@@ -1,0 +1,72 @@
+server:
+  port: 8080 # Model Router 自己的端口
+
+model:
+  services:
+    # 全局负载均衡策略配置
+    load-balance:
+      # 支持: random, round-robin, least-connections, ip-hash
+      type: random
+      # IP Hash 策略的哈希算法 (仅当 type 为 ip-hash 时有效)
+      hash-algorithm: "md5" # 支持: md5, sha1, sha256
+
+    # 對話模型服務 考虑多实例 负载均衡设置
+    chat:
+      # 可以为每个服务类型单独配置负载均衡策略，如果不配置则使用全局策略
+      load-balance:
+        type: least-connections
+      instances:
+        - name: "qwen3:1.7B"
+          base-url: "http://172.16.30.2:30909"
+          path: "/v1-openai/chat/completions"
+          weight: 1
+        - name: "qwen3:1.7B"
+          base-url: "http://172.16.30.3:30909"
+          path: "/v1-openai/chat/completions"
+          weight: 1
+        - name: "qwen3:1.7B"
+          base-url: "http://172.16.30.4:30909"
+          path: "/v1-openai/chat/completions"
+          weight: 2
+
+    # Embedding 模型服務
+    embedding:
+      load-balance:
+        type: round-robin
+      instances:
+        - name: "nomic-embed-text-v1.5"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1-openai/embeddings"
+          weight: 1
+        - name: "nomic-embed-text-v1.5"
+          base-url: "http://172.16.30.7:9090"
+          path: "/v1-openai/embeddings"
+          weight: 1
+
+    # Rerank 模型服務
+    rerank:
+      load-balance:
+        type: ip-hash
+        hash-algorithm: "sha256"
+      instances:
+        - name: "bge-reranker-base"
+          base-url: "http://rerank-server:8080"
+          path: "/rerank"
+          weight: 1
+        - name: "bge-reranker-base"
+          base-url: "http://rerank-server-backup:8080"
+          path: "/rerank"
+          weight: 1
+
+    # TTS 服務
+    tts:
+      # 使用全局负载均衡策略 (random)
+      instances:
+        - name: "openai-tts-1"
+          base-url: "http://tts-server:5000"
+          path: "/tts"
+          weight: 1
+        - name: "openai-tts-1"
+          base-url: "http://tts-server-backup:5000"
+          path: "/tts"
+          weight: 1
