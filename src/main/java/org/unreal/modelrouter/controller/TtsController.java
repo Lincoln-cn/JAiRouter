@@ -4,19 +4,27 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.checker.ServerChecker;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.dto.TtsDTO;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 public class TtsController {
 
     private final ModelServiceRegistry registry;
+    private final ServerChecker serverChecker;
 
-    public TtsController(ModelServiceRegistry registry) {
+    public TtsController(ModelServiceRegistry registry, ServerChecker serverChecker) {
         this.registry = registry;
+        this.serverChecker = serverChecker;
     }
 
     @PostMapping("/v1/audio/speech")
@@ -25,20 +33,27 @@ public class TtsController {
             @RequestBody TtsDTO.Request request,
             ServerHttpRequest httpRequest) {
 
+        if (!serverChecker.isServiceHealthy(ModelServiceRegistry.ServiceType.tts.name())) {
+            String errorResponse = "{\"error\": {\"message\": \"Rerank service is currently unavailable\", \"type\": \"service_unavailable\", \"code\": \"service_unavailable\"}}";
+            return Mono.just(ResponseEntity.status(503)
+                    .header("Content-Type", "application/json")
+                    .body(errorResponse.getBytes()));
+        }
+
         try {
             // 获取客户端IP用于负载均衡
             String clientIp = IpUtils.getClientIp(httpRequest);
 
             // 使用负载均衡选择实例
             ModelRouterProperties.ModelInstance selectedInstance = registry.selectInstance(
-                    ModelServiceRegistry.ServiceType.TTS,
+                    ModelServiceRegistry.ServiceType.tts,
                     request.model(),
                     clientIp
             );
 
             // 获取WebClient和路径
-            WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.TTS, request.model(), clientIp);
-            String path = registry.getModelPath(ModelServiceRegistry.ServiceType.TTS, request.model());
+            WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), clientIp);
+            String path = registry.getModelPath(ModelServiceRegistry.ServiceType.tts, request.model());
 
             return client.post()
                     .uri(path)
@@ -48,7 +63,7 @@ public class TtsController {
                     .toEntity(byte[].class)
                     .doFinally(signalType -> {
                         // 记录连接完成
-                        registry.recordCallComplete(ModelServiceRegistry.ServiceType.TTS, selectedInstance);
+                        registry.recordCallComplete(ModelServiceRegistry.ServiceType.tts, selectedInstance);
                     })
                     .onErrorResume(Exception.class, ex -> {
                         // TTS错误返回JSON错误信息
@@ -80,18 +95,23 @@ public class TtsController {
             @RequestHeader("Authorization") String authorization,
             @RequestBody TtsDTO.Request request,
             ServerHttpRequest httpRequest) {
-
+        if (!serverChecker.isServiceHealthy(ModelServiceRegistry.ServiceType.tts.name())) {
+            String errorResponse = "{\"error\": {\"message\": \"Rerank service is currently unavailable\", \"type\": \"service_unavailable\", \"code\": \"service_unavailable\"}}";
+            return Mono.just(ResponseEntity.status(503)
+                    .header("Content-Type", "application/json")
+                    .body(errorResponse.getBytes()));
+        }
         try {
             String clientIp = IpUtils.getClientIp(httpRequest);
 
             ModelRouterProperties.ModelInstance selectedInstance = registry.selectInstance(
-                    ModelServiceRegistry.ServiceType.TTS,
+                    ModelServiceRegistry.ServiceType.tts,
                     request.model(),
                     clientIp
             );
 
-            WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.TTS, request.model(), clientIp);
-            String path = registry.getModelPath(ModelServiceRegistry.ServiceType.TTS, request.model());
+            WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), clientIp);
+            String path = registry.getModelPath(ModelServiceRegistry.ServiceType.tts, request.model());
 
             // 流式音频响应
             var streamResponse = client.post()
@@ -101,7 +121,7 @@ public class TtsController {
                     .retrieve()
                     .bodyToFlux(byte[].class)
                     .doFinally(signalType -> {
-                        registry.recordCallComplete(ModelServiceRegistry.ServiceType.TTS, selectedInstance);
+                        registry.recordCallComplete(ModelServiceRegistry.ServiceType.tts, selectedInstance);
                     })
                     .onErrorResume(throwable -> {
                         // 流式错误处理
@@ -130,19 +150,35 @@ public class TtsController {
     /**
      * 健康检查端点
      */
-    @GetMapping("/v1/audio/speech/status")
-    public Mono<ResponseEntity<Object>> getTtsStatus() {
+    @GetMapping("/v1/tts/status")
+    public Mono<ResponseEntity<Object>> getEmbeddingStatus() {
         try {
-            var availableModels = registry.getAvailableModels(ModelServiceRegistry.ServiceType.TTS);
-            var loadBalanceStrategy = registry.getLoadBalanceStrategy(ModelServiceRegistry.ServiceType.TTS);
-            var allInstances = registry.getAllInstances().get(ModelServiceRegistry.ServiceType.TTS);
+            var availableModels = registry.getAvailableModels(ModelServiceRegistry.ServiceType.tts);
+            var loadBalanceStrategy = registry.getLoadBalanceStrategy(ModelServiceRegistry.ServiceType.tts);
+            var allInstances = registry.getAllInstances().get(ModelServiceRegistry.ServiceType.tts);
+            var isServiceHealthy = serverChecker.isServiceHealthy(ModelServiceRegistry.ServiceType.tts.name());
+
+            // 添加每个实例的健康状态
+            List<Map<String, Object>> instancesWithHealth = new ArrayList<>();
+            if (allInstances != null) {
+                for (ModelRouterProperties.ModelInstance instance : allInstances) {
+                    Map<String, Object> instanceInfo = new HashMap<>();
+                    instanceInfo.put("name", instance.getName());
+                    instanceInfo.put("baseUrl", instance.getBaseUrl());
+                    instanceInfo.put("path", instance.getPath());
+                    instanceInfo.put("weight", instance.getWeight());
+                    instanceInfo.put("healthy", serverChecker.isInstanceHealthy(ModelServiceRegistry.ServiceType.tts.name(), instance));
+                    instancesWithHealth.add(instanceInfo);
+                }
+            }
 
             var status = new java.util.HashMap<String, Object>();
-            status.put("service_type", "TTS");
+            status.put("service_type", ModelServiceRegistry.ServiceType.tts.name());
             status.put("load_balance_strategy", loadBalanceStrategy);
             status.put("available_models", availableModels);
             status.put("total_instances", allInstances != null ? allInstances.size() : 0);
-            status.put("instances", allInstances);
+            status.put("service_healthy", isServiceHealthy);
+            status.put("instances", instancesWithHealth);
             status.put("timestamp", java.time.Instant.now().toString());
 
             return Mono.just(ResponseEntity.ok(status));

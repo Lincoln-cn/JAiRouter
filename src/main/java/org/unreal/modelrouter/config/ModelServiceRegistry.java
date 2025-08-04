@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.checker.ServerChecker;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,16 +16,18 @@ import java.util.stream.Collectors;
 public class ModelServiceRegistry {
 
     public enum ServiceType {
-        CHAT, EMBEDDING, RERANK, TTS, STT
+        chat, embedding, rerank, tts, stt
     }
 
     private final Map<ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry;
     private final Map<ServiceType, LoadBalancer> loadBalancers;
     private final Map<String, WebClient> webClientCache;
     private final ModelRouterProperties.LoadBalanceConfig globalLoadBalanceConfig;
+    private final ServerChecker serverChecker;
 
-    public ModelServiceRegistry(ModelRouterProperties properties, WebClient.Builder webClientBuilder) {
+    public ModelServiceRegistry(ModelRouterProperties properties, WebClient.Builder webClientBuilder, ServerChecker serverChecker) {
         this.webClientCache = new ConcurrentHashMap<>();
+        this.serverChecker = serverChecker;
 
         // 获取全局负载均衡配置
         this.globalLoadBalanceConfig = Optional.ofNullable(properties.getServices())
@@ -104,16 +107,45 @@ public class ModelServiceRegistry {
      * 根据负载均衡策略选择实例
      */
     public ModelRouterProperties.ModelInstance selectInstance(ServiceType serviceType, String modelName, String clientIp) {
-        List<ModelRouterProperties.ModelInstance> instances = getInstancesByServiceAndModel(serviceType, modelName);
+        List<ModelRouterProperties.ModelInstance> allInstances = getInstancesByServiceAndModel(serviceType, modelName);
 
-        if (instances.isEmpty()) {
+        if (allInstances.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "No instances found for model '" + modelName + "' in service type '" + serviceType + "'");
         }
 
+        // 过滤出通过健康检查的实例
+        List<ModelRouterProperties.ModelInstance> healthyInstances = allInstances.stream()
+                .filter(instance -> serverChecker.isInstanceHealthy(serviceType.name(), instance))
+                .collect(Collectors.toList());
+
+        if (healthyInstances.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No healthy instances found for model '" + modelName + "' in service type '" + serviceType + "'");
+        }
+
         LoadBalancer loadBalancer = loadBalancers.get(serviceType);
-        ModelRouterProperties.ModelInstance selectedInstance = loadBalancer.selectInstance(instances, clientIp);
+        ModelRouterProperties.ModelInstance selectedInstance = loadBalancer.selectInstance(healthyInstances, clientIp);
+
+        // 如果选中的实例不健康，则尝试重新选择（最多尝试3次）
+        int attempts = 0;
+        while (attempts < 3 && !serverChecker.isInstanceHealthy(serviceType.name(), selectedInstance)) {
+            ModelRouterProperties.ModelInstance finalSelectedInstance = selectedInstance;
+            healthyInstances = healthyInstances.stream()
+                    .filter(instance -> !instance.equals(finalSelectedInstance))
+                    .collect(Collectors.toList());
+            
+            if (healthyInstances.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.SERVICE_UNAVAILABLE,
+                        "No healthy instances available for model '" + modelName + "' in service type '" + serviceType + "'");
+            }
+            
+            selectedInstance = loadBalancer.selectInstance(healthyInstances, clientIp);
+            attempts++;
+        }
 
         // 记录调用
         loadBalancer.recordCall(selectedInstance);
