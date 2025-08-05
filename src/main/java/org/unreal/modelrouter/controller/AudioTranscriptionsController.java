@@ -1,12 +1,14 @@
 package org.unreal.modelrouter.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.checker.ServerChecker;
 import org.unreal.modelrouter.config.ModelRouterProperties;
@@ -84,16 +86,13 @@ public class AudioTranscriptionsController {
                             .retrieve()
                             .toEntity(String.class);
                 })
-                .doFinally(signalType -> {
-                    registry.recordCallComplete(ModelServiceRegistry.ServiceType.stt, selectedInstance);
-                })
+                .doFinally(signalType -> registry.recordCallComplete(ModelServiceRegistry.ServiceType.stt, selectedInstance))
                 .onErrorResume(Exception.class, ex -> {
                     ErrorResponse errorResponse = ErrorResponse.builder()
                             .code("error")
                             .type("audio_transcriptions")
                             .message(ex.getMessage())
                             .build();
-                    ex.printStackTrace();
                     return Mono.just(ResponseEntity.status(500)
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(errorResponse.toJson()));
