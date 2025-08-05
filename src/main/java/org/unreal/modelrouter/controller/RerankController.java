@@ -9,6 +9,8 @@ import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.dto.RerankDTO;
 import org.unreal.modelrouter.util.IpUtils;
+import org.unreal.modelrouter.response.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -33,55 +35,42 @@ public class RerankController {
             @RequestBody RerankDTO.Request request,
             ServerHttpRequest httpRequest) {
         if (!serverChecker.isServiceHealthy(ModelServiceRegistry.ServiceType.rerank.name())) {
-            String errorResponse = "{\"error\": {\"message\": \"Rerank service is currently unavailable\", \"type\": \"service_unavailable\", \"code\": \"service_unavailable\"}}";
+            ErrorResponse errorResponse = ErrorResponse.builder().code("error").type("rerank").message("Rerank service is currently unavailable").build();
             return Mono.just(ResponseEntity.status(503)
                     .header("Content-Type", "application/json")
-                    .body(errorResponse));
+                    .body(errorResponse.toJson()));
         }
-        try {
-            // 获取客户端IP用于负载均衡
-            String clientIp = IpUtils.getClientIp(httpRequest);
+        // 获取客户端IP用于负载均衡
+        String clientIp = IpUtils.getClientIp(httpRequest);
 
-            // 使用负载均衡选择实例
-            ModelRouterProperties.ModelInstance selectedInstance = registry.selectInstance(
-                    ModelServiceRegistry.ServiceType.rerank,
-                    request.model(),
-                    clientIp
-            );
+        // 使用负载均衡选择实例
+        ModelRouterProperties.ModelInstance selectedInstance = registry.selectInstance(
+                ModelServiceRegistry.ServiceType.rerank,
+                request.model(),
+                clientIp
+        );
 
-            // 获取WebClient和路径
-            WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), clientIp);
-            String path = registry.getModelPath(ModelServiceRegistry.ServiceType.rerank, request.model());
+        // 获取WebClient和路径
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), clientIp);
+        String path = registry.getModelPath(ModelServiceRegistry.ServiceType.rerank, request.model());
 
-            return client.post()
-                    .uri(path)
-                    .header("Authorization", authorization)
-                    .bodyValue(request)
-                    .retrieve()
-                    .toEntity(String.class)
-                    .doFinally(signalType -> {
-                        // 记录连接完成
-                        registry.recordCallComplete(ModelServiceRegistry.ServiceType.rerank, selectedInstance);
-                    })
-                    .onErrorResume(Exception.class, ex -> {
-                        String errorResponse = String.format(
-                                "{\"error\": {\"message\": \"%s\", \"type\": \"internal_error\", \"code\": \"rerank_error\"}}",
-                                escapeJson(ex.getMessage())
-                        );
-                        return Mono.just(ResponseEntity.internalServerError()
-                                .header("Content-Type", "application/json")
-                                .body(errorResponse));
-                    });
+        return client.post()
+                .uri(path)
+                .header("Authorization", authorization)
+                .bodyValue(request)
+                .retrieve()
+                .toEntity(String.class)
+                .doFinally(signalType -> {
+                    // 记录连接完成
+                    registry.recordCallComplete(ModelServiceRegistry.ServiceType.rerank, selectedInstance);
+                })
+                .onErrorResume(Exception.class, ex -> {
+                    ErrorResponse errorResponse = ErrorResponse.builder().code("error").type("rerank").message(ex.getMessage()).build();
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .header("Content-Type", "application/json")
+                            .body(errorResponse.toJson()));
+                });
 
-        } catch (Exception ex) {
-            String errorResponse = String.format(
-                    "{\"error\": {\"message\": \"%s\", \"type\": \"invalid_request_error\", \"code\": \"invalid_model\"}}",
-                    escapeJson(ex.getMessage())
-            );
-            return Mono.just(ResponseEntity.badRequest()
-                    .header("Content-Type", "application/json")
-                    .body(errorResponse));
-        }
     }
 
     /**
@@ -89,53 +78,35 @@ public class RerankController {
      */
     @GetMapping("/v1/rerank/status")
     public Mono<ResponseEntity<Object>> getEmbeddingStatus() {
-        try {
-            var availableModels = registry.getAvailableModels(ModelServiceRegistry.ServiceType.rerank);
-            var loadBalanceStrategy = registry.getLoadBalanceStrategy(ModelServiceRegistry.ServiceType.rerank);
-            var allInstances = registry.getAllInstances().get(ModelServiceRegistry.ServiceType.rerank);
-            var isServiceHealthy = serverChecker.isServiceHealthy(ModelServiceRegistry.ServiceType.rerank.name());
+        var availableModels = registry.getAvailableModels(ModelServiceRegistry.ServiceType.rerank);
+        var loadBalanceStrategy = registry.getLoadBalanceStrategy(ModelServiceRegistry.ServiceType.rerank);
+        var allInstances = registry.getAllInstances().get(ModelServiceRegistry.ServiceType.rerank);
+        var isServiceHealthy = serverChecker.isServiceHealthy(ModelServiceRegistry.ServiceType.rerank.name());
 
-            // 添加每个实例的健康状态
-            List<Map<String, Object>> instancesWithHealth = new ArrayList<>();
-            if (allInstances != null) {
-                for (ModelRouterProperties.ModelInstance instance : allInstances) {
-                    Map<String, Object> instanceInfo = new HashMap<>();
-                    instanceInfo.put("name", instance.getName());
-                    instanceInfo.put("baseUrl", instance.getBaseUrl());
-                    instanceInfo.put("path", instance.getPath());
-                    instanceInfo.put("weight", instance.getWeight());
-                    instanceInfo.put("healthy", serverChecker.isInstanceHealthy(ModelServiceRegistry.ServiceType.rerank.name(), instance));
-                    instancesWithHealth.add(instanceInfo);
-                }
+        // 添加每个实例的健康状态
+        List<Map<String, Object>> instancesWithHealth = new ArrayList<>();
+        if (allInstances != null) {
+            for (ModelRouterProperties.ModelInstance instance : allInstances) {
+                Map<String, Object> instanceInfo = new HashMap<>();
+                instanceInfo.put("name", instance.getName());
+                instanceInfo.put("baseUrl", instance.getBaseUrl());
+                instanceInfo.put("path", instance.getPath());
+                instanceInfo.put("weight", instance.getWeight());
+                instanceInfo.put("healthy", serverChecker.isInstanceHealthy(ModelServiceRegistry.ServiceType.rerank.name(), instance));
+                instancesWithHealth.add(instanceInfo);
             }
-
-            var status = new java.util.HashMap<String, Object>();
-            status.put("service_type", ModelServiceRegistry.ServiceType.rerank.name());
-            status.put("load_balance_strategy", loadBalanceStrategy);
-            status.put("available_models", availableModels);
-            status.put("total_instances", allInstances != null ? allInstances.size() : 0);
-            status.put("service_healthy", isServiceHealthy);
-            status.put("instances", instancesWithHealth);
-            status.put("timestamp", java.time.Instant.now().toString());
-
-            return Mono.just(ResponseEntity.ok(status));
-        } catch (Exception e) {
-            return Mono.just(ResponseEntity.internalServerError()
-                    .body(java.util.Map.of("error", e.getMessage())));
         }
+
+        var status = new java.util.HashMap<String, Object>();
+        status.put("service_type", ModelServiceRegistry.ServiceType.rerank.name());
+        status.put("load_balance_strategy", loadBalanceStrategy);
+        status.put("available_models", availableModels);
+        status.put("total_instances", allInstances != null ? allInstances.size() : 0);
+        status.put("service_healthy", isServiceHealthy);
+        status.put("instances", instancesWithHealth);
+        status.put("timestamp", java.time.Instant.now().toString());
+        
+        return Mono.just(ResponseEntity.ok(status));
     }
 
-    /**
-     * JSON字符串转义
-     */
-    private String escapeJson(String input) {
-        if (input == null) {
-            return "null";
-        }
-        return input.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
-    }
 }
