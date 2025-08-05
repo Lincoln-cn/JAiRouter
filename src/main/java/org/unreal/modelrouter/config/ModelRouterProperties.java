@@ -9,7 +9,7 @@ import java.util.Map;
 public class ModelRouterProperties {
     private LoadBalanceConfig loadBalance = new LoadBalanceConfig();
     private String adapter = "normal";
-    private CapabilityConfig capability = new CapabilityConfig();
+    private Map<String, ServiceConfig> services; // 直接使用Map，不需要嵌套的CapabilityConfig
 
     public LoadBalanceConfig getLoadBalance() {
         return loadBalance;
@@ -27,24 +27,12 @@ public class ModelRouterProperties {
         this.adapter = adapter;
     }
 
-    public CapabilityConfig getCapability() {
-        return capability;
+    public Map<String, ServiceConfig> getServices() {
+        return services;
     }
 
-    public void setCapability(CapabilityConfig capability) {
-        this.capability = capability;
-    }
-
-    public static class CapabilityConfig {
-        private Map<String, ServiceConfig> services;
-
-        public Map<String, ServiceConfig> getServices() {
-            return services;
-        }
-
-        public void setServices(Map<String, ServiceConfig> services) {
-            this.services = services;
-        }
+    public void setServices(Map<String, ServiceConfig> services) {
+        this.services = services;
     }
 
     public static class ServiceConfig {
@@ -79,7 +67,7 @@ public class ModelRouterProperties {
 
     public static class LoadBalanceConfig {
         private String type = "random";
-        private String hashAlgorithm = "md5";
+        private String hashAlgorithm = "md5"; // 注意这里要用驼峰命名
 
         public String getType() {
             return type;
@@ -100,7 +88,7 @@ public class ModelRouterProperties {
 
     public static class ModelInstance {
         private String name;
-        private String baseUrl;
+        private String baseUrl; // 注意驼峰命名
         private String path;
         private int weight = 1;
 

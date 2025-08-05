@@ -36,8 +36,7 @@ public class ModelServiceRegistry {
                 .orElse(createDefaultLoadBalanceConfig());
         this.globalAdapter = Optional.ofNullable(properties.getAdapter()).orElse("normal");
 
-        Map<String, ModelRouterProperties.ServiceConfig> services = Optional.ofNullable(properties.getCapability())
-                .map(ModelRouterProperties.CapabilityConfig::getServices)
+        Map<String, ModelRouterProperties.ServiceConfig> services = Optional.ofNullable(properties.getServices())
                 .orElse(Map.of());
 
         // 构建实例注册表、负载均衡器、适配器映射

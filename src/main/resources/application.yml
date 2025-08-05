@@ -1,14 +1,6 @@
 server:
   port: 8080 # Model Router 自己的端口
 
-# 健康检查配置
-health:
-  check:
-    enabled: true
-    interval: 30s # 健康检查间隔
-    timeout: 5s   # 健康检查超时
-    failure-threshold: 3 # 失败阈值
-
 model:
   # 全局配置
   load-balance:
@@ -16,7 +8,7 @@ model:
     hash-algorithm: "md5" # IP Hash 策略的哈希算法
   # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
   adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
-  capability:
+  services:
     # 聊天服务配置
     chat:
       load-balance:
@@ -27,9 +19,9 @@ model:
           base-url: "http://172.16.30.6:9090"
           path: "/v1-openai/chat/completions"
           weight: 1
-        - name: "llama3:8B"
+        - name: "qwen3:1.7B"
           base-url: "http://172.16.30.6:9090"
-          path: "/api/chat"
+          path: "/v1/chat/completions"
           weight: 1
 
     # Embedding 服务配置
@@ -74,7 +66,7 @@ model:
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/speech"
           weight: 1
-        - name: "edge-tts"
+        - name: "cosyvoice-300m"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/speech"
           weight: 1
@@ -84,37 +76,15 @@ model:
       load-balance:
         type: round-robin
       instances:
-        - name: "faster-whisper-large-v3"
+        - name: "faster-whisper-tiny"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
           weight: 2
-        - name: "faster-whisper-medium"
+        - name: "faster-whisper-tiny"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
           weight: 1
-
-# 日志配置
-logging:
-  level:
-    org.unreal.modelrouter: DEBUG
-    org.springframework.web.reactive: INFO
-    reactor.netty: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-# 监控配置
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: always
-  metrics:
-    export:
-      prometheus:
-        enabled: true
+debug: true
 
 # WebClient 配置
 webclient:
