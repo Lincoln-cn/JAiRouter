@@ -21,48 +21,50 @@ public class ModelServiceRegistry {
 
     private final Map<ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry;
     private final Map<ServiceType, LoadBalancer> loadBalancers;
+    private final Map<ServiceType, String> serviceAdapters;
     private final Map<String, WebClient> webClientCache;
     private final ModelRouterProperties.LoadBalanceConfig globalLoadBalanceConfig;
+    private final String globalAdapter;
     private final ServerChecker serverChecker;
 
-    public ModelServiceRegistry(ModelRouterProperties properties, WebClient.Builder webClientBuilder, ServerChecker serverChecker) {
+    public ModelServiceRegistry(ModelRouterProperties properties, ServerChecker serverChecker) {
         this.webClientCache = new ConcurrentHashMap<>();
         this.serverChecker = serverChecker;
 
-        // 获取全局负载均衡配置
-        this.globalLoadBalanceConfig = Optional.ofNullable(properties.getServices())
-                .map(services -> services.get("load-balance"))
-                .map(ModelRouterProperties.ServiceConfig::getLoadBalance)
+        // ✅ 使用全局配置
+        this.globalLoadBalanceConfig = Optional.ofNullable(properties.getLoadBalance())
                 .orElse(createDefaultLoadBalanceConfig());
+        this.globalAdapter = Optional.ofNullable(properties.getAdapter()).orElse("normal");
 
-        Map<String, ModelRouterProperties.ServiceConfig> services = Optional.ofNullable(properties.getServices())
+        Map<String, ModelRouterProperties.ServiceConfig> services = Optional.ofNullable(properties.getCapability())
+                .map(ModelRouterProperties.CapabilityConfig::getServices)
                 .orElse(Map.of());
 
-        // 构建实例注册表
+        // 构建实例注册表、负载均衡器、适配器映射
         this.instanceRegistry = new EnumMap<>(ServiceType.class);
-        for (ServiceType serviceType : ServiceType.values()) {
-            String serviceKey = serviceType.name().toLowerCase().replace("_", "-");
-            ModelRouterProperties.ServiceConfig serviceConfig = services.get(serviceKey);
-
-            if (serviceConfig != null && serviceConfig.getInstances() != null) {
-                this.instanceRegistry.put(serviceType, new ArrayList<>(serviceConfig.getInstances()));
-            } else {
-                this.instanceRegistry.put(serviceType, new ArrayList<>());
-            }
-        }
-
-        // 构建负载均衡器
         this.loadBalancers = new EnumMap<>(ServiceType.class);
+        this.serviceAdapters = new EnumMap<>(ServiceType.class);
+
         for (ServiceType serviceType : ServiceType.values()) {
             String serviceKey = serviceType.name().toLowerCase().replace("_", "-");
             ModelRouterProperties.ServiceConfig serviceConfig = services.get(serviceKey);
 
-            // 使用服务特定的负载均衡配置，如果没有则使用全局配置
+            // ✅ 使用服务级配置，没有则用全局
             ModelRouterProperties.LoadBalanceConfig lbConfig = Optional.ofNullable(serviceConfig)
                     .map(ModelRouterProperties.ServiceConfig::getLoadBalance)
                     .orElse(globalLoadBalanceConfig);
 
+            String adapter = Optional.ofNullable(serviceConfig)
+                    .map(ModelRouterProperties.ServiceConfig::getAdapter)
+                    .orElse(globalAdapter);
+
+            List<ModelRouterProperties.ModelInstance> instances = Optional.ofNullable(serviceConfig)
+                    .map(ModelRouterProperties.ServiceConfig::getInstances)
+                    .orElse(List.of());
+
+            this.instanceRegistry.put(serviceType, new ArrayList<>(instances));
             this.loadBalancers.put(serviceType, createLoadBalancer(lbConfig));
+            this.serviceAdapters.put(serviceType, adapter);
         }
     }
 
@@ -84,38 +86,23 @@ public class ModelServiceRegistry {
         };
     }
 
-    /**
-     * 根据负载均衡策略选择实例并获取WebClient
-     * @param serviceType 服务类型
-     * @param modelName 模型名称
-     * @param clientIp 客户端IP (用于IP Hash策略)
-     * @return WebClient实例
-     */
     public WebClient getClient(ServiceType serviceType, String modelName, String clientIp) {
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
         return getWebClient(selectedInstance);
     }
 
-    /**
-     * 兼容性方法，不使用负载均衡，直接返回第一个匹配的实例
-     */
     public WebClient getClient(ServiceType serviceType, String modelName) {
         return getClient(serviceType, modelName, null);
     }
 
-    /**
-     * 根据负载均衡策略选择实例
-     */
     public ModelRouterProperties.ModelInstance selectInstance(ServiceType serviceType, String modelName, String clientIp) {
         List<ModelRouterProperties.ModelInstance> allInstances = getInstancesByServiceAndModel(serviceType, modelName);
-
         if (allInstances.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "No instances found for model '" + modelName + "' in service type '" + serviceType + "'");
         }
 
-        // 过滤出通过健康检查的实例
         List<ModelRouterProperties.ModelInstance> healthyInstances = allInstances.stream()
                 .filter(instance -> serverChecker.isInstanceHealthy(serviceType.name(), instance))
                 .collect(Collectors.toList());
@@ -129,49 +116,35 @@ public class ModelServiceRegistry {
         LoadBalancer loadBalancer = loadBalancers.get(serviceType);
         ModelRouterProperties.ModelInstance selectedInstance = loadBalancer.selectInstance(healthyInstances, clientIp);
 
-        // 如果选中的实例不健康，则尝试重新选择（最多尝试3次）
         int attempts = 0;
         while (attempts < 3 && !serverChecker.isInstanceHealthy(serviceType.name(), selectedInstance)) {
             ModelRouterProperties.ModelInstance finalSelectedInstance = selectedInstance;
             healthyInstances = healthyInstances.stream()
                     .filter(instance -> !instance.equals(finalSelectedInstance))
                     .collect(Collectors.toList());
-            
             if (healthyInstances.isEmpty()) {
                 throw new ResponseStatusException(
                         HttpStatus.SERVICE_UNAVAILABLE,
                         "No healthy instances available for model '" + modelName + "' in service type '" + serviceType + "'");
             }
-            
             selectedInstance = loadBalancer.selectInstance(healthyInstances, clientIp);
             attempts++;
         }
 
-        // 记录调用
         loadBalancer.recordCall(selectedInstance);
-
         return selectedInstance;
     }
 
-    /**
-     * 获取模型路径
-     */
     public String getModelPath(ServiceType serviceType, String modelName) {
         List<ModelRouterProperties.ModelInstance> instances = getInstancesByServiceAndModel(serviceType, modelName);
-
         if (instances.isEmpty()) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
                     "No model named '" + modelName + "' found for service type '" + serviceType + "'");
         }
-
-        // 返回第一个实例的路径（假设同名模型的路径都相同）
         return instances.get(0).getPath();
     }
 
-    /**
-     * 记录调用完成（用于最少连接策略）
-     */
     public void recordCallComplete(ServiceType serviceType, ModelRouterProperties.ModelInstance instance) {
         LoadBalancer loadBalancer = loadBalancers.get(serviceType);
         if (loadBalancer != null) {
@@ -179,9 +152,10 @@ public class ModelServiceRegistry {
         }
     }
 
-    /**
-     * 获取指定服务类型和模型名称的所有实例
-     */
+    public String getServiceAdapter(ServiceType serviceType) {
+        return serviceAdapters.get(serviceType);
+    }
+
     private List<ModelRouterProperties.ModelInstance> getInstancesByServiceAndModel(ServiceType serviceType, String modelName) {
         return Optional.ofNullable(instanceRegistry.get(serviceType))
                 .orElse(Collections.emptyList())
@@ -190,18 +164,12 @@ public class ModelServiceRegistry {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * 获取或创建WebClient
-     */
     private WebClient getWebClient(ModelRouterProperties.ModelInstance instance) {
         String key = instance.getBaseUrl();
         return webClientCache.computeIfAbsent(key, url ->
                 WebClient.builder().baseUrl(url).build());
     }
 
-    /**
-     * 获取所有可用的服务类型
-     */
     public Set<ServiceType> getAvailableServiceTypes() {
         return instanceRegistry.entrySet().stream()
                 .filter(entry -> !entry.getValue().isEmpty())
@@ -209,9 +177,6 @@ public class ModelServiceRegistry {
                 .collect(Collectors.toSet());
     }
 
-    /**
-     * 获取指定服务类型的所有可用模型名称
-     */
     public Set<String> getAvailableModels(ServiceType serviceType) {
         return Optional.ofNullable(instanceRegistry.get(serviceType))
                 .orElse(Collections.emptyList())
@@ -220,20 +185,11 @@ public class ModelServiceRegistry {
                 .collect(Collectors.toSet());
     }
 
-    /**
-     * 获取指定服务类型的负载均衡策略信息
-     */
     public String getLoadBalanceStrategy(ServiceType serviceType) {
         LoadBalancer loadBalancer = loadBalancers.get(serviceType);
-        if (loadBalancer != null) {
-            return loadBalancer.getClass().getSimpleName();
-        }
-        return "Unknown";
+        return loadBalancer != null ? loadBalancer.getClass().getSimpleName() : "Unknown";
     }
 
-    /**
-     * 健康检查 - 获取所有实例的状态
-     */
     public Map<ServiceType, List<ModelRouterProperties.ModelInstance>> getAllInstances() {
         return new HashMap<>(instanceRegistry);
     }
