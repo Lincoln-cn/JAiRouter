@@ -1,84 +1,124 @@
 server:
   port: 8080 # Model Router 自己的端口
 
-model:
-  services:
-    # 全局负载均衡策略配置
-    load-balance:
-      # 支持: random, round-robin, least-connections, ip-hash
-      type: random
-      # IP Hash 策略的哈希算法 (仅当 type 为 ip-hash 时有效)
-      hash-algorithm: "md5" # 支持: md5, sha1, sha256
+# 健康检查配置
+health:
+  check:
+    enabled: true
+    interval: 30s # 健康检查间隔
+    timeout: 5s   # 健康检查超时
+    failure-threshold: 3 # 失败阈值
 
-    # 對話模型服務 考虑多实例 负载均衡设置
+model:
+  # 全局配置
+  load-balance:
+    type: random # 支持: random, round-robin, least-connections, ip-hash
+    hash-algorithm: "md5" # IP Hash 策略的哈希算法
+  # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
+  adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
+  capability:
+    # 聊天服务配置
     chat:
-      # 可以为每个服务类型单独配置负载均衡策略，如果不配置则使用全局策略
       load-balance:
         type: least-connections
+      adapter: gpustack # 使用GPUStack适配器
       instances:
         - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.2:30909"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1-openai/chat/completions"
           weight: 1
-        - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.3:30909"
-          path: "/v1-openai/chat/completions"
+        - name: "llama3:8B"
+          base-url: "http://172.16.30.6:9090"
+          path: "/api/chat"
           weight: 1
-        - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.4:30909"
-          path: "/v1-openai/chat/completions"
-          weight: 2
 
-    # Embedding 模型服務
+    # Embedding 服务配置
     embedding:
       load-balance:
         type: round-robin
       instances:
         - name: "nomic-embed-text-v1.5"
           base-url: "http://172.16.30.6:9090"
-          path: "/v1-openai/embeddings"
+          path: "/v1/embeddings"
           weight: 1
         - name: "nomic-embed-text-v1.5"
-          base-url: "http://172.16.30.7:9090"
-          path: "/v1-openai/embeddings"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/embeddings"
+          weight: 1
+        - name: "bge-large-zh-v1.5"
+          base-url: "http://172.16.30.6:9090/"
+          path: "/v1/embeddings"
           weight: 1
 
-    # Rerank 模型服務
+    # Rerank 服务配置
     rerank:
       load-balance:
         type: ip-hash
         hash-algorithm: "sha256"
       instances:
         - name: "bge-reranker-base"
-          base-url: "http://rerank-server:8080"
-          path: "/rerank"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/rerank"
           weight: 1
-        - name: "bge-reranker-base"
-          base-url: "http://rerank-server-backup:8080"
-          path: "/rerank"
-          weight: 1
+        - name: "bge-reranker-large"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/rerank"
+          weight: 2
 
-    # TTS 服務
+    # TTS 服务配置
     tts:
-      # 使用全局负载均衡策略 (random)
+      load-balance:
+        type: random
       instances:
         - name: "cosyvoice-300m"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/speech"
           weight: 1
-        - name: "cosyvoice-300m"
+        - name: "edge-tts"
           base-url: "http://172.16.30.6:9090"
-          path: "/v1/audio/transcriptions"
+          path: "/v1/audio/speech"
           weight: 1
-    # STT 服務
+
+    # STT 服务配置
     stt:
-      # 使用全局负载均衡策略 (random)
+      load-balance:
+        type: round-robin
       instances:
-        - name: "faster-whisper-tiny"
+        - name: "faster-whisper-large-v3"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/transcriptions"
+          weight: 2
+        - name: "faster-whisper-medium"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
           weight: 1
-        - name: "faster-whisper-tiny"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/audio/transcriptions"
-          weight: 1
+
+# 日志配置
+logging:
+  level:
+    org.unreal.modelrouter: DEBUG
+    org.springframework.web.reactive: INFO
+    reactor.netty: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# WebClient 配置
+webclient:
+  connection-timeout: 10s
+  read-timeout: 30s
+  write-timeout: 30s
+  max-in-memory-size: 10MB

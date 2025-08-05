@@ -7,20 +7,50 @@ import java.util.Map;
 
 @ConfigurationProperties(prefix = "model")
 public class ModelRouterProperties {
+    private LoadBalanceConfig loadBalance = new LoadBalanceConfig();
+    private String adapter = "normal";
+    private CapabilityConfig capability = new CapabilityConfig();
 
-    private Map<String, ServiceConfig> services;
-
-    public Map<String, ServiceConfig> getServices() {
-        return services;
+    public LoadBalanceConfig getLoadBalance() {
+        return loadBalance;
     }
 
-    public void setServices(Map<String, ServiceConfig> services) {
-        this.services = services;
+    public void setLoadBalance(LoadBalanceConfig loadBalance) {
+        this.loadBalance = loadBalance;
+    }
+
+    public String getAdapter() {
+        return adapter;
+    }
+
+    public void setAdapter(String adapter) {
+        this.adapter = adapter;
+    }
+
+    public CapabilityConfig getCapability() {
+        return capability;
+    }
+
+    public void setCapability(CapabilityConfig capability) {
+        this.capability = capability;
+    }
+
+    public static class CapabilityConfig {
+        private Map<String, ServiceConfig> services;
+
+        public Map<String, ServiceConfig> getServices() {
+            return services;
+        }
+
+        public void setServices(Map<String, ServiceConfig> services) {
+            this.services = services;
+        }
     }
 
     public static class ServiceConfig {
         private LoadBalanceConfig loadBalance;
         private List<ModelInstance> instances;
+        private String adapter;
 
         public LoadBalanceConfig getLoadBalance() {
             return loadBalance;
@@ -37,11 +67,19 @@ public class ModelRouterProperties {
         public void setInstances(List<ModelInstance> instances) {
             this.instances = instances;
         }
+
+        public String getAdapter() {
+            return adapter;
+        }
+
+        public void setAdapter(String adapter) {
+            this.adapter = adapter;
+        }
     }
 
     public static class LoadBalanceConfig {
-        private String type = "random"; // 默认随机策略
-        private String hashAlgorithm = "md5"; // IP Hash 使用的哈希算法
+        private String type = "random";
+        private String hashAlgorithm = "md5";
 
         public String getType() {
             return type;
@@ -64,23 +102,7 @@ public class ModelRouterProperties {
         private String name;
         private String baseUrl;
         private String path;
-        private int weight = 1; // 权重，默认为1
-
-        public ModelInstance() {
-        }
-
-        public ModelInstance(String name, String baseUrl, String path) {
-            this.name = name;
-            this.baseUrl = baseUrl;
-            this.path = path;
-        }
-
-        public ModelInstance(String name, String baseUrl, String path, int weight) {
-            this.name = name;
-            this.baseUrl = baseUrl;
-            this.path = path;
-            this.weight = weight;
-        }
+        private int weight = 1;
 
         public String getName() {
             return name;
@@ -112,16 +134,6 @@ public class ModelRouterProperties {
 
         public void setWeight(int weight) {
             this.weight = weight;
-        }
-
-        @Override
-        public String toString() {
-            return "ModelInstance{" +
-                    "name='" + name + '\'' +
-                    ", baseUrl='" + baseUrl + '\'' +
-                    ", path='" + path + '\'' +
-                    ", weight=" + weight +
-                    '}';
         }
     }
 }
