@@ -398,8 +398,38 @@ public class GpuStackAdapter extends BaseAdapter {
 
     @Override
     public Mono<? extends ResponseEntity<?>> rerank(RerankDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        // GPUStack可能不支持rerank，使用基础实现
-        throw new UnsupportedOperationException("GPUStack adapter does not support rerank service");
+        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
+                ModelServiceRegistry.ServiceType.rerank,
+                request.model(),
+                httpRequest
+        );
+
+        String clientIp = IpUtils.getClientIp(httpRequest);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), clientIp);
+        String path = getModelPath(ModelServiceRegistry.ServiceType.rerank, request.model());
+
+        Object transformedRequest = transformRequest(request, "normal");
+
+        return client.post()
+                .uri(path)
+                .header("Authorization", getAuthorizationHeader(authorization, "normal"))
+                .bodyValue(transformedRequest)
+                .retrieve()
+                .toEntity(String.class)
+                .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.rerank, selectedInstance))
+                .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
+                        .headers(responseEntity.getHeaders())
+                        .body(transformResponse(responseEntity.getBody(), "normal")))
+                .onErrorResume(throwable -> {
+                    ErrorResponse errorResponse = ErrorResponse.builder()
+                            .code("error")
+                            .type("rerank")
+                            .message(throwable.getMessage())
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(errorResponse.toJson()));
+                });
     }
 
     @Override
