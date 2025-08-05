@@ -63,7 +63,7 @@ public class OllamaAdapter extends BaseAdapter {
                 options.put("top_p", request.topP());
             }
 
-            if (options.size() > 0) {
+            if (!options.isEmpty()) {
                 ollamaRequest.set("options", options);
             }
 
@@ -296,7 +296,7 @@ public class OllamaAdapter extends BaseAdapter {
             choices.add(choice);
             standardChunk.set("choices", choices);
 
-            return "data: " + standardChunk.toString() + "\n\n";
+            return "data: " + standardChunk + "\n\n";
         } catch (Exception e) {
             return chunk;
         }
