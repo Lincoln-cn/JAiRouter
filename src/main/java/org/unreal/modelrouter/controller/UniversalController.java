@@ -1,6 +1,8 @@
 package org.unreal.modelrouter.controller;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
@@ -100,10 +102,10 @@ public class UniversalController {
     /**
      * 语音转文本接口
      */
-    @PostMapping("/audio/transcriptions")
+    @PostMapping(value = "/audio/transcriptions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<? extends ResponseEntity<?>> speechToText(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody SttDTO.Request request,
+            SttDTO.Request request,
             ServerHttpRequest httpRequest) {
 
         return handleServiceRequest(

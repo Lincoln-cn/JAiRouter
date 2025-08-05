@@ -53,8 +53,8 @@ public class AdapterRegistry {
         String serviceKey = serviceType.name().toLowerCase().replace("_", "-");
 
         // 优先使用服务级配置
-        String adapterName = Optional.ofNullable(properties.getCapability())
-                .map(holder -> holder.getServices().get(serviceKey))
+        String adapterName = Optional.ofNullable(properties.getServices())
+                .map(services -> services.get(serviceKey))
                 .map(ModelRouterProperties.ServiceConfig::getAdapter)
                 .orElse(null);
 

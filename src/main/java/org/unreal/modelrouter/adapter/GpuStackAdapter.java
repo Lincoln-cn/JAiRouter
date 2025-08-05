@@ -3,7 +3,7 @@ package org.unreal.modelrouter.adapter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -44,35 +44,30 @@ public class GpuStackAdapter extends BaseAdapter {
         return request;
     }
 
+    // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
     private Object transformSttRequest(SttDTO.Request sttRequest) {
-        return DataBufferUtils.join(sttRequest.file().content())
-                .map(dataBuffer -> {
-                    byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                    dataBuffer.read(bytes);
-                    DataBufferUtils.release(dataBuffer);
-                    return bytes;
-                })
-                .flatMap(fileBytes -> {
-                    MultipartBodyBuilder builder = new MultipartBodyBuilder();
-                    builder.part("model", sttRequest.model());
-                    builder.part("language", sttRequest.language());
-                    builder.part("file", fileBytes)
-                            .filename(sttRequest.file().filename())
-                            .contentType(MediaType.APPLICATION_OCTET_STREAM);
+        // 直接构建 MultiValueMap 而不处理文件内容
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("model", sttRequest.model());
+        builder.part("language", sttRequest.language());
+        
+        // 使用 asyncPart 处理文件内容流
+        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
+                .filename(sttRequest.file().filename())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM);
 
-                    // 添加其他字段
-                    if (sttRequest.prompt() != null) {
-                        builder.part("prompt", sttRequest.prompt());
-                    }
-                    if (sttRequest.responseFormat() != null) {
-                        builder.part("response_format", sttRequest.responseFormat());
-                    }
-                    if (sttRequest.temperature() != null) {
-                        builder.part("temperature", sttRequest.temperature());
-                    }
+        // 添加其他字段
+        if (sttRequest.prompt() != null) {
+            builder.part("prompt", sttRequest.prompt());
+        }
+        if (sttRequest.responseFormat() != null) {
+            builder.part("response_format", sttRequest.responseFormat());
+        }
+        if (sttRequest.temperature() != null) {
+            builder.part("temperature", sttRequest.temperature());
+        }
 
-                    return Mono.just(builder.build());
-                });
+        return builder.build();
     }
 
     private Object transformTtsRequest(TtsDTO.Request ttsRequest) {
@@ -195,9 +190,7 @@ public class GpuStackAdapter extends BaseAdapter {
      * 适配模型名称格式
      */
     private String adaptModelName(String originalModelName) {
-        // GPUStack可能使用不同的模型名称格式
-        // 例如: qwen3:1.7B -> qwen3-1.7b
-        return originalModelName.toLowerCase().replace(":", "-");
+        return originalModelName;
     }
 
     @Override
@@ -357,7 +350,7 @@ public class GpuStackAdapter extends BaseAdapter {
 
                 standardChunk.set("choices", objectMapper.createArrayNode().add(choice));
 
-                return "data: " + standardChunk.toString();
+                return "data: " + standardChunk;
             }
             return chunk;
         } catch (Exception e) {
@@ -411,8 +404,38 @@ public class GpuStackAdapter extends BaseAdapter {
 
     @Override
     public Mono<? extends ResponseEntity<?>> tts(TtsDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        // GPUStack可能不支持TTS，使用基础实现
-        throw new UnsupportedOperationException("GPUStack adapter does not support TTS service");
+        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
+                ModelServiceRegistry.ServiceType.tts,
+                request.model(),
+                httpRequest
+        );
+
+        String clientIp = IpUtils.getClientIp(httpRequest);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), clientIp);
+        String path = getModelPath(ModelServiceRegistry.ServiceType.tts, request.model());
+
+        Object transformedRequest = transformRequest(request, "gpustack");
+
+        return client.post()
+                .uri(path)
+                .header("Authorization", getAuthorizationHeader(authorization, "gpustack"))
+                .bodyValue(transformedRequest)
+                .retrieve()
+                .toEntity(byte[].class)
+                .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.tts, selectedInstance))
+                .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
+                        .headers(responseEntity.getHeaders())
+                        .body(responseEntity.getBody()))
+                .onErrorResume(throwable -> {
+                    ErrorResponse errorResponse = ErrorResponse.builder()
+                            .code("error")
+                            .type("tts")
+                            .message(throwable.getMessage())
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(errorResponse.toJson().getBytes()));
+                });
     }
 
     @Override
@@ -425,14 +448,15 @@ public class GpuStackAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), clientIp);
-        String path = getModelPath(ModelServiceRegistry.ServiceType.embedding, request.model());
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), clientIp);
+        String path = getModelPath(ModelServiceRegistry.ServiceType.stt, request.model());
 
+        // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
         Object transformedRequest = transformRequest(request, "gpustack");
 
         return client.post()
                 .uri(path)
-                .header("Authorization", authorization)
+                .header("Authorization", getAuthorizationHeader(authorization, "gpustack"))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .bodyValue(transformedRequest)
                 .retrieve()
@@ -444,7 +468,7 @@ public class GpuStackAdapter extends BaseAdapter {
                 .onErrorResume(throwable -> {
                     ErrorResponse errorResponse = ErrorResponse.builder()
                             .code("error")
-                            .type("embedding")
+                            .type("stt")
                             .message("GPUStack adapter error: " + throwable.getMessage())
                             .build();
                     return Mono.just(ResponseEntity.internalServerError()

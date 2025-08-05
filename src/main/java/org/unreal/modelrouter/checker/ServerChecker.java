@@ -38,7 +38,7 @@ public class ServerChecker {
     @Scheduled(fixedRate = 30000)
     public void checkAllServices() {
         log.info("开始检查所有服务实例的健康状态");
-        Map<String, ModelRouterProperties.ServiceConfig> services = modelRouterProperties.getCapability().getServices();
+        Map<String, ModelRouterProperties.ServiceConfig> services = modelRouterProperties.getServices();
         if (services == null || services.isEmpty()) {
             log.warn("未找到配置的服务实例");
             return;
