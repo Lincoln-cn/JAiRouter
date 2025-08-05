@@ -48,11 +48,11 @@ model:
         type: ip-hash
         hash-algorithm: "sha256"
       instances:
-        - name: "bge-reranker-base"
+        - name: "bge-reranker-v2-m3"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/rerank"
           weight: 1
-        - name: "bge-reranker-large"
+        - name: "bge-reranker-v2-m3"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/rerank"
           weight: 2
