@@ -62,11 +62,23 @@ model:
     tts:
       # 使用全局负载均衡策略 (random)
       instances:
-        - name: "openai-tts-1"
-          base-url: "http://tts-server:5000"
-          path: "/tts"
+        - name: "cosyvoice-300m"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/speech"
           weight: 1
-        - name: "openai-tts-1"
-          base-url: "http://tts-server-backup:5000"
-          path: "/tts"
+        - name: "cosyvoice-300m"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/transcriptions"
+          weight: 1
+    # STT 服務
+    stt:
+      # 使用全局负载均衡策略 (random)
+      instances:
+        - name: "faster-whisper-tiny"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/transcriptions"
+          weight: 1
+        - name: "faster-whisper-tiny"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/transcriptions"
           weight: 1
