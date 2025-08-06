@@ -7,6 +7,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.checker.ServerChecker;
 import org.unreal.modelrouter.loadbalancer.*;
+import org.unreal.modelrouter.loadbalancer.impl.IpHashLoadBalancer;
+import org.unreal.modelrouter.loadbalancer.impl.LeastConnectionsLoadBalancer;
+import org.unreal.modelrouter.loadbalancer.impl.RandomLoadBalancer;
+import org.unreal.modelrouter.loadbalancer.impl.RoundRobinLoadBalancer;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
