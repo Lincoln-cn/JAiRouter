@@ -5,18 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.adapter.BaseAdapter;
-import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
-import org.unreal.modelrouter.response.ErrorResponse;
-import org.unreal.modelrouter.util.IpUtils;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * LocalAI Adapter - 适配LocalAI API格式
@@ -31,39 +23,64 @@ public class LocalAiAdapter extends BaseAdapter {
     }
 
     @Override
+    protected String getAdapterType() {
+        return "localai";
+    }
+
+    @Override
     protected Object transformRequest(Object request, String adapterType) {
-        if (request instanceof SttDTO.Request sttRequest) {
-            return transformSttRequest(sttRequest);
+        if (request instanceof ChatDTO.Request) {
+            return transformChatRequest((ChatDTO.Request) request);
+        } else if (request instanceof EmbeddingDTO.Request) {
+            return transformEmbeddingRequest((EmbeddingDTO.Request) request);
+        } else if (request instanceof RerankDTO.Request) {
+            return transformRerankRequest((RerankDTO.Request) request);
+        } else if (request instanceof TtsDTO.Request) {
+            return transformTtsRequest((TtsDTO.Request) request);
+        } else if (request instanceof SttDTO.Request) {
+            return transformSttRequest((SttDTO.Request) request);
         } else {
-            return super.transformRequest(request, adapterType);
+            return request;
         }
     }
 
+    /**
+     * 转换Chat请求格式以适配LocalAI
+     */
+    private Object transformChatRequest(ChatDTO.Request request) {
+        try {
+            ObjectNode localAiRequest = objectMapper.createObjectNode();
 
-    // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
-    private Object transformSttRequest(SttDTO.Request sttRequest) {
-        // 直接构建 MultiValueMap 而不处理文件内容
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("model", sttRequest.model());
-        builder.part("language", sttRequest.language());
+            localAiRequest.put("model", request.model());
+            localAiRequest.set("messages", objectMapper.valueToTree(request.messages()));
 
-        // 使用 asyncPart 处理文件内容流
-        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
-                .filename(sttRequest.file().filename())
-                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+            // LocalAI特定参数
+            if (request.temperature() != null) {
+                localAiRequest.put("temperature", request.temperature());
+            }
+            if (request.maxTokens() != null) {
+                localAiRequest.put("max_tokens", request.maxTokens());
+            }
+            if (request.stream() != null) {
+                localAiRequest.put("stream", request.stream());
+            }
+            if (request.topP() != null) {
+                localAiRequest.put("top_p", request.topP());
+            }
+            if (request.frequencyPenalty() != null) {
+                localAiRequest.put("frequency_penalty", request.frequencyPenalty());
+            }
+            if (request.presencePenalty() != null) {
+                localAiRequest.put("presence_penalty", request.presencePenalty());
+            }
+            if (request.user() != null) {
+                localAiRequest.put("user", request.user());
+            }
 
-        // 添加其他字段
-        if (sttRequest.prompt() != null) {
-            builder.part("prompt", sttRequest.prompt());
+            return localAiRequest;
+        } catch (Exception e) {
+            return request;
         }
-        if (sttRequest.responseFormat() != null) {
-            builder.part("response_format", sttRequest.responseFormat());
-        }
-        if (sttRequest.temperature() != null) {
-            builder.part("temperature", sttRequest.temperature());
-        }
-
-        return builder.build();
     }
 
     /**
@@ -91,6 +108,27 @@ public class LocalAiAdapter extends BaseAdapter {
             return localAiRequest;
         } catch (Exception e) {
             return request;
+        }
+    }
+
+    private Object transformRerankRequest(RerankDTO.Request rerankRequest) {
+        try {
+            ObjectNode localAiRequest = objectMapper.createObjectNode();
+
+            localAiRequest.put("model", rerankRequest.model());
+            localAiRequest.put("query", rerankRequest.query());
+            localAiRequest.set("documents", objectMapper.valueToTree(rerankRequest.documents()));
+
+            if (rerankRequest.topN() != null) {
+                localAiRequest.put("top_n", rerankRequest.topN());
+            }
+            if (rerankRequest.returnDocuments() != null) {
+                localAiRequest.put("return_documents", rerankRequest.returnDocuments());
+            }
+
+            return localAiRequest;
+        } catch (Exception e) {
+            return rerankRequest;
         }
     }
 
@@ -122,11 +160,37 @@ public class LocalAiAdapter extends BaseAdapter {
         }
     }
 
+    // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
+    private Object transformSttRequest(SttDTO.Request sttRequest) {
+        // 直接构建 MultiValueMap 而不处理文件内容
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("model", sttRequest.model());
+        builder.part("language", sttRequest.language());
+
+        // 使用 asyncPart 处理文件内容流
+        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
+                .filename(sttRequest.file().filename())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+
+        // 添加其他字段
+        if (sttRequest.prompt() != null) {
+            builder.part("prompt", sttRequest.prompt());
+        }
+        if (sttRequest.responseFormat() != null) {
+            builder.part("response_format", sttRequest.responseFormat());
+        }
+        if (sttRequest.temperature() != null) {
+            builder.part("temperature", sttRequest.temperature());
+        }
+
+        return builder.build();
+    }
+
     @Override
     protected Object transformResponse(Object response, String adapterType) {
         if (response instanceof String responseStr) {
             try {
-                JsonNode jsonResponse = objectMapper.readTree(adaptModelName(responseStr));
+                JsonNode jsonResponse = objectMapper.readTree(responseStr);
                 return enhanceLocalAiResponse(jsonResponse);
             } catch (Exception e) {
                 return response;
@@ -166,84 +230,24 @@ public class LocalAiAdapter extends BaseAdapter {
     @Override
     protected String getAuthorizationHeader(String authorization, String adapterType) {
         // LocalAI通常不需要严格的认证，但支持API key
-        return adaptModelName(authorization);
+        if (authorization != null && authorization.startsWith("Bearer ")) {
+            return authorization;
+        } else if (authorization != null) {
+            return "Bearer " + authorization;
+        }
+        return null;
     }
 
     @Override
-    public Mono<? extends ResponseEntity<?>> chat(ChatDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
-                ModelServiceRegistry.ServiceType.chat,
-                request.model(),
-                httpRequest
-        );
-
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), adaptModelName(clientIp));
-        String path = getModelPath(ModelServiceRegistry.ServiceType.chat, request.model());
-
-        Object transformedRequest = transformRequest(request, "localai");
-
-        WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(adaptModelName(path))
-                .header("Content-Type", "application/json");
-
-        if (adaptModelName(authorization) != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "localai"));
-        }
-
-        if (request.stream()) {
-            Flux<String> streamResponse = requestSpec
-                    .bodyValue(transformedRequest)
-                    .retrieve()
-                    .bodyToFlux(String.class)
-                    .map(this::processLocalAiStreamChunk)
-                    .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.chat, selectedInstance))
-                    .onErrorResume(throwable -> {
-                        ErrorResponse errorResponse = ErrorResponse.builder()
-                                .code("error")
-                                .type("chat")
-                                .message("LocalAI adapter error: " + throwable.getMessage())
-                                .build();
-                        return Flux.just("data: " + errorResponse.toJson() + "\n\n");
-                    });
-
-            return Mono.just(ResponseEntity.ok()
-                    .contentType(MediaType.TEXT_EVENT_STREAM)
-                    .body(streamResponse));
-        } else {
-            return requestSpec
-                    .bodyValue(transformedRequest)
-                    .retrieve()
-                    .toEntity(String.class)
-                    .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.chat, selectedInstance))
-                    .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
-                            .headers(responseEntity.getHeaders())
-                            .body(transformResponse(responseEntity.getBody(), "localai")))
-                    .onErrorResume(throwable -> {
-                        ErrorResponse errorResponse = ErrorResponse.builder()
-                                .code("error")
-                                .type("chat")
-                                .message("LocalAI adapter error: " + throwable.getMessage())
-                                .build();
-                        return Mono.just(ResponseEntity.internalServerError()
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .body(errorResponse.toJson()));
-                    });
-        }
-    }
-
-    /**
-     * 处理LocalAI流式响应块
-     */
-    private String processLocalAiStreamChunk(String chunk) {
+    protected String transformStreamChunk(String chunk) {
         try {
-            if (adaptModelName(chunk).startsWith("data: ")) {
-                String jsonPart = adaptModelName(chunk).substring(6).trim();
-                if ("[DONE]".equals(adaptModelName(jsonPart))) {
-                    return adaptModelName(chunk);
+            if (chunk.startsWith("data: ")) {
+                String jsonPart = chunk.substring(6).trim();
+                if ("[DONE]".equals(jsonPart)) {
+                    return chunk;
                 }
 
-                JsonNode chunkJson = objectMapper.readTree(adaptModelName(jsonPart));
+                JsonNode chunkJson = objectMapper.readTree(jsonPart);
                 if (chunkJson.isObject()) {
                     ObjectNode enhancedChunk = (ObjectNode) chunkJson.deepCopy();
 
@@ -252,143 +256,12 @@ public class LocalAiAdapter extends BaseAdapter {
                         enhancedChunk.put("system_fingerprint", "localai-adapter");
                     }
 
-                    return "data: " + enhancedChunk.toString() + "\n\n";
+                    return "data: " + enhancedChunk.toString();
                 }
             }
-            return adaptModelName(chunk);
+            return chunk;
         } catch (Exception e) {
-            return adaptModelName(chunk);
+            return chunk;
         }
-    }
-
-    @Override
-    public Mono<? extends ResponseEntity<?>> embedding(EmbeddingDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
-                ModelServiceRegistry.ServiceType.embedding,
-                request.model(),
-                httpRequest
-        );
-
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), adaptModelName(clientIp));
-        String path = getModelPath(ModelServiceRegistry.ServiceType.embedding, request.model());
-
-        Object transformedRequest = transformRequest(request, "localai");
-
-        WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(adaptModelName(path))
-                .header("Content-Type", "application/json");
-
-        if (adaptModelName(authorization) != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "localai"));
-        }
-
-        return requestSpec
-                .bodyValue(transformedRequest)
-                .retrieve()
-                .toEntity(String.class)
-                .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.embedding, selectedInstance))
-                .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
-                        .headers(responseEntity.getHeaders())
-                        .body(transformResponse(responseEntity.getBody(), "localai")))
-                .onErrorResume(throwable -> {
-                    ErrorResponse errorResponse = ErrorResponse.builder()
-                            .code("error")
-                            .type("embedding")
-                            .message("LocalAI adapter error: " + throwable.getMessage())
-                            .build();
-                    return Mono.just(ResponseEntity.internalServerError()
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(errorResponse.toJson()));
-                });
-    }
-
-    @Override
-    public Mono<? extends ResponseEntity<?>> rerank(RerankDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        throw new UnsupportedOperationException("LocalAI adapter does not support rerank service");
-    }
-
-    @Override
-    public Mono<? extends ResponseEntity<?>> tts(TtsDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
-                ModelServiceRegistry.ServiceType.tts,
-                request.model(),
-                httpRequest
-        );
-
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), adaptModelName(clientIp));
-        String path = getModelPath(ModelServiceRegistry.ServiceType.tts, request.model());
-
-        Object transformedRequest = transformRequest(request, "localai");
-
-        WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(adaptModelName(path))
-                .header("Content-Type", "application/json");
-
-        if (adaptModelName(authorization) != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "localai"));
-        }
-
-        return requestSpec
-                .bodyValue(transformedRequest)
-                .retrieve()
-                .toEntity(byte[].class)
-                .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.tts, selectedInstance))
-                .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
-                        .headers(responseEntity.getHeaders())
-                        .body(responseEntity.getBody()))
-                .onErrorResume(throwable -> {
-                    ErrorResponse errorResponse = ErrorResponse.builder()
-                            .code("error")
-                            .type("tts")
-                            .message("LocalAI adapter error: " + throwable.getMessage())
-                            .build();
-                    return Mono.just(ResponseEntity.internalServerError()
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(errorResponse.toJson().getBytes()));
-                });
-    }
-
-    @Override
-    public Mono<? extends ResponseEntity<?>> stt(SttDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
-                ModelServiceRegistry.ServiceType.stt,
-                request.model(),
-                httpRequest
-        );
-
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), adaptModelName(clientIp));
-        String path = getModelPath(ModelServiceRegistry.ServiceType.stt, request.model());
-
-        Object transformedRequest = transformRequest(request, "localai");
-
-        WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(adaptModelName(path))
-                .header("Content-Type", "application/json");
-
-        if (adaptModelName(authorization) != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "localai"));
-        }
-
-        return requestSpec
-                .bodyValue(transformedRequest)
-                .retrieve()
-                .toEntity(String.class)
-                .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.stt, selectedInstance))
-                .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
-                        .headers(responseEntity.getHeaders())
-                        .body(transformResponse(responseEntity.getBody(), "localai")))
-                .onErrorResume(throwable -> {
-                    ErrorResponse errorResponse = ErrorResponse.builder()
-                            .code("error")
-                            .type("stt")
-                            .message("LocalAI adapter error: " + throwable.getMessage())
-                            .build();
-                    return Mono.just(ResponseEntity.internalServerError()
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(errorResponse.toJson()));
-                });
     }
 }

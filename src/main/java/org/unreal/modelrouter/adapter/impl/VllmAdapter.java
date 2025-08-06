@@ -5,18 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.adapter.BaseAdapter;
-import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
-import org.unreal.modelrouter.response.ErrorResponse;
-import org.unreal.modelrouter.util.IpUtils;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * VLLM Adapter - 适配VLLM API格式
@@ -31,29 +23,133 @@ public class VllmAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformRequest(Object request, String adapterType) {
-        if (request instanceof ChatDTO.Request chatRequest) {
-            return transformChatRequest(chatRequest);
-        } else if (request instanceof EmbeddingDTO.Request embeddingRequest) {
-            return transformEmbeddingRequest(embeddingRequest);
-        } else if (request instanceof RerankDTO.Request rerankRequest) {
-            return transformRerankRequest(rerankRequest);
-        } else if (request instanceof TtsDTO.Request ttsRequest) {
-            return transformTtsRequest(ttsRequest);
-        } else if (request instanceof SttDTO.Request sttRequest) {
-            return transformSttRequest(sttRequest);
-        }
-        return request;
+    protected String getAdapterType() {
+        return "vllm";
     }
 
-    // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
+    @Override
+    protected Object transformRequest(Object request, String adapterType) {
+        if (request instanceof ChatDTO.Request) {
+            return transformChatRequest((ChatDTO.Request) request);
+        } else if (request instanceof EmbeddingDTO.Request) {
+            return transformEmbeddingRequest((EmbeddingDTO.Request) request);
+        } else if (request instanceof RerankDTO.Request) {
+            return transformRerankRequest((RerankDTO.Request) request);
+        } else if (request instanceof TtsDTO.Request) {
+            return transformTtsRequest((TtsDTO.Request) request);
+        } else if (request instanceof SttDTO.Request) {
+            return transformSttRequest((SttDTO.Request) request);
+        } else {
+            return request;
+        }
+    }
+
+    /**
+     * 转换Chat请求格式以适配VLLM
+     */
+    private Object transformChatRequest(ChatDTO.Request request) {
+        try {
+            ObjectNode vllmRequest = objectMapper.createObjectNode();
+
+            String vllmModelName = adaptModelName(request.model());
+            vllmRequest.put("model", adaptModelName(vllmModelName));
+            vllmRequest.set("messages", objectMapper.valueToTree(request.messages()));
+
+            // VLLM特定参数
+            if (request.temperature() != null) {
+                vllmRequest.put("temperature", request.temperature());
+            }
+            if (request.maxTokens() != null) {
+                vllmRequest.put("max_tokens", request.maxTokens());
+            }
+            if (request.stream() != null) {
+                vllmRequest.put("stream", request.stream());
+            }
+
+            // VLLM需要的额外参数
+            vllmRequest.put("do_sample", true);
+            if (!request.stream()) {
+                vllmRequest.put("return_full_text", false);
+            }
+
+            return vllmRequest;
+        } catch (Exception e) {
+            return request;
+        }
+    }
+
+    /**
+     * 转换Embedding请求格式
+     */
+    private Object transformEmbeddingRequest(EmbeddingDTO.Request request) {
+        try {
+            ObjectNode vllmRequest = objectMapper.createObjectNode();
+
+            String vllmModelName = adaptModelName(request.model());
+            vllmRequest.put("model", adaptModelName(vllmModelName));
+
+            if (request.input() instanceof String) {
+                vllmRequest.put("input", (String) request.input());
+            } else {
+                vllmRequest.set("input", objectMapper.valueToTree(request.input()));
+            }
+
+            vllmRequest.put("encoding_format", "float");
+            return vllmRequest;
+        } catch (Exception e) {
+            return request;
+        }
+    }
+
+    private Object transformRerankRequest(RerankDTO.Request rerankRequest) {
+        try {
+            ObjectNode vllmRequest = objectMapper.createObjectNode();
+
+            String vllmModelName = adaptModelName(rerankRequest.model());
+            vllmRequest.put("model", adaptModelName(vllmModelName));
+            vllmRequest.put("query", rerankRequest.query());
+            vllmRequest.set("documents", objectMapper.valueToTree(rerankRequest.documents()));
+
+            if (rerankRequest.topN() != null) {
+                vllmRequest.put("top_n", rerankRequest.topN());
+            }
+            if (rerankRequest.returnDocuments() != null) {
+                vllmRequest.put("return_documents", rerankRequest.returnDocuments());
+            }
+
+            return vllmRequest;
+        } catch (Exception e) {
+            return rerankRequest;
+        }
+    }
+
+    private Object transformTtsRequest(TtsDTO.Request ttsRequest) {
+        try {
+            ObjectNode vllmRequest = objectMapper.createObjectNode();
+
+            String vllmModelName = adaptModelName(ttsRequest.model());
+            vllmRequest.put("model", adaptModelName(vllmModelName));
+            vllmRequest.put("input", ttsRequest.input());
+            vllmRequest.put("voice", ttsRequest.voice());
+
+            if (ttsRequest.responseFormat() != null) {
+                vllmRequest.put("response_format", ttsRequest.responseFormat());
+            }
+            if (ttsRequest.speed() != null) {
+                vllmRequest.put("speed", ttsRequest.speed());
+            }
+
+            return vllmRequest;
+        } catch (Exception e) {
+            return ttsRequest;
+        }
+    }
+
     private Object transformSttRequest(SttDTO.Request sttRequest) {
-        // 直接构建 MultiValueMap 而不处理文件内容
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("model", sttRequest.model());
         builder.part("language", sttRequest.language());
 
-        // 使用 asyncPart 处理文件内容流
         builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
                 .filename(sttRequest.file().filename())
                 .contentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -72,129 +168,12 @@ public class VllmAdapter extends BaseAdapter {
         return builder.build();
     }
 
-    private Object transformTtsRequest(TtsDTO.Request ttsRequest) {
-        try {
-            ObjectNode vllmRequest = objectMapper.createObjectNode();
-
-            // GPUStack可能需要不同的模型名称格式
-            String gpuStackModelName = adaptModelName(ttsRequest.model());
-            vllmRequest.put("model", super.adaptModelName(gpuStackModelName));
-
-            // TTS特定参数转换
-            vllmRequest.put("input", ttsRequest.input());
-            vllmRequest.put("voice", ttsRequest.voice());
-
-            if (ttsRequest.responseFormat() != null) {
-                vllmRequest.put("response_format", ttsRequest.responseFormat());
-            }
-            if (ttsRequest.speed() != null) {
-                vllmRequest.put("speed", ttsRequest.speed());
-            }
-
-            return vllmRequest;
-        } catch (Exception e) {
-            // 如果转换失败，返回原请求
-            return ttsRequest;
-        }
-    }
-
-    private Object transformRerankRequest(RerankDTO.Request rerankRequest) {
-        try {
-            ObjectNode vllmRequest = objectMapper.createObjectNode();
-
-            // GPUStack可能需要不同的模型名称格式
-            String gpuStackModelName = adaptModelName(rerankRequest.model());
-            vllmRequest.put("model", super.adaptModelName(gpuStackModelName));
-
-            // Rerank特定参数转换
-            vllmRequest.put("query", rerankRequest.query());
-            vllmRequest.set("documents", objectMapper.valueToTree(rerankRequest.documents()));
-
-            if (rerankRequest.topN() != null) {
-                vllmRequest.put("top_n", rerankRequest.topN());
-            }
-            if (rerankRequest.returnDocuments() != null) {
-                vllmRequest.put("return_documents", rerankRequest.returnDocuments());
-            }
-
-            return vllmRequest;
-        } catch (Exception e) {
-            // 如果转换失败，返回原请求
-            return rerankRequest;
-        }
-    }
-
-    /**
-     * 转换Chat请求格式以适配GPUStack
-     */
-    private Object transformChatRequest(ChatDTO.Request request) {
-        try {
-            ObjectNode vllmRequest = objectMapper.createObjectNode();
-
-            // GPUStack可能需要不同的模型名称格式
-            String gpuStackModelName = adaptModelName(request.model());
-            vllmRequest.put("model", super.adaptModelName(gpuStackModelName));
-
-            // 转换消息格式
-            vllmRequest.set("messages", objectMapper.valueToTree(request.messages()));
-
-            // GPUStack特定参数
-            if (request.temperature() != null) {
-                vllmRequest.put("temperature", request.temperature());
-            }
-            if (request.maxTokens() != null) {
-                vllmRequest.put("max_tokens", request.maxTokens());
-            }
-            if (request.stream() != null) {
-                vllmRequest.put("stream", request.stream());
-            }
-
-            // GPUStack可能需要额外的参数
-            vllmRequest.put("do_sample", true);
-            if (!request.stream()) {
-                vllmRequest.put("return_full_text", false);
-            }
-
-            return vllmRequest;
-        } catch (Exception e) {
-            // 如果转换失败，返回原请求
-            return request;
-        }
-    }
-
-    /**
-     * 转换Embedding请求格式
-     */
-    private Object transformEmbeddingRequest(EmbeddingDTO.Request request) {
-        try {
-            ObjectNode vllmRequest = objectMapper.createObjectNode();
-
-            String gpuStackModelName = adaptModelName(request.model());
-            vllmRequest.put("model", super.adaptModelName(gpuStackModelName));
-
-            // GPUStack的embedding接口可能使用不同的参数名
-            if (request.input() instanceof String) {
-                vllmRequest.put("input", (String) request.input());
-            } else {
-                vllmRequest.set("input", objectMapper.valueToTree(request.input()));
-            }
-
-            // GPUStack特定参数
-            vllmRequest.put("encoding_format", "float");
-
-            return vllmRequest;
-        } catch (Exception e) {
-            return request;
-        }
-    }
-
     @Override
     protected Object transformResponse(Object response, String adapterType) {
-        // VLLM通常与OpenAI API兼容，可能不需要太多转换
         if (response instanceof String responseStr) {
             try {
-                JsonNode jsonResponse = objectMapper.readTree(super.adaptModelName(responseStr));
-                return enhanceVllmResponse(jsonResponse);
+                JsonNode jsonResponse = objectMapper.readTree(adaptModelName(responseStr));
+                return transformResponseJson(jsonResponse);
             } catch (Exception e) {
                 return response;
             }
@@ -203,29 +182,39 @@ public class VllmAdapter extends BaseAdapter {
     }
 
     /**
-     * 增强VLLM响应，添加一些标准化字段
+     * 转换响应格式以符合OpenAI标准
      */
-    private String enhanceVllmResponse(JsonNode vllmResponse) {
+    private String transformResponseJson(JsonNode vllmResponse) {
         try {
-            if (vllmResponse.isObject()) {
-                ObjectNode enhancedResponse = (ObjectNode) vllmResponse.deepCopy();
+            ObjectNode standardResponse = objectMapper.createObjectNode();
 
-                // 确保有ID字段
-                if (!enhancedResponse.has("id")) {
-                    enhancedResponse.put("id", "chatcmpl-vllm-" + System.currentTimeMillis());
-                }
+            // 转换VLLM响应为OpenAI格式
+            if (vllmResponse.has("generated_text")) {
+                // 聊天响应转换
+                ObjectNode choice = objectMapper.createObjectNode();
+                ObjectNode message = objectMapper.createObjectNode();
+                message.put("role", "assistant");
+                message.put("content", vllmResponse.get("generated_text").asText());
+                choice.set("message", message);
+                choice.put("index", 0);
+                choice.put("finish_reason", "stop");
 
-                // 确保有created字段
-                if (!enhancedResponse.has("created")) {
-                    enhancedResponse.put("created", System.currentTimeMillis() / 1000);
-                }
-
-                // 添加系统标识
-                enhancedResponse.put("system_fingerprint", "vllm-adapter");
-
-                return enhancedResponse.toString();
+                standardResponse.set("choices", objectMapper.createArrayNode().add(choice));
+                standardResponse.put("object", "chat.completion");
+            } else if (vllmResponse.has("embeddings")) {
+                // 嵌入响应转换
+                standardResponse.set("data", vllmResponse.get("embeddings"));
+                standardResponse.put("object", "list");
+                standardResponse.put("model", vllmResponse.get("model").asText());
+            } else {
+                return vllmResponse.toString();
             }
-            return vllmResponse.toString();
+
+            // 添加通用字段
+            standardResponse.put("id", "chatcmpl-" + System.currentTimeMillis());
+            standardResponse.put("created", System.currentTimeMillis() / 1000);
+
+            return standardResponse.toString();
         } catch (Exception e) {
             return vllmResponse.toString();
         }
@@ -233,142 +222,44 @@ public class VllmAdapter extends BaseAdapter {
 
     @Override
     protected String getAuthorizationHeader(String authorization, String adapterType) {
-        // VLLM支持标准的Bearer token认证
-        return super.adaptModelName(authorization);
+        if (adaptModelName(authorization) != null && adaptModelName(authorization).startsWith("Bearer ")) {
+            return adaptModelName(authorization);
+        } else if (adaptModelName(authorization) != null) {
+            return "Bearer " + adaptModelName(authorization);
+        }
+        return null;
     }
 
     @Override
-    public Mono<? extends ResponseEntity<?>> chat(ChatDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
-                ModelServiceRegistry.ServiceType.chat,
-                request.model(),
-                httpRequest
-        );
-
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), super.adaptModelName(clientIp));
-        String path = getModelPath(ModelServiceRegistry.ServiceType.chat, request.model());
-
-        Object transformedRequest = transformRequest(request, "vllm");
-
-        // 构建请求头
-        WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(super.adaptModelName(path))
-                .header("Content-Type", "application/json");
-
-        if (super.adaptModelName(authorization) != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(super.adaptModelName(authorization), "vllm"));
-        }
-
-        if (request.stream()) {
-            Flux<String> streamResponse = requestSpec
-                    .bodyValue(transformedRequest)
-                    .retrieve()
-                    .bodyToFlux(String.class)
-                    .map(this::processVllmStreamChunk)
-                    .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.chat, selectedInstance))
-                    .onErrorResume(throwable -> {
-                        ErrorResponse errorResponse = ErrorResponse.builder()
-                                .code("error")
-                                .type("chat")
-                                .message("VLLM adapter error: " + throwable.getMessage())
-                                .build();
-                        return Flux.just("data: " + errorResponse.toJson() + "\n\n");
-                    });
-
-            return Mono.just(ResponseEntity.ok()
-                    .contentType(MediaType.TEXT_EVENT_STREAM)
-                    .body(streamResponse));
-        } else {
-            return requestSpec
-                    .bodyValue(transformedRequest)
-                    .retrieve()
-                    .toEntity(String.class)
-                    .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.chat, selectedInstance))
-                    .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
-                            .headers(responseEntity.getHeaders())
-                            .body(transformResponse(responseEntity.getBody(), "vllm")))
-                    .onErrorResume(throwable -> {
-                        ErrorResponse errorResponse = ErrorResponse.builder()
-                                .code("error")
-                                .type("chat")
-                                .message("VLLM adapter error: " + throwable.getMessage())
-                                .build();
-                        return Mono.just(ResponseEntity.internalServerError()
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .body(errorResponse.toJson()));
-                    });
-        }
-    }
-
-    /**
-     * 处理VLLM流式响应块
-     */
-    private String processVllmStreamChunk(String chunk) {
+    protected String transformStreamChunk(String chunk) {
         try {
-            // VLLM通常返回标准的SSE格式，可能需要一些清理
-            if (super.adaptModelName(chunk).startsWith("data: ")) {
-                String jsonPart = super.adaptModelName(chunk).substring(6).trim();
-                if ("[DONE]".equals(super.adaptModelName(jsonPart))) {
-                    return super.adaptModelName(chunk);
+            if (adaptModelName(chunk).startsWith("data: ")) {
+                String jsonPart = adaptModelName(chunk).substring(6);
+                if ("[DONE]".equals(adaptModelName(jsonPart))) {
+                    return adaptModelName(chunk);
                 }
 
-                JsonNode chunkJson = objectMapper.readTree(super.adaptModelName(jsonPart));
-                if (chunkJson.isObject()) {
-                    ObjectNode enhancedChunk = (ObjectNode) chunkJson.deepCopy();
+                JsonNode chunkJson = objectMapper.readTree(adaptModelName(jsonPart));
+                ObjectNode standardChunk = objectMapper.createObjectNode();
+                standardChunk.put("id", "chatcmpl-" + System.currentTimeMillis());
+                standardChunk.put("object", "chat.completion.chunk");
+                standardChunk.put("created", System.currentTimeMillis() / 1000);
 
-                    // 确保有system_fingerprint
-                    if (!enhancedChunk.has("system_fingerprint")) {
-                        enhancedChunk.put("system_fingerprint", "vllm-adapter");
-                    }
+                ObjectNode choice = objectMapper.createObjectNode();
+                choice.put("index", 0);
 
-                    return "data: " + enhancedChunk.toString() + "\n\n";
+                if (chunkJson.has("token")) {
+                    ObjectNode delta = objectMapper.createObjectNode();
+                    delta.put("content", chunkJson.get("token").asText());
+                    choice.set("delta", delta);
                 }
+
+                standardChunk.set("choices", objectMapper.createArrayNode().add(choice));
+                return "data: " + standardChunk;
             }
-            return super.adaptModelName(chunk);
+            return adaptModelName(chunk);
         } catch (Exception e) {
-            return super.adaptModelName(chunk);
+            return adaptModelName(chunk);
         }
-    }
-
-    @Override
-    public Mono<? extends ResponseEntity<?>> embedding(EmbeddingDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        // VLLM主要用于文本生成，embedding支持可能有限
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
-                ModelServiceRegistry.ServiceType.embedding,
-                request.model(),
-                httpRequest
-        );
-
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), super.adaptModelName(clientIp));
-        String path = getModelPath(ModelServiceRegistry.ServiceType.embedding, request.model());
-
-        WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(super.adaptModelName(path))
-                .header("Content-Type", "application/json");
-
-        if (super.adaptModelName(authorization) != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(super.adaptModelName(authorization), "vllm"));
-        }
-
-        return requestSpec
-                .bodyValue(request) // VLLM embedding可能与OpenAI兼容
-                .retrieve()
-                .toEntity(String.class)
-                .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.embedding, selectedInstance))
-                .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
-                        .headers(responseEntity.getHeaders())
-                        .body(transformResponse(responseEntity.getBody(), "vllm")))
-                .onErrorResume(throwable -> {
-                    ErrorResponse errorResponse = ErrorResponse.builder()
-                            .code("error")
-                            .type("embedding")
-                            .message("VLLM adapter error: " + throwable.getMessage())
-                            .build();
-                    return Mono.just(ResponseEntity.internalServerError()
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(errorResponse.toJson()));
-                });
     }
 }
