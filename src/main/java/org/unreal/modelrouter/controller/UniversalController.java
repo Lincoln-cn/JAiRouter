@@ -2,7 +2,6 @@ package org.unreal.modelrouter.controller;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
