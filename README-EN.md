@@ -80,14 +80,109 @@ model:
 ### Service Instance Configuration Example
 
 ```yaml
-chat:
+```yaml
+model:
+  # 全局配置
   load-balance:
-    type: least-connections
-  instances:
-    - name: "qwen3:1.7B"
-      base-url: "http://172.16.30.2:30909"
-      path: "/v1-openai/chat/completions"
-      weight: 1
+    type: random # 支持: random, round-robin, least-connections, ip-hash
+    hash-algorithm: "md5" # IP Hash 策略的哈希算法
+  # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
+  adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
+  services:
+    # 聊天服务配置
+    chat:
+      load-balance:
+        type: least-connections
+      adapter: gpustack # 使用GPUStack适配器
+      instances:
+        - name: "qwen3:1.7B"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1-openai/chat/completions"
+          weight: 1
+        - name: "qwen3:1.7B"
+          base-url: "http://172.16.30.7:9090"
+          path: "/v1/chat/completions"
+          weight: 1
+
+    # Embedding 服务配置
+    embedding:
+      load-balance:
+        type: round-robin
+      instances:
+        - name: "nomic-embed-text-v1.5"
+          base-url: "http://172.16.30.11:9090"
+          path: "/v1/embeddings"
+          weight: 1
+        - name: "nomic-embed-text-v1.5"
+          base-url: "http://172.16.30.15:9090"
+          path: "/v1/embeddings"
+          weight: 1
+        - name: "bge-large-zh-v1.5"
+          base-url: "http://172.16.30.12:9090/"
+          path: "/v1/embeddings"
+          weight: 1
+
+    # Rerank 服务配置
+    rerank:
+      load-balance:
+        type: ip-hash
+        hash-algorithm: "sha256"
+      instances:
+        - name: "bge-reranker-v2-m3"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/rerank"
+          weight: 1
+        - name: "bge-reranker-v2-m3"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/rerank"
+          weight: 2
+
+    # TTS 服务配置
+    tts:
+      load-balance:
+        type: random
+      instances:
+        - name: "cosyvoice-300m"
+          base-url: "http://172.16.30.9:9090"
+          path: "/v1/audio/speech"
+          weight: 1
+        - name: "cosyvoice-300m"
+          base-url: "http://172.16.30.8:9090"
+          path: "/v1/audio/speech"
+          weight: 1
+
+    # STT 服务配置
+    stt:
+      load-balance:
+        type: round-robin
+      instances:
+        - name: "faster-whisper-tiny"
+          base-url: "http://172.16.30.21:9090"
+          path: "/v1/audio/transcriptions"
+          weight: 2
+        - name: "faster-whisper-tiny"
+          base-url: "http://172.16.30.21:9090"
+          path: "/v1/audio/transcriptions"
+          weight: 1
+
+    imgGen:
+      load-balance:
+          type: round-robin
+      instances:
+          - name: "stable-diffusion-2-1"
+            base-url: "http://172.16.30.25:9090"
+            path: "/v1/images/generations"
+            weight: 1
+
+    imgEdit:
+      load-balance:
+        type: round-robin
+      instances:
+        - name: "stable-diffusion-2-1"
+          base-url: "http://172.16.30.25:9090"
+          path: "/v1/images/edits"
+          weight: 1
+```
 ```
 
 ## API Endpoints
