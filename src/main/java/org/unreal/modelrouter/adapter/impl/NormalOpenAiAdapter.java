@@ -251,4 +251,73 @@ public class NormalOpenAiAdapter extends BaseAdapter {
                             .body(errorResponse.toJson()));
                 });
     }
+
+
+    public Mono<? extends ResponseEntity<?>> imageGenerate(ImageGenerateDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
+                ModelServiceRegistry.ServiceType.imgGen,
+                request.model(),
+                httpRequest
+        );
+
+        String clientIp = IpUtils.getClientIp(httpRequest);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), adaptModelName(clientIp));
+        String path = getModelPath(ModelServiceRegistry.ServiceType.stt, request.model());
+
+        Object transformedRequest = transformRequest(request, "normal");
+        return client.post()
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
+                .bodyValue(transformedRequest)
+                .retrieve()
+                .toEntity(String.class)
+                .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.chat, selectedInstance))
+                .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
+                        .headers(responseEntity.getHeaders())
+                        .body(transformResponse(responseEntity.getBody(), "normal")))
+                .onErrorResume(throwable -> {
+                    ErrorResponse errorResponse = ErrorResponse.builder()
+                            .code("error")
+                            .type("chat")
+                            .message(throwable.getMessage())
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(errorResponse.toJson()));
+                });
+    }
+
+    public Mono<? extends ResponseEntity<?>> imageEdit(ImageEditDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
+                ModelServiceRegistry.ServiceType.imgEdit,
+                request.model(),
+                httpRequest
+        );
+
+        String clientIp = IpUtils.getClientIp(httpRequest);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), adaptModelName(clientIp));
+        String path = getModelPath(ModelServiceRegistry.ServiceType.stt, request.model());
+
+        Object transformedRequest = transformRequest(request, "normal");
+        return client.post()
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
+                .bodyValue(transformedRequest)
+                .retrieve()
+                .toEntity(String.class)
+                .doFinally(signalType -> recordCallComplete(ModelServiceRegistry.ServiceType.chat, selectedInstance))
+                .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
+                        .headers(responseEntity.getHeaders())
+                        .body(transformResponse(responseEntity.getBody(), "normal")))
+                .onErrorResume(throwable -> {
+                    ErrorResponse errorResponse = ErrorResponse.builder()
+                            .code("error")
+                            .type("chat")
+                            .message(throwable.getMessage())
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(errorResponse.toJson()));
+                });
+    }
 }

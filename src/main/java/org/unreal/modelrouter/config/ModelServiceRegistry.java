@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class ModelServiceRegistry {
 
     public enum ServiceType {
-        chat, embedding, rerank, tts, stt
+        chat, embedding, rerank, tts, stt , imgGen ,imgEdit
     }
 
     private final Map<ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry;

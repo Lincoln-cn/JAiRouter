@@ -84,6 +84,24 @@ model:
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
           weight: 1
+
+    imgGen:
+      load-balance:
+          type: round-robin
+      instances:
+          - name: "stable-diffusion-2-1"
+            base-url: "http://172.16.30.6:9090"
+            path: "/v1/images/generations"
+            weight: 1
+
+    imgEdit:
+      load-balance:
+        type: round-robin
+      instances:
+        - name: "stable-diffusion-2-1"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/images/edits"
+          weight: 1
 debug: true
 
 # WebClient 配置
