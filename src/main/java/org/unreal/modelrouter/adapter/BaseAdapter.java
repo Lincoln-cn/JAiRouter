@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.adapter;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -18,6 +19,21 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     public BaseAdapter(ModelServiceRegistry registry) {
         this.registry = registry;
+    }
+
+    /**
+     * 检查适配器是否支持指定的服务能力
+     */
+    protected Mono<ResponseEntity<ErrorResponse>> checkCapability(ModelServiceRegistry.ServiceType serviceType) {
+        if (!supportCapability().contains(serviceType)) {
+            return Mono.just(ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                    .body(ErrorResponse.builder()
+                            .code("not_implemented")
+                            .type(serviceType.name())
+                            .message("This adapter does not support " + serviceType.name() + " capability.")
+                            .build()));
+        }
+        return null;
     }
 
     /**
@@ -123,7 +139,7 @@ public abstract class BaseAdapter implements ServiceCapability {
      */
     protected <T> WebClient.RequestBodySpec configureRequestHeaders(WebClient.RequestBodySpec requestSpec, T request) {
         // 默认设置JSON Content-Type
-        if (!(request instanceof SttDTO.Request)) { // STT需要multipart
+        if (!(request instanceof SttDTO.Request) && !(request instanceof ImageEditDTO.Request)) { // STT需要multipart
             requestSpec.header("Content-Type", "application/json");
         } else {
             requestSpec.contentType(MediaType.MULTIPART_FORM_DATA);
@@ -142,8 +158,8 @@ public abstract class BaseAdapter implements ServiceCapability {
      * 统一错误处理
      */
     protected <T> Mono<? extends ResponseEntity<? extends Object>> handleError(Throwable throwable,
-                                                                     ModelServiceRegistry.ServiceType serviceType,
-                                                                     Class<T> responseType) {
+                                                                               ModelServiceRegistry.ServiceType serviceType,
+                                                                               Class<T> responseType) {
         ErrorResponse errorResponse = createErrorResponse("error", serviceType.name(),
                 getAdapterType() + " adapter error: " + throwable.getMessage());
 
@@ -169,10 +185,14 @@ public abstract class BaseAdapter implements ServiceCapability {
                 .build();
     }
 
-    // ========== 实现ServiceCapability的默认方法 ==========
+    public abstract AdapterCapabilities supportCapability();
 
     @Override
     public Mono<? extends ResponseEntity<?>> chat(ChatDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+        Mono<ResponseEntity<ErrorResponse>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.chat);
+        if (capabilityCheck != null) {
+            return capabilityCheck;
+        }
         return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.chat,
                 request.model(), (req, auth, client, path, instance, serviceType) -> {
                     if (req.stream()) {
@@ -185,6 +205,10 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     @Override
     public Mono<? extends ResponseEntity<?>> embedding(EmbeddingDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+        Mono<ResponseEntity<ErrorResponse>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.embedding);
+        if (capabilityCheck != null) {
+            return capabilityCheck;
+        }
         return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.embedding,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
@@ -192,6 +216,10 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     @Override
     public Mono<? extends ResponseEntity<?>> rerank(RerankDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+        Mono<ResponseEntity<ErrorResponse>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.rerank);
+        if (capabilityCheck != null) {
+            return capabilityCheck;
+        }
         return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.rerank,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
@@ -199,6 +227,10 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     @Override
     public Mono<? extends ResponseEntity<?>> tts(TtsDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+        Mono<ResponseEntity<ErrorResponse>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.tts);
+        if (capabilityCheck != null) {
+            return capabilityCheck;
+        }
         return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.tts,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, byte[].class));
@@ -206,18 +238,30 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     @Override
     public Mono<? extends ResponseEntity<?>> stt(SttDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+        Mono<ResponseEntity<ErrorResponse>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.stt);
+        if (capabilityCheck != null) {
+            return capabilityCheck;
+        }
         return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.stt,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
 
     public Mono<? extends ResponseEntity<?>> imageGenerate(ImageGenerateDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+        Mono<ResponseEntity<ErrorResponse>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.imgGen);
+        if (capabilityCheck != null) {
+            return capabilityCheck;
+        }
         return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.imgGen,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
 
     public Mono<? extends ResponseEntity<?>> imageEdit(ImageEditDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+        Mono<ResponseEntity<ErrorResponse>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.imgEdit);
+        if (capabilityCheck != null) {
+            return capabilityCheck;
+        }
         return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.imgEdit,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));

@@ -4,6 +4,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
 import org.unreal.modelrouter.adapter.ServiceCapability;
 import org.unreal.modelrouter.checker.ServerChecker;
@@ -111,6 +112,32 @@ public class UniversalController {
                 ModelServiceRegistry.ServiceType.stt,
                 () -> adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.stt)
                         .stt(request, authorization, httpRequest)
+        );
+    }
+
+    @PostMapping("/images/generations")
+    public Mono<? extends ResponseEntity<?>> imageGenerate(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            ImageGenerateDTO.Request request,
+            ServerHttpRequest httpRequest) {
+
+        return handleServiceRequest(
+                ModelServiceRegistry.ServiceType.imgGen,
+                () -> adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.imgGen)
+                        .imageGenerate(request, authorization, httpRequest)
+        );
+    }
+
+    @PostMapping("/image/edits")
+    public Mono<? extends ResponseEntity<?>> imageEdits(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            ImageEditDTO.Request request,
+            ServerHttpRequest httpRequest) {
+
+        return handleServiceRequest(
+                ModelServiceRegistry.ServiceType.imgEdit,
+                () -> adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.imgEdit)
+                        .imageEdit(request, authorization, httpRequest)
         );
     }
 
