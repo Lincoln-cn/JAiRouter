@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 public class RerankDTO {
