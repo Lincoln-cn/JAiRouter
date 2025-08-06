@@ -1,11 +1,11 @@
-# Model Router
+#JAiRouter
 
-Model Router 是一个基于 Spring Boot 的模型服务路由和负载均衡网关，用于统一管理和路由各种 AI 模型服务（如 Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略。
+JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关，用于统一管理和路由各种 AI 模型服务（如 Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略。
 
 ## 功能特性
 
 - **统一 API 网关**：提供统一的 API 接入点，支持 OpenAI 兼容的接口格式
-- **多模型服务支持**：支持 Chat、Embedding、Rerank、TTS 等多种模型服务
+- **多模型服务支持**：支持 Chat、Embedding、Rerank、TTS、STT、Image Generation、Image Editing 等多种模型服务
 - **负载均衡策略**：
     - Random（随机）
     - Round Robin（轮询）
@@ -13,18 +13,22 @@ Model Router 是一个基于 Spring Boot 的模型服务路由和负载均衡网
     - IP Hash（一致性哈希）
 - **权重支持**：所有负载均衡策略均支持实例权重配置
 - **健康检查**：提供各服务状态监控接口
+- **适配器支持**：支持多种后端服务适配器（GPUStack、Ollama、VLLM、Xinference、LocalAI等）
 
 ## 项目结构
 
 ```
 src/main/java/org/unreal/modelrouter
+├── adapter         # 适配器模块，用于对接不同的模型服务
+├── checker         # 健康检查模块
 ├── config          # 配置类
 ├── controller      # 控制器
 ├── dto             # 数据传输对象
+├── loadbalancer    # 负载均衡策略实现
+├── response        # 统一响应处理
 ├── util            # 工具类
 └── ModelRouterApplication.java  # 启动类
 ```
-
 
 ## 支持的服务类型
 
@@ -45,6 +49,18 @@ src/main/java/org/unreal/modelrouter
     - 支持流式输出
     - 负载均衡策略：Random（默认）
 
+5. **STT Service** (`/v1/audio/transcriptions`)
+    - 语音转文本服务
+    - 负载均衡策略：Random（默认）
+
+6. **Image Generation Service** (`/v1/images/generations`)
+    - 图像生成服务
+    - 负载均衡策略：Random（默认）
+
+7. **Image Editing Service** (`/v1/images/edits`)
+    - 图像编辑服务
+    - 负载均衡策略：Random（默认）
+
 ## 配置说明
 
 配置文件：`src/main/resources/application.yml`
@@ -59,7 +75,6 @@ model:
       hash-algorithm: "md5"     # IP Hash 算法
 ```
 
-
 ### 服务实例配置示例
 
 ```yaml
@@ -73,7 +88,6 @@ chat:
       weight: 1
 ```
 
-
 ## API 接口
 
 ### Chat Completion
@@ -81,24 +95,35 @@ chat:
 POST /v1/chat/completions
 ```
 
-
 ### Embedding
 ```bash
 POST /v1/embeddings
 ```
-
 
 ### Rerank
 ```bash
 POST /v1/rerank
 ```
 
-
 ### TTS
 ```bash
 POST /v1/audio/speech
 ```
 
+### STT
+```bash
+POST /v1/audio/transcriptions
+```
+
+### Image Generation
+```bash
+POST /v1/images/generations
+```
+
+### Image Editing
+```bash
+POST /v1/images/edits
+```
 
 ### 健康检查
 各服务都提供状态检查接口：
@@ -106,6 +131,9 @@ POST /v1/audio/speech
 - `/v1/embeddings/status`
 - `/v1/rerank/status`
 - `/v1/audio/speech/status`
+- `/v1/audio/transcriptions/status`
+- `/v1/images/generations/status`
+- `/v1/images/edits/status`
 
 ## 负载均衡策略
 
@@ -123,7 +151,6 @@ POST /v1/audio/speech
 # 运行
 java -jar target/model-router-*.jar
 ```
-
 
 ## 依赖
 
