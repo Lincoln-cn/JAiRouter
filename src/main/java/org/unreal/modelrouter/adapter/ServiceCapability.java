@@ -17,7 +17,9 @@ public interface ServiceCapability {
      * @param httpRequest HTTP请求对象
      * @return 响应结果
      */
-    Mono<? extends ResponseEntity<?>> chat(ChatDTO.Request request, String authorization, ServerHttpRequest httpRequest);
+    default Mono<? extends ResponseEntity<?>> chat(ChatDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+        throw new UnsupportedOperationException("does not support chat service");
+    }
 
     /**
      * 文本嵌入服务
@@ -26,7 +28,9 @@ public interface ServiceCapability {
      * @param httpRequest HTTP请求对象
      * @return 响应结果
      */
-    Mono<? extends ResponseEntity<?>> embedding(EmbeddingDTO.Request request, String authorization, ServerHttpRequest httpRequest);
+    default Mono<? extends ResponseEntity<?>> embedding(EmbeddingDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+        throw new UnsupportedOperationException("does not support embedding service");
+    }
 
     /**
      * 重排序服务
@@ -35,7 +39,9 @@ public interface ServiceCapability {
      * @param httpRequest HTTP请求对象
      * @return 响应结果
      */
-    Mono<? extends ResponseEntity<?>> rerank(RerankDTO.Request request, String authorization, ServerHttpRequest httpRequest);
+    default Mono<? extends ResponseEntity<?>> rerank(RerankDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+        throw new UnsupportedOperationException("does not support rerank service");
+    }
 
     /**
      * 文本转语音服务
@@ -44,7 +50,9 @@ public interface ServiceCapability {
      * @param httpRequest HTTP请求对象
      * @return 响应结果
      */
-    Mono<? extends ResponseEntity<?>> tts(TtsDTO.Request request, String authorization, ServerHttpRequest httpRequest);
+    default Mono<? extends ResponseEntity<?>> tts(TtsDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+        throw new UnsupportedOperationException("does not support tts service");
+    }
 
     /**
      * 语音转文本服务
@@ -53,5 +61,7 @@ public interface ServiceCapability {
      * @param httpRequest HTTP请求对象
      * @return 响应结果
      */
-    Mono<? extends ResponseEntity<?>> stt(SttDTO.Request request, String authorization, ServerHttpRequest httpRequest);
+    default Mono<? extends ResponseEntity<?>> stt(SttDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+        throw new UnsupportedOperationException("does not support stt service");
+    }
 }

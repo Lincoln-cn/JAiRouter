@@ -1,12 +1,15 @@
-package org.unreal.modelrouter.adapter;
+package org.unreal.modelrouter.adapter.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
@@ -29,69 +32,38 @@ public class LocalAiAdapter extends BaseAdapter {
 
     @Override
     protected Object transformRequest(Object request, String adapterType) {
-        if (request instanceof ChatDTO.Request chatRequest) {
-            return transformChatRequest(chatRequest);
-        } else if (request instanceof EmbeddingDTO.Request embeddingRequest) {
-            return transformEmbeddingRequest(embeddingRequest);
-        } else if (request instanceof TtsDTO.Request ttsRequest) {
-            return transformTtsRequest(ttsRequest);
+        if (request instanceof SttDTO.Request sttRequest) {
+            return transformSttRequest(sttRequest);
+        } else {
+            return super.transformRequest(request, adapterType);
         }
-        return request;
     }
 
-    /**
-     * 转换Chat请求为LocalAI格式
-     */
-    private Object transformChatRequest(ChatDTO.Request request) {
-        try {
-            ObjectNode localAiRequest = objectMapper.createObjectNode();
 
-            // LocalAI模型名称处理
-            localAiRequest.put("model", request.model());
+    // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
+    private Object transformSttRequest(SttDTO.Request sttRequest) {
+        // 直接构建 MultiValueMap 而不处理文件内容
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("model", sttRequest.model());
+        builder.part("language", sttRequest.language());
 
-            // 消息格式 - LocalAI与OpenAI兼容
-            localAiRequest.set("messages", objectMapper.valueToTree(request.messages()));
+        // 使用 asyncPart 处理文件内容流
+        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
+                .filename(sttRequest.file().filename())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM);
 
-            // 标准参数
-            if (request.temperature() != null) {
-                localAiRequest.put("temperature", request.temperature());
-            }
-            if (request.maxTokens() != null) {
-                localAiRequest.put("max_tokens", request.maxTokens());
-            }
-            if (request.topP() != null) {
-                localAiRequest.put("top_p", request.topP());
-            }
-            if (request.stream() != null) {
-                localAiRequest.put("stream", request.stream());
-            }
-
-            // LocalAI特定参数
-            if (request.frequencyPenalty() != null) {
-                localAiRequest.put("frequency_penalty", request.frequencyPenalty());
-            }
-            if (request.presencePenalty() != null) {
-                localAiRequest.put("presence_penalty", request.presencePenalty());
-            }
-
-            // LocalAI支持的额外参数
-            if (request.topK() != null) {
-                localAiRequest.put("top_k", request.topK());
-            }
-
-            // LocalAI特有的配置
-            localAiRequest.put("echo", false);
-            localAiRequest.put("ignore_eos", false);
-
-            // 如果有stop参数
-            if (request.stop() != null) {
-                localAiRequest.set("stop", objectMapper.valueToTree(request.stop()));
-            }
-
-            return localAiRequest;
-        } catch (Exception e) {
-            return request;
+        // 添加其他字段
+        if (sttRequest.prompt() != null) {
+            builder.part("prompt", sttRequest.prompt());
         }
+        if (sttRequest.responseFormat() != null) {
+            builder.part("response_format", sttRequest.responseFormat());
+        }
+        if (sttRequest.temperature() != null) {
+            builder.part("temperature", sttRequest.temperature());
+        }
+
+        return builder.build();
     }
 
     /**
@@ -154,7 +126,7 @@ public class LocalAiAdapter extends BaseAdapter {
     protected Object transformResponse(Object response, String adapterType) {
         if (response instanceof String responseStr) {
             try {
-                JsonNode jsonResponse = objectMapper.readTree(responseStr);
+                JsonNode jsonResponse = objectMapper.readTree(adaptModelName(responseStr));
                 return enhanceLocalAiResponse(jsonResponse);
             } catch (Exception e) {
                 return response;
@@ -194,7 +166,7 @@ public class LocalAiAdapter extends BaseAdapter {
     @Override
     protected String getAuthorizationHeader(String authorization, String adapterType) {
         // LocalAI通常不需要严格的认证，但支持API key
-        return authorization;
+        return adaptModelName(authorization);
     }
 
     @Override
@@ -206,17 +178,17 @@ public class LocalAiAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.chat, request.model());
 
         Object transformedRequest = transformRequest(request, "localai");
 
         WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(path)
+                .uri(adaptModelName(path))
                 .header("Content-Type", "application/json");
 
-        if (authorization != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(authorization, "localai"));
+        if (adaptModelName(authorization) != null) {
+            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "localai"));
         }
 
         if (request.stream()) {
@@ -265,13 +237,13 @@ public class LocalAiAdapter extends BaseAdapter {
      */
     private String processLocalAiStreamChunk(String chunk) {
         try {
-            if (chunk.startsWith("data: ")) {
-                String jsonPart = chunk.substring(6).trim();
-                if ("[DONE]".equals(jsonPart)) {
-                    return chunk;
+            if (adaptModelName(chunk).startsWith("data: ")) {
+                String jsonPart = adaptModelName(chunk).substring(6).trim();
+                if ("[DONE]".equals(adaptModelName(jsonPart))) {
+                    return adaptModelName(chunk);
                 }
 
-                JsonNode chunkJson = objectMapper.readTree(jsonPart);
+                JsonNode chunkJson = objectMapper.readTree(adaptModelName(jsonPart));
                 if (chunkJson.isObject()) {
                     ObjectNode enhancedChunk = (ObjectNode) chunkJson.deepCopy();
 
@@ -283,9 +255,9 @@ public class LocalAiAdapter extends BaseAdapter {
                     return "data: " + enhancedChunk.toString() + "\n\n";
                 }
             }
-            return chunk;
+            return adaptModelName(chunk);
         } catch (Exception e) {
-            return chunk;
+            return adaptModelName(chunk);
         }
     }
 
@@ -298,17 +270,17 @@ public class LocalAiAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.embedding, request.model());
 
         Object transformedRequest = transformRequest(request, "localai");
 
         WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(path)
+                .uri(adaptModelName(path))
                 .header("Content-Type", "application/json");
 
-        if (authorization != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(authorization, "localai"));
+        if (adaptModelName(authorization) != null) {
+            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "localai"));
         }
 
         return requestSpec
@@ -345,17 +317,17 @@ public class LocalAiAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.tts, request.model());
 
         Object transformedRequest = transformRequest(request, "localai");
 
         WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(path)
+                .uri(adaptModelName(path))
                 .header("Content-Type", "application/json");
 
-        if (authorization != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(authorization, "localai"));
+        if (adaptModelName(authorization) != null) {
+            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "localai"));
         }
 
         return requestSpec
@@ -387,17 +359,17 @@ public class LocalAiAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.stt, request.model());
 
         Object transformedRequest = transformRequest(request, "localai");
 
         WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(path)
+                .uri(adaptModelName(path))
                 .header("Content-Type", "application/json");
 
-        if (authorization != null) {
-            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(authorization, "localai"));
+        if (adaptModelName(authorization) != null) {
+            requestSpec = requestSpec.header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "localai"));
         }
 
         return requestSpec

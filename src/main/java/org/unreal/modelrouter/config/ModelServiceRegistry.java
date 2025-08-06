@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.checker.ServerChecker;
+import org.unreal.modelrouter.loadbalancer.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,10 +78,10 @@ public class ModelServiceRegistry {
     private LoadBalancer createLoadBalancer(ModelRouterProperties.LoadBalanceConfig config) {
         String type = config.getType().toLowerCase();
         return switch (type) {
-            case "random" -> new LoadBalancer.RandomLoadBalancer();
-            case "round-robin" -> new LoadBalancer.RoundRobinLoadBalancer();
-            case "least-connections" -> new LoadBalancer.LeastConnectionsLoadBalancer();
-            case "ip-hash" -> new LoadBalancer.IpHashLoadBalancer(config.getHashAlgorithm());
+            case "random" -> new RandomLoadBalancer();
+            case "round-robin" -> new RoundRobinLoadBalancer();
+            case "least-connections" -> new LeastConnectionsLoadBalancer();
+            case "ip-hash" -> new IpHashLoadBalancer(config.getHashAlgorithm());
             default -> throw new IllegalArgumentException("Unsupported load balance type: " + type);
         };
     }

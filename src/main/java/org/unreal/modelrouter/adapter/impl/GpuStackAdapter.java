@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter;
+package org.unreal.modelrouter.adapter.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
@@ -76,7 +77,7 @@ public class GpuStackAdapter extends BaseAdapter {
 
             // GPUStack可能需要不同的模型名称格式
             String gpuStackModelName = adaptModelName(ttsRequest.model());
-            gpuStackRequest.put("model", gpuStackModelName);
+            gpuStackRequest.put("model", adaptModelName(gpuStackModelName));
 
             // TTS特定参数转换
             gpuStackRequest.put("input", ttsRequest.input());
@@ -102,7 +103,7 @@ public class GpuStackAdapter extends BaseAdapter {
 
             // GPUStack可能需要不同的模型名称格式
             String gpuStackModelName = adaptModelName(rerankRequest.model());
-            gpuStackRequest.put("model", gpuStackModelName);
+            gpuStackRequest.put("model", adaptModelName(gpuStackModelName));
 
             // Rerank特定参数转换
             gpuStackRequest.put("query", rerankRequest.query());
@@ -131,7 +132,7 @@ public class GpuStackAdapter extends BaseAdapter {
 
             // GPUStack可能需要不同的模型名称格式
             String gpuStackModelName = adaptModelName(request.model());
-            gpuStackRequest.put("model", gpuStackModelName);
+            gpuStackRequest.put("model", adaptModelName(gpuStackModelName));
 
             // 转换消息格式
             gpuStackRequest.set("messages", objectMapper.valueToTree(request.messages()));
@@ -149,6 +150,7 @@ public class GpuStackAdapter extends BaseAdapter {
 
             // GPUStack可能需要额外的参数
             gpuStackRequest.put("do_sample", true);
+
             if (!request.stream()) {
                 gpuStackRequest.put("return_full_text", false);
             }
@@ -168,7 +170,7 @@ public class GpuStackAdapter extends BaseAdapter {
             ObjectNode gpuStackRequest = objectMapper.createObjectNode();
 
             String gpuStackModelName = adaptModelName(request.model());
-            gpuStackRequest.put("model", gpuStackModelName);
+            gpuStackRequest.put("model", adaptModelName(gpuStackModelName));
 
             // GPUStack的embedding接口可能使用不同的参数名
             if (request.input() instanceof String) {
@@ -186,18 +188,11 @@ public class GpuStackAdapter extends BaseAdapter {
         }
     }
 
-    /**
-     * 适配模型名称格式
-     */
-    private String adaptModelName(String originalModelName) {
-        return originalModelName;
-    }
-
     @Override
     protected Object transformResponse(Object response, String adapterType) {
         if (response instanceof String responseStr) {
             try {
-                JsonNode jsonResponse = objectMapper.readTree(responseStr);
+                JsonNode jsonResponse = objectMapper.readTree(adaptModelName(responseStr));
                 return transformResponseJson(jsonResponse);
             } catch (Exception e) {
                 // 如果解析失败，返回原响应
@@ -250,12 +245,12 @@ public class GpuStackAdapter extends BaseAdapter {
     @Override
     protected String getAuthorizationHeader(String authorization, String adapterType) {
         // GPUStack可能使用不同的认证方式
-        if (authorization != null && authorization.startsWith("Bearer ")) {
+        if (adaptModelName(authorization) != null && adaptModelName(authorization).startsWith("Bearer ")) {
             // 保持Bearer token格式
-            return authorization;
-        } else if (authorization != null) {
+            return adaptModelName(authorization);
+        } else if (adaptModelName(authorization) != null) {
             // 如果不是Bearer格式，转换为GPUStack期望的格式
-            return "Bearer " + authorization;
+            return "Bearer " + adaptModelName(authorization);
         }
         return null;
     }
@@ -269,15 +264,15 @@ public class GpuStackAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.chat, request.model());
 
         Object transformedRequest = transformRequest(request, "gpustack");
 
         if (request.stream()) {
             Flux<String> streamResponse = client.post()
-                    .uri(path)
-                    .header("Authorization", getAuthorizationHeader(authorization, "gpustack"))
+                    .uri(adaptModelName(path))
+                    .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "gpustack"))
                     .header("Content-Type", "application/json")
                     .bodyValue(transformedRequest)
                     .retrieve()
@@ -298,8 +293,8 @@ public class GpuStackAdapter extends BaseAdapter {
                     .body(streamResponse));
         } else {
             return client.post()
-                    .uri(path)
-                    .header("Authorization", getAuthorizationHeader(authorization, "gpustack"))
+                    .uri(adaptModelName(path))
+                    .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "gpustack"))
                     .header("Content-Type", "application/json")
                     .bodyValue(transformedRequest)
                     .retrieve()
@@ -326,13 +321,13 @@ public class GpuStackAdapter extends BaseAdapter {
      */
     private String transformStreamChunk(String chunk) {
         try {
-            if (chunk.startsWith("data: ")) {
-                String jsonPart = chunk.substring(6);
-                if ("[DONE]".equals(jsonPart)) {
-                    return chunk;
+            if (adaptModelName(chunk).startsWith("data: ")) {
+                String jsonPart = adaptModelName(chunk).substring(6);
+                if ("[DONE]".equals(adaptModelName(jsonPart))) {
+                    return adaptModelName(chunk);
                 }
 
-                JsonNode chunkJson = objectMapper.readTree(jsonPart);
+                JsonNode chunkJson = objectMapper.readTree(adaptModelName(jsonPart));
                 // 根据GPUStack的流式响应格式进行转换
                 ObjectNode standardChunk = objectMapper.createObjectNode();
                 standardChunk.put("id", "chatcmpl-" + System.currentTimeMillis());
@@ -352,9 +347,9 @@ public class GpuStackAdapter extends BaseAdapter {
 
                 return "data: " + standardChunk;
             }
-            return chunk;
+            return adaptModelName(chunk);
         } catch (Exception e) {
-            return chunk;
+            return adaptModelName(chunk);
         }
     }
 
@@ -368,14 +363,14 @@ public class GpuStackAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.embedding, request.model());
 
         Object transformedRequest = transformRequest(request, "gpustack");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "gpustack"))
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "gpustack"))
                 .header("Content-Type", "application/json")
                 .bodyValue(transformedRequest)
                 .retrieve()
@@ -405,14 +400,14 @@ public class GpuStackAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.rerank, request.model());
 
         Object transformedRequest = transformRequest(request, "normal");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "normal"))
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(String.class)
@@ -441,14 +436,14 @@ public class GpuStackAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.tts, request.model());
 
         Object transformedRequest = transformRequest(request, "gpustack");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "gpustack"))
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "gpustack"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(byte[].class)
@@ -478,15 +473,15 @@ public class GpuStackAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.stt, request.model());
 
         // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
         Object transformedRequest = transformRequest(request, "gpustack");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "gpustack"))
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "gpustack"))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .bodyValue(transformedRequest)
                 .retrieve()

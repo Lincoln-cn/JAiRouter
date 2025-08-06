@@ -1,13 +1,15 @@
-package org.unreal.modelrouter.adapter;
+package org.unreal.modelrouter.adapter.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
@@ -34,8 +36,92 @@ public class XinferenceAdapter extends BaseAdapter {
             return transformChatRequest(chatRequest);
         } else if (request instanceof EmbeddingDTO.Request embeddingRequest) {
             return transformEmbeddingRequest(embeddingRequest);
+        } else if (request instanceof RerankDTO.Request rerankRequest) {
+            return transformRerankRequest(rerankRequest);
+        } else if (request instanceof TtsDTO.Request ttsRequest) {
+            return transformTtsRequest(ttsRequest);
+        } else if (request instanceof SttDTO.Request sttRequest) {
+            return transformSttRequest(sttRequest);
         }
         return request;
+    }
+
+    // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
+    private Object transformSttRequest(SttDTO.Request sttRequest) {
+        // 直接构建 MultiValueMap 而不处理文件内容
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("model", sttRequest.model());
+        builder.part("language", sttRequest.language());
+
+        // 使用 asyncPart 处理文件内容流
+        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
+                .filename(sttRequest.file().filename())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+
+        // 添加其他字段
+        if (sttRequest.prompt() != null) {
+            builder.part("prompt", sttRequest.prompt());
+        }
+        if (sttRequest.responseFormat() != null) {
+            builder.part("response_format", sttRequest.responseFormat());
+        }
+        if (sttRequest.temperature() != null) {
+            builder.part("temperature", sttRequest.temperature());
+        }
+
+        return builder.build();
+    }
+
+    private Object transformTtsRequest(TtsDTO.Request ttsRequest) {
+        try {
+            ObjectNode xinferenceRequest = objectMapper.createObjectNode();
+
+            // GPUStack可能需要不同的模型名称格式
+            String gpuStackModelName = adaptModelName(ttsRequest.model());
+            xinferenceRequest.put("model", super.adaptModelName(gpuStackModelName));
+
+            // TTS特定参数转换
+            xinferenceRequest.put("input", ttsRequest.input());
+            xinferenceRequest.put("voice", ttsRequest.voice());
+
+            if (ttsRequest.responseFormat() != null) {
+                xinferenceRequest.put("response_format", ttsRequest.responseFormat());
+            }
+            if (ttsRequest.speed() != null) {
+                xinferenceRequest.put("speed", ttsRequest.speed());
+            }
+
+            return xinferenceRequest;
+        } catch (Exception e) {
+            // 如果转换失败，返回原请求
+            return ttsRequest;
+        }
+    }
+
+    private Object transformRerankRequest(RerankDTO.Request rerankRequest) {
+        try {
+            ObjectNode xinferenceRequest = objectMapper.createObjectNode();
+
+            // GPUStack可能需要不同的模型名称格式
+            String gpuStackModelName = adaptModelName(rerankRequest.model());
+            xinferenceRequest.put("model", super.adaptModelName(gpuStackModelName));
+
+            // Rerank特定参数转换
+            xinferenceRequest.put("query", rerankRequest.query());
+            xinferenceRequest.set("documents", objectMapper.valueToTree(rerankRequest.documents()));
+
+            if (rerankRequest.topN() != null) {
+                xinferenceRequest.put("top_n", rerankRequest.topN());
+            }
+            if (rerankRequest.returnDocuments() != null) {
+                xinferenceRequest.put("return_documents", rerankRequest.returnDocuments());
+            }
+
+            return xinferenceRequest;
+        } catch (Exception e) {
+            // 如果转换失败，返回原请求
+            return rerankRequest;
+        }
     }
 
     /**
@@ -138,7 +224,7 @@ public class XinferenceAdapter extends BaseAdapter {
 
         // 获取WebClient和路径
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), super.adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.chat, request.model());
 
         // 转换请求
@@ -147,8 +233,8 @@ public class XinferenceAdapter extends BaseAdapter {
         if (request.stream()) {
             // 流式响应：直接转发流数据
             Flux<String> streamResponse = client.post()
-                    .uri(path)
-                    .header("Authorization", getAuthorizationHeader(authorization, "xinference"))
+                    .uri(super.adaptModelName(path))
+                    .header("Authorization", getAuthorizationHeader(super.adaptModelName(authorization), "xinference"))
                     .bodyValue(transformedRequest)
                     .retrieve()
                     .bodyToFlux(String.class)
@@ -168,8 +254,8 @@ public class XinferenceAdapter extends BaseAdapter {
         } else {
             // 非流式响应：等待完整响应并转发
             return client.post()
-                    .uri(path)
-                    .header("Authorization", getAuthorizationHeader(authorization, "xinference"))
+                    .uri(super.adaptModelName(path))
+                    .header("Authorization", getAuthorizationHeader(super.adaptModelName(authorization), "xinference"))
                     .bodyValue(transformedRequest)
                     .retrieve()
                     .toEntity(String.class)
@@ -199,14 +285,14 @@ public class XinferenceAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), super.adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.embedding, request.model());
 
         Object transformedRequest = transformRequest(request, "xinference");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "xinference"))
+                .uri(super.adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(super.adaptModelName(authorization), "xinference"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(String.class)
@@ -235,14 +321,14 @@ public class XinferenceAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), super.adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.rerank, request.model());
 
         Object transformedRequest = transformRequest(request, "xinference");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "xinference"))
+                .uri(super.adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(super.adaptModelName(authorization), "xinference"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(String.class)
@@ -271,14 +357,14 @@ public class XinferenceAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), super.adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.tts, request.model());
 
         Object transformedRequest = transformRequest(request, "xinference");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "xinference"))
+                .uri(super.adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(super.adaptModelName(authorization), "xinference"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(byte[].class)
@@ -307,14 +393,14 @@ public class XinferenceAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), super.adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.stt, request.model());
 
         Object transformedRequest = transformRequest(request, "xinference");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "xinference"))
+                .uri(super.adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(super.adaptModelName(authorization), "xinference"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(String.class)
