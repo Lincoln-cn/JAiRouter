@@ -80,7 +80,6 @@ model:
 ### Service Instance Configuration Example
 
 ```yaml
-```yaml
 model:
   # 全局配置
   load-balance:
@@ -182,7 +181,6 @@ model:
           base-url: "http://172.16.30.25:9090"
           path: "/v1/images/edits"
           weight: 1
-```
 ```
 
 ## API Endpoints
