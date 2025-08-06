@@ -49,6 +49,14 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     /**
+     * 适配模型名称格式
+     */
+    protected String adaptModelName(String originalModelName) {
+        // 默认不转换，直接返回原模型名称
+        return originalModelName;
+    }
+
+    /**
      * 转换响应体 - 子类可以重写此方法来适配不同的API格式
      */
     protected Object transformResponse(Object response, String adapterType) {

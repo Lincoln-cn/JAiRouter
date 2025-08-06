@@ -1,9 +1,12 @@
-package org.unreal.modelrouter.adapter;
+package org.unreal.modelrouter.adapter.impl;
 
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
@@ -19,6 +22,30 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     @Override
+    public Object transformRequest(Object request, String adapterType){
+        if(request instanceof SttDTO.Request sttRequest){
+            return transformSttRequest(sttRequest);
+        }else{
+            return super.transformRequest(request, adapterType);
+        }
+    }
+
+    // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
+    private Object transformSttRequest(SttDTO.Request sttRequest) {
+        // 直接构建 MultiValueMap 而不处理文件内容
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("model", sttRequest.model());
+        builder.part("language", sttRequest.language());
+
+        // 使用 asyncPart 处理文件内容流
+        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
+                .filename(sttRequest.file().filename())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+
+        return builder.build();
+    }
+
+    @Override
     public Mono<? extends ResponseEntity<?>> chat(ChatDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
         // 使用负载均衡选择实例
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(
@@ -29,7 +56,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
 
         // 获取WebClient和路径
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.chat, request.model());
 
         // 转换请求（Normal adapter通常不需要转换）
@@ -38,8 +65,8 @@ public class NormalOpenAiAdapter extends BaseAdapter {
         if (request.stream()) {
             // 流式响应：直接转发流数据
             Flux<String> streamResponse = client.post()
-                    .uri(path)
-                    .header("Authorization", getAuthorizationHeader(authorization, "normal"))
+                    .uri(adaptModelName(path))
+                    .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
                     .bodyValue(transformedRequest)
                     .retrieve()
                     .bodyToFlux(String.class)
@@ -59,8 +86,8 @@ public class NormalOpenAiAdapter extends BaseAdapter {
         } else {
             // 非流式响应：等待完整响应并转发
             return client.post()
-                    .uri(path)
-                    .header("Authorization", getAuthorizationHeader(authorization, "normal"))
+                    .uri(adaptModelName(path))
+                    .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
                     .bodyValue(transformedRequest)
                     .retrieve()
                     .toEntity(String.class)
@@ -90,14 +117,14 @@ public class NormalOpenAiAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.embedding, request.model());
 
         Object transformedRequest = transformRequest(request, "normal");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "normal"))
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(String.class)
@@ -126,14 +153,14 @@ public class NormalOpenAiAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.rerank, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.rerank, request.model());
 
         Object transformedRequest = transformRequest(request, "normal");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "normal"))
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(String.class)
@@ -162,14 +189,14 @@ public class NormalOpenAiAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.tts, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.tts, request.model());
 
         Object transformedRequest = transformRequest(request, "normal");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "normal"))
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(byte[].class)
@@ -198,14 +225,14 @@ public class NormalOpenAiAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.stt, request.model(), adaptModelName(clientIp));
         String path = getModelPath(ModelServiceRegistry.ServiceType.stt, request.model());
 
         Object transformedRequest = transformRequest(request, "normal");
 
         return client.post()
-                .uri(path)
-                .header("Authorization", getAuthorizationHeader(authorization, "normal"))
+                .uri(adaptModelName(path))
+                .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), "normal"))
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .toEntity(String.class)

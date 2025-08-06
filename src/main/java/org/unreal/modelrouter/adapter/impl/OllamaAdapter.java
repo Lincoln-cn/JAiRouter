@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter;
+package org.unreal.modelrouter.adapter.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,9 +8,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
-import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.dto.ChatDTO;
+import org.unreal.modelrouter.dto.EmbeddingDTO;
 import org.unreal.modelrouter.response.ErrorResponse;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Flux;
@@ -111,7 +113,7 @@ public class OllamaAdapter extends BaseAdapter {
     protected Object transformResponse(Object response, String adapterType) {
         if (response instanceof String responseStr) {
             try {
-                JsonNode jsonResponse = objectMapper.readTree(responseStr);
+                JsonNode jsonResponse = objectMapper.readTree(adaptModelName(responseStr));
                 return transformResponseJson(jsonResponse);
             } catch (Exception e) {
                 return response;
@@ -190,7 +192,7 @@ public class OllamaAdapter extends BaseAdapter {
     @Override
     protected String getAuthorizationHeader(String authorization, String adapterType) {
         // Ollama通常不需要认证，但保留授权头以防万一
-        return authorization;
+        return adaptModelName(authorization);
     }
 
     /**
@@ -213,14 +215,14 @@ public class OllamaAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.chat, request.model(), adaptModelName(clientIp));
         String path = getOllamaPath(ModelServiceRegistry.ServiceType.chat); // 使用Ollama特定路径
 
         Object transformedRequest = transformRequest(request, "ollama");
 
         if (request.stream()) {
             Flux<String> streamResponse = client.post()
-                    .uri(path)
+                    .uri(adaptModelName(path))
                     .header("Content-Type", "application/json")
                     .bodyValue(transformedRequest)
                     .retrieve()
@@ -241,7 +243,7 @@ public class OllamaAdapter extends BaseAdapter {
                     .body(streamResponse));
         } else {
             return client.post()
-                    .uri(path)
+                    .uri(adaptModelName(path))
                     .header("Content-Type", "application/json")
                     .bodyValue(transformedRequest)
                     .retrieve()
@@ -268,7 +270,7 @@ public class OllamaAdapter extends BaseAdapter {
      */
     private String transformOllamaStreamChunk(String chunk) {
         try {
-            JsonNode chunkJson = objectMapper.readTree(chunk);
+            JsonNode chunkJson = objectMapper.readTree(adaptModelName(chunk));
 
             ObjectNode standardChunk = objectMapper.createObjectNode();
             standardChunk.put("id", "chatcmpl-" + System.currentTimeMillis());
@@ -298,7 +300,7 @@ public class OllamaAdapter extends BaseAdapter {
 
             return "data: " + standardChunk + "\n\n";
         } catch (Exception e) {
-            return chunk;
+            return adaptModelName(chunk);
         }
     }
 
@@ -311,13 +313,13 @@ public class OllamaAdapter extends BaseAdapter {
         );
 
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), clientIp);
+        WebClient client = registry.getClient(ModelServiceRegistry.ServiceType.embedding, request.model(), adaptModelName(clientIp));
         String path = getOllamaPath(ModelServiceRegistry.ServiceType.embedding);
 
         Object transformedRequest = transformRequest(request, "ollama");
 
         return client.post()
-                .uri(path)
+                .uri(adaptModelName(path))
                 .header("Content-Type", "application/json")
                 .bodyValue(transformedRequest)
                 .retrieve()
@@ -336,20 +338,5 @@ public class OllamaAdapter extends BaseAdapter {
                             .contentType(MediaType.APPLICATION_JSON)
                             .body(errorResponse.toJson()));
                 });
-    }
-
-    @Override
-    public Mono<? extends ResponseEntity<?>> rerank(RerankDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        throw new UnsupportedOperationException("Ollama adapter does not support rerank service");
-    }
-
-    @Override
-    public Mono<? extends ResponseEntity<?>> tts(TtsDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        throw new UnsupportedOperationException("Ollama adapter does not support TTS service");
-    }
-
-    @Override
-    public Mono<? extends ResponseEntity<?>> stt(SttDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
-        throw new UnsupportedOperationException("Ollama adapter does not support STT service");
     }
 }
