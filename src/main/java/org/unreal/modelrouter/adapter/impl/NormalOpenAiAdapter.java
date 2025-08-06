@@ -4,14 +4,23 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
+import org.unreal.modelrouter.dto.ImageEditDTO;
 import org.unreal.modelrouter.dto.SttDTO;
+
+import java.util.List;
 
 public class NormalOpenAiAdapter extends BaseAdapter {
 
     public NormalOpenAiAdapter(ModelServiceRegistry registry) {
         super(registry);
+    }
+
+    @Override
+    public AdapterCapabilities supportCapability() {
+        return AdapterCapabilities.all();
     }
 
     @Override
@@ -23,8 +32,95 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     protected Object transformRequest(Object request, String adapterType) {
         if (request instanceof SttDTO.Request sttRequest) {
             return transformSttRequest(sttRequest);
+        }else if (request instanceof ImageEditDTO.Request imageEditRequest) {
+            return transformImageEditRequestRequest(imageEditRequest);
         }
         return super.transformRequest(request, adapterType);
+    }
+
+    private Object transformImageEditRequestRequest(ImageEditDTO.Request imageEditRequest) {
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        
+        // 添加 model 字段
+        if (imageEditRequest.model() != null) {
+            builder.part("model", imageEditRequest.model());
+        }
+
+        // 添加 prompt 字段
+        if (imageEditRequest.prompt() != null) {
+            builder.part("prompt", imageEditRequest.prompt());
+        }
+
+        // 添加 background 字段
+        if (imageEditRequest.background() != null) {
+            builder.part("background", imageEditRequest.background());
+        }
+
+        // 添加 input_fidelity 字段
+        if (imageEditRequest.input_fidelity() != null) {
+            builder.part("input_fidelity", imageEditRequest.input_fidelity());
+        }
+
+        // 添加 mask 字段
+        if (imageEditRequest.mask() != null) {
+            builder.part("mask", imageEditRequest.mask());
+        }
+
+        // 添加 n 字段
+        if (imageEditRequest.n() != null) {
+            builder.part("n", imageEditRequest.n());
+        }
+
+        // 添加 output_compression 字段
+        if (imageEditRequest.output_compression() != null) {
+            builder.part("output_compression", imageEditRequest.output_compression());
+        }
+
+        // 添加 output_format 字段
+        if (imageEditRequest.output_format() != null) {
+            builder.part("output_format", imageEditRequest.output_format());
+        }
+
+        // 添加 partial_images 字段
+        if (imageEditRequest.partial_images() != null) {
+            builder.part("partial_images", imageEditRequest.partial_images());
+        }
+
+        // 添加 quality 字段
+        if (imageEditRequest.quality() != null) {
+            builder.part("quality", imageEditRequest.quality());
+        }
+
+        // 添加 response_format 字段
+        if (imageEditRequest.response_format() != null) {
+            builder.part("response_format", imageEditRequest.response_format());
+        }
+
+        // 添加 size 字段
+        if (imageEditRequest.size() != null) {
+            builder.part("size", imageEditRequest.size());
+        }
+
+        // 添加 stream 字段
+        if (imageEditRequest.stream() != null) {
+            builder.part("stream", imageEditRequest.stream());
+        }
+
+        // 添加 user 字段
+        if (imageEditRequest.user() != null) {
+            builder.part("user", imageEditRequest.user());
+        }
+
+        // 处理 image 文件列表
+        if (imageEditRequest.image() != null && !imageEditRequest.image().isEmpty()) {
+            for (int i = 0; i < imageEditRequest.image().size(); i++) {
+                builder.asyncPart("image", imageEditRequest.image().get(i).content(), DataBuffer.class)
+                        .filename(imageEditRequest.image().get(i).filename())
+                        .contentType(MediaType.IMAGE_PNG); // 假设是PNG格式，可根据实际调整
+            }
+        }
+
+        return builder.build();
     }
 
     /**

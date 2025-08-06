@@ -6,9 +6,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
+import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
+
+import java.util.List;
 
 /**
  * LocalAI Adapter - 适配LocalAI API格式
@@ -20,6 +23,11 @@ public class LocalAiAdapter extends BaseAdapter {
 
     public LocalAiAdapter(ModelServiceRegistry registry) {
         super(registry);
+    }
+
+    @Override
+    public AdapterCapabilities supportCapability() {
+        return AdapterCapabilities.all();
     }
 
     @Override

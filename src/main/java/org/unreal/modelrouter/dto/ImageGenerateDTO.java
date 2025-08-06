@@ -1,7 +1,8 @@
 package org.unreal.modelrouter.dto;
 
 public class ImageGenerateDTO {
-    
+
+
     public record Request(
         String prompt,
         String model,

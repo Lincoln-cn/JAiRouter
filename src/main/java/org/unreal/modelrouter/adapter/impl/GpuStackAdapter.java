@@ -6,10 +6,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
+
+import java.util.List;
 
 /**
  * GPUStack Adapter - 适配GPUStack API格式
@@ -20,6 +22,11 @@ public class GpuStackAdapter extends BaseAdapter {
 
     public GpuStackAdapter(ModelServiceRegistry registry) {
         super(registry);
+    }
+
+    @Override
+    public AdapterCapabilities supportCapability() {
+        return AdapterCapabilities.all();
     }
 
     @Override

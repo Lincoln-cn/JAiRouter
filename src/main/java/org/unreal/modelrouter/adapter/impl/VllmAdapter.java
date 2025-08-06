@@ -6,9 +6,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
+import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
+
+import java.util.List;
 
 /**
  * VLLM Adapter - 适配VLLM API格式
@@ -20,6 +23,15 @@ public class VllmAdapter extends BaseAdapter {
 
     public VllmAdapter(ModelServiceRegistry registry) {
         super(registry);
+    }
+
+    @Override
+    public AdapterCapabilities supportCapability() {
+        return AdapterCapabilities.builder()
+                .chat(true)
+                .embedding(true)
+                .rerank(true)
+                .build();
     }
 
     @Override
