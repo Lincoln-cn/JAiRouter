@@ -1,8 +1,9 @@
-package org.unreal.modelrouter.loadbalancer;
+package org.unreal.modelrouter.loadbalancer.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unreal.modelrouter.config.ModelRouterProperties;
+import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 轮询负载均衡策略
  */
 public class RoundRobinLoadBalancer implements LoadBalancer {
-    private static final Logger logger = LoggerFactory.getLogger(org.unreal.modelrouter.loadbalancer.RoundRobinLoadBalancer.class);
+    private static final Logger logger = LoggerFactory.getLogger(RoundRobinLoadBalancer.class);
     private final Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
 
     @Override

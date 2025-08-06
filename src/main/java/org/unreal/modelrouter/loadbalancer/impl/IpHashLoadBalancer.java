@@ -1,8 +1,9 @@
-package org.unreal.modelrouter.loadbalancer;
+package org.unreal.modelrouter.loadbalancer.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unreal.modelrouter.config.ModelRouterProperties;
+import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -14,7 +15,7 @@ import java.util.TreeMap;
  * IP Hash 负载均衡策略
  */
 public class IpHashLoadBalancer implements LoadBalancer {
-    private static final Logger logger = LoggerFactory.getLogger(org.unreal.modelrouter.loadbalancer.IpHashLoadBalancer.class);
+    private static final Logger logger = LoggerFactory.getLogger(IpHashLoadBalancer.class);
     private final String hashAlgorithm;
 
     public IpHashLoadBalancer(String hashAlgorithm) {

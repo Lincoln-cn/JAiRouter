@@ -1,8 +1,9 @@
-package org.unreal.modelrouter.loadbalancer;
+package org.unreal.modelrouter.loadbalancer.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unreal.modelrouter.config.ModelRouterProperties;
+import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * 最少连接数负载均衡策略
  */
 public class LeastConnectionsLoadBalancer implements LoadBalancer {
-    private static final Logger logger = LoggerFactory.getLogger(org.unreal.modelrouter.loadbalancer.LeastConnectionsLoadBalancer.class);
+    private static final Logger logger = LoggerFactory.getLogger(LeastConnectionsLoadBalancer.class);
+
     private final Map<String, AtomicLong> connectionCounts = new ConcurrentHashMap<>();
 
     @Override
@@ -52,7 +54,6 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
     public void recordCall(ModelRouterProperties.ModelInstance instance) {
         String key = getInstanceKey(instance);
         long currentCount = connectionCounts.computeIfAbsent(key, k -> new AtomicLong(0)).incrementAndGet();
-        // 使用slf4j记录调用日志
         logger.info("Instance {} call recorded. Current connections: {}", key, currentCount);
     }
 
@@ -62,7 +63,6 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
         AtomicLong count = connectionCounts.get(key);
         if (count != null) {
             long currentCount = count.decrementAndGet();
-            // 使用slf4j记录调用完成日志
             logger.info("Instance {} call completed. Current connections: {}", key, currentCount);
         } else {
             logger.info("Instance {} call completed. No active connection count found.", key);
