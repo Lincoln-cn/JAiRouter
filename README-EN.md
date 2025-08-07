@@ -277,18 +277,21 @@ java -jar target/model-router-*.jar
         - [x] GPUStack
     - [x] Add health check interfaces
 - Traffic Control
-    - [ ] Phase 1: Basic Rate Limiting
-        - Implement a basic rate limiter using the Token Bucket algorithm
-        - Integrate service-level rate limiting in [ModelServiceRegistry.selectInstance()](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\config\ModelServiceRegistry.java#L101-L139)
-        - Add basic configuration support
-    - [ ] Phase 2: Fine-Grained Control
-        - Support instance-level rate limiting
+    - [x] Phase 1: Basic Rate Limiting
+        - [x] Implement basic rate limiter using the Token Bucket algorithm
+        - [x] Integrate service-level rate limiting in ModelServiceRegistry.selectInstance()
+        - [x] Add basic configuration support
+        - [x] Support multiple rate-limiting algorithms (sliding window, leaky bucket, etc.)
+        - [x] Add rate-limiting configuration
+        - [x] Add service circuit breaker
+        - [x] Support instance-level rate limiting
+        - Add rate-limiting warm-up and degradation strategies
+    - [ ] Phase 2: Fine-grained Control
         - Add client IP-level rate limiting
         - Implement dynamic configuration update interface
     - [ ] Phase 3: Advanced Features
         - Integrate monitoring metrics and alerts
-        - Support multiple rate-limiting algorithms (sliding window, leaky bucket, etc.)
-        - Add rate limit warm-up and degradation strategies
+
 
 ## Dependencies
 
