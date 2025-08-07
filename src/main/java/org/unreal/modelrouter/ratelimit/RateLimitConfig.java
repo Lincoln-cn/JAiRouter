@@ -11,6 +11,7 @@ public class RateLimitConfig {
     private long rate;
     private String scope;
     private String key;
+    private long warmUpPeriod = 600; // 预热期（秒），默认10分钟
 
     /**
      * 默认构造函数
@@ -43,6 +44,7 @@ public class RateLimitConfig {
         private long rate = 10L;
         private String scope = "service";
         private String key;
+        private long warmUpPeriod = 600L;
 
         public Builder algorithm(String algorithm) {
             this.algorithm = algorithm;
@@ -69,14 +71,19 @@ public class RateLimitConfig {
             return this;
         }
 
+        public Builder warmUpPeriod(long warmUpPeriod) {
+            this.warmUpPeriod = warmUpPeriod;
+            return this;
+        }
+
         public RateLimitConfig build() {
             RateLimitConfig config = new RateLimitConfig(algorithm, capacity, rate, scope);
             config.key = this.key;
+            config.warmUpPeriod = this.warmUpPeriod;
             return config;
         }
     }
 
-    // Getters and Setters
     public boolean isEnabled() {
         return enabled;
     }
@@ -123,6 +130,14 @@ public class RateLimitConfig {
 
     public void setKey(String key) {
         this.key = key;
+    }
+    
+    public long getWarmUpPeriod() {
+        return warmUpPeriod;
+    }
+    
+    public void setWarmUpPeriod(long warmUpPeriod) {
+        this.warmUpPeriod = warmUpPeriod;
     }
 
     /**

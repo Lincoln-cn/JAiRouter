@@ -8,6 +8,11 @@ import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.*;
 import org.unreal.modelrouter.ratelimit.*;
 import org.unreal.modelrouter.ratelimit.impl.*;
+import org.unreal.modelrouter.fallback.FallbackStrategy;
+import org.unreal.modelrouter.fallback.DefaultFallbackStrategy;
+import org.unreal.modelrouter.fallback.CacheFallbackStrategy;
+
+import org.springframework.http.ResponseEntity;
 
 @Component
 public class ComponentFactory {
@@ -40,6 +45,7 @@ public class ComponentFactory {
             case "token-bucket" -> new TokenBucketRateLimiter(cfg);
             case "leaky-bucket" -> new LeakyBucketRateLimiter(cfg);
             case "sliding-window" -> new SlidingWindowRateLimiter(cfg);
+            case "warm-up" -> new org.unreal.modelrouter.ratelimit.impl.WarmUpRateLimiter(cfg);
             default -> {
                 logger.warn("Unknown algorithm: {}, fallback to token-bucket", cfg.getAlgorithm());
                 yield new TokenBucketRateLimiter(cfg);
@@ -66,6 +72,28 @@ public class ComponentFactory {
     public boolean validateLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig cfg) {
         return cfg != null && cfg.getType() != null;
     }
-
-
+    
+    public boolean validateFallbackConfig(ModelRouterProperties.FallbackConfig cfg) {
+        return cfg != null && cfg.getEnabled() != null;
+    }
+    
+    /**
+     * 创建降级策略
+     * @param config 降级配置
+     * @param serviceType 服务类型
+     * @return 降级策略实现
+     */
+    public FallbackStrategy<ResponseEntity<?>> createFallbackStrategy(
+            ModelRouterProperties.FallbackConfig config, 
+            String serviceType) {
+        if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
+            return null;
+        }
+        
+        return switch (config.getStrategy().toLowerCase()) {
+            case "cache" -> new CacheFallbackStrategy(serviceType, config.getCacheSize());
+            case "default" -> new DefaultFallbackStrategy(serviceType);
+            default -> new DefaultFallbackStrategy(serviceType);
+        };
+    }
 }

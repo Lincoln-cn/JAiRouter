@@ -10,6 +10,8 @@ import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.checker.ServerChecker;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager;
+import org.unreal.modelrouter.factory.ComponentFactory;
+import org.unreal.modelrouter.fallback.FallbackManager;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.ratelimit.RateLimitContext;
@@ -25,6 +27,8 @@ public class ModelServiceRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(ModelServiceRegistry.class);
 
+
+
     public enum ServiceType {
         chat, embedding, rerank, tts, stt, imgGen, imgEdit
     }
@@ -37,20 +41,31 @@ public class ModelServiceRegistry {
     private final ServerChecker serverChecker;
     private final RateLimitManager rateLimitManager;
     private final CircuitBreakerManager circuitBreakerManager;
+    private final ComponentFactory componentFactory;
+    private final FallbackManager fallbackManager;
+    private final ModelRouterProperties properties;
 
     public ModelServiceRegistry(ModelRouterProperties properties,
                                 ServerChecker serverChecker,
                                 RateLimitManager rateLimitManager,
                                 LoadBalancerManager loadBalancerManager,
-                                CircuitBreakerManager circuitBreakerManager) {
+                                CircuitBreakerManager circuitBreakerManager,
+                                ComponentFactory componentFactory,
+                                FallbackManager fallbackManager) {
+        this.properties = properties;
         this.webClientCache = new ConcurrentHashMap<>();
         this.serverChecker = serverChecker;
         this.rateLimitManager = rateLimitManager;
         this.loadBalancerManager = loadBalancerManager;
         this.circuitBreakerManager = circuitBreakerManager;
+        this.componentFactory = componentFactory;
+        this.fallbackManager = fallbackManager;
 
         // 初始化熔断器管理器
         this.circuitBreakerManager.initialize(properties);
+        
+        // 初始化降级管理器
+        this.fallbackManager.initialize(properties);
 
         this.globalAdapter = Optional.ofNullable(properties.getAdapter()).orElse("normal");
 
@@ -273,5 +288,34 @@ public class ModelServiceRegistry {
 
     public Map<ServiceType, List<ModelRouterProperties.ModelInstance>> getAllInstances() {
         return new HashMap<>(instanceRegistry);
+    }
+    
+    /**
+     * 获取组件工厂
+     * @return ComponentFactory实例
+     */
+    public ComponentFactory getComponentFactory() {
+        return componentFactory;
+    }
+    
+    /**
+     * 获取降级管理器
+     * @return FallbackManager实例
+     */
+    public FallbackManager getFallbackManager() {
+        return fallbackManager;
+    }
+    
+    /**
+     * 获取服务配置
+     * @param serviceType 服务类型
+     * @return 服务配置
+     */
+    public ModelRouterProperties.ServiceConfig getServiceConfig(ServiceType serviceType) {
+        String serviceKey = serviceType.name().toLowerCase().replace("_", "-");
+        if (properties.getServices() != null) {
+            return properties.getServices().get(serviceKey);
+        }
+        return null;
     }
 }

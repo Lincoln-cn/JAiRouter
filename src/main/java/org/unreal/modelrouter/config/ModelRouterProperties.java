@@ -12,6 +12,7 @@ public class ModelRouterProperties {
     private Map<String, ServiceConfig> services;
     private RateLimitConfig rateLimit = new RateLimitConfig(); // 全局限流配置
     private CircuitBreakerConfig circuitBreaker = new CircuitBreakerConfig(); // 全局熔断器配置
+    private FallbackConfig fallback = new FallbackConfig(); // 全局降级配置
 
     public LoadBalanceConfig getLoadBalance() {
         return loadBalance;
@@ -52,13 +53,21 @@ public class ModelRouterProperties {
     public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
         this.circuitBreaker = circuitBreaker;
     }
-
+    
+    public FallbackConfig getFallback() {
+        return fallback;
+    }
+    
+    public void setFallback(FallbackConfig fallback) {
+        this.fallback = fallback;
+    }
     public static class ServiceConfig {
         private LoadBalanceConfig loadBalance;
         private List<ModelInstance> instances;
         private String adapter;
         private RateLimitConfig rateLimit; // 服务级别限流配置
         private CircuitBreakerConfig circuitBreaker; // 服务级别熔断器配置
+        private FallbackConfig fallback; // 服务级别降级配置
 
         public LoadBalanceConfig getLoadBalance() {
             return loadBalance;
@@ -98,6 +107,14 @@ public class ModelRouterProperties {
 
         public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
             this.circuitBreaker = circuitBreaker;
+        }
+        
+        public FallbackConfig getFallback() {
+            return fallback;
+        }
+        
+        public void setFallback(FallbackConfig fallback) {
+            this.fallback = fallback;
         }
     }
 
@@ -292,6 +309,46 @@ public class ModelRouterProperties {
 
         public void setSuccessThreshold(Integer successThreshold) {
             this.successThreshold = successThreshold;
+        }
+    }
+    
+    // 降级配置类
+    public static class FallbackConfig {
+        private Boolean enabled = false;           // 是否启用降级
+        private String strategy = "default";       // 降级策略: default, cache等
+        private Integer cacheSize = 100;           // 缓存大小（仅在strategy为cache时有效）
+        private Long cacheTtl = 300000L;           // 缓存过期时间（毫秒）
+
+        public Boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getStrategy() {
+            return strategy;
+        }
+
+        public void setStrategy(String strategy) {
+            this.strategy = strategy;
+        }
+
+        public Integer getCacheSize() {
+            return cacheSize;
+        }
+
+        public void setCacheSize(Integer cacheSize) {
+            this.cacheSize = cacheSize;
+        }
+
+        public Long getCacheTtl() {
+            return cacheTtl;
+        }
+
+        public void setCacheTtl(Long cacheTtl) {
+            this.cacheTtl = cacheTtl;
         }
     }
 }

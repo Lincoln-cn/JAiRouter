@@ -25,6 +25,11 @@ model:
     timeout : 60000
     successThreshold: 2
 
+    # 全局降级配置
+  fallback:
+    enabled: true
+    strategy: default
+
   services:
     # 聊天服务配置
     chat:
@@ -79,6 +84,11 @@ model:
       load-balance:
         type: ip-hash
         hash-algorithm: "sha256"
+      fallback:
+        enabled: true
+        strategy: cache
+        cache-size: 50
+        cache-ttl: 600000 # 10分钟
       instances:
         - name: "bge-reranker-v2-m3"
           base-url: "http://172.16.30.6:9090"

@@ -25,19 +25,20 @@ https://deepwiki.com/Lincoln-cn/JAiRouter
 - **流量控制**：支持服务级别和实例级别的限流配置，包括令牌桶、漏桶和滑动窗口算法
 - **熔断机制**：支持服务熔断配置，提高系统稳定性
 
+
 ## 项目结构
 
 ```
-src/main/java/org/unreal/modelrouter
-├── adapter         # 适配器模块，用于对接不同的模型服务
-├── checker         # 健康检查模块
-├── config          # 配置类
-├── controller      # 控制器
-├── dto             # 数据传输对象
-├── loadbalancer    # 负载均衡策略实现
-├── response        # 统一响应处理
-├── util            # 工具类
-└── ModelRouterApplication.java  # 启动类
+src/main/java/org/unreal/modelrouter 
+├── adapter # 适配器模块，用于对接不同的模型服务 
+├── checker # 健康检查模块 
+├── config # 配置类 
+├── controller # 控制器 
+├── dto # 数据传输对象 
+├── loadbalancer # 负载均衡策略实现 
+├── response # 统一响应处理 
+├── util # 工具类 
+└── ModelRouterApplication.java # 启动类
 ```
 
 ## 支持的服务类型
@@ -93,8 +94,10 @@ model:
   load-balance:
     type: random # 支持: random, round-robin, least-connections, ip-hash
     hash-algorithm: "md5" # IP Hash 策略的哈希算法
+
   # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
   adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
+
   # 全局限流配置
   rate-limit:
     enabled: true
@@ -109,6 +112,11 @@ model:
     failureThreshold: 5
     timeout : 60000
     successThreshold: 2
+
+    # 全局降级配置
+  fallback:
+    enabled: true
+    strategy: default
 
   services:
     # 聊天服务配置
@@ -129,7 +137,7 @@ model:
           path: "/v1-openai/chat/completions"
           weight: 1
         - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.7:9090"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1/chat/completions"
           weight: 1
           # 实例级别限流配置
@@ -140,21 +148,22 @@ model:
             rate: 5
             scope: "instance"
 
+
     # Embedding 服务配置
     embedding:
       load-balance:
         type: round-robin
       instances:
         - name: "nomic-embed-text-v1.5"
-          base-url: "http://172.16.30.11:9090"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1/embeddings"
           weight: 1
         - name: "nomic-embed-text-v1.5"
-          base-url: "http://172.16.30.15:9090"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1/embeddings"
           weight: 1
         - name: "bge-large-zh-v1.5"
-          base-url: "http://172.16.30.12:9090/"
+          base-url: "http://172.16.30.6:9090/"
           path: "/v1/embeddings"
           weight: 1
 
@@ -163,6 +172,11 @@ model:
       load-balance:
         type: ip-hash
         hash-algorithm: "sha256"
+      fallback:
+        enabled: true
+        strategy: cache
+        cache-size: 50
+        cache-ttl: 600000 # 10分钟
       instances:
         - name: "bge-reranker-v2-m3"
           base-url: "http://172.16.30.6:9090"
@@ -179,11 +193,11 @@ model:
         type: random
       instances:
         - name: "cosyvoice-300m"
-          base-url: "http://172.16.30.9:9090"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/speech"
           weight: 1
         - name: "cosyvoice-300m"
-          base-url: "http://172.16.30.8:9090"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/speech"
           weight: 1
 
@@ -193,29 +207,29 @@ model:
         type: round-robin
       instances:
         - name: "faster-whisper-tiny"
-          base-url: "http://172.16.30.21:9090"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
           weight: 2
         - name: "faster-whisper-tiny"
-          base-url: "http://172.16.30.21:9090"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
           weight: 1
 
     imgGen:
       load-balance:
-          type: round-robin
+        type: round-robin
       instances:
-          - name: "stable-diffusion-2-1"
-            base-url: "http://172.16.30.25:9090"
-            path: "/v1/images/generations"
-            weight: 1
+        - name: "stable-diffusion-2-1"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/images/generations"
+          weight: 1
 
     imgEdit:
       load-balance:
         type: round-robin
       instances:
         - name: "stable-diffusion-2-1"
-          base-url: "http://172.16.30.25:9090"
+          base-url: "http://172.16.30.6:9090"
           path: "/v1/images/edits"
           weight: 1
 ```
@@ -316,7 +330,7 @@ java -jar target/model-router-*.jar
       - [x] 添加限流配置
       - [x] 添加服务熔断
       - [x] 支持实例级别限流
-      - 添加限流预热和降级策略
+      - [x] 添加限流预热和降级策略
     - [ ] 第二阶段：精细化控制
       - 添加客户端 IP 级别限流
       - 实现动态配置更新接口 
