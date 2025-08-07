@@ -4,37 +4,53 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-/**
- *  '{
- *     "model": "qwen3:4b",
- *     "messages": [
- *       {
- *         "role": "system",
- *         "content": "You are a helpful assistant."
- *       },
- *       {
- *         "role": "user",
- *         "content": "Hello!"
- *       }
- *     ],
- *     "stream": true
- *   }'
- */
 public class ChatDTO {
 
-    // 使用 Java Record 簡化 DTO 定義
     public record Request(
             String model,
             List<Message> messages,
-            boolean stream,
-            @JsonProperty("max_tokens")
-            Integer maxTokens
-    ) {
-    }
+            Boolean stream,
+            @JsonProperty("max_tokens") Integer maxTokens,
+            Double temperature,
+            @JsonProperty("top_p") Double topP,
+            @JsonProperty("top_k") Integer topK,
+            @JsonProperty("frequency_penalty") Double frequencyPenalty,
+            @JsonProperty("presence_penalty") Double presencePenalty,
+            Object stop,
+            String user
+    ) {}
 
     public record Message(
             String role,
+            String content,
+            String name
+    ) {}
+
+    public record Response(
+            String id,
+            String object,
+            Long created,
+            String model,
+            List<Choice> choices,
+            Usage usage,
+            @JsonProperty("system_fingerprint") String systemFingerprint
+    ) {}
+
+    public record Choice(
+            Integer index,
+            Message message,
+            Delta delta,
+            @JsonProperty("finish_reason") String finishReason
+    ) {}
+
+    public record Delta(
+            String role,
             String content
-    ) {
-    }
+    ) {}
+
+    public record Usage(
+            @JsonProperty("prompt_tokens") Integer promptTokens,
+            @JsonProperty("completion_tokens") Integer completionTokens,
+            @JsonProperty("total_tokens") Integer totalTokens
+    ) {}
 }

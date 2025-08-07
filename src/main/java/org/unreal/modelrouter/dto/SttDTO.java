@@ -1,22 +1,43 @@
 package org.unreal.modelrouter.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.RequestPart;
 
-import java.io.File;
+import java.util.List;
 
 public class SttDTO {
 
-    public record Request(@RequestParam("model") String model,
-                          @RequestParam("file") FilePart file,
-                          @RequestParam(value = "language" , defaultValue = "auto") String language) {
-
+    public record Request(
+            @RequestParam("model") String model,
+            @RequestPart("file") FilePart file,
+            @RequestParam(value = "language", defaultValue = "auto") String language,
+            @RequestParam(value = "prompt" , required = false) String prompt,
+            @RequestParam(value = "responseFormat",required = false) String responseFormat,
+            @RequestParam(value = "temperature",required = false) Double temperature
+    ) {
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Response(@JsonProperty("text") String text) {
+    public record Response(
+            String text,
+            String language,
+            Double duration,
+            List<Segment> segments
+    ) {
+    }
+
+    public record Segment(
+            Integer id,
+            Integer seek,
+            Double start,
+            Double end,
+            String text,
+            List<Integer> tokens,
+            Double temperature,
+            @JsonProperty("avg_logprob") Double avgLogprob,
+            @JsonProperty("compression_ratio") Double compressionRatio,
+            @JsonProperty("no_speech_prob") Double noSpeechProb
+    ) {
     }
 }
