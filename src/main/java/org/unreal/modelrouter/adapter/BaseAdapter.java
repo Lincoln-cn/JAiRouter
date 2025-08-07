@@ -1,19 +1,26 @@
 package org.unreal.modelrouter.adapter;
 
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.util.DigestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.fallback.CacheFallbackStrategy;
 import org.unreal.modelrouter.response.ErrorResponse;
 import org.unreal.modelrouter.util.IpUtils;
+import org.unreal.modelrouter.fallback.FallbackStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.security.MessageDigest;
+import java.util.Base64;
 
 public abstract class BaseAdapter implements ServiceCapability {
 
@@ -41,7 +48,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     /**
      * 通用请求处理模板方法
      */
-    protected <T> Mono<? extends ResponseEntity<?>> processRequest(
+    protected <T> Mono processRequest(
             T request,
             String authorization,
             ServerHttpRequest httpRequest,
@@ -59,6 +66,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                 .doOnSuccess(response -> {
                     if (response != null && response.getStatusCode().is2xxSuccessful()) {
                         registry.recordCallComplete(serviceType, selectedInstance);
+                        // 缓存成功响应
+                        cacheSuccessfulResponse(serviceType, modelName, response, httpRequest);
                     } else {
                         // 非2xx响应视为失败
                         registry.recordCallFailure(serviceType, selectedInstance);
@@ -71,12 +80,41 @@ public abstract class BaseAdapter implements ServiceCapability {
                 });
     }
 
+    /**
+     * 通用请求处理模板方法（带降级处理）
+     */
+    protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
+            T request,
+            String authorization,
+            ServerHttpRequest httpRequest,
+            ModelServiceRegistry.ServiceType serviceType,
+            String modelName,
+            RequestProcessor<T> processor) {
 
+        ModelRouterProperties.ServiceConfig serviceConfig = registry.getServiceConfig(serviceType);
+        FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
+                registry.getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
+
+        // 如果未启用降级，则使用普通的处理方法
+        if (fallbackStrategy == null) {
+            return processRequest(request, authorization, httpRequest, serviceType, modelName, processor);
+        }
+
+        return processRequest(request, authorization, httpRequest, serviceType, modelName, processor)
+                .onErrorResume(throwable -> {
+                    try {
+                        ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback((Exception) throwable);
+                        return Mono.just(fallbackResponse);
+                    } catch (Exception e) {
+                        return Mono.error(e);
+                    }
+                });
+    }
 
     /**
      * 通用非流式请求处理
      */
-    protected <T> Mono<? extends ResponseEntity<?>> processNonStreamingRequest(
+    protected <T> Mono processNonStreamingRequest(
             T request,
             String authorization,
             WebClient client,
@@ -105,7 +143,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                     .toEntity(byte[].class)
                     .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
                             .headers(responseEntity.getHeaders())
-                            .body(responseEntity.getBody()));
+                            .body(responseEntity));
         } else {
             return requestSpec
                     .bodyValue(transformedRequest)
@@ -117,7 +155,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                     .toEntity(String.class)
                     .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
                             .headers(responseEntity.getHeaders())
-                            .body(transformResponse(responseEntity.getBody(), getAdapterType())));
+                            .body(transformResponse(responseEntity, getAdapterType())));
         }
     }
 
@@ -198,7 +236,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (capabilityCheck != null) {
             return capabilityCheck;
         }
-        return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.chat,
+        return processRequestWithFallback(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.chat,
                 request.model(), (req, auth, client, path, instance, serviceType) -> {
                     if (req.stream()) {
                         return processStreamingRequest(req, auth, client, path, instance, serviceType);
@@ -214,7 +252,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (capabilityCheck != null) {
             return capabilityCheck;
         }
-        return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.embedding,
+        return processRequestWithFallback(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.embedding,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
@@ -225,7 +263,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (capabilityCheck != null) {
             return capabilityCheck;
         }
-        return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.rerank,
+        return processRequestWithFallback(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.rerank,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
@@ -236,7 +274,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (capabilityCheck != null) {
             return capabilityCheck;
         }
-        return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.tts,
+        return processRequestWithFallback(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.tts,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, byte[].class));
     }
@@ -247,7 +285,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (capabilityCheck != null) {
             return capabilityCheck;
         }
-        return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.stt,
+        return processRequestWithFallback(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.stt,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
@@ -257,7 +295,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (capabilityCheck != null) {
             return capabilityCheck;
         }
-        return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.imgGen,
+        return processRequestWithFallback(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.imgGen,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
@@ -267,7 +305,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (capabilityCheck != null) {
             return capabilityCheck;
         }
-        return processRequest(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.imgEdit,
+        return processRequestWithFallback(request, authorization, httpRequest, ModelServiceRegistry.ServiceType.imgEdit,
                 request.model(), (req, auth, client, path, instance, serviceType) ->
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
@@ -323,6 +361,25 @@ public abstract class BaseAdapter implements ServiceCapability {
      */
     protected String getAuthorizationHeader(String authorization, String adapterType) {
         return authorization;
+    }
+
+    /**
+     * 缓存成功的响应结果
+     */
+    protected void cacheSuccessfulResponse(
+            ModelServiceRegistry.ServiceType serviceType,
+            String modelName,
+            ResponseEntity<?> response,
+            ServerHttpRequest httpRequest) {
+
+        ModelRouterProperties.ServiceConfig serviceConfig = registry.getServiceConfig(serviceType);
+        FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
+                registry.getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
+
+        // 如果降级策略是缓存类型，则缓存响应
+        if (fallbackStrategy instanceof CacheFallbackStrategy) {
+            ((CacheFallbackStrategy) fallbackStrategy).cacheResponse(serviceType, modelName, httpRequest, response);
+        }
     }
 
     /**

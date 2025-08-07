@@ -58,6 +58,23 @@ public class ConfigurationHelper {
                 source.getScope() != null ? source.getScope() : "service"
         );
     }
+    
+    /**
+     * 转换降级配置
+     * 从Properties配置转换为内部配置对象
+     */
+    public ModelRouterProperties.FallbackConfig convertFallbackConfig(ModelRouterProperties.FallbackConfig source) {
+        if (source == null || !Boolean.TRUE.equals(source.getEnabled())) {
+            return null;
+        }
+        
+        ModelRouterProperties.FallbackConfig config = new ModelRouterProperties.FallbackConfig();
+        config.setEnabled(source.getEnabled());
+        config.setStrategy(source.getStrategy() != null ? source.getStrategy() : "default");
+        config.setCacheSize(source.getCacheSize() != null ? source.getCacheSize() : 100);
+        config.setCacheTtl(source.getCacheTtl() != null ? source.getCacheTtl() : 300000L);
+        return config;
+    }
 
     /**
      * 获取有效的负载均衡配置
