@@ -253,6 +253,43 @@ POST /v1/images/edits
 java -jar target/model-router-*.jar
 ```
 
+## 开发计划
+0.1.0 ~ 0.2.0
+- 基础服务框架
+  - [x] 实现Openai chat标准接口转发
+  - [x] 实现Openai embedding标准接口转发
+  - [x] 实现Openai rerank标准接口转发
+  - [x] 实现Openai tts标准接口转发
+  - [x] 实现Openai stt标准接口转发
+  - [x] 实现Openai image generation标准接口转发
+  - [x] 实现Openai image editing标准接口转发
+  - [x] 添加负载均衡策略
+    - [x] 随机
+    - [x] 轮询
+    - [x] 最少连接
+    - [x] IP Hash
+  - [x] 添加服务实例配置
+    - [x] openai
+    - [x] ollama
+    - [x] vllm
+    - [x] xinference
+    - [x] localai
+    - [x] gpustack
+  - [x] 添加健康检查接口
+- 流量控制
+    - [ ] 第一阶段：基础限流 
+      - 实现 Token Bucket 算法的基础限流器 
+      - 在 ModelServiceRegistry.selectInstance() 中集成服务级别限流 
+      - 添加基本的配置支持
+    - [ ] 第二阶段：精细化控制
+      - 支持实例级别限流
+      - 添加客户端 IP 级别限流
+      - 实现动态配置更新接口 
+    - [ ] 第三阶段：高级特性 
+      - 集成监控指标和告警 
+      - 支持多种限流算法（滑动窗口、漏桶等） 
+      - 添加限流预热和降级策略
+
 ## 依赖
 
 - Spring Boot 2.x

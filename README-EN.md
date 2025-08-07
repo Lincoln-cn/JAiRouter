@@ -253,6 +253,43 @@ Each service provides a status check endpoint:
 java -jar target/model-router-*.jar
 ```
 
+## Development Plan
+0.1.0 ~ 0.2.0
+- Basic Service Framework
+    - [x] Implement OpenAI chat standard interface forwarding
+    - [x] Implement OpenAI embedding standard interface forwarding
+    - [x] Implement OpenAI rerank standard interface forwarding
+    - [x] Implement OpenAI TTS standard interface forwarding
+    - [x] Implement OpenAI STT standard interface forwarding
+    - [x] Implement OpenAI image generation standard interface forwarding
+    - [x] Implement OpenAI image editing standard interface forwarding
+    - [x] Add load balancing strategies
+        - [x] Random
+        - [x] Round Robin
+        - [x] Least Connections
+        - [x] IP Hash
+    - [x] Add service instance configuration
+        - [x] OpenAI
+        - [x] Ollama
+        - [x] VLLM
+        - [x] Xinference
+        - [x] LocalAI
+        - [x] GPUStack
+    - [x] Add health check interfaces
+- Traffic Control
+    - [ ] Phase 1: Basic Rate Limiting
+        - Implement a basic rate limiter using the Token Bucket algorithm
+        - Integrate service-level rate limiting in [ModelServiceRegistry.selectInstance()](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\config\ModelServiceRegistry.java#L101-L139)
+        - Add basic configuration support
+    - [ ] Phase 2: Fine-Grained Control
+        - Support instance-level rate limiting
+        - Add client IP-level rate limiting
+        - Implement dynamic configuration update interface
+    - [ ] Phase 3: Advanced Features
+        - Integrate monitoring metrics and alerts
+        - Support multiple rate-limiting algorithms (sliding window, leaky bucket, etc.)
+        - Add rate limit warm-up and degradation strategies
+
 ## Dependencies
 
 - Spring Boot 2.x
