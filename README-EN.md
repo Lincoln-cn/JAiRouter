@@ -4,6 +4,12 @@ JAiRouter is a Spring Boot-based model service routing and load balancing gatewa
 
 [切换到中文版本](README.md)
 
+## Java Version
+JDK version >= 17
+
+## DeepWiki
+https://deepwiki.com/Lincoln-cn/JAiRouter
+
 ## Features
 
 - **Unified API Gateway**: Provides a unified API access point, supporting OpenAI-compatible interface formats.
