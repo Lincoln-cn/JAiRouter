@@ -22,7 +22,7 @@ model:
   circuit-breaker:
     enabled: true
     failureThreshold: 5
-    timeout : 60000L
+    timeout : 60000
     successThreshold: 2
 
   services:
