@@ -6,31 +6,12 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * 抽象限流器实现，提供基础功能
  */
-public abstract class BaseRateLimiter implements RateLimiter {
+public abstract class BaseRateLimiter{
     protected final RateLimitConfig config;
     protected final ConcurrentMap<String, RateLimiter> scopedLimiters = new ConcurrentHashMap<>();
 
     public BaseRateLimiter(RateLimitConfig config) {
         this.config = config;
-    }
-
-    @Override
-    public RateLimitConfig getConfig() {
-        return config;
-    }
-
-    /**
-     * 根据作用域获取或创建限流器
-     * @param context 限流上下文
-     * @return 限流器实例
-     */
-    protected RateLimiter getScopedLimiter(RateLimitContext context) {
-        if (config.getScope() == null) {
-            return this;
-        }
-
-        String key = generateKey(context);
-        return scopedLimiters.computeIfAbsent(key, k -> createScopedLimiter());
     }
 
     /**
