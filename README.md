@@ -22,6 +22,8 @@ https://deepwiki.com/Lincoln-cn/JAiRouter
 - **权重支持**：所有负载均衡策略均支持实例权重配置
 - **健康检查**：提供各服务状态监控接口
 - **适配器支持**：支持多种后端服务适配器（GPUStack、Ollama、VLLM、Xinference、LocalAI等）
+- **流量控制**：支持服务级别和实例级别的限流配置，包括令牌桶、漏桶和滑动窗口算法
+- **熔断机制**：支持服务熔断配置，提高系统稳定性
 
 ## 项目结构
 
@@ -324,6 +326,6 @@ java -jar target/model-router-*.jar
 
 ## 依赖
 
-- Spring Boot 2.x
+- Spring Boot 3.5.+
 - Spring WebFlux
 - Reactor Core

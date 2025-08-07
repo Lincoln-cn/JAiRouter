@@ -22,7 +22,8 @@ https://deepwiki.com/Lincoln-cn/JAiRouter
 - **Weight Support**: All load balancing strategies support instance weight configuration.
 - **Health Check**: Provides service status monitoring interfaces.
 - **Adapter Support**: Supports multiple backend service adapters (GPUStack, Ollama, VLLM, Xinference, LocalAI, etc.).
-
+- **Traffic Control**: Supports rate limiting configuration at both service and instance levels, including token bucket, leaky bucket, and sliding window algorithms
+- **Circuit Breaker**: Supports service circuit breaker configuration to enhance system stability
 ## Project Structure
 
 ```
@@ -324,6 +325,6 @@ java -jar target/model-router-*.jar
 
 ## Dependencies
 
-- Spring Boot 2.x
+- Spring Boot 3.5.+
 - Spring WebFlux
 - Reactor Core
