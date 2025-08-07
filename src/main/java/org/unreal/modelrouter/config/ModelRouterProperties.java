@@ -9,7 +9,8 @@ import java.util.Map;
 public class ModelRouterProperties {
     private LoadBalanceConfig loadBalance = new LoadBalanceConfig();
     private String adapter = "normal";
-    private Map<String, ServiceConfig> services; // 直接使用Map，不需要嵌套的CapabilityConfig
+    private Map<String, ServiceConfig> services;
+    private RateLimitConfig rateLimit = new RateLimitConfig(); // 全局限流配置
 
     public LoadBalanceConfig getLoadBalance() {
         return loadBalance;
@@ -35,10 +36,19 @@ public class ModelRouterProperties {
         this.services = services;
     }
 
+    public RateLimitConfig getRateLimit() {
+        return rateLimit;
+    }
+
+    public void setRateLimit(RateLimitConfig rateLimit) {
+        this.rateLimit = rateLimit;
+    }
+
     public static class ServiceConfig {
         private LoadBalanceConfig loadBalance;
         private List<ModelInstance> instances;
         private String adapter;
+        private RateLimitConfig rateLimit; // 服务级别限流配置
 
         public LoadBalanceConfig getLoadBalance() {
             return loadBalance;
@@ -62,6 +72,14 @@ public class ModelRouterProperties {
 
         public void setAdapter(String adapter) {
             this.adapter = adapter;
+        }
+
+        public RateLimitConfig getRateLimit() {
+            return rateLimit;
+        }
+
+        public void setRateLimit(RateLimitConfig rateLimit) {
+            this.rateLimit = rateLimit;
         }
     }
 
@@ -91,6 +109,7 @@ public class ModelRouterProperties {
         private String baseUrl; // 注意驼峰命名
         private String path;
         private int weight = 1;
+        private RateLimitConfig rateLimit; // 实例级别限流配置
 
         public String getName() {
             return name;
@@ -122,6 +141,72 @@ public class ModelRouterProperties {
 
         public void setWeight(int weight) {
             this.weight = weight;
+        }
+
+        public RateLimitConfig getRateLimit() {
+            return rateLimit;
+        }
+
+        public void setRateLimit(RateLimitConfig rateLimit) {
+            this.rateLimit = rateLimit;
+        }
+    }
+
+    // 限流配置类
+    public static class RateLimitConfig {
+        private Boolean enabled = false;     // 是否启用限流
+        private String algorithm = "token-bucket"; // 算法类型: token-bucket, leaky-bucket, sliding-window等
+        private Long capacity = 100L;        // 容量
+        private Long rate = 10L;             // 速率
+        private String scope = "service";    // 作用域: service, instance, client-ip等
+        private String key;                  // 限流键值（可选）
+
+        public Boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getAlgorithm() {
+            return algorithm;
+        }
+
+        public void setAlgorithm(String algorithm) {
+            this.algorithm = algorithm;
+        }
+
+        public Long getCapacity() {
+            return capacity;
+        }
+
+        public void setCapacity(Long capacity) {
+            this.capacity = capacity;
+        }
+
+        public Long getRate() {
+            return rate;
+        }
+
+        public void setRate(Long rate) {
+            this.rate = rate;
+        }
+
+        public String getScope() {
+            return scope;
+        }
+
+        public void setScope(String scope) {
+            this.scope = scope;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public void setKey(String key) {
+            this.key = key;
         }
     }
 }
