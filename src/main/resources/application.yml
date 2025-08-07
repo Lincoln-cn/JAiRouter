@@ -18,6 +18,13 @@ model:
     rate: 100
     scope: "service"
 
+  # 全局熔断配置
+  circuit-breaker:
+    enabled: true
+    failureThreshold: 5
+    timeout : 60000L
+    successThreshold: 2
+
   services:
     # 聊天服务配置
     chat:

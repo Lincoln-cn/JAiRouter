@@ -38,7 +38,7 @@ public abstract class BaseRateLimiter implements RateLimiter {
      * @param context 限流上下文
      * @return 作用域键
      */
-    protected String generateKey(RateLimitContext context) {
+    public String generateKey(RateLimitContext context) {
         switch (config.getScope().toLowerCase()) {
             case "service":
                 return context.getServiceType().name();

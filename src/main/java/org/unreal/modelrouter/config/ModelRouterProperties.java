@@ -11,6 +11,7 @@ public class ModelRouterProperties {
     private String adapter = "normal";
     private Map<String, ServiceConfig> services;
     private RateLimitConfig rateLimit = new RateLimitConfig(); // 全局限流配置
+    private CircuitBreakerConfig circuitBreaker = new CircuitBreakerConfig(); // 全局熔断器配置
 
     public LoadBalanceConfig getLoadBalance() {
         return loadBalance;
@@ -44,11 +45,20 @@ public class ModelRouterProperties {
         this.rateLimit = rateLimit;
     }
 
+    public CircuitBreakerConfig getCircuitBreaker() {
+        return circuitBreaker;
+    }
+
+    public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+        this.circuitBreaker = circuitBreaker;
+    }
+
     public static class ServiceConfig {
         private LoadBalanceConfig loadBalance;
         private List<ModelInstance> instances;
         private String adapter;
         private RateLimitConfig rateLimit; // 服务级别限流配置
+        private CircuitBreakerConfig circuitBreaker; // 服务级别熔断器配置
 
         public LoadBalanceConfig getLoadBalance() {
             return loadBalance;
@@ -81,6 +91,14 @@ public class ModelRouterProperties {
         public void setRateLimit(RateLimitConfig rateLimit) {
             this.rateLimit = rateLimit;
         }
+
+        public CircuitBreakerConfig getCircuitBreaker() {
+            return circuitBreaker;
+        }
+
+        public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+            this.circuitBreaker = circuitBreaker;
+        }
     }
 
     public static class LoadBalanceConfig {
@@ -110,6 +128,7 @@ public class ModelRouterProperties {
         private String path;
         private int weight = 1;
         private RateLimitConfig rateLimit; // 实例级别限流配置
+        private CircuitBreakerConfig circuitBreaker; // 实例级别熔断器配置
 
         public String getName() {
             return name;
@@ -149,6 +168,14 @@ public class ModelRouterProperties {
 
         public void setRateLimit(RateLimitConfig rateLimit) {
             this.rateLimit = rateLimit;
+        }
+
+        public CircuitBreakerConfig getCircuitBreaker() {
+            return circuitBreaker;
+        }
+
+        public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+            this.circuitBreaker = circuitBreaker;
         }
 
         // 获取实例唯一标识
@@ -212,6 +239,46 @@ public class ModelRouterProperties {
 
         public void setKey(String key) {
             this.key = key;
+        }
+    }
+
+    // 熔断器配置类
+    public static class CircuitBreakerConfig {
+        private Boolean enabled = true;         // 是否启用熔断器
+        private Integer failureThreshold = 5;   // 失败阈值
+        private Long timeout = 60000L;          // 超时时间(毫秒)
+        private Integer successThreshold = 2;   // 成功阈值
+
+        public Boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public Integer getFailureThreshold() {
+            return failureThreshold;
+        }
+
+        public void setFailureThreshold(Integer failureThreshold) {
+            this.failureThreshold = failureThreshold;
+        }
+
+        public Long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(Long timeout) {
+            this.timeout = timeout;
+        }
+
+        public Integer getSuccessThreshold() {
+            return successThreshold;
+        }
+
+        public void setSuccessThreshold(Integer successThreshold) {
+            this.successThreshold = successThreshold;
         }
     }
 }

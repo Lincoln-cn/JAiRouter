@@ -1,10 +1,12 @@
 package org.unreal.modelrouter.adapter;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.config.ModelRouterProperties;
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
@@ -49,11 +51,27 @@ public abstract class BaseAdapter implements ServiceCapability {
 
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, httpRequest);
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(serviceType, modelName, adaptModelName(clientIp));
+        WebClient client = registry.getClient(serviceType, modelName, clientIp);
         String path = getModelPath(serviceType, modelName);
 
-        return processor.process(request, authorization, client, path, selectedInstance, serviceType);
+        return processor.process(request, authorization, client, path, selectedInstance, serviceType)
+                // 在成功完成时记录成功
+                .doOnSuccess(response -> {
+                    if (response != null && response.getStatusCode().is2xxSuccessful()) {
+                        registry.recordCallComplete(serviceType, selectedInstance);
+                    } else {
+                        // 非2xx响应视为失败
+                        registry.recordCallFailure(serviceType, selectedInstance);
+                    }
+                })
+                // 在发生错误时记录失败
+                .onErrorResume(throwable -> {
+                    registry.recordCallFailure(serviceType, selectedInstance);
+                    return Mono.error(throwable);
+                });
     }
+
+
 
     /**
      * 通用非流式请求处理
@@ -80,22 +98,26 @@ public abstract class BaseAdapter implements ServiceCapability {
             return requestSpec
                     .bodyValue(transformedRequest)
                     .retrieve()
+                    .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
+                        // 5xx错误视为服务失败，用于熔断器
+                        return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
+                    })
                     .toEntity(byte[].class)
-                    .doFinally(signalType -> recordCallComplete(serviceType, selectedInstance))
                     .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
                             .headers(responseEntity.getHeaders())
-                            .body(responseEntity.getBody()))
-                    .onErrorResume(throwable -> (Mono<? extends ResponseEntity<byte[]>>) handleError(throwable, serviceType, byte[].class));
+                            .body(responseEntity.getBody()));
         } else {
             return requestSpec
                     .bodyValue(transformedRequest)
                     .retrieve()
+                    .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
+                        // 5xx错误视为服务失败，用于熔断器
+                        return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
+                    })
                     .toEntity(String.class)
-                    .doFinally(signalType -> recordCallComplete(serviceType, selectedInstance))
                     .map(responseEntity -> ResponseEntity.status(responseEntity.getStatusCode())
                             .headers(responseEntity.getHeaders())
-                            .body(transformResponse(responseEntity.getBody(), getAdapterType())))
-                    .onErrorResume(throwable -> (Mono<? extends ResponseEntity<Object>>) handleError(throwable, serviceType, String.class));
+                            .body(transformResponse(responseEntity.getBody(), getAdapterType())));
         }
     }
 
@@ -121,9 +143,12 @@ public abstract class BaseAdapter implements ServiceCapability {
         Flux<String> streamResponse = requestSpec
                 .bodyValue(transformedRequest)
                 .retrieve()
+                .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
+                    // 5xx错误视为服务失败，用于熔断器
+                    return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
+                })
                 .bodyToFlux(String.class)
                 .map(this::transformStreamChunk)
-                .doFinally(signalType -> recordCallComplete(serviceType, selectedInstance))
                 .onErrorResume(throwable -> {
                     ErrorResponse errorResponse = createErrorResponse("error", serviceType.name(), throwable.getMessage());
                     return Flux.just(errorResponse.toJson());
@@ -156,26 +181,6 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     /**
      * 统一错误处理
-     */
-    protected <T> Mono<? extends ResponseEntity<? extends Object>> handleError(Throwable throwable,
-                                                                               ModelServiceRegistry.ServiceType serviceType,
-                                                                               Class<T> responseType) {
-        ErrorResponse errorResponse = createErrorResponse("error", serviceType.name(),
-                getAdapterType() + " adapter error: " + throwable.getMessage());
-
-        if (responseType == byte[].class) {
-            return Mono.just(ResponseEntity.<T>internalServerError()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(errorResponse.toJson().getBytes()));
-        } else {
-            return Mono.just(ResponseEntity.<T>internalServerError()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(errorResponse.toJson()));
-        }
-    }
-
-    /**
-     * 创建错误响应
      */
     protected ErrorResponse createErrorResponse(String code, String type, String message) {
         return ErrorResponse.builder()
@@ -283,15 +288,6 @@ public abstract class BaseAdapter implements ServiceCapability {
             ServerHttpRequest httpRequest) {
         String clientIp = IpUtils.getClientIp(httpRequest);
         return registry.selectInstance(serviceType, modelName, clientIp);
-    }
-
-    /**
-     * 记录调用完成
-     */
-    protected void recordCallComplete(
-            ModelServiceRegistry.ServiceType serviceType,
-            ModelRouterProperties.ModelInstance instance) {
-        registry.recordCallComplete(serviceType, instance);
     }
 
     /**

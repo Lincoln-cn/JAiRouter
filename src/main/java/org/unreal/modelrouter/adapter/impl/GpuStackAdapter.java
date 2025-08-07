@@ -30,12 +30,12 @@ public class GpuStackAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String getAdapterType() {
+    public String getAdapterType() {
         return "gpustack";
     }
 
     @Override
-    protected Object transformRequest(Object request, String adapterType) {
+    public Object transformRequest(Object request, String adapterType) {
         if (request instanceof ChatDTO.Request) {
             return transformChatRequest((ChatDTO.Request) request);
         } else if (request instanceof EmbeddingDTO.Request) {

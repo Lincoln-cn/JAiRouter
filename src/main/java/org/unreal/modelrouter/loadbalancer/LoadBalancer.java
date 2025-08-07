@@ -37,5 +37,11 @@ public interface LoadBalancer {
         // 默认空实现
     }
 
+    /**
+     * 记录实例调用失败
+     * @param instance 调用失败的实例
+     */
+    default void recordCallFailure(ModelRouterProperties.ModelInstance instance) {}
+
 
 }
