@@ -11,6 +11,8 @@ import org.unreal.modelrouter.loadbalancer.impl.IpHashLoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.LeastConnectionsLoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.RandomLoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.RoundRobinLoadBalancer;
+import org.unreal.modelrouter.ratelimit.RateLimitContext;
+import org.unreal.modelrouter.ratelimit.RateLimitManager;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,12 +33,14 @@ public class ModelServiceRegistry {
     private final ModelRouterProperties.LoadBalanceConfig globalLoadBalanceConfig;
     private final String globalAdapter;
     private final ServerChecker serverChecker;
+    private final RateLimitManager rateLimitManager;
 
-    public ModelServiceRegistry(ModelRouterProperties properties, ServerChecker serverChecker) {
+    public ModelServiceRegistry(ModelRouterProperties properties, ServerChecker serverChecker,RateLimitManager rateLimitManager) {
         this.webClientCache = new ConcurrentHashMap<>();
         this.serverChecker = serverChecker;
+        this.rateLimitManager = rateLimitManager;
 
-        // ✅ 使用全局配置
+        // 使用全局配置
         this.globalLoadBalanceConfig = Optional.ofNullable(properties.getLoadBalance())
                 .orElse(createDefaultLoadBalanceConfig());
         this.globalAdapter = Optional.ofNullable(properties.getAdapter()).orElse("normal");
@@ -53,7 +57,7 @@ public class ModelServiceRegistry {
             String serviceKey = serviceType.name().toLowerCase().replace("_", "-");
             ModelRouterProperties.ServiceConfig serviceConfig = services.get(serviceKey);
 
-            // ✅ 使用服务级配置，没有则用全局
+            // 使用服务级配置，没有则用全局
             ModelRouterProperties.LoadBalanceConfig lbConfig = Optional.ofNullable(serviceConfig)
                     .map(ModelRouterProperties.ServiceConfig::getLoadBalance)
                     .orElse(globalLoadBalanceConfig);
@@ -118,6 +122,13 @@ public class ModelServiceRegistry {
         }
 
         LoadBalancer loadBalancer = loadBalancers.get(serviceType);
+        // 检查限流
+        if (!rateLimitManager.tryAcquire(new RateLimitContext(serviceType, modelName, clientIp, 1))) {
+            throw new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Rate limit exceeded for model '" + modelName + "' in service type '" + serviceType + "'");
+        }
+
         ModelRouterProperties.ModelInstance selectedInstance = loadBalancer.selectInstance(healthyInstances, clientIp);
 
         int attempts = 0;
