@@ -7,6 +7,9 @@ JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关
 ## Java Version
 JDK version >= 17
 
+## DeepWiki
+https://deepwiki.com/Lincoln-cn/JAiRouter
+
 ## 功能特性
 
 - **统一 API 网关**：提供统一的 API 接入点，支持 OpenAI 兼容的接口格式
