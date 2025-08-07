@@ -93,12 +93,34 @@ model:
     hash-algorithm: "md5" # IP Hash 策略的哈希算法
   # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
   adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
+  # 全局限流配置
+  rate-limit:
+    enabled: true
+    algorithm: "token-bucket"
+    capacity: 1000
+    rate: 100
+    scope: "service"
+
+  # 全局熔断配置
+  circuit-breaker:
+    enabled: true
+    failureThreshold: 5
+    timeout : 60000
+    successThreshold: 2
+
   services:
     # 聊天服务配置
     chat:
       load-balance:
         type: least-connections
       adapter: gpustack # 使用GPUStack适配器
+      # 服务级别限流配置
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 100
+        rate: 10
+        scope: "service"
       instances:
         - name: "qwen3:1.7B"
           base-url: "http://172.16.30.6:9090"
@@ -108,6 +130,13 @@ model:
           base-url: "http://172.16.30.7:9090"
           path: "/v1/chat/completions"
           weight: 1
+          # 实例级别限流配置
+          rate-limit:
+            enabled: true
+            algorithm: "token-bucket"
+            capacity: 50
+            rate: 5
+            scope: "instance"
 
     # Embedding 服务配置
     embedding:
@@ -172,12 +201,12 @@ model:
 
     imgGen:
       load-balance:
-          type: round-robin
+        type: round-robin
       instances:
-          - name: "stable-diffusion-2-1"
-            base-url: "http://172.16.30.25:9090"
-            path: "/v1/images/generations"
-            weight: 1
+        - name: "stable-diffusion-2-1"
+          base-url: "http://172.16.30.25:9090"
+          path: "/v1/images/generations"
+          weight: 1
 
     imgEdit:
       load-balance:
