@@ -324,6 +324,6 @@ java -jar target/model-router-*.jar
 
 ## Dependencies
 
-- Spring Boot 2.x
+- Spring Boot 3.5.x
 - Spring WebFlux
 - Reactor Core
