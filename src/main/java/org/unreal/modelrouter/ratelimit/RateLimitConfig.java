@@ -1,42 +1,79 @@
-// src/main/java/org/unreal/modelrouter/ratelimit/RateLimitConfig.java
 package org.unreal.modelrouter.ratelimit;
 
 /**
- * 限流配置类
+ * 简化的限流配置类
+ * 移除了冗余的from方法，简化构造和使用
  */
 public class RateLimitConfig {
-    private boolean enabled = false;  // 是否启用
-    private String algorithm;         // 算法类型: token-bucket, leaky-bucket, sliding-window等
-    private long capacity;            // 容量
-    private long rate;                // 速率
-    private String scope;             // 作用域: service, instance, client-ip等
-    private String key;               // 限流键值（可选）
+    private boolean enabled = true;
+    private String algorithm;
+    private long capacity;
+    private long rate;
+    private String scope;
+    private String key;
 
-    // 默认构造函数
-    public RateLimitConfig() {}
+    /**
+     * 默认构造函数
+     */
+    public RateLimitConfig() {
+        this.enabled = false;
+    }
 
-    // 构造函数
+    /**
+     * 完整构造函数
+     */
     public RateLimitConfig(String algorithm, long capacity, long rate, String scope) {
+        this.enabled = true;
         this.algorithm = algorithm;
         this.capacity = capacity;
         this.rate = rate;
         this.scope = scope;
     }
 
-    // 从 ModelRouterProperties.RateLimitConfig 转换
-    public static RateLimitConfig from(org.unreal.modelrouter.config.ModelRouterProperties.RateLimitConfig config) {
-        if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
-            return null;
+    /**
+     * 建造者模式构造
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private String algorithm = "token-bucket";
+        private long capacity = 100L;
+        private long rate = 10L;
+        private String scope = "service";
+        private String key;
+
+        public Builder algorithm(String algorithm) {
+            this.algorithm = algorithm;
+            return this;
         }
 
-        RateLimitConfig rateLimitConfig = new RateLimitConfig();
-        rateLimitConfig.enabled = true;
-        rateLimitConfig.algorithm = config.getAlgorithm();
-        rateLimitConfig.capacity = config.getCapacity() != null ? config.getCapacity() : 100L;
-        rateLimitConfig.rate = config.getRate() != null ? config.getRate() : 10L;
-        rateLimitConfig.scope = config.getScope();
-        rateLimitConfig.key = config.getKey();
-        return rateLimitConfig;
+        public Builder capacity(long capacity) {
+            this.capacity = capacity;
+            return this;
+        }
+
+        public Builder rate(long rate) {
+            this.rate = rate;
+            return this;
+        }
+
+        public Builder scope(String scope) {
+            this.scope = scope;
+            return this;
+        }
+
+        public Builder key(String key) {
+            this.key = key;
+            return this;
+        }
+
+        public RateLimitConfig build() {
+            RateLimitConfig config = new RateLimitConfig(algorithm, capacity, rate, scope);
+            config.key = this.key;
+            return config;
+        }
     }
 
     // Getters and Setters
@@ -86,5 +123,58 @@ public class RateLimitConfig {
 
     public void setKey(String key) {
         this.key = key;
+    }
+
+    /**
+     * 验证配置的有效性
+     */
+    public boolean isValid() {
+        return enabled &&
+                algorithm != null &&
+                capacity > 0 &&
+                rate > 0 &&
+                scope != null;
+    }
+
+    /**
+     * 复制配置
+     */
+    public RateLimitConfig copy() {
+        RateLimitConfig copy = new RateLimitConfig(algorithm, capacity, rate, scope);
+        copy.enabled = this.enabled;
+        copy.key = this.key;
+        return copy;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("RateLimitConfig{enabled=%s, algorithm='%s', capacity=%d, rate=%d, scope='%s', key='%s'}",
+                enabled, algorithm, capacity, rate, scope, key);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RateLimitConfig that = (RateLimitConfig) o;
+
+        if (enabled != that.enabled) return false;
+        if (capacity != that.capacity) return false;
+        if (rate != that.rate) return false;
+        if (!java.util.Objects.equals(algorithm, that.algorithm)) return false;
+        if (!java.util.Objects.equals(scope, that.scope)) return false;
+        return java.util.Objects.equals(key, that.key);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (algorithm != null ? algorithm.hashCode() : 0);
+        result = 31 * result + (int) (capacity ^ (capacity >>> 32));
+        result = 31 * result + (int) (rate ^ (rate >>> 32));
+        result = 31 * result + (scope != null ? scope.hashCode() : 0);
+        result = 31 * result + (key != null ? key.hashCode() : 0);
+        return result;
     }
 }
