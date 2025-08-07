@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.checker.ServerChecker;
+import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
+import org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.ratelimit.RateLimitContext;
@@ -24,7 +26,7 @@ public class ModelServiceRegistry {
     private static final Logger logger = LoggerFactory.getLogger(ModelServiceRegistry.class);
 
     public enum ServiceType {
-        chat, embedding, rerank, tts, stt , imgGen ,imgEdit
+        chat, embedding, rerank, tts, stt, imgGen, imgEdit
     }
 
     private final Map<ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry;
@@ -34,15 +36,21 @@ public class ModelServiceRegistry {
     private final String globalAdapter;
     private final ServerChecker serverChecker;
     private final RateLimitManager rateLimitManager;
+    private final CircuitBreakerManager circuitBreakerManager;
 
     public ModelServiceRegistry(ModelRouterProperties properties,
                                 ServerChecker serverChecker,
                                 RateLimitManager rateLimitManager,
-                                LoadBalancerManager loadBalancerManager) {
+                                LoadBalancerManager loadBalancerManager,
+                                CircuitBreakerManager circuitBreakerManager) {
         this.webClientCache = new ConcurrentHashMap<>();
         this.serverChecker = serverChecker;
         this.rateLimitManager = rateLimitManager;
         this.loadBalancerManager = loadBalancerManager;
+        this.circuitBreakerManager = circuitBreakerManager;
+
+        // 初始化熔断器管理器
+        this.circuitBreakerManager.initialize(properties);
 
         this.globalAdapter = Optional.ofNullable(properties.getAdapter()).orElse("normal");
 
@@ -70,16 +78,6 @@ public class ModelServiceRegistry {
         }
     }
 
-
-    public WebClient getClient(ServiceType serviceType, String modelName, String clientIp) {
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
-        return getWebClient(selectedInstance);
-    }
-
-    public WebClient getClient(ServiceType serviceType, String modelName) {
-        return getClient(serviceType, modelName, null);
-    }
-
     public ModelRouterProperties.ModelInstance selectInstance(ServiceType serviceType,
                                                               String modelName,
                                                               String clientIp) {
@@ -101,6 +99,17 @@ public class ModelServiceRegistry {
                     "No healthy instances found for model '" + modelName + "' in service type '" + serviceType + "'");
         }
 
+        // 熔断器检查 - 过滤掉处于熔断状态的实例
+        List<ModelRouterProperties.ModelInstance> availableInstances = healthyInstances.stream()
+                .filter(instance -> circuitBreakerManager.canExecute(instance.getInstanceId(), instance.getBaseUrl()))
+                .collect(Collectors.toList());
+
+        if (availableInstances.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No available instances (all in circuit breaker state) for model '" + modelName + "' in service type '" + serviceType + "'");
+        }
+
         // 1. 服务级限流检查
         RateLimitContext serviceContext = new RateLimitContext(serviceType, modelName, clientIp, 1);
         if (!rateLimitManager.tryAcquire(serviceContext)) {
@@ -113,7 +122,7 @@ public class ModelServiceRegistry {
 
         // 尝试选择实例，包含实例级限流检查
         ModelRouterProperties.ModelInstance selectedInstance = null;
-        List<ModelRouterProperties.ModelInstance> candidateInstances = new ArrayList<>(healthyInstances);
+        List<ModelRouterProperties.ModelInstance> candidateInstances = new ArrayList<>(availableInstances);
         int maxAttempts = Math.min(candidateInstances.size(), 3); // 最多尝试3次或所有健康实例
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
@@ -126,6 +135,14 @@ public class ModelServiceRegistry {
 
             // 健康检查
             if (!serverChecker.isInstanceHealthy(serviceType.name(), candidate)) {
+                candidateInstances.remove(candidate);
+                continue;
+            }
+
+            // 熔断器检查
+            if (!circuitBreakerManager.canExecute(candidate.getInstanceId(), candidate.getBaseUrl())) {
+                logger.warn("Instance {} is in circuit breaker state, trying next instance",
+                        candidate.getBaseUrl());
                 candidateInstances.remove(candidate);
                 continue;
             }
@@ -155,11 +172,20 @@ public class ModelServiceRegistry {
         if (selectedInstance == null) {
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "No available instances found for model '" + modelName + "' after rate limit and health checks");
+                    "No available instances found for model '" + modelName + "' after rate limit, health and circuit breaker checks");
         }
 
         loadBalancer.recordCall(selectedInstance);
         return selectedInstance;
+    }
+
+    public WebClient getClient(ServiceType serviceType, String modelName, String clientIp) {
+        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
+        return getWebClient(selectedInstance);
+    }
+
+    public WebClient getClient(ServiceType serviceType, String modelName) {
+        return getClient(serviceType, modelName, null);
     }
 
     public String getModelPath(ServiceType serviceType, String modelName) {
@@ -177,6 +203,34 @@ public class ModelServiceRegistry {
         if (loadBalancer != null) {
             loadBalancer.recordCallComplete(instance);
         }
+        // 记录熔断器成功
+        circuitBreakerManager.recordSuccess(instance.getInstanceId(), instance.getBaseUrl());
+    }
+
+    /**
+     * 获取实例的熔断器状态
+     *
+     * @param instance 实例
+     * @return 熔断器状态
+     */
+    public CircuitBreaker.State getInstanceCircuitBreakerState(ModelRouterProperties.ModelInstance instance) {
+        return circuitBreakerManager.getState(instance.getInstanceId(), instance.getBaseUrl());
+    }
+
+    /**
+     * 记录调用失败
+     *
+     * @param serviceType 服务类型
+     * @param instance    实例
+     */
+    public void recordCallFailure(ServiceType serviceType, ModelRouterProperties.ModelInstance instance) {
+        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
+        if (loadBalancer != null) {
+            loadBalancer.recordCallFailure(instance);
+        }
+
+        // 记录熔断器失败
+        circuitBreakerManager.recordFailure(instance.getInstanceId(), instance.getBaseUrl());
     }
 
     public String getServiceAdapter(ServiceType serviceType) {
