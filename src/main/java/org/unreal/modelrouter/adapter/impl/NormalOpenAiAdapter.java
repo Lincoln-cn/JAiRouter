@@ -40,6 +40,10 @@ public class NormalOpenAiAdapter extends BaseAdapter {
 
     private Object transformImageEditRequestRequest(ImageEditDTO.Request imageEditRequest) {
 
+        if (imageEditRequest.model() == null || imageEditRequest.model().isEmpty()) {
+            throw new IllegalArgumentException("model is required");
+        }
+
         if (imageEditRequest.image() == null || imageEditRequest.image().isEmpty()) {
             throw new IllegalArgumentException("At least one image file is required");
         }
