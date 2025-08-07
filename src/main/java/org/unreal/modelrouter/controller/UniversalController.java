@@ -128,7 +128,7 @@ public class UniversalController {
         );
     }
 
-    @PostMapping("/image/edits")
+    @PostMapping("/images/edits")
     public Mono<? extends ResponseEntity<?>> imageEdits(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             ImageEditDTO.Request request,

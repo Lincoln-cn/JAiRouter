@@ -39,6 +39,15 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     private Object transformImageEditRequestRequest(ImageEditDTO.Request imageEditRequest) {
+
+        if (imageEditRequest.image() == null || imageEditRequest.image().isEmpty()) {
+            throw new IllegalArgumentException("At least one image file is required");
+        }
+
+        if (imageEditRequest.prompt() == null || imageEditRequest.prompt().trim().isEmpty()) {
+            throw new IllegalArgumentException("Prompt is required");
+        }
+
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         
         // 添加 model 字段
@@ -113,14 +122,33 @@ public class NormalOpenAiAdapter extends BaseAdapter {
 
         // 处理 image 文件列表
         if (imageEditRequest.image() != null && !imageEditRequest.image().isEmpty()) {
-            for (int i = 0; i < imageEditRequest.image().size(); i++) {
-                builder.asyncPart("image", imageEditRequest.image().get(i).content(), DataBuffer.class)
-                        .filename(imageEditRequest.image().get(i).filename())
-                        .contentType(MediaType.IMAGE_PNG); // 假设是PNG格式，可根据实际调整
+            for (FilePart filePart : imageEditRequest.image()) {
+                // 动态检测文件类型
+                MediaType contentType = determineImageContentType(filePart.filename());
+
+                builder.asyncPart("image", filePart.content(), DataBuffer.class)
+                        .filename(filePart.filename())
+                        .contentType(contentType);
             }
         }
 
         return builder.build();
+    }
+
+    private MediaType determineImageContentType(String filename) {
+        if (filename == null) return MediaType.IMAGE_PNG;
+
+        String lowercaseFilename = filename.toLowerCase();
+        if (lowercaseFilename.endsWith(".jpg") || lowercaseFilename.endsWith(".jpeg")) {
+            return MediaType.IMAGE_JPEG;
+        } else if (lowercaseFilename.endsWith(".png")) {
+            return MediaType.IMAGE_PNG;
+        } else if (lowercaseFilename.endsWith(".gif")) {
+            return MediaType.IMAGE_GIF;
+        } else if (lowercaseFilename.endsWith(".webp")) {
+            return MediaType.parseMediaType("image/webp");
+        }
+        return MediaType.IMAGE_PNG; // 默认
     }
 
     /**
