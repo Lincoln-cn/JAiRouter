@@ -150,6 +150,11 @@ public class ModelRouterProperties {
         public void setRateLimit(RateLimitConfig rateLimit) {
             this.rateLimit = rateLimit;
         }
+
+        // 获取实例唯一标识
+        public String getInstanceId() {
+            return name + "@" + baseUrl;
+        }
     }
 
     // 限流配置类

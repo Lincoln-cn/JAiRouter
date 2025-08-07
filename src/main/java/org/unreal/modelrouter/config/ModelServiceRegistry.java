@@ -1,16 +1,15 @@
 package org.unreal.modelrouter.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.checker.ServerChecker;
-import org.unreal.modelrouter.loadbalancer.*;
-import org.unreal.modelrouter.loadbalancer.impl.IpHashLoadBalancer;
-import org.unreal.modelrouter.loadbalancer.impl.LeastConnectionsLoadBalancer;
-import org.unreal.modelrouter.loadbalancer.impl.RandomLoadBalancer;
-import org.unreal.modelrouter.loadbalancer.impl.RoundRobinLoadBalancer;
+import org.unreal.modelrouter.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.ratelimit.RateLimitManager;
 
@@ -22,45 +21,41 @@ import java.util.stream.Collectors;
 @EnableConfigurationProperties(ModelRouterProperties.class)
 public class ModelServiceRegistry {
 
+    private static final Logger logger = LoggerFactory.getLogger(ModelServiceRegistry.class);
+
     public enum ServiceType {
         chat, embedding, rerank, tts, stt , imgGen ,imgEdit
     }
 
     private final Map<ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry;
-    private final Map<ServiceType, LoadBalancer> loadBalancers;
+    private final LoadBalancerManager loadBalancerManager;
     private final Map<ServiceType, String> serviceAdapters;
     private final Map<String, WebClient> webClientCache;
-    private final ModelRouterProperties.LoadBalanceConfig globalLoadBalanceConfig;
     private final String globalAdapter;
     private final ServerChecker serverChecker;
     private final RateLimitManager rateLimitManager;
 
-    public ModelServiceRegistry(ModelRouterProperties properties, ServerChecker serverChecker,RateLimitManager rateLimitManager) {
+    public ModelServiceRegistry(ModelRouterProperties properties,
+                                ServerChecker serverChecker,
+                                RateLimitManager rateLimitManager,
+                                LoadBalancerManager loadBalancerManager) {
         this.webClientCache = new ConcurrentHashMap<>();
         this.serverChecker = serverChecker;
         this.rateLimitManager = rateLimitManager;
+        this.loadBalancerManager = loadBalancerManager;
 
-        // 使用全局配置
-        this.globalLoadBalanceConfig = Optional.ofNullable(properties.getLoadBalance())
-                .orElse(createDefaultLoadBalanceConfig());
         this.globalAdapter = Optional.ofNullable(properties.getAdapter()).orElse("normal");
 
         Map<String, ModelRouterProperties.ServiceConfig> services = Optional.ofNullable(properties.getServices())
                 .orElse(Map.of());
 
-        // 构建实例注册表、负载均衡器、适配器映射
+        // 构建实例注册表、适配器映射
         this.instanceRegistry = new EnumMap<>(ServiceType.class);
-        this.loadBalancers = new EnumMap<>(ServiceType.class);
         this.serviceAdapters = new EnumMap<>(ServiceType.class);
 
         for (ServiceType serviceType : ServiceType.values()) {
             String serviceKey = serviceType.name().toLowerCase().replace("_", "-");
             ModelRouterProperties.ServiceConfig serviceConfig = services.get(serviceKey);
-
-            // 使用服务级配置，没有则用全局
-            ModelRouterProperties.LoadBalanceConfig lbConfig = Optional.ofNullable(serviceConfig)
-                    .map(ModelRouterProperties.ServiceConfig::getLoadBalance)
-                    .orElse(globalLoadBalanceConfig);
 
             String adapter = Optional.ofNullable(serviceConfig)
                     .map(ModelRouterProperties.ServiceConfig::getAdapter)
@@ -71,28 +66,10 @@ public class ModelServiceRegistry {
                     .orElse(List.of());
 
             this.instanceRegistry.put(serviceType, new ArrayList<>(instances));
-            this.loadBalancers.put(serviceType, createLoadBalancer(lbConfig));
             this.serviceAdapters.put(serviceType, adapter);
         }
     }
 
-    private ModelRouterProperties.LoadBalanceConfig createDefaultLoadBalanceConfig() {
-        ModelRouterProperties.LoadBalanceConfig config = new ModelRouterProperties.LoadBalanceConfig();
-        config.setType("random");
-        config.setHashAlgorithm("md5");
-        return config;
-    }
-
-    private LoadBalancer createLoadBalancer(ModelRouterProperties.LoadBalanceConfig config) {
-        String type = config.getType().toLowerCase();
-        return switch (type) {
-            case "random" -> new RandomLoadBalancer();
-            case "round-robin" -> new RoundRobinLoadBalancer();
-            case "least-connections" -> new LeastConnectionsLoadBalancer();
-            case "ip-hash" -> new IpHashLoadBalancer(config.getHashAlgorithm());
-            default -> throw new IllegalArgumentException("Unsupported load balance type: " + type);
-        };
-    }
 
     public WebClient getClient(ServiceType serviceType, String modelName, String clientIp) {
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
@@ -103,7 +80,9 @@ public class ModelServiceRegistry {
         return getClient(serviceType, modelName, null);
     }
 
-    public ModelRouterProperties.ModelInstance selectInstance(ServiceType serviceType, String modelName, String clientIp) {
+    public ModelRouterProperties.ModelInstance selectInstance(ServiceType serviceType,
+                                                              String modelName,
+                                                              String clientIp) {
         List<ModelRouterProperties.ModelInstance> allInstances = getInstancesByServiceAndModel(serviceType, modelName);
         if (allInstances.isEmpty()) {
             throw new ResponseStatusException(
@@ -111,6 +90,7 @@ public class ModelServiceRegistry {
                     "No instances found for model '" + modelName + "' in service type '" + serviceType + "'");
         }
 
+        // 健康检查
         List<ModelRouterProperties.ModelInstance> healthyInstances = allInstances.stream()
                 .filter(instance -> serverChecker.isInstanceHealthy(serviceType.name(), instance))
                 .collect(Collectors.toList());
@@ -121,29 +101,61 @@ public class ModelServiceRegistry {
                     "No healthy instances found for model '" + modelName + "' in service type '" + serviceType + "'");
         }
 
-        LoadBalancer loadBalancer = loadBalancers.get(serviceType);
-        // 检查限流
-        if (!rateLimitManager.tryAcquire(new RateLimitContext(serviceType, modelName, clientIp, 1))) {
+        // 1. 服务级限流检查
+        RateLimitContext serviceContext = new RateLimitContext(serviceType, modelName, clientIp, 1);
+        if (!rateLimitManager.tryAcquire(serviceContext)) {
             throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS,
-                    "Rate limit exceeded for model '" + modelName + "' in service type '" + serviceType + "'");
+                    "Service rate limit exceeded for model '" + modelName + "' in service type '" + serviceType + "'");
         }
 
-        ModelRouterProperties.ModelInstance selectedInstance = loadBalancer.selectInstance(healthyInstances, clientIp);
+        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
 
-        int attempts = 0;
-        while (attempts < 3 && !serverChecker.isInstanceHealthy(serviceType.name(), selectedInstance)) {
-            ModelRouterProperties.ModelInstance finalSelectedInstance = selectedInstance;
-            healthyInstances = healthyInstances.stream()
-                    .filter(instance -> !instance.equals(finalSelectedInstance))
-                    .collect(Collectors.toList());
-            if (healthyInstances.isEmpty()) {
-                throw new ResponseStatusException(
-                        HttpStatus.SERVICE_UNAVAILABLE,
-                        "No healthy instances available for model '" + modelName + "' in service type '" + serviceType + "'");
+        // 尝试选择实例，包含实例级限流检查
+        ModelRouterProperties.ModelInstance selectedInstance = null;
+        List<ModelRouterProperties.ModelInstance> candidateInstances = new ArrayList<>(healthyInstances);
+        int maxAttempts = Math.min(candidateInstances.size(), 3); // 最多尝试3次或所有健康实例
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            if (candidateInstances.isEmpty()) {
+                break;
             }
-            selectedInstance = loadBalancer.selectInstance(healthyInstances, clientIp);
-            attempts++;
+
+            // 负载均衡选择实例
+            ModelRouterProperties.ModelInstance candidate = loadBalancer.selectInstance(candidateInstances, clientIp);
+
+            // 健康检查
+            if (!serverChecker.isInstanceHealthy(serviceType.name(), candidate)) {
+                candidateInstances.remove(candidate);
+                continue;
+            }
+
+            // 2. 实例级限流检查
+            RateLimitContext instanceContext = new RateLimitContext(
+                    serviceType,
+                    modelName,
+                    clientIp,
+                    1,
+                    candidate.getInstanceId(),
+                    candidate.getBaseUrl()
+            );
+
+            if (!rateLimitManager.tryAcquireInstance(instanceContext)) {
+                logger.warn("Instance rate limit exceeded for instance: {}, trying next instance",
+                        candidate.getInstanceId());
+                candidateInstances.remove(candidate);
+                continue;
+            }
+
+            // 找到可用实例
+            selectedInstance = candidate;
+            break;
+        }
+
+        if (selectedInstance == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "No available instances found for model '" + modelName + "' after rate limit and health checks");
         }
 
         loadBalancer.recordCall(selectedInstance);
@@ -161,7 +173,7 @@ public class ModelServiceRegistry {
     }
 
     public void recordCallComplete(ServiceType serviceType, ModelRouterProperties.ModelInstance instance) {
-        LoadBalancer loadBalancer = loadBalancers.get(serviceType);
+        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
         if (loadBalancer != null) {
             loadBalancer.recordCallComplete(instance);
         }
@@ -201,7 +213,7 @@ public class ModelServiceRegistry {
     }
 
     public String getLoadBalanceStrategy(ServiceType serviceType) {
-        LoadBalancer loadBalancer = loadBalancers.get(serviceType);
+        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
         return loadBalancer != null ? loadBalancer.getClass().getSimpleName() : "Unknown";
     }
 

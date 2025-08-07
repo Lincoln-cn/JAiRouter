@@ -2,23 +2,36 @@ package org.unreal.modelrouter.ratelimit;
 
 import org.unreal.modelrouter.config.ModelServiceRegistry;
 
-/**
- * 限流上下文，包含限流所需的各种信息
- */
+
 public class RateLimitContext {
     private final ModelServiceRegistry.ServiceType serviceType;
     private final String modelName;
     private final String clientIp;
     private final int tokens;
+    private final String instanceId;
+    private final String instanceUrl;
 
+    // 带实例信息的构造函数
     public RateLimitContext(ModelServiceRegistry.ServiceType serviceType,
                             String modelName,
                             String clientIp,
-                            int tokens) {
+                            int tokens,
+                            String instanceId,
+                            String instanceUrl) {
         this.serviceType = serviceType;
         this.modelName = modelName;
         this.clientIp = clientIp;
         this.tokens = tokens;
+        this.instanceId = instanceId;
+        this.instanceUrl = instanceUrl;
+    }
+
+    // 兼容旧版本的构造函数
+    public RateLimitContext(ModelServiceRegistry.ServiceType serviceType,
+                            String modelName,
+                            String clientIp,
+                            int tokens) {
+        this(serviceType, modelName, clientIp, tokens, null, null);
     }
 
     // Getters
@@ -36,5 +49,17 @@ public class RateLimitContext {
 
     public int getTokens() {
         return tokens;
+    }
+
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public String getInstanceUrl() {
+        return instanceUrl;
+    }
+
+    public boolean hasInstanceInfo() {
+        return instanceId != null && instanceUrl != null;
     }
 }
