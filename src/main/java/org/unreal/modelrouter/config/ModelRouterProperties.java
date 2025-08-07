@@ -240,6 +240,19 @@ public class ModelRouterProperties {
         public void setKey(String key) {
             this.key = key;
         }
+
+        public org.unreal.modelrouter.ratelimit.RateLimitConfig covertTo() {
+            if (!Boolean.TRUE.equals(this.enabled)) {
+                return new org.unreal.modelrouter.ratelimit.RateLimitConfig();
+            }
+            return org.unreal.modelrouter.ratelimit.RateLimitConfig.builder()
+                    .algorithm(this.algorithm)
+                    .capacity(this.capacity)
+                    .rate(this.rate)
+                    .scope(this.scope)
+                    .key(this.key)
+                    .build();
+        }
     }
 
     // 熔断器配置类
