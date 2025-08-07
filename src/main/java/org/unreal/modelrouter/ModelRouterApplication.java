@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableAsync
 @EnableScheduling
-@ConfigurationPropertiesScan
+@ConfigurationPropertiesScan("org.unreal.modelrouter.config")
 public class ModelRouterApplication {
 
     public static void main(String[] args) {

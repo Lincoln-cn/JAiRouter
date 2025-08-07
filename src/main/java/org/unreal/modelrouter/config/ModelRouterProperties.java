@@ -7,8 +7,27 @@ import java.util.Map;
 
 @ConfigurationProperties(prefix = "model")
 public class ModelRouterProperties {
-
+    private LoadBalanceConfig loadBalance = new LoadBalanceConfig();
+    private String adapter = "normal";
     private Map<String, ServiceConfig> services;
+    private RateLimitConfig rateLimit = new RateLimitConfig(); // 全局限流配置
+    private CircuitBreakerConfig circuitBreaker = new CircuitBreakerConfig(); // 全局熔断器配置
+
+    public LoadBalanceConfig getLoadBalance() {
+        return loadBalance;
+    }
+
+    public void setLoadBalance(LoadBalanceConfig loadBalance) {
+        this.loadBalance = loadBalance;
+    }
+
+    public String getAdapter() {
+        return adapter;
+    }
+
+    public void setAdapter(String adapter) {
+        this.adapter = adapter;
+    }
 
     public Map<String, ServiceConfig> getServices() {
         return services;
@@ -18,9 +37,28 @@ public class ModelRouterProperties {
         this.services = services;
     }
 
+    public RateLimitConfig getRateLimit() {
+        return rateLimit;
+    }
+
+    public void setRateLimit(RateLimitConfig rateLimit) {
+        this.rateLimit = rateLimit;
+    }
+
+    public CircuitBreakerConfig getCircuitBreaker() {
+        return circuitBreaker;
+    }
+
+    public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+        this.circuitBreaker = circuitBreaker;
+    }
+
     public static class ServiceConfig {
         private LoadBalanceConfig loadBalance;
         private List<ModelInstance> instances;
+        private String adapter;
+        private RateLimitConfig rateLimit; // 服务级别限流配置
+        private CircuitBreakerConfig circuitBreaker; // 服务级别熔断器配置
 
         public LoadBalanceConfig getLoadBalance() {
             return loadBalance;
@@ -37,11 +75,35 @@ public class ModelRouterProperties {
         public void setInstances(List<ModelInstance> instances) {
             this.instances = instances;
         }
+
+        public String getAdapter() {
+            return adapter;
+        }
+
+        public void setAdapter(String adapter) {
+            this.adapter = adapter;
+        }
+
+        public RateLimitConfig getRateLimit() {
+            return rateLimit;
+        }
+
+        public void setRateLimit(RateLimitConfig rateLimit) {
+            this.rateLimit = rateLimit;
+        }
+
+        public CircuitBreakerConfig getCircuitBreaker() {
+            return circuitBreaker;
+        }
+
+        public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+            this.circuitBreaker = circuitBreaker;
+        }
     }
 
     public static class LoadBalanceConfig {
-        private String type = "random"; // 默认随机策略
-        private String hashAlgorithm = "md5"; // IP Hash 使用的哈希算法
+        private String type = "random";
+        private String hashAlgorithm = "md5"; // 注意这里要用驼峰命名
 
         public String getType() {
             return type;
@@ -62,25 +124,11 @@ public class ModelRouterProperties {
 
     public static class ModelInstance {
         private String name;
-        private String baseUrl;
+        private String baseUrl; // 注意驼峰命名
         private String path;
-        private int weight = 1; // 权重，默认为1
-
-        public ModelInstance() {
-        }
-
-        public ModelInstance(String name, String baseUrl, String path) {
-            this.name = name;
-            this.baseUrl = baseUrl;
-            this.path = path;
-        }
-
-        public ModelInstance(String name, String baseUrl, String path, int weight) {
-            this.name = name;
-            this.baseUrl = baseUrl;
-            this.path = path;
-            this.weight = weight;
-        }
+        private int weight = 1;
+        private RateLimitConfig rateLimit; // 实例级别限流配置
+        private CircuitBreakerConfig circuitBreaker; // 实例级别熔断器配置
 
         public String getName() {
             return name;
@@ -114,14 +162,136 @@ public class ModelRouterProperties {
             this.weight = weight;
         }
 
-        @Override
-        public String toString() {
-            return "ModelInstance{" +
-                    "name='" + name + '\'' +
-                    ", baseUrl='" + baseUrl + '\'' +
-                    ", path='" + path + '\'' +
-                    ", weight=" + weight +
-                    '}';
+        public RateLimitConfig getRateLimit() {
+            return rateLimit;
+        }
+
+        public void setRateLimit(RateLimitConfig rateLimit) {
+            this.rateLimit = rateLimit;
+        }
+
+        public CircuitBreakerConfig getCircuitBreaker() {
+            return circuitBreaker;
+        }
+
+        public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+            this.circuitBreaker = circuitBreaker;
+        }
+
+        // 获取实例唯一标识
+        public String getInstanceId() {
+            return name + "@" + baseUrl;
+        }
+    }
+
+    // 限流配置类
+    public static class RateLimitConfig {
+        private Boolean enabled = false;     // 是否启用限流
+        private String algorithm = "token-bucket"; // 算法类型: token-bucket, leaky-bucket, sliding-window等
+        private Long capacity = 100L;        // 容量
+        private Long rate = 10L;             // 速率
+        private String scope = "service";    // 作用域: service, instance, client-ip等
+        private String key;                  // 限流键值（可选）
+
+        public Boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getAlgorithm() {
+            return algorithm;
+        }
+
+        public void setAlgorithm(String algorithm) {
+            this.algorithm = algorithm;
+        }
+
+        public Long getCapacity() {
+            return capacity;
+        }
+
+        public void setCapacity(Long capacity) {
+            this.capacity = capacity;
+        }
+
+        public Long getRate() {
+            return rate;
+        }
+
+        public void setRate(Long rate) {
+            this.rate = rate;
+        }
+
+        public String getScope() {
+            return scope;
+        }
+
+        public void setScope(String scope) {
+            this.scope = scope;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public void setKey(String key) {
+            this.key = key;
+        }
+
+        public org.unreal.modelrouter.ratelimit.RateLimitConfig covertTo() {
+            if (!Boolean.TRUE.equals(this.enabled)) {
+                return new org.unreal.modelrouter.ratelimit.RateLimitConfig();
+            }
+            return org.unreal.modelrouter.ratelimit.RateLimitConfig.builder()
+                    .algorithm(this.algorithm)
+                    .capacity(this.capacity)
+                    .rate(this.rate)
+                    .scope(this.scope)
+                    .key(this.key)
+                    .build();
+        }
+    }
+
+    // 熔断器配置类
+    public static class CircuitBreakerConfig {
+        private Boolean enabled = true;         // 是否启用熔断器
+        private Integer failureThreshold = 5;   // 失败阈值
+        private Long timeout = 60000L;          // 超时时间(毫秒)
+        private Integer successThreshold = 2;   // 成功阈值
+
+        public Boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public Integer getFailureThreshold() {
+            return failureThreshold;
+        }
+
+        public void setFailureThreshold(Integer failureThreshold) {
+            this.failureThreshold = failureThreshold;
+        }
+
+        public Long getTimeout() {
+            return timeout;
+        }
+
+        public void setTimeout(Long timeout) {
+            this.timeout = timeout;
+        }
+
+        public Integer getSuccessThreshold() {
+            return successThreshold;
+        }
+
+        public void setSuccessThreshold(Integer successThreshold) {
+            this.successThreshold = successThreshold;
         }
     }
 }
