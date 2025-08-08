@@ -358,32 +358,6 @@ public class ConfigurationHelper {
     }
 
     /**
-     * 将Map转换为ModelInstance对象
-     *
-     * @param map Map对象
-     * @return 转换后的ModelInstance
-     */
-    public ModelRouterProperties.ModelInstance convertMapToInstance(Map<String, Object> map) {
-        ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
-        instance.setName((String) map.get("name"));
-        instance.setBaseUrl((String) map.get("baseUrl"));
-        instance.setPath((String) map.get("path"));
-        if (map.containsKey("weight")) {
-            instance.setWeight(((Number) map.get("weight")).intValue());
-        } else {
-            instance.setWeight(1);
-        }
-
-        // 设置限流配置
-        setRateLimitFromMap(map, instance);
-
-        // 设置熔断器配置
-        setCircuitBreakerFromMap(map, instance);
-
-        return instance;
-    }
-
-    /**
      * 将ServiceConfig对象转换为Map
      *
      * @param serviceConfig ServiceConfig对象
@@ -421,11 +395,83 @@ public class ConfigurationHelper {
     }
 
     /**
+     * 更新限流配置
+     * @param rateLimit 目标限流配置对象
+     * @param map 配置Map
+     */
+    @SuppressWarnings("unchecked")
+    public void updateRateLimitConfig(ModelRouterProperties.RateLimitConfig rateLimit, Map<String, Object> map) {
+        if (map.containsKey("enabled")) {
+            rateLimit.setEnabled((Boolean) map.get("enabled"));
+        }
+        if (map.containsKey("algorithm")) {
+            rateLimit.setAlgorithm((String) map.get("algorithm"));
+        }
+        if (map.containsKey("capacity")) {
+            rateLimit.setCapacity(((Number) map.get("capacity")).longValue());
+        }
+        if (map.containsKey("rate")) {
+            rateLimit.setRate(((Number) map.get("rate")).longValue());
+        }
+        if (map.containsKey("scope")) {
+            rateLimit.setScope((String) map.get("scope"));
+        }
+        if (map.containsKey("key")) {
+            rateLimit.setKey((String) map.get("key"));
+        }
+        if (map.containsKey("clientIpEnable")) {
+            rateLimit.setClientIpEnable((Boolean) map.get("clientIpEnable"));
+        }
+    }
+
+    /**
+     * 更新熔断器配置
+     * @param circuitBreaker 目标熔断器配置对象
+     * @param map 配置Map
+     */
+    @SuppressWarnings("unchecked")
+    public void updateCircuitBreakerConfig(ModelRouterProperties.CircuitBreakerConfig circuitBreaker, Map<String, Object> map) {
+        if (map.containsKey("enabled")) {
+            circuitBreaker.setEnabled((Boolean) map.get("enabled"));
+        }
+        if (map.containsKey("failureThreshold")) {
+            circuitBreaker.setFailureThreshold((Integer) map.get("failureThreshold"));
+        }
+        if (map.containsKey("timeout")) {
+            circuitBreaker.setTimeout(((Number) map.get("timeout")).longValue());
+        }
+        if (map.containsKey("successThreshold")) {
+            circuitBreaker.setSuccessThreshold((Integer) map.get("successThreshold"));
+        }
+    }
+
+    /**
+     * 更新降级配置
+     * @param fallback 目标降级配置对象
+     * @param map 配置Map
+     */
+    @SuppressWarnings("unchecked")
+    public void updateFallbackConfig(ModelRouterProperties.FallbackConfig fallback, Map<String, Object> map) {
+        if (map.containsKey("enabled")) {
+            fallback.setEnabled((Boolean) map.get("enabled"));
+        }
+        if (map.containsKey("strategy")) {
+            fallback.setStrategy((String) map.get("strategy"));
+        }
+        if (map.containsKey("cacheSize")) {
+            fallback.setCacheSize((Integer) map.get("cacheSize"));
+        }
+        if (map.containsKey("cacheTtl")) {
+            fallback.setCacheTtl(((Number) map.get("cacheTtl")).longValue());
+        }
+    }
+
+    /**
      * 将Map转换为ServiceConfig对象
-     *
      * @param map Map对象
      * @return 转换后的ServiceConfig
      */
+    @SuppressWarnings("unchecked")
     public ModelRouterProperties.ServiceConfig convertMapToServiceConfig(Map<String, Object> map) {
         ModelRouterProperties.ServiceConfig serviceConfig = new ModelRouterProperties.ServiceConfig();
 
@@ -465,6 +511,32 @@ public class ConfigurationHelper {
 
         return serviceConfig;
     }
+
+    /**
+     * 将Map转换为ModelInstance对象
+     * @param map Map对象
+     * @return 转换后的ModelInstance
+     */
+    @SuppressWarnings("unchecked")
+    public ModelRouterProperties.ModelInstance convertMapToInstance(Map<String, Object> map) {
+        ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
+        instance.setName((String) map.get("name"));
+        instance.setBaseUrl((String) map.get("baseUrl"));
+        instance.setPath((String) map.get("path"));
+        if (map.containsKey("weight")) {
+            instance.setWeight(((Number) map.get("weight")).intValue());
+        } else {
+            instance.setWeight(1);
+        }
+
+        // 设置限流配置
+        setRateLimitFromMap(map, instance);
+
+        // 设置熔断器配置
+        setCircuitBreakerFromMap(map, instance);
+
+        return instance;
+    }
     
     // ==================== 共性方法提取 ====================
     
@@ -489,7 +561,7 @@ public class ConfigurationHelper {
      * 从Map中设置限流配置
      */
     private void setRateLimitFromMap(Map<String, Object> sourceMap, ModelRouterProperties.ModelInstance targetInstance) {
-        if (sourceMap.containsKey("rateLimit")) {
+        if (sourceMap.containsKey("rateLimit") && sourceMap.get("rateLimit") != null) {
             Map<String, Object> rateLimitMap = (Map<String, Object>) sourceMap.get("rateLimit");
             ModelRouterProperties.RateLimitConfig rateLimitConfig = new ModelRouterProperties.RateLimitConfig();
             if (rateLimitMap.containsKey("enabled")) {
@@ -521,7 +593,7 @@ public class ConfigurationHelper {
      * 从Map中设置限流配置（用于ServiceConfig）
      */
     private void setRateLimitFromMap(Map<String, Object> sourceMap, ModelRouterProperties.ServiceConfig targetConfig) {
-        if (sourceMap.containsKey("rateLimit")) {
+        if (sourceMap.containsKey("rateLimit") && sourceMap.get("rateLimit") != null) {
             Map<String, Object> rateLimitMap = (Map<String, Object>) sourceMap.get("rateLimit");
             ModelRouterProperties.RateLimitConfig rateLimitConfig = new ModelRouterProperties.RateLimitConfig();
             if (rateLimitMap.containsKey("enabled")) {
@@ -566,8 +638,8 @@ public class ConfigurationHelper {
     /**
      * 从Map中设置熔断器配置
      */
-    private void setCircuitBreakerFromMap(Map<String, Object> sourceMap, ModelRouterProperties.ModelInstance targetInstance) {
-        if (sourceMap.containsKey("circuitBreaker")) {
+    private void setCircuitBreakerFromMap(Map<String, Object> sourceMap, Object target) {
+        if (sourceMap.containsKey("circuitBreaker")&& sourceMap.get("circuitBreaker") != null) {
             Map<String, Object> circuitBreakerMap = (Map<String, Object>) sourceMap.get("circuitBreaker");
             ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig = new ModelRouterProperties.CircuitBreakerConfig();
             if (circuitBreakerMap.containsKey("enabled")) {
@@ -582,30 +654,13 @@ public class ConfigurationHelper {
             if (circuitBreakerMap.containsKey("successThreshold")) {
                 circuitBreakerConfig.setSuccessThreshold(((Number) circuitBreakerMap.get("successThreshold")).intValue());
             }
-            targetInstance.setCircuitBreaker(circuitBreakerConfig);
-        }
-    }
-    
-    /**
-     * 从Map中设置熔断器配置（用于ServiceConfig）
-     */
-    private void setCircuitBreakerFromMap(Map<String, Object> sourceMap, ModelRouterProperties.ServiceConfig targetConfig) {
-        if (sourceMap.containsKey("circuitBreaker")) {
-            Map<String, Object> circuitBreakerMap = (Map<String, Object>) sourceMap.get("circuitBreaker");
-            ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig = new ModelRouterProperties.CircuitBreakerConfig();
-            if (circuitBreakerMap.containsKey("enabled")) {
-                circuitBreakerConfig.setEnabled((Boolean) circuitBreakerMap.get("enabled"));
+            
+            // 根据目标对象类型设置熔断器配置
+            if (target instanceof ModelRouterProperties.ModelInstance) {
+                ((ModelRouterProperties.ModelInstance) target).setCircuitBreaker(circuitBreakerConfig);
+            } else if (target instanceof ModelRouterProperties.ServiceConfig) {
+                ((ModelRouterProperties.ServiceConfig) target).setCircuitBreaker(circuitBreakerConfig);
             }
-            if (circuitBreakerMap.containsKey("failureThreshold")) {
-                circuitBreakerConfig.setFailureThreshold(((Number) circuitBreakerMap.get("failureThreshold")).intValue());
-            }
-            if (circuitBreakerMap.containsKey("timeout")) {
-                circuitBreakerConfig.setTimeout(((Number) circuitBreakerMap.get("timeout")).longValue());
-            }
-            if (circuitBreakerMap.containsKey("successThreshold")) {
-                circuitBreakerConfig.setSuccessThreshold(((Number) circuitBreakerMap.get("successThreshold")).intValue());
-            }
-            targetConfig.setCircuitBreaker(circuitBreakerConfig);
         }
     }
     
@@ -627,7 +682,7 @@ public class ConfigurationHelper {
      * 从Map中设置降级配置
      */
     private void setFallbackFromMap(Map<String, Object> sourceMap, ModelRouterProperties.ServiceConfig targetConfig) {
-        if (sourceMap.containsKey("fallback")) {
+        if (sourceMap.containsKey("fallback")&& sourceMap.get("fallback") != null) {
             Map<String, Object> fallbackMap = (Map<String, Object>) sourceMap.get("fallback");
             ModelRouterProperties.FallbackConfig fallbackConfig = new ModelRouterProperties.FallbackConfig();
             if (fallbackMap.containsKey("enabled")) {

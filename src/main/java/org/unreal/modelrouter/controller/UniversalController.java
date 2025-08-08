@@ -18,17 +18,14 @@ import reactor.core.publisher.Mono;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/v1")
 public class UniversalController {
 
-    private final ModelServiceRegistry modelServiceRegistry;
     private final AdapterRegistry adapterRegistry;
     private final ServiceStateManager serviceStateManager;
 
-    public UniversalController(ModelServiceRegistry modelServiceRegistry,
-                               AdapterRegistry adapterRegistry,
+    public UniversalController(AdapterRegistry adapterRegistry,
                                ServiceStateManager serviceStateManager) {
-        this.modelServiceRegistry = modelServiceRegistry;
         this.adapterRegistry = adapterRegistry;
         this.serviceStateManager = serviceStateManager;
     }
@@ -187,50 +184,8 @@ public class UniversalController {
         }
     }
 
-    /**
-     * 获取服务状态信息
-     */
-    @GetMapping("/status")
-    public ResponseEntity<Map<String, Object>> getStatus() {
-        Map<String, Object> status = new HashMap<>();
-        status.put("timestamp", System.currentTimeMillis());
-        status.put("status", "running");
-
-        // 获取服务状态
-        Map<String, Object> services = new HashMap<>();
-        Set<ModelServiceRegistry.ServiceType> serviceTypes = modelServiceRegistry.getAvailableServiceTypes();
-        for (ModelServiceRegistry.ServiceType type : serviceTypes) {
-            Map<String, Object> serviceInfo = new HashMap<>();
-            serviceInfo.put("healthy", serviceStateManager.isServiceHealthy(type.name()));
-            serviceInfo.put("adapter", modelServiceRegistry.getServiceAdapter(type));
-            serviceInfo.put("loadBalanceStrategy", modelServiceRegistry.getLoadBalanceStrategy(type));
-
-            // 获取实例信息
-            List<Map<String, Object>> instancesInfo = new ArrayList<>();
-            List<ModelRouterProperties.ModelInstance> instances = modelServiceRegistry.getAllInstances().get(type);
-            if (instances != null) {
-                for (ModelRouterProperties.ModelInstance instance : instances) {
-                    Map<String, Object> instanceInfo = new HashMap<>();
-                    instanceInfo.put("name", instance.getName());
-                    instanceInfo.put("baseUrl", instance.getBaseUrl());
-                    instanceInfo.put("path", instance.getPath());
-                    instanceInfo.put("healthy", serviceStateManager.isInstanceHealthy(type.name(), instance));
-                    instancesInfo.add(instanceInfo);
-                }
-            }
-            serviceInfo.put("instances", instancesInfo);
-            services.put(type.name(), serviceInfo);
-        }
-
-        status.put("services", services);
-        return ResponseEntity.ok(status);
-    }
-
-    /**
-     * 函数式接口用于延迟执行服务请求
-     */
     @FunctionalInterface
-    private interface ServiceRequestSupplier {
+    protected interface ServiceRequestSupplier {
         Mono<? extends ResponseEntity<?>> get() throws Exception;
     }
 }

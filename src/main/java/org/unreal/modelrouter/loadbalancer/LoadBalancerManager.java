@@ -201,6 +201,47 @@ public class LoadBalancerManager {
     }
 
     /**
+     * LoadBalancerManager需要添加的方法
+     * 用于支持动态配置更新时重新初始化负载均衡器
+     */
+
+    /**
+     * 重新初始化指定服务的负载均衡器
+     * @param serviceType 服务类型
+     * @param loadBalanceConfig 新的负载均衡配置
+     */
+    public void reinitializeLoadBalancer(ModelServiceRegistry.ServiceType serviceType,
+                                         ModelRouterProperties.LoadBalanceConfig loadBalanceConfig) {
+        try {
+            // 移除旧的负载均衡器
+            loadBalancers.remove(serviceType);
+
+            // 创建新的负载均衡器
+            LoadBalancer newLoadBalancer = componentFactory.createLoadBalancer(loadBalanceConfig);
+            loadBalancers.put(serviceType, newLoadBalancer);
+
+            logger.info("服务 {} 的负载均衡器已重新初始化，类型: {}",
+                    serviceType, loadBalanceConfig.getType());
+        } catch (Exception e) {
+            logger.warn("重新初始化服务 {} 的负载均衡器失败: {}", serviceType, e.getMessage());
+            // 如果失败，创建默认负载均衡器
+            LoadBalancer defaultLoadBalancer = createDefaultLoadBalancer();
+            loadBalancers.put(serviceType, defaultLoadBalancer);
+        }
+    }
+
+    /**
+     * 创建默认负载均衡器
+     * @return 默认负载均衡器
+     */
+    private LoadBalancer createDefaultLoadBalancer() {
+        // 返回随机负载均衡器作为默认值
+        ModelRouterProperties.LoadBalanceConfig defaultConfig = new ModelRouterProperties.LoadBalanceConfig();
+        defaultConfig.setType("random");
+        return componentFactory.createLoadBalancer(defaultConfig);
+    }
+
+    /**
      * 获取负载均衡器数量
      */
     public int getLoadBalancerCount() {

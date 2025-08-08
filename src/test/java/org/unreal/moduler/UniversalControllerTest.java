@@ -40,7 +40,7 @@ class UniversalControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        UniversalController controller = new UniversalController(registry, adapterRegistry, serviceStateManager);
+        UniversalController controller = new UniversalController(adapterRegistry, serviceStateManager);
         webTestClient = WebTestClient.bindToController(controller).build();
     }
 

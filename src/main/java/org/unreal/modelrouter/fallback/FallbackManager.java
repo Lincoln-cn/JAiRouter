@@ -127,4 +127,12 @@ public class FallbackManager {
     public int getFallbackStrategyCount() {
         return fallbackStrategies.size();
     }
+
+    public ModelRouterProperties.FallbackConfig getDefaultFallbackConfig() {
+        if(globalFallbackConfig!=null) {
+            return globalFallbackConfig;
+        }else{
+            return new ModelRouterProperties.FallbackConfig();
+        }
+    }
 }

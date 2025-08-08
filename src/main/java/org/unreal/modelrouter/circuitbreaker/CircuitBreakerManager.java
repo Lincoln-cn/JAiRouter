@@ -184,4 +184,8 @@ public class CircuitBreakerManager {
     public int getCircuitBreakerCount() {
         return circuitBreakers.size();
     }
+
+    public ModelRouterProperties.CircuitBreakerConfig getDefaultCircuitBreakerConfig() {
+        return new ModelRouterProperties.CircuitBreakerConfig();
+    }
 }

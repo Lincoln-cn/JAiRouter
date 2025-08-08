@@ -191,7 +191,6 @@ model:
 store:
   type: file
   path: "config/"
-debug: true
 
 # WebClient 配置
 webclient:

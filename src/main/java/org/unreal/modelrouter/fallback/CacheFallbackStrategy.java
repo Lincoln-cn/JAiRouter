@@ -6,9 +6,9 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.response.ErrorResponse;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -43,16 +43,9 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
             return cachedResponse;
         }
 
-        // 如果没有缓存，返回默认降级响应
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .code("service_degraded")
-                .type(serviceType)
-                .message("Service is currently degraded and no cached data available")
-                .build();
-
         return ResponseEntity.status(503)
                 .header("Content-Type", "application/json")
-                .body(errorResponse.toJson());
+                .body("Service is currently degraded and no cached data available");
     }
 
     /**
@@ -68,22 +61,41 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
             // 简单的LRU实现：移除第一个元素
             cache.remove(cache.keySet().iterator().next());
         }
-        cache.put(generateCacheKey(serviceType,modelName,httpRequest), response);
+        // 由于generateCacheKey现在是异步的，我们需要使用不同的方式处理
+        String cacheKey = generateCacheKeySync(serviceType, modelName, httpRequest);
+        cache.put(cacheKey, response);
     }
 
     /**
-     * 生成缓存键
+     * 同步生成缓存键（用于缓存响应）
      */
-    protected String generateCacheKey(
+    protected String generateCacheKeySync(
             ModelServiceRegistry.ServiceType serviceType,
             String modelName,
             ServerHttpRequest httpRequest) {
-        // 简单的缓存键生成策略，可以根据需要扩展
         String clientIp = IpUtils.getClientIp(httpRequest);
-        return serviceType.name() + ":" + clientIp + ":" + modelName + ":" + requestSha(httpRequest);
+        String requestHash = calculateRequestHashSync(httpRequest);
+        return serviceType.name() + ":" + clientIp + ":" + modelName + ":" + requestHash;
     }
 
-    private String requestSha(ServerHttpRequest httpRequest) {
+    /**
+     * 异步生成缓存键
+     */
+    protected Mono<String> generateCacheKey(
+            ModelServiceRegistry.ServiceType serviceType,
+            String modelName,
+            ServerHttpRequest httpRequest) {
+        return calculateRequestHash(httpRequest)
+                .map(hash -> {
+                    String clientIp = IpUtils.getClientIp(httpRequest);
+                    return serviceType.name() + ":" + clientIp + ":" + modelName + ":" + hash;
+                });
+    }
+
+    /**
+     * 异步计算请求体的SHA256哈希值
+     */
+    private Mono<String> calculateRequestHash(ServerHttpRequest httpRequest) {
         try {
             Flux<DataBuffer> body = httpRequest.getBody();
             return body
@@ -93,7 +105,7 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
                             dataBuffer.read(bytes);
                             return bytes;
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.warn("读取请求体数据时出错", e);
                             return new byte[0];
                         }
                     })
@@ -109,14 +121,22 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
                             byte[] hash = digest.digest(bytes);
                             return Base64.getEncoder().encodeToString(hash);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.warn("计算SHA256哈希值时出错", e);
                             return "";
                         }
-                    })
-                    .block();
+                    });
         } catch (Exception e) {
-            e.printStackTrace();
-            return "";
+            logger.warn("处理请求体时出错", e);
+            return Mono.just("");
         }
+    }
+
+    /**
+     * 同步计算请求体的SHA256哈希值（用于缓存响应）
+     * 注意：这种方法在响应式流中可能不适用，因为请求体可能已经被消费
+     */
+    private String calculateRequestHashSync(ServerHttpRequest httpRequest) {
+        // 对于同步方法，我们返回一个简单的标识符，因为请求体可能已经被消费
+        return "sync-request";
     }
 }
