@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.adapter;
 
-import org.unreal.modelrouter.config.ModelServiceRegistry;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 
 public class AdapterCapabilities {
     private boolean supportChat = false;

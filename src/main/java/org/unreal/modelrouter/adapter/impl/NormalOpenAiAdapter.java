@@ -7,11 +7,9 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
-import org.unreal.modelrouter.config.ModelServiceRegistry;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.ImageEditDTO;
 import org.unreal.modelrouter.dto.SttDTO;
-
-import java.util.List;
 
 public class NormalOpenAiAdapter extends BaseAdapter {
 

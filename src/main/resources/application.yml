@@ -17,6 +17,7 @@ model:
     capacity: 1000
     rate: 100
     scope: "service"
+    client-ip-enable: true  # 启用客户端IP限流
 
   # 全局熔断配置
   circuit-breaker:
@@ -43,6 +44,7 @@ model:
         capacity: 100
         rate: 10
         scope: "service"
+        client-ip-enable: true  # 启用客户端IP限流，每个IP独立计数
       instances:
         - name: "qwen3:1.7B"
           base-url: "http://172.16.30.6:9090"
@@ -65,6 +67,13 @@ model:
     embedding:
       load-balance:
         type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 200
+        rate: 20
+        scope: "service"
+        client-ip-enable: true  # 启用客户端IP限流
       instances:
         - name: "nomic-embed-text-v1.5"
           base-url: "http://172.16.30.6:9090"
@@ -89,6 +98,13 @@ model:
         strategy: cache
         cache-size: 50
         cache-ttl: 600000 # 10分钟
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 50
+        rate: 5
+        scope: "service"
+        client-ip-enable: true  # 启用客户端IP限流
       instances:
         - name: "bge-reranker-v2-m3"
           base-url: "http://172.16.30.6:9090"
@@ -103,6 +119,13 @@ model:
     tts:
       load-balance:
         type: random
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 30
+        rate: 3
+        scope: "service"
+        client-ip-enable: true  # 启用客户端IP限流
       instances:
         - name: "cosyvoice-300m"
           base-url: "http://172.16.30.6:9090"
@@ -117,6 +140,13 @@ model:
     stt:
       load-balance:
         type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 30
+        rate: 3
+        scope: "service"
+        client-ip-enable: true  # 启用客户端IP限流
       instances:
         - name: "faster-whisper-tiny"
           base-url: "http://172.16.30.6:9090"
@@ -130,6 +160,13 @@ model:
     imgGen:
       load-balance:
           type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 10
+        rate: 1
+        scope: "service"
+        client-ip-enable: true  # 启用客户端IP限流
       instances:
           - name: "stable-diffusion-2-1"
             base-url: "http://172.16.30.6:9090"
@@ -139,11 +176,21 @@ model:
     imgEdit:
       load-balance:
         type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 10
+        rate: 1
+        scope: "service"
+        client-ip-enable: true  # 启用客户端IP限流
       instances:
         - name: "stable-diffusion-2-1"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/images/edits"
           weight: 1
+store:
+  type: file
+  path: "config/"
 debug: true
 
 # WebClient 配置

@@ -1,16 +1,14 @@
 package org.unreal.modelrouter.adapter;
 
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
-import org.unreal.modelrouter.config.ModelRouterProperties;
-import org.unreal.modelrouter.config.ModelServiceRegistry;
+import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.fallback.CacheFallbackStrategy;
 import org.unreal.modelrouter.response.ErrorResponse;
@@ -18,9 +16,6 @@ import org.unreal.modelrouter.util.IpUtils;
 import org.unreal.modelrouter.fallback.FallbackStrategy;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.security.MessageDigest;
-import java.util.Base64;
 
 public abstract class BaseAdapter implements ServiceCapability {
 

@@ -2,7 +2,7 @@ package org.unreal.moduler;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.config.ModelRouterProperties;
+import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.*;
 

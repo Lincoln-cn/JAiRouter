@@ -2,8 +2,8 @@ package org.unreal.modelrouter.adapter;
 
 import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.adapter.impl.*;
-import org.unreal.modelrouter.config.ModelRouterProperties;
-import org.unreal.modelrouter.config.ModelServiceRegistry;
+import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 
 import java.util.HashMap;
 import java.util.Map;

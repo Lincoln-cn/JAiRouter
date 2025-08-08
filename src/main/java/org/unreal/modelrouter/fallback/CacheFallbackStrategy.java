@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.unreal.modelrouter.config.ModelServiceRegistry;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.response.ErrorResponse;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Flux;

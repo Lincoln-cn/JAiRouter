@@ -4,12 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.ConfigurationHelper;
-import org.unreal.modelrouter.config.ModelRouterProperties;
-import org.unreal.modelrouter.config.ModelServiceRegistry;
+import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.factory.ComponentFactory;
 
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,6 +31,9 @@ public class RateLimitManager {
             new EnumMap<>(ModelServiceRegistry.ServiceType.class);  // 服务级
     private final Map<String, RateLimiter> instanceLimiters =
             new ConcurrentHashMap<>();                               // 实例级
+    // 客户端IP限流器：serviceType -> (clientIp -> RateLimiter)
+    private final Map<ModelServiceRegistry.ServiceType, Map<String, RateLimiter>> clientIpLimiters =
+            new ConcurrentHashMap<>();
 
     public RateLimitManager(ComponentFactory componentFactory,
                             ConfigurationHelper configHelper,
@@ -99,7 +101,7 @@ public class RateLimitManager {
     /* ===================== 优先级限流 ===================== */
 
     /**
-     * 按优先级执行限流：实例 > 服务 > 全局
+     * 按优先级执行限流：实例 > 服务 > 全局 > 客户端IP
      */
     public boolean tryAcquireWithPriority(RateLimitContext context) {
         /* 1. 实例级 */
@@ -120,6 +122,12 @@ public class RateLimitManager {
             return false;
         }
 
+        /* 4. 客户端IP级 */
+        if (!tryAcquireClientIp(context)) {
+            logger.warn("Client IP limit denied for IP: {}", context.getClientIp());
+            return false;
+        }
+
         logger.debug("All levels passed");
         return true;
     }
@@ -137,6 +145,65 @@ public class RateLimitManager {
         String key = generateInstanceKey(context.getServiceType(), context.getInstanceId(), context.getInstanceUrl());
         RateLimiter limiter = instanceLimiters.get(key);
         return limiter == null || limiter.tryAcquire(context);
+    }
+
+    /**
+     * 客户端IP限流检查
+     */
+    public boolean tryAcquireClientIp(RateLimitContext context) {
+        if (context == null || context.getClientIp() == null) {
+            return true;
+        }
+
+        ModelServiceRegistry.ServiceType serviceType = context.getServiceType();
+        String clientIp = context.getClientIp();
+
+        // 检查服务级配置是否启用了客户端IP限流
+        ModelRouterProperties.ServiceConfig serviceConfig = getServiceConfig(serviceType);
+        if (serviceConfig != null && serviceConfig.getRateLimit() != null && 
+            Boolean.TRUE.equals(serviceConfig.getRateLimit().getClientIpEnable())) {
+            // 获取或创建针对该服务类型和客户端IP的限流器
+            Map<String, RateLimiter> ipLimiters = clientIpLimiters.computeIfAbsent(
+                serviceType, k -> new ConcurrentHashMap<>());
+            
+            RateLimiter ipLimiter = ipLimiters.computeIfAbsent(clientIp, k -> {
+                RateLimitConfig config = configHelper.convertRateLimitConfig(serviceConfig.getRateLimit());
+                return componentFactory.createScopedRateLimiter(config);
+            });
+            
+            return ipLimiter.tryAcquire(context);
+        }
+
+        // 检查全局配置是否启用了客户端IP限流
+        ModelRouterProperties.RateLimitConfig globalRateLimit = properties.getRateLimit();
+        if (globalRateLimit != null && Boolean.TRUE.equals(globalRateLimit.getClientIpEnable())) {
+            // 获取或创建针对该服务类型和客户端IP的限流器
+            Map<String, RateLimiter> ipLimiters = clientIpLimiters.computeIfAbsent(
+                serviceType, k -> new ConcurrentHashMap<>());
+            
+            RateLimiter ipLimiter = ipLimiters.computeIfAbsent(clientIp, k -> {
+                RateLimitConfig config = configHelper.convertRateLimitConfig(globalRateLimit);
+                return componentFactory.createScopedRateLimiter(config);
+            });
+            
+            return ipLimiter.tryAcquire(context);
+        }
+
+        return true; // 未启用客户端IP限流
+    }
+
+    private ModelRouterProperties.ServiceConfig getServiceConfig(ModelServiceRegistry.ServiceType serviceType) {
+        if (properties.getServices() == null) {
+            return null;
+        }
+        
+        String serviceName = serviceType.name().toLowerCase();
+        for (Map.Entry<String, ModelRouterProperties.ServiceConfig> entry : properties.getServices().entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(serviceName)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     /* ===================== 动态管理 ===================== */
@@ -192,15 +259,18 @@ public class RateLimitManager {
         logger.info("Reloading rate limiters");
         var oldSvc = new EnumMap<>(serviceLimiters);
         var oldInst = new ConcurrentHashMap<>(instanceLimiters);
+        var oldClientIp = new ConcurrentHashMap<>(clientIpLimiters);
 
         try {
             serviceLimiters.clear();
             instanceLimiters.clear();
+            clientIpLimiters.clear();
             initializeRateLimiters();
             logger.info("Reloaded successfully");
         } catch (Exception e) {
             serviceLimiters.putAll(oldSvc);
             instanceLimiters.putAll(oldInst);
+            clientIpLimiters.putAll(oldClientIp);
             logger.error("Reload failed, rollback. Error: {}", e.getMessage());
             throw new RuntimeException("Rate limit reload failed", e);
         }
