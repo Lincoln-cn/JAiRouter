@@ -50,7 +50,27 @@ public class ConfigurationService {
      * @return 完整配置Map
      */
     public Map<String, Object> getAllConfigurations() {
-        return configMergeService.getCurrentMergedConfig();
+        Map<String, Object> configs = configMergeService.getCurrentMergedConfig();
+
+        // 为每个实例添加instanceId属性
+        if (configs != null && configs.containsKey("services")) {
+            Map<String, Object> services = (Map<String, Object>) configs.get("services");
+            for (Map.Entry<String, Object> serviceEntry : services.entrySet()) {
+                Map<String, Object> serviceConfig = (Map<String, Object>) serviceEntry.getValue();
+                if (serviceConfig != null && serviceConfig.containsKey("instances")) {
+                    List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.get("instances");
+                    for (Map<String, Object> instance : instances) {
+                        if (instance != null && instance.containsKey("name") && instance.containsKey("baseUrl")) {
+                            String name = (String) instance.get("name");
+                            String baseUrl = (String) instance.get("baseUrl");
+                            String instanceId = name + "@" + baseUrl;
+                            instance.put("instanceId", instanceId);
+                        }
+                    }
+                }
+            }
+        }
+        return configs;
     }
 
     /**
@@ -219,8 +239,8 @@ public class ConfigurationService {
      * @param instanceConfig 实例配置
      */
     @SuppressWarnings("unchecked")
-    public void addServiceInstance(String serviceType, Map<String, Object> instanceConfig) {
-        logger.info("为服务 {} 添加实例: {}", serviceType, instanceConfig.get("name"));
+    public void addServiceInstance(String serviceType, ModelRouterProperties.ModelInstance instanceConfig) {
+        logger.info("为服务 {} 添加实例: {}", serviceType, instanceConfig.getName());
 
         Map<String, Object> currentConfig = getCurrentPersistedConfig();
         Map<String, Object> services = getServicesFromConfig(currentConfig);
@@ -236,7 +256,7 @@ public class ConfigurationService {
                 serviceConfig.computeIfAbsent("instances", k -> new ArrayList<>());
 
         // 验证实例配置
-        Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(instanceConfig);
+        Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(configurationHelper.convertInstanceToMap(instanceConfig));
         String instanceId = buildInstanceId(validatedInstance);
 
         // 检查是否已存在
@@ -265,7 +285,7 @@ public class ConfigurationService {
      * @param instanceConfig 新的实例配置
      */
     @SuppressWarnings("unchecked")
-    public void updateServiceInstance(String serviceType, String instanceId, Map<String, Object> instanceConfig) {
+    public void updateServiceInstance(String serviceType, String instanceId, ModelRouterProperties.ModelInstance instanceConfig) {
         logger.info("更新服务 {} 的实例 {}", serviceType, instanceId);
 
         Map<String, Object> currentConfig = getCurrentPersistedConfig();
@@ -285,7 +305,7 @@ public class ConfigurationService {
             Map<String, Object> instance = instances.get(i);
             if (instanceId.equals(buildInstanceId(instance))) {
                 // 合并更新配置
-                Map<String, Object> updatedInstance = mergeInstanceConfig(instance, instanceConfig);
+                Map<String, Object> updatedInstance = mergeInstanceConfig(instance, configurationHelper.convertInstanceToMap(instanceConfig));
                 Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(updatedInstance);
                 instances.set(i, validatedInstance);
                 found = true;

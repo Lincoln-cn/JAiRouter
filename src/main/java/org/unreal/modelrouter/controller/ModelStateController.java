@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
 import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.response.ApiResponse;
 import reactor.core.publisher.Mono;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 模型状态控制器 - 处理模型监控和管理相关的接口
@@ -28,14 +30,17 @@ public class ModelStateController {
     private final ModelServiceRegistry registry;
     private final ServiceStateManager serviceStateManager;
     private final AdapterRegistry adapterRegistry;
+    private final ConfigurationService configurationService;
 
 
     public ModelStateController(ModelServiceRegistry registry,
                                      ServiceStateManager serviceStateManager,
-                                     AdapterRegistry adapterRegistry) {
+                                     AdapterRegistry adapterRegistry,
+                                     ConfigurationService configurationService) {
         this.registry = registry;
         this.serviceStateManager = serviceStateManager;
         this.adapterRegistry = adapterRegistry;
+        this.configurationService = configurationService;
     }
 
     /**
@@ -184,6 +189,52 @@ public class ModelStateController {
             logger.error("获取系统状态失败", e);
             return Mono.just(ResponseEntity.internalServerError()
                     .body(ApiResponse.error("获取系统状态失败: " + e.getMessage())));
+        }
+    }
+
+    /**
+     * 获取配置统计信息
+     */
+    @GetMapping("/stats")
+    public Mono<ResponseEntity<ApiResponse<Object>>> getConfigurationStats() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+
+            // 获取服务统计
+            Set<String> serviceTypes = registry.getAllServiceTypes();
+            stats.put("totalServices", serviceTypes.size());
+
+            // 获取实例统计
+            Map<String, Integer> instanceCounts = new HashMap<>();
+            Map<String, Integer> modelCounts = new HashMap<>();
+            int totalInstances = 0;
+            int totalModels = 0;
+
+            for (ModelServiceRegistry.ServiceType serviceType : ModelServiceRegistry.ServiceType.values()) {
+                var instances = registry.getAllInstances().get(serviceType);
+                var models = registry.getAvailableModels(serviceType);
+
+                int instanceCount = instances != null ? instances.size() : 0;
+                int modelCount = models.size();
+
+                instanceCounts.put(serviceType.name(), instanceCount);
+                modelCounts.put(serviceType.name(), modelCount);
+
+                totalInstances += instanceCount;
+                totalModels += modelCount;
+            }
+
+            stats.put("totalInstances", totalInstances);
+            stats.put("totalModels", totalModels);
+            stats.put("instancesByService", instanceCounts);
+            stats.put("modelsByService", modelCounts);
+            stats.put("serviceTypes", serviceTypes);
+
+            return Mono.just(ResponseEntity.ok(ApiResponse.success(stats, "获取配置统计成功")));
+        } catch (Exception e) {
+            logger.error("获取配置统计失败", e);
+            return Mono.just(ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("获取配置统计失败: " + e.getMessage())));
         }
     }
 }

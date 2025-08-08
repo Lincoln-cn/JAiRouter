@@ -34,6 +34,10 @@ public class ModelServiceRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(ModelServiceRegistry.class);
 
+    public Set<String> getAllServiceTypes() {
+         return Arrays.stream(ServiceType.values()).map(Enum::name).collect(Collectors.toSet());
+    }
+
     public enum ServiceType {
         chat, embedding, rerank, tts, stt, imgGen, imgEdit
     }
