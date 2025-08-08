@@ -283,7 +283,7 @@ public class ModelRouterProperties {
 
     // 熔断器配置类
     public static class CircuitBreakerConfig {
-        private Boolean enabled = true;         // 是否启用熔断器
+        private Boolean enabled = false;         // 是否启用熔断器
         private Integer failureThreshold = 5;   // 失败阈值
         private Long timeout = 60000L;          // 超时时间(毫秒)
         private Integer successThreshold = 2;   // 成功阈值

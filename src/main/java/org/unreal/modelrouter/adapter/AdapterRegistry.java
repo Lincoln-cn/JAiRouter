@@ -51,13 +51,8 @@ public class AdapterRegistry {
      * 获取指定服务类型的adapter名称
      */
     private String getAdapterName(ModelServiceRegistry.ServiceType serviceType) {
-        String serviceKey = serviceType.name().toLowerCase().replace("_", "-");
-
         // 优先使用服务级配置
-        String adapterName = Optional.ofNullable(properties.getServices())
-                .map(services -> services.get(serviceKey))
-                .map(ModelRouterProperties.ServiceConfig::getAdapter)
-                .orElse(null);
+        String adapterName = registry.getServiceAdapter(serviceType);
 
         // 回退到全局配置
         if (adapterName == null) {

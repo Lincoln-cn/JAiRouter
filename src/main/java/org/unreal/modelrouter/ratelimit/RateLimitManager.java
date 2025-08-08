@@ -160,17 +160,17 @@ public class RateLimitManager {
 
         // 检查服务级配置是否启用了客户端IP限流
         ModelRouterProperties.ServiceConfig serviceConfig = getServiceConfig(serviceType);
-        if (serviceConfig != null && serviceConfig.getRateLimit() != null && 
-            Boolean.TRUE.equals(serviceConfig.getRateLimit().getClientIpEnable())) {
+        if (serviceConfig != null && serviceConfig.getRateLimit() != null &&
+                Boolean.TRUE.equals(serviceConfig.getRateLimit().getClientIpEnable())) {
             // 获取或创建针对该服务类型和客户端IP的限流器
             Map<String, RateLimiter> ipLimiters = clientIpLimiters.computeIfAbsent(
-                serviceType, k -> new ConcurrentHashMap<>());
-            
+                    serviceType, k -> new ConcurrentHashMap<>());
+
             RateLimiter ipLimiter = ipLimiters.computeIfAbsent(clientIp, k -> {
                 RateLimitConfig config = configHelper.convertRateLimitConfig(serviceConfig.getRateLimit());
                 return componentFactory.createScopedRateLimiter(config);
             });
-            
+
             return ipLimiter.tryAcquire(context);
         }
 
@@ -179,13 +179,13 @@ public class RateLimitManager {
         if (globalRateLimit != null && Boolean.TRUE.equals(globalRateLimit.getClientIpEnable())) {
             // 获取或创建针对该服务类型和客户端IP的限流器
             Map<String, RateLimiter> ipLimiters = clientIpLimiters.computeIfAbsent(
-                serviceType, k -> new ConcurrentHashMap<>());
-            
+                    serviceType, k -> new ConcurrentHashMap<>());
+
             RateLimiter ipLimiter = ipLimiters.computeIfAbsent(clientIp, k -> {
                 RateLimitConfig config = configHelper.convertRateLimitConfig(globalRateLimit);
                 return componentFactory.createScopedRateLimiter(config);
             });
-            
+
             return ipLimiter.tryAcquire(context);
         }
 
@@ -196,7 +196,7 @@ public class RateLimitManager {
         if (properties.getServices() == null) {
             return null;
         }
-        
+
         String serviceName = serviceType.name().toLowerCase();
         for (Map.Entry<String, ModelRouterProperties.ServiceConfig> entry : properties.getServices().entrySet()) {
             if (entry.getKey().equalsIgnoreCase(serviceName)) {
@@ -325,5 +325,9 @@ public class RateLimitManager {
     private String generateInstanceKey(ModelServiceRegistry.ServiceType type,
                                        String id, String url) {
         return type.name() + ":" + id;
+    }
+
+    public ModelRouterProperties.RateLimitConfig getDefaultRateLimitConfig() {
+        return new  ModelRouterProperties.RateLimitConfig();
     }
 }
