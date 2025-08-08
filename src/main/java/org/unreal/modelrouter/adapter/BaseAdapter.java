@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
-import org.unreal.modelrouter.fallback.CacheFallbackStrategy;
+import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
 import org.unreal.modelrouter.util.IpUtils;
 import org.unreal.modelrouter.fallback.FallbackStrategy;
 import reactor.core.publisher.Flux;

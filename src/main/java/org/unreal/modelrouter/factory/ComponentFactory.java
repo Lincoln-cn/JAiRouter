@@ -9,8 +9,8 @@ import org.unreal.modelrouter.loadbalancer.impl.*;
 import org.unreal.modelrouter.ratelimit.*;
 import org.unreal.modelrouter.ratelimit.impl.*;
 import org.unreal.modelrouter.fallback.FallbackStrategy;
-import org.unreal.modelrouter.fallback.DefaultFallbackStrategy;
-import org.unreal.modelrouter.fallback.CacheFallbackStrategy;
+import org.unreal.modelrouter.fallback.impl.DefaultFallbackStrategy;
+import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
 
 import org.springframework.http.ResponseEntity;
 
