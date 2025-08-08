@@ -7,9 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.ConfigurationService;
+import org.unreal.modelrouter.dto.UpdateInstanceDTO;
+import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.response.ApiResponse;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 模型管理控制器 - 重构版
@@ -213,13 +216,14 @@ public class ModelManagerController {
     /**
      * 获取指定实例的详细信息
      */
-    @GetMapping("/services/{serviceType}/instances/{instanceId}")
+    @GetMapping("/services/{serviceType}/instance")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getServiceInstance(
             @PathVariable String serviceType,
-            @PathVariable String instanceId) {
+            @RequestParam String modelName,
+            @RequestParam String baseUrl) {
         try {
             // URL解码实例ID
-            String decodedInstanceId = java.net.URLDecoder.decode(instanceId, "UTF-8");
+            String decodedInstanceId = buildInstanceId(modelName, baseUrl);
             Map<String, Object> instance = configurationService.getServiceInstance(serviceType, decodedInstanceId);
 
             if (instance == null) {
@@ -229,7 +233,7 @@ public class ModelManagerController {
 
             return ResponseEntity.ok(ApiResponse.success(instance, "获取实例信息成功"));
         } catch (Exception e) {
-            logger.error("获取实例信息失败: serviceType={}, instanceId={}", serviceType, instanceId, e);
+            logger.error("获取实例信息失败: serviceType={}, modelName={} , baseUrl={}", serviceType, modelName, baseUrl, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("获取实例信息失败: " + e.getMessage()));
         }
@@ -238,10 +242,10 @@ public class ModelManagerController {
     /**
      * 添加服务实例
      */
-    @PostMapping("/services/{serviceType}/instances")
+    @PostMapping("/services/{serviceType}/instance")
     public ResponseEntity<ApiResponse<Void>> addServiceInstance(
             @PathVariable String serviceType,
-            @RequestBody Map<String, Object> instanceConfig) {
+            @RequestBody ModelRouterProperties.ModelInstance instanceConfig) {
         try {
             configurationService.addServiceInstance(serviceType, instanceConfig);
             return ResponseEntity.status(HttpStatus.CREATED)
@@ -259,21 +263,20 @@ public class ModelManagerController {
     /**
      * 更新服务实例
      */
-    @PutMapping("/services/{serviceType}/instances/{instanceId}")
+    @PutMapping("/services/{serviceType}/instance")
     public ResponseEntity<ApiResponse<Void>> updateServiceInstance(
             @PathVariable String serviceType,
-            @PathVariable String instanceId,
-            @RequestBody Map<String, Object> instanceConfig) {
+            @RequestBody UpdateInstanceDTO instanceConfig) {
         try {
             // URL解码实例ID
-            String decodedInstanceId = java.net.URLDecoder.decode(instanceId, "UTF-8");
-            configurationService.updateServiceInstance(serviceType, decodedInstanceId, instanceConfig);
+            String decodedInstanceId = instanceConfig.getInstanceId();
+            configurationService.updateServiceInstance(serviceType, decodedInstanceId, instanceConfig.getInstance().covertTo());
             return ResponseEntity.ok(ApiResponse.success(null, "实例更新成功"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            logger.error("更新实例失败: serviceType={}, instanceId={}", serviceType, instanceId, e);
+            logger.error("获取实例信息失败: serviceType={}, modelName={} , baseUrl={}", serviceType, instanceConfig.getInstance().getName(), instanceConfig.getInstance().getBaseUrl(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("更新实例失败: " + e.getMessage()));
         }
@@ -282,20 +285,21 @@ public class ModelManagerController {
     /**
      * 删除服务实例
      */
-    @DeleteMapping("/services/{serviceType}/instances/{instanceId}")
+    @DeleteMapping("/services/{serviceType}/instance")
     public ResponseEntity<ApiResponse<Void>> deleteServiceInstance(
             @PathVariable String serviceType,
-            @PathVariable String instanceId) {
+            @RequestParam String modelName,
+            @RequestParam String baseUrl) {
         try {
             // URL解码实例ID
-            String decodedInstanceId = java.net.URLDecoder.decode(instanceId, "UTF-8");
+            String decodedInstanceId = buildInstanceId(modelName, baseUrl);
             configurationService.deleteServiceInstance(serviceType, decodedInstanceId);
             return ResponseEntity.ok(ApiResponse.success(null, "实例删除成功"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            logger.error("删除实例失败: serviceType={}, instanceId={}", serviceType, instanceId, e);
+            logger.error("获取实例信息失败: serviceType={}, modelName={} , baseUrl={}", serviceType, modelName, baseUrl, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("删除实例失败: " + e.getMessage()));
         }
@@ -309,13 +313,13 @@ public class ModelManagerController {
     @PostMapping("/services/{serviceType}/instances/batch")
     public ResponseEntity<ApiResponse<Map<String, Object>>> batchAddInstances(
             @PathVariable String serviceType,
-            @RequestBody List<Map<String, Object>> instanceConfigs) {
+            @RequestBody List<ModelRouterProperties.ModelInstance> instanceConfigs) {
         try {
             Map<String, Object> result = new HashMap<>();
             List<String> successList = new ArrayList<>();
             List<Map<String, String>> failureList = new ArrayList<>();
 
-            for (Map<String, Object> instanceConfig : instanceConfigs) {
+            for (ModelRouterProperties.ModelInstance instanceConfig : instanceConfigs) {
                 try {
                     configurationService.addServiceInstance(serviceType, instanceConfig);
                     String instanceId = buildInstanceId(instanceConfig);
@@ -352,11 +356,15 @@ public class ModelManagerController {
     @DeleteMapping("/services/{serviceType}/instances/batch")
     public ResponseEntity<ApiResponse<Map<String, Object>>> batchDeleteInstances(
             @PathVariable String serviceType,
-            @RequestBody List<String> instanceIds) {
+            @RequestBody List<ModelRouterProperties.ModelInstance> modelInstances) {
         try {
             Map<String, Object> result = new HashMap<>();
             List<String> successList = new ArrayList<>();
             List<Map<String, String>> failureList = new ArrayList<>();
+
+            List<String> instanceIds = modelInstances.stream()
+                    .map(instance -> buildInstanceId(instance.getName(), instance.getBaseUrl()))
+                    .toList();
 
             for (String instanceId : instanceIds) {
                 try {
@@ -388,101 +396,18 @@ public class ModelManagerController {
         }
     }
 
-    // ==================== 健康检查和状态查询 ====================
-
-    /**
-     * 获取配置统计信息
-     */
-    @GetMapping("/stats")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getConfigurationStats() {
-        try {
-            Map<String, Object> stats = new HashMap<>();
-
-            // 获取服务统计
-            Set<String> serviceTypes = configurationService.getAvailableServiceTypes();
-            stats.put("totalServices", serviceTypes.size());
-
-            // 获取实例统计
-            Map<String, Integer> instanceCounts = new HashMap<>();
-            Map<String, Integer> modelCounts = new HashMap<>();
-            int totalInstances = 0;
-            int totalModels = 0;
-
-            for (String serviceType : serviceTypes) {
-                List<Map<String, Object>> instances = configurationService.getServiceInstances(serviceType);
-                Set<String> models = configurationService.getAvailableModels(serviceType);
-
-                instanceCounts.put(serviceType, instances.size());
-                modelCounts.put(serviceType, models.size());
-
-                totalInstances += instances.size();
-                totalModels += models.size();
-            }
-
-            stats.put("totalInstances", totalInstances);
-            stats.put("totalModels", totalModels);
-            stats.put("instancesByService", instanceCounts);
-            stats.put("modelsByService", modelCounts);
-            stats.put("serviceTypes", serviceTypes);
-
-            return ResponseEntity.ok(ApiResponse.success(stats, "获取配置统计成功"));
-        } catch (Exception e) {
-            logger.error("获取配置统计失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("获取配置统计失败: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * 验证配置
-     */
-    @PostMapping("/validate")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> validateConfiguration(
-            @RequestBody(required = false) Map<String, Object> configToValidate) {
-        try {
-            Map<String, Object> validationResult = new HashMap<>();
-            List<String> errors = new ArrayList<>();
-            List<String> warnings = new ArrayList<>();
-
-            // 如果没有提供配置，验证当前配置
-            Map<String, Object> configMap = configToValidate != null ?
-                    configToValidate : configurationService.getAllConfigurations();
-
-            // 基本配置验证
-            validateBasicConfiguration(configMap, errors, warnings);
-
-            // 服务配置验证
-            validateServicesConfiguration(configMap, errors, warnings);
-
-            validationResult.put("valid", errors.isEmpty());
-            validationResult.put("errors", errors);
-            validationResult.put("warnings", warnings);
-            validationResult.put("errorCount", errors.size());
-            validationResult.put("warningCount", warnings.size());
-
-            if (errors.isEmpty()) {
-                return ResponseEntity.ok(ApiResponse.success(validationResult, "配置验证通过"));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(ApiResponse.success(validationResult, "配置验证失败"));
-            }
-        } catch (Exception e) {
-            logger.error("配置验证失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error("配置验证失败: " + e.getMessage()));
-        }
-    }
-
     // ==================== 辅助方法 ====================
 
     /**
      * 构建实例ID
      */
-    private String buildInstanceId(Map<String, Object> instance) {
-        String name = (String) instance.get("name");
-        String baseUrl = (String) instance.get("baseUrl");
-        if (name != null && baseUrl != null) {
-            return name + "@" + baseUrl;
+    private String buildInstanceId(ModelRouterProperties.ModelInstance instance) {
+        return buildInstanceId(instance.getName(), instance.getBaseUrl());
+    }
+
+    private String buildInstanceId(String moduleName, String baseUrl) {
+        if (moduleName != null && baseUrl != null) {
+            return moduleName + "@" + baseUrl;
         }
         return "unknown";
     }
