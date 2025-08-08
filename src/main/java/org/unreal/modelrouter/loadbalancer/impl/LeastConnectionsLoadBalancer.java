@@ -2,7 +2,7 @@ package org.unreal.modelrouter.loadbalancer.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.unreal.modelrouter.config.ModelRouterProperties;
+import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 
 import java.util.List;

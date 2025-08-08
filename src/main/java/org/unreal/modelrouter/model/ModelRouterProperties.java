@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.config;
+package org.unreal.modelrouter.model;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -209,6 +209,7 @@ public class ModelRouterProperties {
         private Long rate = 10L;             // 速率
         private String scope = "service";    // 作用域: service, instance, client-ip等
         private String key;                  // 限流键值（可选）
+        private Boolean clientIpEnable = false; // 是否启用客户端IP级别的限流
 
         public Boolean getEnabled() {
             return enabled;
@@ -256,6 +257,14 @@ public class ModelRouterProperties {
 
         public void setKey(String key) {
             this.key = key;
+        }
+
+        public Boolean getClientIpEnable() {
+            return clientIpEnable;
+        }
+
+        public void setClientIpEnable(Boolean clientIpEnable) {
+            this.clientIpEnable = clientIpEnable;
         }
 
         public org.unreal.modelrouter.ratelimit.RateLimitConfig covertTo() {

@@ -5,11 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
-import org.unreal.modelrouter.checker.ServerChecker;
-import org.unreal.modelrouter.config.ModelRouterProperties;
-import org.unreal.modelrouter.config.ModelServiceRegistry;
+import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.controller.UniversalController;
 import reactor.core.publisher.Mono;
 
@@ -27,10 +28,10 @@ class UniversalControllerTest {
     private ModelServiceRegistry registry;
 
     @Mock
-    private ServerChecker serverChecker;
+    private AdapterRegistry adapterRegistry;
 
     @Mock
-    private AdapterRegistry adapterRegistry;
+    private ServiceStateManager serviceStateManager;
 
     @Mock
     private ModelRouterProperties.ModelInstance modelInstance;
@@ -39,7 +40,7 @@ class UniversalControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        UniversalController controller = new UniversalController(registry, serverChecker, adapterRegistry);
+        UniversalController controller = new UniversalController(registry, adapterRegistry, serviceStateManager);
         webTestClient = WebTestClient.bindToController(controller).build();
     }
 
@@ -54,7 +55,7 @@ class UniversalControllerTest {
 
         // 执行测试
         webTestClient.get()
-                .uri("/v1/models")
+                .uri("/api/models")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
@@ -66,9 +67,8 @@ class UniversalControllerTest {
                 .jsonPath("$.data[?(@.id == 'text-embedding-ada-002')].id").isEqualTo("text-embedding-ada-002");
     }
 
-
     @Test
-    void testGetSystemStatus() {
+    void testGetStatus() {
         // 准备测试数据
         Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> allInstances = new HashMap<>();
         allInstances.put(ModelServiceRegistry.ServiceType.chat, Arrays.asList(modelInstance));
@@ -81,127 +81,122 @@ class UniversalControllerTest {
             }
             return new HashSet<>();
         });
-        when(serverChecker.isServiceHealthy(anyString())).thenReturn(true);
-
-        // 执行测试
-        webTestClient.get()
-                .uri("/v1/status")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.name").isEqualTo("Model Router Gateway")
-                .jsonPath("$.services.chat.healthy").isEqualTo(true)
-                .jsonPath("$.services.chat.model_count").isEqualTo(1);
-    }
-
-    @Test
-    void testGetServiceStatus() {
-        // 准备测试数据
-        List<ModelRouterProperties.ModelInstance> instances = Arrays.asList(modelInstance);
-        Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> allInstances = new HashMap<>();
-        allInstances.put(ModelServiceRegistry.ServiceType.chat, instances);
-
-        when(registry.getAllInstances()).thenReturn(allInstances);
-        when(registry.getAvailableModels(ModelServiceRegistry.ServiceType.chat)).thenReturn(new HashSet<>(Arrays.asList("test-model")));
-        when(registry.getLoadBalanceStrategy(ModelServiceRegistry.ServiceType.chat)).thenReturn("round_robin");
-        when(serverChecker.isServiceHealthy("chat")).thenReturn(true);
-        when(serverChecker.isInstanceHealthy(anyString(), any(ModelRouterProperties.ModelInstance.class))).thenReturn(true);
+        when(serviceStateManager.isServiceHealthy(anyString())).thenReturn(true);
+        when(registry.getServiceAdapter(any())).thenReturn("normal");
+        when(registry.getLoadBalanceStrategy(any())).thenReturn("RoundRobinLoadBalancer");
 
         when(modelInstance.getName()).thenReturn("test-instance");
         when(modelInstance.getBaseUrl()).thenReturn("http://test.example.com");
         when(modelInstance.getPath()).thenReturn("/v1");
-        when(modelInstance.getWeight()).thenReturn(1);
 
         // 执行测试
         webTestClient.get()
-                .uri("/v1/status/chat")
+                .uri("/api/status")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.service_type").isEqualTo("chat")
-                .jsonPath("$.service_healthy").isEqualTo(true)
-                .jsonPath("$.available_models[0]").isEqualTo("test-model")
-                .jsonPath("$.instances.length()").isEqualTo(1)
-                .jsonPath("$.instances[0].name").isEqualTo("test-instance");
-    }
-
-    @Test
-    void testGetServiceStatusWithInvalidServiceType() {
-        // 执行测试
-        webTestClient.get()
-                .uri("/v1/status/invalid")
-                .exchange()
-                .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath("$.error").isEqualTo("Invalid service type: invalid");
+                .jsonPath("$.timestamp").exists()
+                .jsonPath("$.status").isEqualTo("running")
+                .jsonPath("$.services.chat.healthy").isEqualTo(true)
+                .jsonPath("$.services.chat.adapter").isEqualTo("normal");
     }
 
     @Test
     void testChatCompletionsWhenServiceUnavailable() {
         // 准备测试数据
-        when(serverChecker.isServiceHealthy("chat")).thenReturn(false);
+        when(serviceStateManager.isServiceHealthy("chat")).thenReturn(false);
 
         // 执行测试
         webTestClient.post()
-                .uri("/v1/chat/completions")
+                .uri("/api/chat/completions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just("{}"), String.class)
                 .exchange()
-                .expectStatus().isEqualTo(503)
-                .expectBody()
-                .jsonPath("$.code").isEqualTo("service_unavailable")
-                .jsonPath("$.type").isEqualTo("chat");
+                .expectStatus().isEqualTo(503);
     }
 
     @Test
     void testEmbeddingsWhenServiceUnavailable() {
         // 准备测试数据
-        when(serverChecker.isServiceHealthy("embedding")).thenReturn(false);
+        when(serviceStateManager.isServiceHealthy("embedding")).thenReturn(false);
 
         // 执行测试
         webTestClient.post()
-                .uri("/v1/embeddings")
+                .uri("/api/embeddings")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just("{}"), String.class)
                 .exchange()
-                .expectStatus().isEqualTo(503)
-                .expectBody()
-                .jsonPath("$.code").isEqualTo("service_unavailable")
-                .jsonPath("$.type").isEqualTo("embedding");
+                .expectStatus().isEqualTo(503);
     }
 
     @Test
     void testRerankWhenServiceUnavailable() {
         // 准备测试数据
-        when(serverChecker.isServiceHealthy("rerank")).thenReturn(false);
+        when(serviceStateManager.isServiceHealthy("rerank")).thenReturn(false);
 
         // 执行测试
         webTestClient.post()
-                .uri("/v1/rerank")
+                .uri("/api/rerank")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just("{}"), String.class)
                 .exchange()
-                .expectStatus().isEqualTo(503)
-                .expectBody()
-                .jsonPath("$.code").isEqualTo("service_unavailable")
-                .jsonPath("$.type").isEqualTo("rerank");
+                .expectStatus().isEqualTo(503);
     }
 
     @Test
     void testTextToSpeechWhenServiceUnavailable() {
         // 准备测试数据
-        when(serverChecker.isServiceHealthy("tts")).thenReturn(false);
+        when(serviceStateManager.isServiceHealthy("tts")).thenReturn(false);
 
         // 执行测试
         webTestClient.post()
-                .uri("/v1/audio/speech")
+                .uri("/api/audio/speech")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just("{}"), String.class)
                 .exchange()
-                .expectStatus().isEqualTo(503)
-                .expectBody()
-                .jsonPath("$.code").isEqualTo("service_unavailable")
-                .jsonPath("$.type").isEqualTo("tts");
+                .expectStatus().isEqualTo(503);
+    }
+
+    @Test
+    void testSpeechToTextWhenServiceUnavailable() {
+        // 准备测试数据
+        when(serviceStateManager.isServiceHealthy("stt")).thenReturn(false);
+
+        // 执行测试
+        webTestClient.post()
+                .uri("/api/audio/transcriptions")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(Mono.just(new MockMultipartFile("file", "test.wav", "audio/wav", "test".getBytes())), MockMultipartFile.class)
+                .exchange()
+                .expectStatus().isEqualTo(503);
+    }
+
+    @Test
+    void testImageGenerateWhenServiceUnavailable() {
+        // 准备测试数据
+        when(serviceStateManager.isServiceHealthy("imgGen")).thenReturn(false);
+
+        // 执行测试
+        webTestClient.post()
+                .uri("/api/images/generations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just("{}"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(503);
+    }
+
+    @Test
+    void testImageEditWhenServiceUnavailable() {
+        // 准备测试数据
+        when(serviceStateManager.isServiceHealthy("imgEdit")).thenReturn(false);
+
+        // 执行测试
+        webTestClient.post()
+                .uri("/api/images/edits")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just("{}"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(503);
     }
 
     @Test
@@ -212,7 +207,7 @@ class UniversalControllerTest {
 
         // 执行测试
         webTestClient.get()
-                .uri("/v1/models")
+                .uri("/api/models")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()

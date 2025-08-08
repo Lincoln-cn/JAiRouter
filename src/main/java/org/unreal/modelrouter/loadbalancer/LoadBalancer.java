@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.loadbalancer;
 
-import org.unreal.modelrouter.config.ModelRouterProperties;
+import org.unreal.modelrouter.model.ModelRouterProperties;
 
 import java.util.List;
 
