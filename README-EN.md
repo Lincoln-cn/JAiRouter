@@ -1,279 +1,215 @@
+Based on the project directory structure you provided, the content of the README file can be further refined by supplementing module responsibilities, test coverage, and dynamic configuration updates to make it closer to the actual project structure. Below is the updated README.md:
+
+---
+
 # JAiRouter
 
-JAiRouter is a Spring Boot-based model service routing and load balancing gateway designed to uniformly manage and route various AI model services (such as Chat, Embedding, Rerank, TTS, etc.), supporting multiple load balancing strategies.
+JAiRouter is a Spring Boot-based model service routing and load balancing gateway designed to centrally manage and route various AI model services (such as Chat, Embedding, Rerank, TTS, etc.), supporting multiple load balancing strategies, rate limiting, circuit breaking, health checks, and dynamic configuration updates.
 
-[切换到中文版本](README.md)
+[中文说明](README.md)
 
-## Java Version
-JDK version >= 17
+---
 
-## DeepWiki
-https://deepwiki.com/Lincoln-cn/JAiRouter
+## ✨ Core Features
 
-## Features
+| Feature Category | Supported Content |
+|------------------|-------------------|
+| **Unified API Gateway** | Supports OpenAI-compatible format, unifying `/v1/*` interfaces |
+| **Service Types** | Chat, Embedding, Rerank, TTS, STT, Image Generation, Image Editing |
+| **Load Balancing Strategies** | Random, Round Robin, Least Connections, IP Hash |
+| **Rate Limiting Algorithms** | Token Bucket, Leaky Bucket, Sliding Window, Warm Up |
+| **Circuit Breaker Mechanism** | Supports failure thresholds, recovery detection, and fallback strategies |
+| **Health Checks** | Independent status interface per service, supports automatic removal of unavailable instances |
+| **Adapter Support** | GPUStack, Ollama, VLLM, Xinference, LocalAI, OpenAI |
+| **Dynamic Configuration Updates** | Supports runtime updates of service instances, weights, rate limits, circuit breakers, etc. |
+| **Configuration Persistence** | Supports both in-memory and file-based backends |
+| **Test Coverage** | Includes unit tests for load balancing, rate limiting, circuit breaking, and controllers |
 
-- **Unified API Gateway**: Provides a unified API access point, supporting OpenAI-compatible interface formats.
-- **Multi-Model Service Support**: Supports various model services including Chat, Embedding, Rerank, TTS, STT, Image Generation, and Image Editing.
-- **Load Balancing Strategies**:
-    - Random
-    - Round Robin
-    - Least Connections
-    - IP Hash (Consistent Hashing)
-- **Weight Support**: All load balancing strategies support instance weight configuration.
-- **Health Check**: Provides service status monitoring interfaces.
-- **Adapter Support**: Supports multiple backend service adapters (GPUStack, Ollama, VLLM, Xinference, LocalAI, etc.).
-- **Traffic Control**: Supports rate limiting configuration at both service and instance levels, including token bucket, leaky bucket, and sliding window algorithms
-- **Circuit Breaker**: Supports service circuit breaker configuration to enhance system stability
-## Project Structure
+---
+
+## 🧱 Project Structure
 
 ```
 src/main/java/org/unreal/modelrouter
-├── adapter         # Adapter module for connecting different model services
-├── checker         # Health check module
-├── config          # Configuration classes
-├── controller      # Controllers
-├── dto             # Data Transfer Objects
-├── loadbalancer    # Load balancing strategy implementations
-├── response        # Unified response handling
-├── util            # Utility classes
+├── adapter              # Adapter module: unifies calling methods for different backend services
+│   ├── impl             # Adapter implementations: GpuStackAdapter, OllamaAdapter, etc.
+├── checker              # Health check module: service status monitoring and removal
+├── circuitbreaker       # Circuit breaker module: failure protection mechanism
+├── config               # Configuration module: loading, merging, and dynamically updating configurations
+├── controller           # Web controllers: unified request entry and status interface
+├── dto                  # Request/response data structure definitions
+├── exception            # Global exception handling
+├── factory              # Component factory: dynamically creates load balancers, rate limiters, etc.
+├── fallback             # Fallback strategies: default responses, caching, etc.
+├── loadbalancer         # Load balancing module: four strategy implementations
+├── model                # Configuration models and registry center
+├── ratelimit            # Rate limiting module: multiple algorithm implementations
+├── store                # Configuration storage module: supports in-memory and file persistence
+├── util                 # Utility classes: IP retrieval, network tools, etc.
 └── ModelRouterApplication.java  # Application startup class
+
+src/main/resources
+├── application.yml      # Main configuration file
+└── logback.xml          # Logging configuration
+
+src/test/java/org/unreal/moduler
+├── CircuitBreakerTest.java
+├── LoadBalancerTest.java
+├── ModelManagerControllerTest.java
+├── ModelServiceRegistryTest.java
+├── RateLimiterTest.java
+├── UniversalControllerTest.java
 ```
 
-## Supported Service Types
+---
 
-1. **Chat Service** (`/v1/chat/completions`)
-    - Supports streaming and non-streaming responses
-    - Load balancing strategy: Least Connections
+## 🧪 Test Module Description
 
-2. **Embedding Service** (`/v1/embeddings`)
-    - Supports single and batch embeddings
-    - Load balancing strategy: Round Robin
+| Test Class | Function Coverage |
+|------------|-------------------|
+| [CircuitBreakerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\CircuitBreakerTest.java#L9-L196) | Tests circuit breaker state switching, failure recovery, and fallback strategies |
+| [LoadBalancerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\LoadBalancerTest.java#L13-L175) | Validates behaviors of load balancing strategies (Random, Round Robin, Least Connections, IP Hash) |
+| [ModelManagerControllerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\ModelManagerControllerTest.java#L21-L105) | Tests dynamic configuration update interfaces |
+| [ModelServiceRegistryTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\ModelServiceRegistryTest.java#L24-L456) | Tests service registration, instance selection, and weight effectiveness |
+| [RateLimiterTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\RateLimiterTest.java#L22-L180) | Validates correctness of rate limiting algorithms and concurrent rate limiting behavior |
+| [UniversalControllerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\UniversalControllerTest.java#L22-L220) | Validates service interface forwarding and response format |
 
-3. **Rerank Service** (`/v1/rerank`)
-    - Text reranking service
-    - Load balancing strategy: IP Hash
+---
 
-4. **TTS Service** (`/v1/audio/speech`)
-    - Text-to-speech service
-    - Supports streaming output
-    - Load balancing strategy: Random (default)
+## ⚙️ Configuration Instructions
 
-5. **STT Service** (`/v1/audio/transcriptions`)
-    - Speech-to-text service
-    - Load balancing strategy: Random (default)
+JAiRouter supports two configuration methods:
 
-6. **Image Generation Service** (`/v1/images/generations`)
-    - Image generation service
-    - Load balancing strategy: Random (default)
+- **Static Configuration**: Defines service, instance, rate limiting, and circuit breaker parameters via [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml);
+- **Dynamic Configuration**: Dynamically adds, deletes, or modifies service instances at runtime via REST API without restarting the service.
 
-7. **Image Editing Service** (`/v1/images/edits`)
-    - Image editing service
-    - Load balancing strategy: Random (default)
+---
 
-## Configuration Instructions
+### ✅ Method 1: Configuration File [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml)
 
-Configuration file: `src/main/resources/application.yml`
+| Configuration Item | Description | Example |
+|--------------------|-------------|---------|
+| `model.services.<type>` | Defines global behavior for a service type | [chat](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\model\ModelServiceRegistry.java#L41-L41), [embedding](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\model\ModelServiceRegistry.java#L41-L41), [tts](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\model\ModelServiceRegistry.java#L41-L41), etc. |
+| [instances](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\model\ModelServiceRegistry.java#L649-L649) | List of model instances under each service | Supports weights, paths, rate limiting, etc. |
+| `load-balance.type` | Load balancing strategy | [random](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\impl\RandomLoadBalancer.java#L21-L21), `round-robin`, `least-connections`, `ip-hash` |
+| `rate-limit` | Rate limiting configuration | Supports `token-bucket`, `leaky-bucket`, `sliding-window` |
+| `client-ip-enable` | Whether to enable client IP-based independent rate limiting | `true`/`false` |
+| `circuit-breaker` | Circuit breaker configuration | Failure threshold, recovery time, success threshold |
+| [fallback](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\model\ModelRouterProperties.java#L14-L14) | Fallback strategy | Supports `default`, [cache](file://reactor\core\publisher\Mono.java#L109-L109) |
+| `store.type` | Configuration persistence method | `memory` or `file` |
+| `store.path` | File storage path (effective only when `type=file`) | `config/` |
 
-### Global Load Balancing Configuration
+> 📌 See [application.yml example](./src/main/resources/application.yml) for details
 
-```yaml
-model:
-  services:
-    load-balance:
-      type: random              # Load balancing strategy
-      hash-algorithm: "md5"     # IP Hash algorithm
+---
+
+✅ Based on the latest [ServiceInstanceController.java](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ServiceInstanceController.java) API paths, the **Dynamic Configuration Interface Documentation** has been updated as follows:
+
+---
+
+### ✅ Method 2: Dynamic Configuration Interface
+
+> Unified API prefix: `/api/config/instance`
+
+| Operation | Method | Path | Description |
+|-----------|--------|------|-------------|
+| Get instance list | `GET` | `/api/config/instance/type/{serviceType}` | Retrieves all instances under the specified service |
+| Get instance details | `GET` | `/api/config/instance/info/{serviceType}` | Requires [modelName](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitContext.java#L7-L7) and [baseUrl](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\model\ModelRouterProperties.java#L143-L143) parameters |
+| Add instance | `POST` | `/api/config/instance/add/{serviceType}` | Adds a model instance |
+| Update instance | `PUT` | `/api/config/instance/update/{serviceType}` | Requires [UpdateInstanceDTO](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\dto\UpdateInstanceDTO.java#L15-L85) including [instanceId](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\dto\UpdateInstanceDTO.java#L17-L17) |
+| Delete instance | `DELETE` | `/api/config/instance/del/{serviceType}` | Requires [modelName](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitContext.java#L7-L7) and [baseUrl](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\dto\UpdateInstanceDTO.java#L22-L22) parameters |
+
+---
+
+#### ✅ Example API Calls
+
+##### 1. Get instance list
+```http
+GET /api/config/instance/type/chat
 ```
 
-### Service Instance Configuration Example
-
-```yaml
-model:
-  # 全局配置
-  load-balance:
-    type: random # 支持: random, round-robin, least-connections, ip-hash
-    hash-algorithm: "md5" # IP Hash 策略的哈希算法
-  # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
-  adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
-  # 全局限流配置
-  rate-limit:
-    enabled: true
-    algorithm: "token-bucket"
-    capacity: 1000
-    rate: 100
-    scope: "service"
-
-  # 全局熔断配置
-  circuit-breaker:
-    enabled: true
-    failureThreshold: 5
-    timeout : 60000
-    successThreshold: 2
-
-  services:
-    # 聊天服务配置
-    chat:
-      load-balance:
-        type: least-connections
-      adapter: gpustack # 使用GPUStack适配器
-      # 服务级别限流配置
-      rate-limit:
-        enabled: true
-        algorithm: "token-bucket"
-        capacity: 100
-        rate: 10
-        scope: "service"
-      instances:
-        - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1-openai/chat/completions"
-          weight: 1
-        - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.7:9090"
-          path: "/v1/chat/completions"
-          weight: 1
-          # 实例级别限流配置
-          rate-limit:
-            enabled: true
-            algorithm: "token-bucket"
-            capacity: 50
-            rate: 5
-            scope: "instance"
-
-    # Embedding 服务配置
-    embedding:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "nomic-embed-text-v1.5"
-          base-url: "http://172.16.30.11:9090"
-          path: "/v1/embeddings"
-          weight: 1
-        - name: "nomic-embed-text-v1.5"
-          base-url: "http://172.16.30.15:9090"
-          path: "/v1/embeddings"
-          weight: 1
-        - name: "bge-large-zh-v1.5"
-          base-url: "http://172.16.30.12:9090/"
-          path: "/v1/embeddings"
-          weight: 1
-
-    # Rerank 服务配置
-    rerank:
-      load-balance:
-        type: ip-hash
-        hash-algorithm: "sha256"
-      instances:
-        - name: "bge-reranker-v2-m3"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/rerank"
-          weight: 1
-        - name: "bge-reranker-v2-m3"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/rerank"
-          weight: 2
-
-    # TTS 服务配置
-    tts:
-      load-balance:
-        type: random
-      instances:
-        - name: "cosyvoice-300m"
-          base-url: "http://172.16.30.9:9090"
-          path: "/v1/audio/speech"
-          weight: 1
-        - name: "cosyvoice-300m"
-          base-url: "http://172.16.30.8:9090"
-          path: "/v1/audio/speech"
-          weight: 1
-
-    # STT 服务配置
-    stt:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "faster-whisper-tiny"
-          base-url: "http://172.16.30.21:9090"
-          path: "/v1/audio/transcriptions"
-          weight: 2
-        - name: "faster-whisper-tiny"
-          base-url: "http://172.16.30.21:9090"
-          path: "/v1/audio/transcriptions"
-          weight: 1
-
-    imgGen:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "stable-diffusion-2-1"
-          base-url: "http://172.16.30.25:9090"
-          path: "/v1/images/generations"
-          weight: 1
-
-    imgEdit:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "stable-diffusion-2-1"
-          base-url: "http://172.16.30.25:9090"
-          path: "/v1/images/edits"
-          weight: 1
+##### 2. Get instance details
+```http
+GET /api/config/instance/info/chat?modelName=qwen3:1.7B&baseUrl=http://172.16.30.6:9090
 ```
 
-## API Endpoints
+##### 3. Add instance
+```http
+POST /api/config/instance/add/chat
+Content-Type: application/json
 
-### Chat Completion
-```bash
-POST /v1/chat/completions
+{
+  "name": "qwen3:7B",
+  "baseUrl": "http://172.16.30.7:9090",
+  "path": "/v1/chat/completions",
+  "weight": 2
+}
 ```
 
-### Embedding
-```bash
-POST /v1/embeddings
+##### 4. Update instance
+```http
+PUT /api/config/instance/update/chat
+Content-Type: application/json
+
+{
+  "instanceId": "qwen3:7B@http://172.16.30.7:9090",
+  "instance": {
+    "name": "qwen3:7B",
+    "baseUrl": "http://172.16.30.8:9090",
+    "path": "/v1/chat/completions",
+    "weight": 3
+  }
+}
 ```
 
-### Rerank
-```bash
-POST /v1/rerank
+##### 5. Delete instance
+```http
+DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30.8:9090
 ```
 
-### TTS
-```bash
-POST /v1/audio/speech
-```
+---
 
-### STT
-```bash
-POST /v1/audio/transcriptions
-```
+For integration with frontend consoles or automation scripts, you can directly use the above APIs for hot updates of service instances.
 
-### Image Generation
-```bash
-POST /v1/images/generations
-```
+---
 
-### Image Editing
-```bash
-POST /v1/images/edits
-```
+### ✅ Configuration Priority Explanation
 
-### Health Check
-Each service provides a status check endpoint:
-- `/v1/chat/status`
-- `/v1/embeddings/status`
-- `/v1/rerank/status`
-- `/v1/audio/speech/status`
-- `/v1/audio/transcriptions/status`
-- `/v1/images/generations/status`
-- `/v1/images/edits/status`
+| Priority | Source | Hot Update Supported |
+|----------|--------|----------------------|
+| High | Dynamic API configuration | ✅ |
+| Low | [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml) | ❌ (requires restart) |
 
-## Load Balancing Strategies
+> 🔁 When dynamic and static configurations conflict, **dynamic configuration takes precedence** and will be persisted to local files (if `store.type=file` is configured).
 
-1. **Random**: Selects instances randomly based on weights.
-2. **Round Robin**: Selects instances in sequential order, supporting weights.
-3. **Least Connections**: Selects the instance with the fewest current connections, considering weight factors.
-4. **IP Hash (Consistent Hashing)**: Selects instances based on client IP hash values, ensuring the same IP always routes to the same instance.
+- **Configuration Persistence**: Supports both in-memory and file-based backends, configured via `store.type=memory|file`.
 
-## Deployment
+---
+
+## 🧩 Additional Module Responsibilities
+
+| Module | Responsibility Description |
+|--------|----------------------------|
+| [adapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\model\ModelServiceRegistry.java#L650-L650) | Wraps different backends (e.g., Ollama, VLLM) into OpenAI-compatible calls |
+| `checker` | Periodically checks service health and automatically removes unavailable instances |
+| `circuitbreaker` | Prevents service cascading failures, supports failure thresholds, recovery detection, and fallback strategies |
+| [config](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\BaseRateLimiter.java#L9-L9) | Loads YAML configurations and supports runtime hot updates |
+| [fallback](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\model\ModelRouterProperties.java#L14-L14) | Provides default or cached responses when services are rate-limited or circuit-breakered |
+| `store` | Abstracts configuration persistence, supports both in-memory and file implementations |
+| `util` | Provides general-purpose tools such as IP retrieval, URL construction, and request forwarding |
+
+---
+
+## 📦 Dependency Versions
+
+- **JDK**: 17+
+- **Spring Boot**: 3.5.x
+- **Spring WebFlux**: Reactive web framework
+- **Reactor Core**: Reactive programming support
+
+---
+
+## 🚀 Startup and Deployment
 
 ```bash
 # Compile
@@ -281,50 +217,22 @@ Each service provides a status check endpoint:
 
 # Run
 java -jar target/model-router-*.jar
+
+# Specify configuration file path
+java -jar target/model-router-*.jar --spring.config.location=classpath:/application.yml
 ```
 
-## Development Plan
-0.1.0 ~ 0.2.0
-- Basic Service Framework
-    - [x] Implement OpenAI chat standard interface forwarding
-    - [x] Implement OpenAI embedding standard interface forwarding
-    - [x] Implement OpenAI rerank standard interface forwarding
-    - [x] Implement OpenAI TTS standard interface forwarding
-    - [x] Implement OpenAI STT standard interface forwarding
-    - [x] Implement OpenAI image generation standard interface forwarding
-    - [x] Implement OpenAI image editing standard interface forwarding
-    - [x] Add load balancing strategies
-        - [x] Random
-        - [x] Round Robin
-        - [x] Least Connections
-        - [x] IP Hash
-    - [x] Add service instance configuration
-        - [x] OpenAI
-        - [x] Ollama
-        - [x] VLLM
-        - [x] Xinference
-        - [x] LocalAI
-        - [x] GPUStack
-    - [x] Add health check interfaces
-- Traffic Control
-    - [x] Phase 1: Basic Rate Limiting
-        - [x] Implement basic rate limiter using the Token Bucket algorithm
-        - [x] Integrate service-level rate limiting in ModelServiceRegistry.selectInstance()
-        - [x] Add basic configuration support
-        - [x] Support multiple rate-limiting algorithms (sliding window, leaky bucket, etc.)
-        - [x] Add rate-limiting configuration
-        - [x] Add service circuit breaker
-        - [x] Support instance-level rate limiting
-        - Add rate-limiting warm-up and degradation strategies
-    - [ ] Phase 2: Fine-grained Control
-        - Add client IP-level rate limiting
-        - Implement dynamic configuration update interface
-    - [ ] Phase 3: Advanced Features
-        - Integrate monitoring metrics and alerts
+---
 
+## 📌 Development Roadmap (Status Update)
 
-## Dependencies
+| Phase | Status | Content |
+|-------|--------|---------|
+| 0.1.0 | ✅ | Basic gateway, adapters, load balancing, health checks |
+| 0.2.0 | ✅ | Rate limiting, circuit breaking, fallback, configuration persistence, dynamic update interfaces |
+| 0.3.0 | 🚧 | Monitoring metrics, Prometheus integration, alert notifications |
+| 0.4.0 | 📋 | Multi-tenancy support, authentication and authorization, log tracing |
 
-- Spring Boot 3.5.+
-- Spring WebFlux
-- Reactor Core
+---
+
+For further extensions, please refer to the [DeepWiki documentation](https://deepwiki.com/Lincoln-cn/JAiRouter) or submit an Issue to contribute.
