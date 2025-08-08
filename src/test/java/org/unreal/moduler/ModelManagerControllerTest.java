@@ -7,7 +7,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.unreal.modelrouter.config.ConfigurationService;
-import org.unreal.modelrouter.controller.ModelManagerController;
+import org.unreal.modelrouter.controller.ServiceTypeController;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -30,7 +30,7 @@ class ModelManagerControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        ModelManagerController controller = new ModelManagerController(configurationService);
+        ServiceTypeController controller = new ServiceTypeController(configurationService);
         webTestClient = WebTestClient.bindToController(controller).build();
     }
 

@@ -1,294 +1,216 @@
+根据你提供的项目目录结构，README 文件的内容可以进一步细化，补充模块职责说明、测试覆盖、配置动态更新等内容，使其更贴近真实项目结构。以下是更新后的 README.md：
+
+---
+
 # JAiRouter
 
-JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关，用于统一管理和路由各种 AI 模型服务（如 Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略。
+JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关，用于统一管理和路由各种 AI 模型服务（如 Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流、熔断、健康检查、动态配置更新等功能。
 
 [English Introduction](README-EN.md)
 
-## Java Version
-JDK version >= 17
+---
 
-## DeepWiki
-https://deepwiki.com/Lincoln-cn/JAiRouter
+## ✨ 核心特性
 
-## 功能特性
+| 特性类别 | 支持内容 |
+|----------|----------|
+| **统一 API 网关** | 支持 OpenAI 兼容格式，统一 `/v1/*` 接口 |
+| **服务类型** | Chat、Embedding、Rerank、TTS、STT、Image Generation、Image Editing |
+| **负载均衡策略** | Random、Round Robin、Least Connections、IP Hash |
+| **限流算法** | Token Bucket、Leaky Bucket、Sliding Window、Warm Up |
+| **熔断机制** | 支持失败阈值、恢复检测、降级策略 |
+| **健康检查** | 每服务独立状态接口，支持自动剔除不可用实例 |
+| **适配器支持** | GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI |
+| **动态配置更新** | 支持运行时更新服务实例、权重、限流、熔断等配置 |
+| **配置持久化** | 支持内存存储和文件存储两种后端 |
+| **测试覆盖** | 包含负载均衡、限流、熔断、控制器等单元测试 |
 
-- **统一 API 网关**：提供统一的 API 接入点，支持 OpenAI 兼容的接口格式
-- **多模型服务支持**：支持 Chat、Embedding、Rerank、TTS、STT、Image Generation、Image Editing 等多种模型服务
-- **负载均衡策略**：
-    - Random（随机）
-    - Round Robin（轮询）
-    - Least Connections（最少连接）
-    - IP Hash（一致性哈希）
-- **权重支持**：所有负载均衡策略均支持实例权重配置
-- **健康检查**：提供各服务状态监控接口
-- **适配器支持**：支持多种后端服务适配器（GPUStack、Ollama、VLLM、Xinference、LocalAI等）
-- **流量控制**：支持服务级别和实例级别的限流配置，包括令牌桶、漏桶和滑动窗口算法
-- **熔断机制**：支持服务熔断配置，提高系统稳定性
+---
 
-
-## 项目结构
+## 🧱 项目结构
 
 ```
-src/main/java/org/unreal/modelrouter 
-├── adapter # 适配器模块，用于对接不同的模型服务 
-├── checker # 健康检查模块 
-├── config # 配置类 
-├── controller # 控制器 
-├── dto # 数据传输对象 
-├── loadbalancer # 负载均衡策略实现 
-├── response # 统一响应处理 
-├── util # 工具类 
-└── ModelRouterApplication.java # 启动类
+src/main/java/org/unreal/modelrouter
+├── adapter              # 适配器模块：统一不同后端服务的调用方式
+│   ├── impl             # 各适配器实现：GpuStackAdapter、OllamaAdapter 等
+├── checker              # 健康检查模块：服务状态监控与剔除
+├── circuitbreaker       # 熔断器模块：失败保护机制
+├── config               # 配置模块：加载、合并、动态更新配置
+├── controller           # Web 控制器：统一请求入口与状态接口
+├── dto                  # 请求/响应数据结构定义
+├── exception            # 全局异常处理
+├── factory              # 组件工厂：动态创建负载均衡器、限流器等
+├── fallback             # 降级策略：默认响应、缓存等
+├── loadbalancer         # 负载均衡模块：四种策略实现
+├── model                # 配置模型与注册中心
+├── ratelimit            # 限流模块：多种算法实现
+├── store                # 配置存储模块：内存与文件持久化支持
+├── util                 # 工具类：IP 获取、网络工具等
+└── ModelRouterApplication.java  # 启动类
+
+src/main/resources
+├── application.yml      # 主配置文件
+└── logback.xml          # 日志配置
+
+src/test/java/org/unreal/moduler
+├── CircuitBreakerTest.java
+├── LoadBalancerTest.java
+├── ModelManagerControllerTest.java
+├── ModelServiceRegistryTest.java
+├── RateLimiterTest.java
+├── UniversalControllerTest.java
 ```
 
-## 支持的服务类型
+---
 
-1. **Chat Service** (`/v1/chat/completions`)
-    - 支持流式和非流式响应
-    - 负载均衡策略：Least Connections
+## 🧪 测试模块说明
 
-2. **Embedding Service** (`/v1/embeddings`)
-    - 支持单个和批量嵌入
-    - 负载均衡策略：Round Robin
+| 测试类 | 功能覆盖 |
+|--------|----------|
+| `CircuitBreakerTest` | 熔断器状态切换、失败恢复、降级策略测试 |
+| `LoadBalancerTest` | 各负载均衡策略（随机、轮询、最少连接、IP Hash）行为验证 |
+| `ModelManagerControllerTest` | 动态配置更新接口测试 |
+| `ModelServiceRegistryTest` | 服务注册、实例选择、权重生效测试 |
+| `RateLimiterTest` | 限流算法正确性、并发限流行为测试 |
+| `UniversalControllerTest` | 各服务接口转发、响应格式验证 |
 
-3. **Rerank Service** (`/v1/rerank`)
-    - 文本重排序服务
-    - 负载均衡策略：IP Hash
+---
 
-4. **TTS Service** (`/v1/audio/speech`)
-    - 文本转语音服务
-    - 支持流式输出
-    - 负载均衡策略：Random（默认）
+## ⚙️ 配置说明
 
-5. **STT Service** (`/v1/audio/transcriptions`)
-    - 语音转文本服务
-    - 负载均衡策略：Random（默认）
+JAiRouter 支持两种配置方式：
 
-6. **Image Generation Service** (`/v1/images/generations`)
-    - 图像生成服务
-    - 负载均衡策略：Random（默认）
+- **静态配置**：通过 `application.yml` 文件定义服务、实例、限流、熔断等参数；
+- **动态配置**：通过 REST API 在运行时动态增删改服务实例，无需重启服务。
 
-7. **Image Editing Service** (`/v1/images/edits`)
-    - 图像编辑服务
-    - 负载均衡策略：Random（默认）
+---
 
-## 配置说明
+### ✅ 方式一：配置文件 `application.yml`
 
-配置文件：`src/main/resources/application.yml`
+| 配置项 | 说明 | 示例 |
+|--------|------|------|
+| `model.services.<type>` | 定义某类服务的全局行为 | `chat`, `embedding`, `tts` 等 |
+| `instances` | 每个服务下的模型实例列表 | 支持权重、路径、限流等 |
+| `load-balance.type` | 负载均衡策略 | `random`, `round-robin`, `least-connections`, `ip-hash` |
+| `rate-limit` | 限流配置 | 支持 `token-bucket`, `leaky-bucket`, `sliding-window` |
+| `client-ip-enable` | 是否启用基于客户端 IP 的独立限流 | `true`/`false` |
+| `circuit-breaker` | 熔断配置 | 失败阈值、恢复时间、成功阈值 |
+| `fallback` | 降级策略 | 支持 `default`, `cache` |
+| `store.type` | 配置持久化方式 | `memory` 或 `file` |
+| `store.path` | 文件存储路径（仅在 `type=file` 时生效） | `config/` |
 
-### 全局负载均衡配置
+> 📌 示例详见 [application.yml 示例](./src/main/resources/application.yml)
 
-```yaml
-model:
-  services:
-    load-balance:
-      type: random              # 负载均衡策略
-      hash-algorithm: "md5"     # IP Hash 算法
+---
+
+✅ 已根据最新的 `ServiceInstanceController.java` 接口路径，更新 **动态配置接口文档** 如下：
+
+---
+
+### ✅ 方式二：动态配置接口
+
+> 接口前缀统一为：`/api/config/instance`
+
+| 操作 | 方法 | 路径 | 说明 |
+|------|------|------|------|
+| 获取实例列表 | `GET` | `/api/config/instance/type/{serviceType}` | 获取指定服务下的所有实例 |
+| 获取单个实例详情 | `GET` | `/api/config/instance/info/{serviceType}` | 需带 `modelName` 和 `baseUrl` 参数 |
+| 添加实例 | `POST` | `/api/config/instance/add/{serviceType}` | 添加一个模型实例 |
+| 更新实例 | `PUT` | `/api/config/instance/update/{serviceType}` | 需传 `UpdateInstanceDTO`，包含 `instanceId` |
+| 删除实例 | `DELETE` | `/api/config/instance/del/{serviceType}` | 需带 `modelName` 和 `baseUrl` 参数 |
+
+---
+
+#### ✅ 示例接口调用
+
+##### 1. 获取实例列表
+```http
+GET /api/config/instance/type/chat
 ```
 
-### 服务实例配置示例
-
-```yaml
-model:
-  # 全局配置
-  load-balance:
-    type: random # 支持: random, round-robin, least-connections, ip-hash
-    hash-algorithm: "md5" # IP Hash 策略的哈希算法
-
-  # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
-  adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
-
-  # 全局限流配置
-  rate-limit:
-    enabled: true
-    algorithm: "token-bucket"
-    capacity: 1000
-    rate: 100
-    scope: "service"
-
-  # 全局熔断配置
-  circuit-breaker:
-    enabled: true
-    failureThreshold: 5
-    timeout : 60000
-    successThreshold: 2
-
-    # 全局降级配置
-  fallback:
-    enabled: true
-    strategy: default
-
-  services:
-    # 聊天服务配置
-    chat:
-      load-balance:
-        type: least-connections
-      adapter: gpustack # 使用GPUStack适配器
-      # 服务级别限流配置
-      rate-limit:
-        enabled: true
-        algorithm: "token-bucket"
-        capacity: 100
-        rate: 10
-        scope: "service"
-      instances:
-        - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1-openai/chat/completions"
-          weight: 1
-        - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/chat/completions"
-          weight: 1
-          # 实例级别限流配置
-          rate-limit:
-            enabled: true
-            algorithm: "token-bucket"
-            capacity: 50
-            rate: 5
-            scope: "instance"
-
-
-    # Embedding 服务配置
-    embedding:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "nomic-embed-text-v1.5"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/embeddings"
-          weight: 1
-        - name: "nomic-embed-text-v1.5"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/embeddings"
-          weight: 1
-        - name: "bge-large-zh-v1.5"
-          base-url: "http://172.16.30.6:9090/"
-          path: "/v1/embeddings"
-          weight: 1
-
-    # Rerank 服务配置
-    rerank:
-      load-balance:
-        type: ip-hash
-        hash-algorithm: "sha256"
-      fallback:
-        enabled: true
-        strategy: cache
-        cache-size: 50
-        cache-ttl: 600000 # 10分钟
-      instances:
-        - name: "bge-reranker-v2-m3"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/rerank"
-          weight: 1
-        - name: "bge-reranker-v2-m3"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/rerank"
-          weight: 2
-
-    # TTS 服务配置
-    tts:
-      load-balance:
-        type: random
-      instances:
-        - name: "cosyvoice-300m"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/audio/speech"
-          weight: 1
-        - name: "cosyvoice-300m"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/audio/speech"
-          weight: 1
-
-    # STT 服务配置
-    stt:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "faster-whisper-tiny"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/audio/transcriptions"
-          weight: 2
-        - name: "faster-whisper-tiny"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/audio/transcriptions"
-          weight: 1
-
-    imgGen:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "stable-diffusion-2-1"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/images/generations"
-          weight: 1
-
-    imgEdit:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "stable-diffusion-2-1"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/images/edits"
-          weight: 1
+##### 2. 获取单个实例详情
+```http
+GET /api/config/instance/info/chat?modelName=qwen3:1.7B&baseUrl=http://172.16.30.6:9090
 ```
 
-## API 接口
+##### 3. 添加实例
+```http
+POST /api/config/instance/add/chat
+Content-Type: application/json
 
-### Chat Completion
-```bash
-POST /v1/chat/completions
+{
+  "name": "qwen3:7B",
+  "baseUrl": "http://172.16.30.7:9090",
+  "path": "/v1/chat/completions",
+  "weight": 2
+}
 ```
 
-### Embedding
-```bash
-POST /v1/embeddings
+##### 4. 更新实例
+```http
+PUT /api/config/instance/update/chat
+Content-Type: application/json
+
+{
+  "instanceId": "qwen3:7B@http://172.16.30.7:9090",
+  "instance": {
+    "name": "qwen3:7B",
+    "baseUrl": "http://172.16.30.8:9090",
+    "path": "/v1/chat/completions",
+    "weight": 3
+  }
+}
 ```
 
-### Rerank
-```bash
-POST /v1/rerank
+##### 5. 删除实例
+```http
+DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30.8:9090
 ```
 
-### TTS
-```bash
-POST /v1/audio/speech
-```
+---
 
-### STT
-```bash
-POST /v1/audio/transcriptions
-```
+如需集成前端控制台或自动化脚本，可直接使用以上接口进行服务实例的热更新。
+---
 
-### Image Generation
-```bash
-POST /v1/images/generations
-```
+### ✅ 配置优先级说明
 
-### Image Editing
-```bash
-POST /v1/images/edits
-```
+| 优先级 | 来源 | 是否支持热更新 |
+|--------|------|----------------|
+| 高 | 动态接口配置 | ✅ |
+| 低 | `application.yml` | ❌（需重启） |
 
-### 健康检查
-各服务都提供状态检查接口：
-- `/v1/chat/status`
-- `/v1/embeddings/status`
-- `/v1/rerank/status`
-- `/v1/audio/speech/status`
-- `/v1/audio/transcriptions/status`
-- `/v1/images/generations/status`
-- `/v1/images/edits/status`
+> 🔁 当动态配置与静态配置冲突时，**以动态配置为准**，并会持久化到本地文件（如配置了 `store.type=file`）。
 
-## 负载均衡策略
 
-1. **Random（随机）**：根据权重随机选择实例
-2. **Round Robin（轮询）**：按顺序轮询选择实例，支持权重
-3. **Least Connections（最少连接）**：选择当前连接数最少的实例，考虑权重因素
-4. **IP Hash（一致性哈希）**：根据客户端 IP 哈希值选择实例，保证同一 IP 总是路由到同一实例
 
-## 部署
+- **配置持久化**：支持内存和文件两种后端，通过 `store.type=memory|file` 配置。
+
+---
+
+## 🧩 模块职责补充说明
+
+| 模块 | 职责说明 |
+|------|----------|
+| `adapter` | 将不同后端（如 Ollama、VLLM）统一封装为 OpenAI 格式调用 |
+| `checker` | 定期检测服务健康状态，自动剔除不可用实例 |
+| `circuitbreaker` | 防止服务雪崩，支持失败阈值、恢复检测、降级策略 |
+| `config` | 加载 YAML 配置，支持运行时热更新 |
+| `fallback` | 当服务熔断或限流时，提供默认响应或缓存响应 |
+| `store` | 配置持久化抽象，支持内存与本地文件两种实现 |
+| `util` | 提供 IP 获取、URL 构造、请求转发等通用工具 |
+
+---
+
+## 📦 依赖版本
+
+- **JDK**：17+
+- **Spring Boot**：3.5.x
+- **Spring WebFlux**：响应式 Web 框架
+- **Reactor Core**：响应式编程支持
+
+---
+
+## 🚀 启动与部署
 
 ```bash
 # 编译
@@ -296,59 +218,22 @@ POST /v1/images/edits
 
 # 运行
 java -jar target/model-router-*.jar
+
+# 配置文件路径
+java -jar target/model-router-*.jar --spring.config.location=classpath:/application.yml
 ```
 
-## 开发计划
-0.1.0 ~ 0.2.0
-- 基础服务框架
-  - [x] 实现Openai chat标准接口转发
-  - [x] 实现Openai embedding标准接口转发
-  - [x] 实现Openai rerank标准接口转发
-  - [x] 实现Openai tts标准接口转发
-  - [x] 实现Openai stt标准接口转发
-  - [x] 实现Openai image generation标准接口转发
-  - [x] 实现Openai image editing标准接口转发
-  - [x] 添加负载均衡策略
-    - [x] 随机
-    - [x] 轮询
-    - [x] 最少连接
-    - [x] IP Hash
-  - [x] 添加服务实例配置
-    - [x] openai
-    - [x] ollama
-    - [x] vllm
-    - [x] xinference
-    - [x] localai
-    - [x] gpustack
-  - [x] 添加健康检查接口
-- 流量控制
-    - [x] 第一阶段：基础限流 
-      - [x] 实现 Token Bucket 算法的基础限流器 
-      - [x] 在 ModelServiceRegistry.selectInstance() 中集成服务级别限流 
-      - [x] 添加基本的配置支持
-      - [x] 支持多种限流算法（滑动窗口、漏桶等）
-      - [x] 添加限流配置
-      - [x] 添加服务熔断
-      - [x] 支持实例级别限流
-      - [x] 添加限流预热和降级策略
-    - [x] 第二阶段：精细化控制
-      - [x] 添加客户端 IP 级别限流
-      - 实现动态配置更新接口 
-        - [x] 增加配置持久化
-          - [x] 增加内存实现
-          - [x] 添加文件实现
-        - [x] 修改动态配置更新核心逻辑
-        - [x] 修改ServiceChecker核心逻辑
-        - [x] 添加动态配置更新接口实现
-        - [x] 添加动态配置更新接口测试
-        - 添加动态配置更新接口文档
-        - 添加动态配置更新接口测试用例
-    - [ ] 第三阶段：高级特性 
-      - 集成监控指标和告警 
+---
 
+## 📌 开发计划（更新状态）
 
-## 依赖
+| 阶段 | 状态 | 内容 |
+|------|------|------|
+| 0.1.0 | ✅ | 基础网关、适配器、负载均衡、健康检查 |
+| 0.2.0 | ✅ | 限流、熔断、降级、配置持久化、动态更新接口 |
+| 0.3.0 | 🚧 | 监控指标、Prometheus 集成、告警通知 |
+| 0.4.0 | 📋 | 多租户支持、认证鉴权、日志追踪 |
 
-- Spring Boot 3.5.+
-- Spring WebFlux
-- Reactor Core
+---
+
+如需进一步扩展，请查看 [DeepWiki 文档](https://deepwiki.com/Lincoln-cn/JAiRouter) 或提交 Issue 参与共建。
