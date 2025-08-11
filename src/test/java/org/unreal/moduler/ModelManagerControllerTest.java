@@ -7,6 +7,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.unreal.modelrouter.config.ConfigurationService;
+import org.unreal.modelrouter.config.ConfigurationValidator;
 import org.unreal.modelrouter.controller.ServiceTypeController;
 import reactor.core.publisher.Mono;
 
@@ -26,11 +27,14 @@ class ModelManagerControllerTest {
     @Mock
     private ConfigurationService configurationService;
 
+    @Mock
+    private ConfigurationValidator configurationValidator;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        ServiceTypeController controller = new ServiceTypeController(configurationService);
+        ServiceTypeController controller = new ServiceTypeController(configurationService,configurationValidator);
         webTestClient = WebTestClient.bindToController(controller).build();
     }
 

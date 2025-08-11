@@ -2,6 +2,7 @@ package org.unreal.modelrouter.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
@@ -21,6 +22,13 @@ import java.util.Map;
 public class ConfigurationHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationHelper.class);
+
+    private ConfigurationValidator configurationValidator;
+
+    @Autowired
+    public void setConfigurationValidator(ConfigurationValidator configurationValidator) {
+        this.configurationValidator = configurationValidator;
+    }
 
     /**
      * 服务键到服务类型映射
@@ -131,15 +139,7 @@ public class ConfigurationHelper {
      * 验证负载均衡配置的有效性
      */
     public boolean isValidLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig config) {
-        if (config == null || config.getType() == null) {
-            return false;
-        }
-
-        String type = config.getType().toLowerCase();
-        return type.equals("random") ||
-                type.equals("round-robin") ||
-                type.equals("least-connections") ||
-                type.equals("ip-hash");
+        return configurationValidator.validateLoadBalanceConfig(config);
     }
 
     /**
@@ -150,9 +150,8 @@ public class ConfigurationHelper {
             return false;
         }
 
-        return config.getAlgorithm() != null &&
-                config.getCapacity() != null && config.getCapacity() > 0 &&
-                config.getRate() != null && config.getRate() > 0;
+        RateLimitConfig convertedConfig = convertRateLimitConfig(config);
+        return configurationValidator.validateRateLimitConfig(convertedConfig);
     }
 
     /**

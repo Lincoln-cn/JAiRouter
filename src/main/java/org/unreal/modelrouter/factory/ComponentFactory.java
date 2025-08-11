@@ -3,6 +3,7 @@ package org.unreal.modelrouter.factory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.config.ConfigurationValidator;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.*;
@@ -12,11 +13,19 @@ import org.unreal.modelrouter.fallback.FallbackStrategy;
 import org.unreal.modelrouter.fallback.impl.DefaultFallbackStrategy;
 import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 
 @Component
 public class ComponentFactory {
     private static final Logger logger = LoggerFactory.getLogger(ComponentFactory.class);
+    
+    private final ConfigurationValidator configurationValidator;
+
+    @Autowired
+    public ComponentFactory(ConfigurationValidator configurationValidator) {
+        this.configurationValidator = configurationValidator;
+    }
 
     /* ---------------- LoadBalancer ---------------- */
 
@@ -62,15 +71,35 @@ public class ComponentFactory {
     /* ---------------- Validation ---------------- */
 
     public boolean validateRateLimitConfig(RateLimitConfig cfg) {
-        return cfg != null && cfg.getAlgorithm() != null && cfg.getCapacity() > 0 && cfg.getRate() > 0;
+        return configurationValidator.validateRateLimitConfig(cfg);
     }
 
     public boolean validateCircuitBreakerConfig(ModelRouterProperties.CircuitBreakerConfig cfg) {
-        return cfg != null && cfg.getEnabled() != null && cfg.getFailureThreshold() > 0 && cfg.getTimeout() > 0;
+        if (cfg == null) {
+            return false;
+        }
+        
+        if (cfg.getEnabled() == null) {
+            return false;
+        }
+        
+        if (cfg.getFailureThreshold() != null && cfg.getFailureThreshold() <= 0) {
+            return false;
+        }
+        
+        if (cfg.getTimeout() != null && cfg.getTimeout() <= 0) {
+            return false;
+        }
+        
+        if (cfg.getSuccessThreshold() != null && cfg.getSuccessThreshold() <= 0) {
+            return false;
+        }
+        
+        return true;
     }
 
     public boolean validateLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig cfg) {
-        return cfg != null && cfg.getType() != null;
+        return configurationValidator.validateLoadBalanceConfig(cfg);
     }
     
     public boolean validateFallbackConfig(ModelRouterProperties.FallbackConfig cfg) {
