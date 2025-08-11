@@ -1,0 +1,9 @@
+<FindBugsFilter>
+    <!-- 在这里添加需要排除的特定类或包 -->
+    <!-- 示例:
+    <Match>
+        <Class name="com.example.SomeClass"/>
+        <Bug pattern="SomePattern"/>
+    </Match>
+    -->
+</FindBugsFilter>

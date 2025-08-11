@@ -17,7 +17,7 @@ public class WarmUpRateLimiter implements RateLimiter {
     private final long warmUpPeriod; // 预热期（纳秒）
     private final AtomicLong lastWarmUpTime; // 上次预热时间戳
 
-    public WarmUpRateLimiter(RateLimitConfig config) {
+    public WarmUpRateLimiter(final RateLimitConfig config) {
         this.config = config;
         this.tokens = new AtomicLong(config.getCapacity());
         this.lastRefillTimestamp = new AtomicLong(System.nanoTime());
@@ -26,11 +26,18 @@ public class WarmUpRateLimiter implements RateLimiter {
         this.lastWarmUpTime = new AtomicLong(System.nanoTime());
     }
 
+    /**
+     * 尝试获取令牌
+     * @param context 限流上下文
+     * @return 是否获取成功
+     */
     @Override
-    public boolean tryAcquire(RateLimitContext context) {
+    public boolean tryAcquire(final RateLimitContext context) {
         refill();
         long current = tokens.get();
-        if (current < context.getTokens()) return false;
+        if (current < context.getTokens()) {
+            return false;
+        }
         return tokens.compareAndSet(current, current - context.getTokens());
     }
 
@@ -53,7 +60,7 @@ public class WarmUpRateLimiter implements RateLimiter {
      * @param now 当前时间戳（纳秒）
      * @return 当前速率
      */
-    private long calculateCurrentRate(long now) {
+    private long calculateCurrentRate(final long now) {
         long timeSinceLastWarmUp = now - lastWarmUpTime.get();
         
         // 如果已经过了预热期，直接返回配置的速率
@@ -66,6 +73,10 @@ public class WarmUpRateLimiter implements RateLimiter {
         return Math.max(1, (config.getRate() * timeSinceLastWarmUp) / warmUpPeriod);
     }
 
+    /**
+     * 获取限流配置
+     * @return 限流配置
+     */
     @Override 
     public RateLimitConfig getConfig() { 
         return config; 

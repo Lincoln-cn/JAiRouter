@@ -200,6 +200,31 @@ For integration with frontend consoles or automation scripts, you can directly u
 
 ---
 
+## 🧪 Test Module Description
+
+| Test Class | Function Coverage |
+|------------|-------------------|
+| [CircuitBreakerTest](file://D:\IdeaProjects\model-router\src\test\java\org/unreal/moduler/CircuitBreakerTest.java#L9-L196) | Tests circuit breaker state switching, failure recovery, and fallback strategies |
+| [LoadBalancerTest](file://D:\IdeaProjects\model-router\src\test\java\org/unreal/moduler/LoadBalancerTest.java#L13-L175) | Validates behaviors of load balancing strategies (Random, Round Robin, Least Connections, IP Hash) |
+| [ModelManagerControllerTest](file://D:\IdeaProjects\model-router\src\test\java\org/unreal/moduler/ModelManagerControllerTest.java#L21-L105) | Tests dynamic configuration update interfaces |
+| [ModelServiceRegistryTest](file://D:\IdeaProjects\model-router\src\test\java\org/unreal/moduler/ModelServiceRegistryTest.java#L24-L456) | Tests service registration, instance selection, and weight effectiveness |
+| [RateLimiterTest](file://D:\IdeaProjects\model-router\src\test\java\org/unreal/moduler/RateLimiterTest.java#L22-L180) | Validates correctness of rate limiting algorithms and concurrent rate limiting behavior |
+| [UniversalControllerTest](file://D:\IdeaProjects\model-router\src\test\java\org/unreal/moduler/UniversalControllerTest.java#L22-L220) | Validates service interface forwarding and response format |
+
+---
+
+## 🛡️ Code Quality Assurance
+
+This project integrates multiple code quality tools to ensure code standards and quality:
+
+| Tool | Purpose | Configuration Files |
+|------|---------|---------------------|
+| **Checkstyle** | Checks code style and formatting standards | [checkstyle.xml](checkstyle.xml) |
+| **SpotBugs** | Static analysis tool to find potential bugs | [spotbugs-security-include.xml](spotbugs-security-include.xml) [spotbugs-security-exclude.xml](spotbugs-security-exclude.xml) |
+| **JaCoCo** | Code coverage analysis tool | Built into [pom.xml](pom.xml) |
+
+These tools run automatically during the Maven build process, helping us maintain high-quality code standards.
+
 ## 📦 Dependency Versions
 
 - **JDK**: 17+

@@ -9,7 +9,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.dto.ChatDTO;
+import org.unreal.modelrouter.dto.EmbeddingDTO;
+import org.unreal.modelrouter.dto.ImageEditDTO;
+import org.unreal.modelrouter.dto.ImageGenerateDTO;
+import org.unreal.modelrouter.dto.RerankDTO;
+import org.unreal.modelrouter.dto.SttDTO;
+import org.unreal.modelrouter.dto.TtsDTO;
 import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
 import org.unreal.modelrouter.util.IpUtils;
 import org.unreal.modelrouter.fallback.FallbackStrategy;
@@ -18,16 +24,20 @@ import reactor.core.publisher.Mono;
 
 public abstract class BaseAdapter implements ServiceCapability {
 
-    protected final ModelServiceRegistry registry;
+    private final ModelServiceRegistry registry;
 
-    public BaseAdapter(ModelServiceRegistry registry) {
+    public BaseAdapter(final ModelServiceRegistry registry) {
         this.registry = registry;
+    }
+
+    public ModelServiceRegistry getRegistry() {
+        return registry;
     }
 
     /**
      * 检查适配器是否支持指定的服务能力
      */
-    protected Mono<ResponseEntity<String>> checkCapability(ModelServiceRegistry.ServiceType serviceType) {
+    protected Mono<ResponseEntity<String>> checkCapability(final ModelServiceRegistry.ServiceType serviceType) {
         if (!supportCapability().contains(serviceType)) {
             return Mono.just(ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
                     .body("This adapter does not support " + serviceType.name() + " capability."));
@@ -38,34 +48,35 @@ public abstract class BaseAdapter implements ServiceCapability {
     /**
      * 通用请求处理模板方法
      */
+    @SuppressWarnings("all")
     protected <T> Mono processRequest(
-            T request,
-            String authorization,
-            ServerHttpRequest httpRequest,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            RequestProcessor<T> processor) {
+            final T request,
+            final String authorization,
+            final ServerHttpRequest httpRequest,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final RequestProcessor<T> processor) {
 
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, httpRequest);
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = registry.getClient(serviceType, modelName, clientIp);
+        WebClient client = getRegistry().getClient(serviceType, modelName, clientIp);
         String path = getModelPath(serviceType, modelName);
 
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
                 // 在成功完成时记录成功
                 .doOnSuccess(response -> {
                     if (response != null && response.getStatusCode().is2xxSuccessful()) {
-                        registry.recordCallComplete(serviceType, selectedInstance);
+                        getRegistry().recordCallComplete(serviceType, selectedInstance);
                         // 缓存成功响应
                         cacheSuccessfulResponse(serviceType, modelName, response, httpRequest);
                     } else {
                         // 非2xx响应视为失败
-                        registry.recordCallFailure(serviceType, selectedInstance);
+                        getRegistry().recordCallFailure(serviceType, selectedInstance);
                     }
                 })
                 // 在发生错误时记录失败
                 .onErrorResume(throwable -> {
-                    registry.recordCallFailure(serviceType, selectedInstance);
+                    getRegistry().recordCallFailure(serviceType, selectedInstance);
                     return Mono.error(throwable);
                 });
     }
@@ -73,17 +84,18 @@ public abstract class BaseAdapter implements ServiceCapability {
     /**
      * 通用请求处理模板方法（带降级处理）
      */
+    @SuppressWarnings("all")
     protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
-            T request,
-            String authorization,
-            ServerHttpRequest httpRequest,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            RequestProcessor<T> processor) {
+            final T request,
+            final String authorization,
+            final ServerHttpRequest httpRequest,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final RequestProcessor<T> processor) {
 
-        ModelRouterProperties.ServiceConfig serviceConfig = registry.getServiceConfig(serviceType);
+        ModelRouterProperties.ServiceConfig serviceConfig = getRegistry().getServiceConfig(serviceType);
         FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
-                registry.getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
+                getRegistry().getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
 
         // 如果未启用降级，则使用普通的处理方法
         if (fallbackStrategy == null) {
@@ -105,13 +117,13 @@ public abstract class BaseAdapter implements ServiceCapability {
      * 通用非流式请求处理
      */
     protected <T> Mono<? extends ResponseEntity<?>> processNonStreamingRequest(
-            T request,
-            String authorization,
-            WebClient client,
-            String path,
-            ModelRouterProperties.ModelInstance selectedInstance,
-            ModelServiceRegistry.ServiceType serviceType,
-            Class<?> responseType) {
+            final T request,
+            final String authorization,
+            final WebClient client,
+            final String path,
+            final ModelRouterProperties.ModelInstance selectedInstance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final Class<?> responseType) {
 
         Object transformedRequest = transformRequest(request, getAdapterType());
 
@@ -163,9 +175,13 @@ public abstract class BaseAdapter implements ServiceCapability {
                             }
                         } else {
                             if (transformedResponse instanceof ResponseEntity) {
-                                return ResponseEntity.status(responseEntity.getStatusCode()).contentType(MediaType.APPLICATION_JSON).body(((ResponseEntity<?>) transformedResponse).getBody());
+                                return ResponseEntity.status(responseEntity.getStatusCode())
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .body(((ResponseEntity<?>) transformedResponse).getBody());
                             } else {
-                                return ResponseEntity.status(responseEntity.getStatusCode()).contentType(MediaType.APPLICATION_JSON).body(transformedResponse);
+                                return ResponseEntity.status(responseEntity.getStatusCode())
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .body(transformedResponse);
                             }
                         }
                     });
@@ -176,12 +192,12 @@ public abstract class BaseAdapter implements ServiceCapability {
      * 通用流式请求处理
      */
     protected <T> Mono<? extends ResponseEntity<?>> processStreamingRequest(
-            T request,
-            String authorization,
-            WebClient client,
-            String path,
-            ModelRouterProperties.ModelInstance selectedInstance,
-            ModelServiceRegistry.ServiceType serviceType) {
+            final T request,
+            final String authorization,
+            final WebClient client,
+            final String path,
+            final ModelRouterProperties.ModelInstance selectedInstance,
+            final ModelServiceRegistry.ServiceType serviceType) {
 
         Object transformedRequest = transformRequest(request, getAdapterType());
 
@@ -210,7 +226,9 @@ public abstract class BaseAdapter implements ServiceCapability {
     /**
      * 配置请求头 - 子类可以重写
      */
-    protected <T> WebClient.RequestBodySpec configureRequestHeaders(WebClient.RequestBodySpec requestSpec, T request) {
+    protected <T> WebClient.RequestBodySpec configureRequestHeaders(
+            final WebClient.RequestBodySpec requestSpec, 
+            final T request) {
         // 默认设置JSON Content-Type
         if (!(request instanceof SttDTO.Request) && !(request instanceof ImageEditDTO.Request)) { // STT需要multipart
             requestSpec.header("Content-Type", "application/json");
@@ -223,14 +241,22 @@ public abstract class BaseAdapter implements ServiceCapability {
     /**
      * 转换流式响应块 - 子类可以重写
      */
-    protected String transformStreamChunk(String chunk) {
+    protected String transformStreamChunk(final String chunk) {
         return adaptModelName(chunk);
     }
 
     public abstract AdapterCapabilities supportCapability();
 
+    /**
+     * 处理聊天请求
+     * @param request 聊天请求参数
+     * @param authorization 授权信息
+     * @param httpRequest HTTP请求对象
+     * @return 响应实体
+     */
+    @SuppressWarnings("all")
     @Override
-    public Mono chat(ChatDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+    public Mono chat(final ChatDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.chat);
         if (capabilityCheck != null) {
             return capabilityCheck;
@@ -245,8 +271,16 @@ public abstract class BaseAdapter implements ServiceCapability {
                 });
     }
 
+    /**
+     * 处理嵌入请求
+     * @param request 嵌入请求参数
+     * @param authorization 授权信息
+     * @param httpRequest HTTP请求对象
+     * @return 响应实体
+     */
+    @SuppressWarnings("all")
     @Override
-    public Mono embedding(EmbeddingDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+    public Mono embedding(final EmbeddingDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.embedding);
         if (capabilityCheck != null) {
             return capabilityCheck;
@@ -256,8 +290,16 @@ public abstract class BaseAdapter implements ServiceCapability {
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
 
+    /**
+     * 处理重排序请求
+     * @param request 重排序请求参数
+     * @param authorization 授权信息
+     * @param httpRequest HTTP请求对象
+     * @return 响应实体
+     */
+    @SuppressWarnings("all")
     @Override
-    public Mono rerank(RerankDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+    public Mono rerank(final RerankDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.rerank);
         if (capabilityCheck != null) {
             return capabilityCheck;
@@ -267,8 +309,16 @@ public abstract class BaseAdapter implements ServiceCapability {
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
 
+    /**
+     * 处理文本转语音请求
+     * @param request TTS请求参数
+     * @param authorization 授权信息
+     * @param httpRequest HTTP请求对象
+     * @return 响应实体
+     */
+    @SuppressWarnings("all")
     @Override
-    public Mono tts(TtsDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+    public Mono tts(final TtsDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.tts);
         if (capabilityCheck != null) {
             return capabilityCheck;
@@ -278,8 +328,16 @@ public abstract class BaseAdapter implements ServiceCapability {
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, byte[].class));
     }
 
+    /**
+     * 处理语音转文本请求
+     * @param request STT请求参数
+     * @param authorization 授权信息
+     * @param httpRequest HTTP请求对象
+     * @return 响应实体
+     */
+    @SuppressWarnings("all")
     @Override
-    public Mono stt(SttDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+    public Mono stt(final SttDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.stt);
         if (capabilityCheck != null) {
             return capabilityCheck;
@@ -289,7 +347,15 @@ public abstract class BaseAdapter implements ServiceCapability {
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
 
-    public Mono imageGenerate(ImageGenerateDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+    /**
+     * 处理图像生成请求
+     * @param request 图像生成请求参数
+     * @param authorization 授权信息
+     * @param httpRequest HTTP请求对象
+     * @return 响应实体
+     */
+    @SuppressWarnings("all")
+    public Mono imageGenerate(final ImageGenerateDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.imgGen);
         if (capabilityCheck != null) {
             return capabilityCheck;
@@ -299,7 +365,15 @@ public abstract class BaseAdapter implements ServiceCapability {
                         processNonStreamingRequest(req, auth, client, path, instance, serviceType, String.class));
     }
 
-    public Mono imageEdit(ImageEditDTO.Request request, String authorization, ServerHttpRequest httpRequest) {
+    /**
+     * 处理图像编辑请求
+     * @param request 图像编辑请求参数
+     * @param authorization 授权信息
+     * @param httpRequest HTTP请求对象
+     * @return 响应实体
+     */
+    @SuppressWarnings("all")
+    public Mono imageEdit(final ImageEditDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.imgEdit);
         if (capabilityCheck != null) {
             return capabilityCheck;
@@ -320,45 +394,45 @@ public abstract class BaseAdapter implements ServiceCapability {
      * 获取选中的实例
      */
     protected ModelRouterProperties.ModelInstance selectInstance(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest) {
         String clientIp = IpUtils.getClientIp(httpRequest);
-        return registry.selectInstance(serviceType, modelName, clientIp);
+        return getRegistry().selectInstance(serviceType, modelName, clientIp);
     }
 
     /**
      * 获取模型路径
      */
-    protected String getModelPath(ModelServiceRegistry.ServiceType serviceType, String modelName) {
-        return registry.getModelPath(serviceType, modelName);
+    protected String getModelPath(final ModelServiceRegistry.ServiceType serviceType, final String modelName) {
+        return getRegistry().getModelPath(serviceType, modelName);
     }
 
     /**
      * 转换请求体 - 子类可以重写此方法来适配不同的API格式
      */
-    protected Object transformRequest(Object request, String adapterType) {
+    protected Object transformRequest(final Object request, final String adapterType) {
         return request;
     }
 
     /**
      * 适配模型名称格式
      */
-    protected String adaptModelName(String originalModelName) {
+    protected String adaptModelName(final String originalModelName) {
         return originalModelName;
     }
 
     /**
      * 转换响应体 - 子类可以重写此方法来适配不同的API格式
      */
-    protected Object transformResponse(Object response, String adapterType) {
+    protected Object transformResponse(final Object response, final String adapterType) {
         return response;
     }
 
     /**
      * 获取授权头 - 子类可以重写此方法来处理不同的认证方式
      */
-    protected String getAuthorizationHeader(String authorization, String adapterType) {
+    protected String getAuthorizationHeader(final String authorization, final String adapterType) {
         return authorization;
     }
 
@@ -366,14 +440,14 @@ public abstract class BaseAdapter implements ServiceCapability {
      * 缓存成功的响应结果
      */
     protected void cacheSuccessfulResponse(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ResponseEntity<?> response,
-            ServerHttpRequest httpRequest) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ResponseEntity<?> response,
+            final ServerHttpRequest httpRequest) {
 
-        ModelRouterProperties.ServiceConfig serviceConfig = registry.getServiceConfig(serviceType);
+        ModelRouterProperties.ServiceConfig serviceConfig = getRegistry().getServiceConfig(serviceType);
         FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
-                registry.getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
+                getRegistry().getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
 
         // 如果降级策略是缓存类型，则缓存响应
         if (fallbackStrategy instanceof CacheFallbackStrategy) {
@@ -387,12 +461,12 @@ public abstract class BaseAdapter implements ServiceCapability {
     @FunctionalInterface
     protected interface RequestProcessor<T> {
         Mono<? extends ResponseEntity<?>> process(
-                T request,
-                String authorization,
-                WebClient client,
-                String path,
-                ModelRouterProperties.ModelInstance selectedInstance,
-                ModelServiceRegistry.ServiceType serviceType
+                final T request,
+                final String authorization,
+                final WebClient client,
+                final String path,
+                final ModelRouterProperties.ModelInstance selectedInstance,
+                final ModelServiceRegistry.ServiceType serviceType
         );
     }
 }

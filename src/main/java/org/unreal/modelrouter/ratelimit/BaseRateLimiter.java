@@ -6,11 +6,11 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * 抽象限流器实现，提供基础功能
  */
-public abstract class BaseRateLimiter{
-    protected final RateLimitConfig config;
-    protected final ConcurrentMap<String, RateLimiter> scopedLimiters = new ConcurrentHashMap<>();
+public abstract class BaseRateLimiter {
+    private final RateLimitConfig config;
+    private final ConcurrentMap<String, RateLimiter> scopedLimiters = new ConcurrentHashMap<>();
 
-    public BaseRateLimiter(RateLimitConfig config) {
+    public BaseRateLimiter(final RateLimitConfig config) {
         this.config = config;
     }
 
@@ -19,20 +19,32 @@ public abstract class BaseRateLimiter{
      * @param context 限流上下文
      * @return 作用域键
      */
-    public String generateKey(RateLimitContext context) {
-        switch (config.getScope().toLowerCase()) {
-            case "service":
-                return context.getServiceType().name();
-            case "model":
-                return context.getServiceType().name() + ":" + context.getModelName();
-            case "client-ip":
-                return context.getClientIp();
-            case "instance":
+    public String generateKey(final RateLimitContext context) {
+        return switch (config.getScope().toLowerCase()) {
+            case "service" -> context.getServiceType().name();
+            case "model" -> context.getServiceType().name() + ":" + context.getModelName();
+            case "client-ip" -> context.getClientIp();
+            case "instance" ->
                 // 这里需要根据实际实例信息生成键
-                return context.getServiceType().name() + ":" + context.getModelName() + ":" + context.getClientIp();
-            default:
-                return "default";
-        }
+                    context.getServiceType().name() + ":" + context.getModelName() + ":" + context.getClientIp();
+            default -> "default";
+        };
+    }
+
+    /**
+     * 获取限流配置
+     * @return 限流配置
+     */
+    public RateLimitConfig getConfig() {
+        return config;
+    }
+
+    /**
+     * 获取作用域限流器映射
+     * @return 作用域限流器映射
+     */
+    public ConcurrentMap<String, RateLimiter> getScopedLimiters() {
+        return scopedLimiters;
     }
 
     /**

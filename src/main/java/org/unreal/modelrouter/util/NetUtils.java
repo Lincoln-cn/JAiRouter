@@ -15,9 +15,9 @@ import java.time.LocalDateTime;
  * - ping是基于ICMP协议, ping不通可能原因是防火墙或其他主机设置禁用了ICMP协议
  * - telnet/socket都是基于TCP/IP协议簇
  */
-public class NetUtils {
+public final class NetUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(NetUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NetUtils.class);
     
     /**
      * 同步检测ip是否可连接
@@ -25,7 +25,7 @@ public class NetUtils {
      * @param host 域名或ip地址
      * @return NetConnect 返回结果
      */
-    public static NetConnect testIpConnect(String host) {
+    public static NetConnect testIpConnect(final String host) {
         boolean reachable = false;
         String msg;
 
@@ -41,10 +41,10 @@ public class NetUtils {
             }
         } catch (UnknownHostException e) {
             msg = String.format("Invalid URL or Host not found: %s", host);
-            log.error("UnknownHostException occurred while pinging host: {}", host, e);
+            LOGGER.error("UnknownHostException occurred while pinging host: {}", host, e);
         } catch (Exception e) {
             msg = String.format("Error: %s", e.getMessage());
-            log.error("Unexpected error occurred while pinging host: {}", host, e);
+            LOGGER.error("Unexpected error occurred while pinging host: {}", host, e);
         }
         return NetConnect.builder().connect(reachable).msg(msg).receiveTime(LocalDateTime.now()).build();
     }
@@ -56,7 +56,7 @@ public class NetUtils {
      * @param port 端口号
      * @return NetConnect 返回结果
      */
-    public static NetConnect testSocketConnect(String host, int port) {
+    public static NetConnect testSocketConnect(final String host, final int port) {
         boolean reachable = false;
         String msg;
 
@@ -71,7 +71,7 @@ public class NetUtils {
             socket.close();
         } catch (Exception e) {
             msg = String.format("Port %s is closed on %s", port, host);
-            log.error("Error occurred while testing socket connection to {}:{}", host, port, e);
+            LOGGER.error("Error occurred while testing socket connection to {}:{}", host, port, e);
         }
         return NetConnect.builder().connect(reachable).msg(msg).receiveTime(LocalDateTime.now()).build();
     }
@@ -85,14 +85,29 @@ public class NetUtils {
             return new NetConnectBuilder();
         }
 
+        /**
+         * 获取连接状态
+         * 
+         * @return 连接状态
+         */
         public boolean isConnect() {
             return connect;
         }
 
+        /**
+         * 获取消息
+         * 
+         * @return 消息内容
+         */
         public String getMsg() {
             return msg;
         }
 
+        /**
+         * 获取接收时间
+         * 
+         * @return 接收时间
+         */
         public LocalDateTime getReceiveTime() {
             return receiveTime;
         }
@@ -102,21 +117,44 @@ public class NetUtils {
             private String msg;
             private LocalDateTime receiveTime;
 
-            public NetConnectBuilder connect(boolean connect) {
-                this.connect = connect;
+            /**
+             * 设置连接状态
+             * 
+             * @param isConnected 连接状态
+             * @return 构建器实例
+             */
+            public NetConnectBuilder connect(final boolean isConnected) {
+                this.connect = isConnected;
                 return this;
             }
 
-            public NetConnectBuilder msg(String msg) {
-                this.msg = msg;
+            /**
+             * 设置消息
+             * 
+             * @param message 消息内容
+             * @return 构建器实例
+             */
+            public NetConnectBuilder msg(final String message) {
+                this.msg = message;
                 return this;
             }
 
-            public NetConnectBuilder receiveTime(LocalDateTime receiveTime) {
-                this.receiveTime = receiveTime;
+            /**
+             * 设置接收时间
+             * 
+             * @param time 接收时间
+             * @return 构建器实例
+             */
+            public NetConnectBuilder receiveTime(final LocalDateTime time) {
+                this.receiveTime = time;
                 return this;
             }
 
+            /**
+             * 构建NetConnect实例
+             * 
+             * @return NetConnect实例
+             */
             public NetConnect build() {
                 NetConnect netConnect = new NetConnect();
                 netConnect.connect = this.connect;
@@ -125,5 +163,9 @@ public class NetUtils {
                 return netConnect;
             }
         }
+    }
+    
+    // 私有构造器防止实例化
+    private NetUtils() {
     }
 }

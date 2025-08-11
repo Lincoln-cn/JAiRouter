@@ -1,6 +1,5 @@
 package org.unreal.modelrouter.ratelimit.impl;
 
-import org.unreal.modelrouter.ratelimit.BaseRateLimiter;
 import org.unreal.modelrouter.ratelimit.RateLimitConfig;
 import org.unreal.modelrouter.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.ratelimit.RateLimiter;
@@ -15,17 +14,24 @@ public class LeakyBucketRateLimiter implements RateLimiter {
     private final AtomicLong water;
     private final AtomicLong lastLeak;
 
-    public LeakyBucketRateLimiter(RateLimitConfig config) {
+    public LeakyBucketRateLimiter(final RateLimitConfig config) {
         this.config = config;
         this.water = new AtomicLong(0);
         this.lastLeak = new AtomicLong(System.nanoTime());
     }
 
+    /**
+     * 尝试获取令牌
+     * @param context 限流上下文
+     * @return 是否获取成功
+     */
     @Override
-    public boolean tryAcquire(RateLimitContext context) {
+    public boolean tryAcquire(final RateLimitContext context) {
         leak();
         long current = water.get();
-        if (current + context.getTokens() > config.getCapacity()) return false;
+        if (current + context.getTokens() > config.getCapacity()) {
+            return false;
+        }
         return water.compareAndSet(current, current + context.getTokens());
     }
 
@@ -39,5 +45,12 @@ public class LeakyBucketRateLimiter implements RateLimiter {
         }
     }
 
-    @Override public RateLimitConfig getConfig() { return config; }
+    /**
+     * 获取限流配置
+     * @return 限流配置
+     */
+    @Override 
+    public RateLimitConfig getConfig() { 
+        return config; 
+    }
 }

@@ -8,8 +8,13 @@ import java.util.Map;
  */
 public abstract class BaseStoreManager implements StoreManager {
 
+    /**
+     * 保存配置
+     * @param key 配置键
+     * @param config 配置内容
+     */
     @Override
-    public void saveConfig(String key, Map<String, Object> config) {
+    public void saveConfig(final String key, final Map<String, Object> config) {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("Key cannot be null or empty");
         }
@@ -19,32 +24,51 @@ public abstract class BaseStoreManager implements StoreManager {
         doSaveConfig(key, config);
     }
 
+    /**
+     * 获取配置
+     * @param key 配置键
+     * @return 配置内容
+     */
     @Override
-    public Map<String, Object> getConfig(String key) {
+    public Map<String, Object> getConfig(final String key) {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("Key cannot be null or empty");
         }
         return doGetConfig(key);
     }
 
+    /**
+     * 删除配置
+     * @param key 配置键
+     */
     @Override
-    public void deleteConfig(String key) {
+    public void deleteConfig(final String key) {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("Key cannot be null or empty");
         }
         doDeleteConfig(key);
     }
 
+    /**
+     * 检查配置是否存在
+     * @param key 配置键
+     * @return 是否存在
+     */
     @Override
-    public boolean exists(String key) {
+    public boolean exists(final String key) {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("Key cannot be null or empty");
         }
         return doExists(key);
     }
 
+    /**
+     * 更新配置
+     * @param key 配置键
+     * @param config 配置内容
+     */
     @Override
-    public void updateConfig(String key, Map<String, Object> config) {
+    public void updateConfig(final String key, final Map<String, Object> config) {
         if (key == null || key.isEmpty()) {
             throw new IllegalArgumentException("Key cannot be null or empty");
         }

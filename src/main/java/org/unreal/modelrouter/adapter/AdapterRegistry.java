@@ -1,7 +1,12 @@
 package org.unreal.modelrouter.adapter;
 
 import org.springframework.context.annotation.Configuration;
-import org.unreal.modelrouter.adapter.impl.*;
+import org.unreal.modelrouter.adapter.impl.GpuStackAdapter;
+import org.unreal.modelrouter.adapter.impl.LocalAiAdapter;
+import org.unreal.modelrouter.adapter.impl.NormalOpenAiAdapter;
+import org.unreal.modelrouter.adapter.impl.OllamaAdapter;
+import org.unreal.modelrouter.adapter.impl.VllmAdapter;
+import org.unreal.modelrouter.adapter.impl.XinferenceAdapter;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 
@@ -16,7 +21,7 @@ public class AdapterRegistry {
     private final ModelRouterProperties properties;
     private final ModelServiceRegistry registry;
 
-    public AdapterRegistry(ModelRouterProperties properties, ModelServiceRegistry registry) {
+    public AdapterRegistry(final ModelRouterProperties properties, final ModelServiceRegistry registry) {
         this.properties = properties;
         this.registry = registry;
         this.adapters = new HashMap<>();
@@ -36,7 +41,7 @@ public class AdapterRegistry {
     /**
      * 根据服务类型获取对应的Adapter
      */
-    public ServiceCapability getAdapter(ModelServiceRegistry.ServiceType serviceType) {
+    public ServiceCapability getAdapter(final ModelServiceRegistry.ServiceType serviceType) {
         String adapterName = getAdapterName(serviceType);
         ServiceCapability adapter = adapters.get(adapterName.toLowerCase());
 
@@ -50,7 +55,7 @@ public class AdapterRegistry {
     /**
      * 获取指定服务类型的adapter名称
      */
-    private String getAdapterName(ModelServiceRegistry.ServiceType serviceType) {
+    private String getAdapterName(final ModelServiceRegistry.ServiceType serviceType) {
         // 优先使用服务级配置
         String adapterName = registry.getServiceAdapter(serviceType);
 
@@ -66,7 +71,7 @@ public class AdapterRegistry {
     /**
      * 检查adapter是否支持指定的服务类型
      */
-    public boolean isAdapterSupported(String adapterName) {
+    public boolean isAdapterSupported(final String adapterName) {
         return adapters.containsKey(adapterName.toLowerCase());
     }
 
