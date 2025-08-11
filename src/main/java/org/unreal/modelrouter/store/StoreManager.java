@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.store;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,4 +49,42 @@ public interface StoreManager {
      * @param config 配置内容
      */
     void updateConfig(String key, Map<String, Object> config);
+
+    /**
+     * 保存配置的版本
+     * @param key 配置键
+     * @param config 配置内容
+     * @param version 版本号
+     */
+    default void saveConfigVersion(String key, Map<String, Object> config, int version) {
+        // 默认实现为空，具体实现在子类中
+    }
+
+    /**
+     * 获取配置的所有版本号
+     * @param key 配置键
+     * @return 版本号列表
+     */
+    default List<Integer> getConfigVersions(String key) {
+        return new ArrayList<>();
+    }
+
+    /**
+     * 获取指定版本的配置
+     * @param key 配置键
+     * @param version 版本号
+     * @return 配置内容
+     */
+    default Map<String, Object> getConfigByVersion(String key, int version) {
+        return null;
+    }
+
+    /**
+     * 删除指定版本的配置
+     * @param key 配置键
+     * @param version 版本号
+     */
+    default void deleteConfigVersion(String key, int version) {
+        // 默认实现为空
+    }
 }

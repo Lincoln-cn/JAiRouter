@@ -10,13 +10,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-/**
- * 基于文件的配置存储实现
- */
 public class FileStoreManager extends BaseStoreManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileStoreManager.class);
@@ -125,7 +122,7 @@ public class FileStoreManager extends BaseStoreManager {
         try {
             Set<String> keys = new HashSet<>();
             File storageDir = new File(storagePath);
-            File[] files = storageDir.listFiles((dir, name) -> name.endsWith(".json"));
+            File[] files = storageDir.listFiles((dir, name) -> name.endsWith(".json") && !name.contains("@"));
             
             if (files != null) {
                 for (File file : files) {
@@ -138,6 +135,90 @@ public class FileStoreManager extends BaseStoreManager {
         } catch (Exception e) {
             LOGGER.error("Failed to list config keys", e);
             return new HashSet<>();
+        }
+    }
+
+    /**
+     * 保存配置的版本
+     * @param key 配置键
+     * @param config 配置内容
+     * @param version 版本号
+     */
+    @Override
+    public void saveConfigVersion(String key, Map<String, Object> config, int version) {
+        try {
+            File versionFile = new File(storagePath, key + "@" + version + ".json");
+            objectMapper.writeValue(versionFile, config);
+        } catch (IOException e) {
+            LOGGER.error("Failed to save config version for key: " + key + ", version: " + version, e);
+        }
+    }
+
+    /**
+     * 获取配置的所有版本号
+     * @param key 配置键
+     * @return 版本号列表
+     */
+    @Override
+    public List<Integer> getConfigVersions(String key) {
+        try {
+            List<Integer> versions = new ArrayList<>();
+            File storageDir = new File(storagePath);
+            Pattern versionPattern = Pattern.compile(Pattern.quote(key) + "@(\\d+)\\.json");
+            
+            File[] files = storageDir.listFiles((dir, name) -> name.startsWith(key + "@") && name.endsWith(".json"));
+            
+            if (files != null) {
+                for (File file : files) {
+                    Matcher matcher = versionPattern.matcher(file.getName());
+                    if (matcher.matches()) {
+                        versions.add(Integer.parseInt(matcher.group(1)));
+                    }
+                }
+            }
+            
+            Collections.sort(versions);
+            return versions;
+        } catch (Exception e) {
+            LOGGER.error("Failed to list config versions for key: " + key, e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 获取指定版本的配置
+     * @param key 配置键
+     * @param version 版本号
+     * @return 配置内容
+     */
+    @Override
+    public Map<String, Object> getConfigByVersion(String key, int version) {
+        try {
+            File versionFile = new File(storagePath, key + "@" + version + ".json");
+            if (!versionFile.exists()) {
+                return null;
+            }
+            return objectMapper.readValue(versionFile, new TypeReference<>() { });
+        } catch (IOException e) {
+            LOGGER.error("Failed to read config version for key: " + key + ", version: " + version, e);
+            return null;
+        }
+    }
+
+    /**
+     * 删除指定版本的配置
+     * @param key 配置键
+     * @param version 版本号
+     */
+    @Override
+    public void deleteConfigVersion(String key, int version) {
+        try {
+            File versionFile = new File(storagePath, key + "@" + version + ".json");
+            if (versionFile.exists()) {
+                Files.delete(versionFile.toPath());
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to delete config version for key: " + key + ", version: " + version, e);
         }
     }
 }
