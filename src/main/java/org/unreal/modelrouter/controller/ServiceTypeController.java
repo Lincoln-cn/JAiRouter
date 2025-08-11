@@ -52,7 +52,7 @@ public class ServiceTypeController {
     @Operation(summary = "获取所有配置", description = "获取当前系统的所有配置信息")
     @ApiResponse(responseCode = "200", description = "成功获取配置",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getAllConfigurations() {
         try {
@@ -72,7 +72,7 @@ public class ServiceTypeController {
     @Operation(summary = "获取服务可用模型", description = "根据服务类型获取该服务下的所有可用模型")
     @ApiResponse(responseCode = "200", description = "成功获取模型列表",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "参数验证失败")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Set<String>>> getAvailableModels(
@@ -105,7 +105,7 @@ public class ServiceTypeController {
     @Operation(summary = "重置配置", description = "将系统配置重置为默认值")
     @ApiResponse(responseCode = "200", description = "配置重置成功",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> resetToDefaultConfig() {
         try {
@@ -127,7 +127,7 @@ public class ServiceTypeController {
     @Operation(summary = "获取所有服务类型", description = "获取系统中所有可用的服务类型")
     @ApiResponse(responseCode = "200", description = "成功获取服务类型",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Set<String>>> getAvailableServiceTypes() {
         try {
@@ -147,7 +147,7 @@ public class ServiceTypeController {
     @Operation(summary = "获取服务配置", description = "根据服务类型获取该服务的配置信息")
     @ApiResponse(responseCode = "200", description = "成功获取服务配置",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "参数验证失败")
     @ApiResponse(responseCode = "404", description = "服务类型不存在")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
@@ -184,7 +184,7 @@ public class ServiceTypeController {
     @Operation(summary = "创建新服务", description = "创建一个新的服务类型并配置相关信息")
     @ApiResponse(responseCode = "201", description = "服务创建成功",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "参数验证失败")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> createService(
@@ -228,7 +228,7 @@ public class ServiceTypeController {
     @Operation(summary = "更新服务配置", description = "更新指定服务类型的配置信息")
     @ApiResponse(responseCode = "200", description = "服务配置更新成功",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "参数验证失败")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> updateServiceConfig(
@@ -271,7 +271,7 @@ public class ServiceTypeController {
     @Operation(summary = "删除服务", description = "删除指定的服务类型及其所有配置")
     @ApiResponse(responseCode = "200", description = "服务删除成功",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "参数验证失败")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> deleteService(

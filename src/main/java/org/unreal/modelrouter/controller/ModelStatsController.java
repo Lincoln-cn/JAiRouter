@@ -45,7 +45,7 @@ public class ModelStatsController {
     @Operation(summary = "获取配置统计信息", description = "获取系统中所有服务和实例的统计信息")
     @ApiResponse(responseCode = "200", description = "成功获取配置统计",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ApiResponse.class)))
+                    schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<ResponseEntity<RouterResponse<Object>>> getConfigurationStats() {
         try {

@@ -1,7 +1,3 @@
-根据你提供的项目目录结构，README 文件的内容可以进一步细化，补充模块职责说明、测试覆盖、配置动态更新等内容，使其更贴近真实项目结构。以下是更新后的 README.md：
-
----
-
 # JAiRouter
 
 JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关，用于统一管理和路由各种 AI 模型服务（如 Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流、熔断、健康检查、动态配置更新等功能。
@@ -30,6 +26,7 @@ JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关
 ## 🧱 项目结构
 
 ```
+
 src/main/java/org/unreal/modelrouter
 ├── adapter              # 适配器模块：统一不同后端服务的调用方式
 │   ├── impl             # 各适配器实现：GpuStackAdapter、OllamaAdapter 等
@@ -59,6 +56,7 @@ src/test/java/org/unreal/moduler
 ├── ModelServiceRegistryTest.java
 ├── RateLimiterTest.java
 ├── UniversalControllerTest.java
+
 ```
 
 ---
@@ -100,10 +98,6 @@ JAiRouter 支持两种配置方式：
 | `store.path` | 文件存储路径（仅在 `type=file` 时生效） | `config/` |
 
 > 📌 示例详见 [application.yml 示例](./src/main/resources/application.yml)
-
----
-
-✅ 已根据最新的 `ServiceInstanceController.java` 接口路径，更新 **动态配置接口文档** 如下：
 
 ---
 
@@ -169,9 +163,6 @@ DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30
 
 ---
 
-如需集成前端控制台或自动化脚本，可直接使用以上接口进行服务实例的热更新。
----
-
 ### ✅ 配置优先级说明
 
 | 优先级 | 来源 | 是否支持热更新 |
@@ -181,36 +172,20 @@ DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30
 
 > 🔁 当动态配置与静态配置冲突时，**以动态配置为准**，并会持久化到本地文件（如配置了 `store.type=file`）。
 
-
-
-- **配置持久化**：支持内存和文件两种后端，通过 `store.type=memory|file` 配置。
-
 ---
 
-## 🧩 模块职责补充说明
+## 📘 API 文档（SpringDoc OpenAPI）
 
-| 模块 | 职责说明 |
-|------|----------|
-| `adapter` | 将不同后端（如 Ollama、VLLM）统一封装为 OpenAI 格式调用 |
-| `checker` | 定期检测服务健康状态，自动剔除不可用实例 |
-| `circuitbreaker` | 防止服务雪崩，支持失败阈值、恢复检测、降级策略 |
-| `config` | 加载 YAML 配置，支持运行时热更新 |
-| `fallback` | 当服务熔断或限流时，提供默认响应或缓存响应 |
-| `store` | 配置持久化抽象，支持内存与本地文件两种实现 |
-| `util` | 提供 IP 获取、URL 构造、请求转发等通用工具 |
+JAiRouter 使用 [SpringDoc OpenAPI](https://springdoc.org/) 自动生成 RESTful API 文档。
 
----
+启动项目后，访问以下地址即可在线查看所有接口的详细说明、请求参数、响应结构及示例：
 
-## 🧪 测试模块说明
+| 文档类型 | 访问地址 |
+|----------|-----------|
+| **Swagger UI** | [http://127.0.0.1:8080/swagger-ui/index.html](http://127.0.0.1:8080/swagger-ui/index.html) |
+| **OpenAPI JSON** | [http://127.0.0.1:8080/v3/api-docs](http://127.0.0.1:8080/v3/api-docs) |
 
-| 测试类 | 功能覆盖 |
-|--------|----------|
-| [CircuitBreakerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\CircuitBreakerTest.java#L9-L196) | 熔断器状态切换、失败恢复、降级策略测试 |
-| [LoadBalancerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\LoadBalancerTest.java#L13-L175) | 各负载均衡策略（随机、轮询、最少连接、IP Hash）行为验证 |
-| [ModelManagerControllerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\ModelManagerControllerTest.java#L21-L105) | 动态配置更新接口测试 |
-| [ModelServiceRegistryTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\ModelServiceRegistryTest.java#L24-L456) | 服务注册、实例选择、权重生效测试 |
-| [RateLimiterTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\RateLimiterTest.java#L22-L180) | 限流算法正确性、并发限流行为测试 |
-| [UniversalControllerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\UniversalControllerTest.java#L22-L220) | 各服务接口转发、响应格式验证 |
+> 📌 默认端口为 `8080`，如修改了 `server.port`，请将地址中的端口替换为实际端口。
 
 ---
 
@@ -225,6 +200,8 @@ DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30
 | **JaCoCo** | 代码覆盖率分析工具 | 内置于 [pom.xml](pom.xml) |
 
 这些工具在 Maven 构建过程中自动运行，帮助我们维护高质量的代码标准。
+
+---
 
 ## 📦 依赖版本
 
@@ -244,7 +221,7 @@ DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30
 # 运行
 java -jar target/model-router-*.jar
 
-# 配置文件路径
+# 指定配置文件路径
 java -jar target/model-router-*.jar --spring.config.location=classpath:/application.yml
 ```
 
