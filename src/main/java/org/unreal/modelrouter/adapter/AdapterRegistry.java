@@ -1,12 +1,7 @@
 package org.unreal.modelrouter.adapter;
 
 import org.springframework.context.annotation.Configuration;
-import org.unreal.modelrouter.adapter.impl.GpuStackAdapter;
-import org.unreal.modelrouter.adapter.impl.LocalAiAdapter;
-import org.unreal.modelrouter.adapter.impl.NormalOpenAiAdapter;
-import org.unreal.modelrouter.adapter.impl.OllamaAdapter;
-import org.unreal.modelrouter.adapter.impl.VllmAdapter;
-import org.unreal.modelrouter.adapter.impl.XinferenceAdapter;
+import org.unreal.modelrouter.adapter.impl.*;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 

@@ -1,6 +1,7 @@
-package org.unreal.modelrouter.response;
+package org.unreal.modelrouter.controller.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.time.LocalDateTime;
 
 /**
@@ -8,7 +9,7 @@ import java.time.LocalDateTime;
  * @param <T> 响应数据类型
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiResponse<T> {
+public class RouterResponse<T> {
 
     private boolean success;
     private String message;
@@ -16,45 +17,45 @@ public class ApiResponse<T> {
     private String errorCode;
     private LocalDateTime timestamp;
 
-    public ApiResponse() {
+    public RouterResponse() {
         this.timestamp = LocalDateTime.now();
     }
 
-    public ApiResponse(boolean success, String message, T data) {
+    public RouterResponse(boolean success, String message, T data) {
         this();
         this.success = success;
         this.message = message;
         this.data = data;
     }
 
-    public ApiResponse(boolean success, String message, T data, String errorCode) {
+    public RouterResponse(boolean success, String message, T data, String errorCode) {
         this(success, message, data);
         this.errorCode = errorCode;
     }
 
     // 成功响应
-    public static <T> ApiResponse<T> success(T data, String message) {
-        return new ApiResponse<>(true, message, data);
+    public static <T> RouterResponse<T> success(T data, String message) {
+        return new RouterResponse<>(true, message, data);
     }
 
-    public static <T> ApiResponse<T> success(T data) {
+    public static <T> RouterResponse<T> success(T data) {
         return success(data, "操作成功");
     }
 
-    public static ApiResponse<Void> success() {
+    public static RouterResponse<Void> success() {
         return success(null, "操作成功");
     }
 
-    public static ApiResponse<Void> success(String message) {
+    public static RouterResponse<Void> success(String message) {
         return success(null, message);
     }
 
     // 错误响应
-    public static <T> ApiResponse<T> error(String message, String errorCode) {
-        return new ApiResponse<>(false, message, null, errorCode);
+    public static <T> RouterResponse<T> error(String message, String errorCode) {
+        return new RouterResponse<>(false, message, null, errorCode);
     }
 
-    public static <T> ApiResponse<T> error(String message) {
+    public static <T> RouterResponse<T> error(String message) {
         return error(message, null);
     }
 

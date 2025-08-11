@@ -8,8 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 
 /**
  * Xinference Adapter - 适配Xinference API格式

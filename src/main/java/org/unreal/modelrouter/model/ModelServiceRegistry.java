@@ -12,7 +12,6 @@ import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.config.ConfigMergeService;
-import org.unreal.modelrouter.factory.ComponentFactory;
 import org.unreal.modelrouter.fallback.FallbackManager;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.LoadBalancerManager;

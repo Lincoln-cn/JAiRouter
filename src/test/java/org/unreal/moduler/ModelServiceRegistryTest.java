@@ -8,17 +8,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager;
-import org.unreal.modelrouter.factory.ComponentFactory;
-import org.unreal.modelrouter.fallback.FallbackManager;
 import org.unreal.modelrouter.config.ConfigMergeService;
 import org.unreal.modelrouter.config.ConfigurationHelper;
-import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.fallback.FallbackManager;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.LoadBalancerManager;
+import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.ratelimit.RateLimitManager;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

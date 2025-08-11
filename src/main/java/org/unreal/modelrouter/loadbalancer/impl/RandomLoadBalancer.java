@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.circuitbreaker.DefaultCircuitBreaker;
-import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.model.ModelRouterProperties;
 
 import java.util.List;
 import java.util.Map;

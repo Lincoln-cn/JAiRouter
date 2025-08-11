@@ -6,9 +6,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.dto.ChatDTO;
 import org.unreal.modelrouter.dto.EmbeddingDTO;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 
 /**
  * Ollama Adapter - 适配Ollama API格式的示例

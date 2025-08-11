@@ -9,9 +9,9 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
 import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.controller.UniversalController;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.controller.UniversalController;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
