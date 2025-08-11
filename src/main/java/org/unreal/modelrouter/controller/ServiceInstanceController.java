@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.ConfigurationService;
+import org.unreal.modelrouter.config.ConfigurationValidator;
 import org.unreal.modelrouter.dto.UpdateInstanceDTO;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 
@@ -20,10 +21,12 @@ public class ServiceInstanceController {
     private static final Logger logger = LoggerFactory.getLogger(ServiceInstanceController.class);
 
     private final ConfigurationService configurationService;
+    private final ConfigurationValidator configurationValidator;
 
     @Autowired
-    public ServiceInstanceController(ConfigurationService configurationService) {
+    public ServiceInstanceController(ConfigurationService configurationService, ConfigurationValidator configurationValidator) {
         this.configurationService = configurationService;
+        this.configurationValidator = configurationValidator;
     }
 
 
@@ -79,6 +82,12 @@ public class ServiceInstanceController {
             @PathVariable String serviceType,
             @RequestBody ModelRouterProperties.ModelInstance instanceConfig) {
         try {
+            // 验证实例配置
+            if (!configurationValidator.validateServiceAddress(instanceConfig.getBaseUrl())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(org.unreal.modelrouter.response.ApiResponse.error("实例baseUrl格式不正确"));
+            }
+            
             configurationService.addServiceInstance(serviceType, instanceConfig);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(org.unreal.modelrouter.response.ApiResponse.success(null, "实例添加成功"));
@@ -100,6 +109,12 @@ public class ServiceInstanceController {
             @PathVariable String serviceType,
             @RequestBody UpdateInstanceDTO instanceConfig) {
         try {
+            // 验证实例配置
+            if (!configurationValidator.validateServiceAddress(instanceConfig.getInstance().getBaseUrl())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(org.unreal.modelrouter.response.ApiResponse.error("实例baseUrl格式不正确"));
+            }
+            
             // URL解码实例ID
             String decodedInstanceId = instanceConfig.getInstanceId();
             configurationService.updateServiceInstance(serviceType, decodedInstanceId, instanceConfig.getInstance().covertTo());
