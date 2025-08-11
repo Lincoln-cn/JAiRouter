@@ -15,12 +15,15 @@ import java.util.stream.Collectors;
  * 配置管理服务 - 重构版
  * 提供完整的服务配置增删改查功能
  * 支持服务、实例的动态管理
+ * 支持配置版本管理
  */
 @Service
 public class ConfigurationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationService.class);
-    private static final String CONFIG_KEY = "model-router-config";
+
+    private static final String CURRENT_KEY = "model-router-config";
+    private static final String VERSION_PREFIX = "model-router-config-v";
 
     private final StoreManager storeManager;
     private final ConfigurationHelper configurationHelper;
@@ -41,6 +44,71 @@ public class ConfigurationService {
      */
     public void setModelServiceRegistry(ModelServiceRegistry modelServiceRegistry) {
         this.modelServiceRegistry = modelServiceRegistry;
+    }
+
+    // ==================== 版本管理 ====================
+
+    /**
+     * 获取所有配置版本号
+     * @return 版本号列表
+     */
+    public List<Integer> getAllVersions() {
+        return storeManager.getConfigVersions(CURRENT_KEY);
+    }
+
+    /**
+     * 获取指定版本的配置
+     * @param version 版本号，0表示YAML原始配置
+     * @return 配置内容
+     */
+    public Map<String, Object> getVersionConfig(int version) {
+        if (version == 0) {
+            return configMergeService.getCurrentMergedConfig(); // YAML 原始配置
+        }
+        return storeManager.getConfigByVersion(CURRENT_KEY, version);
+    }
+
+    /**
+     * 保存当前配置为新版本
+     * @param config 配置内容
+     * @return 新版本号
+     */
+    public int saveAsNewVersion(Map<String, Object> config) {
+        int version = getNextVersion();
+        storeManager.saveConfigVersion(CURRENT_KEY, config, version);
+        logger.info("已保存配置为新版本：{}", version);
+        return version;
+    }
+
+    /**
+     * 应用指定版本的配置
+     * @param version 版本号
+     */
+    public void applyVersion(int version) {
+        Map<String, Object> config = getVersionConfig(version);
+        if (config == null) {
+            throw new IllegalArgumentException("版本不存在: " + version);
+        }
+        storeManager.saveConfig(CURRENT_KEY, new HashMap<>(config));
+        refreshRuntimeConfig();
+        logger.info("已应用配置版本：{}", version);
+    }
+
+    /**
+     * 获取当前最新版本号
+     * @return 当前版本号
+     */
+    public int getCurrentVersion() {
+        List<Integer> versions = getAllVersions();
+        return versions.isEmpty() ? 0 : versions.get(versions.size() - 1);
+    }
+
+    /**
+     * 获取下一个版本号
+     * @return 下一个版本号
+     */
+    private int getNextVersion() {
+        return getAllVersions().stream().max(Integer::compareTo).orElse(0) + 1;
     }
 
     // ==================== 查询操作 ====================
@@ -139,7 +207,7 @@ public class ConfigurationService {
     // ==================== 服务管理操作 ====================
 
     /**
-     * 创建新服务
+     * 创建新服务（自动保存为新版本）
      * @param serviceType 服务类型
      * @param serviceConfig 服务配置
      */
@@ -163,17 +231,15 @@ public class ConfigurationService {
         services.put(serviceType, validatedConfig);
         currentConfig.put("services", services);
 
-        // 保存到持久化存储
-        storeManager.saveConfig(CONFIG_KEY, currentConfig);
-
-        // 刷新运行时配置
+        // 保存为新版本并刷新配置
+        saveAsNewVersion(currentConfig);
         refreshRuntimeConfig();
 
         logger.info("服务 {} 创建成功", serviceType);
     }
 
     /**
-     * 更新服务配置
+     * 更新服务配置（自动保存为新版本）
      * @param serviceType 服务类型
      * @param serviceConfig 新的服务配置
      */
@@ -196,17 +262,15 @@ public class ConfigurationService {
         services.put(serviceType, validatedConfig);
         currentConfig.put("services", services);
 
-        // 保存到持久化存储
-        storeManager.saveConfig(CONFIG_KEY, currentConfig);
-
-        // 刷新运行时配置
+        // 保存为新版本并刷新配置
+        saveAsNewVersion(currentConfig);
         refreshRuntimeConfig();
 
         logger.info("服务 {} 配置更新成功", serviceType);
     }
 
     /**
-     * 删除服务
+     * 删除服务（自动保存为新版本）
      * @param serviceType 服务类型
      */
     public void deleteService(String serviceType) {
@@ -222,10 +286,8 @@ public class ConfigurationService {
         services.remove(serviceType);
         currentConfig.put("services", services);
 
-        // 保存到持久化存储
-        storeManager.saveConfig(CONFIG_KEY, currentConfig);
-
-        // 刷新运行时配置
+        // 保存为新版本并刷新配置
+        saveAsNewVersion(currentConfig);
         refreshRuntimeConfig();
 
         logger.info("服务 {} 删除成功", serviceType);
@@ -234,7 +296,7 @@ public class ConfigurationService {
     // ==================== 实例管理操作 ====================
 
     /**
-     * 添加服务实例
+     * 添加服务实例（自动保存为新版本）
      * @param serviceType 服务类型
      * @param instanceConfig 实例配置
      */
@@ -269,17 +331,15 @@ public class ConfigurationService {
 
         instances.add(validatedInstance);
 
-        // 保存到持久化存储
-        storeManager.saveConfig(CONFIG_KEY, currentConfig);
-
-        // 刷新运行时配置
+        // 保存为新版本并刷新配置
+        saveAsNewVersion(currentConfig);
         refreshRuntimeConfig();
 
         logger.info("实例 {} 添加成功", instanceId);
     }
 
     /**
-     * 更新服务实例
+     * 更新服务实例（自动保存为新版本）
      * @param serviceType 服务类型
      * @param instanceId 实例ID
      * @param instanceConfig 新的实例配置
@@ -317,17 +377,15 @@ public class ConfigurationService {
             throw new IllegalArgumentException("实例不存在: " + instanceId);
         }
 
-        // 保存到持久化存储
-        storeManager.saveConfig(CONFIG_KEY, currentConfig);
-
-        // 刷新运行时配置
+        // 保存为新版本并刷新配置
+        saveAsNewVersion(currentConfig);
         refreshRuntimeConfig();
 
         logger.info("实例 {} 更新成功", instanceId);
     }
 
     /**
-     * 删除服务实例
+     * 删除服务实例（自动保存为新版本）
      * @param serviceType 服务类型
      * @param instanceId 实例ID
      */
@@ -353,10 +411,8 @@ public class ConfigurationService {
             throw new IllegalArgumentException("实例不存在: " + instanceId);
         }
 
-        // 保存到持久化存储
-        storeManager.saveConfig(CONFIG_KEY, currentConfig);
-
-        // 刷新运行时配置
+        // 保存为新版本并刷新配置
+        saveAsNewVersion(currentConfig);
         refreshRuntimeConfig();
 
         logger.info("实例 {} 删除成功", instanceId);
@@ -365,7 +421,7 @@ public class ConfigurationService {
     // ==================== 批量操作 ====================
 
     /**
-     * 批量更新配置
+     * 批量更新配置（自动保存为新版本）
      * @param configs 配置Map
      */
     public void batchUpdateConfigurations(Map<String, Object> configs) {
@@ -378,10 +434,8 @@ public class ConfigurationService {
             currentConfig.put(entry.getKey(), entry.getValue());
         }
 
-        // 保存到持久化存储
-        storeManager.saveConfig(CONFIG_KEY, currentConfig);
-
-        // 刷新运行时配置
+        // 保存为新版本并刷新配置
+        saveAsNewVersion(currentConfig);
         refreshRuntimeConfig();
 
         logger.info("批量配置更新成功");
@@ -408,8 +462,8 @@ public class ConfigurationService {
      * 获取当前持久化配置
      */
     private Map<String, Object> getCurrentPersistedConfig() {
-        if (storeManager.exists(CONFIG_KEY)) {
-            Map<String, Object> config = storeManager.getConfig(CONFIG_KEY);
+        if (storeManager.exists(CURRENT_KEY)) {
+            Map<String, Object> config = storeManager.getConfig(CURRENT_KEY);
             return config != null ? new HashMap<>(config) : new HashMap<>();
         }
         return new HashMap<>();

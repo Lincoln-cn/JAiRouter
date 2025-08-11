@@ -49,6 +49,11 @@ public class ConfigurationInitializer implements CommandLineRunner {
 
             logger.info("配置初始化完成");
 
+            // 4. 保存初始版本为 0
+            configurationService.saveAsNewVersion(configurationService.getAllConfigurations());
+
+            logger.info("已将初始配置保存为版本 0");
+
         } catch (Exception e) {
             logger.error("配置初始化过程中发生错误", e);
             throw e;

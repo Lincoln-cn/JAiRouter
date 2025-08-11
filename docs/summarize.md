@@ -13,6 +13,7 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 7. **多适配器支持**：GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI
 8. **动态配置更新**：运行时更新服务实例、权重、限流、熔断等配置
 9. **配置持久化**：支持内存存储和文件存储两种后端
+10. **全面的监控和管理接口**：提供配置版本管理、模型信息服务、统计信息等 REST API
 
 ## 核心架构组件
 
@@ -26,7 +27,14 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 ### 3. 统一控制器
 - [UniversalController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\UniversalController.java#L19-L190)：处理所有 `/v1/*` 路径的请求，根据请求类型分发到对应的服务
 
-### 4. 适配器系统
+### 4. 管理控制器
+- [ConfigurationVersionController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ConfigurationVersionController.java#L15-L110)：配置版本管理控制器
+- [ModelInfoController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ModelInfoController.java#L16-L60)：模型信息服务控制器
+- [ModelStatsController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ModelStatsController.java#L17-L53)：模型统计信息控制器
+- [ServiceInstanceController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ServiceInstanceController.java#L21-L140)：服务实例管理控制器
+- [ServiceTypeController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ServiceTypeController.java#L22-L120)：服务类型管理控制器
+
+### 5. 适配器系统
 - [BaseAdapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\adapter\BaseAdapter.java#L18-L397)：适配器基类，定义了统一的请求处理流程
 - [AdapterRegistry](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\adapter\AdapterRegistry.java#L11-L78)：适配器注册中心，管理各种适配器实现
 - 适配器实现：
@@ -37,39 +45,44 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
   - [XinferenceAdapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\adapter\impl\XinferenceAdapter.java#L17-L221)：Xinference 适配器
   - [LocalAiAdapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\adapter\impl\LocalAiAdapter.java#L17-L272)：LocalAI 适配器
 
-### 5. 负载均衡
+### 6. 负载均衡
 - [LoadBalancer](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\LoadBalancer.java#L13-L46)：负载均衡接口
+- [LoadBalancerManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\LoadBalancerManager.java#L11-L46)：负载均衡器管理器
 - 实现类：
   - [RandomLoadBalancer](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\impl\RandomLoadBalancer.java#L19-L97)：随机负载均衡
   - [RoundRobinLoadBalancer](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\impl\RoundRobinLoadBalancer.java#L16-L56)：轮询负载均衡
   - [LeastConnectionsLoadBalancer](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\impl\LeastConnectionsLoadBalancer.java#L15-L74)：最少连接负载均衡
   - [IpHashLoadBalancer](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\impl\IpHashLoadBalancer.java#L16-L83)：IP 哈希负载均衡
 
-### 6. 限流系统
+### 7. 限流系统
 - [RateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimiter.java#L5-L18)：限流器接口
+- [RateLimitManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitManager.java#L17-L105)：限流管理器
 - 实现类：
   - [TokenBucketRateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\impl\TokenBucketRateLimiter.java#L8-L38)：令牌桶算法
   - [LeakyBucketRateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\impl\LeakyBucketRateLimiter.java#L12-L42)：漏桶算法
   - [SlidingWindowRateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\impl\SlidingWindowRateLimiter.java#L12-L31)：滑动窗口算法
   - [WarmUpRateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\impl\WarmUpRateLimiter.java#L12-L79)：预热算法
 
-### 7. 熔断器
+### 8. 熔断器
 - [CircuitBreaker](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\circuitbreaker\CircuitBreaker.java#L2-L13)：熔断器接口
+- [CircuitBreakerManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\circuitbreaker\CircuitBreakerManager.java#L9-L34)：熔断器管理器
 - [DefaultCircuitBreaker](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\circuitbreaker\DefaultCircuitBreaker.java#L2-L84)：默认熔断器实现
 - 状态：CLOSED（正常）、OPEN（熔断开启）、HALF_OPEN（半开）
 
-### 8. 配置管理
+### 9. 配置管理
 - [ConfigurationService](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\config\ConfigurationService.java#L18-L572)：配置服务，处理配置的增删改查
 - [StoreManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\StoreManager.java#L8-L49)：存储管理接口，支持内存和文件两种存储方式
 - [FileStoreManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\FileStoreManager.java#L19-L114)：文件存储实现
 - [MemoryStoreManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\MemoryStoreManager.java#L10-L55)：内存存储实现
+- [StoreManagerFactory](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\StoreManagerFactory.java#L11-L47)：存储管理器工厂
 
-### 9. 健康检查
+### 10. 健康检查
 - [ServiceStateManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\checker\ServiceStateManager.java#L14-L79)：服务状态管理器
 - [ServerChecker](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\checker\ServerChecker.java#L16-L122)：服务检查器
 
-### 10. 降级策略
+### 11. 降级策略
 - [FallbackStrategy](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\fallback\FallbackStrategy.java#L5-L12)：降级策略接口
+- [FallbackManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\fallback\FallbackManager.java#L11-L43)：降级策略管理器
 - 实现类：
   - [DefaultFallbackStrategy](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\fallback\impl\DefaultFallbackStrategy.java#L10-L28)：默认降级策略
   - [CacheFallbackStrategy](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\fallback\impl\CacheFallbackStrategy.java#L22-L142)：缓存降级策略
@@ -102,3 +115,5 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 - **灵活性**：支持多种负载均衡和限流算法，可根据需求配置
 - **可观测性**：通过健康检查和状态监控提供服务可观测性
 - **动态性**：支持运行时动态配置更新，无需重启服务
+- **全面的管理接口**：提供丰富的 REST API 用于服务管理和监控
+- **完善的测试覆盖**：包含针对核心组件的单元测试
