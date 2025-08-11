@@ -8,6 +8,10 @@ import org.unreal.modelrouter.loadbalancer.impl.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -172,5 +176,79 @@ public class LoadBalancerTest {
         assertDoesNotThrow(() -> {
             loadBalancer.selectInstance(instances, null);
         });
+    }
+
+    @Test
+    void testLeastConnectionsConcurrentAccess() throws InterruptedException {
+        LeastConnectionsLoadBalancer loadBalancer = new LeastConnectionsLoadBalancer();
+        
+        // 创建多个线程同时访问
+        int threadCount = 10;
+        int requestsPerThread = 100;
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        
+        // 存储每个线程选择的实例统计
+        ConcurrentHashMap<String, AtomicInteger> selectionCounts = new ConcurrentHashMap<>();
+        
+        Runnable task = () -> {
+            try {
+                for (int i = 0; i < requestsPerThread; i++) {
+                    ModelRouterProperties.ModelInstance selected = loadBalancer.selectInstance(instances, "127.0.0.1");
+                    loadBalancer.recordCall(selected);
+                    selectionCounts.computeIfAbsent(selected.getName(), k -> new AtomicInteger(0)).incrementAndGet();
+                    // 模拟处理时间
+                    Thread.sleep(1);
+                    loadBalancer.recordCallComplete(selected);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                latch.countDown();
+            }
+        };
+        
+        // 启动所有线程
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(task).start();
+        }
+        
+        // 等待所有线程完成
+        latch.await(30, TimeUnit.SECONDS);
+        
+        // 验证所有实例都被选中过
+        assertEquals(instances.size(), selectionCounts.size());
+        assertNotNull(selectionCounts.get("instance1"));
+        assertNotNull(selectionCounts.get("instance2"));
+        assertNotNull(selectionCounts.get("instance3"));
+    }
+
+    @Test
+    void testLeastConnectionsWeightedBehavior() {
+        LeastConnectionsLoadBalancer loadBalancer = new LeastConnectionsLoadBalancer();
+        
+        // 创建不同权重的实例
+        List<ModelRouterProperties.ModelInstance> weightedInstances = new ArrayList<>();
+        ModelRouterProperties.ModelInstance instance1 = new ModelRouterProperties.ModelInstance();
+        instance1.setName("high-weight");
+        instance1.setBaseUrl("http://high.example.com");
+        instance1.setPath("/api");
+        instance1.setWeight(3);
+        
+        ModelRouterProperties.ModelInstance instance2 = new ModelRouterProperties.ModelInstance();
+        instance2.setName("low-weight");
+        instance2.setBaseUrl("http://low.example.com");
+        instance2.setPath("/api");
+        instance2.setWeight(1);
+        
+        weightedInstances.add(instance1);
+        weightedInstances.add(instance2);
+        
+        // 给第一个实例增加连接数
+        loadBalancer.recordCall(instance1);
+        loadBalancer.recordCall(instance1);
+        
+        // 应该选择权重较低但连接数较少的实例
+        ModelRouterProperties.ModelInstance selected = loadBalancer.selectInstance(weightedInstances, "127.0.0.1");
+        assertEquals("low-weight", selected.getName());
     }
 }
