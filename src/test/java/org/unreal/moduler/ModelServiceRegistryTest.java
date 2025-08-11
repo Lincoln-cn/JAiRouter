@@ -11,6 +11,7 @@ import org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.factory.ComponentFactory;
 import org.unreal.modelrouter.fallback.FallbackManager;
 import org.unreal.modelrouter.config.ConfigMergeService;
+import org.unreal.modelrouter.config.ConfigurationHelper;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
@@ -41,13 +42,13 @@ public class ModelServiceRegistryTest {
     private CircuitBreakerManager circuitBreakerManager;
     
     @Mock
-    private ComponentFactory componentFactory;
-    
-    @Mock
     private FallbackManager fallbackManager;
     
     @Mock
     private ConfigMergeService configMergeService;
+    
+    @Mock
+    private ConfigurationHelper configurationHelper;
 
     @Mock
     private LoadBalancer loadBalancer;
@@ -60,6 +61,8 @@ public class ModelServiceRegistryTest {
         when(properties.getAdapter()).thenReturn("normal");
         when(properties.getServices()).thenReturn(new HashMap<>());
         when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configurationHelper.getServiceConfigKey(any())).thenCallRealMethod();
+        when(configurationHelper.parseServiceType(anyString())).thenCallRealMethod();
 
         modelServiceRegistry = new ModelServiceRegistry(
                 properties,
@@ -67,9 +70,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
     }
 
@@ -84,9 +87,9 @@ public class ModelServiceRegistryTest {
                     rateLimitManager,
                     loadBalancerManager,
                     circuitBreakerManager,
-                    componentFactory,
                     fallbackManager,
-                    configMergeService
+                    configMergeService,
+                    configurationHelper
             );
         });
     }
@@ -100,7 +103,7 @@ public class ModelServiceRegistryTest {
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -108,9 +111,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         assertEquals("ollama", registry.getServiceAdapter(ModelServiceRegistry.ServiceType.chat));
@@ -125,11 +128,13 @@ public class ModelServiceRegistryTest {
 
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig chatConfig = new ModelRouterProperties.ServiceConfig();
-        chatConfig.setInstances(Arrays.asList(instance));
+        chatConfig.setInstances(List.of(instance));
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
+        when(configurationHelper.parseServiceType(anyString())).thenReturn(ModelServiceRegistry.ServiceType.chat);
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -137,9 +142,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         Set<ModelServiceRegistry.ServiceType> availableTypes = registry.getAvailableServiceTypes();
@@ -155,11 +160,12 @@ public class ModelServiceRegistryTest {
 
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig chatConfig = new ModelRouterProperties.ServiceConfig();
-        chatConfig.setInstances(Arrays.asList(instance));
+        chatConfig.setInstances(List.of(instance));
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -167,9 +173,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         Set<String> availableModels = registry.getAvailableModels(ModelServiceRegistry.ServiceType.chat);
@@ -199,12 +205,13 @@ public class ModelServiceRegistryTest {
         // 配置服务
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig chatConfig = new ModelRouterProperties.ServiceConfig();
-        chatConfig.setInstances(Arrays.asList(instance));
+        chatConfig.setInstances(List.of(instance));
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
         when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(false); // 所有实例都不健康
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -212,9 +219,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         assertThrows(ResponseStatusException.class, () -> {
@@ -236,13 +243,14 @@ public class ModelServiceRegistryTest {
         // 配置服务
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig chatConfig = new ModelRouterProperties.ServiceConfig();
-        chatConfig.setInstances(Arrays.asList(instance));
+        chatConfig.setInstances(List.of(instance));
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
         when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(true); // 实例健康
         when(circuitBreakerManager.canExecute(anyString(), anyString())).thenReturn(false); // 但熔断器打开
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -250,9 +258,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         assertThrows(ResponseStatusException.class, () -> {
@@ -274,14 +282,15 @@ public class ModelServiceRegistryTest {
         // 配置服务
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig chatConfig = new ModelRouterProperties.ServiceConfig();
-        chatConfig.setInstances(Arrays.asList(instance));
+        chatConfig.setInstances(List.of(instance));
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
         when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(true);
         when(circuitBreakerManager.canExecute(anyString(), anyString())).thenReturn(true);
         when(rateLimitManager.tryAcquire(any())).thenReturn(false); // 服务级限流超限
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -289,9 +298,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         assertThrows(ResponseStatusException.class, () -> {
@@ -313,7 +322,7 @@ public class ModelServiceRegistryTest {
         // 配置服务
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig chatConfig = new ModelRouterProperties.ServiceConfig();
-        chatConfig.setInstances(Arrays.asList(instance));
+        chatConfig.setInstances(List.of(instance));
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
@@ -323,7 +332,8 @@ public class ModelServiceRegistryTest {
         when(rateLimitManager.tryAcquireInstance(any())).thenReturn(false); // 实例级限流超限
         when(loadBalancerManager.getLoadBalancer(any())).thenReturn(loadBalancer);
         when(loadBalancer.selectInstance(anyList(), anyString())).thenReturn(instance);
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -331,9 +341,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         assertThrows(ResponseStatusException.class, () -> {
@@ -366,11 +376,12 @@ public class ModelServiceRegistryTest {
         // 配置服务
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig chatConfig = new ModelRouterProperties.ServiceConfig();
-        chatConfig.setInstances(Arrays.asList(instance));
+        chatConfig.setInstances(List.of(instance));
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -378,9 +389,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         String path = registry.getModelPath(ModelServiceRegistry.ServiceType.chat, "test-model");
@@ -423,11 +434,13 @@ public class ModelServiceRegistryTest {
 
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         ModelRouterProperties.ServiceConfig chatConfig = new ModelRouterProperties.ServiceConfig();
-        chatConfig.setInstances(Arrays.asList(instance));
+        chatConfig.setInstances(List.of(instance));
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
+        when(configurationHelper.parseServiceType(anyString())).thenReturn(ModelServiceRegistry.ServiceType.chat);
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -435,9 +448,9 @@ public class ModelServiceRegistryTest {
                 rateLimitManager,
                 loadBalancerManager,
                 circuitBreakerManager,
-                componentFactory,
                 fallbackManager,
-                configMergeService
+                configMergeService,
+                configurationHelper
         );
 
         Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> allInstances = registry.getAllInstances();
@@ -453,5 +466,23 @@ public class ModelServiceRegistryTest {
         instance.setBaseUrl("http://test.com");
 
         assertEquals("test-model@http://test.com", instance.getInstanceId());
+    }
+    
+    /**
+     * 创建模拟的合并配置
+     */
+    private Map<String, Object> createMergedConfig(Map<String, ModelRouterProperties.ServiceConfig> services) {
+        Map<String, Object> mergedConfig = new HashMap<>();
+        Map<String, Object> servicesMap = new HashMap<>();
+        
+        for (Map.Entry<String, ModelRouterProperties.ServiceConfig> entry : services.entrySet()) {
+            Map<String, Object> serviceMap = new HashMap<>();
+            serviceMap.put("instances", entry.getValue().getInstances());
+            serviceMap.put("adapter", entry.getValue().getAdapter());
+            servicesMap.put(entry.getKey(), serviceMap);
+        }
+        
+        mergedConfig.put("services", servicesMap);
+        return mergedConfig;
     }
 }

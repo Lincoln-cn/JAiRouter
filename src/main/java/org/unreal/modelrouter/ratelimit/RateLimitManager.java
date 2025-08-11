@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class RateLimitManager {
-    private static final Logger logger = LoggerFactory.getLogger(RateLimitManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitManager.class);
 
     private final ComponentFactory componentFactory;
     private final ConfigurationHelper configHelper;
@@ -35,9 +35,9 @@ public class RateLimitManager {
     private final Map<ModelServiceRegistry.ServiceType, Map<String, RateLimiter>> clientIpLimiters =
             new ConcurrentHashMap<>();
 
-    public RateLimitManager(ComponentFactory componentFactory,
-                            ConfigurationHelper configHelper,
-                            ModelRouterProperties properties) {
+    public RateLimitManager(final ComponentFactory componentFactory,
+                            final ConfigurationHelper configHelper,
+                            final ModelRouterProperties properties) {
         this.componentFactory = componentFactory;
         this.configHelper = configHelper;
         this.properties = properties;
@@ -47,10 +47,10 @@ public class RateLimitManager {
     /* ===================== 初始化 ===================== */
 
     private void initializeRateLimiters() {
-        logger.info("Initializing rate limiters");
+        LOGGER.info("Initializing rate limiters");
 
         if (properties.getServices() == null) {
-            logger.info("No services configured, skipping");
+            LOGGER.info("No services configured, skipping");
             return;
         }
 
@@ -58,7 +58,7 @@ public class RateLimitManager {
         ModelRouterProperties.RateLimitConfig globalCfg = properties.getRateLimit();
         if (globalCfg != null && Boolean.TRUE.equals(globalCfg.getEnabled())) {
             globalLimiter = componentFactory.createScopedRateLimiter(convert(globalCfg));
-            logger.info("Global limiter initialized");
+            LOGGER.info("Global limiter initialized");
         }
 
         int svcCnt = 0, instCnt = 0;
@@ -70,7 +70,7 @@ public class RateLimitManager {
 
             ModelServiceRegistry.ServiceType type = configHelper.parseServiceType(serviceKey);
             if (type == null) {
-                logger.warn("Unknown service type: {}", serviceKey);
+                LOGGER.warn("Unknown service type: {}", serviceKey);
                 continue;
             }
 
@@ -95,53 +95,69 @@ public class RateLimitManager {
             }
         }
 
-        logger.info("Initialization complete. Service: {}, Instance: {}", svcCnt, instCnt);
+        LOGGER.info("Initialization complete. Service: {}, Instance: {}", svcCnt, instCnt);
     }
 
     /* ===================== 优先级限流 ===================== */
 
     /**
      * 按优先级执行限流：实例 > 服务 > 全局 > 客户端IP
+     * @param context 限流上下文
+     * @return 是否通过限流检查
      */
-    public boolean tryAcquireWithPriority(RateLimitContext context) {
+    public boolean tryAcquireWithPriority(final RateLimitContext context) {
         /* 1. 实例级 */
         if (!tryAcquireInstance(context)) {
-            logger.warn("Instance limit denied");
+            LOGGER.warn("Instance limit denied");
             return false;
         }
 
         /* 2. 服务级 */
         if (!tryAcquire(context)) {
-            logger.warn("Service limit denied");
+            LOGGER.warn("Service limit denied");
             return false;
         }
 
         /* 3. 全局级 */
         if (globalLimiter != null && !globalLimiter.tryAcquire(context)) {
-            logger.warn("Global limit denied");
+            LOGGER.warn("Global limit denied");
             return false;
         }
 
         /* 4. 客户端IP级 */
         if (!tryAcquireClientIp(context)) {
-            logger.warn("Client IP limit denied for IP: {}", context.getClientIp());
+            LOGGER.warn("Client IP limit denied for IP: {}", context.getClientIp());
             return false;
         }
 
-        logger.debug("All levels passed");
+        LOGGER.debug("All levels passed");
         return true;
     }
 
     /* ---------------- 单一级别限流 ---------------- */
 
-    public boolean tryAcquire(RateLimitContext context) {
-        if (context == null) return true;
+    /**
+     * 尝试获取服务级限流令牌
+     * @param context 限流上下文
+     * @return 是否获取成功
+     */
+    public boolean tryAcquire(final RateLimitContext context) {
+        if (context == null) {
+            return true;
+        }
         RateLimiter limiter = serviceLimiters.get(context.getServiceType());
         return limiter == null || limiter.tryAcquire(context);
     }
 
-    public boolean tryAcquireInstance(RateLimitContext context) {
-        if (context == null || !context.hasInstanceInfo()) return true;
+    /**
+     * 尝试获取实例级限流令牌
+     * @param context 限流上下文
+     * @return 是否获取成功
+     */
+    public boolean tryAcquireInstance(final RateLimitContext context) {
+        if (context == null || !context.hasInstanceInfo()) {
+            return true;
+        }
         String key = generateInstanceKey(context.getServiceType(), context.getInstanceId(), context.getInstanceUrl());
         RateLimiter limiter = instanceLimiters.get(key);
         return limiter == null || limiter.tryAcquire(context);
@@ -149,8 +165,10 @@ public class RateLimitManager {
 
     /**
      * 客户端IP限流检查
+     * @param context 限流上下文
+     * @return 是否通过限流检查
      */
-    public boolean tryAcquireClientIp(RateLimitContext context) {
+    public boolean tryAcquireClientIp(final RateLimitContext context) {
         if (context == null || context.getClientIp() == null) {
             return true;
         }
@@ -160,8 +178,9 @@ public class RateLimitManager {
 
         // 检查服务级配置是否启用了客户端IP限流
         ModelRouterProperties.ServiceConfig serviceConfig = getServiceConfig(serviceType);
-        if (serviceConfig != null && serviceConfig.getRateLimit() != null &&
-                Boolean.TRUE.equals(serviceConfig.getRateLimit().getClientIpEnable())) {
+        if (serviceConfig != null 
+                && serviceConfig.getRateLimit() != null
+                && Boolean.TRUE.equals(serviceConfig.getRateLimit().getClientIpEnable())) {
             // 获取或创建针对该服务类型和客户端IP的限流器
             Map<String, RateLimiter> ipLimiters = clientIpLimiters.computeIfAbsent(
                     serviceType, k -> new ConcurrentHashMap<>());
@@ -192,7 +211,7 @@ public class RateLimitManager {
         return true; // 未启用客户端IP限流
     }
 
-    private ModelRouterProperties.ServiceConfig getServiceConfig(ModelServiceRegistry.ServiceType serviceType) {
+    private ModelRouterProperties.ServiceConfig getServiceConfig(final ModelServiceRegistry.ServiceType serviceType) {
         if (properties.getServices() == null) {
             return null;
         }
@@ -208,55 +227,82 @@ public class RateLimitManager {
 
     /* ===================== 动态管理 ===================== */
 
-    public void updateGlobalRateLimiter(ModelRouterProperties.RateLimitConfig cfg) {
+    /**
+     * 更新全局限流器配置
+     * @param cfg 限流配置
+     */
+    public void updateGlobalRateLimiter(final ModelRouterProperties.RateLimitConfig cfg) {
         if (cfg == null || !Boolean.TRUE.equals(cfg.getEnabled())) {
             globalLimiter = null;
-            logger.info("Global limiter removed");
+            LOGGER.info("Global limiter removed");
             return;
         }
         globalLimiter = componentFactory.createScopedRateLimiter(convert(cfg));
-        logger.info("Global limiter updated");
+        LOGGER.info("Global limiter updated");
     }
 
-    public void setRateLimiter(ModelServiceRegistry.ServiceType type, RateLimitConfig cfg) {
+    /**
+     * 设置服务级限流器
+     * @param type 服务类型
+     * @param cfg 限流配置
+     */
+    public void setRateLimiter(final ModelServiceRegistry.ServiceType type, final RateLimitConfig cfg) {
         if (cfg == null || !cfg.isEnabled()) {
             serviceLimiters.remove(type);
-            logger.info("Service limiter removed for {}", type);
+            LOGGER.info("Service limiter removed for {}", type);
             return;
         }
         serviceLimiters.put(type, componentFactory.createScopedRateLimiter(cfg));
-        logger.info("Service limiter set for {}", type);
+        LOGGER.info("Service limiter set for {}", type);
     }
 
-    public void setInstanceRateLimiter(ModelServiceRegistry.ServiceType type,
-                                       ModelRouterProperties.ModelInstance instance,
-                                       ModelRouterProperties.RateLimitConfig cfg) {
+    /**
+     * 设置实例级限流器
+     * @param type 服务类型
+     * @param instance 模型实例
+     * @param cfg 限流配置
+     */
+    public void setInstanceRateLimiter(final ModelServiceRegistry.ServiceType type,
+                                       final ModelRouterProperties.ModelInstance instance,
+                                       final ModelRouterProperties.RateLimitConfig cfg) {
         String key = generateInstanceKey(type, instance);
         if (cfg == null || !Boolean.TRUE.equals(cfg.getEnabled())) {
             instanceLimiters.remove(key);
-            logger.info("Instance limiter removed for {}", key);
+            LOGGER.info("Instance limiter removed for {}", key);
             return;
         }
         instanceLimiters.put(key, componentFactory.createScopedRateLimiter(convert(cfg)));
-        logger.info("Instance limiter set for {}", key);
+        LOGGER.info("Instance limiter set for {}", key);
     }
 
-    public void removeRateLimiter(ModelServiceRegistry.ServiceType type) {
+    /**
+     * 移除服务级限流器
+     * @param type 服务类型
+     */
+    public void removeRateLimiter(final ModelServiceRegistry.ServiceType type) {
         serviceLimiters.remove(type);
-        logger.info("Service limiter removed for {}", type);
+        LOGGER.info("Service limiter removed for {}", type);
     }
 
-    public void removeInstanceRateLimiter(ModelServiceRegistry.ServiceType type,
-                                          ModelRouterProperties.ModelInstance instance) {
+    /**
+     * 移除实例级限流器
+     * @param type 服务类型
+     * @param instance 模型实例
+     */
+    public void removeInstanceRateLimiter(final ModelServiceRegistry.ServiceType type,
+                                          final ModelRouterProperties.ModelInstance instance) {
         String key = generateInstanceKey(type, instance);
         instanceLimiters.remove(key);
-        logger.info("Instance limiter removed for {}", key);
+        LOGGER.info("Instance limiter removed for {}", key);
     }
 
     /* ===================== 配置重载 ===================== */
 
+    /**
+     * 更新配置
+     */
     public synchronized void updateConfiguration() {
-        logger.info("Reloading rate limiters");
+        LOGGER.info("Reloading rate limiters");
         var oldSvc = new EnumMap<>(serviceLimiters);
         var oldInst = new ConcurrentHashMap<>(instanceLimiters);
         var oldClientIp = new ConcurrentHashMap<>(clientIpLimiters);
@@ -266,18 +312,22 @@ public class RateLimitManager {
             instanceLimiters.clear();
             clientIpLimiters.clear();
             initializeRateLimiters();
-            logger.info("Reloaded successfully");
+            LOGGER.info("Reloaded successfully");
         } catch (Exception e) {
             serviceLimiters.putAll(oldSvc);
             instanceLimiters.putAll(oldInst);
             clientIpLimiters.putAll(oldClientIp);
-            logger.error("Reload failed, rollback. Error: {}", e.getMessage());
+            LOGGER.error("Reload failed, rollback. Error: {}", e.getMessage());
             throw new RuntimeException("Rate limit reload failed", e);
         }
     }
 
     /* ===================== 状态查询 ===================== */
 
+    /**
+     * 获取所有限流器状态
+     * @return 状态信息Map
+     */
     public Map<String, Object> getAllRateLimiterStatus() {
         Map<String, Object> status = new ConcurrentHashMap<>();
         if (globalLimiter != null) {
@@ -298,15 +348,17 @@ public class RateLimitManager {
         return status;
     }
 
-    private String describe(RateLimitConfig cfg) {
+    private String describe(final RateLimitConfig cfg) {
         return String.format("%s(capacity=%d,rate=%d,scope=%s)",
                 cfg.getAlgorithm(), cfg.getCapacity(), cfg.getRate(), cfg.getScope());
     }
 
     /* ===================== 工具方法 ===================== */
 
-    private RateLimitConfig convert(ModelRouterProperties.RateLimitConfig src) {
-        if (src == null) return null;
+    private RateLimitConfig convert(final ModelRouterProperties.RateLimitConfig src) {
+        if (src == null) {
+            return null;
+        }
         RateLimitConfig dst = new RateLimitConfig();
         dst.setEnabled(Boolean.TRUE.equals(src.getEnabled()));
         dst.setAlgorithm(src.getAlgorithm() != null ? src.getAlgorithm() : "token-bucket");
@@ -317,16 +369,20 @@ public class RateLimitManager {
         return dst;
     }
 
-    private String generateInstanceKey(ModelServiceRegistry.ServiceType type,
-                                       ModelRouterProperties.ModelInstance inst) {
+    private String generateInstanceKey(final ModelServiceRegistry.ServiceType type,
+                                       final ModelRouterProperties.ModelInstance inst) {
         return generateInstanceKey(type, inst.getInstanceId(), inst.getBaseUrl());
     }
 
-    private String generateInstanceKey(ModelServiceRegistry.ServiceType type,
-                                       String id, String url) {
+    private String generateInstanceKey(final ModelServiceRegistry.ServiceType type,
+                                       final String id, final String url) {
         return type.name() + ":" + id;
     }
 
+    /**
+     * 获取默认限流配置
+     * @return 默认限流配置
+     */
     public ModelRouterProperties.RateLimitConfig getDefaultRateLimitConfig() {
         return new  ModelRouterProperties.RateLimitConfig();
     }

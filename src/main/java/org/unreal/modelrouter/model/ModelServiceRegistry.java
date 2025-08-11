@@ -32,8 +32,12 @@ import java.util.stream.Collectors;
 @EnableConfigurationProperties(ModelRouterProperties.class)
 public class ModelServiceRegistry {
 
-    private static final Logger logger = LoggerFactory.getLogger(ModelServiceRegistry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ModelServiceRegistry.class);
 
+    /**
+     * 获取所有服务类型
+     * @return 服务类型集合
+     */
     public Set<String> getAllServiceTypes() {
          return Arrays.stream(ServiceType.values()).map(Enum::name).collect(Collectors.toSet());
     }
@@ -47,7 +51,6 @@ public class ModelServiceRegistry {
     private final ServiceStateManager serviceStateManager;
     private final RateLimitManager rateLimitManager;
     private final CircuitBreakerManager circuitBreakerManager;
-    private final ComponentFactory componentFactory;
     private final FallbackManager fallbackManager;
     private final ConfigMergeService configMergeService;
     private final org.unreal.modelrouter.config.ConfigurationHelper configurationHelper;
@@ -65,7 +68,6 @@ public class ModelServiceRegistry {
                                 RateLimitManager rateLimitManager,
                                 LoadBalancerManager loadBalancerManager,
                                 CircuitBreakerManager circuitBreakerManager,
-                                ComponentFactory componentFactory,
                                 FallbackManager fallbackManager,
                                 ConfigMergeService configMergeService,
                                 org.unreal.modelrouter.config.ConfigurationHelper configurationHelper) {
@@ -74,7 +76,6 @@ public class ModelServiceRegistry {
         this.rateLimitManager = rateLimitManager;
         this.loadBalancerManager = loadBalancerManager;
         this.circuitBreakerManager = circuitBreakerManager;
-        this.componentFactory = componentFactory;
         this.fallbackManager = fallbackManager;
         this.configMergeService = configMergeService;
         this.configurationHelper = configurationHelper;
@@ -89,7 +90,7 @@ public class ModelServiceRegistry {
      */
     @PostConstruct
     public void initialize() {
-        logger.info("正在初始化ModelServiceRegistry...");
+        LOGGER.info("正在初始化ModelServiceRegistry...");
 
         try {
             // 1. 合并YAML和持久化配置
@@ -98,10 +99,10 @@ public class ModelServiceRegistry {
             // 2. 初始化各个管理器
             initializeManagers();
 
-            logger.info("ModelServiceRegistry初始化完成");
+            LOGGER.info("ModelServiceRegistry初始化完成");
             logCurrentConfiguration();
         } catch (Exception e) {
-            logger.error("ModelServiceRegistry初始化失败", e);
+            LOGGER.error("ModelServiceRegistry初始化失败", e);
             throw new RuntimeException("Failed to initialize ModelServiceRegistry", e);
         }
     }
@@ -111,7 +112,7 @@ public class ModelServiceRegistry {
      * 当配置发生变化时调用此方法
      */
     public void refreshFromMergedConfig() {
-        logger.info("正在刷新运行时配置...");
+        LOGGER.info("正在刷新运行时配置...");
 
         try {
             // 获取合并后的配置
@@ -127,9 +128,9 @@ public class ModelServiceRegistry {
             // 重新初始化负载均衡器
             reinitializeLoadBalancers();
 
-            logger.info("运行时配置刷新完成，当前包含 {} 个服务", serviceConfigCache.size());
+            LOGGER.info("运行时配置刷新完成，当前包含 {} 个服务", serviceConfigCache.size());
         } catch (Exception e) {
-            logger.error("刷新运行时配置失败", e);
+            LOGGER.error("刷新运行时配置失败", e);
         }
     }
 
@@ -230,7 +231,7 @@ public class ModelServiceRegistry {
                     candidate.getInstanceId(), candidate.getBaseUrl());
 
             if (!rateLimitManager.tryAcquireInstance(instanceContext)) {
-                logger.warn("Instance rate limit exceeded for instance: {}, trying next instance",
+                LOGGER.warn("Instance rate limit exceeded for instance: {}, trying next instance",
                         candidate.getInstanceId());
                 candidateInstances.remove(candidate);
                 continue;
@@ -412,7 +413,7 @@ public class ModelServiceRegistry {
 
         if (runtimeConfig != null) {
             runtimeConfig.instances = new ArrayList<>(instances);
-            logger.info("已更新服务 {} 的实例，共 {} 个实例", serviceType, instances.size());
+            LOGGER.info("已更新服务 {} 的实例，共 {} 个实例", serviceType, instances.size());
         }
     }
 
@@ -425,7 +426,7 @@ public class ModelServiceRegistry {
 
         if (runtimeConfig != null) {
             runtimeConfig.adapter = adapter;
-            logger.info("已更新服务 {} 的适配器为: {}", serviceType, adapter);
+            LOGGER.info("已更新服务 {} 的适配器为: {}", serviceType, adapter);
         }
     }
 
@@ -441,7 +442,7 @@ public class ModelServiceRegistry {
         // 初始化降级管理器
         fallbackManager.initialize(originalProperties);
 
-        logger.debug("所有管理器初始化完成");
+        LOGGER.debug("所有管理器初始化完成");
     }
 
     /**
@@ -455,9 +456,9 @@ public class ModelServiceRegistry {
                     loadBalancerManager.reinitializeLoadBalancer(serviceType, entry.getValue().loadBalanceConfig);
                 }
             }
-            logger.debug("负载均衡器重新初始化完成");
+            LOGGER.debug("负载均衡器重新初始化完成");
         } catch (Exception e) {
-            logger.warn("重新初始化负载均衡器时发生错误: {}", e.getMessage());
+            LOGGER.warn("重新初始化负载均衡器时发生错误: {}", e.getMessage());
         }
     }
 
@@ -488,7 +489,7 @@ public class ModelServiceRegistry {
                 originalProperties.setServices(serviceConfigs);
             }
         } catch (Exception e) {
-            logger.warn("更新原始Properties对象时发生错误: {}", e.getMessage());
+            LOGGER.warn("更新原始Properties对象时发生错误: {}", e.getMessage());
         }
     }
 
@@ -510,13 +511,13 @@ public class ModelServiceRegistry {
                     ServiceRuntimeConfig runtimeConfig = buildServiceRuntimeConfig(serviceConfigMap);
                     newCache.put(serviceKey, runtimeConfig);
                 } catch (Exception e) {
-                    logger.warn("构建服务 {} 的运行时配置失败: {}", serviceKey, e.getMessage());
+                    LOGGER.warn("构建服务 {} 的运行时配置失败: {}", serviceKey, e.getMessage());
                 }
             }
         }
 
         this.serviceConfigCache = newCache;
-        logger.debug("服务配置缓存重建完成，包含 {} 个服务", newCache.size());
+        LOGGER.debug("服务配置缓存重建完成，包含 {} 个服务", newCache.size());
     }
 
     /**
@@ -565,27 +566,31 @@ public class ModelServiceRegistry {
      * 解析额外配置（限流、熔断器、降级）
      */
     @SuppressWarnings("unchecked")
-    private void parseAdditionalConfigs(Map<String, Object> serviceConfigMap, ServiceRuntimeConfig runtimeConfig) {
+    private void parseAdditionalConfigs(final Map<String, Object> serviceConfigMap,
+                                        final ServiceRuntimeConfig runtimeConfig) {
         // 限流配置
         if (serviceConfigMap.containsKey("rateLimit")) {
             Map<String, Object> rateLimitMap = (Map<String, Object>) serviceConfigMap.get("rateLimit");
-            if(rateLimitMap !=null) {
-                ModelRouterProperties.RateLimitConfig rateLimitConfig = new ModelRouterProperties.RateLimitConfig();
+            if (rateLimitMap != null) {
+                ModelRouterProperties.RateLimitConfig rateLimitConfig =
+                        new ModelRouterProperties.RateLimitConfig();
                 configurationHelper.updateRateLimitConfig(rateLimitConfig, rateLimitMap);
                 runtimeConfig.rateLimitConfig = rateLimitConfig;
-            }else{
+            } else {
                 runtimeConfig.rateLimitConfig = rateLimitManager.getDefaultRateLimitConfig();
             }
         }
 
         // 熔断器配置
         if (serviceConfigMap.containsKey("circuitBreaker")) {
-            Map<String, Object> circuitBreakerMap = (Map<String, Object>) serviceConfigMap.get("circuitBreaker");
-            if(circuitBreakerMap !=null) {
-                ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig = new ModelRouterProperties.CircuitBreakerConfig();
+            Map<String, Object> circuitBreakerMap =
+                    (Map<String, Object>) serviceConfigMap.get("circuitBreaker");
+            if (circuitBreakerMap != null) {
+                ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig =
+                        new ModelRouterProperties.CircuitBreakerConfig();
                 configurationHelper.updateCircuitBreakerConfig(circuitBreakerConfig, circuitBreakerMap);
                 runtimeConfig.circuitBreakerConfig = circuitBreakerConfig;
-            }else{
+            } else {
                 runtimeConfig.circuitBreakerConfig = circuitBreakerManager.getDefaultCircuitBreakerConfig();
             }
         }
@@ -593,20 +598,22 @@ public class ModelServiceRegistry {
         // 降级配置
         if (serviceConfigMap.containsKey("fallback")) {
             Map<String, Object> fallbackMap = (Map<String, Object>) serviceConfigMap.get("fallback");
-            if (fallbackMap !=null) {
-                ModelRouterProperties.FallbackConfig fallbackConfig = new ModelRouterProperties.FallbackConfig();
+            if (fallbackMap != null) {
+                ModelRouterProperties.FallbackConfig fallbackConfig =
+                        new ModelRouterProperties.FallbackConfig();
                 configurationHelper.updateFallbackConfig(fallbackConfig, fallbackMap);
                 runtimeConfig.fallbackConfig = fallbackConfig;
-            }else{
+            } else {
                 runtimeConfig.fallbackConfig = fallbackManager.getDefaultFallbackConfig();
             }
         }
     }
 
+
     /**
      * 获取WebClient
      */
-    private WebClient getWebClient(ModelRouterProperties.ModelInstance instance) {
+    private WebClient getWebClient(final ModelRouterProperties.ModelInstance instance) {
         String key = instance.getBaseUrl();
         return webClientCache.computeIfAbsent(key, url ->
                 WebClient.builder().baseUrl(url).build());
@@ -615,14 +622,14 @@ public class ModelServiceRegistry {
     /**
      * 获取服务键
      */
-    private String getServiceKey(ServiceType serviceType) {
+    private String getServiceKey(final ServiceType serviceType) {
         return configurationHelper.getServiceConfigKey(serviceType);
     }
 
     /**
      * 解析服务类型
      */
-    private ServiceType parseServiceType(String serviceKey) {
+    private ServiceType parseServiceType(final String serviceKey) {
         return configurationHelper.parseServiceType(serviceKey);
     }
 
@@ -630,11 +637,11 @@ public class ModelServiceRegistry {
      * 记录当前配置信息
      */
     private void logCurrentConfiguration() {
-        logger.info("当前服务配置概览:");
+        LOGGER.info("当前服务配置概览:");
         for (Map.Entry<String, ServiceRuntimeConfig> entry : serviceConfigCache.entrySet()) {
             String serviceKey = entry.getKey();
             ServiceRuntimeConfig config = entry.getValue();
-            logger.info("  服务 {}: {} 个实例, 适配器={}, 负载均衡={}",
+            LOGGER.info("  服务 {}: {} 个实例, 适配器={}, 负载均衡={}",
                     serviceKey,
                     config.instances.size(),
                     config.adapter != null ? config.adapter : "默认",
@@ -646,12 +653,60 @@ public class ModelServiceRegistry {
      * 服务运行时配置
      * 用于缓存解析后的服务配置，提高运行时性能
      */
-    private static class ServiceRuntimeConfig {
-        List<ModelRouterProperties.ModelInstance> instances = new ArrayList<>();
-        String adapter;
-        ModelRouterProperties.LoadBalanceConfig loadBalanceConfig;
-        ModelRouterProperties.RateLimitConfig rateLimitConfig;
-        ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig;
-        ModelRouterProperties.FallbackConfig fallbackConfig;
+    private static final class ServiceRuntimeConfig {
+        private List<ModelRouterProperties.ModelInstance> instances = new ArrayList<>();
+        private String adapter;
+        private ModelRouterProperties.LoadBalanceConfig loadBalanceConfig;
+        private ModelRouterProperties.RateLimitConfig rateLimitConfig;
+        private ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig;
+        private ModelRouterProperties.FallbackConfig fallbackConfig;
+
+        public List<ModelRouterProperties.ModelInstance> getInstances() {
+            return instances;
+        }
+
+        public void setInstances(List<ModelRouterProperties.ModelInstance> instances) {
+            this.instances = instances;
+        }
+
+        public String getAdapter() {
+            return adapter;
+        }
+
+        public void setAdapter(String adapter) {
+            this.adapter = adapter;
+        }
+
+        public ModelRouterProperties.LoadBalanceConfig getLoadBalanceConfig() {
+            return loadBalanceConfig;
+        }
+
+        public void setLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig loadBalanceConfig) {
+            this.loadBalanceConfig = loadBalanceConfig;
+        }
+
+        public ModelRouterProperties.RateLimitConfig getRateLimitConfig() {
+            return rateLimitConfig;
+        }
+
+        public void setRateLimitConfig(ModelRouterProperties.RateLimitConfig rateLimitConfig) {
+            this.rateLimitConfig = rateLimitConfig;
+        }
+
+        public ModelRouterProperties.CircuitBreakerConfig getCircuitBreakerConfig() {
+            return circuitBreakerConfig;
+        }
+
+        public void setCircuitBreakerConfig(ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig) {
+            this.circuitBreakerConfig = circuitBreakerConfig;
+        }
+
+        public ModelRouterProperties.FallbackConfig getFallbackConfig() {
+            return fallbackConfig;
+        }
+
+        public void setFallbackConfig(ModelRouterProperties.FallbackConfig fallbackConfig) {
+            this.fallbackConfig = fallbackConfig;
+        }
     }
 }

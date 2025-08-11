@@ -201,6 +201,31 @@ DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30
 
 ---
 
+## 🧪 测试模块说明
+
+| 测试类 | 功能覆盖 |
+|--------|----------|
+| [CircuitBreakerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\CircuitBreakerTest.java#L9-L196) | 熔断器状态切换、失败恢复、降级策略测试 |
+| [LoadBalancerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\LoadBalancerTest.java#L13-L175) | 各负载均衡策略（随机、轮询、最少连接、IP Hash）行为验证 |
+| [ModelManagerControllerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\ModelManagerControllerTest.java#L21-L105) | 动态配置更新接口测试 |
+| [ModelServiceRegistryTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\ModelServiceRegistryTest.java#L24-L456) | 服务注册、实例选择、权重生效测试 |
+| [RateLimiterTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\RateLimiterTest.java#L22-L180) | 限流算法正确性、并发限流行为测试 |
+| [UniversalControllerTest](file://D:\IdeaProjects\model-router\src\test\java\org\unreal\moduler\UniversalControllerTest.java#L22-L220) | 各服务接口转发、响应格式验证 |
+
+---
+
+## 🛡️ 代码质量保证
+
+本项目集成了多种代码质量工具来确保代码规范和质量：
+
+| 工具 | 用途 | 配置文件 |
+|------|------|----------|
+| **Checkstyle** | 检查代码风格和格式规范 | [checkstyle.xml](checkstyle.xml) |
+| **SpotBugs** | 静态分析工具，查找潜在的错误 | [spotbugs-security-include.xml](spotbugs-security-include.xml) [spotbugs-security-exclude.xml](spotbugs-security-exclude.xml) |
+| **JaCoCo** | 代码覆盖率分析工具 | 内置于 [pom.xml](pom.xml) |
+
+这些工具在 Maven 构建过程中自动运行，帮助我们维护高质量的代码标准。
+
 ## 📦 依赖版本
 
 - **JDK**：17+

@@ -19,12 +19,12 @@ import java.util.Set;
  */
 public class FileStoreManager extends BaseStoreManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(FileStoreManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileStoreManager.class);
 
     private final String storagePath;
     private final ObjectMapper objectMapper;
 
-    public FileStoreManager(String storagePath) {
+    public FileStoreManager(final String storagePath) {
         this.storagePath = storagePath;
         this.objectMapper = new ObjectMapper();
         initializeStorage();
@@ -37,61 +37,89 @@ public class FileStoreManager extends BaseStoreManager {
                 Files.createDirectories(path);
             }
         } catch (IOException e) {
-            logger.error("Failed to initialize storage directory: " + storagePath, e);
+            LOGGER.error("Failed to initialize storage directory: " + storagePath, e);
             throw new RuntimeException("Failed to initialize storage directory", e);
         }
     }
 
+    /**
+     * 保存配置信息到文件
+     * @param key 配置键
+     * @param config 配置内容
+     */
     @Override
-    protected void doSaveConfig(String key, Map<String, Object> config) {
+    protected void doSaveConfig(final String key, final Map<String, Object> config) {
         try {
             File configFile = new File(storagePath, key + ".json");
             objectMapper.writeValue(configFile, config);
         } catch (IOException e) {
-            logger.error("Failed to save config for key: " + key, e);
+            LOGGER.error("Failed to save config for key: " + key, e);
             throw new RuntimeException("Failed to save config", e);
         }
     }
 
+    /**
+     * 从文件获取配置信息
+     * @param key 配置键
+     * @return 配置内容
+     */
     @Override
-    protected Map<String, Object> doGetConfig(String key) {
+    protected Map<String, Object> doGetConfig(final String key) {
         try {
             File configFile = new File(storagePath, key + ".json");
             if (!configFile.exists()) {
                 return null;
             }
-            return objectMapper.readValue(configFile, new TypeReference<Map<String, Object>>() {});
+            return objectMapper.readValue(configFile, new TypeReference<>() { });
         } catch (IOException e) {
-            logger.error("Failed to read config for key: " + key, e);
+            LOGGER.error("Failed to read config for key: " + key, e);
             throw new RuntimeException("Failed to read config", e);
         }
     }
 
+    /**
+     * 从文件删除配置信息
+     * @param key 配置键
+     */
     @Override
-    protected void doDeleteConfig(String key) {
+    protected void doDeleteConfig(final String key) {
         try {
             File configFile = new File(storagePath, key + ".json");
             if (configFile.exists()) {
                 Files.delete(configFile.toPath());
             }
         } catch (IOException e) {
-            logger.error("Failed to delete config for key: " + key, e);
+            LOGGER.error("Failed to delete config for key: " + key, e);
             throw new RuntimeException("Failed to delete config", e);
         }
     }
 
+    /**
+     * 检查配置文件是否存在
+     * @param key 配置键
+     * @return 是否存在
+     */
     @Override
-    protected boolean doExists(String key) {
+    protected boolean doExists(final String key) {
         File configFile = new File(storagePath, key + ".json");
         return configFile.exists();
     }
 
+    /**
+     * 更新配置信息到文件
+     * @param key 配置键
+     * @param config 配置内容
+     */
     @Override
-    protected void doUpdateConfig(String key, Map<String, Object> config) {
+    protected void doUpdateConfig(final String key, final Map<String, Object> config) {
         // 更新和保存使用相同的操作
         doSaveConfig(key, config);
     }
 
+    /**
+     * 获取所有配置键
+     * @return 所有配置键的集合
+     */
     @Override
     public Iterable<String> getAllKeys() {
         try {
@@ -108,7 +136,7 @@ public class FileStoreManager extends BaseStoreManager {
             }
             return keys;
         } catch (Exception e) {
-            logger.error("Failed to list config keys", e);
+            LOGGER.error("Failed to list config keys", e);
             return new HashSet<>();
         }
     }

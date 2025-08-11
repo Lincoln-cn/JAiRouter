@@ -211,7 +211,7 @@ public class LocalAiAdapter extends BaseAdapter {
     private String enhanceLocalAiResponse(JsonNode localAiResponse) {
         try {
             if (localAiResponse.isObject()) {
-                ObjectNode enhancedResponse = (ObjectNode) localAiResponse.deepCopy();
+                ObjectNode enhancedResponse = localAiResponse.deepCopy();
 
                 // 确保标准字段
                 if (!enhancedResponse.has("id")) {
@@ -255,14 +255,14 @@ public class LocalAiAdapter extends BaseAdapter {
 
                 JsonNode chunkJson = objectMapper.readTree(jsonPart);
                 if (chunkJson.isObject()) {
-                    ObjectNode enhancedChunk = (ObjectNode) chunkJson.deepCopy();
+                    ObjectNode enhancedChunk = chunkJson.deepCopy();
 
                     // 添加系统指纹
                     if (!enhancedChunk.has("system_fingerprint")) {
                         enhancedChunk.put("system_fingerprint", "localai-adapter");
                     }
 
-                    return "data: " + enhancedChunk.toString();
+                    return "data: " + enhancedChunk;
                 }
             }
             return chunk;

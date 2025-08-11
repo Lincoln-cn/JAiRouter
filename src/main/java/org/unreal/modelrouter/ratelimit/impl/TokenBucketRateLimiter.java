@@ -11,17 +11,24 @@ public class TokenBucketRateLimiter implements RateLimiter {
     private final AtomicLong tokens;
     private final AtomicLong lastRefillTimestamp;
 
-    public TokenBucketRateLimiter(RateLimitConfig config) {
+    public TokenBucketRateLimiter(final RateLimitConfig config) {
         this.config = config;
         this.tokens = new AtomicLong(config.getCapacity());
         this.lastRefillTimestamp = new AtomicLong(System.nanoTime());
     }
 
+    /**
+     * 尝试获取令牌
+     * @param context 限流上下文
+     * @return 是否获取成功
+     */
     @Override
-    public boolean tryAcquire(RateLimitContext context) {
+    public boolean tryAcquire(final RateLimitContext context) {
         refill();
         long current = tokens.get();
-        if (current < context.getTokens()) return false;
+        if (current < context.getTokens()) {
+            return false;
+        }
         return tokens.compareAndSet(current, current - context.getTokens());
     }
 
@@ -35,5 +42,12 @@ public class TokenBucketRateLimiter implements RateLimiter {
         }
     }
 
-    @Override public RateLimitConfig getConfig() { return config; }
+    /**
+     * 获取限流配置
+     * @return 限流配置
+     */
+    @Override 
+    public RateLimitConfig getConfig() { 
+        return config; 
+    }
 }
