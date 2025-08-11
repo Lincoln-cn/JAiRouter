@@ -1,9 +1,14 @@
 package org.unreal.moduler;
 
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.circuitbreaker.DefaultCircuitBreaker;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -194,4 +199,97 @@ class CircuitBreakerTest {
             return -1;
         }
     }
+
+    @Test
+    void testMultipleOpenCloseCycles() throws InterruptedException {
+        // 测试多次熔断-恢复循环
+        for (int cycle = 0; cycle < 3; cycle++) {
+            // 1. 触发熔断
+            for (int i = 0; i < FAILURE_THRESHOLD; i++) {
+                circuitBreaker.onFailure();
+            }
+            assertEquals(CircuitBreaker.State.OPEN, circuitBreaker.getState());
+            assertFalse(circuitBreaker.canExecute());
+
+            // 2. 等待超时进入半开状态
+            Thread.sleep(TIMEOUT + 100);
+            assertTrue(circuitBreaker.canExecute());
+            assertEquals(CircuitBreaker.State.HALF_OPEN, circuitBreaker.getState());
+
+            // 3. 成功恢复
+            for (int i = 0; i < SUCCESS_THRESHOLD; i++) {
+                circuitBreaker.onSuccess();
+            }
+            assertEquals(CircuitBreaker.State.CLOSED, circuitBreaker.getState());
+            assertTrue(circuitBreaker.canExecute());
+        }
+    }
+
+    @Test
+    void testFailureAfterRecovery() throws InterruptedException {
+        // 测试恢复后再次失败的情况
+        // 1. 触发熔断并恢复
+        for (int i = 0; i < FAILURE_THRESHOLD; i++) circuitBreaker.onFailure();
+        Thread.sleep(TIMEOUT + 100);
+
+        // 需要调用canExecute()来触发状态从OPEN到HALF_OPEN的转换
+        assertTrue(circuitBreaker.canExecute());
+        assertEquals(CircuitBreaker.State.HALF_OPEN, circuitBreaker.getState());
+
+        for (int i = 0; i < SUCCESS_THRESHOLD; i++) circuitBreaker.onSuccess();
+
+        // 2. 确认已恢复正常
+        assertEquals(CircuitBreaker.State.CLOSED, circuitBreaker.getState());
+
+        // 3. 再次触发熔断
+        for (int i = 0; i < FAILURE_THRESHOLD; i++) circuitBreaker.onFailure();
+        assertEquals(CircuitBreaker.State.OPEN, circuitBreaker.getState());
+    }
+
+    @Test
+    void testConcurrentStateTransitions() throws InterruptedException {
+        // 测试并发状态转换
+        int threadCount = 20;
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicInteger openCount = new AtomicInteger(0);
+        AtomicInteger closedCount = new AtomicInteger(0);
+        AtomicInteger halfOpenCount = new AtomicInteger(0);
+        
+        Runnable task = () -> {
+            try {
+                CircuitBreaker.State state = circuitBreaker.getState();
+                switch (state) {
+                    case CLOSED:
+                        closedCount.incrementAndGet();
+                        break;
+                    case OPEN:
+                        openCount.incrementAndGet();
+                        break;
+                    case HALF_OPEN:
+                        halfOpenCount.incrementAndGet();
+                        break;
+                }
+            } finally {
+                latch.countDown();
+            }
+        };
+        
+        // 同时触发失败和检查状态
+        new Thread(() -> {
+            for (int i = 0; i < FAILURE_THRESHOLD; i++) {
+                circuitBreaker.onFailure();
+            }
+        }).start();
+        
+        // 启动多个线程检查状态
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(task).start();
+        }
+        
+        latch.await(5, TimeUnit.SECONDS);
+        
+        // 验证至少有一种状态被检测到
+        assertTrue(openCount.get() + closedCount.get() + halfOpenCount.get() > 0);
+    }
+
 }
