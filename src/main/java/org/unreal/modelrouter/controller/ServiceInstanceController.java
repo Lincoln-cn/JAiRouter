@@ -87,7 +87,7 @@ public class ServiceInstanceController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(org.unreal.modelrouter.response.ApiResponse.error("实例baseUrl格式不正确"));
             }
-            
+
             configurationService.addServiceInstance(serviceType, instanceConfig);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(org.unreal.modelrouter.response.ApiResponse.success(null, "实例添加成功"));
@@ -114,7 +114,7 @@ public class ServiceInstanceController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(org.unreal.modelrouter.response.ApiResponse.error("实例baseUrl格式不正确"));
             }
-            
+
             // URL解码实例ID
             String decodedInstanceId = instanceConfig.getInstanceId();
             configurationService.updateServiceInstance(serviceType, decodedInstanceId, instanceConfig.getInstance().covertTo());
