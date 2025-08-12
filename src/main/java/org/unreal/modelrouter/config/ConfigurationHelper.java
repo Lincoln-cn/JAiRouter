@@ -21,12 +21,17 @@ import java.util.Map;
 @Component
 public class ConfigurationHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger(ConfigurationHelper.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationHelper.class);
 
     private ConfigurationValidator configurationValidator;
 
+    /**
+     * Sets the configuration validator for this helper.
+     * 
+     * @param configurationValidator the configuration validator to set
+     */
     @Autowired
-    public void setConfigurationValidator(ConfigurationValidator configurationValidator) {
+    public void setConfigurationValidator(final ConfigurationValidator configurationValidator) {
         this.configurationValidator = configurationValidator;
     }
 
@@ -34,7 +39,7 @@ public class ConfigurationHelper {
      * 服务键到服务类型映射
      * 支持多种格式：连字符、下划线、驼峰等
      */
-    public ModelServiceRegistry.ServiceType parseServiceType(String serviceKey) {
+    public ModelServiceRegistry.ServiceType parseServiceType(final String serviceKey) {
         if (serviceKey == null || serviceKey.trim().isEmpty()) {
             return null;
         }
@@ -62,7 +67,7 @@ public class ConfigurationHelper {
      * 转换限流配置
      * 从Properties配置转换为内部配置对象
      */
-    public RateLimitConfig convertRateLimitConfig(ModelRouterProperties.RateLimitConfig source) {
+    public RateLimitConfig convertRateLimitConfig(final ModelRouterProperties.RateLimitConfig source) {
         if (source == null || !Boolean.TRUE.equals(source.getEnabled())) {
             return null;
         }
@@ -79,7 +84,7 @@ public class ConfigurationHelper {
      * 转换降级配置
      * 从Properties配置转换为内部配置对象
      */
-    public ModelRouterProperties.FallbackConfig convertFallbackConfig(ModelRouterProperties.FallbackConfig source) {
+    public ModelRouterProperties.FallbackConfig convertFallbackConfig(final ModelRouterProperties.FallbackConfig source) {
         if (source == null || !Boolean.TRUE.equals(source.getEnabled())) {
             return null;
         }
@@ -97,8 +102,8 @@ public class ConfigurationHelper {
      * 优先级：服务配置 > 全局配置 > 默认配置
      */
     public ModelRouterProperties.LoadBalanceConfig getEffectiveLoadBalanceConfig(
-            ModelRouterProperties.LoadBalanceConfig serviceConfig,
-            ModelRouterProperties.LoadBalanceConfig globalConfig) {
+            final ModelRouterProperties.LoadBalanceConfig serviceConfig,
+            final ModelRouterProperties.LoadBalanceConfig globalConfig) {
 
         if (serviceConfig != null) {
             return serviceConfig;
@@ -127,7 +132,7 @@ public class ConfigurationHelper {
      * 获取服务配置键
      * 将ServiceType转换为配置文件中使用的键名
      */
-    public String getServiceConfigKey(ModelServiceRegistry.ServiceType serviceType) {
+    public String getServiceConfigKey(final ModelServiceRegistry.ServiceType serviceType) {
         return switch (serviceType) {
             case imgGen -> "img-gen";
             case imgEdit -> "img-edit";
@@ -138,14 +143,14 @@ public class ConfigurationHelper {
     /**
      * 验证负载均衡配置的有效性
      */
-    public boolean isValidLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig config) {
+    public boolean isValidLoadBalanceConfig(final ModelRouterProperties.LoadBalanceConfig config) {
         return configurationValidator.validateLoadBalanceConfig(config);
     }
 
     /**
      * 验证限流配置的有效性
      */
-    public boolean isValidRateLimitConfig(ModelRouterProperties.RateLimitConfig config) {
+    public boolean isValidRateLimitConfig(final ModelRouterProperties.RateLimitConfig config) {
         if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
             return false;
         }
@@ -160,7 +165,7 @@ public class ConfigurationHelper {
      * @param modelRouterProperties 配置对象
      * @return 配置Map
      */
-    public Map<String, Object> convertModelRouterPropertiesToMap(ModelRouterProperties modelRouterProperties) {
+    public Map<String, Object> convertModelRouterPropertiesToMap(final ModelRouterProperties modelRouterProperties) {
         // 使用反射机制将ModelRouterProperties对象转换为Map，避免硬编码
         return convertObjectToMap(modelRouterProperties);
     }
@@ -171,7 +176,7 @@ public class ConfigurationHelper {
      * @param obj 待转换的对象
      * @return 转换后的Map
      */
-    private Map<String, Object> convertObjectToMap(Object obj) {
+    private Map<String, Object> convertObjectToMap(final Object obj) {
         if (obj == null) {
             return null;
         }
@@ -206,7 +211,7 @@ public class ConfigurationHelper {
             try {
                 // 检查是否可以访问该字段
                 if (!isAccessibleField(field)) {
-                    logger.debug("跳过无法访问的字段: {}", field.getName());
+                    LOGGER.debug("跳过无法访问的字段: {}", field.getName());
                     continue;
                 }
                 
@@ -234,9 +239,9 @@ public class ConfigurationHelper {
                     resultMap.put(field.getName(), value.toString());
                 }
             } catch (IllegalAccessException e) {
-                logger.warn("无法访问字段: " + field.getName(), e);
+                LOGGER.warn("无法访问字段: " + field.getName(), e);
             } catch (Exception e) {
-                logger.warn("处理字段时出错: " + field.getName(), e);
+                LOGGER.warn("处理字段时出错: " + field.getName(), e);
             }
         }
 
@@ -246,7 +251,7 @@ public class ConfigurationHelper {
     /**
      * 检查字段是否可以访问
      */
-    private boolean isAccessibleField(Field field) {
+    private boolean isAccessibleField(final Field field) {
         try {
             // 检查是否是JDK内部类的字段
             if (isJdkInternalClass(field.getDeclaringClass())) {
@@ -261,18 +266,18 @@ public class ConfigurationHelper {
     /**
      * 检查是否为JDK内部类
      */
-    private boolean isJdkInternalClass(Class<?> clazz) {
+    private boolean isJdkInternalClass(final Class<?> clazz) {
         String className = clazz.getName();
-        return className.startsWith("java.") || 
-               className.startsWith("javax.") || 
-               className.startsWith("sun.") ||
-               className.startsWith("com.sun.");
+        return className.startsWith("java.") 
+               || className.startsWith("javax.") 
+               || className.startsWith("sun.")
+               || className.startsWith("com.sun.");
     }
 
     /**
      * 转换Map为结果Map
      */
-    private Map<String, Object> convertMapToResultMap(Map<?, ?> originalMap) {
+    private Map<String, Object> convertMapToResultMap(final Map<?, ?> originalMap) {
         Map<String, Object> convertedMap = new HashMap<>();
         for (Map.Entry<?, ?> entry : originalMap.entrySet()) {
             Object key = entry.getKey();
@@ -293,7 +298,7 @@ public class ConfigurationHelper {
     /**
      * 转换List为结果List
      */
-    private List<Object> convertListToResultList(List<?> originalList) {
+    private List<Object> convertListToResultList(final List<?> originalList) {
         List<Object> convertedList = new ArrayList<>();
         for (Object item : originalList) {
             if (item == null) {
@@ -310,7 +315,7 @@ public class ConfigurationHelper {
     /**
      * 创建单值Map
      */
-    private Map<String, Object> createSingleValueMap(String key, Object value) {
+    private Map<String, Object> createSingleValueMap(final String key, final Object value) {
         Map<String, Object> map = new HashMap<>();
         map.put(key, value);
         return map;
@@ -322,16 +327,16 @@ public class ConfigurationHelper {
      * @param clazz 待判断的类
      * @return 是否为基本类型或其包装类
      */
-    private boolean isPrimitiveOrWrapper(Class<?> clazz) {
-        return clazz.isPrimitive() ||
-                clazz == Boolean.class ||
-                clazz == Character.class ||
-                clazz == Byte.class ||
-                clazz == Short.class ||
-                clazz == Integer.class ||
-                clazz == Long.class ||
-                clazz == Float.class ||
-                clazz == Double.class;
+    private boolean isPrimitiveOrWrapper(final Class<?> clazz) {
+        return clazz.isPrimitive()
+                || clazz == Boolean.class
+                || clazz == Character.class
+                || clazz == Byte.class
+                || clazz == Short.class
+                || clazz == Integer.class
+                || clazz == Long.class
+                || clazz == Float.class
+                || clazz == Double.class;
     }
 
     /**

@@ -29,7 +29,7 @@ public class FileStoreManager extends BaseStoreManager {
 
     private void initializeStorage() {
         try {
-            Path path = Paths.get(storagePath);
+            Path path = org.unreal.modelrouter.util.PathSanitizer.sanitizePath(storagePath);
             if (!Files.exists(path)) {
                 Files.createDirectories(path);
             }
@@ -47,8 +47,10 @@ public class FileStoreManager extends BaseStoreManager {
     @Override
     protected void doSaveConfig(final String key, final Map<String, Object> config) {
         try {
-            File configFile = new File(storagePath, key + ".json");
-            objectMapper.writeValue(configFile, config);
+            String sanitizedKey = org.unreal.modelrouter.util.PathSanitizer.sanitizeFileName(key);
+            Path configPath = org.unreal.modelrouter.util.PathSanitizer.sanitizePath(storagePath)
+                    .resolve(sanitizedKey + ".json");
+            org.unreal.modelrouter.util.SafeFileOperations.writeJsonFile(configPath, config, objectMapper);
         } catch (IOException e) {
             LOGGER.error("Failed to save config for key: " + key, e);
             throw new RuntimeException("Failed to save config", e);
@@ -63,11 +65,10 @@ public class FileStoreManager extends BaseStoreManager {
     @Override
     protected Map<String, Object> doGetConfig(final String key) {
         try {
-            File configFile = new File(storagePath, key + ".json");
-            if (!configFile.exists()) {
-                return null;
-            }
-            return objectMapper.readValue(configFile, new TypeReference<>() { });
+            String sanitizedKey = org.unreal.modelrouter.util.PathSanitizer.sanitizeFileName(key);
+            Path configPath = org.unreal.modelrouter.util.PathSanitizer.sanitizePath(storagePath)
+                    .resolve(sanitizedKey + ".json");
+            return org.unreal.modelrouter.util.SafeFileOperations.readJsonFile(configPath, objectMapper, new TypeReference<>() { });
         } catch (IOException e) {
             LOGGER.error("Failed to read config for key: " + key, e);
             throw new RuntimeException("Failed to read config", e);
@@ -81,10 +82,10 @@ public class FileStoreManager extends BaseStoreManager {
     @Override
     protected void doDeleteConfig(final String key) {
         try {
-            File configFile = new File(storagePath, key + ".json");
-            if (configFile.exists()) {
-                Files.delete(configFile.toPath());
-            }
+            String sanitizedKey = org.unreal.modelrouter.util.PathSanitizer.sanitizeFileName(key);
+            Path configPath = org.unreal.modelrouter.util.PathSanitizer.sanitizePath(storagePath)
+                    .resolve(sanitizedKey + ".json");
+            org.unreal.modelrouter.util.SafeFileOperations.deleteFile(configPath);
         } catch (IOException e) {
             LOGGER.error("Failed to delete config for key: " + key, e);
             throw new RuntimeException("Failed to delete config", e);
@@ -98,8 +99,15 @@ public class FileStoreManager extends BaseStoreManager {
      */
     @Override
     protected boolean doExists(final String key) {
-        File configFile = new File(storagePath, key + ".json");
-        return configFile.exists();
+        try {
+            String sanitizedKey = org.unreal.modelrouter.util.PathSanitizer.sanitizeFileName(key);
+            Path configPath = org.unreal.modelrouter.util.PathSanitizer.sanitizePath(storagePath)
+                    .resolve(sanitizedKey + ".json");
+            return Files.exists(configPath);
+        } catch (Exception e) {
+            LOGGER.error("Failed to check existence for key: " + key, e);
+            return false;
+        }
     }
 
     /**
@@ -121,15 +129,16 @@ public class FileStoreManager extends BaseStoreManager {
     public Iterable<String> getAllKeys() {
         try {
             Set<String> keys = new HashSet<>();
-            File storageDir = new File(storagePath);
-            File[] files = storageDir.listFiles((dir, name) -> name.endsWith(".json") && !name.contains("@"));
+            Path storageDir = org.unreal.modelrouter.util.PathSanitizer.sanitizePath(storagePath);
             
-            if (files != null) {
-                for (File file : files) {
-                    String fileName = file.getName();
-                    String key = fileName.substring(0, fileName.lastIndexOf(".json"));
-                    keys.add(key);
-                }
+            if (Files.exists(storageDir) && Files.isDirectory(storageDir)) {
+                Files.list(storageDir)
+                        .filter(path -> path.toString().endsWith(".json") && !path.toString().contains("@"))
+                        .forEach(path -> {
+                            String fileName = path.getFileName().toString();
+                            String key = fileName.substring(0, fileName.lastIndexOf(".json"));
+                            keys.add(key);
+                        });
             }
             return keys;
         } catch (Exception e) {
