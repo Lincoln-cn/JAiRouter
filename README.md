@@ -380,7 +380,6 @@ services:
 ### 📚 相关文档
 
 - [Docker 部署指南](docs/docker-deployment.md) - 完整的部署文档
-- [SpotBugs 问题修复报告](docs/spotbugs-fixes.md) - 代码质量问题修复说明
 
 ---
 
