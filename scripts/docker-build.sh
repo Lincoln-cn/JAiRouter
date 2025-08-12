@@ -20,7 +20,7 @@ echo -e "${YELLOW}Starting JAiRouter Docker build...${NC}"
 
 # Step 1: Clean and build the JAR
 echo -e "${YELLOW}Step 1: Building JAR file...${NC}"
-./mvnw clean package -DskipTests -Pfast
+./mvn clean package -DskipTests -Pfast
 
 # Check if JAR was built successfully
 if [ ! -f "target/${PROJECT_NAME}-${VERSION}.jar" ]; then
