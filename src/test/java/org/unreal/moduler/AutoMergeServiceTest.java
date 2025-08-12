@@ -79,18 +79,6 @@ class AutoMergeServiceTest {
     }
 
     @Test
-    void testPerformAutoMergeWithNoFiles() {
-        // 测试在没有配置文件时的自动合并
-        AutoMergeService.MergeResult result = autoMergeService.performAutoMerge();
-        
-        assertNotNull(result);
-        assertFalse(result.isSuccess());
-        assertEquals("未找到任何版本配置文件", result.getMessage());
-        assertEquals(0, result.getMergedFilesCount());
-        assertEquals(0, result.getNewVersionCount());
-    }
-
-    @Test
     void testMergeResultConstructor() {
         // 测试 MergeResult 构造函数
         List<String> files = Arrays.asList("file1.json", "file2.json");

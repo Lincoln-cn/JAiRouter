@@ -268,15 +268,10 @@
                     <buildArgs>
                         <JAR_FILE>target/${project.build.finalName}.jar</JAR_FILE>
                     </buildArgs>
+                    <useMavenSettingsForAuth>true</useMavenSettingsForAuth>
+                    <pullNewerImage>false</pullNewerImage>
+                    <noCache>false</noCache>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>default</id>
-                        <goals>
-                            <goal>build</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <!-- Jib Plugin (Alternative Docker plugin) -->

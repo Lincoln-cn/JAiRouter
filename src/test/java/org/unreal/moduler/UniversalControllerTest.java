@@ -2,30 +2,35 @@ package org.unreal.moduler;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
+import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.controller.UniversalController;
-import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
-import java.util.*;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class UniversalControllerTest {
-
-    private WebTestClient webTestClient;
-
-    @Mock
-    private ModelServiceRegistry registry;
 
     @Mock
     private AdapterRegistry adapterRegistry;
@@ -34,188 +39,405 @@ class UniversalControllerTest {
     private ServiceStateManager serviceStateManager;
 
     @Mock
-    private ModelRouterProperties.ModelInstance modelInstance;
+    private BaseAdapter mockAdapter;
+
+    private UniversalController universalController;
+    private WebTestClient webTestClient;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
-        UniversalController controller = new UniversalController(adapterRegistry, serviceStateManager);
-        webTestClient = WebTestClient.bindToController(controller).build();
+        universalController = new UniversalController(adapterRegistry, serviceStateManager);
+        webTestClient = WebTestClient.bindToController(universalController).build();
     }
 
     @Test
-    void testGetModels() {
-        // 准备测试数据
-        Set<String> chatModels = new HashSet<>(Arrays.asList("gpt-3.5-turbo", "gpt-4"));
-        Set<String> embeddingModels = new HashSet<>(Arrays.asList("text-embedding-ada-002"));
+    void testChatCompletions_Success() {
+        // Arrange
+        ChatDTO.Request request = new ChatDTO.Request(
+                "gpt-3.5-turbo",
+                List.of(new ChatDTO.Message("user", "Hello", null)),
+                null, null, null, null, null, null, null, null, null
+        );
+        
+        ChatDTO.Response expectedResponse = new ChatDTO.Response(
+                "chat-123",
+                "chat.completion",
+                System.currentTimeMillis() / 1000,
+                "gpt-3.5-turbo",
+                List.of(new ChatDTO.Choice(
+                        0,
+                        new ChatDTO.Message("assistant", "Hello! How can I help you?", null),
+                        null,
+                        "stop"
+                )),
+                new ChatDTO.Usage(10, 15, 25),
+                null
+        );
 
-        when(registry.getAvailableModels(ModelServiceRegistry.ServiceType.chat)).thenReturn(chatModels);
-        when(registry.getAvailableModels(ModelServiceRegistry.ServiceType.embedding)).thenReturn(embeddingModels);
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
+        
+        when(serviceStateManager.isServiceHealthy("chat")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.chat)).thenReturn(mockAdapter);
+        when(mockAdapter.chat(any(ChatDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenReturn(Mono.just(ResponseEntity.ok(expectedResponse)));
 
-        // 执行测试
-        webTestClient.get()
-                .uri("/api/models")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.object").isEqualTo("list")
-                .jsonPath("$.data.length()").isEqualTo(3)
-                // 使用更灵活的断言方式，不依赖于顺序
-                .jsonPath("$.data[?(@.id == 'gpt-3.5-turbo')].id").isEqualTo("gpt-3.5-turbo")
-                .jsonPath("$.data[?(@.id == 'gpt-4')].id").isEqualTo("gpt-4")
-                .jsonPath("$.data[?(@.id == 'text-embedding-ada-002')].id").isEqualTo("text-embedding-ada-002");
+        // Act & Assert
+        StepVerifier.create(universalController.chatCompletions("Bearer token", request, httpRequest))
+                .expectNextMatches(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    ChatDTO.Response body = (ChatDTO.Response) response.getBody();
+                    assertNotNull(body);
+                    assertEquals("chat-123", body.id());
+                    assertEquals("gpt-3.5-turbo", body.model());
+                    return true;
+                })
+                .verifyComplete();
+
+        verify(serviceStateManager).isServiceHealthy("chat");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.chat);
+        verify(mockAdapter).chat(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
-    void testGetStatus() {
-        // 准备测试数据
-        Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> allInstances = new HashMap<>();
-        allInstances.put(ModelServiceRegistry.ServiceType.chat, Arrays.asList(modelInstance));
-
-        when(registry.getAllInstances()).thenReturn(allInstances);
-        when(registry.getAvailableModels(any(ModelServiceRegistry.ServiceType.class))).thenAnswer(invocation -> {
-            ModelServiceRegistry.ServiceType type = invocation.getArgument(0);
-            if (type == ModelServiceRegistry.ServiceType.chat) {
-                return new HashSet<>(Arrays.asList("test-model"));
-            }
-            return new HashSet<>();
-        });
-        when(serviceStateManager.isServiceHealthy(anyString())).thenReturn(true);
-        when(registry.getServiceAdapter(any())).thenReturn("normal");
-        when(registry.getLoadBalanceStrategy(any())).thenReturn("RoundRobinLoadBalancer");
-
-        when(modelInstance.getName()).thenReturn("test-instance");
-        when(modelInstance.getBaseUrl()).thenReturn("http://test.example.com");
-        when(modelInstance.getPath()).thenReturn("/v1");
-
-        // 执行测试
-        webTestClient.get()
-                .uri("/api/status")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.timestamp").exists()
-                .jsonPath("$.status").isEqualTo("running")
-                .jsonPath("$.services.chat.healthy").isEqualTo(true)
-                .jsonPath("$.services.chat.adapter").isEqualTo("normal");
-    }
-
-    @Test
-    void testChatCompletionsWhenServiceUnavailable() {
-        // 准备测试数据
+    void testChatCompletions_ServiceUnhealthy() {
+        // Arrange
+        ChatDTO.Request request = new ChatDTO.Request(
+                "gpt-3.5-turbo",
+                List.of(new ChatDTO.Message("user", "Hello", null)),
+                null, null, null, null, null, null, null, null, null
+        );
+        
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
+        
         when(serviceStateManager.isServiceHealthy("chat")).thenReturn(false);
 
-        // 执行测试
-        webTestClient.post()
-                .uri("/api/chat/completions")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just("{}"), String.class)
-                .exchange()
-                .expectStatus().isEqualTo(503);
+        // Act & Assert
+        assertThrows(ResponseStatusException.class, () -> {
+            universalController.chatCompletions("Bearer token", request, httpRequest).block();
+        });
+
+        verify(serviceStateManager).isServiceHealthy("chat");
+        verifyNoInteractions(adapterRegistry);
     }
 
     @Test
-    void testEmbeddingsWhenServiceUnavailable() {
-        // 准备测试数据
-        when(serviceStateManager.isServiceHealthy("embedding")).thenReturn(false);
+    void testEmbeddings_Success() {
+        // Arrange
+        EmbeddingDTO.Request request = new EmbeddingDTO.Request(
+                "text-embedding-ada-002",
+                List.of("Hello world"),
+                null, null, null
+        );
+        
+        EmbeddingDTO.Response expectedResponse = new EmbeddingDTO.Response(
+                "embedding",
+                List.of(new EmbeddingDTO.EmbeddingData(
+                        "embedding",
+                        List.of(0.1, 0.2, 0.3),
+                        0
+                )),
+                "text-embedding-ada-002",
+                new EmbeddingDTO.Usage(2, 2)
+        );
 
-        // 执行测试
-        webTestClient.post()
-                .uri("/api/embeddings")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just("{}"), String.class)
-                .exchange()
-                .expectStatus().isEqualTo(503);
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/embeddings").build();
+        
+        when(serviceStateManager.isServiceHealthy("embedding")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.embedding)).thenReturn(mockAdapter);
+        when(mockAdapter.embedding(any(EmbeddingDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenReturn(Mono.just(ResponseEntity.ok(expectedResponse)));
+
+        // Act & Assert
+        StepVerifier.create(universalController.embeddings("Bearer token", request, httpRequest))
+                .expectNextMatches(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    EmbeddingDTO.Response body = (EmbeddingDTO.Response) response.getBody();
+                    assertNotNull(body);
+                    assertEquals("text-embedding-ada-002", body.model());
+                    assertEquals(1, body.data().size());
+                    return true;
+                })
+                .verifyComplete();
+
+        verify(serviceStateManager).isServiceHealthy("embedding");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.embedding);
+        verify(mockAdapter).embedding(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
-    void testRerankWhenServiceUnavailable() {
-        // 准备测试数据
-        when(serviceStateManager.isServiceHealthy("rerank")).thenReturn(false);
+    void testRerank_Success() {
+        // Arrange
+        RerankDTO.Request request = new RerankDTO.Request(
+                "rerank-model",
+                "query text",
+                List.of("doc1", "doc2"),
+                null, null
+        );
+        
+        RerankDTO.Response expectedResponse = new RerankDTO.Response(
+                "rerank-123",
+                List.of(
+                        new RerankDTO.RerankResult(0, 0.9, "doc1"),
+                        new RerankDTO.RerankResult(1, 0.7, "doc2")
+                ),
+                "rerank-model",
+                new RerankDTO.Usage(10)
+        );
 
-        // 执行测试
-        webTestClient.post()
-                .uri("/api/rerank")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just("{}"), String.class)
-                .exchange()
-                .expectStatus().isEqualTo(503);
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/rerank").build();
+        
+        when(serviceStateManager.isServiceHealthy("rerank")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.rerank)).thenReturn(mockAdapter);
+        when(mockAdapter.rerank(any(RerankDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenReturn(Mono.just(ResponseEntity.ok(expectedResponse)));
+
+        // Act & Assert
+        StepVerifier.create(universalController.rerank("Bearer token", request, httpRequest))
+                .expectNextMatches(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    RerankDTO.Response body = (RerankDTO.Response) response.getBody();
+                    assertNotNull(body);
+                    assertEquals("rerank-model", body.model());
+                    assertEquals(2, body.results().size());
+                    return true;
+                })
+                .verifyComplete();
+
+        verify(serviceStateManager).isServiceHealthy("rerank");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.rerank);
+        verify(mockAdapter).rerank(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
-    void testTextToSpeechWhenServiceUnavailable() {
-        // 准备测试数据
-        when(serviceStateManager.isServiceHealthy("tts")).thenReturn(false);
+    void testTextToSpeech_Success() {
+        // Arrange
+        TtsDTO.Request request = new TtsDTO.Request(
+                "tts-1",
+                "Hello world",
+                "alloy",
+                null, null
+        );
+        
+        byte[] audioData = "fake audio data".getBytes();
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/audio/speech").build();
+        
+        when(serviceStateManager.isServiceHealthy("tts")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.tts)).thenReturn(mockAdapter);
+        when(mockAdapter.tts(any(TtsDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .body(audioData)));
 
-        // 执行测试
-        webTestClient.post()
-                .uri("/api/audio/speech")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just("{}"), String.class)
-                .exchange()
-                .expectStatus().isEqualTo(503);
+        // Act & Assert
+        StepVerifier.create(universalController.textToSpeech("Bearer token", request, httpRequest))
+                .expectNextMatches(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    assertEquals(MediaType.APPLICATION_OCTET_STREAM, response.getHeaders().getContentType());
+                    return true;
+                })
+                .verifyComplete();
+
+        verify(serviceStateManager).isServiceHealthy("tts");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.tts);
+        verify(mockAdapter).tts(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
-    void testSpeechToTextWhenServiceUnavailable() {
-        // 准备测试数据
-        when(serviceStateManager.isServiceHealthy("stt")).thenReturn(false);
+    void testSpeechToText_Success() {
+        // Arrange
+        SttDTO.Request request = new SttDTO.Request(
+                "whisper-1",
+                null, // file will be set separately
+                "auto", null, null, null
+        );
+        
+        SttDTO.Response expectedResponse = new SttDTO.Response("Hello world", "en", 2.5, null);
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/audio/transcriptions").build();
+        
+        when(serviceStateManager.isServiceHealthy("stt")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.stt)).thenReturn(mockAdapter);
+        when(mockAdapter.stt(any(SttDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenReturn(Mono.just(ResponseEntity.ok(expectedResponse)));
 
-        // 执行测试
-        webTestClient.post()
-                .uri("/api/audio/transcriptions")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(Mono.just(new MockMultipartFile("file", "test.wav", "audio/wav", "test".getBytes())), MockMultipartFile.class)
-                .exchange()
-                .expectStatus().isEqualTo(503);
+        // Act & Assert
+        StepVerifier.create(universalController.speechToText("Bearer token", request, httpRequest))
+                .expectNextMatches(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    SttDTO.Response body = (SttDTO.Response) response.getBody();
+                    assertNotNull(body);
+                    assertEquals("Hello world", body.text());
+                    return true;
+                })
+                .verifyComplete();
+
+        verify(serviceStateManager).isServiceHealthy("stt");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.stt);
+        verify(mockAdapter).stt(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
-    void testImageGenerateWhenServiceUnavailable() {
-        // 准备测试数据
-        when(serviceStateManager.isServiceHealthy("imgGen")).thenReturn(false);
+    void testImageGenerate_Success() {
+        // Arrange
+        ImageGenerateDTO.Request request = new ImageGenerateDTO.Request(
+                "A beautiful sunset",
+                "dall-e-3",
+                null, null, null, null, null, null
+        );
+        
+        ImageGenerateDTO.Response expectedResponse = new ImageGenerateDTO.Response(
+                System.currentTimeMillis() / 1000,
+                new ImageGenerateDTO.Response.Data[]{
+                        new ImageGenerateDTO.Response.Data(
+                                "https://example.com/image.png",
+                                null,
+                                "A beautiful sunset"
+                        )
+                },
+                null
+        );
 
-        // 执行测试
-        webTestClient.post()
-                .uri("/api/images/generations")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just("{}"), String.class)
-                .exchange()
-                .expectStatus().isEqualTo(503);
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/images/generations").build();
+        
+        when(serviceStateManager.isServiceHealthy("imgGen")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.imgGen)).thenReturn(mockAdapter);
+        when(mockAdapter.imageGenerate(any(ImageGenerateDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenReturn(Mono.just(ResponseEntity.ok(expectedResponse)));
+
+        // Act & Assert
+        StepVerifier.create(universalController.imageGenerate("Bearer token", request, httpRequest))
+                .expectNextMatches(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    ImageGenerateDTO.Response body = (ImageGenerateDTO.Response) response.getBody();
+                    assertNotNull(body);
+                    assertEquals(1, body.data().length);
+                    assertEquals("A beautiful sunset", body.data()[0].revised_prompt());
+                    return true;
+                })
+                .verifyComplete();
+
+        verify(serviceStateManager).isServiceHealthy("imgGen");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.imgGen);
+        verify(mockAdapter).imageGenerate(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
-    void testImageEditWhenServiceUnavailable() {
-        // 准备测试数据
-        when(serviceStateManager.isServiceHealthy("imgEdit")).thenReturn(false);
+    void testImageEdits_Success() {
+        // Arrange
+        ImageEditDTO.Request request = new ImageEditDTO.Request(
+                null, // image will be set separately
+                "Edit this image",
+                null, null, null, // background, input_fidelity, mask
+                "dall-e-2",
+                null, null, null, null, null, null, null, null, null
+        );
+        
+        ImageEditDTO.Response expectedResponse = new ImageEditDTO.Response(
+                System.currentTimeMillis() / 1000,
+                new ImageEditDTO.Response.Data[]{
+                        new ImageEditDTO.Response.Data(
+                                "https://example.com/edited-image.png",
+                                null
+                        )
+                },
+                null, null, null, null, null
+        );
 
-        // 执行测试
-        webTestClient.post()
-                .uri("/api/images/edits")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just("{}"), String.class)
-                .exchange()
-                .expectStatus().isEqualTo(503);
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/images/edits").build();
+        
+        when(serviceStateManager.isServiceHealthy("imgEdit")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.imgEdit)).thenReturn(mockAdapter);
+        when(mockAdapter.imageEdit(any(ImageEditDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenReturn(Mono.just(ResponseEntity.ok(expectedResponse)));
+
+        // Act & Assert
+        StepVerifier.create(universalController.imageEdits("Bearer token", request, httpRequest))
+                .expectNextMatches(response -> {
+                    assertEquals(HttpStatus.OK, response.getStatusCode());
+                    ImageEditDTO.Response body = (ImageEditDTO.Response) response.getBody();
+                    assertNotNull(body);
+                    assertEquals(1, body.data().length);
+                    assertNotNull(body.data()[0].url());
+                    return true;
+                })
+                .verifyComplete();
+
+        verify(serviceStateManager).isServiceHealthy("imgEdit");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.imgEdit);
+        verify(mockAdapter).imageEdit(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
-    void testGetModelsSuccessResponseStructure() {
-        // 准备测试数据
-        Set<String> chatModels = new HashSet<>(Arrays.asList("test-model"));
-        when(registry.getAvailableModels(ModelServiceRegistry.ServiceType.chat)).thenReturn(chatModels);
+    void testHandleServiceRequest_UnsupportedOperation() {
+        // Arrange
+        ChatDTO.Request request = new ChatDTO.Request(
+                "gpt-3.5-turbo",
+                List.of(new ChatDTO.Message("user", "Hello", null)),
+                null, null, null, null, null, null, null, null, null
+        );
+        
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
+        
+        when(serviceStateManager.isServiceHealthy("chat")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.chat)).thenReturn(mockAdapter);
+        when(mockAdapter.chat(any(ChatDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenThrow(new UnsupportedOperationException("Chat not supported"));
 
-        // 执行测试
-        webTestClient.get()
-                .uri("/api/models")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.object").isEqualTo("list")
-                .jsonPath("$.data").isArray()
-                .jsonPath("$.data[0].object").isEqualTo("model")
-                .jsonPath("$.data[0].owned_by").isEqualTo("model-router")
-                .jsonPath("$.data[0].service_type").isEqualTo("chat");
+        // Act & Assert
+        assertThrows(ResponseStatusException.class, () -> {
+            universalController.chatCompletions("Bearer token", request, httpRequest).block();
+        });
+
+        verify(serviceStateManager).isServiceHealthy("chat");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.chat);
     }
 
+    @Test
+    void testHandleServiceRequest_IllegalArgument() {
+        // Arrange
+        ChatDTO.Request request = new ChatDTO.Request(
+                "gpt-3.5-turbo",
+                List.of(new ChatDTO.Message("user", "Hello", null)),
+                null, null, null, null, null, null, null, null, null
+        );
+        
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
+        
+        when(serviceStateManager.isServiceHealthy("chat")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.chat)).thenReturn(mockAdapter);
+        when(mockAdapter.chat(any(ChatDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenThrow(new IllegalArgumentException("Invalid configuration"));
+
+        // Act & Assert
+        assertThrows(ResponseStatusException.class, () -> {
+            universalController.chatCompletions("Bearer token", request, httpRequest).block();
+        });
+
+        verify(serviceStateManager).isServiceHealthy("chat");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.chat);
+    }
+
+    @Test
+    void testHandleServiceRequest_GenericException() {
+        // Arrange
+        ChatDTO.Request request = new ChatDTO.Request(
+                "gpt-3.5-turbo",
+                List.of(new ChatDTO.Message("user", "Hello", null)),
+                null, null, null, null, null, null, null, null, null
+        );
+        
+        ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
+        
+        when(serviceStateManager.isServiceHealthy("chat")).thenReturn(true);
+        when(adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.chat)).thenReturn(mockAdapter);
+        when(mockAdapter.chat(any(ChatDTO.Request.class), anyString(), any(ServerHttpRequest.class)))
+                .thenThrow(new RuntimeException("Unexpected error"));
+
+        // Act & Assert
+        assertThrows(ResponseStatusException.class, () -> {
+            universalController.chatCompletions("Bearer token", request, httpRequest).block();
+        });
+
+        verify(serviceStateManager).isServiceHealthy("chat");
+        verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.chat);
+    }
 }
