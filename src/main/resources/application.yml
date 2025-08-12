@@ -1,18 +1,6 @@
 server:
   port: 8080 # Model Router 自己的端口
 
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: method
-  api-docs:
-    path: /v3/api-docs
-  packages-to-scan: org.unreal.modelrouter.controller
-  show-actuator: true
-  cache:
-    disabled: true
-
 model:
   # 全局配置
   load-balance:

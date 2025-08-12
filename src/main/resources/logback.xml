@@ -1,20 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration debug="true" scan="true" scanPeriod="30 seconds">
-    <appender name="FILE_DEBUG" class="ch.qos.logback.core.FileAppender">
-        <file>log/debug.log</file>
+<!-- 
+    ⚠️  注意：此配置文件已被 logback-spring.xml 替代
+    建议使用 logback-spring.xml 以支持多环境配置
+    
+    当前配置仅作为后备配置，建议在生产环境中：
+    1. 将日志级别调整为 WARN 或 INFO
+    2. 禁用控制台输出，仅输出到文件
+    3. 配置日志文件轮转和清理策略
+-->
+<configuration debug="false" scan="true" scanPeriod="30 seconds">
+    
+    <!-- 文件输出 - 调试日志 -->
+    <appender name="FILE_DEBUG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/jairouter-debug.log</file>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n</pattern>
+            <charset>UTF-8</charset>
         </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>logs/jairouter-debug.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
     </appender>
-    <!-- 根据application.yml 中 system.debug 配置，设置是否启用debug级别输出 -->
+    
+    <!-- 控制台输出 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
-    <root level="DEBUG">
+    
+    <!-- 
+        ⚠️  生产环境建议配置：
+        - 将 root level 改为 "WARN" 
+        - 移除 STDOUT appender
+        - 为关键组件单独配置 INFO 级别
+    -->
+    <root level="INFO">
         <appender-ref ref="FILE_DEBUG" />
         <appender-ref ref="STDOUT"/>
     </root>
+    
+    <!-- 生产环境建议的日志级别配置示例（注释状态） -->
+    <!--
+    <logger name="org.unreal.modelrouter.controller" level="INFO"/>
+    <logger name="org.unreal.modelrouter.config" level="INFO"/>
+    <logger name="org.unreal.modelrouter.checker" level="WARN"/>
+    <logger name="org.unreal.modelrouter.ratelimit" level="ERROR"/>
+    <logger name="org.unreal.modelrouter.loadbalancer" level="ERROR"/>
+    <logger name="org.springframework" level="ERROR"/>
+    -->
+    
 </configuration>

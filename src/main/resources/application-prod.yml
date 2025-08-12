@@ -1,0 +1,63 @@
+# 生产环境配置
+spring:
+  profiles:
+    active: prod
+
+# 日志配置 - 生产环境最小化日志输出
+logging:
+  level:
+    root: WARN
+    org.unreal.modelrouter.controller: INFO
+    org.unreal.modelrouter.config.ConfigurationService: INFO
+    org.unreal.modelrouter.store.AutoMergeService: INFO
+    org.unreal.modelrouter.checker.ServerChecker: WARN
+    org.unreal.modelrouter.checker.RateLimiterCleanupChecker: WARN
+    org.unreal.modelrouter.ratelimit: ERROR
+    org.unreal.modelrouter.loadbalancer: ERROR
+    org.unreal.modelrouter.circuitbreaker: WARN
+    org.unreal.modelrouter: WARN
+    org.springframework: ERROR
+    org.apache.http: ERROR
+    io.netty: ERROR
+    reactor.netty: ERROR
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"
+  file:
+    name: logs/jairouter-prod.log
+
+# 生产环境特定配置
+server:
+  port: 8080
+  # 生产环境性能优化
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    connection-timeout: 20000
+    max-connections: 8192
+
+# 生产环境存储配置
+store:
+  type: file
+  path: "config/"
+
+# WebClient 生产环境配置
+webclient:
+  connection-timeout: 10s
+  read-timeout: 30s
+  write-timeout: 30s
+  max-in-memory-size: 10MB
+
+# 生产环境监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
