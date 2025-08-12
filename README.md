@@ -315,6 +315,51 @@ JAiRouter 采用 SLF4J + Logback 日志框架，支持多环境配置和性能�
 
 ---
 
+## 🐳 Docker 部署
+
+JAiRouter 提供完整的 Docker 化部署方案，支持多环境配置和容器编排：
+
+### 🎯 Docker 特性
+
+- **多阶段构建**: 优化镜像大小，生产镜像约 200MB
+- **多环境支持**: 开发、测试、生产环境独立配置
+- **安全最佳实践**: 非 root 用户，最小权限运行
+- **健康检查**: 内置应用健康监控
+- **监控集成**: 支持 Prometheus + Grafana 监控栈
+
+### 🛠️ 构建方式
+
+| 方式 | 命令 | 特点 |
+|------|------|------|
+| **Makefile** | `make docker-build` | 简单易用，推荐 |
+| **脚本** | `./scripts/docker-build.sh` | 跨平台支持 |
+| **Maven插件** | `mvn dockerfile:build -Pdocker` | 集成构建流程 |
+| **Jib插件** | `mvn jib:dockerBuild -Pjib` | 无需Docker，更快构建 |
+
+### 📋 部署配置
+
+```yaml
+# docker-compose.yml 示例
+version: '3.8'
+services:
+  jairouter:
+    image: jairouter/model-router:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+```
+
+### 📚 相关文档
+
+- [Docker 部署指南](docs/docker-deployment.md) - 完整的部署文档
+
+---
+
 ## 📦 依赖版本
 
 - **JDK**：17+
@@ -325,6 +370,8 @@ JAiRouter 采用 SLF4J + Logback 日志框架，支持多环境配置和性能�
 ---
 
 ## 🚀 启动与部署
+
+### 传统方式部署
 
 ```bash
 # 编译
@@ -337,6 +384,88 @@ java -jar target/model-router-*.jar
 java -jar target/model-router-*.jar --spring.config.location=classpath:/application.yml
 ```
 
+### Docker 部署（推荐）
+
+#### 🐳 快速开始
+
+```bash
+# 1. 构建 Docker 镜像
+make docker-build
+
+# 2. 启动应用
+make docker-run
+
+# 3. 验证部署
+make health-check
+```
+
+#### 🛠️ 详细部署步骤
+
+##### 方式一：使用 Makefile（推荐）
+```bash
+# 开发环境
+make dev                    # 构建并启动开发环境
+
+# 生产环境  
+make prod                   # 构建并启动生产环境
+
+# 使用 Docker Compose
+make compose-up             # 启动应用
+make compose-up-monitoring  # 启动应用和监控
+```
+
+##### 方式二：使用脚本
+```bash
+# Windows PowerShell
+.\scripts\docker-build.ps1 prod
+.\scripts\docker-run.ps1 prod
+
+# Linux/macOS Bash
+./scripts/docker-build.sh prod
+./scripts/docker-run.sh prod
+```
+
+##### 方式三：使用 Maven 插件
+```bash
+# 使用 Dockerfile 插件
+mvn clean package dockerfile:build -Pdocker
+
+# 使用 Jib 插件（无需 Docker）
+mvn clean package jib:dockerBuild -Pjib
+```
+
+#### 🔧 Docker 配置
+
+| 环境 | 端口 | 内存配置 | 特性 |
+|------|------|----------|------|
+| **生产环境** | 8080 | 512MB-1GB | 优化配置，健康检查 |
+| **开发环境** | 8080, 5005 | 256MB-512MB | 调试支持，热重载 |
+
+#### 📊 监控部署
+```bash
+# 启动应用和完整监控栈
+docker-compose --profile monitoring up -d
+
+# 访问监控界面
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3000 (admin/admin)
+```
+
+#### 🔍 常用命令
+```bash
+# 查看容器状态
+docker ps --filter "name=jairouter"
+
+# 查看应用日志
+make docker-logs
+
+# 停止服务
+make docker-stop
+
+# 清理资源
+make docker-clean
+```
+
 ---
 
 ## 📌 开发计划（更新状态）
@@ -346,6 +475,7 @@ java -jar target/model-router-*.jar --spring.config.location=classpath:/applicat
 | 0.1.0 | ✅ | 基础网关、适配器、负载均衡、健康检查 |
 | 0.2.0 | ✅ | 限流、熔断、降级、配置持久化、动态更新接口 |
 | 0.2.1 | ✅ | 定时清理任务、内存优化、客户端IP限流增强、配置文件自动合并 |
+| 0.2.2 | ✅ | Docker 容器化、多环境部署、监控集成 |
 | 0.3.0 | 🚧 | 监控指标、Prometheus 集成、告警通知 |
 | 0.4.0 | 📋 | 多租户支持、认证鉴权、日志追踪 |
 

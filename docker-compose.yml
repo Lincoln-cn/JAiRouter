@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  jairouter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jairouter/model-router:latest
+    container_name: jairouter-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - jairouter-data:/app/config-store
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 可选：添加 Prometheus 监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: jairouter-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # 可选：添加 Grafana 仪表板
+  grafana:
+    image: grafana/grafana:latest
+    container_name: jairouter-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+volumes:
+  jairouter-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  jairouter-network:
+    driver: bridge
