@@ -18,7 +18,7 @@ JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关
 | **健康检查** | 每服务独立状态接口，支持自动剔除不可用实例，定时清理不活跃限流器 |
 | **适配器支持** | GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI |
 | **动态配置更新** | 支持运行时更新服务实例、权重、限流、熔断等配置 |
-| **配置持久化** | 支持内存存储和文件存储两种后端 |
+| **配置持久化** | 支持内存存储和文件存储两种后端，配置文件自动合并 |
 | **测试覆盖** | 包含负载均衡、限流、熔断、控制器等单元测试 |
 
 ---
@@ -41,7 +41,7 @@ src/main/java/org/unreal/modelrouter
 ├── loadbalancer         # 负载均衡模块：四种策略实现
 ├── model                # 配置模型与注册中心
 ├── ratelimit            # 限流模块：多种算法实现
-├── store                # 配置存储模块：内存与文件持久化支持
+├── store                # 配置存储模块：内存与文件持久化支持、配置文件自动合并
 ├── util                 # 工具类：IP 获取、网络工具等
 └── ModelRouterApplication.java  # 启动类
 
@@ -50,6 +50,7 @@ src/main/resources
 └── logback.xml          # 日志配置
 
 src/test/java/org/unreal/moduler
+├── AutoMergeServiceTest.java
 ├── CircuitBreakerTest.java
 ├── LoadBalancerTest.java
 ├── ModelManagerControllerTest.java
@@ -66,6 +67,7 @@ src/test/java/org/unreal/moduler
 
 | 测试类 | 功能覆盖 |
 |--------|----------|
+| `AutoMergeServiceTest` | 配置文件自动合并、备份、清理功能测试 |
 | `CircuitBreakerTest` | 熔断器状态切换、失败恢复、降级策略测试 |
 | `LoadBalancerTest` | 各负载均衡策略（随机、轮询、最少连接、IP Hash）行为验证 |
 | `ModelManagerControllerTest` | 动态配置更新接口测试 |
@@ -173,6 +175,49 @@ DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30
 | 低 | `application.yml` | ❌（需重启） |
 
 > 🔁 当动态配置与静态配置冲突时，**以动态配置为准**，并会持久化到本地文件（如配置了 `store.type=file`）。
+
+---
+
+## 🔄 配置文件自动合并
+
+JAiRouter 提供了强大的配置文件自动合并功能，用于处理 config 目录下的多版本配置文件：
+
+### 📋 合并功能特性
+
+| 功能 | 描述 | API 接口 |
+|------|------|----------|
+| **版本扫描** | 自动扫描 config 目录下的所有版本配置文件 | `GET /api/config/merge/scan` |
+| **合并预览** | 预览配置文件合并后的结果，不执行实际操作 | `GET /api/config/merge/preview` |
+| **自动合并** | 合并多版本配置文件并重置版本从1开始 | `POST /api/config/merge/execute` |
+| **配置备份** | 备份现有配置文件到时间戳目录 | `POST /api/config/merge/backup` |
+| **文件清理** | 清理原始配置文件（可选） | `DELETE /api/config/merge/cleanup` |
+| **服务状态** | 获取合并服务的当前状态信息 | `GET /api/config/merge/status` |
+
+### 🔧 合并策略
+
+- **深度合并**：智能合并 services 配置，避免覆盖现有服务
+- **实例去重**：基于 `name@baseUrl` 自动去重实例配置
+- **版本重置**：合并后重置版本号从1开始，便于后续管理
+- **错误处理**：详细的错误信息和部分成功处理机制
+
+### 📝 使用示例
+
+```bash
+# 1. 扫描版本文件
+curl -X GET http://localhost:8080/api/config/merge/scan
+
+# 2. 预览合并结果
+curl -X GET http://localhost:8080/api/config/merge/preview
+
+# 3. 备份现有文件
+curl -X POST http://localhost:8080/api/config/merge/backup
+
+# 4. 执行自动合并
+curl -X POST http://localhost:8080/api/config/merge/execute
+
+# 5. 清理原始文件（可选）
+curl -X DELETE "http://localhost:8080/api/config/merge/cleanup?deleteOriginals=true"
+```
 
 ---
 
