@@ -76,7 +76,7 @@ public final class PathSanitizer {
      * @param fileName 原始文件名
      * @return 清理后的文件名
      */
-    private static String sanitizeFileName(String fileName) {
+    public static String sanitizeFileName(String fileName) {
         if (fileName == null) {
             return null;
         }
@@ -95,7 +95,7 @@ public final class PathSanitizer {
      * @param file 目标文件
      * @return 是否在目录内
      */
-    private static boolean isWithinDirectory(File directory, File file) {
+    public static boolean isWithinDirectory(File directory, File file) {
         try {
             String dirPath = directory.getCanonicalPath();
             String filePath = file.getCanonicalPath();
@@ -104,5 +104,19 @@ public final class PathSanitizer {
             // 如果无法获取规范路径，则认为不安全
             return false;
         }
+    }
+
+    /**
+     * 清理和规范化路径
+     *
+     * @param path 要处理的路径
+     * @return 规范化的路径对象
+     */
+    public static Path sanitizePath(String path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path cannot be null");
+        }
+
+        return Paths.get(path).toAbsolutePath().normalize();
     }
 }
