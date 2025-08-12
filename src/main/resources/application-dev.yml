@@ -1,0 +1,47 @@
+# 开发环境配置
+spring:
+  profiles:
+    active: dev
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+  packages-to-scan: org.unreal.modelrouter.controller
+  show-actuator: true
+  cache:
+    disabled: true
+
+# 日志配置
+logging:
+  level:
+    org.unreal.modelrouter: DEBUG
+    org.springframework: INFO
+    org.apache.http: INFO
+    io.netty: INFO
+    reactor.netty: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"
+
+# 开发环境特定配置
+server:
+  port: 8080
+
+# 调试模式
+debug: false
+
+# 开发环境存储配置
+store:
+  type: file
+  path: "config-dev/"
+
+# WebClient 开发环境配置
+webclient:
+  connection-timeout: 5s
+  read-timeout: 15s
+  write-timeout: 15s
+  max-in-memory-size: 5MB

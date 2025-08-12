@@ -277,6 +277,44 @@ JAiRouter 使用 [SpringDoc OpenAPI](https://springdoc.org/) 自动生成 RESTfu
 
 ---
 
+## 📝 日志管理
+
+JAiRouter 采用 SLF4J + Logback 日志框架，支持多环境配置和性能优化：
+
+### 🔧 日志配置
+
+| 配置文件 | 用途 | 环境 |
+|----------|------|------|
+| `logback-spring.xml` | 主配置文件，支持多环境 | 推荐使用 |
+| `logback.xml` | 后备配置文件 | 兼容性保留 |
+| `application-dev.yml` | 开发环境日志配置 | 开发环境 |
+| `application-test.yml` | 测试环境日志配置 | 测试环境 |
+| `application-prod.yml` | 生产环境日志配置 | 生产环境 |
+
+### 📊 环境日志级别
+
+| 环境 | Root Level | 应用组件 | 框架组件 | 输出方式 |
+|------|-----------|----------|----------|----------|
+| **开发环境** | INFO | DEBUG | INFO | 控制台 + 文件 |
+| **测试环境** | INFO | INFO/WARN | WARN | 控制台 + 文件 |
+| **生产环境** | WARN | INFO/WARN | ERROR | 仅文件 |
+
+### 🎯 日志优化特性
+
+- **多环境支持**: 根据 Spring Profile 自动切换日志配置
+- **异步输出**: 使用异步 Appender 提升性能
+- **文件轮转**: 自动按大小和时间轮转日志文件
+- **链路追踪**: 支持 traceId 用于分布式链路追踪
+- **性能优化**: 生产环境减少80%日志输出量
+
+### 📚 相关文档
+
+- [日志优化方案](docs/logging-optimization.md)
+- [日志使用规范](docs/logging-standards.md)
+- [日志审计报告](docs/logging-audit-report.md)
+
+---
+
 ## 📦 依赖版本
 
 - **JDK**：17+

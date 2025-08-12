@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 定义日志文件路径 -->
+    <property name="LOG_PATH" value="logs"/>
+    <property name="APP_NAME" value="jairouter"/>
+    
+    <!-- 定义日志格式 -->
+    <property name="CONSOLE_LOG_PATTERN" 
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n"/>
+    <property name="FILE_LOG_PATTERN" 
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"/>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出 - 所有日志 -->
+    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-all.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-all.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 文件输出 - 错误日志 -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-error.log</file>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 异步文件输出 -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE_ALL"/>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- 异步错误日志输出 -->
+    <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE_ERROR"/>
+        <queueSize>256</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>true</includeCallerData>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- 开发环境配置 -->
+    <springProfile name="dev,default">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+        
+        <!-- 应用日志详细输出 -->
+        <logger name="org.unreal.modelrouter" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </logger>
+        
+        <!-- 框架日志适当降级 -->
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="org.apache.http" level="INFO"/>
+        <logger name="io.netty" level="INFO"/>
+        <logger name="reactor.netty" level="INFO"/>
+    </springProfile>
+
+    <!-- 测试环境配置 -->
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+        
+        <!-- 关键业务日志 -->
+        <logger name="org.unreal.modelrouter.controller" level="INFO"/>
+        <logger name="org.unreal.modelrouter.config" level="INFO"/>
+        <logger name="org.unreal.modelrouter.checker" level="INFO"/>
+        <logger name="org.unreal.modelrouter.store" level="INFO"/>
+        
+        <!-- 调试日志降级 -->
+        <logger name="org.unreal.modelrouter.loadbalancer" level="WARN"/>
+        <logger name="org.unreal.modelrouter.ratelimit" level="WARN"/>
+        <logger name="org.unreal.modelrouter.circuitbreaker" level="WARN"/>
+        
+        <!-- 框架日志降级 -->
+        <logger name="org.springframework" level="WARN"/>
+        <logger name="org.apache.http" level="WARN"/>
+    </springProfile>
+
+    <!-- 生产环境配置 -->
+    <springProfile name="prod">
+        <root level="WARN">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </root>
+        
+        <!-- 只记录关键业务日志 -->
+        <logger name="org.unreal.modelrouter.controller" level="INFO" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </logger>
+        
+        <logger name="org.unreal.modelrouter.config.ConfigurationService" level="INFO" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </logger>
+        
+        <logger name="org.unreal.modelrouter.store.AutoMergeService" level="INFO" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </logger>
+        
+        <!-- 监控相关日志 -->
+        <logger name="org.unreal.modelrouter.checker.ServerChecker" level="WARN" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </logger>
+        
+        <logger name="org.unreal.modelrouter.checker.RateLimiterCleanupChecker" level="WARN" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </logger>
+        
+        <!-- 其他组件只记录警告和错误 -->
+        <logger name="org.unreal.modelrouter" level="WARN" additivity="false">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR"/>
+        </logger>
+        
+        <!-- 框架日志最小化 -->
+        <logger name="org.springframework" level="ERROR"/>
+        <logger name="org.apache.http" level="ERROR"/>
+        <logger name="io.netty" level="ERROR"/>
+        <logger name="reactor.netty" level="ERROR"/>
+    </springProfile>
+
+    <!-- 特殊组件日志配置 -->
+    
+    <!-- 限流器日志 - 生产环境降级 -->
+    <springProfile name="prod">
+        <logger name="org.unreal.modelrouter.ratelimit" level="ERROR"/>
+    </springProfile>
+    <springProfile name="!prod">
+        <logger name="org.unreal.modelrouter.ratelimit" level="DEBUG"/>
+    </springProfile>
+    
+    <!-- 负载均衡器日志 - 生产环境降级 -->
+    <springProfile name="prod">
+        <logger name="org.unreal.modelrouter.loadbalancer" level="ERROR"/>
+    </springProfile>
+    <springProfile name="!prod">
+        <logger name="org.unreal.modelrouter.loadbalancer" level="DEBUG"/>
+    </springProfile>
+    
+    <!-- 熔断器日志 - 保持警告级别用于监控 -->
+    <logger name="org.unreal.modelrouter.circuitbreaker" level="WARN"/>
+    
+</configuration>
