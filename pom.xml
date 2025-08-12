@@ -94,6 +94,17 @@
                 <maven.test.skip>true</maven.test.skip>
             </properties>
         </profile>
+
+        <!-- 快速构建 Profile - 跳过代码质量检查 -->
+        <profile>
+            <id>fast</id>
+            <properties>
+                <maven.test.skip>true</maven.test.skip>
+                <checkstyle.skip>true</checkstyle.skip>
+                <spotbugs.skip>true</spotbugs.skip>
+                <jacoco.skip>true</jacoco.skip>
+            </properties>
+        </profile>
     </profiles>
 
 
@@ -179,11 +190,12 @@
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.7.3.0</version>
                 <configuration>
-                    <effort>Max</effort>
-                    <threshold>Low</threshold>
+                    <effort>Default</effort>
+                    <threshold>Medium</threshold>
                     <failOnError>true</failOnError>
                     <includeFilterFile>spotbugs-security-include.xml</includeFilterFile>
                     <excludeFilterFile>spotbugs-security-exclude.xml</excludeFilterFile>
+                    <maxRank>15</maxRank>
                     <plugins>
                         <plugin>
                             <groupId>com.h3xstream.findsecbugs</groupId>

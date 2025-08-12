@@ -49,6 +49,12 @@ package-skip-tests: ## 打包应用（跳过测试）
 	@echo "打包应用（跳过测试）..."
 	mvn clean package -DskipTests
 
+# 快速打包（跳过所有检查）
+.PHONY: package-fast
+package-fast: ## 快速打包应用（跳过所有检查）
+	@echo "快速打包应用（跳过所有检查）..."
+	mvn clean package -Pfast
+
 # 代码质量检查
 .PHONY: quality-check
 quality-check: ## 运行代码质量检查
@@ -63,7 +69,7 @@ coverage: ## 生成测试覆盖率报告
 
 # Docker 构建 - 生产环境
 .PHONY: docker-build
-docker-build: package-skip-tests ## 构建生产环境 Docker 镜像
+docker-build: package-fast ## 构建生产环境 Docker 镜像
 	@echo "构建生产环境 Docker 镜像..."
 	docker build -t $(DOCKER_IMAGE):$(VERSION) .
 	docker tag $(DOCKER_IMAGE):$(VERSION) $(DOCKER_IMAGE):latest

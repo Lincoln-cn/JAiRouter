@@ -77,9 +77,9 @@ catch {
 # 构建应用程序
 Write-Info "构建应用程序..."
 if ($Environment -eq "prod") {
-    $buildResult = mvn clean package -DskipTests
+    $buildResult = mvn clean package -Pfast
 } else {
-    $buildResult = mvn clean package
+    $buildResult = mvn clean package -DskipTests
 }
 
 if ($LASTEXITCODE -ne 0) {

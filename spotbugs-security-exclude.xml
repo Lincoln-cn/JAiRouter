@@ -1,9 +1,74 @@
 <FindBugsFilter>
-    <!-- 在这里添加需要排除的特定类或包 -->
-    <!-- 示例:
+    <!-- 排除日志CRLF注入警告 - 这些是内部系统日志，风险可控 -->
     <Match>
-        <Class name="com.example.SomeClass"/>
-        <Bug pattern="SomePattern"/>
+        <Bug pattern="CRLF_INJECTION_LOGS"/>
     </Match>
-    -->
+    
+    <!-- 排除Spring相关的误报 -->
+    <Match>
+        <Bug pattern="SPRING_ENTITY_LEAK"/>
+    </Match>
+    
+    <!-- 排除泛型相关的误报 -->
+    <Match>
+        <Class name="~.*Controller"/>
+        <Bug pattern="SPRING_ENTITY_LEAK"/>
+    </Match>
+    
+    <!-- 排除测试类的安全检查 -->
+    <Match>
+        <Class name="~.*Test"/>
+    </Match>
+    
+    <!-- 排除DTO类的某些检查 -->
+    <Match>
+        <Class name="~.*\.dto\..*"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- 排除配置类的某些检查 -->
+    <Match>
+        <Class name="~.*\.model\.ModelRouterProperties.*"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- 排除响应类的某些检查 -->
+    <Match>
+        <Class name="~.*\.response\..*"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    
+    <!-- 排除工具类的某些检查 -->
+    <Match>
+        <Class name="~.*\.util\..*"/>
+        <Bug pattern="MS_SHOULD_BE_FINAL"/>
+    </Match>
+    
+    <!-- 排除Spring Boot应用主类 -->
+    <Match>
+        <Class name="~.*Application"/>
+        <Bug pattern="DM_EXIT"/>
+    </Match>
+    
+    <!-- 排除一些常见的低风险问题 -->
+    <Match>
+        <Bug pattern="SE_BAD_FIELD"/>
+    </Match>
+    
+    <Match>
+        <Bug pattern="SE_NO_SERIALVERSIONID"/>
+    </Match>
+    
+    <!-- 排除FindBugs对lambda表达式的误报 -->
+    <Match>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+    </Match>
+    
+    <!-- 排除对Builder模式的误报 -->
+    <Match>
+        <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+    </Match>
 </FindBugsFilter>

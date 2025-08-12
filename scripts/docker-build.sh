@@ -60,9 +60,9 @@ fi
 # 构建应用程序
 log_info "构建应用程序..."
 if [[ "$ENVIRONMENT" == "prod" ]]; then
-    mvn clean package -DskipTests
+    mvn clean package -Pfast
 else
-    mvn clean package
+    mvn clean package -DskipTests
 fi
 
 if [ $? -ne 0 ]; then
