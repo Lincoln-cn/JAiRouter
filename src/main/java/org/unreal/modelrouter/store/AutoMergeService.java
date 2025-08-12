@@ -15,7 +15,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * 自动合并服务
@@ -255,7 +254,7 @@ public class AutoMergeService {
 
             // 2. 读取所有配置文件
             List<Map<String, Object>> configs = new ArrayList<>();
-            for (Map.Entry<String, String> entry : versionFiles.entrySet()) {
+            for (Map.Entry<Integer, String> entry : versionFiles.entrySet()) {
                 try {
                     Map<String, Object> config = readConfigFile(entry.getValue());
                     configs.add(config);
@@ -372,7 +371,7 @@ public class AutoMergeService {
             Map<Integer, String> versionFiles = scanVersionFiles();
             List<Map<String, Object>> configs = new ArrayList<>();
             
-            for (Map.Entry<String, String> entry : versionFiles.entrySet()) {
+            for (Map.Entry<Integer, String> entry : versionFiles.entrySet()) {
                 try {
                     Map<String, Object> config = readConfigFile(entry.getValue());
                     configs.add(config);

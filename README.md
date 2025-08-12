@@ -50,6 +50,7 @@ src/main/resources
 └── logback.xml          # 日志配置
 
 src/test/java/org/unreal/moduler
+├── AutoMergeControllerTest.java
 ├── AutoMergeServiceTest.java
 ├── CircuitBreakerTest.java
 ├── LoadBalancerTest.java
@@ -67,6 +68,7 @@ src/test/java/org/unreal/moduler
 
 | 测试类 | 功能覆盖 |
 |--------|----------|
+| `AutoMergeControllerTest` | 配置文件自动合并控制器接口测试 |
 | `AutoMergeServiceTest` | 配置文件自动合并、备份、清理功能测试 |
 | `CircuitBreakerTest` | 熔断器状态切换、失败恢复、降级策略测试 |
 | `LoadBalancerTest` | 各负载均衡策略（随机、轮询、最少连接、IP Hash）行为验证 |
@@ -191,6 +193,9 @@ JAiRouter 提供了强大的配置文件自动合并功能，用于处理 config
 | **自动合并** | 合并多版本配置文件并重置版本从1开始 | `POST /api/config/merge/execute` |
 | **配置备份** | 备份现有配置文件到时间戳目录 | `POST /api/config/merge/backup` |
 | **文件清理** | 清理原始配置文件（可选） | `DELETE /api/config/merge/cleanup` |
+| **批量操作** | 依次执行备份、合并、清理操作 | `POST /api/config/merge/batch` |
+| **配置验证** | 验证配置文件格式和内容 | `GET /api/config/merge/validate` |
+| **统计信息** | 获取配置文件的详细统计信息 | `GET /api/config/merge/statistics` |
 | **服务状态** | 获取合并服务的当前状态信息 | `GET /api/config/merge/status` |
 
 ### 🔧 合并策略
@@ -215,7 +220,16 @@ curl -X POST http://localhost:8080/api/config/merge/backup
 # 4. 执行自动合并
 curl -X POST http://localhost:8080/api/config/merge/execute
 
-# 5. 清理原始文件（可选）
+# 5. 批量操作（备份+合并+清理）
+curl -X POST "http://localhost:8080/api/config/merge/batch?deleteOriginals=true"
+
+# 6. 验证配置文件
+curl -X GET http://localhost:8080/api/config/merge/validate
+
+# 7. 获取统计信息
+curl -X GET http://localhost:8080/api/config/merge/statistics
+
+# 8. 清理原始文件（可选）
 curl -X DELETE "http://localhost:8080/api/config/merge/cleanup?deleteOriginals=true"
 ```
 

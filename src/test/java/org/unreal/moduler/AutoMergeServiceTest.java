@@ -122,4 +122,23 @@ class AutoMergeServiceTest {
         assertTrue(result.getMergedFiles().isEmpty());
         assertTrue(result.getErrors().isEmpty());
     }
+
+    @Test
+    void testMergeResultGetters() {
+        // 测试 MergeResult 的所有 getter 方法
+        List<String> files = Arrays.asList("config1.json", "config2.json");
+        List<String> errors = Arrays.asList("warning1");
+        
+        AutoMergeService.MergeResult result = new AutoMergeService.MergeResult(
+                true, "合并成功", 2, 1, files, errors);
+        
+        assertTrue(result.isSuccess());
+        assertEquals("合并成功", result.getMessage());
+        assertEquals(2, result.getMergedFilesCount());
+        assertEquals(1, result.getNewVersionCount());
+        assertEquals(2, result.getMergedFiles().size());
+        assertEquals(1, result.getErrors().size());
+        assertEquals("config1.json", result.getMergedFiles().get(0));
+        assertEquals("warning1", result.getErrors().get(0));
+    }
 }
