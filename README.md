@@ -15,7 +15,7 @@ JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关
 | **负载均衡策略** | Random、Round Robin、Least Connections、IP Hash |
 | **限流算法** | Token Bucket、Leaky Bucket、Sliding Window、Warm Up |
 | **熔断机制** | 支持失败阈值、恢复检测、降级策略 |
-| **健康检查** | 每服务独立状态接口，支持自动剔除不可用实例 |
+| **健康检查** | 每服务独立状态接口，支持自动剔除不可用实例，定时清理不活跃限流器 |
 | **适配器支持** | GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI |
 | **动态配置更新** | 支持运行时更新服务实例、权重、限流、熔断等配置 |
 | **配置持久化** | 支持内存存储和文件存储两种后端 |
@@ -30,7 +30,7 @@ JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关
 src/main/java/org/unreal/modelrouter
 ├── adapter              # 适配器模块：统一不同后端服务的调用方式
 │   ├── impl             # 各适配器实现：GpuStackAdapter、OllamaAdapter 等
-├── checker              # 健康检查模块：服务状态监控与剔除
+├── checker              # 健康检查模块：服务状态监控、剔除、定时清理任务
 ├── circuitbreaker       # 熔断器模块：失败保护机制
 ├── config               # 配置模块：加载、合并、动态更新配置
 ├── controller           # Web 控制器：统一请求入口与状态接口
@@ -55,6 +55,7 @@ src/test/java/org/unreal/moduler
 ├── ModelManagerControllerTest.java
 ├── ModelServiceRegistryTest.java
 ├── RateLimiterTest.java
+├── RateLimiterCleanupCheckerTest.java
 ├── UniversalControllerTest.java
 
 ```
@@ -70,6 +71,7 @@ src/test/java/org/unreal/moduler
 | `ModelManagerControllerTest` | 动态配置更新接口测试 |
 | `ModelServiceRegistryTest` | 服务注册、实例选择、权重生效测试 |
 | `RateLimiterTest` | 限流算法正确性、并发限流行为测试 |
+| `RateLimiterCleanupCheckerTest` | 限流器定时清理任务功能测试 |
 | `UniversalControllerTest` | 各服务接口转发、响应格式验证 |
 
 ---
@@ -174,6 +176,19 @@ DELETE /api/config/instance/del/chat?modelName=qwen3:7B&baseUrl=http://172.16.30
 
 ---
 
+## ⏰ 定时任务
+
+JAiRouter 内置了多个定时任务来维护系统的健康状态和性能：
+
+| 任务名称 | 执行频率 | 功能描述 | 实现类 |
+|----------|----------|----------|--------|
+| **服务健康检查** | 每30秒 | 检查所有服务实例的连接状态，自动剔除不可用实例 | `ServerChecker` |
+| **限流器清理** | 每5分钟 | 清理30分钟内未活跃的客户端IP限流器，防止内存泄漏 | `RateLimiterCleanupChecker` |
+
+> 📌 所有定时任务都基于 Spring 的 `@Scheduled` 注解实现，由 Spring 容器统一管理和调度。
+
+---
+
 ## 📘 API 文档（SpringDoc OpenAPI）
 
 JAiRouter 使用 [SpringDoc OpenAPI](https://springdoc.org/) 自动生成 RESTful API 文档。
@@ -233,6 +248,7 @@ java -jar target/model-router-*.jar --spring.config.location=classpath:/applicat
 |------|------|------|
 | 0.1.0 | ✅ | 基础网关、适配器、负载均衡、健康检查 |
 | 0.2.0 | ✅ | 限流、熔断、降级、配置持久化、动态更新接口 |
+| 0.2.1 | ✅ | 定时清理任务、内存优化、客户端IP限流增强 |
 | 0.3.0 | 🚧 | 监控指标、Prometheus 集成、告警通知 |
 | 0.4.0 | 📋 | 多租户支持、认证鉴权、日志追踪 |
 

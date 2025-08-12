@@ -62,7 +62,7 @@ public class ModelServiceRegistryTest {
         // 默认配置
         when(properties.getAdapter()).thenReturn("normal");
         when(properties.getServices()).thenReturn(new HashMap<>());
-        when(configMergeService.mergeConfigurations()).thenReturn(new HashMap<>());
+        when(configMergeService.getPersistedConfig()).thenReturn(new HashMap<>());
         when(configurationHelper.getServiceConfigKey(any())).thenCallRealMethod();
         when(configurationHelper.parseServiceType(anyString())).thenCallRealMethod();
 
