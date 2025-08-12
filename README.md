@@ -73,7 +73,6 @@ src/test/java/org/unreal/moduler
 | `CircuitBreakerTest` | 熔断器状态切换、失败恢复、降级策略测试 |
 | `LoadBalancerTest` | 各负载均衡策略（随机、轮询、最少连接、IP Hash）行为验证 |
 | `ModelManagerControllerTest` | 动态配置更新接口测试 |
-| `ModelServiceRegistryTest` | 服务注册、实例选择、权重生效测试 |
 | `RateLimiterTest` | 限流算法正确性、并发限流行为测试 |
 | `RateLimiterCleanupCheckerTest` | 限流器定时清理任务功能测试 |
 | `UniversalControllerTest` | 各服务接口转发、响应格式验证 |

@@ -71,7 +71,6 @@ src/test/java/org/unreal/moduler
 | `CircuitBreakerTest` | Tests circuit breaker state switching, failure recovery, and fallback strategies |
 | `LoadBalancerTest` | Validates behaviors of load balancing strategies (Random, Round Robin, Least Connections, IP Hash) |
 | `ModelManagerControllerTest` | Tests dynamic configuration update interfaces |
-| `ModelServiceRegistryTest` | Tests service registration, instance selection, and weight effectiveness |
 | `RateLimiterTest` | Validates correctness of rate limiting algorithms and concurrent rate limiting behavior |
 | `RateLimiterCleanupCheckerTest` | Tests scheduled cleanup tasks for rate limiters |
 | `UniversalControllerTest` | Validates service interface forwarding and response format |

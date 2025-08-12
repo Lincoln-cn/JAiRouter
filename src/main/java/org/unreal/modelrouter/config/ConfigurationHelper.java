@@ -133,6 +133,9 @@ public class ConfigurationHelper {
      * 将ServiceType转换为配置文件中使用的键名
      */
     public String getServiceConfigKey(final ModelServiceRegistry.ServiceType serviceType) {
+        if (serviceType == null) {
+            return null;
+        }
         return switch (serviceType) {
             case imgGen -> "img-gen";
             case imgEdit -> "img-edit";
