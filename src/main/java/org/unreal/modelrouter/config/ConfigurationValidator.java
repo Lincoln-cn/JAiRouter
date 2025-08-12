@@ -179,10 +179,14 @@ public class ConfigurationValidator {
      * @return 算法是否合法
      */
     private boolean isValidRateLimitAlgorithm(String algorithm) {
-        return "token-bucket".equalsIgnoreCase(algorithm) ||
-                "leaky-bucket".equalsIgnoreCase(algorithm) ||
-                "sliding-window".equalsIgnoreCase(algorithm) ||
-                "warm-up".equalsIgnoreCase(algorithm);
+        if (algorithm == null) {
+            return false;
+        }
+        String normalizedAlgorithm = algorithm.toLowerCase(java.util.Locale.ROOT);
+        return "token-bucket".equals(normalizedAlgorithm) ||
+                "leaky-bucket".equals(normalizedAlgorithm) ||
+                "sliding-window".equals(normalizedAlgorithm) ||
+                "warm-up".equals(normalizedAlgorithm);
     }
 
     /**
@@ -192,10 +196,14 @@ public class ConfigurationValidator {
      * @return 作用域是否合法
      */
     private boolean isValidRateLimitScope(String scope) {
-        return "service".equalsIgnoreCase(scope) ||
-                "model".equalsIgnoreCase(scope) ||
-                "client-ip".equalsIgnoreCase(scope) ||
-                "instance".equalsIgnoreCase(scope);
+        if (scope == null) {
+            return false;
+        }
+        String normalizedScope = scope.toLowerCase(java.util.Locale.ROOT);
+        return "service".equals(normalizedScope) ||
+                "model".equals(normalizedScope) ||
+                "client-ip".equals(normalizedScope) ||
+                "instance".equals(normalizedScope);
     }
 
     /**
@@ -205,10 +213,14 @@ public class ConfigurationValidator {
      * @return 类型是否合法
      */
     private boolean isValidLoadBalanceType(String type) {
-        return "random".equalsIgnoreCase(type) ||
-                "round-robin".equalsIgnoreCase(type) ||
-                "least-connections".equalsIgnoreCase(type) ||
-                "ip-hash".equalsIgnoreCase(type);
+        if (type == null) {
+            return false;
+        }
+        String normalizedType = type.toLowerCase(java.util.Locale.ROOT);
+        return "random".equals(normalizedType) ||
+                "round-robin".equals(normalizedType) ||
+                "least-connections".equals(normalizedType) ||
+                "ip-hash".equals(normalizedType);
     }
 
     /**
@@ -218,9 +230,13 @@ public class ConfigurationValidator {
      * @return 算法是否合法
      */
     private boolean isValidHashAlgorithm(String algorithm) {
-        return "md5".equalsIgnoreCase(algorithm) ||
-                "sha1".equalsIgnoreCase(algorithm) ||
-                "sha256".equalsIgnoreCase(algorithm);
+        if (algorithm == null) {
+            return false;
+        }
+        String normalizedAlgorithm = algorithm.toLowerCase(java.util.Locale.ROOT);
+        return "md5".equals(normalizedAlgorithm) ||
+                "sha1".equals(normalizedAlgorithm) ||
+                "sha256".equals(normalizedAlgorithm);
     }
 
     /**

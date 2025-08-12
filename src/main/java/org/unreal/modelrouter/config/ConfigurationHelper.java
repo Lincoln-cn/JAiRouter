@@ -41,7 +41,7 @@ public class ConfigurationHelper {
 
         try {
             // 标准化处理：转小写，统一格式
-            String normalizedKey = serviceKey.toLowerCase()
+            String normalizedKey = serviceKey.toLowerCase(java.util.Locale.ROOT)
                     .replace("-", "_")
                     .trim();
 

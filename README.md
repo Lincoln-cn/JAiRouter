@@ -275,6 +275,30 @@ JAiRouter 使用 [SpringDoc OpenAPI](https://springdoc.org/) 自动生成 RESTfu
 
 这些工具在 Maven 构建过程中自动运行，帮助我们维护高质量的代码标准。
 
+### 🔧 代码质量配置
+
+| Profile | 用途 | 检查项目 | 适用场景 |
+|---------|------|----------|----------|
+| **默认** | 完整检查 | Checkstyle + SpotBugs + JaCoCo | 开发环境 |
+| **fast** | 快速构建 | 跳过所有检查 | Docker构建、CI/CD |
+| **prod** | 生产构建 | 跳过测试 | 生产部署 |
+
+### 📋 常用构建命令
+
+```bash
+# 完整构建（包含所有检查）
+mvn clean package
+
+# 快速构建（跳过检查，用于Docker）
+mvn clean package -Pfast
+
+# 生产构建（跳过测试）
+mvn clean package -Pprod
+
+# 仅运行代码质量检查
+mvn checkstyle:check spotbugs:check
+```
+
 ---
 
 ## 📝 日志管理
@@ -357,6 +381,7 @@ services:
 ### 📚 相关文档
 
 - [Docker 部署指南](docs/docker-deployment.md) - 完整的部署文档
+- [SpotBugs 问题修复报告](docs/spotbugs-fixes.md) - 代码质量问题修复说明
 
 ---
 
