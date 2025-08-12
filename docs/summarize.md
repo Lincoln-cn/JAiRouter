@@ -135,7 +135,16 @@ JAiRouter 提供了完善的配置文件自动合并功能，用于管理和整�
 - **POST /api/config/merge/execute**：执行自动合并
 - **POST /api/config/merge/backup**：备份配置文件
 - **DELETE /api/config/merge/cleanup**：清理配置文件
+- **POST /api/config/merge/batch**：批量操作（备份+合并+清理）
+- **GET /api/config/merge/validate**：验证配置文件
+- **GET /api/config/merge/statistics**：获取统计信息
 - **GET /api/config/merge/status**：获取服务状态
+
+### 4. 响应格式统一
+- 使用 `RouterResponse<T>` 统一响应格式
+- 包含成功状态、消息、数据和时间戳
+- 完整的 OpenAPI 文档注解
+- 支持跨域访问（CORS）
 
 ## 工作流程
 

@@ -105,7 +105,7 @@ public class ModelServiceRegistryTest {
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
                 properties,
@@ -134,7 +134,7 @@ public class ModelServiceRegistryTest {
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
         when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
         when(configurationHelper.parseServiceType(anyString())).thenReturn(ModelServiceRegistry.ServiceType.chat);
 
@@ -166,7 +166,7 @@ public class ModelServiceRegistryTest {
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
         when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
@@ -212,7 +212,7 @@ public class ModelServiceRegistryTest {
 
         when(properties.getServices()).thenReturn(services);
         when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(false); // 所有实例都不健康
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
         when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
@@ -251,7 +251,7 @@ public class ModelServiceRegistryTest {
         when(properties.getServices()).thenReturn(services);
         when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(true); // 实例健康
         when(circuitBreakerManager.canExecute(anyString(), anyString())).thenReturn(false); // 但熔断器打开
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
         when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
@@ -291,7 +291,7 @@ public class ModelServiceRegistryTest {
         when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(true);
         when(circuitBreakerManager.canExecute(anyString(), anyString())).thenReturn(true);
         when(rateLimitManager.tryAcquire(any())).thenReturn(false); // 服务级限流超限
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
         when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
@@ -334,7 +334,7 @@ public class ModelServiceRegistryTest {
         when(rateLimitManager.tryAcquireInstance(any())).thenReturn(false); // 实例级限流超限
         when(loadBalancerManager.getLoadBalancer(any())).thenReturn(loadBalancer);
         when(loadBalancer.selectInstance(anyList(), anyString())).thenReturn(instance);
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
         when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
@@ -382,7 +382,7 @@ public class ModelServiceRegistryTest {
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
         when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
 
         ModelServiceRegistry registry = new ModelServiceRegistry(
@@ -440,7 +440,7 @@ public class ModelServiceRegistryTest {
         services.put("chat", chatConfig);
 
         when(properties.getServices()).thenReturn(services);
-        when(configMergeService.mergeConfigurations()).thenReturn(createMergedConfig(services));
+        when(configMergeService.getDefaultConfig()).thenReturn(createMergedConfig(services));
         when(configurationHelper.getServiceConfigKey(any())).thenReturn("chat");
         when(configurationHelper.parseServiceType(anyString())).thenReturn(ModelServiceRegistry.ServiceType.chat);
 
