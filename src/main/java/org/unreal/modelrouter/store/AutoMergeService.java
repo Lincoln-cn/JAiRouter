@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.unreal.modelrouter.util.PathSanitizer;
 
 /**
  * 自动合并服务
@@ -118,7 +119,16 @@ public class AutoMergeService {
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> readConfigFile(String filePath) throws IOException {
-        File file = new File(filePath);
+        // 使用安全的文件路径处理
+        Path safePath = Paths.get(filePath).normalize();
+        
+        // 确保文件在config目录内
+        Path configPath = Paths.get(CONFIG_DIR).toAbsolutePath().normalize();
+        if (!safePath.toAbsolutePath().normalize().startsWith(configPath)) {
+            throw new SecurityException("文件路径不在允许的目录内: " + filePath);
+        }
+        
+        File file = safePath.toFile();
         if (!file.exists()) {
             throw new IOException("配置文件不存在: " + filePath);
         }
@@ -331,7 +341,7 @@ public class AutoMergeService {
             }
 
             String backupDir = CONFIG_DIR + "/backup_" + System.currentTimeMillis();
-            Path backupPath = Paths.get(backupDir);
+            Path backupPath = Paths.get(CONFIG_DIR).resolve("backup_" + System.currentTimeMillis()).normalize();
             Files.createDirectories(backupPath);
 
             for (Map.Entry<Integer, String> entry : versionFiles.entrySet()) {

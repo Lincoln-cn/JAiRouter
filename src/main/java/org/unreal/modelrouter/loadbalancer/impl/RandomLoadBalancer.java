@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 // 修改 RandomLoadBalancer 实现
 public class RandomLoadBalancer implements LoadBalancer {
     private static final Logger logger = LoggerFactory.getLogger(RandomLoadBalancer.class);
-    private final Random random = new Random();
+    private final java.security.SecureRandom random = new java.security.SecureRandom();
     private final Map<String, CircuitBreaker> circuitBreakers = new ConcurrentHashMap<>();
     private final int failureThreshold = 5;
     private final long timeout = 60000; // 60秒
