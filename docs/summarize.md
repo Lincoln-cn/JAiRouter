@@ -12,7 +12,7 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 6. **健康检查**：服务状态监控与自动剔除不可用实例，定时清理不活跃限流器
 7. **多适配器支持**：GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI
 8. **动态配置更新**：运行时更新服务实例、权重、限流、熔断等配置
-9. **配置持久化**：支持内存存储和文件存储两种后端
+9. **配置持久化**：支持内存存储和文件存储两种后端，配置文件自动合并
 10. **全面的监控和管理接口**：提供配置版本管理、模型信息服务、统计信息等 REST API
 
 ## 核心架构组件
@@ -33,6 +33,7 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 - [ModelStatsController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ModelStatsController.java#L17-L53)：模型统计信息控制器
 - [ServiceInstanceController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ServiceInstanceController.java#L21-L140)：服务实例管理控制器
 - [ServiceTypeController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\ServiceTypeController.java#L22-L120)：服务类型管理控制器
+- [AutoMergeController](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\controller\AutoMergeController.java#L15-L200)：配置文件自动合并控制器，提供合并、备份、清理等RESTful接口
 
 ### 5. 适配器系统
 - [BaseAdapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\adapter\BaseAdapter.java#L18-L397)：适配器基类，定义了统一的请求处理流程
@@ -75,6 +76,7 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 - [FileStoreManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\FileStoreManager.java#L19-L114)：文件存储实现
 - [MemoryStoreManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\MemoryStoreManager.java#L10-L55)：内存存储实现
 - [StoreManagerFactory](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\StoreManagerFactory.java#L11-L47)：存储管理器工厂
+- [AutoMergeService](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\AutoMergeService.java#L20-L400)：配置文件自动合并服务，支持多版本配置文件合并、备份、清理
 
 ### 10. 健康检查与定时任务
 - [ServiceStateManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\checker\ServiceStateManager.java#L14-L79)：服务状态管理器
@@ -110,6 +112,31 @@ JAiRouter 集成了完善的定时任务系统，用于维护系统健康状态�
 - **日志记录**：详细的执行日志，便于监控和调试
 - **资源优化**：合理的执行频率设计，平衡性能和资源消耗
 
+## 配置文件自动合并系统
+
+JAiRouter 提供了完善的配置文件自动合并功能，用于管理和整合多版本配置文件：
+
+### 1. 核心功能
+- **版本扫描**：自动识别和扫描 config 目录下的版本配置文件
+- **智能合并**：深度合并配置内容，避免数据丢失
+- **版本重置**：合并后重置版本号从1开始
+- **配置备份**：支持配置文件备份到时间戳目录
+- **文件清理**：可选择性清理原始配置文件
+
+### 2. 合并策略
+- **深度合并**：services 配置进行深度合并，保留所有服务配置
+- **实例去重**：基于 `name@baseUrl` 进行实例去重
+- **配置覆盖**：后续版本的配置会覆盖前面版本的同名配置
+- **错误容错**：部分文件读取失败不影响整体合并过程
+
+### 3. RESTful API 接口
+- **GET /api/config/merge/scan**：扫描版本配置文件
+- **GET /api/config/merge/preview**：预览合并结果
+- **POST /api/config/merge/execute**：执行自动合并
+- **POST /api/config/merge/backup**：备份配置文件
+- **DELETE /api/config/merge/cleanup**：清理配置文件
+- **GET /api/config/merge/status**：获取服务状态
+
 ## 工作流程
 
 1. 客户端发送请求到 `/v1/*` 路径
@@ -138,6 +165,6 @@ JAiRouter 集成了完善的定时任务系统，用于维护系统健康状态�
 - **灵活性**：支持多种负载均衡和限流算法，可根据需求配置
 - **可观测性**：通过健康检查和状态监控提供服务可观测性
 - **动态性**：支持运行时动态配置更新，无需重启服务
-- **资源优化**：定时清理不活跃的限流器，防止内存泄漏
+- **资源优化**：定时清理不活跃的限流器，防止内存泄漏，配置文件自动合并管理
 - **全面的管理接口**：提供丰富的 REST API 用于服务管理和监控
 - **完善的测试覆盖**：包含针对核心组件的单元测试
