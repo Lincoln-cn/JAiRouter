@@ -297,6 +297,8 @@ These tools run automatically during the Maven build process, helping us maintai
 
 ## 🚀 Startup and Deployment
 
+### Traditional Deployment
+
 ```bash
 # Compile
 ./mvnw clean package
@@ -308,6 +310,88 @@ java -jar target/model-router-*.jar
 java -jar target/model-router-*.jar --spring.config.location=classpath:/application.yml
 ```
 
+### Docker Deployment (Recommended)
+
+#### 🐳 Quick Start
+
+```bash
+# 1. Build Docker image
+make docker-build
+
+# 2. Start application
+make docker-run
+
+# 3. Verify deployment
+make health-check
+```
+
+#### 🛠️ Detailed Deployment Steps
+
+##### Method 1: Using Makefile (Recommended)
+```bash
+# Development environment
+make dev                    # Build and start development environment
+
+# Production environment  
+make prod                   # Build and start production environment
+
+# Using Docker Compose
+make compose-up             # Start application
+make compose-up-monitoring  # Start application with monitoring
+```
+
+##### Method 2: Using Scripts
+```bash
+# Windows PowerShell
+.\scripts\docker-build.ps1 prod
+.\scripts\docker-run.ps1 prod
+
+# Linux/macOS Bash
+./scripts/docker-build.sh prod
+./scripts/docker-run.sh prod
+```
+
+##### Method 3: Using Maven Plugins
+```bash
+# Using Dockerfile plugin
+mvn clean package dockerfile:build -Pdocker
+
+# Using Jib plugin (no Docker required)
+mvn clean package jib:dockerBuild -Pjib
+```
+
+#### 🔧 Docker Configuration
+
+| Environment | Ports | Memory Config | Features |
+|-------------|-------|---------------|----------|
+| **Production** | 8080 | 512MB-1GB | Optimized config, health checks |
+| **Development** | 8080, 5005 | 256MB-512MB | Debug support, hot reload |
+
+#### 📊 Monitoring Deployment
+```bash
+# Start application with full monitoring stack
+docker-compose --profile monitoring up -d
+
+# Access monitoring interfaces
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3000 (admin/admin)
+```
+
+#### 🔍 Common Commands
+```bash
+# View container status
+docker ps --filter "name=jairouter"
+
+# View application logs
+make docker-logs
+
+# Stop services
+make docker-stop
+
+# Clean up resources
+make docker-clean
+```
+
 ---
 
 ## 📌 Development Roadmap (Status Update)
@@ -317,8 +401,56 @@ java -jar target/model-router-*.jar --spring.config.location=classpath:/applicat
 | 0.1.0 | ✅ | Basic gateway, adapters, load balancing, health checks |
 | 0.2.0 | ✅ | Rate limiting, circuit breaking, fallback, configuration persistence, dynamic update interfaces |
 | 0.2.1 | ✅ | Scheduled cleanup tasks, memory optimization, client IP rate limiting enhancement, automatic configuration file merging |
+| 0.2.2 | ✅ | Docker containerization, multi-environment deployment, monitoring integration |
 | 0.3.0 | 🚧 | Monitoring metrics, Prometheus integration, alert notifications |
 | 0.4.0 | 📋 | Multi-tenancy support, authentication and authorization, log tracing |
+
+---
+
+---
+
+## 🐳 Docker Deployment
+
+JAiRouter provides a complete Docker deployment solution with multi-environment configuration and container orchestration:
+
+### 🎯 Docker Features
+
+- **Multi-stage Build**: Optimized image size, production image ~200MB
+- **Multi-environment Support**: Independent configuration for dev, test, and production
+- **Security Best Practices**: Non-root user, minimal privilege execution
+- **Health Checks**: Built-in application health monitoring
+- **Monitoring Integration**: Supports Prometheus + Grafana monitoring stack
+
+### 🛠️ Build Methods
+
+| Method | Command | Features |
+|--------|---------|----------|
+| **Makefile** | `make docker-build` | Simple and easy, recommended |
+| **Scripts** | `./scripts/docker-build.sh` | Cross-platform support |
+| **Maven Plugin** | `mvn dockerfile:build -Pdocker` | Integrated build process |
+| **Jib Plugin** | `mvn jib:dockerBuild -Pjib` | No Docker required, faster build |
+
+### 📋 Deployment Configuration
+
+```yaml
+# docker-compose.yml example
+version: '3.8'
+services:
+  jairouter:
+    image: jairouter/model-router:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+```
+
+### 📚 Related Documentation
+
+- [Docker Deployment Guide](docs/docker-deployment.md) - Complete deployment documentation
 
 ---
 
