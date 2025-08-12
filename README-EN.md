@@ -1,7 +1,3 @@
-Based on the project directory structure you provided, the content of the README file can be further refined by supplementing module responsibilities, test coverage, and dynamic configuration updates to make it closer to the actual project structure. Below is the updated README.md:
-
----
-
 # JAiRouter
 
 JAiRouter is a Spring Boot-based model service routing and load balancing gateway designed to centrally manage and route various AI model services (such as Chat, Embedding, Rerank, TTS, etc.), supporting multiple load balancing strategies, rate limiting, circuit breaking, health checks, and dynamic configuration updates.
