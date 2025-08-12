@@ -115,7 +115,19 @@ public class ModelServiceRegistry {
 
         try {
             // 获取合并后的配置
-            Map<String, Object> mergedConfig = configMergeService.mergeConfigurations();
+            Map<String, Object> mergedConfig = configMergeService.getPersistedConfig();
+            
+            // 调整逻辑：如果有最新的配置文件，则使用最新的，如果没有，则使用默认配置
+            if (mergedConfig == null || mergedConfig.isEmpty()) {
+                LOGGER.info("未找到合并配置，使用默认配置");
+                if (originalProperties != null) {
+                    mergedConfig = configurationHelper.convertModelRouterPropertiesToMap(originalProperties);
+                } else {
+                    LOGGER.warn("原始配置也为空，使用空配置");
+                    mergedConfig = new HashMap<>();
+                }
+            }
+            
             this.currentConfig = mergedConfig;
 
             // 更新原始Properties对象（用于其他组件访问）
@@ -139,6 +151,13 @@ public class ModelServiceRegistry {
     public ModelRouterProperties.ModelInstance selectInstance(ServiceType serviceType,
                                                               String modelName,
                                                               String clientIp) {
+        if (serviceType == null) {
+            throw new IllegalArgumentException("ServiceType cannot be null");
+        }
+        if (modelName == null || modelName.trim().isEmpty()) {
+            throw new IllegalArgumentException("ModelName cannot be null or empty");
+        }
+        
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 

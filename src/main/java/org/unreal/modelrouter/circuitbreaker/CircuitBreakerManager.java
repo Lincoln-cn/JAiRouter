@@ -62,10 +62,10 @@ public class CircuitBreakerManager {
      * @return 熔断器实例
      */
     public CircuitBreaker getCircuitBreaker(String instanceId, String instanceUrl) {
-        // 使用实例URL作为唯一标识符
-        String key = instanceUrl != null ? instanceUrl : instanceId;
-        if (key == null) {
-            throw new IllegalArgumentException("InstanceId and InstanceUrl cannot both be null");
+        // 使用实例URL作为唯一标识符，如果URL为空则使用ID
+        String key = instanceUrl != null && !instanceUrl.trim().isEmpty() ? instanceUrl : instanceId;
+        if (key == null || key.trim().isEmpty()) {
+            throw new IllegalArgumentException("Both instanceId and instanceUrl cannot be null or empty");
         }
 
         return circuitBreakers.computeIfAbsent(key,

@@ -477,7 +477,7 @@ public class ConfigurationValidator {
         }
         
         try {
-            ModelServiceRegistry.ServiceType.valueOf(serviceType.toUpperCase());
+            ModelServiceRegistry.ServiceType.valueOf(serviceType.toLowerCase());
             return true;
         } catch (IllegalArgumentException e) {
             return false;

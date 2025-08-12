@@ -9,7 +9,7 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 3. **负载均衡策略**：Random、Round Robin、Least Connections、IP Hash
 4. **限流算法**：Token Bucket、Leaky Bucket、Sliding Window、Warm Up
 5. **熔断机制**：失败阈值、恢复检测、降级策略
-6. **健康检查**：服务状态监控与自动剔除不可用实例
+6. **健康检查**：服务状态监控与自动剔除不可用实例，定时清理不活跃限流器
 7. **多适配器支持**：GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI
 8. **动态配置更新**：运行时更新服务实例、权重、限流、熔断等配置
 9. **配置持久化**：支持内存存储和文件存储两种后端
@@ -56,7 +56,7 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 
 ### 7. 限流系统
 - [RateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimiter.java#L5-L18)：限流器接口
-- [RateLimitManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitManager.java#L17-L105)：限流管理器
+- [RateLimitManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitManager.java#L17-L105)：限流管理器，支持实例级、服务级、全局级、客户端IP级限流
 - 实现类：
   - [TokenBucketRateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\impl\TokenBucketRateLimiter.java#L8-L38)：令牌桶算法
   - [LeakyBucketRateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\impl\LeakyBucketRateLimiter.java#L12-L42)：漏桶算法
@@ -76,9 +76,10 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 - [MemoryStoreManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\MemoryStoreManager.java#L10-L55)：内存存储实现
 - [StoreManagerFactory](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\store\StoreManagerFactory.java#L11-L47)：存储管理器工厂
 
-### 10. 健康检查
+### 10. 健康检查与定时任务
 - [ServiceStateManager](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\checker\ServiceStateManager.java#L14-L79)：服务状态管理器
-- [ServerChecker](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\checker\ServerChecker.java#L16-L122)：服务检查器
+- [ServerChecker](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\checker\ServerChecker.java#L16-L122)：服务检查器，定时检查服务实例健康状态
+- [RateLimiterCleanupChecker](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\checker\RateLimiterCleanupChecker.java#L12-L35)：限流器清理检查器，定时清理不活跃的客户端IP限流器
 
 ### 11. 降级策略
 - [FallbackStrategy](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\fallback\FallbackStrategy.java#L5-L12)：降级策略接口
@@ -86,6 +87,28 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 - 实现类：
   - [DefaultFallbackStrategy](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\fallback\impl\DefaultFallbackStrategy.java#L10-L28)：默认降级策略
   - [CacheFallbackStrategy](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\fallback\impl\CacheFallbackStrategy.java#L22-L142)：缓存降级策略
+
+## 定时任务系统
+
+JAiRouter 集成了完善的定时任务系统，用于维护系统健康状态和性能优化：
+
+### 1. 服务健康检查任务
+- **执行频率**：每30秒
+- **功能**：检查所有配置的服务实例的网络连接状态
+- **实现**：使用 Socket 连接测试，支持 HTTP/HTTPS 协议
+- **作用**：自动发现和剔除不可用的服务实例，确保负载均衡只分发到健康实例
+
+### 2. 限流器清理任务
+- **执行频率**：每5分钟
+- **功能**：清理30分钟内未活跃的客户端IP限流器
+- **目的**：防止长期运行导致的内存泄漏问题
+- **策略**：基于最后访问时间进行清理，保留活跃的限流器实例
+
+### 3. 任务管理特性
+- **Spring 集成**：基于 `@Scheduled` 注解，由 Spring 容器统一管理
+- **异常处理**：任务执行异常不会影响其他任务和主服务
+- **日志记录**：详细的执行日志，便于监控和调试
+- **资源优化**：合理的执行频率设计，平衡性能和资源消耗
 
 ## 工作流程
 
@@ -115,5 +138,6 @@ JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡�
 - **灵活性**：支持多种负载均衡和限流算法，可根据需求配置
 - **可观测性**：通过健康检查和状态监控提供服务可观测性
 - **动态性**：支持运行时动态配置更新，无需重启服务
+- **资源优化**：定时清理不活跃的限流器，防止内存泄漏
 - **全面的管理接口**：提供丰富的 REST API 用于服务管理和监控
 - **完善的测试覆盖**：包含针对核心组件的单元测试

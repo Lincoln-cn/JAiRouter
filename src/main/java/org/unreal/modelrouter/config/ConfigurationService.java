@@ -23,7 +23,6 @@ public class ConfigurationService {
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationService.class);
 
     private static final String CURRENT_KEY = "model-router-config";
-    private static final String VERSION_PREFIX = "model-router-config-v";
 
     private final StoreManager storeManager;
     private final ConfigurationHelper configurationHelper;
@@ -63,7 +62,7 @@ public class ConfigurationService {
      */
     public Map<String, Object> getVersionConfig(int version) {
         if (version == 0) {
-            return configMergeService.getCurrentMergedConfig(); // YAML 原始配置
+            return configMergeService.getDefaultConfig(); // YAML 原始配置
         }
         return storeManager.getConfigByVersion(CURRENT_KEY, version);
     }
@@ -118,7 +117,7 @@ public class ConfigurationService {
      * @return 完整配置Map
      */
     public Map<String, Object> getAllConfigurations() {
-        Map<String, Object> configs = configMergeService.getCurrentMergedConfig();
+        Map<String, Object> configs = configMergeService.getPersistedConfig();
 
         // 为每个实例添加instanceId属性
         if (configs != null && configs.containsKey("services")) {
@@ -330,6 +329,7 @@ public class ConfigurationService {
         }
 
         instances.add(validatedInstance);
+        currentConfig.put("services", services);
 
         // 保存为新版本并刷新配置
         saveAsNewVersion(currentConfig);
@@ -361,24 +361,39 @@ public class ConfigurationService {
 
         // 查找并更新实例
         boolean found = false;
+        int targetIndex = -1;
+        Map<String, Object> oldInstance = null;
+        
+        // 先查找实例位置和原始配置
         for (int i = 0; i < instances.size(); i++) {
             Map<String, Object> instance = instances.get(i);
             if (instanceId.equals(buildInstanceId(instance))) {
-                // 合并更新配置
-                Map<String, Object> updatedInstance = mergeInstanceConfig(instance, configurationHelper.convertInstanceToMap(instanceConfig));
-                Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(updatedInstance);
-                instances.set(i, validatedInstance);
+                targetIndex = i;
+                oldInstance = instance;
                 found = true;
                 break;
             }
+        }
+
+        if (found) {
+            // 合并更新配置
+            Map<String, Object> updatedInstance = mergeInstanceConfig(oldInstance, configurationHelper.convertInstanceToMap(instanceConfig));
+            Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(updatedInstance);
+            instances.set(targetIndex, validatedInstance);
         }
 
         if (!found) {
             throw new IllegalArgumentException("实例不存在: " + instanceId);
         }
 
+        // 更新服务配置
+        serviceConfig.put("instances", instances);
+        services.put(serviceType, serviceConfig);
+        currentConfig.put("services", services);
+
         // 保存为新版本并刷新配置
         saveAsNewVersion(currentConfig);
+        //TODO 有bug 需要检查，会把已经修改的数据，恢复回来，新增一条
         refreshRuntimeConfig();
 
         logger.info("实例 {} 更新成功", instanceId);
@@ -410,6 +425,11 @@ public class ConfigurationService {
         if (!removed) {
             throw new IllegalArgumentException("实例不存在: " + instanceId);
         }
+
+        // 更新服务配置
+        serviceConfig.put("instances", instances);
+        services.put(serviceType, serviceConfig);
+        currentConfig.put("services", services);
 
         // 保存为新版本并刷新配置
         saveAsNewVersion(currentConfig);
@@ -459,14 +479,38 @@ public class ConfigurationService {
     // ==================== 辅助方法 ====================
 
     /**
-     * 获取当前持久化配置
+     * 获取持久化配置（优先使用最新版本的配置）
+     * @return 持久化配置Map
      */
     private Map<String, Object> getCurrentPersistedConfig() {
-        if (storeManager.exists(CURRENT_KEY)) {
-            Map<String, Object> config = storeManager.getConfig(CURRENT_KEY);
-            return config != null ? new HashMap<>(config) : new HashMap<>();
+        try {
+            // 首先尝试获取最新版本的配置
+            List<Integer> versions = storeManager.getConfigVersions(CURRENT_KEY);
+            if (!versions.isEmpty()) {
+                // 获取最大版本号
+                int latestVersion = versions.stream().mapToInt(Integer::intValue).max().orElse(0);
+                Map<String, Object> config = storeManager.getConfigByVersion(CURRENT_KEY, latestVersion);
+                if (config != null) {
+                    logger.info("成功加载最新版本持久化配置 v{}，包含 {} 个顶级配置项", latestVersion, config.size());
+                    return config;
+                }
+            }
+
+            // 如果没有版本配置，尝试获取当前配置
+            if (storeManager.exists(CURRENT_KEY)) {
+                Map<String, Object> config = storeManager.getConfig(CURRENT_KEY);
+                if (config != null) {
+                    logger.info("成功加载持久化配置，包含 {} 个顶级配置项", config.size());
+                    return config;
+                }
+            }
+
+            logger.info("未找到持久化配置，将仅使用YAML配置");
+            return new HashMap<>();
+        } catch (Exception e) {
+            logger.warn("加载持久化配置时发生错误: {}", e.getMessage());
+            return new HashMap<>();
         }
-        return new HashMap<>();
     }
 
     /**

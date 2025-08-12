@@ -25,11 +25,20 @@ public class TokenBucketRateLimiter implements RateLimiter {
     @Override
     public boolean tryAcquire(final RateLimitContext context) {
         refill();
-        long current = tokens.get();
-        if (current < context.getTokens()) {
-            return false;
+        
+        // 使用循环CAS来避免竞争条件
+        while (true) {
+            long current = tokens.get();
+            if (current < context.getTokens()) {
+                return false;
+            }
+            
+            long newValue = current - context.getTokens();
+            if (tokens.compareAndSet(current, newValue)) {
+                return true;
+            }
+            // CAS失败，重试
         }
-        return tokens.compareAndSet(current, current - context.getTokens());
     }
 
     private void refill() {

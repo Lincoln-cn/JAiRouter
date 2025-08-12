@@ -34,6 +34,12 @@ public class RateLimitManager {
     // 客户端IP限流器：serviceType -> (clientIp -> RateLimiter)
     private final Map<ModelServiceRegistry.ServiceType, Map<String, RateLimiter>> clientIpLimiters =
             new ConcurrentHashMap<>();
+    
+    // 客户端IP限流器的最后访问时间，用于清理不活跃的限流器
+    private final Map<String, Long> clientIpLastAccessTime = new ConcurrentHashMap<>();
+    
+    // 不活跃阈值（毫秒）
+    private static final long INACTIVE_THRESHOLD = 1800000; // 30分钟
 
     public RateLimitManager(final ComponentFactory componentFactory,
                             final ConfigurationHelper configHelper,
@@ -175,6 +181,10 @@ public class RateLimitManager {
 
         ModelServiceRegistry.ServiceType serviceType = context.getServiceType();
         String clientIp = context.getClientIp();
+        String accessKey = serviceType.name() + ":" + clientIp;
+
+        // 更新最后访问时间
+        clientIpLastAccessTime.put(accessKey, System.currentTimeMillis());
 
         // 检查服务级配置是否启用了客户端IP限流
         ModelRouterProperties.ServiceConfig serviceConfig = getServiceConfig(serviceType);
@@ -209,6 +219,47 @@ public class RateLimitManager {
         }
 
         return true; // 未启用客户端IP限流
+    }
+
+    /**
+     * 清理不活跃的客户端IP限流器
+     * 定期调用此方法以防止内存泄漏
+     */
+    public void cleanupInactiveClientIpLimiters() {
+        long currentTime = System.currentTimeMillis();
+        
+        clientIpLastAccessTime.entrySet().removeIf(entry -> {
+            String accessKey = entry.getKey();
+            long lastAccessTime = entry.getValue();
+            
+            if (currentTime - lastAccessTime > INACTIVE_THRESHOLD) {
+                // 解析accessKey获取serviceType和clientIp
+                String[] parts = accessKey.split(":", 2);
+                if (parts.length == 2) {
+                    try {
+                        ModelServiceRegistry.ServiceType serviceType = 
+                            ModelServiceRegistry.ServiceType.valueOf(parts[0]);
+                        String clientIp = parts[1];
+                        
+                        // 从clientIpLimiters中移除
+                        Map<String, RateLimiter> ipLimiters = clientIpLimiters.get(serviceType);
+                        if (ipLimiters != null) {
+                            ipLimiters.remove(clientIp);
+                            if (ipLimiters.isEmpty()) {
+                                clientIpLimiters.remove(serviceType);
+                            }
+                        }
+                        
+                        LOGGER.debug("清理不活跃的客户端IP限流器: {}", accessKey);
+                        return true;
+                    } catch (IllegalArgumentException e) {
+                        LOGGER.warn("解析accessKey失败: {}", accessKey);
+                        return true; // 移除无效的key
+                    }
+                }
+            }
+            return false;
+        });
     }
 
     private ModelRouterProperties.ServiceConfig getServiceConfig(final ModelServiceRegistry.ServiceType serviceType) {
