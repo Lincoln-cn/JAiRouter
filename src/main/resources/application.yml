@@ -198,3 +198,52 @@ webclient:
   read-timeout: 30s
   write-timeout: 30s
   max-in-memory-size: 10MB
+
+# 监控指标配置
+monitoring:
+  metrics:
+    enabled: true
+    prefix: "jairouter"
+    collection-interval: 10s
+    enabled-categories:
+      - system
+      - business  
+      - infrastructure
+    custom-tags:
+      environment: "production"
+      version: "1.0.0"
+    
+    # 指标采样配置
+    sampling:
+      request-metrics: 1.0      # 请求指标采样率
+      backend-metrics: 1.0      # 后端调用指标采样率
+      infrastructure-metrics: 0.1  # 基础设施指标采样率
+    
+    # 性能优化配置
+    performance:
+      async-processing: true    # 异步处理指标
+      batch-size: 100          # 批量处理大小
+      buffer-size: 1000        # 缓冲区大小
+
+# Spring Actuator配置增强
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,jairouter-metrics
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    prometheus:
+      cache:
+        time-to-live: 10s
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        descriptions: true
+        step: 10s
+    tags:
+      application: jairouter
+      environment: ${spring.profiles.active:default}
