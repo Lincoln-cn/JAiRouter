@@ -18,8 +18,8 @@ public class OllamaAdapter extends BaseAdapter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public OllamaAdapter(ModelServiceRegistry registry) {
-        super(registry);
+    public OllamaAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+        super(registry, metricsCollector);
     }
 
     @Override

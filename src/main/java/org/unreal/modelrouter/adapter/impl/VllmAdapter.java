@@ -19,8 +19,8 @@ public class VllmAdapter extends BaseAdapter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public VllmAdapter(ModelServiceRegistry registry) {
-        super(registry);
+    public VllmAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+        super(registry, metricsCollector);
     }
 
     @Override

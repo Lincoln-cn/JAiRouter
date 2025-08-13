@@ -13,8 +13,8 @@ import org.unreal.modelrouter.model.ModelServiceRegistry;
 
 public class NormalOpenAiAdapter extends BaseAdapter {
 
-    public NormalOpenAiAdapter(ModelServiceRegistry registry) {
-        super(registry);
+    public NormalOpenAiAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+        super(registry, metricsCollector);
     }
 
     @Override
