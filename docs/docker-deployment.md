@@ -41,14 +41,14 @@ docker build -t jairouter/model-router:latest .
 ./scripts/docker-build.sh dev
 
 # 或手动构建
-mvn clean package
+mvn clean package  -DskipTests
 docker build -f Dockerfile.dev -t jairouter/model-router:dev .
 ```
 
 ### 方式二: Maven Dockerfile 插件
 ```bash
 # 构建镜像
-mvn clean package dockerfile:build -Pdocker
+mvn clean package dockerfile:build -Pdocker -DskipTests
 
 # 构建并推送镜像
 mvn clean package dockerfile:build dockerfile:push -Pdocker
@@ -57,10 +57,10 @@ mvn clean package dockerfile:build dockerfile:push -Pdocker
 ### 方式三: Jib 插件构建（推荐）
 ```bash
 # 构建到本地 Docker
-mvn clean package jib:dockerBuild -Pjib
+mvn clean package -DskipTests jib:dockerBuild -Pjib
 
 # 构建并推送到注册表
-mvn clean package jib:build -Pjib
+mvn clean package -DskipTests jib:build -Pjib
 ```
 
 ## 🚀 运行方式
