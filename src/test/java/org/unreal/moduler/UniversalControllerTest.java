@@ -46,7 +46,7 @@ class UniversalControllerTest {
 
     @BeforeEach
     void setUp() {
-        universalController = new UniversalController(adapterRegistry, serviceStateManager);
+        universalController = new UniversalController(adapterRegistry, serviceStateManager, null);
         webTestClient = WebTestClient.bindToController(universalController).build();
     }
 

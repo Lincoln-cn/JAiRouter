@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,8 +15,11 @@ import org.unreal.modelrouter.adapter.AdapterRegistry;
 import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.MetricsCollector;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
+
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/v1")
@@ -24,11 +28,14 @@ public class UniversalController {
 
     private final AdapterRegistry adapterRegistry;
     private final ServiceStateManager serviceStateManager;
+    private final MetricsCollector metricsCollector;
 
     public UniversalController(AdapterRegistry adapterRegistry,
-                               ServiceStateManager serviceStateManager) {
+                               ServiceStateManager serviceStateManager,
+                               @Autowired(required = false) MetricsCollector metricsCollector) {
         this.adapterRegistry = adapterRegistry;
         this.serviceStateManager = serviceStateManager;
+        this.metricsCollector = metricsCollector;
     }
 
     /**
@@ -211,26 +218,140 @@ public class UniversalController {
 
         // 获取客户端IP
         String clientIp = IpUtils.getClientIp(httpRequest);
+        
+        // 记录请求开始时间
+        long startTime = System.currentTimeMillis();
+        String serviceName = serviceType.name();
+        String method = httpRequest.getMethod().name();
+        String path = httpRequest.getPath().value();
 
         // 检查服务健康状态
-        if (!serviceStateManager.isServiceHealthy(serviceType.name())) {
+        if (!serviceStateManager.isServiceHealthy(serviceName)) {
+            // 记录服务不可用的指标
+            long duration = System.currentTimeMillis() - startTime;
+            recordRequestMetrics(serviceName, method, duration, "503", 0, 0);
+            
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    serviceType.name() + " service is currently unavailable");
+                    serviceName + " service is currently unavailable");
         }
 
         try {
-            // 委托给适配器处理
-            return requestSupplier.get();
+            // 委托给适配器处理，并在完成时记录指标
+            return requestSupplier.get()
+                .doOnSuccess(response -> {
+                    // 请求成功完成时记录指标
+                    long duration = System.currentTimeMillis() - startTime;
+                    String status = getResponseStatus(response);
+                    long requestSize = estimateRequestSize(httpRequest);
+                    long responseSize = estimateResponseSize(response);
+                    
+                    recordRequestMetrics(serviceName, method, duration, status, requestSize, responseSize);
+                })
+                .doOnError(error -> {
+                    // 请求出错时记录指标
+                    long duration = System.currentTimeMillis() - startTime;
+                    String status = getErrorStatus(error);
+                    long requestSize = estimateRequestSize(httpRequest);
+                    
+                    recordRequestMetrics(serviceName, method, duration, status, requestSize, 0);
+                });
 
         } catch (UnsupportedOperationException e) {
+            long duration = System.currentTimeMillis() - startTime;
+            recordRequestMetrics(serviceName, method, duration, "501", 0, 0);
             throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,
                     "Service not supported by current adapter: " + e.getMessage());
         } catch (IllegalArgumentException e) {
+            long duration = System.currentTimeMillis() - startTime;
+            recordRequestMetrics(serviceName, method, duration, "400", 0, 0);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Adapter configuration error: " + e.getMessage());
         } catch (Exception e) {
+            long duration = System.currentTimeMillis() - startTime;
+            recordRequestMetrics(serviceName, method, duration, "500", 0, 0);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Internal server error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 记录请求指标
+     */
+    private void recordRequestMetrics(String service, String method, long duration, String status, 
+                                    long requestSize, long responseSize) {
+        // 如果监控功能未启用，直接返回
+        if (metricsCollector == null) {
+            return;
+        }
+        
+        try {
+            // 记录请求指标
+            metricsCollector.recordRequest(service, method, duration, status);
+            
+            // 记录请求和响应大小指标
+            if (requestSize > 0 || responseSize > 0) {
+                metricsCollector.recordRequestSize(service, requestSize, responseSize);
+            }
+        } catch (Exception e) {
+            // 指标记录失败不应影响主业务流程，只记录日志
+            // 这里可以添加日志记录，但为了保持简洁暂时省略
+        }
+    }
+
+    /**
+     * 获取响应状态码
+     */
+    private String getResponseStatus(ResponseEntity<?> response) {
+        if (response == null) {
+            return "unknown";
+        }
+        return String.valueOf(response.getStatusCode().value());
+    }
+
+    /**
+     * 获取错误状态码
+     */
+    private String getErrorStatus(Throwable error) {
+        if (error instanceof ResponseStatusException) {
+            return String.valueOf(((ResponseStatusException) error).getStatusCode().value());
+        }
+        return "500";
+    }
+
+    /**
+     * 估算请求大小
+     */
+    private long estimateRequestSize(ServerHttpRequest request) {
+        try {
+            // 基于Content-Length头估算请求大小
+            String contentLength = request.getHeaders().getFirst("Content-Length");
+            if (contentLength != null) {
+                return Long.parseLong(contentLength);
+            }
+            
+            // 如果没有Content-Length，返回一个估算值
+            // 这里可以根据实际需要进行更精确的计算
+            return 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 估算响应大小
+     */
+    private long estimateResponseSize(ResponseEntity<?> response) {
+        try {
+            if (response == null || response.getBody() == null) {
+                return 0;
+            }
+            
+            // 基于响应体内容估算大小
+            // 这里是一个简化的实现，实际可能需要更精确的计算
+            String body = response.getBody().toString();
+            return body.getBytes().length;
+        } catch (Exception e) {
+            return 0;
         }
     }
 
