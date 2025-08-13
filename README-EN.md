@@ -395,14 +395,15 @@ make docker-clean
 
 ## 📌 Development Roadmap (Status Update)
 
-| Phase | Status | Content |
-|-------|--------|---------|
-| 0.1.0 | ✅ | Basic gateway, adapters, load balancing, health checks |
-| 0.2.0 | ✅ | Rate limiting, circuit breaking, fallback, configuration persistence, dynamic update interfaces |
+| Phase | Status | Content                                                                                                                 |
+|-------|--------|-------------------------------------------------------------------------------------------------------------------------|
+| 0.1.0 | ✅ | Basic gateway, adapters, load balancing, health checks                                                                  |
+| 0.2.0 | ✅ | Rate limiting, circuit breaking, fallback, configuration persistence, dynamic update interfaces                         |
 | 0.2.1 | ✅ | Scheduled cleanup tasks, memory optimization, client IP rate limiting enhancement, automatic configuration file merging |
-| 0.2.2 | ✅ | Docker containerization, multi-environment deployment, monitoring integration |
-| 0.3.0 | 🚧 | Monitoring metrics, Prometheus integration, alert notifications |
-| 0.4.0 | 📋 | Multi-tenancy support, authentication and authorization, log tracing |
+| 0.3.0 | ✅ | Docker containerization, multi-environment deployment, monitoring integration                                           |
+| 0.3.1 | ✅ | Chinan Acceleration, optimized Alibaba Cloud Maven mirror build                                                                                                                   |
+| 0.3.2 | 🚧 | Monitoring metrics, Prometheus integration, alert notifications                                                         |
+| 0.4.0 | 📋 | Multi-tenancy support, authentication and authorization, log tracing                                                    |
 
 ---
 
