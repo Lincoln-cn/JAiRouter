@@ -416,6 +416,7 @@ JAiRouter provides a complete Docker deployment solution with multi-environment 
 
 - **Multi-stage Build**: Optimized image size, production image ~200MB
 - **Multi-environment Support**: Independent configuration for dev, test, and production
+- **China Acceleration**: Specially optimized Alibaba Cloud Maven mirror build
 - **Security Best Practices**: Non-root user, minimal privilege execution
 - **Health Checks**: Built-in application health monitoring
 - **Monitoring Integration**: Supports Prometheus + Grafana monitoring stack
@@ -424,10 +425,29 @@ JAiRouter provides a complete Docker deployment solution with multi-environment 
 
 | Method | Command | Features |
 |--------|---------|----------|
-| **Makefile** | `make docker-build` | Simple and easy, recommended |
-| **Scripts** | `./scripts/docker-build.sh` | Cross-platform support |
+| **Standard Build** | `./scripts/docker-build.sh` | International users, uses Maven Central Repository |
+| **China Acceleration** | `./scripts/docker-build-china.sh` | Chinese users, uses Alibaba Cloud Maven mirrors |
 | **Maven Plugin** | `mvn dockerfile:build -Pdocker` | Integrated build process |
 | **Jib Plugin** | `mvn jib:dockerBuild -Pjib` | No Docker required, faster build |
+
+### 🇨🇳 China Users Optimized Build
+
+Optimized for Chinese users' network environment, using Alibaba Cloud Maven mirrors:
+
+```bash
+# Use China-optimized build (recommended for Chinese users)
+./scripts/docker-build-china.sh
+
+# Or use Maven china profile
+mvn clean package -Pchina
+docker build -f Dockerfile.china -t jairouter/model-router:latest .
+```
+
+**China Version Features:**
+- ✅ Uses Alibaba Cloud Maven mirrors (https://maven.aliyun.com/repository/public)
+- ✅ Significantly improves dependency download speed
+- ✅ Includes complete repository mirrors for Spring, Central, Plugin, etc.
+- ✅ Automatic settings.xml configuration
 
 ### 📋 Deployment Configuration
 

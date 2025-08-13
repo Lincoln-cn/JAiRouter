@@ -23,8 +23,7 @@ RUN mkdir -p /app/logs /app/config /app/config-store && \
 # 复制应用 JAR 文件
 COPY target/model-router-*.jar app.jar
 
-# 复制配置文件
-COPY config/ ./config/
+# 配置文件通过卷挂载提供，无需复制到镜像中
 
 # 设置 JVM 参数（开发环境）
 ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"

@@ -23,25 +23,50 @@ JAiRouter 支持多种 Docker 部署方式，包括传统的 Dockerfile 构建�
 
 ## 🛠️ 构建方式
 
+### 🇨🇳 中国用户专用优化
+
+针对中国用户网络环境，JAiRouter 提供了专门优化的构建方案：
+
+#### 优化特性
+- **阿里云Maven镜像**: 使用 `https://maven.aliyun.com/repository/public`
+- **完整仓库支持**: 包含Central、Spring、Plugin等仓库镜像
+- **自动配置**: 内置settings.xml配置，无需手动设置
+- **显著提速**: 依赖下载速度提升5-10倍
+
+#### 文件说明
+| 文件 | 用途 |
+|------|------|
+| `Dockerfile.china` | 中国优化的Docker构建文件 |
+| `settings-china.xml` | 阿里云Maven镜像配置 |
+| `scripts/docker-build-china.sh` | 中国优化构建脚本 |
+| `pom.xml` (china profile) | Maven中国加速配置 |
+
 ### 方式一: 传统 Dockerfile 构建
 
-#### 1.1 生产环境构建
+#### 1.1 标准构建（国际用户）
 ```bash
 # 使用脚本构建（推荐）
-./scripts/docker-build.sh prod
+./scripts/docker-build.sh
 
 # 或手动构建
 mvn clean package -DskipTests
 docker build -t jairouter/model-router:latest .
 ```
 
-#### 1.2 开发环境构建
+#### 1.2 中国加速构建（中国用户推荐）
 ```bash
-# 使用脚本构建（推荐）
-./scripts/docker-build.sh dev
+# 使用中国优化脚本构建（推荐）
+./scripts/docker-build-china.sh
 
 # 或手动构建
-mvn clean package  -DskipTests
+mvn clean package -Pchina
+docker build -f Dockerfile.china -t jairouter/model-router:latest .
+```
+
+#### 1.3 开发环境构建
+```bash
+# 构建开发版本
+mvn clean package -DskipTests
 docker build -f Dockerfile.dev -t jairouter/model-router:dev .
 ```
 
@@ -316,13 +341,18 @@ jobs:
 
 ### 构建命令
 ```bash
-# 传统构建
-./scripts/docker-build.sh prod
-./scripts/docker-build.sh dev
+# 标准构建（国际用户）
+./scripts/docker-build.sh
+
+# 中国加速构建（中国用户推荐）
+./scripts/docker-build-china.sh
 
 # Maven 插件构建
 mvn clean package dockerfile:build -Pdocker
 mvn clean package jib:dockerBuild -Pjib
+
+# 使用china profile构建
+mvn clean package -Pchina
 ```
 
 ### 运行命令
