@@ -33,8 +33,10 @@ cat > "${TEMP_SETTINGS_FILE}" << 'EOF'
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 
           http://maven.apache.org/xsd/settings-1.0.0.xsd">
   
+  <localRepository>${user.home}/.m2/repository</localRepository>
+  
   <mirrors>
-    <!-- Alibaba Maven Repository Mirror -->
+    <!-- Alibaba Maven Repository Mirror - 镜像所有仓库 -->
     <mirror>
       <id>aliyunmaven</id>
       <mirrorOf>*</mirrorOf>
@@ -46,13 +48,18 @@ cat > "${TEMP_SETTINGS_FILE}" << 'EOF'
   <profiles>
     <profile>
       <id>china</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <repositories>
         <repository>
           <id>aliyun-central</id>
           <name>Alibaba Central Repository</name>
           <url>https://maven.aliyun.com/repository/central</url>
+          <layout>default</layout>
           <releases>
             <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
           </releases>
           <snapshots>
             <enabled>false</enabled>
@@ -62,8 +69,10 @@ cat > "${TEMP_SETTINGS_FILE}" << 'EOF'
           <id>aliyun-spring</id>
           <name>Alibaba Spring Repository</name>
           <url>https://maven.aliyun.com/repository/spring</url>
+          <layout>default</layout>
           <releases>
             <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
           </releases>
           <snapshots>
             <enabled>false</enabled>
@@ -73,8 +82,10 @@ cat > "${TEMP_SETTINGS_FILE}" << 'EOF'
           <id>aliyun-spring-plugin</id>
           <name>Alibaba Spring Plugin Repository</name>
           <url>https://maven.aliyun.com/repository/spring-plugin</url>
+          <layout>default</layout>
           <releases>
             <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
           </releases>
           <snapshots>
             <enabled>false</enabled>
@@ -86,8 +97,23 @@ cat > "${TEMP_SETTINGS_FILE}" << 'EOF'
           <id>aliyun-plugin</id>
           <name>Alibaba Plugin Repository</name>
           <url>https://maven.aliyun.com/repository/central</url>
+          <layout>default</layout>
           <releases>
             <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>aliyun-spring-plugin</id>
+          <name>Alibaba Spring Plugin Repository</name>
+          <url>https://maven.aliyun.com/repository/spring-plugin</url>
+          <layout>default</layout>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
           </releases>
           <snapshots>
             <enabled>false</enabled>
@@ -107,7 +133,8 @@ echo -e "${GREEN}Alibaba Maven configuration created${NC}"
 
 # Step 2: Clean and build the JAR using Alibaba repository
 echo -e "${YELLOW}Step 2: Building JAR file with Alibaba Maven repository...${NC}"
-mvn clean package -DskipTests -Pfast -s "${TEMP_SETTINGS_FILE}"
+# Force use of our settings file and disable default repositories
+mvn clean package -DskipTests -Pfast -s "${TEMP_SETTINGS_FILE}" -Dmaven.repo.remote=https://maven.aliyun.com/repository/public
 
 # Check if JAR was built successfully
 if [ ! -f "target/${PROJECT_NAME}-${VERSION}.jar" ]; then
