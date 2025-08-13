@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.adapter.impl.*;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.MetricsCollector;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,22 +16,24 @@ public class AdapterRegistry {
     private final Map<String, ServiceCapability> adapters;
     private final ModelRouterProperties properties;
     private final ModelServiceRegistry registry;
+    private final MetricsCollector metricsCollector;
 
-    public AdapterRegistry(final ModelRouterProperties properties, final ModelServiceRegistry registry) {
+    public AdapterRegistry(final ModelRouterProperties properties, final ModelServiceRegistry registry, final MetricsCollector metricsCollector) {
         this.properties = properties;
         this.registry = registry;
+        this.metricsCollector = metricsCollector;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
 
     private void initializeAdapters() {
-        // 注册各种adapter实现
-        adapters.put("normal", new NormalOpenAiAdapter(registry));
-        adapters.put("gpustack", new GpuStackAdapter(registry));
-        adapters.put("ollama", new OllamaAdapter(registry));
-        adapters.put("vllm", new VllmAdapter(registry));
-        adapters.put("xinference", new XinferenceAdapter(registry));
-        adapters.put("localai", new LocalAiAdapter(registry));
+        // 注册各种adapter实现，传入MetricsCollector
+        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector));
+        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector));
+        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector));
+        adapters.put("vllm", new VllmAdapter(registry, metricsCollector));
+        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector));
+        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector));
     }
 
     /**

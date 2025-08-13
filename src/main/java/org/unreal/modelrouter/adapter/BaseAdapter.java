@@ -12,6 +12,7 @@ import org.unreal.modelrouter.fallback.FallbackStrategy;
 import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.MetricsCollector;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -19,13 +20,19 @@ import reactor.core.publisher.Mono;
 public abstract class BaseAdapter implements ServiceCapability {
 
     private final ModelServiceRegistry registry;
+    private final MetricsCollector metricsCollector;
 
-    public BaseAdapter(final ModelServiceRegistry registry) {
+    public BaseAdapter(final ModelServiceRegistry registry, final MetricsCollector metricsCollector) {
         this.registry = registry;
+        this.metricsCollector = metricsCollector;
     }
 
     public ModelServiceRegistry getRegistry() {
         return registry;
+    }
+
+    protected MetricsCollector getMetricsCollector() {
+        return metricsCollector;
     }
 
     /**
@@ -56,21 +63,40 @@ public abstract class BaseAdapter implements ServiceCapability {
         WebClient client = getRegistry().getClient(serviceType, modelName, clientIp);
         String path = getModelPath(serviceType, modelName);
 
+        // 记录开始时间用于计算响应时间
+        long startTime = System.currentTimeMillis();
+        String adapterType = getAdapterType();
+        String instanceName = selectedInstance.getName();
+
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
                 // 在成功完成时记录成功
                 .doOnSuccess(response -> {
+                    long duration = System.currentTimeMillis() - startTime;
                     if (response != null && response.getStatusCode().is2xxSuccessful()) {
                         getRegistry().recordCallComplete(serviceType, selectedInstance);
+                        // 记录成功的后端调用指标
+                        if (metricsCollector != null) {
+                            metricsCollector.recordBackendCall(adapterType, instanceName, duration, true);
+                        }
                         // 缓存成功响应
                         cacheSuccessfulResponse(serviceType, modelName, response, httpRequest);
                     } else {
                         // 非2xx响应视为失败
                         getRegistry().recordCallFailure(serviceType, selectedInstance);
+                        // 记录失败的后端调用指标
+                        if (metricsCollector != null) {
+                            metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
+                        }
                     }
                 })
                 // 在发生错误时记录失败
                 .onErrorResume(throwable -> {
+                    long duration = System.currentTimeMillis() - startTime;
                     getRegistry().recordCallFailure(serviceType, selectedInstance);
+                    // 记录异常的后端调用指标
+                    if (metricsCollector != null) {
+                        metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
+                    }
                     return Mono.error(throwable);
                 });
     }
@@ -120,6 +146,8 @@ public abstract class BaseAdapter implements ServiceCapability {
             final Class<?> responseType) {
 
         Object transformedRequest = transformRequest(request, getAdapterType());
+        String adapterType = getAdapterType();
+        String instanceName = selectedInstance.getName();
 
         WebClient.RequestBodySpec requestSpec = client.post()
                 .uri(adaptModelName(path))
@@ -137,6 +165,15 @@ public abstract class BaseAdapter implements ServiceCapability {
                         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
                     })
                     .toEntity(byte[].class)
+                    .doOnSuccess(responseEntity -> {
+                        // 记录请求大小指标（如果可能）
+                        if (metricsCollector != null && responseEntity != null) {
+                            long requestSize = calculateRequestSize(transformedRequest);
+                            long responseSize = responseEntity.getBody() != null ? 
+                                ((byte[]) responseEntity.getBody()).length : 0;
+                            metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
+                        }
+                    })
                     .map(responseEntity -> {
                         if (responseEntity.getStatusCode().is2xxSuccessful()) {
                             // 只返回body部分
@@ -154,6 +191,15 @@ public abstract class BaseAdapter implements ServiceCapability {
                         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
                     })
                     .toEntity(String.class)
+                    .doOnSuccess(responseEntity -> {
+                        // 记录请求大小指标
+                        if (metricsCollector != null && responseEntity != null) {
+                            long requestSize = calculateRequestSize(transformedRequest);
+                            long responseSize = responseEntity.getBody() != null ? 
+                                responseEntity.getBody().getBytes().length : 0;
+                            metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
+                        }
+                    })
                     .map(responseEntity -> {
                         Object transformedResponse = transformResponse(responseEntity, getAdapterType());
                         if (responseEntity.getStatusCode().is2xxSuccessful()) {
@@ -194,12 +240,17 @@ public abstract class BaseAdapter implements ServiceCapability {
             final ModelServiceRegistry.ServiceType serviceType) {
 
         Object transformedRequest = transformRequest(request, getAdapterType());
+        String adapterType = getAdapterType();
+        String instanceName = selectedInstance.getName();
 
         WebClient.RequestBodySpec requestSpec = client.post()
                 .uri(adaptModelName(path))
                 .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), getAdapterType()));
 
         requestSpec = configureRequestHeaders(requestSpec, request);
+
+        // 记录请求大小
+        long requestSize = calculateRequestSize(transformedRequest);
 
         Flux<String> streamResponse = requestSpec
                 .bodyValue(transformedRequest)
@@ -210,6 +261,12 @@ public abstract class BaseAdapter implements ServiceCapability {
                 })
                 .bodyToFlux(String.class)
                 .map(this::transformStreamChunk)
+                .doOnComplete(() -> {
+                    // 流式响应完成时记录请求大小指标（响应大小难以准确计算）
+                    if (metricsCollector != null) {
+                        metricsCollector.recordRequestSize(serviceType.name(), requestSize, 0);
+                    }
+                })
                 .onErrorResume(throwable -> Flux.just(throwable.getMessage()));
 
         return Mono.just(ResponseEntity.ok()
@@ -446,6 +503,23 @@ public abstract class BaseAdapter implements ServiceCapability {
         // 如果降级策略是缓存类型，则缓存响应
         if (fallbackStrategy instanceof CacheFallbackStrategy) {
             ((CacheFallbackStrategy) fallbackStrategy).cacheResponse(serviceType, modelName, httpRequest, response);
+        }
+    }
+
+    /**
+     * 计算请求大小（字节）
+     */
+    protected long calculateRequestSize(final Object request) {
+        if (request == null) {
+            return 0;
+        }
+        try {
+            // 简单估算：将对象转换为字符串并计算字节长度
+            String requestStr = request.toString();
+            return requestStr.getBytes().length;
+        } catch (Exception e) {
+            // 如果无法计算，返回0
+            return 0;
         }
     }
 

@@ -19,8 +19,8 @@ public class LocalAiAdapter extends BaseAdapter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public LocalAiAdapter(ModelServiceRegistry registry) {
-        super(registry);
+    public LocalAiAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+        super(registry, metricsCollector);
     }
 
     @Override
