@@ -37,8 +37,7 @@ RUN mkdir -p /app/logs /app/config /app/config-store && \
 # 从构建阶段复制 JAR 文件
 COPY --from=builder /app/target/model-router-*.jar app.jar
 
-# 复制配置文件（如果存在）
-RUN if [ -d "config" ]; then cp -r config/ ./config/ && chown -R jairouter:jairouter ./config/; fi
+# 配置文件通过卷挂载提供，无需复制到镜像中
 
 # 设置 JVM 参数
 ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
