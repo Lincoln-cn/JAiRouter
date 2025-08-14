@@ -2,10 +2,12 @@ package org.unreal.modelrouter.checker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.MetricsCollector;
 import org.unreal.modelrouter.util.NetUtils;
 
 import java.net.URI;
@@ -21,6 +23,9 @@ public class ServerChecker {
 
     private final ModelServiceRegistry modelServiceRegistry;
     private final ServiceStateManager serviceStateManager;
+    
+    @Autowired(required = false)
+    private MetricsCollector metricsCollector;
 
     public ServerChecker(ModelServiceRegistry modelServiceRegistry, ServiceStateManager serviceStateManager) {
         this.modelServiceRegistry = modelServiceRegistry;
@@ -92,7 +97,9 @@ public class ServerChecker {
                 }
 
                 // 使用 NetUtils 检查 socket 连接（同步方法）
+                long startTime = System.currentTimeMillis();
                 NetUtils.NetConnect result = NetUtils.testSocketConnect(host, port);
+                long responseTime = System.currentTimeMillis() - startTime;
 
                 // 创建实例的唯一标识符
                 String instanceKey = serviceType + ":" + instance.getName() + "@" + instance.getBaseUrl();
@@ -101,9 +108,11 @@ public class ServerChecker {
                     hasHealthyInstance = true;
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, true);
                     log.debug("实例 {} 连接成功: {}", instance.getName(), result.getMsg());
+                    recordHealthCheckMetrics(getAdapterType(instance), instance.getName(), true, responseTime);
                 } else {
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, false);
                     log.warn("实例 {} 连接失败: {}", instance.getName(), result.getMsg());
+                    recordHealthCheckMetrics(getAdapterType(instance), instance.getName(), false, responseTime);
                 }
 
             } catch (URISyntaxException e) {
@@ -118,6 +127,40 @@ public class ServerChecker {
             log.info("{} 服务至少有一个实例是健康的", serviceType);
         } else {
             log.warn("{} 服务所有实例都不可达", serviceType);
+        }
+    }
+
+    /**
+     * 记录健康检查指标
+     */
+    private void recordHealthCheckMetrics(String adapter, String instance, boolean healthy, long responseTime) {
+        if (metricsCollector != null) {
+            try {
+                metricsCollector.recordHealthCheck(adapter, instance, healthy, responseTime);
+            } catch (Exception e) {
+                log.warn("Failed to record health check metrics: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 根据实例信息推断适配器类型
+     */
+    private String getAdapterType(ModelRouterProperties.ModelInstance instance) {
+        // 根据实例的URL或其他特征推断适配器类型
+        String baseUrl = instance.getBaseUrl().toLowerCase();
+        if (baseUrl.contains("ollama")) {
+            return "ollama";
+        } else if (baseUrl.contains("vllm")) {
+            return "vllm";
+        } else if (baseUrl.contains("gpustack")) {
+            return "gpustack";
+        } else if (baseUrl.contains("xinference")) {
+            return "xinference";
+        } else if (baseUrl.contains("localai")) {
+            return "localai";
+        } else {
+            return "normal";
         }
     }
 }

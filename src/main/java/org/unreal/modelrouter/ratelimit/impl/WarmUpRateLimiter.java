@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.ratelimit.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.unreal.modelrouter.monitoring.MetricsCollector;
 import org.unreal.modelrouter.ratelimit.RateLimitConfig;
 import org.unreal.modelrouter.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.ratelimit.RateLimiter;
@@ -16,6 +18,9 @@ public class WarmUpRateLimiter implements RateLimiter {
     private final AtomicLong lastRefillTimestamp;
     private final long warmUpPeriod; // 预热期（纳秒）
     private final AtomicLong lastWarmUpTime; // 上次预热时间戳
+    
+    @Autowired(required = false)
+    private MetricsCollector metricsCollector;
 
     public WarmUpRateLimiter(final RateLimitConfig config) {
         this.config = config;
@@ -35,10 +40,16 @@ public class WarmUpRateLimiter implements RateLimiter {
     public boolean tryAcquire(final RateLimitContext context) {
         refill();
         long current = tokens.get();
+        boolean allowed;
         if (current < context.getTokens()) {
-            return false;
+            allowed = false;
+        } else {
+            allowed = tokens.compareAndSet(current, current - context.getTokens());
         }
-        return tokens.compareAndSet(current, current - context.getTokens());
+        
+        // 记录限流指标
+        recordRateLimitMetrics(context, allowed);
+        return allowed;
     }
 
     private void refill() {
@@ -87,5 +98,20 @@ public class WarmUpRateLimiter implements RateLimiter {
      */
     public void resetWarmUp() {
         lastWarmUpTime.set(System.nanoTime());
+    }
+
+    /**
+     * 记录限流指标
+     */
+    private void recordRateLimitMetrics(RateLimitContext context, boolean allowed) {
+        if (metricsCollector != null) {
+            try {
+                String serviceName = context.getServiceType() != null ? 
+                    context.getServiceType().name().toLowerCase() : "unknown";
+                metricsCollector.recordRateLimit(serviceName, "warm_up", allowed);
+            } catch (Exception e) {
+                // 静默处理指标记录异常，不影响业务逻辑
+            }
+        }
     }
 }
