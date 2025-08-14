@@ -22,6 +22,17 @@ public interface LoadBalancer {
     ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp);
 
     /**
+     * 选择一个实例（带服务上下文）
+     * @param instances 可用实例列表
+     * @param clientIp 客户端IP (用于IP Hash策略)
+     * @param serviceType 服务类型
+     * @return 选中的实例
+     */
+    default ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp, String serviceType) {
+        return selectInstance(instances, clientIp);
+    }
+
+    /**
      * 记录实例调用
      * @param instance 被调用的实例
      */

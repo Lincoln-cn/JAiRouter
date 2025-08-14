@@ -1,6 +1,12 @@
 package org.unreal.modelrouter.circuitbreaker;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.unreal.modelrouter.monitoring.MetricsCollector;
+
 public class DefaultCircuitBreaker implements CircuitBreaker {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultCircuitBreaker.class);
     private final String instanceId;
     private final int failureThreshold;
     private final long timeout;
@@ -10,6 +16,9 @@ public class DefaultCircuitBreaker implements CircuitBreaker {
     private int failureCount = 0;
     private int successCount = 0;
     private long lastFailureTime = 0;
+    
+    @Autowired(required = false)
+    private MetricsCollector metricsCollector;
 
     public DefaultCircuitBreaker(String instanceId, int failureThreshold,
                                  long timeout, int successThreshold) {
@@ -41,9 +50,11 @@ public class DefaultCircuitBreaker implements CircuitBreaker {
 
     @Override
     public synchronized void onSuccess() {
+        State previousState = state;
         switch (state) {
             case CLOSED:
                 failureCount = 0;
+                recordCircuitBreakerEvent("success", state.name());
                 break;
             case OPEN:
                 break;
@@ -53,13 +64,16 @@ public class DefaultCircuitBreaker implements CircuitBreaker {
                     // 恢复正常状态
                     state = State.CLOSED;
                     failureCount = 0;
+                    recordCircuitBreakerEvent("state_change", state.name());
                 }
+                recordCircuitBreakerEvent("success", state.name());
                 break;
         }
     }
 
     @Override
     public synchronized void onFailure() {
+        State previousState = state;
         failureCount++;
         lastFailureTime = System.currentTimeMillis();
 
@@ -67,6 +81,7 @@ public class DefaultCircuitBreaker implements CircuitBreaker {
             case CLOSED:
                 if (failureCount >= failureThreshold) {
                     state = State.OPEN;
+                    recordCircuitBreakerEvent("state_change", state.name());
                 }
                 break;
             case OPEN:
@@ -74,12 +89,28 @@ public class DefaultCircuitBreaker implements CircuitBreaker {
             case HALF_OPEN:
                 // 失败则重新进入熔断状态
                 state = State.OPEN;
+                recordCircuitBreakerEvent("state_change", state.name());
                 break;
         }
+        
+        recordCircuitBreakerEvent("failure", state.name());
     }
 
     @Override
     public State getState() {
         return state;
+    }
+
+    /**
+     * 记录熔断器指标
+     */
+    private void recordCircuitBreakerEvent(String event, String currentState) {
+        if (metricsCollector != null) {
+            try {
+                metricsCollector.recordCircuitBreaker(instanceId, currentState, event);
+            } catch (Exception e) {
+                logger.warn("Failed to record circuit breaker metrics: {}", e.getMessage());
+            }
+        }
     }
 }

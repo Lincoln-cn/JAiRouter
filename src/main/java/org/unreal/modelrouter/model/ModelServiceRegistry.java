@@ -241,7 +241,7 @@ public class ModelServiceRegistry {
                 break;
             }
 
-            ModelRouterProperties.ModelInstance candidate = loadBalancer.selectInstance(candidateInstances, clientIp);
+            ModelRouterProperties.ModelInstance candidate = loadBalancer.selectInstance(candidateInstances, clientIp, serviceType.name().toLowerCase());
 
             // 实例级限流检查
             RateLimitContext instanceContext = new RateLimitContext(

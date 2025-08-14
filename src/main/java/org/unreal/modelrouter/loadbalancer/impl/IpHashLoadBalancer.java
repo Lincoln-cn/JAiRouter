@@ -2,8 +2,10 @@ package org.unreal.modelrouter.loadbalancer.impl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.monitoring.MetricsCollector;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -17,6 +19,9 @@ import java.util.TreeMap;
 public class IpHashLoadBalancer implements LoadBalancer {
     private static final Logger logger = LoggerFactory.getLogger(IpHashLoadBalancer.class);
     private final String hashAlgorithm;
+    
+    @Autowired(required = false)
+    private MetricsCollector metricsCollector;
 
     public IpHashLoadBalancer(String hashAlgorithm) {
         this.hashAlgorithm = hashAlgorithm != null ? hashAlgorithm : "md5";
@@ -24,6 +29,11 @@ public class IpHashLoadBalancer implements LoadBalancer {
 
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp) {
+        return selectInstance(instances, clientIp, "unknown");
+    }
+
+    @Override
+    public ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp, String serviceType) {
         if (instances == null || instances.isEmpty()) {
             logger.warn("No instances available for IP hash selection");
             throw new IllegalArgumentException("No instances available");
@@ -32,7 +42,7 @@ public class IpHashLoadBalancer implements LoadBalancer {
         if (clientIp == null || clientIp.trim().isEmpty()) {
             logger.warn("No client IP provided, falling back to random selection");
             // 如果没有客户端IP，回退到随机策略
-            return new RandomLoadBalancer().selectInstance(instances, clientIp);
+            return new RandomLoadBalancer().selectInstance(instances, clientIp, serviceType);
         }
 
         // 使用一致性哈希算法
@@ -58,8 +68,9 @@ public class IpHashLoadBalancer implements LoadBalancer {
             entry = ring.firstEntry();
         }
 
-        logger.debug("Selected instance {} using IP hash strategy for client IP {}",
-                entry.getValue().getName(), clientIp);
+        logger.debug("Selected instance {} using IP hash strategy for client IP {} and service {}",
+                entry.getValue().getName(), clientIp, serviceType);
+        recordLoadBalancerSelection(serviceType, "ip_hash", entry.getValue().getName());
         return entry.getValue();
     }
 
@@ -79,6 +90,19 @@ public class IpHashLoadBalancer implements LoadBalancer {
             logger.warn("Hash algorithm {} not available, falling back to string hash", hashAlgorithm);
             // 如果算法不支持，使用简单的字符串hash
             return Math.abs(input.hashCode());
+        }
+    }
+
+    /**
+     * 记录负载均衡器选择指标
+     */
+    private void recordLoadBalancerSelection(String service, String strategy, String selectedInstance) {
+        if (metricsCollector != null) {
+            try {
+                metricsCollector.recordLoadBalancer(service, strategy, selectedInstance);
+            } catch (Exception e) {
+                logger.warn("Failed to record load balancer metrics: {}", e.getMessage());
+            }
         }
     }
 }
