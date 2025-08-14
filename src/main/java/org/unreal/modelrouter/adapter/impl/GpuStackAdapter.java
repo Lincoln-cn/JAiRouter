@@ -10,6 +10,7 @@ import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 /**
  * GPUStack Adapter - 适配GPUStack API格式
@@ -18,7 +19,7 @@ public class GpuStackAdapter extends BaseAdapter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public GpuStackAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+    public GpuStackAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
         super(registry, metricsCollector);
     }
 

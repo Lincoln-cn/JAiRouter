@@ -10,6 +10,7 @@ import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 /**
  * LocalAI Adapter - 适配LocalAI API格式
@@ -19,7 +20,7 @@ public class LocalAiAdapter extends BaseAdapter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public LocalAiAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+    public LocalAiAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
         super(registry, metricsCollector);
     }
 

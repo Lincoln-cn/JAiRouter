@@ -4,8 +4,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.monitoring.DefaultMetricsCollector;
-import org.unreal.modelrouter.monitoring.MonitoringProperties;
+import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
+import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 
 import static org.junit.jupiter.api.Assertions.*;
 

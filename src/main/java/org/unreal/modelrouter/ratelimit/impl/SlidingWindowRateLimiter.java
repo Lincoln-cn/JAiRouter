@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.ratelimit.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.ratelimit.RateLimitConfig;
 import org.unreal.modelrouter.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.ratelimit.RateLimiter;

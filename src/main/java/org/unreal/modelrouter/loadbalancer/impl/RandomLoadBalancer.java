@@ -7,11 +7,10 @@ import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.circuitbreaker.DefaultCircuitBreaker;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 

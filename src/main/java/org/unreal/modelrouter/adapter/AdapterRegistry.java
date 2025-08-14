@@ -4,7 +4,7 @@ import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.adapter.impl.*;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 import java.util.HashMap;
 import java.util.Map;
