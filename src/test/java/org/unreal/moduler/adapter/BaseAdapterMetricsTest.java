@@ -9,8 +9,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
-import reactor.core.publisher.Mono;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;

@@ -9,6 +9,7 @@ import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.dto.ChatDTO;
 import org.unreal.modelrouter.dto.EmbeddingDTO;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 /**
  * Ollama Adapter - 适配Ollama API格式的示例
@@ -18,7 +19,7 @@ public class OllamaAdapter extends BaseAdapter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public OllamaAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+    public OllamaAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
         super(registry, metricsCollector);
     }
 

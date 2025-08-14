@@ -10,10 +10,11 @@ import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.dto.ImageEditDTO;
 import org.unreal.modelrouter.dto.SttDTO;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 public class NormalOpenAiAdapter extends BaseAdapter {
 
-    public NormalOpenAiAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+    public NormalOpenAiAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
         super(registry, metricsCollector);
     }
 

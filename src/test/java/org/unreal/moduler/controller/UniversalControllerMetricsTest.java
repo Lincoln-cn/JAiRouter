@@ -16,7 +16,7 @@ import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.controller.UniversalController;
 import org.unreal.modelrouter.dto.ChatDTO;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 

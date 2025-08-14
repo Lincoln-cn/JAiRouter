@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.unreal.modelrouter.ModelRouterApplication;
-import org.unreal.modelrouter.monitoring.DefaultMetricsCollector;
-import org.unreal.modelrouter.monitoring.MonitoringProperties;
+import org.springframework.test.context.ContextConfiguration;
+import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
+import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * 监控集成测试
  * 验证监控组件在Spring Boot环境中的集成
  */
-@SpringBootTest(classes = ModelRouterApplication.class)
+@SpringBootTest(classes = TestMonitoringConfiguration.class)
+@ContextConfiguration(classes = TestMonitoringConfiguration.class)
 @TestPropertySource(properties = {
     "monitoring.metrics.enabled=true",
     "monitoring.metrics.prefix=integration_test",

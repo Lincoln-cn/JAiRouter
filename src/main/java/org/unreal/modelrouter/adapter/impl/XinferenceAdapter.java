@@ -10,6 +10,7 @@ import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 /**
  * Xinference Adapter - 适配Xinference API格式
@@ -19,7 +20,7 @@ public class XinferenceAdapter extends BaseAdapter {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public XinferenceAdapter(ModelServiceRegistry registry, org.unreal.modelrouter.monitoring.MetricsCollector metricsCollector) {
+    public XinferenceAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
         super(registry, metricsCollector);
     }
 

@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.util.NetUtils;
 
 import java.net.URI;

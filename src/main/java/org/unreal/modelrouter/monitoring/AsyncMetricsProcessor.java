@@ -6,9 +6,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Conditional;
 
 import jakarta.annotation.PreDestroy;
+import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCircuitBreaker;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
+import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

@@ -3,7 +3,7 @@ package org.unreal.modelrouter.circuitbreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 public class DefaultCircuitBreaker implements CircuitBreaker {
     private static final Logger logger = LoggerFactory.getLogger(DefaultCircuitBreaker.class);

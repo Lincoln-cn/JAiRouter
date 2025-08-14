@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

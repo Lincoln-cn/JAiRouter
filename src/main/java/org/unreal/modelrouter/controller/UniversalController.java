@@ -15,11 +15,9 @@ import org.unreal.modelrouter.adapter.AdapterRegistry;
 import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.MetricsCollector;
+import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
-
-import java.time.Instant;
 
 @RestController
 @RequestMapping("/v1")
