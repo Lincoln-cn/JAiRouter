@@ -6,6 +6,8 @@ JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关
 
 ---
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
+
 ## ✨ 核心特性
 
 | 特性类别 | 支持内容 |
