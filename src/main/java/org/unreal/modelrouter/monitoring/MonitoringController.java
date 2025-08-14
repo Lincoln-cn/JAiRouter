@@ -25,17 +25,29 @@ public class MonitoringController {
     private final MetricsCircuitBreaker circuitBreaker;
     private final MetricsMemoryManager memoryManager;
     private final DynamicMonitoringConfigUpdater configUpdater;
+    private final MetricsErrorHandler errorHandler;
+    private final MetricsDegradationStrategy degradationStrategy;
+    private final MetricsCacheAndRetry cacheAndRetry;
+    private final MonitoringHealthChecker healthChecker;
 
     public MonitoringController(MonitoringProperties monitoringProperties,
                               AsyncMetricsCollector asyncMetricsCollector,
                               MetricsCircuitBreaker circuitBreaker,
                               MetricsMemoryManager memoryManager,
-                              DynamicMonitoringConfigUpdater configUpdater) {
+                              DynamicMonitoringConfigUpdater configUpdater,
+                              MetricsErrorHandler errorHandler,
+                              MetricsDegradationStrategy degradationStrategy,
+                              MetricsCacheAndRetry cacheAndRetry,
+                              MonitoringHealthChecker healthChecker) {
         this.monitoringProperties = monitoringProperties;
         this.asyncMetricsCollector = asyncMetricsCollector;
         this.circuitBreaker = circuitBreaker;
         this.memoryManager = memoryManager;
         this.configUpdater = configUpdater;
+        this.errorHandler = errorHandler;
+        this.degradationStrategy = degradationStrategy;
+        this.cacheAndRetry = cacheAndRetry;
+        this.healthChecker = healthChecker;
     }
 
     /**
@@ -250,35 +262,138 @@ public class MonitoringController {
     }
 
     /**
+     * 获取错误处理统计信息
+     */
+    @GetMapping("/error-handler")
+    public ResponseEntity<MetricsErrorHandler.MetricsErrorStats> getErrorHandlerStats() {
+        try {
+            MetricsErrorHandler.MetricsErrorStats stats = errorHandler.getErrorStats();
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            logger.error("Error getting error handler stats", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 重置错误状态
+     */
+    @PostMapping("/error-handler/reset")
+    public ResponseEntity<String> resetErrorState(@RequestParam String component, @RequestParam String operation) {
+        try {
+            errorHandler.resetErrorState(component, operation);
+            logger.info("Reset error state for component: {}, operation: {}", component, operation);
+            return ResponseEntity.ok("Error state reset successfully");
+        } catch (Exception e) {
+            logger.error("Error resetting error state", e);
+            return ResponseEntity.internalServerError().body("Failed to reset error state: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取降级策略状态
+     */
+    @GetMapping("/degradation")
+    public ResponseEntity<MetricsDegradationStrategy.DegradationStatus> getDegradationStatus() {
+        try {
+            MetricsDegradationStrategy.DegradationStatus status = degradationStrategy.getDegradationStatus();
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            logger.error("Error getting degradation status", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 设置降级级别
+     */
+    @PostMapping("/degradation/level")
+    public ResponseEntity<String> setDegradationLevel(@RequestParam String level) {
+        try {
+            MetricsDegradationStrategy.DegradationLevel degradationLevel = 
+                MetricsDegradationStrategy.DegradationLevel.valueOf(level.toUpperCase());
+            degradationStrategy.setDegradationLevel(degradationLevel);
+            logger.info("Set degradation level to: {}", degradationLevel);
+            return ResponseEntity.ok("Degradation level set to: " + degradationLevel.getDescription());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid degradation level: " + level);
+        } catch (Exception e) {
+            logger.error("Error setting degradation level", e);
+            return ResponseEntity.internalServerError().body("Failed to set degradation level: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 启用/禁用自动降级模式
+     */
+    @PostMapping("/degradation/auto-mode")
+    public ResponseEntity<String> setAutoMode(@RequestParam boolean enabled) {
+        try {
+            degradationStrategy.setAutoModeEnabled(enabled);
+            logger.info("Auto degradation mode: {}", enabled ? "enabled" : "disabled");
+            return ResponseEntity.ok("Auto mode " + (enabled ? "enabled" : "disabled"));
+        } catch (Exception e) {
+            logger.error("Error setting auto mode", e);
+            return ResponseEntity.internalServerError().body("Failed to set auto mode: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 强制恢复到正常模式
+     */
+    @PostMapping("/degradation/force-recovery")
+    public ResponseEntity<String> forceRecovery() {
+        try {
+            degradationStrategy.forceRecovery();
+            logger.info("Forced recovery to normal mode");
+            return ResponseEntity.ok("Forced recovery completed");
+        } catch (Exception e) {
+            logger.error("Error during forced recovery", e);
+            return ResponseEntity.internalServerError().body("Forced recovery failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取缓存和重试统计信息
+     */
+    @GetMapping("/cache-retry")
+    public ResponseEntity<MetricsCacheAndRetry.CacheStats> getCacheRetryStats() {
+        try {
+            MetricsCacheAndRetry.CacheStats stats = cacheAndRetry.getCacheStats();
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            logger.error("Error getting cache retry stats", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 清空指标缓存
+     */
+    @PostMapping("/cache-retry/clear-cache")
+    public ResponseEntity<String> clearCache() {
+        try {
+            cacheAndRetry.clearCache();
+            logger.info("Metrics cache cleared");
+            return ResponseEntity.ok("Cache cleared successfully");
+        } catch (Exception e) {
+            logger.error("Error clearing cache", e);
+            return ResponseEntity.internalServerError().body("Failed to clear cache: " + e.getMessage());
+        }
+    }
+
+    /**
      * 健康检查端点
      */
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> getHealth() {
         try {
+            MonitoringHealthChecker.HealthCheckResult result = healthChecker.performHealthCheck();
+            
             Map<String, Object> health = new HashMap<>();
-            
-            // 检查各组件状态
-            boolean isHealthy = true;
-            StringBuilder issues = new StringBuilder();
-            
-            // 检查内存使用
-            MetricsMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
-            if (memoryStats.getMemoryUsageRatio() > 0.9) {
-                isHealthy = false;
-                issues.append("High memory usage: ").append(String.format("%.2f%%", memoryStats.getMemoryUsageRatio() * 100)).append("; ");
-            }
-            
-            // 检查熔断器状态
-            MetricsCircuitBreaker.CircuitBreakerStats cbStats = circuitBreaker.getStats();
-            if ("OPEN".equals(cbStats.getState())) {
-                isHealthy = false;
-                issues.append("Circuit breaker is OPEN; ");
-            }
-            
-            health.put("status", isHealthy ? "UP" : "DOWN");
-            health.put("details", isHealthy ? "All systems operational" : issues.toString());
-            health.put("memoryUsage", String.format("%.2f%%", memoryStats.getMemoryUsageRatio() * 100));
-            health.put("circuitBreakerState", cbStats.getState());
+            health.put("status", result.isHealthy() ? "UP" : "DOWN");
+            health.put("details", result.getDetails());
+            health.put("issues", result.getIssues());
             
             return ResponseEntity.ok(health);
         } catch (Exception e) {
