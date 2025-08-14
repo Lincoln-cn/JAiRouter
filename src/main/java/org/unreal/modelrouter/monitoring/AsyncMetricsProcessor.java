@@ -2,6 +2,7 @@ package org.unreal.modelrouter.monitoring;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Conditional;
 
@@ -47,8 +48,9 @@ public class AsyncMetricsProcessor {
     private final AtomicLong droppedCount = new AtomicLong(0);
     private final AtomicLong queueSize = new AtomicLong(0);
 
+
     public AsyncMetricsProcessor(MonitoringProperties monitoringProperties, 
-                               MetricsCollector metricsCollector,
+                               @Lazy MetricsCollector metricsCollector,
                                MetricsCircuitBreaker circuitBreaker) {
         this.monitoringProperties = monitoringProperties;
         this.metricsCollector = metricsCollector;
