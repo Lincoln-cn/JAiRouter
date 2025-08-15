@@ -1,0 +1,128 @@
+site_name: JAiRouter 文档
+site_description: AI模型服务路由和负载均衡网关
+site_author: JAiRouter Team
+site_url: https://jairouter.github.io/jairouter
+
+repo_name: jairouter/jairouter
+repo_url: https://github.com/jairouter/jairouter
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: zh
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - scheme: slate
+      primary: blue
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: 切换到浅色模式
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.action.edit
+    - content.tabs.link
+
+plugins:
+  - search:
+      lang: 
+        - zh
+        - en
+  - git-revision-date-localized:
+      type: date
+      enable_creation_date: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - 首页: index.md
+  - 快速开始:
+    - getting-started/index.md
+    - 安装指南: getting-started/installation.md
+    - 快速开始: getting-started/quick-start.md
+    - 第一步: getting-started/first-steps.md
+  - 配置指南:
+    - configuration/index.md
+    - 应用配置: configuration/application-config.md
+    - 动态配置: configuration/dynamic-config.md
+    - 负载均衡: configuration/load-balancing.md
+    - 限流配置: configuration/rate-limiting.md
+    - 熔断器: configuration/circuit-breaker.md
+  - API参考:
+    - api-reference/index.md
+    - 统一API: api-reference/universal-api.md
+    - 管理API: api-reference/management-api.md
+    - 监控API: api-reference/monitoring-api.md
+    - OpenAPI规范: api-reference/openapi-spec.md
+  - 部署指南:
+    - deployment/index.md
+    - Docker部署: deployment/docker.md
+    - Kubernetes部署: deployment/kubernetes.md
+    - 生产环境: deployment/production.md
+    - 中国优化: deployment/china-optimization.md
+  - 监控指南:
+    - monitoring/index.md
+    - 监控设置: monitoring/setup.md
+    - 仪表板: monitoring/dashboards.md
+    - 告警配置: monitoring/alerts.md
+    - 故障排查: monitoring/troubleshooting.md
+  - 开发指南:
+    - development/index.md
+    - 架构说明: development/architecture.md
+    - 贡献指南: development/contributing.md
+    - 测试指南: development/testing.md
+    - 代码质量: development/code-quality.md
+  - 故障排查:
+    - troubleshooting/index.md
+    - 常见问题: troubleshooting/common-issues.md
+    - 性能问题: troubleshooting/performance.md
+    - 调试指南: troubleshooting/debugging.md
+  - 参考资料:
+    - reference/index.md
+    - 更新日志: reference/changelog.md
+    - 发展路线图: reference/roadmap.md
+    - 常见问题: reference/faq.md
+    - 术语表: reference/glossary.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/jairouter/jairouter
+  version:
+    provider: mike
+    default: latest
+
+copyright: Copyright &copy; 2025 JAiRouter Team
