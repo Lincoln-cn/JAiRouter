@@ -1,0 +1,438 @@
+# JAiRouter Prometheus告警规则配置
+# 定义各种监控指标的告警阈值和条件
+
+groups:
+  # JAiRouter基础服务告警
+  - name: jairouter.basic
+    interval: 30s
+    rules:
+      # 服务可用性告警
+      - alert: JAiRouterServiceDown
+        expr: up{job="jairouter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter服务不可用"
+          description: "JAiRouter服务实例 {{ $labels.instance }} 已停止响应超过1分钟"
+
+      # 高错误率告警
+      - alert: JAiRouterHighErrorRate
+        expr: |
+          (
+            sum(rate(jairouter_requests_total{status=~"4..|5.."}[5m])) by (instance) /
+            sum(rate(jairouter_requests_total[5m])) by (instance)
+          ) * 100 > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter错误率过高"
+          description: "实例 {{ $labels.instance }} 在过去5分钟内的错误率为 {{ $value | humanizePercentage }}，超过10%阈值"
+
+      # 严重错误率告警
+      - alert: JAiRouterCriticalErrorRate
+        expr: |
+          (
+            sum(rate(jairouter_requests_total{status=~"5.."}[5m])) by (instance) /
+            sum(rate(jairouter_requests_total[5m])) by (instance)
+          ) * 100 > 5
+        for: 1m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter严重错误率过高"
+          description: "实例 {{ $labels.instance }} 在过去5分钟内的5xx错误率为 {{ $value | humanizePercentage }}，超过5%阈值"
+
+  # JAiRouter性能告警
+  - name: jairouter.performance
+    interval: 30s
+    rules:
+      # 响应时间告警
+      - alert: JAiRouterHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(jairouter_request_duration_seconds_bucket[5m])) by (le, service)
+          ) > 2
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter响应时间过高"
+          description: "服务 {{ $labels.service }} 的95%分位响应时间为 {{ $value | humanizeDuration }}，超过2秒阈值"
+
+      # 严重响应时间告警
+      - alert: JAiRouterCriticalLatency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(jairouter_request_duration_seconds_bucket[5m])) by (le, service)
+          ) > 5
+        for: 1m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter响应时间严重过高"
+          description: "服务 {{ $labels.service }} 的95%分位响应时间为 {{ $value | humanizeDuration }}，超过5秒严重阈值"
+
+      # 请求量异常告警
+      - alert: JAiRouterLowRequestVolume
+        expr: |
+          sum(rate(jairouter_requests_total[5m])) by (instance) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter请求量异常低"
+          description: "实例 {{ $labels.instance }} 在过去5分钟内的请求率为 {{ $value | humanize }} req/s，可能存在问题"
+
+  # JAiRouter后端服务告警
+  - name: jairouter.backend
+    interval: 30s
+    rules:
+      # 后端服务不可用告警
+      - alert: JAiRouterBackendDown
+        expr: jairouter_backend_health == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter后端服务不可用"
+          description: "后端服务 {{ $labels.adapter }}-{{ $labels.instance }} 健康检查失败超过1分钟"
+
+      # 后端服务响应时间告警
+      - alert: JAiRouterBackendHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(jairouter_backend_call_duration_seconds_bucket[5m])) by (le, adapter)
+          ) > 3
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter后端服务响应慢"
+          description: "后端适配器 {{ $labels.adapter }} 的95%分位响应时间为 {{ $value | humanizeDuration }}，超过3秒阈值"
+
+      # 后端服务错误率告警
+      - alert: JAiRouterBackendHighErrorRate
+        expr: |
+          (
+            sum(rate(jairouter_backend_calls_total{status="error"}[5m])) by (adapter) /
+            sum(rate(jairouter_backend_calls_total[5m])) by (adapter)
+          ) * 100 > 15
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter后端服务错误率高"
+          description: "后端适配器 {{ $labels.adapter }} 在过去5分钟内的错误率为 {{ $value | humanizePercentage }}，超过15%阈值"
+
+  # JAiRouter基础设施告警
+  - name: jairouter.infrastructure
+    interval: 30s
+    rules:
+      # 熔断器开启告警
+      - alert: JAiRouterCircuitBreakerOpen
+        expr: jairouter_circuit_breaker_state == 2
+        for: 30s
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter熔断器开启"
+          description: "服务 {{ $labels.service }} 的熔断器已开启，可能存在下游服务问题"
+
+      # 限流器触发告警
+      - alert: JAiRouterRateLimitTriggered
+        expr: |
+          sum(rate(jairouter_rate_limit_events_total{result="rejected"}[5m])) by (service) > 10
+        for: 1m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter限流器频繁触发"
+          description: "服务 {{ $labels.service }} 的限流器在过去5分钟内拒绝了 {{ $value | humanize }} 个请求/秒"
+
+      # 负载均衡器实例不均衡告警
+      - alert: JAiRouterLoadBalancerImbalance
+        expr: |
+          (
+            max(jairouter_loadbalancer_selections_total) by (service) -
+            min(jairouter_loadbalancer_selections_total) by (service)
+          ) / max(jairouter_loadbalancer_selections_total) by (service) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter负载均衡不均匀"
+          description: "服务 {{ $labels.service }} 的负载分布不均匀，最大和最小实例请求量差异超过50%"
+
+  # JAiRouter资源告警
+  - name: jairouter.resources
+    interval: 30s
+    rules:
+      # JVM内存使用告警
+      - alert: JAiRouterHighMemoryUsage
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 80
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter内存使用率高"
+          description: "实例 {{ $labels.instance }} 的JVM堆内存使用率为 {{ $value | humanizePercentage }}，超过80%阈值"
+
+      # JVM内存严重不足告警
+      - alert: JAiRouterCriticalMemoryUsage
+        expr: |
+          (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) * 100 > 90
+        for: 1m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter内存使用率严重过高"
+          description: "实例 {{ $labels.instance }} 的JVM堆内存使用率为 {{ $value | humanizePercentage }}，超过90%严重阈值"
+
+      # GC频率告警
+      - alert: JAiRouterHighGCRate
+        expr: |
+          rate(jvm_gc_collection_seconds_count[5m]) > 0.2
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter GC频率过高"
+          description: "实例 {{ $labels.instance }} 的GC频率为 {{ $value | humanize }} 次/秒，可能存在内存问题"
+
+      # 线程数告警
+      - alert: JAiRouterHighThreadCount
+        expr: |
+          jvm_threads_current > 200
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter线程数过多"
+          description: "实例 {{ $labels.instance }} 的当前线程数为 {{ $value }}，超过200个线程"
+
+  # JAiRouter业务指标告警
+  - name: jairouter.business
+    interval: 30s
+    rules:
+      # 模型调用失败率告警
+      - alert: JAiRouterModelCallFailureRate
+        expr: |
+          (
+            sum(rate(jairouter_backend_calls_total{status="error"}[5m])) by (service, adapter) /
+            sum(rate(jairouter_backend_calls_total[5m])) by (service, adapter)
+          ) * 100 > 20
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter模型调用失败率高"
+          description: "服务 {{ $labels.service }} 的适配器 {{ $labels.adapter }} 在过去5分钟内的失败率为 {{ $value | humanizePercentage }}，超过20%阈值"
+
+      # 请求大小异常告警
+      - alert: JAiRouterLargeRequestSize
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(jairouter_request_size_bytes_bucket[5m])) by (le, service)
+          ) > 1048576
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter请求大小异常"
+          description: "服务 {{ $labels.service }} 的95%分位请求大小为 {{ $value | humanizeBytes }}，超过1MB阈值"
+
+      # 响应大小异常告警
+      - alert: JAiRouterLargeResponseSize
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(jairouter_response_size_bytes_bucket[5m])) by (le, service)
+          ) > 5242880
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter响应大小异常"
+          description: "服务 {{ $labels.service }} 的95%分位响应大小为 {{ $value | humanizeBytes }}，超过5MB阈值"
+
+      # 并发连接数告警
+      - alert: JAiRouterHighConcurrentConnections
+        expr: |
+          jairouter_active_connections > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter并发连接数过高"
+          description: "服务 {{ $labels.service }} 的活跃连接数为 {{ $value }}，超过100个连接"
+
+      # 请求队列积压告警
+      - alert: JAiRouterRequestQueueBacklog
+        expr: |
+          jairouter_request_queue_size > 50
+        for: 1m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter请求队列积压"
+          description: "服务 {{ $labels.service }} 的请求队列大小为 {{ $value }}，存在积压情况"
+
+  # JAiRouter安全告警
+  - name: jairouter.security
+    interval: 30s
+    rules:
+      # 异常IP访问告警
+      - alert: JAiRouterSuspiciousIPActivity
+        expr: |
+          sum(rate(jairouter_requests_total[5m])) by (client_ip) > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter检测到可疑IP活动"
+          description: "IP地址 {{ $labels.client_ip }} 在过去5分钟内的请求率为 {{ $value | humanize }} req/s，可能存在异常访问"
+
+      # 认证失败率告警
+      - alert: JAiRouterHighAuthFailureRate
+        expr: |
+          (
+            sum(rate(jairouter_requests_total{status="401"}[5m])) /
+            sum(rate(jairouter_requests_total[5m]))
+          ) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter认证失败率高"
+          description: "在过去5分钟内的认证失败率为 {{ $value | humanizePercentage }}，可能存在安全威胁"
+
+      # 频繁4xx错误告警
+      - alert: JAiRouterHighClientErrorRate
+        expr: |
+          (
+            sum(rate(jairouter_requests_total{status=~"4.."}[5m])) /
+            sum(rate(jairouter_requests_total[5m]))
+          ) * 100 > 20
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter客户端错误率高"
+          description: "在过去5分钟内的4xx错误率为 {{ $value | humanizePercentage }}，可能存在客户端配置问题"
+
+  # JAiRouter容量规划告警
+  - name: jairouter.capacity
+    interval: 60s
+    rules:
+      # 请求量增长趋势告警
+      - alert: JAiRouterRequestVolumeGrowth
+        expr: |
+          (
+            sum(rate(jairouter_requests_total[1h])) -
+            sum(rate(jairouter_requests_total[1h] offset 24h))
+          ) / sum(rate(jairouter_requests_total[1h] offset 24h)) * 100 > 50
+        for: 5m
+        labels:
+          severity: info
+          service: jairouter
+        annotations:
+          summary: "JAiRouter请求量显著增长"
+          description: "相比24小时前，当前请求量增长了 {{ $value | humanizePercentage }}，需要关注容量规划"
+
+      # 磁盘空间告警
+      - alert: JAiRouterLowDiskSpace
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"} /
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) * 100 < 20
+        for: 5m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter服务器磁盘空间不足"
+          description: "服务器磁盘可用空间仅剩 {{ $value | humanizePercentage }}，需要清理或扩容"
+
+      # CPU使用率告警
+      - alert: JAiRouterHighCPUUsage
+        expr: |
+          (
+            100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          ) > 80
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter服务器CPU使用率高"
+          description: "服务器 {{ $labels.instance }} 的CPU使用率为 {{ $value | humanizePercentage }}，超过80%阈值"
+
+  # JAiRouter依赖服务告警
+  - name: jairouter.dependencies
+    interval: 30s
+    rules:
+      # 数据库连接告警
+      - alert: JAiRouterDatabaseConnectionIssue
+        expr: |
+          jairouter_database_connections_active / jairouter_database_connections_max > 0.8
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter数据库连接池使用率高"
+          description: "数据库连接池使用率为 {{ $value | humanizePercentage }}，可能影响性能"
+
+      # 缓存命中率告警
+      - alert: JAiRouterLowCacheHitRate
+        expr: |
+          (
+            sum(rate(jairouter_cache_hits_total[5m])) /
+            (sum(rate(jairouter_cache_hits_total[5m])) + sum(rate(jairouter_cache_misses_total[5m])))
+          ) * 100 < 70
+        for: 5m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter缓存命中率低"
+          description: "缓存命中率为 {{ $value | humanizePercentage }}，低于70%阈值，可能影响性能"
+
+      # 外部API调用超时告警
+      - alert: JAiRouterExternalAPITimeout
+        expr: |
+          sum(rate(jairouter_external_api_timeouts_total[5m])) > 5
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter外部API调用超时频繁"
+          description: "外部API调用超时频率为 {{ $value | humanize }} 次/秒，可能存在网络或服务问题"
