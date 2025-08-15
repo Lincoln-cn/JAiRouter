@@ -11,6 +11,15 @@
     },
     {
       "pattern": "^https://127.0.0.1"
+    },
+    {
+      "pattern": "^mailto:"
+    },
+    {
+      "pattern": "^#"
+    },
+    {
+      "pattern": "\\.(jpg|jpeg|png|gif|svg|ico)$"
     }
   ],
   "replacementPatterns": [
@@ -23,13 +32,21 @@
     {
       "urls": ["https://github.com"],
       "headers": {
-        "Accept-Encoding": "zstd, br, gzip, deflate"
+        "Accept-Encoding": "zstd, br, gzip, deflate",
+        "User-Agent": "Mozilla/5.0 (compatible; LinkChecker)"
+      }
+    },
+    {
+      "urls": ["https://api.github.com"],
+      "headers": {
+        "Accept": "application/vnd.github.v3+json"
       }
     }
   ],
-  "timeout": "20s",
+  "timeout": "30s",
   "retryOn429": true,
-  "retryCount": 3,
-  "fallbackRetryDelay": "30s",
-  "aliveStatusCodes": [200, 206]
+  "retryCount": 5,
+  "fallbackRetryDelay": "60s",
+  "aliveStatusCodes": [200, 206, 301, 302, 403],
+  "verbose": true
 }

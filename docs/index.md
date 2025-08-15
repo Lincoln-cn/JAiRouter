@@ -146,9 +146,9 @@ graph TB
 - **[API 参考](api-reference/index.md)** - 完整的 API 文档
 - **[部署指南](deployment/index.md)** - Docker、Kubernetes 部署方案
 - **[监控指南](monitoring/index.md)** - 监控配置和使用说明
-- **[开发指南](development/index.md)** - 架构说明和贡献指南
-- **[故障排查](troubleshooting/index.md)** - 常见问题和解决方案
-- **[参考资料](reference/index.md)** - 更新日志、FAQ 等
+- **[开发指南](en/development/index.md)** - 架构说明和贡献指南
+- **[故障排查](en/troubleshooting/index.md)** - 常见问题和解决方案
+- **[参考资料](en/reference/index.md)** - 更新日志、FAQ 等
 
 ## 社区与支持
 
