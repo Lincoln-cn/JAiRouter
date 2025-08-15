@@ -1,30 +1,84 @@
 # API 参考
 
-JAiRouter 提供了完整的 RESTful API，包括 OpenAI 兼容的统一 API 和管理 API。
+JAiRouter 提供兼容 OpenAI 格式的统一 API 接口，支持多种 AI 模型服务类型。所有接口都遵循 RESTful 设计原则，使用 JSON 格式进行数据交换。
 
 ## API 概述
 
-JAiRouter 的 API 分为以下几个主要类别：
+JAiRouter 的 API 分为两大类：
 
-- **统一 API** - OpenAI 兼容的 `/v1/*` 接口
-- **管理 API** - 配置管理和实例管理接口
-- **监控 API** - 健康检查和指标监控接口
+### 统一模型接口 (`/v1/*`)
+提供兼容 OpenAI 格式的标准化接口，支持以下服务类型：
+- **聊天完成** - `/v1/chat/completions`
+- **文本嵌入** - `/v1/embeddings`
+- **重排序** - `/v1/rerank`
+- **文本转语音** - `/v1/audio/speech`
+- **语音转文本** - `/v1/audio/transcriptions`
+- **图像生成** - `/v1/images/generations`
+- **图像编辑** - `/v1/images/edits`
 
-## API 特性
+### 管理接口
+提供系统配置和实例管理功能：
+- **配置管理** - 动态配置更新和查询
+- **实例管理** - 服务实例的添加、删除和状态管理
+- **健康检查** - 服务健康状态监控
 
-- **OpenAI 兼容** - 完全兼容 OpenAI API 格式
-- **RESTful 设计** - 遵循 REST 架构原则
-- **JSON 格式** - 统一使用 JSON 数据格式
-- **错误处理** - 标准化的错误响应格式
-- **认证支持** - 支持 API Key 认证
+## 认证方式
 
-## API 文档
+所有 API 接口都支持通过 `Authorization` 请求头进行认证：
 
-- [统一 API](universal-api.md) - OpenAI 兼容的核心 API
-- [管理 API](management-api.md) - 配置和实例管理
-- [监控 API](monitoring-api.md) - 健康检查和监控
-- [OpenAPI 规范](openapi-spec.md) - 完整的 API 规范文档
+```http
+Authorization: Bearer your-api-key
+```
 
-## 快速开始
+## 通用响应格式
 
-查看 [快速开始指南](../getting-started/quick-start.md) 了解如何使用 API。
+### 成功响应
+所有成功的 API 调用都会返回 HTTP 状态码 200，响应体格式根据具体接口而定。
+
+### 错误响应
+当请求失败时，API 会返回相应的 HTTP 状态码和错误信息：
+
+```json
+{
+  "error": {
+    "message": "错误描述",
+    "type": "error_type",
+    "code": "error_code"
+  }
+}
+```
+
+### 常见状态码
+
+| 状态码 | 说明 |
+|--------|------|
+| 200 | 请求成功 |
+| 400 | 请求参数错误 |
+| 401 | 认证失败 |
+| 403 | 权限不足 |
+| 404 | 资源不存在 |
+| 429 | 请求频率超限 |
+| 500 | 服务器内部错误 |
+| 503 | 服务不可用 |
+
+## 限流和熔断
+
+JAiRouter 内置了限流和熔断机制：
+
+- **限流**：支持令牌桶、漏桶、滑动窗口等算法
+- **熔断**：当服务异常率超过阈值时自动熔断保护
+- **负载均衡**：支持随机、轮询、最少连接、IP 哈希等策略
+
+## 监控指标
+
+所有 API 调用都会记录以下监控指标：
+- 请求次数和响应时间
+- 成功率和错误率
+- 请求和响应大小
+- 服务健康状态
+
+## 接口文档导航
+
+- [统一 API 接口](universal-api.md) - `/v1/*` 接口详细说明
+- [管理 API 接口](management-api.md) - 配置和实例管理接口
+- [OpenAPI 规范](openapi-spec.md) - 交互式 API 文档
