@@ -1,17 +1,19 @@
-# Docker 部署
+# Docker 部署指南
 
-JAiRouter 提供完整的 Docker 化部署方案，支持多环境配置和容器编排。本文档详细介绍如何使用 Docker 部署 JAiRouter。
+JAiRouter 提供完整的 Docker 化部署方案，支持多环境配置和容器编排。本文档详细介绍如何使用 Docker 部署 JAiRouter，包括单机部署、集群部署和监控集成。
 
 ## Docker 部署概述
 
-### 特性
+### 核心特性
 
 - **多阶段构建**：优化镜像大小，生产镜像约 200MB
 - **多环境支持**：开发、测试、生产环境独立配置
-- **中国加速**：专门优化的阿里云 Maven 镜像构建
+- **中国网络优化**：专门优化的阿里云 Maven 镜像构建
 - **安全最佳实践**：非 root 用户，最小权限运行
-- **健康检查**：内置应用健康监控
-- **监控集成**：支持 Prometheus + Grafana 监控栈
+- **健康检查**：内置应用健康监控和自动恢复
+- **监控集成**：完整的 Prometheus + Grafana 监控栈
+- **日志管理**：结构化日志和日志轮转
+- **配置管理**：支持动态配置和热更新
 
 ### 镜像信息
 
@@ -34,6 +36,9 @@ docker pull jairouter/model-router:v1.0.0
 
 # 中国用户（使用阿里云镜像）
 docker pull registry.cn-hangzhou.aliyuncs.com/jairouter/model-router:latest
+
+# 验证镜像
+docker images | grep jairouter
 ```
 
 ### 2. 基础运行
@@ -65,12 +70,12 @@ docker run -d \
 
 ### 构建方式选择
 
-| 构建方式 | 适用用户 | 命令 | 特点 |
-|----------|----------|------|------|
-| **中国加速** | 中国用户 | `./scripts/docker-build-china.sh` | 使用阿里云 Maven 镜像，速度提升 5-10 倍 |
-| **标准构建** | 国际用户 | `./scripts/docker-build.sh` | 使用 Maven Central，稳定可靠 |
-| **Maven 构建** | 开发者 | `mvn dockerfile:build -Pdocker` | 集成构建流程 |
-| **Jib 构建** | 高级用户 | `mvn jib:dockerBuild -Pjib` | 无需 Docker，更快构建 |
+| 构建方式 | 适用用户 | 命令 | 特点 | 构建时间 |
+|----------|----------|------|------|----------|
+| **中国加速** | 中国用户 | `./scripts/docker-build-china.sh` | 使用阿里云 Maven 镜像，速度提升 5-10 倍 | ~3-5 分钟 |
+| **标准构建** | 国际用户 | `./scripts/docker-build.sh` | 使用 Maven Central，稳定可靠 | ~8-15 分钟 |
+| **Maven 构建** | 开发者 | `mvn dockerfile:build -Pdocker` | 集成构建流程，支持多 profile | ~5-10 分钟 |
+| **Jib 构建** | 高级用户 | `mvn jib:dockerBuild -Pjib` | 无需 Docker，更快构建，支持分层 | ~2-4 分钟 |
 
 ### 1. 使用构建脚本（推荐）
 
