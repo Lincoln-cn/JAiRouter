@@ -58,7 +58,7 @@ plugins:
           site_name: "JAiRouter Documentation"
           nav_translations:
             首页: Home
-            快速开始: Getting Started
+            入门: Getting Started
             安装指南: Installation Guide
             快速开始: Quick Start
             第一步: First Steps
@@ -94,7 +94,7 @@ plugins:
             参考资料: Reference
             更新日志: Changelog
             发展路线图: Roadmap
-            常见问题: FAQ
+            FAQ: FAQ
             术语表: Glossary
   - git-revision-date-localized:
       type: date
@@ -126,7 +126,7 @@ markdown_extensions:
 
 nav:
   - 首页: zh/index.md
-  - 快速开始:
+  - 入门:
     - zh/getting-started/index.md
     - 安装指南: zh/getting-started/installation.md
     - 快速开始: zh/getting-started/quick-start.md
@@ -171,7 +171,7 @@ nav:
     - zh/reference/index.md
     - 更新日志: zh/reference/changelog.md
     - 发展路线图: zh/reference/roadmap.md
-    - 常见问题: zh/reference/faq.md
+    - FAQ: zh/reference/faq.md
     - 术语表: zh/reference/glossary.md
 
 extra:
@@ -183,7 +183,7 @@ extra:
     default: latest
   alternate:
     - name: 中文
-      link: /zh/
+      link: /
       lang: zh
     - name: English
       link: /en/
