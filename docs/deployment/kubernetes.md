@@ -67,20 +67,26 @@ graph TB
 
 ## 前置要求
 
-### 1. Kubernetes 集群
+### 1. Kubernetes 集群要求
 
-- **版本要求**：Kubernetes 1.20+
-- **节点配置**：至少 2 个工作节点
-- **资源要求**：每个节点至少 4 CPU, 8GB 内存
+| 组件 | 最低要求 | 推荐配置 | 说明 |
+|------|----------|----------|------|
+| **Kubernetes 版本** | 1.20+ | 1.24+ | 支持最新特性 |
+| **节点数量** | 3 个节点 | 5+ 个节点 | 包含 master 和 worker |
+| **节点配置** | 4C8G | 8C16G | 每个 worker 节点 |
+| **存储** | 100GB | 500GB SSD | 持久化存储 |
+| **网络** | CNI 插件 | Calico/Flannel | 网络通信 |
 
 ### 2. 必需组件
 
-| 组件 | 版本 | 用途 |
-|------|------|------|
-| **kubectl** | 1.20+ | 集群管理工具 |
-| **Helm** | 3.0+ | 包管理器（可选） |
-| **Ingress Controller** | 任意 | 外部访问 |
-| **Prometheus Operator** | 0.50+ | 监控（可选） |
+| 组件 | 版本要求 | 安装方式 | 用途 |
+|------|----------|----------|------|
+| **kubectl** | 1.20+ | 官方安装 | 集群管理工具 |
+| **Helm** | 3.0+ | 官方安装 | 包管理器 |
+| **Ingress Controller** | Nginx/Traefik | Helm Chart | 外部访问 |
+| **Cert-Manager** | 1.0+ | Helm Chart | SSL 证书管理 |
+| **Prometheus Operator** | 0.50+ | Helm Chart | 监控系统 |
+| **Grafana** | 8.0+ | Helm Chart | 监控可视化 |
 
 ### 3. 存储类
 
