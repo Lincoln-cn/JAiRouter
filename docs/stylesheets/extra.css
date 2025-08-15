@@ -1,0 +1,148 @@
+/* Language switcher enhancements */
+.md-header__option {
+  margin-left: 0.5rem;
+}
+
+.md-header__option .md-select__inner {
+  font-size: 0.8rem;
+}
+
+/* Ensure language links are properly styled */
+.md-header__option .md-select__link {
+  color: var(--md-primary-fg-color--light);
+  text-decoration: none;
+}
+
+.md-header__option .md-select__link:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* Language indicator in navigation */
+.md-nav__title::before {
+  content: "";
+}
+
+/* Responsive language switcher */
+@media screen and (max-width: 76.1875em) {
+  .md-header__option {
+    display: none;
+  }
+}
+
+/* Custom styling for language switcher dropdown */
+.md-select {
+  position: relative;
+}
+
+.md-select__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.md-select__list {
+  background: var(--md-default-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.25rem;
+  box-shadow: var(--md-shadow-z2);
+  margin-top: 0.25rem;
+  min-width: 8rem;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 1000;
+}
+
+.md-select__item {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  text-decoration: none;
+  color: var(--md-default-fg-color);
+}
+
+.md-select__item:hover {
+  background: var(--md-default-fg-color--lightest);
+}
+
+/* Language flag icons (optional enhancement) */
+.language-zh::before {
+  content: "🇨🇳";
+  margin-right: 0.25rem;
+}
+
+.language-en::before {
+  content: "🇺🇸";
+  margin-right: 0.25rem;
+}
+
+/* Improve readability for Chinese content */
+.md-typeset {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Code blocks with better Chinese font support */
+.md-typeset code,
+.md-typeset pre {
+  font-family: "SFMono-Regular", "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Fira Mono", "Droid Sans Mono", "Source Code Pro", "Consolas", "Liberation Mono", "Menlo", "Courier New", monospace;
+}
+
+/* Ensure proper line height for mixed Chinese/English content */
+.md-typeset p,
+.md-typeset li {
+  line-height: 1.7;
+}
+
+/* Better spacing for Chinese headings */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+/* Improve table readability for mixed content */
+.md-typeset table {
+  font-size: 0.9rem;
+}
+
+.md-typeset table th,
+.md-typeset table td {
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+}
+
+/* Navigation improvements for multilingual content */
+.md-nav__title {
+  font-weight: 600;
+}
+
+.md-nav__item .md-nav__link {
+  padding: 0.5rem 0.75rem;
+}
+
+/* Search improvements for Chinese content */
+.md-search__input {
+  font-family: inherit;
+}
+
+.md-search__input::placeholder {
+  opacity: 0.7;
+}
+
+/* Responsive improvements */
+@media screen and (max-width: 44.9375em) {
+  .md-typeset {
+    font-size: 0.9rem;
+  }
+  
+  .md-typeset h1 {
+    font-size: 1.8rem;
+  }
+  
+  .md-typeset h2 {
+    font-size: 1.5rem;
+  }
+}

@@ -33,12 +33,69 @@ theme:
     - content.code.copy
     - content.action.edit
     - content.tabs.link
+    - navigation.instant
+    - navigation.tracking
 
 plugins:
   - search:
       lang: 
         - zh
         - en
+  - i18n:
+      docs_structure: folder
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: zh
+          default: true
+          name: 中文
+          build: true
+          site_name: "JAiRouter 文档"
+        - locale: en
+          name: English
+          build: true
+          site_name: "JAiRouter Documentation"
+          nav_translations:
+            首页: Home
+            快速开始: Getting Started
+            安装指南: Installation Guide
+            快速开始: Quick Start
+            第一步: First Steps
+            配置指南: Configuration
+            应用配置: Application Config
+            动态配置: Dynamic Config
+            负载均衡: Load Balancing
+            限流配置: Rate Limiting
+            熔断器: Circuit Breaker
+            API参考: API Reference
+            统一API: Universal API
+            管理API: Management API
+            监控API: Monitoring API
+            OpenAPI规范: OpenAPI Specification
+            部署指南: Deployment
+            Docker部署: Docker Deployment
+            Kubernetes部署: Kubernetes Deployment
+            生产环境: Production
+            中国优化: China Optimization
+            监控指南: Monitoring
+            监控设置: Setup
+            仪表板: Dashboards
+            告警配置: Alerts
+            故障排查: Troubleshooting
+            开发指南: Development
+            架构说明: Architecture
+            贡献指南: Contributing
+            测试指南: Testing
+            代码质量: Code Quality
+            常见问题: Common Issues
+            性能问题: Performance Issues
+            调试指南: Debugging Guide
+            参考资料: Reference
+            更新日志: Changelog
+            发展路线图: Roadmap
+            常见问题: FAQ
+            术语表: Glossary
   - git-revision-date-localized:
       type: date
       enable_creation_date: true
@@ -68,54 +125,54 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 nav:
-  - 首页: index.md
+  - 首页: zh/index.md
   - 快速开始:
-    - getting-started/index.md
-    - 安装指南: getting-started/installation.md
-    - 快速开始: getting-started/quick-start.md
-    - 第一步: getting-started/first-steps.md
+    - zh/getting-started/index.md
+    - 安装指南: zh/getting-started/installation.md
+    - 快速开始: zh/getting-started/quick-start.md
+    - 第一步: zh/getting-started/first-steps.md
   - 配置指南:
-    - configuration/index.md
-    - 应用配置: configuration/application-config.md
-    - 动态配置: configuration/dynamic-config.md
-    - 负载均衡: configuration/load-balancing.md
-    - 限流配置: configuration/rate-limiting.md
-    - 熔断器: configuration/circuit-breaker.md
+    - zh/configuration/index.md
+    - 应用配置: zh/configuration/application-config.md
+    - 动态配置: zh/configuration/dynamic-config.md
+    - 负载均衡: zh/configuration/load-balancing.md
+    - 限流配置: zh/configuration/rate-limiting.md
+    - 熔断器: zh/configuration/circuit-breaker.md
   - API参考:
-    - api-reference/index.md
-    - 统一API: api-reference/universal-api.md
-    - 管理API: api-reference/management-api.md
-    - 监控API: api-reference/monitoring-api.md
-    - OpenAPI规范: api-reference/openapi-spec.md
+    - zh/api-reference/index.md
+    - 统一API: zh/api-reference/universal-api.md
+    - 管理API: zh/api-reference/management-api.md
+    - 监控API: zh/api-reference/monitoring-api.md
+    - OpenAPI规范: zh/api-reference/openapi-spec.md
   - 部署指南:
-    - deployment/index.md
-    - Docker部署: deployment/docker.md
-    - Kubernetes部署: deployment/kubernetes.md
-    - 生产环境: deployment/production.md
-    - 中国优化: deployment/china-optimization.md
+    - zh/deployment/index.md
+    - Docker部署: zh/deployment/docker.md
+    - Kubernetes部署: zh/deployment/kubernetes.md
+    - 生产环境: zh/deployment/production.md
+    - 中国优化: zh/deployment/china-optimization.md
   - 监控指南:
-    - monitoring/index.md
-    - 监控设置: monitoring/setup.md
-    - 仪表板: monitoring/dashboards.md
-    - 告警配置: monitoring/alerts.md
-    - 故障排查: monitoring/troubleshooting.md
+    - zh/monitoring/index.md
+    - 监控设置: zh/monitoring/setup.md
+    - 仪表板: zh/monitoring/dashboards.md
+    - 告警配置: zh/monitoring/alerts.md
+    - 故障排查: zh/monitoring/troubleshooting.md
   - 开发指南:
-    - development/index.md
-    - 架构说明: development/architecture.md
-    - 贡献指南: development/contributing.md
-    - 测试指南: development/testing.md
-    - 代码质量: development/code-quality.md
+    - zh/development/index.md
+    - 架构说明: zh/development/architecture.md
+    - 贡献指南: zh/development/contributing.md
+    - 测试指南: zh/development/testing.md
+    - 代码质量: zh/development/code-quality.md
   - 故障排查:
-    - troubleshooting/index.md
-    - 常见问题: troubleshooting/common-issues.md
-    - 性能问题: troubleshooting/performance.md
-    - 调试指南: troubleshooting/debugging.md
+    - zh/troubleshooting/index.md
+    - 常见问题: zh/troubleshooting/common-issues.md
+    - 性能问题: zh/troubleshooting/performance.md
+    - 调试指南: zh/troubleshooting/debugging.md
   - 参考资料:
-    - reference/index.md
-    - 更新日志: reference/changelog.md
-    - 发展路线图: reference/roadmap.md
-    - 常见问题: reference/faq.md
-    - 术语表: reference/glossary.md
+    - zh/reference/index.md
+    - 更新日志: zh/reference/changelog.md
+    - 发展路线图: zh/reference/roadmap.md
+    - 常见问题: zh/reference/faq.md
+    - 术语表: zh/reference/glossary.md
 
 extra:
   social:
@@ -124,5 +181,18 @@ extra:
   version:
     provider: mike
     default: latest
+  alternate:
+    - name: 中文
+      link: /zh/
+      lang: zh
+    - name: English
+      link: /en/
+      lang: en
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/language-switcher.js
 
 copyright: Copyright &copy; 2025 JAiRouter Team
