@@ -675,7 +675,7 @@ curl -X POST "http://localhost:8080/api/config/merge/backup"
 
 - 📖 定期查看 [更新日志](../reference/changelog.md) 了解新特性
 - 🐛 遇到问题时查看 [FAQ](../reference/faq.md)
-- 💬 参与 [GitHub 讨论](https://github.com/your-org/jairouter/discussions)
+- 💬 参与 [GitHub 讨论](https://github.com/Lincoln-cn/JAiRouter/discussions)
 
 ### 🎯 实践建议
 

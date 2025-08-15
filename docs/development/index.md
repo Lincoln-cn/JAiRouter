@@ -23,7 +23,7 @@
 ### 1. 环境准备
 ```bash
 # 克隆项目
-git clone https://github.com/your-org/jairouter.git
+git clone https://github.com/Lincoln-cn/JAiRouter.git
 cd jairouter
 
 # 构建项目（中国用户推荐）

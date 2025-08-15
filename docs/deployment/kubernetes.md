@@ -587,9 +587,9 @@ keywords:
   - router
   - gateway
   - load-balancer
-home: https://github.com/your-org/jairouter
+home: https://github.com/Lincoln-cn/JAiRouter
 sources:
-  - https://github.com/your-org/jairouter
+  - https://github.com/Lincoln-cn/JAiRouter
 maintainers:
   - name: JAiRouter Team
     email: team@jairouter.com

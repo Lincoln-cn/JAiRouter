@@ -102,14 +102,14 @@ java -version
 
 ### 2. 下载 JAR 文件
 
-从 [GitHub Releases](https://github.com/your-org/jairouter/releases) 下载最新版本的 JAR 文件：
+从 [GitHub Releases](https://github.com/Lincoln-cn/JAiRouter/releases) 下载最新版本的 JAR 文件：
 
 ```bash
 # 下载最新版本
-wget https://github.com/your-org/jairouter/releases/latest/download/model-router.jar
+wget https://github.com/Lincoln-cn/JAiRouter/releases/latest/download/model-router.jar
 
 # 或使用 curl
-curl -L -o model-router.jar https://github.com/your-org/jairouter/releases/latest/download/model-router.jar
+curl -L -o model-router.jar https://github.com/Lincoln-cn/JAiRouter/releases/latest/download/model-router.jar
 ```
 
 ### 3. 运行应用
@@ -145,7 +145,7 @@ curl http://localhost:8080/actuator/health
 ### 1. 克隆代码
 
 ```bash
-git clone https://github.com/your-org/jairouter.git
+git clone https://github.com/Lincoln-cn/JAiRouter.git
 cd jairouter
 ```
 
@@ -436,8 +436,8 @@ docker build --no-cache -t jairouter/model-router:latest .
 如果遇到其他问题，请：
 
 1. 查看 [故障排查文档](../troubleshooting/index.md)
-2. 搜索 [GitHub Issues](https://github.com/your-org/jairouter/issues)
-3. 提交新的 [Issue](https://github.com/your-org/jairouter/issues/new)
+2. 搜索 [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
+3. 提交新的 [Issue](https://github.com/Lincoln-cn/JAiRouter/issues/new)
 
 ## 下一步
 

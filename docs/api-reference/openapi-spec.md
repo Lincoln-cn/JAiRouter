@@ -139,7 +139,7 @@ public class OpenApiConfig {
                         .contact(new Contact()
                                 .name("JAiRouter Team")
                                 .email("support@jairouter.com")
-                                .url("https://github.com/your-org/jairouter"))
+                                .url("https://github.com/Lincoln-cn/JAiRouter"))
                         .license(new License()
                                 .name("Apache 2.0")
                                 .url("https://www.apache.org/licenses/LICENSE-2.0")))

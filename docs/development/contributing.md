@@ -23,7 +23,7 @@
 
 1. **克隆项目**
    ```bash
-   git clone https://github.com/your-org/jairouter.git
+   git clone https://github.com/Lincoln-cn/JAiRouter.git
    cd jairouter
    ```
 
