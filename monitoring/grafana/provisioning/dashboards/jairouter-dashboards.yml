@@ -1,0 +1,71 @@
+# Grafana仪表板自动配置
+# 该文件用于自动导入和配置JAiRouter相关的仪表板
+
+apiVersion: 1
+
+# 仪表板提供者配置
+providers:
+  # JAiRouter主要仪表板
+  - name: 'JAiRouter-Main'
+    orgId: 1
+    folder: 'JAiRouter'
+    folderUid: 'jairouter'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/main
+      foldersFromFilesStructure: false
+
+  # JAiRouter系统监控仪表板
+  - name: 'JAiRouter-System'
+    orgId: 1
+    folder: 'JAiRouter/System'
+    folderUid: 'jairouter-system'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/system
+      foldersFromFilesStructure: false
+
+  # JAiRouter业务监控仪表板
+  - name: 'JAiRouter-Business'
+    orgId: 1
+    folder: 'JAiRouter/Business'
+    folderUid: 'jairouter-business'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/business
+      foldersFromFilesStructure: false
+
+  # JAiRouter基础设施监控仪表板
+  - name: 'JAiRouter-Infrastructure'
+    orgId: 1
+    folder: 'JAiRouter/Infrastructure'
+    folderUid: 'jairouter-infrastructure'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/infrastructure
+      foldersFromFilesStructure: false
+
+  # JAiRouter告警和性能分析仪表板
+  - name: 'JAiRouter-Analytics'
+    orgId: 1
+    folder: 'JAiRouter/Analytics'
+    folderUid: 'jairouter-analytics'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/analytics
+      foldersFromFilesStructure: false

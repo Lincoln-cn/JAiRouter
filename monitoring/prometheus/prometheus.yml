@@ -1,0 +1,128 @@
+# Prometheus配置文件
+# JAiRouter监控栈的核心配置
+
+global:
+  # 全局抓取间隔
+  scrape_interval: 15s
+  # 全局评估间隔
+  evaluation_interval: 15s
+  # 外部标签（用于联邦和远程存储）
+  external_labels:
+    cluster: 'jairouter-cluster'
+    environment: 'production'
+
+# 告警规则文件配置
+rule_files:
+  - "rules/*.yml"
+
+# 告警管理器配置
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+      timeout: 10s
+      api_version: v2
+
+# 抓取配置
+scrape_configs:
+  # Prometheus自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    honor_labels: true
+
+  # JAiRouter应用监控
+  - job_name: 'jairouter'
+    static_configs:
+      - targets: ['jairouter:8080']
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    metrics_path: '/actuator/prometheus'
+    honor_labels: true
+    params:
+      format: ['prometheus']
+    relabel_configs:
+      # 添加实例标签
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'jairouter-main'
+      # 添加服务标签
+      - target_label: service
+        replacement: 'jairouter'
+    metric_relabel_configs:
+      # 过滤掉不需要的JVM指标
+      - source_labels: [__name__]
+        regex: 'jvm_classes_.*'
+        action: drop
+      # 重命名指标标签
+      - source_labels: [__name__]
+        regex: 'http_server_requests_seconds_(.*)'
+        target_label: __name__
+        replacement: 'jairouter_http_requests_${1}'
+
+  # AlertManager监控
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Node Exporter系统监控
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'jairouter-host'
+
+  # cAdvisor容器监控
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'jairouter-containers'
+
+  # JAiRouter健康检查端点
+  - job_name: 'jairouter-health'
+    static_configs:
+      - targets: ['jairouter:8080']
+    scrape_interval: 30s
+    metrics_path: '/actuator/health'
+    params:
+      format: ['prometheus']
+    relabel_configs:
+      - target_label: service
+        replacement: 'jairouter-health'
+
+# 远程写入配置（可选，用于长期存储）
+# remote_write:
+#   - url: "http://remote-storage:9201/write"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       max_shards: 200
+#       capacity: 2500
+
+# 远程读取配置（可选）
+# remote_read:
+#   - url: "http://remote-storage:9201/read"
+
+# 存储配置
+storage:
+  tsdb:
+    # 数据保留时间
+    retention.time: 30d
+    # 数据保留大小
+    retention.size: 10GB
+    # 压缩配置
+    min-block-duration: 2h
+    max-block-duration: 25h

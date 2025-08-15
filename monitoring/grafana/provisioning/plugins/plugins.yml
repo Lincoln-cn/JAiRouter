@@ -1,0 +1,58 @@
+# Grafana插件自动配置
+# 该文件用于自动安装和配置所需的Grafana插件
+
+apiVersion: 1
+
+# 插件配置
+apps:
+  # 状态面板插件（用于显示服务状态）
+  - pluginId: 'stat'
+    enabled: true
+    pinned: false
+
+  # 饼图插件（用于显示分布统计）
+  - pluginId: 'piechart'
+    enabled: true
+    pinned: false
+
+  # 热力图插件（用于显示响应时间分布）
+  - pluginId: 'heatmap'
+    enabled: true
+    pinned: false
+
+  # 表格插件（用于显示详细数据）
+  - pluginId: 'table'
+    enabled: true
+    pinned: false
+
+  # 时间序列图插件
+  - pluginId: 'timeseries'
+    enabled: true
+    pinned: false
+
+  # 仪表盘插件（用于显示关键指标）
+  - pluginId: 'gauge'
+    enabled: true
+    pinned: false
+
+  # 条形图插件
+  - pluginId: 'barchart'
+    enabled: true
+    pinned: false
+
+# 数据源插件
+datasources:
+  # Prometheus数据源插件
+  - pluginId: 'prometheus'
+    enabled: true
+    pinned: true
+
+  # Loki日志数据源插件（可选）
+  - pluginId: 'loki'
+    enabled: false
+    pinned: false
+
+  # Jaeger链路追踪数据源插件（可选）
+  - pluginId: 'jaeger'
+    enabled: false
+    pinned: false

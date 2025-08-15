@@ -1,0 +1,328 @@
+# AlertManager配置文件
+# 用于配置告警路由、接收器和抑制规则
+
+global:
+  # SMTP配置（邮件通知）
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'jairouter-alerts@example.com'
+  smtp_auth_username: 'jairouter-alerts@example.com'
+  smtp_auth_password: 'your-email-password'
+  smtp_require_tls: true
+
+  # 其他全局配置
+  resolve_timeout: 5m
+  http_config:
+    follow_redirects: true
+
+# 告警路由配置
+route:
+  # 默认接收器
+  receiver: 'default-receiver'
+  
+  # 分组配置
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  
+  # 子路由配置
+  routes:
+    # 严重告警立即通知
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 5m
+      
+    # 警告级别告警
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 30m
+      
+    # JAiRouter特定告警
+    - match_re:
+        alertname: '^JAiRouter.*'
+      receiver: 'jairouter-alerts'
+      group_wait: 15s
+      repeat_interval: 15m
+
+# 抑制规则配置
+inhibit_rules:
+  # 当有严重告警时，抑制相同服务的警告告警
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service', 'instance']
+
+# 接收器配置
+receivers:
+  # 默认接收器
+  - name: 'default-receiver'
+    webhook_configs:
+      - url: 'http://localhost:9093/api/v1/alerts'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+  # 严重告警接收器
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'ops-team@example.com'
+        subject: '[CRITICAL] JAiRouter Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          🚨 JAiRouter严重告警通知
+          
+          {{ range .Alerts }}
+          📋 告警信息:
+          - 告警名称: {{ .Annotations.summary }}
+          - 详细描述: {{ .Annotations.description }}
+          - 服务实例: {{ .Labels.instance }}
+          - 告警级别: {{ .Labels.severity }}
+          - 开始时间: {{ .StartsAt }}
+          {{ if .EndsAt }}
+          - 结束时间: {{ .EndsAt }}
+          {{ end }}
+          
+          🏷️ 标签信息:
+          {{ range .Labels.SortedPairs }}
+          - {{ .Name }}: {{ .Value }}
+          {{ end }}
+          
+          🔗 监控链接:
+          - Grafana: http://localhost:3000/d/jairouter-overview
+          - Prometheus: http://localhost:9090/alerts
+          
+          {{ end }}
+          
+          ⚠️ 请立即处理此严重告警！
+        headers:
+          Priority: 'high'
+          X-Priority: '1'
+    
+    # Slack通知配置
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#jairouter-alerts'
+        username: 'JAiRouter-AlertManager'
+        icon_emoji: ':rotating_light:'
+        title: '🚨 JAiRouter严重告警'
+        text: |
+          {{ range .Alerts }}
+          *告警*: {{ .Annotations.summary }}
+          *描述*: {{ .Annotations.description }}
+          *实例*: {{ .Labels.instance }}
+          *级别*: {{ .Labels.severity }}
+          *时间*: {{ .StartsAt }}
+          {{ end }}
+        send_resolved: true
+    
+    # 钉钉通知配置
+    webhook_configs:
+      - url: 'https://oapi.dingtalk.com/robot/send?access_token=YOUR_DINGTALK_TOKEN'
+        send_resolved: true
+        http_config:
+          headers:
+            Content-Type: 'application/json'
+        title: 'JAiRouter严重告警'
+        text: |
+          {
+            "msgtype": "markdown",
+            "markdown": {
+              "title": "JAiRouter严重告警",
+              "text": "## 🚨 JAiRouter严重告警\n\n{{ range .Alerts }}**告警名称**: {{ .Annotations.summary }}\n\n**详细描述**: {{ .Annotations.description }}\n\n**服务实例**: {{ .Labels.instance }}\n\n**告警级别**: {{ .Labels.severity }}\n\n**开始时间**: {{ .StartsAt }}\n\n---\n\n{{ end }}请立即处理此严重告警！"
+            }
+          }
+
+  # 警告告警接收器
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'dev-team@example.com'
+        subject: '[WARNING] JAiRouter Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          ⚠️ JAiRouter警告告警通知
+          
+          {{ range .Alerts }}
+          📋 告警信息:
+          - 告警名称: {{ .Annotations.summary }}
+          - 详细描述: {{ .Annotations.description }}
+          - 服务实例: {{ .Labels.instance }}
+          - 告警级别: {{ .Labels.severity }}
+          - 开始时间: {{ .StartsAt }}
+          {{ if .EndsAt }}
+          - 结束时间: {{ .EndsAt }}
+          {{ end }}
+          
+          🏷️ 标签信息:
+          {{ range .Labels.SortedPairs }}
+          - {{ .Name }}: {{ .Value }}
+          {{ end }}
+          
+          🔗 监控链接:
+          - Grafana: http://localhost:3000/d/jairouter-overview
+          - Prometheus: http://localhost:9090/alerts
+          
+          {{ end }}
+          
+          请关注并处理此告警。
+        headers:
+          X-Priority: '3'
+    
+    # Slack通知配置
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#jairouter-monitoring'
+        username: 'JAiRouter-AlertManager'
+        icon_emoji: ':warning:'
+        title: '⚠️ JAiRouter警告告警'
+        text: |
+          {{ range .Alerts }}
+          *告警*: {{ .Annotations.summary }}
+          *描述*: {{ .Annotations.description }}
+          *实例*: {{ .Labels.instance }}
+          *级别*: {{ .Labels.severity }}
+          *时间*: {{ .StartsAt }}
+          {{ end }}
+        send_resolved: true
+
+  # JAiRouter特定告警接收器
+  - name: 'jairouter-alerts'
+    email_configs:
+      - to: 'jairouter-team@example.com'
+        subject: '[JAiRouter] {{ .GroupLabels.alertname }}'
+        body: |
+          🤖 JAiRouter服务告警通知
+          
+          {{ range .Alerts }}
+          📊 监控指标告警:
+          - 告警名称: {{ .Annotations.summary }}
+          - 详细描述: {{ .Annotations.description }}
+          - 服务实例: {{ .Labels.instance }}
+          - 告警级别: {{ .Labels.severity }}
+          - 开始时间: {{ .StartsAt }}
+          {{ if .EndsAt }}
+          - 结束时间: {{ .EndsAt }}
+          {{ end }}
+          
+          🔍 问题排查建议:
+          {{ if eq .Labels.alertname "JAiRouterHighErrorRate" }}
+          1. 检查应用日志中的错误信息
+          2. 验证后端服务的可用性
+          3. 检查网络连接状态
+          {{ else if eq .Labels.alertname "JAiRouterHighLatency" }}
+          1. 检查系统资源使用情况
+          2. 分析慢查询和性能瓶颈
+          3. 验证后端服务响应时间
+          {{ else if eq .Labels.alertname "JAiRouterBackendDown" }}
+          1. 检查后端服务状态
+          2. 验证网络连接
+          3. 检查服务配置
+          {{ else }}
+          1. 查看Grafana仪表板了解详细情况
+          2. 检查相关日志文件
+          3. 验证系统配置
+          {{ end }}
+          
+          🔗 相关链接:
+          - Grafana仪表板: http://localhost:3000/d/jairouter-overview
+          - Prometheus告警: http://localhost:9090/alerts
+          - 应用日志: http://localhost:8080/actuator/loggers
+          
+          {{ end }}
+          
+          请及时处理相关问题，确保服务稳定运行。
+        headers:
+          X-Priority: '3'
+    
+    # 企业微信通知配置
+    wechat_configs:
+      - corp_id: 'YOUR_CORP_ID'
+        agent_id: 'YOUR_AGENT_ID'
+        api_secret: 'YOUR_API_SECRET'
+        to_user: '@all'
+        message: |
+          JAiRouter服务告警
+          {{ range .Alerts }}
+          告警: {{ .Annotations.summary }}
+          描述: {{ .Annotations.description }}
+          实例: {{ .Labels.instance }}
+          级别: {{ .Labels.severity }}
+          时间: {{ .StartsAt }}
+          {{ end }}
+
+  # 业务团队告警接收器
+  - name: 'business-alerts'
+    email_configs:
+      - to: 'business-team@example.com'
+        subject: '[业务告警] JAiRouter {{ .GroupLabels.alertname }}'
+        body: |
+          📈 JAiRouter业务指标告警
+          
+          {{ range .Alerts }}
+          业务影响分析:
+          - 告警类型: {{ .Annotations.summary }}
+          - 影响描述: {{ .Annotations.description }}
+          - 服务实例: {{ .Labels.instance }}
+          - 告警级别: {{ .Labels.severity }}
+          - 发生时间: {{ .StartsAt }}
+          
+          {{ if eq .Labels.alertname "JAiRouterModelCallFailureRate" }}
+          🎯 业务影响:
+          - AI模型调用失败率上升
+          - 可能影响用户体验
+          - 建议检查模型服务状态
+          {{ else if eq .Labels.alertname "JAiRouterHighConcurrentConnections" }}
+          🎯 业务影响:
+          - 并发用户数较高
+          - 系统负载增加
+          - 可能需要扩容
+          {{ else }}
+          🎯 业务影响:
+          - 请关注相关业务指标
+          - 评估对用户的影响
+          {{ end }}
+          
+          {{ end }}
+          
+          请评估业务影响并协调处理。
+
+  # 安全团队告警接收器  
+  - name: 'security-alerts'
+    email_configs:
+      - to: 'security-team@example.com'
+        subject: '[安全告警] JAiRouter {{ .GroupLabels.alertname }}'
+        body: |
+          🔒 JAiRouter安全告警通知
+          
+          {{ range .Alerts }}
+          安全事件详情:
+          - 告警类型: {{ .Annotations.summary }}
+          - 事件描述: {{ .Annotations.description }}
+          - 服务实例: {{ .Labels.instance }}
+          - 告警级别: {{ .Labels.severity }}
+          - 发生时间: {{ .StartsAt }}
+          
+          {{ if eq .Labels.alertname "JAiRouterSuspiciousIPActivity" }}
+          🚨 安全建议:
+          - 立即检查可疑IP的访问模式
+          - 考虑临时封禁异常IP
+          - 分析访问日志确认威胁
+          {{ else if eq .Labels.alertname "JAiRouterHighAuthFailureRate" }}
+          🚨 安全建议:
+          - 检查是否存在暴力破解攻击
+          - 验证认证系统状态
+          - 考虑加强访问控制
+          {{ end }}
+          
+          {{ end }}
+          
+          请立即进行安全评估和处理。
+        headers:
+          Priority: 'high'
+          X-Priority: '2'
+
+# 模板配置
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

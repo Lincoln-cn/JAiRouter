@@ -1,0 +1,70 @@
+# Grafana数据源自动配置
+# 该文件用于自动配置Prometheus数据源，无需手动在Grafana界面中添加
+
+apiVersion: 1
+
+# 删除现有数据源配置（如果存在）
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+
+# 数据源配置列表
+datasources:
+  # 主要的Prometheus数据源
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus:9090
+    isDefault: true
+    version: 1
+    editable: true
+    jsonData:
+      httpMethod: POST
+      queryTimeout: 60s
+      timeInterval: 15s
+      # 启用Exemplars支持（用于链路追踪）
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: jaeger
+      # 自定义查询参数
+      customQueryParameters: ''
+      # 启用警报查询
+      manageAlerts: true
+      # Prometheus服务器版本
+      prometheusType: Prometheus
+      prometheusVersion: 2.40.0
+      # 缓存级别
+      cacheLevel: High
+    # 安全配置（如果需要认证）
+    secureJsonData: {}
+    
+  # 可选：如果有多个Prometheus实例
+  - name: Prometheus-Backup
+    type: prometheus
+    access: proxy
+    orgId: 1
+    url: http://prometheus-backup:9090
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      httpMethod: POST
+      queryTimeout: 60s
+      timeInterval: 15s
+      manageAlerts: false
+      prometheusType: Prometheus
+      cacheLevel: Medium
+    secureJsonData: {}
+
+# 通知渠道配置（可选）
+notifiers:
+  - name: prometheus-alertmanager
+    type: prometheus-alertmanager
+    uid: alertmanager
+    orgId: 1
+    isDefault: true
+    settings:
+      url: http://alertmanager:9093
+      username: ''
+      password: ''
