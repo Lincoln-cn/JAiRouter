@@ -572,7 +572,7 @@ echo "=== 日志分析完成 ==="
 如果以上解决方案无法解决您的问题，请：
 
 1. **查看详细日志**: 启用 DEBUG 级别日志获取更多信息
-2. **搜索已知问题**: 在 [GitHub Issues](https://github.com/your-org/jairouter/issues) 中搜索类似问题
+2. **搜索已知问题**: 在 [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues) 中搜索类似问题
 3. **提交新问题**: 创建新的 Issue，包含详细的错误信息和环境描述
 4. **参与社区讨论**: 在项目讨论区寻求帮助
 

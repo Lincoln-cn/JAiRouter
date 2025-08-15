@@ -163,7 +163,7 @@ curl http://localhost:8080/actuator/metrics/system.cpu.usage
 如果按照本指南仍无法解决问题，可以通过以下方式获得帮助：
 
 ### 社区支持
-- 查看 [GitHub Issues](https://github.com/your-org/jairouter/issues) 中的已知问题
+- 查看 [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues) 中的已知问题
 - 搜索相关的讨论和解决方案
 - 参与社区讨论获得建议
 

@@ -87,5 +87,5 @@ docker run -d --name jairouter -p 8080:8080 jairouter/model-router:latest
 ## 💡 需要帮助？
 
 - 📖 查看 [故障排查](../troubleshooting/index.md)
-- 🐛 提交 [GitHub Issues](https://github.com/your-org/jairouter/issues)
+- 🐛 提交 [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
 - 💬 加入社区讨论

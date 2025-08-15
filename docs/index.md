@@ -56,7 +56,7 @@ JAiRouter 旨在解决 AI 模型服务管理中的复杂性问题，通过统一
 
 1. **克隆项目**
    ```bash
-   git clone https://github.com/your-org/jairouter.git
+   git clone https://github.com/Lincoln-cn/JAiRouter.git
    cd jairouter
    ```
 
@@ -152,11 +152,11 @@ graph TB
 
 ## 社区与支持
 
-- **GitHub**: [https://github.com/your-org/jairouter](https://github.com/your-org/jairouter)
+- **GitHub**: [https://github.com/Lincoln-cn/JAiRouter](https://github.com/Lincoln-cn/JAiRouter)
 - **文档**: [https://your-org.github.io/jairouter](https://your-org.github.io/jairouter)
-- **问题反馈**: [GitHub Issues](https://github.com/your-org/jairouter/issues)
+- **问题反馈**: [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
 - **DeepWiki**: [https://deepwiki.com/Lincoln-cn/JAiRouter](https://deepwiki.com/Lincoln-cn/JAiRouter)
 
 ## 许可证
 
-本项目采用 [MIT 许可证](https://github.com/your-org/jairouter/blob/main/LICENSE)。
+本项目采用 [MIT 许可证](https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE)。
