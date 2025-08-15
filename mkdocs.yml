@@ -1,10 +1,10 @@
 site_name: JAiRouter 文档
 site_description: AI模型服务路由和负载均衡网关
-site_author: JAiRouter Team
-site_url: https://jairouter.github.io/jairouter
+site_author: Lincoln
+site_url: https://github.com/Lincoln-cn/jairouter
 
-repo_name: jairouter/jairouter
-repo_url: https://github.com/jairouter/jairouter
+repo_name: Lincoln-cn/jairouter
+repo_url: https://github.com/Lincoln-cn/jairouter
 edit_uri: edit/main/docs/
 
 theme:
@@ -177,16 +177,16 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/jairouter/jairouter
+      link: https://github.com/Lincoln-cn/jairouter
   version:
     provider: mike
     default: latest
   alternate:
     - name: 中文
-      link: /
+      link: /jairouter/
       lang: zh
     - name: English
-      link: /en/
+      link: /jairouter/en/
       lang: en
 
 extra_css:
