@@ -1,5 +1,6 @@
-# PowerShell script for serving documentation locally on Windows
+# PowerShell script for serving documentation locally
 param(
+    [string]$HostAddress = "localhost",
     [string]$Port = "8000"
 )
 
@@ -30,8 +31,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Serve documentation
-Write-Host "启动文档服务器，端口: $Port" -ForegroundColor Green
-Write-Host "访问地址: http://localhost:$Port" -ForegroundColor Cyan
+Write-Host "启动文档服务器，监听地址: $HostAddress:$Port" -ForegroundColor Green
+Write-Host "访问地址: http://$HostAddress:$Port" -ForegroundColor Cyan
 Write-Host "按 Ctrl+C 停止服务器" -ForegroundColor Yellow
 
-mkdocs serve --dev-addr "localhost:$Port"
+mkdocs serve --dev-addr "$HostAddress:$Port"

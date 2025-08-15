@@ -1,7 +1,8 @@
 #!/bin/bash
 # Shell script for serving documentation locally on Linux/macOS
 
-PORT=${1:-8000}
+PORT=${2:-8000}       # 第二个位置参数，默认 8000
+HOST=${1:-localhost}  # 第一个位置参数，默认 localhost
 
 echo "启动本地文档服务器..."
 
@@ -29,8 +30,8 @@ if [ $? -ne 0 ]; then
 fi
 
 # Serve documentation
-echo "启动文档服务器，端口: $PORT"
-echo "访问地址: http://localhost:$PORT"
+echo "启动文档服务器，监听地址: $HOST:$PORT"
+echo "访问地址: http://$HOST:$PORT"
 echo "按 Ctrl+C 停止服务器"
 
-mkdocs serve --dev-addr "localhost:$PORT"
+mkdocs serve --dev-addr "$HOST:$PORT"
