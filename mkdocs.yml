@@ -1,7 +1,7 @@
 site_name: JAiRouter 文档
 site_description: AI模型服务路由和负载均衡网关
 site_author: Lincoln
-site_url: https://github.com/Lincoln-cn/jairouter
+site_url: https://lincoln-cn.github.io/JAiRouter
 
 repo_name: Lincoln-cn/jairouter
 repo_url: https://github.com/Lincoln-cn/jairouter
@@ -41,6 +41,21 @@ plugins:
       lang: 
         - zh
         - en
+      separator: '[\s\-\.]+'
+      min_search_length: 2
+      prebuild_index: true
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+      htmlmin_opts:
+        remove_comments: true
+        remove_empty_space: true
+        remove_redundant_attributes: true
+        remove_script_type_attributes: true
+        remove_style_link_type_attributes: true
+        minify_css: true
+        minify_js: true
   - i18n:
       docs_structure: folder
       fallback_to_default: true
@@ -78,6 +93,7 @@ plugins:
             Kubernetes部署: Kubernetes Deployment
             生产环境: Production
             中国优化: China Optimization
+            GitHub Pages: GitHub Pages
             监控指南: Monitoring
             监控设置: Setup
             仪表板: Dashboards
@@ -88,6 +104,8 @@ plugins:
             贡献指南: Contributing
             测试指南: Testing
             代码质量: Code Quality
+            部署测试: Deployment Testing
+            性能优化: Performance Optimization
             常见问题: Common Issues
             性能问题: Performance Issues
             调试指南: Debugging Guide
@@ -99,6 +117,14 @@ plugins:
   - git-revision-date-localized:
       type: date
       enable_creation_date: true
+      fallback_to_build_date: true
+  - optimize:
+      enabled: !ENV [OPTIMIZE, false]
+      cache: true
+      cache_dir: .cache/plugin/optimize
+      optimize_png: true
+      optimize_jpg: true
+      optimize_svg: true
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -150,6 +176,7 @@ nav:
     - Kubernetes部署: zh/deployment/kubernetes.md
     - 生产环境: zh/deployment/production.md
     - 中国优化: zh/deployment/china-optimization.md
+    - GitHub Pages: zh/deployment/github-pages.md
   - 监控指南:
     - zh/monitoring/index.md
     - 监控设置: zh/monitoring/setup.md
@@ -162,6 +189,8 @@ nav:
     - 贡献指南: zh/development/contributing.md
     - 测试指南: zh/development/testing.md
     - 代码质量: zh/development/code-quality.md
+    - 部署测试: zh/development/deployment-testing.md
+    - 性能优化: zh/development/performance-optimization.md
   - 故障排查:
     - zh/troubleshooting/index.md
     - 常见问题: zh/troubleshooting/common-issues.md
@@ -178,16 +207,36 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/Lincoln-cn/jairouter
+      name: GitHub Repository
+    - icon: fontawesome/solid/book
+      link: https://lincoln-cn.github.io/JAiRouter
+      name: Documentation
   version:
     provider: mike
     default: latest
   alternate:
     - name: 中文
-      link: /jairouter/
+      link: /
       lang: zh
     - name: English
-      link: /jairouter/en/
+      link: /en
       lang: en
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX  # 替换为实际的 Google Analytics ID
+    feedback:
+      title: 这个页面有帮助吗？
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: 有帮助
+          data: 1
+          note: >-
+            感谢您的反馈！
+        - icon: material/emoticon-sad-outline
+          name: 需要改进
+          data: 0
+          note: >-
+            感谢您的反馈！请通过 GitHub Issues 告诉我们如何改进。
 
 extra_css:
   - stylesheets/extra.css

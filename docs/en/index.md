@@ -1,4 +1,12 @@
-# JAiRouter
+﻿# JAiRouter
+
+<!-- 版本信息 -->
+> **文档版本**: 1.0.0  
+> **最后更新**: 2025-08-18  
+> **Git 提交**: 3418d3f6  
+> **作者**: Lincoln
+<!-- /版本信息 -->
+
 
 JAiRouter is a Spring Boot-based AI model service routing and load balancing gateway that provides unified access to various AI model services through OpenAI-compatible APIs.
 

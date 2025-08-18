@@ -1,0 +1,156 @@
+# 文档内容同步检查配置文件
+
+# 检查规则配置
+check_rules:
+  # 配置文档检查规则
+  configuration:
+    enabled: true
+    # 需要检查的配置文件路径
+    config_files:
+      - "src/main/resources/application.yml"
+      - "src/main/resources/application-dev.yml"
+      - "src/main/resources/application-prod.yml"
+    
+    # 需要检查的文档路径
+    doc_files:
+      - "docs/zh/configuration/application-config.md"
+      - "docs/zh/configuration/load-balancing.md"
+      - "docs/zh/configuration/rate-limiting.md"
+      - "docs/zh/configuration/circuit-breaker.md"
+    
+    # 关键配置项检查
+    key_configs:
+      - path: "server.port"
+        description: "服务器端口配置"
+        required: true
+      - path: "model.adapter"
+        description: "模型适配器配置"
+        required: true
+      - path: "model.load-balance.type"
+        description: "负载均衡类型配置"
+        required: true
+      - path: "model.rate-limit.algorithm"
+        description: "限流算法配置"
+        required: true
+
+  # API 文档检查规则
+  api_documentation:
+    enabled: true
+    # API 端点检查
+    endpoints:
+      - path: "/v1/chat/completions"
+        service: "chat"
+        description: "聊天完成 API"
+      - path: "/v1/embeddings"
+        service: "embedding"
+        description: "文本嵌入 API"
+      - path: "/v1/rerank"
+        service: "rerank"
+        description: "重排序 API"
+      - path: "/v1/audio/speech"
+        service: "tts"
+        description: "文本转语音 API"
+      - path: "/v1/audio/transcriptions"
+        service: "stt"
+        description: "语音转文本 API"
+      - path: "/v1/images/generations"
+        service: "imgGen"
+        description: "图像生成 API"
+      - path: "/v1/images/edits"
+        service: "imgEdit"
+        description: "图像编辑 API"
+    
+    # 管理端点检查
+    management_endpoints:
+      - "health"
+      - "info"
+      - "metrics"
+      - "prometheus"
+      - "jairouter-metrics"
+
+  # 依赖文档检查规则
+  dependencies:
+    enabled: true
+    # 关键依赖检查
+    key_dependencies:
+      - groupId: "org.springframework.boot"
+        artifactId: "spring-boot-starter-webflux"
+        description: "Spring WebFlux 响应式 Web 框架"
+      - groupId: "io.micrometer"
+        artifactId: "micrometer-registry-prometheus"
+        description: "Prometheus 指标注册器"
+      - groupId: "org.springdoc"
+        artifactId: "springdoc-openapi-starter-webflux-ui"
+        description: "OpenAPI 文档生成器"
+
+  # Docker 文档检查规则
+  docker:
+    enabled: true
+    # Docker 文件检查
+    docker_files:
+      - "Dockerfile"
+      - "Dockerfile.dev"
+      - "Dockerfile.china"
+      - "docker-compose.yml"
+      - "docker-compose.dev.yml"
+      - "docker-compose-monitoring.yml"
+    
+    # 端口配置检查
+    port_configs:
+      - container_port: 8080
+        description: "应用服务端口"
+
+  # 监控文档检查规则
+  monitoring:
+    enabled: true
+    # 监控配置检查
+    metrics_config:
+      - path: "monitoring.metrics.prefix"
+        description: "指标前缀配置"
+      - path: "monitoring.metrics.collection-interval"
+        description: "指标采集间隔配置"
+      - path: "management.metrics.export.prometheus.enabled"
+        description: "Prometheus 导出配置"
+
+# 检查严重程度配置
+severity_levels:
+  missing_doc: "FAIL"           # 缺少文档
+  config_mismatch: "WARN"       # 配置不匹配
+  incomplete_doc: "WARN"        # 文档不完整
+  version_mismatch: "WARN"      # 版本不匹配
+  missing_dependency: "WARN"    # 缺少依赖说明
+  port_mismatch: "WARN"         # 端口不匹配
+
+# 忽略规则配置
+ignore_rules:
+  # 忽略的文件路径模式
+  file_patterns:
+    - "*.tmp"
+    - "*.bak"
+    - "*~"
+  
+  # 忽略的检查类型
+  check_types:
+    - "EXAMPLE_ONLY"  # 仅作为示例的配置项
+
+# 报告配置
+report:
+  # 报告格式
+  format: "markdown"
+  
+  # 包含的信息
+  include:
+    - "summary"       # 摘要信息
+    - "details"       # 详细问题
+    - "suggestions"   # 修复建议
+  
+  # 排序方式
+  sort_by: "severity"  # severity, file_path, issue_type
+
+# 自动修复配置
+auto_fix:
+  enabled: false
+  # 可自动修复的问题类型
+  fixable_types:
+    - "VERSION_UPDATE"
+    - "SIMPLE_CONFIG_SYNC"

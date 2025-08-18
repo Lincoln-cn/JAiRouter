@@ -1,233 +1,241 @@
-// Language switcher functionality for JAiRouter documentation
+// JAiRouter 文档站点语言切换功能
+
 (function() {
     'use strict';
-
-    // Language configuration
+    
+    // 语言配置
     const LANGUAGES = {
         'zh': {
             name: '中文',
-            flag: '🇨🇳',
-            path: '/zh/'
+            code: 'zh',
+            path: '/'
         },
         'en': {
             name: 'English',
-            flag: '🇺🇸',
+            code: 'en',
             path: '/en/'
         }
     };
-
-    // Get current language from URL
+    
+    // 获取当前语言
     function getCurrentLanguage() {
         const path = window.location.pathname;
-        if (path.startsWith('/zh/')) return 'zh';
-        if (path.startsWith('/en/')) return 'en';
-        return 'zh'; // Default to Chinese
+        if (path.startsWith('/en/')) {
+            return 'en';
+        }
+        return 'zh';
     }
-
-    // Get corresponding page path in target language
-    function getCorrespondingPath(targetLang) {
-        const currentPath = window.location.pathname;
+    
+    // 获取对应语言的路径
+    function getLanguagePath(targetLang, currentPath) {
         const currentLang = getCurrentLanguage();
         
-        // Remove current language prefix
-        let pagePath = currentPath;
-        if (currentLang === 'zh' && pagePath.startsWith('/zh/')) {
-            pagePath = pagePath.substring(3);
-        } else if (currentLang === 'en' && pagePath.startsWith('/en/')) {
-            pagePath = pagePath.substring(3);
+        if (currentLang === targetLang) {
+            return currentPath;
         }
         
-        // Add target language prefix
-        if (targetLang === 'zh') {
-            return '/zh' + (pagePath.startsWith('/') ? pagePath : '/' + pagePath);
-        } else if (targetLang === 'en') {
-            return '/en' + (pagePath.startsWith('/') ? pagePath : '/' + pagePath);
+        // 移除当前语言前缀
+        let cleanPath = currentPath;
+        if (currentLang === 'en' && cleanPath.startsWith('/en/')) {
+            cleanPath = cleanPath.substring(3);
         }
         
-        return pagePath;
+        // 添加目标语言前缀
+        if (targetLang === 'en') {
+            return '/en' + (cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath);
+        } else {
+            return cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
+        }
     }
-
-    // Create language switcher element
+    
+    // 创建语言切换器
     function createLanguageSwitcher() {
-        const currentLang = getCurrentLanguage();
-        const currentLangConfig = LANGUAGES[currentLang];
-        
-        if (!currentLangConfig) return null;
-
         const switcher = document.createElement('div');
-        switcher.className = 'md-header__option language-switcher';
+        switcher.className = 'language-switcher';
+        switcher.setAttribute('aria-label', 'Language Switcher');
         
-        const select = document.createElement('div');
-        select.className = 'md-select';
+        const currentLang = getCurrentLanguage();
+        const currentPath = window.location.pathname;
         
-        const inner = document.createElement('div');
-        inner.className = 'md-select__inner';
-        inner.innerHTML = `
-            <span class="language-${currentLang}">${currentLangConfig.flag} ${currentLangConfig.name}</span>
-            <svg class="md-icon" viewBox="0 0 24 24" width="16" height="16">
-                <path d="M7 10l5 5 5-5z"/>
-            </svg>
-        `;
-        
-        const list = document.createElement('div');
-        list.className = 'md-select__list';
-        list.style.display = 'none';
-        
-        // Add language options
         Object.keys(LANGUAGES).forEach(langCode => {
-            if (langCode !== currentLang) {
-                const langConfig = LANGUAGES[langCode];
-                const item = document.createElement('a');
-                item.className = `md-select__item language-${langCode}`;
-                item.href = getCorrespondingPath(langCode);
-                item.innerHTML = `${langConfig.flag} ${langConfig.name}`;
-                list.appendChild(item);
+            const lang = LANGUAGES[langCode];
+            const link = document.createElement('a');
+            link.href = getLanguagePath(langCode, currentPath);
+            link.textContent = lang.name;
+            link.setAttribute('hreflang', lang.code);
+            link.setAttribute('title', `Switch to ${lang.name}`);
+            
+            if (langCode === currentLang) {
+                link.className = 'active';
+                link.setAttribute('aria-current', 'page');
             }
+            
+            // 添加点击事件
+            link.addEventListener('click', function(e) {
+                // 检查目标页面是否存在
+                const targetPath = this.href;
+                
+                // 添加加载指示器
+                link.style.opacity = '0.6';
+                link.style.pointerEvents = 'none';
+                
+                // 恢复状态（防止页面不存在时卡住）
+                setTimeout(() => {
+                    link.style.opacity = '';
+                    link.style.pointerEvents = '';
+                }, 3000);
+            });
+            
+            switcher.appendChild(link);
         });
-        
-        // Toggle dropdown on click
-        inner.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const isVisible = list.style.display !== 'none';
-            list.style.display = isVisible ? 'none' : 'block';
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function() {
-            list.style.display = 'none';
-        });
-        
-        select.appendChild(inner);
-        select.appendChild(list);
-        switcher.appendChild(select);
         
         return switcher;
     }
-
-    // Insert language switcher into header
-    function insertLanguageSwitcher() {
-        const header = document.querySelector('.md-header__inner');
-        if (!header) return;
-        
-        // Remove existing language switcher
-        const existing = header.querySelector('.language-switcher');
-        if (existing) {
-            existing.remove();
+    
+    // 初始化语言切换器
+    function initLanguageSwitcher() {
+        // 等待页面加载完成
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initLanguageSwitcher);
+            return;
         }
         
+        // 检查是否已存在语言切换器
+        if (document.querySelector('.language-switcher')) {
+            return;
+        }
+        
+        // 创建并添加语言切换器
         const switcher = createLanguageSwitcher();
-        if (switcher) {
-            // Insert before the search button or at the end
-            const searchButton = header.querySelector('.md-header__button[for="__search"]');
-            if (searchButton) {
-                header.insertBefore(switcher, searchButton);
-            } else {
-                header.appendChild(switcher);
+        document.body.appendChild(switcher);
+        
+        // 添加键盘快捷键支持
+        document.addEventListener('keydown', function(e) {
+            // Alt + L 切换语言
+            if (e.altKey && e.key === 'l') {
+                e.preventDefault();
+                const currentLang = getCurrentLanguage();
+                const targetLang = currentLang === 'zh' ? 'en' : 'zh';
+                const targetPath = getLanguagePath(targetLang, window.location.pathname);
+                window.location.href = targetPath;
+            }
+        });
+    }
+    
+    // 添加语言检测和自动跳转功能
+    function detectAndRedirectLanguage() {
+        // 只在首页进行语言检测
+        if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/en/')) {
+            return;
+        }
+        
+        // 检查是否有语言偏好设置
+        const savedLang = localStorage.getItem('preferred-language');
+        if (savedLang && LANGUAGES[savedLang]) {
+            const currentLang = getCurrentLanguage();
+            if (savedLang !== currentLang) {
+                const targetPath = getLanguagePath(savedLang, window.location.pathname);
+                window.location.href = targetPath;
+                return;
             }
         }
-    }
-
-    // Update page title based on language
-    function updatePageTitle() {
-        const currentLang = getCurrentLanguage();
-        const titleElement = document.querySelector('title');
         
-        if (titleElement && currentLang === 'en') {
-            // Update title for English pages
-            const title = titleElement.textContent;
-            if (title.includes('JAiRouter 文档')) {
-                titleElement.textContent = title.replace('JAiRouter 文档', 'JAiRouter Documentation');
+        // 检测浏览器语言
+        const browserLang = navigator.language || navigator.userLanguage;
+        const langCode = browserLang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+        
+        // 保存语言偏好
+        localStorage.setItem('preferred-language', langCode);
+        
+        // 如果当前语言与检测到的语言不同，进行跳转
+        const currentLang = getCurrentLanguage();
+        if (langCode !== currentLang && window.location.pathname === '/') {
+            const targetPath = getLanguagePath(langCode, window.location.pathname);
+            window.location.href = targetPath;
+        }
+    }
+    
+    // 添加搜索增强功能
+    function enhanceSearch() {
+        // 等待搜索框加载
+        const searchInput = document.querySelector('.md-search__input');
+        if (!searchInput) {
+            setTimeout(enhanceSearch, 100);
+            return;
+        }
+        
+        // 添加搜索快捷键提示
+        searchInput.setAttribute('placeholder', 
+            getCurrentLanguage() === 'zh' ? '搜索文档... (Ctrl+K)' : 'Search docs... (Ctrl+K)'
+        );
+        
+        // 添加 Ctrl+K 快捷键
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
             }
-        }
+        });
     }
-
-    // Update navigation labels for current language
-    function updateNavigationLabels() {
-        const currentLang = getCurrentLanguage();
-        
-        if (currentLang === 'en') {
-            // Update common navigation labels for English
-            const navItems = document.querySelectorAll('.md-nav__link');
-            navItems.forEach(item => {
-                const text = item.textContent.trim();
-                // Add translations as needed
-                switch (text) {
-                    case '首页':
-                        item.textContent = 'Home';
-                        break;
-                    case '快速开始':
-                        item.textContent = 'Getting Started';
-                        break;
-                    case '配置指南':
-                        item.textContent = 'Configuration';
-                        break;
-                    case 'API参考':
-                        item.textContent = 'API Reference';
-                        break;
-                    case '部署指南':
-                        item.textContent = 'Deployment';
-                        break;
-                    case '监控指南':
-                        item.textContent = 'Monitoring';
-                        break;
-                    case '开发指南':
-                        item.textContent = 'Development';
-                        break;
-                    case '故障排查':
-                        item.textContent = 'Troubleshooting';
-                        break;
-                    case '参考资料':
-                        item.textContent = 'Reference';
-                        break;
-                }
-            });
-        }
-    }
-
-    // Initialize language switcher when DOM is ready
-    function init() {
-        insertLanguageSwitcher();
-        updatePageTitle();
-        updateNavigationLabels();
-        
-        // Re-initialize on navigation changes (for SPA-like behavior)
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'childList') {
-                    // Check if header was modified
-                    const headerModified = Array.from(mutation.addedNodes).some(node => 
-                        node.nodeType === Node.ELEMENT_NODE && 
-                        (node.classList.contains('md-header') || node.querySelector('.md-header'))
-                    );
-                    
-                    if (headerModified) {
-                        setTimeout(insertLanguageSwitcher, 100);
+    
+    // 添加页面性能监控
+    function addPerformanceMonitoring() {
+        if ('performance' in window) {
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    if (perfData) {
+                        const loadTime = perfData.loadEventEnd - perfData.loadEventStart;
+                        console.log(`Page load time: ${loadTime}ms`);
+                        
+                        // 如果加载时间过长，显示提示
+                        if (loadTime > 3000) {
+                            console.warn('Page load time is slow. Consider optimizing resources.');
+                        }
                     }
-                }
+                }, 0);
             });
+        }
+    }
+    
+    // 添加离线支持检测
+    function addOfflineSupport() {
+        if ('serviceWorker' in navigator) {
+            // 这里可以注册 Service Worker 来支持离线访问
+            console.log('Service Worker support detected');
+        }
+        
+        // 监听网络状态变化
+        window.addEventListener('online', function() {
+            console.log('Network connection restored');
         });
         
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
+        window.addEventListener('offline', function() {
+            console.log('Network connection lost');
         });
     }
-
-    // Initialize when DOM is loaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
+    
+    // 初始化所有功能
+    function init() {
+        detectAndRedirectLanguage();
+        initLanguageSwitcher();
+        enhanceSearch();
+        addPerformanceMonitoring();
+        addOfflineSupport();
     }
-
-    // Handle browser back/forward navigation
-    window.addEventListener('popstate', function() {
-        setTimeout(function() {
-            insertLanguageSwitcher();
-            updatePageTitle();
-            updateNavigationLabels();
-        }, 100);
-    });
-
+    
+    // 启动初始化
+    init();
+    
+    // 导出全局函数供其他脚本使用
+    window.JAiRouterDocs = {
+        getCurrentLanguage: getCurrentLanguage,
+        switchLanguage: function(langCode) {
+            if (LANGUAGES[langCode]) {
+                const targetPath = getLanguagePath(langCode, window.location.pathname);
+                window.location.href = targetPath;
+            }
+        }
+    };
+    
 })();

@@ -1,4 +1,12 @@
-# Docker Deployment Guide
+﻿# Docker Deployment Guide
+
+<!-- 版本信息 -->
+> **文档版本**: 1.0.0  
+> **最后更新**: 2025-08-18  
+> **Git 提交**: 3418d3f6  
+> **作者**: Lincoln
+<!-- /版本信息 -->
+
 
 JAiRouter provides a complete Dockerized deployment solution, supporting multi-environment configuration and container orchestration. This document details how to deploy JAiRouter using Docker, including standalone deployment, cluster deployment, and monitoring integration.
 
