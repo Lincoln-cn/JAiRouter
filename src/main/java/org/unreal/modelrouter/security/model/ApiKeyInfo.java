@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Data;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -84,5 +85,38 @@ public class ApiKeyInfo {
      */
     public boolean hasPermission(String permission) {
         return permissions != null && permissions.contains(permission);
+    }
+    
+    /**
+     * 生成安全的API Key值
+     * @param prefix API Key前缀（如"sk-"）
+     * @param length API Key长度（不包括前缀）
+     * @return 生成的API Key
+     */
+    public static String generateApiKey(String prefix, int length) {
+        if (prefix == null) {
+            prefix = "sk-";
+        }
+        if (length <= 0) {
+            length = 32;
+        }
+        
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(prefix);
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
+     * 生成默认的API Key值（前缀为"sk-"，长度为32）
+     * @return 生成的API Key
+     */
+    public static String generateApiKey() {
+        return generateApiKey("sk-", 32);
     }
 }
