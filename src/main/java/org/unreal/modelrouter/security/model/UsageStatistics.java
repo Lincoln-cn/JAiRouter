@@ -62,4 +62,28 @@ public class UsageStatistics {
         }
         lastUsedAt = LocalDateTime.now();
     }
+    
+    /**
+     * 重置统计信息
+     */
+    public void reset() {
+        totalRequests = 0L;
+        successfulRequests = 0L;
+        failedRequests = 0L;
+        lastUsedAt = null;
+        if (dailyUsage != null) {
+            dailyUsage.clear();
+        }
+    }
+    
+    /**
+     * 获取失败率
+     * @return 失败率（0-1之间的小数）
+     */
+    public double getFailureRate() {
+        if (totalRequests == 0) {
+            return 0.0;
+        }
+        return (double) failedRequests / totalRequests;
+    }
 }
