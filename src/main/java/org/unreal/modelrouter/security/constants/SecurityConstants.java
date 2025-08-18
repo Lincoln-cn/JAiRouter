@@ -22,6 +22,11 @@ public final class SecurityConstants {
         public static final String PERMISSIONS_ATTRIBUTE = "security.permissions";
     }
     
+    // 请求属性常量
+    public static final String API_KEY_INFO_ATTRIBUTE = "security.apiKeyInfo";
+    public static final String AUTHENTICATED_USER_ID = "security.authenticatedUserId";
+    public static final String USER_PERMISSIONS = "security.userPermissions";
+    
     /**
      * 审计事件类型常量
      */
