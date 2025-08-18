@@ -18,6 +18,7 @@ JAiRouter offers multiple monitoring approaches:
 2. **[Dashboards](dashboards.md)** - Grafana dashboards and visualizations
 3. **[Alerts](alerts.md)** - Alert configuration and notifications
 4. **[Troubleshooting](troubleshooting.md)** - Monitoring-based troubleshooting
+5. - [Alerts Rules](alert_rules_guide.md) - Alert Rules instructions
 
 ## Built-in Monitoring Features
 
