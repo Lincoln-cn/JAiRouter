@@ -1,0 +1,80 @@
+# 安全功能配置示例
+# 将此配置复制到 application.yml 中以启用安全功能
+
+jairouter:
+  security:
+    # 启用安全功能
+    enabled: false  # 默认关闭，需要显式启用
+    
+    # API Key认证配置
+    api-key:
+      enabled: true
+      header-name: "X-API-Key"
+      default-expiration-days: 365
+      cache-enabled: true
+      cache-expiration-seconds: 3600
+      keys:
+        - key-id: "admin-key-001"
+          key-value: "${ADMIN_API_KEY:admin-test-key-12345}"
+          description: "管理员API密钥"
+          permissions: ["admin", "read", "write"]
+          expires-at: "2025-12-31T23:59:59"
+          enabled: true
+        - key-id: "user-key-001"
+          key-value: "${USER_API_KEY:user-test-key-67890}"
+          description: "普通用户API密钥"
+          permissions: ["read"]
+          expires-at: "2025-06-30T23:59:59"
+          enabled: true
+    
+    # JWT认证配置
+    jwt:
+      enabled: false
+      secret: "${JWT_SECRET:your-jwt-secret-key-here}"
+      algorithm: "HS256"
+      expiration-minutes: 60
+      refresh-expiration-days: 7
+      issuer: "jairouter"
+      blacklist-enabled: true
+    
+    # 数据脱敏配置
+    sanitization:
+      request:
+        enabled: true
+        sensitive-words:
+          - "password"
+          - "secret"
+          - "token"
+          - "key"
+        pii-patterns:
+          - "\\d{11}"  # 手机号
+          - "\\d{18}"  # 身份证号
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"  # 邮箱
+        masking-char: "*"
+        log-sanitization: true
+        whitelist-users:
+          - "admin-key-001"
+      
+      response:
+        enabled: true
+        sensitive-words:
+          - "internal"
+          - "debug"
+          - "error"
+        pii-patterns:
+          - "\\d{11}"
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+        masking-char: "*"
+        log-sanitization: true
+    
+    # 审计配置
+    audit:
+      enabled: true
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 90
+      alert-enabled: false
+      alert-thresholds:
+        auth-failures-per-minute: 10
+        sanitization-operations-per-minute: 100
