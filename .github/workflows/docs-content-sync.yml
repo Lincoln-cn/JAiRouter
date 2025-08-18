@@ -1,0 +1,145 @@
+name: 文档内容同步检查
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: 
+      - 'docs/**'
+      - 'src/main/resources/application.yml'
+      - 'pom.xml'
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths: 
+      - 'docs/**'
+      - 'src/main/resources/application.yml'
+      - 'pom.xml'
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+  schedule:
+    # 每天凌晨 2 点运行一次
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  content-sync-check:
+    name: 检查文档内容同步性
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 设置 Python 环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: 安装 Python 依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install PyYAML
+    
+    - name: 运行文档内容同步检查
+      id: sync-check
+      run: |
+        python scripts/check-docs-sync.py \
+          --project-root . \
+          --output docs-sync-report.md \
+          --fail-on-error
+    
+    - name: 上传检查报告
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: docs-sync-report
+        path: docs-sync-report.md
+        retention-days: 30
+    
+    - name: 添加 PR 评论 (如果有问题)
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          try {
+            const report = fs.readFileSync('docs-sync-report.md', 'utf8');
+            
+            const comment = `## 📋 文档内容同步检查报告
+            
+            检查发现了一些需要注意的问题：
+            
+            ${report}
+            
+            ---
+            
+            💡 **建议**: 请检查并修复上述问题，确保文档与代码保持同步。
+            
+            🔧 **本地运行**: 
+            \`\`\`bash
+            python scripts/check-docs-sync.py --project-root . --fail-on-error
+            \`\`\`
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('无法读取报告文件或添加评论:', error.message);
+          }
+    
+    - name: 检查结果总结
+      if: always()
+      run: |
+        if [ -f "docs-sync-report.md" ]; then
+          echo "## 📋 文档同步检查报告" >> $GITHUB_STEP_SUMMARY
+          cat docs-sync-report.md >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ steps.sync-check.outcome }}" = "success" ]; then
+          echo "✅ 文档内容同步检查通过" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ 文档内容同步检查发现问题" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "请查看上方的详细报告并修复相关问题。" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  windows-compatibility-check:
+    name: Windows 兼容性检查
+    runs-on: windows-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 运行 PowerShell 版本检查
+      shell: powershell
+      run: |
+        # 设置执行策略
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+        
+        # 运行 PowerShell 版本的同步检查
+        try {
+          .\scripts\check-docs-sync.ps1 -ProjectRoot . -OutputFile "docs-sync-report-windows.md"
+          Write-Host "✅ Windows PowerShell 版本检查完成" -ForegroundColor Green
+        }
+        catch {
+          Write-Host "❌ Windows PowerShell 版本检查失败: $($_.Exception.Message)" -ForegroundColor Red
+          exit 1
+        }
+    
+    - name: 上传 Windows 检查报告
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: docs-sync-report-windows
+        path: docs-sync-report-windows.md
+        retention-days: 30

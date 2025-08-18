@@ -1,4 +1,12 @@
-# Circuit Breaker Configuration
+﻿# Circuit Breaker Configuration
+
+<!-- 版本信息 -->
+> **文档版本**: 1.0.0  
+> **最后更新**: 2025-08-18  
+> **Git 提交**: 3418d3f6  
+> **作者**: Lincoln
+<!-- /版本信息 -->
+
 
 JAiRouter has a built-in circuit breaker mechanism to prevent service avalanches and cascading failures. When backend services fail, the circuit breaker automatically cuts off requests and automatically resumes normal operation after service recovery. This document details the configuration and usage of the circuit breaker.
 

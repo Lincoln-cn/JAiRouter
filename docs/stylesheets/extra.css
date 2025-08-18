@@ -1,141 +1,95 @@
-/* Language switcher enhancements */
-.md-header__option {
-  margin-left: 0.5rem;
+/* JAiRouter 文档站点自定义样式 */
+
+/* 性能优化 */
+:root {
+  --md-primary-fg-color: #1976d2;
+  --md-primary-fg-color--light: #42a5f5;
+  --md-primary-fg-color--dark: #1565c0;
+  --md-accent-fg-color: #2196f3;
 }
 
-.md-header__option .md-select__inner {
-  font-size: 0.8rem;
+/* 字体优化 - 使用系统字体栈提升加载速度 */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Ensure language links are properly styled */
-.md-header__option .md-select__link {
-  color: var(--md-primary-fg-color--light);
-  text-decoration: none;
+/* 代码字体优化 */
+code, pre {
+  font-family: "SFMono-Regular", "Monaco", "Inconsolata", "Fira Code", "Droid Sans Mono", "Courier New", monospace;
 }
 
-.md-header__option .md-select__link:hover {
-  color: var(--md-accent-fg-color);
+/* 响应式图片 */
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Language indicator in navigation */
-.md-nav__title::before {
-  content: "";
+/* 代码块优化 */
+.highlight {
+  border-radius: 6px;
+  overflow-x: auto;
 }
 
-/* Responsive language switcher */
-@media screen and (max-width: 76.1875em) {
-  .md-header__option {
-    display: none;
-  }
+.highlight pre {
+  margin: 0;
+  padding: 1rem;
+  line-height: 1.5;
 }
 
-/* Custom styling for language switcher dropdown */
-.md-select {
-  position: relative;
+/* 代码复制按钮样式 */
+.md-clipboard {
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
-.md-select__inner {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.md-clipboard:hover {
+  background-color: var(--md-accent-fg-color);
 }
 
-.md-select__list {
-  background: var(--md-default-bg-color);
-  border: 1px solid var(--md-default-fg-color--lightest);
-  border-radius: 0.25rem;
-  box-shadow: var(--md-shadow-z2);
-  margin-top: 0.25rem;
-  min-width: 8rem;
-  position: absolute;
-  right: 0;
-  top: 100%;
-  z-index: 1000;
+/* 搜索框优化 */
+.md-search__input {
+  border-radius: 20px;
+  transition: all 0.3s ease;
 }
 
-.md-select__item {
-  display: block;
-  padding: 0.5rem 0.75rem;
-  text-decoration: none;
-  color: var(--md-default-fg-color);
+.md-search__input:focus {
+  box-shadow: 0 0 0 2px var(--md-accent-fg-color);
 }
 
-.md-select__item:hover {
-  background: var(--md-default-fg-color--lightest);
+/* 导航优化 */
+.md-nav__item {
+  transition: all 0.2s ease;
 }
 
-/* Language flag icons (optional enhancement) */
-.language-zh::before {
-  content: "🇨🇳";
-  margin-right: 0.25rem;
+.md-nav__link:hover {
+  background-color: rgba(25, 118, 210, 0.1);
+  border-radius: 4px;
 }
 
-.language-en::before {
-  content: "🇺🇸";
-  margin-right: 0.25rem;
-}
-
-/* Improve readability for Chinese content */
-.md-typeset {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-/* Code blocks with better Chinese font support */
-.md-typeset code,
-.md-typeset pre {
-  font-family: "SFMono-Regular", "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Fira Mono", "Droid Sans Mono", "Source Code Pro", "Consolas", "Liberation Mono", "Menlo", "Courier New", monospace;
-}
-
-/* Ensure proper line height for mixed Chinese/English content */
-.md-typeset p,
-.md-typeset li {
-  line-height: 1.7;
-}
-
-/* Better spacing for Chinese headings */
-.md-typeset h1,
-.md-typeset h2,
-.md-typeset h3,
-.md-typeset h4,
-.md-typeset h5,
-.md-typeset h6 {
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-}
-
-/* Improve table readability for mixed content */
-.md-typeset table {
+/* 表格响应式优化 */
+.md-typeset table:not([class]) {
   font-size: 0.9rem;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.md-typeset table th,
-.md-typeset table td {
-  padding: 0.75rem 1rem;
-  vertical-align: top;
-}
-
-/* Navigation improvements for multilingual content */
-.md-nav__title {
+.md-typeset table:not([class]) th {
+  background-color: var(--md-primary-fg-color);
+  color: white;
   font-weight: 600;
 }
 
-.md-nav__item .md-nav__link {
-  padding: 0.5rem 0.75rem;
+.md-typeset table:not([class]) tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
-/* Search improvements for Chinese content */
-.md-search__input {
-  font-family: inherit;
-}
-
-.md-search__input::placeholder {
-  opacity: 0.7;
-}
-
-/* Responsive improvements */
-@media screen and (max-width: 44.9375em) {
-  .md-typeset {
-    font-size: 0.9rem;
+/* 移动端优化 */
+@media screen and (max-width: 768px) {
+  .md-typeset table:not([class]) {
+    font-size: 0.8rem;
   }
   
   .md-typeset h1 {
@@ -144,5 +98,171 @@
   
   .md-typeset h2 {
     font-size: 1.5rem;
+  }
+  
+  .md-typeset h3 {
+    font-size: 1.3rem;
+  }
+}
+
+/* 告警框样式优化 */
+.md-typeset .admonition {
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem 0;
+}
+
+.md-typeset .admonition-title {
+  font-weight: 600;
+  border-radius: 6px 6px 0 0;
+}
+
+/* 语言切换器样式 */
+.language-switcher {
+  position: fixed;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  z-index: 1000;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.language-switcher a {
+  display: block;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: var(--md-primary-fg-color);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.language-switcher a:hover,
+.language-switcher a.active {
+  background-color: var(--md-primary-fg-color);
+  color: white;
+}
+
+/* 深色模式下的语言切换器 */
+[data-md-color-scheme="slate"] .language-switcher {
+  background: var(--md-default-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
+[data-md-color-scheme="slate"] .language-switcher a {
+  color: var(--md-default-fg-color);
+}
+
+/* 移动端隐藏语言切换器 */
+@media screen and (max-width: 768px) {
+  .language-switcher {
+    display: none;
+  }
+}
+
+/* 加载动画优化 */
+.md-content {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 深色模式滚动条 */
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+[data-md-color-scheme="slate"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 打印样式优化 */
+@media print {
+  .md-header,
+  .md-sidebar,
+  .md-footer,
+  .language-switcher {
+    display: none !important;
+  }
+  
+  .md-main__inner {
+    margin: 0 !important;
+  }
+  
+  .md-content {
+    max-width: none !important;
+  }
+}
+
+/* 性能优化 - 减少重绘 */
+.md-nav__link,
+.md-tabs__link,
+.md-footer__link {
+  will-change: transform;
+}
+
+/* 焦点可访问性优化 */
+.md-nav__link:focus,
+.md-tabs__link:focus,
+.md-search__input:focus {
+  outline: 2px solid var(--md-accent-fg-color);
+  outline-offset: 2px;
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .md-typeset table:not([class]) th {
+    background-color: #000;
+    color: #fff;
+  }
+  
+  .md-nav__link:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 减少动画的用户偏好支持 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

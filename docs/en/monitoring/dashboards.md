@@ -1,4 +1,12 @@
-# Grafana Dashboard Usage Guide
+﻿# Grafana Dashboard Usage Guide
+
+<!-- 版本信息 -->
+> **文档版本**: 1.0.0  
+> **最后更新**: 2025-08-18  
+> **Git 提交**: 3418d3f6  
+> **作者**: Lincoln
+<!-- /版本信息 -->
+
 
 This guide provides detailed instructions on how to use JAiRouter's Grafana dashboards for system monitoring, performance analysis, and troubleshooting.
 

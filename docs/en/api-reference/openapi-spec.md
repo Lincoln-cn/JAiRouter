@@ -1,4 +1,12 @@
-# OpenAPI Specification Document
+﻿# OpenAPI Specification Document
+
+<!-- 版本信息 -->
+> **文档版本**: 1.0.0  
+> **最后更新**: 2025-08-18  
+> **Git 提交**: 3418d3f6  
+> **作者**: Lincoln
+<!-- /版本信息 -->
+
 
 JAiRouter uses SpringDoc OpenAPI 3 to automatically generate API documentation, providing an interactive API exploration and testing experience.
 

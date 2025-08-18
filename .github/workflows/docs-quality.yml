@@ -50,7 +50,7 @@ jobs:
         ignore: 'node_modules'
         fix: false
     
-    - name: 检查链接有效性
+    - name: 检查链接有效性 (第三方工具)
       uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:
         use-quiet-mode: 'yes'
@@ -58,6 +58,19 @@ jobs:
         config-file: '.github/mlc_config.json'
         folder-path: 'docs'
         file-path: './README.md, ./README-EN.md'
+      continue-on-error: true
+    
+    - name: 检查链接有效性 (自定义脚本)
+      run: |
+        python3 scripts/check-links.py --dir docs --output link-check-report.json --fail-on-error
+        echo "✅ 链接检查完成"
+    
+    - name: 上传链接检查报告
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: link-check-report
+        path: link-check-report.json
     
     - name: 检查文档结构
       run: |

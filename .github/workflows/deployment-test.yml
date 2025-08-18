@@ -1,0 +1,241 @@
+name: 部署测试验证
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: '测试类型'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - full
+        - build-only
+        - config-only
+  pull_request:
+    branches: [ main, master ]
+    paths: 
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/docs.yml'
+      - '.github/workflows/deployment-test.yml'
+
+jobs:
+  validate-deployment:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: 设置 Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: 安装依赖
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs-material
+        pip install mkdocs-git-revision-date-localized-plugin
+        pip install mkdocs-mermaid2-plugin
+        pip install mkdocs-static-i18n
+        pip install mkdocs-minify-plugin
+        pip install mkdocs-optimize-plugin
+    
+    - name: 验证配置文件
+      run: |
+        echo "验证 MkDocs 配置..."
+        mkdocs config
+        echo "✓ 配置文件验证通过"
+    
+    - name: 检查文档结构
+      run: |
+        echo "检查文档结构..."
+        
+        # 检查必要的目录
+        required_dirs=("docs/zh" "docs/en")
+        for dir in "${required_dirs[@]}"; do
+          if [[ ! -d "$dir" ]]; then
+            echo "✗ 缺少目录: $dir"
+            exit 1
+          fi
+          echo "✓ 目录存在: $dir"
+        done
+        
+        # 检查关键文件
+        required_files=("docs/zh/index.md" "docs/en/index.md")
+        for file in "${required_files[@]}"; do
+          if [[ ! -f "$file" ]]; then
+            echo "✗ 缺少文件: $file"
+            exit 1
+          fi
+          echo "✓ 文件存在: $file"
+        done
+    
+    - name: 测试文档构建
+      run: |
+        echo "测试文档构建..."
+        mkdocs build --strict --verbose
+        echo "✓ 文档构建成功"
+    
+    - name: 验证多语言支持
+      run: |
+        echo "验证多语言支持..."
+        
+        # 检查构建输出中的语言版本
+        language_files=("site/index.html" "site/en/index.html")
+        for file in "${language_files[@]}"; do
+          if [[ ! -f "$file" ]]; then
+            echo "✗ 缺少语言版本文件: $file"
+            exit 1
+          fi
+          echo "✓ 语言版本文件存在: $file"
+        done
+        
+        # 检查语言切换功能
+        if grep -q "language-switcher" site/index.html; then
+          echo "✓ 语言切换功能已集成"
+        else
+          echo "⚠ 语言切换功能可能未正确集成"
+        fi
+    
+    - name: 检查页面内容
+      run: |
+        echo "检查页面内容..."
+        
+        # 检查中文首页
+        if grep -q "JAiRouter" site/index.html; then
+          echo "✓ 中文首页内容正确"
+        else
+          echo "✗ 中文首页内容异常"
+          exit 1
+        fi
+        
+        # 检查英文首页
+        if grep -q "JAiRouter" site/en/index.html; then
+          echo "✓ 英文首页内容正确"
+        else
+          echo "✗ 英文首页内容异常"
+          exit 1
+        fi
+    
+    - name: 验证导航结构
+      run: |
+        echo "验证导航结构..."
+        
+        # 检查导航菜单是否包含主要章节
+        sections=("入门" "配置指南" "API参考" "部署指南" "监控指南")
+        for section in "${sections[@]}"; do
+          if grep -q "$section" site/index.html; then
+            echo "✓ 导航包含: $section"
+          else
+            echo "⚠ 导航可能缺少: $section"
+          fi
+        done
+    
+    - name: 检查资源文件
+      run: |
+        echo "检查资源文件..."
+        
+        # 检查 CSS 和 JS 文件
+        if [[ -d "site/assets" ]]; then
+          echo "✓ 资源文件目录存在"
+        else
+          echo "⚠ 资源文件目录不存在"
+        fi
+        
+        # 检查搜索功能
+        if find site -name "*search*" -type f | grep -q .; then
+          echo "✓ 搜索功能文件存在"
+        else
+          echo "⚠ 搜索功能文件可能缺失"
+        fi
+    
+    - name: 模拟部署测试
+      run: |
+        echo "模拟部署测试..."
+        
+        # 检查构建产物大小
+        site_size=$(du -sh site | cut -f1)
+        echo "构建产物大小: $site_size"
+        
+        # 检查关键页面数量
+        html_count=$(find site -name "*.html" | wc -l)
+        echo "HTML 页面数量: $html_count"
+        
+        if [[ $html_count -lt 10 ]]; then
+          echo "⚠ HTML 页面数量较少，请检查构建是否完整"
+        else
+          echo "✓ HTML 页面数量正常"
+        fi
+    
+    - name: 生成测试报告
+      if: always()
+      run: |
+        echo "=== 部署测试报告 ==="
+        echo "测试时间: $(date)"
+        echo "构建状态: ${{ job.status }}"
+        echo "Python 版本: $(python --version)"
+        echo "MkDocs 版本: $(mkdocs --version)"
+        
+        if [[ -d "site" ]]; then
+          echo "构建产物: ✓ 存在"
+          echo "构建大小: $(du -sh site | cut -f1)"
+          echo "页面数量: $(find site -name "*.html" | wc -l)"
+        else
+          echo "构建产物: ✗ 不存在"
+        fi
+    
+    - name: 上传构建产物（用于调试）
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: failed-build-artifacts
+        path: |
+          site/
+          mkdocs.yml
+        retention-days: 7
+
+  test-cross-platform:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.9', '3.11']
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+    
+    - name: 设置 Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: 安装依赖
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs-material
+        pip install mkdocs-git-revision-date-localized-plugin
+        pip install mkdocs-mermaid2-plugin
+        pip install mkdocs-static-i18n
+        pip install mkdocs-minify-plugin
+        pip install mkdocs-optimize-plugin
+    
+    - name: 测试构建 (${{ matrix.os }})
+      run: |
+        mkdocs build --strict
+    
+    - name: 验证构建结果
+      shell: bash
+      run: |
+        if [[ -f "site/index.html" && -f "site/en/index.html" ]]; then
+          echo "✓ 跨平台构建成功 (${{ matrix.os }}, Python ${{ matrix.python-version }})"
+        else
+          echo "✗ 跨平台构建失败"
+          exit 1
+        fi

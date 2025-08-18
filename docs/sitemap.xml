@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <!-- 中文首页 -->
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/"/>
+  </url>
+  
+  <!-- 英文首页 -->
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/en/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/"/>
+  </url>
+  
+  <!-- 中文主要页面 -->
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/getting-started/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/getting-started/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/getting-started/"/>
+  </url>
+  
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/configuration/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/configuration/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/configuration/"/>
+  </url>
+  
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/api-reference/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/api-reference/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/api-reference/"/>
+  </url>
+  
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/deployment/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/deployment/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/deployment/"/>
+  </url>
+  
+  <!-- 英文主要页面 -->
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/en/getting-started/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/getting-started/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/getting-started/"/>
+  </url>
+  
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/en/configuration/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/configuration/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/configuration/"/>
+  </url>
+  
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/en/api-reference/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/api-reference/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/api-reference/"/>
+  </url>
+  
+  <url>
+    <loc>https://lincoln-cn.github.io/JAiRouter/en/deployment/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/deployment/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/deployment/"/>
+  </url>
+  
+</urlset>
