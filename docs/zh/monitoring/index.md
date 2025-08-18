@@ -98,6 +98,7 @@ graph TB
 
 ### 运维指南
 - [告警配置](alerts.md) - 告警规则配置和管理
+- [告警规则](alert_rules_guide.md) - 告警规则详细说明
 - [故障排查](troubleshooting.md) - 常见问题和解决方案
 
 ### 高级主题
