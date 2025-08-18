@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Import;
 @ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true")
 @EnableConfigurationProperties(SecurityProperties.class)
 @Import({
-    // 这里将在后续任务中添加具体的配置类
+    SecurityConfiguration.class
 })
 public class SecurityAutoConfiguration {
     
