@@ -143,15 +143,15 @@ parse_args() {
 
 # 确保项目目录存在
 ensure_project_structure() {
-    local kiro_dir="$PROJECT_ROOT/docs"
+    local docs_dir="$PROJECT_ROOT/docs"
     
-    if [ ! -d "$kiro_dir" ]; then
+    if [ ! -d "docs_dir" ]; then
         log_info "📁 创建 docs 目录..."
-        mkdir -p "$kiro_dir"
+        mkdir -p "docs_dir"
     fi
     
     # 确保版本配置文件存在
-    local config_file="$kiro_dir/docs-version-config.yml"
+    local config_file="docs_dir/docs-version-config.yml"
     if [ ! -f "$config_file" ]; then
         log_info "📝 创建默认版本配置文件..."
         cat > "$config_file" << 'EOF'
