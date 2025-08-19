@@ -62,7 +62,7 @@ jobs:
     
     - name: 检查链接有效性 (自定义脚本)
       run: |
-        python3 scripts/check-links.py --dir docs --output link-check-report.json --fail-on-error
+        python3 scripts/docs/check-links.py --dir docs --output link-check-report.json --fail-on-error
         echo "✅ 链接检查完成"
     
     - name: 上传链接检查报告
