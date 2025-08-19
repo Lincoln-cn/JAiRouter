@@ -2,10 +2,11 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-18  
-> **Git 提交**: 3418d3f6  
+> **最后更新**: 2025-08-19  
+> **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
+
 
 
 JAiRouter provides flexible configuration options to meet various deployment scenarios. This guide covers all aspects of configuration from basic setup to advanced features.

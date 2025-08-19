@@ -1,0 +1,186 @@
+# JAiRouter 向后兼容性配置文件
+# 此配置文件确保在升级到安全增强版本时，现有部署不会受到影响
+# 使用方式: --spring.profiles.active=legacy 或 SPRING_PROFILES_ACTIVE=legacy
+
+# ========================================
+# 安全功能配置 - 向后兼容模式
+# ========================================
+# 在向后兼容模式下，所有安全功能默认关闭
+# 这确保现有的部署在升级后能够正常工作，无需修改配置
+jairouter:
+  security:
+    # 安全功能总开关 - 向后兼容模式下默认关闭
+    enabled: false
+    
+    # API Key 认证配置 - 向后兼容模式
+    api-key:
+      # 即使安全功能关闭，也保持API Key配置结构以便后续启用
+      enabled: false
+      header-name: "X-API-Key"
+      default-expiration-days: 365
+      cache-enabled: false
+      cache-expiration-seconds: 3600
+      keys: []  # 空的API Key列表
+    
+    # JWT 认证配置 - 向后兼容模式
+    jwt:
+      enabled: false
+      secret: ""
+      algorithm: "HS256"
+      expiration-minutes: 60
+      refresh-expiration-days: 7
+      issuer: "jairouter"
+      blacklist-enabled: false
+      blacklist-cache:
+        expiration-seconds: 86400
+        max-size: 10000
+    
+    # 数据脱敏配置 - 向后兼容模式
+    sanitization:
+      request:
+        enabled: false
+        sensitive-words: []
+        pii-patterns: []
+        masking-char: "*"
+        strategies:
+          phone: "keep-prefix-suffix"
+          email: "keep-domain"
+          id-card: "keep-prefix-suffix"
+          default: "full-mask"
+        log-sanitization: false
+        whitelist-users: []
+        whitelist-ips: []
+        rule-priorities:
+          phone: 1
+          email: 2
+          id-card: 3
+          bank-card: 4
+          sensitive-word: 5
+      
+      response:
+        enabled: false
+        sensitive-words: []
+        pii-patterns: []
+        masking-char: "*"
+        log-sanitization: false
+        preserve-json-structure: true
+        service-specific-rules:
+          chat:
+            additional-patterns: []
+          embedding:
+            enabled: false
+          rerank:
+            preserve-ranking-scores: true
+    
+    # 安全审计配置 - 向后兼容模式
+    audit:
+      enabled: false
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 90
+      alert-enabled: false
+      alert-thresholds:
+        auth-failures-per-minute: 10
+        sanitization-operations-per-minute: 100
+        suspicious-requests-per-minute: 20
+      event-types:
+        authentication-success: false
+        authentication-failure: false
+        authorization-failure: false
+        sanitization-applied: false
+        configuration-changed: false
+        security-alert: false
+        suspicious-activity: false
+      storage:
+        type: "file"
+        file-path: "logs/security-audit.log"
+        rotation:
+          max-file-size: "100MB"
+          max-files: 30
+    
+    # 安全监控配置 - 向后兼容模式
+    monitoring:
+      enabled: false
+      metrics:
+        authentication:
+          enabled: false
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+        sanitization:
+          enabled: false
+          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]
+        security-events:
+          enabled: false
+          by-event-type: false
+          by-user: false
+          by-ip: false
+      alerts:
+        enabled: false
+        thresholds:
+          authentication-failure-rate: 0.1
+          sanitization-error-rate: 0.05
+          response-time-p99: 1000
+          max-requests-per-minute: 1000
+        notifications:
+          email:
+            enabled: false
+            recipients: []
+          webhook:
+            enabled: false
+            url: ""
+          log:
+            enabled: false
+    
+    # 性能优化配置 - 向后兼容模式
+    performance:
+      authentication:
+        async-enabled: false
+        thread-pool-size: 10
+        timeout-ms: 5000
+      sanitization:
+        parallel-enabled: false
+        thread-pool-size: 5
+        streaming-threshold: 1048576
+        regex-cache-size: 100
+      cache:
+        redis:
+          enabled: false
+          host: "localhost"
+          port: 6379
+          password: ""
+          database: 0
+          timeout: 2000
+          pool:
+            max-active: 8
+            max-idle: 8
+            min-idle: 0
+        local:
+          enabled: false
+          api-key:
+            max-size: 1000
+            expire-after-write: 3600
+          jwt-blacklist:
+            max-size: 10000
+            expire-after-write: 86400
+
+# ========================================
+# 向后兼容性说明
+# ========================================
+# 此配置文件的目的是确保现有的JAiRouter部署在升级到安全增强版本时
+# 能够无缝工作，不会因为新增的安全功能而导致服务中断或配置错误。
+#
+# 使用场景：
+# 1. 现有生产环境升级时的过渡期配置
+# 2. 需要逐步启用安全功能的渐进式部署
+# 3. 测试环境中需要关闭安全功能的场景
+# 4. 开发环境中暂时不需要安全功能的情况
+#
+# 启用方式：
+# 1. 命令行参数: java -jar app.jar --spring.profiles.active=legacy
+# 2. 环境变量: SPRING_PROFILES_ACTIVE=legacy
+# 3. 配置文件: spring.profiles.active=legacy
+#
+# 注意事项：
+# 1. 此配置仅用于向后兼容，不建议在新部署中长期使用
+# 2. 建议在确认系统稳定后，逐步启用安全功能
+# 3. 可以通过配置管理工具动态切换到安全模式

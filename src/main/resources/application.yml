@@ -226,6 +226,384 @@ monitoring:
       buffer-size: 1000        # 缓冲区大小
 
 # Spring Actuator配置增强
+# ========================================
+# 安全功能配置
+# ========================================
+# JAiRouter 安全加固功能配置，包括API Key认证、JWT支持和数据脱敏
+# 注意：安全功能默认关闭，需要显式启用
+jairouter:
+  security:
+    # 安全功能总开关
+    # 设置为 true 启用所有安全功能，false 则完全禁用
+    enabled: false
+    
+    # ========================================
+    # API Key 认证配置
+    # ========================================
+    api-key:
+      # 启用API Key认证
+      enabled: true
+      
+      # API Key请求头名称
+      # 客户端需要在此请求头中提供有效的API Key
+      header-name: "X-API-Key"
+      
+      # 默认API Key过期天数
+      # 新创建的API Key如果未指定过期时间，将使用此默认值
+      default-expiration-days: 365
+      
+      # 启用API Key缓存以提升性能
+      # 建议在生产环境中启用以减少数据库查询
+      cache-enabled: true
+      
+      # 缓存过期时间（秒）
+      # API Key验证结果在缓存中的保存时间
+      cache-expiration-seconds: 3600
+      
+      # API Key列表配置
+      # 支持通过环境变量注入敏感信息
+      keys:
+        # 管理员API Key示例
+        - key-id: "admin-key-001"
+          key-value: "${ADMIN_API_KEY:}"  # 通过环境变量ADMIN_API_KEY设置
+          description: "管理员API密钥 - 拥有完整权限"
+          permissions: ["admin", "read", "write", "delete"]
+          expires-at: "2025-12-31T23:59:59"
+          enabled: true
+          metadata:
+            created-by: "system"
+            department: "IT"
+        
+        # 普通用户API Key示例
+        - key-id: "user-key-001"
+          key-value: "${USER_API_KEY:}"   # 通过环境变量USER_API_KEY设置
+          description: "普通用户API密钥 - 只读权限"
+          permissions: ["read"]
+          expires-at: "2025-06-30T23:59:59"
+          enabled: true
+          metadata:
+            created-by: "admin"
+            department: "Business"
+    
+    # ========================================
+    # JWT 认证配置
+    # ========================================
+    jwt:
+      # 启用JWT认证支持
+      # 可以与API Key认证同时使用
+      enabled: false
+      
+      # JWT签名密钥
+      # 生产环境中必须使用强密钥，建议通过环境变量设置
+      secret: "${JWT_SECRET:}"
+      
+      # JWT签名算法
+      # 支持: HS256, HS384, HS512, RS256, RS384, RS512
+      algorithm: "HS256"
+      
+      # JWT令牌过期时间（分钟）
+      expiration-minutes: 60
+      
+      # 刷新令牌过期时间（天）
+      refresh-expiration-days: 7
+      
+      # JWT发行者标识
+      issuer: "jairouter"
+      
+      # 启用令牌黑名单功能
+      # 用于实现令牌撤销和登出功能
+      blacklist-enabled: true
+      
+      # 黑名单缓存配置
+      blacklist-cache:
+        # 黑名单缓存过期时间（秒）
+        expiration-seconds: 86400  # 24小时
+        # 最大缓存条目数
+        max-size: 10000
+    
+    # ========================================
+    # 数据脱敏配置
+    # ========================================
+    sanitization:
+      # 请求数据脱敏配置
+      request:
+        # 启用请求数据脱敏
+        enabled: true
+        
+        # 敏感词列表
+        # 匹配到这些词汇时将进行脱敏处理
+        sensitive-words:
+          - "password"      # 密码
+          - "secret"        # 密钥
+          - "token"         # 令牌
+          - "key"           # 密钥
+          - "credential"    # 凭证
+          - "auth"          # 认证信息
+          - "session"       # 会话信息
+        
+        # PII（个人身份信息）正则表达式模式
+        # 用于识别和脱敏个人敏感信息
+        pii-patterns:
+          - "\\d{11}"                                                    # 手机号码
+          - "\\d{18}"                                                    # 身份证号码
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"          # 邮箱地址
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"      # 银行卡号
+          - "\\b(?:13[0-9]|14[5-9]|15[0-3,5-9]|16[2,5,6,7]|17[0-8]|18[0-9]|19[1,3,5,8,9])\\d{8}\\b"  # 中国手机号
+        
+        # 脱敏字符
+        # 用于替换敏感信息的字符
+        masking-char: "*"
+        
+        # 脱敏策略配置
+        strategies:
+          # 手机号脱敏策略：保留前3位和后4位
+          phone: "keep-prefix-suffix"
+          # 邮箱脱敏策略：保留域名，用户名部分脱敏
+          email: "keep-domain"
+          # 身份证脱敏策略：保留前6位和后4位
+          id-card: "keep-prefix-suffix"
+          # 默认策略：完全脱敏
+          default: "full-mask"
+        
+        # 记录脱敏操作日志
+        log-sanitization: true
+        
+        # 白名单用户
+        # 这些用户的请求将跳过脱敏处理
+        whitelist-users:
+          - "admin-key-001"
+        
+        # 白名单IP地址
+        # 来自这些IP的请求将跳过脱敏处理
+        whitelist-ips:
+          - "127.0.0.1"
+          - "::1"
+        
+        # 脱敏规则优先级
+        # 数字越小优先级越高
+        rule-priorities:
+          phone: 1
+          email: 2
+          id-card: 3
+          bank-card: 4
+          sensitive-word: 5
+      
+      # 响应数据脱敏配置
+      response:
+        # 启用响应数据脱敏
+        enabled: true
+        
+        # 响应中的敏感词
+        sensitive-words:
+          - "internal"      # 内部信息
+          - "debug"         # 调试信息
+          - "error"         # 错误详情
+          - "exception"     # 异常信息
+          - "stack"         # 堆栈信息
+          - "trace"         # 跟踪信息
+        
+        # 响应中的PII模式
+        pii-patterns:
+          - "\\d{11}"                                                    # 手机号码
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"          # 邮箱地址
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"      # 银行卡号
+        
+        # 响应脱敏字符
+        masking-char: "*"
+        
+        # 记录响应脱敏日志
+        log-sanitization: true
+        
+        # 保持JSON结构完整性
+        preserve-json-structure: true
+        
+        # 不同服务类型的差异化脱敏策略
+        service-specific-rules:
+          chat:
+            # 聊天服务的特殊脱敏规则
+            additional-patterns:
+              - "\\b(?:QQ|微信|WeChat)[:：]?\\s*\\d+\\b"  # QQ号、微信号
+          embedding:
+            # 向量服务通常不需要额外脱敏
+            enabled: false
+          rerank:
+            # 重排序服务的脱敏规则
+            preserve-ranking-scores: true
+    
+    # ========================================
+    # 安全审计配置
+    # ========================================
+    audit:
+      # 启用安全审计功能
+      enabled: true
+      
+      # 审计日志级别
+      # 可选: TRACE, DEBUG, INFO, WARN, ERROR
+      log-level: "INFO"
+      
+      # 是否在审计日志中包含请求体
+      # 注意：可能包含敏感信息，生产环境建议关闭
+      include-request-body: false
+      
+      # 是否在审计日志中包含响应体
+      # 注意：可能包含敏感信息，生产环境建议关闭
+      include-response-body: false
+      
+      # 审计日志保留天数
+      retention-days: 90
+      
+      # 启用实时告警
+      alert-enabled: true
+      
+      # 告警阈值配置
+      alert-thresholds:
+        # 每分钟认证失败次数阈值
+        auth-failures-per-minute: 10
+        # 每分钟脱敏操作次数阈值
+        sanitization-operations-per-minute: 100
+        # 每分钟异常请求数阈值
+        suspicious-requests-per-minute: 20
+      
+      # 审计事件类型配置
+      event-types:
+        # 认证成功事件
+        authentication-success: true
+        # 认证失败事件
+        authentication-failure: true
+        # 授权失败事件
+        authorization-failure: true
+        # 数据脱敏事件
+        sanitization-applied: true
+        # 配置变更事件
+        configuration-changed: true
+        # 安全告警事件
+        security-alert: true
+        # 可疑活动事件
+        suspicious-activity: true
+      
+      # 审计日志存储配置
+      storage:
+        # 存储类型: file, database, elasticsearch
+        type: "file"
+        # 文件存储路径
+        file-path: "logs/security-audit.log"
+        # 日志轮转配置
+        rotation:
+          max-file-size: "100MB"
+          max-files: 30
+    
+    # ========================================
+    # 安全监控配置
+    # ========================================
+    monitoring:
+      # 启用安全监控
+      enabled: true
+      
+      # 监控指标配置
+      metrics:
+        # 认证相关指标
+        authentication:
+          enabled: true
+          # 响应时间直方图桶配置
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+        
+        # 数据脱敏相关指标
+        sanitization:
+          enabled: true
+          # 脱敏操作响应时间桶配置
+          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]
+        
+        # 安全事件指标
+        security-events:
+          enabled: true
+          # 按事件类型统计
+          by-event-type: true
+          # 按用户统计
+          by-user: true
+          # 按IP地址统计
+          by-ip: true
+      
+      # 告警配置
+      alerts:
+        # 启用告警功能
+        enabled: true
+        
+        # 告警阈值
+        thresholds:
+          # 认证失败率阈值（10%）
+          authentication-failure-rate: 0.1
+          # 脱敏错误率阈值（5%）
+          sanitization-error-rate: 0.05
+          # P99响应时间阈值（毫秒）
+          response-time-p99: 1000
+          # 每分钟最大请求数
+          max-requests-per-minute: 1000
+        
+        # 告警通知配置
+        notifications:
+          # 邮件通知
+          email:
+            enabled: false
+            recipients: []
+          # Webhook通知
+          webhook:
+            enabled: false
+            url: ""
+          # 日志通知
+          log:
+            enabled: true
+    
+    # ========================================
+    # 性能优化配置
+    # ========================================
+    performance:
+      # 认证性能优化
+      authentication:
+        # 启用异步认证
+        async-enabled: true
+        # 认证线程池大小
+        thread-pool-size: 10
+        # 认证超时时间（毫秒）
+        timeout-ms: 5000
+      
+      # 脱敏性能优化
+      sanitization:
+        # 启用并行脱敏处理
+        parallel-enabled: true
+        # 脱敏线程池大小
+        thread-pool-size: 5
+        # 大文件流式处理阈值（字节）
+        streaming-threshold: 1048576  # 1MB
+        # 正则表达式编译缓存大小
+        regex-cache-size: 100
+      
+      # 缓存配置
+      cache:
+        # Redis缓存配置
+        redis:
+          enabled: false
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: 0
+          timeout: 2000
+          pool:
+            max-active: 8
+            max-idle: 8
+            min-idle: 0
+        
+        # 本地缓存配置
+        local:
+          enabled: true
+          # API Key缓存配置
+          api-key:
+            max-size: 1000
+            expire-after-write: 3600  # 1小时
+          # JWT黑名单缓存配置
+          jwt-blacklist:
+            max-size: 10000
+            expire-after-write: 86400  # 24小时
+
 management:
   endpoints:
     web:

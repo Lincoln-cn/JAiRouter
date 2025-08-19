@@ -1,0 +1,273 @@
+# ========================================
+# 预发布环境配置
+# ========================================
+# 预发布环境用于生产前的最终测试，配置接近生产环境但相对宽松
+
+spring:
+  profiles:
+    active: staging
+
+# 日志配置 - 预发布环境详细日志
+logging:
+  level:
+    root: INFO
+    org.unreal.modelrouter.controller: INFO
+    org.unreal.modelrouter.security: DEBUG  # 安全相关保持详细日志
+    org.unreal.modelrouter.config.ConfigurationService: INFO
+    org.unreal.modelrouter.store.AutoMergeService: INFO
+    org.unreal.modelrouter.checker.ServerChecker: WARN
+    org.unreal.modelrouter.checker.RateLimiterCleanupChecker: WARN
+    org.unreal.modelrouter.ratelimit: WARN
+    org.unreal.modelrouter.loadbalancer: WARN
+    org.unreal.modelrouter.circuitbreaker: WARN
+    org.unreal.modelrouter: INFO
+    org.springframework: WARN
+    org.apache.http: WARN
+    io.netty: WARN
+    reactor.netty: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"
+  file:
+    name: logs/jairouter-staging.log
+
+# 预发布环境特定配置
+server:
+  port: 8080
+
+# 预发布环境存储配置
+store:
+  type: file
+  path: "config-staging/"
+
+# WebClient 预发布环境配置
+webclient:
+  connection-timeout: 8s
+  read-timeout: 25s
+  write-timeout: 25s
+  max-in-memory-size: 8MB
+
+# ========================================
+# 预发布环境安全配置
+# ========================================
+jairouter:
+  security:
+    # 预发布环境启用安全功能进行测试
+    enabled: true
+    
+    # 预发布环境API Key配置
+    api-key:
+      enabled: true
+      header-name: "X-API-Key"
+      default-expiration-days: 180  # 预发布环境中等过期时间
+      cache-enabled: true
+      cache-expiration-seconds: 3600
+      keys:
+        # 预发布环境API Key通过环境变量配置
+        - key-id: "staging-admin-key"
+          key-value: "${STAGING_ADMIN_API_KEY:}"
+          description: "预发布环境管理员API密钥"
+          permissions: ["admin", "read", "write", "delete"]
+          expires-at: "${STAGING_ADMIN_KEY_EXPIRES:2025-12-31T23:59:59}"
+          enabled: true
+          metadata:
+            environment: "staging"
+            created-by: "system"
+            security-level: "high"
+        
+        - key-id: "staging-test-key"
+          key-value: "${STAGING_TEST_API_KEY:}"
+          description: "预发布环境测试API密钥"
+          permissions: ["read", "write"]
+          expires-at: "${STAGING_TEST_KEY_EXPIRES:2025-12-31T23:59:59}"
+          enabled: true
+          metadata:
+            environment: "staging"
+            created-by: "tester"
+            security-level: "medium"
+    
+    # 预发布环境JWT配置
+    jwt:
+      enabled: true
+      secret: "${STAGING_JWT_SECRET:}"
+      algorithm: "HS256"
+      expiration-minutes: 60
+      refresh-expiration-days: 7
+      issuer: "jairouter-staging"
+      blacklist-enabled: true
+      blacklist-cache:
+        expiration-seconds: 86400
+        max-size: 20000
+    
+    # 预发布环境数据脱敏配置
+    sanitization:
+      request:
+        enabled: true
+        sensitive-words:
+          - "password"
+          - "secret"
+          - "token"
+          - "key"
+          - "credential"
+          - "auth"
+          - "session"
+        pii-patterns:
+          - "\\d{11}"                                                    # 手机号码
+          - "\\d{18}"                                                    # 身份证号码
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"          # 邮箱地址
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"      # 银行卡号
+        masking-char: "*"
+        strategies:
+          phone: "keep-prefix-suffix"
+          email: "keep-domain"
+          id-card: "keep-prefix-suffix"
+          default: "full-mask"
+        log-sanitization: true  # 预发布环境记录脱敏日志用于测试
+        whitelist-users:
+          - "staging-admin-key"
+        whitelist-ips:
+          - "127.0.0.1"
+          - "::1"
+        rule-priorities:
+          phone: 1
+          email: 2
+          id-card: 3
+          bank-card: 4
+          sensitive-word: 5
+      
+      response:
+        enabled: true
+        sensitive-words:
+          - "internal"
+          - "debug"
+          - "error"
+          - "exception"
+          - "stack"
+          - "trace"
+        pii-patterns:
+          - "\\d{11}"
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
+        masking-char: "*"
+        log-sanitization: true
+        preserve-json-structure: true
+        service-specific-rules:
+          chat:
+            additional-patterns:
+              - "\\b(?:QQ|微信|WeChat)[:：]?\\s*\\d+\\b"
+          embedding:
+            enabled: false
+          rerank:
+            preserve-ranking-scores: true
+    
+    # 预发布环境审计配置
+    audit:
+      enabled: true
+      log-level: "INFO"
+      include-request-body: true   # 预发布环境可以包含请求体用于测试
+      include-response-body: false # 预发布环境不包含响应体
+      retention-days: 60  # 预发布环境中等保留期
+      alert-enabled: true
+      
+      alert-thresholds:
+        auth-failures-per-minute: 8
+        sanitization-operations-per-minute: 150
+        suspicious-requests-per-minute: 15
+      
+      event-types:
+        authentication-success: true
+        authentication-failure: true
+        authorization-failure: true
+        sanitization-applied: true
+        configuration-changed: true
+        security-alert: true
+        suspicious-activity: true
+      
+      storage:
+        type: "file"
+        file-path: "logs/staging-security-audit.log"
+        rotation:
+          max-file-size: "200MB"
+          max-files: 50
+    
+    # 预发布环境监控配置
+    monitoring:
+      enabled: true
+      metrics:
+        authentication:
+          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+        sanitization:
+          enabled: true
+          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]
+        security-events:
+          enabled: true
+          by-event-type: true
+          by-user: true
+          by-ip: true
+      
+      alerts:
+        enabled: true
+        thresholds:
+          authentication-failure-rate: 0.08  # 预发布环境适中的阈值
+          sanitization-error-rate: 0.03
+          response-time-p99: 800
+          max-requests-per-minute: 2000
+        
+        notifications:
+          email:
+            enabled: true
+            recipients: 
+              - "${STAGING_ALERT_EMAIL:}"
+          webhook:
+            enabled: false
+          log:
+            enabled: true
+    
+    # 预发布环境性能配置
+    performance:
+      authentication:
+        async-enabled: true
+        thread-pool-size: 15
+        timeout-ms: 4000
+      
+      sanitization:
+        parallel-enabled: true
+        thread-pool-size: 8
+        streaming-threshold: 1572864  # 1.5MB
+        regex-cache-size: 300
+      
+      cache:
+        redis:
+          enabled: true  # 预发布环境启用Redis测试
+          host: "${STAGING_REDIS_HOST:localhost}"
+          port: "${STAGING_REDIS_PORT:6379}"
+          password: "${STAGING_REDIS_PASSWORD:}"
+          database: 1  # 使用不同的数据库
+          timeout: 2000
+          pool:
+            max-active: 15
+            max-idle: 8
+            min-idle: 3
+        local:
+          enabled: true
+          api-key:
+            max-size: 5000
+            expire-after-write: 3600
+          jwt-blacklist:
+            max-size: 50000
+            expire-after-write: 86400
+
+# 预发布环境监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,jairouter-metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
