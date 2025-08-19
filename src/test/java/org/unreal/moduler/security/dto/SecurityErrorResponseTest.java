@@ -1,7 +1,7 @@
 package org.unreal.moduler.security.dto;
 
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.security.dto.SecurityErrorResponse;
+import org.unreal.modelrouter.dto.SecurityErrorResponse;
 
 import java.time.LocalDateTime;
 

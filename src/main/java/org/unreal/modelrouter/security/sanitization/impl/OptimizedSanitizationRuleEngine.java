@@ -2,6 +2,7 @@ package org.unreal.modelrouter.security.sanitization.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.security.exception.SanitizationException;
 import org.unreal.modelrouter.security.model.RuleType;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
+@Primary
 @ConditionalOnProperty(name = "jairouter.security.sanitization.optimized", havingValue = "true", matchIfMissing = true)
 public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     

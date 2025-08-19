@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.unreal.modelrouter.security.dto.SecurityErrorResponse;
+import org.unreal.modelrouter.dto.SecurityErrorResponse;
 import org.unreal.modelrouter.security.exception.AuthenticationException;
 import org.unreal.modelrouter.security.exception.AuthorizationException;
 import org.unreal.modelrouter.security.exception.SanitizationException;

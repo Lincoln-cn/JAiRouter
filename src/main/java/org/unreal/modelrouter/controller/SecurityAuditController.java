@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.controller;
+package org.unreal.modelrouter.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,9 +10,9 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.dto.SecurityAuditQueryRequest;
-import org.unreal.modelrouter.security.dto.SecurityAuditQueryResponse;
-import org.unreal.modelrouter.security.dto.SecurityStatisticsResponse;
+import org.unreal.modelrouter.dto.SecurityAuditQueryRequest;
+import org.unreal.modelrouter.dto.SecurityAuditQueryResponse;
+import org.unreal.modelrouter.dto.SecurityStatisticsResponse;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.security.monitoring.SecurityAlertService;
 import reactor.core.publisher.Mono;
@@ -26,7 +26,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/security/audit")
+@RequestMapping("/api/security/audit")
 @RequiredArgsConstructor
 @Tag(name = "安全审计", description = "安全审计日志查询和统计接口")
 @ConditionalOnProperty(name = "jairouter.security.audit.api.enabled", havingValue = "true", matchIfMissing = true)
