@@ -213,6 +213,4 @@ scripts\test-deployment.cmd
 
 ## 相关文档
 
-- [GitHub Pages 部署配置](github-pages.md)
-- [文档质量保证](../development/quality-assurance.md)
-- [多语言支持](../configuration/i18n.md)
+- [文档开发指南](../../README.md)
