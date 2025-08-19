@@ -9,7 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
-import org.unreal.modelrouter.security.dto.SecurityErrorResponse;
+import org.unreal.modelrouter.dto.SecurityErrorResponse;
 import org.unreal.modelrouter.security.exception.AuthenticationException;
 import org.unreal.modelrouter.security.exception.AuthorizationException;
 import org.unreal.modelrouter.security.exception.SanitizationException;

@@ -2,6 +2,7 @@ package org.unreal.modelrouter.security.authentication.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.cache.ApiKeyCache;
@@ -22,6 +23,7 @@ import java.util.Map;
  */
 @Slf4j
 @Service
+@Primary
 @ConditionalOnProperty(name = "jairouter.security.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class CachedApiKeyServiceImpl implements ApiKeyService {
     
