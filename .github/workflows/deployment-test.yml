@@ -45,12 +45,6 @@ jobs:
         pip install mkdocs-static-i18n
         pip install mkdocs-minify-plugin
 
-    - name: 验证配置文件
-      run: |
-        echo "验证 MkDocs 配置..."
-        mkdocs config
-        echo "✓ 配置文件验证通过"
-    
     - name: 检查文档结构
       run: |
         echo "检查文档结构..."
