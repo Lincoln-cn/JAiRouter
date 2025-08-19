@@ -138,7 +138,8 @@ class DocumentSyncChecker {
             }
             
             if ($content -notmatch $actualPort.ToString()) {
-                $this.AddIssue($docPath, "CONFIG_MISMATCH", "文档中的端口配置与实际配置不符，实际端口: $actualPort", [CheckResult]::WARN)
+                $message = "文档中的端口配置与实际配置不符，实际端口: $actualPort"
+                $this.AddIssue($docPath, "CONFIG_MISMATCH", $message, [CheckResult]::WARN)
             }
         }
         
@@ -150,7 +151,8 @@ class DocumentSyncChecker {
             }
             
             if ($content -notmatch $actualAdapter) {
-                $this.AddIssue($docPath, "CONFIG_MISMATCH", "文档中缺少实际使用的适配器: $actualAdapter", [CheckResult]::WARN)
+                $message = "文档中缺少实际使用的适配器: $actualAdapter"
+                $this.AddIssue($docPath, "CONFIG_MISMATCH", $message, [CheckResult]::WARN)
             }
         }
     }
@@ -170,7 +172,8 @@ class DocumentSyncChecker {
         
         foreach ($lbType in $supportedTypes) {
             if ($content -notmatch $lbType) {
-                $this.AddIssue($docPath, "INCOMPLETE_DOC", "文档中缺少负载均衡类型说明: $lbType", [CheckResult]::WARN)
+                $message = "文档中缺少负载均衡类型说明: $lbType"
+                $this.AddIssue($docPath, "INCOMPLETE_DOC", $message, [CheckResult]::WARN)
             }
         }
     }
@@ -190,7 +193,8 @@ class DocumentSyncChecker {
         
         foreach ($algorithm in $supportedAlgorithms) {
             if ($content -notmatch $algorithm) {
-                $this.AddIssue($docPath, "INCOMPLETE_DOC", "文档中缺少限流算法说明: $algorithm", [CheckResult]::WARN)
+                $message = "文档中缺少限流算法说明: $algorithm"
+                $this.AddIssue($docPath, "INCOMPLETE_DOC", $message, [CheckResult]::WARN)
             }
         }
     }
@@ -210,7 +214,8 @@ class DocumentSyncChecker {
         
         foreach ($param in $requiredParams) {
             if ($content -notmatch $param) {
-                $this.AddIssue($docPath, "INCOMPLETE_DOC", "文档中缺少熔断器参数说明: $param", [CheckResult]::WARN)
+                $message = "文档中缺少熔断器参数说明: $param"
+                $this.AddIssue($docPath, "INCOMPLETE_DOC", $message, [CheckResult]::WARN)
             }
         }
     }
@@ -250,7 +255,8 @@ class DocumentSyncChecker {
         
         foreach ($endpoint in $expectedEndpoints) {
             if ($content -notmatch [regex]::Escape($endpoint)) {
-                $this.AddIssue($docPath, "INCOMPLETE_API_DOC", "文档中缺少 API 端点说明: $endpoint", [CheckResult]::WARN)
+                $message = "文档中缺少 API 端点说明: $endpoint"
+                $this.AddIssue($docPath, "INCOMPLETE_API_DOC", $message, [CheckResult]::WARN)
             }
         }
     }
@@ -275,7 +281,8 @@ class DocumentSyncChecker {
             foreach ($endpoint in $exposedEndpoints) {
                 $endpoint = $endpoint.Trim()
                 if ($content -notmatch $endpoint) {
-                    $this.AddIssue($docPath, "INCOMPLETE_API_DOC", "文档中缺少管理端点说明: $endpoint", [CheckResult]::WARN)
+                    $message = "文档中缺少管理端点说明: $endpoint"
+                    $this.AddIssue($docPath, "INCOMPLETE_API_DOC", $message, [CheckResult]::WARN)
                 }
             }
         }
@@ -301,7 +308,8 @@ class DocumentSyncChecker {
         foreach ($composeFile in $composeFiles) {
             $composePath = Join-Path $this.ProjectRoot $composeFile
             if ((Test-Path $composePath) -and ($content -notmatch $composeFile)) {
-                $this.AddIssue($docPath, "MISSING_COMPOSE_DOC", "文档中缺少 Docker Compose 文件说明: $composeFile", [CheckResult]::WARN)
+                $message = "文档中缺少 Docker Compose 文件说明: $composeFile"
+                $this.AddIssue($docPath, "MISSING_COMPOSE_DOC", $message, [CheckResult]::WARN)
             }
         }
     }
@@ -385,7 +393,7 @@ function ConvertFrom-Yaml {
     $result = @{}
     $lines = $YamlContent -split "`n"
     $currentSection = $result
-    $sectionStack = @()
+    $sectionStack = [System.Collections.ArrayList]@()
     
     foreach ($line in $lines) {
         $line = $line.Trim()
@@ -413,7 +421,7 @@ function ConvertFrom-Yaml {
                 # 这是一个新的节
                 $newSection = @{}
                 $currentSection[$key] = $newSection
-                $sectionStack += @{ Section = $newSection; Indent = $indent }
+                $sectionStack.Add(@{ Section = $newSection; Indent = $indent }) | Out-Null
             } else {
                 # 这是一个键值对
                 if ($value -match '^\d+$') {
