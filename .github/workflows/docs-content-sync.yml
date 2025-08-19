@@ -47,7 +47,7 @@ jobs:
     - name: 运行文档内容同步检查
       id: sync-check
       run: |
-        python scripts/check-docs-sync.py \
+        python scripts/docs/check-docs-sync.py \
           --project-root . \
           --output docs-sync-report.md \
           --fail-on-error
@@ -82,7 +82,7 @@ jobs:
             
             🔧 **本地运行**: 
             \`\`\`bash
-            python scripts/check-docs-sync.py --project-root . --fail-on-error
+            python scripts/docs/check-docs-sync.py --project-root . --fail-on-error
             \`\`\`
             `;
             
@@ -128,7 +128,7 @@ jobs:
         
         # 运行 PowerShell 版本的同步检查
         try {
-          .\scripts\check-docs-sync.ps1 -ProjectRoot . -OutputFile "docs-sync-report-windows.md"
+          .\scripts\docs\check-docs-sync.ps1 -ProjectRoot . -OutputFile "docs-sync-report-windows.md"
           Write-Host "✅ Windows PowerShell 版本检查完成" -ForegroundColor Green
         }
         catch {
