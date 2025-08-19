@@ -1,23 +1,440 @@
-﻿# 文档版本管理报告
-
-<!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-18  
-> **Git 提交**:   
-> **作者**: 
-<!-- /版本信息 -->
-
+# 文档版本管理报告
 
 ## 版本统计
 
-- 总文档数: 0
-- 近7天变更: 0
-- 版本文件: .\docs\docs-versions.json
-- 最后扫描: 2025-08-18 10:30:09
+- 总文档数: 97
+- 近7天变更: 119
+- 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
+- 最后扫描: 2025-08-19 07:48:22
+
+## 最近变更
+
+- **CREATED**: docs/zh/troubleshooting/performance.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/troubleshooting/index.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/troubleshooting/debugging.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/troubleshooting/common-issues.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/security/troubleshooting.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/security/jwt-authentication.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/security/index.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/security/data-sanitization.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/security/api-key-management.md ( → 1.0.0) - 2025-08-19
+- **CREATED**: docs/zh/reference/roadmap.md ( → 1.0.0) - 2025-08-19
 
 ## 依赖关系分析
 
-- 未发现文档依赖关系
+- **README-EN.md**: 依赖 1 个文档
+  - README.md
+- **README.md**: 依赖 1 个文档
+  - README-EN.md
+- **docs/en/api-reference/index.md**: 依赖 3 个文档
+  - docs/en/api-reference/management-api.md
+  - docs/en/api-reference/openapi-spec.md
+  - docs/en/api-reference/universal-api.md
+- **docs/en/configuration/application-config.md**: 依赖 4 个文档
+  - docs/en/configuration/circuit-breaker.md
+  - docs/en/configuration/dynamic-config.md
+  - docs/en/configuration/load-balancing.md
+  - docs/en/configuration/rate-limiting.md
+- **docs/en/configuration/circuit-breaker.md**: 依赖 2 个文档
+  - docs/en/api-reference/index.md
+  - docs/en/troubleshooting/index.md
+- **docs/en/configuration/dynamic-config.md**: 依赖 4 个文档
+  - docs/en/configuration/circuit-breaker.md
+  - docs/en/configuration/load-balancing.md
+  - docs/en/configuration/rate-limiting.md
+  - docs/en/monitoring/index.md
+- **docs/en/configuration/index.md**: 依赖 5 个文档
+  - docs/en/configuration/application-config.md
+  - docs/en/configuration/circuit-breaker.md
+  - docs/en/configuration/dynamic-config.md
+  - docs/en/configuration/load-balancing.md
+  - docs/en/configuration/rate-limiting.md
+- **docs/en/configuration/load-balancing.md**: 依赖 3 个文档
+  - docs/en/configuration/circuit-breaker.md
+  - docs/en/configuration/rate-limiting.md
+  - docs/en/troubleshooting/index.md
+- **docs/en/configuration/rate-limiting.md**: 依赖 3 个文档
+  - docs/en/configuration/circuit-breaker.md
+  - docs/en/troubleshooting/index.md
+  - docs/en/troubleshooting/performance.md
+- **docs/en/deployment/china-optimization.md**: 依赖 3 个文档
+  - docs/en/deployment/docker.md
+  - docs/en/deployment/production.md
+  - docs/en/troubleshooting/index.md
+- **docs/en/deployment/index.md**: 依赖 4 个文档
+  - docs/en/deployment/china-optimization.md
+  - docs/en/deployment/docker.md
+  - docs/en/deployment/kubernetes.md
+  - docs/en/deployment/production.md
+- **docs/en/deployment/kubernetes.md**: 依赖 3 个文档
+  - docs/en/deployment/production.md
+  - docs/en/troubleshooting/index.md
+  - docs/en/troubleshooting/performance.md
+- **docs/en/deployment/production.md**: 依赖 3 个文档
+  - docs/en/api-reference/index.md
+  - docs/en/troubleshooting/index.md
+  - docs/en/troubleshooting/performance.md
+- **docs/en/development/index.md**: 依赖 4 个文档
+  - docs/en/development/architecture.md
+  - docs/en/development/code-quality.md
+  - docs/en/development/contributing.md
+  - docs/en/development/testing.md
+- **docs/en/development/performance-optimization.md**: 依赖 2 个文档
+  - docs/en/development/architecture.md
+  - docs/en/development/deployment-testing.md
+- **docs/en/getting-started/first-steps.md**: 依赖 6 个文档
+  - docs/en/api-reference/index.md
+  - docs/en/configuration/index.md
+  - docs/en/deployment/index.md
+  - docs/en/getting-started/quick-start.md
+  - docs/en/monitoring/index.md
+  - docs/en/troubleshooting/index.md
+- **docs/en/getting-started/index.md**: 依赖 3 个文档
+  - docs/en/getting-started/first-steps.md
+  - docs/en/getting-started/installation.md
+  - docs/en/getting-started/quick-start.md
+- **docs/en/getting-started/installation.md**: 依赖 1 个文档
+  - docs/en/getting-started/quick-start.md
+- **docs/en/getting-started/quick-start.md**: 依赖 4 个文档
+  - docs/en/api-reference/index.md
+  - docs/en/configuration/index.md
+  - docs/en/deployment/index.md
+  - docs/en/getting-started/installation.md
+- **docs/en/index.md**: 依赖 5 个文档
+  - docs/en/configuration/index.md
+  - docs/en/development/contributing.md
+  - docs/en/getting-started/installation.md
+  - docs/en/getting-started/quick-start.md
+  - docs/en/troubleshooting/index.md
+- **docs/en/monitoring/alerts.md**: 依赖 4 个文档
+  - docs/en/monitoring/metrics.md
+  - docs/en/monitoring/performance.md
+  - docs/en/monitoring/testing.md
+  - docs/en/monitoring/troubleshooting.md
+- **docs/en/monitoring/configuration.md**: 依赖 4 个文档
+  - docs/en/monitoring/metrics.md
+  - docs/en/monitoring/performance.md
+  - docs/en/monitoring/setup.md
+  - docs/en/monitoring/troubleshooting.md
+- **docs/en/monitoring/dashboards.md**: 依赖 4 个文档
+  - docs/en/monitoring/alerts.md
+  - docs/en/monitoring/metrics.md
+  - docs/en/monitoring/performance.md
+  - docs/en/monitoring/troubleshooting.md
+- **docs/en/monitoring/index.md**: 依赖 4 个文档
+  - docs/en/monitoring/alerts.md
+  - docs/en/monitoring/dashboards.md
+  - docs/en/monitoring/setup.md
+  - docs/en/monitoring/troubleshooting.md
+- **docs/en/monitoring/metrics.md**: 依赖 4 个文档
+  - docs/en/monitoring/alerts.md
+  - docs/en/monitoring/dashboards.md
+  - docs/en/monitoring/setup.md
+  - docs/en/monitoring/troubleshooting.md
+- **docs/en/monitoring/performance.md**: 依赖 4 个文档
+  - docs/en/monitoring/metrics.md
+  - docs/en/monitoring/setup.md
+  - docs/en/monitoring/testing.md
+  - docs/en/monitoring/troubleshooting.md
+- **docs/en/monitoring/setup.md**: 依赖 4 个文档
+  - docs/en/monitoring/alerts.md
+  - docs/en/monitoring/dashboards.md
+  - docs/en/monitoring/metrics.md
+  - docs/en/monitoring/performance.md
+- **docs/en/monitoring/testing.md**: 依赖 4 个文档
+  - docs/en/monitoring/metrics.md
+  - docs/en/monitoring/performance.md
+  - docs/en/monitoring/setup.md
+  - docs/en/monitoring/troubleshooting.md
+- **docs/en/monitoring/troubleshooting.md**: 依赖 4 个文档
+  - docs/en/monitoring/alerts.md
+  - docs/en/monitoring/dashboards.md
+  - docs/en/monitoring/performance.md
+  - docs/en/monitoring/setup.md
+- **docs/en/reference/faq.md**: 依赖 2 个文档
+  - docs/en/development/contributing.md
+  - docs/en/reference/roadmap.md
+- **docs/en/reference/index.md**: 依赖 8 个文档
+  - docs/en/api-reference/index.md
+  - docs/en/configuration/index.md
+  - docs/en/deployment/index.md
+  - docs/en/monitoring/index.md
+  - docs/en/reference/changelog.md
+  - docs/en/reference/faq.md
+  - docs/en/reference/glossary.md
+  - docs/en/reference/roadmap.md
+- **docs/en/troubleshooting/index.md**: 依赖 6 个文档
+  - docs/en/api-reference/index.md
+  - docs/en/configuration/index.md
+  - docs/en/reference/faq.md
+  - docs/en/troubleshooting/common-issues.md
+  - docs/en/troubleshooting/debugging.md
+  - docs/en/troubleshooting/performance.md
+- **docs/zh/api-reference/index.md**: 依赖 3 个文档
+  - docs/zh/api-reference/management-api.md
+  - docs/zh/api-reference/openapi-spec.md
+  - docs/zh/api-reference/universal-api.md
+- **docs/zh/configuration/application-config.md**: 依赖 4 个文档
+  - docs/zh/configuration/circuit-breaker.md
+  - docs/zh/configuration/dynamic-config.md
+  - docs/zh/configuration/load-balancing.md
+  - docs/zh/configuration/rate-limiting.md
+- **docs/zh/configuration/circuit-breaker.md**: 依赖 4 个文档
+  - docs/zh/api-reference/index.md
+  - docs/zh/deployment/index.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/troubleshooting/index.md
+- **docs/zh/configuration/dynamic-config.md**: 依赖 4 个文档
+  - docs/zh/configuration/circuit-breaker.md
+  - docs/zh/configuration/load-balancing.md
+  - docs/zh/configuration/rate-limiting.md
+  - docs/zh/monitoring/index.md
+- **docs/zh/configuration/index.md**: 依赖 5 个文档
+  - docs/zh/configuration/application-config.md
+  - docs/zh/configuration/circuit-breaker.md
+  - docs/zh/configuration/dynamic-config.md
+  - docs/zh/configuration/load-balancing.md
+  - docs/zh/configuration/rate-limiting.md
+- **docs/zh/configuration/load-balancing.md**: 依赖 4 个文档
+  - docs/zh/configuration/circuit-breaker.md
+  - docs/zh/configuration/rate-limiting.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/troubleshooting/index.md
+- **docs/zh/configuration/rate-limiting.md**: 依赖 4 个文档
+  - docs/zh/configuration/circuit-breaker.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/troubleshooting/index.md
+  - docs/zh/troubleshooting/performance.md
+- **docs/zh/deployment/china-optimization.md**: 依赖 4 个文档
+  - docs/zh/deployment/docker.md
+  - docs/zh/deployment/production.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/troubleshooting/index.md
+- **docs/zh/deployment/docker.md**: 依赖 4 个文档
+  - docs/zh/deployment/kubernetes.md
+  - docs/zh/deployment/production.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/troubleshooting/index.md
+- **docs/zh/deployment/index.md**: 依赖 4 个文档
+  - docs/zh/deployment/china-optimization.md
+  - docs/zh/deployment/docker.md
+  - docs/zh/deployment/kubernetes.md
+  - docs/zh/deployment/production.md
+- **docs/zh/deployment/kubernetes.md**: 依赖 4 个文档
+  - docs/zh/deployment/production.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/troubleshooting/index.md
+  - docs/zh/troubleshooting/performance.md
+- **docs/zh/deployment/production.md**: 依赖 4 个文档
+  - docs/zh/api-reference/index.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/troubleshooting/index.md
+  - docs/zh/troubleshooting/performance.md
+- **docs/zh/development/index.md**: 依赖 4 个文档
+  - docs/zh/development/architecture.md
+  - docs/zh/development/code-quality.md
+  - docs/zh/development/contributing.md
+  - docs/zh/development/testing.md
+- **docs/zh/development/performance-optimization.md**: 依赖 2 个文档
+  - docs/zh/development/architecture.md
+  - docs/zh/development/deployment-testing.md
+- **docs/zh/getting-started/first-steps.md**: 依赖 8 个文档
+  - docs/zh/api-reference/index.md
+  - docs/zh/configuration/index.md
+  - docs/zh/deployment/index.md
+  - docs/zh/getting-started/quick-start.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/reference/changelog.md
+  - docs/zh/reference/faq.md
+  - docs/zh/troubleshooting/index.md
+- **docs/zh/getting-started/index.md**: 依赖 3 个文档
+  - docs/zh/getting-started/first-steps.md
+  - docs/zh/getting-started/installation.md
+  - docs/zh/getting-started/quick-start.md
+- **docs/zh/getting-started/installation.md**: 依赖 4 个文档
+  - docs/zh/configuration/index.md
+  - docs/zh/getting-started/first-steps.md
+  - docs/zh/getting-started/quick-start.md
+  - docs/zh/troubleshooting/index.md
+- **docs/zh/getting-started/quick-start.md**: 依赖 6 个文档
+  - docs/zh/api-reference/index.md
+  - docs/zh/configuration/index.md
+  - docs/zh/deployment/index.md
+  - docs/zh/getting-started/first-steps.md
+  - docs/zh/getting-started/installation.md
+  - docs/zh/troubleshooting/index.md
+- **docs/zh/index.md**: 依赖 5 个文档
+  - docs/zh/configuration/index.md
+  - docs/zh/development/contributing.md
+  - docs/zh/getting-started/installation.md
+  - docs/zh/getting-started/quick-start.md
+  - docs/zh/troubleshooting/index.md
+- **docs/zh/monitoring/alerts.md**: 依赖 4 个文档
+  - docs/zh/monitoring/metrics.md
+  - docs/zh/monitoring/performance.md
+  - docs/zh/monitoring/testing.md
+  - docs/zh/monitoring/troubleshooting.md
+- **docs/zh/monitoring/configuration.md**: 依赖 4 个文档
+  - docs/zh/monitoring/metrics.md
+  - docs/zh/monitoring/performance.md
+  - docs/zh/monitoring/setup.md
+  - docs/zh/monitoring/troubleshooting.md
+- **docs/zh/monitoring/dashboards.md**: 依赖 4 个文档
+  - docs/zh/monitoring/alerts.md
+  - docs/zh/monitoring/metrics.md
+  - docs/zh/monitoring/performance.md
+  - docs/zh/monitoring/troubleshooting.md
+- **docs/zh/monitoring/index.md**: 依赖 9 个文档
+  - docs/zh/monitoring/alert_rules_guide.md
+  - docs/zh/monitoring/alerts.md
+  - docs/zh/monitoring/configuration.md
+  - docs/zh/monitoring/dashboards.md
+  - docs/zh/monitoring/metrics.md
+  - docs/zh/monitoring/performance.md
+  - docs/zh/monitoring/setup.md
+  - docs/zh/monitoring/testing.md
+  - docs/zh/monitoring/troubleshooting.md
+- **docs/zh/monitoring/metrics.md**: 依赖 4 个文档
+  - docs/zh/monitoring/alerts.md
+  - docs/zh/monitoring/dashboards.md
+  - docs/zh/monitoring/setup.md
+  - docs/zh/monitoring/troubleshooting.md
+- **docs/zh/monitoring/performance.md**: 依赖 4 个文档
+  - docs/zh/monitoring/metrics.md
+  - docs/zh/monitoring/setup.md
+  - docs/zh/monitoring/testing.md
+  - docs/zh/monitoring/troubleshooting.md
+- **docs/zh/monitoring/setup.md**: 依赖 4 个文档
+  - docs/zh/monitoring/alerts.md
+  - docs/zh/monitoring/dashboards.md
+  - docs/zh/monitoring/metrics.md
+  - docs/zh/monitoring/performance.md
+- **docs/zh/monitoring/testing.md**: 依赖 4 个文档
+  - docs/zh/monitoring/metrics.md
+  - docs/zh/monitoring/performance.md
+  - docs/zh/monitoring/setup.md
+  - docs/zh/monitoring/troubleshooting.md
+- **docs/zh/monitoring/troubleshooting.md**: 依赖 4 个文档
+  - docs/zh/monitoring/alerts.md
+  - docs/zh/monitoring/dashboards.md
+  - docs/zh/monitoring/performance.md
+  - docs/zh/monitoring/setup.md
+- **docs/zh/reference/faq.md**: 依赖 2 个文档
+  - docs/zh/development/contributing.md
+  - docs/zh/reference/roadmap.md
+- **docs/zh/reference/index.md**: 依赖 8 个文档
+  - docs/zh/api-reference/index.md
+  - docs/zh/configuration/index.md
+  - docs/zh/deployment/index.md
+  - docs/zh/monitoring/index.md
+  - docs/zh/reference/changelog.md
+  - docs/zh/reference/faq.md
+  - docs/zh/reference/glossary.md
+  - docs/zh/reference/roadmap.md
+- **docs/zh/troubleshooting/index.md**: 依赖 6 个文档
+  - docs/zh/api-reference/index.md
+  - docs/zh/configuration/index.md
+  - docs/zh/reference/faq.md
+  - docs/zh/troubleshooting/common-issues.md
+  - docs/zh/troubleshooting/debugging.md
+  - docs/zh/troubleshooting/performance.md
 
 ## 所有文档版本
 
+- **docs/zh/troubleshooting/performance.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/troubleshooting/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/troubleshooting/debugging.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/troubleshooting/common-issues.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/reference/roadmap.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/reference/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/reference/glossary.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/reference/faq.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/reference/changelog.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/troubleshooting.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/testing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/setup.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/performance.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/metrics.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/index.md**: v1.0.0 - 2025-08-19 (87d3bddc)
+- **docs/zh/monitoring/dashboards.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/configuration.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/alerts.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/monitoring/alert_rules_guide.md**: v1.0.0 - 2025-08-19 (f47f2607)
+- **docs/zh/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/getting-started/quick-start.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/getting-started/installation.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/getting-started/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/getting-started/first-steps.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/development/testing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/development/performance-optimization.md**: v1.0.0 - 2025-08-19 (f47f2607)
+- **docs/zh/development/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/development/deployment-testing.md**: v1.0.0 - 2025-08-19 (f47f2607)
+- **docs/zh/development/contributing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/development/code-quality.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/development/architecture.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/deployment/production.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/deployment/kubernetes.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/deployment/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/deployment/github-pages.md**: v1.0.0 - 2025-08-19 (f47f2607)
+- **docs/zh/deployment/docker.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/deployment/china-optimization.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/configuration/rate-limiting.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/configuration/load-balancing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/configuration/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/configuration/dynamic-config.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/configuration/circuit-breaker.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/configuration/application-config.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/api-reference/universal-api.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/api-reference/openapi-spec.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/api-reference/management-api.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/zh/api-reference/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/troubleshooting/performance.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/troubleshooting/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/troubleshooting/debugging.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/troubleshooting/common-issues.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/reference/roadmap.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/reference/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/reference/glossary.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/reference/faq.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/reference/changelog.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/monitoring/troubleshooting.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/monitoring/testing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/monitoring/setup.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/monitoring/performance.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/monitoring/metrics.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/monitoring/index.md**: v1.0.0 - 2025-08-19 (87d3bddc)
+- **docs/en/monitoring/dashboards.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/monitoring/configuration.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/monitoring/alerts.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/getting-started/quick-start.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/getting-started/installation.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/getting-started/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/getting-started/first-steps.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/development/testing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/development/performance-optimization.md**: v1.0.0 - 2025-08-19 (f47f2607)
+- **docs/en/development/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/development/deployment-testing.md**: v1.0.0 - 2025-08-19 (f47f2607)
+- **docs/en/development/contributing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/development/code-quality.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/development/architecture.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/deployment/production.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/deployment/kubernetes.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/deployment/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/deployment/github-pages.md**: v1.0.0 - 2025-08-19 (f47f2607)
+- **docs/en/deployment/docker.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/deployment/china-optimization.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/configuration/rate-limiting.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/configuration/load-balancing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/configuration/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/configuration/dynamic-config.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/configuration/circuit-breaker.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/configuration/application-config.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/api-reference/universal-api.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/api-reference/openapi-spec.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/api-reference/management-api.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/en/api-reference/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
+- **docs/README.md**: v1.0.0 - 2025-08-19 (869459c5)
+- **README-EN.md**: v1.0.0 - 2025-08-19 (f47f2607)
+- **docs-version-report.md**: v1.0.1 - 2025-08-19 (f90d3cf6)
+- **README.md**: v1.0.1 - 2025-08-19 (f32b5398)
