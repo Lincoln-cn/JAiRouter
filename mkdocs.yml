@@ -222,7 +222,7 @@ extra:
       lang: en
   analytics:
     provider: google
-    property: G-XXXXXXXXXX  # 替换为实际的 Google Analytics ID
+    property: G-C3YPY477RC  # 替换为实际的 Google Analytics ID
     feedback:
       title: 这个页面有帮助吗？
       ratings:
