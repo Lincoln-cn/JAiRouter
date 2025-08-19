@@ -94,7 +94,7 @@ function Show-Help {
 }
 
 function Start-DocsServer {
-    Write-ColorOutput "🚀 启动本地文档服务器..." "Green"
+    Write-ColorOutput "启动本地文档服务器..." "Green"
 
     # 切换到项目根目录
     $projectRoot = "D:\IdeaProjects\model-router"
@@ -106,29 +106,45 @@ function Start-DocsServer {
             $pythonVersion = python --version 2>&1
             Write-ColorOutput "检测到 Python: $pythonVersion" "Blue"
         } catch {
-            Write-ColorOutput "❌ 错误: 未找到 Python，请先安装 Python 3.x" "Red"
+            Write-ColorOutput "错误: 未找到 Python，请先安装 Python 3.x" "Red"
             exit 1
         }
 
         # 检查 requirements.txt
         if (-not (Test-Path "requirements.txt")) {
-            Write-ColorOutput "❌ 错误: 未找到 requirements.txt 文件" "Red"
+            Write-ColorOutput "错误: 未找到 requirements.txt 文件" "Red"
+            exit 1
+        }
+
+        # 获取可用的 pip 命令
+        $pipCmd = Get-PipCommand
+        if (-not $pipCmd) {
+            Write-ColorOutput "错误: 无法找到可用的 pip 命令" "Red"
+            Write-ColorOutput "请手动安装依赖:" "Yellow"
+            Write-ColorOutput "  python -m pip install -r requirements.txt" "Cyan"
             exit 1
         }
 
         # 安装依赖
-        Write-ColorOutput "📦 安装文档依赖..." "Yellow"
-        pip install -r requirements.txt
+        Write-ColorOutput "安装文档依赖..." "Yellow"
+        Write-ColorOutput "使用命令: $pipCmd install -r requirements.txt" "Cyan"
+
+        $cmdParts = $pipCmd -split " "
+        if ($cmdParts.Length -eq 1) {
+            & $cmdParts[0] install -r requirements.txt
+        } elseif ($cmdParts.Length -eq 3) {
+            & $cmdParts[0] $cmdParts[1] $cmdParts[2] install -r requirements.txt
+        }
 
         if ($LASTEXITCODE -ne 0) {
-            Write-ColorOutput "❌ 错误: 依赖安装失败" "Red"
+            Write-ColorOutput "错误: 依赖安装失败" "Red"
             exit 1
         }
 
         # 启动服务器
-        Write-ColorOutput "🌐 启动文档服务器，监听地址: $HostAddress`:$Port" "Green"
-        Write-ColorOutput "📖 访问地址: http://$HostAddress`:$Port" "Cyan"
-        Write-ColorOutput "⏹️  按 Ctrl+C 停止服务器" "Yellow"
+        Write-ColorOutput "启动文档服务器，监听地址: $HostAddress`:$Port" "Green"
+        Write-ColorOutput "访问地址: http://$HostAddress`:$Port" "Cyan"
+        Write-ColorOutput "按 Ctrl+C 停止服务器" "Yellow"
 
         mkdocs serve --dev-addr "$HostAddress`:$Port"
     }
@@ -228,8 +244,33 @@ function Invoke-SyncCheck {
     }
 }
 
+function Get-PipCommand {
+    # 尝试不同的 pip 命令，找到可用的
+    $pipCommands = @("pip", "pip3", "python -m pip", "python3 -m pip", "py -m pip")
+
+    foreach ($cmd in $pipCommands) {
+        try {
+            $cmdParts = $cmd -split " "
+            if ($cmdParts.Length -eq 1) {
+                $result = & $cmdParts[0] --version 2>$null
+            } elseif ($cmdParts.Length -eq 3) {
+                $result = & $cmdParts[0] $cmdParts[1] $cmdParts[2] --version 2>$null
+            }
+
+            if ($LASTEXITCODE -eq 0) {
+                return $cmd
+            }
+        }
+        catch {
+            continue
+        }
+    }
+
+    return $null
+}
+
 function Test-PythonDependencies {
-    Write-ColorOutput "📦 检查 Python 依赖..." "Yellow"
+    Write-ColorOutput "检查 Python 依赖..." "Yellow"
 
     $requiredModules = @("yaml")
     $missingModules = @()
@@ -247,28 +288,46 @@ function Test-PythonDependencies {
     }
 
     if ($missingModules.Count -gt 0) {
-        Write-ColorOutput "⚠️ 缺少 Python 模块: $($missingModules -join ', ')" "Yellow"
-        Write-ColorOutput "正在尝试安装..." "Yellow"
+        Write-ColorOutput "缺少 Python 模块: $($missingModules -join ', ')" "Yellow"
+
+        $pipCmd = Get-PipCommand
+        if (-not $pipCmd) {
+            Write-ColorOutput "错误: 无法找到可用的 pip 命令" "Red"
+            Write-ColorOutput "请手动安装 PyYAML:" "Yellow"
+            Write-ColorOutput "  python -m pip install pyyaml" "Cyan"
+            Write-ColorOutput "  或者 pip install pyyaml" "Cyan"
+            return $false
+        }
+
+        Write-ColorOutput "使用 $pipCmd 安装依赖..." "Yellow"
 
         foreach ($module in $missingModules) {
             $packageName = if ($module -eq "yaml") { "pyyaml" } else { $module }
 
             try {
-                pip install $packageName --user
+                Write-ColorOutput "正在安装 $packageName..." "Yellow"
+
+                $cmdParts = $pipCmd -split " "
+                if ($cmdParts.Length -eq 1) {
+                    & $cmdParts[0] install $packageName --user
+                } elseif ($cmdParts.Length -eq 3) {
+                    & $cmdParts[0] $cmdParts[1] $cmdParts[2] install $packageName --user
+                }
+
                 if ($LASTEXITCODE -eq 0) {
-                    Write-ColorOutput "✅ 成功安装 $packageName" "Green"
+                    Write-ColorOutput "成功安装 $packageName" "Green"
                 } else {
-                    Write-ColorOutput "❌ 安装 $packageName 失败" "Red"
+                    Write-ColorOutput "安装 $packageName 失败" "Red"
                     return $false
                 }
             }
             catch {
-                Write-ColorOutput "❌ 安装 $packageName 时出错: $($_.Exception.Message)" "Red"
+                Write-ColorOutput "安装 $packageName 时出错: $($_.Exception.Message)" "Red"
                 return $false
             }
         }
     } else {
-        Write-ColorOutput "✅ 所有 Python 依赖都已安装" "Green"
+        Write-ColorOutput "所有 Python 依赖都已安装" "Green"
     }
 
     return $true

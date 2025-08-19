@@ -33,7 +33,6 @@ theme:
     - content.code.copy
     - content.action.edit
     - content.tabs.link
-    - navigation.instant
     - navigation.tracking
 
 plugins:
@@ -42,8 +41,6 @@ plugins:
         - zh
         - en
       separator: '[\s\-\.]+'
-      min_search_length: 2
-      prebuild_index: true
   - minify:
       minify_html: true
       minify_js: true
@@ -122,13 +119,6 @@ plugins:
       type: date
       enable_creation_date: true
       fallback_to_build_date: true
-  - optimize:
-      enabled: !ENV [OPTIMIZE, false]
-      cache: true
-      cache_dir: .cache/plugin/optimize
-      optimize_png: true
-      optimize_jpg: true
-      optimize_svg: true
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -229,7 +219,7 @@ extra:
       link: /
       lang: zh
     - name: English
-      link: /en
+      link: /en/
       lang: en
   analytics:
     provider: google
