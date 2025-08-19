@@ -44,8 +44,7 @@ jobs:
         pip install mkdocs-mermaid2-plugin
         pip install mkdocs-static-i18n
         pip install mkdocs-minify-plugin
-        pip install mkdocs-optimize-plugin
-    
+
     - name: 验证配置文件
       run: |
         echo "验证 MkDocs 配置..."
