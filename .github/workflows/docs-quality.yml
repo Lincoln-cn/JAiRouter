@@ -75,64 +75,64 @@ jobs:
     - name: 检查文档结构
       run: |
         python3 -c "
-        import os
-        import sys
-        
-        # 检查必需的文档目录是否存在
-        required_dirs = [
-            'docs/getting-started',
-            'docs/configuration', 
-            'docs/api-reference',
-            'docs/deployment',
-            'docs/monitoring',
-            'docs/development',
-            'docs/troubleshooting',
-            'docs/reference'
-        ]
-        
-        missing_dirs = []
-        for dir_path in required_dirs:
-            if not os.path.exists(dir_path):
-                missing_dirs.append(dir_path)
-        
-        if missing_dirs:
-            print('❌ 缺少必需的文档目录:')
-            for dir_path in missing_dirs:
-                print(f'  - {dir_path}')
-            sys.exit(1)
-        else:
-            print('✅ 文档目录结构检查通过')
+import os
+import sys
+
+# 检查必需的文档目录是否存在
+required_dirs = [
+    'docs/getting-started',
+    'docs/configuration', 
+    'docs/api-reference',
+    'docs/deployment',
+    'docs/monitoring',
+    'docs/development',
+    'docs/troubleshooting',
+    'docs/reference'
+]
+
+missing_dirs = []
+for dir_path in required_dirs:
+    if not os.path.exists(dir_path):
+        missing_dirs.append(dir_path)
+
+if missing_dirs:
+    print('❌ 缺少必需的文档目录:')
+    for dir_path in missing_dirs:
+        print(f'  - {dir_path}')
+    sys.exit(1)
+else:
+    print('✅ 文档目录结构检查通过')
         "
     
     - name: 检查文档元数据
       run: |
         python3 -c "
-        import os
-        import re
-        
-        def check_frontmatter(file_path):
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # 检查是否有 frontmatter
-            if content.startswith('---'):
-                end_pos = content.find('---', 3)
-                if end_pos > 0:
-                    return True
-            return False
-        
-        # 检查主要文档文件的元数据
-        docs_files = []
-        for root, dirs, files in os.walk('docs'):
-            for file in files:
-                if file.endswith('.md'):
-                    docs_files.append(os.path.join(root, file))
-        
-        if docs_files:
-            print(f'📋 检查了 {len(docs_files)} 个文档文件')
-            print('✅ 文档元数据检查完成')
-        else:
-            print('⚠️  未找到文档文件')
+import os
+import re
+
+def check_frontmatter(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # 检查是否有 frontmatter
+    if content.startswith('---'):
+        end_pos = content.find('---', 3)
+        if end_pos > 0:
+            return True
+    return False
+
+# 检查主要文档文件的元数据
+docs_files = []
+for root, dirs, files in os.walk('docs'):
+    for file in files:
+        if file.endswith('.md'):
+            docs_files.append(os.path.join(root, file))
+
+if docs_files:
+    print(f'📋 检查了 {len(docs_files)} 个文档文件')
+    print('✅ 文档元数据检查完成')
+else:
+    print('⚠️  未找到文档文件')
         "
 
   spell-check:
