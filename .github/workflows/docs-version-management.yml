@@ -52,7 +52,7 @@ jobs:
     - name: 设置 Python 环境
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     
     - name: 安装 Python 依赖
       run: |
@@ -71,7 +71,7 @@ jobs:
         echo "🔍 扫描文档版本信息..."
         
         # 使用 Python 版本进行扫描
-        python scripts/docs-version-manager.py --project-root . --scan
+        python scripts/docs/docs-version-manager.py --project-root . --scan
         
         # 检查是否有变更
         if [ -f .kiro/docs-versions.json ]; then
@@ -86,23 +86,23 @@ jobs:
       if: github.event.inputs.add_headers == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
       run: |
         echo "📋 添加版本头信息..."
-        python scripts/docs-version-manager.py --project-root . --add-headers
+        python scripts/docs/docs-version-manager.py --project-root . --add-headers
     
     - name: 清理旧变更记录
       if: github.event.inputs.cleanup_days != '' || github.event_name == 'schedule'
       run: |
         CLEANUP_DAYS="${{ github.event.inputs.cleanup_days || '90' }}"
         echo "🧹 清理 $CLEANUP_DAYS 天前的变更记录..."
-        python scripts/docs-version-manager.py --project-root . --cleanup $CLEANUP_DAYS
+        python scripts/docs/docs-version-manager.py --project-root . --cleanup $CLEANUP_DAYS
     
     - name: 生成版本报告
       id: report
       run: |
         echo "📊 生成版本报告..."
-        python scripts/docs-version-manager.py --project-root . --report docs-version-report.md
+        python scripts/docs/docs-version-manager.py --project-root . --report docs-version-report.md
         
         # 检查过期文档
-        python scripts/docs-version-manager.py --project-root . --check-outdated 30 > outdated-check.txt 2>&1 || true
+        python scripts/docs/docs-version-manager.py --project-root . --check-outdated 30 > outdated-check.txt 2>&1 || true
         
         if grep -q "发现.*个过期文档" outdated-check.txt; then
           echo "has_outdated=true" >> $GITHUB_OUTPUT
@@ -116,8 +116,8 @@ jobs:
     - name: 导出版本数据
       run: |
         echo "📤 导出版本数据..."
-        python scripts/docs-version-manager.py --project-root . --export docs-version-data.json
-        python scripts/docs-version-manager.py --project-root . --export docs-version-data.csv
+        python scripts/docs/docs-version-manager.py --project-root . --export docs-version-data.json
+        python scripts/docs/docs-version-manager.py --project-root . --export docs-version-data.csv
     
     - name: 上传版本报告
       uses: actions/upload-artifact@v4
@@ -172,7 +172,7 @@ jobs:
           const outdatedContent = outdatedSection ? outdatedSection[0] : '未找到过期文档详情';
           
           const issueTitle = `📋 文档维护提醒：发现 ${{ steps.report.outputs.outdated_count }} 个过期文档需要更新`;
-          const issueBody = `## 📊 过期文档检查报告 在定期检查中发现了一些超过 30 天未更新的文档，建议进行内容审查和更新。 ${outdatedContent} ## 🔧 建议操作 1. **审查内容**: 检查过期文档的内容是否仍然准确 2. **更新信息**: 更新过时的信息、链接和示例 3. **验证功能**: 确保文档中的操作步骤仍然有效 4. **同步代码**: 检查文档是否与最新代码保持一致 ## 📈 版本管理信息 - 检查时间: ${new Date().toISOString().split('T')[0]} - 过期阈值: 30 天 - 总文档数: 通过版本管理系统跟踪 - 自动化: 此 Issue 由 GitHub Actions 自动创建 ## 🔗 相关资源 - [文档版本管理配置](.kiro/docs-version-config.yml) - [版本管理脚本](scripts/docs-version-manager.py) - [完整版本报告](../../actions/runs/${{ github.run_id }}) --- *此 Issue 由文档版本管理系统自动创建，每日检查过期文档并提醒维护。*`;
+          const issueBody = `## 📊 过期文档检查报告 在定期检查中发现了一些超过 30 天未更新的文档，建议进行内容审查和更新。 ${outdatedContent} ## 🔧 建议操作 1. **审查内容**: 检查过期文档的内容是否仍然准确 2. **更新信息**: 更新过时的信息、链接和示例 3. **验证功能**: 确保文档中的操作步骤仍然有效 4. **同步代码**: 检查文档是否与最新代码保持一致 ## 📈 版本管理信息 - 检查时间: ${new Date().toISOString().split('T')[0]} - 过期阈值: 30 天 - 总文档数: 通过版本管理系统跟踪 - 自动化: 此 Issue 由 GitHub Actions 自动创建 ## 🔗 相关资源 - [文档版本管理配置](.kiro/docs-version-config.yml) - [版本管理脚本](scripts/docs/docs-version-manager.py) - [完整版本报告](../../actions/runs/${{ github.run_id }}) --- *此 Issue 由文档版本管理系统自动创建，每日检查过期文档并提醒维护。*`;
           
           // 检查是否已存在类似的 Issue
           const { data: issues } = await github.rest.issues.listForRepo({
