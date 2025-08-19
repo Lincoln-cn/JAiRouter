@@ -36,6 +36,8 @@ jobs:
         pip install mkdocs-material
         pip install mkdocs-git-revision-date-localized-plugin
         pip install mkdocs-mermaid2-plugin
+        pip install mkdocs-static-i18n
+        pip install mkdocs-minify-plugin
     
     - name: 验证 MkDocs 配置
       run: |
