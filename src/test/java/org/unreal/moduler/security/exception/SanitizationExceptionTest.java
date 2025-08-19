@@ -2,7 +2,8 @@ package org.unreal.moduler.security.exception;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
-import org.unreal.modelrouter.security.exception.SanitizationException;
+import org.unreal.modelrouter.exception.exception.SanitizationException;
+import org.unreal.modelrouter.exception.exception.SecurityException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -120,7 +121,7 @@ class SanitizationExceptionTest {
         SanitizationException exception = SanitizationException.sanitizationFailed("test");
 
         // Then
-        assertTrue(exception instanceof org.unreal.modelrouter.security.exception.SecurityException);
+        assertTrue(exception instanceof SecurityException);
         assertTrue(exception instanceof RuntimeException);
     }
 

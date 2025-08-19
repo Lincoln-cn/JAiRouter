@@ -16,8 +16,8 @@ import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.RuleType;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SanitizationStrategy;
-import org.unreal.modelrouter.security.sanitization.SanitizationRuleEngine;
-import org.unreal.modelrouter.security.sanitization.SanitizationService;
+import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
+import org.unreal.modelrouter.sanitization.SanitizationService;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;

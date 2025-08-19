@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.util;
+package org.unreal.modelrouter.util;
 
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;

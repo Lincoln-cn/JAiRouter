@@ -7,7 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
-import org.unreal.modelrouter.security.exception.SecurityAuthenticationException;
+import org.unreal.modelrouter.exception.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.security.model.JwtAuthentication;
 import reactor.core.publisher.Mono;

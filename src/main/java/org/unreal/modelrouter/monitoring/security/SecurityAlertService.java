@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.monitoring;
+package org.unreal.modelrouter.monitoring.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

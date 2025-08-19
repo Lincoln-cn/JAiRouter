@@ -5,9 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
-import org.unreal.modelrouter.security.authentication.impl.DefaultJwtTokenValidator;
 import org.unreal.modelrouter.security.config.SecurityProperties;
-import org.unreal.modelrouter.security.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
 import reactor.core.publisher.Mono;
 
 import java.util.*;

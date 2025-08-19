@@ -14,7 +14,7 @@ import org.unreal.modelrouter.dto.SecurityAuditQueryRequest;
 import org.unreal.modelrouter.dto.SecurityAuditQueryResponse;
 import org.unreal.modelrouter.dto.SecurityStatisticsResponse;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
-import org.unreal.modelrouter.security.monitoring.SecurityAlertService;
+import org.unreal.modelrouter.monitoring.security.SecurityAlertService;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;

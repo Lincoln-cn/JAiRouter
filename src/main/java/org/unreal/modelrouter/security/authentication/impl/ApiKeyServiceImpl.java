@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
-import org.unreal.modelrouter.security.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.UsageStatistics;
 import org.unreal.modelrouter.store.StoreManager;

@@ -16,7 +16,7 @@ import org.unreal.modelrouter.security.config.SecurityConfigurationService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
-import org.unreal.modelrouter.security.monitoring.SecurityMetrics;
+import org.unreal.modelrouter.monitoring.security.SecurityMetrics;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;

@@ -10,12 +10,11 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
-import org.unreal.modelrouter.security.filter.SecurityIntegratedApiKeyFilter;
-import org.unreal.modelrouter.security.handler.SecurityAuthenticationFailureHandler;
+import org.unreal.modelrouter.filter.filter.SecurityIntegratedApiKeyFilter;
+import org.unreal.modelrouter.exceptionhandler.SecurityAuthenticationFailureHandler;
 
 /**
  * Spring Security配置类

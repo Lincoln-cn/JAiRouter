@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.monitoring;
+package org.unreal.modelrouter.monitoring.security;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;

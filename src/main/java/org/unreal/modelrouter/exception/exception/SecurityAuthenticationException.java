@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.exception;
+package org.unreal.modelrouter.exception.exception;
 
 /**
  * Spring Security认证异常类

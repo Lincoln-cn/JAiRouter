@@ -8,7 +8,7 @@ import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.security.model.UsageStatistics;
-import org.unreal.modelrouter.security.util.SecurityUtils;
+import org.unreal.modelrouter.util.SecurityUtils;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;

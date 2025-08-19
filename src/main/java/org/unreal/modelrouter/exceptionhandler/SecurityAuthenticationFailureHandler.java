@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.handler;
+package org.unreal.modelrouter.exceptionhandler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +12,7 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.ServerAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+import org.unreal.modelrouter.exception.exception.SecurityException;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -73,9 +74,9 @@ public class SecurityAuthenticationFailureHandler
         errorResponse.put("status", status.value());
         
         // 如果是自定义的安全异常，添加错误代码
-        if (ex.getCause() instanceof org.unreal.modelrouter.security.exception.SecurityException) {
-            org.unreal.modelrouter.security.exception.SecurityException secEx = 
-                    (org.unreal.modelrouter.security.exception.SecurityException) ex.getCause();
+        if (ex.getCause() instanceof SecurityException) {
+            SecurityException secEx =
+                    (SecurityException) ex.getCause();
             errorResponse.put("errorCode", secEx.getErrorCode());
         }
         

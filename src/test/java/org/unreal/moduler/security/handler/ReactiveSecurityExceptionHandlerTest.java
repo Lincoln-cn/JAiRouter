@@ -14,11 +14,11 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.RequestPath;
 import org.springframework.web.server.ServerWebExchange;
-import org.unreal.modelrouter.security.exception.AuthenticationException;
-import org.unreal.modelrouter.security.exception.AuthorizationException;
-import org.unreal.modelrouter.security.exception.SanitizationException;
-import org.unreal.modelrouter.security.exception.SecurityException;
-import org.unreal.modelrouter.security.handler.ReactiveSecurityExceptionHandler;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.exception.AuthorizationException;
+import org.unreal.modelrouter.exception.exception.SanitizationException;
+import org.unreal.modelrouter.exception.exception.SecurityException;
+import org.unreal.modelrouter.exceptionhandler.ReactiveSecurityExceptionHandler;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
