@@ -12,7 +12,7 @@
 
 - 总文档数: 0
 - 近7天变更: 0
-- 版本文件: .\.kiro\docs-versions.json
+- 版本文件: .\docs\docs-versions.json
 - 最后扫描: 2025-08-18 10:30:09
 
 ## 依赖关系分析
