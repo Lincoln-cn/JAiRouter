@@ -43,7 +43,7 @@ jobs:
         echo "✅ MkDocs 配置验证通过"
     
     - name: 检查 Markdown 语法
-      uses: DavidAnson/markdownlint-action@v1
+      uses: DavidAnson/markdownlint-cli2-action@v20
       with:
         files: '**/*.md'
         config: '.markdownlint.json'
@@ -51,7 +51,7 @@ jobs:
         fix: false
     
     - name: 检查链接有效性 (第三方工具)
-      uses: gaurav-nelson/github-action-markdown-link-check@v1
+      uses: tcort/github-action-markdown-link-check@v1
       with:
         use-quiet-mode: 'yes'
         use-verbose-mode: 'yes'
