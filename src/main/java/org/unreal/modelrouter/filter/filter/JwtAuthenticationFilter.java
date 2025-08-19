@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.filter;
+package org.unreal.modelrouter.filter.filter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,9 +19,9 @@ import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.constants.SecurityConstants;
-import org.unreal.modelrouter.security.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
-import org.unreal.modelrouter.security.util.SecurityUtils;
+import org.unreal.modelrouter.util.SecurityUtils;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;

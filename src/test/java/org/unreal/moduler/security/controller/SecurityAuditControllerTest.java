@@ -11,7 +11,7 @@ import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.controller.SecurityAuditController;
 import org.unreal.modelrouter.dto.SecurityAuditQueryRequest;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
-import org.unreal.modelrouter.security.monitoring.SecurityAlertService;
+import org.unreal.modelrouter.monitoring.security.SecurityAlertService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

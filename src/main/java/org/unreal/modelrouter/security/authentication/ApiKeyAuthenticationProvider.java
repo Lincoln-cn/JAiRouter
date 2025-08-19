@@ -9,7 +9,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
-import org.unreal.modelrouter.security.exception.SecurityAuthenticationException;
+import org.unreal.modelrouter.exception.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;

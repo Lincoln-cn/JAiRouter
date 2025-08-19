@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.filter;
+package org.unreal.modelrouter.filter.filter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
