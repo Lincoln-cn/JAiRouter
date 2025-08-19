@@ -83,6 +83,10 @@ plugins:
             负载均衡: Load Balancing
             限流配置: Rate Limiting
             熔断器: Circuit Breaker
+            安全功能: Security Features
+            API Key管理: API Key Management
+            JWT认证: JWT Authentication
+            数据脱敏: Data Sanitization
             API参考: API Reference
             统一API: Universal API
             管理API: Management API
@@ -164,6 +168,12 @@ nav:
     - 负载均衡: zh/configuration/load-balancing.md
     - 限流配置: zh/configuration/rate-limiting.md
     - 熔断器: zh/configuration/circuit-breaker.md
+  - 安全功能:
+    - zh/security/index.md
+    - API Key管理: zh/security/api-key-management.md
+    - JWT认证: zh/security/jwt-authentication.md
+    - 数据脱敏: zh/security/data-sanitization.md
+    - 故障排除: zh/security/troubleshooting.md
   - API参考:
     - zh/api-reference/index.md
     - 统一API: zh/api-reference/universal-api.md

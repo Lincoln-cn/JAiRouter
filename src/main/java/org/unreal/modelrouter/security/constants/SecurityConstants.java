@@ -101,6 +101,22 @@ public final class SecurityConstants {
     }
     
     /**
+     * 过滤器顺序常量
+     */
+    public static final class FilterOrder {
+        public static final int API_KEY_FILTER_ORDER = -100;
+        public static final int JWT_FILTER_ORDER = -99;
+        public static final int SANITIZATION_FILTER_ORDER = -50;
+    }
+    
+    /**
+     * 过滤器顺序常量（向后兼容）
+     */
+    public static final int API_KEY_FILTER_ORDER = FilterOrder.API_KEY_FILTER_ORDER;
+    public static final int JWT_FILTER_ORDER = FilterOrder.JWT_FILTER_ORDER;
+    public static final int SANITIZATION_FILTER_ORDER = FilterOrder.SANITIZATION_FILTER_ORDER;
+    
+    /**
      * 默认配置值
      */
     public static final class Defaults {

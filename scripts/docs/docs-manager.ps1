@@ -1,21 +1,43 @@
 # JAiRouter 文档管理统一脚本
 # 整合了文档服务、链接检查、版本管理、结构验证等功能
 
+[CmdletBinding()]
 param(
-    [Parameter(Position=0)]
+    [Parameter(Position=0, Mandatory=$false)]
     [ValidateSet("serve", "check-links", "fix-links", "check-sync", "version", "validate", "help")]
     [string]$Command = "help",
-    
+
+    [Parameter(Mandatory=$false)]
     [string]$HostAddress = "localhost",
+
+    [Parameter(Mandatory=$false)]
     [string]$Port = "8000",
+
+    [Parameter(Mandatory=$false)]
     [string]$Output = "",
+
+    [Parameter(Mandatory=$false)]
     [switch]$FailOnError,
+
+    [Parameter(Mandatory=$false)]
     [switch]$AutoFix,
+
+    [Parameter(Mandatory=$false)]
     [switch]$Apply,
+
+    [Parameter(Mandatory=$false)]
     [switch]$Scan,
+
+    [Parameter(Mandatory=$false)]
     [switch]$AddHeaders,
+
+    [Parameter(Mandatory=$false)]
     [int]$Cleanup = 0,
+
+    [Parameter(Mandatory=$false)]
     [string]$Export = "",
+
+    [Parameter(Mandatory=$false)]
     [int]$CheckOutdated = 30
 )
 
@@ -73,11 +95,11 @@ function Show-Help {
 
 function Start-DocsServer {
     Write-ColorOutput "🚀 启动本地文档服务器..." "Green"
-    
+
     # 切换到项目根目录
-    $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+    $projectRoot = "D:\IdeaProjects\model-router"
     Push-Location $projectRoot
-    
+
     try {
         # 检查 Python
         try {
@@ -87,27 +109,27 @@ function Start-DocsServer {
             Write-ColorOutput "❌ 错误: 未找到 Python，请先安装 Python 3.x" "Red"
             exit 1
         }
-        
+
         # 检查 requirements.txt
         if (-not (Test-Path "requirements.txt")) {
             Write-ColorOutput "❌ 错误: 未找到 requirements.txt 文件" "Red"
             exit 1
         }
-    
-    # 安装依赖
-    Write-ColorOutput "📦 安装文档依赖..." "Yellow"
-    pip install -r requirements.txt
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-ColorOutput "❌ 错误: 依赖安装失败" "Red"
-        exit 1
-    }
-    
+
+        # 安装依赖
+        Write-ColorOutput "📦 安装文档依赖..." "Yellow"
+        pip install -r requirements.txt
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-ColorOutput "❌ 错误: 依赖安装失败" "Red"
+            exit 1
+        }
+
         # 启动服务器
         Write-ColorOutput "🌐 启动文档服务器，监听地址: $HostAddress`:$Port" "Green"
         Write-ColorOutput "📖 访问地址: http://$HostAddress`:$Port" "Cyan"
         Write-ColorOutput "⏹️  按 Ctrl+C 停止服务器" "Yellow"
-        
+
         mkdocs serve --dev-addr "$HostAddress`:$Port"
     }
     finally {
@@ -117,28 +139,28 @@ function Start-DocsServer {
 
 function Invoke-LinkCheck {
     Write-ColorOutput "🔍 检查文档链接..." "Green"
-    
+
     $scriptPath = Join-Path $PSScriptRoot "check-links.py"
     if (-not (Test-Path $scriptPath)) {
         Write-ColorOutput "❌ 错误: 链接检查脚本不存在" "Red"
         exit 1
     }
-    
+
     # 切换到项目根目录
-    $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+    $projectRoot = "D:\IdeaProjects\model-router"
     Push-Location $projectRoot
-    
+
     try {
-        $args = @()
+        $pyArgs = @()
         if ($Output) {
-            $args += "--output"
-            $args += $Output
+            $pyArgs += "--output"
+            $pyArgs += $Output
         }
         if ($FailOnError) {
-            $args += "--fail-on-error"
+            $pyArgs += "--fail-on-error"
         }
-        
-        python $scriptPath @args
+
+        python $scriptPath @pyArgs
     }
     finally {
         Pop-Location
@@ -147,27 +169,27 @@ function Invoke-LinkCheck {
 
 function Invoke-LinkFix {
     Write-ColorOutput "🔧 修复文档链接..." "Green"
-    
+
     $scriptPath = Join-Path $PSScriptRoot "fix-links.py"
     if (-not (Test-Path $scriptPath)) {
         Write-ColorOutput "❌ 错误: 链接修复脚本不存在" "Red"
         exit 1
     }
-    
+
     # 切换到项目根目录
-    $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+    $projectRoot = "D:\IdeaProjects\model-router"
     Push-Location $projectRoot
-    
+
     try {
-        $args = @()
+        $pyArgs = @()
         if ($AutoFix) {
-            $args += "--auto"
+            $pyArgs += "--auto"
         }
         if ($Apply) {
-            $args += "--apply"
+            $pyArgs += "--apply"
         }
-        
-        python $scriptPath @args
+
+        python $scriptPath @pyArgs
     }
     finally {
         Pop-Location
@@ -176,68 +198,145 @@ function Invoke-LinkFix {
 
 function Invoke-SyncCheck {
     Write-ColorOutput "🔄 检查文档同步性..." "Green"
-    
+
     $scriptPath = Join-Path $PSScriptRoot "check-docs-sync.ps1"
     if (-not (Test-Path $scriptPath)) {
         Write-ColorOutput "❌ 错误: 同步检查脚本不存在" "Red"
         exit 1
     }
-    
-    # 获取项目根目录
-    $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    
-    $args = @("-ProjectRoot", $projectRoot)
-    if ($Output) {
-        $args += "-OutputFile"
-        $args += $Output
+
+    # 直接调用，使用简单的方法避免参数冲突
+    $projectRoot = "D:\IdeaProjects\model-router"
+
+    try {
+        if ($Output -and $FailOnError) {
+            & $scriptPath -ProjectRoot $projectRoot -OutputFile $Output -FailOnError
+        }
+        elseif ($Output) {
+            & $scriptPath -ProjectRoot $projectRoot -OutputFile $Output
+        }
+        elseif ($FailOnError) {
+            & $scriptPath -ProjectRoot $projectRoot -FailOnError
+        }
+        else {
+            & $scriptPath -ProjectRoot $projectRoot
+        }
     }
-    if ($FailOnError) {
-        $args += "-FailOnError"
+    catch {
+        Write-ColorOutput "❌ 同步检查执行失败: $($_.Exception.Message)" "Red"
+        exit 1
     }
-    
-    & $scriptPath @args
+}
+
+function Test-PythonDependencies {
+    Write-ColorOutput "📦 检查 Python 依赖..." "Yellow"
+
+    $requiredModules = @("yaml")
+    $missingModules = @()
+
+    foreach ($module in $requiredModules) {
+        try {
+            $null = python -c "import $module" 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                $missingModules += $module
+            }
+        }
+        catch {
+            $missingModules += $module
+        }
+    }
+
+    if ($missingModules.Count -gt 0) {
+        Write-ColorOutput "⚠️ 缺少 Python 模块: $($missingModules -join ', ')" "Yellow"
+        Write-ColorOutput "正在尝试安装..." "Yellow"
+
+        foreach ($module in $missingModules) {
+            $packageName = if ($module -eq "yaml") { "pyyaml" } else { $module }
+
+            try {
+                pip install $packageName --user
+                if ($LASTEXITCODE -eq 0) {
+                    Write-ColorOutput "✅ 成功安装 $packageName" "Green"
+                } else {
+                    Write-ColorOutput "❌ 安装 $packageName 失败" "Red"
+                    return $false
+                }
+            }
+            catch {
+                Write-ColorOutput "❌ 安装 $packageName 时出错: $($_.Exception.Message)" "Red"
+                return $false
+            }
+        }
+    } else {
+        Write-ColorOutput "✅ 所有 Python 依赖都已安装" "Green"
+    }
+
+    return $true
 }
 
 function Invoke-VersionManagement {
     Write-ColorOutput "📋 管理文档版本..." "Green"
-    
-    $scriptPath = Join-Path $PSScriptRoot "docs-version-manager.ps1"
-    if (-not (Test-Path $scriptPath)) {
-        Write-ColorOutput "❌ 错误: 版本管理脚本不存在" "Red"
+
+    # 检查 Python 依赖
+    if (-not (Test-PythonDependencies)) {
+        Write-ColorOutput "❌ Python 依赖检查失败" "Red"
         exit 1
     }
-    
-    # 获取项目根目录
-    $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    
-    $args = @("-ProjectRoot", $projectRoot)
-    if ($Scan) {
-        $args += "-Scan"
+
+    # 直接调用 Python 脚本，而不是 PowerShell 脚本
+    $pythonScript = Join-Path $PSScriptRoot "docs-version-manager.py"
+    if (-not (Test-Path $pythonScript)) {
+        Write-ColorOutput "❌ 错误: Python 版本管理脚本不存在" "Red"
+        exit 1
     }
-    if ($AddHeaders) {
-        $args += "-AddHeaders"
+
+    $projectRoot = "D:\IdeaProjects\model-router"
+
+    try {
+        # 构建 Python 脚本参数
+        $pyArgs = @("--project-root", $projectRoot)
+
+        if ($Scan) {
+            $pyArgs += "--scan"
+        }
+        if ($AddHeaders) {
+            $pyArgs += "--add-headers"
+        }
+        if ($Cleanup -gt 0) {
+            $pyArgs += "--cleanup"
+            $pyArgs += $Cleanup.ToString()
+        }
+        if ($Export) {
+            $pyArgs += "--export"
+            $pyArgs += $Export
+        }
+
+        $pyArgs += "--check-outdated"
+        $pyArgs += $CheckOutdated.ToString()
+
+        # 切换到项目根目录
+        Push-Location $projectRoot
+
+        try {
+            python $pythonScript @pyArgs
+        }
+        finally {
+            Pop-Location
+        }
     }
-    if ($Cleanup -gt 0) {
-        $args += "-Cleanup"
-        $args += $Cleanup
+    catch {
+        Write-ColorOutput "❌ 版本管理执行失败: $($_.Exception.Message)" "Red"
+        exit 1
     }
-    if ($Export) {
-        $args += "-Export"
-        $args += $Export
-    }
-    $args += "-CheckOutdated"
-    $args += $CheckOutdated
-    
-    & $scriptPath @args
 }
 
 function Invoke-Validation {
     Write-ColorOutput "✅ 验证文档结构..." "Green"
-    
+
     # 切换到项目根目录
-    $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+    $projectRoot = "D:\IdeaProjects\model-router"
     Push-Location $projectRoot
-    
+
     try {
         # 验证 MkDocs 配置
         $configScript = Join-Path $PSScriptRoot "validate-docs-config.py"
@@ -245,7 +344,7 @@ function Invoke-Validation {
             Write-ColorOutput "📋 验证 MkDocs 配置..." "Cyan"
             python $configScript
         }
-        
+
         # 验证文档结构
         $structureScript = Join-Path $PSScriptRoot "validate-structure.ps1"
         if (Test-Path $structureScript) {
@@ -290,5 +389,6 @@ try {
     }
 } catch {
     Write-ColorOutput "❌ 执行失败: $($_.Exception.Message)" "Red"
+    Write-ColorOutput "❌ 详细错误: $($_.Exception.ToString())" "Red"
     exit 1
 }

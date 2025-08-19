@@ -45,3 +45,151 @@ webclient:
   read-timeout: 15s
   write-timeout: 15s
   max-in-memory-size: 5MB
+
+# ========================================
+# 开发环境安全配置
+# ========================================
+jairouter:
+  security:
+    # 开发环境启用安全功能进行测试
+    enabled: true
+    
+    # 开发环境API Key配置
+    api-key:
+      enabled: true
+      header-name: "X-API-Key"
+      default-expiration-days: 30  # 开发环境使用较短的过期时间
+      cache-enabled: true
+      cache-expiration-seconds: 1800  # 30分钟缓存
+      keys:
+        # 开发环境测试用API Key
+        - key-id: "dev-admin-key"
+          key-value: "dev-admin-12345-abcde-67890-fghij"
+          description: "开发环境管理员测试密钥"
+          permissions: ["admin", "read", "write", "delete"]
+          expires-at: "2025-12-31T23:59:59"
+          enabled: true
+          metadata:
+            environment: "development"
+            created-by: "developer"
+        
+        - key-id: "dev-user-key"
+          key-value: "dev-user-67890-klmno-12345-pqrst"
+          description: "开发环境普通用户测试密钥"
+          permissions: ["read"]
+          expires-at: "2025-06-30T23:59:59"
+          enabled: true
+          metadata:
+            environment: "development"
+            created-by: "developer"
+    
+    # 开发环境JWT配置
+    jwt:
+      enabled: true
+      secret: "dev-jwt-secret-key-for-development-only-not-for-production"
+      algorithm: "HS256"
+      expiration-minutes: 30  # 开发环境使用较短的过期时间
+      refresh-expiration-days: 1
+      issuer: "jairouter-dev"
+      blacklist-enabled: true
+    
+    # 开发环境数据脱敏配置（相对宽松）
+    sanitization:
+      request:
+        enabled: true
+        sensitive-words:
+          - "password"
+          - "secret"
+          - "token"
+        pii-patterns:
+          - "\\d{11}"  # 手机号
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"  # 邮箱
+        masking-char: "*"
+        log-sanitization: true
+        whitelist-users:
+          - "dev-admin-key"  # 开发环境管理员跳过脱敏
+        whitelist-ips:
+          - "127.0.0.1"
+          - "::1"
+          - "192.168.0.0/16"  # 开发环境内网IP
+      
+      response:
+        enabled: true
+        sensitive-words:
+          - "internal"
+          - "debug"
+        pii-patterns:
+          - "\\d{11}"
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+        masking-char: "*"
+        log-sanitization: true
+        preserve-json-structure: true
+    
+    # 开发环境审计配置
+    audit:
+      enabled: true
+      log-level: "DEBUG"  # 开发环境使用详细日志
+      include-request-body: true   # 开发环境可以包含请求体用于调试
+      include-response-body: true  # 开发环境可以包含响应体用于调试
+      retention-days: 7  # 开发环境较短的保留期
+      alert-enabled: false  # 开发环境关闭告警
+      
+      event-types:
+        authentication-success: true
+        authentication-failure: true
+        authorization-failure: true
+        sanitization-applied: true
+        configuration-changed: true
+        security-alert: true
+        suspicious-activity: true
+      
+      storage:
+        type: "file"
+        file-path: "logs/dev-security-audit.log"
+        rotation:
+          max-file-size: "10MB"  # 开发环境较小的文件大小
+          max-files: 5
+    
+    # 开发环境监控配置
+    monitoring:
+      enabled: true
+      metrics:
+        authentication:
+          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0]
+        sanitization:
+          enabled: true
+          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0]
+        security-events:
+          enabled: true
+          by-event-type: true
+          by-user: true
+          by-ip: true
+      
+      alerts:
+        enabled: false  # 开发环境关闭告警
+    
+    # 开发环境性能配置
+    performance:
+      authentication:
+        async-enabled: true
+        thread-pool-size: 5  # 开发环境较小的线程池
+        timeout-ms: 10000    # 开发环境较长的超时时间便于调试
+      
+      sanitization:
+        parallel-enabled: true
+        thread-pool-size: 3
+        streaming-threshold: 524288  # 512KB
+        regex-cache-size: 50
+      
+      cache:
+        redis:
+          enabled: false  # 开发环境默认不使用Redis
+        local:
+          enabled: true
+          api-key:
+            max-size: 100
+            expire-after-write: 1800  # 30分钟
+          jwt-blacklist:
+            max-size: 1000
+            expire-after-write: 3600  # 1小时

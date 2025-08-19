@@ -1,0 +1,198 @@
+# 安全功能集成测试配置文件
+# 该配置文件专门用于安全功能的集成测试
+
+spring:
+  profiles:
+    active: test
+  
+  # 数据库配置 - 使用内存数据库进行测试
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+  
+  # Redis配置 - 使用嵌入式Redis进行测试
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+# JAiRouter安全配置
+jairouter:
+  security:
+    # 启用安全功能
+    enabled: true
+    
+    # API Key认证配置
+    api-key:
+      enabled: true
+      header-name: "X-API-Key"
+      default-expiration-days: 365
+      keys: []  # 测试中动态添加
+    
+    # JWT配置
+    jwt:
+      enabled: true
+      secret: "test-jwt-secret-key-for-integration-testing-only-do-not-use-in-production"
+      algorithm: "HS256"
+      expiration-minutes: 60
+      refresh-expiration-days: 7
+    
+    # 数据脱敏配置
+    sanitization:
+      request:
+        enabled: true
+        sensitive-words:
+          - "password"
+          - "secret"
+          - "token"
+          - "key"
+          - "credential"
+        pii-patterns:
+          - "\\d{11}"                                                    # 手机号
+          - "\\d{18}"                                                    # 身份证号
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"          # 邮箱
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"      # 银行卡号
+        masking-char: "*"
+        whitelist-users: []  # 测试中动态配置
+      
+      response:
+        enabled: true
+        sensitive-words:
+          - "internal"
+          - "debug"
+          - "error"
+          - "exception"
+        pii-patterns:
+          - "\\d{11}"
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+        masking-char: "*"
+    
+    # 审计配置
+    audit:
+      enabled: true
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 30  # 测试环境使用较短的保留期
+      
+      # 审计事件类型配置
+      event-types:
+        authentication-success: true
+        authentication-failure: true
+        authorization-failure: true
+        sanitization-applied: true
+        configuration-changed: true
+        security-alert: true
+    
+    # 监控配置
+    monitoring:
+      enabled: true
+      metrics:
+        authentication:
+          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0]
+        sanitization:
+          enabled: true
+          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0]
+      
+      alerts:
+        enabled: true
+        thresholds:
+          authentication-failure-rate: 0.1  # 10%失败率触发告警
+          sanitization-error-rate: 0.05     # 5%错误率触发告警
+          response-time-p99: 1000            # P99响应时间超过1秒触发告警
+
+# 日志配置
+logging:
+  level:
+    org.unreal.modelrouter.security: DEBUG
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+    reactor.netty: WARN
+    io.netty: WARN
+  
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] - %msg%n"
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# 测试专用配置
+test:
+  security:
+    # 测试超时配置
+    timeouts:
+      authentication: 5000      # 认证测试超时5秒
+      sanitization: 3000        # 脱敏测试超时3秒
+      configuration: 2000       # 配置测试超时2秒
+      end-to-end: 30000        # 端到端测试超时30秒
+    
+    # 测试数据配置
+    data:
+      api-keys:
+        count: 10               # 测试中创建的API Key数量
+        expiration-days: 30     # 测试API Key的过期天数
+      
+      sanitization-rules:
+        count: 20               # 测试脱敏规则数量
+        patterns-per-rule: 3    # 每个规则的模式数量
+    
+    # 性能测试配置
+    performance:
+      concurrent-threads: 10    # 并发测试线程数
+      requests-per-thread: 20   # 每个线程的请求数
+      max-response-time: 1000   # 最大响应时间（毫秒）
+    
+    # 安全测试配置
+    penetration:
+      enabled: true
+      attack-patterns:
+        sql-injection: true
+        xss-attack: true
+        authentication-bypass: true
+        information-leakage: true
+
+# 外部服务模拟配置
+mock:
+  services:
+    ai-backend:
+      enabled: true
+      response-delay: 100       # 模拟AI服务响应延迟（毫秒）
+      success-rate: 0.95        # 模拟成功率
+    
+    redis:
+      enabled: true
+      embedded: true            # 使用嵌入式Redis
+    
+    database:
+      enabled: true
+      in-memory: true           # 使用内存数据库
