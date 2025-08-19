@@ -74,13 +74,18 @@ jobs:
         python scripts/docs/docs-version-manager.py --project-root . --scan
         
         # 检查是否有变更
-        if [ -f .kiro/docs-versions.json ]; then
+        echo "🔍 扫描文档版本信息..."
+        
+        # 使用 Python 版本进行扫描
+        python scripts/docs/docs-version-manager.py --project-root . --scan
+        
+        # 检查是否有变更
+        if [ -f docs/docs-versions.json ]; then
           CHANGES_COUNT=$(python -c "
-import json
-with open('.kiro/docs-versions.json', 'r', encoding='utf-8') as f:
-    data = json.load(f)
-print(len(data.get('changes', [])))
-          ")
+          import json
+          with open('docs/docs-versions.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          print(len(data.get('changes', [])))")
           echo "changes_count=$CHANGES_COUNT" >> $GITHUB_OUTPUT
           echo "📊 发现 $CHANGES_COUNT 个变更记录"
         else
