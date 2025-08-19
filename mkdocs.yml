@@ -118,13 +118,6 @@ plugins:
       type: date
       enable_creation_date: true
       fallback_to_build_date: true
-  - optimize:
-      enabled: !ENV [OPTIMIZE, false]
-      cache: true
-      cache_dir: .cache/plugin/optimize
-      optimize_png: true
-      optimize_jpg: true
-      optimize_svg: true
 
 markdown_extensions:
   - pymdownx.highlight:
