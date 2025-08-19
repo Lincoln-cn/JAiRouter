@@ -316,5 +316,4 @@ curl "https://www.webpagetest.org/runtest.php?url=https://lincoln-cn.github.io/J
 ## 相关文档
 
 - [部署测试指南](deployment-testing.md)
-- [用户体验设计](../design/user-experience.md)
 - [技术架构文档](architecture.md)

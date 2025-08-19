@@ -6,7 +6,6 @@ Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流
 [English Introduction](README-EN.md)
 
 ---
-
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
 
 ## ✨ 核心特性

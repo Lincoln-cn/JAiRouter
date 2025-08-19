@@ -98,8 +98,8 @@ class DocumentVersionManager:
     
     def __init__(self, project_root: str):
         self.project_root = Path(project_root).resolve()
-        self.version_file = self.project_root / '.kiro' / 'docs-versions.json'
-        self.config_file = self.project_root / '.kiro' / 'docs-version-config.yml'
+        self.version_file = self.project_root / 'docs' / 'docs-versions.json'
+        self.config_file = self.project_root / 'docs' / 'docs-version-config.yml'
         self.versions: Dict[str, DocumentVersion] = {}
         self.changes: List[VersionChange] = []
         
