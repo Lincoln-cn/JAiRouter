@@ -6,11 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.security.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
-import org.unreal.modelrouter.security.model.UsageStatistics;
 import org.unreal.modelrouter.store.StoreManager;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;

@@ -7,13 +7,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.config.SecurityProperties;
-import org.unreal.modelrouter.security.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
