@@ -14,10 +14,10 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:26.885093",
-      "ContentHash": "0753aab13190ca1f",
-      "GitCommit": "55e74676",
+      "Version": "1.0.1",
+      "LastModified": "2025-08-19T07:48:21.825969",
+      "ContentHash": "dc9070668ea79fc9",
+      "GitCommit": "f32b5398",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:26.956337",
-      "ContentHash": "8daa5f2563b85578",
-      "GitCommit": "c1aa5b0f",
+      "Version": "1.0.1",
+      "LastModified": "2025-08-19T07:48:21.827717",
+      "ContentHash": "83dffdd9136c2949",
+      "GitCommit": "f90d3cf6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -600,77 +600,6 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
-    },
-    "docs/en/security/api-key-management.md": {
-      "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:30.431718",
-      "ContentHash": "be585ea124af48d4",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/security/data-sanitization.md",
-        "docs/en/security/jwt-authentication.md",
-        "docs/en/security/troubleshooting.md"
-      ]
-    },
-    "docs/en/security/data-sanitization.md": {
-      "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:30.532900",
-      "ContentHash": "46e8178fd97d3642",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/security/api-key-management.md",
-        "docs/en/security/jwt-authentication.md",
-        "docs/en/security/troubleshooting.md"
-      ]
-    },
-    "docs/en/security/index.md": {
-      "FilePath": "docs/en/security/index.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:30.632977",
-      "ContentHash": "6d05380d1412cec0",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/security/api-key-management.md",
-        "docs/en/security/data-sanitization.md",
-        "docs/en/security/jwt-authentication.md",
-        "docs/en/security/troubleshooting.md"
-      ]
-    },
-    "docs/en/security/jwt-authentication.md": {
-      "FilePath": "docs/en/security/jwt-authentication.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:30.732638",
-      "ContentHash": "e99d019afde3e351",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/security/api-key-management.md",
-        "docs/en/security/data-sanitization.md",
-        "docs/en/security/troubleshooting.md"
-      ]
-    },
-    "docs/en/security/troubleshooting.md": {
-      "FilePath": "docs/en/security/troubleshooting.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:30.827178",
-      "ContentHash": "7e2cebb6db3bab7e",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/security/api-key-management.md",
-        "docs/en/security/data-sanitization.md",
-        "docs/en/security/jwt-authentication.md"
-      ]
     },
     "docs/en/troubleshooting/common-issues.md": {
       "FilePath": "docs/en/troubleshooting/common-issues.md",
@@ -1309,77 +1238,6 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
-    },
-    "docs/zh/security/api-key-management.md": {
-      "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:35.205826",
-      "ContentHash": "6fc57ee629b5bd5e",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/security/data-sanitization.md",
-        "docs/zh/security/jwt-authentication.md",
-        "docs/zh/security/troubleshooting.md"
-      ]
-    },
-    "docs/zh/security/data-sanitization.md": {
-      "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:35.340994",
-      "ContentHash": "7b8bad5afbf8cd7f",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/security/api-key-management.md",
-        "docs/zh/security/jwt-authentication.md",
-        "docs/zh/security/troubleshooting.md"
-      ]
-    },
-    "docs/zh/security/index.md": {
-      "FilePath": "docs/zh/security/index.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:35.470149",
-      "ContentHash": "cc4a83ca90f2babc",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/security/api-key-management.md",
-        "docs/zh/security/data-sanitization.md",
-        "docs/zh/security/jwt-authentication.md",
-        "docs/zh/security/troubleshooting.md"
-      ]
-    },
-    "docs/zh/security/jwt-authentication.md": {
-      "FilePath": "docs/zh/security/jwt-authentication.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:35.592913",
-      "ContentHash": "233c31cda3ba99d7",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/security/api-key-management.md",
-        "docs/zh/security/data-sanitization.md",
-        "docs/zh/security/troubleshooting.md"
-      ]
-    },
-    "docs/zh/security/troubleshooting.md": {
-      "FilePath": "docs/zh/security/troubleshooting.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-19T11:20:35.709913",
-      "ContentHash": "7e2cebb6db3bab7e",
-      "GitCommit": "",
-      "Author": "",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/security/api-key-management.md",
-        "docs/zh/security/data-sanitization.md",
-        "docs/zh/security/jwt-authentication.md"
-      ]
     },
     "docs/zh/troubleshooting/common-issues.md": {
       "FilePath": "docs/zh/troubleshooting/common-issues.md",
@@ -2285,7 +2143,103 @@
       "ChangeType": "CREATED",
       "Timestamp": "2025-08-19T11:20:36.061346",
       "Description": "文档created"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-08-19T07:48:21.825977",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-08-19T07:48:21.827722",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.037947",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.037976",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/security/index.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.037990",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/security/jwt-authentication.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.038003",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/security/troubleshooting.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.038015",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.038032",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.038045",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/security/index.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.038056",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/security/jwt-authentication.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.038068",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/security/troubleshooting.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-08-19T07:48:22.038078",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2025-08-19T11:20:41.716838"
+  "last_updated": "2025-08-19T07:48:22.141701"
 }
