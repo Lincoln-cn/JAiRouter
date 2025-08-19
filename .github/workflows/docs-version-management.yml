@@ -74,13 +74,12 @@ jobs:
         python scripts/docs/docs-version-manager.py --project-root . --scan
         
         # 检查是否有变更
-        if [ -f .kiro/docs-versions.json ]; then
+        if [ -f docs/docs-versions.json ]; then
           CHANGES_COUNT=$(python -c "
-import json
-with open('.kiro/docs-versions.json', 'r', encoding='utf-8') as f:
-    data = json.load(f)
-print(len(data.get('changes', [])))
-          ")
+          import json
+          with open('docs/docs-versions.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          print(len(data.get('changes', [])))")
           echo "changes_count=$CHANGES_COUNT" >> $GITHUB_OUTPUT
           echo "📊 发现 $CHANGES_COUNT 个变更记录"
         else
@@ -152,7 +151,7 @@ print(len(data.get('changes', [])))
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
-        git add .kiro/docs-versions.json
+        git add docs/docs-versions.json
         git add docs/**/*.md || true
         git add README*.md || true
         git add *.md || true
@@ -177,7 +176,7 @@ print(len(data.get('changes', [])))
           const outdatedContent = outdatedSection ? outdatedSection[0] : '未找到过期文档详情';
           
           const issueTitle = `📋 文档维护提醒：发现 ${{ steps.report.outputs.outdated_count }} 个过期文档需要更新`;
-          const issueBody = `## 📊 过期文档检查报告 在定期检查中发现了一些超过 30 天未更新的文档，建议进行内容审查和更新。 ${outdatedContent} ## 🔧 建议操作 1. **审查内容**: 检查过期文档的内容是否仍然准确 2. **更新信息**: 更新过时的信息、链接和示例 3. **验证功能**: 确保文档中的操作步骤仍然有效 4. **同步代码**: 检查文档是否与最新代码保持一致 ## 📈 版本管理信息 - 检查时间: ${new Date().toISOString().split('T')[0]} - 过期阈值: 30 天 - 总文档数: 通过版本管理系统跟踪 - 自动化: 此 Issue 由 GitHub Actions 自动创建 ## 🔗 相关资源 - [文档版本管理配置](.kiro/docs-version-config.yml) - [版本管理脚本](scripts/docs/docs-version-manager.py) - [完整版本报告](../../actions/runs/${{ github.run_id }}) --- *此 Issue 由文档版本管理系统自动创建，每日检查过期文档并提醒维护。*`;
+          const issueBody = `## 📊 过期文档检查报告 在定期检查中发现了一些超过 30 天未更新的文档，建议进行内容审查和更新。 ${outdatedContent} ## 🔧 建议操作 1. **审查内容**: 检查过期文档的内容是否仍然准确 2. **更新信息**: 更新过时的信息、链接和示例 3. **验证功能**: 确保文档中的操作步骤仍然有效 4. **同步代码**: 检查文档是否与最新代码保持一致 ## 📈 版本管理信息 - 检查时间: ${new Date().toISOString().split('T')[0]} - 过期阈值: 30 天 - 总文档数: 通过版本管理系统跟踪 - 自动化: 此 Issue 由 GitHub Actions 自动创建 ## 🔗 相关资源 - [文档版本管理配置](docs/docs-version-config.yml) - [版本管理脚本](scripts/docs/docs-version-manager.py) - [完整版本报告](../../actions/runs/${{ github.run_id }}) --- *此 Issue 由文档版本管理系统自动创建，每日检查过期文档并提醒维护。*`;
           
           // 检查是否已存在类似的 Issue
           const { data: issues } = await github.rest.issues.listForRepo({
@@ -265,4 +264,4 @@ print(len(data.get('changes', [])))
         echo "### 📄 生成文件" >> $GITHUB_STEP_SUMMARY
         echo "- 版本报告: \[docs-version-report.md\](file://D:\IdeaProjects\model-router\docs-version-report.md)" >> $GITHUB_STEP_SUMMARY
         echo "- 版本数据: \`docs-version-data.json\`, \`docs-version-data.csv\`" >> $GITHUB_STEP_SUMMARY
-        echo "- 版本配置: \`.kiro/docs-versions.json\`" >> $GITHUB_STEP_SUMMARY
+        echo "- 版本配置: \`docs/docs-versions.json\`" >> $GITHUB_STEP_SUMMARY

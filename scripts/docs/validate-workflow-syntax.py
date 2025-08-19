@@ -119,7 +119,7 @@ def check_common_issues():
         
         # 检查文件路径问题
         if 'docs/docs-versions.json' in content:
-            issues.append(f"❌ {workflow_file.name}: 错误的文件路径 'docs/docs-versions.json'，应该是 '.kiro/docs-versions.json'")
+            issues.append(f"❌ {workflow_file.name}: 错误的文件路径 'docs/docs-versions.json'，应该是 'docs/docs-versions.json'")
         
         # 检查Python版本一致性
         python_versions = re.findall(r"python-version:\s*['\"]([^'\"]+)['\"]", content)
