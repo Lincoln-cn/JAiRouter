@@ -33,7 +33,6 @@ theme:
     - content.code.copy
     - content.action.edit
     - content.tabs.link
-    - navigation.instant
     - navigation.tracking
 
 plugins:
@@ -42,8 +41,6 @@ plugins:
         - zh
         - en
       separator: '[\s\-\.]+'
-      min_search_length: 2
-      prebuild_index: true
   - minify:
       minify_html: true
       minify_js: true
@@ -161,7 +158,6 @@ nav:
     - zh/api-reference/index.md
     - 统一API: zh/api-reference/universal-api.md
     - 管理API: zh/api-reference/management-api.md
-    - 监控API: zh/api-reference/monitoring-api.md
     - OpenAPI规范: zh/api-reference/openapi-spec.md
   - 部署指南:
     - zh/deployment/index.md
@@ -212,7 +208,7 @@ extra:
       link: /
       lang: zh
     - name: English
-      link: /en
+      link: /en/
       lang: en
   analytics:
     provider: google
