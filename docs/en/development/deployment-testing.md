@@ -210,9 +210,3 @@ After testing completion, a detailed report is generated including:
 - Add more quality checks
 - Integrate performance testing
 - Implement automated rollback
-
-## Related Documentation
-
-- [GitHub Pages Deployment Configuration](github-pages.md)
-- [Documentation Quality Assurance](../development/quality-assurance.md)
-- [Multi-language Support](../configuration/i18n.md)
