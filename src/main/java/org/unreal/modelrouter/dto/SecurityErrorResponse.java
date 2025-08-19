@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.dto;
+package org.unreal.modelrouter.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;

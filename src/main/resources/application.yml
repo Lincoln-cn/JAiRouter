@@ -265,7 +265,7 @@ jairouter:
       keys:
         # 管理员API Key示例
         - key-id: "admin-key-001"
-          key-value: "${ADMIN_API_KEY:}"  # 通过环境变量ADMIN_API_KEY设置
+          key-value: "${ADMIN_API_KEY:admin-key-001}"  # 通过环境变量ADMIN_API_KEY设置
           description: "管理员API密钥 - 拥有完整权限"
           permissions: ["admin", "read", "write", "delete"]
           expires-at: "2025-12-31T23:59:59"

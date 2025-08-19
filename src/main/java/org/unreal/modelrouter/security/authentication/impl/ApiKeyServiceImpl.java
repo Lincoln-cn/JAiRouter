@@ -255,6 +255,12 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      * 从存储中加载API Key数据到缓存
      */
     private void loadApiKeysFromStore() {
+        //如果不存在配置文件，则创建默认空配置文件
+        if (!storeManager.exists(API_KEYS_STORE_KEY)) {
+            storeManager.saveConfig(API_KEYS_STORE_KEY, Collections.emptyMap());
+            log.info("创建默认API Key配置文件");
+            saveApiKeysToStore();
+        }
         try {
             Map<String, Object> config = storeManager.getConfig(API_KEYS_STORE_KEY);
             if (config != null && !config.isEmpty()) {
@@ -268,6 +274,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                     }
                 }
             }
+
             log.debug("从存储加载了 {} 个API Key", apiKeyCache.size());
         } catch (Exception e) {
             log.error("加载API Key数据失败", e);
@@ -278,6 +285,11 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      * 从存储中加载使用统计数据到缓存
      */
     private void loadUsageStatsFromStore() {
+        if (!storeManager.exists(USAGE_STATS_STORE_KEY)) {
+            storeManager.saveConfig(USAGE_STATS_STORE_KEY, Collections.emptyMap());
+            log.info("创建默认使用统计配置文件");
+            saveUsageStatsToStore();
+        }
         try {
             Map<String, Object> config = storeManager.getConfig(USAGE_STATS_STORE_KEY);
             if (config != null && !config.isEmpty()) {

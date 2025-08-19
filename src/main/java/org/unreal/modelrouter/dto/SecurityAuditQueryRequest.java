@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.dto;
+package org.unreal.modelrouter.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
