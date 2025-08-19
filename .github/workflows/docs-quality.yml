@@ -43,7 +43,7 @@ jobs:
         echo "✅ MkDocs 配置验证通过"
     
     - name: 检查 Markdown 语法
-      uses: DavidAnson/markdownlint-action@v1
+      uses: DavidAnson/markdownlint-cli2-action@v20
       with:
         files: '**/*.md'
         config: '.markdownlint.json'
@@ -51,7 +51,7 @@ jobs:
         fix: false
     
     - name: 检查链接有效性 (第三方工具)
-      uses: gaurav-nelson/github-action-markdown-link-check@v1
+      uses: tcort/github-action-markdown-link-check@v1
       with:
         use-quiet-mode: 'yes'
         use-verbose-mode: 'yes'
@@ -62,11 +62,11 @@ jobs:
     
     - name: 检查链接有效性 (自定义脚本)
       run: |
-        python3 scripts/check-links.py --dir docs --output link-check-report.json --fail-on-error
+        python3 scripts/docs/check-links.py --dir docs --output link-check-report.json --fail-on-error
         echo "✅ 链接检查完成"
     
     - name: 上传链接检查报告
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: link-check-report
@@ -102,8 +102,8 @@ jobs:
             sys.exit(1)
         else:
             print('✅ 文档目录结构检查通过')
-        "
-    
+                "
+            
     - name: 检查文档元数据
       run: |
         python3 -c "
@@ -133,8 +133,7 @@ jobs:
             print('✅ 文档元数据检查完成')
         else:
             print('⚠️  未找到文档文件')
-        "
-
+                "
   spell-check:
     runs-on: ubuntu-latest
     name: 拼写检查

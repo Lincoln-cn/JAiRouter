@@ -65,7 +65,7 @@ class DocumentVersionManager {
     
     DocumentVersionManager([string]$projectRoot) {
         $this.ProjectRoot = $projectRoot
-        $this.VersionFile = Join-Path $projectRoot ".kiro\docs-versions.json"
+        $this.VersionFile = Join-Path $projectRoot "docs\docs-versions.json"
         $this.Versions = @{}
         $this.Changes = New-Object System.Collections.ArrayList
         
@@ -484,7 +484,7 @@ class DocumentVersionManager {
     
     [int]AddVersionHeaders() {
         $addedCount = 0
-        $configPath = Join-Path $this.ProjectRoot ".kiro\docs-version-config.yml"
+        $configPath = Join-Path $this.ProjectRoot "docs\docs-version-config.yml"
         
         # 加载配置
         $config = @{

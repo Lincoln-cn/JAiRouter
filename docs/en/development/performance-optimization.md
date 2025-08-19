@@ -28,8 +28,6 @@ This document describes the performance optimization strategies and implementati
 # mkdocs.yml search configuration
 plugins:
   - search:
-      prebuild_index: true  # Pre-build search index
-      min_search_length: 2  # Minimum search length
       separator: '[\s\-\.]+'  # Optimize tokenization
 ```
 
@@ -316,5 +314,4 @@ curl "https://www.webpagetest.org/runtest.php?url=https://lincoln-cn.github.io/J
 ## Related Documentation
 
 - [Deployment Testing Guide](deployment-testing.md)
-- [User Experience Design](../design/user-experience.md)
 - [Technical Architecture Documentation](architecture.md)

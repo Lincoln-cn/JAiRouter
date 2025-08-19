@@ -21,12 +21,12 @@ on:
       scan_only:
         description: '仅扫描版本信息（不提交更改）'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       add_headers:
         description: '添加版本头信息'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       cleanup_days:
         description: '清理多少天前的变更记录'
@@ -52,7 +52,7 @@ jobs:
     - name: 设置 Python 环境
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     
     - name: 安装 Python 依赖
       run: |
@@ -71,16 +71,11 @@ jobs:
         echo "🔍 扫描文档版本信息..."
         
         # 使用 Python 版本进行扫描
-        python scripts/docs-version-manager.py --project-root . --scan
+        python scripts/docs/docs-version-manager.py --project-root . --scan
         
         # 检查是否有变更
-        if [ -f .kiro/docs-versions.json ]; then
-          CHANGES_COUNT=$(python -c "
-import json
-with open('.kiro/docs-versions.json', 'r', encoding='utf-8') as f:
-    data = json.load(f)
-print(len(data.get('changes', [])))
-")
+        if [ -f docs/docs-versions.json ]; then
+          CHANGES_COUNT=$(jq '.changes | length' docs/docs-versions.json)
           echo "changes_count=$CHANGES_COUNT" >> $GITHUB_OUTPUT
           echo "📊 发现 $CHANGES_COUNT 个变更记录"
         else
@@ -91,23 +86,23 @@ print(len(data.get('changes', [])))
       if: github.event.inputs.add_headers == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
       run: |
         echo "📋 添加版本头信息..."
-        python scripts/docs-version-manager.py --project-root . --add-headers
+        python scripts/docs/docs-version-manager.py --project-root . --add-headers
     
     - name: 清理旧变更记录
       if: github.event.inputs.cleanup_days != '' || github.event_name == 'schedule'
       run: |
         CLEANUP_DAYS="${{ github.event.inputs.cleanup_days || '90' }}"
         echo "🧹 清理 $CLEANUP_DAYS 天前的变更记录..."
-        python scripts/docs-version-manager.py --project-root . --cleanup $CLEANUP_DAYS
+        python scripts/docs/docs-version-manager.py --project-root . --cleanup $CLEANUP_DAYS
     
     - name: 生成版本报告
       id: report
       run: |
         echo "📊 生成版本报告..."
-        python scripts/docs-version-manager.py --project-root . --report docs-version-report.md
+        python scripts/docs/docs-version-manager.py --project-root . --report docs-version-report.md
         
         # 检查过期文档
-        python scripts/docs-version-manager.py --project-root . --check-outdated 30 > outdated-check.txt 2>&1 || true
+        python scripts/docs/docs-version-manager.py --project-root . --check-outdated 30 > outdated-check.txt 2>&1 || true
         
         if grep -q "发现.*个过期文档" outdated-check.txt; then
           echo "has_outdated=true" >> $GITHUB_OUTPUT
@@ -121,11 +116,11 @@ print(len(data.get('changes', [])))
     - name: 导出版本数据
       run: |
         echo "📤 导出版本数据..."
-        python scripts/docs-version-manager.py --project-root . --export docs-version-data.json
-        python scripts/docs-version-manager.py --project-root . --export docs-version-data.csv
+        python scripts/docs/docs-version-manager.py --project-root . --export docs-version-data.json
+        python scripts/docs/docs-version-manager.py --project-root . --export docs-version-data.csv
     
     - name: 上传版本报告
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: docs-version-report
         path: |
@@ -152,18 +147,12 @@ print(len(data.get('changes', [])))
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
-        git add .kiro/docs-versions.json
+        git add docs/docs-versions.json
         git add docs/**/*.md || true
         git add README*.md || true
         git add *.md || true
         
-        git commit -m "docs: 更新文档版本信息 [skip ci]
-        
-        - 扫描了文档版本信息
-        - 发现 ${{ steps.scan.outputs.changes_count }} 个变更
-        - 自动更新版本标识和依赖关系
-        
-        Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+        git commit -m "docs: 更新文档版本信息 [skip ci] - 扫描了文档版本信息 - 发现 ${{ steps.scan.outputs.changes_count }} 个变更 - 自动更新版本标识和依赖关系 Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
         
         git push
     
@@ -183,36 +172,7 @@ print(len(data.get('changes', [])))
           const outdatedContent = outdatedSection ? outdatedSection[0] : '未找到过期文档详情';
           
           const issueTitle = `📋 文档维护提醒：发现 ${{ steps.report.outputs.outdated_count }} 个过期文档需要更新`;
-          const issueBody = `
-## 📊 过期文档检查报告
-
-在定期检查中发现了一些超过 30 天未更新的文档，建议进行内容审查和更新。
-
-${outdatedContent}
-
-## 🔧 建议操作
-
-1. **审查内容**: 检查过期文档的内容是否仍然准确
-2. **更新信息**: 更新过时的信息、链接和示例
-3. **验证功能**: 确保文档中的操作步骤仍然有效
-4. **同步代码**: 检查文档是否与最新代码保持一致
-
-## 📈 版本管理信息
-
-- 检查时间: ${new Date().toISOString().split('T')[0]}
-- 过期阈值: 30 天
-- 总文档数: 通过版本管理系统跟踪
-- 自动化: 此 Issue 由 GitHub Actions 自动创建
-
-## 🔗 相关资源
-
-- [文档版本管理配置](.kiro/docs-version-config.yml)
-- [版本管理脚本](scripts/docs-version-manager.py)
-- [完整版本报告](../../actions/runs/${{ github.run_id }})
-
----
-*此 Issue 由文档版本管理系统自动创建，每日检查过期文档并提醒维护。*
-          `;
+          const issueBody = `## 📊 过期文档检查报告 在定期检查中发现了一些超过 30 天未更新的文档，建议进行内容审查和更新。 ${outdatedContent} ## 🔧 建议操作 1. **审查内容**: 检查过期文档的内容是否仍然准确 2. **更新信息**: 更新过时的信息、链接和示例 3. **验证功能**: 确保文档中的操作步骤仍然有效 4. **同步代码**: 检查文档是否与最新代码保持一致 ## 📈 版本管理信息 - 检查时间: ${new Date().toISOString().split('T')[0]} - 过期阈值: 30 天 - 总文档数: 通过版本管理系统跟踪 - 自动化: 此 Issue 由 GitHub Actions 自动创建 ## 🔗 相关资源 - [文档版本管理配置](docs/docs-version-config.yml) - [版本管理脚本](scripts/docs/docs-version-manager.py) - [完整版本报告](../../actions/runs/${{ github.run_id }}) --- *此 Issue 由文档版本管理系统自动创建，每日检查过期文档并提醒维护。*`;
           
           // 检查是否已存在类似的 Issue
           const { data: issues } = await github.rest.issues.listForRepo({
@@ -268,27 +228,7 @@ ${outdatedContent}
           const recentChangesMatch = reportContent.match(/## 最近变更\n(.*?)(?=\n##|\n$)/s);
           const recentChanges = recentChangesMatch ? recentChangesMatch[1].trim() : '无最近变更';
           
-          const comment = `
-## 📋 文档版本管理报告
-
-此 PR 涉及文档变更，以下是版本管理系统的分析结果：
-
-### 📊 变更统计
-- 变更记录数: ${{ steps.scan.outputs.changes_count }}
-- 过期文档数: ${{ steps.report.outputs.outdated_count }}
-
-### 📝 最近变更
-${recentChanges}
-
-### 🔍 检查项目
-- ✅ 文档版本信息已更新
-- ✅ 依赖关系已检测
-- ✅ Git 信息已收集
-${steps.report.outputs.has_outdated == 'true' ? '- ⚠️ 发现过期文档，建议更新' : '- ✅ 无过期文档'}
-
----
-*此评论由文档版本管理系统自动生成*
-          `;
+          const comment = `## 📋 文档版本管理报告 此 PR 涉及文档变更，以下是版本管理系统的分析结果： ### 📊 变更统计 - 变更记录数: ${{ steps.scan.outputs.changes_count }} - 过期文档数: ${{ steps.report.outputs.outdated_count }} ### 📝 最近变更 ${recentChanges} ### 🔍 检查项目 - ✅ 文档版本信息已更新 - ✅ 依赖关系已检测 - ✅ Git 信息已收集 ${steps.report.outputs.has_outdated == 'true' ? '- ⚠️ 发现过期文档，建议更新' : '- ✅ 无过期文档'} --- *此评论由文档版本管理系统自动生成*`;
           
           await github.rest.issues.createComment({
             owner: context.repo.owner,
@@ -318,6 +258,6 @@ ${steps.report.outputs.has_outdated == 'true' ? '- ⚠️ 发现过期文档，�
         echo "- ✅ 导出版本数据" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 📄 生成文件" >> $GITHUB_STEP_SUMMARY
-        echo "- 版本报告: \`docs-version-report.md\`" >> $GITHUB_STEP_SUMMARY
+        echo "- 版本报告: \[docs-version-report.md\](file://D:\IdeaProjects\model-router\docs-version-report.md)" >> $GITHUB_STEP_SUMMARY
         echo "- 版本数据: \`docs-version-data.json\`, \`docs-version-data.csv\`" >> $GITHUB_STEP_SUMMARY
-        echo "- 版本配置: \`.kiro/docs-versions.json\`" >> $GITHUB_STEP_SUMMARY
+        echo "- 版本配置: \`docs/docs-versions.json\`" >> $GITHUB_STEP_SUMMARY

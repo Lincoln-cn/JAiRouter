@@ -847,7 +847,7 @@ jobs:
       run: ./scripts/run-monitoring-tests.sh --test-type performance --skip-build
     
     - name: 上传测试报告
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-reports

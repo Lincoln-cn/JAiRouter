@@ -46,8 +46,7 @@ jobs:
         pip install mkdocs-mermaid2-plugin
         pip install mkdocs-static-i18n
         pip install mkdocs-minify-plugin
-        pip install mkdocs-optimize-plugin
-    
+
     - name: 构建文档
       run: mkdocs build --strict --verbose
     

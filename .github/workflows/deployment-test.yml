@@ -44,14 +44,7 @@ jobs:
         pip install mkdocs-mermaid2-plugin
         pip install mkdocs-static-i18n
         pip install mkdocs-minify-plugin
-        pip install mkdocs-optimize-plugin
-    
-    - name: 验证配置文件
-      run: |
-        echo "验证 MkDocs 配置..."
-        mkdocs config
-        echo "✓ 配置文件验证通过"
-    
+
     - name: 检查文档结构
       run: |
         echo "检查文档结构..."
@@ -192,7 +185,7 @@ jobs:
     
     - name: 上传构建产物（用于调试）
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: failed-build-artifacts
         path: |
@@ -224,8 +217,7 @@ jobs:
         pip install mkdocs-mermaid2-plugin
         pip install mkdocs-static-i18n
         pip install mkdocs-minify-plugin
-        pip install mkdocs-optimize-plugin
-    
+
     - name: 测试构建 (${{ matrix.os }})
       run: |
         mkdocs build --strict
