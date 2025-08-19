@@ -1,0 +1,255 @@
+# 文档版本管理配置文件
+
+# 版本管理设置
+version_management:
+  # 版本号格式 (semantic, date, incremental)
+  version_format: "semantic"
+  
+  # 自动版本递增规则
+  auto_increment:
+    # 主版本号递增条件
+    major:
+      - "breaking_change"
+      - "api_change"
+      - "major_restructure"
+    
+    # 次版本号递增条件  
+    minor:
+      - "new_section"
+      - "new_feature_doc"
+      - "significant_update"
+    
+    # 补丁版本号递增条件
+    patch:
+      - "content_update"
+      - "typo_fix"
+      - "format_change"
+      - "link_update"
+
+# 文档扫描设置
+document_scanning:
+  # 包含的文档路径模式
+  include_patterns:
+    - "docs/**/*.md"
+    - "README*.md"
+    - "CHANGELOG*.md"
+    - "CONTRIBUTING*.md"
+    - "*.md"
+  
+  # 排除的文档路径模式
+  exclude_patterns:
+    - "node_modules/**"
+    - ".git/**"
+    - "target/**"
+    - "build/**"
+    - "*.tmp"
+    - "*.bak"
+    - "*~"
+  
+  # 文档类型配置
+  document_types:
+    user_guide:
+      patterns: ["docs/zh/getting-started/**", "docs/en/getting-started/**"]
+      importance: "high"
+      update_frequency: "monthly"
+    
+    api_reference:
+      patterns: ["docs/zh/api-reference/**", "docs/en/api-reference/**"]
+      importance: "critical"
+      update_frequency: "weekly"
+    
+    configuration:
+      patterns: ["docs/zh/configuration/**", "docs/en/configuration/**"]
+      importance: "high"
+      update_frequency: "bi-weekly"
+    
+    deployment:
+      patterns: ["docs/zh/deployment/**", "docs/en/deployment/**"]
+      importance: "medium"
+      update_frequency: "monthly"
+    
+    development:
+      patterns: ["docs/zh/development/**", "docs/en/development/**"]
+      importance: "medium"
+      update_frequency: "quarterly"
+
+# 依赖关系检测
+dependency_detection:
+  # 启用依赖检测
+  enabled: true
+  
+  # 检测规则
+  rules:
+    # Markdown 链接
+    markdown_links:
+      enabled: true
+      pattern: '\[.*?\]\(([^)]+)\)'
+      
+    # 文件引用
+    file_references:
+      enabled: true
+      pattern: '#\[\[file:([^\]]+)\]\]'
+    
+    # 配置文件引用
+    config_references:
+      enabled: true
+      pattern: '```ya?ml\s*#\s*([^\n]+\.ya?ml)'
+    
+    # 图片引用
+    image_references:
+      enabled: true
+      pattern: '!\[.*?\]\(([^)]+)\)'
+
+# 过期检测设置
+outdated_detection:
+  # 默认过期天数阈值
+  default_threshold_days: 30
+  
+  # 按文档类型的过期阈值
+  type_thresholds:
+    api_reference: 14      # API 文档 2 周
+    configuration: 21      # 配置文档 3 周
+    user_guide: 30         # 用户指南 1 个月
+    deployment: 45         # 部署文档 1.5 个月
+    development: 90        # 开发文档 3 个月
+  
+  # 忽略过期检查的文档
+  ignore_patterns:
+    - "docs/zh/reference/changelog.md"
+    - "docs/en/reference/changelog.md"
+    - "LICENSE*"
+
+# Git 集成设置
+git_integration:
+  # 启用 Git 信息收集
+  enabled: true
+  
+  # 收集的信息类型
+  collect_info:
+    - "commit_hash"
+    - "author"
+    - "commit_message"
+    - "commit_date"
+  
+  # Git 命令超时时间 (秒)
+  timeout: 10
+
+# 版本头信息设置
+version_headers:
+  # 启用版本头
+  enabled: true
+  
+  # 版本头模板
+  template: |
+    <!-- 版本信息 -->
+    > **文档版本**: {version}  
+    > **最后更新**: {last_modified}  
+    > **Git 提交**: {git_commit}  
+    > **作者**: {author}
+    <!-- /版本信息 -->
+  
+  # 插入位置 (top, after_title, before_content)
+  position: "after_title"
+  
+  # 包含的文档类型
+  include_types:
+    - "user_guide"
+    - "api_reference"
+    - "configuration"
+
+# 报告生成设置
+reporting:
+  # 报告格式 (markdown, json, html)
+  format: "markdown"
+  
+  # 包含的报告部分
+  sections:
+    - "summary"           # 统计摘要
+    - "recent_changes"    # 最近变更
+    - "outdated_docs"     # 过期文档
+    - "dependency_updates" # 依赖更新
+    - "version_list"      # 版本列表
+  
+  # 最近变更显示天数
+  recent_changes_days: 7
+  
+  # 最大显示变更数量
+  max_recent_changes: 20
+
+# 自动化设置
+automation:
+  # 自动提交版本信息
+  auto_commit:
+    enabled: true
+    commit_message: "docs: 更新文档版本信息 [skip ci]"
+  
+  # 自动创建 Issue
+  auto_issue:
+    enabled: true
+    outdated_threshold: 30
+    issue_title: "📋 文档维护提醒：发现过期文档需要更新"
+    labels: ["documentation", "maintenance", "automated"]
+  
+  # 自动 PR 评论
+  auto_pr_comment:
+    enabled: true
+    include_version_info: true
+    include_dependency_check: true
+
+# 存储设置
+storage:
+  # 版本信息文件路径
+  version_file: "docs/docs-versions.json"
+  
+  # 变更历史保留天数
+  history_retention_days: 365
+  
+  # 自动清理旧记录
+  auto_cleanup:
+    enabled: true
+    cleanup_interval_days: 30
+
+# 通知设置
+notifications:
+  # 过期文档通知
+  outdated_docs:
+    enabled: true
+    threshold_days: 30
+    notification_channels: ["github_issue"]
+  
+  # 依赖更新通知
+  dependency_updates:
+    enabled: true
+    notification_channels: ["pr_comment"]
+  
+  # 版本变更通知
+  version_changes:
+    enabled: true
+    notification_channels: ["pr_comment"]
+
+# 验证设置
+validation:
+  # 版本号格式验证
+  version_format_check: true
+  
+  # 依赖关系验证
+  dependency_validation: true
+  
+  # 文档结构验证
+  structure_validation: true
+  
+  # 内容同步验证
+  content_sync_validation: true
+
+# 性能设置
+performance:
+  # 并发处理文档数量
+  concurrent_documents: 10
+  
+  # 文件大小限制 (MB)
+  max_file_size_mb: 10
+  
+  # 缓存设置
+  cache:
+    enabled: true
+    cache_duration_hours: 24

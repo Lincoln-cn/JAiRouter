@@ -143,10 +143,10 @@ parse_args() {
 
 # 确保项目目录存在
 ensure_project_structure() {
-    local kiro_dir="$PROJECT_ROOT/.kiro"
+    local kiro_dir="$PROJECT_ROOT/docs"
     
     if [ ! -d "$kiro_dir" ]; then
-        log_info "📁 创建 .kiro 目录..."
+        log_info "📁 创建 docs 目录..."
         mkdir -p "$kiro_dir"
     fi
     
@@ -241,7 +241,7 @@ call_python_manager() {
 
 # 生成简单的统计报告
 generate_simple_stats() {
-    local version_file="$PROJECT_ROOT/.kiro/docs-versions.json"
+    local version_file="$PROJECT_ROOT/docs/docs-versions.json"
     
     if [ ! -f "$version_file" ]; then
         log_warning "⚠️ 版本文件不存在，请先运行 --scan"
