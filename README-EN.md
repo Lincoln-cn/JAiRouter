@@ -536,16 +536,17 @@ make docker-clean
 
 ## 📌 Development Plan (Update Status)
 
-| Phase    | Status | Content                                                                 |
-|----------|--------|-------------------------------------------------------------------------|
-| 0.1.0    | ✅     | Basic gateway, adapters, load balancing, health checks                  |
-| 0.2.0    | ✅     | Rate limiting, circuit breaking, fallback, config persistence, dynamic update API |
-| 0.2.1    | ✅     | Scheduled cleanup tasks, memory optimization, enhanced client IP rate limiting, auto config merging |
-| 0.3.0    | ✅     | Docker containerization, multi-environment deployment, monitoring integration |
-| 0.3.1    | ✅     | China users use Alibaba mvn source to accelerate image build            |
-| 0.4.0    | ✅     | Monitoring metrics, Prometheus integration, alert notifications         |
-| 0.5.0    | 🚧     | Manage all project-related documents using GitHub Pages                 |
-| 0.6.0    | 📋     | authentication and authorization, log tracing     |
+| Phase | Status | Content                                                                 |
+|-------|--------|-------------------------------------------------------------------------|
+| 0.1.0 | ✅     | Basic gateway, adapters, load balancing, health checks                  |
+| 0.2.0 | ✅     | Rate limiting, circuit breaking, fallback, config persistence, dynamic update API |
+| 0.2.1 | ✅     | Scheduled cleanup tasks, memory optimization, enhanced client IP rate limiting, auto config merging |
+| 0.3.0 | ✅     | Docker containerization, multi-environment deployment, monitoring integration |
+| 0.3.1 | ✅     | China users use Alibaba mvn source to accelerate image build            |
+| 0.4.0 | ✅     | Monitoring metrics, Prometheus integration, alert notifications         |
+| 0.5.0 | ✅     | Manage all project-related documents using GitHub Pages                 |
+| 0.6.0 | 🚧    | authentication and authorization     |
+| 0.7.0 | 📋     | log tracing     |
 
 ---
 
