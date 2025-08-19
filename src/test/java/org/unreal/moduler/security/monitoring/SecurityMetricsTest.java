@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.security.monitoring.SecurityMetrics;
+import org.unreal.modelrouter.monitoring.security.SecurityMetrics;
 
 import static org.junit.jupiter.api.Assertions.*;
 

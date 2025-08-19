@@ -13,8 +13,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
-import org.unreal.modelrouter.security.sanitization.SanitizationService;
-import org.unreal.modelrouter.security.sanitization.SanitizationMetrics;
+import org.unreal.modelrouter.sanitization.SanitizationService;
+import org.unreal.modelrouter.sanitization.SanitizationMetrics;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;

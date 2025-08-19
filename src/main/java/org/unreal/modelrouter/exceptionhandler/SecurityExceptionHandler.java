@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.handler;
+package org.unreal.modelrouter.exceptionhandler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,10 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.unreal.modelrouter.dto.SecurityErrorResponse;
-import org.unreal.modelrouter.security.exception.AuthenticationException;
-import org.unreal.modelrouter.security.exception.AuthorizationException;
-import org.unreal.modelrouter.security.exception.SanitizationException;
-import org.unreal.modelrouter.security.exception.SecurityException;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.exception.AuthorizationException;
+import org.unreal.modelrouter.exception.exception.SanitizationException;
+import org.unreal.modelrouter.exception.exception.SecurityException;
 
 import java.time.LocalDateTime;
 

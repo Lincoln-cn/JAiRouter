@@ -1,15 +1,15 @@
-package org.unreal.modelrouter.security.sanitization.impl;
+package org.unreal.modelrouter.sanitization.impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.security.config.SecurityProperties;
-import org.unreal.modelrouter.security.exception.SanitizationException;
+import org.unreal.modelrouter.exception.exception.SanitizationException;
 import org.unreal.modelrouter.security.model.RuleType;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SanitizationStrategy;
-import org.unreal.modelrouter.security.sanitization.SanitizationRuleEngine;
-import org.unreal.modelrouter.security.sanitization.SanitizationService;
+import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
+import org.unreal.modelrouter.sanitization.SanitizationService;
 import reactor.core.publisher.Mono;
 
 import jakarta.annotation.PostConstruct;

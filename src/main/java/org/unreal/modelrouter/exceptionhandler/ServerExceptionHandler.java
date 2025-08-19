@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.exception;
+package org.unreal.modelrouter.exceptionhandler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
