@@ -36,6 +36,56 @@ public class LocalAiAdapter extends BaseAdapter {
 
     @Override
     protected Object transformRequest(Object request, String adapterType) {
+        // 记录适配器特定的追踪信息
+        org.unreal.modelrouter.tracing.TracingContext tracingContext = 
+            org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        if (tracingContext != null && tracingContext.isActive()) {
+            try {
+                io.opentelemetry.api.trace.Span currentSpan = tracingContext.getCurrentSpan();
+                if (currentSpan != null) {
+                    // 添加LocalAI特定的属性
+                    currentSpan.setAttribute("adapter.local_deployment", true);
+                    currentSpan.setAttribute("adapter.open_source", true);
+                    currentSpan.setAttribute("adapter.deployment_type", "localai");
+                    currentSpan.setAttribute("adapter.version", "v1");
+                    
+                    // 根据请求类型添加特定属性
+                    if (request instanceof ChatDTO.Request) {
+                        ChatDTO.Request chatRequest = (ChatDTO.Request) request;
+                        currentSpan.setAttribute("request.stream", chatRequest.stream() != null ? chatRequest.stream() : false);
+                        currentSpan.setAttribute("request.max_tokens", chatRequest.maxTokens() != null ? chatRequest.maxTokens() : 0);
+                        currentSpan.setAttribute("request.temperature", chatRequest.temperature() != null ? chatRequest.temperature() : 1.0);
+                        currentSpan.setAttribute("request.top_p", chatRequest.topP() != null ? chatRequest.topP() : 1.0);
+                    } else if (request instanceof EmbeddingDTO.Request) {
+                        EmbeddingDTO.Request embeddingRequest = (EmbeddingDTO.Request) request;
+                        currentSpan.setAttribute("request.embedding_model", embeddingRequest.model());
+                        currentSpan.setAttribute("request.input_type", embeddingRequest.input() instanceof String ? "string" : "array");
+                    } else if (request instanceof RerankDTO.Request) {
+                        RerankDTO.Request rerankRequest = (RerankDTO.Request) request;
+                        currentSpan.setAttribute("request.query_length", rerankRequest.query() != null ? rerankRequest.query().length() : 0);
+                        currentSpan.setAttribute("request.documents_count", rerankRequest.documents() != null ? rerankRequest.documents().size() : 0);
+                    } else if (request instanceof TtsDTO.Request) {
+                        TtsDTO.Request ttsRequest = (TtsDTO.Request) request;
+                        currentSpan.setAttribute("request.voice", ttsRequest.voice());
+                        currentSpan.setAttribute("request.input_length", ttsRequest.input() != null ? ttsRequest.input().length() : 0);
+                    }
+                }
+                
+                // 记录适配器调用开始事件
+                try {
+                    org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                        org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                    enhancer.logAdapterCallStart(adapterType, null, getServiceTypeFromRequest(request), 
+                        getModelNameFromRequest(request), tracingContext);
+                } catch (Exception e) {
+                    // 忽略追踪增强错误
+                }
+            } catch (Exception e) {
+                // 忽略追踪错误
+            }
+        }
+        
         if (request instanceof ChatDTO.Request) {
             return transformChatRequest((ChatDTO.Request) request);
         } else if (request instanceof EmbeddingDTO.Request) {
@@ -86,6 +136,7 @@ public class LocalAiAdapter extends BaseAdapter {
 
             return localAiRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return request;
         }
     }
@@ -114,6 +165,7 @@ public class LocalAiAdapter extends BaseAdapter {
 
             return localAiRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return request;
         }
     }
@@ -135,6 +187,7 @@ public class LocalAiAdapter extends BaseAdapter {
 
             return localAiRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return rerankRequest;
         }
     }
@@ -163,34 +216,40 @@ public class LocalAiAdapter extends BaseAdapter {
 
             return localAiRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return request;
         }
     }
 
     // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
     private Object transformSttRequest(SttDTO.Request sttRequest) {
-        // 直接构建 MultiValueMap 而不处理文件内容
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("model", sttRequest.model());
-        builder.part("language", sttRequest.language());
+        try {
+            // 直接构建 MultiValueMap 而不处理文件内容
+            MultipartBodyBuilder builder = new MultipartBodyBuilder();
+            builder.part("model", sttRequest.model());
+            builder.part("language", sttRequest.language());
 
-        // 使用 asyncPart 处理文件内容流
-        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
-                .filename(sttRequest.file().filename())
-                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+            // 使用 asyncPart 处理文件内容流
+            builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
+                    .filename(sttRequest.file().filename())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM);
 
-        // 添加其他字段
-        if (sttRequest.prompt() != null) {
-            builder.part("prompt", sttRequest.prompt());
-        }
-        if (sttRequest.responseFormat() != null) {
-            builder.part("response_format", sttRequest.responseFormat());
-        }
-        if (sttRequest.temperature() != null) {
-            builder.part("temperature", sttRequest.temperature());
-        }
+            // 添加其他字段
+            if (sttRequest.prompt() != null) {
+                builder.part("prompt", sttRequest.prompt());
+            }
+            if (sttRequest.responseFormat() != null) {
+                builder.part("response_format", sttRequest.responseFormat());
+            }
+            if (sttRequest.temperature() != null) {
+                builder.part("temperature", sttRequest.temperature());
+            }
 
-        return builder.build();
+            return builder.build();
+        } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
+            return sttRequest;
+        }
     }
 
     @Override
