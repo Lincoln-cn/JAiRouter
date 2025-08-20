@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.TracingContextHolder;
-import org.unreal.modelrouter.tracing.context.DefaultTracingContext;
+import org.unreal.modelrouter.tracing.DefaultTracingContext;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
 
 import java.util.HashMap;
