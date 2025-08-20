@@ -15,6 +15,8 @@ import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.filter.filter.SecurityIntegratedApiKeyFilter;
 import org.unreal.modelrouter.exceptionhandler.SecurityAuthenticationFailureHandler;
+import org.unreal.modelrouter.tracing.config.TracingSecurityConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Spring Security配置类
@@ -31,6 +33,9 @@ public class SecurityConfiguration {
     private final ApiKeyService apiKeyService;
     private final JwtTokenValidator jwtTokenValidator;
     
+    @Autowired(required = false)
+    private TracingSecurityConfiguration.TracingSecurityFilterChainCustomizer tracingCustomizer;
+    
     /**
      * 配置安全过滤器链
      * 定义哪些路径需要认证，哪些可以匿名访问，实现基于角色的访问控制（RBAC）
@@ -41,6 +46,12 @@ public class SecurityConfiguration {
             ReactiveAuthenticationManager authenticationManager) {
         
         log.info("配置Spring Security WebFlux过滤器链");
+        
+        // 如果启用了追踪功能，则添加追踪过滤器
+        if (tracingCustomizer != null) {
+            http = tracingCustomizer.customize(http);
+            log.info("已集成追踪过滤器到安全过滤器链");
+        }
         
         return http
                 // 禁用CSRF，因为这是一个API网关

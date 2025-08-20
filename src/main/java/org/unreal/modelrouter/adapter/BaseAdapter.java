@@ -36,6 +36,28 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     /**
+     * 获取WebClient实例
+     * 确保WebClient配置了追踪拦截器
+     */
+    protected WebClient getWebClient(final ModelServiceRegistry.ServiceType serviceType, 
+                                   final String modelName, 
+                                   final String clientIp) {
+        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
+        String baseUrl = selectedInstance.getBaseUrl();
+        
+        // 尝试获取带追踪功能的WebClient
+        try {
+            org.unreal.modelrouter.tracing.client.TracingWebClientFactory tracingFactory = 
+                org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                    org.unreal.modelrouter.tracing.client.TracingWebClientFactory.class);
+            return tracingFactory.createTracingWebClient(baseUrl);
+        } catch (Exception e) {
+            // 如果追踪功能不可用，回退到从注册表获取WebClient
+            return getRegistry().getClient(serviceType, modelName, clientIp);
+        }
+    }
+
+    /**
      * 检查适配器是否支持指定的服务能力
      */
     protected Mono<ResponseEntity<String>> checkCapability(final ModelServiceRegistry.ServiceType serviceType) {
@@ -60,19 +82,67 @@ public abstract class BaseAdapter implements ServiceCapability {
 
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, httpRequest);
         String clientIp = IpUtils.getClientIp(httpRequest);
-        WebClient client = getRegistry().getClient(serviceType, modelName, clientIp);
+        WebClient client = getWebClient(serviceType, modelName, clientIp);
         String path = getModelPath(serviceType, modelName);
 
         // 记录开始时间用于计算响应时间
         long startTime = System.currentTimeMillis();
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
+        
+        // 获取追踪上下文并记录适配器调用开始
+        org.unreal.modelrouter.tracing.TracingContext tracingContext = 
+            org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        if (tracingContext != null && tracingContext.isActive()) {
+            try {
+                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                    org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                        org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                enhancer.logAdapterCallStart(adapterType, selectedInstance, serviceType.name(), 
+                    getModelNameFromRequest(request), tracingContext);
+                
+                // 增强适配器Span
+                io.opentelemetry.api.trace.Span currentSpan = tracingContext.getCurrentSpan();
+                if (currentSpan != null) {
+                    enhancer.enhanceAdapterSpan(currentSpan, adapterType, selectedInstance, 
+                        serviceType.name(), getModelNameFromRequest(request));
+                }
+            } catch (Exception e) {
+                // 忽略追踪错误，不影响主业务流程
+            }
+        }
 
+        return processRequestWithRetry(request, authorization, client, path, selectedInstance, 
+                serviceType, processor, tracingContext, startTime, 0);
+    }
+    
+    /**
+     * 带重试的请求处理
+     */
+    @SuppressWarnings("all")
+    private <T> Mono processRequestWithRetry(
+            final T request,
+            final String authorization,
+            final WebClient client,
+            final String path,
+            final ModelRouterProperties.ModelInstance selectedInstance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final RequestProcessor<T> processor,
+            final org.unreal.modelrouter.tracing.TracingContext tracingContext,
+            final long startTime,
+            final int retryCount) {
+        
+        String adapterType = getAdapterType();
+        String instanceName = selectedInstance.getName();
+        int maxRetries = getMaxRetries(serviceType);
+        
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
                 // 在成功完成时记录成功
                 .doOnSuccess(response -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    if (response != null && response.getStatusCode().is2xxSuccessful()) {
+                    boolean success = response != null && response.getStatusCode().is2xxSuccessful();
+                    
+                    if (success) {
                         getRegistry().recordCallComplete(serviceType, selectedInstance);
                         // 记录成功的后端调用指标
                         if (metricsCollector != null) {
@@ -88,16 +158,77 @@ public abstract class BaseAdapter implements ServiceCapability {
                             metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
                         }
                     }
+                    
+                    // 记录适配器调用完成追踪
+                    if (tracingContext != null && tracingContext.isActive()) {
+                        try {
+                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                                org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                                    org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                            enhancer.logAdapterCallComplete(adapterType, selectedInstance, serviceType.name(), 
+                                getModelNameFromRequest(request), duration, success, tracingContext);
+                        } catch (Exception e) {
+                            // 忽略追踪错误
+                        }
+                    }
                 })
-                // 在发生错误时记录失败
+                // 在发生错误时处理重试逻辑
                 .onErrorResume(throwable -> {
                     long duration = System.currentTimeMillis() - startTime;
                     getRegistry().recordCallFailure(serviceType, selectedInstance);
+                    
                     // 记录异常的后端调用指标
                     if (metricsCollector != null) {
                         metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
                     }
-                    return Mono.error(throwable);
+                    
+                    // 检查是否应该重试
+                    if (shouldRetry(throwable, retryCount, maxRetries)) {
+                        // 记录重试追踪
+                        if (tracingContext != null && tracingContext.isActive()) {
+                            try {
+                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                                    org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                                        org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                enhancer.logAdapterRetry(adapterType, selectedInstance, retryCount + 1, 
+                                    maxRetries, throwable, tracingContext);
+                            } catch (Exception e) {
+                                // 忽略追踪错误
+                            }
+                        }
+                        
+                        // 记录重试指标
+                        if (metricsCollector != null) {
+                            metricsCollector.recordRetry(adapterType, instanceName, retryCount + 1);
+                        }
+                        
+                        // 等待重试延迟
+                        long retryDelay = calculateRetryDelay(retryCount);
+                        return Mono.delay(java.time.Duration.ofMillis(retryDelay))
+                                .then(processRequestWithRetry(request, authorization, client, path, 
+                                    selectedInstance, serviceType, processor, tracingContext, 
+                                    System.currentTimeMillis(), retryCount + 1));
+                    } else {
+                        // 记录适配器调用失败追踪
+                        if (tracingContext != null && tracingContext.isActive()) {
+                            try {
+                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                                    org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                                        org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                enhancer.logAdapterCallComplete(adapterType, selectedInstance, serviceType.name(), 
+                                    getModelNameFromRequest(request), duration, false, tracingContext);
+                            } catch (Exception e) {
+                                // 忽略追踪错误
+                            }
+                        }
+                        
+                        // 记录最终失败指标
+                        if (metricsCollector != null) {
+                            metricsCollector.recordFinalFailure(adapterType, instanceName);
+                        }
+                        
+                        return Mono.error(throwable);
+                    }
                 });
     }
 
@@ -148,6 +279,12 @@ public abstract class BaseAdapter implements ServiceCapability {
         Object transformedRequest = transformRequest(request, getAdapterType());
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
+        
+        // 记录请求开始指标
+        long requestStartTime = System.currentTimeMillis();
+        if (metricsCollector != null) {
+            metricsCollector.recordRequestStart(adapterType, instanceName);
+        }
 
         WebClient.RequestBodySpec requestSpec = client.post()
                 .uri(adaptModelName(path))
@@ -172,6 +309,10 @@ public abstract class BaseAdapter implements ServiceCapability {
                             long responseSize = responseEntity.getBody() != null ? 
                                 ((byte[]) responseEntity.getBody()).length : 0;
                             metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
+                            
+                            // 记录响应时间指标
+                            long responseTime = System.currentTimeMillis() - requestStartTime;
+                            metricsCollector.recordResponseTime(adapterType, instanceName, responseTime);
                         }
                     })
                     .map(responseEntity -> {
@@ -180,6 +321,13 @@ public abstract class BaseAdapter implements ServiceCapability {
                             return ResponseEntity.ok(responseEntity.getBody());
                         } else {
                             return ResponseEntity.status(responseEntity.getStatusCode()).body(responseEntity.getBody());
+                        }
+                    })
+                    .doOnError(throwable -> {
+                        // 记录错误指标
+                        if (metricsCollector != null) {
+                            long responseTime = System.currentTimeMillis() - requestStartTime;
+                            metricsCollector.recordError(adapterType, instanceName, throwable.getClass().getSimpleName(), responseTime);
                         }
                     });
         } else {
@@ -198,6 +346,10 @@ public abstract class BaseAdapter implements ServiceCapability {
                             long responseSize = responseEntity.getBody() != null ? 
                                 responseEntity.getBody().getBytes().length : 0;
                             metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
+                            
+                            // 记录响应时间指标
+                            long responseTime = System.currentTimeMillis() - requestStartTime;
+                            metricsCollector.recordResponseTime(adapterType, instanceName, responseTime);
                         }
                     })
                     .map(responseEntity -> {
@@ -224,6 +376,13 @@ public abstract class BaseAdapter implements ServiceCapability {
                                         .body(transformedResponse);
                             }
                         }
+                    })
+                    .doOnError(throwable -> {
+                        // 记录错误指标
+                        if (metricsCollector != null) {
+                            long responseTime = System.currentTimeMillis() - requestStartTime;
+                            metricsCollector.recordError(adapterType, instanceName, throwable.getClass().getSimpleName(), responseTime);
+                        }
                     });
         }
     }
@@ -242,6 +401,12 @@ public abstract class BaseAdapter implements ServiceCapability {
         Object transformedRequest = transformRequest(request, getAdapterType());
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
+        
+        // 记录请求开始指标
+        long requestStartTime = System.currentTimeMillis();
+        if (metricsCollector != null) {
+            metricsCollector.recordRequestStart(adapterType, instanceName);
+        }
 
         WebClient.RequestBodySpec requestSpec = client.post()
                 .uri(adaptModelName(path))
@@ -265,6 +430,17 @@ public abstract class BaseAdapter implements ServiceCapability {
                     // 流式响应完成时记录请求大小指标（响应大小难以准确计算）
                     if (metricsCollector != null) {
                         metricsCollector.recordRequestSize(serviceType.name(), requestSize, 0);
+                        
+                        // 记录响应时间指标
+                        long responseTime = System.currentTimeMillis() - requestStartTime;
+                        metricsCollector.recordResponseTime(adapterType, instanceName, responseTime);
+                    }
+                })
+                .doOnError(throwable -> {
+                    // 记录错误指标
+                    if (metricsCollector != null) {
+                        long responseTime = System.currentTimeMillis() - requestStartTime;
+                        metricsCollector.recordError(adapterType, instanceName, throwable.getClass().getSimpleName(), responseTime);
                     }
                 })
                 .onErrorResume(throwable -> Flux.just(throwable.getMessage()));
@@ -521,6 +697,191 @@ public abstract class BaseAdapter implements ServiceCapability {
             // 如果无法计算，返回0
             return 0;
         }
+    }
+    
+    /**
+     * 从请求对象中提取模型名称
+     */
+    protected String getModelNameFromRequest(final Object request) {
+        if (request == null) {
+            return "unknown";
+        }
+        
+        try {
+            // 使用反射获取model字段
+            java.lang.reflect.Method modelMethod = request.getClass().getMethod("model");
+            Object modelName = modelMethod.invoke(request);
+            return modelName != null ? modelName.toString() : "unknown";
+        } catch (Exception e) {
+            // 如果无法获取模型名称，返回unknown
+            return "unknown";
+        }
+    }
+    
+    /**
+     * 从请求对象中提取服务类型
+     */
+    protected String getServiceTypeFromRequest(final Object request) {
+        if (request == null) {
+            return "unknown";
+        }
+        
+        // 根据请求类型判断服务类型
+        if (request instanceof org.unreal.modelrouter.dto.ChatDTO.Request) {
+            return "chat";
+        } else if (request instanceof org.unreal.modelrouter.dto.EmbeddingDTO.Request) {
+            return "embedding";
+        } else if (request instanceof org.unreal.modelrouter.dto.RerankDTO.Request) {
+            return "rerank";
+        } else if (request instanceof org.unreal.modelrouter.dto.TtsDTO.Request) {
+            return "tts";
+        } else if (request instanceof org.unreal.modelrouter.dto.SttDTO.Request) {
+            return "stt";
+        } else if (request instanceof org.unreal.modelrouter.dto.ImageGenerateDTO.Request) {
+            return "imgGen";
+        } else if (request instanceof org.unreal.modelrouter.dto.ImageEditDTO.Request) {
+            return "imgEdit";
+        } else {
+            return "unknown";
+        }
+    }
+    
+    /**
+     * 记录适配器重试事件
+     * 
+     * @param adapterType 适配器类型
+     * @param instance 服务实例
+     * @param retryCount 当前重试次数
+     * @param maxRetries 最大重试次数
+     * @param error 错误信息
+     */
+    protected void logAdapterRetryEvent(String adapterType, 
+                                       ModelRouterProperties.ModelInstance instance,
+                                       int retryCount, 
+                                       int maxRetries, 
+                                       Throwable error) {
+        org.unreal.modelrouter.tracing.TracingContext tracingContext = 
+            org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        if (tracingContext != null && tracingContext.isActive()) {
+            try {
+                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                    org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                        org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                enhancer.logAdapterRetry(adapterType, instance, retryCount, maxRetries, error, tracingContext);
+            } catch (Exception ex) {
+                // 忽略追踪错误
+            }
+        }
+        
+        // 记录重试指标
+        if (metricsCollector != null) {
+            metricsCollector.recordRetry(adapterType, instance != null ? instance.getName() : "unknown", retryCount);
+        }
+    }
+    
+    /**
+     * 记录适配器请求转换错误事件
+     * 
+     * @param adapterType 适配器类型
+     * @param error 错误信息
+     */
+    protected void logAdapterTransformError(String adapterType, Throwable error) {
+        org.unreal.modelrouter.tracing.TracingContext tracingContext = 
+            org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        if (tracingContext != null && tracingContext.isActive()) {
+            try {
+                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                    org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                        org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                enhancer.logAdapterRetry(adapterType, null, 0, 0, error, tracingContext);
+            } catch (Exception ex) {
+                // 忽略追踪错误
+            }
+        }
+        
+        // 记录转换错误指标
+        if (metricsCollector != null) {
+            metricsCollector.recordError(adapterType, "unknown", error.getClass().getSimpleName(), 0);
+        }
+    }
+    
+    /**
+     * 获取最大重试次数
+     */
+    protected int getMaxRetries(final ModelServiceRegistry.ServiceType serviceType) {
+        // 根据服务类型返回不同的重试次数
+        switch (serviceType) {
+            case chat:
+                return 2; // 聊天服务重试2次
+            case embedding:
+                return 3; // 嵌入服务重试3次
+            case rerank:
+                return 2; // 重排序服务重试2次
+            case tts:
+                return 1; // TTS服务重试1次（文件较大）
+            case stt:
+                return 1; // STT服务重试1次（文件较大）
+            case imgGen:
+                return 1; // 图像生成重试1次（耗时较长）
+            case imgEdit:
+                return 1; // 图像编辑重试1次（耗时较长）
+            default:
+                return 2; // 默认重试2次
+        }
+    }
+    
+    /**
+     * 判断是否应该重试
+     */
+    protected boolean shouldRetry(final Throwable throwable, final int currentRetryCount, final int maxRetries) {
+        // 如果已达到最大重试次数，不再重试
+        if (currentRetryCount >= maxRetries) {
+            return false;
+        }
+        
+        // 检查异常类型，只对特定类型的异常进行重试
+        if (throwable instanceof org.springframework.web.server.ResponseStatusException) {
+            org.springframework.web.server.ResponseStatusException statusException = 
+                (org.springframework.web.server.ResponseStatusException) throwable;
+            
+            // 5xx服务器错误可以重试
+            if (statusException.getStatusCode().is5xxServerError()) {
+                return true;
+            }
+            
+            // 429 Too Many Requests可以重试
+            if (statusException.getStatusCode().value() == 429) {
+                return true;
+            }
+            
+            // 408 Request Timeout可以重试
+            if (statusException.getStatusCode().value() == 408) {
+                return true;
+            }
+            
+            // 4xx客户端错误通常不重试
+            return false;
+        }
+        
+        // 网络相关异常可以重试
+        if (throwable instanceof java.net.ConnectException ||
+            throwable instanceof java.net.SocketTimeoutException ||
+            throwable instanceof java.io.IOException) {
+            return true;
+        }
+        
+        // 其他异常不重试
+        return false;
+    }
+    
+    /**
+     * 计算重试延迟（指数退避）
+     */
+    protected long calculateRetryDelay(final int retryCount) {
+        // 指数退避：基础延迟 * 2^重试次数，最大不超过10秒
+        long baseDelay = 1000; // 1秒基础延迟
+        long delay = baseDelay * (1L << retryCount); // 2^retryCount
+        return Math.min(delay, 10000); // 最大10秒
     }
 
     /**

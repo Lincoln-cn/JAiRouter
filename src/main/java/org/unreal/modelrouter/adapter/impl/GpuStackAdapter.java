@@ -29,12 +29,50 @@ public class GpuStackAdapter extends BaseAdapter {
     }
 
     @Override
-    public String getAdapterType() {
+    protected String getAdapterType() {
         return "gpustack";
     }
-
+    
     @Override
-    public Object transformRequest(Object request, String adapterType) {
+    protected Object transformRequest(Object request, String adapterType) {
+        // 记录适配器特定的追踪信息
+        org.unreal.modelrouter.tracing.TracingContext tracingContext = 
+            org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        if (tracingContext != null && tracingContext.isActive()) {
+            try {
+                io.opentelemetry.api.trace.Span currentSpan = tracingContext.getCurrentSpan();
+                if (currentSpan != null) {
+                    // 添加GPUStack特定的属性
+                    currentSpan.setAttribute("adapter.gpu_optimized", true);
+                    currentSpan.setAttribute("adapter.supports_streaming", true);
+                    currentSpan.setAttribute("adapter.deployment_type", "gpustack");
+                    currentSpan.setAttribute("adapter.version", "v1");
+                    
+                    // 根据请求类型添加特定属性
+                    if (request instanceof org.unreal.modelrouter.dto.ChatDTO.Request) {
+                        org.unreal.modelrouter.dto.ChatDTO.Request chatRequest = 
+                            (org.unreal.modelrouter.dto.ChatDTO.Request) request;
+                        currentSpan.setAttribute("request.stream", chatRequest.stream() != null ? chatRequest.stream() : false);
+                        currentSpan.setAttribute("request.max_tokens", chatRequest.maxTokens() != null ? chatRequest.maxTokens() : 0);
+                        currentSpan.setAttribute("request.temperature", chatRequest.temperature() != null ? chatRequest.temperature() : 1.0);
+                    }
+                }
+                
+                // 记录适配器调用开始事件
+                try {
+                    org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                        org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                    enhancer.logAdapterCallStart(adapterType, null, getServiceTypeFromRequest(request), 
+                        getModelNameFromRequest(request), tracingContext);
+                } catch (Exception e) {
+                    // 忽略追踪增强错误
+                }
+            } catch (Exception e) {
+                // 忽略追踪错误
+            }
+        }
+        
         if (request instanceof ChatDTO.Request) {
             return transformChatRequest((ChatDTO.Request) request);
         } else if (request instanceof EmbeddingDTO.Request) {
@@ -80,6 +118,7 @@ public class GpuStackAdapter extends BaseAdapter {
 
             return gpuStackRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return request;
         }
     }
@@ -103,6 +142,7 @@ public class GpuStackAdapter extends BaseAdapter {
             gpuStackRequest.put("encoding_format", "float");
             return gpuStackRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return request;
         }
     }
@@ -125,6 +165,7 @@ public class GpuStackAdapter extends BaseAdapter {
 
             return gpuStackRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return rerankRequest;
         }
     }
@@ -147,31 +188,37 @@ public class GpuStackAdapter extends BaseAdapter {
 
             return gpuStackRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return ttsRequest;
         }
     }
 
     private Object transformSttRequest(SttDTO.Request sttRequest) {
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("model", sttRequest.model());
-        builder.part("language", sttRequest.language());
+        try {
+            MultipartBodyBuilder builder = new MultipartBodyBuilder();
+            builder.part("model", sttRequest.model());
+            builder.part("language", sttRequest.language());
 
-        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
-                .filename(sttRequest.file().filename())
-                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+            builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
+                    .filename(sttRequest.file().filename())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM);
 
-        // 添加其他字段
-        if (sttRequest.prompt() != null) {
-            builder.part("prompt", sttRequest.prompt());
-        }
-        if (sttRequest.responseFormat() != null) {
-            builder.part("response_format", sttRequest.responseFormat());
-        }
-        if (sttRequest.temperature() != null) {
-            builder.part("temperature", sttRequest.temperature());
-        }
+            // 添加其他字段
+            if (sttRequest.prompt() != null) {
+                builder.part("prompt", sttRequest.prompt());
+            }
+            if (sttRequest.responseFormat() != null) {
+                builder.part("response_format", sttRequest.responseFormat());
+            }
+            if (sttRequest.temperature() != null) {
+                builder.part("temperature", sttRequest.temperature());
+            }
 
-        return builder.build();
+            return builder.build();
+        } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
+            return sttRequest;
+        }
     }
 
     @Override

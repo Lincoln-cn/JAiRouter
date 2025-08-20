@@ -38,12 +38,78 @@ public class OllamaAdapter extends BaseAdapter {
 
     @Override
     protected Object transformRequest(Object request, String adapterType) {
+        // 记录Ollama适配器特定的追踪信息
+        org.unreal.modelrouter.tracing.TracingContext tracingContext =
+                org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        if (tracingContext != null && tracingContext.isActive()) {
+            try {
+                io.opentelemetry.api.trace.Span currentSpan = tracingContext.getCurrentSpan();
+                if (currentSpan != null) {
+                    // 添加Ollama特定的属性
+                    currentSpan.setAttribute("adapter.local_deployment", true);
+                    currentSpan.setAttribute("adapter.supports_custom_models", true);
+                    currentSpan.setAttribute("adapter.deployment_type", "local");
+                    currentSpan.setAttribute("adapter.model_format", "gguf");
+                    currentSpan.setAttribute("adapter.version", "v1");
+
+                    // 根据请求类型添加特定属性
+                    if (request instanceof ChatDTO.Request) {
+                        ChatDTO.Request chatRequest = (ChatDTO.Request) request;
+                        currentSpan.setAttribute("request.model_family", inferModelFamily(chatRequest.model()));
+                        currentSpan.setAttribute("request.stream", chatRequest.stream() != null ? chatRequest.stream() : false);
+                        currentSpan.setAttribute("request.temperature", chatRequest.temperature() != null ? chatRequest.temperature() : 0.8);
+                    } else if (request instanceof EmbeddingDTO.Request) {
+                        EmbeddingDTO.Request embeddingRequest = (EmbeddingDTO.Request) request;
+                        currentSpan.setAttribute("request.embedding_model", embeddingRequest.model());
+                        currentSpan.setAttribute("request.input_type", embeddingRequest.input() instanceof String ? "string" : "array");
+                    }
+                }
+
+                // 记录适配器调用开始事件
+                try {
+                    org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                            org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                                    org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                    enhancer.logAdapterCallStart(adapterType, null, getServiceTypeFromRequest(request),
+                            getModelNameFromRequest(request), tracingContext);
+                } catch (Exception e) {
+                    // 忽略追踪增强错误
+                }
+            } catch (Exception e) {
+                // 忽略追踪错误
+            }
+        }
+
         if (request instanceof ChatDTO.Request) {
             return transformChatRequest((ChatDTO.Request) request);
         } else if (request instanceof EmbeddingDTO.Request) {
             return transformEmbeddingRequest((EmbeddingDTO.Request) request);
         } else {
             return request;
+        }
+    }
+
+    /**
+     * 推断模型家族
+     */
+    private String inferModelFamily(String modelName) {
+        if (modelName == null) {
+            return "unknown";
+        }
+
+        String lowerName = modelName.toLowerCase();
+        if (lowerName.contains("llama")) {
+            return "llama";
+        } else if (lowerName.contains("qwen")) {
+            return "qwen";
+        } else if (lowerName.contains("chatglm")) {
+            return "chatglm";
+        } else if (lowerName.contains("baichuan")) {
+            return "baichuan";
+        } else if (lowerName.contains("mistral")) {
+            return "mistral";
+        } else {
+            return "custom";
         }
     }
 
@@ -77,6 +143,7 @@ public class OllamaAdapter extends BaseAdapter {
 
             return ollamaRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return request;
         }
     }
@@ -94,9 +161,8 @@ public class OllamaAdapter extends BaseAdapter {
             if (request.input() instanceof String) {
                 ollamaRequest.put("prompt", (String) request.input());
             }
-
-            return ollamaRequest;
         } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
             return request;
         }
     }
@@ -108,6 +174,7 @@ public class OllamaAdapter extends BaseAdapter {
                 JsonNode jsonResponse = objectMapper.readTree(responseStr);
                 return transformResponseJson(jsonResponse);
             } catch (Exception e) {
+
                 return response;
             }
         }

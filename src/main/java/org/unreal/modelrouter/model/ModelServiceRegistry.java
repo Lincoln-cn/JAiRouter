@@ -633,8 +633,18 @@ public class ModelServiceRegistry {
      */
     private WebClient getWebClient(final ModelRouterProperties.ModelInstance instance) {
         String key = instance.getBaseUrl();
-        return webClientCache.computeIfAbsent(key, url ->
-                WebClient.builder().baseUrl(url).build());
+        return webClientCache.computeIfAbsent(key, url -> {
+            // 尝试获取追踪WebClient工厂
+            try {
+                org.unreal.modelrouter.tracing.client.TracingWebClientFactory tracingFactory = 
+                    org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                        org.unreal.modelrouter.tracing.client.TracingWebClientFactory.class);
+                return tracingFactory.createTracingWebClient(url);
+            } catch (Exception e) {
+                // 如果追踪功能不可用，创建普通WebClient
+                return WebClient.builder().baseUrl(url).build();
+            }
+        });
     }
 
     /**

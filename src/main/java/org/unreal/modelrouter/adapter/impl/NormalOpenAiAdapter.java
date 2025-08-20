@@ -30,6 +30,46 @@ public class NormalOpenAiAdapter extends BaseAdapter {
 
     @Override
     protected Object transformRequest(Object request, String adapterType) {
+        // 记录适配器特定的追踪信息
+        org.unreal.modelrouter.tracing.TracingContext tracingContext = 
+            org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        if (tracingContext != null && tracingContext.isActive()) {
+            try {
+                io.opentelemetry.api.trace.Span currentSpan = tracingContext.getCurrentSpan();
+                if (currentSpan != null) {
+                    // 添加OpenAI特定的属性
+                    currentSpan.setAttribute("adapter.api_standard", "openai");
+                    currentSpan.setAttribute("adapter.version", "v1");
+                    currentSpan.setAttribute("adapter.compliance_level", "full");
+                    
+                    // 根据请求类型添加特定属性
+                    if (request instanceof SttDTO.Request) {
+                        SttDTO.Request sttRequest = (SttDTO.Request) request;
+                        currentSpan.setAttribute("request.model", sttRequest.model());
+                        currentSpan.setAttribute("request.language", sttRequest.language());
+                    } else if (request instanceof ImageEditDTO.Request) {
+                        ImageEditDTO.Request imageEditRequest = (ImageEditDTO.Request) request;
+                        currentSpan.setAttribute("request.model", imageEditRequest.model());
+                        currentSpan.setAttribute("request.prompt_length", 
+                            imageEditRequest.prompt() != null ? imageEditRequest.prompt().length() : 0);
+                    }
+                }
+                
+                // 记录适配器调用开始事件
+                try {
+                    org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer = 
+                        org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                    enhancer.logAdapterCallStart(adapterType, null, getServiceTypeFromRequest(request), 
+                        getModelNameFromRequest(request), tracingContext);
+                } catch (Exception e) {
+                    // 忽略追踪增强错误
+                }
+            } catch (Exception e) {
+                // 忽略追踪错误
+            }
+        }
+        
         if (request instanceof SttDTO.Request sttRequest) {
             return transformSttRequest(sttRequest);
         }else if (request instanceof ImageEditDTO.Request imageEditRequest) {
@@ -40,103 +80,107 @@ public class NormalOpenAiAdapter extends BaseAdapter {
 
     private Object transformImageEditRequestRequest(ImageEditDTO.Request imageEditRequest) {
 
-        if (imageEditRequest.model() == null || imageEditRequest.model().isEmpty()) {
-            throw new IllegalArgumentException("model is required");
-        }
-
-        if (imageEditRequest.image() == null || imageEditRequest.image().isEmpty()) {
-            throw new IllegalArgumentException("At least one image file is required");
-        }
-
-        if (imageEditRequest.prompt() == null || imageEditRequest.prompt().trim().isEmpty()) {
-            throw new IllegalArgumentException("Prompt is required");
-        }
-
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        
-        // 添加 model 字段
-        if (imageEditRequest.model() != null) {
-            builder.part("model", imageEditRequest.model());
-        }
-
-        // 添加 prompt 字段
-        if (imageEditRequest.prompt() != null) {
-            builder.part("prompt", imageEditRequest.prompt());
-        }
-
-        // 添加 background 字段
-        if (imageEditRequest.background() != null) {
-            builder.part("background", imageEditRequest.background());
-        }
-
-        // 添加 input_fidelity 字段
-        if (imageEditRequest.input_fidelity() != null) {
-            builder.part("input_fidelity", imageEditRequest.input_fidelity());
-        }
-
-        // 添加 mask 字段
-        if (imageEditRequest.mask() != null) {
-            builder.part("mask", imageEditRequest.mask());
-        }
-
-        // 添加 n 字段
-        if (imageEditRequest.n() != null) {
-            builder.part("n", imageEditRequest.n());
-        }
-
-        // 添加 output_compression 字段
-        if (imageEditRequest.output_compression() != null) {
-            builder.part("output_compression", imageEditRequest.output_compression());
-        }
-
-        // 添加 output_format 字段
-        if (imageEditRequest.output_format() != null) {
-            builder.part("output_format", imageEditRequest.output_format());
-        }
-
-        // 添加 partial_images 字段
-        if (imageEditRequest.partial_images() != null) {
-            builder.part("partial_images", imageEditRequest.partial_images());
-        }
-
-        // 添加 quality 字段
-        if (imageEditRequest.quality() != null) {
-            builder.part("quality", imageEditRequest.quality());
-        }
-
-        // 添加 response_format 字段
-        if (imageEditRequest.response_format() != null) {
-            builder.part("response_format", imageEditRequest.response_format());
-        }
-
-        // 添加 size 字段
-        if (imageEditRequest.size() != null) {
-            builder.part("size", imageEditRequest.size());
-        }
-
-        // 添加 stream 字段
-        if (imageEditRequest.stream() != null) {
-            builder.part("stream", imageEditRequest.stream());
-        }
-
-        // 添加 user 字段
-        if (imageEditRequest.user() != null) {
-            builder.part("user", imageEditRequest.user());
-        }
-
-        // 处理 image 文件列表
-        if (imageEditRequest.image() != null && !imageEditRequest.image().isEmpty()) {
-            for (FilePart filePart : imageEditRequest.image()) {
-                // 动态检测文件类型
-                MediaType contentType = determineImageContentType(filePart.filename());
-
-                builder.asyncPart("image", filePart.content(), DataBuffer.class)
-                        .filename(filePart.filename())
-                        .contentType(contentType);
+        try {
+            if (imageEditRequest.model() == null || imageEditRequest.model().isEmpty()) {
+                throw new IllegalArgumentException("model is required");
             }
-        }
 
-        return builder.build();
+            if (imageEditRequest.image() == null || imageEditRequest.image().isEmpty()) {
+                throw new IllegalArgumentException("At least one image file is required");
+            }
+
+            if (imageEditRequest.prompt() == null || imageEditRequest.prompt().trim().isEmpty()) {
+                throw new IllegalArgumentException("Prompt is required");
+            }
+
+            MultipartBodyBuilder builder = new MultipartBodyBuilder();
+
+            // 添加 model 字段
+            if (imageEditRequest.model() != null) {
+                builder.part("model", imageEditRequest.model());
+            }
+
+            // 添加 prompt 字段
+            if (imageEditRequest.prompt() != null) {
+                builder.part("prompt", imageEditRequest.prompt());
+            }
+
+            // 添加 background 字段
+            if (imageEditRequest.background() != null) {
+                builder.part("background", imageEditRequest.background());
+            }
+
+            // 添加 input_fidelity 字段
+            if (imageEditRequest.input_fidelity() != null) {
+                builder.part("input_fidelity", imageEditRequest.input_fidelity());
+            }
+
+            // 添加 mask 字段
+            if (imageEditRequest.mask() != null) {
+                builder.part("mask", imageEditRequest.mask());
+            }
+
+            // 添加 n 字段
+            if (imageEditRequest.n() != null) {
+                builder.part("n", imageEditRequest.n());
+            }
+
+            // 添加 output_compression 字段
+            if (imageEditRequest.output_compression() != null) {
+                builder.part("output_compression", imageEditRequest.output_compression());
+            }
+
+            // 添加 output_format 字段
+            if (imageEditRequest.output_format() != null) {
+                builder.part("output_format", imageEditRequest.output_format());
+            }
+
+            // 添加 partial_images 字段
+            if (imageEditRequest.partial_images() != null) {
+                builder.part("partial_images", imageEditRequest.partial_images());
+            }
+
+            // 添加 quality 字段
+            if (imageEditRequest.quality() != null) {
+                builder.part("quality", imageEditRequest.quality());
+            }
+
+            // 添加 response_format 字段
+            if (imageEditRequest.response_format() != null) {
+                builder.part("response_format", imageEditRequest.response_format());
+            }
+
+            // 添加 size 字段
+            if (imageEditRequest.size() != null) {
+                builder.part("size", imageEditRequest.size());
+            }
+
+            // 添加 stream 字段
+            if (imageEditRequest.stream() != null) {
+                builder.part("stream", imageEditRequest.stream());
+            }
+
+            // 添加 user 字段
+            if (imageEditRequest.user() != null) {
+                builder.part("user", imageEditRequest.user());
+            }
+
+            // 处理 image 文件列表
+            if (imageEditRequest.image() != null && !imageEditRequest.image().isEmpty()) {
+                for (FilePart filePart : imageEditRequest.image()) {
+                    // 动态检测文件类型
+                    MediaType contentType = determineImageContentType(filePart.filename());
+
+                    builder.asyncPart("image", filePart.content(), DataBuffer.class)
+                            .filename(filePart.filename())
+                            .contentType(contentType);
+                }
+            }
+            return builder.build();
+        } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
+            return imageEditRequest;
+        }
     }
 
     private MediaType determineImageContentType(String filename) {
@@ -159,16 +203,21 @@ public class NormalOpenAiAdapter extends BaseAdapter {
      * STT请求需要特殊的multipart处理
      */
     private Object transformSttRequest(SttDTO.Request sttRequest) {
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("model", sttRequest.model());
-        builder.part("language", sttRequest.language());
+        try {
+            MultipartBodyBuilder builder = new MultipartBodyBuilder();
+            builder.part("model", sttRequest.model());
+            builder.part("language", sttRequest.language());
 
-        // 使用 asyncPart 处理文件内容流
-        builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
-                .filename(sttRequest.file().filename())
-                .contentType(MediaType.APPLICATION_OCTET_STREAM);
+            // 使用 asyncPart 处理文件内容流
+            builder.asyncPart("file", sttRequest.file().content(), DataBuffer.class)
+                    .filename(sttRequest.file().filename())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM);
 
-        return builder.build();
+            return builder.build();
+        } catch (Exception e) {
+            logAdapterTransformError(getAdapterType(), e);
+            return sstRequest;
+        }
     }
 
     @Override
