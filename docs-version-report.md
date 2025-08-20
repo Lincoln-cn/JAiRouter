@@ -2,23 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 97
-- 近7天变更: 119
+- 总文档数: 99
+- 近7天变更: 128
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-08-19 07:48:22
+- 最后扫描: 2025-08-20 03:08:21
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/monitoring/testing.md (1.0.0 → 1.0.1) - 2025-08-20
+- **MODIFIED**: docs/zh/development/performance-optimization.md (1.0.0 → 1.0.1) - 2025-08-20
+- **MODIFIED**: docs/zh/development/deployment-testing.md (1.0.0 → 1.0.1) - 2025-08-20
+- **CREATED**: docs/zh/api-reference/monitoring-api.md ( → 1.0.0) - 2025-08-20
+- **MODIFIED**: docs/en/monitoring/testing.md (1.0.0 → 1.0.1) - 2025-08-20
+- **MODIFIED**: docs/en/development/performance-optimization.md (1.0.0 → 1.0.1) - 2025-08-20
+- **MODIFIED**: docs/en/development/deployment-testing.md (1.0.0 → 1.0.1) - 2025-08-20
+- **CREATED**: docs/en/api-reference/monitoring-api.md ( → 1.0.0) - 2025-08-20
+- **MODIFIED**: docs-version-report.md (1.0.1 → 1.0.2) - 2025-08-20
 - **CREATED**: docs/zh/troubleshooting/performance.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/troubleshooting/index.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/troubleshooting/debugging.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/troubleshooting/common-issues.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/security/troubleshooting.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/security/jwt-authentication.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/security/index.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/security/data-sanitization.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/security/api-key-management.md ( → 1.0.0) - 2025-08-19
-- **CREATED**: docs/zh/reference/roadmap.md ( → 1.0.0) - 2025-08-19
 
 ## 依赖关系分析
 
@@ -26,8 +26,9 @@
   - README.md
 - **README.md**: 依赖 1 个文档
   - README-EN.md
-- **docs/en/api-reference/index.md**: 依赖 3 个文档
+- **docs/en/api-reference/index.md**: 依赖 4 个文档
   - docs/en/api-reference/management-api.md
+  - docs/en/api-reference/monitoring-api.md
   - docs/en/api-reference/openapi-spec.md
   - docs/en/api-reference/universal-api.md
 - **docs/en/configuration/application-config.md**: 依赖 4 个文档
@@ -170,8 +171,9 @@
   - docs/en/troubleshooting/common-issues.md
   - docs/en/troubleshooting/debugging.md
   - docs/en/troubleshooting/performance.md
-- **docs/zh/api-reference/index.md**: 依赖 3 个文档
+- **docs/zh/api-reference/index.md**: 依赖 4 个文档
   - docs/zh/api-reference/management-api.md
+  - docs/zh/api-reference/monitoring-api.md
   - docs/zh/api-reference/openapi-spec.md
   - docs/zh/api-reference/universal-api.md
 - **docs/zh/configuration/application-config.md**: 依赖 4 个文档
@@ -230,6 +232,8 @@
   - docs/zh/monitoring/index.md
   - docs/zh/troubleshooting/index.md
   - docs/zh/troubleshooting/performance.md
+- **docs/zh/development/deployment-testing.md**: 依赖 1 个文档
+  - docs/README.md
 - **docs/zh/development/index.md**: 依赖 4 个文档
   - docs/zh/development/architecture.md
   - docs/zh/development/code-quality.md
@@ -338,9 +342,26 @@
   - docs/zh/troubleshooting/common-issues.md
   - docs/zh/troubleshooting/debugging.md
   - docs/zh/troubleshooting/performance.md
+- **docs/en/api-reference/monitoring-api.md**: 依赖 3 个文档
+  - docs/en/api-reference/management-api.md
+  - docs/en/api-reference/openapi-spec.md
+  - docs/en/api-reference/universal-api.md
+- **docs/zh/api-reference/monitoring-api.md**: 依赖 3 个文档
+  - docs/zh/api-reference/management-api.md
+  - docs/zh/api-reference/openapi-spec.md
+  - docs/zh/api-reference/universal-api.md
 
 ## 所有文档版本
 
+- **docs/zh/monitoring/testing.md**: v1.0.1 - 2025-08-20 (807aa5a0)
+- **docs/zh/development/performance-optimization.md**: v1.0.1 - 2025-08-20 (e3559d2d)
+- **docs/zh/development/deployment-testing.md**: v1.0.1 - 2025-08-20 (e3559d2d)
+- **docs/zh/api-reference/monitoring-api.md**: v1.0.0 - 2025-08-20 (5d0fe1f7)
+- **docs/en/monitoring/testing.md**: v1.0.1 - 2025-08-20 (807aa5a0)
+- **docs/en/development/performance-optimization.md**: v1.0.1 - 2025-08-20 (5d0fe1f7)
+- **docs/en/development/deployment-testing.md**: v1.0.1 - 2025-08-20 (5d0fe1f7)
+- **docs/en/api-reference/monitoring-api.md**: v1.0.0 - 2025-08-20 (5d0fe1f7)
+- **docs-version-report.md**: v1.0.2 - 2025-08-20 (4e4c9868)
 - **docs/zh/troubleshooting/performance.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/troubleshooting/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
@@ -351,7 +372,6 @@
 - **docs/zh/reference/faq.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/reference/changelog.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/monitoring/troubleshooting.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
-- **docs/zh/monitoring/testing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/monitoring/setup.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/monitoring/performance.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/monitoring/metrics.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
@@ -366,9 +386,7 @@
 - **docs/zh/getting-started/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/getting-started/first-steps.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/development/testing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
-- **docs/zh/development/performance-optimization.md**: v1.0.0 - 2025-08-19 (f47f2607)
 - **docs/zh/development/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
-- **docs/zh/development/deployment-testing.md**: v1.0.0 - 2025-08-19 (f47f2607)
 - **docs/zh/development/contributing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/development/code-quality.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/development/architecture.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
@@ -398,7 +416,6 @@
 - **docs/en/reference/faq.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/reference/changelog.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/monitoring/troubleshooting.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
-- **docs/en/monitoring/testing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/monitoring/setup.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/monitoring/performance.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/monitoring/metrics.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
@@ -412,9 +429,7 @@
 - **docs/en/getting-started/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/getting-started/first-steps.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/development/testing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
-- **docs/en/development/performance-optimization.md**: v1.0.0 - 2025-08-19 (f47f2607)
 - **docs/en/development/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
-- **docs/en/development/deployment-testing.md**: v1.0.0 - 2025-08-19 (f47f2607)
 - **docs/en/development/contributing.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/development/code-quality.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/en/development/architecture.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
@@ -436,5 +451,4 @@
 - **docs/en/api-reference/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/README.md**: v1.0.0 - 2025-08-19 (869459c5)
 - **README-EN.md**: v1.0.0 - 2025-08-19 (f47f2607)
-- **docs-version-report.md**: v1.0.1 - 2025-08-19 (f90d3cf6)
 - **README.md**: v1.0.1 - 2025-08-19 (f32b5398)
