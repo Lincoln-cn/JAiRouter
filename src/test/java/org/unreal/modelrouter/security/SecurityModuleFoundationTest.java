@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * 安全模块基础架构测试
  * 验证安全模块的基础组件是否正确创建和配置
  */
-@SpringBootTest
 @TestPropertySource(properties = {
     "jairouter.security.enabled=false"  // 禁用安全功能以避免自动配置冲突
 })
