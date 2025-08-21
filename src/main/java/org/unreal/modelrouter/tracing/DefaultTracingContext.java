@@ -237,7 +237,7 @@ public class DefaultTracingContext implements TracingContext {
                 if (attributes == null || attributes.isEmpty()) {
                     currentSpan.addEvent(name);
                 } else {
-                    Attributes.Builder builder = Attributes.builder();
+                    io.opentelemetry.api.common.AttributesBuilder builder = Attributes.builder();
                     attributes.forEach((k, v) -> {
                         if (v instanceof String) {
                             builder.put(AttributeKey.stringKey(k), (String) v);

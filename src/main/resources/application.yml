@@ -207,23 +207,40 @@ monitoring:
     collection-interval: 10s
     enabled-categories:
       - system
-      - business  
+      - business
       - infrastructure
     custom-tags:
       environment: "production"
       version: "1.0.0"
-    
+
     # 指标采样配置
     sampling:
       request-metrics: 1.0      # 请求指标采样率
       backend-metrics: 1.0      # 后端调用指标采样率
       infrastructure-metrics: 0.1  # 基础设施指标采样率
-    
+
     # 性能优化配置
     performance:
       async-processing: true    # 异步处理指标
       batch-size: 100          # 批量处理大小
       buffer-size: 1000        # 缓冲区大小
+
+    # 性能阈值配置
+    thresholds:
+      default-threshold: 1000  # 默认阈值1秒
+      operation-thresholds:
+        api_call: 2000         # API调用阈值2秒
+        database_query: 500    # 数据库查询阈值500毫秒
+      slow-query-threshold: 5000
+      slow-query-thresholds:
+        chat: 8000
+        embedding: 3000
+        rerank: 2000
+        tts: 8000
+        stttts: 30000
+        imgGentts: 30000
+        imgEdittts: 30000
+
 
 # Spring Actuator配置增强
 # ========================================

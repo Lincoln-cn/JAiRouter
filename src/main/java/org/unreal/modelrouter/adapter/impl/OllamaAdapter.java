@@ -161,6 +161,7 @@ public class OllamaAdapter extends BaseAdapter {
             if (request.input() instanceof String) {
                 ollamaRequest.put("prompt", (String) request.input());
             }
+            return ollamaRequest;
         } catch (Exception e) {
             logAdapterTransformError(getAdapterType(), e);
             return request;

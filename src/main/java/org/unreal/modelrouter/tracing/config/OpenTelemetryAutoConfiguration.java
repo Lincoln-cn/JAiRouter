@@ -3,7 +3,7 @@ package org.unreal.modelrouter.tracing.config;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
+// Jaeger exporter 已移除，现在使用 OTLP 协议连接 Jaeger
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,14 +61,9 @@ public class OpenTelemetryAutoConfiguration {
         SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
                 .setResource(resource)
                 .addSpanProcessor(BatchSpanProcessor.builder(spanExporter)
-                        .setScheduleDelay(tracingConfig.getOpenTelemetry().getSdk().getTrace()
-                                .getProcessors().getBatch().getScheduleDelay())
-                        .setMaxQueueSize(tracingConfig.getOpenTelemetry().getSdk().getTrace()
-                                .getProcessors().getBatch().getMaxQueueSize())
-                        .setMaxExportBatchSize(tracingConfig.getOpenTelemetry().getSdk().getTrace()
-                                .getProcessors().getBatch().getMaxExportBatchSize())
-                        .setExportTimeout(tracingConfig.getOpenTelemetry().getSdk().getTrace()
-                                .getProcessors().getBatch().getExportTimeout())
+                        .setScheduleDelay(Duration.ofSeconds(5))  // 使用默认值
+                        .setMaxQueueSize(2048)  // 使用默认值
+                        .setMaxExportBatchSize(512)  // 使用默认值
                         .build())
                 .setSampler(sampler)
                 .build();
@@ -113,7 +109,7 @@ public class OpenTelemetryAutoConfiguration {
         // 自定义属性
         resourceAttributes.putAll(tracingConfig.getOpenTelemetry().getResource().getAttributes());
         
-        Attributes.Builder attributesBuilder = Attributes.builder();
+        io.opentelemetry.api.common.AttributesBuilder attributesBuilder = Attributes.builder();
         resourceAttributes.forEach(attributesBuilder::put);
         
         return Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
@@ -127,7 +123,9 @@ public class OpenTelemetryAutoConfiguration {
         
         switch (exporterType) {
             case "jaeger":
-                return createJaegerExporter();
+                // Jaeger 现在使用 OTLP 协议
+                log.info("Jaeger 导出器现在使用 OTLP 协议，端点: {}", tracingConfig.getExporter().getJaeger().getEndpoint());
+                return createJaegerViaOtlpExporter();
             case "zipkin":
                 return createZipkinExporter();
             case "otlp":
@@ -141,20 +139,47 @@ public class OpenTelemetryAutoConfiguration {
     }
     
     /**
-     * 创建Jaeger导出器
+     * 通过OTLP协议创建Jaeger导出器
+     * Jaeger 现在推荐使用 OTLP 协议而不是专用的 Jaeger 协议
      */
-    private SpanExporter createJaegerExporter() {
+    private SpanExporter createJaegerViaOtlpExporter() {
         TracingConfiguration.ExporterConfig.JaegerConfig jaegerConfig = tracingConfig.getExporter().getJaeger();
         
-        JaegerGrpcSpanExporter.Builder builder = JaegerGrpcSpanExporter.builder()
-                .setEndpoint(jaegerConfig.getEndpoint())
+        // 将 Jaeger 端点转换为 OTLP 端点
+        String otlpEndpoint = convertJaegerToOtlpEndpoint(jaegerConfig.getEndpoint());
+        
+        var builder = OtlpGrpcSpanExporter.builder()
+                .setEndpoint(otlpEndpoint)
                 .setTimeout(jaegerConfig.getTimeout());
         
         // 添加自定义头部
         jaegerConfig.getHeaders().forEach(builder::addHeader);
         
-        log.info("创建Jaeger导出器，端点: {}", jaegerConfig.getEndpoint());
+        log.info("通过OTLP协议创建Jaeger导出器，端点: {} -> {}", jaegerConfig.getEndpoint(), otlpEndpoint);
         return builder.build();
+    }
+    
+    /**
+     * 将 Jaeger 端点转换为 OTLP 端点
+     */
+    private String convertJaegerToOtlpEndpoint(String jaegerEndpoint) {
+        if (jaegerEndpoint == null || jaegerEndpoint.isEmpty()) {
+            return "http://localhost:4317"; // 默认 OTLP gRPC 端点
+        }
+        
+        // 如果已经是 OTLP 端点，直接返回
+        if (jaegerEndpoint.contains("4317") || jaegerEndpoint.contains("4318")) {
+            return jaegerEndpoint;
+        }
+        
+        // 将传统的 Jaeger 端点转换为 OTLP 端点
+        // 例如：http://localhost:14268/api/traces -> http://localhost:4317
+        if (jaegerEndpoint.contains("14268")) {
+            return jaegerEndpoint.replace("14268/api/traces", "4317");
+        }
+        
+        // 默认情况下，假设是 gRPC 端点，使用 4317 端口
+        return jaegerEndpoint.replaceAll(":\\d+.*", ":4317");
     }
     
     /**
@@ -175,7 +200,7 @@ public class OpenTelemetryAutoConfiguration {
     private SpanExporter createOtlpExporter() {
         TracingConfiguration.ExporterConfig.OtlpConfig otlpConfig = tracingConfig.getExporter().getOtlp();
         
-        OtlpGrpcSpanExporter.Builder builder = OtlpGrpcSpanExporter.builder()
+        var builder = OtlpGrpcSpanExporter.builder()
                 .setEndpoint(otlpConfig.getEndpoint())
                 .setTimeout(otlpConfig.getTimeout())
                 .setCompression(otlpConfig.getCompression());
@@ -203,13 +228,13 @@ public class OpenTelemetryAutoConfiguration {
         
         if (samplingRatio >= 1.0) {
             log.info("使用全量采样器");
-            return Sampler.create(1.0);
+            return Sampler.traceIdRatioBased(1.0);
         } else if (samplingRatio <= 0.0) {
             log.info("使用零采样器");
-            return Sampler.create(0.0);
+            return Sampler.traceIdRatioBased(0.0);
         } else {
             log.info("使用比例采样器，采样率: {}", samplingRatio);
-            return Sampler.create(samplingRatio);
+            return Sampler.traceIdRatioBased(samplingRatio);
         }
     }
 }

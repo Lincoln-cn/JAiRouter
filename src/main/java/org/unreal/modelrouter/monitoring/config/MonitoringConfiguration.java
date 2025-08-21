@@ -83,7 +83,7 @@ public class MonitoringConfiguration {
     @Bean
     @Conditional(MonitoringEnabledCondition.class)
     public MeterFilter samplingFilter() {
-        MonitoringProperties.SamplingConfig sampling = monitoringProperties.getSampling();
+        MonitoringProperties.Sampling sampling = monitoringProperties.getSampling();
         
         return MeterFilter.accept(id -> {
             String name = id.getName();

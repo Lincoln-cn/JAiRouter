@@ -357,4 +357,22 @@ public class SecurityMetrics {
     public void resetFailureReasonCounts() {
         failureReasonCounts.clear();
     }
+    
+    // 公共getter方法，用于测试
+    
+    public Counter getAuthenticationAttempts() {
+        return authenticationAttempts;
+    }
+    
+    public Counter getAuthenticationSuccesses() {
+        return authenticationSuccesses;
+    }
+    
+    public Counter getAuthenticationFailures() {
+        return authenticationFailures;
+    }
+    
+    public Counter getSanitizationOperations() {
+        return sanitizationOperations;
+    }
 }
