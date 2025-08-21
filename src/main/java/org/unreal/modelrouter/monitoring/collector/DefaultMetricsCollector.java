@@ -14,6 +14,7 @@ import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -266,6 +267,231 @@ public class DefaultMetricsCollector implements MetricsCollector {
                         service, requestSize, responseSize);
         } catch (Exception e) {
             logger.warn("Failed to record request size metric: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordTrace(String traceId, String spanId, String operationName, long duration, boolean success) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+            String status = success ? "success" : "failure";
+
+            // 记录追踪操作总数
+            String counterKey = "tracing.operations.total." + operationName + "." + status;
+            Counter counter = counters.computeIfAbsent(counterKey, key ->
+                Counter.builder(metricPrefix + "tracing_operations_total")
+                    .tag("operation", operationName)
+                    .tag("status", status)
+                    .description("Total number of tracing operations")
+                    .register(meterRegistry)
+            );
+            counter.increment();
+
+            // 记录追踪操作耗时
+            String timerKey = "tracing.operation.duration." + operationName;
+            Timer timer = timers.computeIfAbsent(timerKey, key ->
+                Timer.builder(metricPrefix + "tracing_operation_duration_seconds")
+                    .tag("operation", operationName)
+                    .description("Tracing operation duration in seconds")
+                    .register(meterRegistry)
+            );
+            timer.record(Duration.ofMillis(duration));
+
+            logger.debug("Recorded trace metric: operation={}, duration={}ms, success={}",
+                    operationName, duration, success);
+        } catch (Exception e) {
+            logger.warn("Failed to record trace metric: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordTraceExport(String exporterType, long duration, boolean success, int batchSize) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+            String status = success ? "success" : "failure";
+
+            // 记录追踪导出事件总数
+            String counterKey = "tracing.export.total." + exporterType + "." + status;
+            Counter counter = counters.computeIfAbsent(counterKey, key ->
+                Counter.builder(metricPrefix + "tracing_export_total")
+                    .tag("exporter", exporterType)
+                    .tag("status", status)
+                    .description("Total number of tracing export events")
+                    .register(meterRegistry)
+            );
+            counter.increment();
+
+            // 记录追踪导出耗时
+            String timerKey = "tracing.export.duration." + exporterType;
+            Timer timer = timers.computeIfAbsent(timerKey, key ->
+                Timer.builder(metricPrefix + "tracing_export_duration_seconds")
+                    .tag("exporter", exporterType)
+                    .description("Tracing export duration in seconds")
+                    .register(meterRegistry)
+            );
+            timer.record(Duration.ofMillis(duration));
+
+            // 记录批次大小
+            String summaryKey = "tracing.export.batch.size." + exporterType;
+            DistributionSummary summary = summaries.computeIfAbsent(summaryKey, key ->
+                DistributionSummary.builder(metricPrefix + "tracing_export_batch_size")
+                    .tag("exporter", exporterType)
+                    .description("Tracing export batch size")
+                    .register(meterRegistry)
+            );
+            summary.record(batchSize);
+
+            logger.debug("Recorded trace export metric: exporter={}, duration={}ms, success={}, batchSize={}",
+                    exporterType, duration, success, batchSize);
+        } catch (Exception e) {
+            logger.warn("Failed to record trace export metric: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordTraceSampling(double samplingRate, boolean sampled) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+            String result = sampled ? "sampled" : "dropped";
+
+            // 记录采样决策
+            String counterKey = "tracing.sampling.decisions." + result;
+            Counter counter = counters.computeIfAbsent(counterKey, key ->
+                Counter.builder(metricPrefix + "tracing_sampling_decisions_total")
+                    .tag("decision", result)
+                    .tag("sampling_rate", String.valueOf(samplingRate))
+                    .description("Total number of tracing sampling decisions")
+                    .register(meterRegistry)
+            );
+            counter.increment();
+
+            logger.debug("Recorded trace sampling metric: samplingRate={}, sampled={}",
+                    samplingRate, sampled);
+        } catch (Exception e) {
+            logger.warn("Failed to record trace sampling metric: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordTraceDataQuality(String traceId, int spanCount, int attributeCount, int errorCount) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+
+            // 记录Span数量
+            String spanSummaryKey = "tracing.data.quality.span.count";
+            DistributionSummary spanSummary = summaries.computeIfAbsent(spanSummaryKey, key ->
+                DistributionSummary.builder(metricPrefix + "tracing_data_quality_span_count")
+                    .description("Number of spans per trace")
+                    .register(meterRegistry)
+            );
+            spanSummary.record(spanCount);
+
+            // 记录属性数量
+            String attributeSummaryKey = "tracing.data.quality.attribute.count";
+            DistributionSummary attributeSummary = summaries.computeIfAbsent(attributeSummaryKey, key ->
+                DistributionSummary.builder(metricPrefix + "tracing_data_quality_attribute_count")
+                    .description("Number of attributes per trace")
+                    .register(meterRegistry)
+            );
+            attributeSummary.record(attributeCount);
+
+            // 记录错误数量
+            String errorSummaryKey = "tracing.data.quality.error.count";
+            DistributionSummary errorSummary = summaries.computeIfAbsent(errorSummaryKey, key ->
+                DistributionSummary.builder(metricPrefix + "tracing_data_quality_error_count")
+                    .description("Number of errors per trace")
+                    .register(meterRegistry)
+            );
+            errorSummary.record(errorCount);
+
+            logger.debug("Recorded trace data quality metric: traceId={}, spanCount={}, attributeCount={}, errorCount={}",
+                    traceId, spanCount, attributeCount, errorCount);
+        } catch (Exception e) {
+            logger.warn("Failed to record trace data quality metric: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordTraceProcessing(String processorName, long duration, boolean success) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+            String status = success ? "success" : "failure";
+
+            // 记录追踪处理事件总数
+            String counterKey = "tracing.processing.total." + processorName + "." + status;
+            Counter counter = counters.computeIfAbsent(counterKey, key ->
+                Counter.builder(metricPrefix + "tracing_processing_total")
+                    .tag("processor", processorName)
+                    .tag("status", status)
+                    .description("Total number of tracing processing events")
+                    .register(meterRegistry)
+            );
+            counter.increment();
+
+            // 记录追踪处理耗时
+            String timerKey = "tracing.processing.duration." + processorName;
+            Timer timer = timers.computeIfAbsent(timerKey, key ->
+                Timer.builder(metricPrefix + "tracing_processing_duration_seconds")
+                    .tag("processor", processorName)
+                    .description("Tracing processing duration in seconds")
+                    .register(meterRegistry)
+            );
+            timer.record(Duration.ofMillis(duration));
+
+            logger.debug("Recorded trace processing metric: processor={}, duration={}ms, success={}",
+                    processorName, duration, success);
+        } catch (Exception e) {
+            logger.warn("Failed to record trace processing metric: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordTraceAnalysis(String analyzerName, int spanCount, long duration, boolean success) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+            String status = success ? "success" : "failure";
+
+            // 记录追踪分析事件总数
+            String counterKey = "tracing.analysis.total." + analyzerName + "." + status;
+            Counter counter = counters.computeIfAbsent(counterKey, key ->
+                Counter.builder(metricPrefix + "tracing_analysis_total")
+                    .tag("analyzer", analyzerName)
+                    .tag("status", status)
+                    .description("Total number of tracing analysis events")
+                    .register(meterRegistry)
+            );
+            counter.increment();
+
+            // 记录追踪分析耗时
+            String timerKey = "tracing.analysis.duration." + analyzerName;
+            Timer timer = timers.computeIfAbsent(timerKey, key ->
+                Timer.builder(metricPrefix + "tracing_analysis_duration_seconds")
+                    .tag("analyzer", analyzerName)
+                    .description("Tracing analysis duration in seconds")
+                    .register(meterRegistry)
+            );
+            timer.record(Duration.ofMillis(duration));
+
+            // 记录Span数量
+            String summaryKey = "tracing.analysis.span.count." + analyzerName;
+            DistributionSummary summary = summaries.computeIfAbsent(summaryKey, key ->
+                DistributionSummary.builder(metricPrefix + "tracing_analysis_span_count")
+                    .tag("analyzer", analyzerName)
+                    .description("Number of spans analyzed")
+                    .register(meterRegistry)
+            );
+            summary.record(spanCount);
+
+            logger.debug("Recorded trace analysis metric: analyzer={}, spanCount={}, duration={}ms, success={}",
+                    analyzerName, spanCount, duration, success);
+        } catch (Exception e) {
+            logger.warn("Failed to record trace analysis metric: {}", e.getMessage());
         }
     }
 
