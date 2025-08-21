@@ -22,6 +22,34 @@ public class SanitizationMetrics {
     private final Counter ruleMatches;
     private final Counter sanitizationErrors;
     
+    /**
+     * 获取脱敏操作计数器
+     */
+    public Counter getSanitizationOperations() {
+        return requestSanitizations;
+    }
+    
+    /**
+     * 获取脱敏耗时计数器
+     */
+    public Timer getSanitizationDuration() {
+        return requestSanitizationTimer;
+    }
+    
+    /**
+     * 获取脱敏失败计数器
+     */
+    public Counter getSanitizationFailures() {
+        return sanitizationErrors;
+    }
+    
+    /**
+     * 获取脱敏成功计数器
+     */
+    public Counter getSanitizationSuccesses() {
+        return requestSanitizations;
+    }
+    
     private final Timer requestSanitizationTimer;
     private final Timer responseSanitizationTimer;
     private final Timer ruleCompilationTimer;

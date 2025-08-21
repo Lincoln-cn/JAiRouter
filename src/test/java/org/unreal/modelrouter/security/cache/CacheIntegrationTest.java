@@ -17,7 +17,7 @@ class CacheIntegrationTest {
     
     @Test
     void testInMemoryCacheBasicOperations() {
-        InMemoryApiKeyCache cache = new InMemoryApiKeyCache();
+        InMemoryApiKeyCache cache = new InMemoryApiKeyCache(null);
         
         ApiKeyInfo testApiKey = ApiKeyInfo.builder()
                 .keyId("test-key-1")
@@ -61,7 +61,7 @@ class CacheIntegrationTest {
     
     @Test
     void testCacheExpiration() {
-        InMemoryApiKeyCache cache = new InMemoryApiKeyCache();
+        InMemoryApiKeyCache cache = new InMemoryApiKeyCache(null);
         
         ApiKeyInfo testApiKey = ApiKeyInfo.builder()
                 .keyId("test-key-2")

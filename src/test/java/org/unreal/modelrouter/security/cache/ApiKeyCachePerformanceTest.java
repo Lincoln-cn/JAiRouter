@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringJUnitExtension;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.unreal.modelrouter.security.cache.impl.InMemoryApiKeyCache;
 import org.unreal.modelrouter.security.cache.impl.RedisApiKeyCache;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * API Key缓存性能测试
  * 测试缓存机制的性能表现和并发访问能力
  */
-@ExtendWith(SpringJUnitExtension.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 class ApiKeyCachePerformanceTest {
     
@@ -38,7 +38,7 @@ class ApiKeyCachePerformanceTest {
     
     @BeforeEach
     void setUp() {
-        inMemoryCache = new InMemoryApiKeyCache();
+        inMemoryCache = new InMemoryApiKeyCache(null);
         testApiKeys = generateTestApiKeys(1000);
     }
     

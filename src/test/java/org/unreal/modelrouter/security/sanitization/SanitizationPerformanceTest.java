@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringJUnitExtension;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.unreal.modelrouter.security.model.RuleType;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SanitizationStrategy;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 脱敏性能测试
  * 测试脱敏引擎的性能表现和优化效果
  */
-@ExtendWith(SpringJUnitExtension.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest
 class SanitizationPerformanceTest {
     
