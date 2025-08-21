@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.monitoring.config.MonitorConfigurationChangeEvent;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     private final ApplicationEventPublisher eventPublisher;
     
     // 配置变更历史记录
-    private final ConcurrentMap<String, ConfigurationChangeEvent> changeHistory = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, SecurityConfigurationChangeEvent> changeHistory = new ConcurrentHashMap<>();
     
     // 配置备份存储
     private final ConcurrentMap<String, SecurityProperties> configBackups = new ConcurrentHashMap<>();
@@ -244,15 +245,21 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
             }
         }).then();
     }
-
     @Override
-    public Mono<List<ConfigurationChangeEvent>> getConfigurationHistory(int limit) {
+    public Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(int limit) {
         return Mono.fromCallable(() -> {
             log.debug("获取配置变更历史，限制数量: {}", limit);
             
             return changeHistory.values().stream()
                     .sorted((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()))
                     .limit(limit)
+                    .map(event -> new SecurityConfigurationChangeEvent(
+                        event.getSource(),
+                        event.getChangeId(),
+                        event.getConfigType(),
+                        event.getOldValue(),
+                        event.getNewValue()
+                    ))
                     .toList();
         });
     }
@@ -262,14 +269,8 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
      */
     private void recordConfigurationChange(String changeType, String userId, String description, Object oldValue, Object newValue) {
         String changeId = UUID.randomUUID().toString();
-        ConfigurationChangeEvent event = new ConfigurationChangeEvent();
-        event.setChangeId(changeId);
-        event.setChangeType(changeType);
-        event.setUserId(userId);
-        event.setTimestamp(LocalDateTime.now());
-        event.setDescription(description);
-        event.setOldValue(oldValue);
-        event.setNewValue(newValue);
+        SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
+                this, changeId, changeType, oldValue, newValue);
         
         changeHistory.put(changeId, event);
         
@@ -277,7 +278,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
         if (changeHistory.size() > 1000) {
             // 删除最旧的记录
             changeHistory.values().stream()
-                    .min((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
+                    .min(Comparator.comparing(SecurityConfigurationChangeEvent::getTimestamp))
                     .ifPresent(oldest -> changeHistory.remove(oldest.getChangeId()));
         }
     }
@@ -287,8 +288,9 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
      */
     private void publishConfigurationChangeEvent(String configType, Object oldValue, Object newValue) {
         try {
+            String changeId = UUID.randomUUID().toString();
             SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
-                    this, configType, oldValue, newValue);
+                    this,changeId, configType, oldValue, newValue);
             eventPublisher.publishEvent(event);
         } catch (Exception e) {
             log.warn("发布配置变更事件失败", e);
@@ -469,29 +471,4 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
         // 恢复其他配置...
     }
 
-    /**
-     * 安全配置变更事件
-     */
-    public static class SecurityConfigurationChangeEvent {
-        private final Object source;
-        private final String configType;
-        private final Object oldValue;
-        private final Object newValue;
-        private final LocalDateTime timestamp;
-
-        public SecurityConfigurationChangeEvent(Object source, String configType, Object oldValue, Object newValue) {
-            this.source = source;
-            this.configType = configType;
-            this.oldValue = oldValue;
-            this.newValue = newValue;
-            this.timestamp = LocalDateTime.now();
-        }
-
-        // Getters
-        public Object getSource() { return source; }
-        public String getConfigType() { return configType; }
-        public Object getOldValue() { return oldValue; }
-        public Object getNewValue() { return newValue; }
-        public LocalDateTime getTimestamp() { return timestamp; }
-    }
 }

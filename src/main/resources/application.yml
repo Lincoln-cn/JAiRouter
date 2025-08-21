@@ -215,9 +215,12 @@ monitoring:
 
     # 指标采样配置
     sampling:
-      request-metrics: 1.0      # 请求指标采样率
-      backend-metrics: 1.0      # 后端调用指标采样率
-      infrastructure-metrics: 0.1  # 基础设施指标采样率
+      request-metrics: 1.0              # 请求指标采样率
+      backend-metrics: 1.0              # 后端调用指标采样率
+      infrastructure-metrics: 0.1       # 基础设施指标采样率
+      trace-metrics: 1.0                # 跟踪指标采样率
+      trace-processing-metrics: 1.0     # 跟踪处理指标采样率
+      trace-analysis-metrics: 1.0       # 跟踪分析指标采样率
 
     # 性能优化配置
     performance:

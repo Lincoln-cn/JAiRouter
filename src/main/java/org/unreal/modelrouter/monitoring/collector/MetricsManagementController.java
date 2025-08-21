@@ -23,7 +23,7 @@ import java.util.Map;
  * 提供监控配置管理和性能统计查询的API接口
  */
 @RestController
-@RequestMapping("/actuator/jairouter-metrics")
+@RequestMapping("/actuator/metrics")
 @Conditional(MonitoringEnabledCondition.class)
 public class MetricsManagementController {
 
@@ -161,9 +161,13 @@ public class MetricsManagementController {
             if (request.getInfrastructureMetrics() != null) {
                 sampling.setInfrastructureMetrics(request.getInfrastructureMetrics());
             }
+            if (request.getTraceMetrics() != null) {
+                sampling.setTraceMetrics(request.getTraceMetrics());
+            }
             
-            logger.info("Updated sampling config: request={}, backend={}, infrastructure={}", 
-                       sampling.getRequestMetrics(), sampling.getBackendMetrics(), sampling.getInfrastructureMetrics());
+            logger.info("Updated sampling config: request={}, backend={}, infrastructure={}, trace={}", 
+                       sampling.getRequestMetrics(), sampling.getBackendMetrics(), 
+                       sampling.getInfrastructureMetrics(), sampling.getTraceMetrics());
             
             return ResponseEntity.ok("Sampling configuration updated successfully");
         } catch (Exception e) {
@@ -419,6 +423,7 @@ public class MetricsManagementController {
         private Double requestMetrics;
         private Double backendMetrics;
         private Double infrastructureMetrics;
+        private Double traceMetrics;
 
         // Getters and Setters
         public Double getRequestMetrics() { return requestMetrics; }
@@ -427,6 +432,8 @@ public class MetricsManagementController {
         public void setBackendMetrics(Double backendMetrics) { this.backendMetrics = backendMetrics; }
         public Double getInfrastructureMetrics() { return infrastructureMetrics; }
         public void setInfrastructureMetrics(Double infrastructureMetrics) { this.infrastructureMetrics = infrastructureMetrics; }
+        public Double getTraceMetrics() { return traceMetrics; }
+        public void setTraceMetrics(Double traceMetrics) { this.traceMetrics = traceMetrics; }
     }
 
     public static class PerformanceUpdateRequest {

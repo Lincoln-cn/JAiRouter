@@ -84,7 +84,8 @@ public class MonitoringController {
                 return ResponseEntity.badRequest().body("Missing 'enabled' parameter");
             }
 
-            boolean updated = configUpdater.updateEnabled(enabled);
+            boolean updated = configUpdater.updateBasicConfig(enabled, monitoringProperties.getPrefix(), 
+                               monitoringProperties.getCollectionInterval(), monitoringProperties.getEnabledCategories());
             if (updated) {
                 return ResponseEntity.ok("监控状态已更新为: " + enabled);
             } else {
@@ -111,7 +112,8 @@ public class MonitoringController {
                 return ResponseEntity.badRequest().body("Invalid prefix format");
             }
 
-            boolean updated = configUpdater.updatePrefix(prefix);
+            boolean updated = configUpdater.updateBasicConfig(monitoringProperties.isEnabled(), prefix,
+                               monitoringProperties.getCollectionInterval(), monitoringProperties.getEnabledCategories());
             if (updated) {
                 return ResponseEntity.ok("指标前缀已更新为: " + prefix);
             } else {
@@ -139,7 +141,8 @@ public class MonitoringController {
                 return ResponseEntity.badRequest().body("Invalid interval format");
             }
 
-            boolean updated = configUpdater.updateCollectionInterval(interval);
+            boolean updated = configUpdater.updateBasicConfig(monitoringProperties.isEnabled(), monitoringProperties.getPrefix(),
+                               interval, monitoringProperties.getEnabledCategories());
             if (updated) {
                 return ResponseEntity.ok("收集间隔已更新为: " + interval);
             } else {
@@ -166,7 +169,8 @@ public class MonitoringController {
                 return ResponseEntity.badRequest().body("Invalid categories");
             }
 
-            boolean updated = configUpdater.updateEnabledCategories(categories);
+            boolean updated = configUpdater.updateBasicConfig(monitoringProperties.isEnabled(), monitoringProperties.getPrefix(),
+                               monitoringProperties.getCollectionInterval(), categories);
             if (updated) {
                 return ResponseEntity.ok("启用类别已更新为: " + categories);
             } else {
@@ -189,12 +193,10 @@ public class MonitoringController {
                 return ResponseEntity.badRequest().body("Missing 'customTags' parameter");
             }
 
-            boolean updated = configUpdater.updateCustomTags(customTags);
-            if (updated) {
-                return ResponseEntity.ok("自定义标签已更新");
-            } else {
-                return ResponseEntity.ok("自定义标签无变化");
-            }
+            // 注意：DynamicMonitoringConfigUpdater 不支持直接更新 customTags，
+            // 因此我们只记录日志并返回成功消息
+            logger.info("自定义标签更新请求: {}", customTags);
+            return ResponseEntity.ok("自定义标签更新请求已接收（注意：此功能尚未实现）");
         } catch (Exception e) {
             logger.error("更新自定义标签失败: {}", e.getMessage());
             return ResponseEntity.internalServerError().body("更新失败: " + e.getMessage());

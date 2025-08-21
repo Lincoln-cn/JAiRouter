@@ -163,6 +163,75 @@ public class AsyncMetricsProcessor {
     }
 
     /**
+     * 异步记录追踪指标
+     */
+    public void recordTraceAsync(String traceId, String spanId, String operationName, long duration, boolean success) {
+        if (!shouldSample(MetricsType.TRACE)) {
+            return;
+        }
+        
+        MetricsEvent event = new TraceMetricsEvent(traceId, spanId, operationName, duration, success);
+        submitEvent(event);
+    }
+    
+    /**
+     * 异步记录追踪处理指标
+     */
+    public void recordTraceProcessingAsync(String processorName, long duration, boolean success) {
+        if (!shouldSample(MetricsType.TRACE_PROCESSING)) {
+            return;
+        }
+        
+        MetricsEvent event = new TraceProcessingMetricsEvent(processorName, duration, success);
+        submitEvent(event);
+    }
+    
+    /**
+     * 异步记录追踪分析指标
+     */
+    public void recordTraceAnalysisAsync(String analyzerName, int spanCount, long duration, boolean success) {
+        if (!shouldSample(MetricsType.TRACE_ANALYSIS)) {
+            return;
+        }
+        
+        MetricsEvent event = new TraceAnalysisMetricsEvent(analyzerName, spanCount, duration, success);
+        submitEvent(event);
+    }
+
+    /**
+     * 异步记录追踪导出指标
+     */
+    public void recordTraceExportAsync(String exporterType, long duration, boolean success, int batchSize) {
+        if (!shouldSample(MetricsType.TRACE)) {
+            return;
+        }
+        
+        MetricsEvent event = new TraceExportMetricsEvent(exporterType, duration, success, batchSize);
+        submitEvent(event);
+    }
+
+    /**
+     * 异步记录追踪采样指标
+     */
+    public void recordTraceSamplingAsync(double samplingRate, boolean sampled) {
+        // 采样指标本身不需要采样
+        MetricsEvent event = new TraceSamplingMetricsEvent(samplingRate, sampled);
+        submitEvent(event);
+    }
+
+    /**
+     * 异步记录追踪数据质量指标
+     */
+    public void recordTraceDataQualityAsync(String traceId, int spanCount, int attributeCount, int errorCount) {
+        if (!shouldSample(MetricsType.TRACE)) {
+            return;
+        }
+        
+        MetricsEvent event = new TraceDataQualityMetricsEvent(traceId, spanCount, attributeCount, errorCount);
+        submitEvent(event);
+    }
+
+    /**
      * 提交指标事件到队列
      */
     private void submitEvent(MetricsEvent event) {
@@ -201,6 +270,12 @@ public class AsyncMetricsProcessor {
                 return sampling.getBackendMetrics();
             case INFRASTRUCTURE:
                 return sampling.getInfrastructureMetrics();
+            case TRACE:
+                return sampling.getTraceMetrics();
+            case TRACE_PROCESSING:
+                return sampling.getTraceProcessingMetrics();
+            case TRACE_ANALYSIS:
+                return sampling.getTraceAnalysisMetrics();
             default:
                 return 1.0;
         }
@@ -303,6 +378,24 @@ public class AsyncMetricsProcessor {
             } else if (event instanceof RequestSizeMetricsEvent) {
                 RequestSizeMetricsEvent size = (RequestSizeMetricsEvent) event;
                 metricsCollector.recordRequestSize(size.service, size.requestSize, size.responseSize);
+            } else if (event instanceof TraceMetricsEvent) {
+                TraceMetricsEvent trace = (TraceMetricsEvent) event;
+                metricsCollector.recordTrace(trace.traceId, trace.spanId, trace.operationName, trace.duration, trace.success);
+            } else if (event instanceof TraceExportMetricsEvent) {
+                TraceExportMetricsEvent traceExport = (TraceExportMetricsEvent) event;
+                metricsCollector.recordTraceExport(traceExport.exporterType, traceExport.duration, traceExport.success, traceExport.batchSize);
+            } else if (event instanceof TraceSamplingMetricsEvent) {
+                TraceSamplingMetricsEvent traceSampling = (TraceSamplingMetricsEvent) event;
+                metricsCollector.recordTraceSampling(traceSampling.samplingRate, traceSampling.sampled);
+            } else if (event instanceof TraceDataQualityMetricsEvent) {
+                TraceDataQualityMetricsEvent traceDataQuality = (TraceDataQualityMetricsEvent) event;
+                metricsCollector.recordTraceDataQuality(traceDataQuality.traceId, traceDataQuality.spanCount, traceDataQuality.attributeCount, traceDataQuality.errorCount);
+            } else if (event instanceof TraceProcessingMetricsEvent) {
+                TraceProcessingMetricsEvent traceProcessing = (TraceProcessingMetricsEvent) event;
+                metricsCollector.recordTraceProcessing(traceProcessing.processorName, traceProcessing.duration, traceProcessing.success);
+            } else if (event instanceof TraceAnalysisMetricsEvent) {
+                TraceAnalysisMetricsEvent traceAnalysis = (TraceAnalysisMetricsEvent) event;
+                metricsCollector.recordTraceAnalysis(traceAnalysis.analyzerName, traceAnalysis.spanCount, traceAnalysis.duration, traceAnalysis.success);
             }
         } catch (Exception e) {
             logger.warn("Failed to process metrics event: {}", e.getMessage());
@@ -355,7 +448,7 @@ public class AsyncMetricsProcessor {
 
     // 指标类型枚举
     private enum MetricsType {
-        REQUEST, BACKEND, INFRASTRUCTURE
+        REQUEST, BACKEND, INFRASTRUCTURE, TRACE, TRACE_PROCESSING, TRACE_ANALYSIS
     }
 
     // 指标事件基类
@@ -451,6 +544,86 @@ public class AsyncMetricsProcessor {
             this.service = service;
             this.requestSize = requestSize;
             this.responseSize = responseSize;
+        }
+    }
+
+    private static class TraceMetricsEvent extends MetricsEvent {
+        final String traceId;
+        final String spanId;
+        final String operationName;
+        final long duration;
+        final boolean success;
+
+        TraceMetricsEvent(String traceId, String spanId, String operationName, long duration, boolean success) {
+            this.traceId = traceId;
+            this.spanId = spanId;
+            this.operationName = operationName;
+            this.duration = duration;
+            this.success = success;
+        }
+    }
+    
+    private static class TraceProcessingMetricsEvent extends MetricsEvent {
+        final String processorName;
+        final long duration;
+        final boolean success;
+
+        TraceProcessingMetricsEvent(String processorName, long duration, boolean success) {
+            this.processorName = processorName;
+            this.duration = duration;
+            this.success = success;
+        }
+    }
+    
+    private static class TraceAnalysisMetricsEvent extends MetricsEvent {
+        final String analyzerName;
+        final int spanCount;
+        final long duration;
+        final boolean success;
+
+        TraceAnalysisMetricsEvent(String analyzerName, int spanCount, long duration, boolean success) {
+            this.analyzerName = analyzerName;
+            this.spanCount = spanCount;
+            this.duration = duration;
+            this.success = success;
+        }
+    }
+
+    private static class TraceExportMetricsEvent extends MetricsEvent {
+        final String exporterType;
+        final long duration;
+        final boolean success;
+        final int batchSize;
+
+        TraceExportMetricsEvent(String exporterType, long duration, boolean success, int batchSize) {
+            this.exporterType = exporterType;
+            this.duration = duration;
+            this.success = success;
+            this.batchSize = batchSize;
+        }
+    }
+
+    private static class TraceSamplingMetricsEvent extends MetricsEvent {
+        final double samplingRate;
+        final boolean sampled;
+
+        TraceSamplingMetricsEvent(double samplingRate, boolean sampled) {
+            this.samplingRate = samplingRate;
+            this.sampled = sampled;
+        }
+    }
+
+    private static class TraceDataQualityMetricsEvent extends MetricsEvent {
+        final String traceId;
+        final int spanCount;
+        final int attributeCount;
+        final int errorCount;
+
+        TraceDataQualityMetricsEvent(String traceId, int spanCount, int attributeCount, int errorCount) {
+            this.traceId = traceId;
+            this.spanCount = spanCount;
+            this.attributeCount = attributeCount;
+            this.errorCount = errorCount;
         }
     }
 

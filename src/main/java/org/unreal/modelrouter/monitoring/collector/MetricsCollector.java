@@ -71,4 +71,62 @@ public interface MetricsCollector {
      * @param responseSize 响应大小(字节)
      */
     void recordRequestSize(String service, long requestSize, long responseSize);
+
+    /**
+     * 记录追踪指标
+     * 
+     * @param traceId 追踪ID
+     * @param spanId Span ID
+     * @param operationName 操作名称
+     * @param duration 持续时间(毫秒)
+     * @param success 是否成功
+     */
+    void recordTrace(String traceId, String spanId, String operationName, long duration, boolean success);
+
+    /**
+     * 记录追踪导出指标
+     * 
+     * @param exporterType 导出器类型
+     * @param duration 导出耗时(毫秒)
+     * @param success 是否成功
+     * @param batchSize 批量大小
+     */
+    void recordTraceExport(String exporterType, long duration, boolean success, int batchSize);
+
+    /**
+     * 记录追踪采样指标
+     * 
+     * @param samplingRate 采样率
+     * @param sampled 是否被采样
+     */
+    void recordTraceSampling(double samplingRate, boolean sampled);
+
+    /**
+     * 记录追踪数据质量指标
+     * 
+     * @param traceId 追踪ID
+     * @param spanCount Span数量
+     * @param attributeCount 属性数量
+     * @param errorCount 错误数量
+     */
+    void recordTraceDataQuality(String traceId, int spanCount, int attributeCount, int errorCount);
+    
+    /**
+     * 记录追踪处理指标
+     * 
+     * @param processorName 处理器名称
+     * @param duration 处理耗时(毫秒)
+     * @param success 是否成功
+     */
+    void recordTraceProcessing(String processorName, long duration, boolean success);
+    
+    /**
+     * 记录追踪分析指标
+     * 
+     * @param analyzerName 分析器名称
+     * @param spanCount Span数量
+     * @param duration 分析耗时(毫秒)
+     * @param success 是否成功
+     */
+    void recordTraceAnalysis(String analyzerName, int spanCount, long duration, boolean success);
 }

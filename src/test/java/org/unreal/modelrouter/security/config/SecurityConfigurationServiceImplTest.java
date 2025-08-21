@@ -78,7 +78,7 @@ class SecurityConfigurationServiceImplTest {
         // 验证存储调用 - 注意：实际实现中需要验证正确的StoreManager方法调用
         
         // 验证事件发布
-        verify(eventPublisher).publishEvent(any(SecurityConfigurationServiceImpl.SecurityConfigurationChangeEvent.class));
+        verify(eventPublisher).publishEvent(any(SecurityConfigurationChangeEvent.class));
     }
 
     @Test
@@ -110,7 +110,7 @@ class SecurityConfigurationServiceImplTest {
         // 验证存储调用 - 注意：实际实现中需要验证正确的StoreManager方法调用
         
         // 验证事件发布
-        verify(eventPublisher).publishEvent(any(SecurityConfigurationServiceImpl.SecurityConfigurationChangeEvent.class));
+        verify(eventPublisher).publishEvent(any(SecurityConfigurationChangeEvent.class));
     }
 
     @Test
@@ -239,7 +239,7 @@ class SecurityConfigurationServiceImplTest {
         // assertEquals("stored-jwt-secret-key-at-least-32-chars", securityProperties.getJwt().getSecret());
 
         // 验证事件发布
-        verify(eventPublisher).publishEvent(any(SecurityConfigurationServiceImpl.SecurityConfigurationChangeEvent.class));
+        verify(eventPublisher).publishEvent(any(SecurityConfigurationChangeEvent.class));
     }
 
     @Test
@@ -297,7 +297,7 @@ class SecurityConfigurationServiceImplTest {
         // 验证存储调用 - 注意：实际实现中需要验证正确的StoreManager方法调用
         
         // 验证事件发布
-        verify(eventPublisher).publishEvent(any(SecurityConfigurationServiceImpl.SecurityConfigurationChangeEvent.class));
+        verify(eventPublisher).publishEvent(any(SecurityConfigurationChangeEvent.class));
     }
 
     @Test
