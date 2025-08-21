@@ -515,7 +515,7 @@ public class MonitoringController {
         public String collectionInterval;
         public Set<String> enabledCategories;
         public Map<String, String> customTags;
-        public MonitoringProperties.SamplingConfig sampling;
-        public MonitoringProperties.PerformanceConfig performance;
+        public MonitoringProperties.Sampling sampling;
+        public MonitoringProperties.Performance performance;
     }
 }

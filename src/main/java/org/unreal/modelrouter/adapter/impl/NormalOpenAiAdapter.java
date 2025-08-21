@@ -216,7 +216,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
             return builder.build();
         } catch (Exception e) {
             logAdapterTransformError(getAdapterType(), e);
-            return sstRequest;
+            return sttRequest;
         }
     }
 

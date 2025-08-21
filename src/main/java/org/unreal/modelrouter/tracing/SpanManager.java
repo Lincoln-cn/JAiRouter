@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -249,7 +250,7 @@ public class SpanManager {
             eventAttributes.put("event.type", "business");
             
             // 转换属性并添加事件
-            io.opentelemetry.api.common.Attributes.Builder builder = 
+            io.opentelemetry.api.common.AttributesBuilder builder = 
                     io.opentelemetry.api.common.Attributes.builder();
             
             eventAttributes.forEach((key, value) -> {

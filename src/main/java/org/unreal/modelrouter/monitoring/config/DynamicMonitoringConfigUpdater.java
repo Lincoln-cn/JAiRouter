@@ -146,9 +146,9 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 更新采样率配置
      */
-    public boolean updateSamplingConfig(MonitoringProperties.SamplingConfig samplingConfig) {
+    public boolean updateSamplingConfig(MonitoringProperties.Sampling samplingConfig) {
         try {
-            MonitoringProperties.SamplingConfig oldValue = monitoringProperties.getSampling();
+            MonitoringProperties.Sampling oldValue = monitoringProperties.getSampling();
             
             // 比较采样配置是否有变化
             boolean changed = false;

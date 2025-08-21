@@ -193,7 +193,7 @@ public class AsyncMetricsProcessor {
      * 获取采样率
      */
     private double getSamplingRate(MetricsType type) {
-        MonitoringProperties.SamplingConfig sampling = monitoringProperties.getSampling();
+        MonitoringProperties.Sampling sampling = monitoringProperties.getSampling();
         switch (type) {
             case REQUEST:
                 return sampling.getRequestMetrics();

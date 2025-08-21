@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 1.0.0
  */
 @Slf4j
-@Component
 public class LoadBalancerTracingWrapper implements LoadBalancer {
     
     private final LoadBalancer delegate;

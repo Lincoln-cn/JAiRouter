@@ -419,6 +419,11 @@ public class ExporterHealthChecker implements HealthIndicator {
         }
         
         @Override
+        public io.opentelemetry.sdk.common.InstrumentationLibraryInfo getInstrumentationLibraryInfo() {
+            return io.opentelemetry.sdk.common.InstrumentationLibraryInfo.empty();
+        }
+        
+        @Override
         public boolean hasEnded() {
             return true;
         }

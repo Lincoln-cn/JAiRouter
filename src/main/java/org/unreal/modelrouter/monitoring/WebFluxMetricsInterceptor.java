@@ -18,6 +18,8 @@ import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -32,11 +34,14 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
 
     private final MetricsCollector metricsCollector;
     private final MonitoringProperties monitoringProperties;
+    private final SlowQueryDetector slowQueryDetector;
 
     public WebFluxMetricsInterceptor(MetricsCollector metricsCollector, 
-                                   MonitoringProperties monitoringProperties) {
+                                   MonitoringProperties monitoringProperties,
+                                   SlowQueryDetector slowQueryDetector) {
         this.metricsCollector = metricsCollector;
         this.monitoringProperties = monitoringProperties;
+        this.slowQueryDetector = slowQueryDetector;
         logger.info("WebFluxMetricsInterceptor initialized");
     }
 
@@ -73,11 +78,11 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
         return chain.filter(decoratedExchange)
             .doOnSuccess(aVoid -> recordMetrics(startTime, method, serviceName, 
                                               decoratedResponse.getStatusCode().value(), 
-                                              requestSize.get(), responseSize.get()))
+                                              requestSize.get(), responseSize.get(), path))
             .doOnError(throwable -> recordMetrics(startTime, method, serviceName, 
-                                                500, requestSize.get(), responseSize.get()))
+                                                500, requestSize.get(), responseSize.get(), path))
             .doOnCancel(() -> recordMetrics(startTime, method, serviceName, 
-                                          499, requestSize.get(), responseSize.get()));
+                                          499, requestSize.get(), responseSize.get(), path));
     }
 
     /**
@@ -177,7 +182,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
      * 记录指标
      */
     private void recordMetrics(long startTime, String method, String serviceName, 
-                             int statusCode, long requestSize, long responseSize) {
+                             int statusCode, long requestSize, long responseSize, String path) {
         try {
             long duration = System.currentTimeMillis() - startTime;
             String status = String.valueOf(statusCode);
@@ -189,6 +194,13 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
             if (requestSize > 0 || responseSize > 0) {
                 metricsCollector.recordRequestSize(serviceName, requestSize, responseSize);
             }
+            
+            // 检测慢查询
+            Map<String, String> context = new HashMap<>();
+            context.put("method", method);
+            context.put("path", path);
+            context.put("status", status);
+            slowQueryDetector.detectSlowQuery(serviceName, duration, context);
             
             logger.debug("Recorded request metrics: service={}, method={}, duration={}ms, " +
                         "status={}, requestSize={}, responseSize={}", 
