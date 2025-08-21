@@ -105,7 +105,7 @@ public class ServerChecker {
             // 忽略追踪错误
         }
 
-        log.info("所有服务实例健康检查完成，健康服务: {}/{}, 健康实例: {}/{}, 耗时: {}ms", 
+        log.debug("所有服务实例健康检查完成，健康服务: {}/{}, 健康实例: {}/{}, 耗时: {}ms",
             healthyServices, totalServices, healthyInstances, totalInstances, batchDuration);
     }
 
@@ -138,7 +138,7 @@ public class ServerChecker {
                 tracingContext = tracingEnhancer.createHealthCheckContext(serviceType, instance);
                 tracingEnhancer.logHealthCheckStart(serviceType, instance, tracingContext);
             } catch (Exception e) {
-                log.debug("无法创建健康检查追踪上下文: {}", e.getMessage());
+                log.error("无法创建健康检查追踪上下文: {}", e.getMessage());
             }
             
             try {
@@ -219,7 +219,7 @@ public class ServerChecker {
             } finally {
                 // 完成追踪上下文
                 if (tracingContext != null) {
-                    tracingContext.close();
+                    tracingContext.clear();
                 }
             }
         }
@@ -288,6 +288,36 @@ public class ServerChecker {
             return "localai";
         } else {
             return "normal";
+        }
+    }
+    
+    /**
+     * 记录服务实例注册事件
+     * 
+     * @param serviceType 服务类型
+     * @param instance 服务实例
+     */
+    public void logServiceInstanceRegistered(String serviceType, ModelRouterProperties.ModelInstance instance) {
+        try {
+            HealthCheckTracingEnhancer tracingEnhancer = ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
+            tracingEnhancer.logServiceInstanceRegistered(serviceType, instance);
+        } catch (Exception e) {
+            log.debug("无法记录服务实例注册事件: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 记录服务实例发现事件
+     * 
+     * @param serviceType 服务类型
+     * @param instance 服务实例
+     */
+    public void logServiceInstanceDiscovered(String serviceType, ModelRouterProperties.ModelInstance instance) {
+        try {
+            HealthCheckTracingEnhancer tracingEnhancer = ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
+            tracingEnhancer.logServiceInstanceDiscovered(serviceType, instance);
+        } catch (Exception e) {
+            log.debug("无法记录服务实例发现事件: {}", e.getMessage());
         }
     }
 }
