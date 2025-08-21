@@ -11,13 +11,13 @@ import java.util.Set;
 
 /**
  * 监控配置验证器
- * 在应用启动时验证监控配置的正确性
+ * 在应用启动时验证监控配置的有效性
  */
 @Component
 public class MonitoringConfigurationValidator {
 
     private static final Logger logger = LoggerFactory.getLogger(MonitoringConfigurationValidator.class);
-
+    
     private final MonitoringProperties monitoringProperties;
 
     public MonitoringConfigurationValidator(MonitoringProperties monitoringProperties) {
@@ -91,6 +91,7 @@ public class MonitoringConfigurationValidator {
         validateSamplingRate("request-metrics", sampling.getRequestMetrics());
         validateSamplingRate("backend-metrics", sampling.getBackendMetrics());
         validateSamplingRate("infrastructure-metrics", sampling.getInfrastructureMetrics());
+        validateSamplingRate("trace-metrics", sampling.getTraceMetrics());
     }
 
     /**

@@ -1,15 +1,15 @@
 package org.unreal.modelrouter.monitoring.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-@Configuration
-@ConfigurationProperties(prefix = "monitoring.metrics")
+@Component
+@ConfigurationProperties(prefix = "monitoring")
 public class MonitoringProperties {
 
     private boolean enabled = true;
@@ -30,6 +30,9 @@ public class MonitoringProperties {
         private double requestMetrics = 1.0;
         private double backendMetrics = 1.0;
         private double infrastructureMetrics = 0.1;
+        private double traceMetrics = 1.0;
+        private double traceProcessingMetrics = 1.0;
+        private double traceAnalysisMetrics = 1.0;
 
         // Getters and setters
         public double getRequestMetrics() {
@@ -54,6 +57,30 @@ public class MonitoringProperties {
 
         public void setInfrastructureMetrics(double infrastructureMetrics) {
             this.infrastructureMetrics = infrastructureMetrics;
+        }
+
+        public double getTraceMetrics() {
+            return traceMetrics;
+        }
+
+        public void setTraceMetrics(double traceMetrics) {
+            this.traceMetrics = traceMetrics;
+        }
+        
+        public double getTraceProcessingMetrics() {
+            return traceProcessingMetrics;
+        }
+
+        public void setTraceProcessingMetrics(double traceProcessingMetrics) {
+            this.traceProcessingMetrics = traceProcessingMetrics;
+        }
+
+        public double getTraceAnalysisMetrics() {
+            return traceAnalysisMetrics;
+        }
+
+        public void setTraceAnalysisMetrics(double traceAnalysisMetrics) {
+            this.traceAnalysisMetrics = traceAnalysisMetrics;
         }
     }
 

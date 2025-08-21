@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.security.config;
 
+import org.unreal.modelrouter.monitoring.config.MonitorConfigurationChangeEvent;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;
@@ -70,40 +71,5 @@ public interface SecurityConfigurationService {
      * @param limit 限制数量
      * @return 配置变更历史
      */
-    Mono<List<ConfigurationChangeEvent>> getConfigurationHistory(int limit);
-    
-    /**
-     * 配置变更事件
-     */
-    class ConfigurationChangeEvent {
-        private String changeId;
-        private String changeType;
-        private String userId;
-        private java.time.LocalDateTime timestamp;
-        private String description;
-        private Object oldValue;
-        private Object newValue;
-        
-        // getters and setters
-        public String getChangeId() { return changeId; }
-        public void setChangeId(String changeId) { this.changeId = changeId; }
-        
-        public String getChangeType() { return changeType; }
-        public void setChangeType(String changeType) { this.changeType = changeType; }
-        
-        public String getUserId() { return userId; }
-        public void setUserId(String userId) { this.userId = userId; }
-        
-        public java.time.LocalDateTime getTimestamp() { return timestamp; }
-        public void setTimestamp(java.time.LocalDateTime timestamp) { this.timestamp = timestamp; }
-        
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-        
-        public Object getOldValue() { return oldValue; }
-        public void setOldValue(Object oldValue) { this.oldValue = oldValue; }
-        
-        public Object getNewValue() { return newValue; }
-        public void setNewValue(Object newValue) { this.newValue = newValue; }
-    }
+    Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(int limit);
 }
