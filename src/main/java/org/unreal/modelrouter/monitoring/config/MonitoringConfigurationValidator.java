@@ -82,7 +82,7 @@ public class MonitoringConfigurationValidator {
      * 验证采样配置
      */
     private void validateSamplingConfiguration() {
-        MonitoringProperties.SamplingConfig sampling = monitoringProperties.getSampling();
+        MonitoringProperties.Sampling sampling = monitoringProperties.getSampling();
         if (sampling == null) {
             logger.warn("采样配置为空，将使用默认值");
             return;
@@ -108,7 +108,7 @@ public class MonitoringConfigurationValidator {
      * 验证性能配置
      */
     private void validatePerformanceConfiguration() {
-        MonitoringProperties.PerformanceConfig performance = monitoringProperties.getPerformance();
+        MonitoringProperties.Performance performance = monitoringProperties.getPerformance();
         if (performance == null) {
             logger.warn("性能配置为空，将使用默认值");
             return;

@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.tracing.exporter;
 
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
+// Jaeger exporter 已移除，现在使用 OTLP 协议连接 Jaeger
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
@@ -50,7 +50,7 @@ public class SpanExporterFactory {
         try {
             switch (exporterType) {
                 case "jaeger":
-                    return createJaegerExporter(config.getExporter().getJaeger());
+                    return createJaegerViaOtlpExporter(config.getExporter().getJaeger());
                 case "zipkin":
                     return createZipkinExporter(config.getExporter().getZipkin());
                 case "otlp":
@@ -72,14 +72,20 @@ public class SpanExporterFactory {
     }
     
     /**
-     * 创建Jaeger导出器
+     * 通过OTLP协议创建Jaeger导出器
      */
-    public SpanExporter createJaegerExporter(TracingConfiguration.ExporterConfig.JaegerConfig config) {
-        log.info("创建Jaeger导出器，端点: {}", config.getEndpoint());
+    public SpanExporter createJaegerViaOtlpExporter(TracingConfiguration.ExporterConfig.JaegerConfig config) {
+        log.info("通过OTLP协议创建Jaeger导出器，端点: {}", config.getEndpoint());
         
-        JaegerGrpcSpanExporter.Builder builder = JaegerGrpcSpanExporter.builder()
-                .setEndpoint(config.getEndpoint())
-                .setTimeout(config.getTimeout());
+        // 将 Jaeger 端点转换为 OTLP 端点
+        String otlpEndpoint = convertJaegerToOtlpEndpoint(config.getEndpoint());
+        
+        var builder = OtlpGrpcSpanExporter.builder()
+                .setEndpoint(otlpEndpoint);
+        
+        if (config.getTimeout() != null) {
+            builder.setTimeout(config.getTimeout());
+        }
         
         // 解析并添加头部
         config.getHeaders().forEach((key, value) -> {
@@ -90,7 +96,27 @@ public class SpanExporterFactory {
             }
         });
         
+        log.info("Jaeger端点转换: {} -> {}", config.getEndpoint(), otlpEndpoint);
         return builder.build();
+    }
+    
+    /**
+     * 将 Jaeger 端点转换为 OTLP 端点
+     */
+    private String convertJaegerToOtlpEndpoint(String jaegerEndpoint) {
+        if (jaegerEndpoint == null || jaegerEndpoint.isEmpty()) {
+            return "http://localhost:4317";
+        }
+        
+        if (jaegerEndpoint.contains("4317") || jaegerEndpoint.contains("4318")) {
+            return jaegerEndpoint;
+        }
+        
+        if (jaegerEndpoint.contains("14268")) {
+            return jaegerEndpoint.replace("14268/api/traces", "4317");
+        }
+        
+        return jaegerEndpoint.replaceAll(":\\d+.*", ":4317");
     }
     
     /**
@@ -110,10 +136,16 @@ public class SpanExporterFactory {
     public SpanExporter createOtlpExporter(TracingConfiguration.ExporterConfig.OtlpConfig config) {
         log.info("创建OTLP导出器，端点: {}", config.getEndpoint());
         
-        OtlpGrpcSpanExporter.Builder builder = OtlpGrpcSpanExporter.builder()
-                .setEndpoint(config.getEndpoint())
-                .setTimeout(config.getTimeout())
-                .setCompression(config.getCompression());
+        var builder = OtlpGrpcSpanExporter.builder()
+                .setEndpoint(config.getEndpoint());
+        
+        if (config.getTimeout() != null) {
+            builder.setTimeout(config.getTimeout());
+        }
+        
+        if (config.getCompression() != null) {
+            builder.setCompression(config.getCompression());
+        }
         
         // 解析并添加头部
         config.getHeaders().forEach((key, value) -> {

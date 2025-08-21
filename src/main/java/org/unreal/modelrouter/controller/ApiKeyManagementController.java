@@ -5,8 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.dto.ApiKeyCreationResponse;
@@ -40,15 +38,14 @@ public class ApiKeyManagementController {
     @GetMapping
     @Operation(summary = "获取所有API密钥", description = "获取系统中所有API密钥的信息（不包含实际的密钥值）")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<List<ApiKeyInfo>>>> getAllApiKeys() {
+    public Mono<RouterResponse<List<ApiKeyInfo>>> getAllApiKeys() {
         return apiKeyService.getAllApiKeys()
                 .map(apiKeys -> {
                     // 清除密钥值以确保安全
                     apiKeys.forEach(key -> key.setKeyValue(null));
-                    return ResponseEntity.ok(RouterResponse.success(apiKeys, "获取API密钥列表成功"));
+                    return RouterResponse.success(apiKeys, "获取API密钥列表成功");
                 })
-                .onErrorReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(RouterResponse.error("获取API密钥列表失败", "INTERNAL_ERROR")));
+                .onErrorReturn(RouterResponse.error("获取API密钥列表失败", "INTERNAL_ERROR"));
     }
 
     /**
@@ -57,16 +54,15 @@ public class ApiKeyManagementController {
     @GetMapping("/{keyId}")
     @Operation(summary = "获取指定API密钥信息", description = "根据API密钥ID获取详细信息（不包含实际的密钥值）")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<ApiKeyInfo>>> getApiKeyById(
+    public Mono<RouterResponse<ApiKeyInfo>> getApiKeyById(
             @Parameter(description = "API密钥ID") @PathVariable String keyId) {
         return apiKeyService.getApiKeyById(keyId)
                 .map(apiKey -> {
                     // 清除密钥值以确保安全
                     apiKey.setKeyValue(null);
-                    return ResponseEntity.ok(RouterResponse.success(apiKey, "获取API密钥信息成功"));
+                    return RouterResponse.success(apiKey, "获取API密钥信息成功");
                 })
-                .onErrorReturn(ResponseEntity.notFound()
-                        .body(RouterResponse.error("API密钥不存在", "NOT_FOUND")));
+                .onErrorReturn(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
     }
 
     /**
@@ -75,7 +71,7 @@ public class ApiKeyManagementController {
     @PostMapping
     @Operation(summary = "创建新的API密钥", description = "创建一个新的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<ApiKeyCreationResponse>>> createApiKey(
+    public Mono<RouterResponse<ApiKeyCreationResponse>> createApiKey(
             @Parameter(description = "API密钥信息") @RequestBody CreateApiKeyRequest request) {
         
         // 生成安全的API密钥
@@ -99,11 +95,9 @@ public class ApiKeyManagementController {
                     response.setKeyValue(keyValue); // 只在创建时返回密钥值
                     response.setDescription(createdKey.getDescription());
                     response.setCreatedAt(createdKey.getCreatedAt());
-                    return ResponseEntity.status(HttpStatus.CREATED)
-                            .body(RouterResponse.success(response, "创建API密钥成功"));
+                    return RouterResponse.success(response, "创建API密钥成功");
                 })
-                .onErrorReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(RouterResponse.error("创建API密钥失败", "INTERNAL_ERROR")));
+                .onErrorReturn(RouterResponse.error("创建API密钥失败", "INTERNAL_ERROR"));
     }
 
     /**
@@ -112,7 +106,7 @@ public class ApiKeyManagementController {
     @PutMapping("/{keyId}")
     @Operation(summary = "更新API密钥", description = "更新指定API密钥的信息")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<ApiKeyInfo>>> updateApiKey(
+    public Mono<RouterResponse<ApiKeyInfo>> updateApiKey(
             @Parameter(description = "API密钥ID") @PathVariable String keyId,
             @Parameter(description = "更新的API密钥信息") @RequestBody UpdateApiKeyRequest request) {
         
@@ -127,10 +121,9 @@ public class ApiKeyManagementController {
                 .map(updatedKey -> {
                     // 清除密钥值以确保安全
                     updatedKey.setKeyValue(null);
-                    return ResponseEntity.ok(RouterResponse.success(updatedKey, "更新API密钥成功"));
+                    return RouterResponse.success(updatedKey, "更新API密钥成功");
                 })
-                .onErrorReturn(ResponseEntity.notFound()
-                        .body(RouterResponse.error("API密钥不存在", "NOT_FOUND")));
+                .onErrorReturn(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
     }
 
     /**
@@ -139,12 +132,11 @@ public class ApiKeyManagementController {
     @DeleteMapping("/{keyId}")
     @Operation(summary = "删除API密钥", description = "删除指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<Void>>> deleteApiKey(
+    public Mono<RouterResponse<Void>> deleteApiKey(
             @Parameter(description = "API密钥ID") @PathVariable String keyId) {
         return apiKeyService.deleteApiKey(keyId)
-                .then(Mono.just(ResponseEntity.ok(RouterResponse.success("删除API密钥成功"))))
-                .onErrorReturn(ResponseEntity.notFound()
-                        .body(RouterResponse.error("API密钥不存在", "NOT_FOUND")));
+                .then(Mono.just(RouterResponse.success("删除API密钥成功")))
+                .onErrorReturn(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
     }
 
     /**
@@ -153,7 +145,7 @@ public class ApiKeyManagementController {
     @PatchMapping("/{keyId}/disable")
     @Operation(summary = "禁用API密钥", description = "禁用指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<ApiKeyInfo>>> disableApiKey(
+    public Mono<RouterResponse<ApiKeyInfo>> disableApiKey(
             @Parameter(description = "API密钥ID") @PathVariable String keyId) {
         return apiKeyService.getApiKeyById(keyId)
                 .flatMap(apiKey -> {
@@ -162,10 +154,9 @@ public class ApiKeyManagementController {
                 })
                 .map(updatedKey -> {
                     updatedKey.setKeyValue(null);
-                    return ResponseEntity.ok(RouterResponse.success(updatedKey, "禁用API密钥成功"));
+                    return RouterResponse.success(updatedKey, "禁用API密钥成功");
                 })
-                .onErrorReturn(ResponseEntity.notFound()
-                        .body(RouterResponse.error("API密钥不存在", "NOT_FOUND")));
+                .onErrorReturn(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
     }
 
     /**
@@ -174,7 +165,7 @@ public class ApiKeyManagementController {
     @PatchMapping("/{keyId}/enable")
     @Operation(summary = "启用API密钥", description = "启用指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<ApiKeyInfo>>> enableApiKey(
+    public Mono<RouterResponse<ApiKeyInfo>> enableApiKey(
             @Parameter(description = "API密钥ID") @PathVariable String keyId) {
         return apiKeyService.getApiKeyById(keyId)
                 .flatMap(apiKey -> {
@@ -183,10 +174,9 @@ public class ApiKeyManagementController {
                 })
                 .map(updatedKey -> {
                     updatedKey.setKeyValue(null);
-                    return ResponseEntity.ok(RouterResponse.success(updatedKey, "启用API密钥成功"));
+                    return RouterResponse.success(updatedKey, "启用API密钥成功");
                 })
-                .onErrorReturn(ResponseEntity.notFound()
-                        .body(RouterResponse.error("API密钥不存在", "NOT_FOUND")));
+                .onErrorReturn(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
     }
 
 }

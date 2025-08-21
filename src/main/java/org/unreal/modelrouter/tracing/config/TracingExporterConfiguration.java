@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.tracing.config;
 
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
+// Jaeger exporter 已移除，现在使用 OTLP 协议连接 Jaeger
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
@@ -47,7 +47,7 @@ public class TracingExporterConfiguration {
         
         switch (exporterType) {
             case "jaeger":
-                return createJaegerExporter();
+                return createJaegerViaOtlpExporter();
             case "zipkin":
                 return createZipkinExporter();
             case "otlp":
@@ -63,15 +63,18 @@ public class TracingExporterConfiguration {
     }
     
     /**
-     * 创建Jaeger导出器
+     * 通过OTLP协议创建Jaeger导出器
      */
-    private SpanExporter createJaegerExporter() {
+    private SpanExporter createJaegerViaOtlpExporter() {
         TracingConfiguration.ExporterConfig.JaegerConfig jaegerConfig = 
                 tracingConfig.getExporter().getJaeger();
         
         try {
-            JaegerGrpcSpanExporter.Builder builder = JaegerGrpcSpanExporter.builder()
-                    .setEndpoint(jaegerConfig.getEndpoint())
+            // 将 Jaeger 端点转换为 OTLP 端点
+            String otlpEndpoint = convertJaegerToOtlpEndpoint(jaegerConfig.getEndpoint());
+            
+            var builder = OtlpGrpcSpanExporter.builder()
+                    .setEndpoint(otlpEndpoint)
                     .setTimeout(jaegerConfig.getTimeout());
             
             // 添加自定义头部
@@ -83,12 +86,31 @@ public class TracingExporterConfiguration {
             });
             
             SpanExporter exporter = builder.build();
-            log.info("成功创建Jaeger导出器，端点: {}", jaegerConfig.getEndpoint());
+            log.info("成功通过OTLP协议创建Jaeger导出器，端点: {} -> {}", jaegerConfig.getEndpoint(), otlpEndpoint);
             return exporter;
         } catch (Exception e) {
             log.error("创建Jaeger导出器失败，回退到日志导出器", e);
             return createLoggingExporter();
         }
+    }
+    
+    /**
+     * 将 Jaeger 端点转换为 OTLP 端点
+     */
+    private String convertJaegerToOtlpEndpoint(String jaegerEndpoint) {
+        if (jaegerEndpoint == null || jaegerEndpoint.isEmpty()) {
+            return "http://localhost:4317";
+        }
+        
+        if (jaegerEndpoint.contains("4317") || jaegerEndpoint.contains("4318")) {
+            return jaegerEndpoint;
+        }
+        
+        if (jaegerEndpoint.contains("14268")) {
+            return jaegerEndpoint.replace("14268/api/traces", "4317");
+        }
+        
+        return jaegerEndpoint.replaceAll(":\\d+.*", ":4317");
     }
     
     /**
@@ -119,7 +141,7 @@ public class TracingExporterConfiguration {
                 tracingConfig.getExporter().getOtlp();
         
         try {
-            OtlpGrpcSpanExporter.Builder builder = OtlpGrpcSpanExporter.builder()
+            var builder = OtlpGrpcSpanExporter.builder()
                     .setEndpoint(otlpConfig.getEndpoint())
                     .setTimeout(otlpConfig.getTimeout())
                     .setCompression(otlpConfig.getCompression());
@@ -157,7 +179,7 @@ public class TracingExporterConfiguration {
         
         // 这里可以根据需要组合多个导出器
         // 例如：同时导出到Jaeger和日志
-        SpanExporter jaegerExporter = createJaegerExporter();
+        SpanExporter jaegerExporter = createJaegerViaOtlpExporter();
         SpanExporter loggingExporter = createLoggingExporter();
         
         return SpanExporter.composite(jaegerExporter, loggingExporter);
@@ -174,15 +196,11 @@ public class TracingExporterConfiguration {
         // 开发环境同时使用日志导出器和Jaeger导出器
         SpanExporter loggingExporter = LoggingSpanExporter.create();
         
-        // 如果配置了Jaeger端点，也创建Jaeger导出器
+        // 如果配置了Jaeger端点，也创建Jaeger导出器（通过OTLP）
         String jaegerEndpoint = tracingConfig.getExporter().getJaeger().getEndpoint();
         if (jaegerEndpoint != null && !jaegerEndpoint.isEmpty()) {
             try {
-                SpanExporter jaegerExporter = JaegerGrpcSpanExporter.builder()
-                        .setEndpoint(jaegerEndpoint)
-                        .setTimeout(tracingConfig.getExporter().getJaeger().getTimeout())
-                        .build();
-                
+                SpanExporter jaegerExporter = createJaegerViaOtlpExporter();
                 return SpanExporter.composite(loggingExporter, jaegerExporter);
             } catch (Exception e) {
                 log.warn("开发环境创建Jaeger导出器失败，仅使用日志导出器", e);
@@ -205,7 +223,7 @@ public class TracingExporterConfiguration {
         
         switch (exporterType) {
             case "jaeger":
-                return createJaegerExporter();
+                return createJaegerViaOtlpExporter();
             case "zipkin":
                 return createZipkinExporter();
             case "otlp":

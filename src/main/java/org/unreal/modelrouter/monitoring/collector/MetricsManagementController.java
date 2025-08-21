@@ -134,9 +134,9 @@ public class MetricsManagementController {
      * 获取当前采样率配置
      */
     @GetMapping("/sampling")
-    public ResponseEntity<MonitoringProperties.SamplingConfig> getSamplingConfig() {
+    public ResponseEntity<MonitoringProperties.Sampling> getSamplingConfig() {
         try {
-            MonitoringProperties.SamplingConfig config = monitoringProperties.getSampling();
+            MonitoringProperties.Sampling config = monitoringProperties.getSampling();
             return ResponseEntity.ok(config);
         } catch (Exception e) {
             logger.error("Error getting sampling config", e);
@@ -150,7 +150,7 @@ public class MetricsManagementController {
     @PostMapping("/sampling")
     public ResponseEntity<String> updateSamplingConfig(@RequestBody SamplingUpdateRequest request) {
         try {
-            MonitoringProperties.SamplingConfig sampling = monitoringProperties.getSampling();
+            MonitoringProperties.Sampling sampling = monitoringProperties.getSampling();
             
             if (request.getRequestMetrics() != null) {
                 sampling.setRequestMetrics(request.getRequestMetrics());
@@ -176,9 +176,9 @@ public class MetricsManagementController {
      * 获取性能配置
      */
     @GetMapping("/performance-config")
-    public ResponseEntity<MonitoringProperties.PerformanceConfig> getPerformanceConfig() {
+    public ResponseEntity<MonitoringProperties.Performance> getPerformanceConfig() {
         try {
-            MonitoringProperties.PerformanceConfig config = monitoringProperties.getPerformance();
+            MonitoringProperties.Performance config = monitoringProperties.getPerformance();
             return ResponseEntity.ok(config);
         } catch (Exception e) {
             logger.error("Error getting performance config", e);
@@ -192,7 +192,7 @@ public class MetricsManagementController {
     @PostMapping("/performance-config")
     public ResponseEntity<String> updatePerformanceConfig(@RequestBody PerformanceUpdateRequest request) {
         try {
-            MonitoringProperties.PerformanceConfig performance = monitoringProperties.getPerformance();
+            MonitoringProperties.Performance performance = monitoringProperties.getPerformance();
             
             if (request.getAsyncProcessing() != null) {
                 performance.setAsyncProcessing(request.getAsyncProcessing());
