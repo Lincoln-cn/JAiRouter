@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 99
-- 近7天变更: 128
+- 近7天变更: 129
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-08-20 03:08:21
+- 最后扫描: 2025-08-21 03:07:20
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.2 → 1.0.3) - 2025-08-21
 - **MODIFIED**: docs/zh/monitoring/testing.md (1.0.0 → 1.0.1) - 2025-08-20
 - **MODIFIED**: docs/zh/development/performance-optimization.md (1.0.0 → 1.0.1) - 2025-08-20
 - **MODIFIED**: docs/zh/development/deployment-testing.md (1.0.0 → 1.0.1) - 2025-08-20
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/en/development/deployment-testing.md (1.0.0 → 1.0.1) - 2025-08-20
 - **CREATED**: docs/en/api-reference/monitoring-api.md ( → 1.0.0) - 2025-08-20
 - **MODIFIED**: docs-version-report.md (1.0.1 → 1.0.2) - 2025-08-20
-- **CREATED**: docs/zh/troubleshooting/performance.md ( → 1.0.0) - 2025-08-19
 
 ## 依赖关系分析
 
@@ -353,6 +353,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.3 - 2025-08-21 (c6e6d1eb)
 - **docs/zh/monitoring/testing.md**: v1.0.1 - 2025-08-20 (807aa5a0)
 - **docs/zh/development/performance-optimization.md**: v1.0.1 - 2025-08-20 (e3559d2d)
 - **docs/zh/development/deployment-testing.md**: v1.0.1 - 2025-08-20 (e3559d2d)
@@ -361,7 +362,6 @@
 - **docs/en/development/performance-optimization.md**: v1.0.1 - 2025-08-20 (5d0fe1f7)
 - **docs/en/development/deployment-testing.md**: v1.0.1 - 2025-08-20 (5d0fe1f7)
 - **docs/en/api-reference/monitoring-api.md**: v1.0.0 - 2025-08-20 (5d0fe1f7)
-- **docs-version-report.md**: v1.0.2 - 2025-08-20 (4e4c9868)
 - **docs/zh/troubleshooting/performance.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/troubleshooting/index.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.0 - 2025-08-19 (c1aa5b0f)
