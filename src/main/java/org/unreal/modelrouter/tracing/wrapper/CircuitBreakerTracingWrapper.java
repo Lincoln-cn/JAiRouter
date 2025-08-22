@@ -125,52 +125,47 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     public void onSuccess() {
         TracingContext context = TracingContextHolder.getCurrentContext();
         Span span = null;
+        Instant startTime = Instant.now();
         
         try {
-            // 创建成功调用追踪Span
+            // 创建熔断器追踪Span
             if (context != null && context.isActive()) {
-                span = context.createChildSpan("circuit-breaker-success", SpanKind.INTERNAL, context.getCurrentSpan());
+                span = context.createChildSpan("circuit-breaker", SpanKind.INTERNAL, context.getCurrentSpan());
                 context.setCurrentSpan(span);
                 
+                // 设置基础属性
                 span.setAttribute("cb.instance_id", instanceId);
+                span.setAttribute("cb.current_state", getState().name());
                 span.setAttribute("cb.operation", "on_success");
-                span.setAttribute("cb.state_before", getState().name());
             }
             
-            State stateBefore = getState();
+            // 记录成功开始
+            recordSuccessStart(context);
             
-            // 执行成功处理
+            // 执行成功回调
             delegate.onSuccess();
             
-            State stateAfter = getState();
+            // 计算操作时间
+            long operationTimeMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
             
             // 更新统计信息
             successCalls.incrementAndGet();
             lastSuccessTime = Instant.now();
             
-            // 记录成功调用
-            recordSuccessCall(context, span, stateBefore, stateAfter);
-            
-            // 检查状态变化
-            if (stateBefore != stateAfter) {
-                recordStateChange(context, stateBefore, stateAfter);
-                previousState = stateAfter;
-                lastStateChangeTime = Instant.now();
-                stateChanges.incrementAndGet();
-            }
+            // 记录成功完成
+            recordSuccessComplete(context, span, operationTimeMs);
             
         } catch (Exception e) {
-            recordCircuitBreakerError(context, span, 0, e);
-            
-            if (context != null && span != null) {
-                context.finishSpan(span, e);
-            }
+            // 记录错误
+            long operationTimeMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
+            recordCircuitBreakerError(context, span, operationTimeMs, e);
             
             throw e;
         } finally {
             // 完成Span
-            if (context != null && span != null) {
+            if (span != null) {
                 context.finishSpan(span);
+                context.setCurrentSpan(span);
             }
         }
     }
@@ -179,52 +174,47 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     public void onFailure() {
         TracingContext context = TracingContextHolder.getCurrentContext();
         Span span = null;
+        Instant startTime = Instant.now();
         
         try {
-            // 创建失败调用追踪Span
+            // 创建熔断器追踪Span
             if (context != null && context.isActive()) {
-                span = context.createChildSpan("circuit-breaker-failure", SpanKind.INTERNAL, context.getCurrentSpan());
+                span = context.createChildSpan("circuit-breaker", SpanKind.INTERNAL, context.getCurrentSpan());
                 context.setCurrentSpan(span);
                 
+                // 设置基础属性
                 span.setAttribute("cb.instance_id", instanceId);
+                span.setAttribute("cb.current_state", getState().name());
                 span.setAttribute("cb.operation", "on_failure");
-                span.setAttribute("cb.state_before", getState().name());
             }
             
-            State stateBefore = getState();
+            // 记录失败开始
+            recordFailureStart(context);
             
-            // 执行失败处理
+            // 执行失败回调
             delegate.onFailure();
             
-            State stateAfter = getState();
+            // 计算操作时间
+            long operationTimeMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
             
             // 更新统计信息
             failureCalls.incrementAndGet();
             lastFailureTime = Instant.now();
             
-            // 记录失败调用
-            recordFailureCall(context, span, stateBefore, stateAfter);
-            
-            // 检查状态变化
-            if (stateBefore != stateAfter) {
-                recordStateChange(context, stateBefore, stateAfter);
-                previousState = stateAfter;
-                lastStateChangeTime = Instant.now();
-                stateChanges.incrementAndGet();
-            }
+            // 记录失败完成
+            recordFailureComplete(context, span, operationTimeMs);
             
         } catch (Exception e) {
-            recordCircuitBreakerError(context, span, 0, e);
-            
-            if (context != null && span != null) {
-                context.finishSpan(span, e);
-            }
+            // 记录错误
+            long operationTimeMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
+            recordCircuitBreakerError(context, span, operationTimeMs, e);
             
             throw e;
         } finally {
             // 完成Span
-            if (context != null && span != null) {
+            if (span != null) {
                 context.finishSpan(span);
+                context.setCurrentSpan(span);
             }
         }
     }
@@ -335,75 +325,81 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     }
     
     /**
-     * 记录成功调用
+     * 记录成功开始事件
      */
-    private void recordSuccessCall(TracingContext context, Span span, State stateBefore, State stateAfter) {
-        if (span != null) {
-            span.setAttribute("cb.call_result", "success");
-            span.setAttribute("cb.state_after", stateAfter.name());
-            span.setAttribute("cb.state_changed", stateBefore != stateAfter);
-        }
-        
-        // 记录成功事件
+    private void recordSuccessStart(TracingContext context) {
         if (context != null && context.isActive()) {
             Map<String, Object> eventAttributes = new HashMap<>();
-            eventAttributes.put("call_result", "success");
-            eventAttributes.put("state_before", stateBefore.name());
-            eventAttributes.put("state_after", stateAfter.name());
-            eventAttributes.put("state_changed", stateBefore != stateAfter);
-            context.addEvent("cb.call_success", eventAttributes);
+            eventAttributes.put("instance_id", instanceId);
+            eventAttributes.put("current_state", getState().name());
+            context.addEvent("cb.success_start", eventAttributes);
         }
-        
-        // 记录结构化日志
-        Map<String, Object> logData = new HashMap<>();
-        logData.put("event", "circuit_breaker_call_success");
-        logData.put("instance_id", instanceId);
-        logData.put("state_before", stateBefore.name());
-        logData.put("state_after", stateAfter.name());
-        logData.put("state_changed", stateBefore != stateAfter);
-        logData.put("success_calls", successCalls.get());
-        logData.put("total_calls", successCalls.get() + failureCalls.get());
-        logData.put("success_rate", calculateSuccessRate());
-        
-        structuredLogger.logBusinessEvent("circuit_breaker_call_success", logData, context);
-        
-        log.debug("熔断器记录成功调用: {} (状态: {} -> {})", instanceId, stateBefore, stateAfter);
     }
     
     /**
-     * 记录失败调用
+     * 记录成功完成事件
      */
-    private void recordFailureCall(TracingContext context, Span span, State stateBefore, State stateAfter) {
+    private void recordSuccessComplete(TracingContext context, Span span, long operationTimeMs) {
         if (span != null) {
-            span.setAttribute("cb.call_result", "failure");
-            span.setAttribute("cb.state_after", stateAfter.name());
-            span.setAttribute("cb.state_changed", stateBefore != stateAfter);
+            span.setAttribute("cb.operation_time_ms", operationTimeMs);
         }
         
-        // 记录失败事件
+        // 记录完成事件
         if (context != null && context.isActive()) {
             Map<String, Object> eventAttributes = new HashMap<>();
-            eventAttributes.put("call_result", "failure");
-            eventAttributes.put("state_before", stateBefore.name());
-            eventAttributes.put("state_after", stateAfter.name());
-            eventAttributes.put("state_changed", stateBefore != stateAfter);
-            context.addEvent("cb.call_failure", eventAttributes);
+            eventAttributes.put("operation_time_ms", operationTimeMs);
+            context.addEvent("cb.success_complete", eventAttributes);
         }
         
         // 记录结构化日志
         Map<String, Object> logData = new HashMap<>();
-        logData.put("event", "circuit_breaker_call_failure");
+        logData.put("event", "circuit_breaker_success");
         logData.put("instance_id", instanceId);
-        logData.put("state_before", stateBefore.name());
-        logData.put("state_after", stateAfter.name());
-        logData.put("state_changed", stateBefore != stateAfter);
-        logData.put("failure_calls", failureCalls.get());
-        logData.put("total_calls", successCalls.get() + failureCalls.get());
-        logData.put("failure_rate", calculateFailureRate());
+        logData.put("current_state", getState().name());
+        logData.put("operation_time_ms", operationTimeMs);
         
-        structuredLogger.logBusinessEvent("circuit_breaker_call_failure", logData, context);
+        structuredLogger.logBusinessEvent("circuit_breaker_success", logData, context);
         
-        log.warn("熔断器记录失败调用: {} (状态: {} -> {})", instanceId, stateBefore, stateAfter);
+        log.debug("熔断器成功调用: {} (状态: {}, 耗时: {}ms)", instanceId, getState(), operationTimeMs);
+    }
+    
+    /**
+     * 记录失败开始事件
+     */
+    private void recordFailureStart(TracingContext context) {
+        if (context != null && context.isActive()) {
+            Map<String, Object> eventAttributes = new HashMap<>();
+            eventAttributes.put("instance_id", instanceId);
+            eventAttributes.put("current_state", getState().name());
+            context.addEvent("cb.failure_start", eventAttributes);
+        }
+    }
+    
+    /**
+     * 记录失败完成事件
+     */
+    private void recordFailureComplete(TracingContext context, Span span, long operationTimeMs) {
+        if (span != null) {
+            span.setAttribute("cb.operation_time_ms", operationTimeMs);
+        }
+        
+        // 记录完成事件
+        if (context != null && context.isActive()) {
+            Map<String, Object> eventAttributes = new HashMap<>();
+            eventAttributes.put("operation_time_ms", operationTimeMs);
+            context.addEvent("cb.failure_complete", eventAttributes);
+        }
+        
+        // 记录结构化日志
+        Map<String, Object> logData = new HashMap<>();
+        logData.put("event", "circuit_breaker_failure");
+        logData.put("instance_id", instanceId);
+        logData.put("current_state", getState().name());
+        logData.put("operation_time_ms", operationTimeMs);
+        
+        structuredLogger.logBusinessEvent("circuit_breaker_failure", logData, context);
+        
+        log.debug("熔断器失败调用: {} (状态: {}, 耗时: {}ms)", instanceId, getState(), operationTimeMs);
     }
     
     /**

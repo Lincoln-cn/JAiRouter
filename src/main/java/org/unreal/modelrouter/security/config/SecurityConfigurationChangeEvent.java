@@ -46,4 +46,6 @@ public class SecurityConfigurationChangeEvent {
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
+
+
 }

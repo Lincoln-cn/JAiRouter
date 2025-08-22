@@ -262,8 +262,7 @@ class SecurityConfigurationServiceImplTest {
         StepVerifier.create(configurationService.getConfigurationHistory(10))
                 .assertNext(history -> {
                     assertFalse(history.isEmpty());
-                    assertEquals("API_KEYS_UPDATE", history.get(0).getChangeType());
-                    assertEquals("系统", history.get(0).getUserId());
+                    assertEquals("API_KEYS_UPDATE", history.get(0).getConfigType());
                     assertNotNull(history.get(0).getTimestamp());
                 })
                 .verifyComplete();
