@@ -187,6 +187,17 @@ groups:
           summary: "负载不均衡"
           description: "实例间负载差异超过 50%"
 
+      # 慢查询检测
+      - alert: SlowQueriesDetected
+        expr: increase(jairouter_slow_queries_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "检测到慢查询"
+          description: "在过去5分钟内检测到 {{ $value }} 个慢查询，需要关注性能问题"
+
   - name: jairouter.business
     interval: 60s
     rules:
@@ -262,6 +273,28 @@ groups:
         annotations:
           summary: "模型提供商服务中断"
           description: "模型提供商 {{ $labels.provider }} 的所有实例都不可用"
+          
+      # 高频慢查询
+      - alert: HighSlowQueryRate
+        expr: rate(jairouter_slow_queries_total[5m]) > 1
+        for: 2m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "慢查询率过高"
+          description: "慢查询速率超过 {{ $value | humanize }} 个/秒，严重影响系统性能"
+          
+      # 数据库查询缓慢
+      - alert: DatabaseSlowQuery
+        expr: histogram_quantile(0.95, sum(rate(jairouter_database_query_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "数据库查询缓慢"
+          description: "数据库查询 P95 响应时间超过 2 秒"
 ```
 
 ## AlertManager 配置
@@ -321,6 +354,13 @@ inhibit_rules:
     target_match:
       severity: warning
     equal: ['service', 'alertname']
+  
+  # 严重错误率告警抑制慢查询告警（因为慢查询可能导致错误率升高）
+  - source_match:
+      alertname: HighErrorRate
+    target_match:
+      alertname: SlowQueriesDetected
+    equal: ['service']
 
 # 接收器配置
 receivers:
@@ -547,7 +587,7 @@ receivers:
 
 ### 静默规则
 
-```bash
+```shell
 # 使用 amtool 创建静默规则
 amtool silence add alertname="HighMemoryUsage" --duration="2h" --comment="内存优化维护"
 
@@ -588,7 +628,7 @@ inhibit_rules:
 
 ### 手动触发告警
 
-```bash
+```shell
 # 停止 JAiRouter 服务测试服务不可用告警
 docker stop jairouter
 
@@ -600,8 +640,7 @@ for i in {1..100}; do curl http://localhost:8080/invalid-endpoint; done
 ```
 
 ### 告警规则验证
-
-```bash
+```shell
 # 验证告警规则语法
 promtool check rules monitoring/prometheus/rules/jairouter-alerts.yml
 
@@ -614,7 +653,7 @@ curl http://localhost:9090/api/v1/alerts
 
 ### AlertManager 测试
 
-```bash
+```shell
 # 检查 AlertManager 配置
 amtool config show
 
@@ -650,6 +689,11 @@ graph TD
     K --> L[永久修复]
     L --> M[文档更新]
     M --> N[流程改进]
+    
+    K --> O[慢查询分析]
+    O --> P[查询优化]
+    P --> Q[索引优化]
+    Q --> J
 ```
 
 ### 告警处理检查清单
@@ -674,9 +718,16 @@ graph TD
 - [ ] 监控趋势变化
 - [ ] 记录处理结果
 
+#### 慢查询告警处理
+- [ ] 检查慢查询日志
+- [ ] 分析慢查询原因
+- [ ] 优化相关查询或操作
+- [ ] 考虑增加索引或缓存
+- [ ] 评估是否需要数据库调优
+
 ### 告警升级机制
 
-```yaml
+```yml
 # 告警升级配置示例
 route:
   routes:
@@ -706,7 +757,7 @@ route:
 ### 减少告警噪音
 
 #### 1. 合理设置阈值
-```yaml
+```yml
 # 避免过于敏感的阈值
 - alert: HighLatency
   expr: histogram_quantile(0.95, sum(rate(jairouter_request_duration_seconds_bucket[5m])) by (le)) > 2
@@ -714,7 +765,7 @@ route:
 ```
 
 #### 2. 使用告警分组
-```yaml
+```yml
 route:
   group_by: ['alertname', 'service', 'severity']
   group_wait: 30s
@@ -722,7 +773,7 @@ route:
 ```
 
 #### 3. 实施告警抑制
-```yaml
+```yml
 inhibit_rules:
   - source_match:
       alertname: JAiRouterDown
@@ -734,7 +785,7 @@ inhibit_rules:
 ### 告警质量监控
 
 #### 告警指标收集
-```yaml
+```yml
 # 收集告警相关指标
 - record: jairouter:alert_firing_count
   expr: sum(ALERTS{alertstate="firing"})
@@ -764,7 +815,7 @@ inhibit_rules:
 - **预测告警**: 可能导致问题的趋势
 
 #### 3. 告警命名规范
-```yaml
+```yml
 # 好的告警命名
 - alert: JAiRouterHighLatency
 - alert: JAiRouterBackendDown
@@ -800,7 +851,7 @@ inhibit_rules:
 
 #### 1. 告警规则不触发
 **检查步骤**:
-```bash
+```shell
 # 验证规则语法
 promtool check rules rules/jairouter-alerts.yml
 
@@ -813,7 +864,7 @@ curl "http://localhost:9090/api/v1/query?query=up{job=\"jairouter\"}"
 
 #### 2. 通知未发送
 **检查步骤**:
-```bash
+```shell
 # 检查 AlertManager 状态
 curl http://localhost:9093/api/v1/status
 
@@ -826,7 +877,7 @@ amtool config show
 
 #### 3. 告警风暴
 **处理方法**:
-```bash
+```shell
 # 创建临时静默
 amtool silence add alertname=".*" --duration="1h" --comment="告警风暴处理"
 

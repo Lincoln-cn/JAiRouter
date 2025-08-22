@@ -22,17 +22,15 @@ public class SlowQueryDetector {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
     private final MonitoringProperties monitoringProperties;
-    private final SlowQueryAlertService slowQueryAlertService;
-    
+
     // 存储慢查询统计信息
     private final Map<String, SlowQueryStats> slowQueryStats = new ConcurrentHashMap<>();
     
     // 慢查询计数器
     private final AtomicLong slowQueryCount = new AtomicLong(0);
     
-    public SlowQueryDetector(MonitoringProperties monitoringProperties, SlowQueryAlertService slowQueryAlertService) {
+    public SlowQueryDetector(MonitoringProperties monitoringProperties) {
         this.monitoringProperties = monitoringProperties;
-        this.slowQueryAlertService = slowQueryAlertService;
         logger.info("SlowQueryDetector initialized");
     }
     
@@ -58,10 +56,7 @@ public class SlowQueryDetector {
             // 更新统计信息
             updateSlowQueryStats(operationName, durationMillis);
             
-            // 发送告警
-            sendAlert(operationName, durationMillis, threshold, context);
-            
-            logger.debug("Slow query detected: {} took {} ms, threshold is {} ms, total slow queries: {}", 
+            logger.debug("Slow query detected: {} took {} ms, threshold is {} ms, total slow queries: {}",
                     operationName, durationMillis, threshold, count);
         }
     }
@@ -97,18 +92,7 @@ public class SlowQueryDetector {
                 .update(durationMillis);
     }
     
-    /**
-     * 发送慢查询告警
-     * @param operationName 操作名称
-     * @param durationMillis 操作耗时(毫秒)
-     * @param threshold 阈值(毫秒)
-     * @param context 操作上下文信息
-     */
-    private void sendAlert(String operationName, long durationMillis, long threshold, Map<String, String> context) {
-        // 使用告警服务发送告警
-        slowQueryAlertService.sendAlert(operationName, durationMillis, threshold, context);
-    }
-    
+
     /**
      * 获取慢查询统计信息
      * @param operationName 操作名称

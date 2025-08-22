@@ -91,6 +91,30 @@ groups:
           summary: "JAiRouter请求量异常低"
           description: "实例 {{ $labels.instance }} 在过去5分钟内的请求率为 {{ $value | humanize }} req/s，可能存在问题"
 
+      # 慢查询告警
+      - alert: JAiRouterSlowQueriesDetected
+        expr: |
+          increase(jairouter_slow_queries_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter检测到慢查询"
+          description: "在过去5分钟内检测到 {{ $value }} 个慢查询，需要关注性能问题"
+
+      # 高频慢查询告警
+      - alert: JAiRouterHighSlowQueryRate
+        expr: |
+          rate(jairouter_slow_queries_total[5m]) > 1
+        for: 2m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter慢查询率过高"
+          description: "慢查询速率超过 {{ $value | humanize }} 个/秒，严重影响系统性能"
+
   # JAiRouter后端服务告警
   - name: jairouter.backend
     interval: 30s
