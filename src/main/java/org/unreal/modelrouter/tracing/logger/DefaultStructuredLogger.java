@@ -39,6 +39,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     private final ObjectMapper objectMapper;
     private final SanitizationService sanitizationService;
     private final TracingConfiguration tracingConfiguration;
+    private final TracingMDCManager tracingMDCManager; // 添加TracingMDCManager依赖
     
     // 日志类型常量
     private static final String LOG_TYPE_REQUEST = "request";
@@ -473,10 +474,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
      */
     private void setMDC(TracingContext context) {
         if (context != null && tracingConfiguration.getLogging().isIncludeTraceId()) {
-            MDC.put("traceId", context.getTraceId());
-            if (tracingConfiguration.getLogging().isIncludeSpanId()) {
-                MDC.put("spanId", context.getSpanId());
-            }
+            tracingMDCManager.setMDC(context);
         }
     }
     
@@ -484,8 +482,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
      * 清理MDC上下文
      */
     private void clearMDC() {
-        MDC.remove("traceId");
-        MDC.remove("spanId");
+        tracingMDCManager.clearMDC();
     }
     
     /**
