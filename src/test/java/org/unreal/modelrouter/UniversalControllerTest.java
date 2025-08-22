@@ -56,7 +56,7 @@ class UniversalControllerTest {
         ChatDTO.Request request = new ChatDTO.Request(
                 "gpt-3.5-turbo",
                 List.of(new ChatDTO.Message("user", "Hello", null)),
-                null, null, null, null, null, null, null, null, null
+                false, null, null, null, null, null, null, null, null
         );
         
         ChatDTO.Response expectedResponse = new ChatDTO.Response(
@@ -104,7 +104,7 @@ class UniversalControllerTest {
         ChatDTO.Request request = new ChatDTO.Request(
                 "gpt-3.5-turbo",
                 List.of(new ChatDTO.Message("user", "Hello", null)),
-                null, null, null, null, null, null, null, null, null
+                false, null, null, null, null, null, null, null, null
         );
         
         ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
@@ -112,9 +112,10 @@ class UniversalControllerTest {
         when(serviceStateManager.isServiceHealthy("chat")).thenReturn(false);
 
         // Act & Assert
-        assertThrows(ResponseStatusException.class, () -> {
-            universalController.chatCompletions("Bearer token", request, httpRequest).block();
-        });
+        StepVerifier.create(universalController.chatCompletions("Bearer token", request, httpRequest))
+                .expectErrorMatches(throwable -> throwable instanceof ResponseStatusException 
+                        && ((ResponseStatusException) throwable).getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE)
+                .verify();
 
         verify(serviceStateManager).isServiceHealthy("chat");
         verifyNoInteractions(adapterRegistry);
@@ -125,7 +126,7 @@ class UniversalControllerTest {
         // Arrange
         EmbeddingDTO.Request request = new EmbeddingDTO.Request(
                 "text-embedding-ada-002",
-                List.of("Hello world"),
+                "Hello world",
                 null, null, null
         );
         
@@ -372,7 +373,7 @@ class UniversalControllerTest {
         ChatDTO.Request request = new ChatDTO.Request(
                 "gpt-3.5-turbo",
                 List.of(new ChatDTO.Message("user", "Hello", null)),
-                null, null, null, null, null, null, null, null, null
+                false, null, null, null, null, null, null, null, null
         );
         
         ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
@@ -383,12 +384,14 @@ class UniversalControllerTest {
                 .thenThrow(new UnsupportedOperationException("Chat not supported"));
 
         // Act & Assert
-        assertThrows(ResponseStatusException.class, () -> {
-            universalController.chatCompletions("Bearer token", request, httpRequest).block();
-        });
+        StepVerifier.create(universalController.chatCompletions("Bearer token", request, httpRequest))
+                .expectErrorMatches(throwable -> throwable instanceof ResponseStatusException 
+                        && ((ResponseStatusException) throwable).getStatusCode() == HttpStatus.NOT_IMPLEMENTED)
+                .verify();
 
         verify(serviceStateManager).isServiceHealthy("chat");
         verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.chat);
+        verify(mockAdapter).chat(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
@@ -397,7 +400,7 @@ class UniversalControllerTest {
         ChatDTO.Request request = new ChatDTO.Request(
                 "gpt-3.5-turbo",
                 List.of(new ChatDTO.Message("user", "Hello", null)),
-                null, null, null, null, null, null, null, null, null
+                false, null, null, null, null, null, null, null, null
         );
         
         ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
@@ -408,12 +411,14 @@ class UniversalControllerTest {
                 .thenThrow(new IllegalArgumentException("Invalid configuration"));
 
         // Act & Assert
-        assertThrows(ResponseStatusException.class, () -> {
-            universalController.chatCompletions("Bearer token", request, httpRequest).block();
-        });
+        StepVerifier.create(universalController.chatCompletions("Bearer token", request, httpRequest))
+                .expectErrorMatches(throwable -> throwable instanceof ResponseStatusException 
+                        && ((ResponseStatusException) throwable).getStatusCode() == HttpStatus.BAD_REQUEST)
+                .verify();
 
         verify(serviceStateManager).isServiceHealthy("chat");
         verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.chat);
+        verify(mockAdapter).chat(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
@@ -422,7 +427,7 @@ class UniversalControllerTest {
         ChatDTO.Request request = new ChatDTO.Request(
                 "gpt-3.5-turbo",
                 List.of(new ChatDTO.Message("user", "Hello", null)),
-                null, null, null, null, null, null, null, null, null
+                false, null, null, null, null, null, null, null, null
         );
         
         ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();
@@ -433,11 +438,13 @@ class UniversalControllerTest {
                 .thenThrow(new RuntimeException("Unexpected error"));
 
         // Act & Assert
-        assertThrows(ResponseStatusException.class, () -> {
-            universalController.chatCompletions("Bearer token", request, httpRequest).block();
-        });
+        StepVerifier.create(universalController.chatCompletions("Bearer token", request, httpRequest))
+                .expectErrorMatches(throwable -> throwable instanceof ResponseStatusException 
+                        && ((ResponseStatusException) throwable).getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR)
+                .verify();
 
         verify(serviceStateManager).isServiceHealthy("chat");
         verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.chat);
+        verify(mockAdapter).chat(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 }

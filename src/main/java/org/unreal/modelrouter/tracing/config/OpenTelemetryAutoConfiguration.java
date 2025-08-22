@@ -2,11 +2,11 @@ package org.unreal.modelrouter.tracing.config;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
-import io.opentelemetry.api.trace.Tracer;
-// Jaeger exporter 已移除，现在使用 OTLP 协议连接 Jaeger
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -17,13 +17,15 @@ import io.opentelemetry.semconv.ResourceAttributes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.unreal.modelrouter.tracing.sampler.SamplingStrategyManager;
 
-import java.time.Duration;
-import java.util.HashMap;
+import jakarta.annotation.PostConstruct;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * OpenTelemetry自动配置类
@@ -41,50 +43,97 @@ import java.util.Map;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "jairouter.tracing", name = "enabled", havingValue = "true", matchIfMissing = true)
+@EnableConfigurationProperties(TracingConfiguration.class)
+@ConditionalOnProperty(name = "jairouter.tracing.enabled", havingValue = "true", matchIfMissing = true)
 public class OpenTelemetryAutoConfiguration {
     
     private final TracingConfiguration tracingConfig;
+    private final SamplingStrategyManager samplingStrategyManager;
     private final Environment environment;
     
     /**
-     * 创建OpenTelemetry SDK实例
+     * 初始化OpenTelemetry配置
      */
-    @Bean
-    public OpenTelemetry openTelemetry() {
-        log.info("初始化OpenTelemetry SDK，服务名称: {}", tracingConfig.getServiceName());
-        
-        Resource resource = createResource();
-        SpanExporter spanExporter = createSpanExporter();
-        Sampler sampler = createSampler();
-        
-        SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-                .setResource(resource)
-                .addSpanProcessor(BatchSpanProcessor.builder(spanExporter)
-                        .setScheduleDelay(Duration.ofSeconds(5))  // 使用默认值
-                        .setMaxQueueSize(2048)  // 使用默认值
-                        .setMaxExportBatchSize(512)  // 使用默认值
-                        .build())
-                .setSampler(sampler)
-                .build();
-        
-        OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
-                .setTracerProvider(tracerProvider)
-                .build();
-        
-        log.info("OpenTelemetry SDK初始化完成，导出器类型: {}", tracingConfig.getExporter().getType());
-        return openTelemetry;
+    @PostConstruct
+    public void init() {
+        log.info("初始化OpenTelemetry配置，服务名称: {}, 版本: {}", 
+                tracingConfig.getServiceName(), tracingConfig.getServiceVersion());
     }
     
     /**
-     * 创建Tracer实例
+     * 创建OpenTelemetry SDK实例
+     * 
+     * @param tracerProvider 追踪器提供者
+     * @return OpenTelemetry实例
      */
     @Bean
-    public Tracer tracer(OpenTelemetry openTelemetry) {
-        return openTelemetry.getTracer(
-                tracingConfig.getServiceName(),
-                tracingConfig.getServiceVersion()
-        );
+    public OpenTelemetry openTelemetry(SdkTracerProvider tracerProvider) {
+        return OpenTelemetrySdk.builder()
+                .setTracerProvider(tracerProvider)
+                .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+                .buildAndRegisterGlobal();
+    }
+    
+    /**
+     * 创建资源实例
+     * 
+     * @return 资源实例
+     */
+    @Bean
+    public Resource otelResource() {
+        return createResource();
+    }
+    
+    /**
+     * 创建追踪器提供者
+     * 
+     * @param resource 资源
+     * @param sampler 采样器
+     * @param spanExporter Span导出器
+     * @return 追踪器提供者
+     */
+    @Bean
+    public SdkTracerProvider tracerProvider(Resource resource, Sampler sampler, SpanExporter spanExporter) {
+        TracingConfiguration.PerformanceConfig performanceConfig = tracingConfig.getPerformance();
+        
+        // 获取批处理配置
+        TracingConfiguration.PerformanceConfig.BatchConfig batchConfig = performanceConfig.getBatch();
+        
+        return SdkTracerProvider.builder()
+                .setResource(resource)
+                .addSpanProcessor(
+                        BatchSpanProcessor.builder(spanExporter)
+                                .setExporterTimeout(batchConfig.getTimeout())
+                                .setScheduleDelay(batchConfig.getTimeout())
+                                .setMaxExportBatchSize(batchConfig.getSize())
+                                .setMaxQueueSize(performanceConfig.getBuffer().getSize())
+                                .build()
+                )
+                .setSampler(sampler)
+                .build();
+    }
+    
+    /**
+     * 创建采样器
+     * 
+     * @return 采样器
+     */
+    @Bean
+    public Sampler otelSampler() {
+        // 使用采样策略管理器中的当前策略创建采样器
+        return Sampler.parentBased(samplingStrategyManager.getCurrentStrategy());
+    }
+    
+    /**
+     * 创建Span导出器
+     * 
+     * @return Span导出器
+     */
+    @Bean
+    @ConditionalOnProperty(name = "jairouter.tracing.exporter.type", havingValue = "logging", matchIfMissing = true)
+    public SpanExporter loggingSpanExporter() {
+        log.info("创建日志导出器");
+        return LoggingSpanExporter.create();
     }
     
     /**
@@ -118,6 +167,11 @@ public class OpenTelemetryAutoConfiguration {
     /**
      * 创建Span导出器
      */
+    @Bean
+    public SpanExporter spanExporter() {
+        return createSpanExporter();
+    }
+    
     private SpanExporter createSpanExporter() {
         String exporterType = tracingConfig.getExporter().getType().toLowerCase();
         
@@ -220,21 +274,4 @@ public class OpenTelemetryAutoConfiguration {
         return LoggingSpanExporter.create();
     }
     
-    /**
-     * 创建采样器
-     */
-    private Sampler createSampler() {
-        double samplingRatio = tracingConfig.getSampling().getRatio();
-        
-        if (samplingRatio >= 1.0) {
-            log.info("使用全量采样器");
-            return Sampler.traceIdRatioBased(1.0);
-        } else if (samplingRatio <= 0.0) {
-            log.info("使用零采样器");
-            return Sampler.traceIdRatioBased(0.0);
-        } else {
-            log.info("使用比例采样器，采样率: {}", samplingRatio);
-            return Sampler.traceIdRatioBased(samplingRatio);
-        }
-    }
 }

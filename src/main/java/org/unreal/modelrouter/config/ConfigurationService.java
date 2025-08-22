@@ -659,6 +659,168 @@ public class ConfigurationService {
         }
     }
 
+    // ==================== 追踪配置管理 ====================
+    
+    /**
+     * 获取当前追踪配置
+     * @return TraceConfig对象
+     */
+    public TraceConfig getTraceConfig() {
+        Map<String, Object> currentConfig = getAllConfigurations();
+        return extractTraceConfig(currentConfig);
+    }
+    
+    /**
+     * 从配置Map中提取追踪配置
+     * @param config 配置Map
+     * @return TraceConfig对象
+     */
+    private TraceConfig extractTraceConfig(Map<String, Object> config) {
+        if (config.containsKey("trace")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> traceConfigMap = (Map<String, Object>) config.get("trace");
+            return TraceConfig.fromMap(traceConfigMap);
+        }
+        return new TraceConfig(); // 返回默认配置
+    }
+    
+    /**
+     * 更新追踪配置
+     * @param traceConfig 新的追踪配置
+     * @param createNewVersion 是否创建新版本
+     */
+    public void updateTraceConfig(TraceConfig traceConfig, boolean createNewVersion) {
+        logger.info("更新追踪配置");
+        
+        Map<String, Object> currentConfig;
+        if (createNewVersion) {
+            currentConfig = getCurrentPersistedConfig();
+        } else {
+            currentConfig = configMergeService.getPersistedConfig();
+        }
+        
+        // 更新配置
+        currentConfig.put("trace", traceConfig.toMap());
+        
+        if (createNewVersion) {
+            // 保存为新版本并刷新配置
+            saveAsNewVersion(currentConfig);
+        } else {
+            // 直接保存配置但不创建新版本
+            storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        }
+        
+        refreshRuntimeConfig();
+        logger.info("追踪配置更新成功");
+    }
+    
+    /**
+     * 删除追踪配置
+     * @param createNewVersion 是否创建新版本
+     */
+    public void deleteTraceConfig(boolean createNewVersion) {
+        logger.info("删除追踪配置");
+        
+        Map<String, Object> currentConfig;
+        if (createNewVersion) {
+            currentConfig = getCurrentPersistedConfig();
+        } else {
+            currentConfig = configMergeService.getPersistedConfig();
+        }
+        
+        // 删除追踪配置
+        currentConfig.remove("trace");
+        
+        if (createNewVersion) {
+            // 保存为新版本并刷新配置
+            saveAsNewVersion(currentConfig);
+        } else {
+            // 直接保存配置但不创建新版本
+            storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        }
+        
+        refreshRuntimeConfig();
+        logger.info("追踪配置删除成功");
+    }
+    
+    // ==================== 追踪采样配置管理 ====================
+    
+    /**
+     * 获取追踪采样配置
+     * 
+     * @return 采样配置Map
+     */
+    public Map<String, Object> getTracingSamplingConfig() {
+        Map<String, Object> currentConfig = getAllConfigurations();
+        
+        // 提取追踪配置
+        if (currentConfig.containsKey("tracing")) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> tracingConfig = (Map<String, Object>) currentConfig.get("tracing");
+            
+            // 提取采样配置
+            if (tracingConfig.containsKey("sampling")) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> samplingConfig = (Map<String, Object>) tracingConfig.get("sampling");
+                return new HashMap<>(samplingConfig);
+            }
+        }
+        
+        // 返回默认配置
+        return createDefaultSamplingConfig();
+    }
+    
+    /**
+     * 更新追踪采样配置
+     * 
+     * @param samplingConfig 新的采样配置
+     * @param createNewVersion 是否创建新版本
+     */
+    public void updateTracingSamplingConfig(Map<String, Object> samplingConfig, boolean createNewVersion) {
+        logger.info("更新追踪采样配置");
+        
+        Map<String, Object> currentConfig;
+        if (createNewVersion) {
+            currentConfig = getCurrentPersistedConfig();
+        } else {
+            currentConfig = configMergeService.getPersistedConfig();
+        }
+        
+        // 获取或创建追踪配置
+        @SuppressWarnings("unchecked")
+        Map<String, Object> tracingConfig = (Map<String, Object>) currentConfig.computeIfAbsent(
+                "tracing", k -> new HashMap<String, Object>());
+        
+        // 更新采样配置
+        tracingConfig.put("sampling", samplingConfig);
+        
+        if (createNewVersion) {
+            // 保存为新版本并刷新配置
+            saveAsNewVersion(currentConfig);
+        } else {
+            // 直接保存配置但不创建新版本
+            storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        }
+        
+        refreshRuntimeConfig();
+        logger.info("追踪采样配置更新成功");
+    }
+    
+    /**
+     * 创建默认采样配置
+     * 
+     * @return 默认采样配置
+     */
+    private Map<String, Object> createDefaultSamplingConfig() {
+        Map<String, Object> defaultConfig = new HashMap<>();
+        defaultConfig.put("ratio", 1.0);
+        defaultConfig.put("serviceRatios", new HashMap<String, Double>());
+        defaultConfig.put("alwaysSample", new ArrayList<String>());
+        defaultConfig.put("neverSample", new ArrayList<String>());
+        defaultConfig.put("rules", new ArrayList<Map<String, Object>>());
+        return defaultConfig;
+    }
+    
     // ==================== 新增方法 ====================
 
     /**
