@@ -2,7 +2,6 @@ package org.unreal.modelrouter.tracing.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.*;
@@ -22,7 +21,6 @@ import java.util.*;
  * @since 1.0.0
  */
 @Data
-@Component
 @ConfigurationProperties(prefix = "jairouter.tracing")
 public class TracingConfiguration {
     
