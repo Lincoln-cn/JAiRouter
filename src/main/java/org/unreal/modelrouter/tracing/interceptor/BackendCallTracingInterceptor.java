@@ -18,7 +18,9 @@ import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -90,7 +92,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
             .doOnError(error -> handleErrorResponse(error, request, span, tracingContext, startTime))
             .doFinally(signalType -> {
                 // 确保Span被正确完成
-                if (span.isRecording()) {
+                if (span != null && span.isRecording()) {
                     tracingContext.finishSpan(span);
                 }
             });
@@ -144,9 +146,9 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
         }
         
         // 设置User-Agent（如果存在）
-        request.headers().getFirst("User-Agent");
-        if (request.headers().getFirst("User-Agent") != null) {
-            span.setAttribute(HTTP_USER_AGENT, request.headers().getFirst("User-Agent"));
+        String userAgent = request.headers().getFirst("User-Agent");
+        if (userAgent != null) {
+            span.setAttribute(HTTP_USER_AGENT, userAgent);
         }
         
         // 尝试从URL中提取适配器和实例信息
@@ -174,7 +176,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     /**
      * 推断适配器类型
      */
-    private String inferAdapterType(String host) {
+    String inferAdapterType(String host) {
         if (host == null) {
             return null;
         }
@@ -227,7 +229,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
             Map<String, Object> requestData = new HashMap<>();
             requestData.put("method", request.method().name());
             requestData.put("url", uri.toString());
-            requestData.put("adapter", adapter);
+            requestData.put("adapter", adapter != null ? adapter : "unknown");
             requestData.put("instance", instance);
             requestData.put("headers", sanitizeHeaders(request.headers().toSingleValueMap()));
             
@@ -259,12 +261,17 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
             }
             
             // 记录响应内容长度（如果可用）
-            String contentLength = response.headers().header("Content-Length").stream().findFirst().orElse(null);
-            if (contentLength != null) {
-                try {
-                    span.setAttribute(HTTP_RESPONSE_CONTENT_LENGTH, Long.parseLong(contentLength));
-                } catch (NumberFormatException e) {
-                    // 忽略解析错误
+            if (response.headers() != null) {
+                List<String> contentLengthHeaders = response.headers().header("Content-Length");
+                if (contentLengthHeaders != null && !contentLengthHeaders.isEmpty()) {
+                    String contentLength = contentLengthHeaders.get(0);
+                    if (contentLength != null) {
+                        try {
+                            span.setAttribute(HTTP_RESPONSE_CONTENT_LENGTH, Long.parseLong(contentLength));
+                        } catch (NumberFormatException e) {
+                            // 忽略解析错误
+                        }
+                    }
                 }
             }
             
@@ -314,7 +321,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
             String instance = uri.getHost() + (uri.getPort() != -1 ? ":" + uri.getPort() : "");
             
             Map<String, Object> errorInfo = new HashMap<>();
-            errorInfo.put("adapter", adapter);
+            errorInfo.put("adapter", adapter != null ? adapter : "unknown");
             errorInfo.put("instance", instance);
             errorInfo.put("url", uri.toString());
             errorInfo.put("method", request.method().name());

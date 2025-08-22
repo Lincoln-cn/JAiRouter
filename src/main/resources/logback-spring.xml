@@ -10,6 +10,10 @@
     <property name="FILE_LOG_PATTERN" 
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"/>
 
+    <!-- 注册自定义转换器 -->
+    <conversionRule conversionWord="traceId" converterClass="org.unreal.modelrouter.tracing.logger.TraceIdConverter" />
+    <conversionRule conversionWord="spanId" converterClass="org.unreal.modelrouter.tracing.logger.SpanIdConverter" />
+
     <!-- 控制台输出 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -53,6 +57,28 @@
         </rollingPolicy>
     </appender>
 
+    <!-- 结构化日志Appender -->
+    <appender name="STRUCTURED_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-structured.log</file>
+        <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <pattern>%msg%n</pattern>
+            </layout>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-structured.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- 自定义追踪Appender -->
+    <appender name="TRACING_APPENDER" class="org.unreal.modelrouter.tracing.logger.TracingLogbackAppender">
+        <jsonFormat>true</jsonFormat>
+        <includeTraceContext>true</includeTraceContext>
+    </appender>
+
     <!-- 异步文件输出 -->
     <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="FILE_ALL"/>
@@ -68,6 +94,15 @@
         <queueSize>256</queueSize>
         <discardingThreshold>0</discardingThreshold>
         <includeCallerData>true</includeCallerData>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- 异步结构化日志输出 -->
+    <appender name="ASYNC_STRUCTURED" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STRUCTURED_FILE"/>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
         <neverBlock>true</neverBlock>
     </appender>
 
