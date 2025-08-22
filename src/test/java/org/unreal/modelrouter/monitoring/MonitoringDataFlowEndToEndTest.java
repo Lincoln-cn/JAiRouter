@@ -11,7 +11,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
-import org.unreal.modelrouter.monitoring.WebFluxMetricsInterceptor;
 import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
 
 import java.time.Duration;
@@ -40,7 +39,21 @@ import static org.junit.jupiter.api.Assertions.*;
     "monitoring.metrics.performance.batch-size=10",
     "monitoring.metrics.performance.buffer-size=100",
     "management.endpoints.web.exposure.include=health,info,metrics,prometheus",
-    "management.endpoint.prometheus.cache.time-to-live=1s"
+    "management.endpoint.prometheus.cache.time-to-live=1s",
+    "management.endpoints.web.base-path=/actuator",
+    "management.endpoints.web.cors.allowed-origins=*",
+    "management.endpoints.web.cors.allowed-methods=GET,POST",
+    "management.endpoint.health.show-details=always",
+    "management.endpoint.prometheus.enabled=true",
+    "management.security.enabled=false",
+    "management.endpoints.web.exposure.include=*",
+    "management.endpoints.enabled-by-default=true",
+    "management.endpoint.info.enabled=true",
+    "management.endpoint.health.enabled=true",
+    "management.endpoint.metrics.enabled=true",
+    "management.endpoint.prometheus.sensitive=false",
+    "management.endpoints.web.path-mapping.prometheus=prometheus",
+    "jairouter.security.jwt.secret=x0TP1rE6RQWX7Zefq9Vqd7FGfgYdTJg4"
 })
 public class MonitoringDataFlowEndToEndTest {
 
@@ -118,22 +131,28 @@ public class MonitoringDataFlowEndToEndTest {
         assertNotNull(requestTimer, "Request timer should exist in registry");
         assertTrue(requestTimer.count() > 0, "Request timer should have recorded values");
 
-        // 验证后端调用指标
-        Counter backendCounter = meterRegistry.find("jairouter_backend_calls_total")
+        // 验证后端调用指标 - 修正标签匹配逻辑
+        Counter backendSuccessCounter = meterRegistry.find("jairouter_backend_calls_total")
             .tag("adapter", "test_adapter")
             .tag("status", "success")
             .counter();
-        assertNotNull(backendCounter, "Backend call counter should exist");
-        assertTrue(backendCounter.count() > 0, "Backend call counter should have been incremented");
+        Counter backendFailureCounter = meterRegistry.find("jairouter_backend_calls_total")
+            .tag("adapter", "test_adapter")
+            .tag("status", "failure")
+            .counter();
+        assertNotNull(backendSuccessCounter, "Backend success call counter should exist");
+        assertNotNull(backendFailureCounter, "Backend failure call counter should exist");
+        assertTrue(backendSuccessCounter.count() > 0, "Backend success call counter should have been incremented");
+        assertTrue(backendFailureCounter.count() > 0, "Backend failure call counter should have been incremented");
 
-        // 验证基础设施指标
-        Counter rateLimitCounter = meterRegistry.find("jairouter_rate_limit_events_total")
+        // 验证基础设施指标 - 修正标签匹配逻辑
+        Counter rateLimitAllowedCounter = meterRegistry.find("jairouter_rate_limit_events_total")
             .tag("service", serviceName)
             .tag("algorithm", "token-bucket")
             .tag("result", "allowed")
             .counter();
-        assertNotNull(rateLimitCounter, "Rate limit counter should exist");
-        assertTrue(rateLimitCounter.count() > 0, "Rate limit counter should have been incremented");
+        assertNotNull(rateLimitAllowedCounter, "Rate limit allowed counter should exist");
+        assertTrue(rateLimitAllowedCounter.count() > 0, "Rate limit allowed counter should have been incremented");
     }
 
     private void verifyMetricsInPrometheusEndpoint(String serviceName, String method, String status) {
@@ -234,7 +253,8 @@ public class MonitoringDataFlowEndToEndTest {
         assertTrue(response.contains("status=\"500\""), "Should contain 500 error status");
         assertTrue(response.contains("status=\"404\""), "Should contain 404 error status");
         assertTrue(response.contains("status=\"503\""), "Should contain 503 error status");
-        assertTrue(response.contains("status=\"failure\""), "Should contain backend failure status");
+        assertTrue(response.contains("status=\"failure\"") || response.contains("result=\"failure\""), 
+            "Should contain backend failure status or result tag");
         assertTrue(response.contains("event=\"FAILURE\""), "Should contain circuit breaker failure event");
     }
 

@@ -2,11 +2,9 @@ package org.unreal.modelrouter.tracing.config;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
-import io.opentelemetry.exporter.logging.LoggingSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -75,6 +73,17 @@ public class OpenTelemetryAutoConfiguration {
     }
     
     /**
+     * 创建Tracer实例
+     * 
+     * @param openTelemetry OpenTelemetry实例
+     * @return Tracer实例
+     */
+    @Bean
+    public Tracer tracer(OpenTelemetry openTelemetry) {
+        return openTelemetry.getTracer("jairouter");
+    }
+    
+    /**
      * 创建资源实例
      * 
      * @return 资源实例
@@ -125,18 +134,6 @@ public class OpenTelemetryAutoConfiguration {
     }
     
     /**
-     * 创建Span导出器
-     * 
-     * @return Span导出器
-     */
-    @Bean
-    @ConditionalOnProperty(name = "jairouter.tracing.exporter.type", havingValue = "logging", matchIfMissing = true)
-    public SpanExporter loggingSpanExporter() {
-        log.info("创建日志导出器");
-        return LoggingSpanExporter.create();
-    }
-    
-    /**
      * 创建资源配置
      */
     private Resource createResource() {
@@ -163,115 +160,4 @@ public class OpenTelemetryAutoConfiguration {
         
         return Resource.getDefault().merge(Resource.create(attributesBuilder.build()));
     }
-    
-    /**
-     * 创建Span导出器
-     */
-    @Bean
-    public SpanExporter spanExporter() {
-        return createSpanExporter();
-    }
-    
-    private SpanExporter createSpanExporter() {
-        String exporterType = tracingConfig.getExporter().getType().toLowerCase();
-        
-        switch (exporterType) {
-            case "jaeger":
-                // Jaeger 现在使用 OTLP 协议
-                log.info("Jaeger 导出器现在使用 OTLP 协议，端点: {}", tracingConfig.getExporter().getJaeger().getEndpoint());
-                return createJaegerViaOtlpExporter();
-            case "zipkin":
-                return createZipkinExporter();
-            case "otlp":
-                return createOtlpExporter();
-            case "logging":
-                return createLoggingExporter();
-            default:
-                log.warn("未知的导出器类型: {}，使用默认的日志导出器", exporterType);
-                return createLoggingExporter();
-        }
-    }
-    
-    /**
-     * 通过OTLP协议创建Jaeger导出器
-     * Jaeger 现在推荐使用 OTLP 协议而不是专用的 Jaeger 协议
-     */
-    private SpanExporter createJaegerViaOtlpExporter() {
-        TracingConfiguration.ExporterConfig.JaegerConfig jaegerConfig = tracingConfig.getExporter().getJaeger();
-        
-        // 将 Jaeger 端点转换为 OTLP 端点
-        String otlpEndpoint = convertJaegerToOtlpEndpoint(jaegerConfig.getEndpoint());
-        
-        var builder = OtlpGrpcSpanExporter.builder()
-                .setEndpoint(otlpEndpoint)
-                .setTimeout(jaegerConfig.getTimeout());
-        
-        // 添加自定义头部
-        jaegerConfig.getHeaders().forEach(builder::addHeader);
-        
-        log.info("通过OTLP协议创建Jaeger导出器，端点: {} -> {}", jaegerConfig.getEndpoint(), otlpEndpoint);
-        return builder.build();
-    }
-    
-    /**
-     * 将 Jaeger 端点转换为 OTLP 端点
-     */
-    private String convertJaegerToOtlpEndpoint(String jaegerEndpoint) {
-        if (jaegerEndpoint == null || jaegerEndpoint.isEmpty()) {
-            return "http://localhost:4317"; // 默认 OTLP gRPC 端点
-        }
-        
-        // 如果已经是 OTLP 端点，直接返回
-        if (jaegerEndpoint.contains("4317") || jaegerEndpoint.contains("4318")) {
-            return jaegerEndpoint;
-        }
-        
-        // 将传统的 Jaeger 端点转换为 OTLP 端点
-        // 例如：http://localhost:14268/api/traces -> http://localhost:4317
-        if (jaegerEndpoint.contains("14268")) {
-            return jaegerEndpoint.replace("14268/api/traces", "4317");
-        }
-        
-        // 默认情况下，假设是 gRPC 端点，使用 4317 端口
-        return jaegerEndpoint.replaceAll(":\\d+.*", ":4317");
-    }
-    
-    /**
-     * 创建Zipkin导出器
-     */
-    private SpanExporter createZipkinExporter() {
-        TracingConfiguration.ExporterConfig.ZipkinConfig zipkinConfig = tracingConfig.getExporter().getZipkin();
-        
-        log.info("创建Zipkin导出器，端点: {}", zipkinConfig.getEndpoint());
-        return ZipkinSpanExporter.builder()
-                .setEndpoint(zipkinConfig.getEndpoint())
-                .build();
-    }
-    
-    /**
-     * 创建OTLP导出器
-     */
-    private SpanExporter createOtlpExporter() {
-        TracingConfiguration.ExporterConfig.OtlpConfig otlpConfig = tracingConfig.getExporter().getOtlp();
-        
-        var builder = OtlpGrpcSpanExporter.builder()
-                .setEndpoint(otlpConfig.getEndpoint())
-                .setTimeout(otlpConfig.getTimeout())
-                .setCompression(otlpConfig.getCompression());
-        
-        // 添加自定义头部
-        otlpConfig.getHeaders().forEach(builder::addHeader);
-        
-        log.info("创建OTLP导出器，端点: {}", otlpConfig.getEndpoint());
-        return builder.build();
-    }
-    
-    /**
-     * 创建日志导出器
-     */
-    private SpanExporter createLoggingExporter() {
-        log.info("创建日志导出器用于开发调试");
-        return LoggingSpanExporter.create();
-    }
-    
 }

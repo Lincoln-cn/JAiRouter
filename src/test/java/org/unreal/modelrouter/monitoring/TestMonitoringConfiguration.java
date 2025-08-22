@@ -14,6 +14,7 @@ import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 import org.unreal.modelrouter.security.TestSecurityProperties;
+import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,14 +51,14 @@ public class TestMonitoringConfiguration {
     public MonitoringProperties testMonitoringProperties() {
         MonitoringProperties properties = new MonitoringProperties();
         properties.setEnabled(true);
-        properties.setPrefix("test");
+        properties.setPrefix("jairouter");
         // Custom tags will be set by @TestPropertySource
         return properties;
     }
 
     @Bean
-    @Primary
-    public MetricsCollector testMetricsCollector(MeterRegistry meterRegistry, MonitoringProperties properties) {
+    public MetricsCollector testMetricsCollector(MeterRegistry meterRegistry, 
+                                               MonitoringProperties properties) {
         return new DefaultMetricsCollector(meterRegistry, properties);
     }
 
@@ -76,5 +77,4 @@ public class TestMonitoringConfiguration {
         return new TestSecurityProperties();
     }
 
-    // 移除了重复的metricsCommonTags Bean定义，避免与MonitoringConfiguration中的同名Bean冲突
 }
