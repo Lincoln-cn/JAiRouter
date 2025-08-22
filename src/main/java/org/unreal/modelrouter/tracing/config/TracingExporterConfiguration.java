@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 
 /**
@@ -40,6 +41,7 @@ public class TracingExporterConfiguration {
      * @return 配置的Span导出器
      */
     @Bean
+    @Primary
     public SpanExporter spanExporter() {
         String exporterType = tracingConfig.getExporter().getType().toLowerCase();
         

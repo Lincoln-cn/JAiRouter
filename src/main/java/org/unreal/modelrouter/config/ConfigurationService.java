@@ -762,7 +762,10 @@ public class ConfigurationService {
             if (tracingConfig.containsKey("sampling")) {
                 @SuppressWarnings("unchecked")
                 Map<String, Object> samplingConfig = (Map<String, Object>) tracingConfig.get("sampling");
-                return new HashMap<>(samplingConfig);
+                // 确保返回的配置包含所有默认键
+                Map<String, Object> result = createDefaultSamplingConfig();
+                result.putAll(samplingConfig);
+                return result;
             }
         }
         

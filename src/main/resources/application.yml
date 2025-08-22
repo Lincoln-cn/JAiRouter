@@ -244,14 +244,209 @@ monitoring:
         imgGentts: 30000
         imgEdittts: 30000
 
-
-# Spring Actuator配置增强
-# ========================================
-# 安全功能配置
-# ========================================
-# JAiRouter 安全加固功能配置，包括API Key认证、JWT支持和数据脱敏
-# 注意：安全功能默认关闭，需要显式启用
+# JAiRouter 配置
 jairouter:
+  # 追踪配置
+  tracing:
+    # 追踪功能总开关
+    enabled: true
+    
+    # 服务信息
+    service-name: "jairouter"
+    service-version: "1.0.0"
+    service-namespace: "production"
+    
+    # OpenTelemetry配置
+    open-telemetry:
+      enabled: true
+      resource:
+        attributes: {}
+      sdk:
+        disabled: false
+        trace:
+          processors:
+            batch:
+              timeout: 30s
+              size: 512
+              delay: 5s
+            simple: {}
+    
+    # 采样配置
+    sampling:
+      # 采样策略: always_on, always_off, traceid_ratio_based, parent_based_always_on, 
+      # parent_based_always_off, parent_based_traceid_ratio
+      strategy: "parent_based_traceid_ratio"
+      
+      # 采样率 (0.0 - 1.0)，仅在使用基于比率的采样策略时生效
+      ratio: 1.0
+      
+      # 默认采样率
+      default-ratio: 1.0
+      
+      # 特定服务的采样率配置
+      service-ratios: {}
+      
+      # 总是采样的路径前缀
+      always-sample:
+        - "/api/important"
+      
+      # 从不采样的路径前缀
+      never-sample:
+        - "/health"
+        - "/actuator"
+      
+      # 采样规则
+      rules: []
+    
+    # 日志配置
+    logging:
+      enabled: true
+      level: "INFO"
+      format: "json"
+      include-stacktrace: false
+      max-message-length: 2048
+      log-request-headers: false
+      log-response-headers: false
+      log-request-body: false
+      log-response-body: false
+      redact-patterns: []
+      custom-fields: {}
+    
+    # 导出器配置
+    exporter:
+      # 导出器类型: logging, jaeger, zipkin, otlp, composite
+      type: "logging"
+      
+      # Jaeger导出器配置 (已弃用，建议使用OTLP)
+      jaeger:
+        endpoint: "http://localhost:14268/api/traces"
+        timeout: 10s
+        headers: {}
+      
+      # Zipkin导出器配置
+      zipkin:
+        endpoint: "http://localhost:9411/api/v2/spans"
+        timeout: 10s
+      
+      # OTLP导出器配置
+      otlp:
+        endpoint: "http://localhost:4317"
+        timeout: 10s
+        compression: "gzip"
+        headers: {}
+      
+      # 日志导出器配置
+      logging:
+        enabled: true
+      
+      # 复合导出器配置
+      composite:
+        exporters: []
+    
+    # 性能配置
+    performance:
+      # 异步处理配置
+      async:
+        enabled: true
+        queue-size: 2048
+        worker-threads: 4
+      
+      # 批处理配置
+      batch:
+        timeout: 30s
+        size: 512
+        delay: 5s
+      
+      # 缓冲区配置
+      buffer:
+        size: 2048
+      
+      # 资源限制配置
+      resource-limits:
+        max-attributes: 128
+        max-events: 128
+        max-links: 128
+        max-attribute-length: 1024
+    
+    # 组件特定配置
+    components:
+      # WebFlux配置
+      webflux:
+        enabled: true
+        capture-request-headers: []
+        capture-response-headers: []
+        capture-request-parameters: []
+      
+      # WebClient配置
+      webclient:
+        enabled: true
+        capture-request-headers: []
+        capture-response-headers: []
+      
+      # 数据库配置
+      database:
+        enabled: true
+        capture-statement: false
+        capture-parameters: false
+      
+      # Redis配置
+      redis:
+        enabled: true
+      
+      # 限流器配置
+      rate-limiter:
+        enabled: true
+        capture-algorithm: true
+        capture-quota: true
+        capture-decision: true
+        capture-statistics: true
+      
+      # 熔断器配置
+      circuit-breaker:
+        enabled: true
+        capture-state: true
+        capture-state-changes: true
+        capture-statistics: true
+        capture-failure-rate: true
+      
+      # 负载均衡器配置
+      load-balancer:
+        enabled: true
+        capture-strategy: true
+        capture-selection: true
+        capture-statistics: true
+    
+    # 安全配置
+    security:
+      sanitization:
+        enabled: true
+        inherit-global-rules: true
+        additional-patterns: []
+      access-control:
+        restrict-trace-access: true
+        allowed-roles: []
+    
+    # 监控配置
+    monitoring:
+      self-monitoring: true
+      metrics:
+        enabled: true
+        prefix: "jairouter.tracing"
+        traces:
+          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
+        exporter:
+          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+      health:
+        enabled: true
+      alerts:
+        enabled: true
+        trace-processing-failures: 10
+        export-failures: 5
+        buffer-pressure: 80
+
+  # 安全功能配置
   security:
     # 安全功能总开关
     # 设置为 true 启用所有安全功能，false 则完全禁用
@@ -645,3 +840,4 @@ management:
     tags:
       application: jairouter
       environment: ${spring.profiles.active:default}
+

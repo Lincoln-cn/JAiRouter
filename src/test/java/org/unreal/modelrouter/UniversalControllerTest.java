@@ -427,7 +427,7 @@ class UniversalControllerTest {
         ChatDTO.Request request = new ChatDTO.Request(
                 "gpt-3.5-turbo",
                 List.of(new ChatDTO.Message("user", "Hello", null)),
-                false, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
         
         ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/chat/completions").build();

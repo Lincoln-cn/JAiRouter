@@ -71,11 +71,12 @@ public class SecurityConfiguration {
                 // 配置授权规则 - 实现基于角色的访问控制（RBAC）
                 .authorizeExchange(exchanges -> exchanges
                         // 健康检查端点允许匿名访问
-                        .pathMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .pathMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                         // API文档端点允许匿名访问
                         .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         // 监控端点需要管理员权限
                         .pathMatchers("/actuator/**").hasRole("ADMIN")
+//                        .pathMatchers("/actuator/**").permitAll()
                         // 配置管理端点需要管理员权限
                         .pathMatchers("/api/config/**", "/api/instances/**").hasRole("ADMIN")
                         // AI服务端点的细粒度权限控制
