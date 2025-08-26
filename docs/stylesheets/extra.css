@@ -266,3 +266,94 @@ img {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* 谷歌广告样式 */
+.google-ad {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--md-default-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 6px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.google-ad:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 广告标题样式 */
+.google-ad-title {
+  font-size: 0.8rem;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 侧边栏广告样式 */
+.google-ad-sidebar {
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+
+.google-ad-sidebar .adsbygoogle {
+  width: 100%;
+  min-height: 250px;
+}
+
+/* 深色模式下的广告样式 */
+[data-md-color-scheme="slate"] .google-ad {
+  background-color: var(--md-default-bg-color);
+  border-color: var(--md-default-fg-color--lightest);
+}
+
+[data-md-color-scheme="slate"] .google-ad-title {
+  color: var(--md-default-fg-color--light);
+}
+
+/* 移动端广告样式 */
+@media screen and (max-width: 768px) {
+  .google-ad {
+    display: none !important;
+  }
+}
+
+/* 平板端广告调整 */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .google-ad-sidebar {
+    margin: 1rem 0;
+  }
+  
+  .google-ad-sidebar .adsbygoogle {
+    min-height: 200px;
+  }
+}
+
+/* 广告加载状态 */
+.google-ad.loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 广告错误状态 */
+.google-ad.error {
+  display: none;
+}
+
+/* 打印时隐藏广告 */
+@media print {
+  .google-ad {
+    display: none !important;
+  }
+}
