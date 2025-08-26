@@ -26,25 +26,28 @@
         return 'zh';
     }
     
-    // 获取对应语言的路径
     function getLanguagePath(targetLang, currentPath) {
         const currentLang = getCurrentLanguage();
-        
-        if (currentLang === targetLang) {
-            return currentPath;
-        }
-        
-        // 移除当前语言前缀
+    
+        // 移除语言前缀，保留原始路径结构
         let cleanPath = currentPath;
-        if (currentLang === 'en' && cleanPath.startsWith('/en/')) {
-            cleanPath = cleanPath.substring(3);
+    
+        if (currentLang === 'en') {
+            cleanPath = cleanPath.replace(/^\/en(\/|$)/, '/');
+        } else {
+            cleanPath = cleanPath.replace(/^\/zh(\/|$)/, '/');
         }
-        
+    
+        // 确保路径以 / 开头
+        if (!cleanPath.startsWith('/')) {
+            cleanPath = '/' + cleanPath;
+        }
+    
         // 添加目标语言前缀
         if (targetLang === 'en') {
-            return '/en' + (cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath);
+            return '/en' + (cleanPath === '/' ? '' : cleanPath);
         } else {
-            return cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
+            return cleanPath === '/en' ? '/' : cleanPath.replace(/^\/en/, '');
         }
     }
     
