@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JAiRouter 广告集成测试</title>
+    <link rel="stylesheet" href="stylesheets/extra.css">
+</head>
+<body>
+    <div class="container">
+        <h1>JAiRouter 广告集成测试页面</h1>
+        
+        <div class="md-nav md-nav--primary">
+            <h2>模拟导航栏</h2>
+            <ul>
+                <li><a href="#">首页</a></li>
+                <li><a href="#">入门指南</a></li>
+                <li><a href="#">配置</a></li>
+                <li><a href="#">API参考</a></li>
+            </ul>
+            <!-- 广告会插入到这里 -->
+        </div>
+        
+        <div class="content">
+            <h2>测试说明</h2>
+            <p>这个页面用于测试谷歌广告集成功能。广告应该会显示在左侧导航栏的下方。</p>
+            
+            <h3>测试检查项目</h3>
+            <ul>
+                <li>广告是否正确显示在导航栏下方</li>
+                <li>广告是否有正确的样式</li>
+                <li>移动端是否隐藏广告</li>
+                <li>广告拦截器检测是否工作</li>
+            </ul>
+            
+            <h3>控制台命令</h3>
+            <p>打开浏览器开发者工具，可以使用以下命令：</p>
+            <pre><code>
+// 启用广告
+window.GoogleAdsConfig.enable();
+
+// 禁用广告
+window.GoogleAdsConfig.disable();
+
+// 检查广告状态
+console.log(window.GoogleAdsConfig.isEnabled());
+            </code></pre>
+        </div>
+    </div>
+    
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8229708772289943" crossorigin="anonymous"></script>
+    <script src="javascripts/google-ads.js"></script>
+    
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .md-nav--primary {
+            width: 250px;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+        
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .md-nav--primary ul li {
+            margin: 10px 0;
+        }
+        
+        .md-nav--primary ul a {
+            text-decoration: none;
+            color: #333;
+            padding: 8px 12px;
+            display: block;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .md-nav--primary ul a:hover {
+            background-color: rgba(25, 118, 210, 0.1);
+        }
+    </style>
+</body>
+</html>
