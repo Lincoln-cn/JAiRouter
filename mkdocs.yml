@@ -80,6 +80,10 @@ plugins:
             负载均衡: Load Balancing
             限流配置: Rate Limiting
             熔断器: Circuit Breaker
+            安全功能: Security Features
+            API Key管理: API Key Management
+            JWT认证: JWT Authentication
+            数据脱敏: Data Sanitization
             API参考: API Reference
             统一API: Universal API
             管理API: Management API
@@ -154,6 +158,12 @@ nav:
     - 负载均衡: zh/configuration/load-balancing.md
     - 限流配置: zh/configuration/rate-limiting.md
     - 熔断器: zh/configuration/circuit-breaker.md
+  - 安全功能:
+    - zh/security/index.md
+    - API Key管理: zh/security/api-key-management.md
+    - JWT认证: zh/security/jwt-authentication.md
+    - 数据脱敏: zh/security/data-sanitization.md
+    - 故障排除: zh/security/troubleshooting.md
   - API参考:
     - zh/api-reference/index.md
     - 统一API: zh/api-reference/universal-api.md
@@ -171,6 +181,7 @@ nav:
     - 监控设置: zh/monitoring/setup.md
     - 仪表板: zh/monitoring/dashboards.md
     - 告警配置: zh/monitoring/alerts.md
+    - 慢查询配置: zh/monitoring/slow-query-alerts.md
     - 故障排查: zh/monitoring/troubleshooting.md
   - 开发指南:
     - zh/development/index.md
@@ -232,5 +243,7 @@ extra_css:
 
 extra_javascript:
   - javascripts/language-switcher.js
+  - javascripts/google-ads.js
+  - https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8229708772289943
 
 copyright: Copyright &copy; 2025 JAiRouter Team
