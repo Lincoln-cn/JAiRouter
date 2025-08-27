@@ -4,10 +4,6 @@
 # 此文件仅包含生产环境特定的配置覆盖
 # 基础配置通过模块化导入，详见 application.yml
 
-spring:
-  profiles:
-    active: prod
-
 # 生产环境日志配置（最小化输出）
 logging:
   level:

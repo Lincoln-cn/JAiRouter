@@ -4,10 +4,6 @@
 # 此文件仅包含开发环境特定的配置覆盖
 # 基础配置通过模块化导入，详见 application.yml
 
-spring:
-  profiles:
-    active: dev
-
 # Swagger API 文档配置（仅开发环境）
 springdoc:
   swagger-ui:

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -44,7 +45,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     private final TracingConfiguration tracingConfiguration;
     private final TracingMDCManager tracingMDCManager;
     
-    // 追踪安全组件
+    // 追踪安全组件 - 使用懒加载解决循环依赖
     private final TracingSanitizationService tracingSanitizationService;
     private final TracingSecurityManager tracingSecurityManager;
     private final TracingEncryptionService tracingEncryptionService;

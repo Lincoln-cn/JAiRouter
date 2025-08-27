@@ -18,7 +18,6 @@ import lombok.Data;
  * @since 1.0.0
  */
 @Data
-@Component
 @ConfigurationProperties(prefix = "jairouter.monitoring.slow-query-alert")
 public class SlowQueryAlertProperties {
     
