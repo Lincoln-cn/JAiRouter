@@ -1,7 +1,7 @@
 site_name: JAiRouter 文档
 site_description: AI模型服务路由和负载均衡网关
 site_author: Lincoln
-site_url: https://lincoln-cn.github.io/JAiRouter
+site_url: https://docs.jairouter.com/
 
 repo_name: Lincoln-cn/jairouter
 repo_url: https://github.com/Lincoln-cn/jairouter
@@ -10,6 +10,7 @@ edit_uri: edit/main/docs/
 theme:
   name: material
   language: zh
+  custom_dir: docs/overrides
   palette:
     - scheme: default
       primary: blue
@@ -100,6 +101,14 @@ plugins:
             仪表板: Dashboards
             告警配置: Alerts
             故障排查: Troubleshooting
+            分布式追踪: Distributed Tracing
+            追踪概述: Tracing Overview
+            快速入门: Quick Start
+            配置参考: Configuration Reference
+            使用指南: Usage Guide
+            性能调优: Performance Tuning
+            故障排除: Troubleshooting
+            运维指南: Operations Guide
             开发指南: Development
             架构说明: Architecture
             贡献指南: Contributing
@@ -181,7 +190,16 @@ nav:
     - 监控设置: zh/monitoring/setup.md
     - 仪表板: zh/monitoring/dashboards.md
     - 告警配置: zh/monitoring/alerts.md
+    - 慢查询配置: zh/monitoring/slow-query-alerts.md
     - 故障排查: zh/monitoring/troubleshooting.md
+  - 分布式追踪:
+    - zh/tracing/index.md
+    - 快速入门: zh/tracing/quickstart.md
+    - 配置参考: zh/tracing/config-reference.md
+    - 使用指南: zh/tracing/usage-guide.md
+    - 性能调优: zh/tracing/performance-tuning.md
+    - 故障排除: zh/tracing/troubleshooting.md
+    - 运维指南: zh/tracing/operations-guide.md
   - 开发指南:
     - zh/development/index.md
     - 架构说明: zh/development/architecture.md
@@ -242,5 +260,6 @@ extra_css:
 
 extra_javascript:
   - javascripts/language-switcher.js
+  - https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8229708772289943
 
 copyright: Copyright &copy; 2025 JAiRouter Team
