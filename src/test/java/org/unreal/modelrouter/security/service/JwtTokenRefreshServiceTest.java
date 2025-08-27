@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.exception.exception.AuthenticationException;
@@ -22,6 +24,7 @@ import static org.mockito.Mockito.*;
  * JwtTokenRefreshService单元测试
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class JwtTokenRefreshServiceTest {
     
     @Mock

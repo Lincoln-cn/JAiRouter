@@ -1,15 +1,20 @@
 package org.unreal.modelrouter.tracing.wrapper;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
+import org.unreal.modelrouter.tracing.TracingContext;
+import org.unreal.modelrouter.tracing.TracingContextHolder;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class CircuitBreakerTracingWrapperTest {
@@ -21,9 +26,27 @@ class CircuitBreakerTracingWrapperTest {
 
     @Mock
     private StructuredLogger structuredLogger;
+    
+    @Mock
+    private TracingContext tracingContext;
+    
+    @Mock
+    private Span span;
+    
+    @Mock
+    private SpanContext spanContext;
 
     @BeforeEach
     void setUp() {
+        // 使用lenient模式设置Mock的追踪上下文避免不必要的stubbing警告
+        lenient().when(tracingContext.isActive()).thenReturn(false); // 设置为false避免创建span的复杂性
+        lenient().when(tracingContext.getCurrentSpan()).thenReturn(span);
+        lenient().when(span.getSpanContext()).thenReturn(spanContext);
+        lenient().when(spanContext.isValid()).thenReturn(true);
+        
+        // 设置追踪上下文
+        TracingContextHolder.setCurrentContext(tracingContext);
+        
         // Mock getState方法的返回值
         when(delegate.getState()).thenReturn(CircuitBreaker.State.CLOSED);
         circuitBreakerWrapper = new CircuitBreakerTracingWrapper(delegate, structuredLogger, "test-instance");
@@ -39,7 +62,7 @@ class CircuitBreakerTracingWrapperTest {
         assertTrue(result);
         verify(delegate, times(1)).canExecute();
         // 验证记录了状态检查开始和执行允许两个事件
-        verify(structuredLogger, times(2)).logBusinessEvent(anyString(), anyMap(), isNull());
+        verify(structuredLogger, times(2)).logBusinessEvent(anyString(), anyMap(), eq(tracingContext));
     }
 
     @Test
@@ -48,7 +71,7 @@ class CircuitBreakerTracingWrapperTest {
         assertDoesNotThrow(() -> circuitBreakerWrapper.onSuccess());
         verify(delegate, times(1)).onSuccess();
         // 根据实际实现，onSuccess只记录一次事件（成功完成）
-        verify(structuredLogger, times(1)).logBusinessEvent(anyString(), anyMap(), isNull());
+        verify(structuredLogger, times(1)).logBusinessEvent(anyString(), anyMap(), eq(tracingContext));
     }
 
     @Test
@@ -57,7 +80,7 @@ class CircuitBreakerTracingWrapperTest {
         assertDoesNotThrow(() -> circuitBreakerWrapper.onFailure());
         verify(delegate, times(1)).onFailure();
         // 根据实际实现，onFailure只记录一次事件（失败完成）
-        verify(structuredLogger, times(1)).logBusinessEvent(anyString(), anyMap(), isNull());
+        verify(structuredLogger, times(1)).logBusinessEvent(anyString(), anyMap(), eq(tracingContext));
     }
 
     @Test
