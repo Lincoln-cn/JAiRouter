@@ -39,6 +39,7 @@ build/
 
 /innerdoc/
 /config/
+/config-dev/
 /logs/
 /.kiro/
 /scripts/docs copy/

@@ -34,7 +34,17 @@ jairouter:
       blacklist-cache:
         expiration-seconds: 86400
         max-size: 10000
-    
+      # 用户账户配置
+      accounts:
+        - username: "admin"
+          password: "{noop}admin123"  # 开发环境明文密码，生产环境应使用加密
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
+        - username: "user"
+          password: "{noop}user123"
+          roles: [ "USER" ]
+          enabled: true
+
     # ========================================
     # 数据脱敏基础配置
     # ========================================
