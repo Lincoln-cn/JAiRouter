@@ -239,8 +239,4 @@ extra_javascript:
   - javascripts/language-switcher.js
   - https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8229708772289943
   
-extra_files:
-  - docs/robots.txt
-  - docs/sitemap.xml
-  
 copyright: Copyright &copy; 2025 JAiRouter Team
