@@ -89,7 +89,7 @@ public class SecurityConfiguration {
                         .anyExchange().authenticated()
                 )
                 // 添加自定义的认证过滤器
-                .addFilterBefore(apiKeyAuthenticationFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterBefore(securityIntegratedApiKeyFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
                 // 设置认证管理器
                 .authenticationManager(authenticationManager)
                 .build();
@@ -99,7 +99,7 @@ public class SecurityConfiguration {
      * 创建API Key认证过滤器
      */
     @Bean
-    public SecurityIntegratedApiKeyFilter apiKeyAuthenticationFilter() {
+    public SecurityIntegratedApiKeyFilter securityIntegratedApiKeyFilter() {
         return new SecurityIntegratedApiKeyFilter(apiKeyService, jwtTokenValidator, securityProperties);
     }
     

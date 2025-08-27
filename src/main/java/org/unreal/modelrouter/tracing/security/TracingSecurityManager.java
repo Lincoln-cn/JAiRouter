@@ -2,6 +2,7 @@ package org.unreal.modelrouter.tracing.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -34,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TracingSecurityManager {
     
     private final TracingConfiguration tracingConfiguration;
-    private final StructuredLogger structuredLogger;
+    private final @Lazy StructuredLogger structuredLogger;
     
     // 追踪访问权限缓存
     private final Map<String, Set<String>> userTracePermissions = new ConcurrentHashMap<>();

@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -40,9 +41,9 @@ import java.util.Set;
 @PreAuthorize("hasRole('ADMIN')")
 public class TracingSecurityController {
     
-    private final TracingSanitizationService tracingSanitizationService;
-    private final TracingSecurityManager tracingSecurityManager;
-    private final TracingEncryptionService tracingEncryptionService;
+    private final @Lazy TracingSanitizationService tracingSanitizationService;
+    private final @Lazy TracingSecurityManager tracingSecurityManager;
+    private final @Lazy TracingEncryptionService tracingEncryptionService;
     
     // ========================================
     // 脱敏规则管理
