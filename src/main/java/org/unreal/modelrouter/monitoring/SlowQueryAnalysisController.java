@@ -1,11 +1,19 @@
 package org.unreal.modelrouter.monitoring;
 
-import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.monitoring.SlowQueryDetector.SlowQueryStats;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.monitoring.SlowQueryDetector.SlowQueryStats;
+import org.unreal.modelrouter.monitoring.alert.SlowQueryAlertService;
+import org.unreal.modelrouter.monitoring.alert.SlowQueryAlertStats;
 
 /**
  * 慢查询统计和趋势分析控制器
@@ -17,6 +25,10 @@ public class SlowQueryAnalysisController {
     
     private final SlowQueryDetector slowQueryDetector;
     private final PerformanceTracker performanceTracker;
+    
+    // 慢查询告警服务（可选）
+    @Autowired(required = false)
+    private SlowQueryAlertService slowQueryAlertService;
     
     public SlowQueryAnalysisController(SlowQueryDetector slowQueryDetector, 
                                      PerformanceTracker performanceTracker) {
@@ -92,5 +104,58 @@ public class SlowQueryAnalysisController {
         trends.put("totalSlowQueries", slowQueryDetector.getTotalSlowQueryCount());
         
         return trends;
+    }
+    
+    // ===========================================
+    // 慢查询告警管理接口
+    // ===========================================
+    
+    /**
+     * 获取慢查询告警统计信息
+     * @return 告警统计信息
+     */
+    @GetMapping("/alerts/stats")
+    public SlowQueryAlertStats getAlertStats() {
+        if (slowQueryAlertService == null) {
+            return SlowQueryAlertStats.builder()
+                    .totalAlertsTriggered(0L)
+                    .totalAlertsSuppressed(0L)
+                    .activeAlertKeys(0)
+                    .activeOperations(java.util.Set.of())
+                    .build();
+        }
+        return slowQueryAlertService.getAlertStats();
+    }
+    
+    /**
+     * 重置慢查询告警统计
+     */
+    @DeleteMapping("/alerts/stats")
+    public void resetAlertStats() {
+        if (slowQueryAlertService != null) {
+            slowQueryAlertService.resetAlertStats();
+        }
+    }
+    
+    /**
+     * 获取告警系统状态
+     * @return 告警系统状态
+     */
+    @GetMapping("/alerts/status")
+    public Map<String, Object> getAlertSystemStatus() {
+        Map<String, Object> status = new java.util.HashMap<>();
+        status.put("alertServiceEnabled", slowQueryAlertService != null);
+        
+        if (slowQueryAlertService != null) {
+            SlowQueryAlertStats stats = slowQueryAlertService.getAlertStats();
+            status.put("alertStats", stats);
+            status.put("alertTriggerRate", stats.getAlertTriggerRate());
+            status.put("alertSuppressionRate", stats.getAlertSuppressionRate());
+            status.put("averageAlertsPerOperation", stats.getAverageAlertsPerOperation());
+        } else {
+            status.put("message", "慢查询告警服务未启用");
+        }
+        
+        return status;
     }
 }
