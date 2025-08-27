@@ -47,10 +47,10 @@ jobs:
     - name: 检查 Markdown 语法
       uses: DavidAnson/markdownlint-cli2-action@v20
       with:
-        files: '**/*.md'
         config: '.markdownlint.json'
-        ignore: 'node_modules'
-        fix: false
+        globs: |
+          **/*.md
+          !node_modules/**
     
     - name: 检查链接有效性 (第三方工具)
       uses: tcort/github-action-markdown-link-check@v1
