@@ -1,0 +1,192 @@
+# ========================================
+# 模型服务基础配置
+# ========================================
+# 此文件包含模型路由的核心业务配置
+# 包括负载均衡、限流、熔断等基础策略
+
+model:
+  # 全局配置
+  load-balance:
+    type: random # 支持: random, round-robin, least-connections, ip-hash
+    hash-algorithm: "md5" # IP Hash 策略的哈希算法
+
+  # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
+  adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
+
+  # 全局限流配置
+  rate-limit:
+    enabled: true
+    algorithm: "token-bucket"
+    capacity: 1000
+    rate: 100
+    scope: "service"
+    client-ip-enable: true  # 启用客户端IP限流
+
+  # 全局熔断配置
+  circuit-breaker:
+    enabled: true
+    failureThreshold: 5
+    timeout: 60000
+    successThreshold: 2
+
+  # 全局降级配置
+  fallback:
+    enabled: true
+    strategy: default
+
+  services:
+    # 聊天服务配置
+    chat:
+      load-balance:
+        type: least-connections
+      adapter: gpustack # 使用GPUStack适配器
+      # 服务级别限流配置
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 100
+        rate: 10
+        scope: "service"
+        client-ip-enable: true
+      instances:
+        - name: "qwen3:1.7B"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1-openai/chat/completions"
+          weight: 1
+        - name: "qwen3:1.7B"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/chat/completions"
+          weight: 1
+          # 实例级别限流配置
+          rate-limit:
+            enabled: true
+            algorithm: "token-bucket"
+            capacity: 50
+            rate: 5
+            scope: "instance"
+
+    # Embedding 服务配置
+    embedding:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 200
+        rate: 20
+        scope: "service"
+        client-ip-enable: true
+      instances:
+        - name: "nomic-embed-text-v1.5"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/embeddings"
+          weight: 1
+        - name: "nomic-embed-text-v1.5"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/embeddings"
+          weight: 1
+        - name: "bge-large-zh-v1.5"
+          base-url: "http://172.16.30.6:9090/"
+          path: "/v1/embeddings"
+          weight: 1
+
+    # Rerank 服务配置
+    rerank:
+      load-balance:
+        type: ip-hash
+        hash-algorithm: "sha256"
+      fallback:
+        enabled: true
+        strategy: cache
+        cache-size: 50
+        cache-ttl: 600000 # 10分钟
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 50
+        rate: 5
+        scope: "service"
+        client-ip-enable: true
+      instances:
+        - name: "bge-reranker-v2-m3"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/rerank"
+          weight: 1
+        - name: "bge-reranker-v2-m3"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/rerank"
+          weight: 2
+
+    # TTS 服务配置
+    tts:
+      load-balance:
+        type: random
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 30
+        rate: 3
+        scope: "service"
+        client-ip-enable: true
+      instances:
+        - name: "cosyvoice-300m"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/speech"
+          weight: 1
+        - name: "cosyvoice-300m"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/speech"
+          weight: 1
+
+    # STT 服务配置
+    stt:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 30
+        rate: 3
+        scope: "service"
+        client-ip-enable: true
+      instances:
+        - name: "faster-whisper-tiny"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/transcriptions"
+          weight: 2
+        - name: "faster-whisper-tiny"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/audio/transcriptions"
+          weight: 1
+
+    imgGen:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 10
+        rate: 1
+        scope: "service"
+        client-ip-enable: true
+      instances:
+        - name: "stable-diffusion-2-1"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/images/generations"
+          weight: 1
+
+    imgEdit:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 10
+        rate: 1
+        scope: "service"
+        client-ip-enable: true
+      instances:
+        - name: "stable-diffusion-2-1"
+          base-url: "http://172.16.30.6:9090"
+          path: "/v1/images/edits"
+          weight: 1

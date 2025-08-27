@@ -1,0 +1,81 @@
+# ========================================
+# 监控基础配置
+# ========================================
+# 此文件包含监控指标、管理端点等可观测性配置
+
+# 监控指标配置
+monitoring:
+  # 监控总开关
+  enabled: true
+  
+  metrics:
+    enabled: true
+    prefix: "jairouter"
+    collection-interval: 10s
+    enabled-categories:
+      - system
+      - business
+      - infrastructure
+      - errors  # 添加错误追踪类别
+    custom-tags:
+      environment: "production"
+      version: "1.0.0"
+
+    # 指标采样配置
+    sampling:
+      request-metrics: 1.0
+      backend-metrics: 1.0
+      infrastructure-metrics: 0.1
+      trace-metrics: 1.0
+      trace-processing-metrics: 1.0
+      trace-analysis-metrics: 1.0
+
+    # 性能优化配置
+    performance:
+      async-processing: true
+      batch-size: 100
+      buffer-size: 1000
+
+    # 性能阈值配置
+    thresholds:
+      default-threshold: 1000
+      operation-thresholds:
+        api_call: 2000
+        database_query: 500
+      slow-query-threshold: 5000
+      slow-query-thresholds:
+        chat: 8000
+        embedding: 3000
+        rerank: 2000
+        tts: 8000
+        stt: 30000        # 修复：从 stttts 改为 stt
+        imgGen: 30000     # 修复：从 imgGentts 改为 imgGen
+        imgEdit: 30000    # 修复：从 imgEdittts 改为 imgEdit
+
+# 管理端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,jairouter-metrics,error-tracking
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    prometheus:
+      cache:
+        time-to-live: 10s
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        descriptions: true
+        step: 10s
+    tags:
+      application: jairouter
+      environment: ${spring.profiles.active:default}
+    web:
+      server:
+        request:
+          autotime:
+            enabled: true

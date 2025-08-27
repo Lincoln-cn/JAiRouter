@@ -1,0 +1,170 @@
+# JAiRouter 慢查询告警规则
+# 该文件定义了与慢查询检测相关的 Prometheus 告警规则
+# 需要放在 monitoring/prometheus/rules/ 目录下
+
+groups:
+  # 慢查询相关告警规则组
+  - name: jairouter.slow-query-alerts
+    interval: 30s
+    rules:
+
+      # 慢查询检测到告警
+      - alert: JAiRouterSlowQueryDetected
+        expr: |
+          increase(slow_query_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: warning
+          service: jairouter
+          category: performance
+        annotations:
+          summary: "JAiRouter检测到慢查询操作"
+          description: |
+            操作 '{{ $labels.operation }}' 在过去5分钟内检测到 {{ $value }} 次慢查询。
+            严重程度: {{ $labels.severity }}
+            
+            建议检查操作性能，识别瓶颈并进行优化。
+
+      # 严重慢查询告警（超过阈值5倍）
+      - alert: JAiRouterCriticalSlowQuery
+        expr: |
+          slow_query_threshold_multiplier > 5
+        for: 1m
+        labels:
+          severity: critical
+          service: jairouter
+          category: performance
+        annotations:
+          summary: "JAiRouter检测到严重慢查询"
+          description: |
+            操作 '{{ $labels.operation }}' 的执行时间超过阈值 {{ $value }} 倍，
+            这表示存在严重的性能问题。
+            
+            需要立即检查系统状态和操作实现。
+
+      # 慢查询告警被触发
+      - alert: JAiRouterSlowQueryAlertTriggered
+        expr: |
+          increase(slow_query_alert_triggered[10m]) > 0
+        for: 0m
+        labels:
+          severity: "{{ $labels.severity }}"
+          service: jairouter
+          category: alert
+        annotations:
+          summary: "JAiRouter慢查询告警系统已触发告警"
+          description: |
+            慢查询告警系统在过去10分钟内为操作 '{{ $labels.operation }}' 
+            触发了 {{ $value }} 次告警。
+            严重程度: {{ $labels.severity }}
+            
+            这表示该操作持续存在性能问题，需要关注和处理。
+
+      # 慢查询频率过高告警
+      - alert: JAiRouterHighSlowQueryRate
+        expr: |
+          rate(slow_query_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+          category: performance
+        annotations:
+          summary: "JAiRouter慢查询频率过高"
+          description: |
+            操作 '{{ $labels.operation }}' 的慢查询频率为 {{ $value | humanizePercentage }}/秒，
+            严重程度: {{ $labels.severity }}
+            
+            慢查询频率过高可能影响整体系统性能，需要优化该操作。
+
+      # 多个操作同时出现慢查询
+      - alert: JAiRouterMultipleSlowOperations
+        expr: |
+          count(rate(slow_query_total[5m]) > 0) >= 3
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+          category: performance
+        annotations:
+          summary: "JAiRouter多个操作同时出现慢查询"
+          description: |
+            当前有 {{ $value }} 个操作同时出现慢查询问题。
+            
+            这可能表示系统整体性能下降，需要检查系统资源和基础设施状态。
+
+      # 慢查询告警系统故障
+      - alert: JAiRouterSlowQueryAlertSystemDown
+        expr: |
+          absent(slow_query_alert_active) or 
+          (time() - on() slow_query_alert_active) > 300
+        for: 5m
+        labels:
+          severity: critical
+          service: jairouter
+          category: system
+        annotations:
+          summary: "JAiRouter慢查询告警系统可能已停止工作"
+          description: |
+            慢查询告警系统超过5分钟没有活动指标更新。
+            
+            需要检查告警服务是否正常运行，确保监控系统的完整性。
+
+      # 慢查询平均响应时间异常
+      - alert: JAiRouterSlowQueryAverageTimeHigh
+        expr: |
+          avg_over_time(slow_query_duration_seconds[10m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: jairouter
+          category: performance
+        annotations:
+          summary: "JAiRouter慢查询平均响应时间过高"
+          description: |
+            操作 '{{ $labels.operation }}' 在过去10分钟的平均慢查询响应时间为 {{ $value }}秒。
+            
+            持续的高响应时间表示需要进行性能调优。
+
+  # 慢查询趋势分析告警规则组
+  - name: jairouter.slow-query-trends
+    interval: 60s
+    rules:
+
+      # 慢查询增长趋势告警
+      - alert: JAiRouterSlowQueryTrendIncreasing
+        expr: |
+          (
+            rate(slow_query_total[1h]) - 
+            rate(slow_query_total[1h] offset 1h)
+          ) / rate(slow_query_total[1h] offset 1h) * 100 > 50
+        for: 10m
+        labels:
+          severity: warning
+          service: jairouter
+          category: trend
+        annotations:
+          summary: "JAiRouter慢查询呈增长趋势"
+          description: |
+            操作 '{{ $labels.operation }}' 的慢查询频率相比1小时前增长了 {{ $value | humanizePercentage }}。
+            
+            慢查询持续增长可能表示性能在恶化，需要及时关注。
+
+      # 慢查询恢复告警（通知性能改善）
+      - alert: JAiRouterSlowQueryRecovered
+        expr: |
+          (
+            rate(slow_query_total[5m]) == 0 and 
+            rate(slow_query_total[5m] offset 10m) > 0
+          )
+        for: 5m
+        labels:
+          severity: info
+          service: jairouter
+          category: recovery
+        annotations:
+          summary: "JAiRouter慢查询问题已恢复"
+          description: |
+            操作 '{{ $labels.operation }}' 的慢查询问题在过去5分钟内已经恢复正常。
+            
+            性能问题已解决，系统运行状态良好。

@@ -1,0 +1,26 @@
+# ========================================
+# 服务器基础配置
+# ========================================
+# 此文件包含应用程序的基础服务器配置
+# 包括端口、线程配置等基础设施相关配置
+
+server:
+  port: 8080
+
+# 存储配置
+store:
+  type: file
+  path: "config/"
+
+# WebClient 基础配置
+webclient:
+  connection-timeout: 10s
+  read-timeout: 30s
+  write-timeout: 30s
+  max-in-memory-size: 10MB
+
+# 基础日志配置
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"
