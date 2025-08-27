@@ -1,0 +1,89 @@
+# ========================================
+# 错误追踪配置模块
+# ========================================
+# 此文件包含错误追踪、异常监控和错误分析等配置
+
+jairouter:
+  monitoring:
+    # 错误追踪配置
+    error-tracking:
+      # 是否启用错误追踪
+      enabled: false  # 默认关闭，各环境按需启用
+      
+      # 错误聚合窗口大小（分钟）
+      aggregation-window-minutes: 5
+      
+      # 最大错误聚合数量
+      max-aggregations: 1000
+      
+      # 堆栈脱敏配置
+      sanitization:
+        # 是否启用堆栈脱敏
+        enabled: true
+        
+        # 最大堆栈深度
+        max-stack-depth: 20
+        
+        # 需要脱敏的包前缀
+        sensitive-packages:
+          - "org.unreal.modelrouter.security"
+          - "org.unreal.modelrouter.auth"
+          - "java.security"
+          - "javax.crypto"
+        
+        # 需要完全过滤的包前缀
+        excluded-packages:
+          - "sun."
+          - "java.lang.reflect"
+          - "org.springframework.cglib"
+          - "net.sf.cglib"
+        
+        # 需要脱敏的字段名
+        sensitive-fields:
+          - "password"
+          - "token"
+          - "secret"
+          - "key"
+          - "credential"
+          - "apiKey"
+          - "accessToken"
+          - "refreshToken"
+      
+      # 指标配置
+      metrics:
+        # 是否启用错误指标
+        enabled: true
+        
+        # 错误计数器前缀
+        counter-prefix: "jairouter.errors"
+        
+        # 是否按错误类型分组
+        group-by-error-type: true
+        
+        # 是否按操作分组
+        group-by-operation: true
+        
+        # 是否记录错误持续时间
+        record-duration: true
+        
+        # 错误持续时间直方图桶配置（秒）
+        histogram-buckets:
+          - 0.1   # 100ms
+          - 0.5   # 500ms
+          - 1.0   # 1s
+          - 2.0   # 2s
+          - 5.0   # 5s
+          - 10.0  # 10s
+          - 30.0  # 30s
+          - 60.0  # 60s
+          
+      # 错误追踪日志配置
+      logging:
+        # 是否记录错误追踪日志
+        enabled: true
+        # 错误日志级别
+        level: "ERROR"
+        # 是否包含堆栈信息
+        include-stack-trace: true
+        # 是否记录错误上下文
+        include-context: true
