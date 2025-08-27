@@ -1,16 +1,19 @@
 package org.unreal.modelrouter.monitoring.error;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.TracingContextHolder;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 错误追踪器
@@ -26,10 +29,16 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ErrorTracker {
     
     private final StructuredLogger structuredLogger;
+    
+    // 可选依赖
+    @Autowired(required = false)
+    private StackTraceSanitizer stackTraceSanitizer;
+    
+    @Autowired(required = false)
+    private ErrorMetricsCollector errorMetricsCollector;
     
     // 异常统计
     private final ConcurrentHashMap<String, AtomicLong> errorTypeCounters = new ConcurrentHashMap<>();
@@ -37,6 +46,10 @@ public class ErrorTracker {
     
     // 异常聚合统计
     private final ConcurrentHashMap<String, ErrorAggregation> errorAggregations = new ConcurrentHashMap<>();
+    
+    public ErrorTracker(StructuredLogger structuredLogger) {
+        this.structuredLogger = structuredLogger;
+    }
     
     /**
      * 记录异常信息
@@ -50,9 +63,17 @@ public class ErrorTracker {
             return;
         }
         
+        Instant startTime = Instant.now();
+        
         try {
             // 获取当前追踪上下文
             TracingContext context = TracingContextHolder.getCurrentContext();
+            
+            // 脱敏异常信息
+            StackTraceSanitizer.SanitizedThrowable sanitizedThrowable = null;
+            if (stackTraceSanitizer != null) {
+                sanitizedThrowable = stackTraceSanitizer.sanitize(throwable);
+            }
             
             // 更新统计信息
             updateErrorStatistics(throwable, operation);
@@ -66,11 +87,27 @@ public class ErrorTracker {
             errorInfo.put("operation", operation);
             errorInfo.put("exceptionClass", throwable.getClass().getName());
             
+            // 添加脱敏后的异常信息
+            if (sanitizedThrowable != null) {
+                errorInfo.put("sanitizedMessage", sanitizedThrowable.getMessage());
+                errorInfo.put("sanitizedStackTrace", sanitizedThrowable.toSimpleString());
+            }
+            
             // 记录到结构化日志中
             structuredLogger.logError(throwable, context, errorInfo);
             
             // 更新聚合统计
             aggregateError(throwable, operation, context);
+            
+            // 记录指标
+            if (errorMetricsCollector != null) {
+                Duration duration = Duration.between(startTime, Instant.now());
+                errorMetricsCollector.recordError(
+                    throwable.getClass().getSimpleName(),
+                    operation,
+                    duration
+                );
+            }
             
         } catch (Exception e) {
             log.warn("记录错误信息时发生异常", e);

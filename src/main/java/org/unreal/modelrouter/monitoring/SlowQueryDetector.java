@@ -1,13 +1,18 @@
 package org.unreal.modelrouter.monitoring;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
-
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.monitoring.alert.SlowQueryAlertService;
+import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
+import org.unreal.modelrouter.tracing.TracingContext;
+import org.unreal.modelrouter.tracing.TracingContextHolder;
 
 /**
  * 慢查询检测器
@@ -31,6 +36,10 @@ public class SlowQueryDetector {
     // 总慢查询计数
     private final AtomicLong totalSlowQueryCount = new AtomicLong(0);
     
+    // 慢查询告警服务（延迟注入避免循环依赖）
+    @Autowired(required = false)
+    private SlowQueryAlertService slowQueryAlertService;
+    
     public SlowQueryDetector(MonitoringProperties monitoringProperties) {
         this.monitoringProperties = monitoringProperties;
     }
@@ -43,6 +52,18 @@ public class SlowQueryDetector {
      * @param context 上下文信息
      */
     public void detectSlowQuery(String operationName, long durationMillis, Map<String, String> context) {
+        detectSlowQuery(operationName, durationMillis, context, null);
+    }
+    
+    /**
+     * 检测慢查询（带追踪上下文）
+     * 
+     * @param operationName 操作名称
+     * @param durationMillis 操作耗时（毫秒）
+     * @param context 上下文信息
+     * @param tracingContext 追踪上下文
+     */
+    public void detectSlowQuery(String operationName, long durationMillis, Map<String, String> context, TracingContext tracingContext) {
         // 获取慢查询阈值，如果没有配置则使用默认值1000ms
         Map<String, Long> slowQueryThresholds = monitoringProperties.getThresholds().getSlowQueryThresholds();
         Long threshold = slowQueryThresholds != null ? 
@@ -60,6 +81,38 @@ public class SlowQueryDetector {
             // 记录慢查询日志
             logger.warn("Slow query detected - Operation: {}, Duration: {}ms, Threshold: {}ms, Context: {}", 
                        operationName, durationMillis, threshold, context);
+            
+            // 触发告警检查
+            triggerSlowQueryAlert(operationName, durationMillis, threshold, context, tracingContext);
+        }
+    }
+    
+    /**
+     * 触发慢查询告警
+     */
+    private void triggerSlowQueryAlert(String operationName, long durationMillis, long threshold, 
+                                      Map<String, String> context, TracingContext tracingContext) {
+        if (slowQueryAlertService == null) {
+            return; // 告警服务未配置
+        }
+        
+        try {
+            // 获取当前追踪上下文（如果没有提供）
+            TracingContext currentContext = tracingContext != null ? 
+                    tracingContext : TracingContextHolder.getCurrentContext();
+            
+            // 构建额外信息
+            Map<String, Object> additionalInfo = new HashMap<>();
+            if (context != null) {
+                additionalInfo.putAll(context);
+            }
+            
+            // 检查并发送告警
+            slowQueryAlertService.checkAndAlert(operationName, durationMillis, threshold, 
+                    currentContext, additionalInfo);
+            
+        } catch (Exception e) {
+            logger.debug("触发慢查询告警时发生错误：operation={}, duration={}ms", operationName, durationMillis, e);
         }
     }
     

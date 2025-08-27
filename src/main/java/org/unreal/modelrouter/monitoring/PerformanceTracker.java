@@ -109,11 +109,11 @@ public class PerformanceTracker {
         if (durationMillis > threshold) {
             logger.warn("Slow operation detected: {} took {} ms, threshold is {} ms", 
                     operationName, durationMillis, threshold);
-            // 可以在这里添加更多慢操作处理逻辑
         }
         
-        // 使用SlowQueryDetector检测慢查询
-        slowQueryDetector.detectSlowQuery(operationName, durationMillis, tags);
+        // 使用SlowQueryDetector检测慢查询，传递当前追踪上下文
+        slowQueryDetector.detectSlowQuery(operationName, durationMillis, tags, 
+                org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext());
     }
     
     /**
