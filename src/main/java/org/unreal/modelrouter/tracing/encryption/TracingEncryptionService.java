@@ -2,6 +2,7 @@ package org.unreal.modelrouter.tracing.encryption;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.config.TracingConfiguration;
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 public class TracingEncryptionService {
     
     private final TracingConfiguration tracingConfiguration;
-    private final StructuredLogger structuredLogger;
+    private final @Lazy StructuredLogger structuredLogger;
     
     // 加密算法常量
     private static final String ENCRYPTION_ALGORITHM = "AES";

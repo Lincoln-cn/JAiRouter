@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -44,7 +45,7 @@ import java.util.Map;
 public class TracingWebFilter implements WebFilter, Ordered {
     
     private final TracingService tracingService;
-    private final StructuredLogger structuredLogger;
+    private final @Lazy StructuredLogger structuredLogger;
     private final TracingPerformanceMonitor performanceMonitor;
     
     /**

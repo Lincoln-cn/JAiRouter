@@ -5,6 +5,8 @@
 # 详细配置请参考各个模块配置文件
 
 spring:
+  main:
+    allow-circular-references: true
   config:
     import:
       - classpath:config/base/server-base.yml

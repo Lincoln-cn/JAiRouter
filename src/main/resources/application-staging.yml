@@ -4,10 +4,6 @@
 # 此文件仅包含预发布环境特定的配置覆盖
 # 基础配置通过模块化导入，详见 application.yml
 
-spring:
-  profiles:
-    active: staging
-
 # 预发布环境日志配置（详细日志）
 logging:
   level:

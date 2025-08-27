@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -28,8 +29,8 @@ import org.unreal.modelrouter.tracing.security.TracingSecurityFilter;
 @ConditionalOnProperty(name = "jairouter.tracing.enabled", havingValue = "true", matchIfMissing = true)
 public class TracingSecurityConfiguration {
     
-    private final TracingWebFilter tracingWebFilter;
-    private final TracingSecurityFilter tracingSecurityFilter;
+    private final @Lazy TracingWebFilter tracingWebFilter;
+    private final @Lazy TracingSecurityFilter tracingSecurityFilter;
     
     /**
      * 配置追踪相关的安全过滤器链
