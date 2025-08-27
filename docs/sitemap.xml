@@ -4,96 +4,96 @@
   
   <!-- 中文首页 -->
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/</loc>
+    <loc>https://docs.jairouter.com/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/"/>
   </url>
   
   <!-- 英文首页 -->
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/en/</loc>
+    <loc>https://docs.jairouter.com/en/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/"/>
   </url>
   
   <!-- 中文主要页面 -->
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/getting-started/</loc>
+    <loc>https://docs.jairouter.com/getting-started/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/getting-started/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/getting-started/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/getting-started/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/getting-started/"/>
   </url>
   
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/configuration/</loc>
+    <loc>https://docs.jairouter.com/configuration/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/configuration/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/configuration/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/configuration/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/configuration/"/>
   </url>
   
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/api-reference/</loc>
+    <loc>https://docs.jairouter.com/api-reference/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/api-reference/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/api-reference/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/api-reference/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/api-reference/"/>
   </url>
   
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/deployment/</loc>
+    <loc>https://docs.jairouter.com/deployment/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/deployment/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/deployment/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/deployment/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/deployment/"/>
   </url>
   
   <!-- 英文主要页面 -->
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/en/getting-started/</loc>
+    <loc>https://docs.jairouter.com/en/getting-started/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/getting-started/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/getting-started/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/getting-started/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/getting-started/"/>
   </url>
   
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/en/configuration/</loc>
+    <loc>https://docs.jairouter.com/en/configuration/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/configuration/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/configuration/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/configuration/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/configuration/"/>
   </url>
   
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/en/api-reference/</loc>
+    <loc>https://docs.jairouter.com/en/api-reference/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/api-reference/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/api-reference/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/api-reference/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/api-reference/"/>
   </url>
   
   <url>
-    <loc>https://lincoln-cn.github.io/JAiRouter/en/deployment/</loc>
+    <loc>https://docs.jairouter.com/en/deployment/</loc>
     <lastmod>2025-01-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lincoln-cn.github.io/JAiRouter/en/deployment/"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="https://lincoln-cn.github.io/JAiRouter/deployment/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://docs.jairouter.com/en/deployment/"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="https://docs.jairouter.com/deployment/"/>
   </url>
   
 </urlset>
