@@ -106,4 +106,34 @@ public class TracingSamplingController {
                     .body(RouterResponse.error("重置追踪采样配置失败: " + e.getMessage()));
         }
     }
+    
+    /**
+     * 回滚追踪采样配置到指定版本
+     * 
+     * @param targetVersion 目标版本号
+     * @return 回滚结果
+     */
+    @PostMapping("/rollback/{targetVersion}")
+    @Operation(summary = "回滚追踪采样配置", description = "将追踪采样配置回滚到指定版本")
+    @ApiResponse(responseCode = "200", description = "配置回滚成功",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RouterResponse.class)))
+    @ApiResponse(responseCode = "400", description = "目标版本不存在或无效")
+    @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    public ResponseEntity<RouterResponse<Map<String, Object>>> rollbackTracingSamplingConfig(
+            @Parameter(description = "目标版本号") @PathVariable int targetVersion) {
+        try {
+            Map<String, Object> rolledBackConfig = configurationService.rollbackTracingSamplingConfig(targetVersion);
+            log.info("追踪采样配置回滚成功，目标版本: {}", targetVersion);
+            return ResponseEntity.ok(RouterResponse.success(rolledBackConfig, "追踪采样配置回滚成功"));
+        } catch (IllegalArgumentException e) {
+            log.error("追踪采样配置回滚失败：参数错误", e);
+            return ResponseEntity.badRequest()
+                    .body(RouterResponse.error("追踪采样配置回滚失败: " + e.getMessage()));
+        } catch (Exception e) {
+            log.error("追踪采样配置回滚失败", e);
+            return ResponseEntity.internalServerError()
+                    .body(RouterResponse.error("追踪采样配置回滚失败: " + e.getMessage()));
+        }
+    }
 }
