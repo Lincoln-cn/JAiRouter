@@ -11,6 +11,9 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.sanitization.SanitizationService;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.tracing.encryption.TracingEncryptionService;
+import org.unreal.modelrouter.tracing.sanitization.TracingSanitizationService;
+import org.unreal.modelrouter.tracing.security.TracingSecurityManager;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -39,7 +42,12 @@ public class DefaultStructuredLogger implements StructuredLogger {
     private final ObjectMapper objectMapper;
     private final SanitizationService sanitizationService;
     private final TracingConfiguration tracingConfiguration;
-    private final TracingMDCManager tracingMDCManager; // 添加TracingMDCManager依赖
+    private final TracingMDCManager tracingMDCManager;
+    
+    // 追踪安全组件
+    private final TracingSanitizationService tracingSanitizationService;
+    private final TracingSecurityManager tracingSecurityManager;
+    private final TracingEncryptionService tracingEncryptionService;
     
     // 日志类型常量
     private static final String LOG_TYPE_REQUEST = "request";
@@ -60,27 +68,50 @@ public class DefaultStructuredLogger implements StructuredLogger {
             return;
         }
         
+        // 检查访问权限
+        tracingSecurityManager.canAccessTraceContext(context)
+                .filter(hasPermission -> hasPermission)
+                .doOnNext(hasPermission -> {
+                    try {
+                        // 设置MDC
+                        setMDC(context);
+                        
+                        Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_REQUEST, context);
+                        Map<String, Object> fields = new HashMap<>();
+                        
+                        // 处理请求日志的其余部分
+                        processRequestLogging(request, context, logEntry, fields);
+                        
+                    } catch (Exception e) {
+                        log.debug("记录请求日志时发生错误", e);
+                    } finally {
+                        clearMDC();
+                    }
+                })
+                .subscribe();
+    }
+    
+    /**
+     * 处理请求日志记录
+     */
+    private void processRequestLogging(ServerHttpRequest request, TracingContext context, 
+                                     Map<String, Object> logEntry, Map<String, Object> fields) {
         try {
-            // 设置MDC
-            setMDC(context);
             
-            Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_REQUEST, context);
-            Map<String, Object> fields = new HashMap<>();
-            
-            // HTTP请求信息
+            // HTTP请求信息（安全处理）
             fields.put("method", request.getMethod() != null ? request.getMethod().name() : "UNKNOWN");
-            fields.put("path", request.getPath().value());
-            fields.put("url", request.getURI().toString());
+            fields.put("path", sanitizeUrlPath(request.getPath().value()));
+            fields.put("url", sanitizeUrl(request.getURI().toString()));
             
-            // 客户端信息
+            // 客户端信息（脱敏处理）
             String clientIp = getClientIp(request);
             if (clientIp != null) {
-                fields.put("clientIp", clientIp);
+                fields.put("clientIp", sanitizeClientIp(clientIp));
             }
             
             String userAgent = request.getHeaders().getFirst("User-Agent");
             if (userAgent != null) {
-                fields.put("userAgent", sanitizeIfNeeded(userAgent));
+                fields.put("userAgent", sanitizeUserAgent(userAgent));
             }
             
             // 请求大小
@@ -93,21 +124,48 @@ public class DefaultStructuredLogger implements StructuredLogger {
                 }
             }
             
-            // 请求头（脱敏处理）
+            // 请求头（安全脱敏处理）
             if (tracingConfiguration.getLogging().isCaptureHeaders()) {
-                Map<String, String> sanitizedHeaders = sanitizeHeaders(request.getHeaders().toSingleValueMap());
-                fields.put("headers", sanitizedHeaders);
+                Map<String, String> rawHeaders = request.getHeaders().toSingleValueMap();
+                sanitizeRequestHeaders(rawHeaders, context)
+                        .doOnNext(sanitizedHeaders -> {
+                            fields.put("headers", sanitizedHeaders);
+                            
+                            // 应用追踪特定的脱敏
+                            tracingSanitizationService.sanitizeLogData(fields, context)
+                                    .doOnNext(sanitizedFields -> {
+                                        logEntry.put("fields", sanitizedFields);
+                                        logEntry.put("message", "HTTP请求开始");
+                                        
+                                        // 如果需要加密存储
+                                        if (shouldEncryptLogData(logEntry)) {
+                                            encryptAndLogEntry(logEntry, context);
+                                        } else {
+                                            logStructuredEntry(logEntry);
+                                        }
+                                    })
+                                    .subscribe();
+                        })
+                        .subscribe();
+            } else {
+                // 应用追踪特定的脱敏
+                tracingSanitizationService.sanitizeLogData(fields, context)
+                        .doOnNext(sanitizedFields -> {
+                            logEntry.put("fields", sanitizedFields);
+                            logEntry.put("message", "HTTP请求开始");
+                            
+                            // 如果需要加密存储
+                            if (shouldEncryptLogData(logEntry)) {
+                                encryptAndLogEntry(logEntry, context);
+                            } else {
+                                logStructuredEntry(logEntry);
+                            }
+                        })
+                        .subscribe();
             }
             
-            logEntry.put("fields", fields);
-            logEntry.put("message", "HTTP请求开始");
-            
-            logStructuredEntry(logEntry);
-            
         } catch (Exception e) {
-            log.debug("记录请求日志时发生错误", e);
-        } finally {
-            clearMDC();
+            log.debug("处理请求日志时发生错误", e);
         }
     }
     
@@ -667,5 +725,221 @@ public class DefaultStructuredLogger implements StructuredLogger {
      */
     private String getEnvironment() {
         return tracingConfiguration.getServiceNamespace();
+    }
+    
+    // ========================================
+    // 安全和脱敏相关方法
+    // ========================================
+    
+    /**
+     * 安全处理URL路径
+     */
+    private String sanitizeUrlPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        
+        // 移除查询参数中的敏感信息
+        if (path.contains("?")) {
+            String[] parts = path.split("\\?", 2);
+            String basePath = parts[0];
+            String queryString = parts[1];
+            
+            // 脱敏查询参数
+            String sanitizedQuery = sanitizeQueryString(queryString);
+            return basePath + "?" + sanitizedQuery;
+        }
+        
+        return path;
+    }
+    
+    /**
+     * 安全处理完整URL
+     */
+    private String sanitizeUrl(String url) {
+        if (url == null) {
+            return null;
+        }
+        
+        try {
+            return sanitizationService.sanitizeRequest(url, "text/plain", null)
+                    .onErrorReturn(url)
+                    .block();
+        } catch (Exception e) {
+            log.debug("URL脱敏失败，返回原值", e);
+            return url;
+        }
+    }
+    
+    /**
+     * 脱敏查询参数
+     */
+    private String sanitizeQueryString(String queryString) {
+        if (queryString == null || queryString.isEmpty()) {
+            return queryString;
+        }
+        
+        StringBuilder sanitized = new StringBuilder();
+        String[] params = queryString.split("&");
+        
+        for (int i = 0; i < params.length; i++) {
+            if (i > 0) {
+                sanitized.append("&");
+            }
+            
+            String param = params[i];
+            if (param.contains("=")) {
+                String[] keyValue = param.split("=", 2);
+                String key = keyValue[0];
+                String value = keyValue.length > 1 ? keyValue[1] : "";
+                
+                if (isSensitiveQueryParam(key)) {
+                    sanitized.append(key).append("=[REDACTED]");
+                } else {
+                    sanitized.append(param);
+                }
+            } else {
+                sanitized.append(param);
+            }
+        }
+        
+        return sanitized.toString();
+    }
+    
+    /**
+     * 检查是否为敏感查询参数
+     */
+    private boolean isSensitiveQueryParam(String key) {
+        String lowerKey = key.toLowerCase();
+        return lowerKey.contains("token") ||
+               lowerKey.contains("key") ||
+               lowerKey.contains("password") ||
+               lowerKey.contains("secret") ||
+               lowerKey.contains("auth") ||
+               lowerKey.contains("credential");
+    }
+    
+    /**
+     * 脱敏客户端IP
+     */
+    private String sanitizeClientIp(String clientIp) {
+        if (clientIp == null) {
+            return null;
+        }
+        
+        // 对IPv4地址进行部分脱敏（保留前两段）
+        if (clientIp.matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) {
+            String[] parts = clientIp.split("\\.");
+            return parts[0] + "." + parts[1] + ".xxx.xxx";
+        }
+        
+        // 对IPv6地址进行部分脱敏
+        if (clientIp.contains(":")) {
+            String[] parts = clientIp.split(":");
+            if (parts.length >= 4) {
+                return parts[0] + ":" + parts[1] + "::xxxx";
+            }
+        }
+        
+        return clientIp;
+    }
+    
+    /**
+     * 脱敏User-Agent
+     */
+    private String sanitizeUserAgent(String userAgent) {
+        if (userAgent == null) {
+            return null;
+        }
+        
+        try {
+            return sanitizationService.sanitizeRequest(userAgent, "text/plain", null)
+                    .onErrorReturn(userAgent)
+                    .block();
+        } catch (Exception e) {
+            log.debug("User-Agent脱敏失败，返回原值", e);
+            return userAgent;
+        }
+    }
+    
+    /**
+     * 脱敏请求头
+     */
+    private Mono<Map<String, String>> sanitizeRequestHeaders(Map<String, String> headers, TracingContext context) {
+        if (headers == null || headers.isEmpty()) {
+            return Mono.just(headers);
+        }
+        
+        Map<String, String> sanitizedHeaders = new HashMap<>();
+        
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            
+            if (isSensitiveHeader(key)) {
+                sanitizedHeaders.put(key, "[REDACTED]");
+                
+                // 记录敏感头部脱敏
+                this.logSanitization(
+                    "request.header." + key.toLowerCase(),
+                    "redact",
+                    "header-sanitization",
+                    context
+                );
+            } else {
+                sanitizedHeaders.put(key, sanitizeIfNeeded(value));
+            }
+        }
+        
+        return Mono.just(sanitizedHeaders);
+    }
+    
+    /**
+     * 检查是否需要加密日志数据
+     */
+    private boolean shouldEncryptLogData(Map<String, Object> logEntry) {
+        // 检查是否包含敏感数据
+        Object fields = logEntry.get("fields");
+        if (fields instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> fieldsMap = (Map<String, Object>) fields;
+            
+            // 检查是否包含需要加密的字段
+            return fieldsMap.containsKey("authorization") ||
+                   fieldsMap.containsKey("token") ||
+                   fieldsMap.containsKey("password") ||
+                   fieldsMap.containsKey("secret");
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 加密并记录日志条目
+     */
+    private void encryptAndLogEntry(Map<String, Object> logEntry, TracingContext context) {
+        try {
+            String jsonLog = objectMapper.writeValueAsString(logEntry);
+            
+            tracingEncryptionService.encryptTraceData(jsonLog, context.getTraceId(), "log_entry")
+                    .doOnNext(encryptedData -> {
+                        // 创建加密日志条目
+                        Map<String, Object> encryptedLogEntry = new HashMap<>();
+                        encryptedLogEntry.put("timestamp", logEntry.get("timestamp"));
+                        encryptedLogEntry.put("level", logEntry.get("level"));
+                        encryptedLogEntry.put("type", logEntry.get("type"));
+                        encryptedLogEntry.put("traceId", context.getTraceId());
+                        encryptedLogEntry.put("spanId", context.getSpanId());
+                        encryptedLogEntry.put("encrypted_data", encryptedData);
+                        encryptedLogEntry.put("message", "[ENCRYPTED] " + logEntry.get("message"));
+                        
+                        logStructuredEntry(encryptedLogEntry);
+                    })
+                    .subscribe();
+                    
+        } catch (Exception e) {
+            log.debug("加密日志条目失败，使用普通日志", e);
+            logStructuredEntry(logEntry);
+        }
     }
 }

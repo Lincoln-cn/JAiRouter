@@ -182,9 +182,18 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
         }
         
         String lowerHost = host.toLowerCase();
-        if (lowerHost.contains("openai")) {
+        if (lowerHost.contains("openai") || lowerHost.contains("azure")) {
             return "openai";
-        } else if (lowerHost.contains("ollama")) {
+        } else if (lowerHost.contains("anthropic") || lowerHost.contains("claude")) {
+            return "anthropic";
+        } else if (lowerHost.contains("googleapis") || lowerHost.contains("google")) {
+            return "google";
+        } else if (lowerHost.contains("huggingface")) {
+            return "huggingface";
+        } else if (lowerHost.contains("cohere")) {
+            return "cohere";
+        } else if (lowerHost.equals("localhost") || lowerHost.equals("127.0.0.1") || 
+                 lowerHost.startsWith("192.168.") || lowerHost.contains("ollama")) {
             return "ollama";
         } else if (lowerHost.contains("vllm")) {
             return "vllm";
