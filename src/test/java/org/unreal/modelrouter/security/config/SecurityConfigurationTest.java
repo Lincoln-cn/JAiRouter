@@ -4,14 +4,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.test.context.TestPropertySource;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
+import org.unreal.modelrouter.security.config.SecurityConfiguration;
+import org.unreal.modelrouter.security.config.CustomReactiveAuthenticationManager;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * SecurityConfiguration测试类
@@ -30,6 +34,9 @@ class SecurityConfigurationTest {
     
     @Mock
     private JwtTokenValidator jwtTokenValidator;
+
+    @Mock
+    private UserDetailsService userDetailsService;
     
 
     
@@ -37,7 +44,7 @@ class SecurityConfigurationTest {
     void testReactiveAuthenticationManagerCreation() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, jwtTokenValidator
+                securityProperties, apiKeyService, jwtTokenValidator, userDetailsService
         );
         
         // When
@@ -52,7 +59,7 @@ class SecurityConfigurationTest {
     void testSecurityWebFilterChainCreation() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, jwtTokenValidator
+                securityProperties, apiKeyService, jwtTokenValidator, userDetailsService
         );
         ReactiveAuthenticationManager authManager = securityConfiguration.reactiveAuthenticationManager();
         ServerHttpSecurity http = ServerHttpSecurity.http();
@@ -70,7 +77,7 @@ class SecurityConfigurationTest {
     void testSecurityPropertiesInjection() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, jwtTokenValidator
+                securityProperties, apiKeyService, jwtTokenValidator, userDetailsService
         );
         
         // When & Then

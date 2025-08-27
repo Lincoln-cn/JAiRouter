@@ -7,8 +7,6 @@
 > **作者**: 
 <!-- /版本信息 -->
 
-
-
 ## Overview
 
 JAiRouter supports JWT (JSON Web Token) authentication, which can be integrated with existing identity authentication systems. JWT authentication provides a stateless authentication mechanism and supports token refresh and blacklist features.
@@ -20,6 +18,7 @@ JAiRouter supports JWT (JSON Web Token) authentication, which can be integrated 
 - **Token Refresh**: Supports access token and refresh token mechanism
 - **Blacklist Functionality**: Supports token revocation and logout
 - **Coexistence with API Key**: Can be used simultaneously with API Key authentication
+- **Username/Password Login**: Supports obtaining JWT tokens through username and password
 
 ## Quick Start
 
@@ -56,7 +55,32 @@ jairouter:
       private-key: "${JWT_PRIVATE_KEY}"
 ```
 
-### 3. Client Usage
+### 3. Configure User Accounts
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      enabled: true
+      secret: "dev-jwt-secret-key-for-development-only-not-for-production"
+      algorithm: "HS256"
+      expiration-minutes: 60
+      refresh-expiration-days: 7
+      issuer: "jairouter"
+      blacklist-enabled: true
+      # User account configuration
+      accounts:
+        - username: "admin"
+          password: "{bcrypt}$2a$10$xmZ5S3DY567m5z6vcPVkreKZ885VqWFb1DB5.RgCEvqHLKj0H/G7u"  # BCrypt encrypted password
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
+        - username: "user"
+          password: "{noop}user123"  # Plain text password for development, should use encryption in production
+          roles: [ "USER" ]
+          enabled: true
+```
+
+### 4. Client Usage
 
 Add the JWT token in the HTTP request header:
 
@@ -66,6 +90,53 @@ curl -H "Authorization: Bearer your-jwt-token-here" \
      -H "Content-Type: application/json" \
      -d '{"model": "gpt-3.5-turbo", "messages": [...]}' \
      http://localhost:8080/v1/chat/completions
+```
+
+## Login to Obtain JWT Token
+
+### Login Endpoint
+
+```
+POST /api/auth/jwt/login
+```
+
+### Request Example
+
+```bash
+curl -X POST http://localhost:8080/api/auth/jwt/login \
+     -H "Content-Type: application/json" \
+     -d '{
+           "username": "admin",
+           "password": "admin123"
+         }'
+```
+
+### Response Example
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600,
+    "message": "Login successful",
+    "timestamp": "2023-01-01T12:00:00"
+  },
+  "errorCode": null
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "message": "Login failed: Incorrect username or password",
+  "data": null,
+  "errorCode": "LOGIN_FAILED"
+}
 ```
 
 ## Detailed Configuration
@@ -83,6 +154,7 @@ curl -H "Authorization: Bearer your-jwt-token-here" \
 | `refresh-expiration-days` | int | 7 | Refresh token expiration time (days) |
 | `issuer` | string | "jairouter" | JWT issuer identifier |
 | `blacklist-enabled` | boolean | true | Whether to enable blacklist functionality |
+| `accounts` | array | [] | User account list |
 
 ### Supported Signing Algorithms
 
@@ -156,6 +228,77 @@ You can include custom claims in the JWT:
 }
 ```
 
+## Password Encryption Configuration
+
+JAiRouter supports multiple password encryption methods to improve security:
+
+### BCrypt Encryption Configuration
+
+BCrypt is a secure password hashing function, recommended for use in production environments:
+
+```java
+// Example code: Generate BCrypt encrypted password
+String rawPassword = "admin123";
+org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = 
+    new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+String encodedPassword = encoder.encode(rawPassword);
+System.out.println("Encoded password: " + encodedPassword);
+```
+
+Using BCrypt encrypted passwords in configuration files:
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      accounts:
+        - username: "admin"
+          password: "{bcrypt}$2a$10$xmZ5S3DY567m5z6vcPVkreKZ885VqWFb1DB5.RgCEvqHLKj0H/G7u"
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
+```
+
+### Plain Text Password Configuration (Development Only)
+
+For development and testing convenience, plain text password configuration is supported:
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      accounts:
+        - username: "user"
+          password: "{noop}user123"
+          roles: [ "USER" ]
+          enabled: true
+```
+
+### Password Encoder Configuration
+
+Configure the password encoder in `SecurityConfiguration.java`:
+
+```java
+/**
+ * Configure password encoder - BCrypt as default encoder
+ */
+@Bean
+public PasswordEncoder passwordEncoder() {
+    java.util.Map<String, org.springframework.security.crypto.password.PasswordEncoder> encoders = 
+        java.util.Map.of(
+            "bcrypt", new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(10),
+            "noop", org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance()
+        );
+    
+    org.springframework.security.crypto.password.DelegatingPasswordEncoder delegatingEncoder = 
+        new org.springframework.security.crypto.password.DelegatingPasswordEncoder("bcrypt", encoders);
+    
+    // Set the default password encoder
+    delegatingEncoder.setDefaultPasswordEncoderForMatches(encoders.get("bcrypt"));
+    
+    return delegatingEncoder;
+}
+```
+
 ## Token Refresh Mechanism
 
 ### Configure Refresh Token
@@ -164,8 +307,8 @@ You can include custom claims in the JWT:
 jairouter:
   security:
     jwt:
-      expiration-minutes: 15        # Access token expires in 15 minutes
-      refresh-expiration-days: 30   # Refresh token expires in 30 days
+      expiration-minutes: 15        // Access token expires in 15 minutes
+      refresh-expiration-days: 30   // Refresh token expires in 30 days
       refresh-endpoint: "/auth/refresh"
 ```
 
@@ -211,8 +354,8 @@ jairouter:
     jwt:
       blacklist-enabled: true
       blacklist-cache:
-        expiration-seconds: 86400   # 24 hours
-        max-size: 10000            # Maximum cache entries
+        expiration-seconds: 86400   // 24 hours
+        max-size: 10000            // Maximum cache entries
 ```
 
 ### Token Revocation
@@ -391,7 +534,7 @@ Use online tools to parse JWT tokens:
 #### 3. Validate Token Content
 
 ```bash
-# Decode JWT token (without signature verification)
+// Decode JWT token (without signature verification)
 echo "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." | base64 -d
 ```
 
@@ -411,6 +554,15 @@ jairouter:
       refresh-expiration-days: 1
       issuer: "jairouter-dev"
       blacklist-enabled: true
+      accounts:
+        - username: "admin"
+          password: "{noop}admin123"
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
+        - username: "user"
+          password: "{noop}user123"
+          roles: [ "USER" ]
+          enabled: true
 ```
 
 ### Production Environment
@@ -431,6 +583,11 @@ jairouter:
       blacklist-cache:
         expiration-seconds: 86400
         max-size: 50000
+      accounts:
+        - username: "admin"
+          password: "{bcrypt}$2a$10$xmZ5S3DY567m5z6vcPVkreKZ885VqWFb1DB5.RgCEvqHLKj0H/G7u"
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
 ```
 
 ### High Availability Environment

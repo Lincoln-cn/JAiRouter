@@ -16,6 +16,11 @@ import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.service.JwtTokenRefreshService;
+import org.unreal.modelrouter.security.service.UserAuthenticationService;
+import org.unreal.modelrouter.dto.LoginRequest;
+import org.unreal.modelrouter.dto.LoginResponse;
+import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.service.UserDetailsServiceImpl;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -37,6 +42,47 @@ public class JwtTokenController {
 
     private final JwtTokenRefreshService tokenRefreshService;
     private final JwtTokenValidator jwtTokenValidator;
+    private final UserAuthenticationService userAuthenticationService;
+    private final SecurityProperties securityProperties;
+    private final UserDetailsServiceImpl userDetailsService;
+
+    /**
+     * 用户登录获取JWT令牌
+     */
+    @PostMapping("/login")
+    @Operation(summary = "用户登录", description = "使用用户名和密码登录获取JWT令牌")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "登录成功"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "用户名或密码错误")
+    })
+    public Mono<ResponseEntity<RouterResponse<LoginResponse>>> login(
+            @Parameter(description = "登录请求") @RequestBody LoginRequest request) {
+
+        log.debug("收到用户登录请求: username={}", request.getUsername());
+
+        return userAuthenticationService.authenticateAndGenerateToken(request.getUsername(), request.getPassword())
+                .map(token -> {
+                    LoginResponse response = new LoginResponse();
+                    response.setToken(token);
+                    response.setTokenType("Bearer");
+                    response.setExpiresIn(securityProperties.getJwt().getExpirationMinutes() * 60L);
+                    response.setMessage("登录成功");
+                    response.setTimestamp(LocalDateTime.now());
+
+                    return ResponseEntity.ok(RouterResponse.success(response, "登录成功"));
+                })
+                .onErrorResume(ex -> {
+                    log.warn("用户登录失败: {}", ex.getMessage());
+
+                    LoginResponse response = new LoginResponse();
+                    response.setMessage("登录失败: " + ex.getMessage());
+                    response.setTimestamp(LocalDateTime.now());
+
+                    return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(RouterResponse.error("登录失败: " + ex.getMessage(), "LOGIN_FAILED")));
+                });
+    }
 
     /**
      * 刷新JWT令牌
