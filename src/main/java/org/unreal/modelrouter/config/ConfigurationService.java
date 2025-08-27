@@ -1,5 +1,13 @@
 package org.unreal.modelrouter.config;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,9 +15,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.StoreManager;
-
-import java.util.*;
-import java.util.stream.Collectors;
+import org.unreal.modelrouter.tracing.config.SamplingConfigurationValidator;
 
 /**
  * 配置管理服务 - 重构版
@@ -27,15 +33,18 @@ public class ConfigurationService {
     private final StoreManager storeManager;
     private final ConfigurationHelper configurationHelper;
     private final ConfigMergeService configMergeService;
+    private final SamplingConfigurationValidator samplingValidator;
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
 
     @Autowired
     public ConfigurationService(StoreManager storeManager,
                                 ConfigurationHelper configurationHelper,
-                                ConfigMergeService configMergeService) {
+                                ConfigMergeService configMergeService,
+                                SamplingConfigurationValidator samplingValidator) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
+        this.samplingValidator = samplingValidator;
     }
 
     /**
@@ -90,6 +99,10 @@ public class ConfigurationService {
         }
         storeManager.saveConfig(CURRENT_KEY, new HashMap<>(config));
         refreshRuntimeConfig();
+        
+        // 记录配置回滚审计日志
+        logConfigurationRollback(version, config);
+        
         logger.info("已应用配置版本：{}", version);
     }
 
@@ -393,7 +406,6 @@ public class ConfigurationService {
 
         // 保存为新版本并刷新配置
         saveAsNewVersion(currentConfig);
-        //TODO 有bug 需要检查，会把已经修改的数据，恢复回来，新增一条
         refreshRuntimeConfig();
 
         logger.info("实例 {} 更新成功", instanceId);
@@ -782,6 +794,26 @@ public class ConfigurationService {
     public void updateTracingSamplingConfig(Map<String, Object> samplingConfig, boolean createNewVersion) {
         logger.info("更新追踪采样配置");
         
+        // 验证配置
+        if (samplingConfig != null && !samplingConfig.isEmpty()) {
+            try {
+                // 将Map转换为TracingConfiguration.SamplingConfig对象进行验证
+                org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig config = 
+                    convertMapToSamplingConfig(samplingConfig);
+                
+                SamplingConfigurationValidator.ValidationResult result = samplingValidator.validateSamplingConfig(config);
+                if (!result.isValid()) {
+                    throw new IllegalArgumentException("采样配置验证失败: " + result.getErrorMessage());
+                }
+                
+                if (result.hasWarnings()) {
+                    logger.warn("采样配置验证警告: {}", result.getWarningMessage());
+                }
+            } catch (Exception e) {
+                logger.warn("采样配置验证过程中发生错误，跳过验证: {}", e.getMessage());
+            }
+        }
+        
         Map<String, Object> currentConfig;
         if (createNewVersion) {
             currentConfig = getCurrentPersistedConfig();
@@ -806,7 +838,91 @@ public class ConfigurationService {
         }
         
         refreshRuntimeConfig();
+        
+        // 记录配置变更审计日志
+        logConfigurationChange("tracing.sampling", "update", samplingConfig, createNewVersion);
+        
         logger.info("追踪采样配置更新成功");
+    }
+    
+    /**
+     * 回滚追踪采样配置到指定版本
+     * 
+     * @param targetVersion 目标版本
+     * @return 回滚后的采样配置
+     */
+    public Map<String, Object> rollbackTracingSamplingConfig(int targetVersion) {
+        logger.info("回滚追踪采样配置到版本: {}", targetVersion);
+        
+        // 获取目标版本的配置
+        Map<String, Object> targetConfig = getVersionConfig(targetVersion);
+        if (targetConfig == null) {
+            throw new IllegalArgumentException("目标版本不存在: " + targetVersion);
+        }
+        
+        // 提取目标版本的采样配置
+        Map<String, Object> targetSamplingConfig = extractSamplingConfigFromVersion(targetConfig);
+        if (targetSamplingConfig == null) {
+            logger.warn("目标版本 {} 中没有采样配置，使用默认配置", targetVersion);
+            targetSamplingConfig = createDefaultSamplingConfig();
+        }
+        
+        // 验证目标配置
+        try {
+            org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig config = 
+                convertMapToSamplingConfig(targetSamplingConfig);
+            
+            SamplingConfigurationValidator.ValidationResult result = samplingValidator.validateSamplingConfig(config);
+            if (!result.isValid()) {
+                throw new IllegalArgumentException("目标版本的采样配置无效: " + result.getErrorMessage());
+            }
+            
+            if (result.hasWarnings()) {
+                logger.warn("目标版本的采样配置有警告: {}", result.getWarningMessage());
+            }
+        } catch (Exception e) {
+            logger.warn("目标版本的采样配置验证过程中发生错误，跳过验证: {}", e.getMessage());
+        }
+        
+        // 更新当前配置
+        Map<String, Object> currentConfig = configMergeService.getPersistedConfig();
+        
+        // 获取或创建追踪配置
+        @SuppressWarnings("unchecked")
+        Map<String, Object> tracingConfig = (Map<String, Object>) currentConfig.computeIfAbsent(
+                "tracing", k -> new HashMap<String, Object>());
+        
+        // 更新采样配置
+        tracingConfig.put("sampling", targetSamplingConfig);
+        
+        // 保存配置
+        storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        refreshRuntimeConfig();
+        
+        // 记录回滚审计日志
+        logSamplingConfigRollback(targetVersion, targetSamplingConfig);
+        
+        logger.info("追踪采样配置回滚成功，目标版本: {}", targetVersion);
+        return targetSamplingConfig;
+    }
+    
+    /**
+     * 从版本配置中提取采样配置
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> extractSamplingConfigFromVersion(Map<String, Object> versionConfig) {
+        if (versionConfig == null) {
+            return null;
+        }
+        
+        if (versionConfig.containsKey("tracing")) {
+            Map<String, Object> tracingConfig = (Map<String, Object>) versionConfig.get("tracing");
+            if (tracingConfig != null && tracingConfig.containsKey("sampling")) {
+                return (Map<String, Object>) tracingConfig.get("sampling");
+            }
+        }
+        
+        return null;
     }
     
     /**
@@ -824,6 +940,120 @@ public class ConfigurationService {
         return defaultConfig;
     }
     
+    /**
+     * 将Map转换为SamplingConfig对象
+     * 
+     * @param configMap 配置Map
+     * @return SamplingConfig对象
+     */
+    @SuppressWarnings("unchecked")
+    private org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig convertMapToSamplingConfig(Map<String, Object> configMap) {
+        org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig config = 
+            new org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig();
+        
+        if (configMap.containsKey("ratio")) {
+            Object ratioObj = configMap.get("ratio");
+            if (ratioObj instanceof Number) {
+                config.setRatio(((Number) ratioObj).doubleValue());
+            }
+        }
+        
+        if (configMap.containsKey("serviceRatios")) {
+            Object serviceRatiosObj = configMap.get("serviceRatios");
+            if (serviceRatiosObj instanceof Map) {
+                Map<String, Object> serviceRatiosMap = (Map<String, Object>) serviceRatiosObj;
+                Map<String, Double> serviceRatios = new HashMap<>();
+                for (Map.Entry<String, Object> entry : serviceRatiosMap.entrySet()) {
+                    if (entry.getValue() instanceof Number) {
+                        serviceRatios.put(entry.getKey(), ((Number) entry.getValue()).doubleValue());
+                    }
+                }
+                config.setServiceRatios(serviceRatios);
+            }
+        }
+        
+        if (configMap.containsKey("alwaysSample")) {
+            Object alwaysSampleObj = configMap.get("alwaysSample");
+            if (alwaysSampleObj instanceof List) {
+                config.setAlwaysSample((List<String>) alwaysSampleObj);
+            }
+        }
+        
+        if (configMap.containsKey("neverSample")) {
+            Object neverSampleObj = configMap.get("neverSample");
+            if (neverSampleObj instanceof List) {
+                config.setNeverSample((List<String>) neverSampleObj);
+            }
+        }
+        
+        if (configMap.containsKey("rules")) {
+            Object rulesObj = configMap.get("rules");
+            if (rulesObj instanceof List) {
+                List<Map<String, Object>> rulesList = (List<Map<String, Object>>) rulesObj;
+                List<org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule> rules = new ArrayList<>();
+                
+                for (Map<String, Object> ruleMap : rulesList) {
+                    org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule rule = 
+                        new org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule();
+                    
+                    if (ruleMap.containsKey("condition")) {
+                        rule.setCondition((String) ruleMap.get("condition"));
+                    }
+                    if (ruleMap.containsKey("ratio")) {
+                        Object ratioObj = ruleMap.get("ratio");
+                        if (ratioObj instanceof Number) {
+                            rule.setRatio(((Number) ratioObj).doubleValue());
+                        }
+                    }
+                    rules.add(rule);
+                }
+                config.setRules(rules);
+            }
+        }
+        
+        // 处理自适应配置
+        if (configMap.containsKey("adaptive")) {
+            Object adaptiveObj = configMap.get("adaptive");
+            if (adaptiveObj instanceof Map) {
+                Map<String, Object> adaptiveMap = (Map<String, Object>) adaptiveObj;
+                org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.AdaptiveConfig adaptiveConfig = 
+                    new org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.AdaptiveConfig();
+                
+                if (adaptiveMap.containsKey("enabled")) {
+                    adaptiveConfig.setEnabled((Boolean) adaptiveMap.get("enabled"));
+                }
+                if (adaptiveMap.containsKey("targetSpansPerSecond")) {
+                    Object targetObj = adaptiveMap.get("targetSpansPerSecond");
+                    if (targetObj instanceof Number) {
+                        adaptiveConfig.setTargetSpansPerSecond(((Number) targetObj).longValue());
+                    }
+                }
+                if (adaptiveMap.containsKey("minRatio")) {
+                    Object minRatioObj = adaptiveMap.get("minRatio");
+                    if (minRatioObj instanceof Number) {
+                        adaptiveConfig.setMinRatio(((Number) minRatioObj).doubleValue());
+                    }
+                }
+                if (adaptiveMap.containsKey("maxRatio")) {
+                    Object maxRatioObj = adaptiveMap.get("maxRatio");
+                    if (maxRatioObj instanceof Number) {
+                        adaptiveConfig.setMaxRatio(((Number) maxRatioObj).doubleValue());
+                    }
+                }
+                if (adaptiveMap.containsKey("adjustmentInterval")) {
+                    Object intervalObj = adaptiveMap.get("adjustmentInterval");
+                    if (intervalObj instanceof Number) {
+                        adaptiveConfig.setAdjustmentInterval(((Number) intervalObj).longValue());
+                    }
+                }
+                
+                config.setAdaptive(adaptiveConfig);
+            }
+        }
+        
+        return config;
+    }
+    
     // ==================== 新增方法 ====================
 
     /**
@@ -832,5 +1062,196 @@ public class ConfigurationService {
      */
     public boolean hasPersistedConfig() {
         return configMergeService.hasPersistedConfig();
+    }
+    
+    // ==================== 审计日志功能 ====================
+    
+    /**
+     * 记录配置变更审计日志
+     * 
+     * @param configType 配置类型
+     * @param action 操作类型 (create, update, delete)
+     * @param configData 配置数据
+     * @param createNewVersion 是否创建新版本
+     */
+    private void logConfigurationChange(String configType, String action, Map<String, Object> configData, boolean createNewVersion) {
+        try {
+            Map<String, Object> auditData = new HashMap<>();
+            auditData.put("configType", configType);
+            auditData.put("action", action);
+            auditData.put("timestamp", java.time.Instant.now().toString());
+            auditData.put("createNewVersion", createNewVersion);
+            
+            if (createNewVersion) {
+                auditData.put("version", getCurrentVersion());
+            }
+            
+            // 记录配置变更的关键信息（不记录敏感数据）
+            if (configData != null && !configData.isEmpty()) {
+                Map<String, Object> sanitizedData = sanitizeConfigData(configData);
+                auditData.put("configChanges", sanitizedData);
+            }
+            
+            // 使用结构化日志记录审计信息
+            logger.info("配置变更审计: {}", auditData);
+            
+        } catch (Exception e) {
+            // 审计日志失败不应影响主业务流程
+            logger.warn("记录配置变更审计日志失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 记录配置回滚审计日志
+     * 
+     * @param targetVersion 目标版本
+     * @param config 回滚后的配置
+     */
+    private void logConfigurationRollback(int targetVersion, Map<String, Object> config) {
+        try {
+            Map<String, Object> auditData = new HashMap<>();
+            auditData.put("configType", "configuration.rollback");
+            auditData.put("action", "rollback");
+            auditData.put("timestamp", java.time.Instant.now().toString());
+            auditData.put("targetVersion", targetVersion);
+            auditData.put("currentVersion", getCurrentVersion());
+            
+            // 记录回滚目标配置的关键信息摘要
+            Map<String, Object> configSummary = createConfigSummary(config);
+            auditData.put("configSummary", configSummary);
+            
+            // 使用结构化日志记录审计信息
+            logger.info("配置回滚审计: {}", auditData);
+            
+        } catch (Exception e) {
+            // 审计日志失败不应影响主业务流程
+            logger.warn("记录配置回滚审计日志失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 创建配置摘要，用于审计日志
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> createConfigSummary(Map<String, Object> config) {
+        Map<String, Object> summary = new HashMap<>();
+        
+        if (config.containsKey("services")) {
+            Map<String, Object> services = (Map<String, Object>) config.get("services");
+            summary.put("serviceCount", services.size());
+            summary.put("serviceTypes", services.keySet());
+        }
+        
+        if (config.containsKey("tracing")) {
+            summary.put("hasTracingConfig", true);
+            Map<String, Object> tracing = (Map<String, Object>) config.get("tracing");
+            if (tracing.containsKey("sampling")) {
+                summary.put("hasSamplingConfig", true);
+            }
+        }
+        
+        return summary;
+    }
+    
+    /**
+     * 记录采样配置回滚审计日志
+     * 
+     * @param targetVersion 目标版本
+     * @param samplingConfig 回滚后的采样配置
+     */
+    private void logSamplingConfigRollback(int targetVersion, Map<String, Object> samplingConfig) {
+        try {
+            Map<String, Object> auditData = new HashMap<>();
+            auditData.put("configType", "tracing.sampling.rollback");
+            auditData.put("action", "rollback");
+            auditData.put("timestamp", java.time.Instant.now().toString());
+            auditData.put("targetVersion", targetVersion);
+            auditData.put("currentVersion", getCurrentVersion());
+            
+            // 记录回滚后的采样配置摘要
+            if (samplingConfig != null && !samplingConfig.isEmpty()) {
+                Map<String, Object> sanitizedData = sanitizeConfigData(samplingConfig);
+                auditData.put("rolledBackConfig", sanitizedData);
+            }
+            
+            // 使用结构化日志记录审计信息
+            logger.info("采样配置回滚审计: {}", auditData);
+            
+        } catch (Exception e) {
+            // 审计日志失败不应影响主业务流程
+            logger.warn("记录采样配置回滚审计日志失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 脱敏配置数据，移除敏感信息
+     * 
+     * @param configData 原始配置数据
+     * @return 脱敏后的配置数据
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> sanitizeConfigData(Map<String, Object> configData) {
+        Map<String, Object> sanitized = new HashMap<>();
+        
+        for (Map.Entry<String, Object> entry : configData.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            
+            // 跳过敏感字段
+            if (isSensitiveField(key)) {
+                sanitized.put(key, "[MASKED]");
+                continue;
+            }
+            
+            // 递归处理嵌套对象
+            if (value instanceof Map) {
+                sanitized.put(key, sanitizeConfigData((Map<String, Object>) value));
+            } else if (value instanceof List) {
+                sanitized.put(key, sanitizeConfigList((List<Object>) value));
+            } else {
+                sanitized.put(key, value);
+            }
+        }
+        
+        return sanitized;
+    }
+    
+    /**
+     * 脱敏配置列表数据
+     */
+    @SuppressWarnings("unchecked")
+    private List<Object> sanitizeConfigList(List<Object> configList) {
+        List<Object> sanitized = new ArrayList<>();
+        
+        for (Object item : configList) {
+            if (item instanceof Map) {
+                sanitized.add(sanitizeConfigData((Map<String, Object>) item));
+            } else if (item instanceof List) {
+                sanitized.add(sanitizeConfigList((List<Object>) item));
+            } else {
+                sanitized.add(item);
+            }
+        }
+        
+        return sanitized;
+    }
+    
+    /**
+     * 判断字段是否为敏感字段
+     */
+    private boolean isSensitiveField(String fieldName) {
+        // 追踪采样配置中暂无敏感字段，但保留扩展性
+        String[] sensitiveFields = {
+            "password", "secret", "key", "token", "credential"
+        };
+        
+        String lowerFieldName = fieldName.toLowerCase();
+        for (String sensitiveField : sensitiveFields) {
+            if (lowerFieldName.contains(sensitiveField)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }
