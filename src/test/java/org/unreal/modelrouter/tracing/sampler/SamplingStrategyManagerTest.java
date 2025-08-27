@@ -1,14 +1,15 @@
 package org.unreal.modelrouter.tracing.sampler;
 
-import io.opentelemetry.sdk.trace.samplers.Sampler;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.unreal.modelrouter.tracing.config.TracingConfiguration;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import io.opentelemetry.sdk.trace.samplers.Sampler;
 
 /**
  * 采样策略管理器测试类
@@ -21,14 +22,31 @@ class SamplingStrategyManagerTest {
     @Mock
     private TracingConfiguration.SamplingConfig samplingConfig;
     
+    @Mock
+    private TracingConfiguration.SamplingConfig.AdaptiveConfig adaptiveConfig;
+    
     private SamplingStrategyManager samplingStrategyManager;
     
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        
+        // 配置AdaptiveConfig mock
+        when(adaptiveConfig.isEnabled()).thenReturn(false);
+        when(adaptiveConfig.getTargetSpansPerSecond()).thenReturn(1000L);
+        when(adaptiveConfig.getMinRatio()).thenReturn(0.1);
+        when(adaptiveConfig.getMaxRatio()).thenReturn(1.0);
+        when(adaptiveConfig.getAdjustmentInterval()).thenReturn(30L);
+        
+        // 配置SamplingConfig mock
         when(tracingConfig.getSampling()).thenReturn(samplingConfig);
         when(samplingConfig.getRatio()).thenReturn(0.5);
         when(samplingConfig.getRules()).thenReturn(java.util.List.of());
+        when(samplingConfig.getAlwaysSample()).thenReturn(java.util.List.of());
+        when(samplingConfig.getNeverSample()).thenReturn(java.util.List.of());
+        when(samplingConfig.getServiceRatios()).thenReturn(java.util.Map.of());
+        when(samplingConfig.getAdaptive()).thenReturn(adaptiveConfig);
+        
         samplingStrategyManager = new SamplingStrategyManager(tracingConfig);
         // 手动调用init方法确保初始化完成
         samplingStrategyManager.init();
