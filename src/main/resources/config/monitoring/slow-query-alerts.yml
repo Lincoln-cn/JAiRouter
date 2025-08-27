@@ -1,0 +1,86 @@
+# ========================================
+# 慢查询告警配置
+# ========================================
+# 此文件包含慢查询监控和告警的配置
+
+jairouter:
+  # 慢查询告警配置
+  monitoring:
+    slow-query-alert:
+      # 启用慢查询告警功能
+      enabled: true
+      
+      # 全局默认配置
+      global:
+        enabled: true
+        # 最小告警间隔（毫秒）- 5分钟
+        min-interval-ms: 300000
+        # 触发告警所需的最小慢查询次数
+        min-occurrences: 3
+        # 启用告警的严重程度级别
+        enabled-severities:
+          - critical
+          - warning
+        # 告警抑制时间窗口（毫秒）- 1小时
+        suppression-window-ms: 3600000
+        # 最大告警频率（每小时）
+        max-alerts-per-hour: 10
+      
+      # 按操作类型的特定配置
+      operations:
+        # 聊天服务的慢查询告警配置
+        chat_request:
+          enabled: true
+          min-interval-ms: 180000  # 3分钟
+          min-occurrences: 2
+          enabled-severities:
+            - critical
+            - warning
+            - info
+          max-alerts-per-hour: 15
+        
+        # 嵌入服务的慢查询告警配置
+        embedding_request:
+          enabled: true
+          min-interval-ms: 300000  # 5分钟
+          min-occurrences: 5
+          enabled-severities:
+            - critical
+            - warning
+        
+        # 后端适配器调用的慢查询告警配置
+        backend_adapter_call:
+          enabled: true
+          min-interval-ms: 120000  # 2分钟
+          min-occurrences: 3
+          enabled-severities:
+            - critical
+            - warning
+          max-alerts-per-hour: 20
+        
+        # 负载均衡操作的慢查询告警配置
+        load_balancer_selection:
+          enabled: true
+          min-interval-ms: 600000  # 10分钟
+          min-occurrences: 10
+          enabled-severities:
+            - critical
+        
+        # 限流检查操作的慢查询告警配置
+        rate_limit_check:
+          enabled: false  # 通常限流检查应该很快，禁用告警
+      
+      # 告警通知配置
+      notification:
+        # 启用Prometheus指标（用于Prometheus告警规则）
+        enable-prometheus-metrics: true
+        # 启用结构化日志记录
+        enable-structured-logging: true
+        # 启用Webhook通知（可选）
+        enable-webhook: false
+        # Webhook URL（如果启用）
+        webhook-url: ""
+        # Webhook请求头（如果启用）
+        webhook-headers:
+          Content-Type: "application/json"
+          Authorization: "Bearer ${WEBHOOK_TOKEN:}"

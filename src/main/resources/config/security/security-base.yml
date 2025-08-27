@@ -1,0 +1,192 @@
+# ========================================
+# 安全基础配置模板
+# ========================================
+# 此文件提供安全功能的基础配置模板
+# 各环境可以根据需要覆盖相应配置
+
+jairouter:
+  security:
+    # 安全功能总开关（默认关闭，各环境按需启用）
+    enabled: false
+    
+    # ========================================
+    # API Key 认证基础配置
+    # ========================================
+    api-key:
+      enabled: false
+      header-name: "X-API-Key"
+      default-expiration-days: 365
+      cache-enabled: true
+      cache-expiration-seconds: 3600
+      keys: []  # 具体密钥由各环境配置定义
+    
+    # ========================================
+    # JWT 认证基础配置
+    # ========================================
+    jwt:
+      enabled: false
+      secret: ""
+      algorithm: "HS256"
+      expiration-minutes: 60
+      refresh-expiration-days: 7
+      issuer: "jairouter"
+      blacklist-enabled: true
+      blacklist-cache:
+        expiration-seconds: 86400
+        max-size: 10000
+    
+    # ========================================
+    # 数据脱敏基础配置
+    # ========================================
+    sanitization:
+      request:
+        enabled: false
+        sensitive-words:
+          - "password"
+          - "secret"
+          - "token"
+          - "key"
+          - "credential"
+          - "auth"
+          - "session"
+        pii-patterns:
+          - "\\d{11}"                                                    # 手机号码
+          - "\\d{18}"                                                    # 身份证号码
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"          # 邮箱地址
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"      # 银行卡号
+        masking-char: "*"
+        strategies:
+          phone: "keep-prefix-suffix"
+          email: "keep-domain"
+          id-card: "keep-prefix-suffix"
+          default: "full-mask"
+        log-sanitization: false
+        whitelist-users: []
+        whitelist-ips: []
+        rule-priorities:
+          phone: 1
+          email: 2
+          id-card: 3
+          bank-card: 4
+          sensitive-word: 5
+      
+      response:
+        enabled: false
+        sensitive-words:
+          - "internal"
+          - "debug"
+          - "error"
+          - "exception"
+          - "stack"
+          - "trace"
+        pii-patterns:
+          - "\\d{11}"
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
+        masking-char: "*"
+        log-sanitization: false
+        preserve-json-structure: true
+        service-specific-rules:
+          chat:
+            additional-patterns: []
+          embedding:
+            enabled: false
+          rerank:
+            preserve-ranking-scores: true
+    
+    # ========================================
+    # 安全审计基础配置
+    # ========================================
+    audit:
+      enabled: false
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 90
+      alert-enabled: false
+      alert-thresholds:
+        auth-failures-per-minute: 10
+        sanitization-operations-per-minute: 100
+        suspicious-requests-per-minute: 20
+      event-types:
+        authentication-success: false
+        authentication-failure: true
+        authorization-failure: true
+        sanitization-applied: false
+        configuration-changed: true
+        security-alert: true
+        suspicious-activity: true
+      storage:
+        type: "file"
+        file-path: "logs/security-audit.log"
+        rotation:
+          max-file-size: "100MB"
+          max-files: 30
+    
+    # ========================================
+    # 安全监控基础配置
+    # ========================================
+    monitoring:
+      enabled: false
+      metrics:
+        authentication:
+          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+        sanitization:
+          enabled: true
+          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]
+        security-events:
+          enabled: true
+          by-event-type: true
+          by-user: true
+          by-ip: true
+      alerts:
+        enabled: false
+        thresholds:
+          authentication-failure-rate: 0.1
+          sanitization-error-rate: 0.05
+          response-time-p99: 1000
+          max-requests-per-minute: 1000
+        notifications:
+          email:
+            enabled: false
+            recipients: []
+          webhook:
+            enabled: false
+            url: ""
+          log:
+            enabled: true
+    
+    # ========================================
+    # 性能优化基础配置
+    # ========================================
+    performance:
+      authentication:
+        async-enabled: true
+        thread-pool-size: 10
+        timeout-ms: 5000
+      sanitization:
+        parallel-enabled: true
+        thread-pool-size: 5
+        streaming-threshold: 1048576  # 1MB
+        regex-cache-size: 100
+      cache:
+        redis:
+          enabled: false
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: 0
+          timeout: 2000
+          pool:
+            max-active: 8
+            max-idle: 8
+            min-idle: 0
+        local:
+          enabled: true
+          api-key:
+            max-size: 1000
+            expire-after-write: 3600
+          jwt-blacklist:
+            max-size: 10000
+            expire-after-write: 86400
