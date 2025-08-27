@@ -5,10 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
@@ -32,6 +35,7 @@ public class SecurityConfiguration {
     private final SecurityProperties securityProperties;
     private final ApiKeyService apiKeyService;
     private final JwtTokenValidator jwtTokenValidator;
+    private final UserDetailsService userDetailsService;
     
     @Autowired(required = false)
     private TracingSecurityConfiguration.TracingSecurityFilterChainCustomizer tracingCustomizer;
@@ -74,6 +78,14 @@ public class SecurityConfiguration {
                         .pathMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
                         // API文档端点允许匿名访问
                         .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                        // JWT登录端点允许匿名访问
+                        .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll()
+                        // 其他JWT管理端点需要认证
+                        .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/refresh").authenticated()
+                        .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/revoke").authenticated()
+                        .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/revoke/batch").hasRole("ADMIN")
+                        .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/validate").permitAll()
+                        .pathMatchers(org.springframework.http.HttpMethod.GET, "/api/auth/jwt/blacklist/stats").hasRole("ADMIN")
                         // 监控端点需要管理员权限
                         .pathMatchers("/actuator/**").hasRole("ADMIN")
 //                        .pathMatchers("/actuator/**").permitAll()
@@ -122,6 +134,34 @@ public class SecurityConfiguration {
                 apiKeyService, 
                 jwtTokenValidator, 
                 securityProperties
+        );
+    }
+    
+    /**
+     * 配置密码编码器
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new org.springframework.security.crypto.password.DelegatingPasswordEncoder(
+                "bcrypt", 
+                java.util.Map.of(
+                        "bcrypt", new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(),
+                        "noop", org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance()
+                )
+        );
+    }
+    
+    /**
+     * 配置认证管理器
+     */
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        return new org.springframework.security.authentication.ProviderManager(
+                java.util.Arrays.asList(
+                        new org.springframework.security.authentication.dao.DaoAuthenticationProvider(passwordEncoder()) {{
+                            setUserDetailsService(userDetailsService);
+                        }}
+                )
         );
     }
 }

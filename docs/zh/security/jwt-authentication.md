@@ -7,8 +7,6 @@
 > **作者**: 
 <!-- /版本信息 -->
 
-
-
 ## 概述
 
 JAiRouter 支持 JWT（JSON Web Token）认证，可以与现有的身份认证系统集成。JWT 认证提供了无状态的认证机制，支持令牌刷新和黑名单功能。
@@ -20,6 +18,7 @@ JAiRouter 支持 JWT（JSON Web Token）认证，可以与现有的身份认证�
 - **令牌刷新**：支持访问令牌和刷新令牌机制
 - **黑名单功能**：支持令牌撤销和登出
 - **与 API Key 共存**：可以与 API Key 认证同时使用
+- **用户名密码登录**：支持通过用户名密码获取JWT令牌
 
 ## 快速开始
 
@@ -56,7 +55,32 @@ jairouter:
       private-key: "${JWT_PRIVATE_KEY}"
 ```
 
-### 3. 客户端使用
+### 3. 配置用户账户
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      enabled: true
+      secret: "dev-jwt-secret-key-for-development-only-not-for-production"
+      algorithm: "HS256"
+      expiration-minutes: 60
+      refresh-expiration-days: 7
+      issuer: "jairouter"
+      blacklist-enabled: true
+      # 用户账户配置
+      accounts:
+        - username: "admin"
+          password: "{bcrypt}$2a$10$xmZ5S3DY567m5z6vcPVkreKZ885VqWFb1DB5.RgCEvqHLKj0H/G7u"  # BCrypt加密的密码
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
+        - username: "user"
+          password: "{noop}user123"  # 开发环境明文密码，生产环境应使用加密
+          roles: [ "USER" ]
+          enabled: true
+```
+
+### 4. 客户端使用
 
 在 HTTP 请求头中添加 JWT 令牌：
 
@@ -66,6 +90,53 @@ curl -H "Authorization: Bearer your-jwt-token-here" \
      -H "Content-Type: application/json" \
      -d '{"model": "gpt-3.5-turbo", "messages": [...]}' \
      http://localhost:8080/v1/chat/completions
+```
+
+## 登录获取JWT令牌
+
+### 登录端点
+
+```
+POST /api/auth/jwt/login
+```
+
+### 请求示例
+
+```bash
+curl -X POST http://localhost:8080/api/auth/jwt/login \
+     -H "Content-Type: application/json" \
+     -d '{
+           "username": "admin",
+           "password": "admin123"
+         }'
+```
+
+### 响应示例
+
+```json
+{
+  "success": true,
+  "message": "登录成功",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600,
+    "message": "登录成功",
+    "timestamp": "2023-01-01T12:00:00"
+  },
+  "errorCode": null
+}
+```
+
+### 错误响应
+
+```json
+{
+  "success": false,
+  "message": "登录失败: 用户名或密码错误",
+  "data": null,
+  "errorCode": "LOGIN_FAILED"
+}
 ```
 
 ## 详细配置
@@ -83,6 +154,7 @@ curl -H "Authorization: Bearer your-jwt-token-here" \
 | `refresh-expiration-days` | int | 7 | 刷新令牌过期时间（天） |
 | `issuer` | string | "jairouter" | JWT 发行者标识 |
 | `blacklist-enabled` | boolean | true | 是否启用黑名单功能 |
+| `accounts` | array | [] | 用户账户列表 |
 
 ### 支持的签名算法
 
@@ -156,6 +228,77 @@ JAiRouter 支持以下标准 JWT 声明：
 }
 ```
 
+## 密码加密配置
+
+JAiRouter 支持多种密码加密方式，以提高安全性：
+
+### BCrypt 加密配置
+
+BCrypt 是一种安全的密码哈希函数，推荐在生产环境中使用：
+
+```java
+// 示例代码：生成BCrypt加密的密码
+String rawPassword = "admin123";
+org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = 
+    new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+String encodedPassword = encoder.encode(rawPassword);
+System.out.println("Encoded password: " + encodedPassword);
+```
+
+在配置文件中使用BCrypt加密的密码：
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      accounts:
+        - username: "admin"
+          password: "{bcrypt}$2a$10$xmZ5S3DY567m5z6vcPVkreKZ885VqWFb1DB5.RgCEvqHLKj0H/G7u"
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
+```
+
+### 明文密码配置（仅限开发环境）
+
+为了方便开发测试，支持明文密码配置：
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      accounts:
+        - username: "user"
+          password: "{noop}user123"
+          roles: [ "USER" ]
+          enabled: true
+```
+
+### 密码编码器配置
+
+在 `SecurityConfiguration.java` 中配置密码编码器：
+
+```java
+/**
+ * 配置密码编码器 - BCrypt作为默认编码器
+ */
+@Bean
+public PasswordEncoder passwordEncoder() {
+    java.util.Map<String, org.springframework.security.crypto.password.PasswordEncoder> encoders = 
+        java.util.Map.of(
+            "bcrypt", new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(10),
+            "noop", org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance()
+        );
+    
+    org.springframework.security.crypto.password.DelegatingPasswordEncoder delegatingEncoder = 
+        new org.springframework.security.crypto.password.DelegatingPasswordEncoder("bcrypt", encoders);
+    
+    // 设置默认的密码编码器
+    delegatingEncoder.setDefaultPasswordEncoderForMatches(encoders.get("bcrypt"));
+    
+    return delegatingEncoder;
+}
+```
+
 ## 令牌刷新机制
 
 ### 配置刷新令牌
@@ -164,8 +307,8 @@ JAiRouter 支持以下标准 JWT 声明：
 jairouter:
   security:
     jwt:
-      expiration-minutes: 15        # 访问令牌15分钟过期
-      refresh-expiration-days: 30   # 刷新令牌30天过期
+      expiration-minutes: 15        // 访问令牌15分钟过期
+      refresh-expiration-days: 30   // 刷新令牌30天过期
       refresh-endpoint: "/auth/refresh"
 ```
 
@@ -211,8 +354,8 @@ jairouter:
     jwt:
       blacklist-enabled: true
       blacklist-cache:
-        expiration-seconds: 86400   # 24小时
-        max-size: 10000            # 最大缓存条目数
+        expiration-seconds: 86400   // 24小时
+        max-size: 10000            // 最大缓存条目数
 ```
 
 ### 令牌撤销
@@ -391,7 +534,7 @@ logging:
 #### 3. 验证令牌内容
 
 ```bash
-# 解码 JWT 令牌（不验证签名）
+// 解码 JWT 令牌（不验证签名）
 echo "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." | base64 -d
 ```
 
@@ -411,6 +554,15 @@ jairouter:
       refresh-expiration-days: 1
       issuer: "jairouter-dev"
       blacklist-enabled: true
+      accounts:
+        - username: "admin"
+          password: "{noop}admin123"
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
+        - username: "user"
+          password: "{noop}user123"
+          roles: [ "USER" ]
+          enabled: true
 ```
 
 ### 生产环境
@@ -431,6 +583,11 @@ jairouter:
       blacklist-cache:
         expiration-seconds: 86400
         max-size: 50000
+      accounts:
+        - username: "admin"
+          password: "{bcrypt}$2a$10$xmZ5S3DY567m5z6vcPVkreKZ885VqWFb1DB5.RgCEvqHLKj0H/G7u"
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
 ```
 
 ### 高可用环境
