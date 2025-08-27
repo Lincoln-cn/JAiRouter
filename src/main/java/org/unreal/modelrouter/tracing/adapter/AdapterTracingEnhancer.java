@@ -286,20 +286,7 @@ public class AdapterTracingEnhancer {
         
         String lowerName = modelName.toLowerCase();
         
-        // 大语言模型
-        if (lowerName.contains("gpt") || lowerName.contains("llama") || 
-            lowerName.contains("qwen") || lowerName.contains("chatglm") ||
-            lowerName.contains("baichuan") || lowerName.contains("claude")) {
-            return "llm";
-        }
-        
-        // 嵌入模型
-        if (lowerName.contains("embedding") || lowerName.contains("embed") ||
-            lowerName.contains("bge") || lowerName.contains("sentence")) {
-            return "embedding";
-        }
-        
-        // 重排序模型
+        // 重排序模型 - 优先检查，避免与其他模型类型冲突
         if (lowerName.contains("rerank") || lowerName.contains("reranker")) {
             return "rerank";
         }
@@ -318,6 +305,19 @@ public class AdapterTracingEnhancer {
         if (lowerName.contains("dall") || lowerName.contains("stable") ||
             lowerName.contains("midjourney") || lowerName.contains("image")) {
             return "image";
+        }
+        
+        // 嵌入模型
+        if (lowerName.contains("embedding") || lowerName.contains("embed") ||
+            lowerName.contains("bge") || lowerName.contains("sentence")) {
+            return "embedding";
+        }
+        
+        // 大语言模型
+        if (lowerName.contains("gpt") || lowerName.contains("llama") || 
+            lowerName.contains("qwen") || lowerName.contains("chatglm") ||
+            lowerName.contains("baichuan") || lowerName.contains("claude")) {
+            return "llm";
         }
         
         return "unknown";
