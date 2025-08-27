@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://lincoln-cn.github.io/JAiRouter/sitemap.xml
+Sitemap: https://docs.jairouter.com/sitemap.xml
 
 # Crawl-delay for respectful crawling
 Crawl-delay: 1
