@@ -103,15 +103,18 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
             String traceId = TracingContextHolder.getCurrentTraceId();
             String spanId = TracingContextHolder.getCurrentSpanId();
             
-            if (!traceId.isEmpty() || !spanId.isEmpty()) {
+            boolean hasTraceId = traceId != null && !traceId.isEmpty();
+            boolean hasSpanId = spanId != null && !spanId.isEmpty();
+            
+            if (hasTraceId || hasSpanId) {
                 sb.append(" [");
-                if (!traceId.isEmpty()) {
+                if (hasTraceId) {
                     sb.append("traceId=").append(traceId);
-                    if (!spanId.isEmpty()) {
+                    if (hasSpanId) {
                         sb.append(", ");
                     }
                 }
-                if (!spanId.isEmpty()) {
+                if (hasSpanId) {
                     sb.append("spanId=").append(spanId);
                 }
                 sb.append("]");
@@ -133,11 +136,11 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
         String traceId = TracingContextHolder.getCurrentTraceId();
         String spanId = TracingContextHolder.getCurrentSpanId();
         
-        if (!traceId.isEmpty()) {
+        if (traceId != null && !traceId.isEmpty()) {
             logData.put("traceId", traceId);
         }
         
-        if (!spanId.isEmpty()) {
+        if (spanId != null && !spanId.isEmpty()) {
             logData.put("spanId", spanId);
         }
     }
