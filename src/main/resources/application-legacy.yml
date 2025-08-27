@@ -1,9 +1,15 @@
+# ========================================
 # JAiRouter 向后兼容性配置文件
+# ========================================
 # 此配置文件确保在升级到安全增强版本时，现有部署不会受到影响
 # 使用方式: --spring.profiles.active=legacy 或 SPRING_PROFILES_ACTIVE=legacy
 
+spring:
+  profiles:
+    active: legacy
+
 # ========================================
-# 安全功能配置 - 向后兼容模式
+# 向后兼容模式安全配置覆盖
 # ========================================
 # 在向后兼容模式下，所有安全功能默认关闭
 # 这确保现有的部署在升级后能够正常工作，无需修改配置
@@ -16,24 +22,14 @@ jairouter:
     api-key:
       # 即使安全功能关闭，也保持API Key配置结构以便后续启用
       enabled: false
-      header-name: "X-API-Key"
-      default-expiration-days: 365
       cache-enabled: false
-      cache-expiration-seconds: 3600
       keys: []  # 空的API Key列表
     
     # JWT 认证配置 - 向后兼容模式
     jwt:
       enabled: false
       secret: ""
-      algorithm: "HS256"
-      expiration-minutes: 60
-      refresh-expiration-days: 7
-      issuer: "jairouter"
       blacklist-enabled: false
-      blacklist-cache:
-        expiration-seconds: 86400
-        max-size: 10000
     
     # 数据脱敏配置 - 向后兼容模式
     sanitization:
@@ -41,49 +37,27 @@ jairouter:
         enabled: false
         sensitive-words: []
         pii-patterns: []
-        masking-char: "*"
-        strategies:
-          phone: "keep-prefix-suffix"
-          email: "keep-domain"
-          id-card: "keep-prefix-suffix"
-          default: "full-mask"
         log-sanitization: false
         whitelist-users: []
         whitelist-ips: []
-        rule-priorities:
-          phone: 1
-          email: 2
-          id-card: 3
-          bank-card: 4
-          sensitive-word: 5
       
       response:
         enabled: false
         sensitive-words: []
         pii-patterns: []
-        masking-char: "*"
         log-sanitization: false
-        preserve-json-structure: true
         service-specific-rules:
           chat:
             additional-patterns: []
           embedding:
             enabled: false
-          rerank:
-            preserve-ranking-scores: true
     
     # 安全审计配置 - 向后兼容模式
     audit:
       enabled: false
-      log-level: "INFO"
       include-request-body: false
       include-response-body: false
-      retention-days: 90
       alert-enabled: false
-      alert-thresholds:
-        auth-failures-per-minute: 10
-        sanitization-operations-per-minute: 100
-        suspicious-requests-per-minute: 20
       event-types:
         authentication-success: false
         authentication-failure: false
@@ -92,12 +66,6 @@ jairouter:
         configuration-changed: false
         security-alert: false
         suspicious-activity: false
-      storage:
-        type: "file"
-        file-path: "logs/security-audit.log"
-        rotation:
-          max-file-size: "100MB"
-          max-files: 30
     
     # 安全监控配置 - 向后兼容模式
     monitoring:
@@ -105,10 +73,8 @@ jairouter:
       metrics:
         authentication:
           enabled: false
-          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
         sanitization:
           enabled: false
-          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0]
         security-events:
           enabled: false
           by-event-type: false
@@ -116,11 +82,6 @@ jairouter:
           by-ip: false
       alerts:
         enabled: false
-        thresholds:
-          authentication-failure-rate: 0.1
-          sanitization-error-rate: 0.05
-          response-time-p99: 1000
-          max-requests-per-minute: 1000
         notifications:
           email:
             enabled: false
@@ -156,12 +117,11 @@ jairouter:
             min-idle: 0
         local:
           enabled: false
-          api-key:
-            max-size: 1000
-            expire-after-write: 3600
-          jwt-blacklist:
-            max-size: 10000
-            expire-after-write: 86400
+
+  # 错误追踪配置 - 向后兼容模式
+  monitoring:
+    error-tracking:
+      enabled: false  # 向后兼容模式下关闭错误追踪
 
 # ========================================
 # 向后兼容性说明

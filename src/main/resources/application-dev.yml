@@ -1,8 +1,14 @@
+# ========================================
 # 开发环境配置
+# ========================================
+# 此文件仅包含开发环境特定的配置覆盖
+# 基础配置通过模块化导入，详见 application.yml
+
 spring:
   profiles:
     active: dev
 
+# Swagger API 文档配置（仅开发环境）
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -15,7 +21,7 @@ springdoc:
   cache:
     disabled: true
 
-# 日志配置
+# 开发环境日志配置
 logging:
   level:
     org.unreal.modelrouter: DEBUG
@@ -23,23 +29,15 @@ logging:
     org.apache.http: INFO
     io.netty: INFO
     reactor.netty: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"
 
-# 开发环境特定配置
-server:
-  port: 8080
-
-# 调试模式
+# 开发环境调试配置
 debug: false
 
-# 开发环境存储配置
+# 开发环境存储配置覆盖
 store:
-  type: file
   path: "config-dev/"
 
-# WebClient 开发环境配置
+# 开发环境 WebClient 配置覆盖
 webclient:
   connection-timeout: 5s
   read-timeout: 15s
@@ -47,22 +45,21 @@ webclient:
   max-in-memory-size: 5MB
 
 # ========================================
-# 开发环境安全配置
+# 开发环境安全配置覆盖
 # ========================================
+# 仅包含开发环境的安全配置差异
 jairouter:
   security:
     # 开发环境启用安全功能进行测试
     enabled: true
     
-    # 开发环境API Key配置
+    # 开发环境 API Key 特定配置
     api-key:
       enabled: true
-      header-name: "X-API-Key"
       default-expiration-days: 30  # 开发环境使用较短的过期时间
-      cache-enabled: true
       cache-expiration-seconds: 1800  # 30分钟缓存
       keys:
-        # 开发环境测试用API Key
+        # 开发环境测试用 API Key
         - key-id: "dev-admin-key"
           key-value: "dev-admin-12345-abcde-67890-fghij"
           description: "开发环境管理员测试密钥"
@@ -83,11 +80,10 @@ jairouter:
             environment: "development"
             created-by: "developer"
     
-    # 开发环境JWT配置
+    # 开发环境 JWT 配置
     jwt:
       enabled: true
       secret: "dev-jwt-secret-key-for-development-only-not-for-production"
-      algorithm: "HS256"
       expiration-minutes: 30  # 开发环境使用较短的过期时间
       refresh-expiration-days: 1
       issuer: "jairouter-dev"
@@ -97,14 +93,6 @@ jairouter:
     sanitization:
       request:
         enabled: true
-        sensitive-words:
-          - "password"
-          - "secret"
-          - "token"
-        pii-patterns:
-          - "\\d{11}"  # 手机号
-          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"  # 邮箱
-        masking-char: "*"
         log-sanitization: true
         whitelist-users:
           - "dev-admin-key"  # 开发环境管理员跳过脱敏
@@ -115,15 +103,7 @@ jairouter:
       
       response:
         enabled: true
-        sensitive-words:
-          - "internal"
-          - "debug"
-        pii-patterns:
-          - "\\d{11}"
-          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
-        masking-char: "*"
         log-sanitization: true
-        preserve-json-structure: true
     
     # 开发环境审计配置
     audit:
@@ -134,17 +114,7 @@ jairouter:
       retention-days: 7  # 开发环境较短的保留期
       alert-enabled: false  # 开发环境关闭告警
       
-      event-types:
-        authentication-success: true
-        authentication-failure: true
-        authorization-failure: true
-        sanitization-applied: true
-        configuration-changed: true
-        security-alert: true
-        suspicious-activity: true
-      
       storage:
-        type: "file"
         file-path: "logs/dev-security-audit.log"
         rotation:
           max-file-size: "10MB"  # 开发环境较小的文件大小
@@ -153,31 +123,16 @@ jairouter:
     # 开发环境监控配置
     monitoring:
       enabled: true
-      metrics:
-        authentication:
-          enabled: true
-          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0]
-        sanitization:
-          enabled: true
-          histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0]
-        security-events:
-          enabled: true
-          by-event-type: true
-          by-user: true
-          by-ip: true
-      
       alerts:
         enabled: false  # 开发环境关闭告警
     
     # 开发环境性能配置
     performance:
       authentication:
-        async-enabled: true
         thread-pool-size: 5  # 开发环境较小的线程池
         timeout-ms: 10000    # 开发环境较长的超时时间便于调试
       
       sanitization:
-        parallel-enabled: true
         thread-pool-size: 3
         streaming-threshold: 524288  # 512KB
         regex-cache-size: 50
@@ -193,3 +148,18 @@ jairouter:
           jwt-blacklist:
             max-size: 1000
             expire-after-write: 3600  # 1小时
+            
+  # 开发环境错误追踪配置
+  monitoring:
+    error-tracking:
+      enabled: true  # 开发环境启用错误追踪
+      aggregation-window-minutes: 1  # 更短的聚合窗口
+      max-aggregations: 100  # 更小的聚合数量
+      
+      sanitization:
+        max-stack-depth: 50  # 开发环境可以显示更多堆栈信息
+      
+      logging:
+        level: "DEBUG"  # 开发环境详细日志
+        include-stack-trace: true
+        include-context: true
