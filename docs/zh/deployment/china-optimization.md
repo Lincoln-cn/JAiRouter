@@ -311,7 +311,7 @@ sudo systemctl restart docker
 
 `Dockerfile.china` 已经针对中国网络环境进行了优化：
 
-```dockerfile
+``dockerfile
 # 多阶段构建 Dockerfile for JAiRouter (China Optimized)
 # 使用阿里云Maven镜像加速构建
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
@@ -1075,3 +1075,349 @@ docker exec jairouter-china nslookup baidu.com
 - **[生产环境部署](production.md)** - 配置高可用生产环境
 - **[监控指南](../monitoring/index.md)** - 设置完整的监控体系
 - **[故障排查](../troubleshooting/index.md)** - 学习故障诊断和解决
+
+## 安全配置
+
+### 1. 国内安全服务集成
+
+配置使用国内安全服务提供商：
+
+```yaml
+# config/security-china.yml
+security:
+  # 国内短信服务配置（用于 OTP 验证）
+  sms:
+    provider: aliyun
+    access-key-id: ${ALIYUN_SMS_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_SMS_ACCESS_KEY_SECRET}
+    sign-name: JAiRouter
+    template-code: SMS_123456789
+  
+  # 国内邮件服务配置
+  email:
+    provider: tencent
+    smtp-host: smtp.exmail.qq.com
+    smtp-port: 465
+    username: ${TENCENT_EMAIL_USERNAME}
+    password: ${TENCENT_EMAIL_PASSWORD}
+  
+  # 国内 CDN 安全配置
+  cdn:
+    provider: aliyun
+    access-key-id: ${ALIYUN_CDN_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_CDN_ACCESS_KEY_SECRET}
+    domain: jairouter.example.com
+```
+
+### 2. 国内证书和密钥管理
+
+```bash
+# 使用国内 CA 机构证书
+# 配置阿里云 SSL 证书服务
+aliyun cas CreateCertificateWithCsr \
+  --DomainName jairouter.example.com \
+  --KeySpec RSA_2048 \
+  --Years 1
+
+# 或使用腾讯云 SSL 证书服务
+tc ssl ApplyCertificate \
+  --Domain jairouter.example.com \
+  --Alias jairouter-cert
+```
+
+### 3. 国内安全合规配置
+
+创建 `config/application-security-compliance.yml`：
+
+```yaml
+# 国内安全合规配置
+security:
+  # 数据保护配置
+  data-protection:
+    # 个人信息加密
+    pii-encryption:
+      enabled: true
+      algorithm: SM4
+      key-provider: hsm
+    
+    # 数据脱敏配置
+    data-masking:
+      enabled: true
+      rules:
+        - field: "idCard"
+          pattern: "(\\d{4})\\d{10}(\\w{4})"
+          replacement: "$1**********$2"
+        - field: "phone"
+          pattern: "(\\d{3})\\d{4}(\\d{4})"
+          replacement: "$1****$2"
+  
+  # 审计日志配置
+  audit:
+    enabled: true
+    log-level: INFO
+    retention-days: 180  # 符合国内法规要求
+    storage:
+      type: file
+      path: /app/logs/audit
+  
+  # 访问控制配置
+  access-control:
+    # IP 白名单
+    ip-whitelist:
+      enabled: true
+      ips:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    
+    # 国内特定访问策略
+    china-specific:
+      enabled: true
+      gfw-compliance: true
+      content-filtering: true
+```
+
+## 日志配置
+
+### 1. 国内日志服务集成
+
+配置使用国内日志服务提供商：
+
+```yaml
+# config/logging-china.yml
+logging:
+  level:
+    org.unreal.modelrouter: INFO
+    org.unreal.modelrouter.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+  
+  # 阿里云日志服务配置
+  aliyun-sls:
+    enabled: true
+    endpoint: cn-hangzhou.log.aliyuncs.com
+    project: jairouter-logs
+    logstore: application-logs
+    access-key-id: ${ALIYUN_SLS_ACCESS_KEY_ID}
+    access-key-secret: ${ALIYUN_SLS_ACCESS_KEY_SECRET}
+  
+  # 腾讯云日志服务配置
+  tencent-cls:
+    enabled: false
+    endpoint: ap-guangzhou.cls.tencentcs.com
+    topic-id: jairouter-logs
+    secret-id: ${TENCENT_CLS_SECRET_ID}
+    secret-key: ${TENCENT_CLS_SECRET_KEY}
+```
+
+### 2. 国内日志存储和分析
+
+创建 `docker-compose.logging-china.yml`：
+
+```yaml
+# 国内日志服务集成配置
+version: '3.8'
+
+services:
+  jairouter:
+    image: jairouter/model-router:china
+    container_name: jairouter-china
+    dns:
+      - 223.5.5.5
+      - 119.29.29.29
+    environment:
+      - SPRING_PROFILES_ACTIVE=china,logging-china
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - china-network
+  
+  # 阿里云日志服务代理
+  aliyun-sls-agent:
+    image: registry.cn-hangzhou.aliyuncs.com/acs/alicloud-log-agent:latest
+    container_name: aliyun-sls-agent
+    environment:
+      - ALIYUN_LOGTAIL_USER_ID=${ALIYUN_ACCOUNT_ID}
+      - ALIYUN_LOGTAIL_REGION=cn-hangzhou
+    volumes:
+      - ./logs:/app/logs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - china-network
+    restart: unless-stopped
+
+networks:
+  china-network:
+    driver: bridge
+```
+
+### 3. 国内日志合规配置
+
+创建 `config/application-logging-compliance.yml`：
+
+```yaml
+# 国内日志合规配置
+logging:
+  level:
+    org.unreal.modelrouter: INFO
+    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.audit: DEBUG
+  
+  # 日志保留策略
+  retention:
+    # 应用日志保留 90 天
+    application-logs:
+      days: 90
+    # 安全日志保留 180 天
+    security-logs:
+      days: 180
+    # 审计日志保留 365 天
+    audit-logs:
+      days: 365
+  
+  # 日志存储配置
+  storage:
+    # 本地存储
+    local:
+      enabled: true
+      path: /app/logs
+      max-size: 100MB
+      max-history: 30
+    
+    # 国内云存储
+    cloud:
+      aliyun-oss:
+        enabled: true
+        bucket: jairouter-logs
+        endpoint: oss-cn-hangzhou.aliyuncs.com
+        access-key-id: ${ALIYUN_OSS_ACCESS_KEY_ID}
+        access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET}
+        prefix: logs/${INSTANCE_ID}/
+      
+      tencent-cos:
+        enabled: false
+        bucket: jairouter-logs
+        region: ap-guangzhou
+        secret-id: ${TENCENT_COS_SECRET_ID}
+        secret-key: ${TENCENT_COS_SECRET_KEY}
+        prefix: logs/${INSTANCE_ID}/
+  
+  # 日志加密配置
+  encryption:
+    enabled: true
+    algorithm: SM4
+    key-provider: hsm
+  
+  # 日志脱敏配置
+  masking:
+    enabled: true
+    rules:
+      - field: "apiKey"
+        pattern: "(.{4}).*(.{4})"
+        replacement: "$1****$2"
+      - field: "password"
+        pattern: ".*"
+        replacement: "****"
+```
+
+### 4. 国内日志监控和告警
+
+创建 `monitoring/alertmanager-china-logging.yml`：
+
+```yaml
+# 国内日志监控告警配置
+global:
+  smtp_smarthost: 'smtp.mxhichina.com:465'
+  smtp_from: 'alerts@jairouter.com'
+  smtp_auth_username: 'alerts@jairouter.com'
+  smtp_auth_password: '${EMAIL_PASSWORD}'
+
+route:
+  group_by: ['alertname', 'cluster']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'china-logging-alerts'
+
+receivers:
+  - name: 'china-logging-alerts'
+    email_configs:
+      - to: 'ops-team@jairouter.com'
+        subject: '[JAiRouter] {{ .GroupLabels.alertname }}'
+        html: |
+          <p><strong>告警名称:</strong> {{ .GroupLabels.alertname }}</p>
+          <p><strong>集群:</strong> {{ .GroupLabels.cluster }}</p>
+          <p><strong>告警详情:</strong></p>
+          <ul>
+          {{ range .Alerts }}
+            <li>{{ .Annotations.summary }} - {{ .Annotations.description }}</li>
+          {{ end }}
+          </ul>
+    
+    # 企业微信告警
+    wechat_configs:
+      - corp_id: '${WECHAT_CORP_ID}'
+        agent_id: '${WECHAT_AGENT_ID}'
+        api_secret: '${WECHAT_API_SECRET}'
+        message: |
+          告警名称: {{ .GroupLabels.alertname }}
+          集群: {{ .GroupLabels.cluster }}
+          {{ range .Alerts }}
+          {{ .Annotations.summary }} - {{ .Annotations.description }}
+          {{ end }}
+    
+    # 钉钉告警
+    webhook_configs:
+      - url: '${DINGTALK_WEBHOOK_URL}'
+        send_resolved: true
+
+# 国内日志监控规则
+rule_files:
+  - "rules/china-logging-rules.yml"
+```
+
+创建 `monitoring/rules/china-logging-rules.yml`：
+
+```yaml
+# 国内日志监控规则
+groups:
+  - name: jairouter.china.logging.rules
+    rules:
+      # 安全日志告警
+      - alert: JAiRouterSecurityLogsChina
+        expr: rate(jairouter_security_logs_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+          region: china
+        annotations:
+          summary: "JAiRouter 安全日志异常 (中国)"
+          description: "JAiRouter 实例 {{ $labels.instance }} 安全日志速率超过 5 条/分钟"
+      
+      # 错误日志告警
+      - alert: JAiRouterErrorLogsChina
+        expr: rate(jairouter_error_logs_total[5m]) > 20
+        for: 2m
+        labels:
+          severity: warning
+          region: china
+        annotations:
+          summary: "JAiRouter 错误日志过多 (中国)"
+          description: "JAiRouter 实例 {{ $labels.instance }} 错误日志速率超过 20 条/分钟"
+      
+      # 访问日志告警
+      - alert: JAiRouterAccessLogsChina
+        expr: rate(jairouter_access_logs_total[5m]) > 1000
+        for: 1m
+        labels:
+          severity: info
+          region: china
+        annotations:
+          summary: "JAiRouter 访问量激增 (中国)"
+          description: "JAiRouter 实例 {{ $labels.instance }} 访问量超过 1000 次/分钟"

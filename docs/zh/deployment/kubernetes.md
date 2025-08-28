@@ -9,7 +9,7 @@
 
 
 
-JAiRouter 支持在 Kubernetes 集群中部署，提供高可用、自动扩缩容和滚动更新等企业级特性。本文档详细介绍如何在 K8s 环境中部署 JAiRouter。
+JAiRouter 支持在 Kubernetes 集群中部署，提供高可用、自动扩缩容和滚动更新等企业级特性。本文档详细介绍如何在 K8s 环境中部署 JAiRouter.
 
 ## Kubernetes 部署概述
 
@@ -24,7 +24,7 @@ JAiRouter 支持在 Kubernetes 集群中部署，提供高可用、自动扩缩�
 
 ### 架构图
 
-```mermaid
+```
 graph TB
     subgraph "Kubernetes Cluster"
         subgraph "Ingress Layer"
@@ -99,7 +99,7 @@ graph TB
 
 ### 3. 存储类
 
-```bash
+```
 # 检查可用的存储类
 kubectl get storageclass
 
@@ -111,7 +111,7 @@ kubectl patch storageclass <storage-class-name> -p '{"metadata": {"annotations":
 
 ### 1. 创建命名空间
 
-```yaml
+```
 # namespace.yaml
 apiVersion: v1
 kind: Namespace
@@ -127,7 +127,7 @@ kubectl apply -f namespace.yaml
 
 ### 2. 创建 ConfigMap
 
-```yaml
+```
 # configmap.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -178,7 +178,7 @@ kubectl apply -f configmap.yaml
 
 ### 3. 创建 Secret
 
-```yaml
+```
 # secret.yaml
 apiVersion: v1
 kind: Secret
@@ -189,7 +189,20 @@ type: Opaque
 data:
   # Base64 编码的密钥
   api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
+  jwt-secret: eW91ci1qd3Qtc2VjcmV0LWtleQ==  # your-jwt-secret-key
   database-password: cGFzc3dvcmQ=     # password
+
+---
+# TLS Secret 配置
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jairouter-tls
+  namespace: jairouter
+type: kubernetes.io/tls
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCiMKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJV
 ```
 
 ```bash
@@ -198,7 +211,7 @@ kubectl apply -f secret.yaml
 
 ### 4. 创建 PVC
 
-```yaml
+```
 # pvc.yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -234,8 +247,8 @@ kubectl apply -f pvc.yaml
 
 ### 5. 创建 Deployment
 
-```yaml
-# deployment.yaml
+```
+# Deployment 安全配置
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -257,6 +270,12 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/path: "/actuator/prometheus"
     spec:
+      # 安全上下文配置
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
       containers:
       - name: jairouter
         image: jairouter/model-router:latest
@@ -288,6 +307,13 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "1000m"
+        # 容器安全上下文
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
@@ -323,7 +349,7 @@ kubectl apply -f deployment.yaml
 
 ### 6. 创建 Service
 
-```yaml
+```
 # service.yaml
 apiVersion: v1
 kind: Service
@@ -369,7 +395,7 @@ kubectl apply -f service.yaml
 
 ### 7. 创建 Ingress
 
-```yaml
+```
 # ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -410,7 +436,7 @@ kubectl apply -f ingress.yaml
 
 ### 1. 水平 Pod 自动扩缩容 (HPA)
 
-```yaml
+```
 # hpa.yaml
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -466,7 +492,7 @@ kubectl apply -f hpa.yaml
 
 ### 2. 垂直 Pod 自动扩缩容 (VPA)
 
-```yaml
+```
 # vpa.yaml
 apiVersion: autoscaling.k8s.io/v1
 kind: VerticalPodAutoscaler
@@ -500,7 +526,7 @@ kubectl apply -f vpa.yaml
 
 ### 1. ServiceMonitor
 
-```yaml
+```
 # servicemonitor.yaml
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -526,7 +552,7 @@ kubectl apply -f servicemonitor.yaml
 
 ### 2. PrometheusRule
 
-```yaml
+```
 # prometheusrule.yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -575,7 +601,7 @@ kubectl apply -f prometheusrule.yaml
 
 ### 1. 创建 Helm Chart
 
-```bash
+```
 # 创建 Chart 目录结构
 mkdir -p jairouter-chart/{templates,charts}
 cd jairouter-chart
@@ -583,7 +609,7 @@ cd jairouter-chart
 
 ### 2. Chart.yaml
 
-```yaml
+```
 # Chart.yaml
 apiVersion: v2
 name: jairouter
@@ -606,7 +632,7 @@ maintainers:
 
 ### 3. values.yaml
 
-```yaml
+```
 # values.yaml
 replicaCount: 3
 
@@ -709,7 +735,7 @@ monitoring:
 
 创建 `templates/deployment.yaml`：
 
-```yaml
+```
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -796,7 +822,7 @@ spec:
 
 ### 5. 部署 Helm Chart
 
-```bash
+```
 # 安装 Chart
 helm install jairouter ./jairouter-chart -n jairouter --create-namespace
 
@@ -814,7 +840,7 @@ helm uninstall jairouter -n jairouter
 
 ### 1. Pod 反亲和性
 
-```yaml
+```
 # 在 deployment.yaml 中添加
 spec:
   template:
@@ -835,7 +861,7 @@ spec:
 
 ### 2. Pod 中断预算
 
-```yaml
+```
 # pdb.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -851,8 +877,8 @@ spec:
 
 ### 3. 网络策略
 
-```yaml
-# networkpolicy.yaml
+```
+# 网络策略配置
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -866,6 +892,7 @@ spec:
   - Ingress
   - Egress
   ingress:
+  # 允许来自 Ingress Controller 的流量
   - from:
     - namespaceSelector:
         matchLabels:
@@ -873,26 +900,508 @@ spec:
     ports:
     - protocol: TCP
       port: 8080
-  egress:
-  - to: []
+  # 允许来自监控组件的流量
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
     ports:
     - protocol: TCP
-      port: 53
+      port: 8080
+  egress:
+  # 允许 DNS 查询
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
     - protocol: UDP
       port: 53
+    - protocol: TCP
+      port: 53
+  # 允许访问外部 AI 服务
   - to: []
     ports:
     - protocol: TCP
+      port: 443
+    - protocol: TCP
       port: 80
+```
+
+## 安全配置
+
+### 1. 网络安全策略
+
+创建 `networkpolicy.yaml`：
+
+```
+# 网络策略配置
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jairouter-netpol
+  namespace: jairouter
+spec:
+  podSelector:
+    matchLabels:
+      app: jairouter
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # 允许来自 Ingress Controller 的流量
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+  # 允许来自监控组件的流量
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  # 允许 DNS 查询
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # 允许访问外部 AI 服务
+  - to: []
+    ports:
     - protocol: TCP
       port: 443
+    - protocol: TCP
+      port: 80
+```
+
+### 2. Pod 安全策略
+
+更新 `deployment.yaml`：
+
+```
+# Deployment 安全配置
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jairouter
+  namespace: jairouter
+  labels:
+    app: jairouter
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: jairouter
+  template:
+    metadata:
+      labels:
+        app: jairouter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      # 安全上下文配置
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: jairouter
+        image: jairouter/model-router:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        - name: JAVA_OPTS
+          value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-secret
+              key: api-key
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+          readOnly: true
+        - name: logs-volume
+          mountPath: /app/logs
+        - name: config-store-volume
+          mountPath: /app/config-store
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        # 容器安全上下文
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: config-volume
+        configMap:
+          name: jairouter-config
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: jairouter-logs-pvc
+      - name: config-store-volume
+        persistentVolumeClaim:
+          claimName: jairouter-config-pvc
+      restartPolicy: Always
+```
+
+### 3. Secret 管理
+
+创建 `secret.yaml`：
+
+```
+# Secret 配置
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jairouter-secret
+  namespace: jairouter
+type: Opaque
+data:
+  # Base64 编码的密钥
+  api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
+  jwt-secret: eW91ci1qd3Qtc2VjcmV0LWtleQ==  # your-jwt-secret-key
+  database-password: cGFzc3dvcmQ=     # password
+
+---
+# TLS Secret 配置
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jairouter-tls
+  namespace: jairouter
+type: kubernetes.io/tls
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCiMKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJV
+```
+
+```
+kubectl apply -f secret.yaml
+```
+
+### 4. 应用安全配置
+
+创建 `configmap-security.yaml`：
+
+```yaml
+# 安全配置 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jairouter-security-config
+  namespace: jairouter
+data:
+  application-security.yml: |
+    # 安全配置
+    security:
+      # API Key 配置
+      api-key:
+        enabled: true
+        header: X-API-Key
+        file: /app/config/api-keys.yml
+      
+      # JWT 配置
+      jwt:
+        enabled: true
+        secret: ${JWT_SECRET}
+        algorithm: HS256
+        expiration-minutes: 60
+        issuer: jairouter
+        accounts:
+          - username: admin
+            password: ${ADMIN_PASSWORD}
+            roles: [ADMIN, USER]
+            enabled: true
+          - username: user
+            password: ${USER_PASSWORD}
+            roles: [USER]
+            enabled: true
+
+      # CORS 配置
+      cors:
+        allowed-origins: "*"
+        allowed-methods: "*"
+        allowed-headers: "*"
+        allow-credentials: false
+
+    # HTTPS 配置
+    server:
+      port: 8443
+      ssl:
+        enabled: true
+        key-store: /app/config/tls/keystore.p12
+        key-store-password: ${SSL_KEYSTORE_PASSWORD}
+        key-store-type: PKCS12
+        key-alias: jairouter
+```
+
+创建 `api-keys-config.yaml`：
+
+```yaml
+# API 密钥配置
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jairouter-api-keys
+  namespace: jairouter
+data:
+  api-keys.yml: |
+    # API 密钥配置
+    api-keys:
+      - name: "service-a"
+        key: "sk-service-a-key-here"
+        permissions:
+          - "chat:read"
+          - "embedding:read"
+        enabled: true
+      
+      - name: "service-b"
+        key: "sk-service-b-key-here"
+        permissions:
+          - "chat:*"
+          - "embedding:*"
+        enabled: true
+```
+
+## 日志配置
+
+### 1. 日志收集配置
+
+创建 `fluentd-config.yaml`：
+
+```yaml
+# Fluentd 配置
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jairouter-fluentd-config
+  namespace: jairouter
+data:
+  fluent.conf: |
+    <source>
+      @type tail
+      path /var/log/containers/jairouter-*_jairouter_*.log
+      pos_file /var/log/jairouter.log.pos
+      tag jairouter.*
+      read_from_head true
+      <parse>
+        @type json
+        time_format %Y-%m-%dT%H:%M:%S.%NZ
+      </parse>
+    </source>
+    
+    <filter jairouter.**>
+      @type kubernetes_metadata
+    </filter>
+    
+    <match jairouter.**>
+      @type elasticsearch
+      host elasticsearch
+      port 9200
+      logstash_format true
+      logstash_prefix jairouter
+      flush_interval 10s
+    </match>
+```
+
+### 2. 结构化日志配置
+
+更新 `configmap.yaml`：
+
+```
+# 更新后的 ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jairouter-config
+  namespace: jairouter
+data:
+  application.yml: |
+    server:
+      port: 8080
+    
+    model:
+      load-balance:
+        type: round-robin
+      rate-limit:
+        enabled: true
+        algorithm: token-bucket
+        capacity: 1000
+        rate: 100
+      services:
+        chat:
+          instances:
+            - name: "llama3.2:3b"
+              base-url: "http://ollama-service:11434"
+              path: "/v1/chat/completions"
+              weight: 1
+    
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,metrics,prometheus
+      metrics:
+        export:
+          prometheus:
+            enabled: true
+    
+    logging:
+      level:
+        org.unreal.modelrouter: INFO
+        org.unreal.modelrouter.security: DEBUG
+      file:
+        name: /app/logs/jairouter.log
+      pattern:
+        console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+        file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+      
+      structured:
+        enabled: true
+        format: json
+        fields:
+          timestamp: "@timestamp"
+          level: "level"
+          logger: "logger"
+          message: "message"
+          thread: "thread"
+          traceId: "traceId"
+          spanId: "spanId"
+          pod: "pod"
+          namespace: "namespace"
+```
+
+### 3. 日志持久化存储
+
+更新 `pvc.yaml`：
+
+```
+# 更新后的 PVC 配置
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jairouter-config-pvc
+  namespace: jairouter
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs-client
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jairouter-logs-pvc
+  namespace: jairouter
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: nfs-client
+
+---
+# 审计日志 PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jairouter-audit-logs-pvc
+  namespace: jairouter
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: nfs-client
+```
+
+### 4. 日志轮转和清理
+
+创建 `log-cleanup-cronjob.yaml`：
+
+```yaml
+# 日志清理 CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: jairouter-log-cleanup
+  namespace: jairouter
+spec:
+  schedule: "0 2 * * *"  # 每天凌晨 2 点执行
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: log-cleanup
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - |
+              find /logs -name "*.log" -mtime +30 -delete
+              find /logs -name "*.log.*" -mtime +30 -delete
+            volumeMounts:
+            - name: logs-volume
+              mountPath: /logs
+          restartPolicy: OnFailure
+          volumes:
+          - name: logs-volume
+            persistentVolumeClaim:
+              claimName: jairouter-logs-pvc
 ```
 
 ## 运维管理
 
 ### 1. 查看部署状态
 
-```bash
+```
 # 查看 Pod 状态
 kubectl get pods -n jairouter
 
@@ -911,7 +1420,7 @@ kubectl get hpa -n jairouter
 
 ### 2. 查看日志
 
-```bash
+```
 # 查看 Pod 日志
 kubectl logs -f deployment/jairouter -n jairouter
 
@@ -924,7 +1433,7 @@ kubectl logs -f -l app=jairouter -n jairouter --max-log-requests=10
 
 ### 3. 滚动更新
 
-```bash
+```
 # 更新镜像
 kubectl set image deployment/jairouter jairouter=jairouter/model-router:v1.1.0 -n jairouter
 
@@ -943,7 +1452,7 @@ kubectl rollout undo deployment/jairouter --to-revision=2 -n jairouter
 
 ### 4. 扩缩容
 
-```bash
+```
 # 手动扩容
 kubectl scale deployment jairouter --replicas=5 -n jairouter
 
@@ -958,7 +1467,7 @@ kubectl patch hpa jairouter-hpa -n jairouter -p '{"spec":{"minReplicas":0,"maxRe
 
 ### 1. Pod 故障排查
 
-```bash
+```
 # 查看 Pod 详细信息
 kubectl describe pod jairouter-xxx-yyy -n jairouter
 
@@ -974,7 +1483,7 @@ kubectl top pod -n jairouter
 
 ### 2. 网络故障排查
 
-```bash
+```
 # 测试 Service 连通性
 kubectl run test-pod --image=busybox -it --rm -- sh
 # 在 Pod 内执行
@@ -990,7 +1499,7 @@ kubectl describe ingress jairouter-ingress -n jairouter
 
 ### 3. 存储故障排查
 
-```bash
+```
 # 查看 PVC 状态
 kubectl get pvc -n jairouter
 

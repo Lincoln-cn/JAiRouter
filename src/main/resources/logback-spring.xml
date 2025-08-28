@@ -11,8 +11,8 @@
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"/>
 
     <!-- 注册自定义转换器 -->
-    <conversionRule conversionWord="traceId" converterClass="org.unreal.modelrouter.tracing.logger.TraceIdConverter" />
-    <conversionRule conversionWord="spanId" converterClass="org.unreal.modelrouter.tracing.logger.SpanIdConverter" />
+    <conversionRule conversionWord="traceId" class="org.unreal.modelrouter.tracing.logger.TraceIdConverter" />
+    <conversionRule conversionWord="spanId" class="org.unreal.modelrouter.tracing.logger.SpanIdConverter" />
 
     <!-- 控制台输出 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -112,6 +112,8 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </root>
         
         <!-- 应用日志详细输出 -->
@@ -119,6 +121,8 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </logger>
         
         <!-- 框架日志适当降级 -->
@@ -134,6 +138,8 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </root>
         
         <!-- 关键业务日志 -->
@@ -157,39 +163,53 @@
         <root level="WARN">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </root>
         
         <!-- 只记录关键业务日志 -->
         <logger name="org.unreal.modelrouter.controller" level="INFO" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </logger>
         
         <logger name="org.unreal.modelrouter.config.ConfigurationService" level="INFO" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </logger>
         
         <logger name="org.unreal.modelrouter.store.AutoMergeService" level="INFO" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </logger>
         
         <!-- 监控相关日志 -->
         <logger name="org.unreal.modelrouter.checker.ServerChecker" level="WARN" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </logger>
         
         <logger name="org.unreal.modelrouter.checker.RateLimiterCleanupChecker" level="WARN" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </logger>
         
         <!-- 其他组件只记录警告和错误 -->
         <logger name="org.unreal.modelrouter" level="WARN" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
+            <appender-ref ref="ASYNC_STRUCTURED"/>
+            <appender-ref ref="TRACING_APPENDER"/>
         </logger>
         
         <!-- 框架日志最小化 -->
