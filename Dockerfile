@@ -24,13 +24,8 @@ LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gatew
 LABEL version="1.0-SNAPSHOT"
 
 # 创建应用用户（安全最佳实践）
-RUN set -eux; \
-    uid=10000; \
-    while getent passwd $uid >/dev/null; do uid=$((uid+1)); done; \
-    gid=$uid; \
-    while getent group $gid >/dev/null; do gid=$((gid+1)); done; \
-    addgroup -S -g $gid jairouter && \
-    adduser  -S -u $uid -G jairouter jairouter
+RUN mkdir -p /app/logs /app/config /app/config-store && \
+    chown -R jairouter:jairouter /app
 
 # 设置工作目录
 WORKDIR /app
