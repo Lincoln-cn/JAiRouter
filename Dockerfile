@@ -16,7 +16,7 @@ COPY spotbugs-security-exclude.xml .
 RUN mvn clean package -DskipTests
 
 # 阶段2: 运行阶段
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 # 设置维护者信息
 LABEL maintainer="JAiRouter Team"
