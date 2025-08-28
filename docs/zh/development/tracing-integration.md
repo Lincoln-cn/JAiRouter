@@ -540,6 +540,6 @@ public void highFrequencyOperation() {
 
 ## 下一步
 
-- [API 参考](api-reference.md) - 详细的 API 文档
+- [API 参考](../api-reference/index.md) - 详细的 API 文档
 - [配置参考](../tracing/config-reference.md) - 完整的配置选项
 - [性能调优](../tracing/performance-tuning.md) - 性能优化指南
