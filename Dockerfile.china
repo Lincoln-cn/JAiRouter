@@ -18,7 +18,7 @@ COPY spotbugs-security-exclude.xml .
 RUN mvn clean package -Pchina
 
 # 运行阶段
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gateway"
