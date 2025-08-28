@@ -10,8 +10,13 @@ LABEL version="1.0-SNAPSHOT"
 RUN apk add --no-cache curl wget
 
 # 创建应用用户（安全最佳实践）
-RUN addgroup -S -g 10010 jairouter && \
-    adduser  -S -u 10010 -G jairouter jairouter
+RUN set -eux; \
+    uid=10000; \
+    while getent passwd $uid >/dev/null; do uid=$((uid+1)); done; \
+    gid=$uid; \
+    while getent group $gid >/dev/null; do gid=$((gid+1)); done; \
+    addgroup -S -g $gid jairouter && \
+    adduser  -S -u $uid -G jairouter jairouter
 
 # 设置工作目录
 WORKDIR /app
