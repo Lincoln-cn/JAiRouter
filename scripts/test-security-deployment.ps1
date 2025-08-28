@@ -142,6 +142,16 @@ function Test-DockerEnvironment {
     return $dockerComposeCmd
 }
 
+# 检查镜像是否存在
+function Test-DockerImageExists {
+    param(
+        [string]$ImageName
+    )
+    
+    $imageExists = docker images sodlinken/jairouter:latest -q
+    return [bool]$imageExists
+}
+
 # 构建测试镜像
 function Build-TestImages {
     param([string]$DockerComposeCmd)
@@ -151,7 +161,7 @@ function Build-TestImages {
     Push-Location $ProjectRoot
     try {
         # 检查是否需要构建
-        $imageExists = docker images jairouter/model-router:latest -q
+        $imageExists = docker images sodlinken/jairouter:latest -q
         if ($imageExists) {
             Log-Info "镜像已存在，跳过构建"
             return $true

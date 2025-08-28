@@ -2,139 +2,19 @@ version: '3.8'
 
 services:
   jairouter:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: jairouter/model-router:latest
-    container_name: jairouter-app
+    image: sodlinken/jairouter:latest
+    container_name: jairouter
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
-      # 安全功能配置
-      - JAIROUTER_SECURITY_ENABLED=${JAIROUTER_SECURITY_ENABLED:-false}
-      - JAIROUTER_SECURITY_API_KEY_ENABLED=${JAIROUTER_SECURITY_API_KEY_ENABLED:-true}
-      - JAIROUTER_SECURITY_JWT_ENABLED=${JAIROUTER_SECURITY_JWT_ENABLED:-false}
-      - JAIROUTER_SECURITY_SANITIZATION_REQUEST_ENABLED=${JAIROUTER_SECURITY_SANITIZATION_REQUEST_ENABLED:-true}
-      - JAIROUTER_SECURITY_SANITIZATION_RESPONSE_ENABLED=${JAIROUTER_SECURITY_SANITIZATION_RESPONSE_ENABLED:-true}
-      - JAIROUTER_SECURITY_AUDIT_ENABLED=${JAIROUTER_SECURITY_AUDIT_ENABLED:-true}
-      # API Key 配置
-      - ADMIN_API_KEY=${ADMIN_API_KEY:-}
-      - USER_API_KEY=${USER_API_KEY:-}
-      # JWT 配置
-      - JWT_SECRET=${JWT_SECRET:-}
-      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
-      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-60}
-      # Redis 配置
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-      - REDIS_DATABASE=${REDIS_DATABASE:-0}
-      - REDIS_TIMEOUT=${REDIS_TIMEOUT:-2000}
     volumes:
       - ./config:/app/config:ro
       - ./logs:/app/logs
-      - jairouter-data:/app/config-store
+      - ./config-store:/app/config-store
+    restart: unless-stopped
     networks:
       - jairouter-network
-    restart: unless-stopped
-    depends_on:
-      - redis
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # Redis 缓存服务（用于安全功能）
-  redis:
-    image: redis:7-alpine
-    container_name: jairouter-redis
-    ports:
-      - "6379:6379"
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-    command: >
-      sh -c "
-        if [ -n \"$$REDIS_PASSWORD\" ]; then
-          redis-server --requirepass $$REDIS_PASSWORD --appendonly yes --appendfsync everysec
-        else
-          redis-server --appendonly yes --appendfsync everysec
-        fi
-      "
-    volumes:
-      - redis-data:/data
-    networks:
-      - jairouter-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # 可选：添加 Prometheus 监控
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: jairouter-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    networks:
-      - jairouter-network
-    restart: unless-stopped
-    profiles:
-      - monitoring
-
-  # 可选：添加 Grafana 仪表板
-  grafana:
-    image: grafana/grafana:latest
-    container_name: jairouter-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
-    networks:
-      - jairouter-network
-    restart: unless-stopped
-    profiles:
-      - monitoring
-
-volumes:
-  jairouter-data:
-    driver: local
-  redis-data:
-    driver: local
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
 
 networks:
   jairouter-network:

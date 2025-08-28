@@ -94,10 +94,10 @@ Write-Info "构建 Docker 镜像..."
 
 if ($Environment -eq "dev") {
     $Dockerfile = "Dockerfile.dev"
-    $ImageTag = "jairouter/model-router:${Version}-dev"
+    $ImageTag = "sodlinken/jairouter:${Version}-dev"
 } else {
     $Dockerfile = "Dockerfile"
-    $ImageTag = "jairouter/model-router:${Version}"
+    $ImageTag = "sodlinken/jairouter:${Version}"
 }
 
 docker build -f $Dockerfile -t $ImageTag .
@@ -109,15 +109,15 @@ if ($LASTEXITCODE -ne 0) {
 
 # 添加 latest 标签（仅生产环境）
 if ($Environment -eq "prod") {
-    docker tag $ImageTag jairouter/model-router:latest
-    Write-Success "Docker 镜像构建完成: $ImageTag, jairouter/model-router:latest"
+    docker tag $ImageTag sodlinken/jairouter:latest
+    Write-Success "Docker 镜像构建完成: $ImageTag, sodlinken/jairouter:latest"
 } else {
     Write-Success "Docker 镜像构建完成: $ImageTag"
 }
 
 # 显示镜像信息
 Write-Info "镜像信息:"
-docker images | Select-String "jairouter/model-router"
+docker images | Select-String "sodlinken/jairouter"
 
 # 可选：运行镜像验证
 $verify = Read-Host "是否要运行镜像进行验证? (y/N)"

@@ -1,4 +1,4 @@
-﻿# JAiRouter
+﻿﻿# JAiRouter
 
 JAiRouter is a Spring Boot-based model service routing and load balancing gateway designed to centrally manage and route various AI model services (such as Chat, Embedding, Rerank, TTS, etc.), supporting multiple load balancing strategies, rate limiting, circuit breaking, health checks, dynamic configuration updates, and more.
 
@@ -46,24 +46,12 @@ Documentation includes:
 
 ## 🚀 Quick Start
 
-### Docker Deployment (Recommended)
-
-1. Pull the image
-
-```bash
-docker pull jairouter/model-router:latest
 ```
+# Pull the latest image
+docker pull sodlinken/jairouter:latest
 
-2. Start the service
-
-```bash
-docker run -p 8080:8080 jairouter/model-router:latest
-```
-
-3. Access the service
-
-```bash
-curl http://localhost:8080/actuator/health
+# Run the container
+docker run -p 8080:8080 sodlinken/jairouter:latest
 ```
 
 ### Traditional Deployment

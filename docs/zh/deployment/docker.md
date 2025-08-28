@@ -1,4 +1,4 @@
-﻿# Docker 部署指南
+﻿﻿# Docker 部署指南
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
@@ -36,28 +36,28 @@ JAiRouter 提供完整的 Docker 化部署方案，支持多环境配置和容�
 
 ### 1. 拉取镜像
 
-```bash
+```
 # 拉取最新生产镜像
-docker pull jairouter/model-router:latest
+docker pull sodlinken/jairouter:latest
 
 # 拉取指定版本
-docker pull jairouter/model-router:v1.0.0
+docker pull sodlinken/jairouter:v1.0.0
 
 # 中国用户（使用阿里云镜像）
 docker pull registry.cn-hangzhou.aliyuncs.com/jairouter/model-router:latest
 
 # 验证镜像
-docker images | grep jairouter
+docker images | grep sodlinken/jairouter
 ```
 
 ### 2. 基础运行
 
-```bash
+```
 # 最简单的运行方式
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # 验证部署
 curl http://localhost:8080/actuator/health
@@ -65,14 +65,14 @@ curl http://localhost:8080/actuator/health
 
 ### 3. 带配置运行
 
-```bash
+```
 # 挂载配置文件运行
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 ## 镜像构建
@@ -90,35 +90,29 @@ docker run -d \
 
 #### 中国用户（推荐）
 
-```bash
+```
 # 使用中国优化构建脚本
 ./scripts/docker-build-china.sh
 
 # 或者手动构建
 mvn clean package -Pchina
-docker build -f Dockerfile.china -t jairouter/model-router:latest .
+docker build -f Dockerfile.china -t sodlinken/jairouter:latest .
 ```
-
-**中国版本特性**：
-- ✅ 使用阿里云 Maven 镜像 (https://maven.aliyun.com/repository/public)
-- ✅ 大幅提升依赖下载速度
-- ✅ 包含 Spring、Central、Plugin 等完整仓库镜像
-- ✅ 自动配置 settings.xml
 
 #### 国际用户
 
-```bash
+```
 # 使用标准构建脚本
 ./scripts/docker-build.sh
 
 # 或者手动构建
 mvn clean package
-docker build -t jairouter/model-router:latest .
+docker build -t sodlinken/jairouter:latest .
 ```
 
 ### 2. 使用 Maven 插件
 
-```bash
+```
 # 使用 Dockerfile 插件
 mvn clean package dockerfile:build -Pdocker
 
@@ -127,27 +121,27 @@ mvn clean package jib:dockerBuild -Pjib
 
 # 构建并推送到注册表
 mvn clean package jib:build -Pjib \
-  -Djib.to.image=your-registry/jairouter/model-router:latest
+  -Djib.to.image=your-registry/sodlinken/jairouter:latest
 ```
 
 ### 3. 多环境构建
 
-```bash
+```
 # 构建开发环境镜像
-docker build -f Dockerfile.dev -t jairouter/model-router:dev .
+docker build -f Dockerfile.dev -t sodlinken/jairouter:dev .
 
 # 构建生产环境镜像
-docker build -f Dockerfile -t jairouter/model-router:prod .
+docker build -f Dockerfile -t sodlinken/jairouter:prod .
 
 # 构建中国优化镜像
-docker build -f Dockerfile.china -t jairouter/model-router:china .
+docker build -f Dockerfile.china -t sodlinken/jairouter:china .
 ```
 
 ## 容器运行
 
 ### 1. 生产环境运行
 
-```bash
+```
 docker run -d \
   --name jairouter-prod \
   -p 8080:8080 \
@@ -161,12 +155,12 @@ docker run -d \
   --health-interval=30s \
   --health-timeout=10s \
   --health-retries=3 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 ### 2. 开发环境运行
 
-```bash
+```
 docker run -d \
   --name jairouter-dev \
   -p 8080:8080 \
@@ -176,12 +170,12 @@ docker run -d \
   -v $(pwd)/config:/app/config \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/src:/app/src:ro \
-  jairouter/model-router:dev
+  sodlinken/jairouter:dev
 ```
 
 ### 3. 使用运行脚本
 
-```bash
+```
 # Windows PowerShell
 .\scripts\docker-run.ps1 prod latest
 
@@ -196,14 +190,14 @@ docker run -d \
 
 ### 1. 基础 Compose 配置
 
-创建 `docker-compose.yml`：
+创建 [docker-compose.yml](file://d:\IdeaProjects\model-router\docker-compose.yml)：
 
-```yaml
+```
 version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     container_name: jairouter
     ports:
       - "8080:8080"
@@ -233,7 +227,7 @@ networks:
 
 创建 `docker-compose.monitoring.yml`：
 
-```yaml
+```
 version: '3.8'
 
 services:
@@ -296,7 +290,7 @@ networks:
 
 创建 `docker-compose.dev.yml`：
 
-```yaml
+```
 version: '3.8'
 
 services:
@@ -325,7 +319,7 @@ networks:
 
 ### 4. 运行 Compose
 
-```bash
+```
 # 启动基础服务
 docker-compose up -d
 
@@ -377,7 +371,7 @@ docker-compose down
 
 ### 1. 端口映射
 
-```bash
+```
 # 基础端口映射
 -p 8080:8080    # 应用端口
 
@@ -392,7 +386,7 @@ docker-compose down
 
 ### 2. 网络模式
 
-```yaml
+```
 # 桥接网络（默认）
 networks:
   - jairouter-network
@@ -413,7 +407,7 @@ networks:
 
 ### 1. 容器健康检查
 
-```bash
+```
 # Docker 运行时健康检查
 docker run -d \
   --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1" \
@@ -421,12 +415,12 @@ docker run -d \
   --health-timeout=10s \
   --health-retries=3 \
   --health-start-period=60s \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 ### 2. Compose 健康检查
 
-```yaml
+```
 healthcheck:
   test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
   interval: 30s
@@ -437,7 +431,7 @@ healthcheck:
 
 ### 3. 健康检查验证
 
-```bash
+```
 # 查看健康状态
 docker ps --format "table {{.Names}}\t{{.Status}}"
 
@@ -454,7 +448,7 @@ curl http://localhost:8080/actuator/health
 
 创建 `monitoring/prometheus.yml`：
 
-```yaml
+```
 global:
   scrape_interval: 15s
 
@@ -470,7 +464,7 @@ scrape_configs:
 
 创建 `monitoring/grafana/dashboards/jairouter.json`：
 
-```json
+```
 {
   "dashboard": {
     "title": "JAiRouter Dashboard",
@@ -502,7 +496,7 @@ scrape_configs:
 
 ### 3. 启动监控栈
 
-```bash
+```
 # 启动完整监控栈
 docker-compose -f docker-compose.monitoring.yml up -d
 
@@ -515,7 +509,7 @@ docker-compose -f docker-compose.monitoring.yml up -d
 
 ### 1. 日志配置
 
-```yaml
+```
 # docker-compose.yml 中的日志配置
 services:
   jairouter:
@@ -528,7 +522,7 @@ services:
 
 ### 2. 日志查看
 
-```bash
+```
 # 查看实时日志
 docker logs -f jairouter
 
@@ -544,7 +538,7 @@ docker logs jairouter > jairouter.log 2>&1
 
 ### 3. 日志轮转
 
-```bash
+```
 # 配置 logrotate
 cat > /etc/logrotate.d/docker-jairouter << EOF
 /var/lib/docker/containers/*/*-json.log {
@@ -563,7 +557,7 @@ EOF
 
 ### 1. 资源限制
 
-```yaml
+```
 services:
   jairouter:
     deploy:
@@ -578,7 +572,7 @@ services:
 
 ### 2. 容器优化
 
-```bash
+```
 # 使用多阶段构建减小镜像大小
 # 使用 .dockerignore 排除不必要文件
 # 使用非 root 用户运行
@@ -587,7 +581,7 @@ services:
 
 ### 3. 网络优化
 
-```yaml
+```
 # 使用自定义网络
 networks:
   jairouter-network:
@@ -603,7 +597,7 @@ networks:
 
 #### 容器启动失败
 
-```bash
+```
 # 查看容器状态
 docker ps -a --filter "name=jairouter"
 
@@ -614,12 +608,12 @@ docker logs jairouter
 netstat -tulpn | grep 8080
 
 # 检查镜像是否存在
-docker images | grep jairouter
+docker images | grep sodlinken/jairouter
 ```
 
 #### 健康检查失败
 
-```bash
+```
 # 手动执行健康检查
 curl -v http://localhost:8080/actuator/health
 
@@ -632,7 +626,7 @@ docker exec jairouter cat /app/logs/jairouter.log
 
 #### 配置文件问题
 
-```bash
+```
 # 检查配置文件挂载
 docker exec jairouter ls -la /app/config
 
@@ -645,7 +639,7 @@ docker exec jairouter java -jar app.jar --spring.config.location=/app/config/app
 
 ### 2. 调试工具
 
-```bash
+```
 # 进入容器调试
 docker exec -it jairouter sh
 
@@ -661,7 +655,7 @@ docker stats jairouter
 
 ### 3. 性能分析
 
-```bash
+```
 # 查看容器资源使用
 docker stats --no-stream jairouter
 
@@ -669,14 +663,14 @@ docker stats --no-stream jairouter
 docker inspect jairouter
 
 # 查看镜像层信息
-docker history jairouter/model-router:latest
+docker history sodlinken/jairouter:latest
 ```
 
 ## 安全配置
 
 ### 1. 容器安全
 
-```bash
+```
 # 使用非 root 用户
 USER 1001:1001
 
@@ -691,7 +685,7 @@ RUN apt-get remove --purge -y wget curl && \
 
 ### 2. 网络安全
 
-```yaml
+```
 # 限制网络访问
 networks:
   jairouter-network:
@@ -701,7 +695,7 @@ networks:
 
 ### 3. 密钥管理
 
-```bash
+```
 # 使用 Docker secrets
 echo "your-secret" | docker secret create jairouter-secret -
 

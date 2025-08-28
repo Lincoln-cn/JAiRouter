@@ -122,6 +122,17 @@ check_docker_environment() {
     echo "$docker_compose_cmd"
 }
 
+# 检查镜像是否存在
+function check_docker_image() {
+    if docker images sodlinken/jairouter:latest -q | grep -q .; then
+        echo "Docker image sodlinken/jairouter:latest exists"
+        return 0
+    else
+        echo "Docker image sodlinken/jairouter:latest not found"
+        return 1
+    fi
+}
+
 # 构建测试镜像
 build_test_images() {
     local docker_compose_cmd="$1"
@@ -131,7 +142,7 @@ build_test_images() {
     cd "$PROJECT_ROOT"
     
     # 检查是否需要构建
-    if docker images jairouter/model-router:latest -q | grep -q .; then
+    if docker images sodlinken/jairouter:latest -q | grep -q .; then
         log_info "镜像已存在，跳过构建"
         return 0
     fi
