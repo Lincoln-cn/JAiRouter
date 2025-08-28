@@ -13,7 +13,7 @@ COPY spotbugs-security-include.xml .
 COPY spotbugs-security-exclude.xml .
 
 # 构建应用程序（跳过测试以加快构建速度）
-RUN mvn clean package -DskipTests
+RUN mvn clean package -Pfast
 
 # 阶段2: 运行阶段
 FROM eclipse-temurin:17-jre
