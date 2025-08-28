@@ -11,7 +11,7 @@
 
     <groupId>org.unreal</groupId>
     <artifactId>model-router</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.8.0</version>
     <packaging>jar</packaging>
 
     <name>model-router</name>
