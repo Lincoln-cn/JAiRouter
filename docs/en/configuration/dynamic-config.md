@@ -2,14 +2,23 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter provides flexible configuration options to meet various deployment scenarios. This guide covers all aspects of configuration from basic setup to advanced features.
+
+## Modular Configuration Overview
+
+Starting from v1.0.0, JAiRouter adopts a modular configuration structure:
+
+- Main configuration file: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
+- Base configuration modules: Files in the [config/base/](file://D:/IdeaProjects/model-router/src/main/resources/config/base/) directory
+- Feature configuration modules: Files in the [config/security/](file://D:/IdeaProjects/model-router/src/main/resources/config/security/), [config/tracing/](file://D:/IdeaProjects/model-router/src/main/resources/config/tracing/) directories, etc.
+- Environment configuration files: [application-dev.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-dev.yml), [application-prod.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-prod.yml), etc.
+
+Although the configuration has been modularized, the dynamic configuration API can still be used to update instance configurations at runtime without affecting the modular structure.
 
 ## Configuration Overview
 **1. Configuration Merging**: At startup, configuration documents in the config directory are read and automatically merged with application.yml configuration for dynamic updates.

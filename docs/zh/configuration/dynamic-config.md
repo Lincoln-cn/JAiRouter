@@ -2,14 +2,23 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter 提供灵活的配置选项以满足各种部署场景。本指南涵盖从基本设置到高级功能的所有配置方面。
+
+## 模块化配置说明
+
+从 v1.0.0 版本开始，JAiRouter 采用模块化配置结构：
+
+- 主配置文件: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
+- 基础配置模块: [config/base/](file://D:/IdeaProjects/model-router/src/main/resources/config/base/) 目录下的文件
+- 功能配置模块: [config/security/](file://D:/IdeaProjects/model-router/src/main/resources/config/security/)、[config/tracing/](file://D:/IdeaProjects/model-router/src/main/resources/config/tracing/) 等目录下的文件
+- 环境配置文件: [application-dev.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-dev.yml)、[application-prod.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-prod.yml) 等
+
+虽然配置已模块化，但动态配置 API 仍然可以用于运行时更新实例配置，不影响模块化结构。
 
 ## 配置概览
 **1.配置合并**: 启动时，读取config目录下的配置文档，与application.yml配置进行自动合并，动态更新配置。

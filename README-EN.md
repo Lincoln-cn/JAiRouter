@@ -29,8 +29,8 @@ JAiRouter is a Spring Boot-based model service routing and load balancing gatewa
 
 The complete project documentation has been migrated to GitHub Pages and can be accessed online:
 
-- [中文文档](https://lincoln-cn.github.io/JAiRouter)
-- [English Documentation](https://lincoln-cn.github.io/JAiRouter/en/)
+- [中文文档](https://docs.jairouter.com/)
+- [English Documentation](https://docs.jairouter.com/en/)
 
 Documentation includes:
 
@@ -83,17 +83,20 @@ After starting the project, you can access the auto-generated API documentation 
 
 ## 📌 Development Roadmap (Status Update)
 
-| Phase | Status | Content                                                  |
-|-------|--------|----------------------------------------------------------|
-| 0.1.0 | ✅     | Basic gateway, adapters, load balancing, health checks   |
-| 0.2.0 | ✅     | Rate limiting, circuit breaking, fallback, config persistence, dynamic update API |
-| 0.2.1 | ✅     | Scheduled cleanup tasks, memory optimization, enhanced client IP rate limiting, auto-merge config files |
+| Phase | Status | Content                                              |
+|-------|--------|------------------------------------------------------|
+| 0.1.0 | ✅     | Basic gateway, adapters, load balancing, health checks |
+| 0.2.0 | ✅     | Rate limiting, circuit breaking, degradation, configuration persistence, dynamic update interface |
+| 0.2.1 | ✅     | Scheduled cleanup tasks, memory optimization, enhanced client IP rate limiting, automatic configuration file merging |
 | 0.3.0 | ✅     | Docker containerization, multi-environment deployment, monitoring integration |
-| 0.3.1 | ✅     | Use Alibaba Maven repository to accelerate image builds in China |
+| 0.3.1 | ✅     | Use Alibaba Maven repository in China to accelerate image building |
 | 0.4.0 | ✅     | Monitoring metrics, Prometheus integration, alert notifications |
-| 0.5.0 | ✅     | Manage all project-related documentation using GitHub Pages |
-| 0.6.0 | 🚧     | Authentication and authorization                         |
-| 0.7.0 | 📋     | Log tracing                                              |
+| 0.5.0 | ✅     | Manage all project-related documents using GitHub Pages |
+| 0.6.0 | ✅     | Authentication and authorization                     |
+| 0.7.0 | ✅     | Log tracing                                          |
+| 0.8.0 | ✅     | Automatically build and publish images to Docker Hub |
+| 0.9.0 | 🚧     | Enhanced monitoring dashboard and user management features |
+| 1.0.0 | 📋     | Enterprise deployment guide                          |
 
 ---
 

@@ -2,14 +2,21 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter has a built-in circuit breaker mechanism to prevent service avalanches and cascading failures. When backend services fail, the circuit breaker automatically cuts off requests and automatically resumes normal operation after service recovery. This document details the configuration and usage of the circuit breaker.
+
+## Modular Configuration Overview
+
+Starting from v1.0.0, JAiRouter adopts a modular configuration structure with circuit breaker related configurations moved to separate configuration files:
+
+- Main configuration file: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
+- Model services base configuration: [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml)
+
+You can find all circuit breaker related configurations in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file, including global configurations, service type configurations, and instance configurations.
 
 ## Circuit Breaker Overview
 
@@ -51,15 +58,35 @@ stateDiagram-v2
 
 ### Basic Configuration
 
+Configure global circuit breaker in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
-# application.yml
+# config/base/model-services-base.yml
 model:
+  # Global circuit breaker configuration
   circuit-breaker:
-    enabled: true               # Enable global circuit breaker
-    failure-threshold: 5        # Failure threshold
-    recovery-timeout: 60000     # Recovery detection interval (milliseconds)
-    success-threshold: 3        # Success threshold
-    timeout: 30000             # Request timeout (milliseconds)
+    enabled: true
+    failureThreshold: 5
+    timeout: 60000
+    successThreshold: 2
+
+  # Global fallback configuration
+  fallback:
+    enabled: true
+    strategy: default
+
+  services:
+    # Chat service configuration
+    chat:
+      load-balance:
+        type: least-connections
+      adapter: gpustack # Use GPUStack adapter
+      # Service-level circuit breaker configuration
+      circuit-breaker:
+        enabled: true
+        failureThreshold: 5
+        timeout: 60000
+        successThreshold: 2
 ```
 
 ### Advanced Configuration
@@ -96,6 +123,8 @@ model:
 
 ### YAML Configuration
 
+Configure circuit breaker for each service type in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
 model:
   services:
@@ -122,6 +151,8 @@ model:
 ```
 
 ### JSON Configuration
+
+JAiRouter also supports updating circuit breaker configurations via the dynamic configuration API:
 
 ```json
 {
@@ -151,6 +182,8 @@ model:
 
 ### Independent Instance Circuit Breaking
 
+Configure instance-level circuit breaker in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
 model:
   services:
@@ -176,6 +209,8 @@ model:
 ```
 
 ### Instance-Specific Configuration
+
+JAiRouter also supports updating instance-level circuit breaker configurations via the dynamic configuration API:
 
 ```json
 {
@@ -206,6 +241,8 @@ model:
 ## Circuit Breaker and Fallback Strategy
 
 ### Basic Fallback Configuration
+
+Configure global and service-level fallback strategies in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
 
 ```yaml
 model:
@@ -253,6 +290,8 @@ model:
 ```
 
 ### JSON Fallback Configuration
+
+JAiRouter also supports updating fallback strategies via the dynamic configuration API:
 
 ```json
 {

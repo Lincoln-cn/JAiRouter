@@ -2,14 +2,21 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter provides multiple rate limiting algorithms, supporting global, service-level, and instance-level rate limiting configurations, as well as independent rate limiting based on client IP. This document details the configuration and usage of various rate limiting strategies.
+
+## Modular Configuration Overview
+
+Starting from v1.0.0, JAiRouter adopts a modular configuration structure with rate limiting related configurations moved to separate configuration files:
+
+- Main configuration file: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
+- Model services base configuration: [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml)
+
+You can find all rate limiting related configurations in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file, including global configurations, service type configurations, and instance configurations.
 
 ## Rate Limiting Overview
 
@@ -46,16 +53,34 @@ graph TB
 
 ### Basic Configuration
 
+Configure global rate limiting in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
-# application.yml
+# config/base/model-services-base.yml
 model:
+  # Global rate limiting configuration
   rate-limit:
-    enabled: true               # Enable global rate limiting
-    algorithm: "token-bucket"   # Default algorithm
-    capacity: 1000             # Default capacity
-    rate: 100                  # Default rate
-    scope: "service"           # Rate limiting scope: service or instance
-    client-ip-enable: true     # Enable client IP rate limiting
+    enabled: true
+    algorithm: "token-bucket"
+    capacity: 1000
+    rate: 100
+    scope: "service"
+    client-ip-enable: true  # Enable client IP rate limiting
+
+  services:
+    # Chat service configuration
+    chat:
+      load-balance:
+        type: least-connections
+      adapter: gpustack # Use GPUStack adapter
+      # Service-level rate limiting configuration
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 100
+        rate: 10
+        scope: "service"
+        client-ip-enable: true
 ```
 
 ### Advanced Configuration
@@ -99,6 +124,8 @@ graph LR
 
 #### Configuration Example
 
+Configure the token bucket algorithm in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
 model:
   services:
@@ -113,6 +140,8 @@ model:
 ```
 
 #### JSON Configuration
+
+JAiRouter also supports updating rate limiting configurations via the dynamic configuration API:
 
 ```json
 {
@@ -176,6 +205,8 @@ graph TB
 
 #### Configuration Example
 
+Configure the leaky bucket algorithm in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
 model:
   services:
@@ -190,6 +221,8 @@ model:
 ```
 
 #### JSON Configuration
+
+JAiRouter also supports updating rate limiting configurations via the dynamic configuration API:
 
 ```json
 {
@@ -236,6 +269,8 @@ graph LR
 
 #### Configuration Example
 
+Configure the sliding window algorithm in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
 model:
   services:
@@ -250,6 +285,8 @@ model:
 ```
 
 #### JSON Configuration
+
+JAiRouter also supports updating rate limiting configurations via the dynamic configuration API:
 
 ```json
 {
@@ -297,6 +334,8 @@ graph LR
 
 #### Configuration Example
 
+Configure the warm-up algorithm in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
 model:
   services:
@@ -312,6 +351,8 @@ model:
 ```
 
 #### JSON Configuration
+
+JAiRouter also supports updating rate limiting configurations via the dynamic configuration API:
 
 ```json
 {
@@ -346,6 +387,8 @@ model:
 ## Client IP Rate Limiting
 
 ### Basic Configuration
+
+Configure client IP rate limiting in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
 
 ```yaml
 model:
@@ -413,6 +456,8 @@ curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.cleanup"
 
 ### Layered Rate Limiting Strategy
 
+Configure multi-layer rate limiting in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
 model:
   # Global rate limiting: Protect the entire system
@@ -457,6 +502,8 @@ model:
 ## Dynamic Rate Limiting Configuration
 
 ### Dynamic Adjustment via Configuration Files
+
+JAiRouter also supports updating rate limiting configurations via the dynamic configuration API:
 
 ```json
 {

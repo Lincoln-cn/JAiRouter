@@ -4,6 +4,26 @@
 
 JAiRouter's slow query alert feature is a complete performance monitoring and alerting system that can automatically detect slow operations in the system and send alert notifications based on configured strategies. This feature integrates distributed tracing, structured logging, and Prometheus metric export.
 
+## Configuration File Structure
+
+JAiRouter uses a modular configuration management approach, with slow query alert configuration located in a separate configuration file:
+
+- **Main Configuration File**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
+- **Slow Query Alert Configuration File**: [src/main/resources/config/monitoring/slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml)
+- **Environment Configuration Files**: [src/main/resources/application-{profile}.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+
+## Modular Configuration Explanation
+
+Slow query alert configuration has been separated from the main configuration file and is imported through the `spring.config.import` mechanism:
+
+```yaml
+# application.yml
+spring:
+  config:
+    import:
+      - classpath:config/monitoring/slow-query-alerts.yml
+```
+
 ## Features
 
 ### 🔍 Automatic Slow Query Detection
@@ -30,7 +50,7 @@ JAiRouter's slow query alert feature is a complete performance monitoring and al
 
 ### 1. Enable Slow Query Alerts
 
-Configure in [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml):
+Configure in [slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml):
 
 ```yaml
 jairouter:
@@ -202,188 +222,63 @@ Returns statistics for the alert system:
 GET /api/monitoring/slow-queries/alerts/status
 ```
 
-Returns the running status and health information of the alert system.
-
-### Reset Statistics API
-
-```http
-DELETE /api/monitoring/slow-queries/stats
-DELETE /api/monitoring/slow-queries/alerts/stats
-```
-
-Resets the corresponding statistics.
-
-## Log Format
-
-### Slow Query Detection Log
+Returns the current status of the alert system:
 
 ```json
 {
-  "timestamp": "2025-08-26T10:30:45.123Z",
-  "level": "WARN",
-  "logger": "org.unreal.modelrouter.monitoring.SlowQueryDetector",
-  "message": "Slow query detected - Operation: chat_request, Duration: 2500ms, Threshold: 1000ms",
-  "traceId": "1234567890abcdef",
-  "spanId": "abcdef1234567890"
+  "enabled": true,
+  "totalOperations": 5,
+  "activeAlerts": 3,
+  "suppressedAlerts": 1,
+  "lastAlertTime": "2025-08-28T10:30:45Z",
+  "systemHealth": "HEALTHY"
 }
 ```
 
-### Slow Query Alert Log
+## Environment Configuration Overrides
 
-```json
-{
-  "timestamp": "2025-08-26T10:30:45.456Z",
-  "level": "INFO",
-  "logger": "org.unreal.modelrouter.monitoring.alert.SlowQueryAlertService",
-  "message": "Slow query alert triggered",
-  "traceId": "1234567890abcdef",
-  "spanId": "abcdef1234567890",
-  "type": "business_event",
-  "event": "slow_query_alert_triggered",
-  "fields": {
-    "alert_id": "uuid-here",
-    "operation_name": "chat_request",
-    "severity": "warning",
-    "current_duration": 2500,
-    "threshold": 1000,
-    "threshold_multiplier": 2.5,
-    "alert_count": 1,
-    "total_occurrences": 5,
-    "average_duration": 2200.0,
-    "max_duration": 3000
-  }
-}
+Different environments can override slow query alert configuration through corresponding environment configuration files:
+
+### Development Environment (application-dev.yml)
+
+```yaml
+jairouter:
+  monitoring:
+    slow-query-alert:
+      enabled: true
+      global:
+        min-interval-ms: 60000    # Shorter alert interval in development environment
+        min-occurrences: 1        # Fewer occurrences to trigger in development environment
+```
+
+### Production Environment (application-prod.yml)
+
+```yaml
+jairouter:
+  monitoring:
+    slow-query-alert:
+      enabled: true
+      global:
+        min-interval-ms: 600000   # Longer alert interval in production environment
+        max-alerts-per-hour: 50   # Higher alert frequency limit in production environment
 ```
 
 ## Best Practices
 
-### 1. Threshold Configuration
+### Configuration Management
 
-- **Chat Service**: Set threshold to 3-5 seconds, considering AI model response time
-- **Embedding Service**: Set threshold to 1-2 seconds, typically faster processing
-- **Reranking Service**: Set threshold to 0.5-1 seconds, relatively simple computation
-- **Backend Calls**: Set threshold to network latency + expected processing time
+1. **Base Configuration**: Define common configurations in [slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml)
+2. **Environment Differences**: Override specific configurations in corresponding environment configuration files
+3. **Threshold Setting**: Set reasonable thresholds based on actual business needs and performance test results
 
-### 2. Alert Strategy
+### Alert Strategy
 
-- **Development Environment**: Use lower thresholds and more frequent alerts for timely issue detection
-- **Production Environment**: Use higher thresholds and alert suppression to avoid noise interference
-- **Critical Services**: Enable alerts for all severity levels
-- **Auxiliary Services**: Enable only critical-level alerts
+1. **Severity Levels**: Properly use different severity levels of alerts
+2. **Suppression Strategy**: Configure appropriate alert suppression to avoid alert flooding
+3. **Notification Channels**: Configure different notification channels based on alert severity
 
-### 3. Monitoring Integration
+### Performance Optimization
 
-- Integrate slow query metrics into Grafana dashboards
-- Configure AlertManager for alert routing and notifications
-- Use ELK Stack for log aggregation and analysis
-- Regularly review and adjust alert thresholds
-
-### 4. Troubleshooting
-
-When receiving slow query alerts, troubleshoot using these steps:
-
-1. **Check System Resources**: CPU, memory, network usage
-2. **Analyze Trace Chain**: View complete request processing chain
-3. **Check Backend Services**: Verify backend AI service health status
-4. **View Load Conditions**: Check for high load situations
-5. **Analyze Log Patterns**: Look for related error logs and exceptions
-
-## Environment Configuration Examples
-
-### Development Environment
-
-```yaml
-jairouter:
-  monitoring:
-    slow-query-alert:
-      global:
-        min-interval-ms: 60000     # 1 minute
-        min-occurrences: 1
-        enabled-severities: [critical, warning, info]
-        max-alerts-per-hour: 30
-```
-
-### Production Environment
-
-```yaml
-jairouter:
-  monitoring:
-    slow-query-alert:
-      global:
-        min-interval-ms: 900000    # 15 minutes
-        min-occurrences: 5
-        enabled-severities: [critical]
-        max-alerts-per-hour: 5
-```
-
-## Extensions and Customization
-
-### Custom Alert Handler
-
-Extend the notification mechanism by implementing a custom alert handler:
-
-```java
-@Component
-public class CustomSlowQueryAlertHandler {
-    
-    @EventListener
-    public void handleSlowQueryAlert(SlowQueryAlert alert) {
-        // Custom alert handling logic
-        // For example: send to external system, write to database, etc.
-    }
-}
-```
-
-### Integration with External Monitoring Systems
-
-Integrate with external monitoring and alerting systems via Webhook:
-
-```yaml
-notification:
-  enable-webhook: true
-  webhook-url: "https://your-monitoring-system.com/api/alerts"
-  webhook-headers:
-    Authorization: "Bearer your-token"
-    Content-Type: "application/json"
-```
-
-## Performance Impact
-
-The slow query alert system is designed for low overhead operation:
-
-- **CPU Overhead**: < 1% under normal load
-- **Memory Overhead**: < 10MB for statistics storage
-- **Network Overhead**: Minimal, only sends notifications when alerts are triggered
-- **Storage Overhead**: Primarily log files, with configurable rotation policies
-
-## Frequently Asked Questions
-
-### Q: Why didn't I receive an alert?
-
-A: Check the following configurations:
-1. Confirm `enabled: true`
-2. Check if `min-occurrences` has been reached
-3. Verify `enabled-severities` includes the corresponding level
-4. Confirm not within suppression time window
-
-### Q: Alerts are too frequent, what should I do?
-
-A: Adjust the following parameters:
-1. Increase `min-interval-ms`
-2. Increase `min-occurrences`
-3. Reduce `max-alerts-per-hour`
-4. Adjust severity levels
-
-### Q: How to customize slow query thresholds?
-
-A: Set in monitoring configuration:
-```yaml
-jairouter:
-  monitoring:
-    thresholds:
-      slow-query-thresholds:
-        chat_request: 5000    # 5 seconds
-        embedding_request: 2000  # 2 seconds
-```
-
-With this complete slow query alert system, JAiRouter provides enterprise-level performance monitoring and alerting capabilities, helping development and operations teams promptly identify and resolve performance issues.
+1. **Sampling Rate**: Adjust sampling rate according to system load
+2. **Batch Processing**: Properly configure batch processing parameters
+3. **Resource Monitoring**: Monitor the resource usage of the slow query alert system itself

@@ -2,6 +2,26 @@
 
 This document provides complete configuration reference for JAiRouter's distributed tracing feature.
 
+## Configuration File Structure
+
+JAiRouter uses a modular configuration management approach, with tracing configuration located in a separate configuration file:
+
+- **Main Configuration File**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
+- **Tracing Configuration File**: [src/main/resources/config/tracing/tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml)
+- **Environment Configuration Files**: [src/main/resources/application-{profile}.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+
+## Modular Configuration Explanation
+
+Tracing configuration has been separated from the main configuration file and is imported through the `spring.config.import` mechanism:
+
+```yaml
+# application.yml
+spring:
+  config:
+    import:
+      - classpath:config/tracing/tracing-base.yml
+```
+
 ## Basic Configuration
 
 ### Enable Tracing
@@ -198,216 +218,194 @@ jairouter:
 
 ## Performance Configuration
 
-### Async Processing
-
 ```yaml
 jairouter:
   tracing:
-    async:
-      enabled: true                # Enable async processing, default: true
-      core-pool-size: 2            # Core thread count, default: 2
-      max-pool-size: 10            # Maximum thread count, default: 10
-      queue-capacity: 1000         # Queue capacity, default: 1000
-      keep-alive: 60s              # Thread keep-alive time, default: 60s
-      thread-name-prefix: "tracing-" # Thread name prefix
+    performance:
+      async-processing: true       # Asynchronous processing, default: true
+      batch-size: 512              # Batch size, default: 512
+      buffer-size: 2048            # Buffer size, default: 2048
+      flush-interval: 5s           # Flush interval, default: 5s
+      max-queue-size: 2048         # Maximum queue size, default: 2048
+      schedule-delay: 5s           # Schedule delay, default: 5s
 ```
 
-### Reactive Configuration
+## Component Configuration
+
+### WebFlux Configuration
 
 ```yaml
 jairouter:
   tracing:
-    reactive:
-      enabled: true                # Enable reactive support, default: true
-      context-propagation: true    # Context propagation, default: true
-      scheduler-hook: true         # Scheduler hook, default: true
+    components:
+      webflux:
+        enabled: true
+        capture-request-headers: []
+        capture-response-headers: []
+        capture-request-parameters: []
+```
+
+### WebClient Configuration
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      webclient:
+        enabled: true
+        capture-request-headers: []
+        capture-response-headers: []
+```
+
+### Database Configuration
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      database:
+        enabled: true
+        capture-statement: false
+        capture-parameters: false
+```
+
+### Redis Configuration
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      redis:
+        enabled: true
+```
+
+### Rate Limiter Configuration
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      rate-limiter:
+        enabled: true
+        capture-algorithm: true
+        capture-quota: true
+        capture-decision: true
+        capture-statistics: true
+```
+
+### Circuit Breaker Configuration
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      circuit-breaker:
+        enabled: true
+        capture-state: true
+        capture-state-changes: true
+        capture-statistics: true
+        capture-failure-rate: true
+```
+
+### Load Balancer Configuration
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      load-balancer:
+        enabled: true
+        capture-strategy: true
+        capture-selection: true
+        capture-statistics: true
 ```
 
 ## Security Configuration
 
-### Sensitive Data Filtering
-
 ```yaml
 jairouter:
   tracing:
     security:
-      enabled: true
-      sensitive-headers:           # Sensitive request headers (will not be recorded)
-        - "Authorization"
-        - "Cookie"
-        - "X-API-Key"
-      sensitive-params:            # Sensitive parameters
-        - "password"
-        - "token"
-        - "secret"
-      mask-pattern: "***"          # Mask pattern, default: "***"
-      
-      encryption:
-        enabled: false             # Enable encrypted storage
-        algorithm: "AES-256-GCM"   # Encryption algorithm
-        key-rotation-interval: 24h # Key rotation interval
+      sanitization:
+        enabled: true
+        inherit-global-rules: true
+        additional-patterns: []
+      access-control:
+        restrict-trace-access: true
+        allowed-roles: []
 ```
 
-### Access Control
+## Monitoring Configuration
 
 ```yaml
 jairouter:
   tracing:
-    security:
-      rbac:
-        enabled: false             # Enable role-based access control
-        admin-roles:               # Administrator roles
-          - "ADMIN"
-          - "SYSTEM"
-        viewer-roles:              # Viewer roles
-          - "USER"
-          - "VIEWER"
-```
-
-## Integration Configuration
-
-### Actuator Integration
-
-```yaml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "health,info,metrics,prometheus,tracing"
-  endpoint:
-    tracing:
-      enabled: true
-
-jairouter:
-  tracing:
-    actuator:
-      health-check: true           # Enable health check
-      metrics-collection: true     # Enable metrics collection
-      info-contribution: true      # Enable info contribution
-```
-
-### MDC Integration
-
-```yaml
-jairouter:
-  tracing:
-    mdc:
-      enabled: true                # Enable MDC integration, default: true
-      trace-id-key: "traceId"      # TraceId key name, default: "traceId"
-      span-id-key: "spanId"        # SpanId key name, default: "spanId"
-      service-name-key: "service"  # Service name key name, default: "service"
-      clear-on-completion: true    # Clear on completion, default: true
-```
-
-## Environment-Specific Configuration
-
-### Development Environment
-
-```yaml
-jairouter:
-  tracing:
-    enabled: true
-    sampling:
-      strategy: "ratio"
-      ratio: 1.0                   # 100% sampling for debugging
-    exporter:
-      type: "logging"              # Use log exporter
-    memory:
-      max-spans: 1000              # Smaller memory footprint
-```
-
-### Test Environment
-
-```yaml
-jairouter:
-  tracing:
-    enabled: true
-    sampling:
-      strategy: "rule"
-      rules:
-        - operation: "*test*"
-          sample-rate: 1.0         # 100% sampling for test cases
-        - error-only: true
-          sample-rate: 1.0         # Complete sampling for error scenarios
-    exporter:
-      type: "jaeger"
-      jaeger:
-        endpoint: "http://jaeger:14268/api/traces"
-```
-
-### Production Environment
-
-```yaml
-jairouter:
-  tracing:
-    enabled: true
-    sampling:
-      strategy: "adaptive"         # Use adaptive sampling
-      adaptive:
-        base-sample-rate: 0.01     # 1% base sampling
-        max-traces-per-second: 100
-    exporter:
-      type: "otlp"                 # Use standard OTLP protocol
-      otlp:
-        endpoint: "https://collector.example.com:4317"
-        protocol: "grpc"
-        tls:
+    monitoring:
+      self-monitoring: true
+      metrics:
+        enabled: true
+        prefix: "jairouter.tracing"
+        traces:
           enabled: true
-    security:
-      enabled: true                # Enable security features
-    memory:
-      max-spans: 50000             # Larger memory configuration
-      cleanup-interval: 30s        # More frequent cleanup
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
+        exporter:
+          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+      health:
+        enabled: true
+      alerts:
+        enabled: true
+        trace-processing-failures: 10
+        export-failures: 5
+        buffer-pressure: 80
 ```
 
-## Configuration Validation
+## Environment Configuration Overrides
 
-### Configuration Check Commands
+Different environments can override tracing configuration through corresponding environment configuration files:
 
-```bash
-# Validate configuration syntax
-java -jar jairouter.jar --spring.config.location=application.yml --validate-config-only
+### Development Environment (application-dev.yml)
 
-# Check tracing configuration
-curl http://localhost:8080/actuator/configprops | jq '.jairouter.tracing'
+```yaml
+jairouter:
+  tracing:
+    enabled: true
+    sampling:
+      ratio: 1.0  # 100% sampling in development environment
+    logging:
+      level: "DEBUG"
 ```
 
-### Common Configuration Errors
+### Production Environment (application-prod.yml)
 
-1. **Sampling Rate Configuration Error**
-   ```yaml
-   # ❌ Wrong: Sampling rate out of range
-   sampling:
-     ratio: 1.5
-   
-   # ✅ Correct: Sampling rate within 0.0-1.0 range
-   sampling:
-     ratio: 1.0
-   ```
+```yaml
+jairouter:
+  tracing:
+    enabled: true
+    sampling:
+      ratio: 0.1  # 10% sampling in production environment
+    exporter:
+      type: "otlp"
+      otlp:
+        endpoint: "${OTLP_ENDPOINT:http://localhost:4317}"
+```
 
-2. **Exporter Endpoint Configuration Error**
-   ```yaml
-   # ❌ Wrong: Incorrect endpoint format
-   exporter:
-     jaeger:
-       endpoint: "localhost:14268"
-   
-   # ✅ Correct: Complete URL
-   exporter:
-     jaeger:
-       endpoint: "http://localhost:14268/api/traces"
-   ```
+## Best Practices
 
-## Configuration Best Practices
+### Configuration Management
 
-1. **Gradual Enablement**: Start with low sampling rate and gradually increase
-2. **Environment Isolation**: Use different configuration strategies for different environments  
-3. **Performance Monitoring**: Regularly check the performance impact of the tracing system
-4. **Security Considerations**: Enable sensitive data filtering in production environments
-5. **Capacity Planning**: Configure appropriate memory and export parameters based on expected traffic
+1. **Base Configuration**: Define common configurations in [tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml)
+2. **Environment Differences**: Override specific configurations in corresponding environment configuration files
+3. **Sensitive Information**: Use environment variables to inject sensitive configurations such as exporter endpoints and authentication information
 
-## Next Steps
+### Sampling Strategy
 
-- [Usage Guide](usage-guide.md) - Learn how to use tracing features
-- [Performance Tuning](performance-tuning.md) - Optimize tracing performance
-- [Troubleshooting](troubleshooting.md) - Solve configuration issues
+1. **Development Environment**: Recommended to use 100% sampling for debugging
+2. **Production Environment**: Adjust sampling rate according to system load to avoid performance impact
+3. **Critical Paths**: Use rule sampling to ensure tracing of important business
+
+### Performance Optimization
+
+1. **Batch Processing**: Properly configure batch processing parameters to balance latency and throughput
+2. **Memory Management**: Adjust memory configuration according to system resources
+3. **Component Selection**: Enable only the components that need tracing to reduce overhead

@@ -2,14 +2,21 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter 提供四种负载均衡策略，支持全局、服务级别和实例级别的配置。本文档详细介绍各种负载均衡策略的配置方法和使用场景。
+
+## 模块化配置说明
+
+从 v1.0.0 版本开始，JAiRouter 采用模块化配置结构，负载均衡相关配置已移至独立的配置文件中：
+
+- 主配置文件: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
+- 负载均衡基础配置: [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml)
+
+您可以在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中找到所有负载均衡相关配置，包括全局配置、各服务类型配置和实例配置。
 
 ## 负载均衡概述
 
@@ -42,20 +49,39 @@ graph TB
 
 ### 基础配置
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置全局负载均衡策略：
+
 ```yaml
-# application.yml
+# config/base/model-services-base.yml
 model:
+  # 全局配置
   load-balance:
     type: round-robin           # 全局默认策略
     hash-algorithm: "md5"       # IP Hash 策略的哈希算法
-    
-    # 健康检查配置
-    health-check:
-      enabled: true             # 启用健康检查
-      interval: 30s            # 检查间隔
-      timeout: 5s              # 检查超时
-      failure-threshold: 3      # 失败阈值
-      success-threshold: 2      # 成功阈值
+
+  # 全局适配器配置 - 如果服务没有指定适配器，将使用此配置
+  adapter: gpustack # 支持: normal, gpustack, ollama, vllm, xinference, localai
+
+  # 全局限流配置
+  rate-limit:
+    enabled: true
+    algorithm: "token-bucket"
+    capacity: 1000
+    rate: 100
+    scope: "service"
+    client-ip-enable: true  # 启用客户端IP限流
+
+  # 全局熔断配置
+  circuit-breaker:
+    enabled: true
+    failureThreshold: 5
+    timeout: 60000
+    successThreshold: 2
+
+  # 全局降级配置
+  fallback:
+    enabled: true
+    strategy: default
 ```
 
 ### 高级配置
@@ -82,6 +108,8 @@ model:
 
 ### YAML 配置方式
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置各服务类型的负载均衡策略：
+
 ```yaml
 model:
   services:
@@ -89,28 +117,50 @@ model:
       load-balance:
         type: least-connections
         hash-algorithm: "sha256"  # 仅 IP Hash 策略需要
+      adapter: gpustack # 使用GPUStack适配器
+      # 服务级别限流配置
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 100
+        rate: 10
+        scope: "service"
+        client-ip-enable: true
       instances:
         - name: "high-perf-model"
           base-url: "http://gpu-server:8080"
+          path: "/v1-openai/chat/completions"
           weight: 3               # 高权重实例
         - name: "standard-model"
           base-url: "http://cpu-server:8080"
+          path: "/v1/chat/completions"
           weight: 1               # 标准权重实例
     
     embedding:
       load-balance:
         type: ip-hash
         hash-algorithm: "md5"
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 200
+        rate: 20
+        scope: "service"
+        client-ip-enable: true
       instances:
         - name: "embedding-model-1"
           base-url: "http://embed-server-1:8080"
+          path: "/v1/embeddings"
           weight: 2
         - name: "embedding-model-2"
           base-url: "http://embed-server-2:8080"
+          path: "/v1/embeddings"
           weight: 2
 ```
 
 ### JSON 配置方式
+
+JAiRouter 也支持通过动态配置 API 更新实例配置：
 
 ```json
 {

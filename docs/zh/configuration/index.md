@@ -2,14 +2,60 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter 提供灵活的配置选项以满足各种部署场景。本指南涵盖从基本设置到高级功能的所有配置方面。
+
+## 模块化配置说明
+
+从 v1.0.0 版本开始，JAiRouter 采用模块化配置结构，将不同功能的配置分离到独立的配置文件中，以提高可维护性和可读性。
+
+### 配置文件结构
+
+```
+src/main/resources/
+├── application.yml                    # 主配置文件，导入其他模块
+├── config/
+│   ├── base/
+│   │   ├── server-base.yml           # 服务器基础配置
+│   │   ├── model-services-base.yml    # 模型服务配置
+│   │   └── monitoring-base.yml       # 监控基础配置
+│   ├── security/
+│   │   └── security-base.yml         # 安全功能配置
+│   ├── tracing/
+│   │   └── tracing-base.yml          # 追踪功能配置
+│   └── monitoring/
+│       ├── slow-query-alerts.yml     # 慢查询告警配置
+│       └── error-tracking.yml        # 错误追踪配置
+├── application-dev.yml               # 开发环境配置
+├── application-staging.yml           # 预发布环境配置
+├── application-prod.yml              # 生产环境配置
+├── application-legacy.yml            # 向后兼容配置
+└── application-security-example.yml  # 安全配置示例
+```
+
+### 配置导入机制
+
+主配置文件 [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml) 通过 `spring.config.import` 机制导入各个模块配置：
+
+```yaml
+# application.yml
+spring:
+  config:
+    import:
+      - classpath:config/base/server-base.yml
+      - classpath:config/base/model-services-base.yml
+      - classpath:config/base/monitoring-base.yml
+      - classpath:config/tracing/tracing-base.yml
+      - classpath:config/security/security-base.yml
+      - classpath:config/monitoring/slow-query-alerts.yml
+      - classpath:config/monitoring/error-tracking.yml
+```
+
+这种方式使得配置更加清晰，便于维护和扩展。
 
 ## 配置概览
 
@@ -73,8 +119,8 @@ JAiRouter 支持以下服务类型：
 | `rerank` | 文本重排 | `/v1/rerank` |
 | `tts` | 语音合成 | `/v1/audio/speech` |
 | `stt` | 语音识别 | `/v1/audio/transcriptions` |
-| `image` | 图像生成 | `/v1/images/generations` |
-| `image-edit` | 图像编辑 | `/v1/images/edits` |
+| `imgGen` | 图像生成 | `/v1/images/generations` |
+| `imgEdit` | 图像编辑 | `/v1/images/edits` |
 
 ## 配置部分
 
@@ -204,6 +250,147 @@ store:
 
 - **memory**: 内存存储（重启后丢失）
 - **file**: 基于文件的存储（重启后保持）
+
+## 环境特定配置
+
+JAiRouter 支持多种环境配置文件：
+
+- **开发环境**: [application-dev.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+- **预发布环境**: [application-staging.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-staging.yml)
+- **生产环境**: [application-prod.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-prod.yml)
+- **兼容模式**: [application-legacy.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-legacy.yml)
+- **安全示例**: [application-security-example.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-security-example.yml)
+
+环境配置文件只包含与基础配置的差异部分，遵循 Spring Boot 的配置覆盖机制。
+
+## 环境变量
+
+使用环境变量覆盖配置：
+
+```bash
+# 服务器端口
+export SERVER_PORT=8080
+
+# 模型服务配置
+export MODEL_LOAD_BALANCE_TYPE=round-robin
+export MODEL_RATE_LIMIT_TYPE=token-bucket
+```
+
+## 命令行参数
+
+通过命令行参数覆盖配置：
+
+```bash
+java -jar jairouter.jar \
+  --server.port=8080 \
+  --model.load-balance.type=round-robin \
+  --spring.profiles.active=prod
+```
+
+## 配置验证
+
+JAiRouter 在启动时验证配置。常见验证错误：
+
+### 缺少必需字段
+
+```yaml
+# ❌ 无效 - 缺少 baseUrl
+model:
+  services:
+    chat:
+      instances:
+        - name: "model"
+          path: "/v1/chat/completions"
+
+# ✅ 有效
+model:
+  services:
+    chat:
+      instances:
+        - name: "model"
+          baseUrl: "http://localhost:11434"
+          path: "/v1/chat/completions"
+```
+
+### 无效配置值
+
+```yaml
+# ❌ 无效 - 不支持的负载均衡类型
+model:
+  services:
+    chat:
+      load-balance:
+        type: invalid-type
+
+# ✅ 有效
+model:
+  services:
+    chat:
+      load-balance:
+        type: round-robin
+```
+
+## 配置最佳实践
+
+### 1. 使用有意义的名称
+
+```yaml
+# ✅ 好 - 描述性名称
+model:
+  services:
+    chat:
+      instances:
+        - name: "qwen2.5-7b-fast"
+          baseUrl: "http://fast-gpu-server:11434"
+        - name: "qwen2.5-14b-accurate"
+          baseUrl: "http://high-memory-server:11434"
+```
+
+### 2. 设置适当的超时
+
+```yaml
+# ✅ 好 - 合理的超时
+model:
+  services:
+    chat:
+      instances:
+        - name: "model"
+          baseUrl: "http://server:11434"
+          timeout: 30000  # 聊天30秒
+    embedding:
+      instances:
+        - name: "embedding"
+          baseUrl: "http://server:11434"
+          timeout: 10000  # 嵌入10秒
+```
+
+### 3. 配置健康检查
+
+```yaml
+# ✅ 好 - 启用健康监控
+model:
+  load-balance:
+    health-check:
+      enabled: true
+      interval: 30000
+      timeout: 5000
+```
+
+### 4. 使用权重进行渐进式部署
+
+```yaml
+# ✅ 好 - 使用权重渐进式部署
+model:
+  services:
+    chat:
+      instances:
+        - name: "stable-model-v1"
+          baseUrl: "http://stable-server:11434"
+          weight: 9  # 90% 流量
+        - name: "new-model-v2"
+          baseUrl: "http://new-server:11434"
+          weight: 1  # 10% 流量
+```
 
 ## 下一步
 

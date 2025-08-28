@@ -4,6 +4,26 @@
 
 JAiRouter 的慢查询告警功能是一个完整的性能监控和告警系统，能够自动检测系统中的慢操作，并根据配置的策略发送告警通知。该功能集成了分布式追踪、结构化日志记录和 Prometheus 指标导出。
 
+## 配置文件结构
+
+JAiRouter 使用模块化的配置管理方式，慢查询告警配置位于独立的配置文件中：
+
+- **主配置文件**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
+- **慢查询告警配置文件**: [src/main/resources/config/monitoring/slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml)
+- **环境配置文件**: [src/main/resources/application-{profile}.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+
+## 模块化配置说明
+
+慢查询告警配置已从主配置文件中分离，通过 `spring.config.import` 机制导入：
+
+```yaml
+# application.yml
+spring:
+  config:
+    import:
+      - classpath:config/monitoring/slow-query-alerts.yml
+```
+
 ## 功能特性
 
 ### 🔍 自动慢查询检测
@@ -30,7 +50,7 @@ JAiRouter 的慢查询告警功能是一个完整的性能监控和告警系统�
 
 ### 1. 启用慢查询告警
 
-在 `application.yml` 中配置：
+在 [slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml) 中配置：
 
 ```yaml
 jairouter:
@@ -202,188 +222,63 @@ GET /api/monitoring/slow-queries/alerts/stats
 GET /api/monitoring/slow-queries/alerts/status
 ```
 
-返回告警系统的运行状态和健康信息。
-
-### 重置统计 API
-
-```http
-DELETE /api/monitoring/slow-queries/stats
-DELETE /api/monitoring/slow-queries/alerts/stats
-```
-
-重置相应的统计信息。
-
-## 日志格式
-
-### 慢查询检测日志
+返回告警系统的当前状态：
 
 ```json
 {
-  "timestamp": "2025-08-26T10:30:45.123Z",
-  "level": "WARN",
-  "logger": "org.unreal.modelrouter.monitoring.SlowQueryDetector",
-  "message": "Slow query detected - Operation: chat_request, Duration: 2500ms, Threshold: 1000ms",
-  "traceId": "1234567890abcdef",
-  "spanId": "abcdef1234567890"
+  "enabled": true,
+  "totalOperations": 5,
+  "activeAlerts": 3,
+  "suppressedAlerts": 1,
+  "lastAlertTime": "2025-08-28T10:30:45Z",
+  "systemHealth": "HEALTHY"
 }
 ```
 
-### 慢查询告警日志
+## 环境配置覆盖
 
-```json
-{
-  "timestamp": "2025-08-26T10:30:45.456Z",
-  "level": "INFO",
-  "logger": "org.unreal.modelrouter.monitoring.alert.SlowQueryAlertService",
-  "message": "慢查询告警已触发",
-  "traceId": "1234567890abcdef",
-  "spanId": "abcdef1234567890",
-  "type": "business_event",
-  "event": "slow_query_alert_triggered",
-  "fields": {
-    "alert_id": "uuid-here",
-    "operation_name": "chat_request",
-    "severity": "warning",
-    "current_duration": 2500,
-    "threshold": 1000,
-    "threshold_multiplier": 2.5,
-    "alert_count": 1,
-    "total_occurrences": 5,
-    "average_duration": 2200.0,
-    "max_duration": 3000
-  }
-}
+不同环境可以通过对应的环境配置文件覆盖慢查询告警配置：
+
+### 开发环境 (application-dev.yml)
+
+```yaml
+jairouter:
+  monitoring:
+    slow-query-alert:
+      enabled: true
+      global:
+        min-interval-ms: 60000    # 开发环境更短的告警间隔
+        min-occurrences: 1        # 开发环境更少的触发次数
+```
+
+### 生产环境 (application-prod.yml)
+
+```yaml
+jairouter:
+  monitoring:
+    slow-query-alert:
+      enabled: true
+      global:
+        min-interval-ms: 600000   # 生产环境更长的告警间隔
+        max-alerts-per-hour: 50   # 生产环境更高的告警频率限制
 ```
 
 ## 最佳实践
 
-### 1. 阈值配置
+### 配置管理
 
-- **聊天服务**: 阈值设置为 3-5 秒，考虑 AI 模型响应时间
-- **嵌入服务**: 阈值设置为 1-2 秒，通常处理速度较快
-- **重排序服务**: 阈值设置为 0.5-1 秒，计算相对简单
-- **后端调用**: 阈值设置为网络延迟 + 预期处理时间
+1. **基础配置**：在 [slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml) 中定义通用配置
+2. **环境差异**：在对应的环境配置文件中覆盖特定配置
+3. **阈值设置**：根据实际业务需求和性能测试结果设置合理的阈值
 
-### 2. 告警策略
+### 告警策略
 
-- **开发环境**: 使用较低的阈值和更频繁的告警，便于及时发现问题
-- **生产环境**: 使用较高的阈值和告警抑制，避免噪声干扰
-- **关键服务**: 启用所有严重程度的告警
-- **辅助服务**: 只启用 critical 级别的告警
+1. **分级告警**：合理使用不同严重程度的告警
+2. **抑制策略**：配置适当的告警抑制避免告警轰炸
+3. **通知渠道**：根据告警严重程度配置不同的通知渠道
 
-### 3. 监控集成
+### 性能优化
 
-- 将慢查询指标集成到 Grafana 仪表板
-- 配置 AlertManager 进行告警路由和通知
-- 使用 ELK Stack 进行日志聚合和分析
-- 定期审查和调整告警阈值
-
-### 4. 故障排除
-
-当收到慢查询告警时，按以下步骤排查：
-
-1. **检查系统资源**: CPU、内存、网络使用情况
-2. **分析追踪链路**: 查看完整的请求处理链路
-3. **检查后端服务**: 验证后端 AI 服务的健康状态
-4. **查看负载情况**: 检查是否存在负载过高的情况
-5. **分析日志模式**: 查找相关的错误日志和异常
-
-## 环境配置示例
-
-### 开发环境
-
-```yaml
-jairouter:
-  monitoring:
-    slow-query-alert:
-      global:
-        min-interval-ms: 60000     # 1分钟
-        min-occurrences: 1
-        enabled-severities: [critical, warning, info]
-        max-alerts-per-hour: 30
-```
-
-### 生产环境
-
-```yaml
-jairouter:
-  monitoring:
-    slow-query-alert:
-      global:
-        min-interval-ms: 900000    # 15分钟
-        min-occurrences: 5
-        enabled-severities: [critical]
-        max-alerts-per-hour: 5
-```
-
-## 扩展和自定义
-
-### 自定义告警处理器
-
-可以通过实现自定义的告警处理器来扩展通知机制：
-
-```java
-@Component
-public class CustomSlowQueryAlertHandler {
-    
-    @EventListener
-    public void handleSlowQueryAlert(SlowQueryAlert alert) {
-        // 自定义告警处理逻辑
-        // 例如：发送到外部系统、写入数据库等
-    }
-}
-```
-
-### 集成外部监控系统
-
-通过 Webhook 集成外部监控和告警系统：
-
-```yaml
-notification:
-  enable-webhook: true
-  webhook-url: "https://your-monitoring-system.com/api/alerts"
-  webhook-headers:
-    Authorization: "Bearer your-token"
-    Content-Type: "application/json"
-```
-
-## 性能影响
-
-慢查询告警系统设计为低开销运行：
-
-- **CPU 开销**: < 1% 在正常负载下
-- **内存开销**: < 10MB 用于统计数据存储
-- **网络开销**: 最小，仅在触发告警时发送通知
-- **存储开销**: 主要是日志文件，可配置轮转策略
-
-## 常见问题
-
-### Q: 为什么没有收到告警？
-
-A: 检查以下配置：
-1. 确认 `enabled: true`
-2. 检查 `min-occurrences` 是否达到
-3. 验证 `enabled-severities` 包含相应级别
-4. 确认没有在抑制时间窗口内
-
-### Q: 告警太频繁怎么办？
-
-A: 调整以下参数：
-1. 增加 `min-interval-ms`
-2. 增加 `min-occurrences`
-3. 减少 `max-alerts-per-hour`
-4. 调整严重程度级别
-
-### Q: 如何自定义慢查询阈值？
-
-A: 在监控配置中设置：
-```yaml
-jairouter:
-  monitoring:
-    thresholds:
-      slow-query-thresholds:
-        chat_request: 5000    # 5秒
-        embedding_request: 2000  # 2秒
-```
-
-通过这个完整的慢查询告警系统，JAiRouter 能够提供企业级的性能监控和告警能力，帮助开发和运维团队及时发现和解决性能问题。
+1. **采样率**：根据系统负载调整采样率
+2. **批处理**：合理配置批处理参数
+3. **资源监控**：监控慢查询告警系统自身的资源使用情况

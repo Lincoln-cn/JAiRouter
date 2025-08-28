@@ -2,14 +2,21 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter 提供多种限流算法，支持全局、服务级别和实例级别的限流配置，以及基于客户端 IP 的独立限流。本文档详细介绍各种限流策略的配置和使用。
+
+## 模块化配置说明
+
+从 v1.0.0 版本开始，JAiRouter 采用模块化配置结构，限流相关配置已移至独立的配置文件中：
+
+- 主配置文件: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
+- 模型服务基础配置: [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml)
+
+您可以在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中找到所有限流相关配置，包括全局配置、各服务类型配置和实例配置。
 
 ## 限流概述
 
@@ -46,16 +53,34 @@ graph TB
 
 ### 基础配置
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置全局限流：
+
 ```yaml
-# application.yml
+# config/base/model-services-base.yml
 model:
+  # 全局限流配置
   rate-limit:
-    enabled: true               # 启用全局限流
-    algorithm: "token-bucket"   # 默认算法
-    capacity: 1000             # 默认容量
-    rate: 100                  # 默认速率
-    scope: "service"           # 限流范围：service 或 instance
-    client-ip-enable: true     # 启用客户端IP限流
+    enabled: true
+    algorithm: "token-bucket"
+    capacity: 1000
+    rate: 100
+    scope: "service"
+    client-ip-enable: true  # 启用客户端IP限流
+
+  services:
+    # 聊天服务配置
+    chat:
+      load-balance:
+        type: least-connections
+      adapter: gpustack # 使用GPUStack适配器
+      # 服务级别限流配置
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 100
+        rate: 10
+        scope: "service"
+        client-ip-enable: true
 ```
 
 ### 高级配置
@@ -99,6 +124,8 @@ graph LR
 
 #### 配置示例
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置令牌桶算法：
+
 ```yaml
 model:
   services:
@@ -113,6 +140,8 @@ model:
 ```
 
 #### JSON 配置
+
+JAiRouter 也支持通过动态配置 API 更新限流配置：
 
 ```json
 {
@@ -176,6 +205,8 @@ graph TB
 
 #### 配置示例
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置漏桶算法：
+
 ```yaml
 model:
   services:
@@ -190,6 +221,8 @@ model:
 ```
 
 #### JSON 配置
+
+JAiRouter 也支持通过动态配置 API 更新限流配置：
 
 ```json
 {
@@ -236,6 +269,8 @@ graph LR
 
 #### 配置示例
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置滑动窗口算法：
+
 ```yaml
 model:
   services:
@@ -250,6 +285,8 @@ model:
 ```
 
 #### JSON 配置
+
+JAiRouter 也支持通过动态配置 API 更新限流配置：
 
 ```json
 {
@@ -297,6 +334,8 @@ graph LR
 
 #### 配置示例
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置预热算法：
+
 ```yaml
 model:
   services:
@@ -312,6 +351,8 @@ model:
 ```
 
 #### JSON 配置
+
+JAiRouter 也支持通过动态配置 API 更新限流配置：
 
 ```json
 {
@@ -346,6 +387,8 @@ model:
 ## 客户端 IP 限流
 
 ### 基础配置
+
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置客户端 IP 限流：
 
 ```yaml
 model:
@@ -413,6 +456,8 @@ curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.cleanup"
 
 ### 分层限流策略
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置多层限流：
+
 ```yaml
 model:
   # 全局限流：保护整个系统
@@ -457,6 +502,8 @@ model:
 ## 动态限流配置
 
 ### 通过配置文件动态调整
+
+JAiRouter 也支持通过动态配置 API 更新限流配置：
 
 ```json
 {
