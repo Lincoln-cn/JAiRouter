@@ -24,8 +24,14 @@ LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gatew
 LABEL version="1.0-SNAPSHOT"
 
 # 创建应用用户（安全最佳实践）
-RUN mkdir -p /app/logs /app/config /app/config-store && \
-    chown -R jairouter:jairouter /app
+RUN set -ex; \
+    id jairouter || { echo "user jairouter not found"; exit 1; }; \
+    mkdir -p /app/logs /app/config /app/config-store; \
+    chown -R jairouter:jairouter /app || { \
+        echo "chown failed:"; \
+        ls -ld /app /app/* 2>/dev/null || true; \
+        exit 1; \
+    }
 
 # 设置工作目录
 WORKDIR /app
