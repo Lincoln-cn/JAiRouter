@@ -9,8 +9,26 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# 参数处理
+ENVIRONMENT=${1:-prod}
+VERSION=${2:-latest}
+
+# 构建镜像标签
+if [ "$ENVIRONMENT" = "dev" ]; then
+    if [ "$VERSION" = "latest" ]; then
+        IMAGE_TAG="sodlinken/jairouter:latest-dev"
+    else
+        IMAGE_TAG="sodlinken/jairouter:${VERSION}-dev"
+    fi
+else
+    if [ "$VERSION" = "latest" ]; then
+        IMAGE_TAG="sodlinken/jairouter:latest"
+    else
+        IMAGE_TAG="sodlinken/jairouter:${VERSION}"
+    fi
+fi
 
 # 函数定义
 log_info() {
@@ -63,14 +81,14 @@ mkdir -p logs config config-store
 # 设置镜像标签
 if [[ "$ENVIRONMENT" == "dev" ]]; then
     if [[ "$VERSION" == "latest" ]]; then
-        IMAGE_TAG="jairouter/model-router:${VERSION}-dev"
+        IMAGE_TAG="sodlinken/jairouter:latest-dev"
     else
-        IMAGE_TAG="jairouter/model-router:${VERSION}-dev"
+        IMAGE_TAG="sodlinken/jairouter:${VERSION}-dev"
     fi
     PORTS="-p 8080:8080 -p 5005:5005"
     JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 else
-    IMAGE_TAG="jairouter/model-router:${VERSION}"
+    IMAGE_TAG="sodlinken/jairouter:${VERSION}"
     PORTS="-p 8080:8080"
     JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 fi

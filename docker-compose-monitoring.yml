@@ -4,227 +4,56 @@
 version: '3.8'
 
 services:
-  # JAiRouter主应用
   jairouter:
-    image: jairouter/model-router:latest
-    container_name: jairouter-app
+    image: sodlinken/jairouter:latest
+    container_name: jairouter
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - JAVA_OPTS=-Xmx2g -Xms1g
-      # 监控相关环境变量
-      - MONITORING_METRICS_ENABLED=true
-      - MONITORING_METRICS_PREFIX=jairouter
-      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,metrics,prometheus
     volumes:
       - ./config:/app/config:ro
       - ./logs:/app/logs
+    restart: unless-stopped
     networks:
       - monitoring
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
     depends_on:
       - prometheus
 
-  # Prometheus监控数据收集
   prometheus:
-    image: prom/prometheus:v2.45.0
+    image: prom/prometheus:latest
     container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus:/etc/prometheus:ro
-      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=30d'
-      - '--storage.tsdb.retention.size=10GB'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
-      - '--log.level=info'
     networks:
       - monitoring
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Grafana可视化仪表板
   grafana:
-    image: grafana/grafana:10.0.0
+    image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "3000:3000"
     environment:
-      # 基础配置
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=jairouter2024
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_USERS_ALLOW_ORG_CREATE=false
-      - GF_USERS_AUTO_ASSIGN_ORG=true
-      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
-      
-      # 服务器配置
-      - GF_SERVER_ROOT_URL=http://localhost:3000
-      - GF_SERVER_SERVE_FROM_SUB_PATH=false
-      
-      # 数据库配置（使用内置SQLite）
-      - GF_DATABASE_TYPE=sqlite3
-      - GF_DATABASE_PATH=/var/lib/grafana/grafana.db
-      
-      # 会话配置
-      - GF_SESSION_PROVIDER=memory
-      - GF_SESSION_COOKIE_SECURE=false
-      
-      # 日志配置
-      - GF_LOG_MODE=console,file
-      - GF_LOG_LEVEL=info
-      
-      # 插件配置
-      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=
-      - GF_INSTALL_PLUGINS=
-      
-      # 告警配置
-      - GF_ALERTING_ENABLED=true
-      - GF_UNIFIED_ALERTING_ENABLED=true
-      
-      # 探索配置
-      - GF_EXPLORE_ENABLED=true
-      
-      # 匿名访问配置
-      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
     networks:
       - monitoring
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    depends_on:
-      - prometheus
 
-  # AlertManager告警管理
-  alertmanager:
-    image: prom/alertmanager:v0.25.0
-    container_name: alertmanager
-    ports:
-      - "9093:9093"
-    volumes:
-      - ./monitoring/alertmanager:/etc/alertmanager:ro
-      - alertmanager_data:/alertmanager
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
-      - '--web.external-url=http://localhost:9093'
-      - '--web.route-prefix=/'
-      - '--cluster.listen-address='
-      - '--log.level=info'
-    networks:
-      - monitoring
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Node Exporter系统指标收集（可选）
-  node-exporter:
-    image: prom/node-exporter:v1.6.0
-    container_name: node-exporter
-    ports:
-      - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-      - '--web.listen-address=:9100'
-      - '--log.level=info'
-    networks:
-      - monitoring
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # cAdvisor容器指标收集（可选）
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.47.0
-    container_name: cadvisor
-    ports:
-      - "8081:8080"
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    privileged: true
-    devices:
-      - /dev/kmsg
-    networks:
-      - monitoring
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-# 数据卷配置
 volumes:
   prometheus_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./monitoring/data/prometheus
-  
   grafana_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./monitoring/data/grafana
-  
-  alertmanager_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./monitoring/data/alertmanager
 
-# 网络配置
 networks:
   monitoring:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-    labels:
-      - "com.jairouter.network=monitoring"
-      - "com.jairouter.description=JAiRouter monitoring network"
