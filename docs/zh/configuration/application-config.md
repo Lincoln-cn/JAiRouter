@@ -1,4 +1,4 @@
-﻿# 应用配置
+﻿﻿# 应用配置
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
@@ -7,21 +7,70 @@
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 本文档详细介绍 JAiRouter 的基础应用配置，包括服务器配置、WebClient 配置、监控配置等。
 
 ## 配置文件位置
 
-- **主配置文件**：`src/main/resources/application.yml`
+- **主配置文件**：[src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
 - **环境配置**：`application-{profile}.yml`
 - **外部配置**：`config/application.yml`（可选）
+- **模块化配置**：`config/{module}/*.yml`
+
+## 模块化配置说明
+
+JAiRouter 采用模块化的配置管理方式，将复杂的配置按功能拆分为多个独立的配置文件。这种设计提高了配置的可维护性、可读性和可重用性。
+
+### 配置结构
+
+```
+# application.yml
+spring:
+  config:
+    import:
+      - classpath:config/base/server-base.yml
+      - classpath:config/base/model-services-base.yml
+      - classpath:config/base/monitoring-base.yml
+      - classpath:config/tracing/tracing-base.yml
+      - classpath:config/security/security-base.yml
+      - classpath:config/monitoring/slow-query-alerts.yml
+      - classpath:config/monitoring/error-tracking.yml
+```
+
+### 配置模块分类
+
+1. **基础配置模块** (`config/base/`)
+   - [server-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/server-base.yml) - 服务器基础配置
+   - [model-services-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) - 模型服务配置
+   - [monitoring-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/monitoring-base.yml) - 监控基础配置
+
+2. **功能配置模块** (`config/{feature}/`)
+   - [tracing/tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml) - 追踪功能配置
+   - [security/security-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/security/security-base.yml) - 安全功能配置
+   - [monitoring/slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml) - 慢查询告警配置
+   - [monitoring/error-tracking.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/error-tracking.yml) - 错误追踪配置
+
+3. **环境配置文件** (`application-{profile}.yml`)
+   - [application-dev.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml) - 开发环境配置
+   - [application-staging.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-staging.yml) - 预发布环境配置
+   - [application-prod.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-prod.yml) - 生产环境配置
+   - [application-legacy.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-legacy.yml) - 向后兼容配置
+
+### 配置优先级
+
+配置加载遵循以下优先级顺序（高优先级覆盖低优先级）：
+
+1. 基础配置模块（最低优先级）
+2. 功能配置模块
+3. 环境特定配置文件
+4. 外部配置文件
+5. 环境变量
+6. 命令行参数（最高优先级）
 
 ## 服务器配置
 
 ### 基本服务器配置
 
-```yaml
+```
 server:
   port: 8080                    # 服务端口
   servlet:
@@ -35,7 +84,7 @@ server:
 
 ### 高级服务器配置
 
-```yaml
+```
 server:
   tomcat:
     threads:
@@ -53,7 +102,7 @@ server:
 
 JAiRouter 使用 WebClient 进行后端服务调用，支持详细的连接配置：
 
-```yaml
+```
 webclient:
   connection-timeout: 10s       # 连接超时
   read-timeout: 30s            # 读取超时
@@ -80,7 +129,7 @@ webclient:
 
 ### WebClient 性能调优
 
-```yaml
+```
 webclient:
   # 针对高并发场景的优化配置
   connection-pool:
@@ -98,7 +147,7 @@ webclient:
 
 ### 基础监控配置
 
-```yaml
+```
 monitoring:
   metrics:
     enabled: true               # 启用指标收集
@@ -120,7 +169,7 @@ monitoring:
 
 ### 高级监控配置
 
-```yaml
+```
 monitoring:
   metrics:
     # 指标采样配置
@@ -151,7 +200,7 @@ monitoring:
 
 ### 基础 Actuator 配置
 
-```yaml
+```
 management:
   endpoints:
     web:
@@ -181,7 +230,7 @@ management:
 
 ### 安全配置
 
-```yaml
+```
 management:
   endpoints:
     web:
@@ -199,355 +248,64 @@ management:
 
 ## Prometheus 集成配置
 
-```yaml
+```
 management:
   metrics:
     export:
       prometheus:
-        enabled: true          # 启用 Prometheus 导出
-        descriptions: true     # 包含指标描述
-        step: 10s             # 指标步长
-        pushgateway:
-          enabled: false       # 是否启用 Pushgateway
-          base-url: http://localhost:9091
-          job: jairouter
-          push-rate: 30s
-    
-    # 全局标签
-    tags:
-      application: jairouter
-      environment: ${spring.profiles.active:default}
-      instance: ${spring.application.name:jairouter}
-    
-    # 指标分布配置
-    distribution:
-      percentiles-histogram:
-        http.server.requests: true
-        jairouter.backend.requests: true
-      percentiles:
-        http.server.requests: 0.5,0.9,0.95,0.99
-        jairouter.backend.requests: 0.5,0.9,0.95,0.99
-      sla:
-        http.server.requests: 10ms,50ms,100ms,200ms,500ms,1s,2s
-        jairouter.backend.requests: 100ms,500ms,1s,2s,5s
-```
-
-## 日志配置
-
-### 基础日志配置
-
-```yaml
-logging:
-  level:
-    org.unreal.modelrouter: INFO
-    org.springframework: WARN
-    org.springframework.web: INFO
-    reactor.netty: WARN
-    io.netty: WARN
-  
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-  
-  file:
-    name: logs/jairouter.log
-    max-size: 100MB
-    max-history: 30
-    total-size-cap: 1GB
-```
-
-### 环境特定日志配置
-
-```yaml
-# application-dev.yml（开发环境）
-logging:
-  level:
-    org.unreal.modelrouter: DEBUG
-    org.springframework.web: DEBUG
-  pattern:
-    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n"
-
-# application-prod.yml（生产环境）
-logging:
-  level:
-    org.unreal.modelrouter: INFO
-    org.springframework: WARN
-    org.springframework.web: WARN
-  file:
-    name: /var/log/jairouter/jairouter.log
-    max-size: 500MB
-    max-history: 60
-```
-
-## 全局模型配置
-
-### 适配器配置
-
-```yaml
-model:
-  # 全局默认适配器
-  adapter: gpustack             # 支持: normal, gpustack, ollama, vllm, xinference, localai
-  
-  # 适配器特定配置
-  adapters:
-    gpustack:
-      api-version: v1
-      timeout: 30s
-    ollama:
-      api-version: v1
-      keep-alive: true
-    vllm:
-      api-version: v1
-      streaming: true
-```
-
-### 全局负载均衡配置
-
-```yaml
-model:
-  load-balance:
-    type: round-robin           # 默认负载均衡策略
-    hash-algorithm: "md5"       # IP Hash 策略的哈希算法
-    
-    # 健康检查配置
-    health-check:
+        enabled: true
+        descriptions: true
+        step: 10s
+  endpoint:
+    prometheus:
       enabled: true
-      interval: 30s
-      timeout: 5s
-      failure-threshold: 3
-      success-threshold: 2
 ```
 
-## 存储配置
+## 使用指南
 
-### 文件存储配置
+### 启动不同环境
 
-```yaml
-store:
-  type: file                   # 存储类型：memory 或 file
-  path: "config/"             # 配置文件存储路径
-  
-  # 文件存储特定配置
-  file:
-    auto-backup: true          # 自动备份
-    backup-interval: 1h        # 备份间隔
-    max-backups: 24           # 最大备份数量
-    compression: true          # 压缩备份文件
+```
+# 启动开发环境
+java -jar app.jar --spring.profiles.active=dev
+
+# 启动预发布环境
+java -jar app.jar --spring.profiles.active=staging
+
+# 启动生产环境
+java -jar app.jar --spring.profiles.active=prod
+
+# 启动兼容模式
+java -jar app.jar --spring.profiles.active=legacy
 ```
 
-### 内存存储配置
+### 修改配置
 
-```yaml
-store:
-  type: memory                 # 内存存储
-  
-  # 内存存储特定配置
-  memory:
-    initial-capacity: 1000     # 初始容量
-    max-size: 10000           # 最大大小
-    expire-after-write: 24h    # 写入后过期时间
-    expire-after-access: 12h   # 访问后过期时间
-```
+1. **基础配置修改**：编辑 [config/base/](file://d:/IdeaProjects/model-router/src/main/resources/config/base/) 目录下的对应文件
+2. **功能启用/禁用**：编辑对应的功能配置文件
+3. **环境差异配置**：编辑对应的环境配置文件
+4. **敏感配置**：建议使用环境变量注入
 
-## 性能调优配置
+### 配置最佳实践
 
-### JVM 配置
+1. **模块化原则**：按功能将配置拆分为独立模块
+2. **环境分离**：使用环境配置文件覆盖基础配置
+3. **敏感信息保护**：通过环境变量注入敏感配置
+4. **版本控制**：将配置文件纳入版本控制
+5. **文档同步**：保持配置与文档的一致性
 
-```yaml
-# application.yml 中的 JVM 相关配置
-spring:
-  application:
-    name: jairouter
-  
-  # 线程池配置
-  task:
-    execution:
-      pool:
-        core-size: 8           # 核心线程数
-        max-size: 32          # 最大线程数
-        queue-capacity: 1000   # 队列容量
-        keep-alive: 60s       # 线程保活时间
-    
-    scheduling:
-      pool:
-        size: 4               # 调度线程池大小
-```
+## 故障排除
 
-### 启动参数建议
+### 配置未生效
 
-```bash
-# 生产环境 JVM 参数
-java -Xms1g -Xmx2g \
-     -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=200 \
-     -XX:+HeapDumpOnOutOfMemoryError \
-     -XX:HeapDumpPath=/var/log/jairouter/ \
-     -Dspring.profiles.active=prod \
-     -jar model-router.jar
+1. 检查配置文件路径是否正确
+2. 确认环境配置文件是否正确加载
+3. 验证配置优先级顺序
+4. 检查是否有语法错误
 
-# 开发环境 JVM 参数
-java -Xms512m -Xmx1g \
-     -XX:+UseG1GC \
-     -Dspring.profiles.active=dev \
-     -Ddebug=true \
-     -jar model-router.jar
-```
+### 配置冲突
 
-## 环境配置示例
-
-### 开发环境配置
-
-```yaml
-# application-dev.yml
-server:
-  port: 8080
-
-logging:
-  level:
-    org.unreal.modelrouter: DEBUG
-
-webclient:
-  connection-timeout: 5s
-  read-timeout: 15s
-
-monitoring:
-  metrics:
-    enabled: true
-    collection-interval: 5s
-
-store:
-  type: memory
-```
-
-### 测试环境配置
-
-```yaml
-# application-test.yml
-server:
-  port: 8080
-
-logging:
-  level:
-    org.unreal.modelrouter: INFO
-  file:
-    name: logs/jairouter-test.log
-
-webclient:
-  connection-timeout: 10s
-  read-timeout: 30s
-
-monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.5
-
-store:
-  type: file
-  path: "config-test/"
-```
-
-### 生产环境配置
-
-```yaml
-# application-prod.yml
-server:
-  port: 8080
-  tomcat:
-    threads:
-      max: 200
-    max-connections: 8192
-
-logging:
-  level:
-    org.unreal.modelrouter: INFO
-    org.springframework: WARN
-  file:
-    name: /var/log/jairouter/jairouter.log
-    max-size: 500MB
-
-webclient:
-  connection-timeout: 10s
-  read-timeout: 60s
-  connection-pool:
-    max-connections: 1000
-
-monitoring:
-  metrics:
-    enabled: true
-    performance:
-      async-processing: true
-      batch-size: 200
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,metrics,prometheus
-
-store:
-  type: file
-  path: "/etc/jairouter/config/"
-  file:
-    auto-backup: true
-    backup-interval: 1h
-```
-
-## 配置验证
-
-### 配置检查命令
-
-```bash
-# 检查配置文件语法
-java -jar model-router.jar --spring.config.location=classpath:/application.yml --spring.profiles.active=prod --dry-run
-
-# 验证端口可用性
-netstat -tulpn | grep 8080
-
-# 检查配置加载
-curl http://localhost:8080/actuator/configprops
-```
-
-### 常见配置错误
-
-1. **端口冲突**
-   ```yaml
-   # 错误：端口被占用
-   server:
-     port: 8080
-   
-   # 解决：更换端口或停止占用进程
-   server:
-     port: 8081
-   ```
-
-2. **超时配置不当**
-   ```yaml
-   # 错误：超时时间过短
-   webclient:
-     read-timeout: 1s
-   
-   # 解决：根据后端响应时间调整
-   webclient:
-     read-timeout: 30s
-   ```
-
-3. **内存配置不足**
-   ```yaml
-   # 错误：内存缓冲区过小
-   webclient:
-     max-in-memory-size: 1MB
-   
-   # 解决：根据请求大小调整
-   webclient:
-     max-in-memory-size: 10MB
-   ```
-
-## 下一步
-
-完成应用配置后，您可以继续配置：
-
-- **[动态配置](dynamic-config.md)** - 学习运行时配置管理
-- **[负载均衡](load-balancing.md)** - 配置负载均衡策略
-- **[限流配置](rate-limiting.md)** - 设置流量控制
-- **[熔断器配置](circuit-breaker.md)** - 配置故障保护
+1. 理解配置优先级规则
+2. 检查是否有重复配置项
+3. 确认环境变量是否覆盖了预期配置
+4. 使用 `--debug` 参数查看配置加载过程

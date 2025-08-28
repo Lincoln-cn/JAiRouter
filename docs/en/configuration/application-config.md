@@ -1,4 +1,4 @@
-﻿# Application Configuration
+﻿﻿# Application Configuration
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
@@ -7,15 +7,64 @@
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 This document details the basic application configuration of JAiRouter, including server configuration, WebClient configuration, monitoring configuration, and more.
 
 ## Configuration File Locations
 
-- **Main Configuration File**: `src/main/resources/application.yml`
+- **Main Configuration File**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
 - **Environment Configuration**: `application-{profile}.yml`
 - **External Configuration**: `config/application.yml` (optional)
+- **Modular Configuration**: `config/{module}/*.yml`
+
+## Modular Configuration Explanation
+
+JAiRouter adopts a modular configuration management approach, splitting complex configurations into multiple independent configuration files by function. This design improves configuration maintainability, readability, and reusability.
+
+### Configuration Structure
+
+```yaml
+# application.yml
+spring:
+  config:
+    import:
+      - classpath:config/base/server-base.yml
+      - classpath:config/base/model-services-base.yml
+      - classpath:config/base/monitoring-base.yml
+      - classpath:config/tracing/tracing-base.yml
+      - classpath:config/security/security-base.yml
+      - classpath:config/monitoring/slow-query-alerts.yml
+      - classpath:config/monitoring/error-tracking.yml
+```
+
+### Configuration Module Categories
+
+1. **Base Configuration Modules** (`config/base/`)
+   - [server-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/server-base.yml) - Server base configuration
+   - [model-services-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) - Model services configuration
+   - [monitoring-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/monitoring-base.yml) - Monitoring base configuration
+
+2. **Feature Configuration Modules** (`config/{feature}/`)
+   - [tracing/tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml) - Tracing feature configuration
+   - [security/security-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/security/security-base.yml) - Security feature configuration
+   - [monitoring/slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml) - Slow query alert configuration
+   - [monitoring/error-tracking.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/error-tracking.yml) - Error tracking configuration
+
+3. **Environment Configuration Files** (`application-{profile}.yml`)
+   - [application-dev.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml) - Development environment configuration
+   - [application-staging.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-staging.yml) - Staging environment configuration
+   - [application-prod.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-prod.yml) - Production environment configuration
+   - [application-legacy.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-legacy.yml) - Legacy compatibility configuration
+
+### Configuration Priority
+
+Configuration loading follows this priority order (higher priority overrides lower priority):
+
+1. Base configuration modules (lowest priority)
+2. Feature configuration modules
+3. Environment-specific configuration files
+4. External configuration files
+5. Environment variables
+6. Command-line arguments (highest priority)
 
 ## Server Configuration
 
@@ -199,355 +248,64 @@ management:
 
 ## Prometheus Integration Configuration
 
-```yaml
+```
 management:
   metrics:
     export:
       prometheus:
-        enabled: true           # Enable Prometheus export
-        descriptions: true      # Include metric descriptions
-        step: 10s               # Metric step
-        pushgateway:
-          enabled: false        # Enable Pushgateway
-          base-url: http://localhost:9091
-          job: jairouter
-          push-rate: 30s
-    
-    # Global tags
-    tags:
-      application: jairouter
-      environment: ${spring.profiles.active:default}
-      instance: ${spring.application.name:jairouter}
-    
-    # Metric distribution configuration
-    distribution:
-      percentiles-histogram:
-        http.server.requests: true
-        jairouter.backend.requests: true
-      percentiles:
-        http.server.requests: 0.5,0.9,0.95,0.99
-        jairouter.backend.requests: 0.5,0.9,0.95,0.99
-      sla:
-        http.server.requests: 10ms,50ms,100ms,200ms,500ms,1s,2s
-        jairouter.backend.requests: 100ms,500ms,1s,2s,5s
-```
-
-## Logging Configuration
-
-### Basic Logging Configuration
-
-```yaml
-logging:
-  level:
-    org.unreal.modelrouter: INFO
-    org.springframework: WARN
-    org.springframework.web: INFO
-    reactor.netty: WARN
-    io.netty: WARN
-  
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-  
-  file:
-    name: logs/jairouter.log
-    max-size: 100MB
-    max-history: 30
-    total-size-cap: 1GB
-```
-
-### Environment-Specific Logging Configuration
-
-```yaml
-# application-dev.yml (Development Environment)
-logging:
-  level:
-    org.unreal.modelrouter: DEBUG
-    org.springframework.web: DEBUG
-  pattern:
-    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr([%thread]){magenta} %clr(%-5level){highlight} %clr(%logger{36}){cyan} - %msg%n"
-
-# application-prod.yml (Production Environment)
-logging:
-  level:
-    org.unreal.modelrouter: INFO
-    org.springframework: WARN
-    org.springframework.web: WARN
-  file:
-    name: /var/log/jairouter/jairouter.log
-    max-size: 500MB
-    max-history: 60
-```
-
-## Global Model Configuration
-
-### Adapter Configuration
-
-```yaml
-model:
-  # Global default adapter
-  adapter: gpustack             # Supported: normal, gpustack, ollama, vllm, xinference, localai
-  
-  # Adapter-specific configuration
-  adapters:
-    gpustack:
-      api-version: v1
-      timeout: 30s
-    ollama:
-      api-version: v1
-      keep-alive: true
-    vllm:
-      api-version: v1
-      streaming: true
-```
-
-### Global Load Balancing Configuration
-
-```yaml
-model:
-  load-balance:
-    type: round-robin           # Default load balancing strategy
-    hash-algorithm: "md5"       # Hash algorithm for IP Hash strategy
-    
-    # Health check configuration
-    health-check:
+        enabled: true
+        descriptions: true
+        step: 10s
+  endpoint:
+    prometheus:
       enabled: true
-      interval: 30s
-      timeout: 5s
-      failure-threshold: 3
-      success-threshold: 2
 ```
 
-## Storage Configuration
+## Usage Guide
 
-### File Storage Configuration
-
-```yaml
-store:
-  type: file                   # Storage type: memory or file
-  path: "config/"              # Configuration file storage path
-  
-  # File storage specific configuration
-  file:
-    auto-backup: true          # Automatic backup
-    backup-interval: 1h        # Backup interval
-    max-backups: 24            # Maximum number of backups
-    compression: true          # Compress backup files
-```
-
-### Memory Storage Configuration
-
-```yaml
-store:
-  type: memory                 # Memory storage
-  
-  # Memory storage specific configuration
-  memory:
-    initial-capacity: 1000     # Initial capacity
-    max-size: 10000            # Maximum size
-    expire-after-write: 24h    # Expiration after write
-    expire-after-access: 12h   # Expiration after access
-```
-
-## Performance Tuning Configuration
-
-### JVM Configuration
-
-```yaml
-# JVM-related configuration in application.yml
-spring:
-  application:
-    name: jairouter
-  
-  # Thread pool configuration
-  task:
-    execution:
-      pool:
-        core-size: 8            # Core thread count
-        max-size: 32            # Maximum thread count
-        queue-capacity: 1000    # Queue capacity
-        keep-alive: 60s         # Thread keep-alive time
-    
-    scheduling:
-      pool:
-        size: 4                 # Scheduling thread pool size
-```
-
-### Startup Parameter Recommendations
+### Starting Different Environments
 
 ```bash
-# Production Environment JVM Parameters
-java -Xms1g -Xmx2g \
-     -XX:+UseG1GC \
-     -XX:MaxGCPauseMillis=200 \
-     -XX:+HeapDumpOnOutOfMemoryError \
-     -XX:HeapDumpPath=/var/log/jairouter/ \
-     -Dspring.profiles.active=prod \
-     -jar model-router.jar
+# Start development environment
+java -jar app.jar --spring.profiles.active=dev
 
-# Development Environment JVM Parameters
-java -Xms512m -Xmx1g \
-     -XX:+UseG1GC \
-     -Dspring.profiles.active=dev \
-     -Ddebug=true \
-     -jar model-router.jar
+# Start staging environment
+java -jar app.jar --spring.profiles.active=staging
+
+# Start production environment
+java -jar app.jar --spring.profiles.active=prod
+
+# Start legacy compatibility mode
+java -jar app.jar --spring.profiles.active=legacy
 ```
 
-## Environment Configuration Examples
+### Modifying Configuration
 
-### Development Environment Configuration
+1. **Base Configuration Modification**: Edit corresponding files in the [config/base/](file://d:/IdeaProjects/model-router/src/main/resources/config/base/) directory
+2. **Feature Enable/Disable**: Edit corresponding feature configuration files
+3. **Environment Differences**: Edit corresponding environment configuration files
+4. **Sensitive Configuration**: Use environment variables for injection
 
-```yaml
-# application-dev.yml
-server:
-  port: 8080
+### Configuration Best Practices
 
-logging:
-  level:
-    org.unreal.modelrouter: DEBUG
+1. **Modularization Principle**: Split configurations into independent modules by function
+2. **Environment Separation**: Use environment configuration files to override base configurations
+3. **Sensitive Information Protection**: Inject sensitive configurations via environment variables
+4. **Version Control**: Include configuration files in version control
+5. **Documentation Synchronization**: Keep configurations consistent with documentation
 
-webclient:
-  connection-timeout: 5s
-  read-timeout: 15s
+## Troubleshooting
 
-monitoring:
-  metrics:
-    enabled: true
-    collection-interval: 5s
+### Configuration Not Taking Effect
 
-store:
-  type: memory
-```
+1. Check if configuration file paths are correct
+2. Confirm if environment configuration files are loaded correctly
+3. Verify configuration priority order
+4. Check for syntax errors
 
-### Test Environment Configuration
+### Configuration Conflicts
 
-```yaml
-# application-test.yml
-server:
-  port: 8080
-
-logging:
-  level:
-    org.unreal.modelrouter: INFO
-  file:
-    name: logs/jairouter-test.log
-
-webclient:
-  connection-timeout: 10s
-  read-timeout: 30s
-
-monitoring:
-  metrics:
-    enabled: true
-    sampling:
-      request-metrics: 0.5
-
-store:
-  type: file
-  path: "config-test/"
-```
-
-### Production Environment Configuration
-
-```yaml
-# application-prod.yml
-server:
-  port: 8080
-  tomcat:
-    threads:
-      max: 200
-    max-connections: 8192
-
-logging:
-  level:
-    org.unreal.modelrouter: INFO
-    org.springframework: WARN
-  file:
-    name: /var/log/jairouter/jairouter.log
-    max-size: 500MB
-
-webclient:
-  connection-timeout: 10s
-  read-timeout: 60s
-  connection-pool:
-    max-connections: 1000
-
-monitoring:
-  metrics:
-    enabled: true
-    performance:
-      async-processing: true
-      batch-size: 200
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,metrics,prometheus
-
-store:
-  type: file
-  path: "/etc/jairouter/config/"
-  file:
-    auto-backup: true
-    backup-interval: 1h
-```
-
-## Configuration Validation
-
-### Configuration Check Commands
-
-```bash
-# Check configuration file syntax
-java -jar model-router.jar --spring.config.location=classpath:/application.yml --spring.profiles.active=prod --dry-run
-
-# Verify port availability
-netstat -tulpn | grep 8080
-
-# Check configuration loading
-curl http://localhost:8080/actuator/configprops
-```
-
-### Common Configuration Errors
-
-1. **Port Conflicts**
-   ```yaml
-   # Error: Port occupied
-   server:
-     port: 8080
-   
-   # Solution: Change port or stop the occupying process
-   server:
-     port: 8081
-   ```
-
-2. **Improper Timeout Configuration**
-   ```yaml
-   # Error: Timeout too short
-   webclient:
-     read-timeout: 1s
-   
-   # Solution: Adjust according to backend response time
-   webclient:
-     read-timeout: 30s
-   ```
-
-3. **Insufficient Memory Configuration**
-   ```yaml
-   # Error: Memory buffer too small
-   webclient:
-     max-in-memory-size: 1MB
-   
-   # Solution: Adjust according to request size
-   webclient:
-     max-in-memory-size: 10MB
-   ```
-
-## Next Steps
-
-After completing the application configuration, you can continue configuring:
-
-- **[Dynamic Configuration](dynamic-config.md)** - Learn runtime configuration management
-- **[Load Balancing](load-balancing.md)** - Configure load balancing strategies
-- **[Rate Limiting](rate-limiting.md)** - Set traffic control
-- **[Circuit Breaker Configuration](circuit-breaker.md)** - Configure fault protection
+1. Understand configuration priority rules
+2. Check for duplicate configuration items
+3. Confirm if environment variables override expected configurations
+4. Use `--debug` parameter to view configuration loading process
