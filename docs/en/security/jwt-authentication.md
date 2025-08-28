@@ -620,4 +620,4 @@ jairouter:
 - [API Key Management Guide](api-key-management.md)
 - [Data Sanitization Rules Configuration](data-sanitization.md)
 - [Security Feature Troubleshooting Guide](troubleshooting.md)
-- [Security Monitoring and Alerting](monitoring.md)
+- [Security Monitoring and Alerting](../monitoring/alerts.md)
