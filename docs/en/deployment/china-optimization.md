@@ -162,7 +162,7 @@ try {
 # Build Docker image
 Write-Host "Step 2: Building Docker image..." -ForegroundColor Cyan
 try {
-    docker build -f Dockerfile.china -t "jairouter/model-router:$Tag" .
+    docker build -f Dockerfile.china -t "sodlinken/jairouter:$Tag" .
     if ($LASTEXITCODE -ne 0) {
         throw "Docker build failed"
     }
@@ -173,12 +173,12 @@ try {
 
 # Verify image
 Write-Host "Step 3: Verifying image..." -ForegroundColor Cyan
-$imageSize = docker images jairouter/model-router:$Tag --format "{{.Size}}"
+$imageSize = docker images sodlinken/jairouter:$Tag --format "{{.Size}}"
 Write-Host "Image size: $imageSize" -ForegroundColor Green
 
 Write-Host "Build completed!" -ForegroundColor Green
-Write-Host "Image: jairouter/model-router:$Tag" -ForegroundColor Yellow
-Write-Host "Run command: docker run -d -p 8080:8080 jairouter/model-router:$Tag" -ForegroundColor Yellow
+Write-Host "Image: sodlinken/jairouter:$Tag" -ForegroundColor Yellow
+Write-Host "Run command: docker run -d -p 8080:8080 sodlinken/jairouter:$Tag" -ForegroundColor Yellow
 ```
 
 #### Linux/macOS Bash Script
@@ -210,16 +210,16 @@ echo "Step 1: Building application with China mirrors..."
 
 # Build Docker image
 echo "Step 2: Building Docker image..."
-docker build -f Dockerfile.china -t "jairouter/model-router:$TAG" .
+docker build -f Dockerfile.china -t "sodlinken/jairouter:$TAG" .
 
 # Verify image
 echo "Step 3: Verifying image..."
-IMAGE_SIZE=$(docker images jairouter/model-router:$TAG --format "{{.Size}}")
+IMAGE_SIZE=$(docker images sodlinken/jairouter:$TAG --format "{{.Size}}")
 echo "Image size: $IMAGE_SIZE"
 
 echo "Build completed!"
-echo "Image: jairouter/model-router:$TAG"
-echo "Run command: docker run -d -p 8080:8080 jairouter/model-router:$TAG"
+echo "Image: sodlinken/jairouter:$TAG"
+echo "Run command: docker run -d -p 8080:8080 sodlinken/jairouter:$TAG"
 ```
 
 ### 3. pom.xml China Optimization Configuration
@@ -457,7 +457,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:china
+    image: sodlinken/jairouter:china
     container_name: jairouter-china
     dns:
       - 223.5.5.5      # Alibaba Cloud DNS
@@ -584,7 +584,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:china
+    image: sodlinken/jairouter:china
     # ... other configurations
     
   prometheus:
@@ -928,6 +928,390 @@ function Main {
 
 # Execute main process
 Main
+```
+
+## Security Configuration
+
+### 1. Domestic Security Service Integration
+
+JAiRouter can be integrated with domestic security services to enhance protection:
+
+#### Alibaba Cloud Security Center Integration
+
+```yaml
+# application-security.yml
+security:
+  # Alibaba Cloud Security Center configuration
+  aliyun-security-center:
+    enabled: true
+    access-key-id: your-access-key-id
+    access-key-secret: your-access-key-secret
+    region: cn-hangzhou
+    
+  # Tencent Cloud Cloud Security configuration
+  tencent-cloud-security:
+    enabled: false
+    secret-id: your-secret-id
+    secret-key: your-secret-key
+    region: ap-beijing
+```
+
+#### Certificate and Key Management
+
+Use domestic certificate authorities for SSL/TLS certificates:
+
+```bash
+# Example of applying for SSL certificate through Alibaba Cloud
+# 1. Install Alibaba Cloud CLI
+pip install aliyun-cli
+
+# 2. Configure credentials
+aliyun configure
+
+# 3. Apply for certificate
+aliyun cas RequestCertificate \
+  --DomainName "jairouter.example.com" \
+  --SubjectAlternativeNames "www.example.com" \
+  --ProductCode "cas" \
+  --CertificateType "DV" \
+  --ValidateType "DNS"
+```
+
+### 2. Security Compliance Configuration
+
+Configure security settings to comply with domestic regulations:
+
+```yaml
+# application-security.yml
+security:
+  # Data encryption requirements
+  encryption:
+    enabled: true
+    algorithm: SM4  # Domestic encryption algorithm
+    key-length: 128
+    
+  # Data storage compliance
+  storage:
+    location: cn  # Ensure data is stored in China
+    encryption-at-rest: true
+    
+  # Network security
+  network:
+    allowed-countries: ["CN"]  # Restrict access to domestic IPs
+    vpn-required: true  # Require VPN for administrative access
+    
+  # Logging requirements
+  logging:
+    audit-enabled: true
+    retention-days: 180  # Comply with domestic log retention requirements
+    local-storage: true  # Store logs locally to comply with data sovereignty
+```
+
+### 3. Application Security Configuration
+
+Configure application-level security for domestic environments:
+
+```yaml
+# application-security.yml
+security:
+  # API Key configuration for domestic services
+  api-key:
+    enabled: true
+    header: X-API-Key
+    keys:
+      - name: domestic-frontend
+        value: sk-domestic-frontend-key
+        permissions:
+          - "chat:read"
+          - "embedding:read"
+        enabled: true
+      - name: domestic-backend
+        value: sk-domestic-backend-key
+        permissions:
+          - "chat:*"
+          - "embedding:*"
+        enabled: true
+  
+  # JWT configuration with domestic compliance
+  jwt:
+    enabled: true
+    secret: your-domestic-jwt-secret
+    algorithm: HS256
+    expiration-minutes: 30  # Shorter expiration for domestic compliance
+    issuer: jairouter-china
+```
+
+## Log Configuration
+
+### 1. Domestic Log Service Integration
+
+Integrate with domestic log services for better log management:
+
+#### Alibaba Cloud SLS (Log Service) Integration
+
+```yaml
+# application-logging.yml
+logging:
+  level:
+    org.unreal.modelrouter: INFO
+    
+  # Alibaba Cloud SLS configuration
+  aliyun-sls:
+    enabled: true
+    endpoint: cn-hangzhou.log.aliyuncs.com
+    project: jairouter-logs
+    logstore: application-logs
+    access-key-id: your-access-key-id
+    access-key-secret: your-access-key-secret
+    
+  # Tencent Cloud CLS configuration
+  tencent-cls:
+    enabled: false
+    endpoint: ap-beijing.cls.tencentcs.com
+    topic-id: your-topic-id
+    secret-id: your-secret-id
+    secret-key: your-secret-key
+```
+
+#### Logback Configuration for Domestic Services
+
+```xml
+<!-- logback-spring.xml -->
+<configuration>
+    <!-- Alibaba Cloud SLS Appender -->
+    <appender name="ALIYUN_SLS" class="com.aliyun.openservices.log.logback.LoghubAppender">
+        <project>jairouter-logs</project>
+        <logStore>application-logs</logStore>
+        <endpoint>cn-hangzhou.log.aliyuncs.com</endpoint>
+        <accessKeyId>your-access-key-id</accessKeyId>
+        <accessKey>your-access-key-secret</accessKey>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </layout>
+    </appender>
+    
+    <root level="INFO">
+        <appender-ref ref="ALIYUN_SLS"/>
+    </root>
+</configuration>
+```
+
+### 2. Log Storage and Analysis
+
+Configure log storage and analysis for domestic requirements:
+
+```yaml
+# application-logging.yml
+logging:
+  # Local log storage (required for compliance)
+  file:
+    name: /app/logs/jairouter.log
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 10GB
+    
+  # Structured logging for analysis
+  structured:
+    enabled: true
+    format: json
+    fields:
+      timestamp: "@timestamp"
+      level: "level"
+      logger: "logger"
+      message: "message"
+      thread: "thread"
+      traceId: "traceId"
+      service: "jairouter"
+      region: "china"
+      
+  # Security audit logging
+  audit:
+    enabled: true
+    file: /app/logs/security-audit.log
+    format: json
+    retention-days: 180
+```
+
+### 3. Log Compliance Configuration
+
+Configure logs to comply with domestic regulations:
+
+```yaml
+# application-logging.yml
+logging:
+  # Ensure logs are stored domestically
+  storage:
+    location: cn
+    encrypted: true
+    
+  # Compliance requirements
+  compliance:
+    pii-logging: false  # Do not log personally identifiable information
+    retention-days: 180  # Retain logs for 180 days as required
+    tamper-evident: true  # Enable tamper-evident logging
+    
+  # Monitoring and alerting
+  monitoring:
+    enabled: true
+    alert-thresholds:
+      error-rate: 0.01  # Alert on 1% error rate
+      security-violations: 1  # Alert on any security violations
+```
+
+### 4. Log Monitoring and Alerting
+
+Set up log monitoring and alerting using domestic services:
+
+#### Alibaba Cloud ARMS Integration
+
+```yaml
+# application-monitoring.yml
+monitoring:
+  # Alibaba Cloud ARMS configuration
+  aliyun-arms:
+    enabled: true
+    app-name: jairouter-china
+    license-key: your-license-key
+    region: cn-hangzhou
+    
+  # Log monitoring
+  logging:
+    alerting:
+      enabled: true
+      channels:
+        - type: sms
+          phone-numbers: ["+86-13800138000"]
+        - type: email
+          addresses: ["admin@example.com"]
+      rules:
+        - name: High Error Rate
+          condition: "rate(error_logs) > 10 per minute"
+          severity: critical
+        - name: Security Violation
+          condition: "security_violations > 0"
+          severity: critical
+```
+
+#### Prometheus Configuration for Domestic Monitoring
+
+```yaml
+# prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'jairouter-china'
+    static_configs:
+      - targets: ['jairouter-cn:8080']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    
+    # Add domestic monitoring endpoint
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: region
+        replacement: china
+```
+
+## Performance Optimization
+
+### 1. Network Optimization
+
+Optimize network configuration for domestic environments:
+
+```yaml
+# application-network.yml
+network:
+  # Domestic CDN configuration
+  cdn:
+    enabled: true
+    provider: aliyun
+    domain: cdn.example.com
+    
+  # Connection pooling for domestic services
+  connection-pool:
+    max-connections: 200
+    connection-timeout: 5000
+    idle-timeout: 30000
+    
+  # Retry configuration for unstable domestic networks
+  retry:
+    max-attempts: 5
+    backoff-multiplier: 2.0
+    initial-interval: 1000
+```
+
+### 2. Storage Optimization
+
+Optimize storage for domestic environments:
+
+```yaml
+# application-storage.yml
+storage:
+  # Use domestic storage services
+  provider: aliyun-oss
+  bucket: jairouter-china
+  region: oss-cn-hangzhou
+  access-key-id: your-access-key-id
+  access-key-secret: your-access-key-secret
+  
+  # CDN acceleration for static resources
+  cdn:
+    enabled: true
+    domain: static.example.com
+```
+
+## Compliance and Regulations
+
+### 1. Data Sovereignty
+
+Ensure compliance with Chinese data sovereignty requirements:
+
+```yaml
+# application-compliance.yml
+compliance:
+  data-sovereignty:
+    enabled: true
+    storage-location: cn
+    processing-location: cn
+    cross-border-transfer: false
+    
+  # Cybersecurity Law compliance
+  cybersecurity-law:
+    data-localization: true
+    security-assessment: true
+    incident-reporting: true
+    
+  # Personal Information Protection Law (PIPL) compliance
+  pipl:
+    consent-required: true
+    data-minimization: true
+    purpose-limitation: true
+    retention-limitation: true
+```
+
+### 2. Security Assessment
+
+Conduct regular security assessments:
+
+```bash
+#!/bin/bash
+# security-assessment.sh
+
+# Regular security checks for domestic compliance
+echo "Running security assessment for China deployment..."
+
+# Check for domestic certificate
+openssl x509 -in /etc/ssl/certs/jairouter.crt -text | grep "Subject:.*CN"
+
+# Check data localization
+df -h | grep "/app/data" | grep "cn-"
+
+# Check network restrictions
+iptables -L | grep "DROP" | grep "foreign"
+
+# Generate compliance report
+echo "Security assessment completed. Report saved to /app/logs/compliance-report-$(date +%Y%m%d).log"
 ```
 
 ## Performance Tuning

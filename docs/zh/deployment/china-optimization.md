@@ -162,7 +162,7 @@ try {
 # 构建 Docker 镜像
 Write-Host "步骤 2: 构建 Docker 镜像..." -ForegroundColor Cyan
 try {
-    docker build -f Dockerfile.china -t "jairouter/model-router:$Tag" .
+    docker build -f Dockerfile.china -t "sodlinken/jairouter:$Tag" .
     if ($LASTEXITCODE -ne 0) {
         throw "Docker 构建失败"
     }
@@ -173,12 +173,12 @@ try {
 
 # 验证镜像
 Write-Host "步骤 3: 验证镜像..." -ForegroundColor Cyan
-$imageSize = docker images jairouter/model-router:$Tag --format "{{.Size}}"
+$imageSize = docker images sodlinken/jairouter:$Tag --format "{{.Size}}"
 Write-Host "镜像大小: $imageSize" -ForegroundColor Green
 
 Write-Host "构建完成!" -ForegroundColor Green
-Write-Host "镜像: jairouter/model-router:$Tag" -ForegroundColor Yellow
-Write-Host "运行命令: docker run -d -p 8080:8080 jairouter/model-router:$Tag" -ForegroundColor Yellow
+Write-Host "镜像: sodlinken/jairouter:$Tag" -ForegroundColor Yellow
+Write-Host "运行命令: docker run -d -p 8080:8080 sodlinken/jairouter:$Tag" -ForegroundColor Yellow
 ```
 
 #### Linux/macOS Bash 脚本
@@ -210,16 +210,16 @@ echo "步骤 1: 使用中国镜像构建应用..."
 
 # 构建 Docker 镜像
 echo "步骤 2: 构建 Docker 镜像..."
-docker build -f Dockerfile.china -t "jairouter/model-router:$TAG" .
+docker build -f Dockerfile.china -t "sodlinken/jairouter:$TAG" .
 
 # 验证镜像
 echo "步骤 3: 验证镜像..."
-IMAGE_SIZE=$(docker images jairouter/model-router:$TAG --format "{{.Size}}")
+IMAGE_SIZE=$(docker images sodlinken/jairouter:$TAG --format "{{.Size}}")
 echo "镜像大小: $IMAGE_SIZE"
 
 echo "构建完成!"
-echo "镜像: jairouter/model-router:$TAG"
-echo "运行命令: docker run -d -p 8080:8080 jairouter/model-router:$TAG"
+echo "镜像: sodlinken/jairouter:$TAG"
+echo "运行命令: docker run -d -p 8080:8080 sodlinken/jairouter:$TAG"
 ```
 
 ### 3. pom.xml 中国优化配置
@@ -457,7 +457,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:china
+    image: sodlinken/jairouter:china
     container_name: jairouter-china
     dns:
       - 223.5.5.5      # 阿里云 DNS
@@ -584,7 +584,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:china
+    image: sodlinken/jairouter:china
     # ... 其他配置
     
   prometheus:
@@ -738,7 +738,7 @@ build_image() {
     else
         echo "使用 Maven 构建..."
         ./mvnw clean package -Pchina -DskipTests
-        docker build -f Dockerfile.china -t jairouter/model-router:china .
+        docker build -f Dockerfile.china -t sodlinken/jairouter:china .
     fi
     
     echo "✓ 镜像构建完成"
@@ -854,7 +854,7 @@ function Build-Image {
     } else {
         Write-Host "使用 Maven 构建..." -ForegroundColor Yellow
         .\mvnw.cmd clean package -Pchina -DskipTests
-        docker build -f Dockerfile.china -t jairouter/model-router:china .
+        docker build -f Dockerfile.china -t sodlinken/jairouter:china .
     }
     
     Write-Host "✓ 镜像构建完成" -ForegroundColor Green
@@ -1221,7 +1221,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:china
+    image: sodlinken/jairouter:china
     container_name: jairouter-china
     dns:
       - 223.5.5.5

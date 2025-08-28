@@ -28,7 +28,7 @@ The fastest way to deploy JAiRouter:
 
 ```bash
 # Pull the latest image
-docker pull jairouter/model-router:latest
+docker pull sodlinken/jairouter:latest
 
 # Run with basic configuration
 docker run -d \
@@ -36,7 +36,7 @@ docker run -d \
   -p 8080:8080 \
   -v ./config:/app/config \
   -v ./logs:/app/logs \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 ### Standalone JAR
@@ -80,7 +80,7 @@ Mount configuration files for persistent settings:
 version: '3.8'
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     ports:
       - "8080:8080"
     volumes:
@@ -110,7 +110,7 @@ kind: Pod
 spec:
   containers:
   - name: jairouter
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     livenessProbe:
       httpGet:
         path: /actuator/health
@@ -159,6 +159,46 @@ logging:
     max-size: 100MB
     max-history: 30
 ```
+
+## Security Configuration Guide
+
+JAiRouter provides multi-layered security mechanisms to protect your deployment:
+
+### Authentication and Authorization
+- **API Key Authentication**: Simple authentication mechanism suitable for service-to-service communication
+- **JWT Authentication**: Complete solution for user authentication
+- **Role-Based Access Control**: Fine-grained access control based on roles
+
+### Network Security
+- **HTTPS Support**: Protect data transmission through TLS encryption
+- **Firewall Configuration**: Restrict unnecessary port access
+- **Request Filtering**: Prevent malicious requests and attacks
+
+### Application Security
+- **Input Validation**: Prevent injection attacks and malicious input
+- **Sensitive Information Protection**: Configuration encryption and key management
+- **Security Header Settings**: Prevent common web attacks
+
+## Logging Configuration Guide
+
+JAiRouter supports flexible logging configuration, including:
+
+### Log Levels
+- **TRACE**: Most detailed log information for debugging
+- **DEBUG**: Detailed debugging information
+- **INFO**: General informational messages
+- **WARN**: Warning information
+- **ERROR**: Error information
+
+### Log Formats
+- **Console Output**: Concise format suitable for development environments
+- **File Logs**: Detailed format suitable for production environments
+- **Structured Logs**: JSON format for easy log analysis and processing
+
+### Log Management
+- **Log Rotation**: Automatic management of log file size and quantity
+- **Log Compression**: Save storage space
+- **Log Archiving**: Long-term storage of important logs
 
 ## Security Considerations
 
@@ -256,14 +296,14 @@ Deploy multiple JAiRouter instances behind a load balancer:
 version: '3.8'
 services:
   jairouter-1:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     ports:
       - "8081:8080"
     volumes:
       - ./config:/app/config:ro
   
   jairouter-2:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     ports:
       - "8082:8080"
     volumes:
@@ -288,7 +328,7 @@ Increase resources for single instance:
 # docker-compose.yml with resource limits
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     deploy:
       resources:
         limits:
@@ -323,7 +363,7 @@ chown -R 1000:1000 logs/
 # Monitor memory usage
 docker stats jairouter
 # Increase memory limits
-docker run -m 2g jairouter/model-router:latest
+docker run -m 2g sodlinken/jairouter:latest
 ```
 
 ### Log Analysis
