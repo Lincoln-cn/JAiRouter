@@ -1,0 +1,25 @@
+# .github/workflows/update-sitemap.yml
+name: Update Sitemap
+on:
+  push:
+    paths:
+      - 'docs/**'
+  schedule:
+    - cron: '0 2 * * 1' # 每周一凌晨2点运行
+
+jobs:
+  update-sitemap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate Sitemap
+        run: |
+          # 使用工具生成 sitemap
+          python generate_sitemap.py
+      - name: Commit and push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/sitemap.xml
+          git commit -m "Update sitemap.xml" || echo "No changes to commit"
+          git push
