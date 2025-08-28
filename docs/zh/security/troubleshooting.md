@@ -703,4 +703,4 @@ curl -H "Authorization: Bearer admin-token" \
 - [API Key 管理指南](api-key-management.md)
 - [JWT 认证配置说明](jwt-authentication.md)
 - [数据脱敏规则配置](data-sanitization.md)
-- [安全监控和告警](monitoring.md)
+- [安全监控和告警](../monitoring/alerts.md)

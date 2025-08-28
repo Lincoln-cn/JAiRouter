@@ -540,6 +540,6 @@ public void highFrequencyOperation() {
 
 ## Next Steps
 
-- [API Reference](api-reference.md) - Detailed API documentation
+- [API Reference](../api-reference/index.md) - Detailed API documentation
 - [Configuration Reference](../tracing/config-reference.md) - Complete configuration options
 - [Performance Tuning](../tracing/performance-tuning.md) - Performance optimization guide
