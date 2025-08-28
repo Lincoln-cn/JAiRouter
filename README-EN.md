@@ -29,8 +29,8 @@ JAiRouter is a Spring Boot-based model service routing and load balancing gatewa
 
 The complete project documentation has been migrated to GitHub Pages and can be accessed online:
 
-- [中文文档](https://docs.jairouter.com/)
-- [English Documentation](https://docs.jairouter.com/en/)
+- [中文文档](https://jairouter.com/)
+- [English Documentation](https://jairouter.com/en/)
 
 Documentation includes:
 
