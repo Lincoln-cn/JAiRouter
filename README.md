@@ -29,8 +29,8 @@ Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流
 
 完整的项目文档已迁移至 GitHub Pages，可在线访问：
 
-- [中文文档](https://docs.jairouter.com/)
-- [English Documentation](https://docs.jairouter.com/en/)
+- [中文文档](https://jairouter.com/)
+- [English Documentation](https://jairouter.com/en/)
 
 文档内容包括：
 
