@@ -2,6 +2,26 @@
 
 本文档提供 JAiRouter 分布式追踪功能的完整配置参考。
 
+## 配置文件结构
+
+JAiRouter 使用模块化的配置管理方式，追踪配置位于独立的配置文件中：
+
+- **主配置文件**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
+- **追踪配置文件**: [src/main/resources/config/tracing/tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml)
+- **环境配置文件**: [src/main/resources/application-{profile}.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+
+## 模块化配置说明
+
+追踪配置已从主配置文件中分离，通过 `spring.config.import` 机制导入：
+
+```yaml
+# application.yml
+spring:
+  config:
+    import:
+      - classpath:config/tracing/tracing-base.yml
+```
+
 ## 基础配置
 
 ### 启用追踪
@@ -198,216 +218,194 @@ jairouter:
 
 ## 性能配置
 
-### 异步处理
-
 ```yaml
 jairouter:
   tracing:
-    async:
-      enabled: true                # 启用异步处理，默认: true
-      core-pool-size: 2            # 核心线程数，默认: 2
-      max-pool-size: 10            # 最大线程数，默认: 10
-      queue-capacity: 1000         # 队列容量，默认: 1000
-      keep-alive: 60s              # 线程保活时间，默认: 60s
-      thread-name-prefix: "tracing-" # 线程名前缀
+    performance:
+      async-processing: true       # 异步处理，默认: true
+      batch-size: 512              # 批处理大小，默认: 512
+      buffer-size: 2048            # 缓冲区大小，默认: 2048
+      flush-interval: 5s           # 刷新间隔，默认: 5s
+      max-queue-size: 2048         # 最大队列大小，默认: 2048
+      schedule-delay: 5s           # 调度延迟，默认: 5s
 ```
 
-### 响应式配置
+## 组件配置
+
+### WebFlux 配置
 
 ```yaml
 jairouter:
   tracing:
-    reactive:
-      enabled: true                # 启用响应式支持，默认: true
-      context-propagation: true    # 上下文传播，默认: true
-      scheduler-hook: true         # 调度器钩子，默认: true
+    components:
+      webflux:
+        enabled: true
+        capture-request-headers: []
+        capture-response-headers: []
+        capture-request-parameters: []
+```
+
+### WebClient 配置
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      webclient:
+        enabled: true
+        capture-request-headers: []
+        capture-response-headers: []
+```
+
+### 数据库配置
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      database:
+        enabled: true
+        capture-statement: false
+        capture-parameters: false
+```
+
+### Redis 配置
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      redis:
+        enabled: true
+```
+
+### 限流器配置
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      rate-limiter:
+        enabled: true
+        capture-algorithm: true
+        capture-quota: true
+        capture-decision: true
+        capture-statistics: true
+```
+
+### 熔断器配置
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      circuit-breaker:
+        enabled: true
+        capture-state: true
+        capture-state-changes: true
+        capture-statistics: true
+        capture-failure-rate: true
+```
+
+### 负载均衡器配置
+
+```yaml
+jairouter:
+  tracing:
+    components:
+      load-balancer:
+        enabled: true
+        capture-strategy: true
+        capture-selection: true
+        capture-statistics: true
 ```
 
 ## 安全配置
 
-### 敏感数据过滤
-
 ```yaml
 jairouter:
   tracing:
     security:
-      enabled: true
-      sensitive-headers:           # 敏感请求头（不会被记录）
-        - "Authorization"
-        - "Cookie"
-        - "X-API-Key"
-      sensitive-params:            # 敏感参数
-        - "password"
-        - "token"
-        - "secret"
-      mask-pattern: "***"          # 掩码模式，默认: "***"
-      
-      encryption:
-        enabled: false             # 启用加密存储
-        algorithm: "AES-256-GCM"   # 加密算法
-        key-rotation-interval: 24h # 密钥轮换间隔
+      sanitization:
+        enabled: true
+        inherit-global-rules: true
+        additional-patterns: []
+      access-control:
+        restrict-trace-access: true
+        allowed-roles: []
 ```
 
-### 访问控制
+## 监控配置
 
 ```yaml
 jairouter:
   tracing:
-    security:
-      rbac:
-        enabled: false             # 启用基于角色的访问控制
-        admin-roles:               # 管理员角色
-          - "ADMIN"
-          - "SYSTEM"
-        viewer-roles:              # 查看者角色
-          - "USER"
-          - "VIEWER"
-```
-
-## 集成配置
-
-### Actuator 集成
-
-```yaml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "health,info,metrics,prometheus,tracing"
-  endpoint:
-    tracing:
-      enabled: true
-
-jairouter:
-  tracing:
-    actuator:
-      health-check: true           # 启用健康检查
-      metrics-collection: true     # 启用指标收集
-      info-contribution: true      # 启用信息贡献
-```
-
-### MDC 集成
-
-```yaml
-jairouter:
-  tracing:
-    mdc:
-      enabled: true                # 启用MDC集成，默认: true
-      trace-id-key: "traceId"      # TraceId键名，默认: "traceId"
-      span-id-key: "spanId"        # SpanId键名，默认: "spanId"
-      service-name-key: "service"  # 服务名键名，默认: "service"
-      clear-on-completion: true    # 完成时清理，默认: true
-```
-
-## 环境特定配置
-
-### 开发环境
-
-```yaml
-jairouter:
-  tracing:
-    enabled: true
-    sampling:
-      strategy: "ratio"
-      ratio: 1.0                   # 100% 采样便于调试
-    exporter:
-      type: "logging"              # 使用日志导出器
-    memory:
-      max-spans: 1000              # 较小的内存占用
-```
-
-### 测试环境
-
-```yaml
-jairouter:
-  tracing:
-    enabled: true
-    sampling:
-      strategy: "rule"
-      rules:
-        - operation: "*test*"
-          sample-rate: 1.0         # 测试用例 100% 采样
-        - error-only: true
-          sample-rate: 1.0         # 错误场景完全采样
-    exporter:
-      type: "jaeger"
-      jaeger:
-        endpoint: "http://jaeger:14268/api/traces"
-```
-
-### 生产环境
-
-```yaml
-jairouter:
-  tracing:
-    enabled: true
-    sampling:
-      strategy: "adaptive"         # 使用自适应采样
-      adaptive:
-        base-sample-rate: 0.01     # 1% 基础采样
-        max-traces-per-second: 100
-    exporter:
-      type: "otlp"                 # 使用标准 OTLP 协议
-      otlp:
-        endpoint: "https://collector.example.com:4317"
-        protocol: "grpc"
-        tls:
+    monitoring:
+      self-monitoring: true
+      metrics:
+        enabled: true
+        prefix: "jairouter.tracing"
+        traces:
           enabled: true
-    security:
-      enabled: true                # 启用安全功能
-    memory:
-      max-spans: 50000             # 更大的内存配置
-      cleanup-interval: 30s        # 更频繁的清理
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
+        exporter:
+          enabled: true
+          histogram-buckets: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+      health:
+        enabled: true
+      alerts:
+        enabled: true
+        trace-processing-failures: 10
+        export-failures: 5
+        buffer-pressure: 80
 ```
 
-## 配置验证
+## 环境配置覆盖
 
-### 配置检查命令
+不同环境可以通过对应的环境配置文件覆盖追踪配置：
 
-```bash
-# 验证配置语法
-java -jar jairouter.jar --spring.config.location=application.yml --validate-config-only
+### 开发环境 (application-dev.yml)
 
-# 检查追踪配置
-curl http://localhost:8080/actuator/configprops | jq '.jairouter.tracing'
+```yaml
+jairouter:
+  tracing:
+    enabled: true
+    sampling:
+      ratio: 1.0  # 开发环境100%采样
+    logging:
+      level: "DEBUG"
 ```
 
-### 常见配置错误
+### 生产环境 (application-prod.yml)
 
-1. **采样率配置错误**
-   ```yaml
-   # ❌ 错误：采样率超出范围
-   sampling:
-     ratio: 1.5
-   
-   # ✅ 正确：采样率在 0.0-1.0 范围内
-   sampling:
-     ratio: 1.0
-   ```
+```yaml
+jairouter:
+  tracing:
+    enabled: true
+    sampling:
+      ratio: 0.1  # 生产环境10%采样
+    exporter:
+      type: "otlp"
+      otlp:
+        endpoint: "${OTLP_ENDPOINT:http://localhost:4317}"
+```
 
-2. **导出器端点配置错误**
-   ```yaml
-   # ❌ 错误：端点格式不正确
-   exporter:
-     jaeger:
-       endpoint: "localhost:14268"
-   
-   # ✅ 正确：包含完整的URL
-   exporter:
-     jaeger:
-       endpoint: "http://localhost:14268/api/traces"
-   ```
+## 最佳实践
 
-## 配置最佳实践
+### 配置管理
 
-1. **渐进式启用**：从低采样率开始，逐步增加
-2. **环境隔离**：不同环境使用不同的配置策略  
-3. **性能监控**：定期检查追踪系统的性能影响
-4. **安全考虑**：生产环境务必启用敏感数据过滤
-5. **容量规划**：根据预期流量配置合适的内存和导出参数
+1. **基础配置**：在 [tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml) 中定义通用配置
+2. **环境差异**：在对应的环境配置文件中覆盖特定配置
+3. **敏感信息**：使用环境变量注入敏感配置，如导出器端点、认证信息等
 
-## 下一步
+### 采样策略
 
-- [使用指南](usage-guide.md) - 了解如何使用追踪功能
-- [性能调优](performance-tuning.md) - 优化追踪性能
-- [故障排除](troubleshooting.md) - 解决配置问题
+1. **开发环境**：建议使用100%采样以便调试
+2. **生产环境**：根据系统负载调整采样率，避免性能影响
+3. **关键路径**：对重要业务使用规则采样确保追踪
+
+### 性能优化
+
+1. **批处理**：合理配置批处理参数以平衡延迟和吞吐量
+2. **内存管理**：根据系统资源调整内存配置
+3. **组件选择**：仅启用需要追踪的组件以减少开销

@@ -2,14 +2,21 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter provides four load balancing strategies, supporting configuration at global, service, and instance levels. This document details the configuration methods and use cases for various load balancing strategies.
+
+## Modular Configuration Overview
+
+Starting from v1.0.0, JAiRouter adopts a modular configuration structure with load balancing related configurations moved to separate configuration files:
+
+- Main configuration file: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
+- Load balancing base configuration: [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml)
+
+You can find all load balancing related configurations in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file, including global configurations, service type configurations, and instance configurations.
 
 ## Load Balancing Overview
 
@@ -42,20 +49,39 @@ graph TB
 
 ### Basic Configuration
 
+Configure global load balancing strategies in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
-# application.yml
+# config/base/model-services-base.yml
 model:
+  # Global configuration
   load-balance:
     type: round-robin           # Global default strategy
     hash-algorithm: "md5"       # Hash algorithm for IP Hash strategy
-    
-    # Health check configuration
-    health-check:
-      enabled: true             # Enable health check
-      interval: 30s            # Check interval
-      timeout: 5s              # Check timeout
-      failure-threshold: 3      # Failure threshold
-      success-threshold: 2      # Success threshold
+
+  # Global adapter configuration - used if service doesn't specify adapter
+  adapter: gpustack # Supports: normal, gpustack, ollama, vllm, xinference, localai
+
+  # Global rate limiting configuration
+  rate-limit:
+    enabled: true
+    algorithm: "token-bucket"
+    capacity: 1000
+    rate: 100
+    scope: "service"
+    client-ip-enable: true  # Enable client IP rate limiting
+
+  # Global circuit breaker configuration
+  circuit-breaker:
+    enabled: true
+    failureThreshold: 5
+    timeout: 60000
+    successThreshold: 2
+
+  # Global fallback configuration
+  fallback:
+    enabled: true
+    strategy: default
 ```
 
 ### Advanced Configuration
@@ -82,6 +108,8 @@ model:
 
 ### YAML Configuration Method
 
+Configure load balancing strategies for each service type in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+
 ```yaml
 model:
   services:
@@ -89,28 +117,50 @@ model:
       load-balance:
         type: least-connections
         hash-algorithm: "sha256"  # Required only for IP Hash strategy
+      adapter: gpustack # Use GPUStack adapter
+      # Service-level rate limiting configuration
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 100
+        rate: 10
+        scope: "service"
+        client-ip-enable: true
       instances:
         - name: "high-perf-model"
           base-url: "http://gpu-server:8080"
+          path: "/v1-openai/chat/completions"
           weight: 3               # High-weight instance
         - name: "standard-model"
           base-url: "http://cpu-server:8080"
+          path: "/v1/chat/completions"
           weight: 1               # Standard-weight instance
     
     embedding:
       load-balance:
         type: ip-hash
         hash-algorithm: "md5"
+      rate-limit:
+        enabled: true
+        algorithm: "token-bucket"
+        capacity: 200
+        rate: 20
+        scope: "service"
+        client-ip-enable: true
       instances:
         - name: "embedding-model-1"
           base-url: "http://embed-server-1:8080"
+          path: "/v1/embeddings"
           weight: 2
         - name: "embedding-model-2"
           base-url: "http://embed-server-2:8080"
+          path: "/v1/embeddings"
           weight: 2
 ```
 
 ### JSON Configuration Method
+
+JAiRouter also supports updating instance configurations via the dynamic configuration API:
 
 ```json
 {

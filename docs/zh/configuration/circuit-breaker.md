@@ -2,14 +2,21 @@
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
+> **最后更新**: 2025-08-28
 > **Git 提交**: c1aa5b0f  
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter 内置熔断器机制，用于防止服务雪崩和级联故障。当后端服务出现故障时，熔断器会自动切断请求，并在服务恢复后自动恢复正常。本文档详细介绍熔断器的配置和使用。
+
+## 模块化配置说明
+
+从 v1.0.0 版本开始，JAiRouter 采用模块化配置结构，熔断器相关配置已移至独立的配置文件中：
+
+- 主配置文件: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
+- 模型服务基础配置: [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml)
+
+您可以在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中找到所有熔断器相关配置，包括全局配置、各服务类型配置和实例配置。
 
 ## 熔断器概述
 
@@ -51,15 +58,35 @@ stateDiagram-v2
 
 ### 基础配置
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置全局熔断器：
+
 ```yaml
-# application.yml
+# config/base/model-services-base.yml
 model:
+  # 全局熔断配置
   circuit-breaker:
-    enabled: true               # 启用全局熔断器
-    failure-threshold: 5        # 失败阈值
-    recovery-timeout: 60000     # 恢复检测间隔（毫秒）
-    success-threshold: 3        # 成功阈值
-    timeout: 30000             # 请求超时时间（毫秒）
+    enabled: true
+    failureThreshold: 5
+    timeout: 60000
+    successThreshold: 2
+
+  # 全局降级配置
+  fallback:
+    enabled: true
+    strategy: default
+
+  services:
+    # 聊天服务配置
+    chat:
+      load-balance:
+        type: least-connections
+      adapter: gpustack # 使用GPUStack适配器
+      # 服务级别熔断配置
+      circuit-breaker:
+        enabled: true
+        failureThreshold: 5
+        timeout: 60000
+        successThreshold: 2
 ```
 
 ### 高级配置
@@ -96,6 +123,8 @@ model:
 
 ### YAML 配置
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置各服务类型的熔断器：
+
 ```yaml
 model:
   services:
@@ -122,6 +151,8 @@ model:
 ```
 
 ### JSON 配置
+
+JAiRouter 也支持通过动态配置 API 更新熔断器配置：
 
 ```json
 {
@@ -151,6 +182,8 @@ model:
 
 ### 独立实例熔断
 
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置实例级别的熔断器：
+
 ```yaml
 model:
   services:
@@ -176,6 +209,8 @@ model:
 ```
 
 ### 实例特定配置
+
+JAiRouter 也支持通过动态配置 API 更新实例级熔断器配置：
 
 ```json
 {
@@ -206,6 +241,8 @@ model:
 ## 熔断器与降级策略
 
 ### 基础降级配置
+
+在 [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) 文件中配置全局和服务级降级策略：
 
 ```yaml
 model:
@@ -253,6 +290,8 @@ model:
 ```
 
 ### JSON 降级配置
+
+JAiRouter 也支持通过动态配置 API 更新降级策略：
 
 ```json
 {
