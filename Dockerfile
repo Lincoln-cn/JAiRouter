@@ -24,8 +24,8 @@ LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gatew
 LABEL version="1.0-SNAPSHOT"
 
 # 创建应用用户（安全最佳实践）
-RUN addgroup -S -g 1001 jairouter && \
-    adduser -S -u 1001 -G jairouter jairouter
+RUN addgroup -S -g 10010 jairouter && \
+    adduser  -S -u 10010 -G jairouter jairouter
 
 # 设置工作目录
 WORKDIR /app
