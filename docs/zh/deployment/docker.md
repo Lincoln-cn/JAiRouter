@@ -509,15 +509,42 @@ docker-compose -f docker-compose.monitoring.yml up -d
 
 ### 1. 日志配置
 
+创建 `config/application-logging.yml`：
+
 ```
-# docker-compose.yml 中的日志配置
-services:
-  jairouter:
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "100m"
-        max-file: "3"
+# 日志配置
+logging:
+  level:
+    # 核心组件日志级别
+    org.unreal.modelrouter: INFO
+    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.tracing: DEBUG
+    
+    # Spring 框架日志级别
+    org.springframework: WARN
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    
+    # Web 客户端日志级别
+    org.springframework.web.reactive.function.client: DEBUG
+    
+  # 控制台日志配置
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+  
+  # 文件日志配置
+  file:
+    name: /app/logs/jairouter.log
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 10GB
+  
+  # Logback 配置
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      max-history: 30
+      total-size-cap: 10GB
 ```
 
 ### 2. 日志查看
@@ -534,6 +561,9 @@ docker logs --since "2024-01-15T10:00:00" jairouter
 
 # 导出日志
 docker logs jairouter > jairouter.log 2>&1
+
+# 在容器内查看日志文件
+docker exec jairouter cat /app/logs/jairouter.log
 ```
 
 ### 3. 日志轮转
@@ -551,6 +581,58 @@ cat > /etc/logrotate.d/docker-jairouter << EOF
     create 0644 root root
 }
 EOF
+
+# Docker Compose 中的日志配置
+version: '3.8'
+
+services:
+  jairouter:
+    image: jairouter/model-router:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+```
+
+### 4. 结构化日志
+
+创建 `config/application-structured-logging.yml`：
+
+```
+# 结构化日志配置
+logging:
+  level:
+    org.unreal.modelrouter: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+  
+  file:
+    name: /app/logs/jairouter.log
+  
+  # JSON 格式日志配置
+  structured:
+    enabled: true
+    format: json
+    fields:
+      timestamp: "@timestamp"
+      level: "level"
+      logger: "logger"
+      message: "message"
+      thread: "thread"
+      traceId: "traceId"
+      spanId: "spanId"
+
+# 结构化日志输出示例
+# {
+#   "@timestamp": "2024-01-15T10:00:00.123Z",
+#   "level": "INFO",
+#   "logger": "org.unreal.modelrouter.ModelRouterApplication",
+#   "message": "Application started successfully",
+#   "thread": "main",
+#   "traceId": "abc123def456"
+# }
 ```
 
 ## 性能优化
@@ -671,38 +753,141 @@ docker history sodlinken/jairouter:latest
 ### 1. 容器安全
 
 ```
-# 使用非 root 用户
-USER 1001:1001
+# 使用非 root 用户运行容器
+docker run -d \
+  --user 1001:1001 \
+  --name jairouter \
+  -p 8080:8080 \
+  jairouter/model-router:latest
 
-# 只读根文件系统
---read-only
+# 设置只读文件系统（除必要目录外）
+docker run -d \
+  --read-only \
+  --tmpfs /tmp \
+  --tmpfs /app/logs \
+  --name jairouter \
+  -p 8080:8080 \
+  jairouter/model-router:latest
 
-# 删除不必要的包
-RUN apt-get remove --purge -y wget curl && \
-    apt-get autoremove -y && \
-    apt-get clean
+# 限制容器能力
+docker run -d \
+  --cap-drop ALL \
+  --cap-add NET_BIND_SERVICE \
+  --name jairouter \
+  -p 8080:8080 \
+  jairouter/model-router:latest
+
+# 设置安全选项
+docker run -d \
+  --security-opt no-new-privileges:true \
+  --security-opt seccomp=profile.json \
+  --name jairouter \
+  -p 8080:8080 \
+  jairouter/model-router:latest
 ```
 
 ### 2. 网络安全
 
 ```
-# 限制网络访问
+# docker-compose.yml 中的网络安全配置
+version: '3.8'
+
+services:
+  jairouter:
+    image: jairouter/model-router:latest
+    container_name: jairouter
+    ports:
+      - "8080:8080"
+    # 限制容器网络访问
+    networks:
+      - jairouter-network
+    # 设置内部网络，无法访问外网
+    networks:
+      jairouter-network:
+        internal: true
+
 networks:
   jairouter-network:
     driver: bridge
-    internal: true  # 内部网络，无法访问外网
 ```
 
 ### 3. 密钥管理
 
 ```
-# 使用 Docker secrets
-echo "your-secret" | docker secret create jairouter-secret -
+# 使用 Docker secrets 管理敏感信息
+echo "your-api-key" | docker secret create jairouter-api-key -
 
-# 在容器中使用
-docker run -d \
-  --secret jairouter-secret \
+# 在 swarm 模式下使用 secrets
+docker service create \
+  --name jairouter \
+  --secret jairouter-api-key \
+  -p 8080:8080 \
   jairouter/model-router:latest
+
+# 在 docker-compose 中使用 secrets
+version: '3.8'
+
+services:
+  jairouter:
+    image: jairouter/model-router:latest
+    secrets:
+      - jairouter-api-key
+    environment:
+      - API_KEY_FILE=/run/secrets/jairouter-api-key
+
+secrets:
+  jairouter-api-key:
+    file: ./secrets/api-key.txt
+```
+
+### 4. 应用安全配置
+
+创建 `config/application-security.yml`：
+
+```
+# 安全配置
+security:
+  # API Key 配置
+  api-key:
+    enabled: true
+    header: X-API-Key
+    keys:
+      - name: default
+        value: your-api-key-here
+  
+  # JWT 配置
+  jwt:
+    enabled: true
+    secret: your-jwt-secret-key
+    algorithm: HS256
+    expiration-minutes: 60
+    issuer: jairouter
+    accounts:
+      - username: admin
+        password: admin-password
+        roles: [ADMIN, USER]
+        enabled: true
+      - username: user
+        password: user-password
+        roles: [USER]
+        enabled: true
+
+  # CORS 配置
+  cors:
+    allowed-origins: "*"
+    allowed-methods: "*"
+    allowed-headers: "*"
+    allow-credentials: false
+
+# HTTPS 配置
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: classpath:keystore.p12
+    key-store-password: password
+    key-store-type: PKCS12
+    key-alias: jairouter
 ```
 
 ## 最佳实践
