@@ -23,7 +23,7 @@
 
 ### 部署架构
 
-```mermaid
+```
 graph TB
     subgraph "外部访问层"
         A[CDN/WAF]
@@ -838,6 +838,265 @@ services:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
+```
+
+### 3. 认证与授权配置
+
+创建 `config/application-security.yml`：
+
+```yaml
+# 安全配置
+security:
+  # API Key 配置
+  api-key:
+    enabled: true
+    header: X-API-Key
+    # API 密钥存储路径
+    file: /app/config/api-keys.yml
+  
+  # JWT 配置
+  jwt:
+    enabled: true
+    secret: ${JWT_SECRET:dev-jwt-secret-key-for-development-only-not-for-production}
+    algorithm: HS256
+    expiration-minutes: 60
+    issuer: jairouter
+    # 账户配置
+    accounts:
+      - username: admin
+        password: ${ADMIN_PASSWORD:admin}
+        roles: [ADMIN, USER]
+        enabled: true
+      - username: user
+        password: ${USER_PASSWORD:user}
+        roles: [USER]
+        enabled: true
+
+  # CORS 配置
+  cors:
+    allowed-origins: "*"
+    allowed-methods: "*"
+    allowed-headers: "*"
+    allow-credentials: false
+
+# HTTPS 配置
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: /app/config/keystore.p12
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:password}
+    key-store-type: PKCS12
+    key-alias: jairouter
+```
+
+创建 `config/api-keys.yml`：
+
+```yaml
+# API 密钥配置
+api-keys:
+  - name: "service-a"
+    key: "sk-service-a-key-here"
+    permissions:
+      - "chat:read"
+      - "embedding:read"
+    enabled: true
+  
+  - name: "service-b"
+    key: "sk-service-b-key-here"
+    permissions:
+      - "chat:*"
+      - "embedding:*"
+    enabled: true
+```
+
+### 4. 安全审计日志
+
+创建 `config/application-audit.yml`：
+
+```yaml
+# 安全审计配置
+audit:
+  enabled: true
+  log-level: INFO
+  # 审计日志文件
+  file: /app/logs/audit.log
+  # 审计事件类型
+  events:
+    - AUTHENTICATION_SUCCESS
+    - AUTHENTICATION_FAILURE
+    - ACCESS_DENIED
+    - API_KEY_USAGE
+  # 敏感操作监控
+  sensitive-operations:
+    - CONFIG_UPDATE
+    - SERVICE_MANAGEMENT
+    - USER_MANAGEMENT
+```
+
+## 日志配置
+
+### 1. 日志级别配置
+
+创建 `config/application-logging.yml`：
+
+```yaml
+# 日志配置
+logging:
+  level:
+    # 核心组件日志级别
+    org.unreal.modelrouter: INFO
+    org.unreal.modelrouter.security: DEBUG
+    org.unreal.modelrouter.tracing: DEBUG
+    org.unreal.modelrouter.monitoring: DEBUG
+    
+    # Spring 框架日志级别
+    org.springframework: WARN
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    
+    # Web 客户端日志级别
+    org.springframework.web.reactive.function.client: WARN
+    
+    # 数据库相关日志
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    
+  # 控制台日志配置
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+  
+  # 文件日志配置
+  file:
+    name: /app/logs/jairouter.log
+    max-size: 500MB
+    max-history: 30
+    total-size-cap: 10GB
+  
+  # Logback 配置
+  logback:
+    rollingpolicy:
+      max-file-size: 500MB
+      max-history: 30
+      total-size-cap: 10GB
+      clean-history-on-start: true
+```
+
+### 2. 结构化日志配置
+
+创建 `config/application-structured-logging.yml`：
+
+```yaml
+# 结构化日志配置
+logging:
+  level:
+    org.unreal.modelrouter: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+  
+  file:
+    name: /app/logs/jairouter.log
+  
+  # JSON 格式日志配置
+  structured:
+    enabled: true
+    format: json
+    fields:
+      timestamp: "@timestamp"
+      level: "level"
+      logger: "logger"
+      message: "message"
+      thread: "thread"
+      traceId: "traceId"
+      spanId: "spanId"
+      service: "service"
+      instanceId: "instanceId"
+
+# 结构化日志输出示例
+# {
+#   "@timestamp": "2024-01-15T10:00:00.123Z",
+#   "level": "INFO",
+#   "logger": "org.unreal.modelrouter.ModelRouterApplication",
+#   "message": "Application started successfully",
+#   "thread": "main",
+#   "traceId": "abc123def456",
+#   "service": "jairouter",
+#   "instanceId": "jairouter-1"
+# }
+```
+
+### 3. 日志轮转配置
+
+创建 `/etc/logrotate.d/jairouter`：
+
+```bash
+# 日志轮转配置
+/path/to/jairouter/logs/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 jairouter jairouter
+    postrotate
+        docker exec jairouter-1 kill -USR1 1
+        docker exec jairouter-2 kill -USR1 1
+        docker exec jairouter-3 kill -USR1 1
+    endscript
+}
+
+# 审计日志轮转配置
+/path/to/jairouter/logs/audit.log {
+    daily
+    rotate 90
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0644 jairouter jairouter
+}
+```
+
+### 4. 日志监控与告警
+
+创建 `monitoring/rules/jairouter-logging.yml`：
+
+```yaml
+# 日志监控告警规则
+groups:
+  - name: jairouter.logging.rules
+    rules:
+      # 错误日志告警
+      - alert: JAiRouterErrorLogs
+        expr: rate(jairouter_log_errors_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JAiRouter 错误日志过多"
+          description: "JAiRouter 实例 {{ $labels.instance }} 错误日志速率超过 10 条/分钟"
+      
+      # 安全事件告警
+      - alert: JAiRouterSecurityEvents
+        expr: rate(jairouter_security_events_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JAiRouter 安全事件"
+          description: "JAiRouter 实例 {{ $labels.instance }} 安全事件速率超过 5 条/分钟"
+      
+      # 认证失败告警
+      - alert: JAiRouterAuthFailures
+        expr: rate(jairouter_auth_failures_total[5m]) > 20
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JAiRouter 认证失败过多"
+          description: "JAiRouter 实例 {{ $labels.instance }} 认证失败速率超过 20 次/分钟"
 ```
 
 ## 备份和恢复

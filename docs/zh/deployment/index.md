@@ -24,7 +24,7 @@ JAiRouter 提供多种部署方式，支持从开发环境到生产环境的完�
 
 ### 部署架构
 
-```mermaid
+```
 graph TB
     subgraph "负载均衡层"
         A[Nginx/HAProxy]
@@ -169,7 +169,7 @@ graph TB
 
 ### 1. Docker 快速部署
 
-```bash
+```
 # 拉取镜像
 docker pull jairouter/model-router:latest
 
@@ -186,7 +186,7 @@ curl http://localhost:8080/actuator/health
 
 ### 2. Docker Compose 部署
 
-```bash
+```
 # 下载配置文件
 wget https://raw.githubusercontent.com/your-org/jairouter/main/docker-compose.yml
 
@@ -199,7 +199,7 @@ docker-compose ps
 
 ### 3. 中国用户快速部署
 
-```bash
+```
 # 使用中国优化镜像
 docker pull registry.cn-hangzhou.aliyuncs.com/jairouter/model-router:latest
 
@@ -235,6 +235,46 @@ docker run -d \
 - [ ] 监控告警配置
 - [ ] 备份策略执行
 - [ ] 安全扫描通过
+
+## 安全配置指南
+
+JAiRouter 提供了多层次的安全防护机制，包括：
+
+### 认证与授权
+- **API Key 认证**：适用于服务间通信的简单认证机制
+- **JWT 认证**：适用于用户认证的完整解决方案
+- **角色访问控制**：基于角色的细粒度访问控制
+
+### 网络安全
+- **HTTPS 支持**：通过 TLS 加密保护数据传输
+- **防火墙配置**：限制不必要的端口访问
+- **请求过滤**：防止恶意请求和攻击
+
+### 应用安全
+- **输入验证**：防止注入攻击和恶意输入
+- **敏感信息保护**：配置加密和密钥管理
+- **安全头设置**：防止常见的 Web 攻击
+
+## 日志配置指南
+
+JAiRouter 支持灵活的日志配置，包括：
+
+### 日志级别
+- **TRACE**：最详细的日志信息，用于调试
+- **DEBUG**：详细的调试信息
+- **INFO**：一般信息性消息
+- **WARN**：警告信息
+- **ERROR**：错误信息
+
+### 日志格式
+- **控制台输出**：适用于开发环境的简洁格式
+- **文件日志**：适用于生产环境的详细格式
+- **结构化日志**：JSON 格式，便于日志分析和处理
+
+### 日志管理
+- **日志轮转**：自动管理日志文件大小和数量
+- **日志压缩**：节省存储空间
+- **日志归档**：长期存储重要日志
 
 ## 故障排查
 
