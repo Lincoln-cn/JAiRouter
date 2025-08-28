@@ -1,4 +1,4 @@
-﻿# Production Environment Deployment
+﻿﻿# Production Environment Deployment
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
@@ -23,7 +23,7 @@ This document details how to deploy JAiRouter in a production environment, inclu
 
 ### Deployment Architecture
 
-```mermaid
+``mermaid
 graph TB
     subgraph "External Access Layer"
         A[CDN/WAF]
@@ -243,7 +243,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     container_name: jairouter-${INSTANCE_ID:-1}
     hostname: jairouter-${INSTANCE_ID:-1}
     restart: unless-stopped
@@ -769,179 +769,392 @@ Create `monitoring/grafana/dashboards/jairouter-overview.json`:
 
 ## Security Configuration
 
-### 1. Network Security
+### 1. Authentication and Authorization Configuration
+
+#### API Key Configuration
+
+Configure API key authentication for service-to-service communication:
+
+```yaml
+# application-security.yml
+security:
+  api-key:
+    enabled: true
+    header: X-API-Key
+    keys:
+      - name: frontend-service
+        value: sk-frontend-key-here
+        permissions:
+          - "chat:read"
+          - "embedding:read"
+        enabled: true
+      - name: backend-service
+        value: sk-backend-key-here
+        permissions:
+          - "chat:*"
+          - "embedding:*"
+          - "config:write"
+        enabled: true
+```
+
+#### JWT Configuration
+
+Configure JWT-based user authentication:
+
+```yaml
+# application-security.yml
+security:
+  jwt:
+    enabled: true
+    secret: your-very-secure-jwt-secret-key-here
+    algorithm: HS256
+    expiration-minutes: 60
+    issuer: jairouter-production
+    accounts:
+      - username: admin
+        password: $2a$10$example-hashed-password
+        roles: [ADMIN, USER]
+        enabled: true
+      - username: operator
+        password: $2a$10$example-hashed-password
+        roles: [USER]
+        enabled: true
+```
+
+### 2. Network Security
 
 #### Firewall Configuration
 
-```bash
-# Ubuntu/Debian
-ufw allow 22/tcp
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw allow from 10.0.0.0/8 to any port 8080
-ufw enable
-
-# CentOS/RHEL
-firewall-cmd --permanent --add-service=ssh
-firewall-cmd --permanent --add-service=http
-firewall-cmd --permanent --add-service=https
-firewall-cmd --permanent --add-rich-rule="rule family='ipv4' source address='10.0.0.0/8' port protocol='tcp' port='8080' accept"
-firewall-cmd --reload
-```
-
-#### SSL/TLS Configuration
+Configure firewall rules to restrict access:
 
 ```bash
-# Generate self-signed certificate (for testing)
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /etc/ssl/private/jairouter.key \
-  -out /etc/ssl/certs/jairouter.crt
+# Example iptables rules
+# Allow SSH access
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-# Or use Let's Encrypt
-certbot --nginx -d jairouter.example.com
+# Allow HTTP/HTTPS access through load balancer only
+iptables -A INPUT -p tcp --dport 80 -s 10.0.1.100 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -s 10.0.1.100 -j ACCEPT
+
+# Allow internal service communication
+iptables -A INPUT -p tcp --dport 8080 -s 10.0.1.0/24 -j ACCEPT
+
+# Allow monitoring access
+iptables -A INPUT -p tcp --dport 9090 -s 10.0.2.0/24 -j ACCEPT
+
+# Drop all other traffic
+iptables -A INPUT -j DROP
 ```
 
-### 2. Application Security
+#### TLS/SSL Configuration
 
-#### Environment Variable Management
+Configure HTTPS for secure communication:
 
-Create `.env.prod`:
-
-```bash
-# API Keys
-OPENAI_API_KEY=sk-your-openai-api-key
-ANTHROPIC_API_KEY=your-anthropic-api-key
-
-# Database Password
-DB_PASSWORD=your-secure-password
-
-# JWT Secret
-JWT_SECRET=your-jwt-secret-key
-
-# Monitoring Password
-GRAFANA_ADMIN_PASSWORD=your-grafana-password
+```nginx
+# Nginx SSL configuration
+server {
+    listen 443 ssl http2;
+    server_name jairouter.example.com;
+    
+    # SSL certificate configuration
+    ssl_certificate /etc/ssl/certs/jairouter.crt;
+    ssl_certificate_key /etc/ssl/private/jairouter.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+    ssl_prefer_server_ciphers on;
+    
+    # Security headers
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    
+    location / {
+        proxy_pass http://jairouter_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
 ```
 
-#### Container Security
+### 3. Application Security Hardening
+
+#### Input Validation
+
+Configure input validation to prevent injection attacks:
 
 ```yaml
-# docker-compose.prod.yml security configuration
-services:
-  jairouter:
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
-    user: "1001:1001"
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
+# application-security.yml
+security:
+  validation:
+    # Enable request validation
+    enabled: true
+    
+    # Configure maximum request size
+    max-request-size: 10MB
+    
+    # Configure rate limiting
+    rate-limit:
+      enabled: true
+      algorithm: token-bucket
+      capacity: 1000
+      rate: 100
+      
+    # Configure CORS
+    cors:
+      allowed-origins:
+        - "https://jairouter.example.com"
+        - "https://admin.jairouter.example.com"
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+      allowed-headers:
+        - Content-Type
+        - Authorization
+        - X-API-Key
+      allow-credentials: true
+```
+
+#### Security Audit Logging
+
+Enable security audit logging:
+
+```yaml
+# application-security.yml
+logging:
+  level:
+    org.unreal.modelrouter.security: DEBUG
+    org.springframework.security: DEBUG
+    
+  # Security audit log configuration
+  audit:
+    enabled: true
+    file: /app/logs/security-audit.log
+    format: json
+    fields:
+      timestamp: "@timestamp"
+      level: "level"
+      event: "event"
+      user: "user"
+      ip: "ip"
+      resource: "resource"
+      result: "result"
+```
+
+## Log Configuration
+
+### 1. Log Level Configuration
+
+Configure appropriate log levels for production:
+
+```yaml
+# application-prod.yml
+logging:
+  level:
+    # Core components - INFO level for normal operation
+    org.unreal.modelrouter: INFO
+    org.unreal.modelrouter.controller: INFO
+    org.unreal.modelrouter.service: INFO
+    
+    # Security components - DEBUG level for detailed security logging
+    org.unreal.modelrouter.security: DEBUG
+    
+    # Configuration components - INFO level for configuration changes
+    org.unreal.modelrouter.config: INFO
+    
+    # Tracing components - DEBUG level for detailed tracing
+    org.unreal.modelrouter.tracing: DEBUG
+    
+    # Framework components - WARN level to reduce noise
+    org.springframework: WARN
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    
+    # External service components - INFO level
+    org.apache.http: INFO
+    io.netty: INFO
+    reactor.netty: INFO
+```
+
+### 2. Structured Log Configuration
+
+Configure structured logging for better log analysis:
+
+```yaml
+# application-prod.yml
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+  
+  file:
+    name: /app/logs/jairouter.log
+  
+  # JSON format log configuration
+  structured:
+    enabled: true
+    format: json
+    fields:
+      timestamp: "@timestamp"
+      level: "level"
+      logger: "logger"
+      message: "message"
+      thread: "thread"
+      traceId: "traceId"
+      spanId: "spanId"
+      host: "host"
+      service: "service"
+```
+
+### 3. Log Rotation Configuration
+
+Configure log rotation to manage disk space:
+
+```xml
+<!-- logback-spring.xml -->
+<configuration>
+    <!-- Define log file path -->
+    <property name="LOG_PATH" value="/app/logs"/>
+    <property name="APP_NAME" value="jairouter"/>
+    
+    <!-- File output - all logs -->
+    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-all.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{50} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-all.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- File output - error logs -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}-error.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{50} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+</configuration>
+```
+
+### 4. Log Monitoring and Alerting
+
+Configure log monitoring and alerting:
+
+```yaml
+# prometheus-alerts.yml
+groups:
+- name: jairouter-logs
+  rules:
+  - alert: HighErrorRate
+    expr: rate(logback_events_total{level="ERROR"}[5m]) > 1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High error rate in JAiRouter logs"
+      description: "JAiRouter is logging errors at a rate of {{ $value }} per second"
+      
+  - alert: SecurityViolation
+    expr: rate(jairouter_security_events_total{result="denied"}[5m]) > 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Security violation detected"
+      description: "JAiRouter has denied {{ $value }} security requests in the last 5 minutes"
 ```
 
 ## Backup and Recovery
 
 ### 1. Configuration Backup
 
-Create `backup-config.sh`:
+Implement regular configuration backups:
 
 ```bash
 #!/bin/bash
+# backup-config.sh
 
 BACKUP_DIR="/backup/jairouter"
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="jairouter_config_$DATE.tar.gz"
+CONFIG_DIR="/app/config"
 
 # Create backup directory
 mkdir -p $BACKUP_DIR
 
 # Backup configuration files
-tar -czf $BACKUP_DIR/$BACKUP_FILE \
-  config/ \
-  docker-compose.prod.yml \
-  monitoring/ \
-  scripts/
+tar -czf $BACKUP_DIR/config-$DATE.tar.gz -C $CONFIG_DIR .
 
-# Keep backups for the last 30 days
-find $BACKUP_DIR -name "jairouter_config_*.tar.gz" -mtime +30 -delete
+# Backup logs (security audit logs)
+tar -czf $BACKUP_DIR/logs-$DATE.tar.gz /app/logs/security-audit.log
 
-echo "Configuration backup completed: $BACKUP_DIR/$BACKUP_FILE"
-```
+# Remove backups older than 30 days
+find $BACKUP_DIR -name "config-*.tar.gz" -mtime +30 -delete
+find $BACKUP_DIR -name "logs-*.tar.gz" -mtime +30 -delete
 
-### 2. Data Backup
-
-Create `backup-data.sh`:
-
-```bash
-#!/bin/bash
-
-BACKUP_DIR="/backup/jairouter"
-DATE=$(date +%Y%m%d_%H%M%S)
-
-# Backup configuration store
-docker exec jairouter-1 tar -czf - /app/config-store | \
-  cat > $BACKUP_DIR/config-store_$DATE.tar.gz
-
-# Backup logs (last 7 days)
-find logs/ -name "*.log" -mtime -7 | \
-  tar -czf $BACKUP_DIR/logs_$DATE.tar.gz -T -
-
-# Backup monitoring data
-docker exec prometheus tar -czf - /prometheus | \
-  cat > $BACKUP_DIR/prometheus_$DATE.tar.gz
-
-echo "Data backup completed"
-```
-
-### 3. Automatic Backup
-
-Create crontab task:
-
-```bash
-# Edit crontab
-crontab -e
-
-# Add backup tasks
-0 2 * * * /path/to/backup-config.sh
-0 3 * * * /path/to/backup-data.sh
-```
-
-### 4. Recovery Process
-
-Create `restore.sh`:
-
-```bash
-#!/bin/bash
-
-BACKUP_FILE=$1
-RESTORE_DIR="/tmp/jairouter_restore"
-
-if [ -z "$BACKUP_FILE" ]; then
-    echo "Usage: $0 <backup_file>"
+# Verify backup
+if [ -f $BACKUP_DIR/config-$DATE.tar.gz ]; then
+    echo "Backup successful: config-$DATE.tar.gz"
+else
+    echo "Backup failed"
     exit 1
 fi
+```
+
+### 2. Disaster Recovery Plan
+
+Create a disaster recovery plan:
+
+```bash
+#!/bin/bash
+# disaster-recovery.sh
+
+# Recovery steps:
+# 1. Restore configuration from backup
+# 2. Restore logs from backup (if needed)
+# 3. Restart services
+# 4. Verify functionality
+
+RECOVERY_DATE="20240115_100000"  # Date of backup to restore
+BACKUP_DIR="/backup/jairouter"
+CONFIG_DIR="/app/config"
 
 # Stop services
-docker-compose -f docker-compose.prod.yml down
+systemctl stop jairouter
 
-# Create restore directory
-mkdir -p $RESTORE_DIR
-cd $RESTORE_DIR
+# Restore configuration
+tar -xzf $BACKUP_DIR/config-$RECOVERY_DATE.tar.gz -C $CONFIG_DIR
 
-# Extract backup file
-tar -xzf $BACKUP_FILE
-
-# Restore configuration files
-cp -r config/ /path/to/jairouter/
-cp docker-compose.prod.yml /path/to/jairouter/
-cp -r monitoring/ /path/to/jairouter/
+# Restore logs (if needed)
+# tar -xzf $BACKUP_DIR/logs-$RECOVERY_DATE.tar.gz -C /app/logs
 
 # Start services
-cd /path/to/jairouter
-docker-compose -f docker-compose.prod.yml up -d
+systemctl start jairouter
 
-echo "Recovery completed"
+# Verify services
+sleep 10
+curl -f http://localhost:8080/actuator/health
 ```
 
 ## Performance Optimization

@@ -1,4 +1,4 @@
-﻿# Kubernetes Deployment
+﻿﻿# Kubernetes Deployment
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
@@ -24,7 +24,7 @@ JAiRouter supports deployment in Kubernetes clusters, providing enterprise-grade
 
 ### Architecture Diagram
 
-```mermaid
+``mermaid
 graph TB
     subgraph "Kubernetes Cluster"
         subgraph "Ingress Layer"
@@ -259,7 +259,7 @@ spec:
     spec:
       containers:
       - name: jairouter
-        image: jairouter/model-router:latest
+        image: sodlinken/jairouter:latest
         ports:
         - containerPort: 8080
           name: http
@@ -1015,10 +1015,279 @@ kubectl describe pod jairouter-xxx-yyy -n jairouter | grep -A 10 Volumes
 
 ### 2. Security Configuration
 
-- Run containers as non-root user
-- Configure network policies to restrict traffic
-- Use Secrets to manage sensitive information
-- Regularly update images and dependencies
+#### 1. Network Security Policy
+
+Create `networkpolicy.yaml`:
+
+```yaml
+# Network policy configuration
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jairouter-netpol
+  namespace: jairouter
+spec:
+  podSelector:
+    matchLabels:
+      app: jairouter
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from Ingress Controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow traffic from monitoring components
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  # Allow DNS queries
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow access to external AI services
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+```
+
+#### 2. Pod Security Policy
+
+Update `deployment.yaml`:
+
+```yaml
+# Deployment security configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jairouter
+  namespace: jairouter
+  labels:
+    app: jairouter
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: jairouter
+  template:
+    metadata:
+      labels:
+        app: jairouter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      # Security context configuration
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: jairouter
+        image: sodlinken/jairouter:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "prod"
+        - name: JAVA_OPTS
+          value: "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jairouter-secret
+              key: api-key
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config
+          readOnly: true
+        - name: logs-volume
+          mountPath: /app/logs
+        - name: config-store-volume
+          mountPath: /app/config-store
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        # Container security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: config-volume
+        configMap:
+          name: jairouter-config
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: jairouter-logs-pvc
+      - name: config-store-volume
+        persistentVolumeClaim:
+          claimName: jairouter-config-pvc
+      restartPolicy: Always
+```
+
+#### 3. Secret Management
+
+Create `secret.yaml`:
+
+```yaml
+# Secret configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jairouter-secret
+  namespace: jairouter
+type: Opaque
+data:
+  # Base64 encoded keys
+  api-key: eW91ci1hcGkta2V5LWhlcmU=  # your-api-key-here
+  jwt-secret: eW91ci1qd3Qtc2VjcmV0LWtleQ==  # your-jwt-secret-key
+  database-password: cGFzc3dvcmQ=     # password
+
+---
+# TLS Secret configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jairouter-tls
+  namespace: jairouter
+type: kubernetes.io/tls
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCiMKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJV
+```
+
+```bash
+kubectl apply -f secret.yaml
+```
+
+#### 4. Application Security Configuration
+
+Create `configmap-security.yaml`:
+
+```yaml
+# Security configuration ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jairouter-security-config
+  namespace: jairouter
+data:
+  application-security.yml: |
+    # Security configuration
+    security:
+      # API Key configuration
+      api-key:
+        enabled: true
+        header: X-API-Key
+        file: /app/config/api-keys.yml
+      
+      # JWT configuration
+      jwt:
+        enabled: true
+        secret: ${JWT_SECRET}
+        algorithm: HS256
+        expiration-minutes: 60
+        issuer: jairouter
+        accounts:
+          - username: admin
+            password: ${ADMIN_PASSWORD}
+            roles: [ADMIN, USER]
+            enabled: true
+          - username: user
+            password: ${USER_PASSWORD}
+            roles: [USER]
+            enabled: true
+
+      # CORS configuration
+      cors:
+        allowed-origins: "*"
+        allowed-methods: "*"
+        allowed-headers: "*"
+        allow-credentials: false
+
+    # HTTPS configuration
+    server:
+      port: 8443
+      ssl:
+        enabled: true
+        key-store: /app/config/tls/keystore.p12
+        key-store-password: ${SSL_KEYSTORE_PASSWORD}
+        key-store-type: PKCS12
+        key-alias: jairouter
+```
+
+Create `api-keys-config.yaml`:
+
+```yaml
+# API key configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jairouter-api-keys
+  namespace: jairouter
+data:
+  api-keys.yml: |
+    # API key configuration
+    api-keys:
+      - name: "service-a"
+        key: "sk-service-a-key-here"
+        permissions:
+          - "chat:read"
+          - "embedding:read"
+        enabled: true
+      
+      - name: "service-b"
+        key: "sk-service-b-key-here"
+        permissions:
+          - "chat:*"
+          - "embedding:*"
+        enabled: true
+```
 
 ### 3. Monitoring and Alerting
 
