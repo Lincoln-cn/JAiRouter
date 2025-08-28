@@ -1,11 +1,6 @@
 {
   "default": true,
-  "MD013": {
-    "line_length": 120,
-    "code_blocks": false,
-    "tables": false,
-    "headings": false
-  },
+  "MD013": false,
   "MD033": false,
   "MD041": false,
   "MD024": {
@@ -18,6 +13,7 @@
   "MD029": {
     "style": "ordered"
   },
+  "MD040": false,
   "MD046": {
     "style": "fenced"
   }
