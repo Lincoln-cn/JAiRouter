@@ -28,21 +28,21 @@
     
     function getLanguagePath(targetLang, currentPath) {
         const currentLang = getCurrentLanguage();
-
+    
         // 移除语言前缀，保留原始路径结构
         let cleanPath = currentPath;
-
+    
         if (currentLang === 'en') {
             cleanPath = cleanPath.replace(/^\/en(\/|$)/, '/');
         } else {
             cleanPath = cleanPath.replace(/^\/zh(\/|$)/, '/');
         }
-
+    
         // 确保路径以 / 开头
         if (!cleanPath.startsWith('/')) {
             cleanPath = '/' + cleanPath;
         }
-
+    
         // 添加目标语言前缀
         if (targetLang === 'en') {
             return '/en' + (cleanPath === '/' ? '' : cleanPath);
@@ -75,18 +75,13 @@
             
             // 添加点击事件
             link.addEventListener('click', function(e) {
-                // 检查目标页面是否存在
-                const targetPath = this.href;
-                
-                // 添加加载指示器
-                link.style.opacity = '0.6';
-                link.style.pointerEvents = 'none';
-                
-                // 恢复状态（防止页面不存在时卡住）
-                setTimeout(() => {
-                    link.style.opacity = '';
-                    link.style.pointerEvents = '';
-                }, 3000);
+                e.preventDefault(); // 阻止默认跳转，手动处理
+                const targetLang = langCode;
+            
+                localStorage.setItem('preferred-language', targetLang);
+            
+                const targetPath = getLanguagePath(targetLang, window.location.pathname);
+                window.location.href = targetPath;
             });
             
             switcher.appendChild(link);
@@ -125,13 +120,12 @@
         });
     }
     
-    // 添加语言检测和自动跳转功能
-    function detectAndRedirectLanguage() {
-        // 只在首页进行语言检测
-        if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/en/')) {
+   function detectAndRedirectLanguage() {
+    //  只在根路径执行语言跳转
+        if (window.location.pathname !== '/') {
             return;
         }
-        
+    
         // 检查是否有语言偏好设置
         const savedLang = localStorage.getItem('preferred-language');
         if (savedLang && LANGUAGES[savedLang]) {
@@ -142,17 +136,17 @@
                 return;
             }
         }
-        
+    
         // 检测浏览器语言
         const browserLang = navigator.language || navigator.userLanguage;
         const langCode = browserLang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
-        
+    
         // 保存语言偏好
         localStorage.setItem('preferred-language', langCode);
-        
+    
         // 如果当前语言与检测到的语言不同，进行跳转
         const currentLang = getCurrentLanguage();
-        if (langCode !== currentLang && window.location.pathname === '/') {
+        if (langCode !== currentLang) {
             const targetPath = getLanguagePath(langCode, window.location.pathname);
             window.location.href = targetPath;
         }
