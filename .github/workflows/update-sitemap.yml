@@ -1,0 +1,52 @@
+name: Update Sitemap
+
+on:
+  # Run when documentation files are changed
+  push:
+    paths:
+      - 'docs/**'
+      - 'scripts/generate_sitemap.py'
+  
+  # Run weekly on Monday at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * 1'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  update-sitemap:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      
+      # Make the script executable
+      - name: Make script executable
+        run: chmod +x scripts/generate_sitemap.py
+      
+      # Generate sitemap
+      - name: Generate sitemap
+        run: python scripts/generate_sitemap.py
+      
+      # Commit and push changes if sitemap was updated
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/sitemap.xml
+          git diff --staged --quiet || (git commit -m "Auto-update sitemap.xml" && git push) || echo "No changes to commit"
+      
+      # Notify about the update
+      - name: Notify about sitemap update
+        if: success()
+        run: echo "Sitemap updated successfully"
