@@ -640,4 +640,4 @@ jairouter:
 - [API Key Management Guide](api-key-management.md)
 - [JWT Authentication Configuration](jwt-authentication.md)
 - [Security Feature Troubleshooting Guide](troubleshooting.md)
-- [Security Monitoring and Alerting](monitoring.md)
+- [Security Monitoring and Alerting](../monitoring/alerts.md)
