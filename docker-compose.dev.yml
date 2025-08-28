@@ -2,96 +2,21 @@ version: '3.8'
 
 services:
   jairouter-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    image: jairouter/model-router:dev
+    image: sodlinken/jairouter:dev
     container_name: jairouter-dev
     ports:
       - "8080:8080"
-      - "5005:5005"  # 调试端口
+      - "5005:5005"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
-      # 安全功能配置（开发环境默认启用用于测试）
-      - JAIROUTER_SECURITY_ENABLED=${JAIROUTER_SECURITY_ENABLED:-true}
-      - JAIROUTER_SECURITY_API_KEY_ENABLED=${JAIROUTER_SECURITY_API_KEY_ENABLED:-true}
-      - JAIROUTER_SECURITY_JWT_ENABLED=${JAIROUTER_SECURITY_JWT_ENABLED:-false}
-      - JAIROUTER_SECURITY_SANITIZATION_REQUEST_ENABLED=${JAIROUTER_SECURITY_SANITIZATION_REQUEST_ENABLED:-true}
-      - JAIROUTER_SECURITY_SANITIZATION_RESPONSE_ENABLED=${JAIROUTER_SECURITY_SANITIZATION_RESPONSE_ENABLED:-true}
-      - JAIROUTER_SECURITY_AUDIT_ENABLED=${JAIROUTER_SECURITY_AUDIT_ENABLED:-true}
-      # API Key 配置（开发环境测试密钥）
-      - ADMIN_API_KEY=${ADMIN_API_KEY:-dev-admin-key-12345}
-      - USER_API_KEY=${USER_API_KEY:-dev-user-key-67890}
-      # JWT 配置
-      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-key-for-testing-only}
-      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
-      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-60}
-      # Redis 配置
-      - REDIS_HOST=redis-dev
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-      - REDIS_DATABASE=${REDIS_DATABASE:-0}
-      - REDIS_TIMEOUT=${REDIS_TIMEOUT:-2000}
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     volumes:
       - ./config:/app/config
       - ./logs:/app/logs
-      - ./config-dev:/app/config-store
-      - ./src:/app/src:ro  # 挂载源代码用于热重载（如果支持）
+      - ./src:/app/src:ro
     networks:
-      - jairouter-dev-network
-    restart: unless-stopped
-    depends_on:
-      - redis-dev
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # Redis 缓存服务（开发环境）
-  redis-dev:
-    image: redis:7-alpine
-    container_name: jairouter-redis-dev
-    ports:
-      - "6379:6379"
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-    command: >
-      sh -c "
-        if [ -n \"$$REDIS_PASSWORD\" ]; then
-          redis-server --requirepass $$REDIS_PASSWORD --appendonly yes --appendfsync everysec
-        else
-          redis-server --appendonly yes --appendfsync everysec
-        fi
-      "
-    volumes:
-      - redis-dev-data:/data
-    networks:
-      - jairouter-dev-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-volumes:
-  redis-dev-data:
-    driver: local
+      - jairouter-network
 
 networks:
-  jairouter-dev-network:
+  jairouter-network:
     driver: bridge

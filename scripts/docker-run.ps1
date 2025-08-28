@@ -6,6 +6,26 @@ param(
     [string]$Version = "latest"
 )
 
+# 设置默认值
+if ([string]::IsNullOrEmpty($Version)) {
+    $Version = "latest"
+}
+
+# 构建镜像标签
+if ($Environment -eq "dev") {
+    if ($Version -eq "latest") {
+        $ImageTag = "sodlinken/jairouter:latest-dev"
+    } else {
+        $ImageTag = "sodlinken/jairouter:${Version}-dev"
+    }
+} else {
+    if ($Version -eq "latest") {
+        $ImageTag = "sodlinken/jairouter:latest"
+    } else {
+        $ImageTag = "sodlinken/jairouter:${Version}"
+    }
+}
+
 # 颜色定义
 $Red = "Red"
 $Green = "Green"
@@ -67,14 +87,14 @@ New-Item -ItemType Directory -Force -Path "logs", "config", "config-store" | Out
 # 设置镜像标签
 if ($Environment -eq "dev") {
     if ($Version -eq "latest") {
-        $ImageTag = "jairouter/model-router:latest-dev"
+        $ImageTag = "sodlinken/jairouter:latest-dev"
     } else {
-        $ImageTag = "jairouter/model-router:${Version}-dev"
+        $ImageTag = "sodlinken/jairouter:${Version}-dev"
     }
     $Ports = "-p 8080:8080 -p 5005:5005"
     $JavaOpts = "-Xms256m -Xmx512m -XX:+UseG1GC -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
 } else {
-    $ImageTag = "jairouter/model-router:${Version}"
+    $ImageTag = "sodlinken/jairouter:${Version}"
     $Ports = "-p 8080:8080"
     $JavaOpts = "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 }
