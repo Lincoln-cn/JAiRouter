@@ -14,8 +14,8 @@ import org.unreal.modelrouter.tracing.TracingContextHolder;
 import java.util.HashMap;
 import java.util.Map;
 
-@RestControllerAdvice
-@RequiredArgsConstructor
+// @RestControllerAdvice - 已禁用，使用 ReactiveGlobalExceptionHandler 替代
+// @RequiredArgsConstructor
 public class ServerExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerExceptionHandler.class);
