@@ -11,7 +11,7 @@ import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.WebFluxMetricsInterceptor;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;

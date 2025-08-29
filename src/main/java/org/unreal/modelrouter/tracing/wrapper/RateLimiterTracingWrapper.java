@@ -2,9 +2,7 @@ package org.unreal.modelrouter.tracing.wrapper;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.ratelimit.RateLimitConfig;
 import org.unreal.modelrouter.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.ratelimit.RateLimiter;

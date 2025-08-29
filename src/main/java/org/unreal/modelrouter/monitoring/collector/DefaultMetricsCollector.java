@@ -1,20 +1,15 @@
 package org.unreal.modelrouter.monitoring.collector;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
 
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**

@@ -1,9 +1,9 @@
 package org.unreal.modelrouter.monitoring.alert;
 
-import java.util.Set;
-
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.Set;
 
 /**
  * 慢查询告警配置

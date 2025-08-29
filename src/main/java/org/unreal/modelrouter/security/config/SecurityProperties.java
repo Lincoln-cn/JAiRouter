@@ -1,13 +1,13 @@
 package org.unreal.modelrouter.security.config;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
 import java.util.ArrayList;
 import java.util.List;
 

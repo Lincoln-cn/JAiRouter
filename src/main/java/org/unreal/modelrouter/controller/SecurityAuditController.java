@@ -9,12 +9,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.dto.SecurityAuditQueryRequest;
 import org.unreal.modelrouter.dto.SecurityAuditQueryResponse;
 import org.unreal.modelrouter.dto.SecurityStatisticsResponse;
-import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.monitoring.security.SecurityAlertService;
+import org.unreal.modelrouter.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;

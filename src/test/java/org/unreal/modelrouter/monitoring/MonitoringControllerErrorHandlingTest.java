@@ -7,12 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.controller.MonitoringController;
 import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
 import org.unreal.modelrouter.monitoring.MetricsMemoryManager;
 import org.unreal.modelrouter.monitoring.circuitbreaker.*;
 import org.unreal.modelrouter.monitoring.config.DynamicMonitoringConfigUpdater;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.error.MetricsErrorHandler;
 
 import java.util.Map;

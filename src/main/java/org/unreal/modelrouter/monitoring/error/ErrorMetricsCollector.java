@@ -1,15 +1,14 @@
 package org.unreal.modelrouter.monitoring.error;
 
-import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.ErrorTrackerProperties;
-
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.config.ErrorTrackerProperties;
+
+import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 错误指标收集器

@@ -3,15 +3,14 @@ package org.unreal.modelrouter.monitoring.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.unreal.modelrouter.config.MonitoringProperties;
-import org.unreal.modelrouter.monitoring.config.MonitorConfigurationChangeEvent;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.config.MonitoringProperties;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 动态监控配置更新器

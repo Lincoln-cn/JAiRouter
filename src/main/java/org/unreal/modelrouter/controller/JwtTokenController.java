@@ -15,11 +15,9 @@ import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
+import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.service.JwtTokenRefreshService;
 import org.unreal.modelrouter.security.service.UserAuthenticationService;
-import org.unreal.modelrouter.dto.LoginRequest;
-import org.unreal.modelrouter.dto.LoginResponse;
-import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.service.UserDetailsServiceImpl;
 import reactor.core.publisher.Mono;
 
