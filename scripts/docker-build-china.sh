@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuration
 PROJECT_NAME="jairouter"
 IMAGE_NAME="sodlinken/${PROJECT_NAME}"
-VERSION="1.0-SNAPSHOT"
+VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 
 echo -e "${YELLOW}Starting JAiRouter Docker build (China Optimized)...${NC}"
 echo -e "${BLUE}使用阿里云Maven镜像加速构建${NC}"
