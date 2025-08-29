@@ -43,7 +43,7 @@ Documentation will be automatically deployed after modifications:
 ## Access URLs
 
 - **Default URL**: https://lincoln-cn.github.io/JAiRouter
-- **Custom Domain**: https://docs.jairouter.com (requires DNS configuration)
+- **Custom Domain**: https://jairouter.com (requires DNS configuration)
 
 ## Deployment Status Check
 
