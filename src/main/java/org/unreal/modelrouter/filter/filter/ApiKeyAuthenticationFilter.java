@@ -98,6 +98,11 @@ public class ApiKeyAuthenticationFilter implements WebFilter {
                 .onErrorResume(Exception.class, ex -> {
                     log.error("API Key认证过程中发生未知错误", ex);
                     recordAuthenticationEvent(request, null, false, "内部错误");
+                    // 检查响应是否已经提交，避免重复处理
+                    if (response.isCommitted()) {
+                        log.warn("响应已提交，跳过错误处理");
+                        return Mono.empty();
+                    }
                     return handleAuthenticationFailure(exchange, "认证服务内部错误", "INTERNAL_ERROR");
                 });
     }
@@ -245,14 +250,29 @@ public class ApiKeyAuthenticationFilter implements WebFilter {
      */
     private Mono<Void> handleAuthenticationFailure(ServerWebExchange exchange, String message, String errorCode) {
         ServerHttpResponse response = exchange.getResponse();
-        response.setStatusCode(HttpStatus.UNAUTHORIZED);
-        response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
         
-        String errorResponse = String.format(
-                "{\"error\":\"%s\",\"message\":\"%s\",\"timestamp\":\"%s\"}",
-                errorCode, message, LocalDateTime.now()
-        );
+        // 检查响应是否已经提交
+        if (response.isCommitted()) {
+            log.warn("响应已提交，无法设置认证失败响应");
+            return Mono.empty();
+        }
         
-        return response.writeWith(Mono.just(response.bufferFactory().wrap(errorResponse.getBytes())));
+        try {
+            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+            // 安全地设置响应头
+            if (!response.getHeaders().containsKey("Content-Type")) {
+                response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
+            }
+            
+            String errorResponse = String.format(
+                    "{\"error\":\"%s\",\"message\":\"%s\",\"timestamp\":\"%s\"}",
+                    errorCode, message, LocalDateTime.now()
+            );
+            
+            return response.writeWith(Mono.just(response.bufferFactory().wrap(errorResponse.getBytes())));
+        } catch (Exception e) {
+            log.error("设置认证失败响应时发生错误", e);
+            return Mono.empty();
+        }
     }
 }
