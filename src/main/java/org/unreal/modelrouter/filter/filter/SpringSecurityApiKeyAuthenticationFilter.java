@@ -160,6 +160,13 @@ public class SpringSecurityApiKeyAuthenticationFilter implements WebFilter {
          * 提取JWT令牌
          */
         private String extractJwtToken(ServerWebExchange exchange) {
+            String jwtHeader = securityProperties.getJwt().getJwtHeader();
+            List<String> jwtHeaders = exchange.getRequest().getHeaders().get(jwtHeader);
+            if (jwtHeaders != null && !jwtHeaders.isEmpty()) {
+                return jwtHeaders.get(0);
+            }
+            
+            // 兼容Bearer格式
             List<String> authHeaders = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
             if (authHeaders != null && !authHeaders.isEmpty()) {
                 String authHeader = authHeaders.get(0);

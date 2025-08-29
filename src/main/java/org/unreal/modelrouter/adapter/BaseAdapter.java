@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.adapter;
 
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -16,11 +17,15 @@ import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class BaseAdapter implements ServiceCapability {
 
     private final ModelServiceRegistry registry;
     private final MetricsCollector metricsCollector;
+
+    private Logger logger = LoggerFactory.getLogger(BaseAdapter.class);
 
     public BaseAdapter(final ModelServiceRegistry registry, final MetricsCollector metricsCollector) {
         this.registry = registry;
@@ -300,12 +305,23 @@ public abstract class BaseAdapter implements ServiceCapability {
                         // 5xx错误视为服务失败，用于熔断器
                         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
                     })
+                    .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
+                        // 特别处理401错误
+                        if (clientResponse.statusCode().value() == 401) {
+                            logger.error("下游服务认证失败 (401): instance={}, path={}, response={}", 
+                                instanceName, path, clientResponse.statusCode());
+                        } else if (clientResponse.statusCode().value() == 400) {
+                            logger.error("下游服务请求错误 (400): instance={}, path={}, response={}", 
+                                instanceName, path, clientResponse.statusCode());
+                        }
+                        return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
+                    })
                     .toEntity(byte[].class)
                     .doOnSuccess(responseEntity -> {
                         // 记录请求大小指标（如果可能）
                         if (metricsCollector != null && responseEntity != null) {
                             long requestSize = calculateRequestSize(transformedRequest);
-                            long responseSize = responseEntity.getBody() != null ?
+                            long responseSize = responseEntity.getBody() != null ? 
                                     ((byte[]) responseEntity.getBody()).length : 0;
                             metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
 
@@ -340,12 +356,23 @@ public abstract class BaseAdapter implements ServiceCapability {
                         // 5xx错误视为服务失败，用于熔断器
                         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
                     })
+                    .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
+                        // 特别处理401错误
+                        if (clientResponse.statusCode().value() == 401) {
+                            logger.error("下游服务认证失败 (401): instance={}, path={}, response={}", 
+                                instanceName, path, clientResponse.statusCode());
+                        } else if (clientResponse.statusCode().value() == 400) {
+                            logger.error("下游服务请求错误 (400): instance={}, path={}, response={}", 
+                                instanceName, path, clientResponse.statusCode());
+                        }
+                        return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
+                    })
                     .toEntity(String.class)
                     .doOnSuccess(responseEntity -> {
                         // 记录请求大小指标
                         if (metricsCollector != null && responseEntity != null) {
                             long requestSize = calculateRequestSize(transformedRequest);
-                            long responseSize = responseEntity.getBody() != null ?
+                            long responseSize = responseEntity.getBody() != null ? 
                                     responseEntity.getBody().getBytes().length : 0;
                             metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
 
@@ -847,6 +874,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     protected boolean shouldRetry(final Throwable throwable, final int currentRetryCount, final int maxRetries) {
         // 如果已达到最大重试次数，不再重试
         if (currentRetryCount >= maxRetries) {
+            logger.debug("达到最大重试次数，不再重试: currentRetryCount={}, maxRetries={}", currentRetryCount, maxRetries);
             return false;
         }
 
@@ -857,20 +885,24 @@ public abstract class BaseAdapter implements ServiceCapability {
 
             // 5xx服务器错误可以重试
             if (statusException.getStatusCode().is5xxServerError()) {
+                logger.debug("5xx服务器错误，可以重试: status={}", statusException.getStatusCode());
                 return true;
             }
 
             // 429 Too Many Requests可以重试
             if (statusException.getStatusCode().value() == 429) {
+                logger.debug("429 Too Many Requests，可以重试");
                 return true;
             }
 
             // 408 Request Timeout可以重试
             if (statusException.getStatusCode().value() == 408) {
+                logger.debug("408 Request Timeout，可以重试");
                 return true;
             }
 
-            // 4xx客户端错误通常不重试
+            // 记录其他4xx错误（如401）
+            logger.debug("4xx客户端错误，不重试: status={}", statusException.getStatusCode());
             return false;
         }
 
@@ -878,10 +910,12 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (throwable instanceof java.net.ConnectException ||
                 throwable instanceof java.net.SocketTimeoutException ||
                 throwable instanceof java.io.IOException) {
+            logger.debug("网络相关异常，可以重试: exception={}", throwable.getClass().getSimpleName());
             return true;
         }
 
         // 其他异常不重试
+        logger.debug("其他异常，不重试: exception={}", throwable.getClass().getSimpleName());
         return false;
     }
 
