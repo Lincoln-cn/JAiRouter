@@ -13,11 +13,13 @@ $BLUE = "`e[0;34m"
 $NC = "`e[0m" # No Color
 
 # Configuration
-$PROJECT_NAME = "jairouter"
-$IMAGE_NAME = "sodlinken/${PROJECT_NAME}"
+$PROJECT_NAME = "model-router"
+$IMAGE_NAME = "sodlinken/jairouter"
+
+# Get version from pom.xml
 $VERSION = (Select-Xml -Path "pom.xml" -XPath "//project/version" | Select-Object -First 1).Node.InnerText
 
-Write-Host "${YELLOW}Starting JAiRouter Docker build (China Optimized)...${NC}"
+Write-Host "${YELLOW}Starting JAiRouter Docker build (China Optimized, Version: ${VERSION})...${NC}"
 Write-Host "${BLUE}使用阿里云Maven镜像加速构建${NC}"
 
 # Check if settings-china.xml exists
@@ -26,8 +28,20 @@ if (-not (Test-Path "settings-china.xml")) {
     exit 1
 }
 
-# Build Docker image using China-optimized Dockerfile
-Write-Host "${YELLOW}Building Docker image with China-optimized configuration...${NC}"
+# Step 1: Clean and build the JAR with China-optimized settings
+Write-Host "${YELLOW}Step 1: Building JAR file with Alibaba Maven mirrors...${NC}"
+mvn clean package -DskipTests -Pfast -s settings-china.xml
+
+# Check if JAR was built successfully
+if (-not (Test-Path "target/${PROJECT_NAME}-${VERSION}.jar")) {
+    Write-Host "${RED}Error: JAR file not found at target/${PROJECT_NAME}-${VERSION}.jar${NC}"
+    exit 1
+}
+
+Write-Host "${GREEN}JAR file built successfully${NC}"
+
+# Step 2: Build Docker image using China-optimized Dockerfile
+Write-Host "${YELLOW}Step 2: Building Docker image with China-optimized configuration...${NC}"
 docker build -f Dockerfile.china -t "${IMAGE_NAME}:${VERSION}" -t "${IMAGE_NAME}:latest" .
 
 # Check if Docker build was successful
