@@ -10,8 +10,8 @@ LABEL version="1.0-SNAPSHOT"
 RUN apk add --no-cache curl wget
 
 # 创建应用用户（安全最佳实践）
-RUN groupadd -r -g 10010 jairouter && \
-    useradd -r -u 10010 -g 10010 jairouter
+RUN addgroup -S jairouter && \
+    adduser  -S -G jairouter jairouter
 
 # 设置工作目录
 WORKDIR /app
@@ -43,4 +43,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
 # 启动应用
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "]
