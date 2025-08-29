@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://docs.jairouter.com/sitemap.xml
+Sitemap: https://jairouter.com/sitemap.xml
 
 # Crawl-delay for respectful crawling
 Crawl-delay: 1
