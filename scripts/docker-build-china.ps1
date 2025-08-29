@@ -15,7 +15,7 @@ $NC = "`e[0m" # No Color
 # Configuration
 $PROJECT_NAME = "jairouter"
 $IMAGE_NAME = "sodlinken/${PROJECT_NAME}"
-$VERSION = "1.0-SNAPSHOT"
+$VERSION = (Select-Xml -Path "pom.xml" -XPath "//project/version" | Select-Object -First 1).Node.InnerText
 
 Write-Host "${YELLOW}Starting JAiRouter Docker build (China Optimized)...${NC}"
 Write-Host "${BLUE}使用阿里云Maven镜像加速构建${NC}"
