@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.alert.SlowQueryAlertService;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.TracingContextHolder;
 

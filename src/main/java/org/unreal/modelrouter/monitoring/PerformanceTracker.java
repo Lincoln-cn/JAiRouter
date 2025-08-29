@@ -5,7 +5,7 @@ import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
+import org.unreal.modelrouter.config.MonitoringProperties;
 
 import java.time.Duration;
 import java.util.*;
