@@ -46,7 +46,7 @@
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # 检查运行状态
 docker ps --filter "name=jairouter"
@@ -55,7 +55,7 @@ docker ps --filter "name=jairouter"
 **预期输出**：
 ```
 CONTAINER ID   IMAGE                           COMMAND                  CREATED         STATUS         PORTS                    NAMES
-abc123def456   jairouter/model-router:latest   "java -jar /app/mode…"   2 seconds ago   Up 1 second    0.0.0.0:8080->8080/tcp   jairouter
+abc123def456   sodlinken/jairouter:latest   "java -jar /app/mode…"   2 seconds ago   Up 1 second    0.0.0.0:8080->8080/tcp   jairouter
 ```
 
 ### 方式二：JAR 文件直接运行
@@ -222,7 +222,7 @@ docker run -d \
   --name jairouter \
   -p 8080:8080 \
   -v $(pwd)/config:/app/config:ro \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # JAR 重启
 # 停止当前进程（Ctrl+C），然后重新运行

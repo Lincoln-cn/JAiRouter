@@ -60,12 +60,12 @@
 
 ```bash
 # 拉取镜像
-docker pull jairouter/model-router:latest
+docker pull sodlinken/jairouter:latest
 
 # 启动服务
 docker run -d -p 8080:8080 \
   -v ./config:/app/config \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 或者从源码构建：

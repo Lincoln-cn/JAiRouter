@@ -73,7 +73,7 @@ java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 \
 version: '3.8'
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     ports:
       - "8080:8080"
       - "5005:5005"  # Debug port

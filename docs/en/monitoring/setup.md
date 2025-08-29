@@ -203,7 +203,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     ports:
       - "8080:8080"
     environment:
