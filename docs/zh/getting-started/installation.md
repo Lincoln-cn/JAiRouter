@@ -51,10 +51,10 @@ Docker 安装是最简单快捷的方式，适合大多数用户。
 
 ```bash
 # 拉取最新版本
-docker pull jairouter/model-router:latest
+docker pull sodlinken/jairouter:latest
 
 # 或拉取指定版本
-docker pull jairouter/model-router:v0.3.1
+docker pull sodlinken/jairouter:v0.3.1
 ```
 
 ### 3. 运行容器
@@ -64,7 +64,7 @@ docker pull jairouter/model-router:v0.3.1
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # 带配置文件运行
 docker run -d \
@@ -72,7 +72,7 @@ docker run -d \
   -p 8080:8080 \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 ### 4. 验证安装
@@ -270,7 +270,7 @@ JAiRouter 提供了针对不同用户群体优化的构建脚本：
 
 ```bash
 # 使用中国优化的 Dockerfile
-docker build -f Dockerfile.china -t jairouter/model-router:latest .
+docker build -f Dockerfile.china -t sodlinken/jairouter:latest .
 ```
 
 **Dockerfile.china 特性**：
@@ -282,7 +282,7 @@ docker build -f Dockerfile.china -t jairouter/model-router:latest .
 
 ```bash
 # 使用标准 Dockerfile
-docker build -t jairouter/model-router:latest .
+docker build -t sodlinken/jairouter:latest .
 ```
 
 ### 3. 使用 Maven 插件
@@ -437,7 +437,7 @@ docker --version
 docker system prune -a
 
 # 重新构建
-docker build --no-cache -t jairouter/model-router:latest .
+docker build --no-cache -t sodlinken/jairouter:latest .
 ```
 
 ### 获取帮助

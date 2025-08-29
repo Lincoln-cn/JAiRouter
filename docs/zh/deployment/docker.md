@@ -44,7 +44,7 @@ docker pull sodlinken/jairouter:latest
 docker pull sodlinken/jairouter:v1.0.0
 
 # 中国用户（使用阿里云镜像）
-docker pull registry.cn-hangzhou.aliyuncs.com/jairouter/model-router:latest
+docker pull registry.cn-hangzhou.aliyuncs.com/sodlinken/jairouter:latest
 
 # 验证镜像
 docker images | grep sodlinken/jairouter
@@ -232,7 +232,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     container_name: jairouter
     ports:
       - "8080:8080"
@@ -587,7 +587,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     logging:
       driver: "json-file"
       options:
@@ -758,7 +758,7 @@ docker run -d \
   --user 1001:1001 \
   --name jairouter \
   -p 8080:8080 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # 设置只读文件系统（除必要目录外）
 docker run -d \
@@ -767,7 +767,7 @@ docker run -d \
   --tmpfs /app/logs \
   --name jairouter \
   -p 8080:8080 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # 限制容器能力
 docker run -d \
@@ -775,7 +775,7 @@ docker run -d \
   --cap-add NET_BIND_SERVICE \
   --name jairouter \
   -p 8080:8080 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # 设置安全选项
 docker run -d \
@@ -783,7 +783,7 @@ docker run -d \
   --security-opt seccomp=profile.json \
   --name jairouter \
   -p 8080:8080 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 ### 2. 网络安全
@@ -794,7 +794,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     container_name: jairouter
     ports:
       - "8080:8080"
@@ -822,14 +822,14 @@ docker service create \
   --name jairouter \
   --secret jairouter-api-key \
   -p 8080:8080 \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # 在 docker-compose 中使用 secrets
 version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     secrets:
       - jairouter-api-key
     environment:

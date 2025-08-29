@@ -499,7 +499,7 @@ sudo systemctl restart docker
 # docker-compose.yml
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     deploy:
       resources:
         limits:

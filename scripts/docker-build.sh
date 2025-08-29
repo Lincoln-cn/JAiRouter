@@ -12,8 +12,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_NAME="model-router"
-IMAGE_NAME="jairouter/${PROJECT_NAME}"
+PROJECT_NAME="jairouter"
+IMAGE_NAME="sodlinken/${PROJECT_NAME}"
 VERSION="1.0-SNAPSHOT"
 
 echo -e "${YELLOW}Starting JAiRouter Docker build...${NC}"

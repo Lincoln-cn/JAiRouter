@@ -243,7 +243,7 @@ version: '3.8'
 
 services:
   jairouter:
-    image: jairouter/model-router:latest
+    image: sodlinken/jairouter:latest
     container_name: jairouter-${INSTANCE_ID:-1}
     hostname: jairouter-${INSTANCE_ID:-1}
     restart: unless-stopped

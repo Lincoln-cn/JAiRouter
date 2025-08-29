@@ -60,12 +60,12 @@ Future support will include Anthropic Claude, Google Gemini, Cohere, and more se
 
 ```bash
 # Pull the image
-docker pull jairouter/model-router:latest
+docker pull sodlinken/jairouter:latest
 
 # Start the service
 docker run -d -p 8080:8080 \
   -v ./config:/app/config \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 Or build from source:

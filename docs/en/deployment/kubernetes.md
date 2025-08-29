@@ -611,7 +611,7 @@ maintainers:
 replicaCount: 3
 
 image:
-  repository: jairouter/model-router
+  repository: sodlinken/jairouter
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -926,7 +926,7 @@ kubectl logs -f -l app=jairouter -n jairouter --max-log-requests=10
 
 ```bash
 # Update image
-kubectl set image deployment/jairouter jairouter=jairouter/model-router:v1.1.0 -n jairouter
+kubectl set image deployment/jairouter jairouter=sodlinken/jairouter:v1.1.0 -n jairouter
 
 # View update status
 kubectl rollout status deployment/jairouter -n jairouter

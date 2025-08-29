@@ -738,7 +738,7 @@ build_image() {
     else
         echo "Building with Maven..."
         ./mvnw clean package -Pchina -DskipTests
-        docker build -f Dockerfile.china -t jairouter/model-router:china .
+        docker build -f Dockerfile.china -t sodlinken/jairouter:china .
     fi
     
     echo "✓ Image build completed"
@@ -854,7 +854,7 @@ function Build-Image {
     } else {
         Write-Host "Building with Maven..." -ForegroundColor Yellow
         .\mvnw.cmd clean package -Pchina -DskipTests
-        docker build -f Dockerfile.china -t jairouter/model-router:china .
+        docker build -f Dockerfile.china -t sodlinken/jairouter:china .
     }
     
     Write-Host "✓ Image build completed" -ForegroundColor Green

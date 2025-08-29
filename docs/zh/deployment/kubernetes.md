@@ -278,7 +278,7 @@ spec:
         fsGroup: 1001
       containers:
       - name: jairouter
-        image: jairouter/model-router:latest
+        image: sodlinken/jairouter:latest
         ports:
         - containerPort: 8080
           name: http
@@ -637,7 +637,7 @@ maintainers:
 replicaCount: 3
 
 image:
-  repository: jairouter/model-router
+  repository: sodlinken/jairouter
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -1020,7 +1020,7 @@ spec:
         fsGroup: 1001
       containers:
       - name: jairouter
-        image: jairouter/model-router:latest
+        image: sodlinken/jairouter:latest
         ports:
         - containerPort: 8080
           name: http
@@ -1435,7 +1435,7 @@ kubectl logs -f -l app=jairouter -n jairouter --max-log-requests=10
 
 ```
 # 更新镜像
-kubectl set image deployment/jairouter jairouter=jairouter/model-router:v1.1.0 -n jairouter
+kubectl set image deployment/jairouter jairouter=sodlinken/jairouter:v1.1.0 -n jairouter
 
 # 查看更新状态
 kubectl rollout status deployment/jairouter -n jairouter
