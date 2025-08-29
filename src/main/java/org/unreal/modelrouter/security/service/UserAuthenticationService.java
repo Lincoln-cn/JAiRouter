@@ -4,7 +4,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -24,9 +25,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true")
 public class UserAuthenticationService {
     
-    private final AuthenticationManager authenticationManager;
+    private final ReactiveAuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final SecurityProperties securityProperties;
     
@@ -34,20 +36,17 @@ public class UserAuthenticationService {
      * 验证用户名和密码并生成JWT令牌
      */
     public Mono<String> authenticateAndGenerateToken(String username, String password) {
-        try {
-            // 创建认证令牌
-            UsernamePasswordAuthenticationToken authToken = 
-                new UsernamePasswordAuthenticationToken(username, password);
-            
-            // 进行认证
-            Authentication authentication = authenticationManager.authenticate(authToken);
-            
-            // 认证成功后生成JWT令牌
-            return Mono.just(generateJwtToken(authentication));
-        } catch (Exception e) {
-            log.warn("用户认证失败: {}", e.getMessage());
-            return Mono.error(new RuntimeException("用户名或密码错误"));
-        }
+        // 创建认证令牌
+        UsernamePasswordAuthenticationToken authToken = 
+            new UsernamePasswordAuthenticationToken(username, password);
+        
+        // 进行认证
+        return authenticationManager.authenticate(authToken)
+                .map(this::generateJwtToken)
+                .onErrorMap(e -> {
+                    log.warn("用户认证失败: {}", e.getMessage());
+                    return new RuntimeException("用户名或密码错误");
+                });
     }
     
     /**
