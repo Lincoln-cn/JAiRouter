@@ -3,8 +3,8 @@ package org.unreal.modelrouter.sanitization.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.exception.exception.SanitizationException;
-import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
+import org.unreal.modelrouter.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;

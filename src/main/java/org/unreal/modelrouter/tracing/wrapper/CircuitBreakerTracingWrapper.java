@@ -2,7 +2,6 @@ package org.unreal.modelrouter.tracing.wrapper;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.tracing.TracingContext;

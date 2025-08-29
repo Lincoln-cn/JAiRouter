@@ -4,7 +4,6 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
 import org.unreal.modelrouter.tracing.config.TracingConfiguration;
 
-import java.util.List;
 import java.util.Map;
 
 /**

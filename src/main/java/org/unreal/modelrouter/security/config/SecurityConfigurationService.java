@@ -1,6 +1,5 @@
 package org.unreal.modelrouter.security.config;
 
-import org.unreal.modelrouter.monitoring.config.MonitorConfigurationChangeEvent;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;

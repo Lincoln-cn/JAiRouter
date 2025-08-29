@@ -1,10 +1,10 @@
 package org.unreal.modelrouter.monitoring.alert;
 
-import java.time.Instant;
-import java.util.Map;
-
 import lombok.Builder;
 import lombok.Data;
+
+import java.time.Instant;
+import java.util.Map;
 
 /**
  * 慢查询告警信息

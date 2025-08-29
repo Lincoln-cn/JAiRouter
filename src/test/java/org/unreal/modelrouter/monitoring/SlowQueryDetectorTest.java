@@ -2,7 +2,7 @@ package org.unreal.modelrouter.monitoring;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
+import org.unreal.modelrouter.config.MonitoringProperties;
 
 import java.util.HashMap;
 import java.util.Map;

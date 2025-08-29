@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.tracing.health.HealthCheckTracingEnhancer;
 import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.util.NetUtils;
+import org.unreal.modelrouter.tracing.health.HealthCheckTracingEnhancer;
 import org.unreal.modelrouter.util.ApplicationContextProvider;
+import org.unreal.modelrouter.util.NetUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;

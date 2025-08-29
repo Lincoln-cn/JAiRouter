@@ -5,8 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
-import org.unreal.modelrouter.monitoring.error.MetricsErrorHandler;
 import org.unreal.modelrouter.monitoring.MetricsMemoryManager;
+import org.unreal.modelrouter.monitoring.error.MetricsErrorHandler;
 
 import java.time.Duration;
 import java.time.Instant;

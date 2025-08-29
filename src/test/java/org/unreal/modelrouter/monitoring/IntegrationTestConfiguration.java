@@ -6,8 +6,8 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 
 /**
  * 集成测试专用配置

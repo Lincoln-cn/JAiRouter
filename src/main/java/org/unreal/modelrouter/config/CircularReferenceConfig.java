@@ -2,9 +2,6 @@ package org.unreal.modelrouter.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.boot.autoconfigure.web.reactive.ReactiveWebServerFactoryAutoConfiguration;
-import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
 
 /**
  * 循环依赖配置类

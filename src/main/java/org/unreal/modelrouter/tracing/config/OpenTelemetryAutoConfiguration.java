@@ -12,6 +12,7 @@ import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.semconv.ResourceAttributes;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,9 +22,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.unreal.modelrouter.tracing.sampler.SamplingStrategyManager;
 
-import jakarta.annotation.PostConstruct;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * OpenTelemetry自动配置类

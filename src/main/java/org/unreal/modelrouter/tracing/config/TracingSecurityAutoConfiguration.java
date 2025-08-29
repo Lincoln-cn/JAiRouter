@@ -13,8 +13,6 @@ import org.unreal.modelrouter.tracing.logger.StructuredLogger;
 import org.unreal.modelrouter.tracing.sanitization.TracingSanitizationService;
 import org.unreal.modelrouter.tracing.security.TracingSecurityManager;
 
-import jakarta.annotation.PostConstruct;
-
 /**
  * 追踪安全功能自动配置类
  * 

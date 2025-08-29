@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.ContextConfiguration;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 
 import static org.junit.jupiter.api.Assertions.*;
 

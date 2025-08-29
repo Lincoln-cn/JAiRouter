@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.ContextConfiguration;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.TestMonitoringConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 

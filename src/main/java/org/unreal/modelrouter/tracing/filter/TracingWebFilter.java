@@ -1,29 +1,26 @@
 package org.unreal.modelrouter.tracing.filter;
 
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.Ordered;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.core.Ordered;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import org.unreal.modelrouter.tracing.performance.TracingPerformanceMonitor;
 import org.unreal.modelrouter.tracing.TracingConstants;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.TracingService;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
+import org.unreal.modelrouter.tracing.performance.TracingPerformanceMonitor;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 
 /**

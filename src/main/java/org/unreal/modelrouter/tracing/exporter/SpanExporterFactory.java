@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.tracing.exporter;
 
 // Jaeger exporter 已移除，现在使用 OTLP 协议连接 Jaeger
+
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
@@ -12,7 +13,6 @@ import org.unreal.modelrouter.tracing.config.TracingConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Span导出器工厂
