@@ -10,8 +10,8 @@ LABEL version="1.0-SNAPSHOT"
 RUN apk add --no-cache curl wget
 
 # 创建应用用户（安全最佳实践）
-RUN addgroup -S jairouter && \
-    adduser  -S -G jairouter jairouter
+RUN groupadd -r -g 10010 jairouter && \
+    useradd -r -u 10010 -g 10010 jairouter
 
 # 设置工作目录
 WORKDIR /app
