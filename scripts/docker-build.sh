@@ -12,8 +12,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_NAME="jairouter"
-IMAGE_NAME="sodlinken/${PROJECT_NAME}"
+PROJECT_NAME="model-router"
+IMAGE_NAME="sodlinken/jairouter"
 
 # Get version from pom.xml
 VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
