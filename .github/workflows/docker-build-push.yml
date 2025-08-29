@@ -54,6 +54,12 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # Build JAR file using the provided script
+      - name: Build JAR And Docker Image file
+        run: |
+          chmod +x ./scripts/docker-build.sh
+          ./scripts/docker-build.sh
+
       # Extract metadata (tags, labels) for Docker
       - name: Extract Docker metadata
         id: meta
