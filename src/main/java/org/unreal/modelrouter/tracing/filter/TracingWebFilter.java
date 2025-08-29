@@ -46,7 +46,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     private final TracingPerformanceMonitor performanceMonitor;
     
     /**
-     * 设置过滤器优先级为最高，确保在安全过滤器之前执行
+     * 设置过滤器优先级，确保在缓存body过滤器之后、安全过滤器之前执行
      */
     @Override
     public int getOrder() {
