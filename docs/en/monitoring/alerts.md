@@ -61,7 +61,7 @@ groups:
         annotations:
           summary: "JAiRouter Service Unavailable"
           description: "JAiRouter service has stopped responding for more than 1 minute"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/service-down"
+          runbook_url: "https://jairouter.com/troubleshooting/service-down"
 
       # High Error Rate
       - alert: HighErrorRate
@@ -73,7 +73,7 @@ groups:
         annotations:
           summary: "High Error Rate Alert"
           description: "5xx error rate exceeds 5%, current value: {{ $value | humanizePercentage }}"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/high-error-rate"
+          runbook_url: "https://jairouter.com/troubleshooting/high-error-rate"
 
       # High Latency
       - alert: HighLatency
@@ -85,7 +85,7 @@ groups:
         annotations:
           summary: "Response Time Too Long"
           description: "P95 response time exceeds 5 seconds, current value: {{ $value }}s"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/high-latency"
+          runbook_url: "https://jairouter.com/troubleshooting/high-latency"
 
       # High Memory Usage
       - alert: HighMemoryUsage
@@ -97,7 +97,7 @@ groups:
         annotations:
           summary: "Memory Usage Too High"
           description: "JVM heap memory usage exceeds 90%, current value: {{ $value | humanizePercentage }}"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/memory-issues"
+          runbook_url: "https://jairouter.com/troubleshooting/memory-issues"
 
       # Backend Service Unavailable
       - alert: BackendServiceDown
@@ -111,7 +111,7 @@ groups:
         annotations:
           summary: "Backend Service Unavailable"
           description: "Backend service {{ $labels.adapter }}/{{ $labels.instance }} health check failed"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/backend-down"
+          runbook_url: "https://jairouter.com/troubleshooting/backend-down"
 
   - name: jairouter.warning
     interval: 60s

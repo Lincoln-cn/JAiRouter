@@ -61,7 +61,7 @@ groups:
         annotations:
           summary: "JAiRouter 服务不可用"
           description: "JAiRouter 服务已停止响应超过 1 分钟"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/service-down"
+          runbook_url: "https://jairouter.com/troubleshooting/service-down"
 
       # 严重错误率
       - alert: HighErrorRate
@@ -73,7 +73,7 @@ groups:
         annotations:
           summary: "高错误率告警"
           description: "5xx 错误率超过 5%，当前值: {{ $value | humanizePercentage }}"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/high-error-rate"
+          runbook_url: "https://jairouter.com/troubleshooting/high-error-rate"
 
       # 严重响应延迟
       - alert: HighLatency
@@ -85,7 +85,7 @@ groups:
         annotations:
           summary: "响应时间过长"
           description: "P95 响应时间超过 5 秒，当前值: {{ $value }}s"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/high-latency"
+          runbook_url: "https://jairouter.com/troubleshooting/high-latency"
 
       # 内存严重不足
       - alert: HighMemoryUsage
@@ -97,7 +97,7 @@ groups:
         annotations:
           summary: "内存使用率过高"
           description: "JVM 堆内存使用率超过 90%，当前值: {{ $value | humanizePercentage }}"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/memory-issues"
+          runbook_url: "https://jairouter.com/troubleshooting/memory-issues"
 
       # 后端服务不可用
       - alert: BackendServiceDown
@@ -111,7 +111,7 @@ groups:
         annotations:
           summary: "后端服务不可用"
           description: "后端服务 {{ $labels.adapter }}/{{ $labels.instance }} 健康检查失败"
-          runbook_url: "https://docs.jairouter.com/troubleshooting/backend-down"
+          runbook_url: "https://jairouter.com/troubleshooting/backend-down"
 
   - name: jairouter.warning
     interval: 60s

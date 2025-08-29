@@ -10,7 +10,7 @@ import datetime
 from pathlib import Path
 
 # Configuration
-BASE_URL = "https://docs.jairouter.com"
+BASE_URL = "https://jairouter.com"
 DOCS_DIR = "docs"
 SITEMAP_FILE = os.path.join(DOCS_DIR, "sitemap.xml")
 

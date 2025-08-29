@@ -689,7 +689,7 @@ curl -H "Authorization: Bearer admin-token" \
 
 - **GitHub Issues**: https://github.com/Lincoln-cn/JAiRouter/issues
 - **邮箱支持**: support@jairouter.com
-- **文档中心**: https://docs.jairouter.com
+- **文档中心**: https://jairouter.com
 
 提交问题时，请包含以下信息：
 1. 问题详细描述
