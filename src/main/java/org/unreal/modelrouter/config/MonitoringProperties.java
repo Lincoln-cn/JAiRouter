@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring.config;
+package org.unreal.modelrouter.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

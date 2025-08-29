@@ -4,8 +4,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.SlowQueryDetector;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
 
 import io.micrometer.core.instrument.MeterRegistry;

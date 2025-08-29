@@ -5,10 +5,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Primary;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
 import org.unreal.modelrouter.monitoring.MetricsMemoryManager;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 
 /**
  * 异步指标收集器
