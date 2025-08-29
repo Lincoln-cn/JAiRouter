@@ -57,6 +57,7 @@ public class UniversalController {
             @RequestBody(required = false) ChatDTO.Request request,
             ServerHttpRequest httpRequest) {
 
+
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.chat,
                 () -> adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.chat)
@@ -114,8 +115,15 @@ public class UniversalController {
 
         // 添加请求体检查
         if (request == null) {
+            logger.error("Rerank request body is null");
             throw new ServerWebInputException("Request body is required");
         }
+
+        // 记录请求信息用于调试
+        logger.debug("Rerank request received: model={}, query length={}, documents count={}", 
+            request.model(), 
+            request.query() != null ? request.query().length() : 0,
+            request.documents() != null ? request.documents().size() : 0);
 
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.rerank,
