@@ -3,6 +3,7 @@ package org.unreal.modelrouter.monitoring.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.config.MonitorConfigurationChangeEvent;
 import org.springframework.stereotype.Component;
 

@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.context.annotation.Conditional;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.*;
 import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCacheAndRetry;
 import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCircuitBreaker;
@@ -12,7 +13,6 @@ import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsDegradationStrate
 import org.unreal.modelrouter.monitoring.circuitbreaker.MonitoringHealthChecker;
 import org.unreal.modelrouter.monitoring.config.DynamicMonitoringConfigUpdater;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.error.MetricsErrorHandler;
 
 import java.util.HashMap;

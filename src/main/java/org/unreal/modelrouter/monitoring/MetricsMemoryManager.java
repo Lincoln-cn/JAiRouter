@@ -6,8 +6,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Conditional;
 
 import jakarta.annotation.PostConstruct;
+
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;

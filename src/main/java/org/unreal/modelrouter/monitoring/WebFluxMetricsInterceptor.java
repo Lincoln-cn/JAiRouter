@@ -12,9 +12,10 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import org.springframework.context.annotation.Conditional;
+import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
