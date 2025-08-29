@@ -87,6 +87,7 @@ jairouter:
     # 生产环境 JWT 配置
     jwt:
       enabled: false  # 生产环境默认关闭JWT，根据需要启用
+      jwt-header: "Jairouter_Token"
       secret: "${PROD_JWT_SECRET:}"
       issuer: "jairouter-prod"
       blacklist-cache:

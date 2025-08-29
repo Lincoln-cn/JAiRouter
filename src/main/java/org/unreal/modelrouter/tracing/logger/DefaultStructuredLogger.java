@@ -573,16 +573,9 @@ public class DefaultStructuredLogger implements StructuredLogger {
         if (value == null || !tracingConfiguration.getLogging().isSanitizeEnabled()) {
             return value;
         }
-        
-        try {
-            // 使用脱敏服务进行异步脱敏，这里使用同步方式获取结果
-            return sanitizationService.sanitizeRequest(value, "text/plain", null)
-                    .onErrorReturn(value) // 脱敏失败时返回原值
-                    .block();
-        } catch (Exception e) {
-            log.debug("脱敏处理失败，返回原值", e);
-            return value;
-        }
+
+        // 直接返回原值，避免在响应式线程中进行阻塞操作
+        return value;
     }
     
     /**
@@ -592,20 +585,9 @@ public class DefaultStructuredLogger implements StructuredLogger {
         if (map == null || map.isEmpty() || !tracingConfiguration.getLogging().isSanitizeEnabled()) {
             return map;
         }
-        
-        Map<String, Object> sanitizedMap = new HashMap<>();
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            String key = entry.getKey();
-            Object value = entry.getValue();
-            
-            if (value instanceof String) {
-                sanitizedMap.put(key, sanitizeIfNeeded((String) value));
-            } else {
-                sanitizedMap.put(key, value);
-            }
-        }
-        
-        return sanitizedMap;
+
+        // 为避免阻塞操作，直接返回原map
+        return map;
     }
     
     /**
@@ -615,20 +597,20 @@ public class DefaultStructuredLogger implements StructuredLogger {
         if (headers == null || headers.isEmpty()) {
             return headers;
         }
-        
+
         Map<String, String> sanitizedHeaders = new HashMap<>();
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            
+
             // 敏感头部直接脱敏
             if (isSensitiveHeader(key)) {
                 sanitizedHeaders.put(key, "***");
             } else {
-                sanitizedHeaders.put(key, sanitizeIfNeeded(value));
+                sanitizedHeaders.put(key, value);
             }
         }
-        
+
         return sanitizedHeaders;
     }
     
@@ -760,14 +742,8 @@ public class DefaultStructuredLogger implements StructuredLogger {
             return null;
         }
         
-        try {
-            return sanitizationService.sanitizeRequest(url, "text/plain", null)
-                    .onErrorReturn(url)
-                    .block();
-        } catch (Exception e) {
-            log.debug("URL脱敏失败，返回原值", e);
-            return url;
-        }
+        // 直接返回原URL，避免在响应式线程中进行阻塞操作
+        return url;
     }
     
     /**
@@ -819,6 +795,18 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     /**
+     * 脱敏User-Agent
+     */
+    private String sanitizeUserAgent(String userAgent) {
+        if (userAgent == null) {
+            return null;
+        }
+        
+        // 直接返回原User-Agent，避免在响应式线程中进行阻塞操作
+        return userAgent;
+    }
+    
+    /**
      * 脱敏客户端IP
      */
     private String sanitizeClientIp(String clientIp) {
@@ -844,52 +832,26 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     /**
-     * 脱敏User-Agent
-     */
-    private String sanitizeUserAgent(String userAgent) {
-        if (userAgent == null) {
-            return null;
-        }
-        
-        try {
-            return sanitizationService.sanitizeRequest(userAgent, "text/plain", null)
-                    .onErrorReturn(userAgent)
-                    .block();
-        } catch (Exception e) {
-            log.debug("User-Agent脱敏失败，返回原值", e);
-            return userAgent;
-        }
-    }
-    
-    /**
-     * 脱敏请求头
+     * 脱敏请求头（非阻塞）
      */
     private Mono<Map<String, String>> sanitizeRequestHeaders(Map<String, String> headers, TracingContext context) {
         if (headers == null || headers.isEmpty()) {
             return Mono.just(headers);
         }
-        
+
         Map<String, String> sanitizedHeaders = new HashMap<>();
-        
+
         for (Map.Entry<String, String> entry : headers.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            
+
             if (isSensitiveHeader(key)) {
                 sanitizedHeaders.put(key, "[REDACTED]");
-                
-                // 记录敏感头部脱敏
-                this.logSanitization(
-                    "request.header." + key.toLowerCase(),
-                    "redact",
-                    "header-sanitization",
-                    context
-                );
             } else {
-                sanitizedHeaders.put(key, sanitizeIfNeeded(value));
+                sanitizedHeaders.put(key, value);
             }
         }
-        
+
         return Mono.just(sanitizedHeaders);
     }
     

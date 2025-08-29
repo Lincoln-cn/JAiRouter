@@ -7,6 +7,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -77,9 +78,8 @@ public class ResponseSanitizationFilter implements WebFilter {
                                 // 读取原始响应内容
                                 byte[] bytes = new byte[dataBuffer.readableByteCount()];
                                 dataBuffer.read(bytes);
-                                DataBufferUtils.release(dataBuffer);
-                                
-                                String originalContent = new String(bytes, StandardCharsets.UTF_8);
+                                final byte[] originalBytes = bytes; // 创建final变量供lambda使用
+                                String originalContent = new String(originalBytes, StandardCharsets.UTF_8);
                                 
                                 // 执行脱敏
                                 return sanitizationService.sanitizeResponse(originalContent, contentType)
@@ -93,9 +93,6 @@ public class ResponseSanitizationFilter implements WebFilter {
                                             DataBuffer sanitizedBuffer = bufferFactory.wrap(
                                                     sanitizedContent.getBytes(StandardCharsets.UTF_8));
                                             
-                                            // 更新Content-Length头
-                                            updateContentLength(sanitizedContent.getBytes(StandardCharsets.UTF_8).length);
-                                            
                                             return super.writeWith(Mono.just(sanitizedBuffer));
                                         })
                                         .onErrorResume(SanitizationException.class, ex -> {
@@ -104,35 +101,44 @@ public class ResponseSanitizationFilter implements WebFilter {
                                             
                                             // 根据配置决定是否返回原始内容还是错误
                                             if (securityProperties.getSanitization().getResponse().isFailOnError()) {
-                                                return handleSanitizationFailure(ex, originalResponse);
+                                                return handleSanitizationFailure(ex);
                                             } else {
                                                 log.warn("响应脱敏失败但配置为继续处理，返回原始内容: {}", ex.getMessage());
                                                 // 重新创建原始内容的DataBuffer
                                                 DataBufferFactory bufferFactory = originalResponse.bufferFactory();
-                                                DataBuffer originalBuffer = bufferFactory.wrap(bytes);
+                                                DataBuffer originalBuffer = bufferFactory.wrap(originalBytes);
                                                 return super.writeWith(Mono.just(originalBuffer));
                                             }
                                         })
                                         .onErrorResume(Exception.class, ex -> {
-                                            log.error("响应脱敏过程中发生未知错误", ex);
-                                            recordSanitizationEvent(request, contentType, false, "未知错误: " + ex.getMessage());
+                                            // 记录更详细的错误信息
+                                            String errorMessage = "未知错误: " + (ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName());
+                                            if (ex.getCause() != null) {
+                                                errorMessage += ", 原因: " + (ex.getCause().getMessage() != null ? ex.getCause().getMessage() : ex.getCause().getClass().getName());
+                                            }
+                                            
+                                            log.error("响应脱敏过程中发生未知错误: {}", errorMessage, ex);
+                                            recordSanitizationEvent(request, contentType, false, errorMessage);
                                             
                                             // 发生未知错误时，根据配置决定处理方式
                                             if (securityProperties.getSanitization().getResponse().isFailOnError()) {
                                                 return handleSanitizationFailure(
                                                         new SanitizationException("响应脱敏过程中发生未知错误", ex, 
-                                                                SanitizationException.CONTENT_PROCESSING_FAILED), originalResponse);
+                                                                SanitizationException.CONTENT_PROCESSING_FAILED));
                                             } else {
                                                 // 返回原始内容
                                                 DataBufferFactory bufferFactory = originalResponse.bufferFactory();
-                                                DataBuffer originalBuffer = bufferFactory.wrap(bytes);
+                                                DataBuffer originalBuffer = bufferFactory.wrap(originalBytes);
                                                 return super.writeWith(Mono.just(originalBuffer));
                                             }
                                         });
                             } catch (Exception e) {
-                                DataBufferUtils.release(dataBuffer);
+                                log.error("响应内容读取失败", e);
                                 return Mono.error(new SanitizationException("响应内容读取失败", e, 
                                         SanitizationException.CONTENT_PROCESSING_FAILED));
+                            } finally {
+                                // 确保DataBuffer被释放
+                                DataBufferUtils.release(dataBuffer);
                             }
                         })
                         .switchIfEmpty(Mono.defer(() -> super.writeWith(body)));
@@ -142,15 +148,13 @@ public class ResponseSanitizationFilter implements WebFilter {
              * 获取响应内容类型
              */
             private String getResponseContentType() {
-                MediaType mediaType = getHeaders().getContentType();
-                return mediaType != null ? mediaType.toString() : "application/octet-stream";
-            }
-            
-            /**
-             * 更新Content-Length头
-             */
-            private void updateContentLength(int length) {
-                getHeaders().setContentLength(length);
+                try {
+                    MediaType mediaType = getHeaders().getContentType();
+                    return mediaType != null ? mediaType.toString() : "application/octet-stream";
+                } catch (Exception e) {
+                    log.warn("获取响应内容类型失败: {}", e.getMessage());
+                    return "application/octet-stream";
+                }
             }
         };
         
@@ -172,7 +176,13 @@ public class ResponseSanitizationFilter implements WebFilter {
                path.startsWith("/static/") ||
                path.startsWith("/css/") ||
                path.startsWith("/js/") ||
-               path.startsWith("/images/");
+               path.startsWith("/images/") ||
+               // 排除所有AI模型接口路径，避免对AI模型输入输出进行脱敏
+               path.startsWith("/v1/chat/") ||
+               path.startsWith("/v1/embeddings") ||
+               path.startsWith("/v1/rerank") ||
+               path.startsWith("/v1/audio/") ||
+               path.startsWith("/v1/images/");
     }
     
     /**
@@ -267,21 +277,14 @@ public class ResponseSanitizationFilter implements WebFilter {
     /**
      * 处理脱敏失败
      */
-    private Mono<Void> handleSanitizationFailure(SanitizationException ex, ServerHttpResponse response) {
+    private Mono<Void> handleSanitizationFailure(SanitizationException ex) {
         // 创建错误响应内容
         String errorResponse = String.format(
                 "{\"error\":\"%s\",\"message\":\"%s\",\"timestamp\":\"%s\"}",
                 ex.getErrorCode(), ex.getMessage(), LocalDateTime.now()
         );
         
-        DataBufferFactory bufferFactory = response.bufferFactory();
-        DataBuffer errorBuffer = bufferFactory.wrap(errorResponse.getBytes(StandardCharsets.UTF_8));
-        
-        // 设置错误状态和头
-        response.setStatusCode(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR);
-        response.getHeaders().set("Content-Type", "application/json;charset=UTF-8");
-        response.getHeaders().setContentLength(errorResponse.getBytes(StandardCharsets.UTF_8).length);
-        
-        return response.writeWith(Mono.just(errorBuffer));
+        // 返回错误，让上层处理
+        return Mono.error(ex);
     }
 }

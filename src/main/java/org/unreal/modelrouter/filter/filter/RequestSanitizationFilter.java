@@ -54,6 +54,11 @@ public class RequestSanitizationFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         
+        // 如果请求脱敏功能未启用，直接跳过
+        if (!securityProperties.getSanitization().getRequest().isEnabled()) {
+            return chain.filter(exchange);
+        }
+        
         // 跳过不需要脱敏的路径
         String path = request.getPath().value();
         if (isExcludedPath(path)) {
@@ -132,7 +137,7 @@ public class RequestSanitizationFilter implements WebFilter {
                                         public HttpHeaders getHeaders() {
                                             HttpHeaders headers = new HttpHeaders();
                                             headers.putAll(super.getHeaders());
-                                            // 更新Content-Length
+                                            // 更新Content-Length，避免直接修改只读headers
                                             headers.setContentLength(sanitizedContent.getBytes(StandardCharsets.UTF_8).length);
                                             return headers;
                                         }
@@ -161,8 +166,14 @@ public class RequestSanitizationFilter implements WebFilter {
                     }
                 })
                 .onErrorResume(Exception.class, ex -> {
-                    log.error("请求脱敏过程中发生未知错误", ex);
-                    recordSanitizationEvent(request, userId, contentType, false, "未知错误: " + ex.getMessage());
+                    // 记录更详细的错误信息
+                    String errorMessage = "未知错误: " + (ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName());
+                    if (ex.getCause() != null) {
+                        errorMessage += ", 原因: " + (ex.getCause().getMessage() != null ? ex.getCause().getMessage() : ex.getCause().getClass().getName());
+                    }
+                    
+                    log.error("请求脱敏过程中发生未知错误: {}", errorMessage, ex);
+                    recordSanitizationEvent(request, userId, contentType, false, errorMessage);
                     
                     // 发生未知错误时，根据配置决定处理方式
                     if (securityProperties.getSanitization().getRequest().isFailOnError()) {
@@ -189,7 +200,13 @@ public class RequestSanitizationFilter implements WebFilter {
                path.startsWith("/static/") ||
                path.startsWith("/css/") ||
                path.startsWith("/js/") ||
-               path.startsWith("/images/");
+               path.startsWith("/images/") ||
+               // 排除所有AI模型接口路径，避免对AI模型输入输出进行脱敏
+               path.startsWith("/v1/chat/") ||
+               path.startsWith("/v1/embeddings") ||
+               path.startsWith("/v1/rerank") ||
+               path.startsWith("/v1/audio/") ||
+               path.startsWith("/v1/images/");
     }
     
     /**
