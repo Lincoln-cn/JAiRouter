@@ -18,8 +18,18 @@ import org.unreal.modelrouter.tracing.logger.StructuredLogger;
  */
 @Configuration
 @EnableConfigurationProperties(ErrorTrackerProperties.class)
-@ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.enabled", havingValue = "true", matchIfMissing = true)
 public class ErrorTrackerAutoConfiguration {
+    
+    /**
+     * 创建堆栈脱敏配置Bean
+     *
+     * @param properties 错误追踪配置属性
+     * @return 堆栈脱敏配置
+     */
+    @Bean
+    public ErrorTrackerProperties.SanitizationConfig sanitizationConfig(ErrorTrackerProperties properties) {
+        return properties.getSanitization();
+    }
     
     /**
      * 创建错误追踪器
@@ -42,6 +52,7 @@ public class ErrorTrackerAutoConfiguration {
      * @return 错误指标收集器
      */
     @Bean
+    @ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.enabled", havingValue = "true")
     @ConditionalOnProperty(name = "jairouter.monitoring.metrics.enabled", havingValue = "true", matchIfMissing = true)
     public ErrorMetricsCollector errorMetricsCollector(
             MeterRegistry meterRegistry,
@@ -58,8 +69,9 @@ public class ErrorTrackerAutoConfiguration {
      * @return 异常堆栈脱敏器
      */
     @Bean
+    @ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.enabled", havingValue = "true")
     @ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.sanitization.enabled", havingValue = "true", matchIfMissing = true)
-    public StackTraceSanitizer stackTraceSanitizer(ErrorTrackerProperties properties) {
-        return new StackTraceSanitizer(properties.getSanitization());
+    public StackTraceSanitizer stackTraceSanitizer(ErrorTrackerProperties.SanitizationConfig sanitizationConfig) {
+        return new StackTraceSanitizer(sanitizationConfig);
     }
 }

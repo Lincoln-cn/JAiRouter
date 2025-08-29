@@ -161,6 +161,7 @@
     <!-- 生产环境配置 -->
     <springProfile name="prod">
         <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
             <appender-ref ref="ASYNC_STRUCTURED"/>
