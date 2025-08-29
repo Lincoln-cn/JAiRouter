@@ -106,31 +106,57 @@ curl -H "X-API-Key: your-api-key-here" \
 
 ### Linux/macOS
 
-```bash
-export ADMIN_API_KEY="your-admin-api-key-here"
-export USER_API_KEY="your-user-api-key-here"
+```
+# 生产环境 API Key 配置
+export PROD_ADMIN_API_KEY="your-production-admin-api-key-here"
+export PROD_SERVICE_API_KEY="your-production-service-api-key-here"
+export PROD_READONLY_API_KEY="your-production-readonly-api-key-here"
+
+# API Key 过期时间配置
+export PROD_ADMIN_KEY_EXPIRES="2025-12-31T23:59:59"
+export PROD_SERVICE_KEY_EXPIRES="2025-12-31T23:59:59"
+export PROD_READONLY_KEY_EXPIRES="2025-12-31T23:59:59"
 ```
 
 ### Windows
 
-```cmd
-set ADMIN_API_KEY=your-admin-api-key-here
-set USER_API_KEY=your-user-api-key-here
+```
+# 生产环境 API Key 配置
+set PROD_ADMIN_API_KEY=your-production-admin-api-key-here
+set PROD_SERVICE_API_KEY=your-production-service-api-key-here
+set PROD_READONLY_API_KEY=your-production-readonly-api-key-here
+
+# API Key 过期时间配置
+set PROD_ADMIN_KEY_EXPIRES=2025-12-31T23:59:59
+set PROD_SERVICE_KEY_EXPIRES=2025-12-31T23:59:59
+set PROD_READONLY_KEY_EXPIRES=2025-12-31T23:59:59
 ```
 
 ### Docker
 
-```bash
-docker run -e ADMIN_API_KEY="your-admin-api-key-here" \
-           -e USER_API_KEY="your-user-api-key-here" \
-           jairouter:latest
+```
+# 生产环境 Docker 部署
+docker run -d \
+  --name jairouter-prod \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e PROD_ADMIN_API_KEY="your-production-admin-api-key-here" \
+  -e PROD_SERVICE_API_KEY="your-production-service-api-key-here" \
+  -e PROD_READONLY_API_KEY="your-production-readonly-api-key-here" \
+  -e PROD_JWT_SECRET="your-production-jwt-secret-here" \
+  -e REDIS_HOST="your-redis-host" \
+  -e REDIS_PORT="your-redis-port" \
+  -e REDIS_PASSWORD="your-redis-password" \
+  -v $(pwd)/config:/app/config:ro \
+  -v $(pwd)/logs:/app/logs \
+  sodlinken/jairouter:latest
 ```
 
 ## 缓存配置
 
 ### Redis 缓存
 
-```yaml
+```
 jairouter:
   security:
     performance:
@@ -145,7 +171,7 @@ jairouter:
 
 ### 本地缓存
 
-```yaml
+```
 jairouter:
   security:
     performance:
@@ -271,7 +297,7 @@ jairouter:
 
 #### 1. 启用详细日志
 
-```yaml
+```
 logging:
   level:
     org.unreal.modelrouter.security: DEBUG
@@ -301,7 +327,7 @@ http://localhost:8080/actuator/health
 
 ### 开发环境
 
-```yaml
+```
 jairouter:
   security:
     enabled: true
@@ -317,7 +343,7 @@ jairouter:
 
 ### 生产环境
 
-```yaml
+```
 jairouter:
   security:
     enabled: true

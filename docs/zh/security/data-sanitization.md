@@ -26,7 +26,7 @@ JAiRouter 的数据脱敏功能可以自动识别和处理请求和响应中的�
 
 ### 1. 启用数据脱敏
 
-```yaml
+``yaml
 jairouter:
   security:
     enabled: true
@@ -39,7 +39,7 @@ jairouter:
 
 ### 2. 基础配置
 
-```yaml
+``yaml
 jairouter:
   security:
     sanitization:
@@ -58,7 +58,7 @@ jairouter:
 
 发送包含敏感信息的请求：
 
-```bash
+```
 curl -H "X-API-Key: your-api-key" \
      -X POST \
      -H "Content-Type: application/json" \
@@ -75,7 +75,7 @@ curl -H "X-API-Key: your-api-key" \
 
 ### 请求数据脱敏配置
 
-```yaml
+```
 jairouter:
   security:
     sanitization:
@@ -131,7 +131,7 @@ jairouter:
 
 ### 响应数据脱敏配置
 
-```yaml
+```
 jairouter:
   security:
     sanitization:
@@ -230,42 +230,42 @@ jairouter:
 
 #### 中国手机号
 
-```yaml
+```
 pii-patterns:
   - "\\b(?:13[0-9]|14[5-9]|15[0-3,5-9]|16[2,5,6,7]|17[0-8]|18[0-9]|19[1,3,5,8,9])\\d{8}\\b"
 ```
 
 #### 中国身份证号
 
-```yaml
+```
 pii-patterns:
   - "\\b[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[0-9Xx]\\b"
 ```
 
 #### 邮箱地址
 
-```yaml
+```
 pii-patterns:
   - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
 ```
 
 #### 银行卡号
 
-```yaml
+```
 pii-patterns:
   - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"
 ```
 
 #### IP 地址
 
-```yaml
+```
 pii-patterns:
   - "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"
 ```
 
 #### URL 地址
 
-```yaml
+```
 pii-patterns:
   - "https?://[\\w\\-]+(\\.[\\w\\-]+)+([\\w\\-\\.,@?^=%&:/~\\+#]*[\\w\\-\\@?^=%&/~\\+#])?"
 ```
@@ -274,21 +274,21 @@ pii-patterns:
 
 #### 员工工号
 
-```yaml
+```
 pii-patterns:
   - "\\b[A-Z]{2}\\d{6}\\b"  # 如：AB123456
 ```
 
 #### 订单号
 
-```yaml
+```
 pii-patterns:
   - "\\bORD\\d{10}\\b"  # 如：ORD1234567890
 ```
 
 #### 车牌号
 
-```yaml
+```
 pii-patterns:
   - "[京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-Z0-9]{4}[A-Z0-9挂学警港澳]"
 ```
@@ -299,7 +299,7 @@ pii-patterns:
 
 指定的用户可以跳过脱敏处理：
 
-```yaml
+```
 jairouter:
   security:
     sanitization:
@@ -314,7 +314,7 @@ jairouter:
 
 指定的 IP 地址可以跳过脱敏处理：
 
-```yaml
+```
 jairouter:
   security:
     sanitization:
@@ -331,7 +331,7 @@ jairouter:
 
 支持运行时动态添加白名单：
 
-```bash
+```
 # 添加用户到白名单
 curl -X POST http://localhost:8080/admin/security/whitelist/users \
      -H "Authorization: Bearer admin-token" \
@@ -349,7 +349,7 @@ curl -X POST http://localhost:8080/admin/security/whitelist/ips \
 
 不同的 AI 服务可以使用不同的脱敏规则：
 
-```yaml
+```
 jairouter:
   security:
     sanitization:
@@ -397,7 +397,7 @@ jairouter:
 
 ### 并行处理
 
-```yaml
+```
 jairouter:
   security:
     performance:
@@ -412,7 +412,7 @@ jairouter:
 
 ### 正则表达式缓存
 
-```yaml
+```
 jairouter:
   security:
     performance:
@@ -425,7 +425,7 @@ jairouter:
 
 ### 批量处理
 
-```yaml
+```
 jairouter:
   security:
     performance:
@@ -436,11 +436,82 @@ jairouter:
         batch-timeout: 1000
 ```
 
+### 3. Redis 缓存
+
+```
+jairouter:
+  security:
+    performance:
+      cache:
+        redis:
+          enabled: true
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: 0
+```
+
+### 4. 应用安全配置
+
+创建 `config/application-security.yml`：
+
+```
+# 安全配置
+security:
+  # API Key 配置
+  api-key:
+    enabled: true
+    header: X-API-Key
+    keys:
+      # 生产环境使用环境变量配置
+      - name: "prod-admin"
+        value: "${PROD_ADMIN_API_KEY:}"
+      - name: "prod-service"
+        value: "${PROD_SERVICE_API_KEY:}"
+      - name: "prod-readonly"
+        value: "${PROD_READONLY_API_KEY:}"
+  
+  # JWT 配置
+  jwt:
+    enabled: true
+    secret: "${PROD_JWT_SECRET:}"
+    algorithm: HS256
+    expiration-minutes: 15
+    issuer: jairouter-prod
+    accounts:
+      - username: admin
+        password: "{bcrypt}your-bcrypt-hashed-password"
+        roles: [ADMIN, USER]
+        enabled: true
+      - username: user
+        password: "{bcrypt}your-bcrypt-hashed-password"
+        roles: [USER]
+        enabled: true
+
+  # CORS 配置
+  cors:
+    allowed-origins: "*"
+    allowed-methods: "*"
+    allowed-headers: "*"
+    allow-credentials: false
+
+# HTTPS 配置
+server:
+  port: 8443
+  ssl:
+    enabled: true
+    key-store: classpath:keystore.p12
+    key-store-password: password
+    key-store-type: PKCS12
+    key-alias: jairouter
+```
+
+
 ## 监控和审计
 
 ### 脱敏指标
 
-```yaml
+```
 jairouter:
   security:
     monitoring:
@@ -452,7 +523,7 @@ jairouter:
 
 ### 审计日志
 
-```yaml
+```
 jairouter:
   security:
     audit:
@@ -548,7 +619,7 @@ jairouter:
 
 #### 1. 启用详细日志
 
-```yaml
+```
 logging:
   level:
     org.unreal.modelrouter.security.sanitization: DEBUG
@@ -562,7 +633,7 @@ logging:
 
 #### 3. 监控脱敏效果
 
-```bash
+```
 # 查看脱敏日志
 tail -f logs/security-audit.log | grep sanitization
 
@@ -574,7 +645,7 @@ curl http://localhost:8080/actuator/prometheus | grep sanitization
 
 ### 基础配置
 
-```yaml
+```
 jairouter:
   security:
     enabled: true
@@ -592,7 +663,7 @@ jairouter:
 
 ### 高级配置
 
-```yaml
+```
 jairouter:
   security:
     sanitization:
