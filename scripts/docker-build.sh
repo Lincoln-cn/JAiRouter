@@ -14,9 +14,11 @@ NC='\033[0m' # No Color
 # Configuration
 PROJECT_NAME="jairouter"
 IMAGE_NAME="sodlinken/${PROJECT_NAME}"
-VERSION="1.0-SNAPSHOT"
 
-echo -e "${YELLOW}Starting JAiRouter Docker build...${NC}"
+# Get version from pom.xml
+VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+
+echo -e "${YELLOW}Starting JAiRouter Docker build (Version: ${VERSION})...${NC}"
 
 # Step 1: Clean and build the JAR
 echo -e "${YELLOW}Step 1: Building JAR file...${NC}"
