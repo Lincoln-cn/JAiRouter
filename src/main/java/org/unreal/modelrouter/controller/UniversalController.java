@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
 import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.dto.*;
@@ -18,6 +19,8 @@ import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/v1")
@@ -27,6 +30,8 @@ public class UniversalController {
     private final AdapterRegistry adapterRegistry;
     private final ServiceStateManager serviceStateManager;
     private final MetricsCollector metricsCollector;
+
+    private Logger logger = LoggerFactory.getLogger(UniversalController.class);
 
     public UniversalController(AdapterRegistry adapterRegistry,
                                ServiceStateManager serviceStateManager,
@@ -49,7 +54,7 @@ public class UniversalController {
             @Parameter(description = "认证令牌")
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "聊天请求参数")
-            @RequestBody ChatDTO.Request request,
+            @RequestBody(required = false) ChatDTO.Request request,
             ServerHttpRequest httpRequest) {
 
         return handleServiceRequest(
@@ -74,8 +79,13 @@ public class UniversalController {
             @Parameter(description = "认证令牌")
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "嵌入请求参数")
-            @RequestBody EmbeddingDTO.Request request,
+            @RequestBody(required = false) EmbeddingDTO.Request request,
             ServerHttpRequest httpRequest) {
+
+        // 添加请求体检查
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
 
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.embedding,
@@ -99,8 +109,13 @@ public class UniversalController {
             @Parameter(description = "认证令牌")
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "重排序请求参数")
-            @RequestBody RerankDTO.Request request,
+            @RequestBody(required = false) RerankDTO.Request request,
             ServerHttpRequest httpRequest) {
+
+        // 添加请求体检查
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
 
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.rerank,
@@ -124,8 +139,13 @@ public class UniversalController {
             @Parameter(description = "认证令牌")
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "文本转语音请求参数")
-            @RequestBody TtsDTO.Request request,
+            @RequestBody(required = false) TtsDTO.Request request,
             ServerHttpRequest httpRequest) {
+
+        // 添加请求体检查
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
 
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.tts,
@@ -171,8 +191,13 @@ public class UniversalController {
             @Parameter(description = "认证令牌")
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "图像生成请求参数")
-            @RequestBody ImageGenerateDTO.Request request,
+            @RequestBody(required = false) ImageGenerateDTO.Request request,
             ServerHttpRequest httpRequest) {
+
+        // 添加请求体检查
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
 
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.imgGen,
@@ -193,8 +218,13 @@ public class UniversalController {
             @Parameter(description = "认证令牌")
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "图像编辑请求参数")
-            @RequestBody ImageEditDTO.Request request,
+            @RequestBody(required = false) ImageEditDTO.Request request,
             ServerHttpRequest httpRequest) {
+
+        // 添加请求体检查
+        if (request == null) {
+            throw new ServerWebInputException("Request body is required");
+        }
 
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.imgEdit,
@@ -312,6 +342,28 @@ public class UniversalController {
     private String getErrorStatus(Throwable error) {
         if (error instanceof ResponseStatusException) {
             return String.valueOf(((ResponseStatusException) error).getStatusCode().value());
+        }
+        // 处理WebClient响应异常
+        if (error instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
+            org.springframework.web.reactive.function.client.WebClientResponseException webClientException = 
+                (org.springframework.web.reactive.function.client.WebClientResponseException) error;
+            // 特别处理401 Unauthorized错误
+            if (webClientException.getStatusCode().value() == 401) {
+                // 记录详细的401错误信息
+                logger.error("下游服务认证失败: status={}, message={}, response body={}", 
+                    webClientException.getStatusCode(), 
+                    webClientException.getMessage(), 
+                    webClientException.getResponseBodyAsString());
+            }
+            // 特别处理400 Bad Request错误
+            else if (webClientException.getStatusCode().value() == 400) {
+                // 记录详细的400错误信息
+                logger.error("下游服务请求错误: status={}, message={}, response body={}", 
+                    webClientException.getStatusCode(), 
+                    webClientException.getMessage(), 
+                    webClientException.getResponseBodyAsString());
+            }
+            return String.valueOf(webClientException.getStatusCode().value());
         }
         return "500";
     }

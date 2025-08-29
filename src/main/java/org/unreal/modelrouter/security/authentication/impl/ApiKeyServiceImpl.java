@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.exception.exception.AuthenticationException;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
+import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.UsageStatistics;
 import org.unreal.modelrouter.store.StoreManager;
@@ -29,6 +30,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     
     private final StoreManager storeManager;
     private final ObjectMapper objectMapper;
+    private final SecurityProperties securityProperties;
     
     // API Key缓存：keyValue -> ApiKeyInfo
     private final Map<String, ApiKeyInfo> apiKeyCache = new ConcurrentHashMap<>();
@@ -38,9 +40,10 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     private final Map<String, UsageStatistics> usageStatsCache = new ConcurrentHashMap<>();
     
     @Autowired
-    public ApiKeyServiceImpl(StoreManager storeManager, ObjectMapper objectMapper) {
+    public ApiKeyServiceImpl(StoreManager storeManager, ObjectMapper objectMapper, SecurityProperties securityProperties) {
         this.storeManager = storeManager;
         this.objectMapper = objectMapper;
+        this.securityProperties = securityProperties;
     }
     
     /**
@@ -48,33 +51,56 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      */
     @PostConstruct
     public void init() {
+        loadApiKeysFromConfig();
         loadApiKeysFromStore();
         loadUsageStatsFromStore();
         log.info("API Key服务初始化完成，加载了 {} 个API Key", apiKeyCache.size());
     }
     
+    /**
+     * 从配置文件加载API Key
+     */
+    private void loadApiKeysFromConfig() {
+        List<ApiKeyInfo> configKeys = securityProperties.getApiKey().getKeys();
+        if (configKeys != null && !configKeys.isEmpty()) {
+            for (ApiKeyInfo apiKeyInfo : configKeys) {
+                // 只有当密钥不在缓存中时才添加（避免重复）
+                if (!apiKeyCache.containsKey(apiKeyInfo.getKeyValue())) {
+                    apiKeyCache.put(apiKeyInfo.getKeyValue(), apiKeyInfo);
+                    keyIdIndex.put(apiKeyInfo.getKeyId(), apiKeyInfo.getKeyValue());
+                }
+            }
+        }
+        log.debug("从配置加载了 {} 个API Key", configKeys != null ? configKeys.size() : 0);
+    }
+    
     @Override
     public Mono<ApiKeyInfo> validateApiKey(String keyValue) {
-        return Mono.fromCallable(() -> {
-            if (keyValue == null || keyValue.trim().isEmpty()) {
-                throw AuthenticationException.missingApiKey();
+        return Mono.defer(() -> {
+            try {
+                if (keyValue == null || keyValue.trim().isEmpty()) {
+                    return Mono.error(AuthenticationException.missingApiKey());
+                }
+                
+                ApiKeyInfo apiKeyInfo = apiKeyCache.get(keyValue);
+                if (apiKeyInfo == null) {
+                    return Mono.error(AuthenticationException.invalidApiKey());
+                }
+                
+                if (!apiKeyInfo.isEnabled()) {
+                    return Mono.error(new AuthenticationException("API Key已被禁用", AuthenticationException.INVALID_API_KEY));
+                }
+                
+                if (apiKeyInfo.getExpiresAt() != null && apiKeyInfo.getExpiresAt().isBefore(LocalDateTime.now())) {
+                    return Mono.error(AuthenticationException.expiredApiKey());
+                }
+                
+                log.debug("API Key验证成功: {}", apiKeyInfo.getKeyId());
+                return Mono.just(apiKeyInfo);
+            } catch (Exception e) {
+                log.error("API Key验证过程中发生错误: {}", e.getMessage(), e);
+                return Mono.error(e);
             }
-            
-            ApiKeyInfo apiKeyInfo = apiKeyCache.get(keyValue);
-            if (apiKeyInfo == null) {
-                throw AuthenticationException.invalidApiKey();
-            }
-            
-            if (!apiKeyInfo.isEnabled()) {
-                throw new AuthenticationException("API Key已被禁用", AuthenticationException.INVALID_API_KEY);
-            }
-            
-            if (apiKeyInfo.getExpiresAt() != null && apiKeyInfo.getExpiresAt().isBefore(LocalDateTime.now())) {
-                throw AuthenticationException.expiredApiKey();
-            }
-            
-            log.debug("API Key验证成功: {}", apiKeyInfo.getKeyId());
-            return apiKeyInfo;
         });
     }    
 
@@ -269,8 +295,11 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 if (apiKeyMaps != null) {
                     for (Map<String, Object> apiKeyMap : apiKeyMaps) {
                         ApiKeyInfo apiKeyInfo = objectMapper.convertValue(apiKeyMap, ApiKeyInfo.class);
-                        apiKeyCache.put(apiKeyInfo.getKeyValue(), apiKeyInfo);
-                        keyIdIndex.put(apiKeyInfo.getKeyId(), apiKeyInfo.getKeyValue());
+                        // 只有当密钥不在配置中时才添加（避免重复）
+                        if (!apiKeyCache.containsKey(apiKeyInfo.getKeyValue())) {
+                            apiKeyCache.put(apiKeyInfo.getKeyValue(), apiKeyInfo);
+                            keyIdIndex.put(apiKeyInfo.getKeyId(), apiKeyInfo.getKeyValue());
+                        }
                     }
                 }
             }

@@ -115,6 +115,13 @@ public class SecurityProperties {
         private boolean enabled = false;
         
         /**
+         * JWT令牌请求头名称
+         */
+        @NotBlank
+        @Size(min = 1, max = 100)
+        private String jwtHeader = "Jairouter_Token";
+        
+        /**
          * JWT签名密钥
          */
         @Size(min = 32, message = "JWT密钥长度至少32个字符")

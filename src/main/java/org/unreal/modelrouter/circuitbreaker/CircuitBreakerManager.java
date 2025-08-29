@@ -96,11 +96,20 @@ public class CircuitBreakerManager {
     public void recordFailure(String instanceId, String instanceUrl) {
         try {
             CircuitBreaker cb = getCircuitBreaker(instanceId, instanceUrl);
+            CircuitBreaker.State previousState = cb.getState();
             cb.onFailure();
-            logger.debug("Recorded failure for instance: {}", instanceUrl != null ? instanceUrl : instanceId);
+            CircuitBreaker.State currentState = cb.getState();
+            logger.debug("记录调用失败: instance={}, previousState={}, currentState={}", 
+                instanceUrl != null ? instanceUrl : instanceId, previousState, currentState);
+            
+            // 如果状态发生变化，记录详细信息
+            if (previousState != currentState) {
+                logger.info("熔断器状态变化: instance={}, {} -> {}", 
+                    instanceUrl != null ? instanceUrl : instanceId, previousState, currentState);
+            }
         } catch (Exception e) {
-            logger.warn("Failed to record failure for instance: {}",
-                    instanceUrl != null ? instanceUrl : instanceId, e);
+            logger.warn("记录调用失败时出错: instance={}", 
+                instanceUrl != null ? instanceUrl : instanceId, e);
         }
     }
 
@@ -115,12 +124,15 @@ public class CircuitBreakerManager {
             CircuitBreaker cb = getCircuitBreaker(instanceId, instanceUrl);
             boolean canExecute = cb.canExecute();
             if (!canExecute) {
-                logger.debug("Instance {} is in circuit breaker state: {}",
+                logger.debug("实例被熔断器阻止: instance={}, state={}",
+                        instanceUrl != null ? instanceUrl : instanceId, cb.getState());
+            } else {
+                logger.trace("实例可以执行: instance={}, state={}",
                         instanceUrl != null ? instanceUrl : instanceId, cb.getState());
             }
             return canExecute;
         } catch (Exception e) {
-            logger.warn("Error checking circuit breaker for instance: {}",
+            logger.warn("检查熔断器状态时出错: instance={}",
                     instanceUrl != null ? instanceUrl : instanceId, e);
             // 出错时默认允许执行
             return true;

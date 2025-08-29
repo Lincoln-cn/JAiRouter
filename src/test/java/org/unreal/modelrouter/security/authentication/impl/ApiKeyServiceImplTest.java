@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.exception.exception.AuthenticationException;
+import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.test.StepVerifier;
@@ -27,13 +28,16 @@ class ApiKeyServiceImplTest {
     @Mock
     private StoreManager storeManager;
 
+    @Mock
+    private SecurityProperties securityProperties;
+
     private ObjectMapper objectMapper;
     private ApiKeyServiceImpl apiKeyService;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        apiKeyService = new ApiKeyServiceImpl(storeManager, objectMapper);
+        apiKeyService = new ApiKeyServiceImpl(storeManager, objectMapper,securityProperties);
         
         // 模拟存储为空的情况
         when(storeManager.getConfig(anyString())).thenReturn(null);

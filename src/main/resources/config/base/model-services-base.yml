@@ -76,6 +76,12 @@ model:
         rate: 20
         scope: "service"
         client-ip-enable: true
+      # 为 embeddings 服务添加专门的熔断器配置
+      circuit-breaker:
+        enabled: true
+        failureThreshold: 10  # 提高失败阈值，避免因认证错误导致频繁熔断
+        timeout: 30000       # 缩短熔断超时时间
+        successThreshold: 3
       instances:
         - name: "nomic-embed-text-v1.5"
           base-url: "http://172.16.30.6:9090"

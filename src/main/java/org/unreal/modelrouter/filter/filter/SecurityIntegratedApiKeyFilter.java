@@ -46,7 +46,7 @@ public class SecurityIntegratedApiKeyFilter implements WebFilter {
                     return chain.filter(exchange)
                             .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
                 })
-                .switchIfEmpty(chain.filter(exchange));
+                .switchIfEmpty(chain.filter(exchange)); // 如果没有认证信息，继续处理请求
     }
     
     /**
@@ -56,17 +56,30 @@ public class SecurityIntegratedApiKeyFilter implements WebFilter {
         // 首先尝试API Key
         String apiKey = extractApiKey(exchange);
         if (apiKey != null) {
-            return Mono.just(new ApiKeyAuthentication(apiKey));
+            ApiKeyAuthentication apiKeyAuth = new ApiKeyAuthentication(apiKey);
+            return authenticateApiKey(apiKeyAuth)
+                    .onErrorResume(throwable -> {
+                        // API Key验证失败，继续尝试JWT验证
+                        return tryJwtAuthentication(exchange);
+                    })
+                    .switchIfEmpty(Mono.defer(() -> tryJwtAuthentication(exchange))); // API Key验证未返回结果，尝试JWT
         }
         
-        // 然后尝试JWT
+        // 如果没有API Key，尝试JWT
+        return tryJwtAuthentication(exchange);
+    }
+    
+    /**
+     * 尝试JWT认证
+     */
+    private Mono<Authentication> tryJwtAuthentication(ServerWebExchange exchange) {
         if (securityProperties.getJwt().isEnabled()) {
             String jwtToken = extractJwtToken(exchange);
             if (jwtToken != null) {
-                return Mono.just(new JwtAuthentication(jwtToken));
+                JwtAuthentication jwtAuth = new JwtAuthentication(jwtToken);
+                return authenticateJwt(jwtAuth);
             }
         }
-        
         return Mono.empty();
     }
     
@@ -133,6 +146,13 @@ public class SecurityIntegratedApiKeyFilter implements WebFilter {
      * 提取JWT令牌
      */
     private String extractJwtToken(ServerWebExchange exchange) {
+        String jwtHeader = securityProperties.getJwt().getJwtHeader();
+        List<String> jwtHeaders = exchange.getRequest().getHeaders().get(jwtHeader);
+        if (jwtHeaders != null && !jwtHeaders.isEmpty()) {
+            return jwtHeaders.get(0);
+        }
+        
+        // 兼容Bearer格式
         List<String> authHeaders = exchange.getRequest().getHeaders().get("Authorization");
         if (authHeaders != null && !authHeaders.isEmpty()) {
             String authHeader = authHeaders.get(0);

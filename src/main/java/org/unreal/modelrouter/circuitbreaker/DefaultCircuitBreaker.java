@@ -81,14 +81,21 @@ public class DefaultCircuitBreaker implements CircuitBreaker {
             case CLOSED:
                 if (failureCount >= failureThreshold) {
                     state = State.OPEN;
+                    logger.info("熔断器打开: instanceId={}, failureCount={}, failureThreshold={}", 
+                        instanceId, failureCount, failureThreshold);
                     recordCircuitBreakerEvent("state_change", state.name());
+                } else {
+                    logger.debug("熔断器记录失败 (CLOSED状态): instanceId={}, failureCount={}, failureThreshold={}", 
+                        instanceId, failureCount, failureThreshold);
                 }
                 break;
             case OPEN:
+                logger.debug("熔断器记录失败 (OPEN状态): instanceId={}", instanceId);
                 break;
             case HALF_OPEN:
                 // 失败则重新进入熔断状态
                 state = State.OPEN;
+                logger.info("熔断器重新打开: instanceId={}, failure in HALF_OPEN state", instanceId);
                 recordCircuitBreakerEvent("state_change", state.name());
                 break;
         }

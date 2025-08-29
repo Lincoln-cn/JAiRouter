@@ -25,6 +25,7 @@ jairouter:
     # ========================================
     jwt:
       enabled: false
+      jwt-header: "Jairouter_Token"
       secret: ""
       algorithm: "HS256"
       expiration-minutes: 60
