@@ -852,9 +852,9 @@ public abstract class BaseAdapter implements ServiceCapability {
             case chat:
                 return 2; // 聊天服务重试2次
             case embedding:
-                return 3; // 嵌入服务重试3次
+                return 2; // 嵌入服务重试2次（降低）
             case rerank:
-                return 2; // 重排序服务重试2次
+                return 1; // 重排序服务重试1次（降低，避免body重读问题）
             case tts:
                 return 1; // TTS服务重试1次（文件较大）
             case stt:
@@ -864,7 +864,7 @@ public abstract class BaseAdapter implements ServiceCapability {
             case imgEdit:
                 return 1; // 图像编辑重试1次（耗时较长）
             default:
-                return 2; // 默认重试2次
+                return 1; // 默认重试1次（降低）
         }
     }
 
@@ -878,10 +878,28 @@ public abstract class BaseAdapter implements ServiceCapability {
             return false;
         }
 
+        // 检查是否是 ServerWebInputException（No request body）- 这种错误不应该重试
+        if (throwable instanceof org.springframework.web.server.ServerWebInputException) {
+            logger.warn("ServerWebInputException 错误，不重试: {}", throwable.getMessage());
+            return false;
+        }
+
         // 检查异常类型，只对特定类型的异常进行重试
         if (throwable instanceof org.springframework.web.server.ResponseStatusException) {
             org.springframework.web.server.ResponseStatusException statusException =
                     (org.springframework.web.server.ResponseStatusException) throwable;
+
+            // 400 Bad Request 不重试（特别是 No request body 错误）
+            if (statusException.getStatusCode().value() == 400) {
+                logger.warn("400 Bad Request 错误，不重试: {}", statusException.getMessage());
+                return false;
+            }
+
+            // 401 Unauthorized 不重试
+            if (statusException.getStatusCode().value() == 401) {
+                logger.warn("401 Unauthorized 错误，不重试");
+                return false;
+            }
 
             // 5xx服务器错误可以重试
             if (statusException.getStatusCode().is5xxServerError()) {
@@ -901,8 +919,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                 return true;
             }
 
-            // 记录其他4xx错误（如401）
-            logger.debug("4xx客户端错误，不重试: status={}", statusException.getStatusCode());
+            // 记录其他4xx错误
+            logger.debug("其他4xx客户端错误，不重试: status={}", statusException.getStatusCode());
             return false;
         }
 
