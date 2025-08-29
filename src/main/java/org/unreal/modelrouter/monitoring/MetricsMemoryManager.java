@@ -1,23 +1,17 @@
 package org.unreal.modelrouter.monitoring;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.context.annotation.Conditional;
-
-import jakarta.annotation.PostConstruct;
-
+import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 

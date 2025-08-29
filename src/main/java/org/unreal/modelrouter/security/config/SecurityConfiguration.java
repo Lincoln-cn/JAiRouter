@@ -2,6 +2,7 @@ package org.unreal.modelrouter.security.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,12 +15,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+import org.unreal.modelrouter.exceptionhandler.SecurityAuthenticationFailureHandler;
+import org.unreal.modelrouter.filter.filter.SecurityIntegratedApiKeyFilter;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
-import org.unreal.modelrouter.filter.filter.SecurityIntegratedApiKeyFilter;
-import org.unreal.modelrouter.exceptionhandler.SecurityAuthenticationFailureHandler;
 import org.unreal.modelrouter.tracing.config.TracingSecurityConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Spring Security配置类

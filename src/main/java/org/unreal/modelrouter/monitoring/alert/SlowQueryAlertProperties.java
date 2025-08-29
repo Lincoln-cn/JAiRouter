@@ -1,13 +1,11 @@
 package org.unreal.modelrouter.monitoring.alert;
 
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
-
-import lombok.Data;
 
 /**
  * 慢查询告警配置属性

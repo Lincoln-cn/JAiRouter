@@ -1,19 +1,14 @@
 package org.unreal.modelrouter.monitoring;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.monitoring.SlowQueryDetector.SlowQueryStats;
 import org.unreal.modelrouter.monitoring.alert.SlowQueryAlertService;
 import org.unreal.modelrouter.monitoring.alert.SlowQueryAlertStats;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 慢查询统计和趋势分析控制器

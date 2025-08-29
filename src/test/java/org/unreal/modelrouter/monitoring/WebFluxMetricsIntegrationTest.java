@@ -11,10 +11,10 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitoring.config.MonitoringConfiguration;
-import org.unreal.modelrouter.monitoring.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.config.WebFluxMetricsConfiguration;
 import org.unreal.modelrouter.monitoring.WebFluxMetricsInterceptor;
 import org.unreal.modelrouter.ModelRouterApplication;
+import org.unreal.modelrouter.config.MonitoringProperties;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
