@@ -25,8 +25,8 @@ LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gatew
 LABEL version="1.0-SNAPSHOT"
 
 # 创建应用用户（安全最佳实践）
-RUN groupadd -r -g 10010 jairouter && \
-    useradd -r -u 10010 -g 10010 jairouter
+RUN addgroup -S jairouter && \
+    adduser  -S -G jairouter jairouter
 
 WORKDIR /app
 
