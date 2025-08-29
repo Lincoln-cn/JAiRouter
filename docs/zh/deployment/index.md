@@ -171,14 +171,14 @@ graph TB
 
 ```
 # 拉取镜像
-docker pull jairouter/model-router:latest
+docker pull sodlinken/jairouter:latest
 
 # 启动容器
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
   -v $(pwd)/config:/app/config:ro \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 
 # 验证部署
 curl http://localhost:8080/actuator/health
@@ -201,13 +201,13 @@ docker-compose ps
 
 ```
 # 使用中国优化镜像
-docker pull registry.cn-hangzhou.aliyuncs.com/jairouter/model-router:latest
+docker pull registry.cn-hangzhou.aliyuncs.com/sodlinken/jairouter:latest
 
 # 启动容器
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
-  registry.cn-hangzhou.aliyuncs.com/jairouter/model-router:latest
+  registry.cn-hangzhou.aliyuncs.com/sodlinken/jairouter:latest
 ```
 
 ## 部署检查清单

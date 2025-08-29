@@ -56,7 +56,7 @@ java -jar target/model-router-*.jar
 
 1. Pull the Docker image:
 ```bash
-docker pull jairouter/model-router:latest
+docker pull sodlinken/jairouter:latest
 ```
 
 2. Run the container:
@@ -65,7 +65,7 @@ docker run -d \
   --name jairouter \
   -p 8080:8080 \
   -v ./config:/app/config \
-  jairouter/model-router:latest
+  sodlinken/jairouter:latest
 ```
 
 ## Configuration

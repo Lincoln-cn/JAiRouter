@@ -107,7 +107,7 @@ jairouter:
         redis:
           enabled: false
           host: "localhost"
-          port: 6379
+          port: mvn 6379
           password: ""
           database: 0
           timeout: 2000

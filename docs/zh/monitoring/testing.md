@@ -80,7 +80,7 @@ version: '3.8'
 
 services:
   jairouter-test:
-    image: jairouter/model-router:test
+    image: sodlinken/jairouter:test
     ports:
       - "8080:8080"
     environment:
