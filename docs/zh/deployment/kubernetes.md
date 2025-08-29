@@ -192,6 +192,22 @@ data:
   jwt-secret: eW91ci1qd3Qtc2VjcmV0LWtleQ==  # your-jwt-secret-key
   database-password: cGFzc3dvcmQ=     # password
 
+# 生产环境推荐使用环境变量配置
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jairouter-prod-secret
+  namespace: jairouter
+type: Opaque
+stringData:
+  PROD_ADMIN_API_KEY: "your-production-admin-api-key-here"
+  PROD_SERVICE_API_KEY: "your-production-service-api-key-here"
+  PROD_READONLY_API_KEY: "your-production-readonly-api-key-here"
+  PROD_JWT_SECRET: "your-production-jwt-secret-here"
+  REDIS_PASSWORD: "your-redis-password"
+  SECURITY_ALERT_EMAIL: "security-alerts@your-company.com"
+
 ---
 # TLS Secret 配置
 apiVersion: v1
@@ -710,6 +726,28 @@ persistence:
   accessMode: ReadWriteMany
   size: 10Gi
 
+# 环境变量配置
+env:
+  # Spring 配置
+  SPRING_PROFILES_ACTIVE: "prod"
+  
+  # 生产环境 API Key 配置
+  PROD_ADMIN_API_KEY: "your-production-admin-api-key-here"
+  PROD_SERVICE_API_KEY: "your-production-service-api-key-here"
+  PROD_READONLY_API_KEY: "your-production-readonly-api-key-here"
+  
+  # 生产环境 JWT 配置
+  PROD_JWT_SECRET: "your-production-jwt-secret-here"
+  
+  # Redis 配置
+  REDIS_HOST: "your-redis-host"
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD: "your-redis-password"
+  
+  # 安全告警配置
+  SECURITY_ALERT_EMAIL: "security-alerts@your-company.com"
+  SECURITY_ALERT_WEBHOOK: "https://your-webhook-url.com/security-alerts"
+
 config:
   application.yml: |
     server:
@@ -1124,7 +1162,7 @@ kubectl apply -f secret.yaml
 
 创建 `configmap-security.yaml`：
 
-```yaml
+```
 # 安全配置 ConfigMap
 apiVersion: v1
 kind: ConfigMap
@@ -1139,22 +1177,35 @@ data:
       api-key:
         enabled: true
         header: X-API-Key
-        file: /app/config/api-keys.yml
+        # 生产环境使用环境变量配置
+        keys:
+          - key-id: "prod-admin"
+            key-value: "${PROD_ADMIN_API_KEY:}"
+            permissions: ["admin", "read", "write", "delete"]
+            enabled: true
+          - key-id: "prod-service"
+            key-value: "${PROD_SERVICE_API_KEY:}"
+            permissions: ["read", "write"]
+            enabled: true
+          - key-id: "prod-readonly"
+            key-value: "${PROD_READONLY_API_KEY:}"
+            permissions: ["read"]
+            enabled: true
       
       # JWT 配置
       jwt:
         enabled: true
-        secret: ${JWT_SECRET}
+        secret: "${PROD_JWT_SECRET:}"
         algorithm: HS256
-        expiration-minutes: 60
-        issuer: jairouter
+        expiration-minutes: 15
+        issuer: jairouter-prod
         accounts:
           - username: admin
-            password: ${ADMIN_PASSWORD}
+            password: "{bcrypt}your-bcrypt-hashed-password"
             roles: [ADMIN, USER]
             enabled: true
           - username: user
-            password: ${USER_PASSWORD}
+            password: "{bcrypt}your-bcrypt-hashed-password"
             roles: [USER]
             enabled: true
 
@@ -1176,32 +1227,9 @@ data:
         key-alias: jairouter
 ```
 
-创建 `api-keys-config.yaml`：
 
-```yaml
-# API 密钥配置
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: jairouter-api-keys
-  namespace: jairouter
-data:
-  api-keys.yml: |
-    # API 密钥配置
-    api-keys:
-      - name: "service-a"
-        key: "sk-service-a-key-here"
-        permissions:
-          - "chat:read"
-          - "embedding:read"
-        enabled: true
-      
-      - name: "service-b"
-        key: "sk-service-b-key-here"
-        permissions:
-          - "chat:*"
-          - "embedding:*"
-        enabled: true
+```
+
 ```
 
 ## 日志配置
@@ -1365,7 +1393,7 @@ spec:
 
 创建 `log-cleanup-cronjob.yaml`：
 
-```yaml
+```
 # 日志清理 CronJob
 apiVersion: batch/v1
 kind: CronJob

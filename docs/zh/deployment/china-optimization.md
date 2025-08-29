@@ -1076,6 +1076,55 @@ docker exec jairouter-china nslookup baidu.com
 - **[监控指南](../monitoring/index.md)** - 设置完整的监控体系
 - **[故障排查](../troubleshooting/index.md)** - 学习故障诊断和解决
 
+## 环境变量配置
+
+### 生产环境环境变量
+
+```bash
+# 生产环境 API Key 配置
+export PROD_ADMIN_API_KEY="your-production-admin-api-key-here"
+export PROD_SERVICE_API_KEY="your-production-service-api-key-here"
+export PROD_READONLY_API_KEY="your-production-readonly-api-key-here"
+
+# 生产环境 JWT 配置
+export PROD_JWT_SECRET="your-production-jwt-secret-here"
+
+# Redis 配置
+export REDIS_HOST="your-redis-host"
+export REDIS_PORT="your-redis-port"
+export REDIS_PASSWORD="your-redis-password"
+
+# 国内云服务配置
+export ALIYUN_SMS_ACCESS_KEY_ID="your-aliyun-sms-access-key-id"
+export ALIYUN_SMS_ACCESS_KEY_SECRET="your-aliyun-sms-access-key-secret"
+export TENCENT_EMAIL_USERNAME="your-tencent-email-username"
+export TENCENT_EMAIL_PASSWORD="your-tencent-email-password"
+export ALIYUN_CDN_ACCESS_KEY_ID="your-aliyun-cdn-access-key-id"
+export ALIYUN_CDN_ACCESS_KEY_SECRET="your-aliyun-cdn-access-key-secret"
+```
+
+### Docker 环境变量配置
+
+```bash
+# 生产环境 Docker 部署（国内优化版本）
+docker run -d \
+  --name jairouter-china \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=china \
+  -e PROD_ADMIN_API_KEY="your-production-admin-api-key-here" \
+  -e PROD_SERVICE_API_KEY="your-production-service-api-key-here" \
+  -e PROD_READONLY_API_KEY="your-production-readonly-api-key-here" \
+  -e PROD_JWT_SECRET="your-production-jwt-secret-here" \
+  -e REDIS_HOST="your-redis-host" \
+  -e REDIS_PORT="your-redis-port" \
+  -e REDIS_PASSWORD="your-redis-password" \
+  -e ALIYUN_SMS_ACCESS_KEY_ID="your-aliyun-sms-access-key-id" \
+  -e ALIYUN_SMS_ACCESS_KEY_SECRET="your-aliyun-sms-access-key-secret" \
+  -v $(pwd)/config:/app/config:ro \
+  -v $(pwd)/logs:/app/logs \
+  registry.cn-hangzhou.aliyuncs.com/sodlinken/jairouter:china
+```
+
 ## 安全配置
 
 ### 1. 国内安全服务集成

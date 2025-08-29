@@ -376,95 +376,158 @@ spring:
   profiles:
     active: prod
 
-model:
-  # 全局配置
-  load-balance:
-    type: least-connections
-    health-check:
+# 生产环境安全配置
+jairouter:
+  security:
+    # 生产环境安全功能（默认关闭，需要显式启用）
+    enabled: true
+    
+    # 生产环境 API Key 特定配置
+    api-key:
       enabled: true
-      interval: 30s
-      timeout: 5s
-      failure-threshold: 3
-      success-threshold: 2
-  
-  rate-limit:
-    enabled: true
-    algorithm: token-bucket
-    capacity: 10000
-    rate: 1000
-    client-ip-enable: true
-    client-ip:
-      cleanup-interval: 300s
-      max-idle-time: 1800s
-      max-clients: 50000
-  
-  circuit-breaker:
-    enabled: true
-    failure-threshold: 5
-    recovery-timeout: 60000
-    success-threshold: 3
-    timeout: 30000
-  
-  services:
-    chat:
-      load-balance:
-        type: least-connections
-      rate-limit:
+      default-expiration-days: 365
+      cache-expiration-seconds: 3600  # 1小时缓存
+      keys:
+        # 生产环境API Key通过环境变量配置
+        - key-id: "prod-admin-key"
+          key-value: "${PROD_ADMIN_API_KEY:}"
+          description: "生产环境管理员API密钥"
+          permissions: ["admin", "read", "write", "delete"]
+          expires-at: "${PROD_ADMIN_KEY_EXPIRES:2025-12-31T23:59:59}"
+          enabled: true
+          metadata:
+            environment: "production"
+            created-by: "system"
+            security-level: "high"
+        
+        - key-id: "prod-service-key"
+          key-value: "${PROD_SERVICE_API_KEY:}"
+          description: "生产环境服务API密钥"
+          permissions: ["read", "write"]
+          expires-at: "${PROD_SERVICE_KEY_EXPIRES:2025-12-31T23:59:59}"
+          enabled: true
+          metadata:
+            environment: "production"
+            created-by: "system"
+            security-level: "medium"
+        
+        - key-id: "prod-readonly-key"
+          key-value: "${PROD_READONLY_API_KEY:}"
+          description: "生产环境只读API密钥"
+          permissions: ["read"]
+          expires-at: "${PROD_READONLY_KEY_EXPIRES:2025-12-31T23:59:59}"
+          enabled: true
+          metadata:
+            environment: "production"
+            created-by: "system"
+            security-level: "low"
+    
+    # 生产环境 JWT 配置
+    jwt:
+      enabled: true
+      secret: "${PROD_JWT_SECRET:}"
+      issuer: "jairouter-prod"
+      blacklist-cache:
+        max-size: 50000  # 生产环境更大的黑名单缓存
+    
+    # 生产环境数据脱敏配置（严格模式）
+    sanitization:
+      request:
         enabled: true
-        algorithm: token-bucket
-        capacity: 5000
-        rate: 500
-        client-ip-enable: true
-      circuit-breaker:
+        log-sanitization: false  # 生产环境不记录脱敏详情
+        whitelist-users: []      # 生产环境不设置白名单用户
+        whitelist-ips: []        # 生产环境不设置白名单IP
+      
+      response:
         enabled: true
-        failure-threshold: 3
-        recovery-timeout: 30000
-      instances:
-        - name: "gpt-4"
-          base-url: "https://api.openai.com"
-          path: "/v1/chat/completions"
-          weight: 1
-          headers:
-            Authorization: "Bearer ${OPENAI_API_KEY}"
-        - name: "claude-3"
-          base-url: "https://api.anthropic.com"
-          path: "/v1/messages"
-          weight: 2
-          headers:
-            x-api-key: "${ANTHROPIC_API_KEY}"
+        log-sanitization: false
+    
+    # 生产环境审计配置
+    audit:
+      enabled: true
+      include-request-body: false   # 生产环境不包含请求体
+      include-response-body: false  # 生产环境不包含响应体
+      retention-days: 365  # 生产环境长期保留
+      alert-enabled: true
+      
+      alert-thresholds:
+        auth-failures-per-minute: 5      # 生产环境更严格的阈值
+        sanitization-operations-per-minute: 200
+        suspicious-requests-per-minute: 10
+      
+      event-types:
+        authentication-success: false    # 生产环境不记录成功认证（减少日志量）
+        sanitization-applied: false      # 生产环境不记录脱敏操作（减少日志量）
+      
+      storage:
+        file-path: "logs/prod-security-audit.log"
+        rotation:
+          max-file-size: "500MB"  # 生产环境更大的文件大小
+          max-files: 100
+    
+    # 生产环境监控配置
+    monitoring:
+      enabled: true
+      metrics:
+        security-events:
+          by-user: false  # 生产环境不按用户统计（隐私考虑）
+      
+      alerts:
+        enabled: true
+        thresholds:
+          authentication-failure-rate: 0.05  # 生产环境更严格的失败率阈值（5%）
+          sanitization-error-rate: 0.01      # 生产环境更严格的错误率阈值（1%）
+          response-time-p99: 500              # 生产环境更严格的响应时间要求
+          max-requests-per-minute: 5000       # 生产环境更高的请求量阈值
+        
+        notifications:
+          email:
+            enabled: true
+            recipients: 
+              - "${SECURITY_ALERT_EMAIL:}"
+          webhook:
+            enabled: true
+            url: "${SECURITY_ALERT_WEBHOOK:}"
+          log:
+            enabled: true
+    
+    # 生产环境性能配置
+    performance:
+      authentication:
+        thread-pool-size: 20  # 生产环境更大的线程池
+        timeout-ms: 3000      # 生产环境更短的超时时间
+      
+      sanitization:
+        thread-pool-size: 10
+        streaming-threshold: 2097152  # 2MB
+        regex-cache-size: 500         # 生产环境更大的缓存
+      
+      cache:
+        redis:
+          enabled: true  # 生产环境启用Redis缓存
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: 0
+          timeout: 2000
+          pool:
+            max-active: 20  # 生产环境更大的连接池
+            max-idle: 10
+            min-idle: 5
+        local:
+          enabled: true
+          api-key:
+            max-size: 10000  # 生产环境更大的本地缓存
+            expire-after-write: 3600
+          jwt-blacklist:
+            max-size: 100000
+            expire-after-write: 86400
 
-# WebClient 配置
-webclient:
-  connection-timeout: 10s
-  read-timeout: 60s
-  write-timeout: 60s
-  max-in-memory-size: 50MB
-  connection-pool:
-    max-connections: 1000
-    max-idle-time: 30s
-    pending-acquire-timeout: 60s
-
-# 存储配置
-store:
-  type: file
-  path: "/app/config-store/"
-  file:
-    auto-backup: true
-    backup-interval: 1h
-    max-backups: 24
-    compression: true
-
-# 监控配置
+# 生产环境监控配置覆盖
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-      base-path: /actuator
   endpoint:
     health:
-      show-details: when-authorized
-      show-components: always
+      show-details: when-authorized  # 生产环境仅授权用户可见健康详情
     prometheus:
       cache:
         time-to-live: 10s

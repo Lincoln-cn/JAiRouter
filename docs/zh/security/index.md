@@ -93,7 +93,7 @@ curl -H "X-API-Key: your-api-key" \
 
 ## 架构概览
 
-```mermaid
+``mermaid
 graph TB
     Client[客户端] --> Gateway[API网关层]
     Gateway --> Auth[认证过滤器]
@@ -198,13 +198,25 @@ jairouter:
 export ADMIN_API_KEY="your-admin-api-key-here"
 export USER_API_KEY="your-user-api-key-here"
 
+# 生产环境 API Key 配置
+export PROD_ADMIN_API_KEY="your-production-admin-api-key-here"
+export PROD_SERVICE_API_KEY="your-production-service-api-key-here"
+export PROD_READONLY_API_KEY="your-production-readonly-api-key-here"
+
 # JWT 配置
 export JWT_SECRET="your-jwt-secret-key-here"
+
+# 生产环境 JWT 配置
+export PROD_JWT_SECRET="your-production-jwt-secret-key-here"
 
 # Redis 配置（如果启用）
 export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
 export REDIS_PASSWORD="your-redis-password"
+
+# 安全告警配置
+export SECURITY_ALERT_EMAIL="security-alerts@your-company.com"
+export SECURITY_ALERT_WEBHOOK="https://your-webhook-url.com/security-alerts"
 ```
 
 ## 监控指标
