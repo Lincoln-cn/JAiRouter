@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 // @RestControllerAdvice - 已禁用，使用 ReactiveGlobalExceptionHandler 替代
-// @RequiredArgsConstructor
+@RequiredArgsConstructor
 public class ServerExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ServerExceptionHandler.class);
