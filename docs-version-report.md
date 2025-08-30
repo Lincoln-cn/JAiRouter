@@ -5,10 +5,11 @@
 - 总文档数: 131
 - 近7天变更: 136
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-08-29 03:02:12
+- 最后扫描: 2025-08-30 02:55:55
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.11 → 1.0.12) - 2025-08-30
 - **MODIFIED**: docs/zh/troubleshooting/performance.md (1.0.0 → 1.0.1) - 2025-08-29
 - **MODIFIED**: docs/zh/troubleshooting/index.md (1.0.0 → 1.0.1) - 2025-08-29
 - **MODIFIED**: docs/zh/troubleshooting/debugging.md (1.0.0 → 1.0.1) - 2025-08-29
@@ -18,7 +19,6 @@
 - **CREATED**: docs/zh/tracing/quickstart.md ( → 1.0.0) - 2025-08-29
 - **CREATED**: docs/zh/tracing/performance-tuning.md ( → 1.0.0) - 2025-08-29
 - **CREATED**: docs/zh/tracing/operations-guide.md ( → 1.0.0) - 2025-08-29
-- **CREATED**: docs/zh/tracing/index.md ( → 1.0.0) - 2025-08-29
 
 ## 依赖关系分析
 
@@ -455,6 +455,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.12 - 2025-08-30 (0adc15c1)
 - **docs/zh/troubleshooting/performance.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/troubleshooting/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.1 - 2025-08-29 (7e878bcf)
@@ -581,7 +582,6 @@
 - **docs/en/api-reference/management-api.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/api-reference/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/README.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs-version-report.md**: v1.0.11 - 2025-08-29 (53433ab1)
 - **README.md**: v1.0.2 - 2025-08-29 (79df88ed)
 - **README-EN.md**: v1.0.1 - 2025-08-29 (79df88ed)
 - **docs/zh/api-reference/monitoring-api.md**: v1.0.0 - 2025-08-20 (5d0fe1f7)
