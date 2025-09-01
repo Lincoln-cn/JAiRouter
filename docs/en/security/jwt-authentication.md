@@ -1,24 +1,24 @@
 # JWT Authentication Configuration Guide
 
-<!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**:   
-> **作者**: 
-<!-- /版本信息 -->
+<!-- Version Information -->
+> **Document Version**: 1.0.0  
+> **Last Updated**: 2025-08-19  
+> **Git Commit**:   
+> **Author**:
+<!-- /Version Information -->
 
 ## Overview
 
-JAiRouter supports JWT (JSON Web Token) authentication, which can be integrated with existing identity authentication systems. JWT authentication provides a stateless authentication mechanism and supports token refresh and blacklist features.
+JAiRouter supports JWT (JSON Web Token) authentication, which can be integrated with existing identity authentication systems. JWT authentication provides a stateless authentication mechanism and supports token refresh and blacklist functionalities.
 
 ## Features
 
 - **Standard JWT Support**: Fully compatible with RFC 7519 standard
 - **Multiple Signing Algorithms**: Supports HS256, HS384, HS512, RS256, RS384, RS512
-- **Token Refresh**: Supports access token and refresh token mechanism
+- **Token Refresh**: Supports access token and refresh token mechanisms
 - **Blacklist Functionality**: Supports token revocation and logout
-- **Coexistence with API Key**: Can be used simultaneously with API Key authentication
-- **Username/Password Login**: Supports obtaining JWT tokens through username and password
+- **Coexistence with API Key**: Can be used alongside API Key authentication
+- **Username/Password Login**: Supports obtaining JWT tokens via username and password
 
 ## Quick Start
 
@@ -35,24 +35,40 @@ jairouter:
       expiration-minutes: 60
 ```
 
+**Configuration Explanation**  
+To **change the HTTP header used to carry the JWT**, you can add the following when enabling JWT:
+ ```yaml
+ jwt:
+   enabled: true
+   jwt-header: "Jairouter_Token"
+ ```
+In this case, JAiRouter will no longer read the default `Authorization` header but will instead read the custom `Jairouter_Token` header to obtain the token. This is suitable for scenarios where the `Authorization` header is shared with existing systems.
+
 ### 2. Set JWT Key
+
+#### Symmetric Key (HS256/HS384/HS512)
+```bash
+# Production Environment JWT Key Configuration
+export PROD_JWT_SECRET="your-very-strong-production-jwt-secret-key-at-least-32-characters-long"
+```
 
 #### Symmetric Key (HS256/HS384/HS512)
 
 ```bash
-# Generate a strong key
-export JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long"
+# Production Environment JWT Key Configuration
+export PROD_JWT_SECRET="your-very-strong-production-jwt-secret-key-at-least-32-characters-long"
+
+# Optional Expiration Time Configuration
+export PROD_JWT_EXPIRATION_MINUTES=15
+export PROD_JWT_REFRESH_EXPIRATION_DAYS=30
 ```
 
 #### Asymmetric Key (RS256/RS384/RS512)
 
-```yaml
-jairouter:
-  security:
-    jwt:
-      algorithm: "RS256"
-      public-key: "${JWT_PUBLIC_KEY}"
-      private-key: "${JWT_PRIVATE_KEY}"
+```bash
+# Production Environment Asymmetric Key Configuration
+export JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\nyour-public-key-here\n-----END PUBLIC KEY-----"
+export JWT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour-private-key-here\n-----END PRIVATE KEY-----"
 ```
 
 ### 3. Configure User Accounts
@@ -68,14 +84,14 @@ jairouter:
       refresh-expiration-days: 7
       issuer: "jairouter"
       blacklist-enabled: true
-      # User account configuration
+      # User Account Configuration
       accounts:
         - username: "admin"
           password: "{bcrypt}$2a$10$xmZ5S3DY567m5z6vcPVkreKZ885VqWFb1DB5.RgCEvqHLKj0H/G7u"  # BCrypt encrypted password
           roles: [ "ADMIN", "USER" ]
           enabled: true
         - username: "user"
-          password: "{noop}user123"  # Plain text password for development, should use encryption in production
+          password: "{noop}user123"  # Plain text password for development, encrypted in production
           roles: [ "USER" ]
           enabled: true
 ```
@@ -145,16 +161,16 @@ curl -X POST http://localhost:8080/api/auth/jwt/login \
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `enabled` | boolean | false | Whether to enable JWT authentication |
-| `secret` | string | - | JWT signing key (symmetric algorithm) |
+| [enabled](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\config\TraceConfig.java#L12-L12) | boolean | false | Whether to enable JWT authentication |
+| [secret](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\security\config\SecurityProperties.java#L126-L127) | string | - | JWT signing key (symmetric algorithm) |
 | `public-key` | string | - | JWT public key (asymmetric algorithm) |
 | `private-key` | string | - | JWT private key (asymmetric algorithm) |
-| `algorithm` | string | "HS256" | JWT signing algorithm |
+| [algorithm](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\security\config\SecurityProperties.java#L132-L134) | string | "HS256" | JWT signing algorithm |
 | `expiration-minutes` | int | 60 | Access token expiration time (minutes) |
 | `refresh-expiration-days` | int | 7 | Refresh token expiration time (days) |
-| `issuer` | string | "jairouter" | JWT issuer identifier |
+| [issuer](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\security\config\SecurityProperties.java#L153-L155) | string | "jairouter" | JWT issuer identifier |
 | `blacklist-enabled` | boolean | true | Whether to enable blacklist functionality |
-| `accounts` | array | [] | User account list |
+| [accounts](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\security\config\JwtUserProperties.java#L14-L14) | array | [] | User account list |
 
 ### Supported Signing Algorithms
 
@@ -204,9 +220,9 @@ JAiRouter supports the following standard JWT claims:
   "iss": "jairouter",           // Issuer
   "sub": "user123",             // Subject (User ID)
   "aud": "jairouter-api",       // Audience
-  "exp": 1640995200,            // Expiration time
-  "iat": 1640991600,            // Issued at
-  "nbf": 1640991600,            // Not before
+  "exp": 1640995200,            // Expiration Time
+  "iat": 1640991600,            // Issued At
+  "nbf": 1640991600,            // Not Before
   "jti": "unique-token-id"      // JWT ID
 }
 ```
@@ -230,11 +246,11 @@ You can include custom claims in the JWT:
 
 ## Password Encryption Configuration
 
-JAiRouter supports multiple password encryption methods to improve security:
+JAiRouter supports multiple password encryption methods to enhance security:
 
 ### BCrypt Encryption Configuration
 
-BCrypt is a secure password hashing function, recommended for use in production environments:
+BCrypt is a secure password hashing function recommended for production environments:
 
 ```java
 // Example code: Generate BCrypt encrypted password
@@ -245,7 +261,7 @@ String encodedPassword = encoder.encode(rawPassword);
 System.out.println("Encoded password: " + encodedPassword);
 ```
 
-Using BCrypt encrypted passwords in configuration files:
+Using BCrypt encrypted password in configuration file:
 
 ```yaml
 jairouter:
@@ -260,7 +276,7 @@ jairouter:
 
 ### Plain Text Password Configuration (Development Only)
 
-For development and testing convenience, plain text password configuration is supported:
+For convenience in development and testing, plain text password configuration is supported:
 
 ```yaml
 jairouter:
@@ -275,7 +291,7 @@ jairouter:
 
 ### Password Encoder Configuration
 
-Configure the password encoder in `SecurityConfiguration.java`:
+Configure password encoder in [SecurityConfiguration.java](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\security\config\SecurityConfiguration.java):
 
 ```java
 /**
@@ -292,7 +308,7 @@ public PasswordEncoder passwordEncoder() {
     org.springframework.security.crypto.password.DelegatingPasswordEncoder delegatingEncoder = 
         new org.springframework.security.crypto.password.DelegatingPasswordEncoder("bcrypt", encoders);
     
-    // Set the default password encoder
+    // Set default password encoder
     delegatingEncoder.setDefaultPasswordEncoderForMatches(encoders.get("bcrypt"));
     
     return delegatingEncoder;
@@ -307,12 +323,12 @@ public PasswordEncoder passwordEncoder() {
 jairouter:
   security:
     jwt:
-      expiration-minutes: 15        // Access token expires in 15 minutes
-      refresh-expiration-days: 30   // Refresh token expires in 30 days
+      expiration-minutes: 15        # Access token expires in 15 minutes
+      refresh-expiration-days: 30   # Refresh token expires in 30 days
       refresh-endpoint: "/auth/refresh"
 ```
 
-### Token Refresh Process
+### Refresh Token Flow
 
 1. **Obtain Access Token and Refresh Token**
 ```bash
@@ -354,8 +370,8 @@ jairouter:
     jwt:
       blacklist-enabled: true
       blacklist-cache:
-        expiration-seconds: 86400   // 24 hours
-        max-size: 10000            // Maximum cache entries
+        expiration-seconds: 86400   # 24 hours
+        max-size: 10000            # Maximum cache entries
 ```
 
 ### Token Revocation
@@ -380,7 +396,7 @@ curl -X POST http://localhost:8080/auth/revoke-all \
 
 ## Integration with API Key
 
-JWT authentication can be used simultaneously with API Key authentication:
+JWT authentication can be used alongside API Key authentication:
 
 ```yaml
 jairouter:
@@ -394,8 +410,8 @@ jairouter:
 
 Authentication Priority:
 1. If the request contains a JWT token, JWT authentication is used first
-2. If JWT authentication fails or no JWT token exists, try API Key authentication
-3. If both authentication methods fail, return a 401 error
+2. If JWT authentication fails or no JWT token exists, API Key authentication is attempted
+3. If both authentication methods fail, a 401 error is returned
 
 ## Performance Optimization
 
@@ -445,9 +461,9 @@ jairouter:
 
 ### Monitoring Metrics
 
-- `jairouter_security_jwt_tokens_issued_total`: Total number of issued tokens
-- `jairouter_security_jwt_tokens_refreshed_total`: Total number of refreshed tokens
-- `jairouter_security_jwt_tokens_revoked_total`: Total number of revoked tokens
+- `jairouter_security_jwt_tokens_issued_total`: Total tokens issued
+- `jairouter_security_jwt_tokens_refreshed_total`: Total tokens refreshed
+- `jairouter_security_jwt_tokens_revoked_total`: Total tokens revoked
 - `jairouter_security_jwt_validation_duration_seconds`: Token validation duration
 
 ## Security Best Practices
@@ -456,7 +472,7 @@ jairouter:
 
 - **Use Strong Keys**: Symmetric keys should be at least 256 bits (32 bytes)
 - **Regular Rotation**: Regularly rotate JWT signing keys
-- **Secure Storage**: Store keys using environment variables or key management systems
+- **Secure Storage**: Store keys using environment variables or secret management systems
 - **Key Separation**: Use different keys for different environments
 
 ### 2. Token Lifecycle
@@ -467,8 +483,8 @@ jairouter:
 
 ### 3. Algorithm Selection
 
-- **Production Environment Recommendation**: Use asymmetric algorithms like RS256
-- **Development Environment**: Symmetric algorithms like HS256 can be used
+- **Production Recommendation**: Use asymmetric algorithms like RS256
+- **Development**: Symmetric algorithms like HS256 can be used
 - **Avoid Weak Algorithms**: Do not use the none algorithm
 
 ### 4. Claim Validation
@@ -487,23 +503,23 @@ jairouter:
 
 **Possible Causes**:
 - Incorrect token format
-- Signature verification failure
-- Token has expired
-- Key configuration error
+- Signature validation failure
+- Expired token
+- Incorrect key configuration
 
 **Solutions**:
-1. Check if the token format is correct
+1. Check if token format is correct
 2. Verify signature key configuration
-3. Check if the token has expired
-4. Check detailed error logs
+3. Check if token has expired
+4. Review detailed error logs
 
 #### 2. Token Expired
 
 **Error Message**: `JWT token has expired`
 
 **Solutions**:
-1. Use refresh token to obtain a new access token
-2. Re-login to obtain a new token
+1. Use refresh token to obtain new access token
+2. Re-login to obtain new token
 3. Adjust token expiration time configuration
 
 #### 3. Blacklist Issues
@@ -511,8 +527,8 @@ jairouter:
 **Error Message**: `JWT token has been revoked`
 
 **Solutions**:
-1. Check if the token has been revoked
-2. Re-login to obtain a new token
+1. Check if token has been revoked
+2. Re-login to obtain new token
 3. Check blacklist cache configuration
 
 ### Debugging Tips
@@ -525,16 +541,16 @@ logging:
     org.unreal.modelrouter.security.jwt: DEBUG
 ```
 
-#### 2. Token Parsing Tools
+#### 2. Token Decoding Tools
 
-Use online tools to parse JWT tokens:
+Use online tools to decode JWT tokens:
 - https://jwt.io/
 - https://jwt-decoder.com/
 
-#### 3. Validate Token Content
+#### 3. Verify Token Content
 
 ```bash
-// Decode JWT token (without signature verification)
+# Decode JWT token (without signature verification)
 echo "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." | base64 -d
 ```
 
@@ -620,4 +636,4 @@ jairouter:
 - [API Key Management Guide](api-key-management.md)
 - [Data Sanitization Rules Configuration](data-sanitization.md)
 - [Security Feature Troubleshooting Guide](troubleshooting.md)
-- [Security Monitoring and Alerting](../monitoring/alerts.md)
+- [Security Monitoring and Alerting](monitoring.md)

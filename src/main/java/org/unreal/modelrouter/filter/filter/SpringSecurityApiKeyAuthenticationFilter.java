@@ -2,13 +2,16 @@ package org.unreal.modelrouter.filter.filter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationFailureHandler;
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler;
-import org.springframework.security.web.server.authentication.WebFilterChainServerAuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
@@ -24,26 +27,16 @@ import java.util.List;
  * 与Spring Security框架集成，支持API Key和JWT认证
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true", matchIfMissing = true)
 public class SpringSecurityApiKeyAuthenticationFilter implements WebFilter {
     
     private final SecurityProperties securityProperties;
     private final ServerAuthenticationConverter authenticationConverter;
     private final ServerAuthenticationSuccessHandler successHandler;
     private final ServerAuthenticationFailureHandler failureHandler;
-    
-    /**
-     * 默认构造函数，使用默认的成功处理器
-     */
-    public SpringSecurityApiKeyAuthenticationFilter(
-            SecurityProperties securityProperties,
-            ServerAuthenticationConverter authenticationConverter,
-            ServerAuthenticationFailureHandler failureHandler) {
-        this.securityProperties = securityProperties;
-        this.authenticationConverter = authenticationConverter;
-        this.successHandler = new WebFilterChainServerAuthenticationSuccessHandler();
-        this.failureHandler = failureHandler;
-    }
+    private final org.springframework.security.authentication.ReactiveAuthenticationManager authenticationManager;
     
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -52,13 +45,27 @@ public class SpringSecurityApiKeyAuthenticationFilter implements WebFilter {
             return chain.filter(exchange);
         }
         
-        // 转换请求为认证对象
+        // 如果API Key和JWT都未启用，则跳过认证
+        if (!securityProperties.getApiKey().isEnabled() && !securityProperties.getJwt().isEnabled()) {
+            return chain.filter(exchange);
+        }
+        
+        // 转换请求为认证对象并执行认证
         return authenticationConverter.convert(exchange)
-                .cast(Authentication.class)
                 .flatMap(authentication -> {
-                    // 将认证对象存储到exchange中，让认证管理器处理
-                    exchange.getAttributes().put("AUTHENTICATION_REQUEST", authentication);
-                    return chain.filter(exchange);
+                    // 使用认证管理器进行实际认证
+                    return authenticationManager.authenticate(authentication)
+                            .flatMap(authenticated -> {
+                                // 创建已认证的安全上下文
+                                SecurityContextImpl securityContext = new SecurityContextImpl(authenticated);
+                                // 在安全上下文中继续执行过滤器链
+                                return chain.filter(exchange)
+                                        .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
+                            })
+                            .onErrorResume(throwable -> {
+                                // 认证失败，传递给失败处理器
+                                return Mono.error(throwable);
+                            });
                 })
                 .switchIfEmpty(chain.filter(exchange));
     }
@@ -77,36 +84,14 @@ public class SpringSecurityApiKeyAuthenticationFilter implements WebFilter {
      * 检查是否为排除的路径
      */
     private boolean isExcludedPath(String path) {
-        return path.startsWith("/actuator/health") ||
-               path.startsWith("/actuator/info") ||
+        // 排除健康检查和监控端点
+        return path.startsWith("/actuator/") ||
+               path.equals("/health") ||
+               path.equals("/metrics") ||
                path.startsWith("/swagger-ui/") ||
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/webjars/") ||
                path.equals("/favicon.ico");
-    }
-    
-    /**
-     * 执行认证
-     */
-    private Mono<Authentication> authenticate(ServerWebExchange exchange, Authentication authentication) {
-        // 这里应该调用认证管理器进行认证
-        // 但由于我们在过滤器中，我们需要手动处理
-        log.debug("执行认证: {}", authentication.getClass().getSimpleName());
-        
-        // 返回未认证的Authentication，让后续的认证管理器处理
-        return Mono.just(authentication);
-    }
-    
-    /**
-     * 将认证信息设置到安全上下文中
-     */
-    private Mono<Void> setAuthenticationInContext(Authentication authentication) {
-        return ReactiveSecurityContextHolder.getContext()
-                .doOnNext(securityContext -> {
-                    securityContext.setAuthentication(authentication);
-                    log.debug("设置安全上下文: {}", authentication.getName());
-                })
-                .then();
     }
     
     /**
@@ -122,15 +107,17 @@ public class SpringSecurityApiKeyAuthenticationFilter implements WebFilter {
         
         @Override
         public Mono<Authentication> convert(ServerWebExchange exchange) {
-            // 首先尝试提取API Key
-            String apiKey = extractApiKey(exchange);
-            if (apiKey != null) {
-                log.debug("提取到API Key，创建API Key认证对象");
-                return Mono.just(new ApiKeyAuthentication(apiKey));
+            // 首先尝试提取API Key（如果启用）
+            if (Boolean.TRUE.equals(securityProperties.getApiKey().isEnabled())) {
+                String apiKey = extractApiKey(exchange);
+                if (apiKey != null) {
+                    log.debug("提取到API Key，创建API Key认证对象");
+                    return Mono.just(new ApiKeyAuthentication(apiKey));
+                }
             }
             
-            // 然后尝试提取JWT令牌
-            if (securityProperties.getJwt().isEnabled()) {
+            // 然后尝试提取JWT令牌（如果启用）
+            if (Boolean.TRUE.equals(securityProperties.getJwt().isEnabled())) {
                 String jwtToken = extractJwtToken(exchange);
                 if (jwtToken != null) {
                     log.debug("提取到JWT令牌，创建JWT认证对象");
@@ -153,6 +140,15 @@ public class SpringSecurityApiKeyAuthenticationFilter implements WebFilter {
                 return headerValues.get(0);
             }
             
+            // 也支持从Authorization头中提取（Bearer格式）
+            List<String> authHeaders = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
+            if (authHeaders != null && !authHeaders.isEmpty()) {
+                String authHeader = authHeaders.get(0);
+                if (authHeader.startsWith("Bearer ")) {
+                    return authHeader.substring(7);
+                }
+            }
+            
             return null;
         }
         
@@ -167,14 +163,13 @@ public class SpringSecurityApiKeyAuthenticationFilter implements WebFilter {
             }
             
             // 兼容Bearer格式
-            List<String> authHeaders = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION);
+            List<String> authHeaders = exchange.getRequest().getHeaders().get(securityProperties.getJwt().getJwtHeader());
             if (authHeaders != null && !authHeaders.isEmpty()) {
                 String authHeader = authHeaders.get(0);
                 if (authHeader.startsWith("Bearer ")) {
                     return authHeader.substring(7);
                 }
             }
-            
             return null;
         }
     }

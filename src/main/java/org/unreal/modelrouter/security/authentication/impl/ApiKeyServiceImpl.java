@@ -306,7 +306,16 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
             log.debug("从存储加载了 {} 个API Key", apiKeyCache.size());
         } catch (Exception e) {
-            log.error("加载API Key数据失败", e);
+            log.error("加载API Key数据失败，可能由于JSON文件损坏，请检查文件格式", e);
+            // 尝试重新创建配置文件
+            try {
+                log.info("尝试重新创建API Key配置文件");
+                storeManager.saveConfig(API_KEYS_STORE_KEY, Collections.emptyMap());
+                saveApiKeysToStore();
+                log.info("API Key配置文件已重新创建");
+            } catch (Exception recreateException) {
+                log.error("重新创建API Key配置文件失败", recreateException);
+            }
         }
     }
     

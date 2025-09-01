@@ -249,6 +249,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                         } else if (clientResponse.statusCode().value() == 400) {
                             logger.error("下游服务请求错误 (400): instance={}, path={}, response={}", 
                                 instanceName, path, clientResponse.statusCode());
+                        }else if (clientResponse.statusCode().value() == 503) {
+                            logger.error("下游服务请求错误 (503): instance={}, path={}, response={}",
+                                    instanceName, path, clientResponse.statusCode());
                         }
                         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
                     })

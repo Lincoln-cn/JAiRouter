@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.security.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -66,16 +67,30 @@ public class ApiKeyInfo {
      * 检查API Key是否已过期
      * @return 是否过期
      */
+    @JsonProperty("expired")
     public boolean isExpired() {
         return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
+    }
+    
+    // 用于反序列化expired字段的setter方法（无实际作用，仅用于兼容旧数据）
+    @JsonProperty("expired")
+    public void setExpired(boolean expired) {
+        // 仅用于反序列化，实际值由expiresAt字段计算得出
     }
     
     /**
      * 检查API Key是否有效（启用且未过期）
      * @return 是否有效
      */
+    @JsonProperty("valid")
     public boolean isValid() {
         return enabled && !isExpired();
+    }
+    
+    // 用于反序列化valid字段的setter方法（无实际作用，仅用于兼容旧数据）
+    @JsonProperty("valid")
+    public void setValid(boolean valid) {
+        // 仅用于反序列化，实际值由enabled和expiresAt字段计算得出
     }
     
     /**

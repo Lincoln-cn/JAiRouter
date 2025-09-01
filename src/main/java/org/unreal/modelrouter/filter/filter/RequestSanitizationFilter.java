@@ -206,7 +206,9 @@ public class RequestSanitizationFilter implements WebFilter {
                path.startsWith("/v1/embeddings") ||
                path.startsWith("/v1/rerank") ||
                path.startsWith("/v1/audio/") ||
-               path.startsWith("/v1/images/");
+               path.startsWith("/v1/images/") ||
+               // 排除认证端点
+               path.startsWith("/api/auth/jwt/login");
     }
     
     /**
