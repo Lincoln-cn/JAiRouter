@@ -115,7 +115,32 @@ public abstract class BaseAdapter implements ServiceCapability {
             }
         }
 
+        return processRequestWithRetry(request, authorization, client, path, selectedInstance,
+                serviceType, processor, tracingContext, startTime, 0);
+    }
+
+    /**
+     * 带重试的请求处理
+     */
+    @SuppressWarnings("all")
+    private <T> Mono processRequestWithRetry(
+            final T request,
+            final String authorization,
+            final WebClient client,
+            final String path,
+            final ModelRouterProperties.ModelInstance selectedInstance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final RequestProcessor<T> processor,
+            final org.unreal.modelrouter.tracing.TracingContext tracingContext,
+            final long startTime,
+            final int retryCount) {
+
+        String adapterType = getAdapterType();
+        String instanceName = selectedInstance.getName();
+        int maxRetries = getMaxRetries(serviceType);
+
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
+                // 在成功完成时记录成功
                 .doOnSuccess(response -> {
                     long duration = System.currentTimeMillis() - startTime;
                     boolean success = response != null && response.getStatusCode().is2xxSuccessful();
@@ -126,6 +151,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                         if (metricsCollector != null) {
                             metricsCollector.recordBackendCall(adapterType, instanceName, duration, true);
                         }
+                        // 缓存成功响应 - TODO: 实现缓存逻辑
+                        // cacheSuccessfulResponse(serviceType, modelName, response, httpRequest);
                     } else {
                         // 非2xx响应视为失败
                         getRegistry().recordCallFailure(serviceType, selectedInstance);
@@ -148,7 +175,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                         }
                     }
                 })
-                .doOnError(throwable -> {
+                // 在发生错误时处理重试逻辑
+                .onErrorResume(throwable -> {
                     long duration = System.currentTimeMillis() - startTime;
                     getRegistry().recordCallFailure(serviceType, selectedInstance);
 
@@ -157,22 +185,58 @@ public abstract class BaseAdapter implements ServiceCapability {
                         metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
                     }
 
-                    // 记录适配器调用失败追踪
-                    if (tracingContext != null && tracingContext.isActive()) {
-                        try {
-                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
-                                    org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
-                            enhancer.logAdapterCallComplete(adapterType, selectedInstance, serviceType.name(),
-                                    getModelNameFromRequest(request), duration, false, tracingContext);
-                        } catch (Exception e) {
-                            // 忽略追踪错误
+                    // 检查是否应该重试
+                    if (shouldRetry(throwable, retryCount, maxRetries)) {
+                        // 记录重试追踪
+                        if (tracingContext != null && tracingContext.isActive()) {
+                            try {
+                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                                        org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                enhancer.logAdapterRetry(adapterType, selectedInstance, retryCount + 1,
+                                        maxRetries, throwable, tracingContext);
+                            } catch (Exception e) {
+                                // 忽略追踪错误
+                            }
                         }
+
+                        // 记录重试指标
+                        if (metricsCollector != null) {
+                            // 使用 recordBackendCall 记录重试，duration 为 0，success 为 false 表示需要重试
+                            metricsCollector.recordBackendCall(adapterType, instanceName, 0, false);
+                        }
+
+                        // 等待重试延迟
+                        long retryDelay = calculateRetryDelay(retryCount);
+                        return Mono.delay(java.time.Duration.ofMillis(retryDelay))
+                                .then(processRequestWithRetry(request, authorization, client, path,
+                                        selectedInstance, serviceType, processor, tracingContext,
+                                        System.currentTimeMillis(), retryCount + 1));
+                    } else {
+                        // 记录适配器调用失败追踪
+                        if (tracingContext != null && tracingContext.isActive()) {
+                            try {
+                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                                        org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                enhancer.logAdapterCallComplete(adapterType, selectedInstance, serviceType.name(),
+                                        getModelNameFromRequest(request), duration, false, tracingContext);
+                            } catch (Exception e) {
+                                // 忽略追踪错误
+                            }
+                        }
+
+                        // 记录最终失败指标
+                        if (metricsCollector != null) {
+                            // 使用 recordBackendCall 记录最终失败
+                            long finalDuration = System.currentTimeMillis() - startTime;
+                            metricsCollector.recordBackendCall(adapterType, instanceName, finalDuration, false);
+                        }
+
+                        return Mono.error(throwable);
                     }
                 });
     }
-
-
 
     /**
      * 通用请求处理模板方法（带降级处理）
@@ -782,7 +846,109 @@ public abstract class BaseAdapter implements ServiceCapability {
         }
     }
 
+    /**
+     * 获取最大重试次数
+     */
+    protected int getMaxRetries(final ModelServiceRegistry.ServiceType serviceType) {
+        // 根据服务类型返回不同的重试次数
+        switch (serviceType) {
+            case chat:
+                return 2; // 聊天服务重试2次
+            case embedding:
+                return 2; // 嵌入服务重试2次（降低）
+            case rerank:
+                return 1; // 重排序服务重试1次（降低，避免body重读问题）
+            case tts:
+                return 1; // TTS服务重试1次（文件较大）
+            case stt:
+                return 1; // STT服务重试1次（文件较大）
+            case imgGen:
+                return 1; // 图像生成重试1次（耗时较长）
+            case imgEdit:
+                return 1; // 图像编辑重试1次（耗时较长）
+            default:
+                return 1; // 默认重试1次（降低）
+        }
+    }
 
+    /**
+     * 判断是否应该重试
+     */
+    protected boolean shouldRetry(final Throwable throwable, final int currentRetryCount, final int maxRetries) {
+        // 如果已达到最大重试次数，不再重试
+        if (currentRetryCount >= maxRetries) {
+            logger.debug("达到最大重试次数，不再重试: currentRetryCount={}, maxRetries={}", currentRetryCount, maxRetries);
+            return false;
+        }
+
+        // 检查是否是 ServerWebInputException（No request body）- 这种错误不应该重试
+        if (throwable instanceof org.springframework.web.server.ServerWebInputException) {
+            logger.warn("ServerWebInputException 错误，不重试: {}", throwable.getMessage());
+            return false;
+        }
+
+        // 检查异常类型，只对特定类型的异常进行重试
+        if (throwable instanceof org.springframework.web.server.ResponseStatusException) {
+            org.springframework.web.server.ResponseStatusException statusException =
+                    (org.springframework.web.server.ResponseStatusException) throwable;
+
+            // 400 Bad Request 不重试（特别是 No request body 错误）
+            if (statusException.getStatusCode().value() == 400) {
+                logger.warn("400 Bad Request 错误，不重试: {}", statusException.getMessage());
+                return false;
+            }
+
+            // 401 Unauthorized 不重试
+            if (statusException.getStatusCode().value() == 401) {
+                logger.warn("401 Unauthorized 错误，不重试");
+                return false;
+            }
+
+            // 5xx服务器错误可以重试
+            if (statusException.getStatusCode().is5xxServerError()) {
+                logger.debug("5xx服务器错误，可以重试: status={}", statusException.getStatusCode());
+                return true;
+            }
+
+            // 429 Too Many Requests可以重试
+            if (statusException.getStatusCode().value() == 429) {
+                logger.debug("429 Too Many Requests，可以重试");
+                return true;
+            }
+
+            // 408 Request Timeout可以重试
+            if (statusException.getStatusCode().value() == 408) {
+                logger.debug("408 Request Timeout，可以重试");
+                return true;
+            }
+
+            // 记录其他4xx错误
+            logger.debug("其他4xx客户端错误，不重试: status={}", statusException.getStatusCode());
+            return false;
+        }
+
+        // 网络相关异常可以重试
+        if (throwable instanceof java.net.ConnectException ||
+                throwable instanceof java.net.SocketTimeoutException ||
+                throwable instanceof java.io.IOException) {
+            logger.debug("网络相关异常，可以重试: exception={}", throwable.getClass().getSimpleName());
+            return true;
+        }
+
+        // 其他异常不重试
+        logger.debug("其他异常，不重试: exception={}", throwable.getClass().getSimpleName());
+        return false;
+    }
+
+    /**
+     * 计算重试延迟（指数退避）
+     */
+    protected long calculateRetryDelay(final int retryCount) {
+        // 指数退避：基础延迟 * 2^重试次数，最大不超过10秒
+        long baseDelay = 1000; // 1秒基础延迟
+        long delay = baseDelay * (1L << retryCount); // 2^retryCount
+        return Math.min(delay, 10000); // 最大10秒
+    }
 
     /**
      * 函数式接口用于请求处理
