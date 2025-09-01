@@ -1,7 +1,7 @@
 site_name: JAiRouter 文档
 site_description: AI模型服务路由和负载均衡网关
 site_author: Lincoln
-site_url: https://docs.jairouter.com/
+site_url: https://jairouter.com/
 
 repo_name: Lincoln-cn/jairouter
 repo_url: https://github.com/Lincoln-cn/jairouter
