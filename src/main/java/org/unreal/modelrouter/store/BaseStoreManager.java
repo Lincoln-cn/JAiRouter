@@ -3,6 +3,7 @@ package org.unreal.modelrouter.store;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * StoreManager的抽象实现类
@@ -23,10 +24,24 @@ public abstract class BaseStoreManager implements StoreManager {
         if (config == null) {
             throw new IllegalArgumentException("Config cannot be null");
         }
+        
+        // 检查配置是否发生变化
+        Map<String, Object> currentConfig = null;
+        try {
+            currentConfig = doGetConfig(key);
+        } catch (Exception e) {
+            // 如果读取配置失败，可能是文件不存在，继续执行保存操作
+            // 这种情况下视为配置发生了变化
+        }
+        boolean configChanged = !Objects.equals(currentConfig, config);
+        
         // 保存当前版本
         doSaveConfig(key, config);
-        // 保存历史版本
-        saveConfigVersion(key, config, getNextVersion(key));
+        
+        // 只有配置发生变化时才保存历史版本
+        if (configChanged) {
+            saveConfigVersion(key, config, getNextVersion(key));
+        }
     }
 
     /**
