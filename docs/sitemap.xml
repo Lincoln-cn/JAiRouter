@@ -27,7 +27,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/deployment/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/"/>
@@ -51,7 +51,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/monitoring/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/monitoring/"/>
@@ -115,7 +115,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/deployment/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/"/>
@@ -155,7 +155,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/security/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/security/"/>
@@ -187,7 +187,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/getting-started/installation/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/getting-started/installation/"/>
@@ -211,7 +211,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/getting-started/installation/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/getting-started/installation/"/>
@@ -219,7 +219,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/getting-started/quick-start/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/getting-started/quick-start/"/>
@@ -307,7 +307,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/deployment/china-optimization/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/china-optimization/"/>
@@ -315,7 +315,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/deployment/docker/</loc>
-    <lastmod>2025-08-27</lastmod>
+    <lastmod>2025-08-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/docker/"/>
@@ -323,7 +323,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/deployment/github-pages/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/github-pages/"/>
@@ -331,7 +331,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/deployment/kubernetes/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/kubernetes/"/>
@@ -339,7 +339,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/deployment/production/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/production/"/>
@@ -427,7 +427,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/deployment/china-optimization/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/china-optimization/"/>
@@ -435,7 +435,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/deployment/docker/</loc>
-    <lastmod>2025-08-27</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/docker/"/>
@@ -443,7 +443,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/deployment/github-pages/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/github-pages/"/>
@@ -451,7 +451,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/deployment/kubernetes/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/kubernetes/"/>
@@ -459,7 +459,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/deployment/production/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/deployment/production/"/>
@@ -467,7 +467,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/monitoring/alerts/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/monitoring/alerts/"/>
@@ -515,7 +515,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/monitoring/setup/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/monitoring/setup/"/>
@@ -531,7 +531,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/monitoring/testing/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/monitoring/testing/"/>
@@ -563,7 +563,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/security/jwt-authentication/</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2025-09-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/security/jwt-authentication/"/>
@@ -571,7 +571,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/security/troubleshooting/</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/security/troubleshooting/"/>
@@ -627,7 +627,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/monitoring/alerts/</loc>
-    <lastmod>2025-08-22</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/monitoring/alerts/"/>
@@ -683,7 +683,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/monitoring/setup/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/monitoring/setup/"/>
@@ -699,7 +699,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/monitoring/testing/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/monitoring/testing/"/>
@@ -715,7 +715,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/security/api-key-management/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/security/api-key-management/"/>
@@ -723,7 +723,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/security/data-sanitization/</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/security/data-sanitization/"/>
@@ -731,7 +731,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/security/jwt-authentication/</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2025-09-01</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/security/jwt-authentication/"/>
@@ -739,7 +739,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/security/troubleshooting/</loc>
-    <lastmod>2025-08-28</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/security/troubleshooting/"/>
@@ -851,7 +851,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/troubleshooting/common-issues/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/troubleshooting/common-issues/"/>
@@ -859,7 +859,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/troubleshooting/debugging/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/troubleshooting/debugging/"/>
@@ -931,7 +931,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/troubleshooting/common-issues/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/troubleshooting/common-issues/"/>
@@ -939,7 +939,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/troubleshooting/debugging/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/troubleshooting/debugging/"/>
@@ -971,7 +971,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/en/reference/faq/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/reference/faq/"/>
@@ -1003,7 +1003,7 @@
   </url>
   <url>
     <loc>https://jairouter.com/zh/reference/faq/</loc>
-    <lastmod>2025-08-19</lastmod>
+    <lastmod>2025-08-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://jairouter.com/en/reference/faq/"/>
