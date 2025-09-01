@@ -51,9 +51,14 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      */
     @PostConstruct
     public void init() {
-        loadApiKeysFromConfig();
-        loadApiKeysFromStore();
-        loadUsageStatsFromStore();
+        try {
+            loadApiKeysFromConfig();
+            loadApiKeysFromStore();
+            loadUsageStatsFromStore();
+        } catch (Exception e) {
+            log.error("API Key服务初始化失败", e);
+            throw e;
+        }
         log.info("API Key服务初始化完成，加载了 {} 个API Key", apiKeyCache.size());
     }
     
@@ -281,13 +286,12 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      * 从存储中加载API Key数据到缓存
      */
     private void loadApiKeysFromStore() {
-        //如果不存在配置文件，则创建默认空配置文件
-        if (!storeManager.exists(API_KEYS_STORE_KEY)) {
-            storeManager.saveConfig(API_KEYS_STORE_KEY, Collections.emptyMap());
-            log.info("创建默认API Key配置文件");
-            saveApiKeysToStore();
-        }
         try {
+            //如果不存在配置文件，则创建默认空配置文件
+            if (!storeManager.exists(API_KEYS_STORE_KEY)) {
+                storeManager.saveConfig(API_KEYS_STORE_KEY, Collections.emptyMap());
+                log.info("创建默认API Key配置文件");
+            }
             Map<String, Object> config = storeManager.getConfig(API_KEYS_STORE_KEY);
             if (config != null && !config.isEmpty()) {
                 @SuppressWarnings("unchecked")
@@ -311,7 +315,6 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             try {
                 log.info("尝试重新创建API Key配置文件");
                 storeManager.saveConfig(API_KEYS_STORE_KEY, Collections.emptyMap());
-                saveApiKeysToStore();
                 log.info("API Key配置文件已重新创建");
             } catch (Exception recreateException) {
                 log.error("重新创建API Key配置文件失败", recreateException);
@@ -323,12 +326,11 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      * 从存储中加载使用统计数据到缓存
      */
     private void loadUsageStatsFromStore() {
-        if (!storeManager.exists(USAGE_STATS_STORE_KEY)) {
-            storeManager.saveConfig(USAGE_STATS_STORE_KEY, Collections.emptyMap());
-            log.info("创建默认使用统计配置文件");
-            saveUsageStatsToStore();
-        }
         try {
+            if (!storeManager.exists(USAGE_STATS_STORE_KEY)) {
+                storeManager.saveConfig(USAGE_STATS_STORE_KEY, Collections.emptyMap());
+                log.info("创建默认使用统计配置文件");
+            }
             Map<String, Object> config = storeManager.getConfig(USAGE_STATS_STORE_KEY);
             if (config != null && !config.isEmpty()) {
                 @SuppressWarnings("unchecked")
@@ -344,10 +346,18 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             log.debug("从存储加载了 {} 个使用统计", usageStatsCache.size());
         } catch (Exception e) {
             log.error("加载使用统计数据失败", e);
+            // 尝试重新创建配置文件
+            try {
+                log.info("尝试重新创建使用统计配置文件");
+                storeManager.saveConfig(USAGE_STATS_STORE_KEY, Collections.emptyMap());
+                log.info("使用统计配置文件已重新创建");
+            } catch (Exception recreateException) {
+                log.error("重新创建使用统计配置文件失败", recreateException);
+            }
         }
-    }    
-  
-  /**
+    }
+    
+    /**
      * 保存API Key数据到存储
      */
     private void saveApiKeysToStore() {

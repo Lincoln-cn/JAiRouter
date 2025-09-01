@@ -75,6 +75,10 @@ public class FileStoreManager extends BaseStoreManager {
                     .resolve(sanitizedKey + ".json");
             return SafeFileOperations.readJsonFile(configPath, objectMapper, new TypeReference<>() { });
         } catch (IOException e) {
+            // 对于文件不存在的情况，静默处理，因为这是正常现象（新安装或默认初始化）
+            if (e.getMessage() != null && e.getMessage().contains("File does not exist")) {
+                return null;
+            }
             LOGGER.error("Failed to read config for key: " + key + ". File path: " + storagePath + "/" + key + ".json", e);
             throw new RuntimeException("Failed to read config for key: " + key + ". Please check if the JSON file is valid.", e);
         }
@@ -160,11 +164,15 @@ public class FileStoreManager extends BaseStoreManager {
      */
     @Override
     public void saveConfigVersion(String key, Map<String, Object> config, int version) {
-        try {
-            File versionFile = new File(storagePath, key + "@" + version + ".json");
-            objectMapper.writeValue(versionFile, config);
-        } catch (IOException e) {
-            LOGGER.error("Failed to save config version for key: " + key + ", version: " + version, e);
+        // 只有当配置不为空时才保存版本文件
+        if (config != null && !config.isEmpty()) {
+            try {
+                String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+                File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
+                objectMapper.writeValue(versionFile, config);
+            } catch (IOException e) {
+                LOGGER.error("Failed to save config version for key: " + key + ", version: " + version, e);
+            }
         }
     }
 
@@ -178,9 +186,10 @@ public class FileStoreManager extends BaseStoreManager {
         try {
             List<Integer> versions = new ArrayList<>();
             File storageDir = new File(storagePath);
-            Pattern versionPattern = Pattern.compile(Pattern.quote(key) + "@(\\d+)\\.json");
+            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+            Pattern versionPattern = Pattern.compile(Pattern.quote(sanitizedKey) + "@(\\d+)\\.json");
             
-            File[] files = storageDir.listFiles((dir, name) -> name.startsWith(key + "@") && name.endsWith(".json"));
+            File[] files = storageDir.listFiles((dir, name) -> name.startsWith(sanitizedKey + "@") && name.endsWith(".json"));
             
             if (files != null) {
                 for (File file : files) {
@@ -208,7 +217,8 @@ public class FileStoreManager extends BaseStoreManager {
     @Override
     public Map<String, Object> getConfigByVersion(String key, int version) {
         try {
-            File versionFile = new File(storagePath, key + "@" + version + ".json");
+            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
             if (!versionFile.exists()) {
                 return null;
             }
@@ -227,7 +237,8 @@ public class FileStoreManager extends BaseStoreManager {
     @Override
     public void deleteConfigVersion(String key, int version) {
         try {
-            File versionFile = new File(storagePath, key + "@" + version + ".json");
+            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
             if (versionFile.exists()) {
                 Files.delete(versionFile.toPath());
             }
