@@ -636,4 +636,4 @@ jairouter:
 - [API Key 管理指南](api-key-management.md)
 - [数据脱敏规则配置](data-sanitization.md)
 - [安全功能故障排除指南](troubleshooting.md)
-- [安全监控和告警](monitoring.md)
+- [安全监控和告警](../monitoring/index.md)
