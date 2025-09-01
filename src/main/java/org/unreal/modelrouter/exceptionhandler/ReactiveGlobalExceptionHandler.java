@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.exceptionhandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +16,18 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.dto.SecurityErrorResponse;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.exception.AuthorizationException;
+import org.unreal.modelrouter.exception.exception.SanitizationException;
+import org.unreal.modelrouter.exception.exception.SecurityException;
+import org.unreal.modelrouter.exception.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.monitoring.error.ErrorTracker;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.TracingContextHolder;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +45,11 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     private final ErrorTracker errorTracker;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    {
+        // 注册JavaTimeModule以支持LocalDateTime序列化
+        objectMapper.registerModule(new JavaTimeModule());
+    }
+
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
         ServerHttpResponse response = exchange.getResponse();
@@ -52,34 +65,42 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             recordError(ex);
             
             // 根据异常类型设置响应
-            RouterResponse<Void> errorResponse;
-            HttpStatus status;
-            
-            if (ex instanceof ServerWebInputException) {
-                logger.error("请求体读取异常: {}", ex.getMessage());
-                errorResponse = RouterResponse.error("请求体无效或缺失: " + ex.getMessage(), "400");
-                status = HttpStatus.BAD_REQUEST;
-            } else if (ex instanceof ResponseStatusException) {
-                ResponseStatusException rse = (ResponseStatusException) ex;
-                logger.error("响应状态异常: status={}, message={}", rse.getStatusCode(), rse.getMessage());
-                errorResponse = RouterResponse.error("请求处理失败: " + rse.getReason(), String.valueOf(rse.getStatusCode().value()));
-                status = HttpStatus.resolve(rse.getStatusCode().value());
-                if (status == null) {
+            if (ex instanceof SecurityException) {
+                return handleSecurityException(exchange, (SecurityException) ex);
+            } else if (ex instanceof SecurityAuthenticationException) {
+                return handleSecurityAuthenticationException(exchange, (SecurityAuthenticationException) ex);
+            } else if (ex instanceof AuthenticationException) {
+                // 直接处理AuthenticationException异常，返回具体的错误信息
+                return handleAuthenticationException(exchange, (AuthenticationException) ex);
+            } else {
+                RouterResponse<Void> errorResponse;
+                HttpStatus status;
+                
+                if (ex instanceof ServerWebInputException) {
+                    logger.error("请求体读取异常: {}", ex.getMessage());
+                    errorResponse = RouterResponse.error("请求体无效或缺失: " + ex.getMessage(), "400");
+                    status = HttpStatus.BAD_REQUEST;
+                } else if (ex instanceof ResponseStatusException) {
+                    ResponseStatusException rse = (ResponseStatusException) ex;
+                    logger.error("响应状态异常: status={}, message={}", rse.getStatusCode(), rse.getMessage());
+                    errorResponse = RouterResponse.error("请求处理失败: " + rse.getReason(), String.valueOf(rse.getStatusCode().value()));
+                    status = HttpStatus.resolve(rse.getStatusCode().value());
+                    if (status == null) {
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                    }
+                } else {
+                    logger.error("系统异常", ex);
+                    String errorMessage = ex.getMessage();
+                    if (errorMessage == null) {
+                        errorMessage = ex.getClass().getSimpleName();
+                    }
+                    errorResponse = RouterResponse.error("系统异常: " + errorMessage, "500");
                     status = HttpStatus.INTERNAL_SERVER_ERROR;
                 }
-            } else {
-                logger.error("系统异常", ex);
-                String errorMessage = ex.getMessage();
-                if (errorMessage == null) {
-                    errorMessage = ex.getClass().getSimpleName();
-                }
-                errorResponse = RouterResponse.error("系统异常: " + errorMessage, "500");
-                status = HttpStatus.INTERNAL_SERVER_ERROR;
+                
+                // 安全地设置响应状态和头
+                return setResponse(response, errorResponse, status);
             }
-            
-            // 安全地设置响应状态和头
-            return setResponse(response, errorResponse, status);
-            
         } catch (Exception e) {
             logger.error("异常处理器本身发生异常", e);
             // 如果异常处理器本身出错，返回最简单的错误响应
@@ -107,9 +128,18 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             } else if (ex instanceof ResponseStatusException) {
                 ResponseStatusException rse = (ResponseStatusException) ex;
                 additionalInfo.put("responseStatus", String.valueOf(rse.getStatusCode().value()));
+            } else if (ex instanceof SecurityException) {
+                additionalInfo.put("responseStatus", String.valueOf(((SecurityException) ex).getHttpStatus().value()));
+                additionalInfo.put("errorCode", ((SecurityException) ex).getErrorCode());
+            } else if (ex instanceof SecurityAuthenticationException) {
+                additionalInfo.put("responseStatus", "401");
+                additionalInfo.put("errorCode", ((SecurityAuthenticationException) ex).getErrorCode());
             } else {
                 additionalInfo.put("responseStatus", "500");
             }
+            
+            // 添加异常类型信息
+            additionalInfo.put("exceptionType", ex.getClass().getSimpleName());
             
             errorTracker.trackError(ex, "reactive_global_exception_handling", additionalInfo);
         } catch (Exception trackingException) {
@@ -139,6 +169,129 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         } catch (Exception e) {
             logger.error("设置错误响应失败", e);
             return setSimpleErrorResponse(response);
+        }
+    }
+    
+    /**
+     * 处理安全异常
+     */
+    private Mono<Void> handleSecurityException(ServerWebExchange exchange, SecurityException ex) {
+        // 根据异常类型进行不同的处理
+        if (ex instanceof AuthenticationException) {
+            return handleAuthenticationException(exchange, (AuthenticationException) ex);
+        } else if (ex instanceof AuthorizationException) {
+            return handleAuthorizationException(exchange, (AuthorizationException) ex);
+        } else if (ex instanceof SanitizationException) {
+            return handleSanitizationException(exchange, (SanitizationException) ex);
+        } else {
+            return handleGenericSecurityException(exchange, ex);
+        }
+    }
+
+    /**
+     * 处理认证异常
+     */
+    private Mono<Void> handleAuthenticationException(ServerWebExchange exchange, AuthenticationException ex) {
+        logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage());
+        
+        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(ex.getHttpStatus().value())
+                .error(ex.getHttpStatus().getReasonPhrase())
+                .message(ex.getMessage())
+                .errorCode(ex.getErrorCode())
+                .path(exchange.getRequest().getPath().value())
+                .build();
+
+        return writeErrorResponse(exchange, ex.getHttpStatus(), errorResponse);
+    }
+
+    /**
+     * 处理授权异常
+     */
+    private Mono<Void> handleAuthorizationException(ServerWebExchange exchange, AuthorizationException ex) {
+        logger.warn("授权失败: {} - {}", ex.getErrorCode(), ex.getMessage());
+        
+        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(ex.getHttpStatus().value())
+                .error(ex.getHttpStatus().getReasonPhrase())
+                .message(ex.getMessage())
+                .errorCode(ex.getErrorCode())
+                .path(exchange.getRequest().getPath().value())
+                .build();
+
+        return writeErrorResponse(exchange, ex.getHttpStatus(), errorResponse);
+    }
+
+    /**
+     * 处理数据脱敏异常
+     */
+    private Mono<Void> handleSanitizationException(ServerWebExchange exchange, SanitizationException ex) {
+        logger.error("数据脱敏异常: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
+        
+        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(ex.getHttpStatus().value())
+                .error(ex.getHttpStatus().getReasonPhrase())
+                .message("数据处理失败")  // 不暴露具体的脱敏错误信息
+                .errorCode(ex.getErrorCode())
+                .path(exchange.getRequest().getPath().value())
+                .build();
+
+        return writeErrorResponse(exchange, ex.getHttpStatus(), errorResponse);
+    }
+
+    /**
+     * 处理通用安全异常
+     */
+    private Mono<Void> handleGenericSecurityException(ServerWebExchange exchange, SecurityException ex) {
+        logger.error("安全异常: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
+        
+        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(ex.getHttpStatus().value())
+                .error(ex.getHttpStatus().getReasonPhrase())
+                .message(ex.getMessage())
+                .errorCode(ex.getErrorCode())
+                .path(exchange.getRequest().getPath().value())
+                .build();
+
+        return writeErrorResponse(exchange, ex.getHttpStatus(), errorResponse);
+    }
+    
+    /**
+     * 处理Spring Security认证异常
+     */
+    private Mono<Void> handleSecurityAuthenticationException(ServerWebExchange exchange, SecurityAuthenticationException ex) {
+        logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage());
+        
+        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
+                .message(ex.getMessage())
+                .errorCode(ex.getErrorCode())
+                .path(exchange.getRequest().getPath().value())
+                .build();
+
+        return writeErrorResponse(exchange, HttpStatus.UNAUTHORIZED, errorResponse);
+    }
+    
+    /**
+     * 写入错误响应
+     */
+    private Mono<Void> writeErrorResponse(ServerWebExchange exchange, HttpStatus status, SecurityErrorResponse errorResponse) {
+        exchange.getResponse().setStatusCode(status);
+        exchange.getResponse().getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+
+        try {
+            String responseBody = objectMapper.writeValueAsString(errorResponse);
+            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(responseBody.getBytes());
+            return exchange.getResponse().writeWith(Mono.just(buffer));
+        } catch (Exception e) {
+            logger.error("写入错误响应失败", e);
+            return setSimpleErrorResponse(exchange.getResponse());
         }
     }
     

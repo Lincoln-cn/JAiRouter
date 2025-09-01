@@ -11,7 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
-import org.unreal.modelrouter.filter.filter.RequestSanitizationFilter;
+import org.unreal.modelrouter.filter.RequestSanitizationFilter;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.constants.SecurityConstants;

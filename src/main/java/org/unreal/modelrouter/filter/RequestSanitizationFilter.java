@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.filter.filter;
+package org.unreal.modelrouter.filter;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +21,7 @@ import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.constants.SecurityConstants;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.security.config.ExcludedPathsConfig;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -190,25 +191,8 @@ public class RequestSanitizationFilter implements WebFilter {
      * 检查是否为排除的路径
      */
     private boolean isExcludedPath(String path) {
-        // 排除健康检查、监控端点和静态资源
-        return path.startsWith("/actuator/") ||
-               path.equals("/health") ||
-               path.equals("/metrics") ||
-               path.startsWith("/swagger-ui/") ||
-               path.startsWith("/v3/api-docs") ||
-               path.equals("/favicon.ico") ||
-               path.startsWith("/static/") ||
-               path.startsWith("/css/") ||
-               path.startsWith("/js/") ||
-               path.startsWith("/images/") ||
-               // 排除所有AI模型接口路径，避免对AI模型输入输出进行脱敏
-               path.startsWith("/v1/chat/") ||
-               path.startsWith("/v1/embeddings") ||
-               path.startsWith("/v1/rerank") ||
-               path.startsWith("/v1/audio/") ||
-               path.startsWith("/v1/images/") ||
-               // 排除认证端点
-               path.startsWith("/api/auth/jwt/login");
+        // 使用统一的排除路径配置
+        return ExcludedPathsConfig.isDataMaskExcluded(path);
     }
     
     /**

@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -17,8 +16,7 @@ import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.service.JwtTokenRefreshService;
-import org.unreal.modelrouter.security.service.UserAuthenticationService;
-import org.unreal.modelrouter.security.service.UserDetailsServiceImpl;
+import org.unreal.modelrouter.security.service.AccountManager;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -40,9 +38,8 @@ public class JwtTokenController {
 
     private final JwtTokenRefreshService tokenRefreshService;
     private final JwtTokenValidator jwtTokenValidator;
-    private final UserAuthenticationService userAuthenticationService;
+    private final AccountManager accountManager;
     private final SecurityProperties securityProperties;
-    private final UserDetailsServiceImpl userDetailsService;
 
     /**
      * 用户登录获取JWT令牌
@@ -54,12 +51,12 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "用户名或密码错误")
     })
-    public Mono<ResponseEntity<RouterResponse<LoginResponse>>> login(
+    public Mono<RouterResponse<LoginResponse>> login(
             @Parameter(description = "登录请求") @RequestBody LoginRequest request) {
 
         log.debug("收到用户登录请求: username={}", request.getUsername());
 
-        return userAuthenticationService.authenticateAndGenerateToken(request.getUsername(), request.getPassword())
+        return accountManager.authenticateAndGenerateToken(request.getUsername(), request.getPassword(), securityProperties)
                 .map(token -> {
                     LoginResponse response = new LoginResponse();
                     response.setToken(token);
@@ -68,7 +65,7 @@ public class JwtTokenController {
                     response.setMessage("登录成功");
                     response.setTimestamp(LocalDateTime.now());
 
-                    return ResponseEntity.ok(RouterResponse.success(response, "登录成功"));
+                    return RouterResponse.success(response, "登录成功");
                 })
                 .onErrorResume(ex -> {
                     log.warn("用户登录失败: {}", ex.getMessage());
@@ -77,8 +74,7 @@ public class JwtTokenController {
                     response.setMessage("登录失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(RouterResponse.error("登录失败: " + ex.getMessage(), "LOGIN_FAILED")));
+                    return Mono.just(RouterResponse.error("登录失败: " + ex.getMessage(), "LOGIN_FAILED"));
                 });
     }
 
@@ -92,7 +88,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "当前令牌无效或已过期"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误")
     })
-    public Mono<ResponseEntity<RouterResponse<TokenResponse>>> refreshToken(
+    public Mono<RouterResponse<TokenResponse>> refreshToken(
             @Parameter(description = "令牌刷新请求") @RequestBody TokenRefreshRequest request,
             Authentication authentication) {
 
@@ -106,7 +102,7 @@ public class JwtTokenController {
                     response.setMessage("令牌刷新成功");
                     response.setTimestamp(LocalDateTime.now());
 
-                    return ResponseEntity.ok(RouterResponse.success(response, "令牌刷新成功"));
+                    return RouterResponse.success(response, "令牌刷新成功");
                 })
                 .onErrorResume(ex -> {
                     log.warn("JWT令牌刷新失败: {}", ex.getMessage());
@@ -115,8 +111,7 @@ public class JwtTokenController {
                     response.setMessage("令牌刷新失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(RouterResponse.error("令牌刷新失败: " + ex.getMessage(), "TOKEN_REFRESH_FAILED")));
+                    return Mono.just(RouterResponse.error("令牌刷新失败: " + ex.getMessage(), "TOKEN_REFRESH_FAILED"));
                 });
     }
 
@@ -131,7 +126,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足")
     })
     @PreAuthorize("hasRole('ADMIN') or authentication.name == #request.userId")
-    public Mono<ResponseEntity<RouterResponse<JwtApiResponse>>> revokeToken(
+    public Mono<RouterResponse<JwtApiResponse>> revokeToken(
             @Parameter(description = "令牌撤销请求") @RequestBody TokenRevokeRequest request,
             Authentication authentication) {
 
@@ -146,7 +141,7 @@ public class JwtTokenController {
                     response.setMessage("令牌撤销成功");
                     response.setTimestamp(LocalDateTime.now());
 
-                    return ResponseEntity.ok(RouterResponse.success(response, "令牌撤销成功"));
+                    return RouterResponse.success(response, "令牌撤销成功");
                 }))
                 .onErrorResume(ex -> {
                     log.warn("JWT令牌撤销失败: {}", ex.getMessage());
@@ -156,8 +151,7 @@ public class JwtTokenController {
                     response.setMessage("令牌撤销失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.just(ResponseEntity.badRequest()
-                            .body(RouterResponse.error("令牌撤销失败: " + ex.getMessage(), "TOKEN_REVOKE_FAILED")));
+                    return Mono.just(RouterResponse.error("令牌撤销失败: " + ex.getMessage(), "TOKEN_REVOKE_FAILED"));
                 });
     }
 
@@ -172,7 +166,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足")
     })
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<JwtApiResponse>>> revokeTokensBatch(
+    public Mono<RouterResponse<JwtApiResponse>> revokeTokensBatch(
             @Parameter(description = "批量令牌撤销请求") @RequestBody BatchTokenRevokeRequest request,
             Authentication authentication) {
 
@@ -187,7 +181,7 @@ public class JwtTokenController {
                     response.setMessage(String.format("成功撤销%d个令牌", request.getTokens().size()));
                     response.setTimestamp(LocalDateTime.now());
 
-                    return ResponseEntity.ok(RouterResponse.success(response, "批量撤销令牌成功"));
+                    return RouterResponse.success(response, "批量撤销令牌成功");
                 }))
                 .onErrorResume(ex -> {
                     log.warn("批量JWT令牌撤销失败: {}", ex.getMessage());
@@ -197,8 +191,7 @@ public class JwtTokenController {
                     response.setMessage("批量撤销失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.just(ResponseEntity.badRequest()
-                            .body(RouterResponse.error("批量撤销失败: " + ex.getMessage(), "BATCH_TOKEN_REVOKE_FAILED")));
+                    return Mono.just(RouterResponse.error("批量撤销失败: " + ex.getMessage(), "BATCH_TOKEN_REVOKE_FAILED"));
                 });
     }
 
@@ -211,7 +204,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "令牌验证完成"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误")
     })
-    public Mono<ResponseEntity<RouterResponse<TokenValidationResponse>>> validateToken(
+    public Mono<RouterResponse<TokenValidationResponse>> validateToken(
             @Parameter(description = "令牌验证请求") @RequestBody TokenValidationRequest request) {
 
         log.debug("收到JWT令牌验证请求");
@@ -228,7 +221,7 @@ public class JwtTokenController {
                                     response.setMessage("令牌有效");
                                     response.setTimestamp(LocalDateTime.now());
 
-                                    return ResponseEntity.ok(RouterResponse.success(response, "令牌有效"));
+                                    return RouterResponse.success(response, "令牌有效");
                                 });
                     } else {
                         // 令牌无效
@@ -237,7 +230,7 @@ public class JwtTokenController {
                         response.setMessage("令牌无效或已被撤销");
                         response.setTimestamp(LocalDateTime.now());
 
-                        return Mono.just(ResponseEntity.ok(RouterResponse.success(response, "令牌无效或已被撤销")));
+                        return Mono.just(RouterResponse.success(response, "令牌无效或已被撤销"));
                     }
                 })
                 .onErrorResume(ex -> {
@@ -248,7 +241,7 @@ public class JwtTokenController {
                     response.setMessage("令牌验证失败: " + ex.getMessage());
                     response.setTimestamp(LocalDateTime.now());
 
-                    return Mono.just(ResponseEntity.ok(RouterResponse.success(response, "令牌验证失败")));
+                    return Mono.just(RouterResponse.success(response, "令牌验证失败"));
                 });
     }
 
@@ -262,17 +255,16 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足")
     })
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> getBlacklistStats(Authentication authentication) {
+    public Mono<RouterResponse<Map<String, Object>>> getBlacklistStats(Authentication authentication) {
 
         log.debug("收到黑名单统计信息请求: user={}",
                 authentication != null ? authentication.getName() : "anonymous");
 
         return tokenRefreshService.getBlacklistStats()
-                .map(stats -> ResponseEntity.ok(RouterResponse.success(stats, "获取黑名单统计信息成功")))
+                .map(stats -> RouterResponse.success(stats, "获取黑名单统计信息成功"))
                 .onErrorResume(ex -> {
                     log.warn("获取黑名单统计信息失败: {}", ex.getMessage());
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(RouterResponse.error("获取黑名单统计信息失败", "BLACKLIST_STATS_FAILED")));
+                    return Mono.just(RouterResponse.error("获取黑名单统计信息失败", "BLACKLIST_STATS_FAILED"));
                 });
     }
 
