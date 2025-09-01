@@ -1,7 +1,9 @@
 package org.unreal.modelrouter.store;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unreal.modelrouter.util.PathSanitizer;
@@ -25,6 +27,8 @@ public class FileStoreManager extends BaseStoreManager {
     public FileStoreManager(final String storagePath) {
         this.storagePath = storagePath;
         this.objectMapper = new ObjectMapper();
+        this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         initializeStorage();
     }
 
@@ -71,8 +75,8 @@ public class FileStoreManager extends BaseStoreManager {
                     .resolve(sanitizedKey + ".json");
             return SafeFileOperations.readJsonFile(configPath, objectMapper, new TypeReference<>() { });
         } catch (IOException e) {
-            LOGGER.error("Failed to read config for key: " + key, e);
-            throw new RuntimeException("Failed to read config", e);
+            LOGGER.error("Failed to read config for key: " + key + ". File path: " + storagePath + "/" + key + ".json", e);
+            throw new RuntimeException("Failed to read config for key: " + key + ". Please check if the JSON file is valid.", e);
         }
     }
 

@@ -12,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.security.config.JwtUserProperties;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import reactor.core.publisher.Mono;
 
@@ -31,33 +32,44 @@ public class UserAuthenticationService {
     private final ReactiveAuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final SecurityProperties securityProperties;
+    private final JwtUserProperties jwtUserProperties;
     
     /**
      * 验证用户名和密码并生成JWT令牌
      */
     public Mono<String> authenticateAndGenerateToken(String username, String password) {
-        // 创建认证令牌
-        UsernamePasswordAuthenticationToken authToken = 
-            new UsernamePasswordAuthenticationToken(username, password);
+        // 直接验证配置中的用户凭据
+        return Mono.just(validateCredentials(username, password))
+                .filter(valid -> valid)
+                .switchIfEmpty(Mono.error(new RuntimeException("用户名或密码错误")))
+                .map(valid -> generateJwtToken(username));
+    }
+    
+    /**
+     * 验证用户凭据
+     */
+    private boolean validateCredentials(String username, String password) {
+        if (!jwtUserProperties.isEnabled()) {
+            log.warn("JWT认证功能未启用");
+            return false;
+        }
         
-        // 进行认证
-        return authenticationManager.authenticate(authToken)
-                .map(this::generateJwtToken)
-                .onErrorMap(e -> {
-                    log.warn("用户认证失败: {}", e.getMessage());
-                    return new RuntimeException("用户名或密码错误");
-                });
+        return jwtUserProperties.getAccounts().stream()
+                .filter(account -> account.isEnabled())
+                .anyMatch(account -> 
+                    account.getUsername().equals(username) && 
+                    account.getPassword().equals(password));
     }
     
     /**
      * 生成JWT令牌
      */
-    private String generateJwtToken(Authentication authentication) {
+    private String generateJwtToken(String username) {
         // 获取用户详情
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         
         // 获取用户角色
-        List<String> roles = authentication.getAuthorities().stream()
+        List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         

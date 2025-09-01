@@ -45,15 +45,12 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
     
     @Mock
     private WebFilterChain filterChain;
-    
+
+    @Mock
     private SpringSecurityApiKeyAuthenticationFilter filter;
     
     @BeforeEach
     void setUp() {
-        filter = new SpringSecurityApiKeyAuthenticationFilter(
-                securityProperties, authenticationConverter, failureHandler
-        );
-        
         when(securityProperties.getApiKey()).thenReturn(apiKeyConfig);
         when(securityProperties.getJwt()).thenReturn(jwtConfig);
         when(filterChain.filter(any())).thenReturn(Mono.empty());

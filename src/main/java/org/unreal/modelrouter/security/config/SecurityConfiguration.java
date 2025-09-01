@@ -14,12 +14,13 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.unreal.modelrouter.exceptionhandler.SecurityAuthenticationFailureHandler;
-import org.unreal.modelrouter.filter.filter.SecurityIntegratedApiKeyFilter;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.tracing.config.TracingSecurityConfiguration;
+import org.unreal.modelrouter.filter.filter.SpringSecurityApiKeyAuthenticationFilter;
 
 /**
  * Spring Security配置类
@@ -47,7 +48,8 @@ public class SecurityConfiguration {
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
-            ReactiveAuthenticationManager authenticationManager) {
+            ReactiveAuthenticationManager authenticationManager,
+            SpringSecurityApiKeyAuthenticationFilter securityFilter) {
         
         log.info("配置Spring Security WebFlux过滤器链");
         
@@ -100,20 +102,10 @@ public class SecurityConfiguration {
                         // 其他所有请求需要认证
                         .anyExchange().authenticated()
                 )
-                // 添加自定义的认证过滤器
-                .addFilterBefore(securityIntegratedApiKeyFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
-                // 设置认证管理器
-                .authenticationManager(authenticationManager)
+                .addFilterAt(securityFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
-    
-    /**
-     * 创建API Key认证过滤器
-     */
-    @Bean
-    public SecurityIntegratedApiKeyFilter securityIntegratedApiKeyFilter() {
-        return new SecurityIntegratedApiKeyFilter(apiKeyService, jwtTokenValidator, securityProperties);
-    }
+
     
     /**
      * 认证失败处理器
@@ -163,5 +155,28 @@ public class SecurityConfiguration {
                         }}
                 )
         );
+    }
+    
+    /**
+     * 配置认证转换器
+     */
+    @Bean
+    public ServerAuthenticationConverter serverAuthenticationConverter() {
+        return new SpringSecurityApiKeyAuthenticationFilter.DefaultAuthenticationConverter(securityProperties);
+    }
+    
+    /**
+     * 创建API Key认证过滤器
+     */
+    @Bean
+    public SpringSecurityApiKeyAuthenticationFilter springSecurityApiKeyAuthenticationFilter(
+            ServerAuthenticationConverter serverAuthenticationConverter,
+            ReactiveAuthenticationManager reactiveAuthenticationManager) {
+        return new SpringSecurityApiKeyAuthenticationFilter(
+                securityProperties, 
+                serverAuthenticationConverter, 
+                null, 
+                null,
+                reactiveAuthenticationManager);
     }
 }
