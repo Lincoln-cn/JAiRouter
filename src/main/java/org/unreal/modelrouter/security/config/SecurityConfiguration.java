@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,13 +15,15 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
-import org.unreal.modelrouter.exceptionhandler.SecurityAuthenticationFailureHandler;
+import org.unreal.modelrouter.exceptionhandler.ReactiveGlobalExceptionHandler;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.tracing.config.TracingSecurityConfiguration;
-import org.unreal.modelrouter.filter.filter.SpringSecurityApiKeyAuthenticationFilter;
+import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
+import org.springframework.security.web.server.authentication.WebFilterChainServerAuthenticationSuccessHandler;
 
 /**
  * Spring Security配置类
@@ -36,8 +39,8 @@ public class SecurityConfiguration {
     private final SecurityProperties securityProperties;
     private final ApiKeyService apiKeyService;
     private final JwtTokenValidator jwtTokenValidator;
-    private final UserDetailsService userDetailsService;
-    
+    private final ApplicationContext applicationContext;
+
     @Autowired(required = false)
     private TracingSecurityConfiguration.TracingSecurityFilterChainCustomizer tracingCustomizer;
     
@@ -49,7 +52,7 @@ public class SecurityConfiguration {
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
             ReactiveAuthenticationManager authenticationManager,
-            SpringSecurityApiKeyAuthenticationFilter securityFilter) {
+            SpringSecurityAuthenticationFilter securityFilter) {
         
         log.info("配置Spring Security WebFlux过滤器链");
         
@@ -72,7 +75,11 @@ public class SecurityConfiguration {
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 // 配置异常处理
                 .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(authenticationFailureHandler())
+                        .authenticationEntryPoint((exchange, ex) -> {
+                            // 直接使用ReactiveGlobalExceptionHandler处理认证异常
+                            ReactiveGlobalExceptionHandler exceptionHandler = applicationContext.getBean(ReactiveGlobalExceptionHandler.class);
+                            return exceptionHandler.handle(exchange, ex);
+                        })
                 )
                 // 配置授权规则 - 实现基于角色的访问控制（RBAC）
                 .authorizeExchange(exchanges -> exchanges
@@ -94,11 +101,11 @@ public class SecurityConfiguration {
                         // 配置管理端点需要管理员权限
                         .pathMatchers("/api/config/**", "/api/instances/**").hasRole("ADMIN")
                         // AI服务端点的细粒度权限控制
-                        .pathMatchers(org.springframework.http.HttpMethod.GET, "/v1/**").hasAnyRole("READ", "WRITE", "ADMIN")
-                        .pathMatchers(org.springframework.http.HttpMethod.POST, "/v1/**").hasAnyRole("WRITE", "ADMIN")
-                        .pathMatchers(org.springframework.http.HttpMethod.PUT, "/v1/**").hasAnyRole("WRITE", "ADMIN")
-                        .pathMatchers(org.springframework.http.HttpMethod.PATCH, "/v1/**").hasAnyRole("WRITE", "ADMIN")
-                        .pathMatchers(org.springframework.http.HttpMethod.DELETE, "/v1/**").hasAnyRole("DELETE", "ADMIN")
+                        .pathMatchers(org.springframework.http.HttpMethod.GET, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
+                        .pathMatchers(org.springframework.http.HttpMethod.POST, "/v1/**").hasAnyRole("WRITE", "USER")
+                        .pathMatchers(org.springframework.http.HttpMethod.PUT, "/v1/**").hasAnyRole("WRITE", "USER")
+                        .pathMatchers(org.springframework.http.HttpMethod.PATCH, "/v1/**").hasAnyRole("WRITE", "USER")
+                        .pathMatchers(org.springframework.http.HttpMethod.DELETE, "/v1/**").hasAnyRole("DELETE", "USER")
                         // 其他所有请求需要认证
                         .anyExchange().authenticated()
                 )
@@ -106,15 +113,6 @@ public class SecurityConfiguration {
                 .build();
     }
 
-    
-    /**
-     * 认证失败处理器
-     */
-    @Bean
-    public SecurityAuthenticationFailureHandler authenticationFailureHandler() {
-        return new SecurityAuthenticationFailureHandler();
-    }
-    
     /**
      * 配置响应式认证管理器
      * 处理不同类型的认证请求
@@ -148,6 +146,9 @@ public class SecurityConfiguration {
      */
     @Bean
     public AuthenticationManager authenticationManager() {
+        // 动态获取UserDetailsService以避免循环依赖
+        UserDetailsService userDetailsService = applicationContext.getBean(UserDetailsService.class);
+        
         return new org.springframework.security.authentication.ProviderManager(
                 java.util.Arrays.asList(
                         new org.springframework.security.authentication.dao.DaoAuthenticationProvider(passwordEncoder()) {{
@@ -162,21 +163,19 @@ public class SecurityConfiguration {
      */
     @Bean
     public ServerAuthenticationConverter serverAuthenticationConverter() {
-        return new SpringSecurityApiKeyAuthenticationFilter.DefaultAuthenticationConverter(securityProperties);
+        return new SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter(securityProperties);
     }
     
     /**
      * 创建API Key认证过滤器
      */
     @Bean
-    public SpringSecurityApiKeyAuthenticationFilter springSecurityApiKeyAuthenticationFilter(
+    public SpringSecurityAuthenticationFilter springSecurityApiKeyAuthenticationFilter(
             ServerAuthenticationConverter serverAuthenticationConverter,
             ReactiveAuthenticationManager reactiveAuthenticationManager) {
-        return new SpringSecurityApiKeyAuthenticationFilter(
+        return new SpringSecurityAuthenticationFilter(
                 securityProperties, 
                 serverAuthenticationConverter, 
-                null, 
-                null,
                 reactiveAuthenticationManager);
     }
 }

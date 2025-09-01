@@ -14,7 +14,7 @@ import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
-import org.unreal.modelrouter.filter.filter.ResponseSanitizationFilter;
+import org.unreal.modelrouter.filter.ResponseSanitizationFilter;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.exception.exception.SanitizationException;
