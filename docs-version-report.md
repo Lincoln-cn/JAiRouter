@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 131
-- 近7天变更: 136
+- 近7天变更: 135
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-08-31 03:06:31
+- 最后扫描: 2025-09-01 03:21:19
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.13 → 1.0.14) - 2025-09-01
 - **MODIFIED**: docs-version-report.md (1.0.12 → 1.0.13) - 2025-08-31
 - **MODIFIED**: docs-version-report.md (1.0.11 → 1.0.12) - 2025-08-30
 - **MODIFIED**: docs/zh/troubleshooting/performance.md (1.0.0 → 1.0.1) - 2025-08-29
@@ -18,7 +19,6 @@
 - **CREATED**: docs/zh/tracing/usage-guide.md ( → 1.0.0) - 2025-08-29
 - **CREATED**: docs/zh/tracing/troubleshooting.md ( → 1.0.0) - 2025-08-29
 - **CREATED**: docs/zh/tracing/quickstart.md ( → 1.0.0) - 2025-08-29
-- **CREATED**: docs/zh/tracing/performance-tuning.md ( → 1.0.0) - 2025-08-29
 
 ## 依赖关系分析
 
@@ -455,7 +455,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.13 - 2025-08-31 (ff900b40)
+- **docs-version-report.md**: v1.0.14 - 2025-09-01 (c53d1f04)
 - **docs/zh/troubleshooting/performance.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/troubleshooting/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.1 - 2025-08-29 (7e878bcf)
