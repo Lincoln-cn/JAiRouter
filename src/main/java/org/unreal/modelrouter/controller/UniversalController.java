@@ -57,7 +57,6 @@ public class UniversalController {
             @RequestBody(required = false) ChatDTO.Request request,
             ServerHttpRequest httpRequest) {
 
-
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.chat,
                 () -> adapterRegistry.getAdapter(ModelServiceRegistry.ServiceType.chat)
