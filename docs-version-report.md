@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 131
-- 近7天变更: 135
+- 近7天变更: 162
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-09-01 03:21:19
+- 最后扫描: 2025-09-02 03:06:00
 
 ## 最近变更
 
-- **MODIFIED**: docs-version-report.md (1.0.13 → 1.0.14) - 2025-09-01
-- **MODIFIED**: docs-version-report.md (1.0.12 → 1.0.13) - 2025-08-31
-- **MODIFIED**: docs-version-report.md (1.0.11 → 1.0.12) - 2025-08-30
-- **MODIFIED**: docs/zh/troubleshooting/performance.md (1.0.0 → 1.0.1) - 2025-08-29
-- **MODIFIED**: docs/zh/troubleshooting/index.md (1.0.0 → 1.0.1) - 2025-08-29
-- **MODIFIED**: docs/zh/troubleshooting/debugging.md (1.0.0 → 1.0.1) - 2025-08-29
-- **MODIFIED**: docs/zh/troubleshooting/common-issues.md (1.0.0 → 1.0.1) - 2025-08-29
-- **CREATED**: docs/zh/tracing/usage-guide.md ( → 1.0.0) - 2025-08-29
-- **CREATED**: docs/zh/tracing/troubleshooting.md ( → 1.0.0) - 2025-08-29
-- **CREATED**: docs/zh/tracing/quickstart.md ( → 1.0.0) - 2025-08-29
+- **MODIFIED**: docs/zh/troubleshooting/debugging.md (1.0.1 → 1.0.2) - 2025-09-02
+- **MODIFIED**: docs/zh/troubleshooting/common-issues.md (1.0.1 → 1.0.2) - 2025-09-02
+- **MODIFIED**: docs/zh/security/jwt-authentication.md (1.0.0 → 1.0.1) - 2025-09-02
+- **MODIFIED**: docs/zh/security/index.md (1.0.0 → 1.0.1) - 2025-09-02
+- **MODIFIED**: docs/zh/security/data-sanitization.md (1.0.0 → 1.0.1) - 2025-09-02
+- **MODIFIED**: docs/zh/security/api-key-management.md (1.0.0 → 1.0.1) - 2025-09-02
+- **MODIFIED**: docs/zh/reference/faq.md (1.0.1 → 1.0.2) - 2025-09-02
+- **MODIFIED**: docs/zh/monitoring/testing.md (1.0.2 → 1.0.3) - 2025-09-02
+- **MODIFIED**: docs/zh/monitoring/setup.md (1.0.1 → 1.0.2) - 2025-09-02
+- **MODIFIED**: docs/zh/getting-started/quick-start.md (1.0.1 → 1.0.2) - 2025-09-02
 
 ## 依赖关系分析
 
@@ -359,7 +359,7 @@
   - docs/en/security/jwt-authentication.md
   - docs/en/security/troubleshooting.md
 - **docs/en/security/jwt-authentication.md**: 依赖 4 个文档
-  - docs/en/monitoring/alerts.md
+  - docs/en/monitoring/index.md
   - docs/en/security/api-key-management.md
   - docs/en/security/data-sanitization.md
   - docs/en/security/troubleshooting.md
@@ -415,7 +415,7 @@
   - docs/zh/security/jwt-authentication.md
   - docs/zh/security/troubleshooting.md
 - **docs/zh/security/jwt-authentication.md**: 依赖 4 个文档
-  - docs/zh/monitoring/alerts.md
+  - docs/zh/monitoring/index.md
   - docs/zh/security/api-key-management.md
   - docs/zh/security/data-sanitization.md
   - docs/zh/security/troubleshooting.md
@@ -455,11 +455,35 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.14 - 2025-09-01 (c53d1f04)
+- **docs/zh/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/zh/troubleshooting/common-issues.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/zh/security/jwt-authentication.md**: v1.0.1 - 2025-09-02 (7b2dac10)
+- **docs/zh/security/index.md**: v1.0.1 - 2025-09-02 (50351a36)
+- **docs/zh/security/data-sanitization.md**: v1.0.1 - 2025-09-02 (50351a36)
+- **docs/zh/security/api-key-management.md**: v1.0.1 - 2025-09-02 (50351a36)
+- **docs/zh/reference/faq.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/zh/monitoring/testing.md**: v1.0.3 - 2025-09-02 (948a0c17)
+- **docs/zh/monitoring/setup.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/zh/getting-started/quick-start.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/zh/getting-started/installation.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/zh/deployment/production.md**: v1.0.2 - 2025-09-02 (50351a36)
+- **docs/zh/deployment/kubernetes.md**: v1.0.2 - 2025-09-02 (50351a36)
+- **docs/zh/deployment/index.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/zh/deployment/docker.md**: v1.0.2 - 2025-09-02 (50351a36)
+- **docs/zh/deployment/china-optimization.md**: v1.0.2 - 2025-09-02 (50351a36)
+- **docs/en/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/en/troubleshooting/common-issues.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/en/security/jwt-authentication.md**: v1.0.1 - 2025-09-02 (7b2dac10)
+- **docs/en/reference/faq.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/en/monitoring/testing.md**: v1.0.3 - 2025-09-02 (948a0c17)
+- **docs/en/monitoring/setup.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/en/monitoring/index.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/en/getting-started/installation.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/en/deployment/kubernetes.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs/en/deployment/china-optimization.md**: v1.0.2 - 2025-09-02 (948a0c17)
+- **docs-version-report.md**: v1.0.15 - 2025-09-02 (0763795d)
 - **docs/zh/troubleshooting/performance.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/troubleshooting/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/zh/troubleshooting/debugging.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/zh/troubleshooting/common-issues.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/tracing/usage-guide.md**: v1.0.0 - 2025-08-29 (7b00dc09)
 - **docs/zh/tracing/troubleshooting.md**: v1.0.0 - 2025-08-29 (7b00dc09)
 - **docs/zh/tracing/quickstart.md**: v1.0.0 - 2025-08-29 (7b00dc09)
@@ -468,19 +492,12 @@
 - **docs/zh/tracing/index.md**: v1.0.0 - 2025-08-29 (c876a54c)
 - **docs/zh/tracing/config-reference.md**: v1.0.0 - 2025-08-29 (c98679ca)
 - **docs/zh/security/troubleshooting.md**: v1.0.0 - 2025-08-29 (4e960687)
-- **docs/zh/security/jwt-authentication.md**: v1.0.0 - 2025-08-29 (c876a54c)
-- **docs/zh/security/index.md**: v1.0.0 - 2025-08-29 (7e878bcf)
-- **docs/zh/security/data-sanitization.md**: v1.0.0 - 2025-08-29 (c876a54c)
-- **docs/zh/security/api-key-management.md**: v1.0.0 - 2025-08-29 (7e878bcf)
 - **docs/zh/reference/roadmap.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/reference/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/reference/glossary.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/zh/reference/faq.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/reference/changelog.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/monitoring/troubleshooting.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/zh/monitoring/testing.md**: v1.0.2 - 2025-08-29 (f00ce4e1)
 - **docs/zh/monitoring/slow-query-alerts.md**: v1.0.0 - 2025-08-29 (c98679ca)
-- **docs/zh/monitoring/setup.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/monitoring/performance.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/monitoring/metrics.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/monitoring/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
@@ -490,8 +507,6 @@
 - **docs/zh/monitoring/alerts.md**: v1.0.1 - 2025-08-29 (4e960687)
 - **docs/zh/monitoring/alert_rules_guide.md**: v1.0.1 - 2025-08-29 (d341d4d0)
 - **docs/zh/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/zh/getting-started/quick-start.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/zh/getting-started/installation.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/getting-started/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/getting-started/first-steps.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/development/tracing-integration.md**: v1.0.0 - 2025-08-29 (c876a54c)
@@ -502,12 +517,7 @@
 - **docs/zh/development/contributing.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/development/code-quality.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/development/architecture.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/zh/deployment/production.md**: v1.0.1 - 2025-08-29 (df99c45e)
-- **docs/zh/deployment/kubernetes.md**: v1.0.1 - 2025-08-29 (df99c45e)
-- **docs/zh/deployment/index.md**: v1.0.1 - 2025-08-29 (df99c45e)
 - **docs/zh/deployment/github-pages.md**: v1.0.1 - 2025-08-29 (4e960687)
-- **docs/zh/deployment/docker.md**: v1.0.1 - 2025-08-29 (df99c45e)
-- **docs/zh/deployment/china-optimization.md**: v1.0.1 - 2025-08-29 (7692c6b7)
 - **docs/zh/configuration/rate-limiting.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/zh/configuration/modular-config.md**: v1.0.0 - 2025-08-29 (c98679ca)
 - **docs/zh/configuration/load-balancing.md**: v1.0.1 - 2025-08-29 (c98679ca)
@@ -521,8 +531,6 @@
 - **docs/zh/api-reference/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/troubleshooting/performance.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/troubleshooting/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/en/troubleshooting/debugging.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/en/troubleshooting/common-issues.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/tracing/usage-guide.md**: v1.0.0 - 2025-08-29 (7b00dc09)
 - **docs/en/tracing/troubleshooting.md**: v1.0.0 - 2025-08-29 (7b00dc09)
 - **docs/en/tracing/quickstart.md**: v1.0.0 - 2025-08-29 (7b00dc09)
@@ -531,29 +539,23 @@
 - **docs/en/tracing/index.md**: v1.0.0 - 2025-08-29 (7b00dc09)
 - **docs/en/tracing/config-reference.md**: v1.0.0 - 2025-08-29 (c98679ca)
 - **docs/en/security/troubleshooting.md**: v1.0.0 - 2025-08-29 (4e960687)
-- **docs/en/security/jwt-authentication.md**: v1.0.0 - 2025-08-29 (4e72e3fe)
 - **docs/en/security/index.md**: v1.0.0 - 2025-08-29 (7e878bcf)
 - **docs/en/security/data-sanitization.md**: v1.0.0 - 2025-08-29 (4e72e3fe)
 - **docs/en/security/api-key-management.md**: v1.0.0 - 2025-08-29 (7e878bcf)
 - **docs/en/reference/roadmap.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/reference/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/reference/glossary.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/en/reference/faq.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/reference/changelog.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/monitoring/troubleshooting.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/en/monitoring/testing.md**: v1.0.2 - 2025-08-29 (f00ce4e1)
 - **docs/en/monitoring/slow-query-alerts.md**: v1.0.0 - 2025-08-29 (c98679ca)
-- **docs/en/monitoring/setup.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/monitoring/performance.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/monitoring/metrics.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/en/monitoring/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/monitoring/error-tracking.md**: v1.0.0 - 2025-08-29 (c98679ca)
 - **docs/en/monitoring/dashboards.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/monitoring/configuration.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/monitoring/alerts.md**: v1.0.1 - 2025-08-29 (4e960687)
 - **docs/en/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/getting-started/quick-start.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/en/getting-started/installation.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/getting-started/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/getting-started/first-steps.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/development/tracing-integration.md**: v1.0.0 - 2025-08-29 (c876a54c)
@@ -565,11 +567,9 @@
 - **docs/en/development/code-quality.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/development/architecture.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/deployment/production.md**: v1.0.1 - 2025-08-29 (7692c6b7)
-- **docs/en/deployment/kubernetes.md**: v1.0.1 - 2025-08-29 (7692c6b7)
 - **docs/en/deployment/index.md**: v1.0.1 - 2025-08-29 (7692c6b7)
 - **docs/en/deployment/github-pages.md**: v1.0.1 - 2025-08-29 (4e960687)
 - **docs/en/deployment/docker.md**: v1.0.1 - 2025-08-29 (7692c6b7)
-- **docs/en/deployment/china-optimization.md**: v1.0.1 - 2025-08-29 (7692c6b7)
 - **docs/en/configuration/rate-limiting.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/en/configuration/modular-config.md**: v1.0.0 - 2025-08-29 (c98679ca)
 - **docs/en/configuration/load-balancing.md**: v1.0.1 - 2025-08-29 (c98679ca)
