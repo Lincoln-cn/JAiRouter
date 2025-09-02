@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ErrorMetricsCollector {
     
     private final MeterRegistry meterRegistry;
-    private final ErrorTracker errorTracker;
     private final ErrorTrackerProperties properties;
     
     // 指标缓存
@@ -31,10 +30,8 @@ public class ErrorMetricsCollector {
     private final ConcurrentHashMap<String, Timer> errorTimers = new ConcurrentHashMap<>();
     
     public ErrorMetricsCollector(MeterRegistry meterRegistry, 
-                                ErrorTracker errorTracker,
                                 ErrorTrackerProperties properties) {
         this.meterRegistry = meterRegistry;
-        this.errorTracker = errorTracker;
         this.properties = properties;
         
         // 注册基础错误指标
@@ -178,25 +175,6 @@ public class ErrorMetricsCollector {
     }
     
     /**
-     * 获取错误统计信息
-     * 
-     * @return 错误统计信息
-     */
-    public ErrorMetricsStats getErrorMetricsStats() {
-        try {
-            return ErrorMetricsStats.builder()
-                .totalErrorCounters(errorCounters.size())
-                .totalErrorTimers(errorTimers.size())
-                .errorTypeStats(errorTracker.getErrorTypeStatistics())
-                .errorLocationStats(errorTracker.getErrorLocationStatistics())
-                .build();
-        } catch (Exception e) {
-            log.warn("获取错误指标统计失败", e);
-            return ErrorMetricsStats.builder().build();
-        }
-    }
-    
-    /**
      * 错误指标统计信息
      */
     @lombok.Data
@@ -204,7 +182,5 @@ public class ErrorMetricsCollector {
     public static class ErrorMetricsStats {
         private int totalErrorCounters;
         private int totalErrorTimers;
-        private java.util.Map<String, Long> errorTypeStats;
-        private java.util.Map<String, Long> errorLocationStats;
     }
 }

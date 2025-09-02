@@ -64,8 +64,7 @@ class SlowQueryAlertServiceTest {
                 monitoringProperties,
                 alertProperties,
                 structuredLogger,
-                meterRegistry,
-                slowQueryDetector
+                meterRegistry
         );
         
         // 设置Mock行为

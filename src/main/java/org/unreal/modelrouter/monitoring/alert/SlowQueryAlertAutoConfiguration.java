@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.SlowQueryDetector;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
+import org.unreal.modelrouter.util.ApplicationContextProvider;
 
 /**
  * 慢查询告警自动配置
@@ -38,15 +39,14 @@ public class SlowQueryAlertAutoConfiguration {
             MonitoringProperties monitoringProperties,
             SlowQueryAlertProperties alertProperties,
             StructuredLogger structuredLogger,
-            MeterRegistry meterRegistry,
-            SlowQueryDetector slowQueryDetector) {
+            MeterRegistry meterRegistry
+            ) {
         
         return new SlowQueryAlertService(
                 monitoringProperties,
                 alertProperties,
                 structuredLogger,
-                meterRegistry,
-                slowQueryDetector
+                meterRegistry
         );
     }
 }
