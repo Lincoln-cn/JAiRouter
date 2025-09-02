@@ -169,8 +169,18 @@ public class ConfigurationHelper {
      * @return 配置Map
      */
     public Map<String, Object> convertModelRouterPropertiesToMap(final ModelRouterProperties modelRouterProperties) {
+        LOGGER.debug("开始转换ModelRouterProperties到Map");
         // 使用反射机制将ModelRouterProperties对象转换为Map，避免硬编码
-        return convertObjectToMap(modelRouterProperties);
+        Map<String, Object> result = convertObjectToMap(modelRouterProperties);
+        LOGGER.debug("转换完成，结果Map大小: {}", result != null ? result.size() : 0);
+        if (result != null && result.containsKey("services")) {
+            LOGGER.debug("服务配置存在");
+            Object services = result.get("services");
+            if (services instanceof Map) {
+                LOGGER.debug("服务配置是Map类型，大小: {}", ((Map<?, ?>) services).size());
+            }
+        }
+        return result;
     }
 
     /**

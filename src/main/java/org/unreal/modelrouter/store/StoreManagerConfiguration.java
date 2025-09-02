@@ -57,4 +57,19 @@ public class StoreManagerConfiguration {
     public StoreManager storeManager() {
         return StoreManagerFactory.createStoreManager(type, path);
     }
+    
+    /**
+     * 创建ConfigVersionManager Bean
+     * @return ConfigVersionManager实例
+     */
+    @Bean
+    @ConditionalOnMissingBean(ConfigVersionManager.class)
+    public ConfigVersionManager configVersionManager() {
+        StoreManager storeManager = storeManager();
+        if (storeManager instanceof ConfigVersionManager) {
+            return (ConfigVersionManager) storeManager;
+        }
+        // 如果StoreManager不实现ConfigVersionManager接口，则创建ImprovedFileStoreManager实例
+        return new ImprovedFileStoreManager(path);
+    }
 }
