@@ -53,7 +53,7 @@ public class ConfigMergeService {
                     return config;
                 }
             }
-            
+
             // 如果没有版本配置，尝试获取当前配置
             if (storeManager.exists(CONFIG_KEY)) {
                 Map<String, Object> config = storeManager.getConfig(CONFIG_KEY);
@@ -62,12 +62,12 @@ public class ConfigMergeService {
                     return config;
                 }
             }
-            
-            logger.info("未找到持久化配置，将仅使用YAML配置");
-            return new HashMap<>();
+
+            logger.info("未找到持久化配置，将使用默认YAML配置");
+            return getDefaultConfig();
         } catch (Exception e) {
             logger.warn("加载持久化配置时发生错误: {}", e.getMessage());
-            return new HashMap<>();
+            return getDefaultConfig();
         }
     }
 
@@ -164,14 +164,14 @@ public class ConfigMergeService {
         if (instanceConfig == null) {
             return null;
         }
-        
+
         Object nameObj = instanceConfig.get("name");
         Object baseUrlObj = instanceConfig.get("baseUrl");
-        
+
         String name = nameObj instanceof String ? (String) nameObj : null;
         String baseUrl = baseUrlObj instanceof String ? (String) baseUrlObj : null;
-        
-        if (name != null && !name.trim().isEmpty() && 
+
+        if (name != null && !name.trim().isEmpty() &&
             baseUrl != null && !baseUrl.trim().isEmpty()) {
             return name + "@" + baseUrl;
         }
@@ -188,12 +188,12 @@ public class ConfigMergeService {
             for (Integer version : versions) {
                 storeManager.deleteConfigVersion(CONFIG_KEY, version);
             }
-            
+
             // 删除当前配置
             if (storeManager.exists(CONFIG_KEY)) {
                 storeManager.deleteConfig(CONFIG_KEY);
             }
-            
+
             logger.info("已清除所有持久化配置，恢复到YAML默认配置");
         } catch (Exception e) {
             logger.error("清除持久化配置时发生错误", e);
@@ -211,7 +211,7 @@ public class ConfigMergeService {
             if (!versions.isEmpty()) {
                 return true;
             }
-            
+
             // 检查是否有当前配置
             return storeManager.exists(CONFIG_KEY);
         } catch (Exception e) {
