@@ -27,9 +27,9 @@ public class ConfigurationValidator {
             "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
     );
 
-    // 域名正则表达式 - 修复 ReDoS 漏洞，使用更安全的模式
+    // 域名正则表达式 - 支持多级域名
     private static final Pattern DOMAIN_PATTERN = Pattern.compile(
-            "^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.[a-zA-Z]{2,6}$"
+            "^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,6}$"
     );
 
     /**
