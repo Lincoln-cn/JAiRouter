@@ -9,11 +9,18 @@ import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.SlowQueryDetector;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
+import org.unreal.modelrouter.util.ApplicationContextProvider;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,10 +45,12 @@ public class SlowQueryAlertService {
     private final SlowQueryAlertProperties alertProperties;
     private final StructuredLogger structuredLogger;
     private final MeterRegistry meterRegistry;
-    private final SlowQueryDetector slowQueryDetector;
     private final ScheduledExecutorService scheduledExecutor;
     
     // 告警频率控制
+    private SlowQueryDetector slowQueryDetector;
+    
+    // 告警统计信息
     private final Map<String, AtomicLong> lastAlertTime = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> alertCount = new ConcurrentHashMap<>();
     
@@ -52,13 +61,11 @@ public class SlowQueryAlertService {
     public SlowQueryAlertService(MonitoringProperties monitoringProperties,
                                 SlowQueryAlertProperties alertProperties,
                                 StructuredLogger structuredLogger,
-                                MeterRegistry meterRegistry,
-                                SlowQueryDetector slowQueryDetector) {
+                                MeterRegistry meterRegistry) {
         this.monitoringProperties = monitoringProperties;
         this.alertProperties = alertProperties;
         this.structuredLogger = structuredLogger;
         this.meterRegistry = meterRegistry;
-        this.slowQueryDetector = slowQueryDetector;
         this.scheduledExecutor = Executors.newScheduledThreadPool(2, r -> {
             Thread t = new Thread(r, "slow-query-alert-scheduler");
             t.setDaemon(true);
@@ -69,6 +76,24 @@ public class SlowQueryAlertService {
         startPeriodicTasks();
         
         logger.info("慢查询告警服务已启动");
+    }
+    
+    /**
+     * 获取慢查询检测器实例（延迟获取以避免循环依赖）
+     * 
+     * @return 慢查询检测器实例
+     */
+    private SlowQueryDetector getSlowQueryDetector() {
+        if (slowQueryDetector == null) {
+            // 使用ApplicationContextProvider获取SlowQueryDetector实例
+            try {
+                slowQueryDetector = ApplicationContextProvider.getBean(SlowQueryDetector.class);
+            } catch (Exception e) {
+                logger.error("无法从ApplicationContextProvider获取SlowQueryDetector实例", e);
+                return null;
+            }
+        }
+        return slowQueryDetector;
     }
     
     /**
@@ -147,7 +172,7 @@ public class SlowQueryAlertService {
         }
         
         // 检查连续慢查询次数
-        SlowQueryDetector.SlowQueryStats stats = slowQueryDetector.getSlowQueryStats(operationName);
+        SlowQueryDetector.SlowQueryStats stats = getSlowQueryDetector().getSlowQueryStats(operationName);
         if (stats.getCount() < alertConfig.getMinOccurrences()) {
             logger.debug("慢查询次数不足，未达到告警阈值：操作={}, 当前次数={}, 要求次数={}", 
                     operationName, stats.getCount(), alertConfig.getMinOccurrences());
@@ -191,7 +216,7 @@ public class SlowQueryAlertService {
     private SlowQueryAlert buildSlowQueryAlert(String operationName, long durationMillis, long threshold,
                                               long alertCount, TracingContext context, Map<String, Object> additionalInfo) {
         
-        SlowQueryDetector.SlowQueryStats stats = slowQueryDetector.getSlowQueryStats(operationName);
+        SlowQueryDetector.SlowQueryStats stats = getSlowQueryDetector().getSlowQueryStats(operationName);
         String severity = getSeverityLevel(durationMillis, threshold);
         
         return SlowQueryAlert.builder()
@@ -323,8 +348,15 @@ public class SlowQueryAlertService {
      */
     private void generateSlowQueryReport() {
         try {
-            Map<String, SlowQueryDetector.SlowQueryStats> allStats = slowQueryDetector.getAllSlowQueryStats();
-            long totalSlowQueries = slowQueryDetector.getTotalSlowQueryCount();
+            SlowQueryDetector detector = getSlowQueryDetector();
+            // 检查detector是否为null
+            if (detector == null) {
+                logger.warn("无法获取SlowQueryDetector实例，跳过生成慢查询统计报告");
+                return;
+            }
+            
+            Map<String, SlowQueryDetector.SlowQueryStats> allStats = detector.getAllSlowQueryStats();
+            long totalSlowQueries = detector.getTotalSlowQueryCount();
             
             if (totalSlowQueries == 0) {
                 return; // 没有慢查询，无需生成报告

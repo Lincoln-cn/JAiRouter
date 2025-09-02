@@ -56,10 +56,9 @@ public class ErrorTrackerAutoConfiguration {
     @ConditionalOnProperty(name = "jairouter.monitoring.metrics.enabled", havingValue = "true", matchIfMissing = true)
     public ErrorMetricsCollector errorMetricsCollector(
             MeterRegistry meterRegistry,
-            ErrorTracker errorTracker,
             ErrorTrackerProperties properties) {
         
-        return new ErrorMetricsCollector(meterRegistry, errorTracker, properties);
+        return new ErrorMetricsCollector(meterRegistry, properties);
     }
     
     /**

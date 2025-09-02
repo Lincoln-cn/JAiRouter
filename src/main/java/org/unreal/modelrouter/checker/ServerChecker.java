@@ -18,6 +18,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -50,8 +51,30 @@ public class ServerChecker {
         
         Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry =
                 modelServiceRegistry.getAllInstances();
-        if (instanceRegistry == null || instanceRegistry.isEmpty()) {
+        
+        // 增强日志输出，帮助诊断问题
+        if (instanceRegistry == null) {
+            log.warn("服务实例注册表为null");
+            return;
+        }
+        
+        if (instanceRegistry.isEmpty()) {
             log.warn("未找到配置的服务实例");
+            // 添加更多调试信息
+            log.debug("检查配置是否正确加载...");
+            try {
+                // 尝试获取服务类型列表
+                Set<ModelServiceRegistry.ServiceType> availableTypes = modelServiceRegistry.getAvailableServiceTypes();
+                log.debug("可用服务类型: {}", availableTypes != null ? availableTypes.size() : 0);
+                
+                // 检查每个服务类型的实例
+                for (ModelServiceRegistry.ServiceType type : ModelServiceRegistry.ServiceType.values()) {
+                    Set<String> models = modelServiceRegistry.getAvailableModels(type);
+                    log.debug("服务类型 {} 包含 {} 个模型", type, models != null ? models.size() : 0);
+                }
+            } catch (Exception e) {
+                log.error("检查配置时发生错误", e);
+            }
             return;
         }
 

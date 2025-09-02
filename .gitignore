@@ -40,6 +40,7 @@ build/
 /innerdoc/
 /config/
 /config-dev/
+/config-store/
 /logs/
 /.kiro/
 /scripts/docs copy/

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -141,6 +142,39 @@ public final class SafeFileOperations {
      * @throws IOException 如果文件操作失败
      */
     public static String writeJsonFile(Path basePath, Map<String, Object> data, ObjectMapper objectMapper)
+            throws IOException {
+        if (basePath == null || data == null || objectMapper == null) {
+            throw new IllegalArgumentException("Base path, data and object mapper cannot be null");
+        }
+
+        // 确保基础目录存在并规范化路径
+        Path safeBasePath = basePath.toAbsolutePath().normalize();
+        if (safeBasePath.getParent() != null) {
+            Files.createDirectories(safeBasePath.getParent());
+        }
+
+        // 检查路径安全性
+        if (safeBasePath.getParent() != null && !isPathSafe(safeBasePath.getParent().toString(),
+                safeBasePath.toString())) {
+            throw new SecurityException("Path traversal attempt detected: " + basePath.toString());
+        }
+
+        // 将数据写入JSON文件
+        objectMapper.writeValue(safeBasePath.toFile(), data);
+
+        return safeBasePath.toString();
+    }
+
+    /**
+     * 将List数据写入JSON文件
+     *
+     * @param basePath 基础路径
+     * @param data 要写入的List数据
+     * @param objectMapper JSON对象映射器
+     * @return 文件的绝对路径
+     * @throws IOException 如果文件操作失败
+     */
+    public static String writeJsonFile(Path basePath, List<?> data, ObjectMapper objectMapper)
             throws IOException {
         if (basePath == null || data == null || objectMapper == null) {
             throw new IllegalArgumentException("Base path, data and object mapper cannot be null");

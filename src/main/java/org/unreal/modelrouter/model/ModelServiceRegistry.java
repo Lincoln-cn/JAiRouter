@@ -93,10 +93,14 @@ public class ModelServiceRegistry {
 
         try {
             // 1. 合并YAML和持久化配置
+            LOGGER.debug("开始合并YAML和持久化配置");
             refreshFromMergedConfig();
+            LOGGER.debug("配置合并完成，当前配置大小: {}", currentConfig != null ? currentConfig.size() : 0);
 
             // 2. 初始化各个管理器
+            LOGGER.debug("开始初始化各个管理器");
             initializeManagers();
+            LOGGER.debug("所有管理器初始化完成");
 
             LOGGER.info("ModelServiceRegistry初始化完成");
             logCurrentConfiguration();
@@ -496,15 +500,18 @@ public class ModelServiceRegistry {
                 Map<String, Object> servicesMap = (Map<String, Object>) mergedConfig.get("services");
                 Map<String, ModelRouterProperties.ServiceConfig> serviceConfigs = new HashMap<>();
 
-                for (Map.Entry<String, Object> entry : servicesMap.entrySet()) {
-                    String serviceKey = entry.getKey();
-                    Map<String, Object> serviceConfigMap = (Map<String, Object>) entry.getValue();
-                    ModelRouterProperties.ServiceConfig serviceConfig =
-                            configurationHelper.convertMapToServiceConfig(serviceConfigMap);
-                    serviceConfigs.put(serviceKey, serviceConfig);
-                }
+                // 添加空值检查，防止NullPointerException
+                if (servicesMap != null) {
+                    for (Map.Entry<String, Object> entry : servicesMap.entrySet()) {
+                        String serviceKey = entry.getKey();
+                        Map<String, Object> serviceConfigMap = (Map<String, Object>) entry.getValue();
+                        ModelRouterProperties.ServiceConfig serviceConfig =
+                                configurationHelper.convertMapToServiceConfig(serviceConfigMap);
+                        serviceConfigs.put(serviceKey, serviceConfig);
+                    }
 
-                originalProperties.setServices(serviceConfigs);
+                    originalProperties.setServices(serviceConfigs);
+                }
             }
         } catch (Exception e) {
             LOGGER.warn("更新原始Properties对象时发生错误: {}", e.getMessage());
@@ -520,16 +527,19 @@ public class ModelServiceRegistry {
 
         if (mergedConfig.containsKey("services")) {
             Map<String, Object> servicesMap = (Map<String, Object>) mergedConfig.get("services");
+            
+            // 添加空值检查，防止NullPointerException
+            if (servicesMap != null) {
+                for (Map.Entry<String, Object> entry : servicesMap.entrySet()) {
+                    String serviceKey = entry.getKey();
+                    Map<String, Object> serviceConfigMap = (Map<String, Object>) entry.getValue();
 
-            for (Map.Entry<String, Object> entry : servicesMap.entrySet()) {
-                String serviceKey = entry.getKey();
-                Map<String, Object> serviceConfigMap = (Map<String, Object>) entry.getValue();
-
-                try {
-                    ServiceRuntimeConfig runtimeConfig = buildServiceRuntimeConfig(serviceConfigMap);
-                    newCache.put(serviceKey, runtimeConfig);
-                } catch (Exception e) {
-                    LOGGER.warn("构建服务 {} 的运行时配置失败: {}", serviceKey, e.getMessage());
+                    try {
+                        ServiceRuntimeConfig runtimeConfig = buildServiceRuntimeConfig(serviceConfigMap);
+                        newCache.put(serviceKey, runtimeConfig);
+                    } catch (Exception e) {
+                        LOGGER.warn("构建服务 {} 的运行时配置失败: {}", serviceKey, e.getMessage());
+                    }
                 }
             }
         }

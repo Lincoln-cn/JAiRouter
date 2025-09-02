@@ -126,32 +126,18 @@ public class SecurityConfiguration {
                 securityProperties
         );
     }
-    
-    /**
-     * 配置密码编码器
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new org.springframework.security.crypto.password.DelegatingPasswordEncoder(
-                "bcrypt", 
-                java.util.Map.of(
-                        "bcrypt", new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(),
-                        "noop", org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance()
-                )
-        );
-    }
-    
+
     /**
      * 配置认证管理器
      */
     @Bean
-    public AuthenticationManager authenticationManager() {
+    public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
         // 动态获取UserDetailsService以避免循环依赖
         UserDetailsService userDetailsService = applicationContext.getBean(UserDetailsService.class);
         
         return new org.springframework.security.authentication.ProviderManager(
                 java.util.Arrays.asList(
-                        new org.springframework.security.authentication.dao.DaoAuthenticationProvider(passwordEncoder()) {{
+                        new org.springframework.security.authentication.dao.DaoAuthenticationProvider(passwordEncoder) {{
                             setUserDetailsService(userDetailsService);
                         }}
                 )
