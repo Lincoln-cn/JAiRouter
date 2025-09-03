@@ -98,36 +98,36 @@ def generate_url_entry(relative_path, lastmod, priority, changefreq):
     if url_path.endswith('index/'):
         url_path = url_path[:-6]  # Remove 'index/'
     
-    # Handle root index
-    if url_path == '/':
-        loc = BASE_URL + '/'
-    else:
-        # Add language prefix
-        if url_path.startswith('en/'):
-            loc = BASE_URL + '/' + url_path
-        elif url_path.startswith('zh/'):
-            loc = BASE_URL + '/' + url_path
-        else:
-            # Default to root path
-            loc = BASE_URL + '/' + url_path
-    
     # Generate alternate links for multilingual support
     alternate_links = ""
-    if 'en/' in url_path:
-        zh_path = url_path.replace('en/', 'zh/')
+    if url_path == '' or url_path == '/':  # Root index
+        loc = BASE_URL + '/'
+        alternate_links = f'''
+    <xhtml:link rel="alternate" hreflang="zh" href="{loc}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="{BASE_URL}/en/"/>'''
+    elif url_path.startswith('en/'):
+        # English pages
+        loc = BASE_URL + '/' + url_path
+        zh_path = url_path[3:]  # Remove 'en/' prefix
+        if zh_path == '' or zh_path == '/':
+            zh_url = BASE_URL + '/'
+        else:
+            zh_url = BASE_URL + '/' + zh_path
         alternate_links = f'''
     <xhtml:link rel="alternate" hreflang="en" href="{loc}"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="{BASE_URL}/{zh_path}"/>'''
-    elif 'zh/' in url_path:
-        en_path = url_path.replace('zh/', 'en/')
-        alternate_links = f'''
-    <xhtml:link rel="alternate" hreflang="en" href="{BASE_URL}/{en_path}"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="{loc}"/>'''
+    <xhtml:link rel="alternate" hreflang="zh" href="{zh_url}"/>'''
     else:
-        # For root paths, provide both language versions
+        # Chinese pages (default language)
+        if url_path == '' or url_path == '/':
+            loc = BASE_URL + '/'
+            en_url = BASE_URL + '/en/'
+        else:
+            loc = BASE_URL + '/' + url_path
+            en_url = BASE_URL + '/en/' + url_path
+        
         alternate_links = f'''
-    <xhtml:link rel="alternate" hreflang="en" href="{BASE_URL}/en/{url_path}"/>
-    <xhtml:link rel="alternate" hreflang="zh" href="{BASE_URL}/zh/{url_path}"/>'''
+    <xhtml:link rel="alternate" hreflang="zh" href="{loc}"/>
+    <xhtml:link rel="alternate" hreflang="en" href="{en_url}"/>'''
     
     # Generate the URL entry
     url_entry = f'''  <url>
@@ -152,6 +152,8 @@ def generate_sitemap():
     
     # Process each markdown file
     url_entries = []
+    processed_paths = set()  # Keep track of processed paths to avoid duplicates
+    
     for full_path, relative_path in md_files:
         # Get directory name for priority determination
         dir_name = os.path.dirname(relative_path)
@@ -161,6 +163,16 @@ def generate_sitemap():
         
         # Get last modified time
         lastmod = get_last_modified_time(full_path)
+        
+        # Convert file path to URL path for duplicate checking
+        url_path = relative_path.replace('\\', '/').replace('.md', '/')
+        if url_path.endswith('index/'):
+            url_path = url_path[:-6]
+            
+        # Avoid duplicate entries
+        if url_path in processed_paths:
+            continue
+        processed_paths.add(url_path)
         
         # Generate URL entry
         url_entry = generate_url_entry(relative_path, lastmod, priority, changefreq)
