@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -22,7 +24,10 @@ import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.security.model.JwtAuthentication;
 import org.unreal.modelrouter.security.config.ExcludedPathsConfig;
 import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.exception.exception.AuthenticationException;
 import reactor.core.publisher.Mono;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -38,6 +43,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     private final SecurityProperties securityProperties;
     private final ServerAuthenticationConverter authenticationConverter;
     private final ReactiveAuthenticationManager authenticationManager;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -67,7 +73,12 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
                                 // 认证失败，传递给失败处理器
                                 return Mono.error(throwable);
                             });
-                });
+                })
+                .switchIfEmpty(Mono.defer(() -> {
+                    // 没有提供认证信息，抛出异常让全局异常处理器处理
+                    log.warn("请求缺少认证信息: {}", exchange.getRequest().getPath().value());
+                    return Mono.error(new AuthenticationException("请求缺少认证信息，请提供API Key或JWT Token", "AUTH_MISSING"));
+                }));
     }
     
     /**
