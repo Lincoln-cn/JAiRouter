@@ -53,9 +53,19 @@ docker images | grep sodlinken/jairouter
 ### 2. 基础运行
 
 ```
-# 最简单的运行方式
+# 最简单的运行方式 默认开启JWT认证
 docker run -d \
   --name jairouter \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -p 8080:8080 \
+  sodlinken/jairouter:latest
+  
+# 最简单的运行方式 关闭JWT认证
+docker run -d \
+  --name jairouter \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  -e JAIROUTER_SECURITY_JWT_ENABLED=false \
   -p 8080:8080 \
   sodlinken/jairouter:latest
 
@@ -69,6 +79,8 @@ curl http://localhost:8080/actuator/health
 # 挂载配置文件运行
 docker run -d \
   --name jairouter \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
   -p 8080:8080 \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
@@ -143,9 +155,16 @@ docker build -f Dockerfile.china -t sodlinken/jairouter:china .
 
 ```
 docker run -d \
-  --name jairouter-prod \
+  --name jairouter \
   -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
+  -e PROD_ADMIN_API_KEY=adminkey \
+  -e PROD_SERVICE_API_KEY=serviceaoi \
+  -e PROD_READONLY_API_KEY=readonly \
+  -e JAIROUTER_SECURITY_ENABLED=true \
+  -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
+  -e JAIROUTER_SECURITY_JWT_ENABLED=true \
+  -e PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
   -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0" \
   -e PROD_JWT_SECRET=your-prod-jwt-secret \
   -v $(pwd)/config:/app/config:ro \
@@ -168,7 +187,7 @@ docker run -d \
   -p 8080:8080 \
   -p 5005:5005 \
   -e SPRING_PROFILES_ACTIVE=dev \
-  -e JWT_SECRET=your-dev-jwt-secret \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
   -e JAVA_OPTS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005" \
   -v $(pwd)/config:/app/config \
   -v $(pwd)/logs:/app/logs \
@@ -206,7 +225,13 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - PROD_JWT_SECRET=your-prod-jwt-secret
+      - PROD_ADMIN_API_KEY=adminkey 
+      - PROD_SERVICE_API_KEY=serviceaoi 
+      - PROD_READONLY_API_KEY=readonly 
+      - JAIROUTER_SECURITY_ENABLED=true 
+      - JAIROUTER_SECURITY_API_KEY_ENABLED=true 
+      - JAIROUTER_SECURITY_JWT_ENABLED=true 
+      - PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" 
       - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
     volumes:
       - ./config:/app/config:ro
@@ -242,6 +267,14 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - PROD_ADMIN_API_KEY=adminkey 
+      - PROD_SERVICE_API_KEY=serviceaoi 
+      - PROD_READONLY_API_KEY=readonly 
+      - JAIROUTER_SECURITY_ENABLED=true 
+      - JAIROUTER_SECURITY_API_KEY_ENABLED=true 
+      - JAIROUTER_SECURITY_JWT_ENABLED=true 
+      - PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" 
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
     volumes:
       - ./config:/app/config:ro
       - ./logs:/app/logs
@@ -348,22 +381,23 @@ docker-compose down
 
 ### 1. 环境变量
 
-| 变量名 | 默认值 | 说明 |
-|--------|--------|------|
-| `SPRING_PROFILES_ACTIVE` | `prod` | Spring 激活的配置文件 |
-| `JAVA_OPTS` | 见下表 | JVM 参数 |
-| `SERVER_PORT` | `8080` | 应用端口 |
-| `JWT_SECRET` | 无 | 开发环境JWT密钥 |
-| `MANAGEMENT_PORT` | `8081` | 管理端口（可选） |
-| `PROD_ADMIN_API_KEY` | 无 | 生产环境管理员API密钥 |
-| `PROD_SERVICE_API_KEY` | 无 | 生产环境服务API密钥 |
-| `PROD_READONLY_API_KEY` | 无 | 生产环境只读API密钥 |
-| `PROD_JWT_SECRET` | 无 | 生产环境JWT密钥 |
-| `REDIS_HOST` | `localhost` | Redis主机地址 |
-| `REDIS_PORT` | `6379` | Redis端口 |
-| `REDIS_PASSWORD` | 无 | Redis密码 |
-| `SECURITY_ALERT_EMAIL` | 无 | 安全告警邮件地址 |
-| `SECURITY_ALERT_WEBHOOK` | 无 | 安全告警Webhook地址 |
+| 变量名                      | 默认值         | 说明             |
+|--------------------------|-------------|----------------|
+| `SPRING_PROFILES_ACTIVE` | `prod`      | Spring 激活的配置文件 |
+| `JAVA_OPTS`              | 见下表         | JVM 参数         |
+| `SERVER_PORT`            | `8080`      | 应用端口           |
+| `JWT_SECRET`             | 无           | 开发环境JWT密钥      |
+| `PROD_JWT_SECRET`         | 无  | 生产环境环境JWT密钥    |
+| `MANAGEMENT_PORT`        | `8081`      | 管理端口（可选）       |
+| `PROD_ADMIN_API_KEY`     | 无           | 生产环境管理员API密钥   |
+| `PROD_SERVICE_API_KEY`   | 无           | 生产环境服务API密钥    |
+| `PROD_READONLY_API_KEY`  | 无           | 生产环境只读API密钥    |
+| `PROD_JWT_SECRET`        | 无           | 生产环境JWT密钥      |
+| `REDIS_HOST`             | `localhost` | Redis主机地址      |
+| `REDIS_PORT`             | `6379`      | Redis端口        |
+| `REDIS_PASSWORD`         | 无           | Redis密码        |
+| `SECURITY_ALERT_EMAIL`   | 无           | 安全告警邮件地址       |
+| `SECURITY_ALERT_WEBHOOK` | 无           | 安全告警Webhook地址  |
 
 ### 2. JVM 参数配置
 
