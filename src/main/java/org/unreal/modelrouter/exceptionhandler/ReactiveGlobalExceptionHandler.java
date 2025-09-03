@@ -16,7 +16,6 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.dto.SecurityErrorResponse;
 import org.unreal.modelrouter.exception.exception.AuthenticationException;
 import org.unreal.modelrouter.exception.exception.AuthorizationException;
 import org.unreal.modelrouter.exception.exception.SanitizationException;
@@ -194,16 +193,8 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     private Mono<Void> handleAuthenticationException(ServerWebExchange exchange, AuthenticationException ex) {
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage());
         
-        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(ex.getHttpStatus().value())
-                .error(ex.getHttpStatus().getReasonPhrase())
-                .message(ex.getMessage())
-                .errorCode(ex.getErrorCode())
-                .path(exchange.getRequest().getPath().value())
-                .build();
-
-        return writeErrorResponse(exchange, ex.getHttpStatus(), errorResponse);
+        RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
+        return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
     }
 
     /**
@@ -212,16 +203,8 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     private Mono<Void> handleAuthorizationException(ServerWebExchange exchange, AuthorizationException ex) {
         logger.warn("授权失败: {} - {}", ex.getErrorCode(), ex.getMessage());
         
-        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(ex.getHttpStatus().value())
-                .error(ex.getHttpStatus().getReasonPhrase())
-                .message(ex.getMessage())
-                .errorCode(ex.getErrorCode())
-                .path(exchange.getRequest().getPath().value())
-                .build();
-
-        return writeErrorResponse(exchange, ex.getHttpStatus(), errorResponse);
+        RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
+        return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
     }
 
     /**
@@ -230,16 +213,8 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     private Mono<Void> handleSanitizationException(ServerWebExchange exchange, SanitizationException ex) {
         logger.error("数据脱敏异常: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
-        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(ex.getHttpStatus().value())
-                .error(ex.getHttpStatus().getReasonPhrase())
-                .message("数据处理失败")  // 不暴露具体的脱敏错误信息
-                .errorCode(ex.getErrorCode())
-                .path(exchange.getRequest().getPath().value())
-                .build();
-
-        return writeErrorResponse(exchange, ex.getHttpStatus(), errorResponse);
+        RouterResponse<Void> errorResponse = RouterResponse.error("数据处理失败", ex.getErrorCode());
+        return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
     }
 
     /**
@@ -248,16 +223,8 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     private Mono<Void> handleGenericSecurityException(ServerWebExchange exchange, SecurityException ex) {
         logger.error("安全异常: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
-        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(ex.getHttpStatus().value())
-                .error(ex.getHttpStatus().getReasonPhrase())
-                .message(ex.getMessage())
-                .errorCode(ex.getErrorCode())
-                .path(exchange.getRequest().getPath().value())
-                .build();
-
-        return writeErrorResponse(exchange, ex.getHttpStatus(), errorResponse);
+        RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
+        return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
     }
     
     /**
@@ -266,33 +233,8 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     private Mono<Void> handleSecurityAuthenticationException(ServerWebExchange exchange, SecurityAuthenticationException ex) {
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage());
         
-        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
-                .timestamp(LocalDateTime.now())
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                .message(ex.getMessage())
-                .errorCode(ex.getErrorCode())
-                .path(exchange.getRequest().getPath().value())
-                .build();
-
-        return writeErrorResponse(exchange, HttpStatus.UNAUTHORIZED, errorResponse);
-    }
-    
-    /**
-     * 写入错误响应
-     */
-    private Mono<Void> writeErrorResponse(ServerWebExchange exchange, HttpStatus status, SecurityErrorResponse errorResponse) {
-        exchange.getResponse().setStatusCode(status);
-        exchange.getResponse().getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
-
-        try {
-            String responseBody = objectMapper.writeValueAsString(errorResponse);
-            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(responseBody.getBytes());
-            return exchange.getResponse().writeWith(Mono.just(buffer));
-        } catch (Exception e) {
-            logger.error("写入错误响应失败", e);
-            return setSimpleErrorResponse(exchange.getResponse());
-        }
+        RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
+        return setResponse(exchange.getResponse(), errorResponse, HttpStatus.UNAUTHORIZED);
     }
     
     /**
