@@ -5,10 +5,11 @@
 - 总文档数: 131
 - 近7天变更: 162
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-09-02 03:06:00
+- 最后扫描: 2025-09-03 02:54:45
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.15 → 1.0.16) - 2025-09-03
 - **MODIFIED**: docs/zh/troubleshooting/debugging.md (1.0.1 → 1.0.2) - 2025-09-02
 - **MODIFIED**: docs/zh/troubleshooting/common-issues.md (1.0.1 → 1.0.2) - 2025-09-02
 - **MODIFIED**: docs/zh/security/jwt-authentication.md (1.0.0 → 1.0.1) - 2025-09-02
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/zh/reference/faq.md (1.0.1 → 1.0.2) - 2025-09-02
 - **MODIFIED**: docs/zh/monitoring/testing.md (1.0.2 → 1.0.3) - 2025-09-02
 - **MODIFIED**: docs/zh/monitoring/setup.md (1.0.1 → 1.0.2) - 2025-09-02
-- **MODIFIED**: docs/zh/getting-started/quick-start.md (1.0.1 → 1.0.2) - 2025-09-02
 
 ## 依赖关系分析
 
@@ -455,6 +455,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.16 - 2025-09-03 (46ec0f0f)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/zh/troubleshooting/common-issues.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/zh/security/jwt-authentication.md**: v1.0.1 - 2025-09-02 (7b2dac10)
@@ -481,7 +482,6 @@
 - **docs/en/getting-started/installation.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/en/deployment/kubernetes.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/en/deployment/china-optimization.md**: v1.0.2 - 2025-09-02 (948a0c17)
-- **docs-version-report.md**: v1.0.15 - 2025-09-02 (0763795d)
 - **docs/zh/troubleshooting/performance.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/troubleshooting/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/tracing/usage-guide.md**: v1.0.0 - 2025-08-29 (7b00dc09)
