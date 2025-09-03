@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.controller.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +16,8 @@ public class RouterResponse<T> {
     private String message;
     private T data;
     private String errorCode;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
 
     public RouterResponse() {

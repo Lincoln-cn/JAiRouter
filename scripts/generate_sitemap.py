@@ -92,49 +92,52 @@ def scan_markdown_files(docs_dir):
 def generate_url_entry(relative_path, lastmod, priority, changefreq):
     """Generate a single URL entry for the sitemap"""
     # Convert file path to URL path
-    url_path = relative_path.replace('\\', '/').replace('.md', '/')
+    url_path = relative_path.replace('\\', '/').replace('.md', '')
     
-    # Handle index files
-    if url_path.endswith('index/'):
-        url_path = url_path[:-6]  # Remove 'index/'
+    # Handle index files and normalize URL
+    if url_path.endswith('index'):
+        url_path = url_path[:-5]  # Remove 'index'
+    
+    # Ensure URL path starts with / and doesn't have double slashes
+    url_path = '/' + url_path.strip('/')
+    url_path = '/'.join(part for part in url_path.split('/') if part)
+    
+    # Generate the base URL
+    loc = f"{BASE_URL}{url_path}"
     
     # Generate alternate links for multilingual support
     alternate_links = ""
-    if url_path == '' or url_path == '/':  # Root index
-        loc = BASE_URL + '/'
+    if url_path == '/' or url_path == '':
+        # Root index
         alternate_links = f'''
-    <xhtml:link rel="alternate" hreflang="zh" href="{loc}"/>
+    <xhtml:link rel="alternate" hreflang="zh" href="{BASE_URL}/"/>
     <xhtml:link rel="alternate" hreflang="en" href="{BASE_URL}/en/"/>'''
-    elif url_path.startswith('en/'):
+    elif url_path.startswith('/en/'):
         # English pages
-        loc = BASE_URL + '/' + url_path
-        zh_path = url_path[3:]  # Remove 'en/' prefix
-        if zh_path == '' or zh_path == '/':
+        zh_path = url_path[3:]  # Remove '/en' prefix
+        if zh_path == '/' or zh_path == '':
             zh_url = BASE_URL + '/'
         else:
-            zh_url = BASE_URL + '/' + zh_path
+            zh_url = BASE_URL + zh_path
+        
         alternate_links = f'''
     <xhtml:link rel="alternate" hreflang="en" href="{loc}"/>
     <xhtml:link rel="alternate" hreflang="zh" href="{zh_url}"/>'''
     else:
         # Chinese pages (default language)
-        if url_path == '' or url_path == '/':
-            loc = BASE_URL + '/'
-            en_url = BASE_URL + '/en/'
-        else:
-            loc = BASE_URL + '/' + url_path
-            en_url = BASE_URL + '/en/' + url_path
+        en_url = BASE_URL + '/en' + url_path
         
         alternate_links = f'''
     <xhtml:link rel="alternate" hreflang="zh" href="{loc}"/>
     <xhtml:link rel="alternate" hreflang="en" href="{en_url}"/>'''
     
-    # Generate the URL entry
+    # Generate the URL entry with proper indentation
     url_entry = f'''  <url>
     <loc>{loc}</loc>
     <lastmod>{lastmod}</lastmod>
     <changefreq>{changefreq}</changefreq>
-    <priority>{priority:.1f}</priority>{alternate_links}
+    <priority>{priority:.1f}</priority>
+    <xhtml:link rel="canonical" href="{loc}"/>{alternate_links}
   </url>'''
     
     return url_entry
@@ -152,7 +155,7 @@ def generate_sitemap():
     
     # Process each markdown file
     url_entries = []
-    processed_paths = set()  # Keep track of processed paths to avoid duplicates
+    processed_urls = set()  # Keep track of processed URLs to avoid duplicates
     
     for full_path, relative_path in md_files:
         # Get directory name for priority determination
@@ -161,18 +164,23 @@ def generate_sitemap():
         # Get priority and change frequency
         priority, changefreq = get_priority_and_changefreq(full_path, dir_name)
         
+        # Generate URL path and normalize it
+        url_path = relative_path.replace('\\', '/').replace('.md', '')
+        if url_path.endswith('index'):
+            url_path = url_path[:-5]
+        url_path = '/' + url_path.strip('/')
+        url_path = '/'.join(part for part in url_path.split('/') if part)
+        
+        # Create canonical URL
+        canonical_url = f"{BASE_URL}{url_path}"
+        
+        # Skip if we've already processed this URL
+        if canonical_url in processed_urls:
+            continue
+        processed_urls.add(canonical_url)
+        
         # Get last modified time
         lastmod = get_last_modified_time(full_path)
-        
-        # Convert file path to URL path for duplicate checking
-        url_path = relative_path.replace('\\', '/').replace('.md', '/')
-        if url_path.endswith('index/'):
-            url_path = url_path[:-6]
-            
-        # Avoid duplicate entries
-        if url_path in processed_paths:
-            continue
-        processed_paths.add(url_path)
         
         # Generate URL entry
         url_entry = generate_url_entry(relative_path, lastmod, priority, changefreq)
