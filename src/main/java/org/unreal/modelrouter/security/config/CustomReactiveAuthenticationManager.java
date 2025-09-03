@@ -83,13 +83,12 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
                 })
                 .doOnError(error -> log.debug("API Key认证失败: {}", error.getMessage()))
                 .onErrorMap(throwable -> {
-                    if (throwable instanceof AuthenticationException) {
+                   if (throwable instanceof org.unreal.modelrouter.exception.exception.AuthenticationException) {
                         return throwable;
                     }
-                    return new SecurityAuthenticationException(
-                            "API_KEY_AUTH_FAILED", 
+                    return new org.unreal.modelrouter.exception.exception.AuthenticationException(
                             "API Key认证失败: " + throwable.getMessage(),
-                            throwable
+                            "API_KEY_AUTH_FAILED"
                     );
                 });
     }
@@ -121,7 +120,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
                 .doOnNext(validatedAuth -> log.debug("JWT令牌认证成功: {}", validatedAuth.getName()))
                 .doOnError(error -> log.debug("JWT令牌认证失败: {}", error.getMessage()))
                 .onErrorMap(throwable -> {
-                    if (throwable instanceof AuthenticationException) {
+                    if (throwable instanceof org.unreal.modelrouter.exception.exception.AuthenticationException) {
                         return throwable;
                     }
                     
@@ -134,10 +133,9 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
                         );
                     }
                     
-                    return new org.unreal.modelrouter.exception.exception.SecurityAuthenticationException(
-                            "JWT_AUTH_FAILED", 
+                    return new org.unreal.modelrouter.exception.exception.AuthenticationException(
                             "JWT令牌认证失败: " + throwable.getMessage(),
-                            throwable
+                            "JWT_AUTH_FAILED"
                     );
                 });
     }
