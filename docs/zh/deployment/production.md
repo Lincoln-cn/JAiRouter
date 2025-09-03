@@ -253,6 +253,13 @@ services:
     
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - PROD_ADMIN_API_KEY=adminkey
+      - PROD_SERVICE_API_KEY=serviceaoi
+      - PROD_READONLY_API_KEY=readonly
+      - JAIROUTER_SECURITY_ENABLED=true
+      - JAIROUTER_SECURITY_API_KEY_ENABLED=true
+      - JAIROUTER_SECURITY_JWT_ENABLED=true
+      - PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long"
       - JAVA_OPTS=-Xms1g -Xmx2g -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
       - INSTANCE_ID=${INSTANCE_ID:-1}
       - CLUSTER_NODES=${CLUSTER_NODES}
