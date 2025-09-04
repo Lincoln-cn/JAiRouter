@@ -101,7 +101,6 @@ jairouter:
       response:
         enabled: true
         log-sanitization: true
-    
     # 开发环境审计配置
     audit:
       enabled: true

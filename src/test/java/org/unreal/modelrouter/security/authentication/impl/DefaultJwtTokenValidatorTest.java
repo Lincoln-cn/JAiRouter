@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
 import org.unreal.modelrouter.security.config.SecurityProperties;
-import org.unreal.modelrouter.exception.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.security.model.JwtAuthentication;
 import org.unreal.modelrouter.security.model.JwtPrincipal;
 import reactor.core.publisher.Mono;

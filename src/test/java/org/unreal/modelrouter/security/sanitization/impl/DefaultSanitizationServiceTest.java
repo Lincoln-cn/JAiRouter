@@ -7,7 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.sanitization.impl.DefaultSanitizationService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
-import org.unreal.modelrouter.exception.exception.SanitizationException;
+import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.security.model.RuleType;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SanitizationStrategy;
