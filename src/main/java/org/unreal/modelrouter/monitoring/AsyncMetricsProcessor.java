@@ -11,6 +11,7 @@ import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCircuitBreaker;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -41,6 +42,9 @@ public class AsyncMetricsProcessor {
     private final AtomicLong processedCount = new AtomicLong(0);
     private final AtomicLong droppedCount = new AtomicLong(0);
     private final AtomicLong queueSize = new AtomicLong(0);
+    
+    // 安全随机数生成器
+    private final SecureRandom secureRandom = new SecureRandom();
 
 
     public AsyncMetricsProcessor(MonitoringProperties monitoringProperties, 
@@ -249,7 +253,7 @@ public class AsyncMetricsProcessor {
      */
     private boolean shouldSample(MetricsType type) {
         double samplingRate = getSamplingRate(type);
-        return Math.random() < samplingRate;
+        return secureRandom.nextDouble() < samplingRate;
     }
 
     /**

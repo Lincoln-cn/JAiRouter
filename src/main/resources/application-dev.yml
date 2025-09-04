@@ -78,7 +78,7 @@ jairouter:
     
     # 开发环境 JWT 配置
     jwt:
-      enabled: true
+      enabled: false
       jwt-header: "Jairouter_Token"
       secret: "dev-jwt-secret-key-for-development-only-not-for-production"
       expiration-minutes: 30  # 开发环境使用较短的过期时间
