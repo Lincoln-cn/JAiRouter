@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.16",
-      "LastModified": "2025-09-03T02:54:44.881070",
-      "ContentHash": "1d130ee7875a7a24",
-      "GitCommit": "46ec0f0f",
+      "Version": "1.0.17",
+      "LastModified": "2025-09-04T02:55:19.259252",
+      "ContentHash": "5e2a3ff7568cbd8e",
+      "GitCommit": "087ad62c",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -792,10 +792,10 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.342941",
-      "ContentHash": "7ee6371de5151a78",
-      "GitCommit": "50351a36",
+      "Version": "1.0.3",
+      "LastModified": "2025-09-04T02:55:19.478640",
+      "ContentHash": "406154bf3df552fe",
+      "GitCommit": "706fbad7",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -847,10 +847,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.354543",
-      "ContentHash": "41150993bff102c6",
-      "GitCommit": "50351a36",
+      "Version": "1.0.3",
+      "LastModified": "2025-09-04T02:55:19.488616",
+      "ContentHash": "267da5a977cdd685",
+      "GitCommit": "706fbad7",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4109,7 +4109,31 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-09-03T02:54:44.881076",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.16",
+      "NewVersion": "1.0.17",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-04T02:55:19.259258",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-04T02:55:19.478647",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-04T02:55:19.488621",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-09-03T02:54:45.345853"
+  "last_updated": "2025-09-04T02:55:19.718613"
 }
