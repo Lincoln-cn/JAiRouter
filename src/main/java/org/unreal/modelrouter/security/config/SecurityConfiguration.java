@@ -32,7 +32,6 @@ import org.springframework.security.web.server.authentication.WebFilterChainServ
 @Slf4j
 @Configuration
 @EnableWebFluxSecurity
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true")
 public class SecurityConfiguration {
     
@@ -40,6 +39,16 @@ public class SecurityConfiguration {
     private final ApiKeyService apiKeyService;
     private final JwtTokenValidator jwtTokenValidator;
     private final ApplicationContext applicationContext;
+    
+    public SecurityConfiguration(SecurityProperties securityProperties, 
+                               ApiKeyService apiKeyService,
+                               @Autowired(required = false) JwtTokenValidator jwtTokenValidator,
+                               ApplicationContext applicationContext) {
+        this.securityProperties = securityProperties;
+        this.apiKeyService = apiKeyService;
+        this.jwtTokenValidator = jwtTokenValidator;
+        this.applicationContext = applicationContext;
+    }
 
     @Autowired(required = false)
     private TracingSecurityConfiguration.TracingSecurityFilterChainCustomizer tracingCustomizer;
@@ -109,7 +118,8 @@ public class SecurityConfiguration {
                         // 其他所有请求需要认证
                         .anyExchange().authenticated()
                 )
-                .addFilterAt(securityFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                // 将认证过滤器放在较早的位置，确保在multipart解析之前执行
+                .addFilterBefore(securityFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
 
@@ -157,11 +167,9 @@ public class SecurityConfiguration {
      */
     @Bean
     public SpringSecurityAuthenticationFilter springSecurityApiKeyAuthenticationFilter(
-            ServerAuthenticationConverter serverAuthenticationConverter,
             ReactiveAuthenticationManager reactiveAuthenticationManager) {
         return new SpringSecurityAuthenticationFilter(
                 securityProperties, 
-                serverAuthenticationConverter, 
                 reactiveAuthenticationManager);
     }
 }
