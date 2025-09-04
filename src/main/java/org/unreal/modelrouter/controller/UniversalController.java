@@ -175,9 +175,22 @@ public class UniversalController {
     public Mono<? extends ResponseEntity<?>> speechToText(
             @Parameter(description = "认证令牌")
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "语音转文本请求参数")
-            SttDTO.Request request,
+            @Parameter(description = "模型名称")
+            @RequestParam("model") String model,
+            @Parameter(description = "音频文件")
+            @RequestPart("file") org.springframework.http.codec.multipart.FilePart file,
+            @Parameter(description = "语言")
+            @RequestParam(value = "language", defaultValue = "auto") String language,
+            @Parameter(description = "提示词")
+            @RequestParam(value = "prompt", required = false) String prompt,
+            @Parameter(description = "响应格式")
+            @RequestParam(value = "responseFormat", required = false) String responseFormat,
+            @Parameter(description = "温度参数")
+            @RequestParam(value = "temperature", required = false) Double temperature,
             ServerHttpRequest httpRequest) {
+
+        // 构建SttDTO.Request对象
+        SttDTO.Request request = new SttDTO.Request(model, file, language, prompt, responseFormat, temperature);
 
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.stt,

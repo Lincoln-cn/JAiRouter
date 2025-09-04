@@ -30,6 +30,13 @@ public class ExcludedPathsConfig {
         authPaths.add("/webjars/");
         authPaths.add("/api/auth/jwt/login");
         authPaths.add("/favicon.ico");
+        // 注意：AI模型接口需要认证，不应该添加到排除列表中
+        // 这些接口包含敏感的AI服务，必须通过API Key或JWT认证访问
+        // authPaths.add("/v1/chat/");      // 需要认证
+        // authPaths.add("/v1/embeddings"); // 需要认证  
+        // authPaths.add("/v1/rerank");     // 需要认证
+        // authPaths.add("/v1/audio/");     // 需要认证
+        // authPaths.add("/v1/images/");    // 需要认证
         AUTH_EXCLUDED_PATHS = Collections.unmodifiableSet(authPaths);
         
         // 数据脱敏排除路径
@@ -44,7 +51,9 @@ public class ExcludedPathsConfig {
         securityPaths.add("/css/");
         securityPaths.add("/js/");
         securityPaths.add("/images/");
-        // 排除所有AI模型接口路径，避免对AI模型输入输出进行脱敏
+        // 排除AI模型接口路径的数据脱敏（但仍需要认证！）
+        // 这些接口不进行数据脱敏是因为AI模型的输入输出不应被修改
+        // 但这些接口仍然需要通过API Key或JWT进行认证
         securityPaths.add("/v1/chat/");
         securityPaths.add("/v1/embeddings");
         securityPaths.add("/v1/rerank");
