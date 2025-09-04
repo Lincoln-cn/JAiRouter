@@ -3,12 +3,15 @@
 ## 版本统计
 
 - 总文档数: 131
-- 近7天变更: 162
+- 近7天变更: 164
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-09-03 02:54:45
+- 最后扫描: 2025-09-04 02:55:19
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/deployment/production.md (1.0.2 → 1.0.3) - 2025-09-04
+- **MODIFIED**: docs/zh/deployment/docker.md (1.0.2 → 1.0.3) - 2025-09-04
+- **MODIFIED**: docs-version-report.md (1.0.16 → 1.0.17) - 2025-09-04
 - **MODIFIED**: docs-version-report.md (1.0.15 → 1.0.16) - 2025-09-03
 - **MODIFIED**: docs/zh/troubleshooting/debugging.md (1.0.1 → 1.0.2) - 2025-09-02
 - **MODIFIED**: docs/zh/troubleshooting/common-issues.md (1.0.1 → 1.0.2) - 2025-09-02
@@ -16,9 +19,6 @@
 - **MODIFIED**: docs/zh/security/index.md (1.0.0 → 1.0.1) - 2025-09-02
 - **MODIFIED**: docs/zh/security/data-sanitization.md (1.0.0 → 1.0.1) - 2025-09-02
 - **MODIFIED**: docs/zh/security/api-key-management.md (1.0.0 → 1.0.1) - 2025-09-02
-- **MODIFIED**: docs/zh/reference/faq.md (1.0.1 → 1.0.2) - 2025-09-02
-- **MODIFIED**: docs/zh/monitoring/testing.md (1.0.2 → 1.0.3) - 2025-09-02
-- **MODIFIED**: docs/zh/monitoring/setup.md (1.0.1 → 1.0.2) - 2025-09-02
 
 ## 依赖关系分析
 
@@ -455,7 +455,9 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.16 - 2025-09-03 (46ec0f0f)
+- **docs/zh/deployment/production.md**: v1.0.3 - 2025-09-04 (706fbad7)
+- **docs/zh/deployment/docker.md**: v1.0.3 - 2025-09-04 (706fbad7)
+- **docs-version-report.md**: v1.0.17 - 2025-09-04 (087ad62c)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/zh/troubleshooting/common-issues.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/zh/security/jwt-authentication.md**: v1.0.1 - 2025-09-02 (7b2dac10)
@@ -467,10 +469,8 @@
 - **docs/zh/monitoring/setup.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/zh/getting-started/quick-start.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/zh/getting-started/installation.md**: v1.0.2 - 2025-09-02 (948a0c17)
-- **docs/zh/deployment/production.md**: v1.0.2 - 2025-09-02 (50351a36)
 - **docs/zh/deployment/kubernetes.md**: v1.0.2 - 2025-09-02 (50351a36)
 - **docs/zh/deployment/index.md**: v1.0.2 - 2025-09-02 (948a0c17)
-- **docs/zh/deployment/docker.md**: v1.0.2 - 2025-09-02 (50351a36)
 - **docs/zh/deployment/china-optimization.md**: v1.0.2 - 2025-09-02 (50351a36)
 - **docs/en/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/en/troubleshooting/common-issues.md**: v1.0.2 - 2025-09-02 (948a0c17)
