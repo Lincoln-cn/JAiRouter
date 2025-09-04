@@ -2,8 +2,8 @@ package org.unreal.modelrouter.security.exception;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
-import org.unreal.modelrouter.exception.exception.AuthorizationException;
-import org.unreal.modelrouter.exception.exception.SecurityException;
+import org.unreal.modelrouter.exception.AuthorizationException;
+import org.unreal.modelrouter.exception.SecurityException;
 
 import static org.junit.jupiter.api.Assertions.*;
 

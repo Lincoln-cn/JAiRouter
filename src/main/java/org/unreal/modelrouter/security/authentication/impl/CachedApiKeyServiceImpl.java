@@ -9,6 +9,7 @@ import org.unreal.modelrouter.security.cache.ApiKeyCache;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.UsageStatistics;
+import org.unreal.modelrouter.exception.AuthenticationException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -41,18 +42,37 @@ public class CachedApiKeyServiceImpl implements ApiKeyService {
     
     @Override
     public Mono<ApiKeyInfo> validateApiKey(String keyValue) {
+        if (keyValue == null || keyValue.trim().isEmpty()) {
+            return Mono.error(AuthenticationException.missingApiKey());
+        }
+        
         return apiKeyCache.get(keyValue)
+                .doOnNext(apiKeyInfo -> log.debug("从缓存获取API Key成功: {}", apiKeyInfo != null ? apiKeyInfo.getKeyId() : "null"))
+                .doOnSubscribe(subscription -> log.debug("开始验证API Key: {}", keyValue))
+                .onErrorResume(throwable -> {
+                    // 即使缓存获取失败，也要继续尝试从原始服务获取
+                    log.warn("从缓存获取API Key时发生错误: {}, 将尝试从原始服务获取", keyValue, throwable);
+                    return Mono.empty();
+                })
                 .switchIfEmpty(
-                    // 缓存未命中，从原始服务获取
+                    // 缓存未命中或缓存获取失败，从原始服务获取
                     delegateService.validateApiKey(keyValue)
+                            .doOnNext(apiKeyInfo -> log.debug("从原始服务验证API Key成功: {}", apiKeyInfo.getKeyId()))
                             .flatMap(apiKeyInfo -> {
                                 // 缓存有效的API Key
                                 Duration cacheTtl = calculateCacheTtl(apiKeyInfo);
                                 return apiKeyCache.put(keyValue, apiKeyInfo, cacheTtl)
+                                        .doOnSuccess(unused -> log.debug("API Key已缓存: {} (TTL: {})", apiKeyInfo.getKeyId(), cacheTtl))
+                                        .doOnError(error -> log.warn("缓存API Key失败: {}", apiKeyInfo.getKeyId(), error))
                                         .thenReturn(apiKeyInfo);
                             })
+                            .doOnError(error -> log.warn("从原始服务验证API Key失败: {}, 错误: {}", keyValue, error.getMessage()))
                 )
-                .doOnNext(apiKeyInfo -> log.debug("API Key验证完成: {} (来源: 缓存)", apiKeyInfo.getKeyId()))
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("API Key验证失败: 未找到有效的API Key {}", keyValue);
+                    return Mono.error(AuthenticationException.invalidApiKey());
+                }))
+                .doOnNext(apiKeyInfo -> log.debug("API Key验证完成: {}", apiKeyInfo.getKeyId()))
                 .doOnError(error -> log.error("API Key验证失败: {}", keyValue, error));
     }
     

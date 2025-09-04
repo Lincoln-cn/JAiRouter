@@ -5,7 +5,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.exception.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
@@ -287,25 +287,40 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      */
     private void loadApiKeysFromStore() {
         try {
-            //如果不存在配置文件，则创建默认空配置文件
+            //如果不存在配置文件，则创建默认配置文件
             if (!storeManager.exists(API_KEYS_STORE_KEY)) {
-                storeManager.saveConfig(API_KEYS_STORE_KEY, Collections.emptyMap());
-                log.info("创建默认API Key配置文件");
+                createDefaultApiKeyConfig();
             }
+            
             Map<String, Object> config = storeManager.getConfig(API_KEYS_STORE_KEY);
-            if (config != null && !config.isEmpty()) {
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> apiKeyMaps = (List<Map<String, Object>>) config.get("apiKeys");
-                if (apiKeyMaps != null) {
-                    for (Map<String, Object> apiKeyMap : apiKeyMaps) {
-                        ApiKeyInfo apiKeyInfo = objectMapper.convertValue(apiKeyMap, ApiKeyInfo.class);
-                        // 只有当密钥不在配置中时才添加（避免重复）
-                        if (!apiKeyCache.containsKey(apiKeyInfo.getKeyValue())) {
-                            apiKeyCache.put(apiKeyInfo.getKeyValue(), apiKeyInfo);
-                            keyIdIndex.put(apiKeyInfo.getKeyId(), apiKeyInfo.getKeyValue());
+            if (config != null) {
+                // 检查配置文件结构是否正确
+                Object apiKeysObj = config.get("apiKeys");
+                if (apiKeysObj instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> apiKeyMaps = (List<Map<String, Object>>) apiKeysObj;
+                    if (apiKeyMaps != null) {
+                        for (Map<String, Object> apiKeyMap : apiKeyMaps) {
+                            try {
+                                ApiKeyInfo apiKeyInfo = objectMapper.convertValue(apiKeyMap, ApiKeyInfo.class);
+                                // 只有当密钥不在配置中时才添加（避免重复）
+                                if (!apiKeyCache.containsKey(apiKeyInfo.getKeyValue())) {
+                                    apiKeyCache.put(apiKeyInfo.getKeyValue(), apiKeyInfo);
+                                    keyIdIndex.put(apiKeyInfo.getKeyId(), apiKeyInfo.getKeyValue());
+                                }
+                            } catch (Exception conversionException) {
+                                log.warn("跳过无效的API Key条目: {}", apiKeyMap, conversionException);
+                            }
                         }
                     }
+                } else if (!config.isEmpty()) {
+                    // 配置文件存在但结构不正确，记录警告
+                    log.warn("API Key配置文件结构不正确，期望包含'apiKeys'字段，当前内容: {}", config);
                 }
+            } else {
+                // 配置文件内容为null，重新创建
+                log.warn("API Key配置文件内容为null，重新创建默认配置文件");
+                createDefaultApiKeyConfig();
             }
 
             log.debug("从存储加载了 {} 个API Key", apiKeyCache.size());
@@ -314,7 +329,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             // 尝试重新创建配置文件
             try {
                 log.info("尝试重新创建API Key配置文件");
-                storeManager.saveConfig(API_KEYS_STORE_KEY, Collections.emptyMap());
+                createDefaultApiKeyConfig();
                 log.info("API Key配置文件已重新创建");
             } catch (Exception recreateException) {
                 log.error("重新创建API Key配置文件失败", recreateException);
@@ -323,38 +338,75 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     }
     
     /**
+     * 创建默认的API Key配置文件
+     */
+    private void createDefaultApiKeyConfig() {
+        Map<String, Object> defaultConfig = new HashMap<>();
+        defaultConfig.put("apiKeys", new ArrayList<>());
+        storeManager.saveConfig(API_KEYS_STORE_KEY, defaultConfig);
+        log.info("创建默认API Key配置文件: {}", API_KEYS_STORE_KEY);
+    }
+    
+    /**
      * 从存储中加载使用统计数据到缓存
      */
     private void loadUsageStatsFromStore() {
         try {
+            // 如果不存在配置文件，则创建默认配置文件
             if (!storeManager.exists(USAGE_STATS_STORE_KEY)) {
-                storeManager.saveConfig(USAGE_STATS_STORE_KEY, Collections.emptyMap());
-                log.info("创建默认使用统计配置文件");
+                createDefaultUsageStatsConfig();
             }
+            
             Map<String, Object> config = storeManager.getConfig(USAGE_STATS_STORE_KEY);
-            if (config != null && !config.isEmpty()) {
-                @SuppressWarnings("unchecked")
-                Map<String, Map<String, Object>> statsMap = (Map<String, Map<String, Object>>) config.get("usageStats");
-                if (statsMap != null) {
-                    for (Map.Entry<String, Map<String, Object>> entry : statsMap.entrySet()) {
-                        String keyId = entry.getKey();
-                        UsageStatistics stats = objectMapper.convertValue(entry.getValue(), UsageStatistics.class);
-                        usageStatsCache.put(keyId, stats);
+            if (config != null) {
+                // 检查配置文件结构是否正确
+                Object usageStatsObj = config.get("usageStats");
+                if (usageStatsObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Map<String, Object>> statsMap = (Map<String, Map<String, Object>>) usageStatsObj;
+                    if (statsMap != null) {
+                        for (Map.Entry<String, Map<String, Object>> entry : statsMap.entrySet()) {
+                            try {
+                                String keyId = entry.getKey();
+                                UsageStatistics stats = objectMapper.convertValue(entry.getValue(), UsageStatistics.class);
+                                usageStatsCache.put(keyId, stats);
+                            } catch (Exception conversionException) {
+                                log.warn("跳过无效的使用统计条目，Key ID: {}", entry.getKey(), conversionException);
+                            }
+                        }
                     }
+                } else if (!config.isEmpty()) {
+                    // 配置文件存在但结构不正确，记录警告
+                    log.warn("使用统计配置文件结构不正确，期望包含'usageStats'字段，当前内容: {}", config);
                 }
+            } else {
+                // 配置文件内容为null，重新创建
+                log.warn("使用统计配置文件内容为null，重新创建默认配置文件");
+                createDefaultUsageStatsConfig();
             }
+            
             log.debug("从存储加载了 {} 个使用统计", usageStatsCache.size());
         } catch (Exception e) {
             log.error("加载使用统计数据失败", e);
             // 尝试重新创建配置文件
             try {
                 log.info("尝试重新创建使用统计配置文件");
-                storeManager.saveConfig(USAGE_STATS_STORE_KEY, Collections.emptyMap());
+                createDefaultUsageStatsConfig();
                 log.info("使用统计配置文件已重新创建");
             } catch (Exception recreateException) {
                 log.error("重新创建使用统计配置文件失败", recreateException);
             }
         }
+    }
+    
+    /**
+     * 创建默认的使用统计配置文件
+     */
+    private void createDefaultUsageStatsConfig() {
+        Map<String, Object> defaultConfig = new HashMap<>();
+        defaultConfig.put("usageStats", new HashMap<>());
+        storeManager.saveConfig(USAGE_STATS_STORE_KEY, defaultConfig);
+        log.info("创建默认使用统计配置文件: {}", USAGE_STATS_STORE_KEY);
     }
     
     /**

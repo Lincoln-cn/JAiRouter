@@ -43,34 +43,49 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
         long startTime = System.nanoTime();
         
         return Mono.fromCallable(() -> {
-            CacheEntry entry = cache.get(keyValue);
-            if (entry == null) {
-                if (cacheMetrics != null) {
-                    cacheMetrics.recordCacheMiss();
+            try {
+                if (keyValue == null || keyValue.trim().isEmpty()) {
+                    log.debug("尝试获取空的API Key");
+                    return null;
                 }
-                return null;
-            }
-            
-            if (entry.isExpired()) {
-                cache.remove(keyValue);
-                if (cacheMetrics != null) {
-                    cacheMetrics.recordCacheEviction();
-                    cacheMetrics.recordCacheMiss();
+                
+                CacheEntry entry = cache.get(keyValue);
+                if (entry == null) {
+                    if (cacheMetrics != null) {
+                        cacheMetrics.recordCacheMiss();
+                    }
+                    log.debug("API Key在缓存中未找到: {}", keyValue);
+                    return null;
                 }
-                log.debug("内存缓存中的API Key已过期，已移除: {}", keyValue);
-                return null;
+                
+                if (entry.isExpired()) {
+                    cache.remove(keyValue);
+                    if (cacheMetrics != null) {
+                        cacheMetrics.recordCacheEviction();
+                        cacheMetrics.recordCacheMiss();
+                    }
+                    log.debug("内存缓存中的API Key已过期，已移除: {}", keyValue);
+                    return null;
+                }
+                
+                if (cacheMetrics != null) {
+                    cacheMetrics.recordCacheHit();
+                }
+                log.debug("从内存缓存获取API Key: {}", entry.apiKeyInfo.getKeyId());
+                return entry.apiKeyInfo;
+            } catch (Exception e) {
+                log.warn("从内存缓存获取API Key时发生异常: {}", keyValue != null ? keyValue : "null", e);
+                return null; // 返回null而不是抛出异常，确保switchIfEmpty能正常工作
             }
-            
-            if (cacheMetrics != null) {
-                cacheMetrics.recordCacheHit();
-            }
-            log.debug("从内存缓存获取API Key: {}", entry.apiKeyInfo.getKeyId());
-            return entry.apiKeyInfo;
         })
         .doFinally(signalType -> {
             if (cacheMetrics != null) {
-                Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-                cacheMetrics.recordReadDuration(duration);
+                try {
+                    Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
+                    cacheMetrics.recordReadDuration(duration);
+                } catch (Exception e) {
+                    log.warn("记录缓存读取时间时发生异常", e);
+                }
             }
         });
     }

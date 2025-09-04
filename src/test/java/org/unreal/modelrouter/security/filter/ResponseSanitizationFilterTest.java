@@ -17,7 +17,7 @@ import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.filter.ResponseSanitizationFilter;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
-import org.unreal.modelrouter.exception.exception.SanitizationException;
+import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.sanitization.SanitizationService;
 import reactor.core.publisher.Flux;

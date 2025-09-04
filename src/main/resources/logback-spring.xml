@@ -112,8 +112,6 @@
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>
-            <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
         </root>
         
         <!-- 应用日志详细输出 -->

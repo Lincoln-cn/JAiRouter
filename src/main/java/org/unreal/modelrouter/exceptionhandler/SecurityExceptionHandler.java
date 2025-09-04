@@ -7,10 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.unreal.modelrouter.dto.SecurityErrorResponse;
-import org.unreal.modelrouter.exception.exception.AuthenticationException;
-import org.unreal.modelrouter.exception.exception.AuthorizationException;
-import org.unreal.modelrouter.exception.exception.SanitizationException;
-import org.unreal.modelrouter.exception.exception.SecurityException;
+import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.DownstreamServiceException;
+import org.unreal.modelrouter.exception.AuthorizationException;
+import org.unreal.modelrouter.exception.SanitizationException;
+import org.unreal.modelrouter.exception.SecurityException;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
 
@@ -98,6 +100,28 @@ public class SecurityExceptionHandler {
                 .build();
 
         return ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
+    }
+
+    /**
+     * 处理下游服务异常
+     */
+    @ExceptionHandler(DownstreamServiceException.class)
+    public ResponseEntity<SecurityErrorResponse> handleDownstreamServiceException(DownstreamServiceException ex) {
+        logger.warn("下游服务异常: {}", ex.getMessage(), ex);
+        
+        SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(ex.getStatusCode().value())
+                .error(ex.getStatusCode().getReasonPhrase())
+                .message(ex.getMessage())
+                .errorCode("DOWNSTREAM_SERVICE_ERROR")
+                .build();
+        
+        // 对于认证相关的下游错误，使用401状态码
+        HttpStatus status = ex.getStatusCode().value() == 401 ? 
+            HttpStatus.UNAUTHORIZED : HttpStatus.valueOf(ex.getStatusCode().value());
+            
+        return ResponseEntity.status(status).body(errorResponse);
     }
 
     /**

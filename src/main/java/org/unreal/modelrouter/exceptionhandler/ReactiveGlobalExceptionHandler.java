@@ -16,17 +16,16 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.exception.exception.AuthenticationException;
-import org.unreal.modelrouter.exception.exception.AuthorizationException;
-import org.unreal.modelrouter.exception.exception.SanitizationException;
-import org.unreal.modelrouter.exception.exception.SecurityException;
-import org.unreal.modelrouter.exception.exception.SecurityAuthenticationException;
+import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.AuthorizationException;
+import org.unreal.modelrouter.exception.SanitizationException;
+import org.unreal.modelrouter.exception.SecurityException;
+import org.unreal.modelrouter.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.monitoring.error.ErrorTracker;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.TracingContextHolder;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -163,6 +162,12 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             String jsonResponse = objectMapper.writeValueAsString(errorResponse);
             DataBuffer buffer = response.bufferFactory().wrap(jsonResponse.getBytes());
             
+            // 检查响应是否已提交
+            if (response.isCommitted()) {
+                logger.warn("响应已提交，无法写入错误信息");
+                return Mono.empty();
+            }
+            
             return response.writeWith(Mono.just(buffer));
             
         } catch (Exception e) {
@@ -191,7 +196,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      * 处理认证异常
      */
     private Mono<Void> handleAuthenticationException(ServerWebExchange exchange, AuthenticationException ex) {
-        logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage());
+        logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
         return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
@@ -201,7 +206,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      * 处理授权异常
      */
     private Mono<Void> handleAuthorizationException(ServerWebExchange exchange, AuthorizationException ex) {
-        logger.warn("授权失败: {} - {}", ex.getErrorCode(), ex.getMessage());
+        logger.warn("授权失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
         return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
@@ -211,7 +216,8 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      * 处理数据脱敏异常
      */
     private Mono<Void> handleSanitizationException(ServerWebExchange exchange, SanitizationException ex) {
-        logger.error("数据脱敏异常: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
+        // 记录完整的异常堆栈信息
+        logger.error("数据脱敏异常: {} - {}\n{}", ex.getErrorCode(), ex.getMessage(), getStackTraceAsString(ex), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error("数据处理失败", ex.getErrorCode());
         return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
@@ -221,17 +227,29 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      * 处理通用安全异常
      */
     private Mono<Void> handleGenericSecurityException(ServerWebExchange exchange, SecurityException ex) {
-        logger.error("安全异常: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
+        // 记录完整的异常堆栈信息
+        logger.error("安全异常: {} - {}\n{}", ex.getErrorCode(), ex.getMessage(), getStackTraceAsString(ex), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
         return setResponse(exchange.getResponse(), errorResponse, ex.getHttpStatus());
+    }
+
+    /**
+     * 将异常堆栈转换为字符串
+     */
+    private String getStackTraceAsString(Throwable throwable) {
+        StringBuilder sb = new StringBuilder();
+        for (StackTraceElement element : throwable.getStackTrace()) {
+            sb.append(element.toString()).append("\n");
+        }
+        return sb.toString();
     }
     
     /**
      * 处理Spring Security认证异常
      */
     private Mono<Void> handleSecurityAuthenticationException(ServerWebExchange exchange, SecurityAuthenticationException ex) {
-        logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage());
+        logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
         return setResponse(exchange.getResponse(), errorResponse, HttpStatus.UNAUTHORIZED);
@@ -241,16 +259,21 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      * 设置最简单的错误响应
      */
     private Mono<Void> setSimpleErrorResponse(ServerHttpResponse response) {
+        // 检查响应是否已提交，避免递归
+        if (response.isCommitted()) {
+            return Mono.empty();
+        }
+        
         try {
-            if (!response.isCommitted()) {
-                response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-                String simpleError = "{\"success\":false,\"message\":\"Internal Server Error\",\"code\":\"500\"}";
-                DataBuffer buffer = response.bufferFactory().wrap(simpleError.getBytes());
-                return response.writeWith(Mono.just(buffer));
-            }
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            String simpleError = "{\"success\":false,\"message\":\"Internal Server Error\",\"code\":\"500\"}";
+            DataBuffer buffer = response.bufferFactory().wrap(simpleError.getBytes());
+            return response.writeWith(Mono.just(buffer));
         } catch (Exception e) {
             logger.error("设置简单错误响应也失败了", e);
+            // 即使设置简单响应失败，也要确保返回Mono.empty()避免递归
+            return Mono.empty();
         }
-        return Mono.empty();
     }
+
 }
