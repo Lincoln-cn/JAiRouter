@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.dto.SecurityErrorResponse;
-import org.unreal.modelrouter.exception.exception.AuthenticationException;
-import org.unreal.modelrouter.exception.exception.AuthorizationException;
-import org.unreal.modelrouter.exception.exception.SanitizationException;
-import org.unreal.modelrouter.exception.exception.SecurityException;
+import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.exception.AuthorizationException;
+import org.unreal.modelrouter.exception.SanitizationException;
+import org.unreal.modelrouter.exception.SecurityException;
 import org.unreal.modelrouter.exceptionhandler.SecurityExceptionHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
