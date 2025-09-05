@@ -50,6 +50,7 @@ public class ExcludedPathsConfig {
         securityPaths.add("/v1/rerank");
         securityPaths.add("/v1/audio/");
         securityPaths.add("/v1/images/");
+        securityPaths.add("/v1/debug/");
         // 排除认证端点
         securityPaths.add("/api/auth/jwt/login");
         DATA_MASKING_EXCLUDED_PATHS = Collections.unmodifiableSet(securityPaths);

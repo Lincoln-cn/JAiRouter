@@ -1,5 +1,9 @@
+// [!code focus:9]
+// [!code focus:386-419]
 package org.unreal.modelrouter.adapter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +20,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.LinkedMultiValueMap;
+import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.model.ModelRouterProperties;
@@ -36,6 +41,8 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     private final ModelServiceRegistry registry;
     private final MetricsCollector metricsCollector;
+
+    private final ObjectMapper objectMapper = new ObjectMapper(); // <-- 新增 ObjectMapper 用于解析JSON
 
     private Logger logger = LoggerFactory.getLogger(BaseAdapter.class);
 
@@ -245,7 +252,25 @@ public abstract class BaseAdapter implements ServiceCapability {
                             metricsCollector.recordBackendCall(adapterType, instanceName, finalDuration, false);
                         }
 
-                        return Mono.error(throwable);
+                        // 修复：保持原始的错误状态码，并确保传递给 Mono.error() 的参数是 Throwable 类型
+                        if (throwable instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
+                            org.springframework.web.reactive.function.client.WebClientResponseException webEx =
+                                    (org.springframework.web.reactive.function.client.WebClientResponseException) throwable;
+                            ResponseStatusException responseEx = new ResponseStatusException(webEx.getStatusCode(), webEx.getMessage(), webEx);
+                            logger.error("WebClientResponseException 处理失败: {}", responseEx.getMessage(), responseEx);
+                            return Mono.error(responseEx);
+                        } else if (throwable instanceof DownstreamServiceException) {
+                            DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
+                            ResponseStatusException responseEx = new ResponseStatusException(
+                                    downStreamEx.getStatusCode(),
+                                    downStreamEx.getMessage(),
+                                    downStreamEx);
+                            logger.error("DownstreamServiceException 处理失败: {}", responseEx.getMessage(), responseEx);
+                            return Mono.error(responseEx);
+                        } else {
+                            logger.error("未知异常类型处理失败: {}", throwable.getMessage(), throwable);
+                            return Mono.error(throwable);
+                        }
                     }
                 });
     }
@@ -275,6 +300,39 @@ public abstract class BaseAdapter implements ServiceCapability {
                 .onErrorResume(throwable -> {
                     try {
                         ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback((Exception) throwable);
+                        if (fallbackResponse == null || fallbackResponse.getBody() == null) {
+                            // 修复：保持原始错误状态码
+                            if (throwable instanceof DownstreamServiceException) {
+                                DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
+                                return Mono.error(new ResponseStatusException(
+                                        downStreamEx.getStatusCode(),
+                                        downStreamEx.getMessage(),
+                                        downStreamEx));
+                            } else if (throwable instanceof ResponseStatusException) {
+                                return Mono.error((ResponseStatusException) throwable);
+                            } else {
+                                return Mono.error(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存"));
+                            }
+                        }
+                        // 只要不是 2xx，直接抛异常
+                        if (!fallbackResponse.getStatusCode().is2xxSuccessful()) {
+                            // 修复：保持原始错误状态码
+                            if (throwable instanceof DownstreamServiceException) {
+                                DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
+                                return Mono.error(new ResponseStatusException(
+                                        downStreamEx.getStatusCode(),
+                                        downStreamEx.getMessage(),
+                                        downStreamEx));
+                            } else if (throwable instanceof ResponseStatusException) {
+                                return Mono.error((ResponseStatusException) throwable);
+                            } else {
+                                return Mono.error(new ResponseStatusException(
+                                        fallbackResponse.getStatusCode(),
+                                        fallbackResponse.getBody() != null ? fallbackResponse.getBody().toString() : "未知错误"
+                                ));
+                            }
+                        }
+                        // 只有成功的 ResponseEntity 才 ResponseEntity 返回
                         return Mono.just(fallbackResponse);
                     } catch (Exception e) {
                         return Mono.error(e);
@@ -304,10 +362,10 @@ public abstract class BaseAdapter implements ServiceCapability {
 
         String finalPath = adaptModelName(path);
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), getAdapterType());
-        
-        logger.debug("发送请求到下游服务: instance={}, path={}, auth={}", 
-            instanceName, finalPath, finalAuth != null ? "***" : "null");
-        
+
+        logger.debug("发送请求到下游服务: instance={}, path={}, auth={}",
+                instanceName, finalPath, finalAuth != null ? "***" : "null");
+
         WebClient.RequestBodySpec requestSpec = client.post()
                 .uri(finalPath)
                 .header("Authorization", finalAuth);
@@ -316,6 +374,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         requestSpec = configureRequestHeaders(requestSpec, request);
 
         if (responseType == byte[].class) {
+            // ... (二进制文件处理逻辑保持不变)
             return requestSpec
                     .body(createRequestBody(transformedRequest))
                     .exchangeToMono(clientResponse -> {
@@ -431,92 +490,100 @@ public abstract class BaseAdapter implements ServiceCapability {
                     .retrieve()
                     .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
                         // 5xx错误视为服务失败，用于熔断器
-                        logger.error("下游服务5xx错误: instance={}, path={}, status={}", 
-                            instanceName, path, clientResponse.statusCode());
+                        logger.error("下游服务5xx错误: instance={}, path={}, status={}",
+                                instanceName, path, clientResponse.statusCode());
                         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
                     })
                     .onStatus(HttpStatusCode::is4xxClientError, clientResponse -> {
                         // 特别处理401错误
                         if (clientResponse.statusCode().value() == 401) {
-                            logger.error("下游服务认证失败 (401): instance={}, path={}, response={}", 
-                                instanceName, path, clientResponse.statusCode());
+                            logger.error("下游服务认证失败 (401): instance={}, path={}, response={}",
+                                    instanceName, path, clientResponse.statusCode());
                             // 返回特定异常，避免与本地认证错误混淆
                             return Mono.error(new DownstreamServiceException(
-                                "下游服务认证失败，请检查下游服务的认证配置", 
-                                HttpStatus.valueOf(clientResponse.statusCode().value())));
+                                    "下游服务认证失败，请检查下游服务的认证配置",
+                                    HttpStatus.valueOf(clientResponse.statusCode().value())));
                         } else if (clientResponse.statusCode().value() == 400) {
-                            logger.error("下游服务请求错误 (400): instance={}, path={}, response={}", 
-                                instanceName, path, clientResponse.statusCode());
+                            logger.error("下游服务请求错误 (400): instance={}, path={}, response={}",
+                                    instanceName, path, clientResponse.statusCode());
                             return Mono.error(new DownstreamServiceException(
-                                "下游服务请求参数错误，请检查请求内容", 
-                                HttpStatus.valueOf(clientResponse.statusCode().value())));
+                                    "下游服务请求参数错误，请检查请求内容",
+                                    HttpStatus.valueOf(clientResponse.statusCode().value())));
                         } else if (clientResponse.statusCode().value() == 503) {
                             logger.error("下游服务不可用 (503): instance={}, path={}, response={}",
                                     instanceName, path, clientResponse.statusCode());
                             return Mono.error(new DownstreamServiceException(
-                                "下游服务暂时不可用，请稍后重试", 
-                                HttpStatus.valueOf(clientResponse.statusCode().value())));
+                                    "下游服务暂时不可用，请稍后重试",
+                                    HttpStatus.valueOf(clientResponse.statusCode().value())));
                         }
-                        logger.error("下游服务4xx错误: instance={}, path={}, status={}", 
-                            instanceName, path, clientResponse.statusCode());
+                        logger.error("下游服务4xx错误: instance={}, path={}, status={}",
+                                instanceName, path, clientResponse.statusCode());
                         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
                     })
                     .toEntity(String.class)
+                    // ==================== 核心修改开始 ====================
+                    .flatMap(responseEntity -> {
+                        if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+                            String bodyStr = responseEntity.getBody() != null ? responseEntity.getBody() : "";
+                            return Mono.<ResponseEntity<?>>error(new ResponseStatusException(
+                                    responseEntity.getStatusCode(),
+                                    "下游服务异常: " + bodyStr
+                            ));
+                        }
+
+                        try {
+                            String bodyStr = responseEntity.getBody();
+                            Object downstreamData;
+
+                            if (bodyStr == null || bodyStr.isEmpty()) {
+                                // 如果下游成功响应但body为空，则data部分为null
+                                downstreamData = null;
+                            } else {
+                                // 1. 将下游服务的JSON响应体解析为通用Object
+                                downstreamData = objectMapper.readValue(bodyStr, Object.class);
+                            }
+
+                            // 2. 对解析后的数据应用转换逻辑（子类可重写此方法）
+                            Object transformedData = transformResponse(downstreamData, getAdapterType());
+
+                            // 3. 将最终数据包装到RouterResponse中
+                            RouterResponse<Object> finalResponse = RouterResponse.success(transformedData, "请求成功");
+
+                            // 4. 构建并返回包含RouterResponse的最终ResponseEntity
+                            return Mono.just(
+                                    ResponseEntity.status(responseEntity.getStatusCode())
+                                            .contentType(MediaType.APPLICATION_JSON)
+                                            .body(finalResponse)
+                            );
+                        } catch (JsonProcessingException e) {
+                            // 如果下游返回的不是合法的JSON，则处理错误
+                            logger.error("无法解析下游服务的响应体: {}", responseEntity.getBody(), e);
+                            return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "无法解析下游服务响应"));
+                        }
+                    })
+                    // ==================== 核心修改结束 ====================
                     .doOnSuccess(responseEntity -> {
-                        logger.debug("下游服务响应成功: instance={}, path={}, status={}, body length={}", 
-                            instanceName, path, responseEntity.getStatusCode(), 
-                            responseEntity.getBody() != null ? responseEntity.getBody().length() : 0);
-                        if (responseEntity.getBody() != null && responseEntity.getBody().length() > 0) {
-                            logger.debug("响应内容预览: {}", 
-                                responseEntity.getBody().length() > 200 ? 
-                                responseEntity.getBody().substring(0, 200) + "..." : 
-                                responseEntity.getBody());
+                        Object responseBody = responseEntity.getBody();
+                        String bodyStr = responseBody != null ? responseBody.toString() : "";
+                        logger.debug("下游服务响应成功: instance={}, path={}, status={}, body length={}",
+                                instanceName, path, responseEntity.getStatusCode(), bodyStr.length());
+                        if (!bodyStr.isEmpty()) {
+                            logger.debug("响应内容预览: {}", bodyStr.length() > 200 ? bodyStr.substring(0, 200) + "..." : bodyStr);
                         }
                     })
                     .doOnSuccess(responseEntity -> {
                         // 记录请求大小指标
                         if (metricsCollector != null && responseEntity != null) {
                             long requestSize = calculateRequestSize(transformedRequest);
-                            long responseSize = responseEntity.getBody() != null ? 
-                                    responseEntity.getBody().getBytes().length : 0;
+                            Object responseBody = responseEntity.getBody();
+                            String bodyStr = responseBody != null ? responseBody.toString() : "";
+                            long responseSize = bodyStr.getBytes().length;
                             metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
 
                             // 记录响应时间指标
                             long responseTime = System.currentTimeMillis() - requestStartTime;
                             String status = responseEntity.getStatusCode().toString();
                             metricsCollector.recordRequest(serviceType.name(), "POST", responseTime, status);
-                        }
-                    })
-                    .map(responseEntity -> {
-                        logger.debug("收到下游服务响应: status={}, body length={}", 
-                            responseEntity.getStatusCode(), 
-                            responseEntity.getBody() != null ? responseEntity.getBody().length() : 0);
-                        
-                        Object transformedResponse = transformResponse(responseEntity, getAdapterType());
-                        logger.debug("响应转换完成: transformed type={}", 
-                            transformedResponse != null ? transformedResponse.getClass().getSimpleName() : "null");
-                        
-                        if (responseEntity.getStatusCode().is2xxSuccessful()) {
-                            // 只返回body部分
-                            if (transformedResponse instanceof ResponseEntity) {
-                                return ResponseEntity.ok()
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .body(((ResponseEntity<?>) transformedResponse).getBody());
-                            } else {
-                                return ResponseEntity.ok()
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .body(transformedResponse);
-                            }
-                        } else {
-                            if (transformedResponse instanceof ResponseEntity) {
-                                return ResponseEntity.status(responseEntity.getStatusCode())
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .body(((ResponseEntity<?>) transformedResponse).getBody());
-                            } else {
-                                return ResponseEntity.status(responseEntity.getStatusCode())
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .body(transformedResponse);
-                            }
                         }
                     })
                     .doOnError(throwable -> {
@@ -559,7 +626,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         // 记录请求大小
         long requestSize = calculateRequestSize(transformedRequest);
 
-        Flux<String> streamResponse = requestSpec
+        Flux streamResponse = requestSpec
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
@@ -587,7 +654,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                         // 可以考虑添加更多错误类型记录
                     }
                 })
-                .onErrorResume(throwable -> Flux.just(throwable.getMessage()));
+                .onErrorResume(throwable -> {
+                    return Flux.error(throwable);
+                });
 
         return Mono.just(ResponseEntity.ok()
                 .contentType(MediaType.TEXT_EVENT_STREAM)
@@ -614,7 +683,7 @@ public abstract class BaseAdapter implements ServiceCapability {
      */
     protected BodyInserter<?, ? super ClientHttpRequest> createRequestBody(Object request) {
         logger.debug("创建请求体，请求类型: {}", request.getClass().getSimpleName());
-        
+
         // 检查是否已经是转换后的multipart数据
         if (request instanceof MultiValueMap) {
             logger.debug("检测到已转换的multipart数据，直接使用");
@@ -637,18 +706,18 @@ public abstract class BaseAdapter implements ServiceCapability {
      */
     private BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(SttDTO.Request sttRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-        
-        logger.debug("创建STT multipart请求体: model={}, file={}, language={}", 
-            sttRequest.model(), 
-            sttRequest.file() != null ? sttRequest.file().filename() : "null",
-            sttRequest.language());
-        
+
+        logger.debug("创建STT multipart请求体: model={}, file={}, language={}",
+                sttRequest.model(),
+                sttRequest.file() != null ? sttRequest.file().filename() : "null",
+                sttRequest.language());
+
         // 添加文件部分
         if (sttRequest.file() != null) {
             parts.add("file", sttRequest.file());
             logger.debug("添加文件部分: filename={}", sttRequest.file().filename());
         }
-        
+
         // 添加其他表单字段
         if (sttRequest.model() != null) {
             parts.add("model", sttRequest.model());
@@ -670,7 +739,7 @@ public abstract class BaseAdapter implements ServiceCapability {
             parts.add("temperature", sttRequest.temperature().toString());
             logger.debug("添加temperature字段: {}", sttRequest.temperature());
         }
-        
+
         logger.debug("Multipart表单数据创建完成，包含{}个字段", parts.size());
         return BodyInserters.fromMultipartData(parts);
     }
@@ -680,10 +749,10 @@ public abstract class BaseAdapter implements ServiceCapability {
      */
     private BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(ImageEditDTO.Request imageEditRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-        
+
         // 这里需要根据ImageEditDTO.Request的实际结构来实现
         // 暂时返回空的multipart数据
-        
+
         return BodyInserters.fromMultipartData(parts);
     }
 
@@ -878,10 +947,11 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     /**
-     * 转换响应体 - 子类可以重写此方法来适配不同的API格式
+     * 转换响应体 - 子类可以重写此方法来适配不同的API格式.
+     * 注意：此方法现在处理的是已解析为Object的下游响应体，而不是原始的ResponseEntity。
      */
-    protected Object transformResponse(final Object response, final String adapterType) {
-        return response;
+    protected Object transformResponse(final Object responseData, final String adapterType) {
+        return responseData;
     }
 
     /**

@@ -9,15 +9,20 @@ server:
 
 # Spring Boot 基础配置
 spring:
-  # WebFlux multipart 配置
   webflux:
     multipart:
-      max-in-memory-size: 10MB
-      max-disk-usage-per-part: 100MB
-      max-parts: 128
-  # Codec 配置
-  codec:
-    max-in-memory-size: 10MB
+      max-in-memory-size: 10MB        # 内存中multipart数据的最大大小
+      max-disk-usage-per-part: 100MB  # 每个部分可使用的最大磁盘空间
+      max-parts: 50                   # 最大部分数量
+      max-headers-size: 8KB           # 请求头最大大小
+      file-storage-directory: ${java.io.tmpdir} # 临时文件存储目录
+
+  # Reactor Netty服务器配置
+  reactor:
+    netty:
+      max-initial-line-length: 4096   # 初始行最大长度
+      max-header-size: 8192          # 头部最大大小
+      max-chunk-size: 8192           # 块最大大小
 
 # 存储配置
 store:
