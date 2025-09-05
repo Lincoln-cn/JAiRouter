@@ -11,6 +11,7 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.authentication.ServerAuthenticationFailureHandler;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.filter.DefaultAuthenticationConverter;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
@@ -112,8 +113,8 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
         when(apiKeyConfig.getHeaderName()).thenReturn("X-API-Key");
         when(jwtConfig.isEnabled()).thenReturn(false);
         
-        SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter converter =
-                new SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter(securityProperties);
+        DefaultAuthenticationConverter converter =
+                new DefaultAuthenticationConverter(securityProperties);
         
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/v1/chat/completions")
@@ -136,8 +137,8 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
         when(apiKeyConfig.getHeaderName()).thenReturn("X-API-Key");
         when(jwtConfig.isEnabled()).thenReturn(true);
         
-        SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter converter =
-                new SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter(securityProperties);
+        DefaultAuthenticationConverter converter =
+                new DefaultAuthenticationConverter(securityProperties);
         
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/v1/chat/completions")
@@ -160,8 +161,8 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
         when(apiKeyConfig.getHeaderName()).thenReturn("X-API-Key");
         when(jwtConfig.isEnabled()).thenReturn(false);
         
-        SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter converter =
-                new SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter(securityProperties);
+        DefaultAuthenticationConverter converter =
+                new DefaultAuthenticationConverter(securityProperties);
         
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/v1/chat/completions").build()
@@ -178,8 +179,8 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
         when(apiKeyConfig.getHeaderName()).thenReturn("X-API-Key");
         when(jwtConfig.isEnabled()).thenReturn(true);
         
-        SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter converter =
-                new SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter(securityProperties);
+        DefaultAuthenticationConverter converter =
+                new DefaultAuthenticationConverter(securityProperties);
         
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/v1/chat/completions")

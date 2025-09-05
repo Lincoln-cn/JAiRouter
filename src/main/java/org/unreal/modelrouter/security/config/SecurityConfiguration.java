@@ -15,15 +15,14 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.unreal.modelrouter.exceptionhandler.ReactiveGlobalExceptionHandler;
+import org.unreal.modelrouter.filter.DefaultAuthenticationConverter;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.tracing.config.TracingSecurityConfiguration;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
-import org.springframework.security.web.server.authentication.WebFilterChainServerAuthenticationSuccessHandler;
 
 /**
  * Spring Security配置类
@@ -109,7 +108,7 @@ public class SecurityConfiguration {
                         // 其他所有请求需要认证
                         .anyExchange().authenticated()
                 )
-                .addFilterAt(securityFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterBefore(securityFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
 
@@ -149,7 +148,7 @@ public class SecurityConfiguration {
      */
     @Bean
     public ServerAuthenticationConverter serverAuthenticationConverter() {
-        return new SpringSecurityAuthenticationFilter.DefaultAuthenticationConverter(securityProperties);
+        return new DefaultAuthenticationConverter(securityProperties);
     }
     
     /**

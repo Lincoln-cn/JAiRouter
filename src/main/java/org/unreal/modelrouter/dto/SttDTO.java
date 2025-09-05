@@ -10,12 +10,12 @@ import java.util.List;
 public class SttDTO {
 
     public record Request(
-            @RequestParam("model") String model,
-            @RequestPart("file") FilePart file,
-            @RequestParam(value = "language", defaultValue = "auto") String language,
-            @RequestParam(value = "prompt" , required = false) String prompt,
-            @RequestParam(value = "responseFormat",required = false) String responseFormat,
-            @RequestParam(value = "temperature",required = false) Double temperature
+            String model,
+            FilePart file,
+            String language,
+            String prompt,
+            String responseFormat,
+            Double temperature
     ) {
     }
 

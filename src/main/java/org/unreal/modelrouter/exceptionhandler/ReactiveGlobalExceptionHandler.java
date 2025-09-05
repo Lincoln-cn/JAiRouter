@@ -51,7 +51,8 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
         ServerHttpResponse response = exchange.getResponse();
-        
+        logger.error("响应状态: committed={}, status={}", response.isCommitted(), response.getStatusCode());
+
         // 如果响应已经提交，直接返回
         if (response.isCommitted()) {
             logger.warn("响应已提交，跳过异常处理: {}", ex.getMessage());
