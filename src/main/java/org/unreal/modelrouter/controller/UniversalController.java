@@ -19,8 +19,11 @@ import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
+import org.springframework.web.server.ServerWebExchange;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.codec.multipart.FilePart;
 
 @RestController
 @RequestMapping("/v1")
@@ -173,11 +176,16 @@ public class UniversalController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     @ApiResponse(responseCode = "503", description = "服务不可用")
     public Mono<? extends ResponseEntity<?>> speechToText(
-            @Parameter(description = "认证令牌")
+            @RequestPart("model") String model,
+            @RequestPart("file") FilePart file,
+            @RequestPart(value = "language", required = false) String language,
+            @RequestPart(value = "prompt", required = false) String prompt,
+            @RequestPart(value = "responseFormat", required = false) String responseFormat,
+            @RequestPart(value = "temperature", required = false) Double temperature,
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "语音转文本请求参数")
-            SttDTO.Request request,
             ServerHttpRequest httpRequest) {
+
+        SttDTO.Request request = new SttDTO.Request(model, file, language, prompt, responseFormat, temperature);
 
         return handleServiceRequest(
                 ModelServiceRegistry.ServiceType.stt,
@@ -371,6 +379,12 @@ public class UniversalController {
                     webClientException.getResponseBodyAsString());
             }
             return String.valueOf(webClientException.getStatusCode().value());
+        }
+        // 添加对DownstreamServiceException的处理
+        if (error instanceof org.unreal.modelrouter.exception.DownstreamServiceException) {
+            org.unreal.modelrouter.exception.DownstreamServiceException downstreamException = 
+                (org.unreal.modelrouter.exception.DownstreamServiceException) error;
+            return String.valueOf(downstreamException.getStatusCode().value());
         }
         return "500";
     }

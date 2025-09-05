@@ -18,6 +18,7 @@ import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationService;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.security.config.ExcludedPathsConfig;
 import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Flux;
@@ -160,30 +161,15 @@ public class ResponseSanitizationFilter implements WebFilter {
         // 使用装饰后的响应继续处理链
         return chain.filter(exchange.mutate().response(decoratedResponse).build());
     }
-    
+
     /**
      * 检查是否为排除的路径
      */
     private boolean isExcludedPath(String path) {
-        // 排除健康检查、监控端点和静态资源
-        return path.startsWith("/actuator/") ||
-               path.equals("/health") ||
-               path.equals("/metrics") ||
-               path.startsWith("/swagger-ui/") ||
-               path.startsWith("/v3/api-docs") ||
-               path.equals("/favicon.ico") ||
-               path.startsWith("/static/") ||
-               path.startsWith("/css/") ||
-               path.startsWith("/js/") ||
-               path.startsWith("/images/") ||
-               // 排除所有AI模型接口路径，避免对AI模型输入输出进行脱敏
-               path.startsWith("/v1/chat/") ||
-               path.startsWith("/v1/embeddings") ||
-               path.startsWith("/v1/rerank") ||
-               path.startsWith("/v1/audio/") ||
-               path.startsWith("/v1/images/");
+        // 使用统一的排除路径配置
+        return ExcludedPathsConfig.isDataMaskExcluded(path);
     }
-    
+
     /**
      * 检查是否应该对该内容类型进行脱敏
      */
