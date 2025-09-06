@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.18",
-      "LastModified": "2025-09-05T02:58:24.276571",
-      "ContentHash": "52c294539a5d2a10",
-      "GitCommit": "bae373ef",
+      "Version": "1.0.19",
+      "LastModified": "2025-09-06T02:53:48.949073",
+      "ContentHash": "f112f6499ad96dd3",
+      "GitCommit": "6dd20552",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -91,10 +91,10 @@
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.133900",
-      "ContentHash": "9e9c9159d791aca1",
-      "GitCommit": "c98679ca",
+      "Version": "1.0.2",
+      "LastModified": "2025-09-06T02:53:48.969467",
+      "ContentHash": "dc55f88cf8f409b4",
+      "GitCommit": "5ed29c46",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -187,10 +187,10 @@
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.153217",
-      "ContentHash": "3a3ee99239820a30",
-      "GitCommit": "7692c6b7",
+      "Version": "1.0.2",
+      "LastModified": "2025-09-06T02:53:48.990897",
+      "ContentHash": "36da4cb8f523b571",
+      "GitCommit": "5ed29c46",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -222,10 +222,10 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.165076",
-      "ContentHash": "c2ac9bfd489e7df9",
-      "GitCommit": "948a0c17",
+      "Version": "1.0.3",
+      "LastModified": "2025-09-06T02:53:48.997957",
+      "ContentHash": "ff323e0c7ee8ef5f",
+      "GitCommit": "5ed29c46",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -236,10 +236,10 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.162144",
-      "ContentHash": "506f7a28a5901573",
-      "GitCommit": "7692c6b7",
+      "Version": "1.0.2",
+      "LastModified": "2025-09-06T02:53:49.000133",
+      "ContentHash": "f4c6706f9607d1ae",
+      "GitCommit": "5ed29c46",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -691,10 +691,10 @@
     },
     "docs/zh/configuration/application-config.md": {
       "FilePath": "docs/zh/configuration/application-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.310450",
-      "ContentHash": "5b96de88890a0e5d",
-      "GitCommit": "c98679ca",
+      "Version": "1.0.2",
+      "LastModified": "2025-09-06T02:53:49.148199",
+      "ContentHash": "6e83b349616cf09d",
+      "GitCommit": "5ed29c46",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4141,7 +4141,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-09-05T02:58:24.276579",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.18",
+      "NewVersion": "1.0.19",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-06T02:53:48.949079",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/application-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-06T02:53:48.969472",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-06T02:53:48.990902",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-06T02:53:48.997962",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-06T02:53:49.000138",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/application-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-06T02:53:49.148205",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-09-05T02:58:24.748239"
+  "last_updated": "2025-09-06T02:53:49.420310"
 }

@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 131
-- 近7天变更: 164
+- 近7天变更: 41
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-09-05 02:58:24
+- 最后扫描: 2025-09-06 02:53:49
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/configuration/application-config.md (1.0.1 → 1.0.2) - 2025-09-06
+- **MODIFIED**: docs/en/deployment/production.md (1.0.1 → 1.0.2) - 2025-09-06
+- **MODIFIED**: docs/en/deployment/kubernetes.md (1.0.2 → 1.0.3) - 2025-09-06
+- **MODIFIED**: docs/en/deployment/docker.md (1.0.1 → 1.0.2) - 2025-09-06
+- **MODIFIED**: docs/en/configuration/application-config.md (1.0.1 → 1.0.2) - 2025-09-06
+- **MODIFIED**: docs-version-report.md (1.0.18 → 1.0.19) - 2025-09-06
 - **MODIFIED**: docs-version-report.md (1.0.17 → 1.0.18) - 2025-09-05
 - **MODIFIED**: docs/zh/deployment/production.md (1.0.2 → 1.0.3) - 2025-09-04
 - **MODIFIED**: docs/zh/deployment/docker.md (1.0.2 → 1.0.3) - 2025-09-04
 - **MODIFIED**: docs-version-report.md (1.0.16 → 1.0.17) - 2025-09-04
-- **MODIFIED**: docs-version-report.md (1.0.15 → 1.0.16) - 2025-09-03
-- **MODIFIED**: docs/zh/troubleshooting/debugging.md (1.0.1 → 1.0.2) - 2025-09-02
-- **MODIFIED**: docs/zh/troubleshooting/common-issues.md (1.0.1 → 1.0.2) - 2025-09-02
-- **MODIFIED**: docs/zh/security/jwt-authentication.md (1.0.0 → 1.0.1) - 2025-09-02
-- **MODIFIED**: docs/zh/security/index.md (1.0.0 → 1.0.1) - 2025-09-02
-- **MODIFIED**: docs/zh/security/data-sanitization.md (1.0.0 → 1.0.1) - 2025-09-02
 
 ## 依赖关系分析
 
@@ -455,7 +455,12 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.18 - 2025-09-05 (bae373ef)
+- **docs/zh/configuration/application-config.md**: v1.0.2 - 2025-09-06 (5ed29c46)
+- **docs/en/deployment/production.md**: v1.0.2 - 2025-09-06 (5ed29c46)
+- **docs/en/deployment/kubernetes.md**: v1.0.3 - 2025-09-06 (5ed29c46)
+- **docs/en/deployment/docker.md**: v1.0.2 - 2025-09-06 (5ed29c46)
+- **docs/en/configuration/application-config.md**: v1.0.2 - 2025-09-06 (5ed29c46)
+- **docs-version-report.md**: v1.0.19 - 2025-09-06 (6dd20552)
 - **docs/zh/deployment/production.md**: v1.0.3 - 2025-09-04 (706fbad7)
 - **docs/zh/deployment/docker.md**: v1.0.3 - 2025-09-04 (706fbad7)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (948a0c17)
@@ -480,7 +485,6 @@
 - **docs/en/monitoring/setup.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/en/monitoring/index.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/en/getting-started/installation.md**: v1.0.2 - 2025-09-02 (948a0c17)
-- **docs/en/deployment/kubernetes.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/en/deployment/china-optimization.md**: v1.0.2 - 2025-09-02 (948a0c17)
 - **docs/zh/troubleshooting/performance.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/troubleshooting/index.md**: v1.0.1 - 2025-08-29 (7e878bcf)
@@ -524,7 +528,6 @@
 - **docs/zh/configuration/index.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/zh/configuration/dynamic-config.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/zh/configuration/circuit-breaker.md**: v1.0.1 - 2025-08-29 (c98679ca)
-- **docs/zh/configuration/application-config.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/zh/api-reference/universal-api.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/api-reference/openapi-spec.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/zh/api-reference/management-api.md**: v1.0.1 - 2025-08-29 (7e878bcf)
@@ -566,17 +569,14 @@
 - **docs/en/development/contributing.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/development/code-quality.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/development/architecture.md**: v1.0.1 - 2025-08-29 (7e878bcf)
-- **docs/en/deployment/production.md**: v1.0.1 - 2025-08-29 (7692c6b7)
 - **docs/en/deployment/index.md**: v1.0.1 - 2025-08-29 (7692c6b7)
 - **docs/en/deployment/github-pages.md**: v1.0.1 - 2025-08-29 (4e960687)
-- **docs/en/deployment/docker.md**: v1.0.1 - 2025-08-29 (7692c6b7)
 - **docs/en/configuration/rate-limiting.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/en/configuration/modular-config.md**: v1.0.0 - 2025-08-29 (c98679ca)
 - **docs/en/configuration/load-balancing.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/en/configuration/index.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/en/configuration/dynamic-config.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/en/configuration/circuit-breaker.md**: v1.0.1 - 2025-08-29 (c98679ca)
-- **docs/en/configuration/application-config.md**: v1.0.1 - 2025-08-29 (c98679ca)
 - **docs/en/api-reference/universal-api.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/api-reference/openapi-spec.md**: v1.0.1 - 2025-08-29 (7e878bcf)
 - **docs/en/api-reference/management-api.md**: v1.0.1 - 2025-08-29 (7e878bcf)
