@@ -5,10 +5,11 @@
 - 总文档数: 131
 - 近7天变更: 41
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-09-06 02:53:49
+- 最后扫描: 2025-09-07 03:02:22
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.19 → 1.0.20) - 2025-09-07
 - **MODIFIED**: docs/zh/configuration/application-config.md (1.0.1 → 1.0.2) - 2025-09-06
 - **MODIFIED**: docs/en/deployment/production.md (1.0.1 → 1.0.2) - 2025-09-06
 - **MODIFIED**: docs/en/deployment/kubernetes.md (1.0.2 → 1.0.3) - 2025-09-06
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.17 → 1.0.18) - 2025-09-05
 - **MODIFIED**: docs/zh/deployment/production.md (1.0.2 → 1.0.3) - 2025-09-04
 - **MODIFIED**: docs/zh/deployment/docker.md (1.0.2 → 1.0.3) - 2025-09-04
-- **MODIFIED**: docs-version-report.md (1.0.16 → 1.0.17) - 2025-09-04
 
 ## 依赖关系分析
 
@@ -455,12 +455,12 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.20 - 2025-09-07 (9eeae098)
 - **docs/zh/configuration/application-config.md**: v1.0.2 - 2025-09-06 (5ed29c46)
 - **docs/en/deployment/production.md**: v1.0.2 - 2025-09-06 (5ed29c46)
 - **docs/en/deployment/kubernetes.md**: v1.0.3 - 2025-09-06 (5ed29c46)
 - **docs/en/deployment/docker.md**: v1.0.2 - 2025-09-06 (5ed29c46)
 - **docs/en/configuration/application-config.md**: v1.0.2 - 2025-09-06 (5ed29c46)
-- **docs-version-report.md**: v1.0.19 - 2025-09-06 (6dd20552)
 - **docs/zh/deployment/production.md**: v1.0.3 - 2025-09-04 (706fbad7)
 - **docs/zh/deployment/docker.md**: v1.0.3 - 2025-09-04 (706fbad7)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (948a0c17)
