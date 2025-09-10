@@ -10,7 +10,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import org.unreal.modelrouter.filter.filter.ApiKeyAuthenticationFilter;
+import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
@@ -56,8 +56,8 @@ class ApiKeyAuthenticationFilterIntegrationTest {
                 .build();
 
         // 创建WebTestClient并添加过滤器
-        ApiKeyAuthenticationFilter filter = new ApiKeyAuthenticationFilter(
-                apiKeyService, auditService, securityProperties);
+        SpringSecurityAuthenticationFilter filter = new SpringSecurityAuthenticationFilter(
+                securityProperties, null, null);
 
         webTestClient = WebTestClient.bindToRouterFunction(route)
                 .webFilter(filter)
@@ -161,8 +161,8 @@ class ApiKeyAuthenticationFilterIntegrationTest {
                 .GET("/actuator/health", request -> ServerResponse.ok().bodyValue("UP"))
                 .build();
 
-        ApiKeyAuthenticationFilter filter = new ApiKeyAuthenticationFilter(
-                apiKeyService, auditService, securityProperties);
+        SpringSecurityAuthenticationFilter filter = new SpringSecurityAuthenticationFilter(
+                securityProperties, null, null);
 
         WebTestClient healthClient = WebTestClient.bindToRouterFunction(healthRoute)
                 .webFilter(filter)

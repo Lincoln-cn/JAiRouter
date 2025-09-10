@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -35,12 +36,13 @@ import java.util.concurrent.atomic.AtomicReference;
  * - 追踪系统的健康检查
  * - 性能指标收集和导出
  * 
- * @author JAiRouter Team
  * @since 1.0.0
  */
 @Slf4j
 @Component
 public class TracingPerformanceMonitor implements HealthIndicator {
+    
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final TracingConfiguration tracingConfiguration;
     private final AsyncTracingProcessor asyncTracingProcessor;
@@ -426,7 +428,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
 
     private double getCurrentCpuUsage() {
         // 简化的CPU使用率获取
-        return Math.random() * 100; // 实际实现需要从系统获取
+        return SECURE_RANDOM.nextDouble() * 100; // 实际实现需要从系统获取
     }
 
     private double getCurrentThroughput() {
