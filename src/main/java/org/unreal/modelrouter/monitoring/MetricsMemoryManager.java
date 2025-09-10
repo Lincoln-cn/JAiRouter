@@ -25,7 +25,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class MetricsMemoryManager {
 
     private static final Logger logger = LoggerFactory.getLogger(MetricsMemoryManager.class);
-
+    
+    // 添加安全随机数生成器
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    
     // 内存阈值配置
     private static final double MEMORY_WARNING_THRESHOLD = 0.8;  // 80%内存使用率告警
     private static final double MEMORY_CRITICAL_THRESHOLD = 0.9; // 90%内存使用率紧急清理
@@ -210,20 +213,20 @@ public class MetricsMemoryManager {
     }
 
     /**
-     * 检查是否应该采样（基于内存压力）
+     * 根据内存使用情况动态调整采样率
      */
-    public boolean shouldSample(double baseSamplingRate) {
+    public boolean shouldSample(double baseSamplingRate) {  // 改为public访问权限
         double memoryUsage = getCurrentMemoryUsage();
         
         if (memoryUsage >= MEMORY_CRITICAL_THRESHOLD) {
             // 内存紧张时，大幅降低采样率
-            return Math.random() < (baseSamplingRate * 0.1);
+            return SECURE_RANDOM.nextDouble() < (baseSamplingRate * 0.1);
         } else if (memoryUsage >= MEMORY_WARNING_THRESHOLD) {
             // 内存告警时，适度降低采样率
-            return Math.random() < (baseSamplingRate * 0.5);
+            return SECURE_RANDOM.nextDouble() < (baseSamplingRate * 0.5);
         } else {
             // 内存正常时，使用基础采样率
-            return Math.random() < baseSamplingRate;
+            return SECURE_RANDOM.nextDouble() < baseSamplingRate;
         }
     }
 
