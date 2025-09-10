@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.config.MonitoringProperties;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,11 +22,11 @@ import java.util.Map;
  * 负责配置Micrometer和Prometheus集成
  */
 @Configuration
-@EnableConfigurationProperties(MonitoringProperties.class)
 public class MonitoringConfiguration {
 
     private static final Logger logger = LoggerFactory.getLogger(MonitoringConfiguration.class);
-
+    private static final SecureRandom secureRandom = new SecureRandom();
+    
     private final MonitoringProperties monitoringProperties;
 
     public MonitoringConfiguration(MonitoringProperties monitoringProperties) {
@@ -100,7 +101,7 @@ public class MonitoringConfiguration {
             }
             
             // 简单的采样逻辑
-            return Math.random() < samplingRate;
+            return secureRandom.nextDouble() < samplingRate;
         });
     }
 

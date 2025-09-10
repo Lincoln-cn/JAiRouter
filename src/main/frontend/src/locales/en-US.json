@@ -2,5 +2,16 @@
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome to JAiRouter Admin Interface"
+  },
+  "login": {
+    "title": "JAiRouter Admin",
+    "subtitle": "Please sign in to your account",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Sign In",
+    "usernameRequired": "Please enter username",
+    "passwordRequired": "Please enter password",
+    "success": "Login successful",
+    "failed": "Login failed"
   }
 }

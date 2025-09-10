@@ -2,5 +2,16 @@
   "dashboard": {
     "title": "仪表板",
     "welcome": "欢迎使用 JAiRouter 管理界面"
+  },
+  "login": {
+    "title": "JAiRouter 管理后台",
+    "subtitle": "请登录您的账户",
+    "username": "用户名",
+    "password": "密码",
+    "submit": "登录",
+    "usernameRequired": "请输入用户名",
+    "passwordRequired": "请输入密码",
+    "success": "登录成功",
+    "failed": "登录失败"
   }
 }
