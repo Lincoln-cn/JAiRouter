@@ -1,4 +1,4 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
+import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import type { ApiResponse } from '@/types'
 
 // Create axios instance
@@ -12,11 +12,11 @@ const request: AxiosInstance = axios.create({
 
 // Request interceptor
 request.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
-    // Add auth token if available
+  (config: InternalAxiosRequestConfig) => {
+    // Add JWT token using the correct header name for JAiRouter
     const token = localStorage.getItem('admin_token')
     if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
+      config.headers['Jairouter_Token'] = token
     }
     return config
   },

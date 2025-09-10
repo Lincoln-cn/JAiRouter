@@ -172,10 +172,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
             
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
+                String hex = String.format("%02x", b);
                 hexString.append(hex);
             }
             

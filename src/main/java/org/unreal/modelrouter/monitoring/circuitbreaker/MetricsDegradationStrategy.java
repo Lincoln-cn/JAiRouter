@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,6 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class MetricsDegradationStrategy {
     
     private static final Logger logger = LoggerFactory.getLogger(MetricsDegradationStrategy.class);
+    
+    private static final SecureRandom secureRandom = new SecureRandom();
     
     private final MeterRegistry meterRegistry;
     private final Counter degradationActivations;
@@ -185,7 +188,7 @@ public class MetricsDegradationStrategy {
         }
         
         // 基于采样率决定
-        return Math.random() < level.getSamplingRate();
+        return secureRandom.nextDouble() < level.getSamplingRate();
     }
     
     /**
@@ -200,7 +203,7 @@ public class MetricsDegradationStrategy {
         Integer errorCount = componentErrorCounts.get(component);
         if (errorCount != null && errorCount > 10) {
             // 高错误组件降低采样率
-            return Math.random() < 0.1;
+            return secureRandom.nextDouble() < 0.1;
         }
         
         return true;
