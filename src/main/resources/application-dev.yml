@@ -65,7 +65,7 @@ jairouter:
           metadata:
             environment: "development"
             created-by: "developer"
-        
+
         - key-id: "dev-user-key"
           key-value: "dev-user-67890-klmno-12345-pqrst"
           description: "开发环境普通用户测试密钥"
@@ -75,16 +75,16 @@ jairouter:
           metadata:
             environment: "development"
             created-by: "developer"
-    
+
     # 开发环境 JWT 配置
     jwt:
-      enabled: false
+      enabled: true
       jwt-header: "Jairouter_Token"
-      secret: "dev-jwt-secret-key-for-development-only-not-for-production"
-      expiration-minutes: 30  # 开发环境使用较短的过期时间
-      refresh-expiration-days: 1
-      issuer: "jairouter-dev"
-      blacklist-enabled: true
+      secret: "your-secret-key-with-at-least-32-characters-for-development"
+      algorithm: "HS256"
+      expiration-minutes: 60
+      refresh-expiration-days: 7
+      issuer: "jairouter"
     
     # 开发环境数据脱敏配置（相对宽松）
     sanitization:
