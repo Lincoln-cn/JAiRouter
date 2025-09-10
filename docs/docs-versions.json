@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.22",
-      "LastModified": "2025-09-09T03:01:26.097764",
-      "ContentHash": "a5060bcf13840e82",
-      "GitCommit": "d74b66a8",
+      "Version": "1.0.23",
+      "LastModified": "2025-09-10T02:55:04.912956",
+      "ContentHash": "c05ea8a3002824ce",
+      "GitCommit": "9f3e3e91",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4213,7 +4213,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-09-09T03:01:26.097773",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.22",
+      "NewVersion": "1.0.23",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-10T02:55:04.912963",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-09-09T03:01:26.581220"
+  "last_updated": "2025-09-10T02:55:05.398622"
 }
