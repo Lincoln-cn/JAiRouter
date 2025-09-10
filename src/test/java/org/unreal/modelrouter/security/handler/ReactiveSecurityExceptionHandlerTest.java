@@ -18,7 +18,7 @@ import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.exception.AuthorizationException;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.exception.SecurityException;
-import org.unreal.modelrouter.exceptionhandler.ReactiveSecurityExceptionHandler;
+import org.unreal.modelrouter.exceptionhandler.ReactiveGlobalExceptionHandler;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -46,7 +46,7 @@ class ReactiveSecurityExceptionHandlerTest {
     @Mock
     private HttpHeaders httpHeaders;
 
-    private ReactiveSecurityExceptionHandler exceptionHandler;
+    private ReactiveGlobalExceptionHandler exceptionHandler;
     private ObjectMapper objectMapper;
     private DataBufferFactory bufferFactory;
 
@@ -54,7 +54,7 @@ class ReactiveSecurityExceptionHandlerTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         bufferFactory = new DefaultDataBufferFactory();
-        exceptionHandler = new ReactiveSecurityExceptionHandler(objectMapper);
+        exceptionHandler = new ReactiveGlobalExceptionHandler(null);
 
         // Mock exchange setup
         lenient().when(exchange.getRequest()).thenReturn(request);

@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
-import org.unreal.modelrouter.filter.filter.ApiKeyAuthenticationFilter;
+import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.config.SecurityProperties;
@@ -45,7 +45,7 @@ class ApiKeyAuthenticationFilterTest {
     private WebFilterChain filterChain;
 
     private SecurityProperties securityProperties;
-    private ApiKeyAuthenticationFilter filter;
+    private SpringSecurityAuthenticationFilter filter;
 
     @BeforeEach
     void setUp() {
@@ -53,7 +53,7 @@ class ApiKeyAuthenticationFilterTest {
         securityProperties.getApiKey().setEnabled(true);
         securityProperties.getApiKey().setHeaderName("X-API-Key");
         
-        filter = new ApiKeyAuthenticationFilter(apiKeyService, auditService, securityProperties);
+        filter = new SpringSecurityAuthenticationFilter(securityProperties, null, null);
         
         // 使用lenient模式避免不必要的stubbing警告
         lenient().when(auditService.recordEvent(any(SecurityAuditEvent.class))).thenReturn(Mono.empty());
