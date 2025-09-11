@@ -15,7 +15,14 @@ request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // Add JWT token using the correct header name for JAiRouter
     const token = localStorage.getItem('admin_token')
-    if (token && config.headers) {
+    
+    // 检查是否是JWT token获取接口，如果不是则添加token头部
+    const isTokenEndpoint = config.url && (
+      config.url.includes('/auth/jwt/login') || 
+      config.url.includes('/auth/jwt/refresh')
+    )
+    
+    if (token && config.headers && !isTokenEndpoint) {
       config.headers['Jairouter_Token'] = token
     }
     return config

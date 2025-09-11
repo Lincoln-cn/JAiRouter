@@ -99,7 +99,7 @@ const handleLogin = async () => {
     
     console.log(t('login.success'), response)
     
-    // 跳转到仪表板
+    // 跳转到仪表板 (将使用Layout组件)
     router.push('/dashboard')
   } catch (error: any) {
     console.error('登录失败:', error)
@@ -110,6 +110,13 @@ const handleLogin = async () => {
   }
 }
 
+// 页面加载时检查是否已经登录
+onMounted(() => {
+  if (userStore.isAuthenticated()) {
+    // 如果已经登录，直接跳转到仪表板
+    router.push('/dashboard')
+  }
+})
 </script>
 
 <style scoped>
