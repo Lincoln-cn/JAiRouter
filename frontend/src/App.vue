@@ -13,6 +13,13 @@ import { useUserStore } from '@/stores/user'
 const route = useRoute()
 const userStore = useUserStore()
 
+// 在应用启动时检查是否需要启动令牌刷新
+onMounted(() => {
+  if (userStore.isAuthenticated()) {
+    // 启动定时刷新令牌
+    userStore.startTokenRefresh()
+  }
+})
 </script>
 
 <style>
