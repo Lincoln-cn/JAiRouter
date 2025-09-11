@@ -98,9 +98,10 @@ public class SecurityConfiguration {
             // 健康检查端点允许匿名访问
             .pathMatchers("/actuator/health", "/actuator/info", "/actuator/prometheus").permitAll()
             // API文档端点允许匿名访问
-            .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+            .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**" ).permitAll()
+            
             // Web管理界面静态资源允许匿名访问（前端会处理认证）
-            .pathMatchers("/admin/**").permitAll()
+            .pathMatchers("/admin/**","/favicon.ico","/.well-known/**").permitAll()
             // Web管理界面通过现有API访问，使用JWT认证
             // JWT登录端点允许匿名访问
             .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll();

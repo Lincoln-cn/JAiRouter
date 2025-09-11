@@ -5,7 +5,14 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 // App root component
+
+const route = useRoute()
+const userStore = useUserStore()
+
 </script>
 
 <style>

@@ -1,6 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import request from '@/utils/request'
+import type { ApiResponse } from '@/types'
+
+// 定义登录响应数据类型
+interface LoginResponseData {
+  token: string
+  tokenType: string
+  expiresIn: number
+  message: string
+  timestamp: string
+}
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(localStorage.getItem('admin_token'))
@@ -24,20 +34,23 @@ export const useUserStore = defineStore('user', () => {
   // 登录方法
   const login = async (username: string, password: string) => {
     try {
-      const response = await request.post('/auth/jwt/login', {
+      const response = await request.post<ApiResponse<LoginResponseData>>('/auth/jwt/login', {
         username,
         password
       })
       
-      if (response.data.success) {
-        const { token: jwtToken, user } = response.data.data
+      if (response.data.success && response.data.data) {
+        // 从响应数据中提取 token
+        const jwtToken = response.data.data.token
         setToken(jwtToken)
-        userInfo.value = user
+        // 可以在这里设置用户信息，如果需要的话
+        // userInfo.value = response.data.data.user
         return response.data
       } else {
         throw new Error(response.data.message || '登录失败')
       }
     } catch (error: any) {
+      console.error('登录请求失败:', error)
       throw new Error(error.response?.data?.message || error.message || '登录失败')
     }
   }
@@ -66,7 +79,7 @@ export const useUserStore = defineStore('user', () => {
         }
       })
       
-      if (response.data.success) {
+      if (response.data.success && response.data.data) {
         userInfo.value = response.data.data.user
         return userInfo.value
       }

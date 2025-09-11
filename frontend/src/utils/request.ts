@@ -34,7 +34,8 @@ request.interceptors.response.use(
     if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem('admin_token')
-      window.location.href = '/admin/login'
+      // 使用相对路径而不是硬编码路径
+      window.location.href = '/login'
     }
     return Promise.reject(error)
   }

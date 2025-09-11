@@ -29,7 +29,9 @@ public class ExcludedPathsConfig {
         authPaths.add("/v3/api-docs");
         authPaths.add("/webjars/");
         authPaths.add("/api/auth/jwt/login");
+        authPaths.add("/admin");
         authPaths.add("/favicon.ico");
+        authPaths.add("/.well-known");
         // 注意：AI模型接口需要认证，不应该添加到排除列表中
         // 这些接口包含敏感的AI服务，必须通过API Key或JWT认证访问
         // authPaths.add("/v1/chat/");      // 需要认证
@@ -47,6 +49,7 @@ public class ExcludedPathsConfig {
         securityPaths.add("/swagger-ui/");
         securityPaths.add("/v3/api-docs");
         securityPaths.add("/favicon.ico");
+        securityPaths.add("/.well-known");
         securityPaths.add("/static/");
         securityPaths.add("/css/");
         securityPaths.add("/js/");
@@ -60,6 +63,7 @@ public class ExcludedPathsConfig {
         securityPaths.add("/v1/audio/");
         securityPaths.add("/v1/images/");
         securityPaths.add("/v1/debug/");
+        securityPaths.add("/admin");
         // 排除认证端点
         securityPaths.add("/api/auth/jwt/login");
         DATA_MASKING_EXCLUDED_PATHS = Collections.unmodifiableSet(securityPaths);
