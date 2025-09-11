@@ -9,3 +9,10 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// Element Plus 图标类型定义
+declare module '@element-plus/icons-vue' {
+  import { DefineComponent } from 'vue'
+  const icons: Record<string, DefineComponent>
+  export default icons
+}
