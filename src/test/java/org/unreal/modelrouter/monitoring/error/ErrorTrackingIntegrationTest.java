@@ -60,7 +60,7 @@ class ErrorTrackingIntegrationTest {
         errorTracker = new ErrorTracker(structuredLogger);
         
         // 创建指标收集器
-        errorMetricsCollector = new ErrorMetricsCollector(meterRegistry, errorTracker, properties);
+        errorMetricsCollector = new ErrorMetricsCollector(meterRegistry, properties);
         
         // 通过反射设置可选依赖
         setPrivateField(errorTracker, "stackTraceSanitizer", stackTraceSanitizer);

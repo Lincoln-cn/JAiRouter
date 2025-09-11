@@ -10,6 +10,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -249,12 +250,7 @@ class UniversalControllerTest {
     @Test
     void testSpeechToText_Success() {
         // Arrange
-        SttDTO.Request request = new SttDTO.Request(
-                "whisper-1",
-                null, // file will be set separately
-                "auto", null, null, null
-        );
-        
+        FilePart mockFile = mock(FilePart.class);
         SttDTO.Response expectedResponse = new SttDTO.Response("Hello world", "en", 2.5, null);
         ServerHttpRequest httpRequest = MockServerHttpRequest.post("/v1/audio/transcriptions").build();
         
@@ -264,7 +260,7 @@ class UniversalControllerTest {
                 .thenReturn(Mono.just(ResponseEntity.ok(expectedResponse)));
 
         // Act & Assert
-        StepVerifier.create(universalController.speechToText("Bearer token", request, httpRequest))
+        StepVerifier.create(universalController.speechToText("whisper-1", mockFile, "auto", null, null, null, "Bearer token", httpRequest))
                 .expectNextMatches(response -> {
                     assertEquals(HttpStatus.OK, response.getStatusCode());
                     SttDTO.Response body = (SttDTO.Response) response.getBody();
@@ -276,7 +272,8 @@ class UniversalControllerTest {
 
         verify(serviceStateManager).isServiceHealthy("stt");
         verify(adapterRegistry).getAdapter(ModelServiceRegistry.ServiceType.stt);
-        verify(mockAdapter).stt(eq(request), eq("Bearer token"), any(ServerHttpRequest.class));
+        // 验证调用参数
+        verify(mockAdapter).stt(any(SttDTO.Request.class), eq("Bearer token"), any(ServerHttpRequest.class));
     }
 
     @Test
