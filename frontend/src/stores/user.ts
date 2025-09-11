@@ -8,8 +8,6 @@ interface LoginResponseData {
   token: string
   tokenType: string
   expiresIn: number
-  message: string
-  timestamp: string
 }
 
 export const useUserStore = defineStore('user', () => {
