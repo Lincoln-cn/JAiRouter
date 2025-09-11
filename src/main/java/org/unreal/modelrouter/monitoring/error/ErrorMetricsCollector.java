@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.ErrorTrackerProperties;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -175,6 +176,18 @@ public class ErrorMetricsCollector {
     }
     
     /**
+     * 获取错误指标统计信息
+     *
+     * @return 错误指标统计信息
+     */
+    public ErrorMetricsStats getErrorMetricsStats() {
+        return ErrorMetricsStats.builder()
+                .totalErrorCounters(errorCounters.size())
+                .totalErrorTimers(errorTimers.size())
+                .build();
+    }
+    
+    /**
      * 错误指标统计信息
      */
     @lombok.Data
@@ -182,5 +195,27 @@ public class ErrorMetricsCollector {
     public static class ErrorMetricsStats {
         private int totalErrorCounters;
         private int totalErrorTimers;
+        
+        /**
+         * 获取错误类型统计信息
+         *
+         * @return 错误类型统计信息
+         */
+        public Map<String, Counter> getErrorTypeStats() {
+            // 这里应该返回按错误类型分组的统计信息
+            // 为了简化，我们返回一个空的映射
+            return Map.of();
+        }
+        
+        /**
+         * 获取错误位置统计信息
+         *
+         * @return 错误位置统计信息
+         */
+        public Map<String, Counter> getErrorLocationStats() {
+            // 这里应该返回按错误位置分组的统计信息
+            // 为了简化，我们返回一个空的映射
+            return Map.of();
+        }
     }
 }
