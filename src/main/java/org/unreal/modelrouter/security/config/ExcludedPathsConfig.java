@@ -25,14 +25,14 @@ public class ExcludedPathsConfig {
      * 需要排除认证的Ant风格路径模式列表
      */
     public static final List<String> AUTH_EXCLUDED_PATTERNS;
-    
+
     /**
      * 需要排除数据脱敏的Ant风格路径模式列表
      */
     public static final List<String> DATA_MASKING_EXCLUDED_PATTERNS;
-    
+
     private static final AntPathMatcher pathMatcher = new AntPathMatcher();
-    
+
     static {
         // 认证排除路径 - 使用Set.of创建不可变集合（Java 9+）
         AUTH_EXCLUDED_PATHS = Set.of(
@@ -47,7 +47,7 @@ public class ExcludedPathsConfig {
             "/favicon.ico",
             "/.well-known"
         );
-        
+
         // 认证排除路径模式
         AUTH_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
@@ -78,7 +78,7 @@ public class ExcludedPathsConfig {
             // 排除认证端点
             "/api/auth/jwt/login"
         );
-        
+
         // 数据脱敏排除路径模式
         DATA_MASKING_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
@@ -95,13 +95,13 @@ public class ExcludedPathsConfig {
      */
     public static boolean isAuthExcluded(String path) {
         // 检查精确匹配和前缀匹配
-        if (AUTH_EXCLUDED_PATHS.stream().anyMatch(excludedPath -> 
+        if (AUTH_EXCLUDED_PATHS.stream().anyMatch(excludedPath ->
             path.equals(excludedPath) || path.startsWith(excludedPath))) {
             return true;
         }
-        
+
         // 检查Ant路径模式匹配
-        return AUTH_EXCLUDED_PATTERNS.stream().anyMatch(pattern -> 
+        return AUTH_EXCLUDED_PATTERNS.stream().anyMatch(pattern ->
             pathMatcher.match(pattern, path));
     }
     
@@ -113,13 +113,13 @@ public class ExcludedPathsConfig {
      */
     public static boolean isDataMaskExcluded(String path) {
         // 检查精确匹配和前缀匹配
-        if (DATA_MASKING_EXCLUDED_PATHS.stream().anyMatch(excludedPath -> 
+        if (DATA_MASKING_EXCLUDED_PATHS.stream().anyMatch(excludedPath ->
             path.equals(excludedPath) || path.startsWith(excludedPath))) {
             return true;
         }
-        
+
         // 检查Ant路径模式匹配
-        return DATA_MASKING_EXCLUDED_PATTERNS.stream().anyMatch(pattern -> 
+        return DATA_MASKING_EXCLUDED_PATTERNS.stream().anyMatch(pattern ->
             pathMatcher.match(pattern, path));
     }
 }
