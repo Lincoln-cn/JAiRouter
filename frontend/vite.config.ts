@@ -11,9 +11,14 @@ export default defineConfig({
     vue(),
     AutoImport({
       resolvers: [ElementPlusResolver()],
+      imports: ['vue', 'vue-router', 'pinia'],
+      dirs: ['src/stores'],
+      dts: 'auto-imports.d.ts'
     }),
     Components({
       resolvers: [ElementPlusResolver()],
+      dirs: ['src/components'],
+      dts: 'components.d.ts'
     }),
   ],
   base: '/admin/',
