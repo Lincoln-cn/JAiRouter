@@ -60,14 +60,8 @@ const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 
-// 添加当前时间用于调试
-const currentTime = ref(new Date().toLocaleTimeString())
-const loginAttempted = ref(false)
 
-// 每秒更新时间
-setInterval(() => {
-  currentTime.value = new Date().toLocaleTimeString()
-}, 1000)
+const loginAttempted = ref(false)
 
 const loginFormRef = ref<FormInstance | null>(null)
 const loading = ref(false)
