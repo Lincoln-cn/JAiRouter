@@ -62,17 +62,11 @@ public class JwtTokenController {
                     response.setToken(token);
                     response.setTokenType("Bearer");
                     response.setExpiresIn(securityProperties.getJwt().getExpirationMinutes() * 60L);
-                    response.setMessage("登录成功");
-                    response.setTimestamp(LocalDateTime.now());
 
                     return RouterResponse.success(response, "登录成功");
                 })
                 .onErrorResume(ex -> {
                     log.warn("用户登录失败: {}", ex.getMessage());
-
-                    LoginResponse response = new LoginResponse();
-                    response.setMessage("登录失败: " + ex.getMessage());
-                    response.setTimestamp(LocalDateTime.now());
 
                     return Mono.just(RouterResponse.error("登录失败: " + ex.getMessage(), "LOGIN_FAILED"));
                 });
