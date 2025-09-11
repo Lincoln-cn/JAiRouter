@@ -43,12 +43,16 @@ export default defineConfig({
       '/admin/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        // 重写路径，去掉 /admin 前缀
+        rewrite: (path) => path.replace(/^\/admin/, '')
       },
       '/admin/ws': {
         target: 'ws://localhost:8080',
         ws: true,
-        changeOrigin: true
+        changeOrigin: true,
+        // 重写路径，去掉 /admin 前缀
+        rewrite: (path) => path.replace(/^\/admin/, '')
       }
     }
   },
