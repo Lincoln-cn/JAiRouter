@@ -46,7 +46,7 @@ webclient:
 # 仅包含开发环境的安全配置差异
 jairouter:
   security:
-    # 开发环境启用安全功能进行测试
+    # 开发环境安全配置覆盖
     enabled: true
     
     # 开发环境 API Key 特定配置
@@ -56,21 +56,21 @@ jairouter:
       cache-expiration-seconds: 1800  # 30分钟缓存
       keys:
         # 开发环境测试用 API Key
-        - key-id: "dev-admin-key"
-          key-value: "dev-admin-12345-abcde-67890-fghij"
+        - keyId: "dev-admin-key"
+          keyValue: "dev-admin-12345-abcde-67890-fghij"
           description: "开发环境管理员测试密钥"
           permissions: ["admin", "read", "write", "delete"]
-          expires-at: "2025-12-31T23:59:59"
+          expiresAt: "2025-12-31T23:59:59"
           enabled: true
           metadata:
             environment: "development"
             created-by: "developer"
 
-        - key-id: "dev-user-key"
-          key-value: "dev-user-67890-klmno-12345-pqrst"
+        - keyId: "dev-user-key"
+          keyValue: "dev-user-67890-klmno-12345-pqrst"
           description: "开发环境普通用户测试密钥"
           permissions: ["read"]
-          expires-at: "2025-06-30T23:59:59"
+          expiresAt: "2025-06-30T23:59:59"
           enabled: true
           metadata:
             environment: "development"
