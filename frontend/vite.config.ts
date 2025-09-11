@@ -11,14 +11,9 @@ export default defineConfig({
     vue(),
     AutoImport({
       resolvers: [ElementPlusResolver()],
-      imports: ['vue', 'vue-router', 'pinia'],
-      dirs: ['src/stores'],
-      dts: 'auto-imports.d.ts'
     }),
     Components({
       resolvers: [ElementPlusResolver()],
-      dirs: ['src/components'],
-      dts: 'components.d.ts'
     }),
   ],
   base: '/admin/',
@@ -27,28 +22,12 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
     minify: 'terser',
-    chunkSizeWarningLimit: 1000, // 增加块大小警告限制
     rollupOptions: {
       output: {
         manualChunks: {
-          // 核心框架
-          vue: ['vue'],
-          'vue-router': ['vue-router'],
-          pinia: ['pinia'],
-          
-          // UI框架
-          'element-plus': ['element-plus'],
-          'element-plus-icons': ['@element-plus/icons-vue'],
-          
-          // 图表库
-          echarts: ['echarts'],
-          'vue-echarts': ['vue-echarts'],
-          
-          // 网络请求
-          axios: ['axios'],
-          
-          // 国际化
-          'vue-i18n': ['vue-i18n']
+          vendor: ['vue', 'vue-router', 'pinia'],
+          charts: ['echarts', 'vue-echarts'],
+          elementPlus: ['element-plus']
         }
       }
     }
@@ -64,32 +43,12 @@ export default defineConfig({
       '/admin/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: false,
-        // 重写路径，去掉 /admin 前缀
-        rewrite: (path) => path.replace(/^\/admin/, ''),
-        configure: (proxy, options) => {
-          // 添加请求日志
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log(`[Vite Proxy] Request: ${req.method} ${req.url} -> ${options.target}${req.url?.replace(/^\/admin/, '')}`)
-          });
-          // 添加响应日志
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log(`[Vite Proxy] Response: ${req.method} ${req.url} -> Status: ${proxyRes.statusCode}`)
-          });
-        }
+        secure: false
       },
       '/admin/ws': {
         target: 'ws://localhost:8080',
         ws: true,
-        changeOrigin: true,
-        // 重写路径，去掉 /admin 前缀
-        rewrite: (path) => path.replace(/^\/admin/, ''),
-        configure: (proxy, options) => {
-          // 添加WebSocket连接日志
-          proxy.on('open', () => {
-            console.log(`[Vite Proxy] WebSocket connected to: ${options.target}`)
-          });
-        }
+        changeOrigin: true
       }
     }
   },

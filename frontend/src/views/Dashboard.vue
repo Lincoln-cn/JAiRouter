@@ -54,7 +54,7 @@
         </el-card>
       </el-col>
     </el-row>
-    
+
     <el-row :gutter="20" class="charts-row">
       <el-col :span="16">
         <el-card>
@@ -86,7 +86,7 @@
         </el-card>
       </el-col>
     </el-row>
-    
+
     <el-row :gutter="20" class="services-row">
       <el-col :span="24">
         <el-card>
@@ -128,23 +128,23 @@ const stats = ref({
 
 // 最近活动
 const recentActivities = ref([
-  { 
-    content: '添加了新的聊天服务实例', 
+  {
+    content: '添加了新的聊天服务实例',
     timestamp: '2023-10-01 10:30:00',
     type: 'primary'
   },
-  { 
-    content: '更新了嵌入服务配置', 
+  {
+    content: '更新了嵌入服务配置',
     timestamp: '2023-10-01 09:45:00',
     type: 'success'
   },
-  { 
-    content: 'Rerank服务出现异常', 
+  {
+    content: 'Rerank服务出现异常',
     timestamp: '2023-10-01 09:15:00',
     type: 'warning'
   },
-  { 
-    content: '创建了新的API密钥', 
+  {
+    content: '创建了新的API密钥',
     timestamp: '2023-10-01 08:30:00',
     type: 'info'
   }
@@ -152,33 +152,33 @@ const recentActivities = ref([
 
 // 服务状态
 const services = ref([
-  { 
-    name: 'Chat Service', 
-    type: 'chat', 
-    instances: 3, 
-    status: 'healthy', 
-    lastUpdate: '2023-10-01 10:30:00' 
+  {
+    name: 'Chat Service',
+    type: 'chat',
+    instances: 3,
+    status: 'healthy',
+    lastUpdate: '2023-10-01 10:30:00'
   },
-  { 
-    name: 'Embedding Service', 
-    type: 'embedding', 
-    instances: 2, 
-    status: 'healthy', 
-    lastUpdate: '2023-10-01 09:45:00' 
+  {
+    name: 'Embedding Service',
+    type: 'embedding',
+    instances: 2,
+    status: 'healthy',
+    lastUpdate: '2023-10-01 09:45:00'
   },
-  { 
-    name: 'Rerank Service', 
-    type: 'rerank', 
-    instances: 1, 
-    status: 'unhealthy', 
-    lastUpdate: '2023-10-01 09:15:00' 
+  {
+    name: 'Rerank Service',
+    type: 'rerank',
+    instances: 1,
+    status: 'unhealthy',
+    lastUpdate: '2023-10-01 09:15:00'
   },
-  { 
-    name: 'TTS Service', 
-    type: 'tts', 
-    instances: 2, 
-    status: 'healthy', 
-    lastUpdate: '2023-10-01 08:00:00' 
+  {
+    name: 'TTS Service',
+    type: 'tts',
+    instances: 2,
+    status: 'healthy',
+    lastUpdate: '2023-10-01 08:00:00'
   }
 ])
 
