@@ -133,6 +133,7 @@ const accountFormRef = ref<FormInstance | null>(null)
 const fetchAccounts = async () => {
   loading.value = true
   try {
+    // 修复路径，确保使用正确的API路径
     const response = await request.get('/api/security/jwt/accounts')
     accounts.value = response.data
   } catch (error) {
