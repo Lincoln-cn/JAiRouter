@@ -134,6 +134,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 
 // 激活的标签页
 const activeTab = ref('global')

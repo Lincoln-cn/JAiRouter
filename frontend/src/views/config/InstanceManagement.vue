@@ -75,6 +75,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 服务类型
 const serviceTypes = ref(['chat', 'embedding', 'rerank', 'tts', 'stt'])
@@ -82,8 +83,18 @@ const serviceTypes = ref(['chat', 'embedding', 'rerank', 'tts', 'stt'])
 // 当前激活的服务类型
 const activeServiceType = ref('chat')
 
+// 定义实例类型
+interface ServiceInstance {
+  id: number
+  serviceType: string
+  name: string
+  baseUrl: string
+  weight: number
+  status: 'active' | 'inactive'
+}
+
 // 模拟数据
-const instances = ref({
+const instances = ref<Record<string, ServiceInstance[]>>({
   chat: [
     { id: 1, serviceType: 'chat', name: 'Ollama Chat', baseUrl: 'http://localhost:11434', weight: 50, status: 'active' },
     { id: 2, serviceType: 'chat', name: 'VLLM Chat', baseUrl: 'http://localhost:8000', weight: 30, status: 'active' }
@@ -100,13 +111,13 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const isEdit = ref(false)
 
-const form = ref({
+const form = ref<ServiceInstance>({
   id: 0,
   serviceType: 'chat',
   name: '',
   baseUrl: '',
   weight: 1,
-  status: true
+  status: 'active'
 })
 
 // 添加实例
@@ -119,13 +130,13 @@ const handleAddInstance = () => {
     name: '',
     baseUrl: '',
     weight: 1,
-    status: true
+    status: 'active'
   }
   dialogVisible.value = true
 }
 
 // 编辑实例
-const handleEdit = (row: any) => {
+const handleEdit = (row: ServiceInstance) => {
   dialogTitle.value = '编辑实例'
   isEdit.value = true
   form.value = { ...row }
@@ -133,7 +144,7 @@ const handleEdit = (row: any) => {
 }
 
 // 删除实例
-const handleDelete = (row: any) => {
+const handleDelete = (row: ServiceInstance) => {
   ElMessageBox.confirm('确定要删除该实例吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -154,9 +165,9 @@ const handleSave = () => {
     }
   } else {
     // 新增
-    const newInstance = {
-      id: Date.now(),
-      ...form.value
+    const newInstance: ServiceInstance = {
+      ...form.value,
+      id: Date.now()
     }
     if (!instances.value[form.value.serviceType]) {
       instances.value[form.value.serviceType] = []
