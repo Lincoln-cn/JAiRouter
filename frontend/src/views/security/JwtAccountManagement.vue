@@ -87,16 +87,15 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import request from '@/utils/request'
 import type { FormInstance, FormRules } from 'element-plus'
-
-// 定义账户类型
-interface JwtAccount {
-  username: string
-  password?: string
-  roles: string[]
-  enabled: boolean
-}
+import { 
+  getJwtAccounts, 
+  createJwtAccount, 
+  updateJwtAccount, 
+  deleteJwtAccount, 
+  toggleJwtAccountStatus 
+} from '@/fetch/jwtAccount'
+import type { JwtAccount, CreateJwtAccountRequest } from '@/fetch/jwtAccount'
 
 // 数据状态
 const accounts = ref<JwtAccount[]>([])
@@ -133,9 +132,7 @@ const accountFormRef = ref<FormInstance | null>(null)
 const fetchAccounts = async () => {
   loading.value = true
   try {
-    // 修复路径，确保使用正确的API路径
-    const response = await request.get('/api/security/jwt/accounts')
-    accounts.value = response.data
+    accounts.value = await getJwtAccounts()
   } catch (error) {
     console.error('获取账户列表失败:', error)
     ElMessage.error('获取账户列表失败')
@@ -158,11 +155,17 @@ const submitAccount = async () => {
       try {
         if (editingAccount.value) {
           // 更新账户
-          await request.put(`/api/security/jwt/accounts/${accountForm.username}`, accountForm)
+          await updateJwtAccount(accountForm.username, accountForm)
           ElMessage.success('账户更新成功')
         } else {
           // 创建账户
-          await request.post('/api/security/jwt/accounts', accountForm)
+          const createRequest: CreateJwtAccountRequest = {
+            username: accountForm.username,
+            password: accountForm.password!,
+            roles: accountForm.roles,
+            enabled: accountForm.enabled
+          }
+          await createJwtAccount(createRequest)
           ElMessage.success('账户创建成功')
         }
         
@@ -190,9 +193,7 @@ const editAccount = (account: JwtAccount) => {
 // 切换账户状态
 const toggleAccountStatus = async (account: JwtAccount) => {
   try {
-    await request.patch(`/api/security/jwt/accounts/${account.username}/status`, null, {
-      params: { enabled: !account.enabled }
-    })
+    await toggleJwtAccountStatus(account.username, !account.enabled)
     ElMessage.success(`账户${!account.enabled ? '启用' : '禁用'}成功`)
     fetchAccounts()
   } catch (error) {
@@ -213,7 +214,7 @@ const deleteAccount = (account: JwtAccount) => {
     }
   ).then(async () => {
     try {
-      await request.delete(`/api/security/jwt/accounts/${account.username}`)
+      await deleteJwtAccount(account.username)
       ElMessage.success('账户删除成功')
       fetchAccounts()
     } catch (error) {
