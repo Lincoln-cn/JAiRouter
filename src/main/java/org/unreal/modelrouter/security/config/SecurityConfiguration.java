@@ -101,23 +101,20 @@ public class SecurityConfiguration {
                 .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                 // Web管理界面静态资源允许匿名访问（前端会处理认证）
                 .pathMatchers("/admin/**").permitAll()
-                // Web管理界面通过现有API访问，使用JWT认证
                 // JWT登录端点允许匿名访问
-                .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll();
-
-
-        // 继续配置其他路径
-        authorizeExchangeSpec
+                .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll()
+                // JWT账户管理端点需要管理员权限
+                .pathMatchers("/api/security/jwt/accounts/**").hasRole("ADMIN")
                 // 监控端点需要管理员权限
                 .pathMatchers("/actuator/**").hasRole("ADMIN")
-                // 配置管理端点需要管理员权限
-                .pathMatchers("/api/**").permitAll()
                 // AI服务端点的细粒度权限控制
                 .pathMatchers(org.springframework.http.HttpMethod.GET, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
                 .pathMatchers(org.springframework.http.HttpMethod.PUT, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
                 .pathMatchers(org.springframework.http.HttpMethod.PATCH, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
                 .pathMatchers(org.springframework.http.HttpMethod.DELETE, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
+                // 其他API端点需要认证
+                .pathMatchers("/api/**").authenticated()
                 // 其他所有请求需要认证
                 .anyExchange().authenticated();
 
