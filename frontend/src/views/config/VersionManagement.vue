@@ -82,9 +82,25 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+// 定义版本配置类型
+interface VersionConfig {
+  services: string[]
+  instances: { service: string; url: string }[]
+}
+
+// 定义版本类型
+interface Version {
+  version: number
+  createTime: string
+  description: string
+  status: 'current' | 'history'
+  config: VersionConfig
+}
 
 // 模拟数据
-const versions = ref([
+const versions = ref<Version[]>([
   { 
     version: 1, 
     createTime: '2023-10-01 10:00:00', 
@@ -123,7 +139,7 @@ const versions = ref([
 ])
 
 const detailDialogVisible = ref(false)
-const currentVersion = ref({} as any)
+const currentVersion = ref({} as Version)
 
 // 创建版本
 const handleCreateVersion = () => {
@@ -131,12 +147,15 @@ const handleCreateVersion = () => {
     confirmButtonText: '确定',
     cancelButtonText: '取消'
   }).then(({ value }) => {
-    const newVersion = {
+    const newVersion: Version = {
       version: versions.value.length + 1,
       createTime: new Date().toLocaleString(),
       description: value || '新版本',
       status: 'history',
-      config: {}
+      config: {
+        services: [],
+        instances: []
+      }
     }
     versions.value.unshift(newVersion)
     ElMessage.success('版本创建成功')
@@ -146,13 +165,13 @@ const handleCreateVersion = () => {
 }
 
 // 查看版本详情
-const handleView = (row: any) => {
+const handleView = (row: Version) => {
   currentVersion.value = row
   detailDialogVisible.value = true
 }
 
 // 应用版本
-const handleApply = (row: any) => {
+const handleApply = (row: Version) => {
   ElMessageBox.confirm(`确定要应用版本 ${row.version} 吗？这将替换当前配置。`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -172,7 +191,7 @@ const handleApply = (row: any) => {
 }
 
 // 回滚版本
-const handleRollback = (row: any) => {
+const handleRollback = (row: Version) => {
   ElMessageBox.confirm(`确定要回滚到版本 ${row.version} 吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -192,7 +211,7 @@ const handleRollback = (row: any) => {
 }
 
 // 删除版本
-const handleDelete = (row: any) => {
+const handleDelete = (row: Version) => {
   ElMessageBox.confirm(`确定要删除版本 ${row.version} 吗？此操作不可恢复。`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',

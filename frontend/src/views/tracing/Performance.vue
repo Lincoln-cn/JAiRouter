@@ -149,6 +149,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
+import { ElMessage } from 'element-plus'
 
 // 时间范围
 const timeRange = ref(['2023-10-01 00:00:00', '2023-10-01 23:59:59'])
