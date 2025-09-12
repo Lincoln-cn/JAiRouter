@@ -1,6 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
+// 添加JWT解码函数
+function isTokenExpired(token: string): boolean {
+  try {
+    // 解码JWT token
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    // 获取过期时间（以秒为单位）
+    const exp = payload.exp
+    // 获取当前时间（以秒为单位）
+    const currentTime = Math.floor(Date.now() / 1000)
+    // 检查是否过期（提前1分钟过期以确保安全）
+    return exp - currentTime < 60
+  } catch (error) {
+    // 如果解码失败，认为token无效
+    return true
+  }
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -179,18 +196,43 @@ router.beforeEach((to, from, next) => {
     return
   }
   
-  if (to.meta.requiresAuth !== false && !userStore.isAuthenticated()) {
-    // 需要认证但未登录，跳转到登录页
-    console.log('需要认证但未登录，重定向到登录页')
-    next('/login')
-  } else if (to.path === '/login' && userStore.isAuthenticated()) {
-    // 已登录用户访问登录页，跳转到首页
-    console.log('已登录用户访问登录页，重定向到仪表板')
-    next('/dashboard')
-  } else {
-    console.log('正常路由跳转')
-    next()
+  // 检查是否需要认证
+  if (to.meta.requiresAuth !== false) {
+    // 检查是否有token
+    if (!userStore.isAuthenticated()) {
+      console.log('需要认证但未登录，重定向到登录页')
+      next('/login')
+      return
+    }
+    
+    // 检查token是否过期（超过1小时）
+    const token = localStorage.getItem('admin_token')
+    if (token && isTokenExpired(token)) {
+      console.log('Token已过期，清除token并重定向到登录页')
+      userStore.clearToken()
+      next('/login')
+      return
+    }
   }
+  
+  // 已登录用户访问登录页的处理
+  if (to.path === '/login' && userStore.isAuthenticated()) {
+    // 检查token是否过期
+    const token = localStorage.getItem('admin_token')
+    if (token && isTokenExpired(token)) {
+      console.log('已登录但token过期，清除token并重定向到登录页')
+      userStore.clearToken()
+      next('/login')
+    } else {
+      // token有效，重定向到仪表板
+      console.log('已登录用户访问登录页，重定向到仪表板')
+      next('/dashboard')
+    }
+    return
+  }
+  
+  console.log('正常路由跳转')
+  next()
 })
 
 export default router

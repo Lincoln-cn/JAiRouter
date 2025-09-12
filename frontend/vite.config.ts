@@ -66,14 +66,30 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         // 重写路径，去掉 /admin 前缀
-        rewrite: (path) => path.replace(/^\/admin/, '')
+        rewrite: (path) => path.replace(/^\/admin/, ''),
+        configure: (proxy, options) => {
+          // 添加请求日志
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log(`[Vite Proxy] Request: ${req.method} ${req.url} -> ${options.target}${req.url?.replace(/^\/admin/, '')}`)
+          });
+          // 添加响应日志
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log(`[Vite Proxy] Response: ${req.method} ${req.url} -> Status: ${proxyRes.statusCode}`)
+          });
+        }
       },
       '/admin/ws': {
         target: 'ws://localhost:8080',
         ws: true,
         changeOrigin: true,
         // 重写路径，去掉 /admin 前缀
-        rewrite: (path) => path.replace(/^\/admin/, '')
+        rewrite: (path) => path.replace(/^\/admin/, ''),
+        configure: (proxy, options) => {
+          // 添加WebSocket连接日志
+          proxy.on('open', () => {
+            console.log(`[Vite Proxy] WebSocket connected to: ${options.target}`)
+          });
+        }
       }
     }
   },
