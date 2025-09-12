@@ -480,11 +480,34 @@ public class JwtAccountConfigurationService {
     /**
      * 从配置中获取账户列表
      */
-    @SuppressWarnings("unchecked")
     private List<JwtUserProperties.UserAccount> getAccountsFromConfig(Map<String, Object> config) {
         Object accountsObj = config.get("accounts");
         if (accountsObj instanceof List) {
-            return new ArrayList<>((List<JwtUserProperties.UserAccount>) accountsObj);
+            List<JwtUserProperties.UserAccount> accounts = new ArrayList<>();
+            List<Map<String, Object>> accountsList = (List<Map<String, Object>>) accountsObj;
+            
+            for (Map<String, Object> accountMap : accountsList) {
+                JwtUserProperties.UserAccount account = new JwtUserProperties.UserAccount();
+                account.setUsername((String) accountMap.get("username"));
+                account.setPassword((String) accountMap.get("password"));
+                account.setEnabled((Boolean) accountMap.get("enabled"));
+                
+                // 处理角色列表
+                Object rolesObj = accountMap.get("roles");
+                if (rolesObj instanceof List) {
+                    List<String> roles = new ArrayList<>();
+                    for (Object role : (List<?>) rolesObj) {
+                        roles.add((String) role);
+                    }
+                    account.setRoles(roles);
+                } else {
+                    account.setRoles(new ArrayList<>());
+                }
+                
+                accounts.add(account);
+            }
+            
+            return accounts;
         }
         return new ArrayList<>();
     }
@@ -574,7 +597,6 @@ public class JwtAccountConfigurationService {
     /**
      * 刷新运行时JWT账户配置
      */
-    @SuppressWarnings("unchecked")
     private void refreshAccountRuntimeConfig(Map<String, Object> config) {
         try {
             if (config.containsKey("enabled")) {
@@ -582,8 +604,7 @@ public class JwtAccountConfigurationService {
             }
             
             if (config.containsKey("accounts")) {
-                List<JwtUserProperties.UserAccount> accounts = 
-                        (List<JwtUserProperties.UserAccount>) config.get("accounts");
+                List<JwtUserProperties.UserAccount> accounts = getAccountsFromConfig(config);
                 jwtUserProperties.setAccounts(new ArrayList<>(accounts));
             }
             
