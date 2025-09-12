@@ -14,6 +14,7 @@ import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationService;
@@ -201,15 +202,31 @@ public class RequestSanitizationFilter implements WebFilter {
 
         @Override
         public HttpHeaders getHeaders() {
-            // 创建新的headers，但要保留所有原始头信息
-            HttpHeaders headers = new HttpHeaders();
-            headers.putAll(super.getHeaders());
+            // 获取原始headers
+            HttpHeaders originalHeaders = super.getHeaders();
+            
+            // 检查是否为只读headers
+            if (originalHeaders.getClass().getSimpleName().equals("ReadOnlyHttpHeaders")) {
+                // 对于只读headers，创建新的HttpHeaders实例
+                HttpHeaders newHeaders = new HttpHeaders();
+                newHeaders.putAll(originalHeaders);
+                
+                // 只更新Content-Length，不修改其他关键头信息（如Content-Type中的boundary）
+                byte[] contentBytes = sanitizedContent.getBytes(StandardCharsets.UTF_8);
+                newHeaders.setContentLength(contentBytes.length);
+                
+                return newHeaders;
+            } else {
+                // 对于可修改的headers，直接修改
+                HttpHeaders headers = new HttpHeaders();
+                headers.putAll(originalHeaders);
 
-            // 只更新Content-Length，不修改其他关键头信息（如Content-Type中的boundary）
-            byte[] contentBytes = sanitizedContent.getBytes(StandardCharsets.UTF_8);
-            headers.setContentLength(contentBytes.length);
+                // 只更新Content-Length，不修改其他关键头信息（如Content-Type中的boundary）
+                byte[] contentBytes = sanitizedContent.getBytes(StandardCharsets.UTF_8);
+                headers.setContentLength(contentBytes.length);
 
-            return headers;
+                return headers;
+            }
         }
     }
 
