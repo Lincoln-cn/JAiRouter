@@ -52,7 +52,8 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
         return ReactiveSecurityContextHolder.getContext()
                 .cast(SecurityContext.class)
                 .map(SecurityContext::getAuthentication)
-                .filter(auth -> auth != null && auth.isAuthenticated())
+                .filter(auth ->
+                        auth != null && auth.isAuthenticated())
                 .flatMap(auth -> {
                     log.debug("检测到已认证的上下文，跳过认证步骤: {}", exchange.getRequest().getPath().value());
                     return chain.filter(exchange);
@@ -129,18 +130,11 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
      * 检查是否应该进行认证
      */
     private Mono<Boolean> requiresAuthentication(ServerWebExchange exchange) {
-        // 使用异步方式检查是否需要认证，避免阻塞
-        return requiresAuthenticationMatcher().matches(exchange)
-                .map(matchResult -> matchResult.isMatch())
-                .defaultIfEmpty(false)
-                .onErrorReturn(false);
-    }
-
-    /**
-     * 创建认证请求匹配器
-     */
-    private ServerWebExchangeMatcher requiresAuthenticationMatcher() {
-        return ServerWebExchangeMatchers.pathMatchers("/v1/**");
+        String path = exchange.getRequest().getPath().value();
+        // 使用ExcludedPathsConfig.AUTH_EXCLUDED_PATHS判断是否需要认证
+        boolean isExcluded = org.unreal.modelrouter.security.config.ExcludedPathsConfig.isAuthExcluded(path);
+        // 如果路径不在排除列表中，则需要认证
+        return Mono.just(!isExcluded);
     }
 
     /**
