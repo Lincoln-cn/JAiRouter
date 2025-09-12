@@ -69,9 +69,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+// 定义API密钥类型
+interface ApiKey {
+  keyId: string
+  description: string
+  createdAt: string
+  expiresAt: string
+  enabled: boolean
+  permissions: string[]
+}
 
 // 模拟数据
-const apiKeys = ref([
+const apiKeys = ref<ApiKey[]>([
   { 
     keyId: 'key-1', 
     description: '管理后台API密钥', 
@@ -102,12 +113,13 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const isEdit = ref(false)
 
-const form = ref({
+const form = ref<Omit<ApiKey, 'keyId' | 'createdAt'> & { keyId: string; createdAt: string }>({
   keyId: '',
   description: '',
+  createdAt: '',
   expiresAt: '',
   enabled: true,
-  permissions: [] as string[]
+  permissions: []
 })
 
 // 创建API密钥
@@ -117,6 +129,7 @@ const handleCreateApiKey = () => {
   form.value = {
     keyId: '',
     description: '',
+    createdAt: '',
     expiresAt: '',
     enabled: true,
     permissions: []
@@ -125,7 +138,7 @@ const handleCreateApiKey = () => {
 }
 
 // 编辑API密钥
-const handleEdit = (row: any) => {
+const handleEdit = (row: ApiKey) => {
   dialogTitle.value = '编辑API密钥'
   isEdit.value = true
   form.value = { ...row }
@@ -133,7 +146,7 @@ const handleEdit = (row: any) => {
 }
 
 // 删除API密钥
-const handleDelete = (row: any) => {
+const handleDelete = (row: ApiKey) => {
   ElMessageBox.confirm(`确定要删除API密钥 ${row.keyId} 吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -150,14 +163,17 @@ const handleSave = () => {
     // 编辑
     const index = apiKeys.value.findIndex(key => key.keyId === form.value.keyId)
     if (index !== -1) {
-      apiKeys.value[index] = { ...form.value }
+      apiKeys.value[index] = { 
+        ...form.value,
+        createdAt: apiKeys.value[index].createdAt // 保留原有的创建时间
+      }
     }
   } else {
     // 新增
     const newKey = {
+      ...form.value,
       keyId: 'key-' + Date.now(),
-      createdAt: new Date().toLocaleString(),
-      ...form.value
+      createdAt: new Date().toLocaleString()
     }
     apiKeys.value.push(newKey)
   }

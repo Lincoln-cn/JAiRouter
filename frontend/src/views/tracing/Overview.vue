@@ -112,12 +112,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
-import { 
-  DataLine, 
-  Warning, 
-  SuccessFilled,
-  ScaleToOriginal
-} from '@/icons'
+import { ElMessage } from 'element-plus'
 
 // 统计数据
 const stats = ref({

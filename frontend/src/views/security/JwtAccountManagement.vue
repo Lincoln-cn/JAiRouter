@@ -3,7 +3,7 @@
     <el-card class="main-card">
       <template #header>
         <div class="card-header">
-          <span>JWT账户管理</span>
+          <span>账户管理</span>
           <div>
             <el-button type="primary" @click="showCreateDialog = true">
               <el-icon><Plus /></el-icon>
@@ -87,7 +87,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh } from '@/icons'
 import request from '@/utils/request'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -256,5 +255,10 @@ onMounted(() => {
 
 .dialog-footer {
   text-align: right;
+}
+
+/* 美化操作列按钮间距 */
+.el-table__row .el-button + .el-button {
+  margin-left: 8px;
 }
 </style>
