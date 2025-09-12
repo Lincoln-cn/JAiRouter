@@ -4,12 +4,78 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JAiRouter 管理界面</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      #app {
+        width: 100%;
+        padding: 20px;
+      }
+      
+      .loading-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 40px;
+        text-align: center;
+        animation: fadeIn 0.8s ease-out;
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(102, 126, 234, 0.3);
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      h2 {
+        color: #333;
+        margin-bottom: 15px;
+        font-weight: 600;
+      }
+      
+      p {
+        color: #666;
+        line-height: 1.6;
+        margin: 10px 0;
+      }
+      
+      .brand {
+        color: #667eea;
+        font-weight: bold;
+      }
+    </style>
   </head>
   <body>
     <div id="app">
-      <div style="text-align: center; padding: 20px; font-family: Arial, sans-serif;">
-        <h2>正在加载 JAiRouter 管理界面...</h2>
-        <p>如果长时间停留在此页面，请检查控制台是否有错误信息。</p>
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <h2>正在加载 <span class="brand">JAiRouter</span> 管理界面</h2>
+        <p>系统正在初始化，请稍候...</p>
+        <p>如果长时间停留在此页面，请按 F12 打开控制台查看详细错误信息。</p>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

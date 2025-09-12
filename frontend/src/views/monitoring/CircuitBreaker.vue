@@ -99,6 +99,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 熔断器状态数据
 const circuitBreakers = ref([

@@ -96,7 +96,7 @@
         <div class="header-right">
           <el-dropdown @command="handleUserCommand">
             <span class="user-info">
-              <el-avatar :size="30" :icon="UserFilled" />
+              <el-avatar :size="30" icon="UserFilled" />
               <span class="username">管理员</span>
             </span>
             <template #dropdown>
@@ -120,15 +120,6 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { 
-  House,
-  Setting, 
-  Lock, 
-  DataAnalysis, 
-  Connection,
-  UserFilled,
-  User
-} from '@/icons'
 
 const route = useRoute()
 const router = useRouter()

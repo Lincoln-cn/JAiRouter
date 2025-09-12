@@ -63,6 +63,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 模拟数据
 const tokens = ref([

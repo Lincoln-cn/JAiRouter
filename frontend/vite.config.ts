@@ -27,12 +27,28 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
     minify: 'terser',
+    chunkSizeWarningLimit: 1000, // 增加块大小警告限制
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['vue', 'vue-router', 'pinia'],
-          charts: ['echarts', 'vue-echarts'],
-          elementPlus: ['element-plus']
+          // 核心框架
+          vue: ['vue'],
+          'vue-router': ['vue-router'],
+          pinia: ['pinia'],
+          
+          // UI框架
+          'element-plus': ['element-plus'],
+          'element-plus-icons': ['@element-plus/icons-vue'],
+          
+          // 图表库
+          echarts: ['echarts'],
+          'vue-echarts': ['vue-echarts'],
+          
+          // 网络请求
+          axios: ['axios'],
+          
+          // 国际化
+          'vue-i18n': ['vue-i18n']
         }
       }
     }

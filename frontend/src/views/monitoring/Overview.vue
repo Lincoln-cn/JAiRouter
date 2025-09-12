@@ -109,12 +109,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
-import { 
-  SuccessFilled, 
-  Warning, 
-  CircleClose, 
-  DataLine 
-} from '@/icons'
 
 // 统计数据
 const stats = ref({

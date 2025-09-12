@@ -56,9 +56,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+// 定义服务类型
+interface Service {
+  id: number
+  type: string
+  name: string
+  description: string
+  status: string
+}
 
 // 模拟数据
-const services = ref([
+const services = ref<Service[]>([
   { id: 1, type: 'chat', name: '聊天服务', description: '提供聊天模型服务', status: 'active' },
   { id: 2, type: 'embedding', name: '嵌入服务', description: '提供文本嵌入服务', status: 'active' },
   { id: 3, type: 'rerank', name: '重排序服务', description: '提供结果重排序服务', status: 'inactive' }
@@ -68,12 +78,12 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const isEdit = ref(false)
 
-const form = ref({
+const form = ref<Omit<Service, 'id'> & { id: number }>({
   id: 0,
   type: '',
   name: '',
   description: '',
-  status: true
+  status: ''
 })
 
 // 添加服务
@@ -85,13 +95,13 @@ const handleAddService = () => {
     type: '',
     name: '',
     description: '',
-    status: true
+    status: 'active'
   }
   dialogVisible.value = true
 }
 
 // 编辑服务
-const handleEdit = (row: any) => {
+const handleEdit = (row: Service) => {
   dialogTitle.value = '编辑服务'
   isEdit.value = true
   form.value = { ...row }
@@ -99,7 +109,7 @@ const handleEdit = (row: any) => {
 }
 
 // 删除服务
-const handleDelete = (row: any) => {
+const handleDelete = (row: Service) => {
   ElMessageBox.confirm('确定要删除该服务吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -120,9 +130,9 @@ const handleSave = () => {
     }
   } else {
     // 新增
-    const newService = {
-      id: Date.now(),
-      ...form.value
+    const newService: Service = {
+      ...form.value,
+      id: Date.now()
     }
     services.value.push(newService)
   }
