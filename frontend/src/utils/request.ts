@@ -23,7 +23,9 @@ request.interceptors.request.use(
     )
     
     if (token && config.headers && !isTokenEndpoint) {
-      config.headers['Jairouter_token'] = token
+      // 确保使用正确的头部名称
+      config.headers['Jairouter_Token'] = token
+      console.log('Adding JWT token to request header:', token.substring(0, 20) + '...')
     }
     return config
   },
@@ -38,6 +40,7 @@ request.interceptors.response.use(
     return response
   },
   error => {
+    console.error('Request failed:', error)
     if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem('admin_token')
