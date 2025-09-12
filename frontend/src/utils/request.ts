@@ -18,14 +18,12 @@ request.interceptors.request.use(
     
     // 检查是否是JWT token获取接口，如果不是则添加token头部
     const isTokenEndpoint = config.url && (
-      config.url.includes('/api/auth/jwt/login') || 
-      config.url.includes('/api/auth/jwt/refresh')
+      config.url.includes('/auth/jwt/login') || 
+      config.url.includes('/auth/jwt/refresh')
     )
     
     if (token && config.headers && !isTokenEndpoint) {
-      // 确保使用正确的头部名称
-      config.headers['Jairouter_Token'] = token
-      console.log('Adding JWT token to request header:', token.substring(0, 20) + '...')
+      config.headers['Jairouter_token'] = token
     }
     return config
   },
@@ -40,7 +38,6 @@ request.interceptors.response.use(
     return response
   },
   error => {
-    console.error('Request failed:', error)
     if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem('admin_token')
