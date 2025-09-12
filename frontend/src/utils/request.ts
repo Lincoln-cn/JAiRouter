@@ -18,8 +18,8 @@ request.interceptors.request.use(
     
     // 检查是否是JWT token获取接口，如果不是则添加token头部
     const isTokenEndpoint = config.url && (
-      config.url.includes('/auth/jwt/login') || 
-      config.url.includes('/auth/jwt/refresh')
+      config.url.includes('/api/auth/jwt/login') || 
+      config.url.includes('/api/auth/jwt/refresh')
     )
     
     if (token && config.headers && !isTokenEndpoint) {

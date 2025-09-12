@@ -14,6 +14,7 @@ import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationService;
@@ -154,6 +155,22 @@ public class ResponseSanitizationFilter implements WebFilter {
                 } catch (Exception e) {
                     log.warn("获取响应内容类型失败: {}", e.getMessage());
                     return "application/octet-stream";
+                }
+            }
+            
+            @Override
+            public HttpHeaders getHeaders() {
+                // 获取原始headers
+                HttpHeaders originalHeaders = super.getHeaders();
+                
+                // 检查是否为只读headers
+                if (originalHeaders.getClass().getSimpleName().equals("ReadOnlyHttpHeaders")) {
+                    // 对于只读headers，创建新的HttpHeaders实例
+                    HttpHeaders newHeaders = new HttpHeaders();
+                    newHeaders.putAll(originalHeaders);
+                    return newHeaders;
+                } else {
+                    return originalHeaders;
                 }
             }
         };

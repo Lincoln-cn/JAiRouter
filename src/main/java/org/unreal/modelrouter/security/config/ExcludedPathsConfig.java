@@ -29,16 +29,9 @@ public class ExcludedPathsConfig {
         authPaths.add("/v3/api-docs");
         authPaths.add("/webjars/");
         authPaths.add("/api/auth/jwt/login");
-        authPaths.add("/admin");
+        authPaths.add("/admin/");
         authPaths.add("/favicon.ico");
         authPaths.add("/.well-known");
-        // 注意：AI模型接口需要认证，不应该添加到排除列表中
-        // 这些接口包含敏感的AI服务，必须通过API Key或JWT认证访问
-        // authPaths.add("/v1/chat/");      // 需要认证
-        // authPaths.add("/v1/embeddings"); // 需要认证  
-        // authPaths.add("/v1/rerank");     // 需要认证
-        // authPaths.add("/v1/audio/");     // 需要认证
-        // authPaths.add("/v1/images/");    // 需要认证
         AUTH_EXCLUDED_PATHS = Collections.unmodifiableSet(authPaths);
         
         // 数据脱敏排除路径
@@ -63,9 +56,12 @@ public class ExcludedPathsConfig {
         securityPaths.add("/v1/audio/");
         securityPaths.add("/v1/images/");
         securityPaths.add("/v1/debug/");
-        securityPaths.add("/admin");
+        securityPaths.add("/admin/");
         // 排除认证端点
         securityPaths.add("/api/auth/jwt/login");
+        // 排除JWT账户管理端点
+        securityPaths.add("/api/security/jwt/accounts");
+        securityPaths.add("/api/security/jwt/accounts/");
         DATA_MASKING_EXCLUDED_PATHS = Collections.unmodifiableSet(securityPaths);
     }
     

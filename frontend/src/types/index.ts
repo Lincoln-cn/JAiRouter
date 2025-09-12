@@ -7,6 +7,14 @@ export interface ApiResponse<T = any> {
   error?: string
 }
 
+export interface RouterResponse<T = any> {
+  success: boolean
+  message: string
+  data?: T
+  errorCode?: string
+  timestamp: string
+}
+
 export interface SystemStatus {
   uptime: number
   version: string

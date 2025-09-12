@@ -166,7 +166,8 @@ public class JwtAccountConfigurationService {
                 saveAccountAsNewVersion(currentConfig);
                 
                 // 更新内存中的配置
-                jwtUserProperties.getAccounts().add(encryptedAccount);
+                // 重新获取最新的配置来确保内存中的配置是最新的
+                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
                 
                 // 发布配置变更事件
                 publishAccountChangeEvent("account-create", null, encryptedAccount);
@@ -231,7 +232,8 @@ public class JwtAccountConfigurationService {
                 saveAccountAsNewVersion(currentConfig);
                 
                 // 更新内存中的配置
-                refreshAccountRuntimeConfig(currentConfig);
+                // 重新获取最新的配置来确保内存中的配置是最新的
+                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
                 
                 // 发布配置变更事件
                 publishAccountChangeEvent("account-update", oldAccount, account);
@@ -283,7 +285,8 @@ public class JwtAccountConfigurationService {
                 saveAccountAsNewVersion(currentConfig);
                 
                 // 更新内存中的配置
-                refreshAccountRuntimeConfig(currentConfig);
+                // 重新获取最新的配置来确保内存中的配置是最新的
+                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
                 
                 // 发布配置变更事件
                 publishAccountChangeEvent("account-delete", deletedAccount, null);
@@ -334,10 +337,15 @@ public class JwtAccountConfigurationService {
                 saveAccountAsNewVersion(currentConfig);
                 
                 // 更新内存中的配置
-                refreshAccountRuntimeConfig(currentConfig);
+                // 重新获取最新的配置来确保内存中的配置是最新的
+                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
                 
                 // 发布配置变更事件
-                publishAccountChangeEvent("account-status-change", oldAccount, null);
+                JwtUserProperties.UserAccount newAccount = accounts.stream()
+                    .filter(account -> account.getUsername().equals(username))
+                    .findFirst()
+                    .orElse(null);
+                publishAccountChangeEvent("account-status-change", oldAccount, newAccount);
                 
                 log.info("JWT账户状态更新成功: {} -> {}", username, enabled ? "启用" : "禁用");
                 
@@ -388,7 +396,8 @@ public class JwtAccountConfigurationService {
                 saveAccountAsNewVersion(currentConfig);
                 
                 // 更新内存中的配置
-                jwtUserProperties.setAccounts(new ArrayList<>(encryptedAccounts));
+                // 重新获取最新的配置来确保内存中的配置是最新的
+                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
                 
                 // 发布配置变更事件
                 publishAccountChangeEvent("accounts-batch-update", oldAccounts, encryptedAccounts);

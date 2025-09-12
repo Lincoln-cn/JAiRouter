@@ -70,7 +70,7 @@ export const useUserStore = defineStore('user', () => {
   // 刷新令牌方法
   const refreshToken = async () => {
     try {
-      const response = await request.post<ApiResponse<TokenResponseData>>('/api/auth/jwt/refresh', {
+      const response = await request.post<ApiResponse<TokenResponseData>>('/auth/jwt/refresh', {
         token: token.value
       })
       
@@ -91,7 +91,7 @@ export const useUserStore = defineStore('user', () => {
   // 登录方法
   const login = async (username: string, password: string) => {
     try {
-      const response = await request.post<ApiResponse<LoginResponseData>>('/api/auth/jwt/login', {
+      const response = await request.post<ApiResponse<LoginResponseData>>('/auth/jwt/login', {
         username,
         password
       })
@@ -118,7 +118,7 @@ export const useUserStore = defineStore('user', () => {
   const logout = async () => {
     try {
       if (token.value) {
-        await request.post('/api/auth/jwt/revoke', {
+        await request.post('/auth/jwt/revoke', {
           token: token.value
         })
       }
@@ -132,7 +132,7 @@ export const useUserStore = defineStore('user', () => {
   // 获取用户信息
   const getUserInfo = async () => {
     try {
-      const response = await request.get('/api/auth/jwt/validate', {
+      const response = await request.get('/auth/jwt/validate', {
         headers: {
           'Jairouter_Token': token.value
         }
