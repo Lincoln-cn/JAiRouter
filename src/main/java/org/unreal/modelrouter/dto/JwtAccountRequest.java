@@ -13,6 +13,7 @@ public class JwtAccountRequest {
     private String username;
 
     @NotBlank(message = "密码不能为空")
+    @jakarta.validation.constraints.Size(min = 6, message = "密码长度至少6位")
     private String password;
 
     @NotEmpty(message = "角色不能为空")
