@@ -5,7 +5,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.109951",
       "ContentHash": "0d31c3c903d272e4",
-      "GitCommit": "79df88ed",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -17,7 +17,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-08-29T03:02:12.111976",
       "ContentHash": "55af3cdb4fbe6dd0",
-      "GitCommit": "79df88ed",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -26,11 +26,11 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.25",
-      "LastModified": "2025-09-12T02:54:36.611046",
-      "ContentHash": "78a6a2439a6e38d5",
-      "GitCommit": "cdd349ea",
-      "Author": "GitHub Action",
+      "Version": "1.0.26",
+      "LastModified": "2025-09-13T02:47:07.715931",
+      "ContentHash": "6d5d4a36ac1cb405",
+      "GitCommit": "dbe39921",
+      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -39,7 +39,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.117171",
       "ContentHash": "9a685510a17a109d",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -49,7 +49,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.120341",
       "ContentHash": "ed9a2725e0800307",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -64,7 +64,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.123086",
       "ContentHash": "654bd6fbcecc24b1",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -74,7 +74,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.129057",
       "ContentHash": "a08d29a756101341",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -84,7 +84,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.131746",
       "ContentHash": "4a0231fb8294d2da",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -94,7 +94,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-06T02:53:48.969467",
       "ContentHash": "dc55f88cf8f409b4",
-      "GitCommit": "5ed29c46",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -104,7 +104,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.136558",
       "ContentHash": "21f17ce17900ad57",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -117,7 +117,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.139120",
       "ContentHash": "79e565f2f57e3808",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -132,7 +132,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.141732",
       "ContentHash": "10c1c5773774bf2c",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -148,7 +148,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.144247",
       "ContentHash": "ab4d03f55b606cad",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -162,7 +162,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.149015",
       "ContentHash": "4c2a47519511021d",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -176,7 +176,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.156071",
       "ContentHash": "a8c97a458b835b3d",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -190,7 +190,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-06T02:53:48.990897",
       "ContentHash": "36da4cb8f523b571",
-      "GitCommit": "5ed29c46",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -200,7 +200,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.154991",
       "ContentHash": "314a1076195591a0",
-      "GitCommit": "4e960687",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -210,7 +210,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.157521",
       "ContentHash": "12899acf11a9cf3e",
-      "GitCommit": "7692c6b7",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -225,7 +225,7 @@
       "Version": "1.0.3",
       "LastModified": "2025-09-06T02:53:48.997957",
       "ContentHash": "ff323e0c7ee8ef5f",
-      "GitCommit": "5ed29c46",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -239,7 +239,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-06T02:53:49.000133",
       "ContentHash": "f4c6706f9607d1ae",
-      "GitCommit": "5ed29c46",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -253,7 +253,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.164877",
       "ContentHash": "4b968207745226fa",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -263,7 +263,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.167494",
       "ContentHash": "9df357b72d090e9b",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -273,7 +273,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.170061",
       "ContentHash": "5566330c269da531",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -283,7 +283,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-08-29T03:02:12.172656",
       "ContentHash": "6cbadd5e7cce3fdb",
-      "GitCommit": "f00ce4e1",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -293,7 +293,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.175720",
       "ContentHash": "0b87db07fd4730fe",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -308,7 +308,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-08-29T03:02:12.178391",
       "ContentHash": "3fdf6eb979319814",
-      "GitCommit": "f00ce4e1",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -321,7 +321,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.181087",
       "ContentHash": "9694dd80d7013772",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -331,7 +331,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.186377",
       "ContentHash": "6c4b9782f9aac63d",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -348,7 +348,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.189375",
       "ContentHash": "fee3342444f7e09d",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -362,7 +362,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.197982",
       "ContentHash": "d5c4440dd7725f2a",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -374,7 +374,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.195585",
       "ContentHash": "cd9645956c2273db",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -389,7 +389,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.198524",
       "ContentHash": "242e7d827a597de4",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -405,7 +405,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.201267",
       "ContentHash": "6524bf13fbc1f1cb",
-      "GitCommit": "4e960687",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -420,7 +420,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.204444",
       "ContentHash": "0b0f583857e57fe6",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -435,7 +435,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.207276",
       "ContentHash": "337a87a73bfb385a",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -450,7 +450,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.217651",
       "ContentHash": "e475ec610059734f",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -465,7 +465,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.215875",
       "ContentHash": "fb3a0f8b19579e17",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -480,7 +480,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.218895",
       "ContentHash": "2cd69f239dc041f3",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -495,7 +495,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.226160",
       "ContentHash": "124dd84b95d3e1b8",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -510,7 +510,7 @@
       "Version": "1.0.3",
       "LastModified": "2025-09-02T03:06:00.230915",
       "ContentHash": "6dfa2bd024cba2cd",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -525,7 +525,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.229781",
       "ContentHash": "84c80b9b474127fb",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -540,7 +540,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.232384",
       "ContentHash": "324237f9d229cbef",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -550,7 +550,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.239351",
       "ContentHash": "10ad45d997546a42",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -563,7 +563,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.238436",
       "ContentHash": "3db018af00d45ca7",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -573,7 +573,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.243299",
       "ContentHash": "213fdf378689ab18",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -592,7 +592,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.246331",
       "ContentHash": "1f269fa6823a2192",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -602,7 +602,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.288867",
       "ContentHash": "ca13379249c707c0",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -612,7 +612,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.291148",
       "ContentHash": "b46b383a9fd407c6",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -622,7 +622,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.289606",
       "ContentHash": "113e1d655309ff5b",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -639,7 +639,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.292566",
       "ContentHash": "ad0f1ac766fbe18d",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -649,7 +649,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.296236",
       "ContentHash": "6c89a01635a6b2a3",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -664,7 +664,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.299132",
       "ContentHash": "d90e536a7a4c22ec",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -674,7 +674,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.305216",
       "ContentHash": "dd9323ac3b745ee1",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -684,7 +684,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.308041",
       "ContentHash": "91810c34d6c27bbd",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -694,7 +694,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-06T02:53:49.148199",
       "ContentHash": "6e83b349616cf09d",
-      "GitCommit": "5ed29c46",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -704,7 +704,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.313561",
       "ContentHash": "f93348012d6c92a8",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -719,7 +719,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.316622",
       "ContentHash": "baf4bae4d5946c45",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -734,7 +734,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.319542",
       "ContentHash": "ea27b354cbab8d89",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -750,7 +750,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.322557",
       "ContentHash": "067ee32099e33982",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -765,7 +765,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.327874",
       "ContentHash": "34c8660a75ddfc88",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -780,7 +780,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.339102",
       "ContentHash": "7eaac0eb35a0aab8",
-      "GitCommit": "50351a36",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -795,7 +795,7 @@
       "Version": "1.0.3",
       "LastModified": "2025-09-04T02:55:19.478640",
       "ContentHash": "406154bf3df552fe",
-      "GitCommit": "706fbad7",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -810,7 +810,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.335672",
       "ContentHash": "0f19f29e21bfcef4",
-      "GitCommit": "4e960687",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -820,7 +820,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.348268",
       "ContentHash": "d567bf756771da0f",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -835,7 +835,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.351398",
       "ContentHash": "83c914b033a40501",
-      "GitCommit": "50351a36",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -850,7 +850,7 @@
       "Version": "1.0.3",
       "LastModified": "2025-09-04T02:55:19.488616",
       "ContentHash": "267da5a977cdd685",
-      "GitCommit": "706fbad7",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -865,7 +865,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.347543",
       "ContentHash": "efa2d1e202930123",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -875,7 +875,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.350478",
       "ContentHash": "61d4d3a38e42de3f",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -885,7 +885,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.353318",
       "ContentHash": "e0d7fa3871a4a4f0",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -895,7 +895,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-08-29T03:02:12.356179",
       "ContentHash": "89297b9f5f3d0e95",
-      "GitCommit": "f00ce4e1",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -907,7 +907,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.359727",
       "ContentHash": "aa6086e06fa621ba",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -922,7 +922,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-08-29T03:02:12.362736",
       "ContentHash": "ed05f4be2c27c063",
-      "GitCommit": "f00ce4e1",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -935,7 +935,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.365679",
       "ContentHash": "9ade8f33df4887a5",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -945,7 +945,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.373011",
       "ContentHash": "89fbdb87a610a5d7",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -964,7 +964,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.376259",
       "ContentHash": "d1375a3adc23476f",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -978,7 +978,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.387804",
       "ContentHash": "4b24d5558f0df4d7",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -993,7 +993,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.390541",
       "ContentHash": "1a4e0956203f612a",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1010,7 +1010,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.387004",
       "ContentHash": "0aa55bb7a354b039",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1026,7 +1026,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.389612",
       "ContentHash": "18df087a73b709aa",
-      "GitCommit": "d341d4d0",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1036,7 +1036,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.392098",
       "ContentHash": "66cc3f377cf0adb9",
-      "GitCommit": "4e960687",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1051,7 +1051,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.395145",
       "ContentHash": "f25c3db6fa081870",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1066,7 +1066,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.398131",
       "ContentHash": "836249d88b0faab8",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1081,7 +1081,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.403567",
       "ContentHash": "8fc4eb165a8e4b6a",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1101,7 +1101,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.406655",
       "ContentHash": "18f55ceee5bfd11c",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1116,7 +1116,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.409671",
       "ContentHash": "06c6dccc2cec7a21",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1131,7 +1131,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.419717",
       "ContentHash": "783a204c48ac7734",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1146,7 +1146,7 @@
       "Version": "1.0.3",
       "LastModified": "2025-09-02T03:06:00.424528",
       "ContentHash": "5480b402c43e76a4",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1161,7 +1161,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.421325",
       "ContentHash": "cba5da37e9966364",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1176,7 +1176,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.423927",
       "ContentHash": "e7bdc3a7c2ea108e",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1186,7 +1186,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.432728",
       "ContentHash": "54c565a02424dcd9",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1199,7 +1199,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.429588",
       "ContentHash": "30fecb1b77a15df4",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1209,7 +1209,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.433625",
       "ContentHash": "94928b449a8c4124",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1228,7 +1228,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.436315",
       "ContentHash": "53bd5cd222aa375d",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1238,7 +1238,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.473955",
       "ContentHash": "f6c66c7162e38c30",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1248,7 +1248,7 @@
       "Version": "1.0.2",
       "LastModified": "2025-09-02T03:06:00.476055",
       "ContentHash": "507baebd7723abe8",
-      "GitCommit": "948a0c17",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1258,7 +1258,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.475356",
       "ContentHash": "955951a7cec3b2dc",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1275,7 +1275,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-08-29T03:02:12.478015",
       "ContentHash": "2b99078bf17c6be8",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1285,7 +1285,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-20T03:08:21.382209",
       "ContentHash": "ee811922d033a597",
-      "GitCommit": "5d0fe1f7",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1299,7 +1299,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-20T03:08:21.491577",
       "ContentHash": "06e68af2ac49685a",
-      "GitCommit": "5d0fe1f7",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1313,7 +1313,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.146364",
       "ContentHash": "9c2fdfd4cd944b18",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1323,7 +1323,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.183241",
       "ContentHash": "35bd5daee9247a05",
-      "GitCommit": "c876a54c",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1337,7 +1337,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.209457",
       "ContentHash": "159e7dee50df0a87",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1347,7 +1347,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.223917",
       "ContentHash": "8bec04b8fc820c5c",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1357,7 +1357,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.249620",
       "ContentHash": "a0c6d9e719f6d66c",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1371,7 +1371,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.252345",
       "ContentHash": "72390f180038b8e9",
-      "GitCommit": "4e72e3fe",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1386,7 +1386,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.256012",
       "ContentHash": "218ef6f82cf13064",
-      "GitCommit": "7e878bcf",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1401,7 +1401,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-09-02T03:06:00.263083",
       "ContentHash": "47c52ef132343ea0",
-      "GitCommit": "7b2dac10",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1416,7 +1416,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.261295",
       "ContentHash": "15d5a69be9f03bf6",
-      "GitCommit": "4e960687",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1431,7 +1431,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.263562",
       "ContentHash": "f93e611cf5b80669",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1441,7 +1441,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.266520",
       "ContentHash": "69b01c57f9cc64f8",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1457,7 +1457,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.269313",
       "ContentHash": "adc9736d2b43adee",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1471,7 +1471,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.271873",
       "ContentHash": "733d432adc8a01ab",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1484,7 +1484,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.274765",
       "ContentHash": "18c9e49b4802aef8",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1500,7 +1500,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.277492",
       "ContentHash": "f400fe8f31da0b7f",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1514,7 +1514,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.280327",
       "ContentHash": "34e0dbfea60e8556",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1529,7 +1529,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.324884",
       "ContentHash": "8a0f4e41f7a8e26f",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1539,7 +1539,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.368347",
       "ContentHash": "8cbbcfb2f5eb5492",
-      "GitCommit": "c876a54c",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1553,7 +1553,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.400304",
       "ContentHash": "aa3414da9ccd86d1",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1563,7 +1563,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.415007",
       "ContentHash": "934484ed8c934b83",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1573,7 +1573,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-09-02T03:06:00.444435",
       "ContentHash": "f737e2a7fbaeb5ac",
-      "GitCommit": "50351a36",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1587,7 +1587,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-09-02T03:06:00.446834",
       "ContentHash": "3700e184ada7f28f",
-      "GitCommit": "50351a36",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1602,7 +1602,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-09-02T03:06:00.449267",
       "ContentHash": "1969b6957ffce354",
-      "GitCommit": "50351a36",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1617,7 +1617,7 @@
       "Version": "1.0.1",
       "LastModified": "2025-09-02T03:06:00.451367",
       "ContentHash": "c67f3ab3d08cc1b4",
-      "GitCommit": "7b2dac10",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1632,7 +1632,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.449484",
       "ContentHash": "15d5a69be9f03bf6",
-      "GitCommit": "4e960687",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1647,7 +1647,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.451645",
       "ContentHash": "958df22a0b9746d1",
-      "GitCommit": "c98679ca",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1657,7 +1657,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.453883",
       "ContentHash": "35da1451b5bb018d",
-      "GitCommit": "c876a54c",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1673,7 +1673,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.457010",
       "ContentHash": "a6d7dfdc2d3d1a74",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1687,7 +1687,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.459388",
       "ContentHash": "253c60cdcacd45a2",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1700,7 +1700,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.462009",
       "ContentHash": "8f929ed4965c291d",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1716,7 +1716,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.464522",
       "ContentHash": "9704aac331d3f754",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1730,7 +1730,7 @@
       "Version": "1.0.0",
       "LastModified": "2025-08-29T03:02:12.467102",
       "ContentHash": "cd4089756712e1fd",
-      "GitCommit": "7b00dc09",
+      "GitCommit": "dbe39921",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -4237,7 +4237,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-09-12T02:54:36.611052",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.25",
+      "NewVersion": "1.0.26",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-13T02:47:07.715938",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-09-12T02:54:37.105555"
+  "last_updated": "2025-09-13T02:47:08.096856"
 }
