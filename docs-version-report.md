@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 131
-- 近7天变更: 13
+- 近7天变更: 8
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-09-13 02:47:08
+- 最后扫描: 2025-09-14 03:02:22
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.26 → 1.0.27) - 2025-09-14
 - **MODIFIED**: docs-version-report.md (1.0.25 → 1.0.26) - 2025-09-13
 - **MODIFIED**: docs-version-report.md (1.0.24 → 1.0.25) - 2025-09-12
 - **MODIFIED**: docs-version-report.md (1.0.23 → 1.0.24) - 2025-09-11
@@ -16,9 +17,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.21 → 1.0.22) - 2025-09-09
 - **MODIFIED**: docs-version-report.md (1.0.20 → 1.0.21) - 2025-09-08
 - **MODIFIED**: docs-version-report.md (1.0.19 → 1.0.20) - 2025-09-07
-- **MODIFIED**: docs/zh/configuration/application-config.md (1.0.1 → 1.0.2) - 2025-09-06
-- **MODIFIED**: docs/en/deployment/production.md (1.0.1 → 1.0.2) - 2025-09-06
-- **MODIFIED**: docs/en/deployment/kubernetes.md (1.0.2 → 1.0.3) - 2025-09-06
 
 ## 依赖关系分析
 
@@ -455,7 +453,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.26 - 2025-09-13 (dbe39921)
+- **docs-version-report.md**: v1.0.27 - 2025-09-14 (b774babe)
 - **docs/zh/configuration/application-config.md**: v1.0.2 - 2025-09-06 (dbe39921)
 - **docs/en/deployment/production.md**: v1.0.2 - 2025-09-06 (dbe39921)
 - **docs/en/deployment/kubernetes.md**: v1.0.3 - 2025-09-06 (dbe39921)
