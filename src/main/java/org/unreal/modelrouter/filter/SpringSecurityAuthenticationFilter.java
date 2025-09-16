@@ -244,18 +244,20 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
      */
     private Mono<Void> createAuthenticationErrorResponse(ServerWebExchange exchange, String message, String errorCode) {
         ServerHttpResponse response = exchange.getResponse();
+        
+        // 检查响应是否已经提交
+        if (response.isCommitted()) {
+            log.warn("响应已提交，无法创建认证错误响应");
+            return Mono.empty();
+        }
+        
         response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
-        response.getHeaders().add(HttpHeaders.WWW_AUTHENTICATE, "Bearer realm=\"JAiRouter\"");
-        response.getHeaders().add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-
-        // 构造错误响应体
         String errorResponse = String.format(
                 "{\"error\": {\"message\": \"%s\", \"type\": \"authentication_error\", \"code\": \"%s\"}}",
                 message.replace("\"", "\\\""),
                 errorCode
         );
 
-        // 写入响应体
         return response.writeWith(Mono.just(response.bufferFactory().wrap(errorResponse.getBytes())))
                 .onErrorResume(throwable -> {
                     log.error("写入认证错误响应时发生异常: {}", throwable.getMessage(), throwable);
