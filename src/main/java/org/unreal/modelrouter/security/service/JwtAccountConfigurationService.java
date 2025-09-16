@@ -111,7 +111,19 @@ public class JwtAccountConfigurationService {
     public Mono<List<JwtUserProperties.UserAccount>> getAllAccounts() {
         return Mono.fromCallable(() -> {
             log.debug("获取所有JWT账户");
-            return new ArrayList<>(jwtUserProperties.getAccounts());
+            // 优先从持久化配置中获取账户列表，如果不存在则使用默认配置
+            try {
+                Map<String, Object> currentConfig = getCurrentPersistedAccountConfig();
+                List<JwtUserProperties.UserAccount> accounts = getAccountsFromConfig(currentConfig);
+                if (accounts != null && !accounts.isEmpty()) {
+                    return accounts;
+                }
+            } catch (Exception e) {
+                log.warn("从持久化配置获取账户列表失败，使用默认配置", e);
+            }
+            // 回退到默认配置
+            List<JwtUserProperties.UserAccount> accounts = jwtUserProperties.getAccounts();
+            return accounts != null ? new ArrayList<>(accounts) : new ArrayList<>();
         });
     }
 

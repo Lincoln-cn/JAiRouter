@@ -247,8 +247,11 @@ public class DefaultTracingContext implements TracingContext {
                             builder.put(AttributeKey.doubleKey(k), (Double) v);
                         } else if (v instanceof Boolean) {
                             builder.put(AttributeKey.booleanKey(k), (Boolean) v);
-                        } else {
+                        } else if (v != null) {
                             builder.put(AttributeKey.stringKey(k), v.toString());
+                        } else {
+                            // 处理null值情况
+                            builder.put(AttributeKey.stringKey(k), "null");
                         }
                     });
                     currentSpan.addEvent(name, builder.build());

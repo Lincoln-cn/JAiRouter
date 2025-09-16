@@ -429,10 +429,14 @@ public class TracingService {
             // 响应时间
             span.setAttribute("http.response_time_ms", duration);
             
-            // 响应大小
-            if (exchange.getResponse().getHeaders().getContentLength() > 0) {
-                span.setAttribute("http.response_content_length", 
-                        exchange.getResponse().getHeaders().getContentLength());
+            // 安全地获取响应大小，避免修改headers
+            try {
+                long contentLength = exchange.getResponse().getHeaders().getContentLength();
+                if (contentLength > 0) {
+                    span.setAttribute("http.response_content_length", contentLength);
+                }
+            } catch (Exception e) {
+                log.debug("获取响应大小时发生错误", e);
             }
         } catch (Exception e) {
             log.debug("设置HTTP响应属性时发生错误", e);

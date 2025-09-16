@@ -234,6 +234,11 @@ public class TracingConfiguration {
          * 是否捕获HTTP头部
          */
         private boolean captureHeaders = true;
+        
+        /**
+         * 是否在错误日志中包含堆栈跟踪信息
+         */
+        private boolean includeStackTrace = true;
     }
     
     /**
