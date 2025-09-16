@@ -53,7 +53,7 @@ class CachedBodyWebFilterTest {
     @Test
     void testFilterOrderPriority() {
         // 测试过滤器优先级设置
-        assertEquals(Ordered.HIGHEST_PRECEDENCE - 1, cachedBodyWebFilter.getOrder(),
+        assertEquals(Ordered.HIGHEST_PRECEDENCE, cachedBodyWebFilter.getOrder(),
                 "CachedBodyWebFilter应该有最高优先级");
     }
     

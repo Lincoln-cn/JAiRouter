@@ -82,15 +82,9 @@ public class ApiKeyInfo {
      * 检查API Key是否有效（启用且未过期）
      * @return 是否有效
      */
-    @JsonProperty("valid")
+    @JsonIgnore
     public boolean isValid() {
         return enabled && !isExpired();
-    }
-    
-    // 用于反序列化valid字段的setter方法（无实际作用，仅用于兼容旧数据）
-    @JsonProperty("valid")
-    public void setValid(boolean valid) {
-        // 仅用于反序列化，实际值由enabled和expiresAt字段计算得出
     }
     
     /**

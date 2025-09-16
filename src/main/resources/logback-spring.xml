@@ -220,6 +220,15 @@
 
     <!-- 特殊组件日志配置 -->
     
+    <!-- 屏蔽特定的UnsupportedOperationException异常日志 -->
+    <logger name="org.unreal.modelrouter.tracing.logger.DefaultStructuredLogger" level="WARN" additivity="false">
+        <appender-ref ref="ASYNC_STRUCTURED"/>
+        <!-- 移除了错误的过滤器配置，因为TurboFilter是全局的 -->
+    </logger>
+    
+    <!-- 在根日志记录器中也添加过滤器，确保所有日志都屏蔽该异常 -->
+    <turboFilter class="org.unreal.modelrouter.config.LoggingFilterConfiguration$ReadOnlyHttpHeadersExceptionFilter"/>
+    
     <!-- 限流器日志 - 生产环境降级 -->
     <springProfile name="prod">
         <logger name="org.unreal.modelrouter.ratelimit" level="ERROR"/>

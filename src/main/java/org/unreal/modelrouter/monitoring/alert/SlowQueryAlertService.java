@@ -87,7 +87,18 @@ public class SlowQueryAlertService {
         if (slowQueryDetector == null) {
             // 使用ApplicationContextProvider获取SlowQueryDetector实例
             try {
+                // 检查ApplicationContext是否已初始化且已刷新
+                if (!ApplicationContextProvider.isInitialized()) {
+                    logger.debug("ApplicationContext尚未初始化，无法获取SlowQueryDetector实例");
+                    return null;
+                }
+                
+                // 尝试获取Bean
                 slowQueryDetector = ApplicationContextProvider.getBean(SlowQueryDetector.class);
+            } catch (IllegalStateException e) {
+                // ApplicationContext尚未刷新
+                logger.debug("ApplicationContext尚未刷新，无法获取SlowQueryDetector实例: {}", e.getMessage());
+                return null;
             } catch (Exception e) {
                 logger.error("无法从ApplicationContextProvider获取SlowQueryDetector实例", e);
                 return null;

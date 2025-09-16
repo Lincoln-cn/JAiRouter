@@ -62,7 +62,11 @@ public class SecurityTracingIntegration {
                     log.debug("记录认证成功事件: 用户={}, 方法={}, IP={} (traceId: {})", 
                             authentication.getName(), authMethod, clientIp, context.getTraceId());
                 })
-                .then();
+                .then()
+                .onErrorResume(error -> {
+                    log.debug("记录认证成功事件时发生错误，忽略并继续: {}", error.getMessage());
+                    return Mono.empty();
+                });
     }
     
     /**
@@ -99,7 +103,11 @@ public class SecurityTracingIntegration {
                     log.debug("记录认证失败事件: 用户={}, 原因={}, IP={} (traceId: {})", 
                             user, reason, clientIp, context.getTraceId());
                 })
-                .then();
+                .then()
+                .onErrorResume(error -> {
+                    log.debug("记录认证失败事件时发生错误，忽略并继续: {}", error.getMessage());
+                    return Mono.empty();
+                });
     }
     
     /**
@@ -128,7 +136,11 @@ public class SecurityTracingIntegration {
                     log.debug("记录授权成功事件: 用户={}, 资源={}, IP={} (traceId: {})", 
                             authentication.getName(), resource, clientIp, context.getTraceId());
                 })
-                .then();
+                .then()
+                .onErrorResume(error -> {
+                    log.debug("记录授权成功事件时发生错误，忽略并继续: {}", error.getMessage());
+                    return Mono.empty();
+                });
     }
     
     /**
@@ -172,7 +184,11 @@ public class SecurityTracingIntegration {
                     log.debug("记录授权失败事件: 用户={}, 资源={}, 原因={}, IP={} (traceId: {})", 
                             user, resource, reason, clientIp, context.getTraceId());
                 })
-                .then();
+                .then()
+                .onErrorResume(error -> {
+                    log.debug("记录授权失败事件时发生错误，忽略并继续: {}", error.getMessage());
+                    return Mono.empty();
+                });
     }
     
     /**
@@ -200,7 +216,11 @@ public class SecurityTracingIntegration {
                     log.debug("记录安全配置变更: 类型={}, 动作={}, 操作者={} (traceId: {})", 
                             configType, action, operator, context.getTraceId());
                 })
-                .then();
+                .then()
+                .onErrorResume(error -> {
+                    log.debug("记录安全配置变更事件时发生错误，忽略并继续: {}", error.getMessage());
+                    return Mono.empty();
+                });
     }
     
     /**
@@ -228,7 +248,11 @@ public class SecurityTracingIntegration {
                     log.debug("记录数据脱敏事件: 字段={}, 动作={}, 规则={} (traceId: {})", 
                             field, action, ruleId, context.getTraceId());
                 })
-                .then();
+                .then()
+                .onErrorResume(error -> {
+                    log.debug("记录数据脱敏事件时发生错误，忽略并继续: {}", error.getMessage());
+                    return Mono.empty();
+                });
     }
     
     /**
