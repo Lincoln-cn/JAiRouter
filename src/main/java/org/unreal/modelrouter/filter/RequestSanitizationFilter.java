@@ -75,12 +75,6 @@ public class RequestSanitizationFilter implements WebFilter {
             return chain.filter(exchange);
         }
 
-        // 特别处理：如果是multipart请求，直接跳过以避免破坏边界信息
-        if (isMultipartRequest(request)) {
-            log.debug("跳过multipart请求脱敏处理，避免破坏边界信息: {}", path);
-            return chain.filter(exchange);
-        }
-
         // 检查用户是否在白名单中
         String userId = getUserId(exchange);
         if (userId != null) {
@@ -136,8 +130,13 @@ public class RequestSanitizationFilter implements WebFilter {
                                     DataBuffer sanitizedBuffer = bufferFactory.wrap(
                                             sanitizedContent.getBytes(StandardCharsets.UTF_8));
 
-                                    // 创建装饰后的请求 - 谨慎处理headers
-                                    ServerHttpRequest decoratedRequest = new SanitizedRequestDecorator(request, sanitizedBuffer, sanitizedContent);
+                                    // 创建装饰后的请求 - 不处理headers
+                                    ServerHttpRequest decoratedRequest = new ServerHttpRequestDecorator(request) {
+                                        @Override
+                                        public Flux<DataBuffer> getBody() {
+                                            return Flux.just(sanitizedBuffer);
+                                        }
+                                    };
 
                                     // 继续处理链
                                     return chain.filter(exchange.mutate().request(decoratedRequest).build());
@@ -183,64 +182,6 @@ public class RequestSanitizationFilter implements WebFilter {
     }
 
     /**
-     * 自定义请求装饰器 - 谨慎处理headers以避免破坏multipart边界
-     */
-    private static class SanitizedRequestDecorator extends ServerHttpRequestDecorator {
-        private final DataBuffer sanitizedBody;
-        private final String sanitizedContent;
-
-        public SanitizedRequestDecorator(ServerHttpRequest delegate, DataBuffer sanitizedBody, String sanitizedContent) {
-            super(delegate);
-            this.sanitizedBody = sanitizedBody;
-            this.sanitizedContent = sanitizedContent;
-        }
-
-        @Override
-        public Flux<DataBuffer> getBody() {
-            return Flux.just(sanitizedBody);
-        }
-
-        @Override
-        public HttpHeaders getHeaders() {
-            // 获取原始headers
-            HttpHeaders originalHeaders = super.getHeaders();
-            
-            // 检查是否为只读headers
-            if (originalHeaders.getClass().getSimpleName().equals("ReadOnlyHttpHeaders")) {
-                // 对于只读headers，创建新的HttpHeaders实例
-                HttpHeaders newHeaders = new HttpHeaders();
-                newHeaders.putAll(originalHeaders);
-                
-                // 只更新Content-Length，不修改其他关键头信息（如Content-Type中的boundary）
-                byte[] contentBytes = sanitizedContent.getBytes(StandardCharsets.UTF_8);
-                newHeaders.setContentLength(contentBytes.length);
-                
-                return newHeaders;
-            } else {
-                // 对于可修改的headers，直接修改
-                HttpHeaders headers = new HttpHeaders();
-                headers.putAll(originalHeaders);
-
-                // 只更新Content-Length，不修改其他关键头信息（如Content-Type中的boundary）
-                byte[] contentBytes = sanitizedContent.getBytes(StandardCharsets.UTF_8);
-                headers.setContentLength(contentBytes.length);
-
-                return headers;
-            }
-        }
-    }
-
-    /**
-     * 检查是否为multipart请求
-     */
-    private boolean isMultipartRequest(ServerHttpRequest request) {
-        MediaType contentType = request.getHeaders().getContentType();
-        return contentType != null &&
-                (contentType.isCompatibleWith(MediaType.MULTIPART_FORM_DATA) ||
-                        contentType.getType().equals("multipart"));
-    }
-
-    /**
      * 检查是否为排除的路径
      */
     private boolean isExcludedPath(String path) {
@@ -257,23 +198,15 @@ public class RequestSanitizationFilter implements WebFilter {
     }
 
     /**
-     * 检查是否应该对该内容类型进行脱敏
+     * 检查是否应该对该内容类型进行脱敏 - 只处理JSON
      */
     private boolean shouldSanitizeContentType(String contentType) {
         if (contentType == null) {
             return false;
         }
 
-        // 排除multipart类型，避免破坏边界信息
-        if (contentType.startsWith("multipart/")) {
-            return false;
-        }
-
-        // 主要处理文本类型的内容
-        return contentType.startsWith("application/json") ||
-                contentType.startsWith("application/xml") ||
-                contentType.startsWith("text/") ||
-                contentType.startsWith("application/x-www-form-urlencoded");
+        // 只处理JSON类型
+        return contentType.startsWith("application/json");
     }
 
     /**
@@ -364,16 +297,28 @@ public class RequestSanitizationFilter implements WebFilter {
      * 处理脱敏失败
      */
     private Mono<Void> handleSanitizationFailure(ServerWebExchange exchange, SanitizationException ex) {
-        exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.BAD_REQUEST);
-        exchange.getResponse().getHeaders().add("Content-Type", "application/json;charset=UTF-8");
+        org.springframework.http.server.reactive.ServerHttpResponse response = exchange.getResponse();
+        
+        // 检查响应是否已经提交
+        if (response.isCommitted()) {
+            log.warn("响应已提交，无法处理脱敏失败");
+            return Mono.empty();
+        }
+        
+        response.setStatusCode(org.springframework.http.HttpStatus.BAD_REQUEST);
+        
+        // 安全地设置响应头，避免重复设置
+        if (!response.getHeaders().containsKey("Content-Type")) {
+            response.getHeaders().add("Content-Type", "application/json;charset=UTF-8");
+        }
 
         String errorResponse = String.format(
                 "{\"error\":\"%s\",\"message\":\"%s\",\"timestamp\":\"%s\"}",
-                ex.getErrorCode(), ex.getMessage(), LocalDateTime.now()
+                ex.getErrorCode(), ex.getMessage(), java.time.LocalDateTime.now()
         );
 
-        return exchange.getResponse().writeWith(
-                Mono.just(exchange.getResponse().bufferFactory().wrap(errorResponse.getBytes()))
+        return response.writeWith(
+                Mono.just(response.bufferFactory().wrap(errorResponse.getBytes()))
         );
     }
 }

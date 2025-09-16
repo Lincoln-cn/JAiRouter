@@ -31,8 +31,16 @@ public class ReactiveTracingContextHolder {
     public static Mono<TracingContext> getCurrentContext() {
         return Mono.deferContextual(contextView -> {
             try {
-                TracingContext context = contextView.get(TracingConstants.ContextKeys.TRACING_CONTEXT);
-                return Mono.just(context);
+                if (contextView.hasKey(TracingConstants.ContextKeys.TRACING_CONTEXT)) {
+                    TracingContext context = contextView.get(TracingConstants.ContextKeys.TRACING_CONTEXT);
+                    return Mono.just(context);
+                } else {
+                    // 只在调试级别记录，避免生产环境日志过多
+                    if (log.isDebugEnabled()) {
+                        log.debug("Reactor上下文中不包含追踪上下文键: {}", TracingConstants.ContextKeys.TRACING_CONTEXT);
+                    }
+                    return Mono.empty();
+                }
             } catch (Exception e) {
                 log.debug("从Reactor上下文中获取追踪上下文失败", e);
                 return Mono.empty();
@@ -200,6 +208,12 @@ public class ReactiveTracingContextHolder {
     public static <T> Mono<T> withCurrentContext(java.util.function.Function<TracingContext, Mono<T>> operation) {
         return getCurrentContext()
                 .flatMap(operation)
-                .switchIfEmpty(Mono.defer(() -> operation.apply(null)));
+                .switchIfEmpty(Mono.defer(() -> {
+                    // 当没有追踪上下文时，仍然执行操作但传入null
+                    if (log.isDebugEnabled()) {
+                        log.debug("在没有追踪上下文的情况下执行操作");
+                    }
+                    return operation.apply(null);
+                }));
     }
 }

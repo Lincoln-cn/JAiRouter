@@ -157,6 +157,11 @@ jairouter:
       # 生产环境错误跟踪配置
       error-tracking:
         enabled: ${PROD_ERROR_TRACKING_ENABLED:true}
+  
+  # 生产环境追踪配置
+  tracing:
+    logging:
+      include-stack-trace: false  # 生产环境不记录堆栈跟踪到结构化日志
     
     # 生产环境性能配置
     performance:

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
@@ -51,7 +52,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
         ServerHttpResponse response = exchange.getResponse();
-        logger.error("响应状态: committed={}, status={}", response.isCommitted(), response.getStatusCode());
+        logger.debug("响应状态: committed={}, status={}", response.isCommitted(), response.getStatusCode());
 
         // 如果响应已经提交，直接返回
         if (response.isCommitted()) {
@@ -151,10 +152,16 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      */
     private Mono<Void> setResponse(ServerHttpResponse response, RouterResponse<Void> errorResponse, HttpStatus status) {
         try {
+            // 检查响应是否已提交
+            if (response.isCommitted()) {
+                logger.warn("响应已提交，无法设置错误响应");
+                return Mono.empty();
+            }
+            
             // 设置状态码
             response.setStatusCode(status);
             
-            // 安全地设置响应头
+            // 安全地设置响应头，避免重复设置
             if (!response.getHeaders().containsKey("Content-Type")) {
                 response.getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
             }
@@ -163,9 +170,10 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             String jsonResponse = objectMapper.writeValueAsString(errorResponse);
             DataBuffer buffer = response.bufferFactory().wrap(jsonResponse.getBytes());
             
-            // 检查响应是否已提交
+            // 再次检查响应是否已提交
             if (response.isCommitted()) {
                 logger.warn("响应已提交，无法写入错误信息");
+                DataBufferUtils.release(buffer);
                 return Mono.empty();
             }
             
@@ -267,8 +275,22 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         
         try {
             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            
+            // 安全地设置响应头，避免重复设置
+            if (!response.getHeaders().containsKey("Content-Type")) {
+                response.getHeaders().add("Content-Type", MediaType.APPLICATION_JSON_VALUE);
+            }
+            
             String simpleError = "{\"success\":false,\"message\":\"Internal Server Error\",\"code\":\"500\"}";
             DataBuffer buffer = response.bufferFactory().wrap(simpleError.getBytes());
+            
+            // 再次检查响应是否已提交
+            if (response.isCommitted()) {
+                logger.warn("响应已提交，无法写入简单错误信息");
+                DataBufferUtils.release(buffer);
+                return Mono.empty();
+            }
+            
             return response.writeWith(Mono.just(buffer));
         } catch (Exception e) {
             logger.error("设置简单错误响应也失败了", e);
