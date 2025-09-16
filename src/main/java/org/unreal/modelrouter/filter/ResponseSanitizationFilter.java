@@ -14,7 +14,6 @@ import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationService;
@@ -66,6 +65,12 @@ public class ResponseSanitizationFilter implements WebFilter {
         ServerHttpResponseDecorator decoratedResponse = new ServerHttpResponseDecorator(originalResponse) {
             @Override
             public Mono<Void> writeWith(org.reactivestreams.Publisher<? extends DataBuffer> body) {
+                // 检查响应是否已经提交
+                if (getDelegate().isCommitted()) {
+                    log.warn("响应已提交，跳过脱敏处理");
+                    return super.writeWith(body);
+                }
+                
                 // 检查是否需要处理响应内容
                 String contentType = getResponseContentType();
                 if (!shouldSanitizeContentType(contentType)) {
@@ -89,6 +94,14 @@ public class ResponseSanitizationFilter implements WebFilter {
                                             recordSanitizationEvent(request, contentType, 
                                                                    !originalContent.equals(sanitizedContent));
                                             
+                                            // 检查响应是否已经提交
+                                            if (getDelegate().isCommitted()) {
+                                                log.warn("响应已提交，无法写入脱敏后的内容");
+                                                // 释放缓冲区并返回空
+                                                DataBufferUtils.release(dataBuffer);
+                                                return Mono.empty();
+                                            }
+                                            
                                             // 创建新的响应体
                                             DataBufferFactory bufferFactory = originalResponse.bufferFactory();
                                             DataBuffer sanitizedBuffer = bufferFactory.wrap(
@@ -105,6 +118,12 @@ public class ResponseSanitizationFilter implements WebFilter {
                                                 return handleSanitizationFailure(ex);
                                             } else {
                                                 log.warn("响应脱敏失败但配置为继续处理，返回原始内容: {}", ex.getMessage());
+                                                // 检查响应是否已经提交
+                                                if (getDelegate().isCommitted()) {
+                                                    log.warn("响应已提交，无法写入原始内容");
+                                                    DataBufferUtils.release(dataBuffer);
+                                                    return Mono.empty();
+                                                }
                                                 // 重新创建原始内容的DataBuffer
                                                 DataBufferFactory bufferFactory = originalResponse.bufferFactory();
                                                 DataBuffer originalBuffer = bufferFactory.wrap(originalBytes);
@@ -127,6 +146,12 @@ public class ResponseSanitizationFilter implements WebFilter {
                                                         new SanitizationException("响应脱敏过程中发生未知错误", ex, 
                                                                 SanitizationException.CONTENT_PROCESSING_FAILED));
                                             } else {
+                                                // 检查响应是否已经提交
+                                                if (getDelegate().isCommitted()) {
+                                                    log.warn("响应已提交，无法写入原始内容");
+                                                    DataBufferUtils.release(dataBuffer);
+                                                    return Mono.empty();
+                                                }
                                                 // 返回原始内容
                                                 DataBufferFactory bufferFactory = originalResponse.bufferFactory();
                                                 DataBuffer originalBuffer = bufferFactory.wrap(originalBytes);
@@ -157,22 +182,6 @@ public class ResponseSanitizationFilter implements WebFilter {
                     return "application/octet-stream";
                 }
             }
-            
-            @Override
-            public HttpHeaders getHeaders() {
-                // 获取原始headers
-                HttpHeaders originalHeaders = super.getHeaders();
-                
-                // 检查是否为只读headers
-                if (originalHeaders.getClass().getSimpleName().equals("ReadOnlyHttpHeaders")) {
-                    // 对于只读headers，创建新的HttpHeaders实例
-                    HttpHeaders newHeaders = new HttpHeaders();
-                    newHeaders.putAll(originalHeaders);
-                    return newHeaders;
-                } else {
-                    return originalHeaders;
-                }
-            }
         };
         
         // 使用装饰后的响应继续处理链
@@ -195,11 +204,8 @@ public class ResponseSanitizationFilter implements WebFilter {
             return false;
         }
         
-        // 主要处理文本类型的内容
-        return contentType.startsWith("application/json") ||
-               contentType.startsWith("application/xml") ||
-               contentType.startsWith("text/") ||
-               contentType.startsWith("application/x-www-form-urlencoded");
+        // 只处理JSON类型的内容
+        return contentType.startsWith("application/json");
     }
     
     /**

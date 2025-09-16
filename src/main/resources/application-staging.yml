@@ -168,3 +168,8 @@ jairouter:
           jwt-blacklist:
             max-size: 50000
             expire-after-write: 86400
+  
+  # 预发布环境追踪配置
+  tracing:
+    logging:
+      include-stack-trace: false  # 预发布环境不记录堆栈跟踪到结构化日志

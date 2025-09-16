@@ -284,10 +284,12 @@ public class DefaultStructuredLogger implements StructuredLogger {
             fields.put("errorType", error.getClass().getSimpleName());
             fields.put("errorMessage", error.getMessage());
             
-            // 堆栈信息（截断处理）
-            String stackTrace = getStackTrace(error);
-            if (stackTrace != null) {
-                fields.put("stackTrace", stackTrace);
+            // 堆栈信息（截断处理）- 仅在配置允许时记录
+            if (tracingConfiguration.getLogging().isIncludeStackTrace()) {
+                String stackTrace = getStackTrace(error);
+                if (stackTrace != null) {
+                    fields.put("stackTrace", stackTrace);
+                }
             }
             
             // 额外信息

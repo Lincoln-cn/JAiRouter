@@ -55,6 +55,7 @@ jairouter:
       log-response-body: false
       redact-patterns: []
       custom-fields: {}
+      include-stack-trace: false
     
     # 导出器配置
     exporter:
