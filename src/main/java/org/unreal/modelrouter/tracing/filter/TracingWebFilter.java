@@ -214,10 +214,14 @@ public class TracingWebFilter implements WebFilter, Ordered {
                 }
             }
             
-            // 响应大小
-            long contentLength = response.getHeaders().getContentLength();
-            if (contentLength > 0) {
-                currentSpan.setAttribute(TracingConstants.HttpAttributes.RESPONSE_SIZE, contentLength);
+            // 响应大小（安全地获取，避免修改headers）
+            try {
+                long contentLength = response.getHeaders().getContentLength();
+                if (contentLength > 0) {
+                    currentSpan.setAttribute(TracingConstants.HttpAttributes.RESPONSE_SIZE, contentLength);
+                }
+            } catch (Exception e) {
+                log.debug("获取响应大小时发生错误", e);
             }
             
             // 响应时间
