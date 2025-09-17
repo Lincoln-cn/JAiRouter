@@ -74,11 +74,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getServiceInstances, getServiceTypes } from '@/api/dashboard'
 
 // 服务类型
-const serviceTypes = ref(['chat', 'embedding', 'rerank', 'tts', 'stt'])
+const serviceTypes = ref<string[]>([])
 
 // 当前激活的服务类型
 const activeServiceType = ref('chat')
@@ -93,19 +94,8 @@ interface ServiceInstance {
   status: 'active' | 'inactive'
 }
 
-// 模拟数据
-const instances = ref<Record<string, ServiceInstance[]>>({
-  chat: [
-    { id: 1, serviceType: 'chat', name: 'Ollama Chat', baseUrl: 'http://localhost:11434', weight: 50, status: 'active' },
-    { id: 2, serviceType: 'chat', name: 'VLLM Chat', baseUrl: 'http://localhost:8000', weight: 30, status: 'active' }
-  ],
-  embedding: [
-    { id: 3, serviceType: 'embedding', name: 'Ollama Embedding', baseUrl: 'http://localhost:11434', weight: 40, status: 'active' }
-  ],
-  rerank: [],
-  tts: [],
-  stt: []
-})
+// 实例数据
+const instances = ref<Record<string, any[]>>({})
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
@@ -119,6 +109,47 @@ const form = ref<ServiceInstance>({
   weight: 1,
   status: 'active'
 })
+
+// 监听服务类型变化，获取对应实例数据
+watch(activeServiceType, (newServiceType) => {
+  if (newServiceType && !instances.value[newServiceType]) {
+    fetchServiceInstances(newServiceType)
+  }
+})
+
+// 获取服务类型列表
+const fetchServiceTypes = async () => {
+  try {
+    const response = await getServiceTypes()
+    if (response.data?.success) {
+      serviceTypes.value = response.data.data || []
+      if (serviceTypes.value.length > 0) {
+        activeServiceType.value = serviceTypes.value[0]
+        // 获取第一个服务类型的实例数据
+        fetchServiceInstances(serviceTypes.value[0])
+      }
+    }
+  } catch (error) {
+    console.error('获取服务类型失败:', error)
+    ElMessage.error('获取服务类型失败')
+  }
+}
+
+// 获取指定服务类型的实例列表
+const fetchServiceInstances = async (serviceType: string) => {
+  try {
+    const response = await getServiceInstances(serviceType)
+    if (response.data?.success) {
+      instances.value[serviceType] = response.data.data || []
+    } else {
+      instances.value[serviceType] = []
+    }
+  } catch (error) {
+    console.error(`获取${serviceType}服务实例失败:`, error)
+    instances.value[serviceType] = []
+    ElMessage.error(`获取${serviceType}服务实例失败`)
+  }
+}
 
 // 添加实例
 const handleAddInstance = () => {
@@ -136,7 +167,7 @@ const handleAddInstance = () => {
 }
 
 // 编辑实例
-const handleEdit = (row: ServiceInstance) => {
+const handleEdit = (row: any) => {
   dialogTitle.value = '编辑实例'
   isEdit.value = true
   form.value = { ...row }
@@ -144,13 +175,13 @@ const handleEdit = (row: ServiceInstance) => {
 }
 
 // 删除实例
-const handleDelete = (row: ServiceInstance) => {
+const handleDelete = (row: any) => {
   ElMessageBox.confirm('确定要删除该实例吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    instances.value[row.serviceType] = instances.value[row.serviceType].filter(instance => instance.id !== row.id)
+    instances.value[row.serviceType] = instances.value[row.serviceType].filter((instance: any) => instance.id !== row.id)
     ElMessage.success('删除成功')
   })
 }
@@ -159,13 +190,13 @@ const handleDelete = (row: ServiceInstance) => {
 const handleSave = () => {
   if (isEdit.value) {
     // 编辑
-    const index = instances.value[form.value.serviceType].findIndex(instance => instance.id === form.value.id)
+    const index = instances.value[form.value.serviceType].findIndex((instance: any) => instance.id === form.value.id)
     if (index !== -1) {
       instances.value[form.value.serviceType][index] = { ...form.value }
     }
   } else {
     // 新增
-    const newInstance: ServiceInstance = {
+    const newInstance: any = {
       ...form.value,
       id: Date.now()
     }
@@ -181,8 +212,7 @@ const handleSave = () => {
 
 // 组件挂载时获取数据
 onMounted(() => {
-  // 这里可以调用API获取真实数据
-  console.log('获取实例管理数据')
+  fetchServiceTypes()
 })
 </script>
 
