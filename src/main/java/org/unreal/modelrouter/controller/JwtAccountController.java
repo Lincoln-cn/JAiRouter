@@ -90,10 +90,11 @@ public class JwtAccountController {
         log.info("创建JWT账户: {}", request.getUsername());
         
         return accountConfigurationService.createAccount(jwtUserProperties.convertToAccount(request))
-                .then(Mono.just(RouterResponse.success("JWT账户创建成功: " + request.getUsername())))
+                .then(Mono.fromRunnable(() -> {}))
+                .then(Mono.just(RouterResponse.<Void>success("JWT账户创建成功: " + request.getUsername())))
                 .onErrorResume(ex -> {
                     log.error("创建JWT账户失败: " + request.getUsername(), ex);
-                    return Mono.just(RouterResponse.error("创建JWT账户失败: " + ex.getMessage(), "ACCOUNT_CREATE_ERROR"));
+                    return Mono.just(RouterResponse.<Void>error("创建JWT账户失败: " + ex.getMessage(), "ACCOUNT_CREATE_ERROR"));
                 });
     }
 
@@ -108,10 +109,11 @@ public class JwtAccountController {
         log.info("更新JWT账户: {}", username);
         
         return accountConfigurationService.updateAccount(username, jwtUserProperties.convertToAccount(request))
-                .then(Mono.just(RouterResponse.success("JWT账户更新成功: " + username)))
+                .then(Mono.fromRunnable(() -> {}))
+                .then(Mono.just(RouterResponse.<Void>success("JWT账户更新成功: " + username)))
                 .onErrorResume(ex -> {
                     log.error("更新JWT账户失败: " + username, ex);
-                    return Mono.just(RouterResponse.error("更新JWT账户失败: " + ex.getMessage(), "ACCOUNT_UPDATE_ERROR"));
+                    return Mono.just(RouterResponse.<Void>error("更新JWT账户失败: " + ex.getMessage(), "ACCOUNT_UPDATE_ERROR"));
                 });
     }
 
@@ -124,10 +126,11 @@ public class JwtAccountController {
         log.info("删除JWT账户: {}", username);
         
         return accountConfigurationService.deleteAccount(username)
-                .then(Mono.just(RouterResponse.success("JWT账户删除成功: " + username)))
+                .then(Mono.fromRunnable(() -> {}))
+                .then(Mono.just(RouterResponse.<Void>success("JWT账户删除成功: " + username)))
                 .onErrorResume(ex -> {
                     log.error("删除JWT账户失败: " + username, ex);
-                    return Mono.just(RouterResponse.error("删除JWT账户失败: " + ex.getMessage(), "ACCOUNT_DELETE_ERROR"));
+                    return Mono.just(RouterResponse.<Void>error("删除JWT账户失败: " + ex.getMessage(), "ACCOUNT_DELETE_ERROR"));
                 });
     }
 
@@ -142,11 +145,12 @@ public class JwtAccountController {
         log.info("{}JWT账户: {}", enabled ? "启用" : "禁用", username);
         
         return accountConfigurationService.setAccountEnabled(username, enabled)
+                .then(Mono.fromRunnable(() -> {}))
                 .then(Mono.just(
-                        RouterResponse.success(String.format("JWT账户%s成功: %s", enabled ? "启用" : "禁用", username))))
+                        RouterResponse.<Void>success(String.format("JWT账户%s成功: %s", enabled ? "启用" : "禁用", username))))
                 .onErrorResume(ex -> {
                     log.error("{}JWT账户失败: {}", enabled ? "启用" : "禁用", username, ex);
-                    return Mono.just(RouterResponse.error(
+                    return Mono.just(RouterResponse.<Void>error(
                         String.format("JWT账户%s失败: %s", enabled ? "启用" : "禁用", ex.getMessage()), 
                         "ACCOUNT_STATUS_ERROR"));
                 });
@@ -165,10 +169,11 @@ public class JwtAccountController {
                 .toList();
         
         return accountConfigurationService.batchUpdateAccounts(accounts)
-                .then(Mono.just(RouterResponse.success("JWT账户批量更新成功，数量: " + requests.size())))
+                .then(Mono.fromRunnable(() -> {}))
+                .then(Mono.just(RouterResponse.<Void>success("JWT账户批量更新成功，数量: " + requests.size())))
                 .onErrorResume(ex -> {
                     log.error("批量更新JWT账户失败，数量: " + requests.size(), ex);
-                    return Mono.just(RouterResponse.error("批量更新JWT账户失败: " + ex.getMessage(), "ACCOUNT_BATCH_UPDATE_ERROR"));
+                    return Mono.just(RouterResponse.<Void>error("批量更新JWT账户失败: " + ex.getMessage(), "ACCOUNT_BATCH_UPDATE_ERROR"));
                 });
     }
 
@@ -218,10 +223,10 @@ public class JwtAccountController {
         log.info("应用JWT账户配置版本: {}", version);
         
         return Mono.fromRunnable(() -> accountConfigurationService.applyAccountVersion(version))
-                .then(Mono.just(RouterResponse.success("JWT账户配置版本应用成功: " + version)))
+                .then(Mono.just(RouterResponse.<Void>success("JWT账户配置版本应用成功: " + version)))
                 .onErrorResume(ex -> {
                     log.error("应用JWT账户配置版本失败: " + version, ex);
-                    return Mono.just(RouterResponse.error("应用JWT账户配置版本失败: " + ex.getMessage(), "VERSION_APPLY_ERROR"));
+                    return Mono.just(RouterResponse.<Void>error("应用JWT账户配置版本失败: " + ex.getMessage(), "VERSION_APPLY_ERROR"));
                 });
     }
 
@@ -248,10 +253,11 @@ public class JwtAccountController {
         log.info("重置JWT账户配置为默认值");
         
         return accountConfigurationService.resetAccountsToDefault()
-                .then(Mono.just(RouterResponse.success("JWT账户配置已重置为默认值")))
+                .then(Mono.fromRunnable(() -> {}))
+                .then(Mono.just(RouterResponse.<Void>success("JWT账户配置已重置为默认值")))
                 .onErrorResume(ex -> {
                     log.error("重置JWT账户配置为默认值失败", ex);
-                    return Mono.just(RouterResponse.error("重置JWT账户配置为默认值失败: " + ex.getMessage(), "RESET_DEFAULT_ERROR"));
+                    return Mono.just(RouterResponse.<Void>error("重置JWT账户配置为默认值失败: " + ex.getMessage(), "RESET_DEFAULT_ERROR"));
                 });
     }
 
