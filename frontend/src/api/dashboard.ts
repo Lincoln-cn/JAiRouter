@@ -1,11 +1,6 @@
 import request from '@/utils/request'
 import type { DashboardOverview, RouterResponse } from '@/types'
 
-// 获取Dashboard概览数据
-export const getDashboardOverview = () => {
-  return request.get<RouterResponse<DashboardOverview>>('/monitoring/overview')
-}
-
 // 获取服务统计信息
 export const getServiceStats = () => {
   return request.get<RouterResponse<Object>>('/models/stats')
@@ -28,7 +23,7 @@ export const getSystemHealth = () => {
 
 // 获取监控概览
 export const getMonitoringOverview = () => {
-  return request.get<RouterResponse<any>>('/monitoring/overview')
+  return request.get<RouterResponse<DashboardOverview>>('/monitoring/overview')
 }
 
 // 获取所有服务配置信息
