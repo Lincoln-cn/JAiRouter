@@ -135,7 +135,7 @@ public class ApiKeyManagementController {
     public Mono<RouterResponse<Void>> deleteApiKey(
             @Parameter(description = "API密钥ID") @PathVariable String keyId) {
         return apiKeyService.deleteApiKey(keyId)
-                .then(Mono.just(RouterResponse.success("删除API密钥成功")))
+                .then(Mono.just(RouterResponse.success((Void) null, "删除API密钥成功")))
                 .onErrorReturn(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
     }
 

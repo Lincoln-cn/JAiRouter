@@ -45,11 +45,12 @@ public class RouterResponse<T> {
         return success(data, "操作成功");
     }
 
-    public static RouterResponse<Void> success() {
+    // 将无参 success 和 带 message 的 success 改为泛型静态方法，避免与 success(T) 发生重载歧义
+    public static <T> RouterResponse<T> success() {
         return success(null, "操作成功");
     }
 
-    public static RouterResponse<Void> success(String message) {
+    public static <T> RouterResponse<T> success(String message) {
         return success(null, message);
     }
 
