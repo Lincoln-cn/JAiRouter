@@ -48,3 +48,4 @@ build/
 /.kiro/
 /scripts/docs copy/
 /site/
+app.log
