@@ -13,6 +13,10 @@
               <el-icon><Refresh /></el-icon>
               刷新
             </el-button>
+            <el-button @click="showConfigDialog = true">
+              <el-icon><Setting /></el-icon>
+              配置管理
+            </el-button>
           </div>
         </div>
       </template>
@@ -81,11 +85,99 @@
         </span>
       </template>
     </el-dialog>
+    
+    <!-- 配置管理对话框 -->
+    <el-dialog 
+      title="JWT账户配置管理" 
+      v-model="showConfigDialog" 
+      width="800px"
+      @close="closeConfigDialog"
+    >
+      <el-tabs v-model="configActiveTab">
+        <!-- 配置状态 -->
+        <el-tab-pane label="配置状态" name="status">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="是否存在持久化配置">
+              <el-tag :type="configStatus.hasPersistedConfig ? 'success' : 'info'">
+                {{ configStatus.hasPersistedConfig ? '是' : '否' }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="当前版本号">
+              <el-tag type="primary">{{ configStatus.currentVersion }}</el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="总版本数">
+              <el-tag type="primary">{{ configStatus.totalVersions }}</el-tag>
+            </el-descriptions-item>
+          </el-descriptions>
+          
+          <div style="margin-top: 20px; text-align: right;">
+            <el-button type="warning" @click="resetToDefault" :loading="resetLoading">
+              重置为默认配置
+            </el-button>
+          </div>
+        </el-tab-pane>
+        
+        <!-- 版本管理 -->
+        <el-tab-pane label="版本管理" name="versions">
+          <el-table :data="versions" style="width: 100%" v-loading="versionsLoading">
+            <el-table-column prop="version" label="版本号" width="100">
+              <template #default="scope">
+                <el-tag :type="scope.row.isCurrent ? 'success' : 'info'">
+                  {{ scope.row.version }} 
+                  <span v-if="scope.row.isCurrent">(当前)</span>
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="created" label="创建时间" width="200" />
+            <el-table-column label="操作">
+              <template #default="scope">
+                <el-button 
+                  size="small" 
+                  type="primary" 
+                  @click="viewVersionConfig(scope.row.version)"
+                >
+                  查看配置
+                </el-button>
+                <el-button 
+                  size="small" 
+                  :type="scope.row.isCurrent ? 'info' : 'success'"
+                  :disabled="scope.row.isCurrent"
+                  @click="applyVersion(scope.row.version)"
+                >
+                  应用此版本
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+        
+        <!-- 配置详情 -->
+        <el-tab-pane label="配置详情" name="config-detail" v-if="showConfigDetail">
+          <el-alert
+            title="配置详情"
+            type="info"
+            description="当前显示的是指定版本的JWT账户配置信息"
+            show-icon
+            style="margin-bottom: 20px;"
+          />
+          
+          <el-card>
+            <pre style="white-space: pre-wrap; word-wrap: break-word;">{{ versionConfigContent }}</pre>
+          </el-card>
+        </el-tab-pane>
+      </el-tabs>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showConfigDialog = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { 
@@ -93,15 +185,35 @@ import {
   createJwtAccount, 
   updateJwtAccount, 
   deleteJwtAccount, 
-  toggleJwtAccountStatus 
-} from '@/fetch/jwtAccount'
-import type { JwtAccount, CreateJwtAccountRequest } from '@/fetch/jwtAccount'
+  toggleJwtAccountStatus,
+  getJwtAccountVersions,
+  getJwtAccountVersionConfig,
+  applyJwtAccountVersion,
+  getCurrentJwtAccountVersion,
+  resetJwtAccountsToDefault,
+  getJwtAccountConfigStatus
+} from '@/api/account'
+import type { JwtAccount, CreateJwtAccountRequest, JwtAccountConfigStatus } from '@/api/account'
 
 // 数据状态
 const accounts = ref<JwtAccount[]>([])
 const loading = ref(false)
 const showCreateDialog = ref(false)
 const editingAccount = ref<JwtAccount | null>(null)
+
+// 配置管理状态
+const showConfigDialog = ref(false)
+const configActiveTab = ref('status')
+const configStatus = ref<JwtAccountConfigStatus>({
+  hasPersistedConfig: false,
+  currentVersion: 0,
+  totalVersions: 0
+})
+const versions = ref<Array<{version: number, isCurrent: boolean, created?: string}>>([])
+const versionsLoading = ref(false)
+const resetLoading = ref(false)
+const showConfigDetail = ref(false)
+const versionConfigContent = ref('')
 
 // 表单数据
 const accountForm = reactive<JwtAccount>({
@@ -238,9 +350,127 @@ const resetForm = () => {
   }
 }
 
+// ==================== 配置管理功能 ====================
+
+// 获取配置状态
+const fetchConfigStatus = async () => {
+  try {
+    configStatus.value = await getJwtAccountConfigStatus()
+  } catch (error) {
+    console.error('获取配置状态失败:', error)
+    ElMessage.error('获取配置状态失败')
+  }
+}
+
+// 获取版本列表
+const fetchVersions = async () => {
+  versionsLoading.value = true
+  try {
+    const versionNumbers = await getJwtAccountVersions()
+    const currentVersion = await getCurrentJwtAccountVersion()
+    
+    versions.value = versionNumbers.map(version => ({
+      version,
+      isCurrent: version === currentVersion,
+      created: new Date().toLocaleString() // 简化处理，实际应从后端获取创建时间
+    }))
+  } catch (error) {
+    console.error('获取版本列表失败:', error)
+    ElMessage.error('获取版本列表失败')
+  } finally {
+    versionsLoading.value = false
+  }
+}
+
+// 查看版本配置
+const viewVersionConfig = async (version: number) => {
+  try {
+    const config = await getJwtAccountVersionConfig(version)
+    versionConfigContent.value = JSON.stringify(config, null, 2)
+    showConfigDetail.value = true
+    configActiveTab.value = 'config-detail'
+  } catch (error) {
+    console.error('获取版本配置失败:', error)
+    ElMessage.error('获取版本配置失败')
+  }
+}
+
+// 应用版本
+const applyVersion = async (version: number) => {
+  ElMessageBox.confirm(
+    `确定要应用版本 ${version} 的配置吗？这将替换当前的账户配置。`,
+    '确认应用',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      await applyJwtAccountVersion(version)
+      ElMessage.success(`版本 ${version} 应用成功`)
+      // 刷新账户列表和配置状态
+      await fetchAccounts()
+      await fetchConfigStatus()
+      await fetchVersions()
+    } catch (error) {
+      console.error('应用版本失败:', error)
+      ElMessage.error('应用版本失败')
+    }
+  }).catch(() => {
+    // 用户取消
+  })
+}
+
+// 重置为默认配置
+const resetToDefault = () => {
+  ElMessageBox.confirm(
+    '确定要重置JWT账户配置为默认值吗？这将清除所有自定义的账户配置。',
+    '确认重置',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    resetLoading.value = true
+    try {
+      await resetJwtAccountsToDefault()
+      ElMessage.success('配置已重置为默认值')
+      // 刷新所有数据
+      await fetchAccounts()
+      await fetchConfigStatus()
+      await fetchVersions()
+    } catch (error) {
+      console.error('重置配置失败:', error)
+      ElMessage.error('重置配置失败')
+    } finally {
+      resetLoading.value = false
+    }
+  }).catch(() => {
+    // 用户取消
+  })
+}
+
+// 关闭配置对话框
+const closeConfigDialog = () => {
+  showConfigDialog.value = false
+  configActiveTab.value = 'status'
+  showConfigDetail.value = false
+  versionConfigContent.value = ''
+}
+
 // 组件挂载时获取账户列表
 onMounted(() => {
   fetchAccounts()
+})
+
+// 监听配置对话框打开事件
+watch(showConfigDialog, (newVal: boolean) => {
+  if (newVal) {
+    fetchConfigStatus()
+    fetchVersions()
+  }
 })
 </script>
 

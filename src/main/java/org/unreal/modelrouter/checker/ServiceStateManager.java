@@ -43,6 +43,18 @@ public class ServiceStateManager {
     }
 
     /**
+     * 获取特定实例的健康状态
+     *
+     * @param serviceType 服务类型
+     * @param instance    模型实例
+     * @return 实例是否健康
+     */
+    public boolean isInstanceHealthy(String serviceType, String instanceName , String baseUrl) {
+        String instanceKey = serviceType + ":" + instanceName + "@" + baseUrl;
+        return instanceHealthStatus.getOrDefault(instanceKey, true); // 默认认为是健康的
+    }
+
+    /**
      * 更新服务健康状态
      *
      * @param serviceType 服务类型

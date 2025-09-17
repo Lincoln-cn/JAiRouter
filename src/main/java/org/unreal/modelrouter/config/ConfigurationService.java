@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.tracing.config.SamplingConfigurationValidator;
 
 import java.util.*;
@@ -28,6 +29,7 @@ public class ConfigurationService {
     private final StoreManager storeManager;
     private final ConfigurationHelper configurationHelper;
     private final ConfigMergeService configMergeService;
+    private final ServiceStateManager serviceStateManager;
     private final SamplingConfigurationValidator samplingValidator;
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
 
@@ -35,10 +37,12 @@ public class ConfigurationService {
     public ConfigurationService(StoreManager storeManager,
                                 ConfigurationHelper configurationHelper,
                                 ConfigMergeService configMergeService,
+                                ServiceStateManager serviceStateManager,
                                 SamplingConfigurationValidator samplingValidator) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
+        this.serviceStateManager = serviceStateManager;
         this.samplingValidator = samplingValidator;
     }
 
@@ -127,10 +131,11 @@ public class ConfigurationService {
     public Map<String, Object> getAllConfigurations() {
         Map<String, Object> configs = configMergeService.getPersistedConfig();
 
-        // 为每个实例添加instanceId属性
+        // 为每个实例添加instanceId和health属性
         if (configs != null && configs.containsKey("services")) {
             Map<String, Object> services = (Map<String, Object>) configs.get("services");
             for (Map.Entry<String, Object> serviceEntry : services.entrySet()) {
+                String serviceType = serviceEntry.getKey();
                 Map<String, Object> serviceConfig = (Map<String, Object>) serviceEntry.getValue();
                 if (serviceConfig != null && serviceConfig.containsKey("instances")) {
                     List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.get("instances");
@@ -140,6 +145,10 @@ public class ConfigurationService {
                             String baseUrl = (String) instance.get("baseUrl");
                             String instanceId = name + "@" + baseUrl;
                             instance.put("instanceId", instanceId);
+                            
+                            // 添加健康状态信息，使用ServiceStateManager
+                            boolean isHealthy = serviceStateManager.isInstanceHealthy(serviceType, name, baseUrl);
+                            instance.put("health", isHealthy);
                         }
                     }
                 }
@@ -207,9 +216,20 @@ public class ConfigurationService {
         List<Map<String, Object>> instances = getServiceInstances(serviceType);
         return instances.stream()
                 .filter(instance -> instanceId.equals(buildInstanceId(instance)))
+                .map(instance -> {
+                    // 添加健康状态信息
+                    String baseUrl = (String) instance.get("baseUrl");
+                    String name = (String) instance.get("name");
+                    if (baseUrl != null && name != null) {
+                        boolean isHealthy = serviceStateManager.isInstanceHealthy(serviceType, name, baseUrl);
+                        instance.put("health", isHealthy);
+                    }
+                    return instance;
+                })
                 .findFirst()
                 .orElse(null);
     }
+
 
     // ==================== 服务管理操作 ====================
 
@@ -521,13 +541,13 @@ public class ConfigurationService {
     }
 
     /**
-     * 从配置中获取services部分
+     * 从配置中获取services部分，并添加健康状态信息
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> getServicesFromConfig(Map<String, Object> config) {
-        Object services = config.get("services");
-        if (services instanceof Map) {
-            return new HashMap<>((Map<String, Object>) services);
+        Object servicesObj = config.get("services");
+        if (servicesObj instanceof Map) {
+            return new HashMap<>((Map<String, Object>) servicesObj);
         }
         return new HashMap<>();
     }
