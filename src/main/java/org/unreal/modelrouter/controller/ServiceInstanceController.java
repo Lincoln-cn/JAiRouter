@@ -111,6 +111,8 @@ public class ServiceInstanceController {
     public ResponseEntity<RouterResponse<Void>> addServiceInstance(
             @Parameter(description = "服务类型", example = "chat")
             @PathVariable String serviceType,
+            @Parameter(description = "是否创建新版本", example = "false")
+            @RequestParam(defaultValue = "true") boolean createNewVersion,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "实例配置信息")
             @RequestBody ModelRouterProperties.ModelInstance instanceConfig) {
         try {
@@ -120,7 +122,7 @@ public class ServiceInstanceController {
                         .body(RouterResponse.error("实例baseUrl格式不正确"));
             }
             
-            configurationService.addServiceInstance(serviceType, instanceConfig);
+            configurationService.addServiceInstance(serviceType, instanceConfig, createNewVersion);
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(RouterResponse.success(null, "实例添加成功"));
         } catch (IllegalArgumentException e) {
@@ -146,6 +148,8 @@ public class ServiceInstanceController {
     public ResponseEntity<RouterResponse<Void>> updateServiceInstance(
             @Parameter(description = "服务类型", example = "chat")
             @PathVariable String serviceType,
+            @Parameter(description = "是否创建新版本", example = "false")
+            @RequestParam(defaultValue = "true") boolean createNewVersion,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "实例更新信息")
             @RequestBody UpdateInstanceDTO instanceConfig) {
         try {
@@ -157,7 +161,7 @@ public class ServiceInstanceController {
             
             // URL解码实例ID
             String decodedInstanceId = instanceConfig.getInstanceId();
-            configurationService.updateServiceInstance(serviceType, decodedInstanceId, instanceConfig.getInstance().covertTo());
+            configurationService.updateServiceInstance(serviceType, decodedInstanceId, instanceConfig.getInstance().covertTo(), createNewVersion);
             return ResponseEntity.ok(RouterResponse.success(null, "实例更新成功"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -182,6 +186,8 @@ public class ServiceInstanceController {
     public ResponseEntity<RouterResponse<Void>> deleteServiceInstance(
             @Parameter(description = "服务类型", example = "chat")
             @PathVariable String serviceType,
+            @Parameter(description = "是否创建新版本", example = "false")
+            @RequestParam(defaultValue = "true") boolean createNewVersion,
             @Parameter(description = "模型名称", example = "qwen2:7b")
             @RequestParam String modelName,
             @Parameter(description = "基础URL", example = "http://localhost:8000")
@@ -189,7 +195,7 @@ public class ServiceInstanceController {
         try {
             // URL解码实例ID
             String decodedInstanceId = buildInstanceId(modelName, baseUrl);
-            configurationService.deleteServiceInstance(serviceType, decodedInstanceId);
+            configurationService.deleteServiceInstance(serviceType, decodedInstanceId, createNewVersion);
             return ResponseEntity.ok(RouterResponse.success(null, "实例删除成功"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
