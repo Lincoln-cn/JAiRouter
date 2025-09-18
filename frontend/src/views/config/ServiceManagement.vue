@@ -95,7 +95,7 @@
               element-loading-text="加载中..."
               element-loading-background="rgba(0, 0, 0, 0.05)"
               class="service-table"
-              :row-key="row => row.type"
+              :row-key="rowKey"
               border
               fit
             >
@@ -180,7 +180,7 @@
         :model="form"
         label-width="140px"
         ref="formRef"
-        :rules="formRules"
+        :rules="rules"
         v-loading="dialogLoading"
       >
         <el-form-item label="服务类型" prop="type">
@@ -204,11 +204,21 @@
         </el-form-item>
 
         <el-form-item label="适配器" prop="adapter">
-          <el-input
+          <el-select
             v-model="form.adapter"
-            placeholder="请输入适配器名称，如：openai"
+            placeholder="请选择适配器"
             size="large"
-          />
+            style="width: 100%"
+            clearable
+            filterable
+          >
+            <el-option
+              v-for="adapter in adapters"
+              :key="adapter.name"
+              :label="adapter.name"
+              :value="adapter.name"
+            />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="负载均衡策略" prop="loadBalance.type">
@@ -246,69 +256,97 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed, watch } from 'vue'
-import { ElMessage, ElMessageBox, ElForm, ElNotification } from 'element-plus'
-import {
-  getServiceTypes,
-  getServiceConfig,
-  createService,
-  updateServiceConfig,
-  deleteService
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
+import { 
+  getServiceTypes, 
+  getAllServicesWithConfig, // 添加新导入
+  getServiceConfig, 
+  createService, 
+  updateServiceConfig, 
+  deleteService,
+  getAdapters
 } from '@/api/service'
 
-// 导入图标
-import { Setting, Plus, Edit, Delete, Search } from '@element-plus/icons-vue'
+// 支持的服务类型列表（保持原有）
+const supportedTypes = [
+  'chat', 'embedding', 'rerank', 'tts', 'stt', 'imgGen', 'imgEdit'
+]
 
-// 支持的服务类型（仅这些类型可添加）
-const supportedTypes = ['chat', 'embedding', 'imgEdit', 'imgGen', 'rerank', 'stt', 'tts']
-
-// 类型定义
+// 服务定义
 interface Service {
   type: string
   adapter: string
   loadBalanceType: string
   description?: string
 }
-interface ServiceConfig {
-  adapter?: string
-  loadBalance?: { type: string }
-  description?: string
+
+// 表单定义
+interface ServiceForm {
+  type: string
+  adapter: string
+  loadBalance: {
+    type: string
+  }
+  description: string
 }
 
-type FormInstance = InstanceType<typeof ElForm>
-const formRef = ref<FormInstance>()
-
+// 状态管理
+const services = ref<Service[]>([])
 const loading = ref(false)
 const dialogLoading = ref(false)
-const errorMessage = ref('')
-
-const services = ref<Service[]>([])
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const isEdit = ref(false)
-
-// 搜索过滤分页
+const errorMessage = ref('')
+const formRef = ref<FormInstance>()
 const searchQuery = ref('')
 const filterLoadBalance = ref('')
-const filterAdapter = ref('')
-const pageSize = ref(10)
+const filterAdapter = ref<string | undefined>(undefined)
 const currentPage = ref(1)
+const pageSize = ref(10)
 
-const formRules = {
-  type: [
-    { required: true, message: '请选择服务类型', trigger: 'change' }
-  ],
-  adapter: [{ required: false, message: '请输入适配器名称', trigger: 'blur' }],
-  'loadBalance.type': [
-    { required: true, message: '请选择负载均衡策略', trigger: 'change' }
-  ]
+// 服务类型映射（保持原有）
+const serviceTypeMap: Record<string, string> = {
+  chat: '聊天服务',
+  embedding: '嵌入服务',
+  rerank: '重排序服务',
+  tts: '文本转语音',
+  stt: '语音转文本',
+  imgGen: '图像生成',
+  imgEdit: '图像编辑服务'
 }
 
-const form = reactive({
+// 服务数据缓存
+const serviceCache = ref<Record<string, any>>({})
+// 适配器数据缓存
+const adaptersCache = ref<any[]>([])
+// 请求防抖定时器
+let fetchTimer: ReturnType<typeof setTimeout> | null = null
+
+// 表单数据
+const form = reactive<ServiceForm>({
   type: '',
   adapter: '',
   loadBalance: { type: 'random' },
   description: ''
 })
+
+// 验证规则
+const rules = reactive<FormRules<ServiceForm>>({
+  type: [
+    { required: true, message: '请选择服务类型', trigger: 'change' }
+  ],
+  adapter: [
+    { required: true, message: '请选择适配器', trigger: 'change' }
+  ],
+  'loadBalance.type': [
+    { required: true, message: '请选择负载均衡策略', trigger: 'change' }
+  ]
+})
+
+// 修复表格行键的类型问题
+const rowKey = (row: Service) => row.type
 
 const getLoadBalanceTagType = (type: string) => {
   switch (type) {
@@ -334,8 +372,12 @@ function debounce<T extends (...args: any[]) => void>(fn: T, wait = 300) {
     timeout = setTimeout(() => fn(...args), wait)
   }
 }
+
 const applySearch = debounce(() => { currentPage.value = 1 }, 350)
 const handleSearchClear = () => { currentPage.value = 1 }
+
+// 添加适配器相关数据
+const adapters = ref<any[]>([])
 
 // 计算当前尚未被添加的类型
 const availableTypes = computed(() => {
@@ -368,57 +410,101 @@ const paginatedServices = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return filteredServices.value.slice(start, start + pageSize.value)
 })
+
 watch([filteredServices, pageSize], () => {
   if (currentPage.value > totalPages.value) currentPage.value = totalPages.value
 })
 
+// 获取服务数据（带缓存和防抖）
 const fetchServices = async () => {
-  loading.value = true
-  errorMessage.value = ''
-  try {
-    const response = await getServiceTypes()
-    if (response.data?.success) {
-      const serviceTypes: string[] = response.data.data || []
-      const serviceList: Service[] = []
-
-      const promises = serviceTypes.map(async (type) => {
-        try {
-          const cfgResp = await getServiceConfig(type)
-          if (cfgResp.data?.success) {
-            const cfg = cfgResp.data.data || {}
-            serviceList.push({
-              type,
-              adapter: cfg.adapter || '',
-              loadBalanceType: cfg.loadBalance?.type || 'random',
-              description: cfg.description || ''
-            })
-          } else {
-            serviceList.push({ type, adapter: '', loadBalanceType: 'random' })
-            ElNotification({ title: '警告', message: `获取服务 ${type} 配置失败: ${cfgResp.data?.message || '未知错误'}`, type: 'warning', duration: 3000 })
-          }
-        } catch (err: any) {
-          console.error(`获取服务 ${type} 配置失败:`, err)
-          serviceList.push({ type, adapter: '', loadBalanceType: 'random' })
-          ElNotification({ title: '警告', message: `获取服务 ${type} 配置失败: ${err?.message || '网络错误'}`, type: 'warning', duration: 3000 })
+  // 清除之前的定时器
+  if (fetchTimer) {
+    clearTimeout(fetchTimer)
+  }
+  
+  // 设置新的定时器（防抖）
+  fetchTimer = setTimeout(async () => {
+    loading.value = true
+    errorMessage.value = ''
+    try {
+      // 检查缓存
+      const cacheKey = 'services_data'
+      const cachedData = serviceCache.value[cacheKey]
+      if (cachedData && Date.now() - cachedData.timestamp < 30000) { // 30秒内使用缓存
+        services.value = [...cachedData.data]
+        loading.value = false
+        return
+      }
+      
+      // 并行获取所有服务配置和适配器列表（优化：使用单个请求获取所有服务配置）
+      const [servicesResponse, adaptersResponse] = await Promise.all([
+        getAllServicesWithConfig(), // 使用优化接口
+        getAdapters()
+      ])
+      
+      // 处理适配器数据
+      if (adaptersResponse.data?.success) {
+        const adapterData = adaptersResponse.data.data || []
+        adapters.value = adapterData
+        // 缓存适配器数据
+        adaptersCache.value = adapterData
+      } else {
+        // 使用缓存的适配器数据
+        if (adaptersCache.value.length > 0) {
+          adapters.value = [...adaptersCache.value]
         }
-      })
+        ElNotification({ 
+          title: '警告', 
+          message: `获取适配器列表失败: ${adaptersResponse.data?.message || '未知错误'}`, 
+          type: 'warning', 
+          duration: 3000 
+        })
+      }
+      
+      // 处理服务数据（优化：单次请求获取所有服务配置）
+      if (servicesResponse.data?.success) {
+        const servicesData: Record<string, any> = servicesResponse.data.data || {}
+        const serviceList: Service[] = []
 
-      await Promise.all(promises)
-      serviceList.sort((a, b) => a.type.localeCompare(b.type))
-      services.value = serviceList
-    } else {
-      const errorMsg = response.data?.message || '获取服务列表失败'
+        // 遍历所有服务类型并构建服务列表
+        for (const [type, cfg] of Object.entries(servicesData)) {
+          const serviceData = {
+            type,
+            adapter: cfg.adapter || '',
+            loadBalanceType: cfg.loadBalance?.type || 'random',
+            description: cfg.description || ''
+          }
+          serviceList.push(serviceData)
+          
+          // 缓存服务配置
+          const serviceCacheKey = `service_config_${type}`
+          serviceCache.value[serviceCacheKey] = {
+            data: serviceData,
+            timestamp: Date.now()
+          }
+        }
+
+        serviceList.sort((a, b) => a.type.localeCompare(b.type))
+        services.value = serviceList
+        // 缓存服务列表
+        serviceCache.value[cacheKey] = {
+          data: [...serviceList],
+          timestamp: Date.now()
+        }
+      } else {
+        const errorMsg = servicesResponse.data?.message || '获取服务列表失败'
+        errorMessage.value = errorMsg
+        ElMessage.error(errorMsg)
+      }
+    } catch (error: any) {
+      console.error('获取服务列表失败:', error)
+      const errorMsg = error?.message || '网络错误，请检查网络连接'
       errorMessage.value = errorMsg
       ElMessage.error(errorMsg)
+    } finally {
+      loading.value = false
     }
-  } catch (error: any) {
-    console.error('获取服务列表失败:', error)
-    const errorMsg = error?.message || '网络错误，请检查网络连接'
-    errorMessage.value = errorMsg
-    ElMessage.error(errorMsg)
-  } finally {
-    loading.value = false
-  }
+  }, 300) // 300ms防抖延迟
 }
 
 const handleAddService = () => {
@@ -496,7 +582,7 @@ const handleSave = async () => {
     if (valid) {
       dialogLoading.value = true
       try {
-        const serviceConfig: ServiceConfig = {
+        const serviceConfig: any = {
           adapter: form.adapter || undefined,
           loadBalance: form.loadBalance,
           description: form.description || undefined
