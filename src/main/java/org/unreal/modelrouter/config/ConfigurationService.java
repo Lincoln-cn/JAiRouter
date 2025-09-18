@@ -330,6 +330,11 @@ public class ConfigurationService {
     @SuppressWarnings("unchecked")
     public void addServiceInstance(String serviceType, ModelRouterProperties.ModelInstance instanceConfig) {
         logger.info("为服务 {} 添加实例: {}", serviceType, instanceConfig.getName());
+        
+        // 验证服务类型
+        if (!isValidServiceType(serviceType)) {
+            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
+        }
 
         Map<String, Object> currentConfig = getCurrentPersistedConfig();
         Map<String, Object> services = getServicesFromConfig(currentConfig);
@@ -375,6 +380,11 @@ public class ConfigurationService {
     @SuppressWarnings("unchecked")
     public void updateServiceInstance(String serviceType, String instanceId, ModelRouterProperties.ModelInstance instanceConfig) {
         logger.info("更新服务 {} 的实例 {}", serviceType, instanceId);
+        
+        // 验证服务类型
+        if (!isValidServiceType(serviceType)) {
+            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
+        }
 
         Map<String, Object> currentConfig = getCurrentPersistedConfig();
         Map<String, Object> services = getServicesFromConfig(currentConfig);
@@ -434,6 +444,11 @@ public class ConfigurationService {
     @SuppressWarnings("unchecked")
     public void deleteServiceInstance(String serviceType, String instanceId) {
         logger.info("删除服务 {} 的实例 {}", serviceType, instanceId);
+        
+        // 验证服务类型
+        if (!isValidServiceType(serviceType)) {
+            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
+        }
 
         Map<String, Object> currentConfig = getCurrentPersistedConfig();
         Map<String, Object> services = getServicesFromConfig(currentConfig);

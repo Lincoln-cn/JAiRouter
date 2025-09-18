@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -68,7 +67,7 @@ public class ModelInfoController {
             )
         }
     )
-    public Mono<ResponseEntity<RouterResponse<Object>>> getModels() {
+    public Mono<RouterResponse<Object>> getModels() {
         try {
             List<Map<String, Object>> allModels = new ArrayList<>();
 
@@ -99,11 +98,10 @@ public class ModelInfoController {
             var response = new HashMap<String, Object>();
             response.put("object", "list");
             response.put("data", allModels);
-            return Mono.just(ResponseEntity.ok(RouterResponse.success(response, "获取模型列表成功")));
+            return Mono.just(RouterResponse.success(response, "获取模型列表成功"));
         } catch (Exception e) {
             logger.error("获取模型列表失败", e);
-            return Mono.just(ResponseEntity.internalServerError()
-                    .body(RouterResponse.error("获取模型列表失败: " + e.getMessage())));
+            return Mono.just(RouterResponse.error("获取模型列表失败: " + e.getMessage()));
         }
     }
 }
