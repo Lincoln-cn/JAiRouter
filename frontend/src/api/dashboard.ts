@@ -16,9 +16,19 @@ export const getServiceInstances = (serviceType: string) => {
   return request.get<RouterResponse<any[]>>(`/config/instance/type/${serviceType}`)
 }
 
-// 获取系统健康状态
-export const getSystemHealth = () => {
-  return request.get<any>('/actuator/health')
+// 添加服务实例（支持控制是否创建新版本）
+export const addServiceInstance = (serviceType: string, instanceConfig: any, createNewVersion: boolean = true) => {
+  return request.post<RouterResponse<void>>(`/config/instance/add/${serviceType}?createNewVersion=${createNewVersion}`, instanceConfig)
+}
+
+// 更新服务实例（支持控制是否创建新版本）
+export const updateServiceInstance = (serviceType: string, instanceConfig: any, createNewVersion: boolean = true) => {
+  return request.put<RouterResponse<void>>(`/config/instance/update/${serviceType}?createNewVersion=${createNewVersion}`, instanceConfig)
+}
+
+// 删除服务实例（支持控制是否创建新版本）
+export const deleteServiceInstance = (serviceType: string, modelName: string, baseUrl: string, createNewVersion: boolean = true) => {
+  return request.delete<RouterResponse<void>>(`/config/instance/del/${serviceType}?modelName=${encodeURIComponent(modelName)}&baseUrl=${encodeURIComponent(baseUrl)}&createNewVersion=${createNewVersion}`)
 }
 
 // 获取监控概览
