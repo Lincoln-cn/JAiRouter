@@ -323,12 +323,13 @@ public class ConfigurationService {
     // ==================== 实例管理操作 ====================
 
     /**
-     * 添加服务实例（自动保存为新版本）
+     * 添加服务实例（优化版本，可选择是否保存为新版本）
      * @param serviceType 服务类型
      * @param instanceConfig 实例配置
+     * @param createNewVersion 是否创建新版本
      */
     @SuppressWarnings("unchecked")
-    public void addServiceInstance(String serviceType, ModelRouterProperties.ModelInstance instanceConfig) {
+    public void addServiceInstance(String serviceType, ModelRouterProperties.ModelInstance instanceConfig, boolean createNewVersion) {
         logger.info("为服务 {} 添加实例: {}", serviceType, instanceConfig.getName());
         
         // 验证服务类型
@@ -364,21 +365,34 @@ public class ConfigurationService {
         instances.add(validatedInstance);
         currentConfig.put("services", services);
 
-        // 保存为新版本并刷新配置
-        saveAsNewVersion(currentConfig);
+        if (createNewVersion) {
+            // 保存为新版本并刷新配置
+            saveAsNewVersion(currentConfig);
+        } else {
+            // 直接保存配置但不创建新版本
+            storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        }
         refreshRuntimeConfig();
 
         logger.info("实例 {} 添加成功", instanceId);
     }
 
     /**
-     * 更新服务实例（自动保存为新版本）
+     * 添加服务实例（默认创建新版本以保持向后兼容）
+     */
+    public void addServiceInstance(String serviceType, ModelRouterProperties.ModelInstance instanceConfig) {
+        addServiceInstance(serviceType, instanceConfig, true);
+    }
+
+    /**
+     * 更新服务实例（优化版本，可选择是否保存为新版本）
      * @param serviceType 服务类型
      * @param instanceId 实例ID
      * @param instanceConfig 新的实例配置
+     * @param createNewVersion 是否创建新版本
      */
     @SuppressWarnings("unchecked")
-    public void updateServiceInstance(String serviceType, String instanceId, ModelRouterProperties.ModelInstance instanceConfig) {
+    public void updateServiceInstance(String serviceType, String instanceId, ModelRouterProperties.ModelInstance instanceConfig, boolean createNewVersion) {
         logger.info("更新服务 {} 的实例 {}", serviceType, instanceId);
         
         // 验证服务类型
@@ -429,20 +443,33 @@ public class ConfigurationService {
         services.put(serviceType, serviceConfig);
         currentConfig.put("services", services);
 
-        // 保存为新版本并刷新配置
-        saveAsNewVersion(currentConfig);
+        if (createNewVersion) {
+            // 保存为新版本并刷新配置
+            saveAsNewVersion(currentConfig);
+        } else {
+            // 直接保存配置但不创建新版本
+            storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        }
         refreshRuntimeConfig();
 
         logger.info("实例 {} 更新成功", instanceId);
     }
 
     /**
-     * 删除服务实例（自动保存为新版本）
+     * 更新服务实例（默认创建新版本以保持向后兼容）
+     */
+    public void updateServiceInstance(String serviceType, String instanceId, ModelRouterProperties.ModelInstance instanceConfig) {
+        updateServiceInstance(serviceType, instanceId, instanceConfig, true);
+    }
+
+    /**
+     * 删除服务实例（优化版本，可选择是否保存为新版本）
      * @param serviceType 服务类型
      * @param instanceId 实例ID
+     * @param createNewVersion 是否创建新版本
      */
     @SuppressWarnings("unchecked")
-    public void deleteServiceInstance(String serviceType, String instanceId) {
+    public void deleteServiceInstance(String serviceType, String instanceId, boolean createNewVersion) {
         logger.info("删除服务 {} 的实例 {}", serviceType, instanceId);
         
         // 验证服务类型
@@ -473,11 +500,23 @@ public class ConfigurationService {
         services.put(serviceType, serviceConfig);
         currentConfig.put("services", services);
 
-        // 保存为新版本并刷新配置
-        saveAsNewVersion(currentConfig);
+        if (createNewVersion) {
+            // 保存为新版本并刷新配置
+            saveAsNewVersion(currentConfig);
+        } else {
+            // 直接保存配置但不创建新版本
+            storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        }
         refreshRuntimeConfig();
 
         logger.info("实例 {} 删除成功", instanceId);
+    }
+
+    /**
+     * 删除服务实例（默认创建新版本以保持向后兼容）
+     */
+    public void deleteServiceInstance(String serviceType, String instanceId) {
+        deleteServiceInstance(serviceType, instanceId, true);
     }
 
     // ==================== 批量操作 ====================

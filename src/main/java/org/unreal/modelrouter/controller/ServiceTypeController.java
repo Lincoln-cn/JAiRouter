@@ -17,6 +17,7 @@ import org.unreal.modelrouter.config.ConfigurationValidator;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -121,6 +122,64 @@ public class ServiceTypeController {
     // ==================== 服务管理 ====================
 
     /**
+     * 验证服务配置参数
+     * @param serviceType 服务类型
+     * @param serviceConfig 服务配置
+     * @return 验证结果，如果验证通过返回null，否则返回错误信息
+     */
+    private List<String> validateServiceConfiguration(String serviceType, Map<String, Object> serviceConfig) {
+        // 验证服务类型参数
+        if (!configurationValidator.isValidServiceType(serviceType)) {
+            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
+        }
+        
+        List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        configurationValidator.validateServiceConfig(serviceType, serviceConfig, errors, warnings);
+        
+        return errors;
+    }
+
+    /**
+     * 获取所有服务类型及其配置（优化接口，减少前端请求次数）
+     */
+    @GetMapping("/services/batch")
+    @Operation(summary = "批量获取所有服务类型及其配置", description = "批量获取系统中所有服务类型及其详细配置信息，用于优化前端性能，减少HTTP请求次数")
+    @ApiResponse(responseCode = "200", description = "成功获取服务类型及配置",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RouterResponse.class)))
+    @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    public ResponseEntity<RouterResponse<Map<String, Map<String, Object>>>> getAllServicesWithConfig() {
+        try {
+            Set<String> serviceTypes = configurationService.getAvailableServiceTypes();
+            Map<String, Map<String, Object>> result = new HashMap<>();
+            
+            // 获取每个服务类型的配置
+            for (String serviceType : serviceTypes) {
+                try {
+                    Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
+                    if (serviceConfig != null) {
+                        result.put(serviceType, serviceConfig);
+                    } else {
+                        // 如果服务配置为空，添加一个空的配置对象
+                        result.put(serviceType, new HashMap<>());
+                    }
+                } catch (Exception e) {
+                    logger.warn("获取服务 {} 配置时发生错误: {}", serviceType, e.getMessage());
+                    // 即使某个服务配置获取失败，也继续处理其他服务
+                    result.put(serviceType, new HashMap<>());
+                }
+            }
+            
+            return ResponseEntity.ok(RouterResponse.success(result, "获取所有服务类型及配置成功"));
+        } catch (Exception e) {
+            logger.error("获取所有服务类型及配置失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(RouterResponse.error("获取所有服务类型及配置失败: " + e.getMessage()));
+        }
+    }
+
+    /**
      * 获取所有可用服务类型
      */
     @GetMapping("/services")
@@ -194,13 +253,7 @@ public class ServiceTypeController {
             @RequestBody Map<String, Object> serviceConfig) {
         try {
             // 验证参数
-            if (!configurationValidator.isValidServiceType(serviceType)) {
-                throw new IllegalArgumentException("无效的服务类型: " + serviceType);
-            }
-            
-            List<String> errors = new ArrayList<>();
-            List<String> warnings = new ArrayList<>();
-            configurationValidator.validateServiceConfig(serviceType, serviceConfig, errors, warnings);
+            List<String> errors = validateServiceConfiguration(serviceType, serviceConfig);
             
             if (!errors.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -238,13 +291,7 @@ public class ServiceTypeController {
             @RequestBody Map<String, Object> serviceConfig) {
         try {
             // 验证参数
-            if (!configurationValidator.isValidServiceType(serviceType)) {
-                throw new IllegalArgumentException("无效的服务类型: " + serviceType);
-            }
-            
-            List<String> errors = new ArrayList<>();
-            List<String> warnings = new ArrayList<>();
-            configurationValidator.validateServiceConfig(serviceType, serviceConfig, errors, warnings);
+            List<String> errors = validateServiceConfiguration(serviceType, serviceConfig);
             
             if (!errors.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)

@@ -76,7 +76,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getServiceInstances, getServiceTypes } from '@/api/dashboard'
+import { getServiceInstances, getServiceTypes, addServiceInstance, updateServiceInstance, deleteServiceInstance } from '@/api/dashboard'
 
 // 服务类型
 const serviceTypes = ref<string[]>([])
@@ -94,8 +94,13 @@ interface ServiceInstance {
   status: 'active' | 'inactive'
 }
 
+// 实例数据缓存
+const instancesCache = ref<Record<string, any[]>>({})
 // 实例数据
 const instances = ref<Record<string, any[]>>({})
+
+// 请求防抖定时器
+let fetchTimer: ReturnType<typeof setTimeout> | null = null
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
@@ -112,8 +117,11 @@ const form = ref<ServiceInstance>({
 
 // 监听服务类型变化，获取对应实例数据
 watch(activeServiceType, (newServiceType) => {
-  if (newServiceType && !instances.value[newServiceType]) {
+  if (newServiceType && !instancesCache.value[newServiceType]) {
     fetchServiceInstances(newServiceType)
+  } else if (newServiceType && instancesCache.value[newServiceType]) {
+    // 从缓存中获取数据
+    instances.value[newServiceType] = [...instancesCache.value[newServiceType]]
   }
 })
 
@@ -135,20 +143,37 @@ const fetchServiceTypes = async () => {
   }
 }
 
-// 获取指定服务类型的实例列表
-const fetchServiceInstances = async (serviceType: string) => {
-  try {
-    const response = await getServiceInstances(serviceType)
-    if (response.data?.success) {
-      instances.value[serviceType] = response.data.data || []
-    } else {
-      instances.value[serviceType] = []
-    }
-  } catch (error) {
-    console.error(`获取${serviceType}服务实例失败:`, error)
-    instances.value[serviceType] = []
-    ElMessage.error(`获取${serviceType}服务实例失败`)
+// 获取指定服务类型的实例列表（带防抖和缓存）
+const fetchServiceInstances = (serviceType: string) => {
+  // 清除之前的定时器
+  if (fetchTimer) {
+    clearTimeout(fetchTimer)
   }
+  
+  // 设置新的定时器（防抖）
+  fetchTimer = setTimeout(async () => {
+    try {
+      // 如果缓存中有数据，直接使用
+      if (instancesCache.value[serviceType]) {
+        instances.value[serviceType] = [...instancesCache.value[serviceType]]
+        return
+      }
+      
+      const response = await getServiceInstances(serviceType)
+      if (response.data?.success) {
+        const data = response.data.data || []
+        // 缓存数据
+        instancesCache.value[serviceType] = data
+        instances.value[serviceType] = [...data]
+      } else {
+        instances.value[serviceType] = []
+      }
+    } catch (error) {
+      console.error(`获取${serviceType}服务实例失败:`, error)
+      instances.value[serviceType] = []
+      ElMessage.error(`获取${serviceType}服务实例失败`)
+    }
+  }, 300) // 300ms防抖延迟
 }
 
 // 添加实例
@@ -180,34 +205,90 @@ const handleDelete = (row: any) => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    instances.value[row.serviceType] = instances.value[row.serviceType].filter((instance: any) => instance.id !== row.id)
-    ElMessage.success('删除成功')
+  }).then(async () => {
+    try {
+      // 调用后端API删除实例，不创建新版本
+      const response = await deleteServiceInstance(row.serviceType, row.name, row.baseUrl, false)
+      if (response.data?.success) {
+        instances.value[row.serviceType] = instances.value[row.serviceType].filter((instance: any) => instance.id !== row.id)
+        // 更新缓存
+        instancesCache.value[row.serviceType] = [...instances.value[row.serviceType]]
+        ElMessage.success('删除成功')
+      } else {
+        ElMessage.error(response.data?.message || '删除失败')
+      }
+    } catch (error) {
+      console.error('删除实例失败:', error)
+      ElMessage.error('删除实例失败')
+    }
   })
 }
 
 // 保存实例
-const handleSave = () => {
-  if (isEdit.value) {
-    // 编辑
-    const index = instances.value[form.value.serviceType].findIndex((instance: any) => instance.id === form.value.id)
-    if (index !== -1) {
-      instances.value[form.value.serviceType][index] = { ...form.value }
+const handleSave = async () => {
+  try {
+    if (isEdit.value) {
+      // 编辑
+      // 构造更新数据
+      const updateData = {
+        instanceId: `${form.value.name}@${form.value.baseUrl}`,
+        instance: {
+          name: form.value.name,
+          baseUrl: form.value.baseUrl,
+          weight: form.value.weight,
+          status: form.value.status
+        }
+      }
+      
+      // 调用后端API更新实例，不创建新版本
+      const response = await updateServiceInstance(form.value.serviceType, updateData, false)
+      if (response.data?.success) {
+        const index = instances.value[form.value.serviceType].findIndex((instance: any) => instance.id === form.value.id)
+        if (index !== -1) {
+          instances.value[form.value.serviceType][index] = { ...form.value }
+          // 更新缓存
+          instancesCache.value[form.value.serviceType] = [...instances.value[form.value.serviceType]]
+        }
+        ElMessage.success('编辑成功')
+      } else {
+        ElMessage.error(response.data?.message || '编辑失败')
+        return
+      }
+    } else {
+      // 新增
+      // 构造实例数据
+      const instanceData = {
+        name: form.value.name,
+        baseUrl: form.value.baseUrl,
+        weight: form.value.weight,
+        status: form.value.status
+      }
+      
+      // 调用后端API添加实例，不创建新版本
+      const response = await addServiceInstance(form.value.serviceType, instanceData, false)
+      if (response.data?.success) {
+        const newInstance: any = {
+          ...form.value,
+          id: Date.now()
+        }
+        if (!instances.value[form.value.serviceType]) {
+          instances.value[form.value.serviceType] = []
+        }
+        instances.value[form.value.serviceType].push(newInstance)
+        // 更新缓存
+        instancesCache.value[form.value.serviceType] = [...instances.value[form.value.serviceType]]
+        ElMessage.success('添加成功')
+      } else {
+        ElMessage.error(response.data?.message || '添加失败')
+        return
+      }
     }
-  } else {
-    // 新增
-    const newInstance: any = {
-      ...form.value,
-      id: Date.now()
-    }
-    if (!instances.value[form.value.serviceType]) {
-      instances.value[form.value.serviceType] = []
-    }
-    instances.value[form.value.serviceType].push(newInstance)
+    
+    dialogVisible.value = false
+  } catch (error) {
+    console.error('保存实例失败:', error)
+    ElMessage.error('保存实例失败')
   }
-  
-  dialogVisible.value = false
-  ElMessage.success(isEdit.value ? '编辑成功' : '添加成功')
 }
 
 // 组件挂载时获取数据
