@@ -493,16 +493,6 @@ const fetchDashboardData = async () => {
     await fetchServiceConfig()
     await fetchMonitoringOverview()
 
-    // 系统健康
-    try {
-      const healthRes = await getSystemHealth()
-      if (healthRes.data && healthRes.data.status === 'DOWN') {
-        stats.value.alertCount = (stats.value.alertCount || 0) + 1
-      }
-    } catch {
-      // ignore
-    }
-
     // 初始化或刷新图表
     nextTick(() => {
       initChart()
