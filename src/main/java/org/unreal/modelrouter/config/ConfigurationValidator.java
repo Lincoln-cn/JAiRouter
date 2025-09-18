@@ -2,6 +2,7 @@ package org.unreal.modelrouter.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
@@ -31,6 +32,18 @@ public class ConfigurationValidator {
     private static final Pattern DOMAIN_PATTERN = Pattern.compile(
             "^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,6}$"
     );
+
+    private ConfigurationHelper configurationHelper;
+
+    /**
+     * Sets the configuration helper for this validator.
+     * 
+     * @param configurationHelper the configuration helper to set
+     */
+    @Autowired
+    public void setConfigurationHelper(final ConfigurationHelper configurationHelper) {
+        this.configurationHelper = configurationHelper;
+    }
 
     /**
      * 验证限流配置参数的合法性
@@ -487,15 +500,16 @@ public class ConfigurationValidator {
             validateRateLimitConfig(config.get("rateLimit"), "全局", errors, warnings);
         }
     }
+
     public boolean isValidServiceType(String serviceType) {
         if (serviceType == null) {
             return false;
         }
         
         try {
-            ModelServiceRegistry.ServiceType.valueOf(serviceType.toLowerCase());
-            return true;
-        } catch (IllegalArgumentException e) {
+            // 使用ConfigurationHelper来解析服务类型，支持更多格式
+            return configurationHelper.parseServiceType(serviceType) != null;
+        } catch (Exception e) {
             return false;
         }
     }
