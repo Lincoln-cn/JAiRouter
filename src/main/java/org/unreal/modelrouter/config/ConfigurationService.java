@@ -432,7 +432,9 @@ public class ConfigurationService {
         // 先查找实例位置和原始配置
         for (int i = 0; i < instances.size(); i++) {
             Map<String, Object> instance = instances.get(i);
-            if (instanceId.equals(buildInstanceId(instance))) {
+            String currentInstanceId = buildInstanceId(instance);
+            logger.info("比较实例ID: 请求ID={}, 配置ID={}, 匹配结果={}", instanceId, currentInstanceId, instanceId.equals(currentInstanceId));
+            if (instanceId.equals(currentInstanceId)) {
                 targetIndex = i;
                 oldInstance = instance;
                 found = true;
@@ -448,6 +450,13 @@ public class ConfigurationService {
         }
 
         if (!found) {
+            // 记录所有实例信息用于调试
+            logger.warn("实例不存在: {}，服务 {} 中的所有实例:", instanceId, serviceType);
+            for (int i = 0; i < instances.size(); i++) {
+                Map<String, Object> instance = instances.get(i);
+                String currentInstanceId = buildInstanceId(instance);
+                logger.warn("  实例 {}: ID={}, name={}, baseUrl={}", i, currentInstanceId, instance.get("name"), instance.get("baseUrl"));
+            }
             throw new IllegalArgumentException("实例不存在: " + instanceId);
         }
 
@@ -624,7 +633,11 @@ public class ConfigurationService {
      */
     private String buildInstanceId(Map<String, Object> instance) {
         String name = (String) instance.get("name");
+        // 同时支持baseUrl和base-url两种字段名
         String baseUrl = (String) instance.get("baseUrl");
+        if (baseUrl == null) {
+            baseUrl = (String) instance.get("base-url");
+        }
         if (name != null && baseUrl != null) {
             return name + "@" + baseUrl;
         }

@@ -361,7 +361,7 @@ public class ConfigurationHelper {
     public Map<String, Object> convertInstanceToMap(ModelRouterProperties.ModelInstance instance) {
         Map<String, Object> map = new HashMap<>();
         map.put("name", instance.getName());
-        map.put("baseUrl", instance.getBaseUrl());
+        map.put("baseUrl", instance.getBaseUrl()); // 保持Java代码中使用驼峰命名
         map.put("path", instance.getPath());
         map.put("weight", instance.getWeight());
         map.put("status", instance.getStatus()); // 添加status字段
@@ -539,7 +539,12 @@ public class ConfigurationHelper {
     public ModelRouterProperties.ModelInstance convertMapToInstance(Map<String, Object> map) {
         ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
         instance.setName((String) map.get("name"));
-        instance.setBaseUrl((String) map.get("baseUrl"));
+        // 同时支持baseUrl和base-url两种字段名
+        String baseUrl = (String) map.get("baseUrl");
+        if (baseUrl == null) {
+            baseUrl = (String) map.get("base-url");
+        }
+        instance.setBaseUrl(baseUrl);
         instance.setPath((String) map.get("path"));
         if (map.containsKey("weight")) {
             instance.setWeight(((Number) map.get("weight")).intValue());

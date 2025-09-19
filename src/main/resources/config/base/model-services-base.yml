@@ -51,10 +51,6 @@ model:
       instances:
         - name: "qwen3:1.7B"
           base-url: "http://172.16.30.6:9090"
-          path: "/v1-openai/chat/completions"
-          weight: 1
-        - name: "qwen3:1.7B"
-          base-url: "http://172.16.30.6:9090"
           path: "/v1/chat/completions"
           weight: 1
           # 实例级别限流配置
@@ -87,10 +83,6 @@ model:
           base-url: "http://172.16.30.6:9090"
           path: "/v1/embeddings"
           weight: 1
-        - name: "nomic-embed-text-v1.5"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/embeddings"
-          weight: 1
         - name: "bge-large-zh-v1.5"
           base-url: "http://172.16.30.6:9090/"
           path: "/v1/embeddings"
@@ -117,10 +109,6 @@ model:
         - name: "bge-reranker-v2-m3"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/rerank"
-          weight: 1
-        - name: "bge-reranker-v2-m3"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/rerank"
           weight: 2
 
     # TTS 服务配置
@@ -139,10 +127,6 @@ model:
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/speech"
           weight: 1
-        - name: "cosyvoice-300m"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/audio/speech"
-          weight: 1
 
     # STT 服务配置
     stt:
@@ -156,10 +140,6 @@ model:
         scope: "service"
         client-ip-enable: true
       instances:
-        - name: "faster-whisper-tiny"
-          base-url: "http://172.16.30.6:9090"
-          path: "/v1/audio/transcriptions"
-          weight: 2
         - name: "faster-whisper-tiny"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
