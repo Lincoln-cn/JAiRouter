@@ -153,6 +153,9 @@ public class ServiceInstanceController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "实例更新信息")
             @RequestBody UpdateInstanceDTO instanceConfig) {
         try {
+            logger.info("接收到更新实例请求: serviceType={}, createNewVersion={}, instanceConfig={}", 
+                serviceType, createNewVersion, instanceConfig);
+            
             // 验证实例配置
             if (!configurationValidator.validateServiceAddress(instanceConfig.getInstance().getBaseUrl())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -161,13 +164,15 @@ public class ServiceInstanceController {
             
             // URL解码实例ID
             String decodedInstanceId = instanceConfig.getInstanceId();
+            logger.info("准备更新实例: serviceType={}, instanceId={}", serviceType, decodedInstanceId);
             configurationService.updateServiceInstance(serviceType, decodedInstanceId, instanceConfig.getInstance().covertTo(), createNewVersion);
             return ResponseEntity.ok(RouterResponse.success(null, "实例更新成功"));
         } catch (IllegalArgumentException e) {
+            logger.warn("更新实例参数错误: serviceType={}, message={}", serviceType, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(RouterResponse.error(e.getMessage()));
         } catch (Exception e) {
-            logger.error("获取实例信息失败: serviceType={}, modelName={} , baseUrl={}", serviceType, instanceConfig.getInstance().getName(), instanceConfig.getInstance().getBaseUrl(), e);
+            logger.error("更新实例失败: serviceType={}, instanceId={}", serviceType, instanceConfig.getInstanceId(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(RouterResponse.error("更新实例失败: " + e.getMessage()));
         }
