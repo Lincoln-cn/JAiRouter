@@ -364,6 +364,7 @@ public class ConfigurationHelper {
         map.put("baseUrl", instance.getBaseUrl());
         map.put("path", instance.getPath());
         map.put("weight", instance.getWeight());
+        map.put("status", instance.getStatus()); // 添加status字段
 
         // 添加限流配置
         addRateLimitToMap(instance.getRateLimit(), map);
@@ -544,6 +545,13 @@ public class ConfigurationHelper {
             instance.setWeight(((Number) map.get("weight")).intValue());
         } else {
             instance.setWeight(1);
+        }
+        
+        // 添加status字段处理
+        if (map.containsKey("status")) {
+            instance.setStatus((String) map.get("status"));
+        } else {
+            instance.setStatus("active"); // 默认值
         }
 
         // 设置限流配置
