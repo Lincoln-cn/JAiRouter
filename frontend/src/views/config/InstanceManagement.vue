@@ -606,8 +606,8 @@ const handleDelete = (row: ServiceInstance) => {
     type: 'warning'
   }).then(async () => {
     try {
-      // 确保使用实例对应的服务类型
-      const serviceType = row.serviceType || activeServiceType.value;
+      // 确保使用当前激活的页签对应的服务类型
+      const serviceType = activeServiceType.value;
       console.log('删除实例，使用服务类型:', serviceType);
       console.log(`发送删除请求到: /api/config/instance/del/${serviceType}?modelName=${encodeURIComponent(row.name)}&baseUrl=${encodeURIComponent(row.baseUrl)}&createNewVersion=false`)
       const response = await deleteServiceInstance(serviceType, row.name, row.baseUrl, false)
@@ -639,7 +639,7 @@ const handleSave = async () => {
   saveLoading.value = true
   try {
     // 确保使用当前选项卡的服务类型
-    const serviceType = form.serviceType || activeServiceType.value;
+    const serviceType = activeServiceType.value;
     console.log('保存实例，使用服务类型:', serviceType);
     
     const instanceData = {
