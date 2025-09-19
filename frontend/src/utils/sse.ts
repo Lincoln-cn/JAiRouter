@@ -26,11 +26,6 @@ export function connectSSE() {
     // 获取token
     const token = localStorage.getItem('admin_token')
     
-    // 如果有token，则添加到URL参数中（作为备选方案）
-    if (token) {
-      sseUrl += `?token=${encodeURIComponent(token)}`
-    }
-    
     // 创建AbortController用于取消请求
     abortController = new AbortController()
     
@@ -85,13 +80,16 @@ export function connectSSE() {
               try {
                 const data = JSON.parse(line.slice(6))
                 console.log('收到SSE消息:', data)
-                // 调用所有回调函数
-                callbacks.forEach(callback => {
-                  try {
-                    callback(data)
-                  } catch (e) {
-                    console.error('SSE消息处理错误:', e)
-                  }
+                // 使用queueMicrotask将回调执行推迟到下一个微任务队列，确保在主线程中更新数据
+                queueMicrotask(() => {
+                  // 调用所有回调函数
+                  callbacks.forEach(callback => {
+                    try {
+                      callback(data)
+                    } catch (e) {
+                      console.error('SSE消息处理错误:', e)
+                    }
+                  })
                 })
               } catch (e) {
                 console.error('解析SSE消息失败:', e)
