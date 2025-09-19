@@ -59,8 +59,14 @@ export const useUserStore = defineStore('user', () => {
   const logout = async () => {
     try {
       if (token.value) {
+        // 解析JWT token获取用户名
+        const payload = JSON.parse(atob(token.value.split('.')[1]))
+        const username = payload.sub
+        
         await request.post('/auth/jwt/revoke', {
-          token: token.value
+          token: token.value,
+          userId: username,
+          reason: '用户主动登出'
         })
       }
     } catch (error) {
