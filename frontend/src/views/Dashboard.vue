@@ -1,4 +1,3 @@
-```vue
 <template>
   <div class="dashboard">
     <!-- 顶部统计卡片 -->
@@ -248,6 +247,9 @@ import {
   Loading
 } from '@element-plus/icons-vue'
 
+// SSE helpers
+import { connectSSE, disconnectSSE, addSSEListener, removeSSEListener } from '@/utils/sse'
+
 // 状态数据
 const stats = ref({
   serviceCount: 0,
@@ -263,6 +265,9 @@ const monitoringOverview = ref<any>(null)
 const serviceConfigData = ref<any>(null)
 const configLoading = ref(false)
 const activeServiceTab = ref<string>('global')
+
+// SSE 回调引用，方便移除
+let sseHandler: ((data: any) => void) | null = null
 
 // 服务类型映射（保持原有）
 const serviceTypeMap: Record<string, string> = {
@@ -330,12 +335,16 @@ const statCards = computed(() => {
   })()
   const error = instances - healthy
 
+  // 如果通过 SSE 更新了明确的健康/异常计数，则优先使用它们
+  const healthyCount = stats.value.healthyInstanceCount ?? healthy
+  const errorCount = stats.value.errorInstanceCount ?? error
+
   return [
     { key: 'service', icon: Flag, label: '服务数量', value: serviceCount, bg: 'linear-gradient(135deg,#e6f7ff,#fff0f6)' },
     { key: 'instance', icon: Cpu, label: '实例数量', value: instances, bg: 'linear-gradient(135deg,#fff7e6,#f0fff4)' },
     { key: 'model', icon: Monitor, label: '模型数量', value: stats.value.totalModels || 0, bg: 'linear-gradient(135deg,#f0f5ff,#fff)' },
-    { key: 'healthy', icon: Check, label: '健康实例', value: healthy, bg: 'linear-gradient(135deg,#e6fffb,#f0f9ff)' },
-    { key: 'error', icon: Warning, label: '异常实例', value: error < 0 ? 0 : error, bg: 'linear-gradient(135deg,#fff0f0,#fff7e6)' },
+    { key: 'healthy', icon: Check, label: '健康实例', value: healthyCount, bg: 'linear-gradient(135deg,#e6fffb,#f0f9ff)' },
+    { key: 'error', icon: Warning, label: '异常实例', value: errorCount < 0 ? 0 : errorCount, bg: 'linear-gradient(135deg,#fff0f0,#fff7e6)' },
     { key: 'user', icon: User, label: '账号数量', value: stats.value.userCount || 0, bg: 'linear-gradient(135deg,#f8eaff,#eef7ff)' }
   ]
 })
@@ -345,7 +354,6 @@ const systemChart = ref<HTMLElement | null>(null)
 let systemChartInstance: echarts.ECharts | null = null
 
 const getChartOption = () => {
-  // 保持之前图表逻辑，简洁美观
   if (!monitoringOverview.value) {
     return {
       tooltip: { trigger: 'axis' },
@@ -408,6 +416,96 @@ const degradationText = (level?: string) => (level === 'NONE' ? '无降级' : le
 const degradationTagType = (level?: string) => (level === 'NONE' ? 'success' : level === 'PARTIAL' ? 'warning' : 'danger')
 const circuitText = (s?: string) => (s === 'CLOSED' ? '关闭' : s === 'OPEN' ? '开启' : s === 'HALF_OPEN' ? '半开' : 'N/A')
 const circuitTagType = (s?: string) => (s === 'CLOSED' ? 'success' : s === 'OPEN' ? 'danger' : 'warning')
+
+// SSE 辅助：规范化 baseUrl（去尾部斜杠）
+const normalizeBase = (u?: string) => (u ? u.replace(/\/+$/, '') : '')
+
+// 替换 Dashboard.vue 中原有的 handleHealthUpdate 为下面实现
+const handleHealthUpdate = (payload: any) => {
+  if (!payload) return
+  // payload 可能直接就是 instanceHealth 或是包含 type/timestamp 等字段
+  const instanceHealth = payload.instanceHealth || payload.data?.instanceHealth || null
+  // 兼容多种包装形式
+  const dataObj = instanceHealth ?? (payload.type === 'health-update' ? payload.instanceHealth : null)
+  if (!dataObj || typeof dataObj !== 'object') return
+
+  console.debug('[SSE] handleHealthUpdate payload:', dataObj)
+
+  // track which services changed so we can reassign arrays to trigger reactivity
+  const changedServices = new Set<string>()
+  let sseHealthy = 0
+  let sseError = 0
+
+  Object.entries(dataObj).forEach(([key, val]) => {
+    // 更严格地判断健康状态：兼容 boolean 与字符串 'true'/'false'（不再使用 Boolean(val)）
+    const isHealthy = (typeof val === 'boolean') ? val : String(val).toLowerCase() === 'true'
+
+    if (isHealthy) {sseHealthy++} else {sseError++}
+
+    // key 格式示例: "chat:test@http://test.com" 或 "chat:qwen3:1.7B@http://172.16.30.6:9090"
+    const firstColon = key.indexOf(':')
+    if (firstColon === -1) return
+    const svcType = key.slice(0, firstColon)
+    const rest = key.slice(firstColon + 1)
+    const lastAt = rest.lastIndexOf('@')
+    if (lastAt === -1) return
+    const instName = rest.slice(0, lastAt)
+    const instBase = normalizeBase(rest.slice(lastAt + 1))
+
+    const svc = serviceConfigData.value?.services?.[svcType]
+    if (svc && Array.isArray(svc.instances)) {
+      let localChanged = false
+      svc.instances.forEach((ins: any, idx: number) => {
+        const insBase = normalizeBase(ins.baseUrl || ins.base || '')
+        const insName = ins.name || ins.id || ''
+        // 匹配实例：优先 name+baseUrl 精确匹配，降级到只匹配 baseUrl（视情况）
+        if ((insName === instName && insBase === instBase) || (insBase && insBase === instBase)) {
+          // 仅在值变化时替换对象以确保 Vue 能检测到变化
+          if (ins.health !== isHealthy) {
+            const newIns = { ...ins, health: isHealthy }
+            // 使用 splice 直接替换当前索引，保持数组引用但替换元素引用
+            svc.instances.splice(idx, 1, newIns)
+            localChanged = true
+          }
+        }
+      })
+      if (localChanged) changedServices.add(svcType)
+    }
+  })
+
+  // 强制刷新变更过的服务实例数组以保证视图更新
+  changedServices.forEach(svcType => {
+    const svc = serviceConfigData.value?.services?.[svcType]
+    if (svc && Array.isArray(svc.instances)) {
+      svc.instances = svc.instances.slice()
+    }
+  })
+
+  // 使用 SSE 报文的统计数据更新顶部卡片（按你的要求以 SSE 数据为准）
+  stats.value.healthyInstanceCount = sseHealthy
+  stats.value.errorInstanceCount = sseError
+  // 如果你也希望实例总数由 SSE 决定：
+  stats.value.instanceCount = sseHealthy + sseError
+
+  // 确保触发响应式（在极端情况下重新赋值对象以强制视图更新）
+  stats.value = { ...stats.value }
+
+  console.debug('[SSE] updated counts from SSE, healthy:', sseHealthy, 'error:', sseError, 'changed services:', Array.from(changedServices))
+
+  // 触发视图/图表刷新（若需要）
+  nextTick(() => {
+    if (systemChartInstance) {
+      try {
+        systemChartInstance.setOption(getChartOption(), { notMerge: true })
+      } catch (e) {
+        console.warn('[SSE] update chart failed', e)
+      }
+    }
+  })
+}
+// ===== end handleHealthUpdate =====
+
+/* 以下为原有数据加载与生命周期逻辑（未改动） */
 
 // 数据请求（保留原有功能）
 const fetchServiceConfig = async () => {
@@ -503,13 +601,36 @@ const fetchDashboardData = async () => {
 }
 
 onMounted(() => {
-  fetchDashboardData()
+  // 加载初始数据后再建立 SSE 连接并注册回调，保证 serviceConfigData 已经尽可能就绪
+  fetchDashboardData().then(() => {
+    // 注册 SSE 回调
+    sseHandler = (data: any) => {
+      // sse.ts 会传入解析后的 JSON 对象
+      // 有时 payload 可能被嵌套或直接携带 instanceHealth 字段，handleHealthUpdate 会处理兼容
+      handleHealthUpdate(data)
+    }
+    addSSEListener(sseHandler)
+    connectSSE()
+  }).catch(() => {
+    // 即便初始加载失败，也尝试建立 SSE 连接以便后续实时更新
+    sseHandler = (data: any) => handleHealthUpdate(data)
+    addSSEListener(sseHandler)
+    connectSSE()
+  })
+
   window.addEventListener('resize', resizeChart)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeChart)
   systemChartInstance?.dispose()
+
+  // 移除 SSE 相关资源
+  if (sseHandler) {
+    removeSSEListener(sseHandler)
+    sseHandler = null
+  }
+  disconnectSSE()
 })
 </script>
 
@@ -605,7 +726,6 @@ onBeforeUnmount(() => {
   flex: 1 1 auto;
 }
 
-
 /* 响应式 */
 @media (max-width: 992px) {
   .chart-area { height: 220px; }
@@ -616,6 +736,4 @@ onBeforeUnmount(() => {
   .icon-box { width:48px; height:48px; }
   .chart-area { height: 200px; }
 }
-
 </style>
-```

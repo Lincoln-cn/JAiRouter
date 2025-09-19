@@ -3,11 +3,13 @@ package org.unreal.modelrouter.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.unreal.modelrouter.checker.ServerChecker;
+import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.util.ApplicationContextProvider;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.StoreManager;
-import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.tracing.config.SamplingConfigurationValidator;
 
 import java.util.*;
@@ -424,7 +426,6 @@ public class ConfigurationService {
         List<Map<String, Object>> instances = (List<Map<String, Object>>)
                 serviceConfig.getOrDefault("instances", new ArrayList<>());
 
-        // 查找并更新实例
         boolean found = false;
         int targetIndex = -1;
         Map<String, Object> oldInstance = null;
@@ -765,6 +766,22 @@ public class ConfigurationService {
             try {
                 // 触发ModelServiceRegistry重新加载配置
                 modelServiceRegistry.refreshFromMergedConfig();
+                
+                // 通知健康检查组件清理过期的实例状态缓存
+                try {
+                    ServerChecker serverChecker = ApplicationContextProvider.getBean(ServerChecker.class);
+                    ServiceStateManager serviceStateManager = ApplicationContextProvider.getBean(ServiceStateManager.class);
+                    
+                    if (serverChecker != null) {
+                        serverChecker.clearExpiredInstanceStates();
+                    }
+                    
+                    if (serviceStateManager != null) {
+                        serviceStateManager.clearExpiredInstanceHealthStatus();
+                    }
+                } catch (Exception e) {
+                    logger.warn("通知健康检查组件清理缓存时发生错误: {}", e.getMessage());
+                }
             } catch (Exception e) {
                 logger.warn("刷新运行时配置时发生错误: {}", e.getMessage());
             }
