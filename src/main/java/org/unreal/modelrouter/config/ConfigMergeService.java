@@ -136,6 +136,10 @@ public class ConfigMergeService {
                 Map<String, Object> instanceConfig = (Map<String, Object>) instance;
                 String instanceId = getInstanceId(instanceConfig);
                 if (instanceId != null) {
+                    // 确保instanceId字段存在
+                    if (!instanceConfig.containsKey("instanceId")) {
+                        instanceConfig.put("instanceId", instanceId);
+                    }
                     instanceMap.put(instanceId, instance);
                 }
             }
@@ -147,6 +151,10 @@ public class ConfigMergeService {
                 Map<String, Object> instanceConfig = (Map<String, Object>) instance;
                 String instanceId = getInstanceId(instanceConfig);
                 if (instanceId != null) {
+                    // 确保instanceId字段存在
+                    if (!instanceConfig.containsKey("instanceId")) {
+                        instanceConfig.put("instanceId", instanceId);
+                    }
                     instanceMap.put(instanceId, instance);
                 }
             }

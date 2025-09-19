@@ -179,7 +179,7 @@
                 stripe
                 size="small"
                 style="width:100%"
-                :row-class-name="(row) => row.row?.health ? '' : 'row-error'"
+                :row-class-name="(row: any) => row.row?.health ? '' : 'row-error'"
               >
                 <el-table-column prop="name" label="实例名称" width="180" />
                 <el-table-column prop="baseUrl" label="基础URL" min-width="220" />
@@ -230,22 +230,11 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import {
   getServiceStats,
-  getSystemHealth,
   getAllServiceConfig,
   getMonitoringOverview
 } from '@/api/dashboard'
 import { getJwtAccounts } from '@/api/account'
 import { ElMessage } from 'element-plus'
-import {
-  Flag,
-  Cpu,
-  Monitor,
-  Check,
-  Warning,
-  User,
-  Refresh,
-  Loading
-} from '@element-plus/icons-vue'
 
 // SSE helpers
 import { connectSSE, disconnectSSE, addSSEListener, removeSSEListener } from '@/utils/sse'
@@ -257,6 +246,7 @@ const stats = ref({
   totalModels: 0,
   alertCount: 0,
   userCount: 0,
+  // 保留这些字段作为初始值，但实际值将通过计算属性获取
   healthyInstanceCount: 0,
   errorInstanceCount: 0
 })
@@ -326,7 +316,7 @@ const statCards = computed(() => {
     return total
   })()
   const healthy = (() => {
-    if (!serviceConfigData.value?.services) return stats.value.healthyInstanceCount
+    if (!serviceConfigData.value?.services) return 0 // 默认返回0
     let c = 0
     Object.values(serviceConfigData.value.services).forEach((s: any) => {
       (s.instances || []).forEach((ins: any) => { if (ins.health) c++ })
@@ -335,17 +325,26 @@ const statCards = computed(() => {
   })()
   const error = instances - healthy
 
-  // 如果通过 SSE 更新了明确的健康/异常计数，则优先使用它们
-  const healthyCount = stats.value.healthyInstanceCount ?? healthy
-  const errorCount = stats.value.errorInstanceCount ?? error
+  // 始终基于服务配置详情中的实例状态计算
+  const healthyCount = healthy
+  const errorCount = error
+
+  console.log('[Dashboard] 计算统计卡片数据:', {
+    serviceCount,
+    instances,
+    healthy,
+    error,
+    healthyCount,
+    errorCount
+  })
 
   return [
-    { key: 'service', icon: Flag, label: '服务数量', value: serviceCount, bg: 'linear-gradient(135deg,#e6f7ff,#fff0f6)' },
-    { key: 'instance', icon: Cpu, label: '实例数量', value: instances, bg: 'linear-gradient(135deg,#fff7e6,#f0fff4)' },
-    { key: 'model', icon: Monitor, label: '模型数量', value: stats.value.totalModels || 0, bg: 'linear-gradient(135deg,#f0f5ff,#fff)' },
-    { key: 'healthy', icon: Check, label: '健康实例', value: healthyCount, bg: 'linear-gradient(135deg,#e6fffb,#f0f9ff)' },
-    { key: 'error', icon: Warning, label: '异常实例', value: errorCount < 0 ? 0 : errorCount, bg: 'linear-gradient(135deg,#fff0f0,#fff7e6)' },
-    { key: 'user', icon: User, label: '账号数量', value: stats.value.userCount || 0, bg: 'linear-gradient(135deg,#f8eaff,#eef7ff)' }
+    { key: 'service', icon: 'Flag', label: '服务数量', value: serviceCount, bg: 'linear-gradient(135deg,#e6f7ff,#fff0f6)' },
+    { key: 'instance', icon: 'Cpu', label: '实例数量', value: instances, bg: 'linear-gradient(135deg,#fff7e6,#f0fff4)' },
+    { key: 'model', icon: 'Monitor', label: '模型数量', value: stats.value.totalModels || 0, bg: 'linear-gradient(135deg,#f0f5ff,#fff)' },
+    { key: 'healthy', icon: 'Check', label: '健康实例', value: healthyCount, bg: 'linear-gradient(135deg,#e6fffb,#f0f9ff)' },
+    { key: 'error', icon: 'Warning', label: '异常实例', value: errorCount < 0 ? 0 : errorCount, bg: 'linear-gradient(135deg,#fff0f0,#fff7e6)' },
+    { key: 'user', icon: 'User', label: '账号数量', value: stats.value.userCount || 0, bg: 'linear-gradient(135deg,#f8eaff,#eef7ff)' }
   ]
 })
 
@@ -379,7 +378,7 @@ const getChartOption = () => {
     yAxis: {
       type: 'value',
       axisLabel: {
-        formatter: v => v <= 1 ? `${v * 100}%` : `${v}`
+        formatter: (v: number) => v <= 1 ? `${v * 100}%` : `${v}`
       }
     },
     series: [
@@ -393,7 +392,7 @@ const getChartOption = () => {
           { value: err.activeErrorComponents || 0, itemStyle: { color: (err.activeErrorComponents || 0) > 0 ? '#f56c6c' : '#67c23a' } },
           { value: cache.usageRatio || 0, itemStyle: { color: (cache.usageRatio || 0) > 0.8 ? '#f56c6c' : '#409eff' } }
         ],
-        label: { show: true, position: 'top', formatter: p => (p.dataIndex === 2 ? `${p.value}` : `${Math.round(p.value * 100)}%`) }
+        label: { show: true, position: 'top', formatter: (p: any) => (p.dataIndex === 2 ? `${p.value}` : `${Math.round(p.value * 100)}%`) }
       }
     ]
   }
@@ -420,6 +419,12 @@ const circuitTagType = (s?: string) => (s === 'CLOSED' ? 'success' : s === 'OPEN
 // SSE 辅助：规范化 baseUrl（去尾部斜杠）
 const normalizeBase = (u?: string) => (u ? u.replace(/\/+$/, '') : '')
 
+// 在主线程中更新数据的方法
+const updateDataInMainThread = (updateFn: () => void) => {
+  // 使用 queueMicrotask 确保在主线程中更新数据
+  queueMicrotask(updateFn)
+}
+
 // 替换 Dashboard.vue 中原有的 handleHealthUpdate 为下面实现
 const handleHealthUpdate = (payload: any) => {
   if (!payload) return
@@ -429,78 +434,137 @@ const handleHealthUpdate = (payload: any) => {
   const dataObj = instanceHealth ?? (payload.type === 'health-update' ? payload.instanceHealth : null)
   if (!dataObj || typeof dataObj !== 'object') return
 
-  console.debug('[SSE] handleHealthUpdate payload:', dataObj)
+  console.log('[SSE] handleHealthUpdate payload:', dataObj)
 
-  // track which services changed so we can reassign arrays to trigger reactivity
-  const changedServices = new Set<string>()
-  let sseHealthy = 0
-  let sseError = 0
+  // 在主线程中更新数据
+  updateDataInMainThread(() => {
+    // track which services changed so we can reassign arrays to trigger reactivity
+    const changedServices = new Set<string>()
 
-  Object.entries(dataObj).forEach(([key, val]) => {
-    // 更严格地判断健康状态：兼容 boolean 与字符串 'true'/'false'（不再使用 Boolean(val)）
-    const isHealthy = (typeof val === 'boolean') ? val : String(val).toLowerCase() === 'true'
+    Object.entries(dataObj).forEach(([key, val]) => {
+      // 更严格地判断健康状态：兼容 boolean 与字符串 'true'/'false'（不再使用 Boolean(val)）
+      const isHealthy = (typeof val === 'boolean') ? val : String(val).toLowerCase() === 'true'
 
-    if (isHealthy) {sseHealthy++} else {sseError++}
+      // key 格式示例: "chat:test@http://test.com" 或 "chat:qwen3:1.7B@http://172.16.30.6:9090"
+      const firstColon = key.indexOf(':')
+      if (firstColon === -1) return
+      const svcType = key.slice(0, firstColon)
+      const rest = key.slice(firstColon + 1)
+      const lastAt = rest.lastIndexOf('@')
+      if (lastAt === -1) return
+      const instName = rest.slice(0, lastAt)
+      const instBase = normalizeBase(rest.slice(lastAt + 1))
 
-    // key 格式示例: "chat:test@http://test.com" 或 "chat:qwen3:1.7B@http://172.16.30.6:9090"
-    const firstColon = key.indexOf(':')
-    if (firstColon === -1) return
-    const svcType = key.slice(0, firstColon)
-    const rest = key.slice(firstColon + 1)
-    const lastAt = rest.lastIndexOf('@')
-    if (lastAt === -1) return
-    const instName = rest.slice(0, lastAt)
-    const instBase = normalizeBase(rest.slice(lastAt + 1))
+      console.log(`[SSE] 解析实例信息: key=${key}, svcType=${svcType}, instName=${instName}, instBase=${instBase}`)
 
-    const svc = serviceConfigData.value?.services?.[svcType]
-    if (svc && Array.isArray(svc.instances)) {
-      let localChanged = false
-      svc.instances.forEach((ins: any, idx: number) => {
-        const insBase = normalizeBase(ins.baseUrl || ins.base || '')
-        const insName = ins.name || ins.id || ''
-        // 匹配实例：优先 name+baseUrl 精确匹配，降级到只匹配 baseUrl（视情况）
-        if ((insName === instName && insBase === instBase) || (insBase && insBase === instBase)) {
-          // 仅在值变化时替换对象以确保 Vue 能检测到变化
-          if (ins.health !== isHealthy) {
-            const newIns = { ...ins, health: isHealthy }
-            // 使用 splice 直接替换当前索引，保持数组引用但替换元素引用
-            svc.instances.splice(idx, 1, newIns)
-            localChanged = true
+      const svc = serviceConfigData.value?.services?.[svcType]
+      if (svc && Array.isArray(svc.instances)) {
+        let localChanged = false
+        svc.instances.forEach((ins: any, idx: number) => {
+          const insBase = normalizeBase(ins.baseUrl || ins.base || '')
+          const insName = ins.name || ins.id || ''
+          // 匹配实例：优先 name+baseUrl 精确匹配，降级到只匹配 baseUrl（视情况）
+          console.log(`[SSE] 尝试匹配: insName=${insName}, insBase=${insBase} vs instName=${instName}, instBase=${instBase}`)
+          
+          // 增强匹配逻辑，处理可能的路径差异
+          const isNameMatch = insName === instName;
+          const isBaseMatch = insBase === instBase;
+          
+          if (isNameMatch && isBaseMatch) {
+            // 添加调试日志
+            console.log(`[SSE] 精确匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
+            
+            // 仅在值变化时替换对象以确保 Vue 能检测到变化
+            if (ins.health !== isHealthy) {
+              const newIns = { ...ins, health: isHealthy }
+              // 使用 splice 直接替换当前索引，保持数组引用但替换元素引用
+              svc.instances.splice(idx, 1, newIns)
+              localChanged = true
+              console.log(`[SSE] 更新实例健康状态: ${key}, ${ins.health} -> ${isHealthy}`)
+            } else {
+              console.log(`[SSE] 实例健康状态未变化: ${key}, 仍然是 ${isHealthy}`)
+            }
+          } else if (isBaseMatch) {
+            // 如果只有baseUrl匹配，也尝试更新（处理name可能不一致的情况）
+            console.log(`[SSE] baseUrl匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
+            
+            if (ins.health !== isHealthy) {
+              const newIns = { ...ins, health: isHealthy }
+              svc.instances.splice(idx, 1, newIns)
+              localChanged = true
+              console.log(`[SSE] 更新实例健康状态(基于baseUrl): ${key}, ${ins.health} -> ${isHealthy}`)
+            } else {
+              console.log(`[SSE] 实例健康状态未变化(基于baseUrl): ${key}, 仍然是 ${isHealthy}`)
+            }
+          } else if (ins.instanceId && ins.instanceId === key) {
+            // 尝试通过 instanceId 匹配（新增的匹配方式）
+            console.log(`[SSE] instanceId匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
+            
+            if (ins.health !== isHealthy) {
+              const newIns = { ...ins, health: isHealthy }
+              svc.instances.splice(idx, 1, newIns)
+              localChanged = true
+              console.log(`[SSE] 更新实例健康状态(基于instanceId): ${key}, ${ins.health} -> ${isHealthy}`)
+            } else {
+              console.log(`[SSE] 实例健康状态未变化(基于instanceId): ${key}, 仍然是 ${isHealthy}`)
+            }
+          } else if (ins.instanceId && ins.instanceId === `${svcType}:${key}`) {
+            // 尝试通过 serviceType + instanceId 匹配（处理后端返回的key格式）
+            console.log(`[SSE] serviceType+instanceId匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
+            
+            if (ins.health !== isHealthy) {
+              const newIns = { ...ins, health: isHealthy }
+              svc.instances.splice(idx, 1, newIns)
+              localChanged = true
+              console.log(`[SSE] 更新实例健康状态(基于serviceType+instanceId): ${key}, ${ins.health} -> ${isHealthy}`)
+            } else {
+              console.log(`[SSE] 实例健康状态未变化(基于serviceType+instanceId): ${key}, 仍然是 ${isHealthy}`)
+            }
+          } else {
+            // 添加新的匹配方式：直接通过完整key匹配
+            const fullKey = `${svcType}:${insName}@${insBase}`;
+            if (fullKey === key) {
+              console.log(`[SSE] 完整key匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
+              
+              if (ins.health !== isHealthy) {
+                const newIns = { ...ins, health: isHealthy }
+                svc.instances.splice(idx, 1, newIns)
+                localChanged = true
+                console.log(`[SSE] 更新实例健康状态(基于完整key): ${key}, ${ins.health} -> ${isHealthy}`)
+              } else {
+                console.log(`[SSE] 实例健康状态未变化(基于完整key): ${key}, 仍然是 ${isHealthy}`)
+              }
+            }
           }
-        }
-      })
-      if (localChanged) changedServices.add(svcType)
-    }
-  })
-
-  // 强制刷新变更过的服务实例数组以保证视图更新
-  changedServices.forEach(svcType => {
-    const svc = serviceConfigData.value?.services?.[svcType]
-    if (svc && Array.isArray(svc.instances)) {
-      svc.instances = svc.instances.slice()
-    }
-  })
-
-  // 使用 SSE 报文的统计数据更新顶部卡片（按你的要求以 SSE 数据为准）
-  stats.value.healthyInstanceCount = sseHealthy
-  stats.value.errorInstanceCount = sseError
-  // 如果你也希望实例总数由 SSE 决定：
-  stats.value.instanceCount = sseHealthy + sseError
-
-  // 确保触发响应式（在极端情况下重新赋值对象以强制视图更新）
-  stats.value = { ...stats.value }
-
-  console.debug('[SSE] updated counts from SSE, healthy:', sseHealthy, 'error:', sseError, 'changed services:', Array.from(changedServices))
-
-  // 触发视图/图表刷新（若需要）
-  nextTick(() => {
-    if (systemChartInstance) {
-      try {
-        systemChartInstance.setOption(getChartOption(), { notMerge: true })
-      } catch (e) {
-        console.warn('[SSE] update chart failed', e)
+        })
+        if (localChanged) changedServices.add(svcType)
+      } else {
+        // 添加调试日志
+        console.log(`[SSE] 未找到服务类型或实例: ${svcType}`, svc)
       }
-    }
+    })
+
+    // 强制刷新变更过的服务实例数组以保证视图更新
+    changedServices.forEach(svcType => {
+      const svc = serviceConfigData.value?.services?.[svcType]
+      if (svc && Array.isArray(svc.instances)) {
+        svc.instances = svc.instances.slice()
+      }
+    })
+
+    // 不再直接更新健康实例和异常实例的数量，而是通过计算属性自动计算
+    console.log('[SSE] updated instance health status, changed services:', Array.from(changedServices))
+
+    // 触发视图/图表刷新（若需要）
+    nextTick(() => {
+      if (systemChartInstance) {
+        try {
+          systemChartInstance.setOption(getChartOption(), { notMerge: true })
+        } catch (e) {
+          console.warn('[SSE] update chart failed', e)
+        }
+      }
+    })
   })
 }
 // ===== end handleHealthUpdate =====
@@ -569,14 +633,12 @@ const fetchDashboardData = async () => {
     // 服务统计（保留）
     const statsRes = await getServiceStats()
     if (statsRes.data && statsRes.data.success) {
-      const d = statsRes.data.data || {}
+      const d: any = statsRes.data.data || {}
       stats.value.serviceCount = d.totalServices || 0
       stats.value.instanceCount = d.totalInstances || 0
       stats.value.totalModels = d.totalModels || 0
       stats.value.alertCount = d.alertCount || 0
       stats.value.userCount = d.userCount || 0
-      stats.value.errorInstanceCount = d.errorInstanceCount || 0
-      stats.value.healthyInstanceCount = (d.totalInstances || 0) - (d.errorInstanceCount || 0)
     }
 
     // 账号数（保留）

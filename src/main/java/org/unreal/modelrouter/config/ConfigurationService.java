@@ -716,6 +716,15 @@ public class ConfigurationService {
         if (!normalized.containsKey("status")) {
             normalized.put("status", "active");
         }
+        
+        // 确保instanceId字段存在
+        if (!normalized.containsKey("instanceId")) {
+            String name = (String) normalized.get("name");
+            String baseUrl = (String) normalized.get("baseUrl");
+            if (name != null && baseUrl != null) {
+                normalized.put("instanceId", name + "@" + baseUrl);
+            }
+        }
 
         return normalized;
     }
@@ -755,6 +764,16 @@ public class ConfigurationService {
     private Map<String, Object> mergeInstanceConfig(Map<String, Object> existing, Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
         merged.putAll(updates);
+        
+        // 确保instanceId字段存在
+        if (!merged.containsKey("instanceId")) {
+            String name = (String) merged.get("name");
+            String baseUrl = (String) merged.get("baseUrl");
+            if (name != null && baseUrl != null) {
+                merged.put("instanceId", name + "@" + baseUrl);
+            }
+        }
+        
         return merged;
     }
 
