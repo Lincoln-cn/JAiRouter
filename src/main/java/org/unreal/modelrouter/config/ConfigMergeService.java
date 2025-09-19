@@ -166,7 +166,11 @@ public class ConfigMergeService {
         }
 
         Object nameObj = instanceConfig.get("name");
+        // 同时支持baseUrl和base-url两种字段名
         Object baseUrlObj = instanceConfig.get("baseUrl");
+        if (baseUrlObj == null) {
+            baseUrlObj = instanceConfig.get("base-url");
+        }
 
         String name = nameObj instanceof String ? (String) nameObj : null;
         String baseUrl = baseUrlObj instanceof String ? (String) baseUrlObj : null;
