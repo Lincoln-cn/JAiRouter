@@ -2,7 +2,9 @@ package org.unreal.modelrouter.checker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.controller.HealthStatusSseController;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 
 import java.util.Map;
@@ -16,6 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServiceStateManager {
 
     private static final Logger log = LoggerFactory.getLogger(ServiceStateManager.class);
+
+    // 注入SSE控制器
+    @Autowired(required = false)
+    private HealthStatusSseController healthStatusSseController;
 
     // 存储每个服务类型的健康状态
     private final Map<String, Boolean> serviceHealthStatus = new ConcurrentHashMap<>();
@@ -73,7 +79,27 @@ public class ServiceStateManager {
      */
     public void updateInstanceHealthStatus(String serviceType, ModelRouterProperties.ModelInstance instance, boolean isHealthy) {
         String instanceKey = serviceType + ":" + instance.getName() + "@" + instance.getBaseUrl();
-        instanceHealthStatus.put(instanceKey, isHealthy);
+        Boolean previousStatus = instanceHealthStatus.get(instanceKey);
+        
+        // 只有状态发生变化时才更新
+        if (previousStatus == null || previousStatus != isHealthy) {
+            instanceHealthStatus.put(instanceKey, isHealthy);
+            log.debug("实例健康状态更新: {} -> {}", instanceKey, isHealthy);
+            
+            // 通知SSE控制器推送更新
+            if (healthStatusSseController != null) {
+                try {
+                    healthStatusSseController.notifyHealthStatusChange();
+                    log.debug("已通知SSE控制器推送健康状态更新");
+                } catch (Exception e) {
+                    log.warn("通知SSE控制器推送健康状态更新时发生错误: {}", e.getMessage());
+                }
+            } else {
+                log.debug("SSE控制器未注入，跳过推送更新");
+            }
+        } else {
+            log.debug("实例健康状态未发生变化: {}", instanceKey);
+        }
     }
 
     /**
@@ -88,5 +114,14 @@ public class ServiceStateManager {
      */
     public Map<String, Boolean> getAllInstanceHealthStatus() {
         return new ConcurrentHashMap<>(instanceHealthStatus);
+    }
+    
+    /**
+     * 清理过期的实例健康状态
+     */
+    public void clearExpiredInstanceHealthStatus() {
+        log.info("清理过期的实例健康状态，清理前缓存大小: {}", instanceHealthStatus.size());
+        instanceHealthStatus.clear();
+        log.info("实例健康状态缓存清理完成");
     }
 }

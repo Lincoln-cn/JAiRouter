@@ -162,17 +162,30 @@ public class ServiceInstanceController {
                         .body(RouterResponse.error("实例baseUrl格式不正确"));
             }
             
-            // URL解码实例ID
-            String decodedInstanceId = instanceConfig.getInstanceId();
-            logger.info("准备更新实例: serviceType={}, instanceId={}", serviceType, decodedInstanceId);
-            configurationService.updateServiceInstance(serviceType, decodedInstanceId, instanceConfig.getInstance().covertTo(), createNewVersion);
+            // 获取原始实例ID和新实例ID
+            String originalInstanceId = instanceConfig.getInstanceId();
+            String newInstanceId = instanceConfig.getNewInstanceId();
+            
+            logger.info("准备更新实例: serviceType={}, originalInstanceId={}, newInstanceId={}", serviceType, originalInstanceId, newInstanceId);
+            
+            // 如果实例ID发生变化，需要特殊处理
+            if (!originalInstanceId.equals(newInstanceId)) {
+                logger.info("实例ID发生变化，从 {} 更新为 {}", originalInstanceId, newInstanceId);
+                // 先删除旧实例，再添加新实例
+                configurationService.deleteServiceInstance(serviceType, originalInstanceId, false);
+                configurationService.addServiceInstance(serviceType, instanceConfig.getInstance().covertTo(), createNewVersion);
+            } else {
+                // 实例ID未变化，直接更新
+                configurationService.updateServiceInstance(serviceType, originalInstanceId, instanceConfig.getInstance().covertTo(), createNewVersion);
+            }
+            
             return ResponseEntity.ok(RouterResponse.success(null, "实例更新成功"));
         } catch (IllegalArgumentException e) {
             logger.warn("更新实例参数错误: serviceType={}, message={}", serviceType, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(RouterResponse.error(e.getMessage()));
         } catch (Exception e) {
-            logger.error("更新实例失败: serviceType={}, instanceId={}", serviceType, instanceConfig.getInstanceId(), e);
+            logger.error("更新实例失败: serviceType={}", serviceType, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(RouterResponse.error("更新实例失败: " + e.getMessage()));
         }
