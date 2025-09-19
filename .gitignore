@@ -49,3 +49,4 @@ build/
 /scripts/docs copy/
 /site/
 app.log
+/src/main/resources/static/admin
