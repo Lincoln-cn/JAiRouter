@@ -348,6 +348,7 @@ interface ServiceInstance {
   path: string
   weight: number
   status: 'active' | 'inactive'
+  originalInstanceId?: string // 添加原始实例ID字段
   rateLimit: {
     enabled: boolean
     algorithm: string
@@ -455,6 +456,7 @@ watch([filtered, pageSize], () => {
 
 // 监听服务类型变化，使用缓存或请求
 watch(activeServiceType, (newServiceType) => {
+  console.log('服务类型变化，新服务类型:', newServiceType);
   currentPage.value = 1
   searchQuery.value = ''
   statusFilter.value = ''
@@ -471,6 +473,7 @@ const fetchServiceTypes = async () => {
     const response = await getServiceTypes()
     if (response.data?.success) {
       const types: string[] = response.data.data || []
+      console.log('获取到的服务类型:', types);
 
       // 保持 serviceOrder 中的顺序，其他未在 serviceOrder 中的类型追加在后
       const ordered = serviceOrder.filter(t => types.includes(t)).concat(types.filter(t => !serviceOrder.includes(t)))
@@ -490,6 +493,8 @@ const fetchServiceTypes = async () => {
 // 获取实例（带缓存与简单防抖）
 let fetchTimer: ReturnType<typeof setTimeout> | null = null
 const fetchServiceInstances = (serviceType: string) => {
+  console.log('获取实例列表，使用服务类型:', serviceType);
+  console.log(`发送获取请求到: /api/config/instance/type/${serviceType}`)
   if (fetchTimer) clearTimeout(fetchTimer)
   fetchTimer = setTimeout(async () => {
     loading.value = true
@@ -502,8 +507,13 @@ const fetchServiceInstances = (serviceType: string) => {
       const response = await getServiceInstances(serviceType)
       if (response.data?.success) {
         const data: ServiceInstance[] = response.data.data || []
-        instancesCache.value[serviceType] = data
-        instances.value[serviceType] = [...data]
+        // 确保每个实例都包含正确的服务类型
+        const typedData = data.map(item => ({
+          ...item,
+          serviceType: serviceType
+        }))
+        instancesCache.value[serviceType] = typedData
+        instances.value[serviceType] = [...typedData]
       } else {
         instances.value[serviceType] = []
       }
@@ -520,6 +530,7 @@ const fetchServiceInstances = (serviceType: string) => {
 // 刷新当前 tab
 const refreshCurrent = () => {
   const t = activeServiceType.value
+  console.log('刷新当前选项卡，服务类型:', t);
   delete instancesCache.value[t]
   fetchServiceInstances(t)
   ElMessage.success('刷新中...')
@@ -531,7 +542,7 @@ const handleAddInstance = () => {
   isEdit.value = false
   Object.assign(form, {
     id: 0,
-    serviceType: activeServiceType.value,
+    serviceType: activeServiceType.value, // 确保使用当前选项卡的服务类型
     name: '',
     baseUrl: '',
     path: '',
@@ -553,6 +564,7 @@ const handleAddInstance = () => {
       successThreshold: 2
     }
   })
+  console.log('添加实例，使用服务类型:', activeServiceType.value)
   dialogVisible.value = true
 }
 
@@ -562,6 +574,9 @@ const handleEdit = (row: ServiceInstance) => {
   isEdit.value = true
   Object.assign(form, {
     ...row,
+    // 确保使用当前激活的页签对应的服务类型，而不是实例原来的服务类型
+    serviceType: activeServiceType.value,
+    originalInstanceId: `${row.name}@${row.baseUrl}`, // 保存原始实例ID
     rateLimit: {
       enabled: row.rateLimit?.enabled || false,
       algorithm: row.rateLimit?.algorithm || 'token-bucket',
@@ -578,6 +593,8 @@ const handleEdit = (row: ServiceInstance) => {
       successThreshold: row.circuitBreaker?.successThreshold || 2
     }
   })
+  console.log('编辑实例，设置originalInstanceId:', form.originalInstanceId)
+  console.log('编辑实例，使用服务类型:', form.serviceType)
   dialogVisible.value = true
 }
 
@@ -589,10 +606,14 @@ const handleDelete = (row: ServiceInstance) => {
     type: 'warning'
   }).then(async () => {
     try {
-      const response = await deleteServiceInstance(row.serviceType, row.name, row.baseUrl, false)
+      // 确保使用实例对应的服务类型
+      const serviceType = row.serviceType || activeServiceType.value;
+      console.log('删除实例，使用服务类型:', serviceType);
+      console.log(`发送删除请求到: /api/config/instance/del/${serviceType}?modelName=${encodeURIComponent(row.name)}&baseUrl=${encodeURIComponent(row.baseUrl)}&createNewVersion=false`)
+      const response = await deleteServiceInstance(serviceType, row.name, row.baseUrl, false)
       if (response.data?.success) {
-        instances.value[row.serviceType] = (instances.value[row.serviceType] || []).filter(i => i.id !== row.id)
-        instancesCache.value[row.serviceType] = [...(instances.value[row.serviceType] || [])]
+        instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== row.id)
+        instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
         ElMessage.success('删除成功')
       } else {
         ElMessage.error(response.data?.message || '删除失败')
@@ -617,25 +638,32 @@ const handleSave = async () => {
   if (!formRef.value) return
   saveLoading.value = true
   try {
+    // 确保使用当前选项卡的服务类型
+    const serviceType = form.serviceType || activeServiceType.value;
+    console.log('保存实例，使用服务类型:', serviceType);
+    
     const instanceData = {
       name: form.name,
       baseUrl: form.baseUrl,
       path: form.path,
       weight: form.weight,
-      status: form.status  // 添加status字段
+      status: form.status
     }
 
     if (isEdit.value) {
-      // 确保数据格式与后端UpdateInstanceDTO完全匹配
+      // 使用原始实例ID而不是根据表单数据重新构建
       const updateData = { 
-        instanceId: `${form.name}@${form.baseUrl}`, 
+        instanceId: form.originalInstanceId || `${form.name}@${form.baseUrl}`, 
         instance: instanceData 
       }
-      const response = await updateServiceInstance(form.serviceType, updateData, false)
+      console.log('更新实例请求数据:', updateData)
+      // 使用正确的服务类型发送请求
+      console.log(`发送更新请求到: /api/config/instance/update/${serviceType}?createNewVersion=false`)
+      const response = await updateServiceInstance(serviceType, updateData, false)
       if (response.data?.success) {
         // 编辑成功后，清除缓存并重新获取实例列表以确保数据同步
-        delete instancesCache.value[form.serviceType]
-        await fetchServiceInstances(form.serviceType)
+        delete instancesCache.value[serviceType]
+        await fetchServiceInstances(serviceType)
         ElMessage.success('编辑成功')
       } else {
         ElMessage.error(response.data?.message || '编辑失败')
@@ -643,12 +671,14 @@ const handleSave = async () => {
         return
       }
     } else {
-      const response = await addServiceInstance(form.serviceType, instanceData, false)
+      // 使用正确的服务类型发送请求
+      console.log(`发送添加请求到: /api/config/instance/add/${serviceType}?createNewVersion=false`)
+      const response = await addServiceInstance(serviceType, instanceData, false)
       if (response.data?.success) {
         const newInstance: ServiceInstance = { ...form, id: Date.now() }
-        if (!instances.value[form.serviceType]) instances.value[form.serviceType] = []
-        instances.value[form.serviceType].push(newInstance)
-        instancesCache.value[form.serviceType] = [...instances.value[form.serviceType]]
+        if (!instances.value[serviceType]) instances.value[serviceType] = []
+        instances.value[serviceType].push(newInstance)
+        instancesCache.value[serviceType] = [...instances.value[serviceType]]
         ElMessage.success('添加成功')
       } else {
         ElMessage.error(response.data?.message || '添加失败')
