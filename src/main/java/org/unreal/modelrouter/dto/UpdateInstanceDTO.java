@@ -96,4 +96,15 @@ public class UpdateInstanceDTO {
     public void setInstance(Data instance) {
         this.instance = instance;
     }
+    
+    /**
+     * 构建新的实例ID
+     * @return 新的实例ID
+     */
+    public String getNewInstanceId() {
+        if (instance != null && instance.getName() != null && instance.getBaseUrl() != null) {
+            return instance.getName() + "@" + instance.getBaseUrl();
+        }
+        return instanceId; // 如果无法构建新的ID，则返回原始ID
+    }
 }
