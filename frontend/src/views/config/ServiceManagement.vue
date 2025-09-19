@@ -242,6 +242,88 @@
             rows="3"
           />
         </el-form-item>
+        
+        <!-- 服务级别限流配置 -->
+        <el-divider content-position="left">服务级别限流配置</el-divider>
+        <el-form-item label="启用限流">
+          <el-switch v-model="form.rateLimit.enabled" active-text="启用" inactive-text="禁用" />
+        </el-form-item>
+        
+        <div v-if="form.rateLimit.enabled">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="算法">
+                <el-select v-model="form.rateLimit.algorithm" placeholder="请选择算法">
+                  <el-option label="令牌桶" value="token-bucket" />
+                  <el-option label="漏桶" value="leaky-bucket" />
+                  <el-option label="滑动窗口" value="sliding-window" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="作用域">
+                <el-select v-model="form.rateLimit.scope" placeholder="请选择作用域" disabled>
+                  <el-option label="服务级别" value="service" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="容量">
+                <el-input-number v-model="form.rateLimit.capacity" :min="1" :max="10000" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="速率">
+                <el-input-number v-model="form.rateLimit.rate" :min="1" :max="10000" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="限流键值">
+                <el-input v-model="form.rateLimit.key" placeholder="请输入限流键值（可选）" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="客户端IP限流">
+                <el-switch v-model="form.rateLimit.clientIpEnable" active-text="启用" inactive-text="禁用" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+        
+        <!-- 服务级别熔断器配置 -->
+        <el-divider content-position="left">服务级别熔断器配置</el-divider>
+        <el-form-item label="启用熔断器">
+          <el-switch v-model="form.circuitBreaker.enabled" active-text="启用" inactive-text="禁用" />
+        </el-form-item>
+        
+        <div v-if="form.circuitBreaker.enabled">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="失败阈值">
+                <el-input-number v-model="form.circuitBreaker.failureThreshold" :min="1" :max="100" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="超时时间(毫秒)">
+                <el-input-number v-model="form.circuitBreaker.timeout" :min="1000" :max="300000" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="成功阈值">
+                <el-input-number v-model="form.circuitBreaker.successThreshold" :min="1" :max="100" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
       </el-form>
 
       <template #footer>
@@ -289,6 +371,22 @@ interface ServiceForm {
     type: string
   }
   description: string
+  // 添加服务级别的限流和熔断配置
+  rateLimit: {
+    enabled: boolean
+    algorithm: string
+    capacity: number
+    rate: number
+    scope: string
+    key: string
+    clientIpEnable: boolean
+  }
+  circuitBreaker: {
+    enabled: boolean
+    failureThreshold: number
+    timeout: number
+    successThreshold: number
+  }
 }
 
 // 状态管理
@@ -329,7 +427,23 @@ const form = reactive<ServiceForm>({
   type: '',
   adapter: '',
   loadBalance: { type: 'random' },
-  description: ''
+  description: '',
+  // 初始化服务级别的限流和熔断配置
+  rateLimit: {
+    enabled: false,
+    algorithm: 'token-bucket',
+    capacity: 100,
+    rate: 10,
+    scope: 'service', // 服务级别
+    key: '',
+    clientIpEnable: false
+  },
+  circuitBreaker: {
+    enabled: false,
+    failureThreshold: 5,
+    timeout: 60000,
+    successThreshold: 2
+  }
 })
 
 // 验证规则
@@ -535,6 +649,22 @@ const handleEdit = async (row: Service) => {
       form.adapter = cfg.adapter || row.adapter || ''
       form.loadBalance.type = cfg.loadBalance?.type || row.loadBalanceType || 'random'
       form.description = cfg.description || ''
+      // 添加服务级别的限流和熔断配置
+      form.rateLimit = {
+        enabled: cfg.rateLimit?.enabled || false,
+        algorithm: cfg.rateLimit?.algorithm || 'token-bucket',
+        capacity: cfg.rateLimit?.capacity || 100,
+        rate: cfg.rateLimit?.rate || 10,
+        scope: cfg.rateLimit?.scope || 'service',
+        key: cfg.rateLimit?.key || '',
+        clientIpEnable: cfg.rateLimit?.clientIpEnable || false
+      }
+      form.circuitBreaker = {
+        enabled: cfg.circuitBreaker?.enabled || false,
+        failureThreshold: cfg.circuitBreaker?.failureThreshold || 5,
+        timeout: cfg.circuitBreaker?.timeout || 60000,
+        successThreshold: cfg.circuitBreaker?.successThreshold || 2
+      }
       dialogVisible.value = true
     } else {
       ElMessage.error(response.data?.message || '获取服务配置失败')
@@ -585,7 +715,10 @@ const handleSave = async () => {
         const serviceConfig: any = {
           adapter: form.adapter || undefined,
           loadBalance: form.loadBalance,
-          description: form.description || undefined
+          description: form.description || undefined,
+          // 添加服务级别的限流和熔断配置
+          rateLimit: form.rateLimit.enabled ? form.rateLimit : { enabled: false },
+          circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : { enabled: false }
         }
         let response
         if (isEdit.value) response = await updateServiceConfig(form.type, serviceConfig)

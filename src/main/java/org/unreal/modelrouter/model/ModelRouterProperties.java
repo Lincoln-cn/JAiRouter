@@ -144,6 +144,7 @@ public class ModelRouterProperties {
         private String baseUrl; // 注意驼峰命名
         private String path;
         private int weight = 1;
+        private String status = "active"; // 添加状态字段，默认为active
         private RateLimitConfig rateLimit; // 实例级别限流配置
         private CircuitBreakerConfig circuitBreaker; // 实例级别熔断器配置
 
@@ -177,6 +178,14 @@ public class ModelRouterProperties {
 
         public void setWeight(int weight) {
             this.weight = weight;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
         }
 
         public RateLimitConfig getRateLimit() {
