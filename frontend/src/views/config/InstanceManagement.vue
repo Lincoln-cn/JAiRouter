@@ -318,14 +318,6 @@ import {
   updateServiceInstance,
   deleteServiceInstance
 } from '@/api/dashboard'
-import {
-  Management,
-  Plus,
-  Edit,
-  Delete,
-  Search,
-  Refresh
-} from '@element-plus/icons-vue'
 
 // 服务类型映射（保持原有）
 const serviceTypeMap: Record<string, string> = {
@@ -528,7 +520,7 @@ const fetchServiceInstances = (serviceType: string) => {
 // 刷新当前 tab
 const refreshCurrent = () => {
   const t = activeServiceType.value
-  instancesCache.value[t] = undefined
+  delete instancesCache.value[t]
   fetchServiceInstances(t)
   ElMessage.success('刷新中...')
 }
@@ -630,22 +622,20 @@ const handleSave = async () => {
       baseUrl: form.baseUrl,
       path: form.path,
       weight: form.weight,
-      status: form.status,
-      rateLimit: form.rateLimit.enabled ? form.rateLimit : { enabled: false },
-      circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : { enabled: false }
+      status: form.status  // 添加status字段
     }
 
     if (isEdit.value) {
-      const updateData = { instanceId: `${form.name}@${form.baseUrl}`, instance: instanceData }
+      // 确保数据格式与后端UpdateInstanceDTO完全匹配
+      const updateData = { 
+        instanceId: `${form.name}@${form.baseUrl}`, 
+        instance: instanceData 
+      }
       const response = await updateServiceInstance(form.serviceType, updateData, false)
       if (response.data?.success) {
-        const list = instances.value[form.serviceType] || []
-        const idx = list.findIndex(i => i.id === form.id)
-        if (idx !== -1) {
-          list[idx] = { ...form }
-          instances.value[form.serviceType] = [...list]
-          instancesCache.value[form.serviceType] = [...list]
-        }
+        // 编辑成功后，清除缓存并重新获取实例列表以确保数据同步
+        delete instancesCache.value[form.serviceType]
+        await fetchServiceInstances(form.serviceType)
         ElMessage.success('编辑成功')
       } else {
         ElMessage.error(response.data?.message || '编辑失败')
