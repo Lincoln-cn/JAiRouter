@@ -365,6 +365,9 @@ public class ConfigurationHelper {
         map.put("path", instance.getPath());
         map.put("weight", instance.getWeight());
         map.put("status", instance.getStatus()); // 添加status字段
+        
+        // 添加instanceId字段
+        map.put("instanceId", instance.getInstanceId());
 
         // 添加限流配置
         addRateLimitToMap(instance.getRateLimit(), map);
