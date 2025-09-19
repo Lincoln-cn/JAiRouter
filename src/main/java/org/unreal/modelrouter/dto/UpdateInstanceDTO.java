@@ -23,6 +23,7 @@ public class UpdateInstanceDTO {
         private String baseUrl;
         private String path;
         private Integer weight;
+        private String status; // 添加status字段
 
         // Getters and setters
         public String getName() {
@@ -57,12 +58,24 @@ public class UpdateInstanceDTO {
             this.weight = weight;
         }
 
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
         public ModelRouterProperties.ModelInstance covertTo() {
             ModelRouterProperties.ModelInstance modelInstance = new ModelRouterProperties.ModelInstance();
             modelInstance.setName(name);
             modelInstance.setBaseUrl(baseUrl);
             modelInstance.setPath(path);
             modelInstance.setWeight(weight);
+            // 添加status字段设置
+            if (status != null) {
+                modelInstance.setStatus(status);
+            }
             return modelInstance;
         }
     }
