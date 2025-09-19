@@ -190,7 +190,16 @@ public class ConfigurationService {
         if (serviceConfig == null) {
             return new ArrayList<>();
         }
-        return (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
+        List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
+        
+        // 确保每个实例都有status字段
+        for (Map<String, Object> instance : instances) {
+            if (!instance.containsKey("status")) {
+                instance.put("status", "active"); // 默认为active
+            }
+        }
+        
+        return instances;
     }
 
     /**
@@ -223,6 +232,10 @@ public class ConfigurationService {
                     if (baseUrl != null && name != null) {
                         boolean isHealthy = serviceStateManager.isInstanceHealthy(serviceType, name, baseUrl);
                         instance.put("health", isHealthy);
+                    }
+                    // 确保status字段存在
+                    if (!instance.containsKey("status")) {
+                        instance.put("status", "active"); // 默认为active
                     }
                     return instance;
                 })
@@ -683,6 +696,11 @@ public class ConfigurationService {
         // 设置默认值
         if (!normalized.containsKey("weight")) {
             normalized.put("weight", 1);
+        }
+        
+        // 添加status字段的默认值
+        if (!normalized.containsKey("status")) {
+            normalized.put("status", "active");
         }
 
         return normalized;
