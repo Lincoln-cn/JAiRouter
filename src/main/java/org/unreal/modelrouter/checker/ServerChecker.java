@@ -41,6 +41,15 @@ public class ServerChecker {
     }
 
     /**
+     * 当配置更新时，清理过期的实例状态缓存
+     */
+    public void clearExpiredInstanceStates() {
+        log.info("清理过期的实例状态缓存，清理前缓存大小: {}", previousInstanceStates.size());
+        previousInstanceStates.clear();
+        log.info("实例状态缓存清理完成");
+    }
+
+    /**
      * 定时检查所有服务实例的健康状态
      * 每30秒执行一次
      */
