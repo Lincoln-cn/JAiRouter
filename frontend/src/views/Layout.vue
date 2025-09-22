@@ -34,6 +34,7 @@
           <el-menu-item index="/config/services">服务管理</el-menu-item>
           <el-menu-item index="/config/instances">实例管理</el-menu-item>
           <el-menu-item index="/config/versions">版本管理</el-menu-item>
+          <el-menu-item index="/config/merge">配置合并</el-menu-item>
         </el-sub-menu>
         
         <!-- 安全管理 -->

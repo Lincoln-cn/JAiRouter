@@ -75,6 +75,12 @@ const router = createRouter({
           name: 'version-management',
           component: () => import('../views/config/VersionManagement.vue'),
           meta: { title: '版本管理', icon: 'document' }
+        },
+        {
+          path: 'merge',
+          name: 'config-merge-management',
+          component: () => import('../views/config/ConfigMergeManagement.vue'),
+          meta: { title: '配置合并', icon: 'files' }
         }
       ]
     },

@@ -428,20 +428,36 @@ const updateDataInMainThread = (updateFn: () => void) => {
 // 替换 Dashboard.vue 中原有的 handleHealthUpdate 为下面实现
 const handleHealthUpdate = (payload: any) => {
   if (!payload) return
-  // payload 可能直接就是 instanceHealth 或是包含 type/timestamp 等字段
-  const instanceHealth = payload.instanceHealth || payload.data?.instanceHealth || null
-  // 兼容多种包装形式
-  const dataObj = instanceHealth ?? (payload.type === 'health-update' ? payload.instanceHealth : null)
-  if (!dataObj || typeof dataObj !== 'object') return
+  
+  // 处理新的SSE数据格式: {"instanceHealth":{...},"type":"health-update","timestamp":"..."}
+  let dataObj: Record<string, any> | null = null;
+  
+  // 检查是否是新的数据格式
+  if (payload.type === 'health-update' && payload.instanceHealth) {
+    dataObj = payload.instanceHealth;
+  } 
+  // 兼容旧的数据格式
+  else if (payload.type === 'health-update' && payload.data && payload.data.instanceHealth) {
+    dataObj = payload.data.instanceHealth;
+  }
+  // 兼容直接传递instanceHealth对象的格式
+  else if (payload.instanceHealth) {
+    dataObj = payload.instanceHealth;
+  }
+  
+  if (!dataObj || typeof dataObj !== 'object') {
+    console.log('[SSE] 无效的数据格式:', payload);
+    return;
+  }
 
-  console.log('[SSE] handleHealthUpdate payload:', dataObj)
+  console.log('[SSE] handleHealthUpdate payload:', dataObj);
 
   // 在主线程中更新数据
   updateDataInMainThread(() => {
     // track which services changed so we can reassign arrays to trigger reactivity
     const changedServices = new Set<string>()
 
-    Object.entries(dataObj).forEach(([key, val]) => {
+    Object.entries(dataObj || {}).forEach(([key, val]) => {
       // 更严格地判断健康状态：兼容 boolean 与字符串 'true'/'false'（不再使用 Boolean(val)）
       const isHealthy = (typeof val === 'boolean') ? val : String(val).toLowerCase() === 'true'
 
