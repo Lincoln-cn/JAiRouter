@@ -193,8 +193,8 @@ public class ServerChecker {
                 NetUtils.NetConnect result = NetUtils.testSocketConnect(host, port);
                 long responseTime = System.currentTimeMillis() - startTime;
 
-                // 创建实例的唯一标识符
-                String instanceKey = serviceType + ":" + instance.getName() + "@" + instance.getBaseUrl();
+                // 创建实例的唯一标识符，使用实例的UUID
+                String instanceKey = serviceType + ":" + instance.getInstanceId();
                 
                 // 获取之前的健康状态
                 boolean previousHealthStatus = previousInstanceStates.getOrDefault(instanceKey, true);
