@@ -187,15 +187,36 @@ public class FileStoreManager extends BaseStoreManager {
             List<Integer> versions = new ArrayList<>();
             File storageDir = new File(storagePath);
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-            Pattern versionPattern = Pattern.compile(Pattern.quote(sanitizedKey) + "@(\\d+)\\.json");
             
-            File[] files = storageDir.listFiles((dir, name) -> name.startsWith(sanitizedKey + "@") && name.endsWith(".json"));
+            // 使用缓存来减少文件系统遍历
+            File[] files = storageDir.listFiles((dir, name) -> 
+                name.startsWith(sanitizedKey + "@") && 
+                (name.endsWith(".json") || name.endsWith(".json.gz")));
             
             if (files != null) {
                 for (File file : files) {
-                    Matcher matcher = versionPattern.matcher(file.getName());
-                    if (matcher.matches()) {
-                        versions.add(Integer.parseInt(matcher.group(1)));
+                    String fileName = file.getName();
+                    // 提取版本号，支持压缩和未压缩的文件
+                    if (fileName.endsWith(".json")) {
+                        String versionStr = fileName.substring(
+                            (sanitizedKey + "@").length(), 
+                            fileName.length() - ".json".length());
+                        try {
+                            versions.add(Integer.parseInt(versionStr));
+                        } catch (NumberFormatException e) {
+                            // 忽略无法解析为数字的文件
+                            LOGGER.debug("无法解析版本号: {}", fileName);
+                        }
+                    } else if (fileName.endsWith(".json.gz")) {
+                        String versionStr = fileName.substring(
+                            (sanitizedKey + "@").length(), 
+                            fileName.length() - ".json.gz".length());
+                        try {
+                            versions.add(Integer.parseInt(versionStr));
+                        } catch (NumberFormatException e) {
+                            // 忽略无法解析为数字的文件
+                            LOGGER.debug("无法解析版本号: {}", fileName);
+                        }
                     }
                 }
             }
@@ -244,6 +265,92 @@ public class FileStoreManager extends BaseStoreManager {
             }
         } catch (IOException e) {
             LOGGER.error("Failed to delete config version for key: " + key + ", version: " + version, e);
+        }
+    }
+
+    /**
+     * 压缩指定版本的配置文件
+     * @param key 配置键
+     * @param version 版本号
+     * @return 压缩是否成功
+     */
+    public boolean compressConfigVersion(String key, int version) {
+        try {
+            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
+            File compressedFile = new File(storagePath, sanitizedKey + "@" + version + ".json.gz");
+            
+            if (!versionFile.exists()) {
+                LOGGER.warn("Config version file does not exist: " + versionFile.getAbsolutePath());
+                return false;
+            }
+            
+            // 如果压缩文件已存在，先删除
+            if (compressedFile.exists()) {
+                Files.delete(compressedFile.toPath());
+            }
+            
+            // 压缩文件
+            try (java.io.FileInputStream fis = new java.io.FileInputStream(versionFile);
+                 java.util.zip.GZIPOutputStream gzos = new java.util.zip.GZIPOutputStream(new java.io.FileOutputStream(compressedFile))) {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = fis.read(buffer)) > 0) {
+                    gzos.write(buffer, 0, len);
+                }
+            }
+            
+            // 删除原始文件
+            Files.delete(versionFile.toPath());
+            
+            LOGGER.info("Successfully compressed config version file: " + versionFile.getAbsolutePath());
+            return true;
+        } catch (IOException e) {
+            LOGGER.error("Failed to compress config version for key: " + key + ", version: " + version, e);
+            return false;
+        }
+    }
+
+    /**
+     * 解压缩指定版本的配置文件
+     * @param key 配置键
+     * @param version 版本号
+     * @return 解压缩是否成功
+     */
+    public boolean decompressConfigVersion(String key, int version) {
+        try {
+            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+            File compressedFile = new File(storagePath, sanitizedKey + "@" + version + ".json.gz");
+            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
+            
+            if (!compressedFile.exists()) {
+                LOGGER.warn("Compressed config version file does not exist: " + compressedFile.getAbsolutePath());
+                return false;
+            }
+            
+            // 如果原始文件已存在，先删除
+            if (versionFile.exists()) {
+                Files.delete(versionFile.toPath());
+            }
+            
+            // 解压缩文件
+            try (java.util.zip.GZIPInputStream gzis = new java.util.zip.GZIPInputStream(new java.io.FileInputStream(compressedFile));
+                 java.io.FileOutputStream fos = new java.io.FileOutputStream(versionFile)) {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = gzis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                }
+            }
+            
+            // 删除压缩文件
+            Files.delete(compressedFile.toPath());
+            
+            LOGGER.info("Successfully decompressed config version file: " + compressedFile.getAbsolutePath());
+            return true;
+        } catch (IOException e) {
+            LOGGER.error("Failed to decompress config version for key: " + key + ", version: " + version, e);
+            return false;
         }
     }
 }

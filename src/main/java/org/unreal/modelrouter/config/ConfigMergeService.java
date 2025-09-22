@@ -44,7 +44,16 @@ public class ConfigMergeService {
      */
     public Map<String, Object> getPersistedConfig() {
         try {
-            // 首先尝试获取最新版本的配置
+            // 首先尝试获取当前配置（最新应用的配置）
+            if (storeManager.exists(CONFIG_KEY)) {
+                Map<String, Object> config = storeManager.getConfig(CONFIG_KEY);
+                if (config != null) {
+                    logger.info("成功加载当前持久化配置，包含 {} 个顶级配置项", config.size());
+                    return config;
+                }
+            }
+            
+            // 如果没有当前配置，尝试获取最新版本的配置
             List<Integer> versions = storeManager.getConfigVersions(CONFIG_KEY);
             if (!versions.isEmpty()) {
                 // 获取最大版本号
@@ -52,15 +61,6 @@ public class ConfigMergeService {
                 Map<String, Object> config = storeManager.getConfigByVersion(CONFIG_KEY, latestVersion);
                 if (config != null) {
                     logger.info("成功加载最新版本持久化配置 v{}，包含 {} 个顶级配置项", latestVersion, config.size());
-                    return config;
-                }
-            }
-
-            // 如果没有版本配置，尝试获取当前配置
-            if (storeManager.exists(CONFIG_KEY)) {
-                Map<String, Object> config = storeManager.getConfig(CONFIG_KEY);
-                if (config != null) {
-                    logger.info("成功加载持久化配置，包含 {} 个顶级配置项", config.size());
                     return config;
                 }
             }
