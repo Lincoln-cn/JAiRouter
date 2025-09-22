@@ -109,6 +109,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
+import { connectSSE, disconnectSSE, addSSEListener, removeSSEListener } from '@/utils/sse'
 
 // 统计数据
 const stats = ref({
@@ -145,6 +146,82 @@ const services = ref([
     lastCheck: '2023-10-01 09:55:00' 
   }
 ])
+
+// SSE 回调引用
+let sseHandler: ((data: any) => void) | null = null
+
+// 更新服务状态的函数
+const updateServiceStatus = (serviceType: string, isHealthy: boolean) => {
+  const serviceMap: Record<string, string> = {
+    'chat': 'Chat Service',
+    'embedding': 'Embedding Service',
+    'rerank': 'Rerank Service',
+    'tts': 'TTS Service',
+    'stt': 'STT Service',
+    'imgGen': 'Image Generation Service',
+    'imgEdit': 'Image Edit Service'
+  }
+  
+  const serviceName = serviceMap[serviceType] || `${serviceType} Service`
+  const service = services.value.find(s => s.name === serviceName)
+  
+  if (service) {
+    service.status = isHealthy ? 'healthy' : 'unhealthy'
+    service.lastCheck = new Date().toLocaleString('zh-CN')
+  } else {
+    // 如果服务不存在，添加新服务
+    services.value.push({
+      name: serviceName,
+      status: isHealthy ? 'healthy' : 'unhealthy',
+      requests: 0,
+      errors: 0,
+      latency: 0,
+      lastCheck: new Date().toLocaleString('zh-CN')
+    })
+  }
+}
+
+// 处理SSE健康更新数据
+const handleHealthUpdate = (payload: any) => {
+  if (!payload) return
+  
+  // 处理新的SSE数据格式: {"instanceHealth":{...},"type":"health-update","timestamp":"..."}
+  let dataObj = null;
+  
+  // 检查是否是新的数据格式
+  if (payload.type === 'health-update' && payload.instanceHealth) {
+    dataObj = payload.instanceHealth;
+  } 
+  // 兼容旧的数据格式
+  else if (payload.type === 'health-update' && payload.data && payload.data.instanceHealth) {
+    dataObj = payload.data.instanceHealth;
+  }
+  // 兼容直接传递instanceHealth对象的格式
+  else if (payload.instanceHealth) {
+    dataObj = payload.instanceHealth;
+  }
+  
+  if (!dataObj || typeof dataObj !== 'object') {
+    console.log('[SSE] 监控概览页面收到无效的数据格式:', payload);
+    return;
+  }
+
+  console.log('[SSE] 监控概览页面 handleHealthUpdate payload:', dataObj);
+
+  // 处理健康状态更新
+  Object.entries(dataObj).forEach(([key, val]) => {
+    // 解析服务类型
+    const firstColon = key.indexOf(':')
+    if (firstColon === -1) return
+    const svcType = key.slice(0, firstColon)
+    
+    // 判断健康状态
+    const isHealthy = (typeof val === 'boolean') ? val : String(val).toLowerCase() === 'true'
+    
+    // 更新服务状态
+    updateServiceStatus(svcType, isHealthy)
+  })
+}
 
 // 图表引用
 const requestChart = ref<HTMLElement | null>(null)
@@ -225,6 +302,13 @@ const handleResize = () => {
 onMounted(() => {
   initCharts()
   window.addEventListener('resize', handleResize)
+  
+  // 注册 SSE 回调
+  sseHandler = (data: any) => {
+    handleHealthUpdate(data)
+  }
+  addSSEListener(sseHandler)
+  connectSSE()
 })
 
 // 组件卸载前清理
@@ -232,6 +316,13 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   requestChartInstance?.dispose()
   errorChartInstance?.dispose()
+  
+  // 移除 SSE 相关资源
+  if (sseHandler) {
+    removeSSEListener(sseHandler)
+    sseHandler = null
+  }
+  disconnectSSE()
 })
 </script>
 

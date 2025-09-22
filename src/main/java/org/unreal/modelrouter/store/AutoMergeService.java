@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.config.ConfigurationService;
+import org.unreal.modelrouter.store.StoreManagerConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,21 +26,23 @@ public class AutoMergeService {
 
     private static final Logger logger = LoggerFactory.getLogger(AutoMergeService.class);
 
-    private static final String CONFIG_DIR = "config";
     private static final String CONFIG_FILE_PREFIX = "model-router-config";
     private static final Pattern VERSION_PATTERN = Pattern.compile(CONFIG_FILE_PREFIX + "@(\\d+)\\.json");
 
     private final ObjectMapper objectMapper;
     private final StoreManager storeManager;
     private final ConfigurationService configurationService;
+    private final StoreManagerConfiguration storeManagerConfiguration;
 
     @Autowired
     public AutoMergeService(ObjectMapper objectMapper, 
                            StoreManager storeManager,
-                           ConfigurationService configurationService) {
+                           ConfigurationService configurationService,
+                           StoreManagerConfiguration storeManagerConfiguration) {
         this.objectMapper = objectMapper;
         this.storeManager = storeManager;
         this.configurationService = configurationService;
+        this.storeManagerConfiguration = storeManagerConfiguration;
     }
 
     /**
@@ -73,16 +76,38 @@ public class AutoMergeService {
     }
 
     /**
+     * 获取配置目录路径
+     * @return 配置目录路径
+     */
+    private String getConfigDir() {
+        return storeManagerConfiguration.getPath();
+    }
+
+    /**
+     * 检查自动合并功能是否启用
+     * @return 是否启用自动合并功能
+     */
+    private boolean isAutoMergeEnabled() {
+        return storeManagerConfiguration.isAutoMerge();
+    }
+
+    /**
      * 扫描并获取所有版本配置文件
      * @return 版本文件映射 (版本号 -> 文件路径)
      */
     public Map<Integer, String> scanVersionFiles() {
+        // 如果自动合并功能未启用，返回空映射
+        if (!isAutoMergeEnabled()) {
+            logger.info("自动合并功能未启用，跳过扫描版本配置文件");
+            return new TreeMap<>();
+        }
+
         Map<Integer, String> versionFiles = new TreeMap<>();
         
         try {
-            Path configPath = Paths.get(CONFIG_DIR);
+            Path configPath = Paths.get(getConfigDir());
             if (!Files.exists(configPath)) {
-                logger.warn("配置目录不存在: {}", CONFIG_DIR);
+                logger.warn("配置目录不存在: {}", getConfigDir());
                 return versionFiles;
             }
 
@@ -122,7 +147,7 @@ public class AutoMergeService {
         Path safePath = Paths.get(filePath).normalize();
         
         // 确保文件在config目录内
-        Path configPath = Paths.get(CONFIG_DIR).toAbsolutePath().normalize();
+        Path configPath = Paths.get(getConfigDir()).toAbsolutePath().normalize();
         if (!safePath.toAbsolutePath().normalize().startsWith(configPath)) {
             throw new SecurityException("文件路径不在允许的目录内: " + filePath);
         }
@@ -339,8 +364,8 @@ public class AutoMergeService {
                 return new MergeResult(false, "未找到任何需要备份的配置文件", 0, 0, backedUpFiles, errors);
             }
 
-            String backupDir = CONFIG_DIR + "/backup_" + System.currentTimeMillis();
-            Path backupPath = Paths.get(CONFIG_DIR).resolve("backup_" + System.currentTimeMillis()).normalize();
+            String backupDir = getConfigDir() + "/backup_" + System.currentTimeMillis();
+            Path backupPath = Paths.get(getConfigDir()).resolve("backup_" + System.currentTimeMillis()).normalize();
             Files.createDirectories(backupPath);
 
             for (Map.Entry<Integer, String> entry : versionFiles.entrySet()) {
