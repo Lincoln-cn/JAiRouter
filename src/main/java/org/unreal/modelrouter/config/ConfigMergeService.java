@@ -6,11 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.util.SecurityUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 配置合并服务
@@ -172,6 +174,18 @@ public class ConfigMergeService {
         if (instanceConfig == null) {
             return null;
         }
+        
+        // 检查是否已存在instanceId字段
+        Object instanceIdObj = instanceConfig.get("instanceId");
+        if (instanceIdObj instanceof String && !((String) instanceIdObj).isEmpty()) {
+            // 验证已存在的instanceId是否为有效的UUID格式，如果不是则重新生成
+            String existingInstanceId = (String) instanceIdObj;
+            if (isValidUUID(existingInstanceId)) {
+                return existingInstanceId;
+            } else {
+                logger.warn("实例ID {} 不是有效的UUID格式，将重新生成", existingInstanceId);
+            }
+        }
 
         Object nameObj = instanceConfig.get("name");
         // 同时支持baseUrl和base-url两种字段名
@@ -185,9 +199,24 @@ public class ConfigMergeService {
 
         if (name != null && !name.trim().isEmpty() &&
             baseUrl != null && !baseUrl.trim().isEmpty()) {
-            return name + "@" + baseUrl;
+            // 使用UUID生成唯一ID
+            return SecurityUtils.generateId();
         }
         return null;
+    }
+    
+    /**
+     * 验证字符串是否为有效的UUID
+     * @param uuid UUID字符串
+     * @return 是否有效
+     */
+    private boolean isValidUUID(String uuid) {
+        try {
+            UUID.fromString(uuid);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     /**

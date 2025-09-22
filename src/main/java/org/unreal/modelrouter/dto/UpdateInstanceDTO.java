@@ -1,15 +1,17 @@
 package org.unreal.modelrouter.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.util.SecurityUtils;
 
 /**
  * {
  *     "instanceId":"test-model@http://test.example.com",
  *     "data": {
- *         "name": "test-model",
- *         "baseUrl": "http://www.example.com",
- *         "path": "/v1/chat/completions",
- *         "weight": 1
+ *     "name": "test-model",
+ *     "baseUrl": "http://www.example.com",
+ *     "path": "/v1/chat/completions",
+ *     "weight": 1
  *     }
  * }
  */
@@ -18,12 +20,15 @@ public class UpdateInstanceDTO {
     private String instanceId;
     private Data instance;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Data {
         private String name;
         private String baseUrl;
         private String path;
         private Integer weight;
         private String status; // 添加status字段
+        private ModelRouterProperties.RateLimitConfig rateLimit; // 使用ModelRouterProperties中的限流配置字段
+        private ModelRouterProperties.CircuitBreakerConfig circuitBreaker; // 使用ModelRouterProperties中的熔断配置字段
 
         // Getters and setters
         public String getName() {
@@ -65,6 +70,22 @@ public class UpdateInstanceDTO {
         public void setStatus(String status) {
             this.status = status;
         }
+        
+        public ModelRouterProperties.RateLimitConfig getRateLimit() {
+            return rateLimit;
+        }
+
+        public void setRateLimit(ModelRouterProperties.RateLimitConfig rateLimit) {
+            this.rateLimit = rateLimit;
+        }
+
+        public ModelRouterProperties.CircuitBreakerConfig getCircuitBreaker() {
+            return circuitBreaker;
+        }
+
+        public void setCircuitBreaker(ModelRouterProperties.CircuitBreakerConfig circuitBreaker) {
+            this.circuitBreaker = circuitBreaker;
+        }
 
         public ModelRouterProperties.ModelInstance covertTo() {
             ModelRouterProperties.ModelInstance modelInstance = new ModelRouterProperties.ModelInstance();
@@ -75,6 +96,57 @@ public class UpdateInstanceDTO {
             // 添加status字段设置
             if (status != null) {
                 modelInstance.setStatus(status);
+            }
+            // 添加限流配置设置
+            if (rateLimit != null) {
+                ModelRouterProperties.RateLimitConfig rateLimitConfig = new ModelRouterProperties.RateLimitConfig();
+                // 只有当字段不为null时才设置值
+                if (rateLimit.getEnabled() != null) {
+                    rateLimitConfig.setEnabled(rateLimit.getEnabled());
+                }
+                if (rateLimit.getAlgorithm() != null) {
+                    rateLimitConfig.setAlgorithm(rateLimit.getAlgorithm());
+                }
+                if (rateLimit.getCapacity() != null) {
+                    rateLimitConfig.setCapacity(rateLimit.getCapacity());
+                }
+                if (rateLimit.getRate() != null) {
+                    rateLimitConfig.setRate(rateLimit.getRate());
+                }
+                if (rateLimit.getScope() != null) {
+                    rateLimitConfig.setScope(rateLimit.getScope());
+                }
+                if (rateLimit.getKey() != null) {
+                    rateLimitConfig.setKey(rateLimit.getKey());
+                }
+                if (rateLimit.getClientIpEnable() != null) {
+                    rateLimitConfig.setClientIpEnable(rateLimit.getClientIpEnable());
+                }
+                modelInstance.setRateLimit(rateLimitConfig);
+            } else {
+                // 即使rateLimit为null，也要创建一个空的配置对象，以避免验证错误
+                modelInstance.setRateLimit(new ModelRouterProperties.RateLimitConfig());
+            }
+            // 添加熔断配置设置
+            if (circuitBreaker != null) {
+                ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig = new ModelRouterProperties.CircuitBreakerConfig();
+                // 只有当字段不为null时才设置值
+                if (circuitBreaker.getEnabled() != null) {
+                    circuitBreakerConfig.setEnabled(circuitBreaker.getEnabled());
+                }
+                if (circuitBreaker.getFailureThreshold() != null) {
+                    circuitBreakerConfig.setFailureThreshold(circuitBreaker.getFailureThreshold());
+                }
+                if (circuitBreaker.getTimeout() != null) {
+                    circuitBreakerConfig.setTimeout(circuitBreaker.getTimeout());
+                }
+                if (circuitBreaker.getSuccessThreshold() != null) {
+                    circuitBreakerConfig.setSuccessThreshold(circuitBreaker.getSuccessThreshold());
+                }
+                modelInstance.setCircuitBreaker(circuitBreakerConfig);
+            } else {
+                // 即使circuitBreaker为null，也要创建一个空的配置对象，以避免验证错误
+                modelInstance.setCircuitBreaker(new ModelRouterProperties.CircuitBreakerConfig());
             }
             return modelInstance;
         }
@@ -102,9 +174,7 @@ public class UpdateInstanceDTO {
      * @return 新的实例ID
      */
     public String getNewInstanceId() {
-        if (instance != null && instance.getName() != null && instance.getBaseUrl() != null) {
-            return instance.getName() + "@" + instance.getBaseUrl();
-        }
-        return instanceId; // 如果无法构建新的ID，则返回原始ID
+        // 直接返回现有的instanceId，确保在更新时保持原有的instanceId不变
+        return instanceId;
     }
 }
