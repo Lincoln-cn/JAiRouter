@@ -445,34 +445,25 @@ const handleHealthUpdate = (payload: any) => {
       // 更严格地判断健康状态：兼容 boolean 与字符串 'true'/'false'（不再使用 Boolean(val)）
       const isHealthy = (typeof val === 'boolean') ? val : String(val).toLowerCase() === 'true'
 
-      // key 格式示例: "chat:test@http://test.com" 或 "chat:qwen3:1.7B@http://172.16.30.6:9090"
+      // key 格式示例: "chat:550e8400-e29b-41d4-a716-446655440000" (serviceType:instanceId)
       const firstColon = key.indexOf(':')
       if (firstColon === -1) return
       const svcType = key.slice(0, firstColon)
-      const rest = key.slice(firstColon + 1)
-      const lastAt = rest.lastIndexOf('@')
-      if (lastAt === -1) return
-      const instName = rest.slice(0, lastAt)
-      const instBase = normalizeBase(rest.slice(lastAt + 1))
+      const instanceId = key.slice(firstColon + 1)
 
-      console.log(`[SSE] 解析实例信息: key=${key}, svcType=${svcType}, instName=${instName}, instBase=${instBase}`)
+      console.log(`[SSE] 解析实例信息: key=${key}, svcType=${svcType}, instanceId=${instanceId}`)
 
       const svc = serviceConfigData.value?.services?.[svcType]
       if (svc && Array.isArray(svc.instances)) {
         let localChanged = false
         svc.instances.forEach((ins: any, idx: number) => {
-          const insBase = normalizeBase(ins.baseUrl || ins.base || '')
-          const insName = ins.name || ins.id || ''
-          // 匹配实例：优先 name+baseUrl 精确匹配，降级到只匹配 baseUrl（视情况）
-          console.log(`[SSE] 尝试匹配: insName=${insName}, insBase=${insBase} vs instName=${instName}, instBase=${instBase}`)
+          const insInstanceId = ins.instanceId || `${ins.name}@${ins.baseUrl}` || ''
+          // 匹配实例：优先 instanceId 精确匹配
+          console.log(`[SSE] 尝试匹配: insInstanceId=${insInstanceId} vs instanceId=${instanceId}`)
           
-          // 增强匹配逻辑，处理可能的路径差异
-          const isNameMatch = insName === instName;
-          const isBaseMatch = insBase === instBase;
-          
-          if (isNameMatch && isBaseMatch) {
+          if (insInstanceId === instanceId) {
             // 添加调试日志
-            console.log(`[SSE] 精确匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
+            console.log(`[SSE] 精确匹配到实例: ${key} -> ${svcType}.${ins.name} (${ins.baseUrl}), 健康状态: ${ins.health} -> ${isHealthy}`)
             
             // 仅在值变化时替换对象以确保 Vue 能检测到变化
             if (ins.health !== isHealthy) {
@@ -484,55 +475,19 @@ const handleHealthUpdate = (payload: any) => {
             } else {
               console.log(`[SSE] 实例健康状态未变化: ${key}, 仍然是 ${isHealthy}`)
             }
-          } else if (isBaseMatch) {
-            // 如果只有baseUrl匹配，也尝试更新（处理name可能不一致的情况）
-            console.log(`[SSE] baseUrl匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
-            
-            if (ins.health !== isHealthy) {
-              const newIns = { ...ins, health: isHealthy }
-              svc.instances.splice(idx, 1, newIns)
-              localChanged = true
-              console.log(`[SSE] 更新实例健康状态(基于baseUrl): ${key}, ${ins.health} -> ${isHealthy}`)
-            } else {
-              console.log(`[SSE] 实例健康状态未变化(基于baseUrl): ${key}, 仍然是 ${isHealthy}`)
-            }
-          } else if (ins.instanceId && ins.instanceId === key) {
-            // 尝试通过 instanceId 匹配（新增的匹配方式）
-            console.log(`[SSE] instanceId匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
-            
-            if (ins.health !== isHealthy) {
-              const newIns = { ...ins, health: isHealthy }
-              svc.instances.splice(idx, 1, newIns)
-              localChanged = true
-              console.log(`[SSE] 更新实例健康状态(基于instanceId): ${key}, ${ins.health} -> ${isHealthy}`)
-            } else {
-              console.log(`[SSE] 实例健康状态未变化(基于instanceId): ${key}, 仍然是 ${isHealthy}`)
-            }
-          } else if (ins.instanceId && ins.instanceId === `${svcType}:${key}`) {
-            // 尝试通过 serviceType + instanceId 匹配（处理后端返回的key格式）
-            console.log(`[SSE] serviceType+instanceId匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
-            
-            if (ins.health !== isHealthy) {
-              const newIns = { ...ins, health: isHealthy }
-              svc.instances.splice(idx, 1, newIns)
-              localChanged = true
-              console.log(`[SSE] 更新实例健康状态(基于serviceType+instanceId): ${key}, ${ins.health} -> ${isHealthy}`)
-            } else {
-              console.log(`[SSE] 实例健康状态未变化(基于serviceType+instanceId): ${key}, 仍然是 ${isHealthy}`)
-            }
-          } else {
-            // 添加新的匹配方式：直接通过完整key匹配
-            const fullKey = `${svcType}:${insName}@${insBase}`;
-            if (fullKey === key) {
-              console.log(`[SSE] 完整key匹配到实例: ${key} -> ${svcType}.${insName} (${insBase}), 健康状态: ${ins.health} -> ${isHealthy}`)
+          } else if (!ins.instanceId && ins.name && ins.baseUrl) {
+            // 如果实例没有instanceId，尝试通过name@baseUrl格式匹配（向后兼容）
+            const fallbackInstanceId = `${ins.name}@${ins.baseUrl}`;
+            if (fallbackInstanceId === instanceId) {
+              console.log(`[SSE] 向后兼容匹配到实例: ${key} -> ${svcType}.${ins.name} (${ins.baseUrl}), 健康状态: ${ins.health} -> ${isHealthy}`)
               
               if (ins.health !== isHealthy) {
                 const newIns = { ...ins, health: isHealthy }
                 svc.instances.splice(idx, 1, newIns)
                 localChanged = true
-                console.log(`[SSE] 更新实例健康状态(基于完整key): ${key}, ${ins.health} -> ${isHealthy}`)
+                console.log(`[SSE] 更新实例健康状态(向后兼容): ${key}, ${ins.health} -> ${isHealthy}`)
               } else {
-                console.log(`[SSE] 实例健康状态未变化(基于完整key): ${key}, 仍然是 ${isHealthy}`)
+                console.log(`[SSE] 实例健康状态未变化(向后兼容): ${key}, 仍然是 ${isHealthy}`)
               }
             }
           }
