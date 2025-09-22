@@ -77,19 +77,6 @@ export default defineConfig({
             console.log(`[Vite Proxy] Response: ${req.method} ${req.url} -> Status: ${proxyRes.statusCode}`)
           });
         }
-      },
-      '/admin/ws': {
-        target: 'ws://localhost:8080',
-        ws: true,
-        changeOrigin: true,
-        // 重写路径，去掉 /admin 前缀
-        rewrite: (path) => path.replace(/^\/admin/, ''),
-        configure: (proxy, options) => {
-          // 添加WebSocket连接日志
-          proxy.on('open', () => {
-            console.log(`[Vite Proxy] WebSocket connected to: ${options.target}`)
-          });
-        }
       }
     }
   },
