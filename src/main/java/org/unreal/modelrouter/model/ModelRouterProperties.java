@@ -1,7 +1,8 @@
 package org.unreal.modelrouter.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-
+import org.unreal.modelrouter.util.SecurityUtils;
 import java.util.List;
 import java.util.Map;
 
@@ -118,6 +119,7 @@ public class ModelRouterProperties {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class LoadBalanceConfig {
         private String type = "random";
         private String hashAlgorithm = "md5"; // 注意这里要用驼峰命名
@@ -139,12 +141,14 @@ public class ModelRouterProperties {
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ModelInstance {
         private String name;
         private String baseUrl; // 注意驼峰命名
         private String path;
         private int weight = 1;
         private String status = "active"; // 添加状态字段，默认为active
+        private String instanceId; // 添加唯一ID字段
         private RateLimitConfig rateLimit; // 实例级别限流配置
         private CircuitBreakerConfig circuitBreaker; // 实例级别熔断器配置
 
@@ -187,6 +191,18 @@ public class ModelRouterProperties {
         public void setStatus(String status) {
             this.status = status;
         }
+        
+        public String getInstanceId() {
+            // 如果instanceId为空，则生成一个新的UUID
+            if (instanceId == null || instanceId.isEmpty()) {
+                instanceId = SecurityUtils.generateId();
+            }
+            return instanceId;
+        }
+        
+        public void setInstanceId(String instanceId) {
+            this.instanceId = instanceId;
+        }
 
         public RateLimitConfig getRateLimit() {
             return rateLimit;
@@ -203,14 +219,10 @@ public class ModelRouterProperties {
         public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
             this.circuitBreaker = circuitBreaker;
         }
-
-        // 获取实例唯一标识
-        public String getInstanceId() {
-            return name + "@" + baseUrl;
-        }
     }
 
     // 限流配置类
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class RateLimitConfig {
         private Boolean enabled = false;     // 是否启用限流
         private String algorithm = "token-bucket"; // 算法类型: token-bucket, leaky-bucket, sliding-window等
@@ -291,6 +303,7 @@ public class ModelRouterProperties {
     }
 
     // 熔断器配置类
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class CircuitBreakerConfig {
         private Boolean enabled = false;         // 是否启用熔断器
         private Integer failureThreshold = 5;   // 失败阈值
@@ -331,6 +344,7 @@ public class ModelRouterProperties {
     }
     
     // 降级配置类
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class FallbackConfig {
         private Boolean enabled = false;           // 是否启用降级
         private String strategy = "default";       // 降级策略: default, cache等

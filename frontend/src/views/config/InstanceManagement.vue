@@ -341,14 +341,15 @@ const activeServiceType = ref('chat')
 
 // 定义实例类型
 interface ServiceInstance {
-  id: number
+  id: string | number  // 修改为联合类型以支持字符串ID
   serviceType: string
   name: string
   baseUrl: string
   path: string
   weight: number
   status: 'active' | 'inactive'
-  originalInstanceId?: string // 添加原始实例ID字段
+  instanceId?: string
+  originalInstanceId?: string
   rateLimit: {
     enabled: boolean
     algorithm: string
@@ -506,10 +507,11 @@ const fetchServiceInstances = (serviceType: string) => {
       }
       const response = await getServiceInstances(serviceType)
       if (response.data?.success) {
-        const data: ServiceInstance[] = response.data.data || []
-        // 确保每个实例都包含正确的服务类型
-        const typedData = data.map(item => ({
+        const data: any[] = response.data.data || []
+        // 确保每个实例都包含正确的服务类型和ID
+        const typedData: ServiceInstance[] = data.map((item) => ({
           ...item,
+          id: item.instanceId || Date.now() + Math.random(), // 使用后端返回的instanceId作为唯一标识符，如果没有则使用随机数
           serviceType: serviceType
         }))
         instancesCache.value[serviceType] = typedData
@@ -576,7 +578,8 @@ const handleEdit = (row: ServiceInstance) => {
     ...row,
     // 确保使用当前激活的页签对应的服务类型，而不是实例原来的服务类型
     serviceType: activeServiceType.value,
-    originalInstanceId: `${row.name}@${row.baseUrl}`, // 保存原始实例ID
+    // 使用后端返回的实例ID而不是根据表单数据重新构建
+    originalInstanceId: row.instanceId, // 直接使用后端返回的instanceId
     rateLimit: {
       enabled: row.rateLimit?.enabled || false,
       algorithm: row.rateLimit?.algorithm || 'token-bucket',
@@ -642,18 +645,21 @@ const handleSave = async () => {
     const serviceType = activeServiceType.value;
     console.log('保存实例，使用服务类型:', serviceType);
     
+    // 构造实例数据，包含限流和熔断配置
     const instanceData = {
       name: form.name,
       baseUrl: form.baseUrl,
       path: form.path,
       weight: form.weight,
-      status: form.status
+      status: form.status,
+      rateLimit: form.rateLimit.enabled ? form.rateLimit : null, // 只有启用时才传递限流配置
+      circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : null // 只有启用时才传递熔断配置
     }
 
     if (isEdit.value) {
-      // 使用原始实例ID而不是根据表单数据重新构建
+      // 使用后端返回的实例ID
       const updateData = { 
-        instanceId: form.originalInstanceId || `${form.name}@${form.baseUrl}`, 
+        instanceId: form.originalInstanceId, 
         instance: instanceData 
       }
       console.log('更新实例请求数据:', updateData)
