@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 配置持久化管理接口
- * 用于将初始化和后续通过web restful配置的数据进行持久化存储
- */
 public interface StoreManager {
 
     /**

@@ -15,6 +15,7 @@ public class StoreManagerConfiguration {
 
     private String type = "file";
     private String path = "./config-store";
+    private boolean autoMerge = true;
 
     /**
      * 获取存储类型
@@ -46,6 +47,22 @@ public class StoreManagerConfiguration {
      */
     public void setPath(final String path) {
         this.path = path;
+    }
+
+    /**
+     * 获取是否启用自动合并功能
+     * @return 是否启用自动合并功能
+     */
+    public boolean isAutoMerge() {
+        return autoMerge;
+    }
+
+    /**
+     * 设置是否启用自动合并功能
+     * @param autoMerge 是否启用自动合并功能
+     */
+    public void setAutoMerge(boolean autoMerge) {
+        this.autoMerge = autoMerge;
     }
 
     /**

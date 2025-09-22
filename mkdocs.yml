@@ -81,6 +81,7 @@ plugins:
             负载均衡: Load Balancing
             限流配置: Rate Limiting
             熔断器: Circuit Breaker
+            存储配置: Store Configuration
             安全功能: Security Features
             API Key管理: API Key Management
             JWT认证: JWT Authentication
@@ -168,6 +169,7 @@ nav:
     - 负载均衡: zh/configuration/load-balancing.md
     - 限流配置: zh/configuration/rate-limiting.md
     - 熔断器: zh/configuration/circuit-breaker.md
+    - 存储配置: zh/configuration/store-config.md
   - 安全功能:
     - zh/security/index.md
     - API Key管理: zh/security/api-key-management.md
