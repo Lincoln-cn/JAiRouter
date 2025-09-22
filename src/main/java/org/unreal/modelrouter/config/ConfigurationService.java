@@ -654,8 +654,8 @@ public class ConfigurationService {
             return instanceId;
         }
         if (name != null && baseUrl != null) {
-            // 使用UUID生成唯一ID
-            return java.util.UUID.randomUUID().toString();
+            // 使用name和baseUrl生成一致的ID，而不是随机UUID
+            return name + "@" + baseUrl;
         }
         return null;
     }
@@ -668,8 +668,8 @@ public class ConfigurationService {
      */
     public String buildInstanceId(String moduleName, String baseUrl) {
         if (moduleName != null && baseUrl != null) {
-            // 使用UUID生成唯一ID
-            return java.util.UUID.randomUUID().toString();
+            // 使用模块名称和基础URL生成一致的ID，而不是随机UUID
+            return moduleName + "@" + baseUrl;
         }
         return "unknown";
     }

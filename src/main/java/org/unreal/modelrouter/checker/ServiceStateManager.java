@@ -44,7 +44,8 @@ public class ServiceStateManager {
      * @return 实例是否健康
      */
     public boolean isInstanceHealthy(String serviceType, ModelRouterProperties.ModelInstance instance) {
-        String instanceKey = serviceType + ":" + instance.getName() + "@" + instance.getBaseUrl();
+        // 使用实例的唯一ID作为键
+        String instanceKey = serviceType + ":" + instance.getInstanceId();
         return instanceHealthStatus.getOrDefault(instanceKey, true); // 默认认为是健康的
     }
 
@@ -56,6 +57,7 @@ public class ServiceStateManager {
      * @return 实例是否健康
      */
     public boolean isInstanceHealthy(String serviceType, String instanceName , String baseUrl) {
+        // 为了向后兼容，仍然支持通过name和baseUrl查询
         String instanceKey = serviceType + ":" + instanceName + "@" + baseUrl;
         return instanceHealthStatus.getOrDefault(instanceKey, true); // 默认认为是健康的
     }
@@ -78,7 +80,8 @@ public class ServiceStateManager {
      * @param isHealthy   是否健康
      */
     public void updateInstanceHealthStatus(String serviceType, ModelRouterProperties.ModelInstance instance, boolean isHealthy) {
-        String instanceKey = serviceType + ":" + instance.getName() + "@" + instance.getBaseUrl();
+        // 使用实例的唯一ID作为键
+        String instanceKey = serviceType + ":" + instance.getInstanceId();
         Boolean previousStatus = instanceHealthStatus.get(instanceKey);
         
         // 只有状态发生变化时才更新
