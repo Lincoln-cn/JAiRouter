@@ -109,6 +109,22 @@ public class ConfigurationService {
     }
 
     /**
+     * 删除指定版本的配置
+     * @param version 版本号
+     */
+    public void deleteConfigVersion(int version) {
+        // 检查版本是否存在
+        List<Integer> versions = getAllVersions();
+        if (!versions.contains(version)) {
+            throw new IllegalArgumentException("版本不存在: " + version);
+        }
+        
+        // 调用StoreManager删除指定版本
+        storeManager.deleteConfigVersion(CURRENT_KEY, version);
+        logger.info("已删除配置版本：{}", version);
+    }
+
+    /**
      * 获取当前最新版本号
      * @return 当前版本号
      */

@@ -399,3 +399,4 @@ model:
 - [负载均衡](load-balancing.md) - 负载均衡策略
 - [限流配置](rate-limiting.md) - 限流算法
 - [熔断器](circuit-breaker.md) - 熔断器配置
+- [存储配置](store-config.md) - 存储和自动合并配置

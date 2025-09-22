@@ -9,14 +9,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.store.StoreManager;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 配置版本管理控制器
@@ -29,12 +28,15 @@ import java.util.Map;
 public class ConfigurationVersionController {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationVersionController.class);
+    private static final String CONFIG_KEY = "model-router-config";
 
     private final ConfigurationService configurationService;
+    private final StoreManager storeManager;
 
     @Autowired
-    public ConfigurationVersionController(ConfigurationService configurationService) {
+    public ConfigurationVersionController(ConfigurationService configurationService, StoreManager storeManager) {
         this.configurationService = configurationService;
+        this.storeManager = storeManager;
     }
 
     /**
@@ -48,14 +50,13 @@ public class ConfigurationVersionController {
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<List<Integer>>> getConfigVersions() {
+    public Mono<RouterResponse<List<Integer>>> getConfigVersions() {
         try {
             List<Integer> versions = configurationService.getAllVersions();
-            return ResponseEntity.ok(RouterResponse.success(versions, "获取配置版本列表成功"));
+            return Mono.just(RouterResponse.success(versions, "获取配置版本列表成功"));
         } catch (Exception e) {
             logger.error("获取配置版本列表失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("获取配置版本列表失败: " + e.getMessage()));
+            return Mono.just(RouterResponse.error("获取配置版本列表失败: " + e.getMessage()));
         }
     }
 
@@ -72,20 +73,18 @@ public class ConfigurationVersionController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "404", description = "指定版本的配置不存在")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Map<String, Object>>> getConfigByVersion(
+    public Mono<RouterResponse<Map<String, Object>>> getConfigByVersion(
             @Parameter(description = "版本号", example = "1")
             @PathVariable int version) {
         try {
             Map<String, Object> config = configurationService.getVersionConfig(version);
             if (config == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("指定版本的配置不存在: " + version));
+                return Mono.just(RouterResponse.error("指定版本的配置不存在: " + version));
             }
-            return ResponseEntity.ok(RouterResponse.success(config, "获取配置版本详情成功"));
+            return Mono.just(RouterResponse.success(config, "获取配置版本详情成功"));
         } catch (Exception e) {
             logger.error("获取配置版本详情失败: version={}", version, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("获取配置版本详情失败: " + e.getMessage()));
+            return Mono.just(RouterResponse.error("获取配置版本详情失败: " + e.getMessage()));
         }
     }
 
@@ -102,20 +101,18 @@ public class ConfigurationVersionController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "回滚配置失败")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Void>> rollbackToVersion(
+    public Mono<RouterResponse<Void>> rollbackToVersion(
             @Parameter(description = "版本号", example = "1")
             @PathVariable int version) {
         try {
             configurationService.applyVersion(version);
-            return ResponseEntity.ok(RouterResponse.success("配置已成功回滚到版本: " + version));
+            return Mono.just(RouterResponse.success((Void) null, "配置已成功回滚到版本: " + version));
         } catch (IllegalArgumentException e) {
             logger.warn("回滚配置失败，版本不存在: version={}", version, e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("回滚配置失败: " + e.getMessage()));
+            return Mono.just(RouterResponse.error("回滚配置失败: " + e.getMessage()));
         } catch (Exception e) {
             logger.error("回滚配置失败: version={}", version, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("回滚配置失败: " + e.getMessage()));
+            return Mono.just(RouterResponse.error("回滚配置失败: " + e.getMessage()));
         }
     }
 
@@ -132,25 +129,22 @@ public class ConfigurationVersionController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "不能删除当前版本")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Void>> deleteConfigVersion(
+    public Mono<RouterResponse<Void>> deleteConfigVersion(
             @Parameter(description = "版本号", example = "1")
             @PathVariable int version) {
         try {
             // 不允许删除当前版本
             int currentVersion = configurationService.getCurrentVersion();
             if (version == currentVersion) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error("不能删除当前版本"));
+                return Mono.just(RouterResponse.error("不能删除当前版本"));
             }
 
-            // 注意：ConfigurationService中没有直接的删除版本方法，这里需要根据实际实现调整
-            // 如果需要此功能，应在ConfigurationService中添加相应方法
-            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                    .body(RouterResponse.error("删除配置版本功能暂未实现"));
+            // 调用StoreManager删除指定版本
+            configurationService.deleteConfigVersion(version);
+            return Mono.just(RouterResponse.success((Void) null, "配置版本删除成功"));
         } catch (Exception e) {
             logger.error("删除配置版本失败: version={}", version, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("删除配置版本失败: " + e.getMessage()));
+            return Mono.just(RouterResponse.error("删除配置版本失败: " + e.getMessage()));
         }
     }
 
@@ -165,14 +159,13 @@ public class ConfigurationVersionController {
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Integer>> getCurrentVersion() {
+    public Mono<RouterResponse<Integer>> getCurrentVersion() {
         try {
             int currentVersion = configurationService.getCurrentVersion();
-            return ResponseEntity.ok(RouterResponse.success(currentVersion, "获取当前配置版本成功"));
+            return Mono.just(RouterResponse.success(currentVersion, "获取当前配置版本成功"));
         } catch (Exception e) {
             logger.error("获取当前配置版本失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("获取当前配置版本失败: " + e.getMessage()));
+            return Mono.just(RouterResponse.error("获取当前配置版本失败: " + e.getMessage()));
         }
     }
 
@@ -189,19 +182,105 @@ public class ConfigurationVersionController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "配置内容不合法")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Void>> applyVersion(
+    public Mono<RouterResponse<Void>> applyVersion(
             @PathVariable int version) {
         try {
             configurationService.applyVersion(version);
-            return ResponseEntity.ok(RouterResponse.success("配置应用成功"));
+            return Mono.just(RouterResponse.success((Void) null, "配置应用成功"));
         } catch (IllegalArgumentException e) {
             logger.warn("配置内容不合法", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("配置内容不合法: " + e.getMessage()));
+            return Mono.just(RouterResponse.error("配置内容不合法: " + e.getMessage()));
         } catch (Exception e) {
             logger.error("应用配置失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("应用配置失败: " + e.getMessage()));
+            return Mono.just(RouterResponse.error("应用配置失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取所有版本的详细信息
+     *
+     * @return 所有版本的详细信息列表
+     */
+    @GetMapping("/info")
+    @Operation(summary = "获取所有版本详细信息", description = "一次性获取所有版本的详细信息，包括配置内容和压缩状态")
+    @ApiResponse(responseCode = "200", description = "成功获取所有版本详细信息",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RouterResponse.class)))
+    @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    public Mono<RouterResponse<List<VersionInfo>>> getAllVersionInfo() {
+        try {
+            // 获取所有版本号
+            List<Integer> versionNumbers = configurationService.getAllVersions();
+            
+            // 获取当前版本号
+            int currentVersion = configurationService.getCurrentVersion();
+            
+            // 构建所有版本的详细信息
+            List<VersionInfo> versionInfos = new ArrayList<>();
+            
+            for (Integer version : versionNumbers) {
+                try {
+                    // 获取配置详情
+                    Map<String, Object> config = configurationService.getVersionConfig(version);
+                    
+                    VersionInfo versionInfo = new VersionInfo();
+                    versionInfo.setVersion(version);
+                    versionInfo.setConfig(config != null ? config : new HashMap<>());
+                    versionInfo.setCurrent(version == currentVersion);
+                    
+                    versionInfos.add(versionInfo);
+                } catch (Exception e) {
+                    logger.warn("获取版本 {} 详情失败: {}", version, e.getMessage());
+                    // 即使某个版本获取失败，也继续处理其他版本
+                    VersionInfo versionInfo = new VersionInfo();
+                    versionInfo.setVersion(version);
+                    versionInfo.setConfig(new HashMap<>());
+                    versionInfo.setCurrent(version == currentVersion);
+                    versionInfos.add(versionInfo);
+                }
+            }
+            
+            // 按版本号降序排列
+            versionInfos.sort((a, b) -> b.getVersion().compareTo(a.getVersion()));
+            
+            return Mono.just(RouterResponse.success(versionInfos, "获取所有版本详细信息成功"));
+        } catch (Exception e) {
+            logger.error("获取所有版本详细信息失败", e);
+            return Mono.just(RouterResponse.error("获取所有版本详细信息失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 版本信息数据传输对象
+     */
+    public static class VersionInfo {
+        private Integer version;
+        private Map<String, Object> config;
+        private Boolean current;
+
+        // Getters and setters
+        public Integer getVersion() {
+            return version;
+        }
+
+        public void setVersion(Integer version) {
+            this.version = version;
+        }
+
+        public Map<String, Object> getConfig() {
+            return config;
+        }
+
+        public void setConfig(Map<String, Object> config) {
+            this.config = config;
+        }
+
+        public Boolean getCurrent() {
+            return current;
+        }
+
+        public void setCurrent(Boolean current) {
+            this.current = current;
         }
     }
 }

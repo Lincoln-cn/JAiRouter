@@ -28,6 +28,7 @@ spring:
 store:
   type: file
   path: "config/"
+  auto-merge: true
 
 # WebClient 基础配置
 webclient:
