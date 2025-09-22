@@ -17,6 +17,7 @@ import org.unreal.modelrouter.config.ConfigurationValidator;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.UpdateInstanceDTO;
 import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.util.SecurityUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -81,8 +82,8 @@ public class ServiceInstanceController {
             @Parameter(description = "基础URL", example = "http://localhost:8000")
             @RequestParam String baseUrl) {
         try {
-            // URL解码实例ID
-            String decodedInstanceId = buildInstanceId(modelName, baseUrl);
+            // 使用ConfigurationService生成实例ID
+            String decodedInstanceId = configurationService.buildInstanceId(modelName, baseUrl);
             Map<String, Object> instance = configurationService.getServiceInstance(serviceType, decodedInstanceId);
 
             if (instance == null) {
@@ -116,8 +117,12 @@ public class ServiceInstanceController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "实例配置信息")
             @RequestBody ModelRouterProperties.ModelInstance instanceConfig) {
         try {
+            logger.info("接收到添加实例请求: serviceType={}, createNewVersion={}, instanceConfig={}", 
+                serviceType, createNewVersion, instanceConfig);
+            
             // 验证实例配置
             if (!configurationValidator.validateServiceAddress(instanceConfig.getBaseUrl())) {
+                logger.warn("实例baseUrl格式不正确: {}", instanceConfig.getBaseUrl());
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(RouterResponse.error("实例baseUrl格式不正确"));
             }
@@ -126,6 +131,7 @@ public class ServiceInstanceController {
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(RouterResponse.success(null, "实例添加成功"));
         } catch (IllegalArgumentException e) {
+            logger.warn("添加实例参数错误: serviceType={}, message={}", serviceType, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(RouterResponse.error(e.getMessage()));
         } catch (Exception e) {
@@ -156,8 +162,22 @@ public class ServiceInstanceController {
             logger.info("接收到更新实例请求: serviceType={}, createNewVersion={}, instanceConfig={}", 
                 serviceType, createNewVersion, instanceConfig);
             
+            // 检查请求参数是否为空
+            if (instanceConfig == null) {
+                logger.warn("更新实例请求参数为空");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(RouterResponse.error("请求参数不能为空"));
+            }
+            
+            if (instanceConfig.getInstance() == null) {
+                logger.warn("更新实例请求中的instance数据为空");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(RouterResponse.error("实例数据不能为空"));
+            }
+            
             // 验证实例配置
             if (!configurationValidator.validateServiceAddress(instanceConfig.getInstance().getBaseUrl())) {
+                logger.warn("实例baseUrl格式不正确: {}", instanceConfig.getInstance().getBaseUrl());
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(RouterResponse.error("实例baseUrl格式不正确"));
             }
@@ -168,16 +188,8 @@ public class ServiceInstanceController {
             
             logger.info("准备更新实例: serviceType={}, originalInstanceId={}, newInstanceId={}", serviceType, originalInstanceId, newInstanceId);
             
-            // 如果实例ID发生变化，需要特殊处理
-            if (!originalInstanceId.equals(newInstanceId)) {
-                logger.info("实例ID发生变化，从 {} 更新为 {}", originalInstanceId, newInstanceId);
-                // 先删除旧实例，再添加新实例
-                configurationService.deleteServiceInstance(serviceType, originalInstanceId, false);
-                configurationService.addServiceInstance(serviceType, instanceConfig.getInstance().covertTo(), createNewVersion);
-            } else {
-                // 实例ID未变化，直接更新
-                configurationService.updateServiceInstance(serviceType, originalInstanceId, instanceConfig.getInstance().covertTo(), createNewVersion);
-            }
+            // 直接更新实例，不检查ID是否变化
+            configurationService.updateServiceInstance(serviceType, originalInstanceId, instanceConfig.getInstance().covertTo(), createNewVersion);
             
             return ResponseEntity.ok(RouterResponse.success(null, "实例更新成功"));
         } catch (IllegalArgumentException e) {
@@ -211,8 +223,8 @@ public class ServiceInstanceController {
             @Parameter(description = "基础URL", example = "http://localhost:8000")
             @RequestParam String baseUrl) {
         try {
-            // URL解码实例ID
-            String decodedInstanceId = buildInstanceId(modelName, baseUrl);
+            // 使用ConfigurationService生成实例ID
+            String decodedInstanceId = configurationService.buildInstanceId(modelName, baseUrl);
             configurationService.deleteServiceInstance(serviceType, decodedInstanceId, createNewVersion);
             return ResponseEntity.ok(RouterResponse.success(null, "实例删除成功"));
         } catch (IllegalArgumentException e) {
@@ -223,12 +235,5 @@ public class ServiceInstanceController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(RouterResponse.error("删除实例失败: " + e.getMessage()));
         }
-    }
-
-    private String buildInstanceId(String moduleName, String baseUrl) {
-        if (moduleName != null && baseUrl != null) {
-            return moduleName + "@" + baseUrl;
-        }
-        return "unknown";
     }
 }
