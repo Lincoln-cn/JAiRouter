@@ -11,6 +11,7 @@ import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.StoreManager;
 import org.unreal.modelrouter.tracing.config.SamplingConfigurationValidator;
+import org.unreal.modelrouter.util.SecurityUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -145,8 +146,11 @@ public class ConfigurationService {
                         if (instance != null && instance.containsKey("name") && instance.containsKey("baseUrl")) {
                             String name = (String) instance.get("name");
                             String baseUrl = (String) instance.get("baseUrl");
-                            String instanceId = name + "@" + baseUrl;
-                            instance.put("instanceId", instanceId);
+                            // 检查是否已存在instanceId，如果不存在才生成新的
+                            if (!instance.containsKey("instanceId") || instance.get("instanceId") == null) {
+                                String instanceId = buildInstanceId(name, baseUrl);
+                                instance.put("instanceId", instanceId);
+                            }
                             
                             // 添加健康状态信息，使用ServiceStateManager
                             boolean isHealthy = serviceStateManager.isInstanceHealthy(serviceType, name, baseUrl);
@@ -367,14 +371,19 @@ public class ConfigurationService {
 
         // 验证实例配置
         Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(configurationHelper.convertInstanceToMap(instanceConfig));
-        String instanceId = buildInstanceId(validatedInstance);
-
-        // 检查是否已存在
+        
+        // 检查是否已存在（通过name和baseUrl判断）
+        String name = (String) validatedInstance.get("name");
+        String baseUrl = (String) validatedInstance.get("baseUrl");
         boolean exists = instances.stream()
-                .anyMatch(instance -> instanceId.equals(buildInstanceId(instance)));
+                .anyMatch(instance -> {
+                    String instanceName = (String) instance.get("name");
+                    String instanceBaseUrl = (String) instance.get("baseUrl");
+                    return name.equals(instanceName) && baseUrl.equals(instanceBaseUrl);
+                });
 
         if (exists) {
-            throw new IllegalArgumentException("实例已存在: " + instanceId);
+            throw new IllegalArgumentException("实例已存在: " + name + "@" + baseUrl);
         }
 
         instances.add(validatedInstance);
@@ -389,7 +398,7 @@ public class ConfigurationService {
         }
         refreshRuntimeConfig();
 
-        logger.info("实例 {} 添加成功", instanceId);
+        logger.info("实例 {} 添加成功", name + "@" + baseUrl);
     }
 
     /**
@@ -639,10 +648,30 @@ public class ConfigurationService {
         if (baseUrl == null) {
             baseUrl = (String) instance.get("base-url");
         }
+        // 检查是否已存在instanceId字段
+        String instanceId = (String) instance.get("instanceId");
+        if (instanceId != null && !instanceId.isEmpty()) {
+            return instanceId;
+        }
         if (name != null && baseUrl != null) {
-            return name + "@" + baseUrl;
+            // 使用UUID生成唯一ID
+            return java.util.UUID.randomUUID().toString();
         }
         return null;
+    }
+    
+    /**
+     * 根据模块名称和基础URL构建实例ID
+     * @param moduleName 模块名称
+     * @param baseUrl 基础URL
+     * @return 实例ID
+     */
+    public String buildInstanceId(String moduleName, String baseUrl) {
+        if (moduleName != null && baseUrl != null) {
+            // 使用UUID生成唯一ID
+            return java.util.UUID.randomUUID().toString();
+        }
+        return "unknown";
     }
 
     /**
@@ -718,11 +747,11 @@ public class ConfigurationService {
         }
         
         // 确保instanceId字段存在
-        if (!normalized.containsKey("instanceId")) {
+        if (!normalized.containsKey("instanceId") || normalized.get("instanceId") == null) {
             String name = (String) normalized.get("name");
             String baseUrl = (String) normalized.get("baseUrl");
             if (name != null && baseUrl != null) {
-                normalized.put("instanceId", name + "@" + baseUrl);
+                normalized.put("instanceId", buildInstanceId(name, baseUrl));
             }
         }
 
@@ -770,7 +799,7 @@ public class ConfigurationService {
             String name = (String) merged.get("name");
             String baseUrl = (String) merged.get("baseUrl");
             if (name != null && baseUrl != null) {
-                merged.put("instanceId", name + "@" + baseUrl);
+                merged.put("instanceId", buildInstanceId(name, baseUrl));
             }
         }
         

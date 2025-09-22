@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.regex.Pattern;
 
 /**
  * 配置转换和处理工具类
@@ -22,8 +25,20 @@ import java.util.Map;
 public class ConfigurationHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConfigurationHelper.class);
+    
+    // IP地址正则表达式
+    private static final Pattern IP_PATTERN = Pattern.compile(
+        "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+    );
+    
+    // 域名正则表达式
+    private static final Pattern DOMAIN_PATTERN = Pattern.compile(
+        "^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$"
+    );
 
     private ConfigurationValidator configurationValidator;
+    private ConfigurationHelper configurationHelper;
 
     /**
      * Sets the configuration validator for this helper.
@@ -33,6 +48,11 @@ public class ConfigurationHelper {
     @Autowired
     public void setConfigurationValidator(final ConfigurationValidator configurationValidator) {
         this.configurationValidator = configurationValidator;
+    }
+    
+    @Autowired
+    public void setConfigurationHelper(final ConfigurationHelper configurationHelper) {
+        this.configurationHelper = configurationHelper;
     }
 
     /**
@@ -47,107 +67,56 @@ public class ConfigurationHelper {
         try {
             // 标准化处理：转小写，统一格式
             String normalizedKey = serviceKey.toLowerCase(java.util.Locale.ROOT)
-                    .replace("-", "_")
-                    .trim();
-
-            // 特殊映射处理
-            return switch (normalizedKey) {
-                case "imggen", "img_gen", "image_generation", "image_gen" -> ModelServiceRegistry.ServiceType.imgGen;
-                case "imgedit", "img_edit", "image_edit", "image_editing" -> ModelServiceRegistry.ServiceType.imgEdit;
-                case "tts", "text_to_speech", "text2speech" -> ModelServiceRegistry.ServiceType.tts;
-                case "stt", "speech_to_text", "speech2text" -> ModelServiceRegistry.ServiceType.stt;
-                default -> ModelServiceRegistry.ServiceType.valueOf(normalizedKey);
-            };
+                    .replaceAll("[\\s_-]+", ""); // 移除空格、下划线和连字符
+            
+            // 尝试直接匹配枚举值
+            return ModelServiceRegistry.ServiceType.valueOf(normalizedKey);
         } catch (IllegalArgumentException e) {
-            return null;
+            // 处理常见的别名映射
+            switch (serviceKey.toLowerCase(java.util.Locale.ROOT)) {
+                case "chat":
+                case "chat-completion":
+                case "chat-completions":
+                    return ModelServiceRegistry.ServiceType.chat;
+                case "embedding":
+                case "embeddings":
+                    return ModelServiceRegistry.ServiceType.embedding;
+                case "rerank":
+                case "re-rank":
+                    return ModelServiceRegistry.ServiceType.rerank;
+                case "tts":
+                case "text-to-speech":
+                    return ModelServiceRegistry.ServiceType.tts;
+                case "stt":
+                case "speech-to-text":
+                    return ModelServiceRegistry.ServiceType.stt;
+                case "imggen":
+                case "image-generation":
+                case "image-generate":
+                    return ModelServiceRegistry.ServiceType.imgGen;
+                case "imgedit":
+                case "image-edit":
+                case "image-editing":
+                    return ModelServiceRegistry.ServiceType.imgEdit;
+                default:
+                    LOGGER.warn("无法解析服务类型: {}", serviceKey);
+                    return null;
+            }
         }
-    }
-
-    /**
-     * 转换限流配置
-     * 从Properties配置转换为内部配置对象
-     */
-    public RateLimitConfig convertRateLimitConfig(final ModelRouterProperties.RateLimitConfig source) {
-        if (source == null || !Boolean.TRUE.equals(source.getEnabled())) {
-            return null;
-        }
-
-        return new RateLimitConfig(
-                source.getAlgorithm() != null ? source.getAlgorithm() : "token-bucket",
-                source.getCapacity() != null ? source.getCapacity() : 100L,
-                source.getRate() != null ? source.getRate() : 10L,
-                source.getScope() != null ? source.getScope() : "service"
-        );
-    }
-
-    /**
-     * 转换降级配置
-     * 从Properties配置转换为内部配置对象
-     */
-    public ModelRouterProperties.FallbackConfig convertFallbackConfig(final ModelRouterProperties.FallbackConfig source) {
-        if (source == null || !Boolean.TRUE.equals(source.getEnabled())) {
-            return null;
-        }
-
-        ModelRouterProperties.FallbackConfig config = new ModelRouterProperties.FallbackConfig();
-        config.setEnabled(source.getEnabled());
-        config.setStrategy(source.getStrategy() != null ? source.getStrategy() : "default");
-        config.setCacheSize(source.getCacheSize() != null ? source.getCacheSize() : 100);
-        config.setCacheTtl(source.getCacheTtl() != null ? source.getCacheTtl() : 300000L);
-        return config;
-    }
-
-    /**
-     * 获取有效的负载均衡配置
-     * 优先级：服务配置 > 全局配置 > 默认配置
-     */
-    public ModelRouterProperties.LoadBalanceConfig getEffectiveLoadBalanceConfig(
-            final ModelRouterProperties.LoadBalanceConfig serviceConfig,
-            final ModelRouterProperties.LoadBalanceConfig globalConfig) {
-
-        if (serviceConfig != null) {
-            return serviceConfig;
-        }
-
-        if (globalConfig != null) {
-            return globalConfig;
-        }
-
-        // 返回默认配置
-        return createDefaultLoadBalanceConfig();
-    }
-
-    /**
-     * 创建默认负载均衡配置
-     */
-    public ModelRouterProperties.LoadBalanceConfig createDefaultLoadBalanceConfig() {
-        ModelRouterProperties.LoadBalanceConfig defaultConfig =
-                new ModelRouterProperties.LoadBalanceConfig();
-        defaultConfig.setType("random");
-        defaultConfig.setHashAlgorithm("md5");
-        return defaultConfig;
     }
 
     /**
      * 获取服务配置键
-     * 将ServiceType转换为配置文件中使用的键名
+     * @param serviceType 服务类型
+     * @return 服务配置键
      */
-    public String getServiceConfigKey(final ModelServiceRegistry.ServiceType serviceType) {
+    public String getServiceConfigKey(ModelServiceRegistry.ServiceType serviceType) {
         if (serviceType == null) {
             return null;
         }
-        return switch (serviceType) {
-            case imgGen -> "img-gen";
-            case imgEdit -> "img-edit";
-            default -> serviceType.name().toLowerCase().replace("_", "-");
-        };
-    }
-
-    /**
-     * 验证负载均衡配置的有效性
-     */
-    public boolean isValidLoadBalanceConfig(final ModelRouterProperties.LoadBalanceConfig config) {
-        return configurationValidator.validateLoadBalanceConfig(config);
+        
+        // 使用连字符格式作为标准键名
+        return serviceType.name().replaceAll("([a-z])([A-Z])", "$1-$2").toLowerCase();
     }
 
     /**
@@ -160,6 +129,503 @@ public class ConfigurationHelper {
 
         RateLimitConfig convertedConfig = convertRateLimitConfig(config);
         return configurationValidator.validateRateLimitConfig(convertedConfig);
+    }
+
+    /**
+     * 将ModelRouterProperties.RateLimitConfig转换为RateLimitConfig
+     */
+    public RateLimitConfig convertRateLimitConfig(final ModelRouterProperties.RateLimitConfig config) {
+        if (config == null) {
+            return null;
+        }
+
+        return RateLimitConfig.builder()
+                .algorithm(config.getAlgorithm())
+                .capacity(config.getCapacity())
+                .rate(config.getRate())
+                .scope(config.getScope())
+                .key(config.getKey())
+                .build();
+    }
+
+    /**
+     * 验证限流配置参数的合法性
+     */
+    public boolean validateRateLimitConfig(final ModelRouterProperties.RateLimitConfig config) {
+        if (config == null) {
+            LOGGER.warn("Rate limit config is null");
+            return false;
+        }
+
+        // 如果未启用，则无需验证
+        if (!Boolean.TRUE.equals(config.getEnabled())) {
+            LOGGER.debug("Rate limit config is disabled, validation skipped");
+            return true;
+        }
+
+        // 验证算法
+        if (config.getAlgorithm() == null || !isValidRateLimitAlgorithm(config.getAlgorithm())) {
+            LOGGER.warn("Invalid rate limit algorithm: {}", config.getAlgorithm());
+            return false;
+        }
+
+        // 验证容量和速率
+        if (config.getCapacity() == null || config.getCapacity() <= 0) {
+            LOGGER.warn("Invalid rate limit capacity: {}", config.getCapacity());
+            return false;
+        }
+
+        if (config.getRate() == null || config.getRate() <= 0) {
+            LOGGER.warn("Invalid rate limit rate: {}", config.getRate());
+            return false;
+        }
+
+        // 验证作用域
+        if (config.getScope() == null || !isValidRateLimitScope(config.getScope())) {
+            LOGGER.warn("Invalid rate limit scope: {}", config.getScope());
+            return false;
+        }
+
+        // 验证客户端IP启用标志
+        if (config.getClientIpEnable() == null) {
+            LOGGER.warn("Rate limit clientIpEnable is null");
+            return false;
+        }
+
+        logger.debug("Rate limit config validation passed");
+        return true;
+    }
+
+    /**
+     * 验证负载均衡配置参数的合法性
+     *
+     * @param config 负载均衡配置
+     * @return 配置是否合法
+     */
+    public boolean validateLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig config) {
+        if (config == null) {
+            logger.warn("Load balance config is null");
+            return false;
+        }
+
+        // 检查类型是否合法
+        if (config.getType() == null || !isValidLoadBalanceType(config.getType())) {
+            logger.warn("Invalid load balance type: {}", config.getType());
+            return false;
+        }
+
+        // 对于IP哈希算法，检查哈希算法是否合法
+        if ("ip-hash".equalsIgnoreCase(config.getType())) {
+            if (config.getHashAlgorithm() == null || !isValidHashAlgorithm(config.getHashAlgorithm())) {
+                logger.warn("Invalid hash algorithm for IP hash load balancer: {}", config.getHashAlgorithm());
+                return false;
+            }
+        }
+
+        logger.debug("Load balance config validation passed");
+        return true;
+    }
+
+    /**
+     * 验证服务实例地址的合法性
+     *
+     * @param address 服务实例地址
+     * @return 地址是否合法
+     */
+    public boolean validateServiceAddress(String address) {
+        if (address == null || address.trim().isEmpty()) {
+            logger.warn("Invalid service address: null or empty");
+            return false;
+        }
+
+        // 移除协议部分（http:// 或 https://）
+        String cleanAddress = address;
+        if (address.startsWith("http://")) {
+            cleanAddress = address.substring(7);
+        } else if (address.startsWith("https://")) {
+            cleanAddress = address.substring(8);
+        }
+
+        // 分离主机和端口
+        String host;
+        String portStr = null;
+
+        int colonIndex = cleanAddress.lastIndexOf(':');
+        if (colonIndex > 0) {
+            host = cleanAddress.substring(0, colonIndex);
+            portStr = cleanAddress.substring(colonIndex + 1);
+        } else {
+            host = cleanAddress;
+        }
+
+        // 验证主机部分（IP或域名）
+        if (!IP_PATTERN.matcher(host).matches() && !DOMAIN_PATTERN.matcher(host).matches()) {
+            logger.warn("Invalid service address host: {}", host);
+            return false;
+        }
+
+        // 验证端口部分（如果存在）
+        if (portStr != null) {
+            try {
+                int port = Integer.parseInt(portStr);
+                if (port <= 0 || port > 65535) {
+                    logger.warn("Invalid service address port: {}", port);
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                logger.warn("Invalid service address port format: {}", portStr);
+                return false;
+            }
+        }
+
+        logger.debug("Service address validation passed: {}", address);
+        return true;
+    }
+
+    /**
+     * 检查限流算法是否合法
+     *
+     * @param algorithm 算法名称
+     * @return 算法是否合法
+     */
+    private boolean isValidRateLimitAlgorithm(String algorithm) {
+        if (algorithm == null) {
+            return false;
+        }
+        String normalizedAlgorithm = algorithm.toLowerCase(java.util.Locale.ROOT);
+        return "token-bucket".equals(normalizedAlgorithm) ||
+                "leaky-bucket".equals(normalizedAlgorithm) ||
+                "sliding-window".equals(normalizedAlgorithm) ||
+                "warm-up".equals(normalizedAlgorithm);
+    }
+
+    /**
+     * 检查限流作用域是否合法
+     *
+     * @param scope 作用域
+     * @return 作用域是否合法
+     */
+    private boolean isValidRateLimitScope(String scope) {
+        if (scope == null) {
+            return false;
+        }
+        String normalizedScope = scope.toLowerCase(java.util.Locale.ROOT);
+        return "service".equals(normalizedScope) ||
+                "model".equals(normalizedScope) ||
+                "client-ip".equals(normalizedScope) ||
+                "instance".equals(normalizedScope);
+    }
+
+    /**
+     * 检查负载均衡类型是否合法
+     *
+     * @param type 负载均衡类型
+     * @return 类型是否合法
+     */
+    private boolean isValidLoadBalanceType(String type) {
+        if (type == null) {
+            return false;
+        }
+        String normalizedType = type.toLowerCase(java.util.Locale.ROOT);
+        return "random".equals(normalizedType) ||
+                "round-robin".equals(normalizedType) ||
+                "least-connections".equals(normalizedType) ||
+                "ip-hash".equals(normalizedType);
+    }
+
+    /**
+     * 检查哈希算法是否合法
+     *
+     * @param algorithm 哈希算法
+     * @return 算法是否合法
+     */
+    private boolean isValidHashAlgorithm(String algorithm) {
+        if (algorithm == null) {
+            return false;
+        }
+        String normalizedAlgorithm = algorithm.toLowerCase(java.util.Locale.ROOT);
+        return "md5".equals(normalizedAlgorithm) ||
+                "sha1".equals(normalizedAlgorithm) ||
+                "sha256".equals(normalizedAlgorithm);
+    }
+
+    /**
+     * 验证负载均衡配置
+     */
+    @SuppressWarnings("unchecked")
+    private void validateLoadBalanceConfig(Object loadBalanceObj,
+                                           String context,
+                                           List<String> errors,
+                                           List<String> warnings) {
+        if (!(loadBalanceObj instanceof Map)) {
+            errors.add(context + " 负载均衡配置格式错误");
+            return;
+        }
+
+        Map<String, Object> loadBalance = (Map<String, Object>) loadBalanceObj;
+
+        if (loadBalance.containsKey("type")) {
+            String type = (String) loadBalance.get("type");
+            if (!isValidLoadBalanceType(type)) {
+                errors.add(context + " 负载均衡类型无效: " + type);
+            }
+        }
+    }
+
+    /**
+     * 验证限流配置
+     */
+    @SuppressWarnings("unchecked")
+    private void validateRateLimitConfig(Object rateLimitObj,
+                                         String context,
+                                         List<String> errors,
+                                         List<String> warnings) {
+        if (!(rateLimitObj instanceof Map)) {
+            errors.add(context + " 限流配置格式错误");
+            return;
+        }
+
+        Map<String, Object> rateLimit = (Map<String, Object>) rateLimitObj;
+
+        // 如果未启用，则无需验证
+        if (rateLimit.containsKey("enabled") &&
+                (Boolean.FALSE.equals(rateLimit.get("enabled")) || "false".equalsIgnoreCase(rateLimit.get("enabled").toString()))) {
+            return;
+        }
+
+        if (rateLimit.containsKey("algorithm")) {
+            String algorithm = (String) rateLimit.get("algorithm");
+            if (!isValidRateLimitAlgorithm(algorithm)) {
+                errors.add(context + " 限流算法无效: " + algorithm);
+            }
+        }
+
+        if (rateLimit.containsKey("capacity")) {
+            try {
+                long capacity = ((Number) rateLimit.get("capacity")).longValue();
+                if (capacity <= 0) {
+                    errors.add(context + " 限流容量必须大于0: " + capacity);
+                }
+            } catch (Exception e) {
+                errors.add(context + " 限流容量格式错误: " + rateLimit.get("capacity"));
+            }
+        }
+
+        if (rateLimit.containsKey("rate")) {
+            try {
+                long rate = ((Number) rateLimit.get("rate")).longValue();
+                if (rate <= 0) {
+                    errors.add(context + " 限流速率必须大于0: " + rate);
+                }
+            } catch (Exception e) {
+                errors.add(context + " 限流速率格式错误: " + rateLimit.get("rate"));
+            }
+        }
+
+        if (rateLimit.containsKey("scope")) {
+            String scope = (String) rateLimit.get("scope");
+            if (!isValidRateLimitScope(scope)) {
+                errors.add(context + " 限流作用域无效: " + scope);
+            }
+        }
+    }
+
+    /**
+     * 验证熔断器配置
+     */
+    @SuppressWarnings("unchecked")
+    private void validateCircuitBreakerConfig(Object circuitBreakerObj,
+                                              String context,
+                                              List<String> errors,
+                                              List<String> warnings) {
+        if (!(circuitBreakerObj instanceof Map)) {
+            errors.add(context + " 熔断器配置格式错误");
+            return;
+        }
+
+        Map<String, Object> circuitBreaker = (Map<String, Object>) circuitBreakerObj;
+
+        // 如果未启用，则无需验证
+        if (circuitBreaker.containsKey("enabled") &&
+                (Boolean.FALSE.equals(circuitBreaker.get("enabled")) || "false".equalsIgnoreCase(circuitBreaker.get("enabled").toString()))) {
+            return;
+        }
+
+        if (circuitBreaker.containsKey("failureThreshold")) {
+            try {
+                int failureThreshold = ((Number) circuitBreaker.get("failureThreshold")).intValue();
+                if (failureThreshold <= 0) {
+                    errors.add(context + " 熔断器失败阈值必须大于0: " + failureThreshold);
+                }
+            } catch (Exception e) {
+                errors.add(context + " 熔断器失败阈值格式错误: " + circuitBreaker.get("failureThreshold"));
+            }
+        }
+
+        if (circuitBreaker.containsKey("timeout")) {
+            try {
+                long timeout = ((Number) circuitBreaker.get("timeout")).longValue();
+                if (timeout <= 0) {
+                    errors.add(context + " 熔断器超时时间必须大于0: " + timeout);
+                }
+            } catch (Exception e) {
+                errors.add(context + " 熔断器超时时间格式错误: " + circuitBreaker.get("timeout"));
+            }
+        }
+
+        if (circuitBreaker.containsKey("successThreshold")) {
+            try {
+                int successThreshold = ((Number) circuitBreaker.get("successThreshold")).intValue();
+                if (successThreshold <= 0) {
+                    errors.add(context + " 熔断器成功阈值必须大于0: " + successThreshold);
+                }
+            } catch (Exception e) {
+                errors.add(context + " 熔断器成功阈值格式错误: " + circuitBreaker.get("successThreshold"));
+            }
+        }
+    }
+
+    /**
+     * 验证服务配置
+     */
+    public void validateServiceConfig(String serviceType,
+                                      Map<String, Object> serviceConfig,
+                                      List<String> errors,
+                                      List<String> warnings) {
+        if (serviceConfig == null) {
+            errors.add("服务配置不能为空");
+            return;
+        }
+
+        // 验证基本配置
+        validateBasicConfiguration(serviceConfig, errors, warnings);
+
+        // 验证负载均衡配置
+        if (serviceConfig.containsKey("loadBalance")) {
+            validateLoadBalanceConfig(serviceConfig.get("loadBalance"), serviceType, errors, warnings);
+        }
+
+        // 验证限流配置
+        if (serviceConfig.containsKey("rateLimit")) {
+            validateRateLimitConfig(serviceConfig.get("rateLimit"), serviceType, errors, warnings);
+        }
+
+        // 验证熔断器配置
+        if (serviceConfig.containsKey("circuitBreaker")) {
+            validateCircuitBreakerConfig(serviceConfig.get("circuitBreaker"), serviceType, errors, warnings);
+        }
+
+        // 验证实例配置
+        if (serviceConfig.containsKey("instances")) {
+            validateInstancesConfig(serviceConfig.get("instances"), serviceType, errors, warnings);
+        }
+    }
+
+    /**
+     * 验证实例配置
+     */
+    @SuppressWarnings("unchecked")
+    private void validateInstancesConfig(Object instancesObj,
+                                         String serviceType,
+                                         List<String> errors,
+                                         List<String> warnings) {
+        if (!(instancesObj instanceof List)) {
+            errors.add(serviceType + " 实例配置格式错误");
+            return;
+        }
+
+        List<Map<String, Object>> instances = (List<Map<String, Object>>) instancesObj;
+        Set<String> instanceIds = new HashSet<>();
+
+        for (int i = 0; i < instances.size(); i++) {
+            Map<String, Object> instance = instances.get(i);
+            String context = serviceType + " 实例[" + i + "]";
+
+            // 验证必需字段
+            if (!instance.containsKey("name") || instance.get("name") == null) {
+                errors.add(context + " 名称不能为空");
+            }
+
+            if (!instance.containsKey("baseUrl") || instance.get("baseUrl") == null) {
+                errors.add(context + " 基础URL不能为空");
+            } else {
+                String baseUrl = (String) instance.get("baseUrl");
+                if (!validateServiceAddress(baseUrl)) {
+                    errors.add(context + " 基础URL格式不正确: " + baseUrl);
+                }
+            }
+
+            // 验证权重
+            if (instance.containsKey("weight")) {
+                try {
+                    int weight = ((Number) instance.get("weight")).intValue();
+                    if (weight <= 0) {
+                        errors.add(context + " 权重必须大于0: " + weight);
+                    }
+                } catch (Exception e) {
+                    errors.add(context + " 权重格式错误: " + instance.get("weight"));
+                }
+            }
+
+            // 验证限流配置
+            if (instance.containsKey("rateLimit")) {
+                validateRateLimitConfig(instance.get("rateLimit"), context, errors, warnings);
+            }
+
+            // 验证熔断器配置
+            if (instance.containsKey("circuitBreaker")) {
+                validateCircuitBreakerConfig(instance.get("circuitBreaker"), context, errors, warnings);
+            }
+
+            // 检查实例ID唯一性
+            if (instance.containsKey("instanceId")) {
+                String instanceId = (String) instance.get("instanceId");
+                if (instanceIds.contains(instanceId)) {
+                    errors.add(context + " 实例ID重复: " + instanceId);
+                } else {
+                    instanceIds.add(instanceId);
+                }
+            }
+        }
+    }
+
+    /**
+     * 验证基础配置
+     */
+    @SuppressWarnings("unchecked")
+    private void validateBasicConfiguration(Map<String, Object> config,
+                                            List<String> errors,
+                                            List<String> warnings) {
+        // 验证全局适配器
+        if (config.containsKey("adapter")) {
+            String adapter = (String) config.get("adapter");
+            if (adapter == null || adapter.trim().isEmpty()) {
+                warnings.add("全局适配器配置为空");
+            }
+        }
+
+        // 验证全局负载均衡配置
+        if (config.containsKey("loadBalance")) {
+            validateLoadBalanceConfig(config.get("loadBalance"), "全局", errors, warnings);
+        }
+
+        // 验证全局限流配置
+        if (config.containsKey("rateLimit")) {
+            validateRateLimitConfig(config.get("rateLimit"), "全局", errors, warnings);
+        }
+    }
+
+    public boolean isValidServiceType(String serviceType) {
+        if (serviceType == null) {
+            return false;
+        }
+        
+        try {
+            // 使用ConfigurationHelper来解析服务类型，支持更多格式
+            return configurationHelper.parseServiceType(serviceType) != null;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -239,22 +705,15 @@ public class ConfigurationHelper {
                     Map<?, ?> originalMap = (Map<?, ?>) value;
                     resultMap.put(field.getName(), convertMapToResultMap(originalMap));
                 } else if (value instanceof List) {
-                    List<?> originalList = (List<?>) value;
-                    resultMap.put(field.getName(), convertListToResultList(originalList));
-                } else if (value.getClass().getPackage().getName().equals(clazz.getPackage().getName())) {
-                    // 如果是同一个包下的自定义类，递归处理
-                    resultMap.put(field.getName(), convertObjectToMap(value));
-                } else if (!isJdkInternalClass(value.getClass())) {
-                    // 对于非JDK内部类，尝试递归处理
-                    resultMap.put(field.getName(), convertObjectToMap(value));
+                    resultMap.put(field.getName(), convertListToResultList((List<?>) value));
                 } else {
-                    // 对于其他JDK内部类，使用toString()
-                    resultMap.put(field.getName(), value.toString());
+                    // 递归处理嵌套对象
+                    resultMap.put(field.getName(), convertObjectToMap(value));
                 }
             } catch (IllegalAccessException e) {
-                LOGGER.warn("无法访问字段: " + field.getName(), e);
+                LOGGER.warn("无法访问字段: {}", field.getName(), e);
             } catch (Exception e) {
-                LOGGER.warn("处理字段时出错: " + field.getName(), e);
+                LOGGER.warn("处理字段时发生错误: {}", field.getName(), e);
             }
         }
 
@@ -264,92 +723,87 @@ public class ConfigurationHelper {
     /**
      * 检查字段是否可以访问
      */
-    private boolean isAccessibleField(final Field field) {
-        try {
-            // 检查是否是JDK内部类的字段
-            if (isJdkInternalClass(field.getDeclaringClass())) {
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
+    private boolean isAccessibleField(Field field) {
+        // 检查是否是静态字段
+        if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
             return false;
         }
+        return true;
     }
 
     /**
-     * 检查是否为JDK内部类
+     * 检查类是否是JDK内部类
      */
-    private boolean isJdkInternalClass(final Class<?> clazz) {
-        String className = clazz.getName();
-        return className.startsWith("java.") 
-               || className.startsWith("javax.") 
-               || className.startsWith("sun.")
-               || className.startsWith("com.sun.");
-    }
-
-    /**
-     * 转换Map为结果Map
-     */
-    private Map<String, Object> convertMapToResultMap(final Map<?, ?> originalMap) {
-        Map<String, Object> convertedMap = new HashMap<>();
-        for (Map.Entry<?, ?> entry : originalMap.entrySet()) {
-            Object key = entry.getKey();
-            Object value = entry.getValue();
-            String stringKey = String.valueOf(key);
-            
-            if (value == null) {
-                convertedMap.put(stringKey, null);
-            } else if (isPrimitiveOrWrapper(value.getClass()) || value instanceof String) {
-                convertedMap.put(stringKey, value);
-            } else {
-                convertedMap.put(stringKey, convertObjectToMap(value));
-            }
+    private boolean isJdkInternalClass(Class<?> clazz) {
+        Package pkg = clazz.getPackage();
+        if (pkg == null) {
+            return false;
         }
-        return convertedMap;
+        String pkgName = pkg.getName();
+        return pkgName.startsWith("java.") || 
+               pkgName.startsWith("javax.") || 
+               pkgName.startsWith("sun.") || 
+               pkgName.startsWith("com.sun.");
     }
 
     /**
-     * 转换List为结果List
+     * 检查是否是基本类型或其包装类
      */
-    private List<Object> convertListToResultList(final List<?> originalList) {
-        List<Object> convertedList = new ArrayList<>();
-        for (Object item : originalList) {
-            if (item == null) {
-                convertedList.add(null);
-            } else if (isPrimitiveOrWrapper(item.getClass()) || item instanceof String) {
-                convertedList.add(item);
-            } else {
-                convertedList.add(convertObjectToMap(item));
-            }
-        }
-        return convertedList;
+    private boolean isPrimitiveOrWrapper(Class<?> clazz) {
+        return clazz.isPrimitive() ||
+               clazz == Boolean.class ||
+               clazz == Character.class ||
+               clazz == Byte.class ||
+               clazz == Short.class ||
+               clazz == Integer.class ||
+               clazz == Long.class ||
+               clazz == Float.class ||
+               clazz == Double.class;
     }
 
     /**
      * 创建单值Map
      */
-    private Map<String, Object> createSingleValueMap(final String key, final Object value) {
+    private Map<String, Object> createSingleValueMap(String key, Object value) {
         Map<String, Object> map = new HashMap<>();
         map.put(key, value);
         return map;
     }
 
     /**
-     * 判断是否为基本类型或其包装类
-     *
-     * @param clazz 待判断的类
-     * @return 是否为基本类型或其包装类
+     * 转换Map为结果Map
      */
-    private boolean isPrimitiveOrWrapper(final Class<?> clazz) {
-        return clazz.isPrimitive()
-                || clazz == Boolean.class
-                || clazz == Character.class
-                || clazz == Byte.class
-                || clazz == Short.class
-                || clazz == Integer.class
-                || clazz == Long.class
-                || clazz == Float.class
-                || clazz == Double.class;
+    private Map<String, Object> convertMapToResultMap(Map<?, ?> originalMap) {
+        Map<String, Object> resultMap = new HashMap<>();
+        for (Map.Entry<?, ?> entry : originalMap.entrySet()) {
+            String key = entry.getKey() != null ? entry.getKey().toString() : "null";
+            Object value = entry.getValue();
+            if (value == null) {
+                resultMap.put(key, null);
+            } else if (isPrimitiveOrWrapper(value.getClass()) || value instanceof String) {
+                resultMap.put(key, value);
+            } else {
+                resultMap.put(key, convertObjectToMap(value));
+            }
+        }
+        return resultMap;
+    }
+
+    /**
+     * 转换List为结果List
+     */
+    private List<Object> convertListToResultList(List<?> originalList) {
+        List<Object> resultList = new ArrayList<>();
+        for (Object item : originalList) {
+            if (item == null) {
+                resultList.add(null);
+            } else if (isPrimitiveOrWrapper(item.getClass()) || item instanceof String) {
+                resultList.add(item);
+            } else {
+                resultList.add(convertObjectToMap(item));
+            }
+        }
+        return resultList;
     }
 
     /**
@@ -359,145 +813,28 @@ public class ConfigurationHelper {
      * @return 转换后的Map
      */
     public Map<String, Object> convertInstanceToMap(ModelRouterProperties.ModelInstance instance) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("name", instance.getName());
-        map.put("baseUrl", instance.getBaseUrl()); // 保持Java代码中使用驼峰命名
-        map.put("path", instance.getPath());
-        map.put("weight", instance.getWeight());
-        map.put("status", instance.getStatus()); // 添加status字段
-        
-        // 添加instanceId字段
-        map.put("instanceId", instance.getInstanceId());
-
-        // 添加限流配置
-        addRateLimitToMap(instance.getRateLimit(), map);
-
-        // 添加熔断器配置
-        addCircuitBreakerToMap(instance.getCircuitBreaker(), map);
-
-        return map;
+        if (instance == null) {
+            return null;
+        }
+        return convertObjectToMap(instance);
     }
-
-    /**
-     * 将ServiceConfig对象转换为Map
-     *
-     * @param serviceConfig ServiceConfig对象
-     * @return 转换后的Map
-     */
-    public Map<String, Object> convertServiceConfigToMap(ModelRouterProperties.ServiceConfig serviceConfig) {
-        Map<String, Object> map = new HashMap<>();
-        if (serviceConfig.getLoadBalance() != null) {
-            Map<String, Object> loadBalanceMap = new HashMap<>();
-            loadBalanceMap.put("type", serviceConfig.getLoadBalance().getType());
-            loadBalanceMap.put("hashAlgorithm", serviceConfig.getLoadBalance().getHashAlgorithm());
-            map.put("loadBalance", loadBalanceMap);
-        }
-        if (serviceConfig.getInstances() != null) {
-            List<Map<String, Object>> instances = new ArrayList<>();
-            for (ModelRouterProperties.ModelInstance instance : serviceConfig.getInstances()) {
-                instances.add(convertInstanceToMap(instance));
-            }
-            map.put("instances", instances);
-        }
-        if (serviceConfig.getAdapter() != null) {
-            map.put("adapter", serviceConfig.getAdapter());
-        }
-        
-        // 添加限流配置
-        addRateLimitToMap(serviceConfig.getRateLimit(), map);
-        
-        // 添加熔断器配置
-        addCircuitBreakerToMap(serviceConfig.getCircuitBreaker(), map);
-        
-        // 添加降级配置
-        addFallbackToMap(serviceConfig.getFallback(), map);
-
-        return map;
-    }
-
-    /**
-     * 更新限流配置
-     * @param rateLimit 目标限流配置对象
-     * @param map 配置Map
-     */
-    @SuppressWarnings("unchecked")
-    public void updateRateLimitConfig(ModelRouterProperties.RateLimitConfig rateLimit, Map<String, Object> map) {
-        if (map.containsKey("enabled")) {
-            rateLimit.setEnabled((Boolean) map.get("enabled"));
-        }
-        if (map.containsKey("algorithm")) {
-            rateLimit.setAlgorithm((String) map.get("algorithm"));
-        }
-        if (map.containsKey("capacity")) {
-            rateLimit.setCapacity(((Number) map.get("capacity")).longValue());
-        }
-        if (map.containsKey("rate")) {
-            rateLimit.setRate(((Number) map.get("rate")).longValue());
-        }
-        if (map.containsKey("scope")) {
-            rateLimit.setScope((String) map.get("scope"));
-        }
-        if (map.containsKey("key")) {
-            rateLimit.setKey((String) map.get("key"));
-        }
-        if (map.containsKey("clientIpEnable")) {
-            rateLimit.setClientIpEnable((Boolean) map.get("clientIpEnable"));
-        }
-    }
-
-    /**
-     * 更新熔断器配置
-     * @param circuitBreaker 目标熔断器配置对象
-     * @param map 配置Map
-     */
-    @SuppressWarnings("unchecked")
-    public void updateCircuitBreakerConfig(ModelRouterProperties.CircuitBreakerConfig circuitBreaker, Map<String, Object> map) {
-        if (map.containsKey("enabled")) {
-            circuitBreaker.setEnabled((Boolean) map.get("enabled"));
-        }
-        if (map.containsKey("failureThreshold")) {
-            circuitBreaker.setFailureThreshold((Integer) map.get("failureThreshold"));
-        }
-        if (map.containsKey("timeout")) {
-            circuitBreaker.setTimeout(((Number) map.get("timeout")).longValue());
-        }
-        if (map.containsKey("successThreshold")) {
-            circuitBreaker.setSuccessThreshold((Integer) map.get("successThreshold"));
-        }
-    }
-
-    /**
-     * 更新降级配置
-     * @param fallback 目标降级配置对象
-     * @param map 配置Map
-     */
-    @SuppressWarnings("unchecked")
-    public void updateFallbackConfig(ModelRouterProperties.FallbackConfig fallback, Map<String, Object> map) {
-        if (map.containsKey("enabled")) {
-            fallback.setEnabled((Boolean) map.get("enabled"));
-        }
-        if (map.containsKey("strategy")) {
-            fallback.setStrategy((String) map.get("strategy"));
-        }
-        if (map.containsKey("cacheSize")) {
-            fallback.setCacheSize((Integer) map.get("cacheSize"));
-        }
-        if (map.containsKey("cacheTtl")) {
-            fallback.setCacheTtl(((Number) map.get("cacheTtl")).longValue());
-        }
-    }
-
+    
     /**
      * 将Map转换为ServiceConfig对象
-     * @param map Map对象
-     * @return 转换后的ServiceConfig
+     *
+     * @param serviceConfigMap 服务配置Map
+     * @return ServiceConfig对象
      */
-    @SuppressWarnings("unchecked")
-    public ModelRouterProperties.ServiceConfig convertMapToServiceConfig(Map<String, Object> map) {
+    public ModelRouterProperties.ServiceConfig convertMapToServiceConfig(Map<String, Object> serviceConfigMap) {
+        if (serviceConfigMap == null) {
+            return null;
+        }
+        
         ModelRouterProperties.ServiceConfig serviceConfig = new ModelRouterProperties.ServiceConfig();
-
-        if (map.containsKey("loadBalance")) {
-            Map<String, Object> loadBalanceMap = (Map<String, Object>) map.get("loadBalance");
+        
+        // 设置负载均衡配置
+        if (serviceConfigMap.containsKey("loadBalance") && serviceConfigMap.get("loadBalance") instanceof Map) {
+            Map<String, Object> loadBalanceMap = (Map<String, Object>) serviceConfigMap.get("loadBalance");
             ModelRouterProperties.LoadBalanceConfig loadBalanceConfig = new ModelRouterProperties.LoadBalanceConfig();
             if (loadBalanceMap.containsKey("type")) {
                 loadBalanceConfig.setType((String) loadBalanceMap.get("type"));
@@ -507,230 +844,225 @@ public class ConfigurationHelper {
             }
             serviceConfig.setLoadBalance(loadBalanceConfig);
         }
-
-        if (map.containsKey("instances")) {
+        
+        // 设置适配器
+        if (serviceConfigMap.containsKey("adapter")) {
+            serviceConfig.setAdapter((String) serviceConfigMap.get("adapter"));
+        }
+        
+        // 设置实例列表
+        if (serviceConfigMap.containsKey("instances") && serviceConfigMap.get("instances") instanceof List) {
+            List<Map<String, Object>> instanceList = (List<Map<String, Object>>) serviceConfigMap.get("instances");
             List<ModelRouterProperties.ModelInstance> instances = new ArrayList<>();
-            List<Map<String, Object>> instanceList = (List<Map<String, Object>>) map.get("instances");
             for (Map<String, Object> instanceMap : instanceList) {
-                instances.add(convertMapToInstance(instanceMap));
+                ModelRouterProperties.ModelInstance instance = convertMapToInstance(instanceMap);
+                if (instance != null) {
+                    instances.add(instance);
+                }
             }
             serviceConfig.setInstances(instances);
         }
-
-        if (map.containsKey("adapter")) {
-            serviceConfig.setAdapter((String) map.get("adapter"));
-        }
-
-        // 设置限流配置
-        setRateLimitFromMap(map, serviceConfig);
         
-        // 设置熔断器配置
-        setCircuitBreakerFromMap(map, serviceConfig);
-        
-        // 设置降级配置
-        setFallbackFromMap(map, serviceConfig);
-
         return serviceConfig;
     }
-
+    
     /**
      * 将Map转换为ModelInstance对象
-     * @param map Map对象
-     * @return 转换后的ModelInstance
+     *
+     * @param instanceMap 实例配置Map
+     * @return ModelInstance对象
      */
-    @SuppressWarnings("unchecked")
-    public ModelRouterProperties.ModelInstance convertMapToInstance(Map<String, Object> map) {
-        ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
-        instance.setName((String) map.get("name"));
-        // 同时支持baseUrl和base-url两种字段名
-        String baseUrl = (String) map.get("baseUrl");
-        if (baseUrl == null) {
-            baseUrl = (String) map.get("base-url");
-        }
-        instance.setBaseUrl(baseUrl);
-        instance.setPath((String) map.get("path"));
-        if (map.containsKey("weight")) {
-            instance.setWeight(((Number) map.get("weight")).intValue());
-        } else {
-            instance.setWeight(1);
+    public ModelRouterProperties.ModelInstance convertMapToInstance(Map<String, Object> instanceMap) {
+        if (instanceMap == null) {
+            return null;
         }
         
-        // 添加status字段处理
-        if (map.containsKey("status")) {
-            instance.setStatus((String) map.get("status"));
-        } else {
-            instance.setStatus("active"); // 默认值
+        ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
+        
+        // 设置基本属性
+        if (instanceMap.containsKey("name")) {
+            instance.setName((String) instanceMap.get("name"));
         }
-
+        if (instanceMap.containsKey("baseUrl")) {
+            instance.setBaseUrl((String) instanceMap.get("baseUrl"));
+        }
+        if (instanceMap.containsKey("path")) {
+            instance.setPath((String) instanceMap.get("path"));
+        }
+        if (instanceMap.containsKey("weight")) {
+            Object weightObj = instanceMap.get("weight");
+            if (weightObj instanceof Number) {
+                instance.setWeight(((Number) weightObj).intValue());
+            }
+        }
+        if (instanceMap.containsKey("status")) {
+            instance.setStatus((String) instanceMap.get("status"));
+        }
+        if (instanceMap.containsKey("instanceId")) {
+            instance.setInstanceId((String) instanceMap.get("instanceId"));
+        }
+        
         // 设置限流配置
-        setRateLimitFromMap(map, instance);
-
+        if (instanceMap.containsKey("rateLimit") && instanceMap.get("rateLimit") instanceof Map) {
+            Map<String, Object> rateLimitMap = (Map<String, Object>) instanceMap.get("rateLimit");
+            ModelRouterProperties.RateLimitConfig rateLimitConfig = new ModelRouterProperties.RateLimitConfig();
+            updateRateLimitConfig(rateLimitConfig, rateLimitMap);
+            instance.setRateLimit(rateLimitConfig);
+        }
+        
         // 设置熔断器配置
-        setCircuitBreakerFromMap(map, instance);
-
+        if (instanceMap.containsKey("circuitBreaker") && instanceMap.get("circuitBreaker") instanceof Map) {
+            Map<String, Object> circuitBreakerMap = (Map<String, Object>) instanceMap.get("circuitBreaker");
+            ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig = new ModelRouterProperties.CircuitBreakerConfig();
+            updateCircuitBreakerConfig(circuitBreakerConfig, circuitBreakerMap);
+            instance.setCircuitBreaker(circuitBreakerConfig);
+        }
+        
         return instance;
     }
     
-    // ==================== 共性方法提取 ====================
-    
     /**
-     * 将限流配置添加到Map中
+     * 创建默认负载均衡配置
+     *
+     * @return 默认负载均衡配置
      */
-    private void addRateLimitToMap(ModelRouterProperties.RateLimitConfig rateLimit, Map<String, Object> targetMap) {
-        if (rateLimit != null) {
-            Map<String, Object> rateLimitMap = new HashMap<>();
-            rateLimitMap.put("enabled", rateLimit.getEnabled());
-            rateLimitMap.put("algorithm", rateLimit.getAlgorithm());
-            rateLimitMap.put("capacity", rateLimit.getCapacity());
-            rateLimitMap.put("rate", rateLimit.getRate());
-            rateLimitMap.put("scope", rateLimit.getScope());
-            rateLimitMap.put("key", rateLimit.getKey());
-            rateLimitMap.put("clientIpEnable", rateLimit.getClientIpEnable());
-            targetMap.put("rateLimit", rateLimitMap);
-        }
+    public ModelRouterProperties.LoadBalanceConfig createDefaultLoadBalanceConfig() {
+        return new ModelRouterProperties.LoadBalanceConfig();
     }
     
     /**
-     * 从Map中设置限流配置
+     * 更新限流配置
+     *
+     * @param rateLimitConfig 限流配置对象
+     * @param rateLimitMap 限流配置Map
      */
-    private void setRateLimitFromMap(Map<String, Object> sourceMap, ModelRouterProperties.ModelInstance targetInstance) {
-        if (sourceMap.containsKey("rateLimit") && sourceMap.get("rateLimit") != null) {
-            Map<String, Object> rateLimitMap = (Map<String, Object>) sourceMap.get("rateLimit");
-            ModelRouterProperties.RateLimitConfig rateLimitConfig = new ModelRouterProperties.RateLimitConfig();
-            if (rateLimitMap.containsKey("enabled")) {
-                rateLimitConfig.setEnabled((Boolean) rateLimitMap.get("enabled"));
-            }
-            if (rateLimitMap.containsKey("algorithm")) {
-                rateLimitConfig.setAlgorithm((String) rateLimitMap.get("algorithm"));
-            }
-            if (rateLimitMap.containsKey("capacity")) {
-                rateLimitConfig.setCapacity(((Number) rateLimitMap.get("capacity")).longValue());
-            }
-            if (rateLimitMap.containsKey("rate")) {
-                rateLimitConfig.setRate(((Number) rateLimitMap.get("rate")).longValue());
-            }
-            if (rateLimitMap.containsKey("scope")) {
-                rateLimitConfig.setScope((String) rateLimitMap.get("scope"));
-            }
-            if (rateLimitMap.containsKey("key")) {
-                rateLimitConfig.setKey((String) rateLimitMap.get("key"));
-            }
-            if (rateLimitMap.containsKey("clientIpEnable")) {
-                rateLimitConfig.setClientIpEnable((Boolean) rateLimitMap.get("clientIpEnable"));
-            }
-            targetInstance.setRateLimit(rateLimitConfig);
+    public void updateRateLimitConfig(ModelRouterProperties.RateLimitConfig rateLimitConfig, Map<String, Object> rateLimitMap) {
+        if (rateLimitConfig == null || rateLimitMap == null) {
+            return;
         }
-    }
-    
-    /**
-     * 从Map中设置限流配置（用于ServiceConfig）
-     */
-    private void setRateLimitFromMap(Map<String, Object> sourceMap, ModelRouterProperties.ServiceConfig targetConfig) {
-        if (sourceMap.containsKey("rateLimit") && sourceMap.get("rateLimit") != null) {
-            Map<String, Object> rateLimitMap = (Map<String, Object>) sourceMap.get("rateLimit");
-            ModelRouterProperties.RateLimitConfig rateLimitConfig = new ModelRouterProperties.RateLimitConfig();
-            if (rateLimitMap.containsKey("enabled")) {
-                rateLimitConfig.setEnabled((Boolean) rateLimitMap.get("enabled"));
+        
+        if (rateLimitMap.containsKey("enabled")) {
+            Object enabledObj = rateLimitMap.get("enabled");
+            if (enabledObj instanceof Boolean) {
+                rateLimitConfig.setEnabled((Boolean) enabledObj);
             }
-            if (rateLimitMap.containsKey("algorithm")) {
-                rateLimitConfig.setAlgorithm((String) rateLimitMap.get("algorithm"));
-            }
-            if (rateLimitMap.containsKey("capacity")) {
-                rateLimitConfig.setCapacity(((Number) rateLimitMap.get("capacity")).longValue());
-            }
-            if (rateLimitMap.containsKey("rate")) {
-                rateLimitConfig.setRate(((Number) rateLimitMap.get("rate")).longValue());
-            }
-            if (rateLimitMap.containsKey("scope")) {
-                rateLimitConfig.setScope((String) rateLimitMap.get("scope"));
-            }
-            if (rateLimitMap.containsKey("key")) {
-                rateLimitConfig.setKey((String) rateLimitMap.get("key"));
-            }
-            if (rateLimitMap.containsKey("clientIpEnable")) {
-                rateLimitConfig.setClientIpEnable((Boolean) rateLimitMap.get("clientIpEnable"));
-            }
-            targetConfig.setRateLimit(rateLimitConfig);
         }
-    }
-    
-    /**
-     * 将熔断器配置添加到Map中
-     */
-    private void addCircuitBreakerToMap(ModelRouterProperties.CircuitBreakerConfig circuitBreaker, Map<String, Object> targetMap) {
-        if (circuitBreaker != null) {
-            Map<String, Object> circuitBreakerMap = new HashMap<>();
-            circuitBreakerMap.put("enabled", circuitBreaker.getEnabled());
-            circuitBreakerMap.put("failureThreshold", circuitBreaker.getFailureThreshold());
-            circuitBreakerMap.put("timeout", circuitBreaker.getTimeout());
-            circuitBreakerMap.put("successThreshold", circuitBreaker.getSuccessThreshold());
-            targetMap.put("circuitBreaker", circuitBreakerMap);
+        if (rateLimitMap.containsKey("algorithm")) {
+            rateLimitConfig.setAlgorithm((String) rateLimitMap.get("algorithm"));
         }
-    }
-    
-    /**
-     * 从Map中设置熔断器配置
-     */
-    private void setCircuitBreakerFromMap(Map<String, Object> sourceMap, Object target) {
-        if (sourceMap.containsKey("circuitBreaker")&& sourceMap.get("circuitBreaker") != null) {
-            Map<String, Object> circuitBreakerMap = (Map<String, Object>) sourceMap.get("circuitBreaker");
-            ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig = new ModelRouterProperties.CircuitBreakerConfig();
-            if (circuitBreakerMap.containsKey("enabled")) {
-                circuitBreakerConfig.setEnabled((Boolean) circuitBreakerMap.get("enabled"));
+        if (rateLimitMap.containsKey("capacity")) {
+            Object capacityObj = rateLimitMap.get("capacity");
+            if (capacityObj instanceof Number) {
+                rateLimitConfig.setCapacity(((Number) capacityObj).longValue());
             }
-            if (circuitBreakerMap.containsKey("failureThreshold")) {
-                circuitBreakerConfig.setFailureThreshold(((Number) circuitBreakerMap.get("failureThreshold")).intValue());
+        }
+        if (rateLimitMap.containsKey("rate")) {
+            Object rateObj = rateLimitMap.get("rate");
+            if (rateObj instanceof Number) {
+                rateLimitConfig.setRate(((Number) rateObj).longValue());
             }
-            if (circuitBreakerMap.containsKey("timeout")) {
-                circuitBreakerConfig.setTimeout(((Number) circuitBreakerMap.get("timeout")).longValue());
-            }
-            if (circuitBreakerMap.containsKey("successThreshold")) {
-                circuitBreakerConfig.setSuccessThreshold(((Number) circuitBreakerMap.get("successThreshold")).intValue());
-            }
-            
-            // 根据目标对象类型设置熔断器配置
-            if (target instanceof ModelRouterProperties.ModelInstance) {
-                ((ModelRouterProperties.ModelInstance) target).setCircuitBreaker(circuitBreakerConfig);
-            } else if (target instanceof ModelRouterProperties.ServiceConfig) {
-                ((ModelRouterProperties.ServiceConfig) target).setCircuitBreaker(circuitBreakerConfig);
+        }
+        if (rateLimitMap.containsKey("scope")) {
+            rateLimitConfig.setScope((String) rateLimitMap.get("scope"));
+        }
+        if (rateLimitMap.containsKey("key")) {
+            rateLimitConfig.setKey((String) rateLimitMap.get("key"));
+        }
+        if (rateLimitMap.containsKey("clientIpEnable")) {
+            Object clientIpEnableObj = rateLimitMap.get("clientIpEnable");
+            if (clientIpEnableObj instanceof Boolean) {
+                rateLimitConfig.setClientIpEnable((Boolean) clientIpEnableObj);
             }
         }
     }
     
     /**
-     * 将降级配置添加到Map中
+     * 更新熔断器配置
+     *
+     * @param circuitBreakerConfig 熔断器配置对象
+     * @param circuitBreakerMap 熔断器配置Map
      */
-    private void addFallbackToMap(ModelRouterProperties.FallbackConfig fallback, Map<String, Object> targetMap) {
-        if (fallback != null) {
-            Map<String, Object> fallbackMap = new HashMap<>();
-            fallbackMap.put("enabled", fallback.getEnabled());
-            fallbackMap.put("strategy", fallback.getStrategy());
-            fallbackMap.put("cacheSize", fallback.getCacheSize());
-            fallbackMap.put("cacheTtl", fallback.getCacheTtl());
-            targetMap.put("fallback", fallbackMap);
+    public void updateCircuitBreakerConfig(ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig, Map<String, Object> circuitBreakerMap) {
+        if (circuitBreakerConfig == null || circuitBreakerMap == null) {
+            return;
+        }
+        
+        if (circuitBreakerMap.containsKey("enabled")) {
+            Object enabledObj = circuitBreakerMap.get("enabled");
+            if (enabledObj instanceof Boolean) {
+                circuitBreakerConfig.setEnabled((Boolean) enabledObj);
+            }
+        }
+        if (circuitBreakerMap.containsKey("failureThreshold")) {
+            Object failureThresholdObj = circuitBreakerMap.get("failureThreshold");
+            if (failureThresholdObj instanceof Number) {
+                circuitBreakerConfig.setFailureThreshold(((Number) failureThresholdObj).intValue());
+            }
+        }
+        if (circuitBreakerMap.containsKey("timeout")) {
+            Object timeoutObj = circuitBreakerMap.get("timeout");
+            if (timeoutObj instanceof Number) {
+                circuitBreakerConfig.setTimeout(((Number) timeoutObj).longValue());
+            }
+        }
+        if (circuitBreakerMap.containsKey("successThreshold")) {
+            Object successThresholdObj = circuitBreakerMap.get("successThreshold");
+            if (successThresholdObj instanceof Number) {
+                circuitBreakerConfig.setSuccessThreshold(((Number) successThresholdObj).intValue());
+            }
         }
     }
     
     /**
-     * 从Map中设置降级配置
+     * 更新降级配置
+     *
+     * @param fallbackConfig 降级配置对象
+     * @param fallbackMap 降级配置Map
      */
-    private void setFallbackFromMap(Map<String, Object> sourceMap, ModelRouterProperties.ServiceConfig targetConfig) {
-        if (sourceMap.containsKey("fallback")&& sourceMap.get("fallback") != null) {
-            Map<String, Object> fallbackMap = (Map<String, Object>) sourceMap.get("fallback");
-            ModelRouterProperties.FallbackConfig fallbackConfig = new ModelRouterProperties.FallbackConfig();
-            if (fallbackMap.containsKey("enabled")) {
-                fallbackConfig.setEnabled((Boolean) fallbackMap.get("enabled"));
-            }
-            if (fallbackMap.containsKey("strategy")) {
-                fallbackConfig.setStrategy((String) fallbackMap.get("strategy"));
-            }
-            if (fallbackMap.containsKey("cacheSize")) {
-                fallbackConfig.setCacheSize(((Number) fallbackMap.get("cacheSize")).intValue());
-            }
-            if (fallbackMap.containsKey("cacheTtl")) {
-                fallbackConfig.setCacheTtl(((Number) fallbackMap.get("cacheTtl")).longValue());
-            }
-            targetConfig.setFallback(fallbackConfig);
+    public void updateFallbackConfig(ModelRouterProperties.FallbackConfig fallbackConfig, Map<String, Object> fallbackMap) {
+        if (fallbackConfig == null || fallbackMap == null) {
+            return;
         }
+        
+        if (fallbackMap.containsKey("enabled")) {
+            Object enabledObj = fallbackMap.get("enabled");
+            if (enabledObj instanceof Boolean) {
+                fallbackConfig.setEnabled((Boolean) enabledObj);
+            }
+        }
+        if (fallbackMap.containsKey("strategy")) {
+            fallbackConfig.setStrategy((String) fallbackMap.get("strategy"));
+        }
+        if (fallbackMap.containsKey("cacheSize")) {
+            Object cacheSizeObj = fallbackMap.get("cacheSize");
+            if (cacheSizeObj instanceof Number) {
+                fallbackConfig.setCacheSize(((Number) cacheSizeObj).intValue());
+            }
+        }
+        if (fallbackMap.containsKey("cacheTtl")) {
+            Object cacheTtlObj = fallbackMap.get("cacheTtl");
+            if (cacheTtlObj instanceof Number) {
+                fallbackConfig.setCacheTtl(((Number) cacheTtlObj).longValue());
+            }
+        }
+    }
+    
+    /**
+     * 获取有效的负载均衡配置
+     *
+     * @param serviceConfig 服务配置
+     * @param globalConfig 全局配置
+     * @return 有效的负载均衡配置
+     */
+    public ModelRouterProperties.LoadBalanceConfig getEffectiveLoadBalanceConfig(
+            ModelRouterProperties.LoadBalanceConfig serviceConfig,
+            ModelRouterProperties.LoadBalanceConfig globalConfig) {
+        if (serviceConfig != null) {
+            return serviceConfig;
+        }
+        if (globalConfig != null) {
+            return globalConfig;
+        }
+        return createDefaultLoadBalanceConfig();
     }
 }
