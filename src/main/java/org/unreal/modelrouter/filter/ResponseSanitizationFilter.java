@@ -33,7 +33,7 @@ import java.time.LocalDateTime;
  */
 @Slf4j
 @Component
-@Order(20) // 在请求脱敏过滤器之后执行
+@Order(20) // 在请求处理之后执行
 @ConditionalOnProperty(name = "jairouter.security.sanitization.response.enabled", havingValue = "true", matchIfMissing = true)
 public class ResponseSanitizationFilter implements WebFilter {
     
