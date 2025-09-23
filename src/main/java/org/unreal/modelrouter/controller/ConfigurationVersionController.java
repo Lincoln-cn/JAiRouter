@@ -37,6 +37,23 @@ public class ConfigurationVersionController {
     public ConfigurationVersionController(ConfigurationService configurationService, StoreManager storeManager) {
         this.configurationService = configurationService;
         this.storeManager = storeManager;
+        System.out.println("=== ConfigurationVersionController 构造函数被调用 ===");
+        System.err.println("=== ConfigurationVersionController 已初始化 ===");
+        logger.error("=== ConfigurationVersionController 已初始化 ===");
+        
+        // 打印映射信息
+        System.err.println("=== 控制器映射路径: /api/config/version ===");
+        System.err.println("=== applyVersion 方法映射: POST /api/config/version/apply/{version} ===");
+    }
+
+    /**
+     * 测试端点 - 验证控制器是否工作
+     */
+    @GetMapping("/test")
+    public Mono<RouterResponse<String>> test() {
+        System.out.println("=== TEST端点被调用 ===");
+        logger.error("=== TEST端点被调用 ===");
+        return Mono.just(RouterResponse.success("控制器工作正常", "测试成功"));
     }
 
     /**
@@ -104,8 +121,10 @@ public class ConfigurationVersionController {
     public Mono<RouterResponse<Void>> rollbackToVersion(
             @Parameter(description = "版本号", example = "1")
             @PathVariable int version) {
+        logger.info("控制器收到回滚版本请求: {}", version);
         try {
-            configurationService.applyVersion(version);
+            configurationService.rollbackToVersion(version);
+            logger.info("控制器成功调用服务层回滚版本: {}", version);
             return Mono.just(RouterResponse.success((Void) null, "配置已成功回滚到版本: " + version));
         } catch (IllegalArgumentException e) {
             logger.warn("回滚配置失败，版本不存在: version={}", version, e);
@@ -182,17 +201,22 @@ public class ConfigurationVersionController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "配置内容不合法")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public Mono<RouterResponse<Void>> applyVersion(
+    public Mono<String> applyVersion(
             @PathVariable int version) {
+        System.out.println("=== 控制器方法被调用: applyVersion, version=" + version + " ===");
+        System.err.println("=== 控制器收到应用版本请求: " + version + " ===");
         try {
             configurationService.applyVersion(version);
-            return Mono.just(RouterResponse.success((Void) null, "配置应用成功"));
+            System.err.println("=== 控制器成功调用服务层应用版本: " + version + " ===");
+            return Mono.just("配置应用成功");
         } catch (IllegalArgumentException e) {
-            logger.warn("配置内容不合法", e);
-            return Mono.just(RouterResponse.error("配置内容不合法: " + e.getMessage()));
+            System.err.println("=== 配置内容不合法: version=" + version + " ===");
+            e.printStackTrace();
+            return Mono.just("配置内容不合法: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("应用配置失败", e);
-            return Mono.just(RouterResponse.error("应用配置失败: " + e.getMessage()));
+            System.err.println("=== 应用配置失败: version=" + version + " ===");
+            e.printStackTrace();
+            return Mono.just("应用配置失败: " + e.getMessage());
         }
     }
 
@@ -212,8 +236,8 @@ public class ConfigurationVersionController {
             // 获取所有版本号
             List<Integer> versionNumbers = configurationService.getAllVersions();
             
-            // 获取当前版本号
-            int currentVersion = configurationService.getCurrentVersion();
+            // 获取实际当前版本号
+            int currentVersion = configurationService.getActualCurrentVersion();
             
             // 构建所有版本的详细信息
             List<VersionInfo> versionInfos = new ArrayList<>();

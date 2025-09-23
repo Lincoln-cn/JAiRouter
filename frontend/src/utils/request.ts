@@ -13,6 +13,14 @@ const request: AxiosInstance = axios.create({
 // Request interceptor
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // 记录请求信息用于调试
+    console.log('发送请求:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`
+    })
+    
     // Add JWT token using the correct header name for JAiRouter
     const token = localStorage.getItem('admin_token')
     
