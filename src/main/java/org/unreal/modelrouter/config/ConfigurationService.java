@@ -95,17 +95,61 @@ public class ConfigurationService {
      * @param version 版本号
      */
     public void applyVersion(int version) {
+        logger.info("开始应用配置版本: {}", version);
+        
         Map<String, Object> config = getVersionConfig(version);
         if (config == null) {
             throw new IllegalArgumentException("版本不存在: " + version);
         }
-        storeManager.saveConfig(CURRENT_KEY, new HashMap<>(config));
+        
+        logger.debug("获取到版本 {} 的配置，包含 {} 个顶级配置项", version, config.size());
+        
+        // 添加版本元数据
+        Map<String, Object> configWithMetadata = new HashMap<>(config);
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("version", version);
+        metadata.put("appliedAt", System.currentTimeMillis());
+        metadata.put("operation", "apply");
+        configWithMetadata.put("_metadata", metadata);
+        
+        logger.debug("添加元数据后配置包含 {} 个顶级配置项，元数据: {}", configWithMetadata.size(), metadata);
+        
+        storeManager.saveConfig(CURRENT_KEY, configWithMetadata);
+        logger.info("配置已保存到存储管理器，键: {}", CURRENT_KEY);
+        
         refreshRuntimeConfig();
         
         // 记录配置回滚审计日志
         logConfigurationRollback(version, config);
         
         logger.info("已应用配置版本：{}", version);
+    }
+
+    /**
+     * 回滚到指定版本的配置
+     * @param version 版本号
+     */
+    public void rollbackToVersion(int version) {
+        Map<String, Object> config = getVersionConfig(version);
+        if (config == null) {
+            throw new IllegalArgumentException("版本不存在: " + version);
+        }
+        
+        // 添加版本元数据
+        Map<String, Object> configWithMetadata = new HashMap<>(config);
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("version", version);
+        metadata.put("appliedAt", System.currentTimeMillis());
+        metadata.put("operation", "rollback");
+        configWithMetadata.put("_metadata", metadata);
+        
+        storeManager.saveConfig(CURRENT_KEY, configWithMetadata);
+        refreshRuntimeConfig();
+        
+        // 记录配置回滚审计日志
+        logConfigurationRollback(version, config);
+        
+        logger.info("已回滚到配置版本：{}", version);
     }
 
     /**
@@ -125,7 +169,38 @@ public class ConfigurationService {
     }
 
     /**
-     * 获取当前最新版本号
+     * 获取实际当前配置版本号
+     * @return 当前配置版本号，如果不存在则返回0
+     */
+    public int getActualCurrentVersion() {
+        // 获取当前配置的版本信息
+        Map<String, Object> currentConfig = configMergeService.getPersistedConfig();
+        logger.debug("获取当前配置用于版本检查，配置为空: {}", currentConfig == null);
+        
+        if (currentConfig != null) {
+            logger.debug("当前配置包含_metadata: {}", currentConfig.containsKey("_metadata"));
+            if (currentConfig.containsKey("_metadata")) {
+                Map<String, Object> metadata = (Map<String, Object>) currentConfig.get("_metadata");
+                logger.debug("元数据内容: {}", metadata);
+                if (metadata != null && metadata.containsKey("version")) {
+                    Object versionObj = metadata.get("version");
+                    if (versionObj instanceof Number) {
+                        int actualVersion = ((Number) versionObj).intValue();
+                        logger.info("从元数据获取到实际当前版本: {}", actualVersion);
+                        return actualVersion;
+                    }
+                }
+            }
+        }
+        
+        // 如果没有元数据信息，则返回通过版本列表计算的版本号
+        int fallbackVersion = getCurrentVersion();
+        logger.info("未找到元数据版本信息，使用回退版本: {}", fallbackVersion);
+        return fallbackVersion;
+    }
+
+    /**
+     * 获取当前最新版本号（基于版本列表）
      * @return 当前版本号
      */
     public int getCurrentVersion() {

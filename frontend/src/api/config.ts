@@ -32,11 +32,13 @@ export const getConfigByVersion = (version: number) => {
 }
 
 // 应用指定版本的配置
+// 将指定版本的配置内容设置为当前配置，用于复用历史配置
 export const applyVersion = (version: number) => {
   return request.post<RouterResponse<void>>(`/config/version/apply/${version}`)
 }
 
 // 回滚到指定版本
+// 将系统配置完全恢复到指定的历史版本状态，用于错误修复和系统恢复
 export const rollbackVersion = (version: number) => {
   return request.post<RouterResponse<void>>(`/config/version/rollback/${version}`)
 }
