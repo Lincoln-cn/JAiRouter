@@ -8,6 +8,15 @@
         </div>
       </template>
       
+      <el-alert
+        title="操作说明"
+        type="info"
+        description="应用：将指定版本配置设为当前配置 | 回滚：恢复到指定历史版本状态"
+        show-icon
+        closable
+        style="margin-bottom: 20px;"
+      />
+      
       <el-table :data="versions" style="width: 100%" v-loading="loading">
         <el-table-column prop="version" label="版本号" width="100" />
         <el-table-column prop="status" label="状态" width="100">
@@ -17,7 +26,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250">
+        <el-table-column label="操作" width="300">
           <template #default="scope">
             <el-button size="small" @click="handleView(scope.row)">查看</el-button>
             <el-button 
@@ -142,36 +151,54 @@ const handleView = (row: Version) => {
 
 // 应用版本
 const handleApply = (row: Version) => {
-  ElMessageBox.confirm(`确定要应用版本 ${row.version} 吗？这将替换当前配置。`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
+  ElMessageBox.confirm(
+    `确定要应用版本 ${row.version} 吗？这将把该版本的配置内容设置为当前配置。`, 
+    '应用配置版本', 
+    {
+      confirmButtonText: '确定应用',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
     try {
-      await applyVersion(row.version)
-      ElMessage.success('版本应用成功')
-      fetchVersions()
-    } catch (error) {
+      const response = await applyVersion(row.version)
+      console.log('应用版本响应:', response)
+      ElMessage.success('版本应用成功，配置已更新')
+      // 添加短暂延迟确保后端完全处理完成
+      setTimeout(() => {
+        fetchVersions()
+      }, 500)
+    } catch (error: any) {
       console.error('应用版本失败:', error)
-      ElMessage.error('版本应用失败')
+      const errorMessage = error?.response?.data?.message || error?.message || '版本应用失败'
+      ElMessage.error(`版本应用失败: ${errorMessage}`)
     }
   })
 }
 
 // 回滚版本
 const handleRollback = (row: Version) => {
-  ElMessageBox.confirm(`确定要回滚到版本 ${row.version} 吗？`, '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
+  ElMessageBox.confirm(
+    `确定要回滚到版本 ${row.version} 吗？这将把系统配置完全恢复到该历史版本的状态。`, 
+    '回滚配置版本', 
+    {
+      confirmButtonText: '确定回滚',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
     try {
-      await rollbackVersion(row.version)
-      ElMessage.success('版本回滚成功')
-      fetchVersions()
-    } catch (error) {
+      const response = await rollbackVersion(row.version)
+      console.log('回滚版本响应:', response)
+      ElMessage.success('版本回滚成功，系统已恢复到指定状态')
+      // 添加短暂延迟确保后端完全处理完成
+      setTimeout(() => {
+        fetchVersions()
+      }, 500)
+    } catch (error: any) {
       console.error('回滚版本失败:', error)
-      ElMessage.error('版本回滚失败')
+      const errorMessage = error?.response?.data?.message || error?.message || '版本回滚失败'
+      ElMessage.error(`版本回滚失败: ${errorMessage}`)
     }
   })
 }

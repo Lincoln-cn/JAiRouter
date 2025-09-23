@@ -18,7 +18,7 @@ import java.util.List;
 @Data
 @Component
 @Validated
-@ConfigurationProperties(prefix = "jairouter.security")
+@ConfigurationProperties(prefix = "jairouter.security" , ignoreUnknownFields  = true ,ignoreInvalidFields = true)
 public class SecurityProperties {
     
     /**

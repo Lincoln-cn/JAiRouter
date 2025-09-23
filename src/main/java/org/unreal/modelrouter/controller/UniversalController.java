@@ -45,6 +45,16 @@ public class UniversalController {
     }
 
     /**
+     * 测试配置版本应用接口
+     */
+    @PostMapping("/config/version/apply/{version}")
+    public Mono<String> testApplyVersion(@PathVariable int version) {
+        System.out.println("=== UniversalController testApplyVersion 被调用: version=" + version + " ===");
+        System.err.println("=== UniversalController testApplyVersion 被调用: version=" + version + " ===");
+        return Mono.just("测试成功，版本: " + version);
+    }
+
+    /**
      * 聊天完成接口
      */
     @PostMapping("/chat/completions")

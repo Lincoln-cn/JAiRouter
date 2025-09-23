@@ -78,7 +78,7 @@ Configuration is loaded in the following order (later sources override earlier o
 
 ## Basic Structure
 
-```yaml
+```
 server:
   port: 8080
 
@@ -293,7 +293,7 @@ JAiRouter validates configuration at startup. Common validation errors:
 
 ### Missing Required Fields
 
-```yaml
+```
 # ❌ Invalid - missing baseUrl
 model:
   services:
@@ -314,7 +314,7 @@ model:
 
 ### Invalid Configuration Values
 
-```yaml
+```
 # ❌ Invalid - unsupported load balance type
 model:
   services:
@@ -334,7 +334,7 @@ model:
 
 ### 1. Use Meaningful Names
 
-```yaml
+```
 # ✅ Good - descriptive names
 model:
   services:
@@ -348,7 +348,7 @@ model:
 
 ### 2. Set Appropriate Timeouts
 
-```yaml
+```
 # ✅ Good - reasonable timeouts
 model:
   services:
@@ -366,7 +366,7 @@ model:
 
 ### 3. Configure Health Checks
 
-```yaml
+```
 # ✅ Good - enable health monitoring
 model:
   load-balance:
@@ -378,7 +378,7 @@ model:
 
 ### 4. Use Weights for Gradual Rollouts
 
-```yaml
+```
 # ✅ Good - gradual rollout with weights
 model:
   services:
@@ -399,3 +399,5 @@ model:
 - [Load Balancing](load-balancing.md) - Load balancing strategies
 - [Rate Limiting](rate-limiting.md) - Rate limiting algorithms
 - [Circuit Breaker](circuit-breaker.md) - Circuit breaker configuration
+- [Storage Configuration](store-config.md) - Storage and auto-merge configuration
+- [Version Management](version-management.md) - Configuration version management: Apply vs Rollback

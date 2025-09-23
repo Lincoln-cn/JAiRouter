@@ -57,6 +57,10 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
             // 绝对不能对 multipart 做任何缓存或 join
             return chain.filter(exchange);
         } else {
+            if (!hasBody(request)) {
+                log.debug("请求无body，跳过缓存: {}", request.getPath().value());
+                return chain.filter(exchange);
+            }
             log.debug("缓存标准请求体: {}", request.getPath().value());
             return handleStandardRequest(exchange, chain, request);
         }
@@ -125,7 +129,9 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
                         };
                         return chain.filter(exchange.mutate().request(cachedRequest).build());
                     } finally {
-                        DataBufferUtils.release(dataBuffer);
+                        if (dataBuffer != null) {
+                            DataBufferUtils.release(dataBuffer);
+                        }
                     }
                 })
                 .onErrorResume(error -> {
@@ -156,13 +162,8 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
 
         // 检查 Transfer-Encoding
         String transferEncoding = request.getHeaders().getFirst("Transfer-Encoding");
-        if ("chunked".equalsIgnoreCase(transferEncoding)) {
-            return true;
-        }
+        return "chunked".equalsIgnoreCase(transferEncoding);
 
-        // 检查 HTTP 方法，通常 POST、PUT、PATCH 可能有 body
-        String method = request.getMethod() != null ? request.getMethod().name() : "";
-        return "POST".equals(method) || "PUT".equals(method) || "PATCH".equals(method);
     }
 
     /**
