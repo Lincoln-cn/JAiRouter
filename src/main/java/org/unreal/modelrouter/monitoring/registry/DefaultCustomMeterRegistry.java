@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
 import org.unreal.modelrouter.monitoring.registry.model.MetricMetadata;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
  */
 @Component
 @Conditional(MonitoringEnabledCondition.class)
+@Primary
 public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
     
     private static final Logger logger = LoggerFactory.getLogger(DefaultCustomMeterRegistry.class);
