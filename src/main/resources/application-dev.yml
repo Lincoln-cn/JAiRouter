@@ -87,18 +87,8 @@ jairouter:
     
     # 开发环境数据脱敏配置（相对宽松）
     sanitization:
-      request:
-        enabled: true
-        log-sanitization: true
-        whitelist-users:
-          - "dev-admin-key"  # 开发环境管理员跳过脱敏
-        whitelist-ips:
-          - "127.0.0.1"
-          - "::1"
-          - "192.168.0.0/16"  # 开发环境内网IP
-      
       response:
-        enabled: true
+        enabled: false  # 临时禁用响应脱敏来调试问题
         log-sanitization: true
     # 开发环境审计配置
     audit:

@@ -1,10 +1,9 @@
 package org.unreal.modelrouter.security.config;
 
-import org.springframework.util.AntPathMatcher;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
+import org.springframework.util.AntPathMatcher;
 
 /**
  * 统一管理所有需要排除认证和数据脱敏的路径配置
