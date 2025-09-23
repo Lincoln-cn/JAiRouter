@@ -1,4 +1,4 @@
-﻿# 配置指南
+# 配置指南
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
@@ -78,7 +78,7 @@ JAiRouter 支持两种主要配置方式：
 
 ## 基本结构
 
-```yaml
+```
 server:
   port: 8080
 
@@ -128,7 +128,7 @@ JAiRouter 支持以下服务类型：
 
 配置请求如何在服务实例之间分发：
 
-```yaml
+```
 model:
   services:
     chat:
@@ -147,7 +147,7 @@ model:
 
 控制请求速率以防止服务过载：
 
-```yaml
+```
 model:
   services:
     chat:
@@ -169,7 +169,7 @@ model:
 
 使用熔断器模式防止级联故障：
 
-```yaml
+```
 model:
   services:
     chat:
@@ -184,7 +184,7 @@ model:
 
 定义服务不可用时的回退行为：
 
-```yaml
+```
 model:
   services:
     chat:
@@ -206,7 +206,7 @@ model:
 
 定义实际的服务端点：
 
-```yaml
+```
 model:
   services:
     chat:
@@ -238,7 +238,7 @@ model:
 
 配置动态配置的持久化方式：
 
-```yaml
+```
 store:
   type: file              # memory 或 file
   path: ./config          # 文件存储目录
@@ -267,7 +267,7 @@ JAiRouter 支持多种环境配置文件：
 
 使用环境变量覆盖配置：
 
-```bash
+```
 # 服务器端口
 export SERVER_PORT=8080
 
@@ -280,7 +280,7 @@ export MODEL_RATE_LIMIT_TYPE=token-bucket
 
 通过命令行参数覆盖配置：
 
-```bash
+```
 java -jar jairouter.jar \
   --server.port=8080 \
   --model.load-balance.type=round-robin \
@@ -293,7 +293,7 @@ JAiRouter 在启动时验证配置。常见验证错误：
 
 ### 缺少必需字段
 
-```yaml
+```
 # ❌ 无效 - 缺少 baseUrl
 model:
   services:
@@ -314,7 +314,7 @@ model:
 
 ### 无效配置值
 
-```yaml
+```
 # ❌ 无效 - 不支持的负载均衡类型
 model:
   services:
@@ -334,7 +334,7 @@ model:
 
 ### 1. 使用有意义的名称
 
-```yaml
+```
 # ✅ 好 - 描述性名称
 model:
   services:
@@ -348,7 +348,7 @@ model:
 
 ### 2. 设置适当的超时
 
-```yaml
+```
 # ✅ 好 - 合理的超时
 model:
   services:
@@ -366,7 +366,7 @@ model:
 
 ### 3. 配置健康检查
 
-```yaml
+```
 # ✅ 好 - 启用健康监控
 model:
   load-balance:
@@ -378,7 +378,7 @@ model:
 
 ### 4. 使用权重进行渐进式部署
 
-```yaml
+```
 # ✅ 好 - 使用权重渐进式部署
 model:
   services:
@@ -400,3 +400,4 @@ model:
 - [限流配置](rate-limiting.md) - 限流算法
 - [熔断器](circuit-breaker.md) - 熔断器配置
 - [存储配置](store-config.md) - 存储和自动合并配置
+- [版本管理](version-management.md) - 配置版本管理：应用 vs 回滚

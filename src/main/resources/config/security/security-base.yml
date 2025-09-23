@@ -50,46 +50,11 @@ jairouter:
     # 数据脱敏基础配置
     # ========================================
     sanitization:
-      request:
-        enabled: false
-        sensitive-words:
-          - "password"
-          - "secret"
-          - "token"
-          - "key"
-          - "credential"
-          - "auth"
-          - "session"
-        pii-patterns:
-          - "\\d{11}"                                                    # 手机号码
-          - "\\d{18}"                                                    # 身份证号码
-          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"          # 邮箱地址
-          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b"      # 银行卡号
-        masking-char: "*"
-        strategies:
-          phone: "keep-prefix-suffix"
-          email: "keep-domain"
-          id-card: "keep-prefix-suffix"
-          default: "full-mask"
-        log-sanitization: false
-        whitelist-users: []
-        whitelist-ips: []
-        rule-priorities:
-          phone: 1
-          email: 2
-          id-card: 3
-          bank-card: 4
-          sensitive-word: 5
-      
       response:
         enabled: false
         sensitive-words:
-          - "internal"
-          - "debug"
-          - "error"
-          - "exception"
-          - "stack"
-          - "trace"
+          - "password"
+          - "account"
         pii-patterns:
           - "\\d{11}"
           - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"
@@ -109,7 +74,7 @@ jairouter:
     # 安全审计基础配置
     # ========================================
     audit:
-      enabled: false
+      enabled: true
       log-level: "INFO"
       include-request-body: false
       include-response-body: false

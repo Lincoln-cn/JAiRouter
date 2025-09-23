@@ -56,7 +56,11 @@ public class ResponseSanitizationFilter implements WebFilter {
         
         // 跳过不需要脱敏的路径
         String path = request.getPath().value();
-        if (isExcludedPath(path)) {
+        boolean isExcluded = isExcludedPath(path);
+        log.debug("ResponseSanitizationFilter处理路径: {}, 是否排除: {}", path, isExcluded);
+        
+        if (isExcluded) {
+            log.debug("路径 {} 被排除，跳过响应脱敏处理", path);
             return chain.filter(exchange);
         }
         
