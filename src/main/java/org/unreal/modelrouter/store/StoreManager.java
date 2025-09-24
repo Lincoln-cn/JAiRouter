@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.store;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,5 +83,38 @@ public interface StoreManager {
      */
     default void deleteConfigVersion(String key, int version) {
         // 默认实现为空
+    }
+
+    /**
+     * 验证指定版本是否存在
+     *
+     * @param key     配置键
+     * @param version 版本号
+     * @return 版本是否存在
+     */
+    default boolean versionExists(String key, int version) {
+        return false;
+    }
+
+    /**
+     * 获取指定版本的文件路径
+     *
+     * @param key     配置键
+     * @param version 版本号
+     * @return 版本文件的实际路径，如果版本不存在则返回null
+     */
+    default String getVersionFilePath(String key, int version) {
+        return null;
+    }
+
+    /**
+     * 获取指定版本的创建时间
+     *
+     * @param key     配置键
+     * @param version 版本号
+     * @return 版本创建时间，如果版本不存在则返回null
+     */
+    default LocalDateTime getVersionCreatedTime(String key, int version) {
+        return null;
     }
 }
