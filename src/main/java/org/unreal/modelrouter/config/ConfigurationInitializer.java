@@ -37,35 +37,36 @@ public class ConfigurationInitializer implements CommandLineRunner {
         logger.info("开始执行配置初始化...");
 
         try {
-            // 1. 设置ModelServiceRegistry引用到ConfigurationService
-            // 避免循环依赖问题
-            configurationService.setModelServiceRegistry(modelServiceRegistry);
-            logger.debug("已设置ModelServiceRegistry引用到ConfigurationService");
+            if (configurationService.getActualCurrentVersion() == 0) {
+                // 1. 设置ModelServiceRegistry引用到ConfigurationService
+                // 避免循环依赖问题
+                configurationService.setModelServiceRegistry(modelServiceRegistry);
+                logger.debug("已设置ModelServiceRegistry引用到ConfigurationService");
 
-            // 2. 触发配置合并和初始化
-            // ModelServiceRegistry在@PostConstruct中已经执行了初始化
-            // 这里确保配置服务知道运行时注册表的状态
-            logger.info("配置初始化检查...");
+                // 2. 触发配置合并和初始化
+                // ModelServiceRegistry在@PostConstruct中已经执行了初始化
+                // 这里确保配置服务知道运行时注册表的状态
+                logger.info("配置初始化检查...");
 
-            // 3. 输出初始化状态信息
-            logInitializationStatus();
+                // 3. 输出初始化状态信息
+                logInitializationStatus();
 
-            logger.info("配置初始化完成");
+                logger.info("配置初始化完成");
 
-            Map<String, Object> currentConfig = configurationService.getAllConfigurations();
-            // 添加版本元数据
-            Map<String, Object> metadata = new HashMap<>();
-            metadata.put("operation", "createService");
-            metadata.put("operationDetail", "初始化系统配置");
-            metadata.put("serviceType", "all");
-            metadata.put("timestamp", System.currentTimeMillis());
-            currentConfig.put("_metadata", metadata);
+                Map<String, Object> currentConfig = configurationService.getAllConfigurations();
+                // 添加版本元数据
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("operation", "createService");
+                metadata.put("operationDetail", "初始化系统配置");
+                metadata.put("serviceType", "all");
+                metadata.put("timestamp", System.currentTimeMillis());
+                currentConfig.put("_metadata", metadata);
 
-            // 4. 保存初始版本为 0
-            configurationService.saveAsNewVersion(currentConfig, "初始化配置", "System");
+                // 4. 保存初始版本为 0
+                configurationService.saveAsNewVersion(currentConfig, "初始化配置", "System");
 
-            logger.info("已将初始配置保存为版本 0");
-
+                logger.info("已将初始配置保存为版本 0");
+            }
         } catch (Exception e) {
             logger.error("配置初始化过程中发生错误", e);
             throw e;

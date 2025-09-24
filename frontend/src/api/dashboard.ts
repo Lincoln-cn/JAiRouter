@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { DashboardOverview, RouterResponse } from '@/types'
+import type {DashboardOverview, RouterResponse} from '@/types'
 
 // 获取服务统计信息
 export const getServiceStats = () => {
@@ -27,8 +27,8 @@ export const updateServiceInstance = (serviceType: string, instanceConfig: any, 
 }
 
 // 删除服务实例（支持控制是否创建新版本）
-export const deleteServiceInstance = (serviceType: string, modelName: string, baseUrl: string, createNewVersion: boolean = true) => {
-  return request.delete<RouterResponse<void>>(`/config/instance/del/${serviceType}?modelName=${encodeURIComponent(modelName)}&baseUrl=${encodeURIComponent(baseUrl)}&createNewVersion=${createNewVersion}`)
+export const deleteServiceInstance = (serviceType: string, instanceId: string, createNewVersion: boolean = true) => {
+    return request.delete<RouterResponse<void>>(`/config/instance/del/${serviceType}?instanceId=${instanceId}&createNewVersion=${createNewVersion}`)
 }
 
 // 获取监控概览
