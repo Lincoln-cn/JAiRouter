@@ -80,6 +80,11 @@ public class MemoryStoreManager extends BaseStoreManager {
         return new HashSet<>(storage.keySet());
     }
 
+    @Override
+    public Map<String, Object> getLatestConfig(String configKey) {
+        return storage.get(configKey);
+    }
+
     /**
      * 清空所有配置（仅用于测试）
      */

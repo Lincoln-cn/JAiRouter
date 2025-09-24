@@ -78,7 +78,6 @@ public class ModelServiceRegistry {
         this.fallbackManager = fallbackManager;
         this.configMergeService = configMergeService;
         this.configurationHelper = configurationHelper;
-
         this.webClientCache = new ConcurrentHashMap<>();
         this.serviceConfigCache = new ConcurrentHashMap<>();
     }

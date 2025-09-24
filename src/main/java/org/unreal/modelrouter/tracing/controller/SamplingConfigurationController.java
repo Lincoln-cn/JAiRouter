@@ -154,7 +154,7 @@ public class SamplingConfigurationController {
      */
     @PostMapping("/strategy/{strategyName}")
     public ResponseEntity<Map<String, Object>> switchSamplingStrategy(
-            @PathVariable String strategyName) {
+            @PathVariable("strategyName") String strategyName) {
         try {
             samplingStrategyManager.updateStrategy(strategyName);
             

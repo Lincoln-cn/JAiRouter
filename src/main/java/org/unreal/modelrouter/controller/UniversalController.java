@@ -4,10 +4,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,11 +22,6 @@ import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
-import org.springframework.web.server.ServerWebExchange;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.codec.multipart.FilePart;
 
 @RestController
 @RequestMapping("/v1")
@@ -34,7 +32,7 @@ public class UniversalController {
     private final ServiceStateManager serviceStateManager;
     private final MetricsCollector metricsCollector;
 
-    private Logger logger = LoggerFactory.getLogger(UniversalController.class);
+    private final Logger logger = LoggerFactory.getLogger(UniversalController.class);
 
     public UniversalController(AdapterRegistry adapterRegistry,
                                ServiceStateManager serviceStateManager,
@@ -42,16 +40,6 @@ public class UniversalController {
         this.adapterRegistry = adapterRegistry;
         this.serviceStateManager = serviceStateManager;
         this.metricsCollector = metricsCollector;
-    }
-
-    /**
-     * 测试配置版本应用接口
-     */
-    @PostMapping("/config/version/apply/{version}")
-    public Mono<String> testApplyVersion(@PathVariable int version) {
-        System.out.println("=== UniversalController testApplyVersion 被调用: version=" + version + " ===");
-        System.err.println("=== UniversalController testApplyVersion 被调用: version=" + version + " ===");
-        return Mono.just("测试成功，版本: " + version);
     }
 
     /**
@@ -369,9 +357,7 @@ public class UniversalController {
             return String.valueOf(((ResponseStatusException) error).getStatusCode().value());
         }
         // 处理WebClient响应异常
-        if (error instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
-            org.springframework.web.reactive.function.client.WebClientResponseException webClientException = 
-                (org.springframework.web.reactive.function.client.WebClientResponseException) error;
+        if (error instanceof org.springframework.web.reactive.function.client.WebClientResponseException webClientException) {
             // 特别处理401 Unauthorized错误
             if (webClientException.getStatusCode().value() == 401) {
                 // 记录详细的401错误信息
@@ -391,9 +377,7 @@ public class UniversalController {
             return String.valueOf(webClientException.getStatusCode().value());
         }
         // 添加对DownstreamServiceException的处理
-        if (error instanceof org.unreal.modelrouter.exception.DownstreamServiceException) {
-            org.unreal.modelrouter.exception.DownstreamServiceException downstreamException = 
-                (org.unreal.modelrouter.exception.DownstreamServiceException) error;
+        if (error instanceof org.unreal.modelrouter.exception.DownstreamServiceException downstreamException) {
             return String.valueOf(downstreamException.getStatusCode().value());
         }
         return "500";

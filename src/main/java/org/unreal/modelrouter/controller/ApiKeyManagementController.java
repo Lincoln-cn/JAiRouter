@@ -55,7 +55,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "获取指定API密钥信息", description = "根据API密钥ID获取详细信息（不包含实际的密钥值）")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyInfo>> getApiKeyById(
-            @Parameter(description = "API密钥ID") @PathVariable String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
         return apiKeyService.getApiKeyById(keyId)
                 .map(apiKey -> {
                     // 清除密钥值以确保安全
@@ -76,7 +76,7 @@ public class ApiKeyManagementController {
         
         // 生成安全的API密钥
         String keyValue = ApiKeyInfo.generateApiKey();
-        String keyId = request.getKeyId() != null ? request.getKeyId() : "key-" + UUID.randomUUID().toString();
+        String keyId = request.getKeyId() != null ? request.getKeyId() : "key-" + UUID.randomUUID();
         
         ApiKeyInfo apiKeyInfo = ApiKeyInfo.builder()
                 .keyId(keyId)
@@ -107,7 +107,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "更新API密钥", description = "更新指定API密钥的信息")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyInfo>> updateApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable String keyId,
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId,
             @Parameter(description = "更新的API密钥信息") @RequestBody UpdateApiKeyRequest request) {
         
         ApiKeyInfo updateInfo = ApiKeyInfo.builder()
@@ -133,7 +133,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "删除API密钥", description = "删除指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Void>> deleteApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
         return apiKeyService.deleteApiKey(keyId)
                 .then(Mono.just(RouterResponse.success((Void) null, "删除API密钥成功")))
                 .onErrorReturn(RouterResponse.error("API密钥不存在", "NOT_FOUND"));
@@ -146,7 +146,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "禁用API密钥", description = "禁用指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyInfo>> disableApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
         return apiKeyService.getApiKeyById(keyId)
                 .flatMap(apiKey -> {
                     apiKey.setEnabled(false);
@@ -166,7 +166,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "启用API密钥", description = "启用指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyInfo>> enableApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
         return apiKeyService.getApiKeyById(keyId)
                 .flatMap(apiKey -> {
                     apiKey.setEnabled(true);

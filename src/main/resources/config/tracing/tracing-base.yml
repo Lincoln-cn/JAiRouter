@@ -135,7 +135,7 @@ jairouter:
       
       # Redis配置
       redis:
-        enabled: true
+        enabled: false
       
       # 限流器配置
       rate-limiter:

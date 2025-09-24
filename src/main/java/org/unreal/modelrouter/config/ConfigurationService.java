@@ -13,6 +13,7 @@ import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.StoreManager;
 import org.unreal.modelrouter.tracing.config.SamplingConfigurationValidator;
 import org.unreal.modelrouter.util.ApplicationContextProvider;
+import org.unreal.modelrouter.util.JacksonHelper;
 import org.unreal.modelrouter.util.SecurityUtils;
 
 import java.time.LocalDateTime;
@@ -53,6 +54,7 @@ public class ConfigurationService {
     // 记录最近版本创建的时间，用于检测短时间内的重复创建
     private volatile long lastVersionCreationTime = 0;
     private volatile String lastVersionDescription = "";
+
     @Autowired
     public ConfigurationService(StoreManager storeManager,
                                 ConfigurationHelper configurationHelper,
@@ -81,102 +83,104 @@ public class ConfigurationService {
      */
     private void initializeVersionControl() {
         try {
-            boolean metadataLoaded = false;
+            // 检查是否已经存在版本文件，如果存在则直接使用，不进行初始化
+            if (storeManager.exists(CURRENT_KEY + ".metadata") || storeManager.exists(CURRENT_KEY + ".history")) {
+                logger.info("检测到已存在的版本文件，跳过初始化过程，直接加载历史数据");
 
-            // 初始化配置元数据
-            if (storeManager.exists(CURRENT_KEY + ".metadata")) {
-                Map<String, Object> metadataMap = storeManager.getConfig(CURRENT_KEY + ".metadata");
-                if (metadataMap != null) {
-                    ConfigMetadata metadata = new ConfigMetadata();
-                    metadata.setConfigKey(CURRENT_KEY);
-                    if (metadataMap.containsKey("currentVersion")) {
-                        metadata.setCurrentVersion(((Number) metadataMap.get("currentVersion")).intValue());
-                    }
-                    if (metadataMap.containsKey("initialVersion")) {
-                        metadata.setInitialVersion(((Number) metadataMap.get("initialVersion")).intValue());
-                    }
-                    if (metadataMap.containsKey("createdAt")) {
-                        metadata.setCreatedAt((LocalDateTime) metadataMap.get("createdAt"));
-                    }
-                    if (metadataMap.containsKey("lastModified")) {
-                        metadata.setLastModified((LocalDateTime) metadataMap.get("lastModified"));
-                    }
-                    if (metadataMap.containsKey("lastModifiedBy")) {
-                        metadata.setLastModifiedBy((String) metadataMap.get("lastModifiedBy"));
-                    }
-                    if (metadataMap.containsKey("totalVersions")) {
-                        metadata.setTotalVersions(((Number) metadataMap.get("totalVersions")).intValue());
-                    }
-                    if (metadataMap.containsKey("existingVersions")) {
+                // 优先读取历史文件
+                if (storeManager.exists(CURRENT_KEY + ".history")) {
+                    Map<String, Object> historyWrapper = storeManager.getConfig(CURRENT_KEY + ".history");
+                    if (historyWrapper != null && historyWrapper.containsKey("history")) {
                         @SuppressWarnings("unchecked")
-                        List<Integer> versionList = (List<Integer>) metadataMap.get("existingVersions");
-                        if (versionList != null) {
-                            metadata.setExistingVersions(new HashSet<>(versionList));
-                            logger.info("加载了 {} 个版本: {}", versionList.size(), versionList);
-                        }
-                    }
-                    configMetadataMap.put(CURRENT_KEY, metadata);
-                    metadataLoaded = true;
-                    logger.info("成功加载配置元数据，当前版本: {}", metadata.getCurrentVersion());
-                }
-            }
-
-            // 初始化版本历史
-            List<VersionInfo> versionHistory = new ArrayList<>();
-            if (storeManager.exists(CURRENT_KEY + ".history")) {
-                Map<String, Object> historyWrapper = storeManager.getConfig(CURRENT_KEY + ".history");
-                if (historyWrapper != null && historyWrapper.containsKey("history")) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> historyList = (List<Map<String, Object>>) historyWrapper.get("history");
-                    if (historyList != null) {
-                        for (Map<String, Object> historyItem : historyList) {
-                            VersionInfo versionInfo = new VersionInfo();
-                            if (historyItem.containsKey("version")) {
-                                versionInfo.setVersion(((Number) historyItem.get("version")).intValue());
-                            }
-                            if (historyItem.containsKey("createdAt")) {
-                                Object createdAtObj = historyItem.get("createdAt");
-                                if (createdAtObj instanceof LocalDateTime) {
-                                    versionInfo.setCreatedAt((LocalDateTime) createdAtObj);
-                                } else if (createdAtObj instanceof List) {
-                                    // 处理数组格式的时间 [2025,9,23,18,50,17,964096443]
-                                    @SuppressWarnings("unchecked")
-                                    List<Integer> timeArray = (List<Integer>) createdAtObj;
-                                    if (timeArray.size() >= 6) {
-                                        LocalDateTime dateTime = LocalDateTime.of(
-                                                timeArray.get(0), // year
-                                                timeArray.get(1), // month
-                                                timeArray.get(2), // day
-                                                timeArray.get(3), // hour
-                                                timeArray.get(4), // minute
-                                                timeArray.get(5), // second
-                                                timeArray.size() > 6 ? timeArray.get(6) : 0 // nano
-                                        );
-                                        versionInfo.setCreatedAt(dateTime);
-                                    }
+                        List<Map<String, Object>> historyList = (List<Map<String, Object>>) historyWrapper.get("history");
+                        if (historyList != null) {
+                            List<VersionInfo> versionHistory = new ArrayList<>();
+                            for (Map<String, Object> historyItem : historyList) {
+                                VersionInfo versionInfo = new VersionInfo();
+                                if (historyItem.containsKey("version")) {
+                                    versionInfo.setVersion(((Number) historyItem.get("version")).intValue());
                                 }
+                                if (historyItem.containsKey("createdAt")) {
+                                    versionInfo.setCreatedAt(JacksonHelper.covertStringToLocalDateTime((String) historyItem.get("createdAt")));
+                                }
+                                if (historyItem.containsKey("createdBy")) {
+                                    versionInfo.setCreatedBy((String) historyItem.get("createdBy"));
+                                }
+                                if (historyItem.containsKey("description")) {
+                                    versionInfo.setDescription((String) historyItem.get("description"));
+                                }
+                                if (historyItem.containsKey("changeType")) {
+                                    versionInfo.setChangeType(VersionInfo.ChangeType.valueOf((String) historyItem.get("changeType")));
+                                }
+                                versionHistory.add(versionInfo);
                             }
-                            if (historyItem.containsKey("createdBy")) {
-                                versionInfo.setCreatedBy((String) historyItem.get("createdBy"));
-                            }
-                            if (historyItem.containsKey("description")) {
-                                versionInfo.setDescription((String) historyItem.get("description"));
-                            }
-                            if (historyItem.containsKey("changeType")) {
-                                versionInfo.setChangeType(VersionInfo.ChangeType.valueOf((String) historyItem.get("changeType")));
-                            }
-                            versionHistory.add(versionInfo);
+                            versionHistoryMap.put(CURRENT_KEY, versionHistory);
+                            logger.info("成功加载版本历史，共 {} 个版本", versionHistory.size());
                         }
-                        versionHistoryMap.put(CURRENT_KEY, versionHistory);
-                        logger.info("成功加载版本历史，共 {} 个版本", versionHistory.size());
                     }
                 }
-            }
 
-            // 元数据恢复机制：如果元数据丢失但历史文件存在，尝试重建元数据
-            if (!metadataLoaded && !versionHistory.isEmpty()) {
-                logger.warn("检测到元数据文件丢失但历史文件存在，尝试重建元数据");
-                recoverMetadataFromHistory(versionHistory);
+                // 然后读取元数据文件
+                if (storeManager.exists(CURRENT_KEY + ".metadata")) {
+                    Map<String, Object> metadataMap = storeManager.getConfig(CURRENT_KEY + ".metadata");
+                    if (metadataMap != null) {
+                        ConfigMetadata metadata = new ConfigMetadata();
+                        metadata.setConfigKey(CURRENT_KEY);
+                        if (metadataMap.containsKey("currentVersion")) {
+                            metadata.setCurrentVersion(((Number) metadataMap.get("currentVersion")).intValue());
+                        }
+                        if (metadataMap.containsKey("initialVersion")) {
+                            metadata.setInitialVersion(((Number) metadataMap.get("initialVersion")).intValue());
+                        }
+                        if (metadataMap.containsKey("createdAt")) {
+                            metadata.setCreatedAt(JacksonHelper.covertStringToLocalDateTime((String) metadataMap.get("createdAt")));
+                        }
+                        if (metadataMap.containsKey("lastModified")) {
+                            metadata.setLastModified(JacksonHelper.covertStringToLocalDateTime((String) metadataMap.get("lastModified")));
+                        }
+                        if (metadataMap.containsKey("lastModifiedBy")) {
+                            metadata.setLastModifiedBy((String) metadataMap.get("lastModifiedBy"));
+                        }
+                        if (metadataMap.containsKey("totalVersions")) {
+                            metadata.setTotalVersions(((Number) metadataMap.get("totalVersions")).intValue());
+                        }
+                        if (metadataMap.containsKey("existingVersions")) {
+                            @SuppressWarnings("unchecked")
+                            List<Integer> versionList = (List<Integer>) metadataMap.get("existingVersions");
+                            if (versionList != null) {
+                                metadata.setExistingVersions(new HashSet<>(versionList));
+                                logger.info("加载了 {} 个版本: {}", versionList.size(), versionList);
+                            }
+                        }
+                        configMetadataMap.put(CURRENT_KEY, metadata);
+                        logger.info("成功加载配置元数据，当前版本: {}", metadata.getCurrentVersion());
+                    }
+                }
+            } else {
+
+                // 只有在完全没有版本文件时才进行初始化
+                logger.info("未检测到任何版本文件，执行初始化过程");
+
+                // 创建初始元数据
+                ConfigMetadata metadata = new ConfigMetadata();
+                metadata.setConfigKey(CURRENT_KEY);
+                metadata.setInitialVersion(1);
+                metadata.setCurrentVersion(0);
+                metadata.setCreatedAt(LocalDateTime.now());
+                metadata.setLastModified(LocalDateTime.now());
+                metadata.setLastModifiedBy("system");
+                metadata.setTotalVersions(0);
+                metadata.setExistingVersions(new HashSet<>());
+
+                configMetadataMap.put(CURRENT_KEY, metadata);
+                saveMetadata(CURRENT_KEY, metadata);
+
+                // 创建空的历史记录
+                List<VersionInfo> versionHistory = new ArrayList<>();
+                versionHistoryMap.put(CURRENT_KEY, versionHistory);
+                saveVersionHistory(CURRENT_KEY, versionHistory);
+
+                logger.info("版本控制初始化完成");
             }
         } catch (Exception e) {
             logger.warn("初始化版本控制数据时发生错误: {}", e.getMessage());
@@ -248,70 +252,6 @@ public class ConfigurationService {
         lastVersionDescription = description;
     }
 
-    /**
-     * 从版本历史恢复元数据
-     */
-    private void recoverMetadataFromHistory(List<VersionInfo> versionHistory) {
-        try {
-            if (versionHistory == null || versionHistory.isEmpty()) {
-                logger.warn("版本历史为空，无法恢复元数据");
-                return;
-            }
-
-            // 按版本号排序
-            versionHistory.sort(Comparator.comparing(VersionInfo::getVersion));
-
-            // 获取版本范围
-            int minVersion = versionHistory.get(0).getVersion();
-            int maxVersion = versionHistory.get(versionHistory.size() - 1).getVersion();
-
-            // 创建恢复的元数据
-            ConfigMetadata recoveredMetadata = new ConfigMetadata();
-            recoveredMetadata.setConfigKey(CURRENT_KEY);
-            recoveredMetadata.setInitialVersion(minVersion);
-            recoveredMetadata.setCurrentVersion(maxVersion);
-            recoveredMetadata.setTotalVersions(versionHistory.size());
-
-            // 恢复版本列表
-            Set<Integer> existingVersions = new HashSet<>();
-            for (VersionInfo versionInfo : versionHistory) {
-                existingVersions.add(versionInfo.getVersion());
-            }
-            recoveredMetadata.setExistingVersions(existingVersions);
-
-            // 设置时间信息
-            VersionInfo firstVersion = versionHistory.get(0);
-            VersionInfo lastVersion = versionHistory.get(versionHistory.size() - 1);
-
-            if (firstVersion.getCreatedAt() != null) {
-                recoveredMetadata.setCreatedAt(firstVersion.getCreatedAt());
-            } else {
-                recoveredMetadata.setCreatedAt(LocalDateTime.now());
-            }
-
-            if (lastVersion.getCreatedAt() != null) {
-                recoveredMetadata.setLastModified(lastVersion.getCreatedAt());
-            } else {
-                recoveredMetadata.setLastModified(LocalDateTime.now());
-            }
-
-            if (lastVersion.getCreatedBy() != null) {
-                recoveredMetadata.setLastModifiedBy(lastVersion.getCreatedBy());
-            } else {
-                recoveredMetadata.setLastModifiedBy("system");
-            }
-
-            // 保存恢复的元数据
-            configMetadataMap.put(CURRENT_KEY, recoveredMetadata);
-            saveMetadata(CURRENT_KEY, recoveredMetadata);
-
-            logger.info("成功从版本历史恢复元数据，版本范围: {} - {}, 总版本数: {}",
-                    minVersion, maxVersion, versionHistory.size());
-
-        } catch (Exception e) {
-            logger.error("从版本历史恢复元数据失败", e);
-        }
-    }
 
     /**
      * 保存配置元数据
@@ -357,6 +297,7 @@ public class ConfigurationService {
     }
 
     // ==================== 版本管理 ====================
+
     /**
      * 获取所有配置版本号
      *
@@ -647,9 +588,6 @@ public class ConfigurationService {
                     metadata.setLastModifiedBy(SecurityUtils.getCurrentUserId());
                     metadata.removeVersion(version); // 从版本列表中移除
 
-                    // 重新计算版本范围，跳过已删除的版本
-                    updateVersionRangeAfterDeletion(metadata, version);
-
                     saveMetadata(CURRENT_KEY, metadata);
                     logger.debug("已更新配置元数据和版本范围");
                 }
@@ -738,7 +676,7 @@ public class ConfigurationService {
         // 检查版本是否在有效范围内
         ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
         if (metadata != null) {
-            return version >= metadata.getInitialVersion() && version <= metadata.getCurrentVersion();
+            return metadata.getExistingVersions().contains(version);
         }
 
         // 如果没有元数据，检查版本列表
@@ -1046,6 +984,7 @@ public class ConfigurationService {
     }
 
     // ==================== 查询操作 ====================
+
     /**
      * 获取所有配置（合并后的最终配置）
      *
@@ -1175,6 +1114,7 @@ public class ConfigurationService {
     }
 
     // ==================== 服务管理操作 ====================
+
     /**
      * 创建新服务（自动保存为新版本）
      *
@@ -1290,12 +1230,12 @@ public class ConfigurationService {
     }
 
     // ==================== 实例管理操作 ====================
+
     /**
      * 添加服务实例（优化版本，可选择是否保存为新版本）
      *
      * @param serviceType 服务类型
      * @param instanceConfig 实例配置
-     * @param createNewVersion 是否创建新版本
      */
     @SuppressWarnings("unchecked")
     public void addServiceInstance(String serviceType, ModelRouterProperties.ModelInstance instanceConfig) {
@@ -1352,12 +1292,11 @@ public class ConfigurationService {
         String userId = SecurityUtils.getCurrentUserId();
         String description = "添加服务实例: " + name + "@" + baseUrl;
         saveAsNewVersionIfChanged(currentConfig, description, userId);
-        
+
         refreshRuntimeConfig();
 
         logger.info("实例 {} 添加成功", name + "@" + baseUrl);
     }
-
 
 
     /**
@@ -1497,12 +1436,11 @@ public class ConfigurationService {
         String userId = SecurityUtils.getCurrentUserId();
         String description = "更新服务实例: " + name + "@" + baseUrl;
         saveAsNewVersionIfChanged(currentConfig, description, userId);
-        
+
         refreshRuntimeConfig();
 
         logger.info("实例 {} 更新成功", instanceId);
     }
-
 
 
     /**
@@ -1510,7 +1448,6 @@ public class ConfigurationService {
      *
      * @param serviceType 服务类型
      * @param instanceId 实例ID
-     * @param createNewVersion 是否创建新版本
      */
     @SuppressWarnings("unchecked")
     public void deleteServiceInstance(String serviceType, String instanceId) {
@@ -1556,15 +1493,15 @@ public class ConfigurationService {
         String userId = SecurityUtils.getCurrentUserId();
         String description = "删除服务实例: " + instanceId;
         saveAsNewVersionIfChanged(currentConfig, description, userId);
-        
+
         refreshRuntimeConfig();
 
         logger.info("实例 {} 删除成功", instanceId);
     }
 
 
-
     // ==================== 批量操作 ====================
+
     /**
      * 批量更新配置（自动保存为新版本）
      *
@@ -1618,15 +1555,15 @@ public class ConfigurationService {
 
         // 执行所有操作
         for (InstanceOperation operation : operations) {
-            switch (operation.getType()) {
+            switch (operation.type()) {
                 case ADD:
-                    addInstanceToList(instances, operation.getInstanceConfig(), operationDetails);
+                    addInstanceToList(instances, operation.instanceConfig(), operationDetails);
                     break;
                 case UPDATE:
-                    updateInstanceInList(instances, operation.getInstanceId(), operation.getInstanceConfig(), operationDetails);
+                    updateInstanceInList(instances, operation.instanceId(), operation.instanceConfig(), operationDetails);
                     break;
                 case DELETE:
-                    deleteInstanceFromList(instances, operation.getInstanceId(), operationDetails);
+                    deleteInstanceFromList(instances, operation.instanceId(), operationDetails);
                     break;
             }
         }
@@ -2466,14 +2403,12 @@ public class ConfigurationService {
             ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
             if (metadata != null) {
                 auditData.put("totalVersionsAfterDeletion", metadata.getTotalVersions());
-                auditData.put("versionRange",
-                        String.format("%d-%d", metadata.getInitialVersion(), metadata.getCurrentVersion()));
+                auditData.put("existingVersions",
+                        metadata.getExistingVersions());
             }
 
             // 记录剩余可用版本
-            List<Integer> remainingVersions = getAllVersions();
-            remainingVersions.remove(Integer.valueOf(deletedVersion)); // 移除已删除的版本
-            auditData.put("remainingVersions", remainingVersions);
+            auditData.put("remainingVersions", getAllVersions());
 
             // 使用结构化日志记录审计信息
             logger.info("版本删除审计: {}", auditData);
@@ -2505,20 +2440,6 @@ public class ConfigurationService {
             if (!existingVersions.isEmpty()) {
                 // 更新版本范围为实际存在的版本范围
                 Collections.sort(existingVersions);
-                int newInitialVersion = existingVersions.get(0);
-                int newCurrentVersion = existingVersions.get(existingVersions.size() - 1);
-
-                // 如果删除的是当前版本，需要将当前版本设置为最新的存在版本
-                if (deletedVersion == metadata.getCurrentVersion()) {
-                    metadata.setCurrentVersion(newCurrentVersion);
-                    logger.info("删除的是当前版本，已将当前版本更新为: {}", newCurrentVersion);
-                }
-
-                // 如果删除的是初始版本，需要更新初始版本
-                if (deletedVersion == metadata.getInitialVersion()) {
-                    metadata.setInitialVersion(newInitialVersion);
-                    logger.info("删除的是初始版本，已将初始版本更新为: {}", newInitialVersion);
-                }
 
                 logger.debug("版本范围已更新: {} - {}", metadata.getInitialVersion(), metadata.getCurrentVersion());
             } else {
@@ -2615,7 +2536,7 @@ public class ConfigurationService {
     private boolean isSensitiveField(String fieldName) {
         // 追踪采样配置中暂无敏感字段，但保留扩展性
         String[] sensitiveFields = {
-            "password", "secret", "key", "token", "credential"
+                "password", "secret", "key", "token", "credential"
         };
 
         String lowerFieldName = fieldName.toLowerCase();
@@ -2636,30 +2557,9 @@ public class ConfigurationService {
     }
 
     /**
-     * 实例操作定义
-     */
-    public static class InstanceOperation {
-        private final InstanceOperationType type;
-        private final String instanceId;
-        private final ModelRouterProperties.ModelInstance instanceConfig;
-
-        public InstanceOperation(InstanceOperationType type, String instanceId, ModelRouterProperties.ModelInstance instanceConfig) {
-            this.type = type;
-            this.instanceId = instanceId;
-            this.instanceConfig = instanceConfig;
-        }
-
-        // Getters
-        public InstanceOperationType getType() {
-            return type;
-        }
-
-        public String getInstanceId() {
-            return instanceId;
-        }
-
-        public ModelRouterProperties.ModelInstance getInstanceConfig() {
-            return instanceConfig;
-        }
+         * 实例操作定义
+         */
+        public record InstanceOperation(InstanceOperationType type, String instanceId,
+                                        ModelRouterProperties.ModelInstance instanceConfig) {
     }
 }

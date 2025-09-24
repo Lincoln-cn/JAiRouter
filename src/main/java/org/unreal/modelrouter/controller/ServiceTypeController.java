@@ -16,11 +16,7 @@ import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.config.ConfigurationValidator;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 模型管理控制器 - 重构版
@@ -78,24 +74,14 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Set<String>>> getAvailableModels(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType) {
-        try {
-            // 验证服务类型参数
-            if (!configurationValidator.isValidServiceType(serviceType)) {
-                throw new IllegalArgumentException("无效的服务类型: " + serviceType);
-            }
-            
-            Set<String> models = configurationService.getAvailableModels(serviceType);
-            return ResponseEntity.ok(RouterResponse.success(models, "获取模型列表成功"));
-        } catch (IllegalArgumentException e) {
-            logger.warn("参数验证失败: serviceType={}", serviceType, e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("参数验证失败: " + e.getMessage()));
-        } catch (Exception e) {
-            logger.error("获取模型列表失败: serviceType={}", serviceType, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("获取模型列表失败: " + e.getMessage()));
+            @PathVariable("serviceType") String serviceType) {
+        // 验证服务类型参数
+        if (!configurationValidator.isValidServiceType(serviceType)) {
+            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
+        Set<String> models = configurationService.getAvailableModels(serviceType);
+        return ResponseEntity.ok(RouterResponse.success(models, "获取模型列表成功"));
+
     }
 
 
@@ -109,17 +95,9 @@ public class ServiceTypeController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> resetToDefaultConfig() {
-        try {
-            configurationService.resetToDefaultConfig();
-            return ResponseEntity.ok(RouterResponse.success(null, "配置已重置为默认值"));
-        } catch (Exception e) {
-            logger.error("重置配置失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("重置配置失败: " + e.getMessage()));
-        }
+        configurationService.resetToDefaultConfig();
+        return ResponseEntity.ok(RouterResponse.success(null, "配置已重置为默认值"));
     }
-
-    // ==================== 服务管理 ====================
 
     /**
      * 验证服务配置参数
@@ -132,11 +110,10 @@ public class ServiceTypeController {
         if (!configurationValidator.isValidServiceType(serviceType)) {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
-        
+
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
         configurationValidator.validateServiceConfig(serviceType, serviceConfig, errors, warnings);
-        
         return errors;
     }
 
@@ -150,33 +127,28 @@ public class ServiceTypeController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Map<String, Object>>>> getAllServicesWithConfig() {
-        try {
-            Set<String> serviceTypes = configurationService.getAvailableServiceTypes();
-            Map<String, Map<String, Object>> result = new HashMap<>();
-            
-            // 获取每个服务类型的配置
-            for (String serviceType : serviceTypes) {
-                try {
-                    Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
-                    if (serviceConfig != null) {
-                        result.put(serviceType, serviceConfig);
-                    } else {
-                        // 如果服务配置为空，添加一个空的配置对象
-                        result.put(serviceType, new HashMap<>());
-                    }
-                } catch (Exception e) {
-                    logger.warn("获取服务 {} 配置时发生错误: {}", serviceType, e.getMessage());
-                    // 即使某个服务配置获取失败，也继续处理其他服务
+        Set<String> serviceTypes = configurationService.getAvailableServiceTypes();
+        Map<String, Map<String, Object>> result = new HashMap<>();
+
+        // 获取每个服务类型的配置
+        for (String serviceType : serviceTypes) {
+            try {
+                Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
+                if (serviceConfig != null) {
+                    result.put(serviceType, serviceConfig);
+                } else {
+                    // 如果服务配置为空，添加一个空的配置对象
                     result.put(serviceType, new HashMap<>());
                 }
+            } catch (Exception e) {
+                logger.warn("获取服务 {} 配置时发生错误: {}", serviceType, e.getMessage());
+                // 即使某个服务配置获取失败，也继续处理其他服务
+                result.put(serviceType, new HashMap<>());
             }
-            
-            return ResponseEntity.ok(RouterResponse.success(result, "获取所有服务类型及配置成功"));
-        } catch (Exception e) {
-            logger.error("获取所有服务类型及配置失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("获取所有服务类型及配置失败: " + e.getMessage()));
         }
+
+        return ResponseEntity.ok(RouterResponse.success(result, "获取所有服务类型及配置成功"));
+
     }
 
     /**
@@ -189,14 +161,9 @@ public class ServiceTypeController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Set<String>>> getAvailableServiceTypes() {
-        try {
-            Set<String> serviceTypes = configurationService.getAvailableServiceTypes();
-            return ResponseEntity.ok(RouterResponse.success(serviceTypes, "获取服务类型成功"));
-        } catch (Exception e) {
-            logger.error("获取服务类型失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("获取服务类型失败: " + e.getMessage()));
-        }
+        Set<String> serviceTypes = configurationService.getAvailableServiceTypes();
+        return ResponseEntity.ok(RouterResponse.success(serviceTypes, "获取服务类型成功"));
+
     }
 
     /**
@@ -212,28 +179,18 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getServiceConfig(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType) {
-        try {
-            // 验证服务类型参数
-            if (!configurationValidator.isValidServiceType(serviceType)) {
-                throw new IllegalArgumentException("无效的服务类型: " + serviceType);
-            }
-            
-            Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
-            if (serviceConfig == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("服务类型不存在: " + serviceType));
-            }
-            return ResponseEntity.ok(RouterResponse.success(serviceConfig, "获取服务配置成功"));
-        } catch (IllegalArgumentException e) {
-            logger.warn("参数验证失败: serviceType={}", serviceType, e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("参数验证失败: " + e.getMessage()));
-        } catch (Exception e) {
-            logger.error("获取服务配置失败: serviceType={}", serviceType, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("获取服务配置失败: " + e.getMessage()));
+            @PathVariable("serviceType") String serviceType) {
+        // 验证服务类型参数
+        if (!configurationValidator.isValidServiceType(serviceType)) {
+            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
+
+        Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
+        if (serviceConfig == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(RouterResponse.error("服务类型不存在: " + serviceType));
+        }
+        return ResponseEntity.ok(RouterResponse.success(serviceConfig, "获取服务配置成功"));
     }
 
     /**
@@ -248,30 +205,21 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> createService(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType,
+            @PathVariable("serviceType") String serviceType,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "服务配置信息")
             @RequestBody Map<String, Object> serviceConfig) {
-        try {
-            // 验证参数
-            List<String> errors = validateServiceConfiguration(serviceType, serviceConfig);
-            
-            if (!errors.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors)));
-            }
-            
-            configurationService.createService(serviceType, serviceConfig);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(RouterResponse.success(null, "服务创建成功"));
-        } catch (IllegalArgumentException e) {
-            logger.warn("参数验证失败: serviceType={}", serviceType, e);
+        // 验证参数
+        List<String> errors = validateServiceConfiguration(serviceType, serviceConfig);
+
+        if (!errors.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("参数验证失败: " + e.getMessage()));
-        } catch (Exception e) {
-            logger.error("创建服务失败: serviceType={}", serviceType, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("创建服务失败: " + e.getMessage()));
+                    .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors)));
         }
+
+        configurationService.createService(serviceType, serviceConfig);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(RouterResponse.success(null, "服务创建成功"));
+
     }
 
     /**
@@ -286,29 +234,19 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> updateServiceConfig(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType,
+            @PathVariable("serviceType") String serviceType,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "服务配置信息")
             @RequestBody Map<String, Object> serviceConfig) {
-        try {
-            // 验证参数
-            List<String> errors = validateServiceConfiguration(serviceType, serviceConfig);
-            
-            if (!errors.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors)));
-            }
-            
-            configurationService.updateServiceConfig(serviceType, serviceConfig);
-            return ResponseEntity.ok(RouterResponse.success(null, "服务配置更新成功"));
-        } catch (IllegalArgumentException e) {
-            logger.warn("参数验证失败: serviceType={}", serviceType, e);
+        List<String> errors = validateServiceConfiguration(serviceType, serviceConfig);
+
+        if (!errors.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("参数验证失败: " + e.getMessage()));
-        } catch (Exception e) {
-            logger.error("更新服务配置失败: serviceType={}", serviceType, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("更新服务配置失败: " + e.getMessage()));
+                    .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors)));
         }
+
+        configurationService.updateServiceConfig(serviceType, serviceConfig);
+        return ResponseEntity.ok(RouterResponse.success(null, "服务配置更新成功"));
+
     }
 
     /**
@@ -323,24 +261,15 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> deleteService(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType) {
-        try {
-            // 验证服务类型参数
-            if (!configurationValidator.isValidServiceType(serviceType)) {
-                throw new IllegalArgumentException("无效的服务类型: " + serviceType);
-            }
-            
-            configurationService.deleteService(serviceType);
-            return ResponseEntity.ok(RouterResponse.success(null, "服务删除成功"));
-        } catch (IllegalArgumentException e) {
-            logger.warn("参数验证失败: serviceType={}", serviceType, e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("参数验证失败: " + e.getMessage()));
-        } catch (Exception e) {
-            logger.error("删除服务失败: serviceType={}", serviceType, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("删除服务失败: " + e.getMessage()));
+            @PathVariable("serviceType") String serviceType) {
+        // 验证服务类型参数
+        if (!configurationValidator.isValidServiceType(serviceType)) {
+            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
+
+        configurationService.deleteService(serviceType);
+        return ResponseEntity.ok(RouterResponse.success(null, "服务删除成功"));
+
     }
 
 }

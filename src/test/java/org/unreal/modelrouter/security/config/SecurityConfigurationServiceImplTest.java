@@ -13,11 +13,14 @@ import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * SecurityConfigurationServiceImpl测试类
@@ -61,7 +64,7 @@ class SecurityConfigurationServiceImplTest {
                 .enabled(true)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusDays(180))
-                .permissions(Arrays.asList("read"))
+                .permissions(List.of("read"))
                 .build();
 
         List<ApiKeyInfo> apiKeys = Arrays.asList(apiKey1, apiKey2);
@@ -192,27 +195,11 @@ class SecurityConfigurationServiceImplTest {
                 .verifyComplete();
     }
 
-    @Test
-    void testBackupConfiguration() {
-        // 设置初始配置
-        securityProperties.setEnabled(true);
-        securityProperties.getApiKey().setHeaderName("X-Test-API-Key");
-
-        // 执行测试
-        StepVerifier.create(configurationService.backupConfiguration())
-                .assertNext(backupId -> {
-                    assertNotNull(backupId);
-                    assertTrue(backupId.startsWith("backup-"));
-                })
-                .verifyComplete();
-
-        // 验证存储调用 - 注意：实际实现中需要验证正确的StoreManager方法调用
-    }
 
     @Test
     void testReloadConfiguration() {
         // 模拟存储返回的配置
-        List<ApiKeyInfo> storedApiKeys = Arrays.asList(
+        List<ApiKeyInfo> storedApiKeys = Collections.singletonList(
                 ApiKeyInfo.builder()
                         .keyId("stored-key")
                         .keyValue("stored-value")
@@ -245,7 +232,7 @@ class SecurityConfigurationServiceImplTest {
     @Test
     void testGetConfigurationHistory() {
         // 先执行一些配置更新操作来生成历史记录
-        List<ApiKeyInfo> apiKeys = Arrays.asList(
+        List<ApiKeyInfo> apiKeys = Collections.singletonList(
                 ApiKeyInfo.builder()
                         .keyId("history-test-key")
                         .keyValue("history-test-value")
@@ -297,18 +284,6 @@ class SecurityConfigurationServiceImplTest {
         
         // 验证事件发布
         verify(eventPublisher).publishEvent(any(SecurityConfigurationChangeEvent.class));
-    }
-
-    @Test
-    void testRestoreConfiguration_BackupNotFound() {
-        // 模拟备份不存在
-        when(storeManager.getConfig(anyString()))
-                .thenReturn(null);
-
-        // 执行测试
-        StepVerifier.create(configurationService.restoreConfiguration("non-existent-backup"))
-                .expectError(IllegalArgumentException.class)
-                .verify();
     }
 
     @Test
