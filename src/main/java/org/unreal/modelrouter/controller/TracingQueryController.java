@@ -46,7 +46,8 @@ public class TracingQueryController {
     @ApiResponse(responseCode = "200", description = "成功返回追踪链路")
     @ApiResponse(responseCode = "404", description = "未找到指定的追踪")
     public Mono<ResponseEntity<TraceQueryService.TraceChain>> getTraceChain(
-            @Parameter(description = "追踪ID") @PathVariable String traceId) {
+            @Parameter(description = "追踪ID")
+            @PathVariable("traceId") String traceId) {
         
         return traceQueryService.getTraceChain(traceId)
             .map(traceChain -> {

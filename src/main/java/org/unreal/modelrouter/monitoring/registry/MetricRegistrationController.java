@@ -61,7 +61,7 @@ public class MetricRegistrationController {
     @DeleteMapping("/{metricName}")
     @Operation(summary = "注销指标", description = "注销指定的指标")
     public ResponseEntity<Map<String, Object>> unregisterMetric(
-            @PathVariable String metricName,
+            @PathVariable("metricName") String metricName,
             @RequestParam(required = false) Map<String, String> tags) {
         
         boolean result = metricRegistrationService.unregisterMetric(metricName, tags != null ? tags : Map.of());
@@ -95,7 +95,8 @@ public class MetricRegistrationController {
     
     @GetMapping("/metadata/{metricName}")
     @Operation(summary = "获取指标元数据", description = "获取指定指标的元数据信息")
-    public ResponseEntity<MetricMetadata> getMetricMetadata(@PathVariable String metricName) {
+    public ResponseEntity<MetricMetadata> getMetricMetadata(
+            @PathVariable("metricName") String metricName) {
         return customMeterRegistry.getMetricMetadata(metricName)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -104,7 +105,7 @@ public class MetricRegistrationController {
     @PutMapping("/metadata/{metricName}")
     @Operation(summary = "更新指标元数据", description = "更新指定指标的元数据信息")
     public ResponseEntity<Map<String, Object>> updateMetricMetadata(
-            @PathVariable String metricName,
+            @PathVariable("metricName") String metricName,
             @RequestBody MetricMetadata metadata) {
         
         boolean result = customMeterRegistry.updateMetricMetadata(metricName, metadata);
@@ -121,7 +122,7 @@ public class MetricRegistrationController {
     @PutMapping("/{metricName}/configuration")
     @Operation(summary = "更新指标配置", description = "更新指标的启用状态和采样率")
     public ResponseEntity<Map<String, Object>> updateMetricConfiguration(
-            @PathVariable String metricName,
+            @PathVariable("metricName") String metricName,
             @RequestParam boolean enabled,
             @RequestParam(defaultValue = "1.0") double samplingRate) {
         
@@ -147,7 +148,8 @@ public class MetricRegistrationController {
     
     @GetMapping("/category/{category}")
     @Operation(summary = "按类别获取指标", description = "获取指定类别的所有指标")
-    public ResponseEntity<List<MetricMetadata>> getMetricsByCategory(@PathVariable String category) {
+    public ResponseEntity<List<MetricMetadata>> getMetricsByCategory(
+            @PathVariable("category") String category) {
         List<MetricMetadata> metrics = metricRegistrationService.getMetricsByCategory(category);
         return ResponseEntity.ok(metrics);
     }

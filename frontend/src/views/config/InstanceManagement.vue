@@ -348,8 +348,7 @@ interface ServiceInstance {
   path: string
   weight: number
   status: 'active' | 'inactive'
-  instanceId?: string
-  originalInstanceId?: string
+  instanceId: string
   rateLimit: {
     enabled: boolean
     algorithm: string
@@ -579,7 +578,6 @@ const handleEdit = (row: ServiceInstance) => {
     // 确保使用当前激活的页签对应的服务类型，而不是实例原来的服务类型
     serviceType: activeServiceType.value,
     // 使用后端返回的实例ID而不是根据表单数据重新构建
-    originalInstanceId: row.instanceId, // 直接使用后端返回的instanceId
     rateLimit: {
       enabled: row.rateLimit?.enabled || false,
       algorithm: row.rateLimit?.algorithm || 'token-bucket',
@@ -596,7 +594,7 @@ const handleEdit = (row: ServiceInstance) => {
       successThreshold: row.circuitBreaker?.successThreshold || 2
     }
   })
-  console.log('编辑实例，设置originalInstanceId:', form.originalInstanceId)
+  console.log('编辑实例，设置originalInstanceId:', form.instanceId)
   console.log('编辑实例，使用服务类型:', form.serviceType)
   dialogVisible.value = true
 }
@@ -612,8 +610,8 @@ const handleDelete = (row: ServiceInstance) => {
       // 确保使用当前激活的页签对应的服务类型
       const serviceType = activeServiceType.value;
       console.log('删除实例，使用服务类型:', serviceType);
-      console.log(`发送删除请求到: /api/config/instance/del/${serviceType}?modelName=${encodeURIComponent(row.name)}&baseUrl=${encodeURIComponent(row.baseUrl)}&createNewVersion=true`)
-      const response = await deleteServiceInstance(serviceType, row.name, row.baseUrl, true)
+      console.log(`发送删除请求到: /api/config/instance/del/${serviceType}?instanceId=${row.instanceId}&createNewVersion=true`)
+      const response = await deleteServiceInstance(serviceType, row.instanceId, true)
       if (response.data?.success) {
         instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== row.id)
         instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
@@ -658,8 +656,8 @@ const handleSave = async () => {
 
     if (isEdit.value) {
       // 使用后端返回的实例ID
-      const updateData = { 
-        instanceId: form.originalInstanceId, 
+      const updateData = {
+        instanceId: form.instanceId,
         instance: instanceData 
       }
       console.log('更新实例请求数据:', updateData)
