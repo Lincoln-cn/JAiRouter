@@ -13,9 +13,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class FileStoreManager extends BaseStoreManager {
 
@@ -350,6 +352,141 @@ public class FileStoreManager extends BaseStoreManager {
             return true;
         } catch (IOException e) {
             LOGGER.error("Failed to decompress config version for key: " + key + ", version: " + version, e);
+            return false;
+        }
+    }
+
+    /**
+     * 验证指定版本是否存在
+     *
+     * @param key     配置键
+     * @param version 版本号
+     * @return 版本是否存在
+     */
+    @Override
+    public boolean versionExists(String key, int version) {
+        try {
+            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
+            File compressedFile = new File(storagePath, sanitizedKey + "@" + version + ".json.gz");
+
+            // 检查版本文件是否存在（支持压缩和未压缩格式）
+            boolean exists = versionFile.exists() || compressedFile.exists();
+
+            if (exists) {
+                // 进行文件完整性检查
+                File fileToCheck = versionFile.exists() ? versionFile : compressedFile;
+                return isVersionFileValid(fileToCheck, versionFile.exists());
+            }
+
+            return false;
+        } catch (Exception e) {
+            LOGGER.error("Failed to check version existence for key: " + key + ", version: " + version, e);
+            return false;
+        }
+    }
+
+    /**
+     * 获取指定版本的文件路径
+     *
+     * @param key     配置键
+     * @param version 版本号
+     * @return 版本文件的实际路径，如果版本不存在则返回null
+     */
+    @Override
+    public String getVersionFilePath(String key, int version) {
+        try {
+            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
+            File compressedFile = new File(storagePath, sanitizedKey + "@" + version + ".json.gz");
+
+            if (versionFile.exists()) {
+                return versionFile.getAbsolutePath();
+            } else if (compressedFile.exists()) {
+                return compressedFile.getAbsolutePath();
+            }
+
+            return null;
+        } catch (Exception e) {
+            LOGGER.error("Failed to get version file path for key: " + key + ", version: " + version, e);
+            return null;
+        }
+    }
+
+    /**
+     * 获取指定版本的创建时间
+     *
+     * @param key     配置键
+     * @param version 版本号
+     * @return 版本创建时间，如果版本不存在则返回null
+     */
+    @Override
+    public LocalDateTime getVersionCreatedTime(String key, int version) {
+        try {
+            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
+            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
+            File compressedFile = new File(storagePath, sanitizedKey + "@" + version + ".json.gz");
+
+            File fileToCheck = null;
+            if (versionFile.exists()) {
+                fileToCheck = versionFile;
+            } else if (compressedFile.exists()) {
+                fileToCheck = compressedFile;
+            }
+
+            if (fileToCheck != null) {
+                BasicFileAttributes attrs = Files.readAttributes(fileToCheck.toPath(), BasicFileAttributes.class);
+                Instant creationTime = attrs.creationTime().toInstant();
+                return LocalDateTime.ofInstant(creationTime, ZoneId.systemDefault());
+            }
+
+            return null;
+        } catch (Exception e) {
+            LOGGER.error("Failed to get version creation time for key: " + key + ", version: " + version, e);
+            return null;
+        }
+    }
+
+    /**
+     * 检查版本文件的完整性
+     *
+     * @param file           要检查的文件
+     * @param isUncompressed 是否为未压缩文件
+     * @return 文件是否有效
+     */
+    private boolean isVersionFileValid(File file, boolean isUncompressed) {
+        try {
+            // 检查文件大小（空文件或过小的文件可能损坏）
+            if (file.length() < 2) { // 至少应该有"{}"
+                LOGGER.warn("Version file is too small, possibly corrupted: " + file.getAbsolutePath());
+                return false;
+            }
+
+            // 对于未压缩的JSON文件，尝试解析以验证格式
+            if (isUncompressed) {
+                try {
+                    objectMapper.readValue(file, new TypeReference<Map<String, Object>>() {
+                    });
+                    return true;
+                } catch (IOException e) {
+                    LOGGER.warn("Version file contains invalid JSON: " + file.getAbsolutePath(), e);
+                    return false;
+                }
+            } else {
+                // 对于压缩文件，检查是否可以正常读取
+                try (java.util.zip.GZIPInputStream gzis = new java.util.zip.GZIPInputStream(
+                        new java.io.FileInputStream(file))) {
+                    // 尝试读取前几个字节以验证压缩格式
+                    byte[] buffer = new byte[10];
+                    gzis.read(buffer);
+                    return true;
+                } catch (IOException e) {
+                    LOGGER.warn("Version file is not a valid gzip file: " + file.getAbsolutePath(), e);
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error validating version file: " + file.getAbsolutePath(), e);
             return false;
         }
     }

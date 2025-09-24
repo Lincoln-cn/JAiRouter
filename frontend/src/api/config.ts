@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { RouterResponse } from '@/types'
+import type {RouterResponse} from '@/types'
 
 // 定义版本配置类型
 export interface ConfigVersion {
@@ -14,6 +14,9 @@ export interface VersionInfo {
   version: number
   config: Record<string, any>
   current: boolean
+    operation?: string
+    operationDetail?: string
+    timestamp?: number
 }
 
 // 获取配置的所有版本列表
@@ -33,14 +36,9 @@ export const getConfigByVersion = (version: number) => {
 
 // 应用指定版本的配置
 // 将指定版本的配置内容设置为当前配置，用于复用历史配置
+// 应用操作会创建一个新的版本记录
 export const applyVersion = (version: number) => {
   return request.post<RouterResponse<void>>(`/config/version/apply/${version}`)
-}
-
-// 回滚到指定版本
-// 将系统配置完全恢复到指定的历史版本状态，用于错误修复和系统恢复
-export const rollbackVersion = (version: number) => {
-  return request.post<RouterResponse<void>>(`/config/version/rollback/${version}`)
 }
 
 // 删除指定版本的配置
@@ -101,4 +99,25 @@ export const validateConfigFiles = () => {
 // 获取配置文件统计信息
 export const getConfigStatistics = () => {
   return request.get<RouterResponse<Record<string, any>>>('/config/merge/statistics')
+}
+
+// 版本管理系统集成接口
+// 从版本管理系统扫描版本文件
+export const scanVersionFilesFromVersionManager = () => {
+    return request.get<RouterResponse<Record<number, string>>>('/config/merge/scan/version-manager')
+}
+
+// 获取基于版本管理系统的合并预览
+export const getMergePreviewFromVersionManager = () => {
+    return request.get<RouterResponse<Record<string, any>>>('/config/merge/preview/version-manager')
+}
+
+// 执行基于版本管理系统的自动合并
+export const performAutoMergeWithVersionManager = () => {
+    return request.post<RouterResponse<any>>('/config/merge/execute/version-manager')
+}
+
+// 执行原子性配置合并操作
+export const performAtomicMergeWithVersionManager = () => {
+    return request.post<RouterResponse<any>>('/config/merge/execute/atomic')
 }

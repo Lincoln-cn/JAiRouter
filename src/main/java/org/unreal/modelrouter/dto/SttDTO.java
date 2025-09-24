@@ -2,8 +2,6 @@ package org.unreal.modelrouter.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.codec.multipart.FilePart;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 
 import java.util.List;
 
