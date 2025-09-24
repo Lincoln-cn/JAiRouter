@@ -4,10 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.entity.ConfigMetadata;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
-import org.unreal.modelrouter.store.ConfigVersionManager;
+import org.unreal.modelrouter.store.StoreManager;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -24,7 +23,7 @@ import java.util.Map;
 public class ImprovedSecurityConfigurationService implements SecurityConfigurationService {
 
     private final SecurityProperties securityProperties;
-    private final ConfigVersionManager configVersionManager;
+    private final StoreManager storeManager;
     private final ApplicationEventPublisher eventPublisher;
     private final SecurityConfigurationValidator validator;
     
@@ -50,20 +49,13 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
                 Map<String, Object> configMap = convertApiKeysToMap(apiKeys);
                 
                 // 更新配置版本
-                int newVersion = configVersionManager.updateConfig(
-                    API_KEYS_CONFIG_KEY, 
-                    configMap, 
-                    "Update API Keys via REST API", 
-                    getCurrentUserId()
+                storeManager.updateConfig(
+                    API_KEYS_CONFIG_KEY,
+                        configMap
                 );
                 
                 // 更新内存中的配置
                 securityProperties.getApiKey().setKeys(apiKeys);
-                
-                // 发布配置变更事件
-                publishConfigurationChangeEvent("api-keys", null, apiKeys, newVersion);
-                
-                log.info("API Keys configuration updated successfully, new version: {}", newVersion);
                 
             } catch (Exception e) {
                 log.error("Failed to update API Keys configuration", e);
@@ -83,19 +75,11 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
                 
                 // 转换为存储格式
                 Map<String, Object> configMap = convertSanitizationRulesToMap(rules);
-                
-                // 更新配置版本
-                int newVersion = configVersionManager.updateConfig(
-                    SANITIZATION_RULES_CONFIG_KEY, 
-                    configMap, 
-                    "Update sanitization rules via REST API", 
-                    getCurrentUserId()
+
+                storeManager.updateConfig(
+                    SANITIZATION_RULES_CONFIG_KEY,
+                        configMap
                 );
-                
-                // 发布配置变更事件
-                publishConfigurationChangeEvent("sanitization-rules", null, rules, newVersion);
-                
-                log.info("Sanitization rules configuration updated successfully, new version: {}", newVersion);
                 
             } catch (Exception e) {
                 log.error("Failed to update sanitization rules configuration", e);
@@ -118,23 +102,15 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
                 
                 // 转换为存储格式
                 Map<String, Object> configMap = convertJwtConfigToMap(jwtConfig);
-                
-                // 更新配置版本
-                int newVersion = configVersionManager.updateConfig(
-                    JWT_CONFIG_KEY, 
-                    configMap, 
-                    "Update JWT configuration via REST API", 
-                    getCurrentUserId()
+
+                storeManager.updateConfig(
+                    JWT_CONFIG_KEY,
+                        configMap
                 );
                 
                 // 更新内存中的配置
                 updateJwtConfigProperties(jwtConfig);
-                
-                // 发布配置变更事件
-                publishConfigurationChangeEvent("jwt-config", oldConfig, jwtConfig, newVersion);
-                
-                log.info("JWT configuration updated successfully, new version: {}", newVersion);
-                
+
             } catch (Exception e) {
                 log.error("Failed to update JWT configuration", e);
                 throw new RuntimeException("Failed to update JWT configuration", e);
@@ -173,68 +149,12 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     @Override
-    public Mono<String> backupConfiguration() {
-        return Mono.fromCallable(() -> {
-            log.info("Creating configuration backup");
-            
-            try {
-                // 获取当前所有配置的版本信息
-                ConfigMetadata apiKeysMetadata =
-                        configVersionManager.getConfigMetadata(API_KEYS_CONFIG_KEY);
-                ConfigMetadata jwtMetadata =
-                        configVersionManager.getConfigMetadata(JWT_CONFIG_KEY);
-                ConfigMetadata sanitizationMetadata =
-                        configVersionManager.getConfigMetadata(SANITIZATION_RULES_CONFIG_KEY);
-                
-                // 创建备份信息
-                Map<String, Object> backupInfo = new HashMap<>();
-                backupInfo.put("timestamp", System.currentTimeMillis());
-                backupInfo.put("apiKeysVersion", apiKeysMetadata != null ? apiKeysMetadata.getCurrentVersion() : 0);
-                backupInfo.put("jwtVersion", jwtMetadata != null ? jwtMetadata.getCurrentVersion() : 0);
-                backupInfo.put("sanitizationVersion", sanitizationMetadata != null ? sanitizationMetadata.getCurrentVersion() : 0);
-                
-                String backupId = "backup-" + System.currentTimeMillis();
-                
-                // 这里可以实现更复杂的备份逻辑，比如创建配置快照等
-                
-                log.info("Configuration backup created: {}", backupId);
-                return backupId;
-                
-            } catch (Exception e) {
-                log.error("Failed to create configuration backup", e);
-                throw new RuntimeException("Failed to create configuration backup", e);
-            }
-        });
-    }
-
-    @Override
-    public Mono<Void> restoreConfiguration(String backupId) {
-        return Mono.fromRunnable(() -> {
-            log.info("Restoring configuration from backup: {}", backupId);
-            
-            try {
-                // 这里实现从备份恢复配置的逻辑
-                // 可以使用 configVersionManager.rollbackToVersion() 方法
-                
-                log.info("Configuration restored from backup: {}", backupId);
-                
-            } catch (Exception e) {
-                log.error("Failed to restore configuration from backup: " + backupId, e);
-                throw new RuntimeException("Failed to restore configuration", e);
-            }
-        }).then();
-    }
-
-    @Override
     public Mono<Void> reloadConfiguration() {
         return Mono.fromRunnable(() -> {
             log.info("Reloading security configurations");
             
             try {
                 loadLatestConfigurations();
-                
-                // 发布配置重新加载事件
-                publishConfigurationChangeEvent("config-reload", null, securityProperties, 0);
                 
                 log.info("Security configurations reloaded successfully");
                 
@@ -256,46 +176,6 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
             return List.of(); // 临时返回空列表
         });
     }
-
-    // ========== 私有辅助方法 ==========
-
-    private void initializeApiKeysConfig() {
-        if (!configVersionManager.isConfigInitialized(API_KEYS_CONFIG_KEY)) {
-            Map<String, Object> initialConfig = convertApiKeysToMap(securityProperties.getApiKey().getKeys());
-            configVersionManager.initializeConfig(
-                API_KEYS_CONFIG_KEY, 
-                initialConfig, 
-                "Initial API Keys configuration"
-            );
-            log.info("API Keys configuration initialized");
-        }
-    }
-
-    private void initializeJwtConfig() {
-        if (!configVersionManager.isConfigInitialized(JWT_CONFIG_KEY)) {
-            Map<String, Object> initialConfig = convertJwtConfigToMap(securityProperties.getJwt());
-            configVersionManager.initializeConfig(
-                JWT_CONFIG_KEY, 
-                initialConfig, 
-                "Initial JWT configuration"
-            );
-            log.info("JWT configuration initialized");
-        }
-    }
-
-    private void initializeSanitizationRulesConfig() {
-        if (!configVersionManager.isConfigInitialized(SANITIZATION_RULES_CONFIG_KEY)) {
-            Map<String, Object> initialConfig = new HashMap<>();
-            initialConfig.put("rules", List.of()); // 初始为空规则列表
-            configVersionManager.initializeConfig(
-                SANITIZATION_RULES_CONFIG_KEY, 
-                initialConfig, 
-                "Initial sanitization rules configuration"
-            );
-            log.info("Sanitization rules configuration initialized");
-        }
-    }
-
     /**
      * 应用启动时加载最新配置
      */
@@ -321,7 +201,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     private void loadLatestApiKeysConfig() {
-        Map<String, Object> configMap = configVersionManager.getLatestConfig(API_KEYS_CONFIG_KEY);
+        Map<String, Object> configMap = storeManager.getLatestConfig(API_KEYS_CONFIG_KEY);
         if (configMap != null) {
             List<ApiKeyInfo> apiKeys = convertMapToApiKeys(configMap);
             securityProperties.getApiKey().setKeys(apiKeys);
@@ -330,7 +210,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     private void loadLatestJwtConfig() {
-        Map<String, Object> configMap = configVersionManager.getLatestConfig(JWT_CONFIG_KEY);
+        Map<String, Object> configMap = storeManager.getLatestConfig(JWT_CONFIG_KEY);
         if (configMap != null) {
             SecurityProperties.JwtConfig jwtConfig = convertMapToJwtConfig(configMap);
             updateJwtConfigProperties(jwtConfig);
@@ -339,7 +219,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     private void loadLatestSanitizationRulesConfig() {
-        Map<String, Object> configMap = configVersionManager.getLatestConfig(SANITIZATION_RULES_CONFIG_KEY);
+        Map<String, Object> configMap = storeManager.getLatestConfig(SANITIZATION_RULES_CONFIG_KEY);
         if (configMap != null) {
             List<SanitizationRule> rules = convertMapToSanitizationRules(configMap);
             // 这里需要将规则应用到脱敏服务中
@@ -432,26 +312,5 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         current.setRefreshExpirationDays(newConfig.getRefreshExpirationDays());
         current.setIssuer(newConfig.getIssuer());
         current.setBlacklistEnabled(newConfig.isBlacklistEnabled());
-    }
-
-    private void publishConfigurationChangeEvent(String configType, Object oldValue, Object newValue, int version) {
-        try {
-            SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
-                this, 
-                "change-" + System.currentTimeMillis(), 
-                configType, 
-                oldValue, 
-                newValue
-            );
-            eventPublisher.publishEvent(event);
-            log.debug("Published configuration change event for: {}, version: {}", configType, version);
-        } catch (Exception e) {
-            log.warn("Failed to publish configuration change event", e);
-        }
-    }
-
-    private String getCurrentUserId() {
-        // 这里可以从Spring Security上下文获取当前用户ID
-        return "system";
     }
 }

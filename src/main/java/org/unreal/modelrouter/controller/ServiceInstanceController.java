@@ -52,7 +52,7 @@ public class ServiceInstanceController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<List<Map<String, Object>>>> getServiceInstances(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType) {
+            @PathVariable("serviceType") String serviceType) {
         try {
             List<Map<String, Object>> instances = configurationService.getServiceInstances(serviceType);
             return ResponseEntity.ok(RouterResponse.success(instances, "获取实例列表成功"));
@@ -75,7 +75,7 @@ public class ServiceInstanceController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getServiceInstance(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType,
+            @PathVariable("serviceType") String serviceType,
             @Parameter(description = "模型名称", example = "qwen2:7b")
             @RequestParam String modelName,
             @Parameter(description = "基础URL", example = "http://localhost:8000")
@@ -110,15 +110,15 @@ public class ServiceInstanceController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> addServiceInstance(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType,
+            @PathVariable("serviceType") String serviceType,
             @Parameter(description = "是否创建新版本", example = "false")
             @RequestParam(defaultValue = "true") boolean createNewVersion,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "实例配置信息")
             @RequestBody ModelRouterProperties.ModelInstance instanceConfig) {
         try {
-            logger.info("接收到添加实例请求: serviceType={}, createNewVersion={}, instanceConfig={}", 
-                serviceType, createNewVersion, instanceConfig);
-            
+            logger.info("接收到添加实例请求: serviceType={}, createNewVersion={}, instanceConfig={}",
+                    serviceType, createNewVersion, instanceConfig);
+
             // 验证实例配置
             if (!configurationValidator.validateServiceAddress(instanceConfig.getBaseUrl())) {
                 logger.warn("实例baseUrl格式不正确: {}", instanceConfig.getBaseUrl());
@@ -152,9 +152,9 @@ public class ServiceInstanceController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> updateServiceInstance(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType,
+            @PathVariable("serviceType") String serviceType,
             @Parameter(description = "是否创建新版本", example = "false")
-            @RequestParam(defaultValue = "true") boolean createNewVersion,
+            @RequestParam(value = "createNewVersion", defaultValue = "true") boolean createNewVersion,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "实例更新信息")
             @RequestBody UpdateInstanceDTO instanceConfig) {
         try {
@@ -165,20 +165,20 @@ public class ServiceInstanceController {
             if (logger.isDebugEnabled()) {
                 logger.debug("更新实例请求详情: instanceConfig={}", instanceConfig);
             }
-            
+
             // 检查请求参数是否为空
             if (instanceConfig == null) {
                 logger.warn("更新实例请求参数为空");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(RouterResponse.error("请求参数不能为空"));
             }
-            
+
             if (instanceConfig.getInstance() == null) {
                 logger.warn("更新实例请求中的instance数据为空");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(RouterResponse.error("实例数据不能为空"));
             }
-            
+
             // 验证实例配置
             if (!configurationValidator.validateServiceAddress(instanceConfig.getInstance().getBaseUrl())) {
                 logger.warn("实例baseUrl格式不正确: {}", instanceConfig.getInstance().getBaseUrl());
@@ -187,7 +187,7 @@ public class ServiceInstanceController {
             }
 
             configurationService.updateServiceInstance(serviceType, instanceConfig.getInstanceId(), instanceConfig.getInstance().covertTo());
-            
+
             return ResponseEntity.ok(RouterResponse.success(null, "实例更新成功"));
         } catch (IllegalArgumentException e) {
             logger.warn("更新实例参数错误: serviceType={}, message={}", serviceType, e.getMessage(), e);
@@ -212,25 +212,12 @@ public class ServiceInstanceController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> deleteServiceInstance(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable String serviceType,
+            @PathVariable("serviceType") String serviceType,
             @Parameter(description = "是否创建新版本", example = "false")
-            @RequestParam(defaultValue = "true") boolean createNewVersion,
-            @Parameter(description = "模型名称", example = "qwen2:7b")
-            @RequestParam String modelName,
-            @Parameter(description = "基础URL", example = "http://localhost:8000")
-            @RequestParam String baseUrl) {
-        try {
-            // 使用ConfigurationService生成实例ID
-            String decodedInstanceId = configurationService.buildInstanceId(modelName, baseUrl);
-            configurationService.deleteServiceInstance(serviceType, decodedInstanceId);
-            return ResponseEntity.ok(RouterResponse.success(null, "实例删除成功"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error(e.getMessage()));
-        } catch (Exception e) {
-            logger.error("获取实例信息失败: serviceType={}, modelName={} , baseUrl={}", serviceType, modelName, baseUrl, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("删除实例失败: " + e.getMessage()));
-        }
+            @RequestParam(value = "createNewVersion", defaultValue = "true") boolean createNewVersion,
+            @Parameter(description = "实例 ID")
+            @RequestParam(value = "instanceId") String instanceId) {
+        configurationService.deleteServiceInstance(serviceType, instanceId);
+        return ResponseEntity.ok(RouterResponse.success(null, "实例删除成功"));
     }
 }
