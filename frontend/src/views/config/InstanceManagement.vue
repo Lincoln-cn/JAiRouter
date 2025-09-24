@@ -308,15 +308,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, reactive, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import type { FormInstance } from 'element-plus'
+import {computed, onMounted, reactive, ref, watch} from 'vue'
+import type {FormInstance} from 'element-plus'
+import {ElMessage, ElMessageBox} from 'element-plus'
 import {
+  addServiceInstance,
+  deleteServiceInstance,
   getServiceInstances,
   getServiceTypes,
-  addServiceInstance,
-  updateServiceInstance,
-  deleteServiceInstance
+  updateServiceInstance
 } from '@/api/dashboard'
 
 // 服务类型映射（保持原有）
@@ -612,8 +612,8 @@ const handleDelete = (row: ServiceInstance) => {
       // 确保使用当前激活的页签对应的服务类型
       const serviceType = activeServiceType.value;
       console.log('删除实例，使用服务类型:', serviceType);
-      console.log(`发送删除请求到: /api/config/instance/del/${serviceType}?modelName=${encodeURIComponent(row.name)}&baseUrl=${encodeURIComponent(row.baseUrl)}&createNewVersion=false`)
-      const response = await deleteServiceInstance(serviceType, row.name, row.baseUrl, false)
+      console.log(`发送删除请求到: /api/config/instance/del/${serviceType}?modelName=${encodeURIComponent(row.name)}&baseUrl=${encodeURIComponent(row.baseUrl)}&createNewVersion=true`)
+      const response = await deleteServiceInstance(serviceType, row.name, row.baseUrl, true)
       if (response.data?.success) {
         instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== row.id)
         instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
@@ -664,8 +664,8 @@ const handleSave = async () => {
       }
       console.log('更新实例请求数据:', updateData)
       // 使用正确的服务类型发送请求
-      console.log(`发送更新请求到: /api/config/instance/update/${serviceType}?createNewVersion=false`)
-      const response = await updateServiceInstance(serviceType, updateData, false)
+      console.log(`发送更新请求到: /api/config/instance/update/${serviceType}?createNewVersion=true`)
+      const response = await updateServiceInstance(serviceType, updateData, true)
       if (response.data?.success) {
         // 编辑成功后，清除缓存并重新获取实例列表以确保数据同步
         delete instancesCache.value[serviceType]
@@ -678,8 +678,8 @@ const handleSave = async () => {
       }
     } else {
       // 使用正确的服务类型发送请求
-      console.log(`发送添加请求到: /api/config/instance/add/${serviceType}?createNewVersion=false`)
-      const response = await addServiceInstance(serviceType, instanceData, false)
+      console.log(`发送添加请求到: /api/config/instance/add/${serviceType}?createNewVersion=true`)
+      const response = await addServiceInstance(serviceType, instanceData, true)
       if (response.data?.success) {
         const newInstance: ServiceInstance = { ...form, id: Date.now() }
         if (!instances.value[serviceType]) instances.value[serviceType] = []

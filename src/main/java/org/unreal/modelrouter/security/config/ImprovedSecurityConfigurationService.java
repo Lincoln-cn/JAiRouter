@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.entity.ConfigMetadata;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.ConfigVersionManager;
@@ -178,11 +179,11 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
             
             try {
                 // 获取当前所有配置的版本信息
-                ConfigVersionManager.ConfigMetadata apiKeysMetadata = 
+                ConfigMetadata apiKeysMetadata =
                         configVersionManager.getConfigMetadata(API_KEYS_CONFIG_KEY);
-                ConfigVersionManager.ConfigMetadata jwtMetadata = 
+                ConfigMetadata jwtMetadata =
                         configVersionManager.getConfigMetadata(JWT_CONFIG_KEY);
-                ConfigVersionManager.ConfigMetadata sanitizationMetadata = 
+                ConfigMetadata sanitizationMetadata =
                         configVersionManager.getConfigMetadata(SANITIZATION_RULES_CONFIG_KEY);
                 
                 // 创建备份信息

@@ -10,7 +10,6 @@ public class TtsDTO {
             String voice,
             @JsonProperty("response_format") String responseFormat,
             Double speed
-    ) {}
-
-    // TTS typically returns binary audio data, so no specific response DTO needed
+    ) {
+    }
 }

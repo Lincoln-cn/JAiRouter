@@ -3,16 +3,15 @@ package org.unreal.modelrouter.store;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
- * StoreManager的抽象实现类
- * 提供基本的实现框架
+ * StoreManager的抽象实现类 提供基本的实现框架
  */
 public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 保存配置
+     *
      * @param key 配置键
      * @param config 配置内容
      */
@@ -24,28 +23,14 @@ public abstract class BaseStoreManager implements StoreManager {
         if (config == null) {
             throw new IllegalArgumentException("Config cannot be null");
         }
-        
-        // 检查配置是否发生变化
-        Map<String, Object> currentConfig = null;
-        try {
-            currentConfig = doGetConfig(key);
-        } catch (Exception e) {
-            // 如果读取配置失败，可能是文件不存在，继续执行保存操作
-            // 这种情况下视为配置发生了变化
-        }
-        boolean configChanged = !Objects.equals(currentConfig, config);
-        
+
         // 保存当前版本
         doSaveConfig(key, config);
-        
-        // 只有配置发生变化时才保存历史版本
-        if (configChanged) {
-            saveConfigVersion(key, config, getNextVersion(key));
-        }
     }
 
     /**
      * 获取配置
+     *
      * @param key 配置键
      * @return 配置内容
      */
@@ -59,6 +44,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 删除配置
+     *
      * @param key 配置键
      */
     @Override
@@ -71,6 +57,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 检查配置是否存在
+     *
      * @param key 配置键
      * @return 是否存在
      */
@@ -84,6 +71,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 更新配置
+     *
      * @param key 配置键
      * @param config 配置内容
      */
@@ -100,6 +88,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 实际保存配置的抽象方法
+     *
      * @param key 配置键
      * @param config 配置内容
      */
@@ -107,6 +96,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 实际获取配置的抽象方法
+     *
      * @param key 配置键
      * @return 配置内容
      */
@@ -114,12 +104,14 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 实际删除配置的抽象方法
+     *
      * @param key 配置键
      */
     protected abstract void doDeleteConfig(String key);
 
     /**
      * 实际检查配置是否存在的抽象方法
+     *
      * @param key 配置键
      * @return 是否存在
      */
@@ -127,6 +119,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 实际更新配置的抽象方法
+     *
      * @param key 配置键
      * @param config 配置内容
      */
@@ -134,6 +127,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 保存配置的版本
+     *
      * @param key 配置键
      * @param config 配置内容
      * @param version 版本号
@@ -145,6 +139,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 获取配置的所有版本号
+     *
      * @param key 配置键
      * @return 版本号列表
      */
@@ -155,6 +150,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 获取指定版本的配置
+     *
      * @param key 配置键
      * @param version 版本号
      * @return 配置内容
@@ -166,6 +162,7 @@ public abstract class BaseStoreManager implements StoreManager {
 
     /**
      * 删除指定版本的配置
+     *
      * @param key 配置键
      * @param version 版本号
      */
@@ -175,17 +172,8 @@ public abstract class BaseStoreManager implements StoreManager {
     }
 
     /**
-     * 获取下一个版本号
-     * @param key 配置键
-     * @return 下一个版本号
-     */
-    protected int getNextVersion(String key) {
-        List<Integer> versions = getConfigVersions(key);
-        return versions.isEmpty() ? 1 : versions.stream().mapToInt(Integer::intValue).max().orElse(0) + 1;
-    }
-
-    /**
      * 获取所有配置键
+     *
      * @return 配置键列表
      */
     @Override
