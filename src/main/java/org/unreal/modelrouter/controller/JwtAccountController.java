@@ -71,10 +71,6 @@ public class JwtAccountController {
                     }
                     JwtAccountResponse response = jwtUserProperties.convertToResponse(account);
                     return RouterResponse.success(response, "成功获取JWT账户");
-                })
-                .onErrorResume(ex -> {
-                    log.error("获取JWT账户失败: " + username, ex);
-                    return Mono.just(RouterResponse.error("获取JWT账户失败: " + ex.getMessage(), "ACCOUNT_GET_ERROR"));
                 });
     }
 
