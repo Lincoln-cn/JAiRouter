@@ -173,4 +173,27 @@ public class SecurityUtils {
         
         return result == 0;
     }
+
+    /**
+     * 获取当前用户ID
+     * 在没有认证上下文的情况下返回系统默认用户
+     *
+     * @return 当前用户ID
+     */
+    public static String getCurrentUserId() {
+        // TODO: 在实际实现中，这里应该从Spring Security上下文或JWT token中获取用户ID
+        // 目前返回系统默认用户，避免空指针异常
+        try {
+            // 尝试从Spring Security上下文获取用户信息
+            // SecurityContext context = SecurityContextHolder.getContext();
+            // Authentication authentication = context.getAuthentication();
+            // if (authentication != null && authentication.isAuthenticated()) {
+            //     return authentication.getName();
+            // }
+            return "system";
+        } catch (Exception e) {
+            // 如果获取用户信息失败，返回系统默认用户
+            return "system";
+        }
+    }
 }
