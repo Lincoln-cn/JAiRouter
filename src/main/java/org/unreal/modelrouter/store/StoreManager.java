@@ -117,4 +117,6 @@ public interface StoreManager {
     default LocalDateTime getVersionCreatedTime(String key, int version) {
         return null;
     }
+
+    Map<String, Object> getLatestConfig(String configKey);
 }

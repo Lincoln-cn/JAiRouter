@@ -46,7 +46,8 @@ public class SlowQueryAnalysisController {
      * @return 慢查询统计信息
      */
     @GetMapping("/stats/{operationName}")
-    public SlowQueryStats getSlowQueryStatsByOperation(@PathVariable String operationName) {
+    public SlowQueryStats getSlowQueryStatsByOperation(
+            @PathVariable("operationName") String operationName) {
         return slowQueryDetector.getSlowQueryStats(operationName);
     }
     

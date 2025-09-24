@@ -1,19 +1,34 @@
 <template>
   <div class="config-merge-management">
-    <el-card>
+    <el-card class="merge-card">
       <template #header>
         <div class="card-header">
-          <span>配置合并管理</span>
+          <div class="header-title">
+            <el-icon>
+              <Rank/>
+            </el-icon>
+            <span>配置合并管理</span>
+          </div>
           <div>
-            <el-button type="primary" @click="handleRefresh">刷新</el-button>
-            <el-button type="success" @click="handleBatchOperation" :loading="batchLoading">一键合并</el-button>
+            <el-button type="primary" @click="handleRefresh">
+              <el-icon>
+                <Refresh/>
+              </el-icon>
+              刷新
+            </el-button>
+            <el-button :loading="batchLoading" type="success" @click="handleBatchOperation">
+              <el-icon>
+                <Lightning/>
+              </el-icon>
+              一键合并
+            </el-button>
           </div>
         </div>
       </template>
 
-      <el-card style="margin-bottom: 20px;">
+      <el-card class="mode-card" shadow="never">
         <template #header>
-          <span>合并模式设置</span>
+          <span><el-icon><Setting/></el-icon> 合并模式设置</span>
         </template>
         <el-switch
             v-model="useVersionManager"
@@ -21,20 +36,20 @@
             inactive-text="文件系统模式"
             @change="handleModeChange"
         />
-        <p style="margin-top: 10px; color: #606266; font-size: 14px;">
+        <p class="mode-desc">
           {{
-            useVersionManager ?
-                '版本管理系统模式：从配置版本管理系统获取版本数据，支持冲突检测和原子性操作' :
-                '文件系统模式：直接扫描配置目录中的版本文件进行合并'
+            useVersionManager
+                ? '版本管理系统模式：从配置版本管理系统获取版本数据，支持冲突检测和原子性操作'
+                : '文件系统模式：直接扫描配置目录中的版本文件进行合并'
           }}
         </p>
       </el-card>
 
-      <el-row :gutter="20">
+      <el-row :gutter="24" class="stat-row">
         <el-col :span="12">
-          <el-card class="stat-card">
+          <el-card class="stat-card" shadow="hover">
             <template #header>
-              <span>统计信息</span>
+              <span><el-icon><DataLine/></el-icon> 统计信息</span>
             </template>
             <el-descriptions :column="1" size="small" border>
               <el-descriptions-item label="版本文件数量">{{ statistics.totalVersionFiles || 0 }}</el-descriptions-item>
@@ -44,29 +59,32 @@
             </el-descriptions>
           </el-card>
         </el-col>
-        
         <el-col :span="12">
-          <el-card class="stat-card">
+          <el-card class="stat-card" shadow="hover">
             <template #header>
-              <span>服务状态</span>
+              <span><el-icon><Connection/></el-icon> 服务状态</span>
             </template>
             <el-descriptions :column="1" size="small" border>
               <el-descriptions-item label="可用版本文件">{{ status.availableVersionFiles || 0 }}</el-descriptions-item>
               <el-descriptions-item label="配置目录">{{ status.configDirectory || 'config' }}</el-descriptions-item>
-              <el-descriptions-item label="服务状态">{{ status.serviceReady ? '就绪' : '未就绪' }}</el-descriptions-item>
+              <el-descriptions-item label="服务状态">
+                <el-tag :type="status.serviceReady ? 'success' : 'danger'">
+                  {{ status.serviceReady ? '就绪' : '未就绪' }}
+                </el-tag>
+              </el-descriptions-item>
             </el-descriptions>
           </el-card>
         </el-col>
       </el-row>
-      
+
       <el-divider />
-      
-      <el-tabs v-model="activeTab" @tab-change="handleTabChange as any">
+
+      <el-tabs v-model="activeTab" class="merge-tabs" type="border-card" @tab-change="handleTabChange as any">
         <el-tab-pane label="版本文件" name="files">
-          <el-table :data="versionFilesList" style="width: 100%" v-loading="loading">
-            <el-table-column prop="version" label="版本号" width="100" />
-            <el-table-column prop="filePath" label="文件路径" />
-            <el-table-column label="操作" width="200">
+          <el-table v-loading="loading" :data="versionFilesList" border class="file-table" fit>
+            <el-table-column align="center" label="版本号" prop="version" width="100"/>
+            <el-table-column label="文件路径" min-width="280" prop="filePath" show-overflow-tooltip/>
+            <el-table-column align="center" label="操作" width="160">
               <template #default="scope">
                 <el-button size="small" @click="handlePreviewFile(scope.row)">预览</el-button>
                 <el-button size="small" type="danger" @click="handleDeleteFile(scope.row)">删除</el-button>
@@ -74,10 +92,9 @@
             </el-table-column>
           </el-table>
         </el-tab-pane>
-        
+
         <el-tab-pane label="合并预览" name="preview">
           <div v-if="previewData.mergedConfig" class="preview-content">
-            <!-- 版本管理系统模式下显示额外信息 -->
             <div v-if="useVersionManager && (mergeConflicts.length > 0 || mergeWarnings.length > 0)"
                  style="margin-bottom: 20px;">
               <el-alert
@@ -104,11 +121,10 @@
               </el-alert>
             </div>
 
-            <!-- 版本管理系统模式下显示统计信息 -->
             <div v-if="useVersionManager && previewData.mergeStatistics" style="margin-bottom: 20px;">
-              <el-card>
+              <el-card shadow="never">
                 <template #header>
-                  <span>合并统计信息</span>
+                  <span><el-icon><PieChart/></el-icon> 合并统计信息</span>
                 </template>
                 <el-descriptions :column="2" border size="small">
                   <el-descriptions-item label="源版本数量">{{
@@ -139,31 +155,25 @@
               </el-card>
             </div>
 
-            <el-card>
+            <el-card shadow="never">
               <template #header>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span>合并后配置预览</span>
+                <div class="preview-header">
+                  <span><el-icon><Document/></el-icon> 合并后配置预览</span>
                   <div>
-                    <el-button size="small" @click="copyConfig">复制配置</el-button>
-                    <el-button size="small" @click="downloadConfig">下载配置</el-button>
+                    <el-button icon="el-icon-document-copy" size="small" @click="copyConfig">复制配置</el-button>
+                    <el-button icon="el-icon-download" size="small" @click="downloadConfig">下载配置</el-button>
                   </div>
                 </div>
               </template>
-
-              <!-- 配置概览 -->
-              <div v-if="previewData.mergedConfig.services" style="margin-bottom: 15px;">
-                <h5>配置概览</h5>
+              <div v-if="previewData.mergedConfig.services" class="overview-tags">
                 <el-tag
                     v-for="(serviceConfig, serviceType) in previewData.mergedConfig.services"
                     :key="serviceType"
-                    style="margin-right: 8px; margin-bottom: 8px;"
                     type="info"
                 >
                   {{ serviceType }}: {{ serviceConfig.instances ? serviceConfig.instances.length : 0 }} 个实例
                 </el-tag>
               </div>
-
-              <!-- 详细配置 -->
               <div class="config-detail">
                 <el-collapse v-model="activeConfigSections">
                   <el-collapse-item
@@ -182,14 +192,14 @@
             <el-empty description="暂无预览数据" />
           </div>
         </el-tab-pane>
-        
+
         <el-tab-pane label="操作日志" name="logs">
           <el-timeline>
             <el-timeline-item
-              v-for="(log, index) in operationLogs"
-              :key="index"
-              :timestamp="log.timestamp"
-              :type="log.type"
+                v-for="(log, index) in operationLogs"
+                :key="index"
+                :timestamp="log.timestamp"
+                :type="log.type"
             >
               {{ log.message }}
             </el-timeline-item>
@@ -197,26 +207,41 @@
         </el-tab-pane>
       </el-tabs>
 
-      <!-- 操作进度显示 -->
-      <el-card v-if="showProgress" style="margin-bottom: 20px;">
+      <el-card v-if="showProgress" class="progress-card" shadow="never">
         <template #header>
-          <span>操作进度</span>
+          <span><el-icon><Loading/></el-icon> 操作进度</span>
         </template>
         <el-progress
             :percentage="operationProgress"
             :status="operationProgress === 100 ? 'success' : 'active'"
             :stroke-width="8"
         />
-        <p style="margin-top: 10px; color: #606266;">{{ operationStatus }}</p>
+        <p class="progress-status">{{ operationStatus }}</p>
       </el-card>
 
       <div class="action-buttons">
         <el-button :loading="scanLoading" @click="handleScan">
+          <el-icon>
+            <Search/>
+          </el-icon>
           {{ useVersionManager ? '扫描版本' : '扫描文件' }}
         </el-button>
-        <el-button @click="handlePreview" :loading="previewLoading">生成预览</el-button>
-        <el-button v-if="!useVersionManager" :loading="backupLoading" @click="handleBackup">备份配置</el-button>
+        <el-button :loading="previewLoading" @click="handlePreview">
+          <el-icon>
+            <View/>
+          </el-icon>
+          生成预览
+        </el-button>
+        <el-button v-if="!useVersionManager" :loading="backupLoading" @click="handleBackup">
+          <el-icon>
+            <Upload/>
+          </el-icon>
+          备份配置
+        </el-button>
         <el-button :loading="mergeLoading" type="primary" @click="handleMerge">
+          <el-icon>
+            <Switch/>
+          </el-icon>
           {{ useVersionManager ? '智能合并' : '执行合并' }}
         </el-button>
         <el-button
@@ -225,22 +250,29 @@
             type="success"
             @click="handleAtomicMerge"
         >
+          <el-icon>
+            <Coin/>
+          </el-icon>
           原子性合并
         </el-button>
-        <el-button v-if="!useVersionManager" :loading="cleanupLoading" @click="handleCleanup">清理文件</el-button>
+        <el-button v-if="!useVersionManager" :loading="cleanupLoading" @click="handleCleanup">
+          <el-icon>
+            <Delete/>
+          </el-icon>
+          清理文件
+        </el-button>
       </div>
     </el-card>
-    
+
     <!-- 文件预览对话框 -->
-    <el-dialog v-model="previewDialogVisible" title="文件预览" width="600px">
+    <el-dialog v-model="previewDialogVisible" class="file-dialog" title="文件预览" width="640px">
       <div v-if="currentFileContent">
-        <h4>{{ currentFilePath }}</h4>
-        <pre>{{ JSON.stringify(currentFileContent, null, 2) }}</pre>
+        <h4 style="margin-bottom:6px;">{{ currentFilePath }}</h4>
+        <pre class="file-preview">{{ JSON.stringify(currentFileContent, null, 2) }}</pre>
       </div>
       <div v-else>
         <el-empty description="无法加载文件内容" />
       </div>
-      
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="previewDialogVisible = false">关闭</el-button>
@@ -266,7 +298,24 @@ import {
   performBatchOperation,
   scanVersionFiles,
   scanVersionFilesFromVersionManager
-} from '../../api/config'
+} from '@/api/config.ts'
+import {
+  Coin,
+  Connection,
+  DataLine,
+  Delete,
+  Document,
+  Lightning,
+  Loading,
+  PieChart,
+  Rank,
+  Refresh,
+  Search,
+  Setting,
+  Switch,
+  Upload,
+  View,
+} from '@element-plus/icons-vue'
 
 interface VersionFile {
   version: number
@@ -422,7 +471,7 @@ const fetchVersionFiles = async () => {
       response = await scanVersionFiles()
       addLog('扫描版本文件完成')
     }
-    
+
     versionFiles.value = response.data.data || {}
     versionFilesList.value = Object.entries(versionFiles.value).map(([version, filePath]) => ({
       version: parseInt(version),
@@ -513,7 +562,7 @@ const handlePreview = async () => {
       response = await getMergePreview()
       addLog('生成合并预览完成', 'success')
     }
-    
+
     previewData.value = response.data.data || {}
 
     // 版本管理系统模式下处理冲突和警告信息
@@ -523,7 +572,7 @@ const handlePreview = async () => {
       mergeConflicts.value = []
       mergeWarnings.value = []
     }
-    
+
     activeTab.value = 'preview'
     ElMessage.success('预览生成成功')
 
@@ -579,7 +628,7 @@ const handleMerge = async () => {
         response = await performAutoMerge()
         addLog('执行自动合并完成', 'success')
       }
-      
+
       if (response.data.success) {
         ElMessage.success(response.data.message || '合并成功')
 
@@ -590,7 +639,7 @@ const handleMerge = async () => {
             ElMessage.warning(`合并完成，但发现 ${result.conflicts.length} 个冲突`)
           }
         }
-        
+
         // 刷新数据
         handleRefresh()
       } else {
@@ -863,62 +912,179 @@ onMounted(() => {
 
 <style scoped>
 .config-merge-management {
-  padding: 20px;
+  padding: 24px;
+  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  min-height: calc(100vh - 80px);
+}
+
+.merge-card {
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.07);
+  padding: 0;
+  width: 100%;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 18px 22px;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2d3d;
+  gap: 10px;
+}
+
+.mode-card {
+  margin: 0 0 18px 0;
+  background: #f9fafc;
+  border-radius: 8px;
+}
+
+.mode-desc {
+  margin-top: 10px;
+  color: #606266;
+  font-size: 14px;
+  padding-left: 4px;
+}
+
+.stat-row {
+  margin-bottom: 8px;
 }
 
 .stat-card {
-  margin-bottom: 20px;
+  border-radius: 10px;
+  margin-bottom: 0;
+  background: #fcfcfe;
+}
+
+.merge-tabs {
+  margin: 16px 0 0 0;
+}
+
+.file-table {
+  border-radius: 6px;
+  background: #fff;
+}
+
+.file-table :deep(.el-table__cell) {
+  font-size: 14px;
+  padding: 12px;
+}
+
+.file-table :deep(.el-table__header th) {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b3a4b;
+  background-color: #fbfdff;
+}
+
+.preview-content {
+  margin-bottom: 22px;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.overview-tags {
+  margin-bottom: 10px;
+}
+
+.overview-tags .el-tag {
+  margin-right: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.config-detail {
+  max-height: 540px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+.config-section {
+  background-color: #f8f9fa;
+  padding: 14px;
+  border-radius: 4px;
+  border-left: 4px solid #409eff;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
+  margin: 0;
+  line-height: 1.5;
+}
+.config-section:hover {
+  background-color: #f0f2f5;
+}
+
+.no-preview {
+  text-align: center;
+  padding: 44px 0;
+}
+
+.progress-card {
+  margin: 22px 0 0 0;
+  border-radius: 8px;
+  background: #f8fafd;
+}
+
+.progress-status {
+  margin-top: 10px;
+  color: #606266;
 }
 
 .action-buttons {
   margin-top: 20px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
+  padding-left: 3px;
 }
 
-.preview-content pre {
+.file-dialog :deep(.el-dialog__header) {
+  background-color: #fbfdff;
+  border-bottom: 1px solid #eef2f6;
+  padding: 14px 20px;
+}
+
+.file-dialog :deep(.el-dialog__title) {
+  font-weight: 700;
+  color: #1f2d3d;
+  font-size: 18px;
+}
+
+.file-dialog :deep(.el-dialog__body) {
+  padding: 20px;
+}
+
+.file-preview {
   background-color: #f5f5f5;
-  padding: 15px;
-  border-radius: 4px;
-  max-height: 500px;
+  padding: 14px;
+  border-radius: 5px;
+  max-height: 400px;
   overflow-y: auto;
+  font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 13px;
   white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-}
-
-.no-preview {
-  text-align: center;
-  padding: 40px 0;
-}
-
-.config-detail {
-  max-height: 600px;
-  overflow-y: auto;
-}
-
-.config-section {
-  background-color: #f8f9fa;
-  padding: 12px;
-  border-radius: 4px;
-  border-left: 4px solid #409eff;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  line-height: 1.4;
   margin: 0;
 }
 
-.config-section:hover {
-  background-color: #f0f2f5;
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  padding: 10px 20px;
 }
 </style>

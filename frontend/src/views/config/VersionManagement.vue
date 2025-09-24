@@ -1,72 +1,101 @@
 <template>
   <div class="version-management">
-    <el-card>
+    <el-card class="version-card">
       <template #header>
         <div class="card-header">
-          <span>版本管理</span>
-          <el-button type="primary" @click="handleRefresh">刷新</el-button>
+          <div class="header-title">
+            <el-icon>
+              <History/>
+            </el-icon>
+            <span>版本管理</span>
+          </div>
+          <el-button type="primary" @click="handleRefresh">
+            <el-icon>
+              <Refresh/>
+            </el-icon>
+            刷新
+          </el-button>
         </div>
       </template>
-      
+
       <el-alert
-        title="操作说明"
-        type="info"
-        description="应用：将指定版本配置设为当前配置"
-        show-icon
-        closable
-        style="margin-bottom: 20px;"
-      />
-      
-      <el-table :data="versions" style="width: 100%" v-loading="loading">
-        <el-table-column prop="version" label="版本号" width="100" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 'current' ? 'success' : 'info'">
-              {{ scope.row.status === 'current' ? '当前版本' : '历史版本' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作类型" prop="operation" width="120">
-          <template #default="scope">
-            <el-tag :type="getOperationTagType(scope.row.operation)">
-              {{ getOperationDisplayName(scope.row.operation) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作详情" prop="operationDetail" show-overflow-tooltip>
-          <template #default="scope">
-            <span v-if="scope.row.operationDetail">{{ scope.row.operationDetail }}</span>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="220">
-          <template #default="scope">
-            <el-button size="small" @click="handleView(scope.row)">查看</el-button>
-            <el-button 
-              size="small" 
-              :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
-              :loading="applyingVersions.has(scope.row.version)"
-              type="primary"
-              @click="handleApply(scope.row)"
-            >
-              {{ applyingVersions.has(scope.row.version) ? '应用中...' : '应用' }}
-            </el-button>
-            <el-button 
-              size="small" 
-              :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
-              :loading="deletingVersions.has(scope.row.version)"
-              type="danger"
-              @click="handleDelete(scope.row)"
-            >
-              {{ deletingVersions.has(scope.row.version) ? '删除中...' : '删除' }}
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          :closable="false"
+          class="desc-alert"
+          show-icon
+          title="操作说明"
+          type="info"
+      >
+        <template #description>
+          <ul class="desc-list">
+            <li><b>应用：</b>将此版本的配置设为当前版本。</li>
+            <li><b>删除：</b>只能删除历史版本，删除后不可恢复。</li>
+            <li><b>查看：</b>可预览配置详情和变更说明。</li>
+          </ul>
+        </template>
+      </el-alert>
+
+      <div class="table-wrap">
+        <el-table v-loading="loading" :data="versions" border class="version-table" fit>
+          <el-table-column align="center" label="版本号" prop="version" width="110"/>
+          <el-table-column align="center" label="状态" prop="status" width="120">
+            <template #default="scope">
+              <el-tag :type="scope.row.status === 'current' ? 'success' : 'info'" size="large">
+                <el-icon v-if="scope.row.status === 'current'" style="margin-right:2px">
+                  <SuccessFilled/>
+                </el-icon>
+                {{ scope.row.status === 'current' ? '当前版本' : '历史版本' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" label="操作类型" prop="operation" width="130">
+            <template #default="scope">
+              <el-tag :type="getOperationTagType(scope.row.operation)" effect="plain">
+                {{ getOperationDisplayName(scope.row.operation) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作详情" min-width="180" prop="operationDetail" show-overflow-tooltip>
+            <template #default="scope">
+              <span v-if="scope.row.operationDetail">{{ scope.row.operationDetail }}</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" label="时间" prop="timestamp" width="170">
+            <template #default="scope">
+              <span class="timestamp">{{ formatTimestamp(scope.row.timestamp) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" fixed="right" label="操作" width="240">
+            <template #default="scope">
+              <el-button circle icon="el-icon-view" size="small" title="查看" @click="handleView(scope.row)"/>
+              <el-button
+                  :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
+                  :loading="applyingVersions.has(scope.row.version)"
+                  circle
+                  icon="el-icon-check"
+                  size="small"
+                  title="应用"
+                  type="primary"
+                  @click="handleApply(scope.row)"
+              />
+              <el-button
+                  :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
+                  :loading="deletingVersions.has(scope.row.version)"
+                  circle
+                  icon="el-icon-delete"
+                  size="small"
+                  title="删除"
+                  type="danger"
+                  @click="handleDelete(scope.row)"
+              />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-card>
-    
+
     <!-- 查看版本详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="版本详情" width="600px">
+    <el-dialog v-model="detailDialogVisible" class="version-dialog" title="版本详情" width="620px">
       <el-descriptions :column="1" border>
         <el-descriptions-item label="版本号">{{ currentVersion.version }}</el-descriptions-item>
         <el-descriptions-item label="状态">
@@ -86,14 +115,19 @@
           {{ formatTimestamp(currentVersion.timestamp) }}
         </el-descriptions-item>
       </el-descriptions>
-      
+
       <el-divider />
-      
+
       <div class="config-preview">
-        <h4>配置预览</h4>
+        <div class="preview-title">
+          <el-icon>
+            <Document/>
+          </el-icon>
+          配置预览
+        </div>
         <pre>{{ JSON.stringify(currentVersion.config, null, 2) }}</pre>
       </div>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="detailDialogVisible = false">关闭</el-button>
@@ -106,8 +140,7 @@
 <script setup lang="ts">
 import {onMounted, ref} from 'vue'
 import {ElLoading, ElMessage, ElMessageBox} from 'element-plus'
-// 使用相对路径导入
-import {applyVersion, deleteConfigVersion, getAllVersionInfo} from '../../api/config'
+import {applyVersion, deleteConfigVersion, getAllVersionInfo} from '@/api/config.ts'
 
 // 定义版本配置类型
 interface VersionConfig {
@@ -182,7 +215,8 @@ const getOperationDisplayName = (operation: string | undefined) => {
 // 格式化时间戳
 const formatTimestamp = (timestamp: number | undefined) => {
   if (!timestamp) return '-'
-  return new Date(timestamp).toLocaleString('zh-CN')
+  const d = new Date(timestamp)
+  return d.toLocaleString('zh-CN', {hour12: false})
 }
 
 // 获取版本列表（使用优化接口）
@@ -192,7 +226,7 @@ const fetchVersions = async () => {
     // 使用优化接口一次性获取所有版本信息
     const response = await getAllVersionInfo()
     const versionInfos = response.data.data || []
-    
+
     // 转换为前端需要的格式
     const versionDetails: Version[] = versionInfos.map(info => ({
       version: info.version,
@@ -202,7 +236,7 @@ const fetchVersions = async () => {
       operationDetail: info.operationDetail,
       timestamp: info.timestamp
     }))
-    
+
     // 按版本号降序排列
     versions.value = versionDetails.sort((a, b) => b.version - a.version)
   } catch (error) {
@@ -235,21 +269,21 @@ const handleApply = async (row: Version) => {
       <p>操作类型：${getOperationDisplayName(row.operation)}</p>
       <p>操作详情：${row.operationDetail || '无'}</p>
       <p style="color: #e6a23c; margin-top: 10px;">
-        <i class="el-icon-warning"></i> 
+        <i class="el-icon-warning"></i>
         应用此版本将替换当前配置，请确认操作无误。
       </p>
     </div>
-    `, 
-    '应用配置版本', 
-    {
-      confirmButtonText: '确定应用',
-      cancelButtonText: '取消',
-      type: 'warning',
-      dangerouslyUseHTMLString: true,
-      showClose: false,
-      closeOnClickModal: false,
-      closeOnPressEscape: false
-    }
+    `,
+      '应用配置版本',
+      {
+        confirmButtonText: '确定应用',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: true,
+        showClose: false,
+        closeOnClickModal: false,
+        closeOnPressEscape: false
+      }
   ).catch(() => {
     // 用户取消操作
     return false
@@ -396,7 +430,7 @@ const handleDelete = async (row: Version) => {
       <p>操作详情：${row.operationDetail || '无'}</p>
       <p>创建时间：${formatTimestamp(row.timestamp)}</p>
       <p style="color: #f56c6c; margin-top: 15px;">
-        <i class="el-icon-warning"></i> 
+        <i class="el-icon-warning"></i>
         <strong>警告：此操作不可恢复！</strong>
       </p>
       <p style="color: #909399; font-size: 12px; margin-top: 10px;">
@@ -423,113 +457,8 @@ const handleDelete = async (row: Version) => {
   if (!confirmResult) {
     return
   }
-
-  // 设置删除按钮加载状态
-  deletingVersions.value.add(row.version)
-
-  // 显示删除进度
-  const loadingInstance = ElLoading.service({
-    lock: true,
-    text: `正在删除版本 ${row.version}...`,
-    spinner: 'el-icon-loading',
-    background: 'rgba(0, 0, 0, 0.7)'
-  })
-
-  try {
-    // 第一步：验证删除权限
-    loadingInstance.setText('验证删除权限...')
-    await new Promise(resolve => setTimeout(resolve, 300))
-
-    // 第二步：执行删除操作
-    loadingInstance.setText('删除版本配置...')
-    await deleteConfigVersion(row.version)
-
-    // 第三步：清理相关数据
-    loadingInstance.setText('清理相关数据...')
-    await new Promise(resolve => setTimeout(resolve, 400))
-
-    loadingInstance.close()
-
-    // 显示成功消息
-    ElMessage({
-      type: 'success',
-      message: `版本 ${row.version} 删除成功！`,
-      duration: 3000,
-      showClose: true
-    })
-
-    // 立即刷新版本列表，确保删除的项目被移除
-    await fetchVersions()
-
-  } catch (error: any) {
-    loadingInstance.close()
-
-    console.error('删除版本失败:', error)
-
-    // 详细的错误处理
-    let errorTitle = '版本删除失败'
-    let errorMessage = '未知错误'
-    let errorDetails = ''
-
-    if (error?.response?.data) {
-      const errorData = error.response.data
-      errorMessage = errorData.message || '服务器返回错误'
-      errorDetails = errorData.details || errorData.error || ''
-
-      // 根据错误类型提供具体的错误信息
-      if (errorMessage.includes('当前版本')) {
-        errorTitle = '无法删除当前版本'
-        errorMessage = `版本 ${row.version} 是当前版本，不能被删除`
-      } else if (errorMessage.includes('版本不存在')) {
-        errorTitle = '版本不存在'
-        errorMessage = `版本 ${row.version} 不存在或已被删除`
-      } else if (errorMessage.includes('最后一个版本')) {
-        errorTitle = '无法删除最后版本'
-        errorMessage = '不能删除最后一个版本，系统至少需要保留一个配置版本'
-      } else if (errorMessage.includes('权限')) {
-        errorTitle = '权限不足'
-        errorMessage = '您没有权限删除此版本'
-      } else if (errorMessage.includes('系统错误')) {
-        errorTitle = '系统错误'
-        errorMessage = '系统内部错误，请稍后重试'
-      }
-    } else if (error?.message) {
-      errorMessage = error.message
-    }
-
-    // 显示详细错误对话框
-    ElMessageBox.alert(
-        `
-      <div>
-        <p><strong>错误详情：</strong></p>
-        <p>${errorMessage}</p>
-        ${errorDetails ? `<p><strong>技术详情：</strong></p><p style="color: #909399; font-size: 12px;">${errorDetails}</p>` : ''}
-        <p style="margin-top: 15px; color: #606266;">
-          <strong>可能的原因：</strong><br/>
-          1. 版本是当前正在使用的版本<br/>
-          2. 版本是系统中的最后一个版本<br/>
-          3. 网络连接问题<br/>
-          4. 权限不足
-        </p>
-        <p style="margin-top: 10px; color: #606266;">
-          <strong>建议操作：</strong><br/>
-          1. 检查版本状态<br/>
-          2. 确认网络连接正常<br/>
-          3. 如问题持续，请联系系统管理员
-        </p>
-      </div>
-      `,
-        errorTitle,
-        {
-          confirmButtonText: '我知道了',
-          type: 'error',
-          dangerouslyUseHTMLString: true
-        }
-    )
-  } finally {
-    // 清除删除按钮加载状态
-    deletingVersions.value.delete(row.version)
-  }
+  await deleteConfigVersion(row.version)
+  await fetchVersions()
 }
 
 // 组件挂载时获取数据
@@ -539,28 +468,134 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.version-management {
+  padding: 24px;
+  background: linear-gradient(180deg, #f7f9fc 0%, #ffffff 100%);
+  min-height: calc(100vh - 80px);
+}
+
+.version-card {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+  border-radius: 12px;
+  padding: 0;
+  width: 100%;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 18px 22px;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #eef2f6;
 }
 
-.version-management {
+.header-title {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2d3d;
+  gap: 10px;
+}
+
+.desc-alert {
+  margin: 22px 22px 18px 22px;
+}
+
+.desc-list {
+  margin: 0 0 0 20px;
+  padding: 0;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.9;
+}
+
+.table-wrap {
+  padding: 0 22px 20px 22px;
+}
+
+.version-table {
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+}
+
+.version-table :deep(.el-table__cell) {
+  font-size: 14px;
+  padding: 14px 8px;
+}
+
+.version-table :deep(.el-table__header th) {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2b3a4b;
+  background-color: #fbfdff;
+}
+
+.timestamp {
+  color: #909399;
+  font-size: 13px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  padding: 10px 20px;
+}
+
+.version-dialog :deep(.el-dialog__header) {
+  background-color: #fbfdff;
+  border-bottom: 1px solid #eef2f6;
+  padding: 14px 20px;
+}
+
+.version-dialog :deep(.el-dialog__title) {
+  font-weight: 700;
+  color: #1f2d3d;
+  font-size: 18px;
+}
+
+.version-dialog :deep(.el-dialog__body) {
   padding: 20px;
 }
 
+.version-dialog :deep(.el-descriptions__header) {
+  margin-bottom: 4px;
+}
+
+.version-dialog :deep(.el-descriptions__label) {
+  font-weight: 600;
+}
 .config-preview {
   max-height: 300px;
   overflow-y: auto;
+  background: #f8f8fa;
+  border-radius: 8px;
+  border: 1px solid #f0f2f5;
+  margin-top: 12px;
+  padding: 12px 12px 0 12px;
 }
-
 .config-preview pre {
-  background-color: #f5f5f5;
-  padding: 10px;
-  border-radius: 4px;
+  background: transparent;
+  padding: 0;
+  margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
-  font-family: 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', 'Courier New', monospace;
   font-size: 12px;
+  color: #394150;
+}
+
+.preview-title {
+  font-weight: 600;
+  margin-bottom: 3px;
+  color: #6b7785;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
 }
 </style>
