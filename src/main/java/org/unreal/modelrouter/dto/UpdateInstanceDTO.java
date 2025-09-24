@@ -2,17 +2,16 @@ package org.unreal.modelrouter.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.util.SecurityUtils;
 
 /**
  * {
- *     "instanceId":"test-model@http://test.example.com",
- *     "data": {
- *     "name": "test-model",
- *     "baseUrl": "http://www.example.com",
- *     "path": "/v1/chat/completions",
- *     "weight": 1
- *     }
+ * "instanceId":"test-model@http://test.example.com",
+ * "data": {
+ * "name": "test-model",
+ * "baseUrl": "http://www.example.com",
+ * "path": "/v1/chat/completions",
+ * "weight": 1
+ * }
  * }
  */
 public class UpdateInstanceDTO {
@@ -70,7 +69,7 @@ public class UpdateInstanceDTO {
         public void setStatus(String status) {
             this.status = status;
         }
-        
+
         public ModelRouterProperties.RateLimitConfig getRateLimit() {
             return rateLimit;
         }
@@ -167,14 +166,5 @@ public class UpdateInstanceDTO {
 
     public void setInstance(Data instance) {
         this.instance = instance;
-    }
-    
-    /**
-     * 构建新的实例ID
-     * @return 新的实例ID
-     */
-    public String getNewInstanceId() {
-        // 直接返回现有的instanceId，确保在更新时保持原有的instanceId不变
-        return instanceId;
     }
 }

@@ -6,18 +6,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.store.StoreManager;
-import org.unreal.modelrouter.util.SecurityUtils;
+import org.unreal.modelrouter.util.InstanceIdUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
- * 配置合并服务
- * 负责合并应用配置和持久化存储中的配置
- * 持久化存储中的配置优先级更高
+ * 配置合并服务 负责合并应用配置和持久化存储中的配置 持久化存储中的配置优先级更高
  */
 @Service
 public class ConfigMergeService {
@@ -39,7 +36,8 @@ public class ConfigMergeService {
     }
 
     /**
-     * 获取持久化配置（优先使用最新版本的配置）
+     * 获取持久化配置（仅用于配置合并，不处理版本控制）
+     *
      * @return 持久化配置Map
      */
     public Map<String, Object> getPersistedConfig() {
@@ -52,7 +50,7 @@ public class ConfigMergeService {
                     return config;
                 }
             }
-            
+
             // 如果没有当前配置，尝试获取最新版本的配置
             List<Integer> versions = storeManager.getConfigVersions(CONFIG_KEY);
             if (!versions.isEmpty()) {
@@ -75,12 +73,13 @@ public class ConfigMergeService {
 
     /**
      * 深度合并两个配置Map
+     *
      * @param baseConfig 基础配置（YAML配置）
      * @param overrideConfig 覆盖配置（持久化配置）
      * @return 合并后的配置
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> deepMergeConfigs(Map<String, Object> baseConfig, Map<String, Object> overrideConfig) {
+    public Map<String, Object> deepMergeConfigs(Map<String, Object> baseConfig, Map<String, Object> overrideConfig) {
         if (overrideConfig.isEmpty()) {
             return new HashMap<>(baseConfig);
         }
@@ -124,6 +123,7 @@ public class ConfigMergeService {
 
     /**
      * 合并实例列表，支持实例的增删改
+     *
      * @param baseInstances YAML中的实例列表
      * @param overrideInstances 持久化的实例列表
      * @return 合并后的实例列表
@@ -136,7 +136,7 @@ public class ConfigMergeService {
         for (Object instance : baseInstances) {
             if (instance instanceof Map) {
                 Map<String, Object> instanceConfig = (Map<String, Object>) instance;
-                String instanceId = getInstanceId(instanceConfig);
+                String instanceId = InstanceIdUtils.getInstanceId(instanceConfig);
                 if (instanceId != null) {
                     // 确保instanceId字段存在
                     if (!instanceConfig.containsKey("instanceId")) {
@@ -151,7 +151,7 @@ public class ConfigMergeService {
         for (Object instance : overrideInstances) {
             if (instance instanceof Map) {
                 Map<String, Object> instanceConfig = (Map<String, Object>) instance;
-                String instanceId = getInstanceId(instanceConfig);
+                String instanceId = InstanceIdUtils.getInstanceId(instanceConfig);
                 if (instanceId != null) {
                     // 确保instanceId字段存在
                     if (!instanceConfig.containsKey("instanceId")) {
@@ -166,61 +166,7 @@ public class ConfigMergeService {
     }
 
     /**
-     * 获取实例ID
-     * @param instanceConfig 实例配置
-     * @return 实例ID
-     */
-    private String getInstanceId(Map<String, Object> instanceConfig) {
-        if (instanceConfig == null) {
-            return null;
-        }
-        
-        // 检查是否已存在instanceId字段
-        Object instanceIdObj = instanceConfig.get("instanceId");
-        if (instanceIdObj instanceof String && !((String) instanceIdObj).isEmpty()) {
-            // 验证已存在的instanceId是否为有效的UUID格式，如果不是则重新生成
-            String existingInstanceId = (String) instanceIdObj;
-            if (isValidUUID(existingInstanceId)) {
-                return existingInstanceId;
-            } else {
-                logger.warn("实例ID {} 不是有效的UUID格式，将重新生成", existingInstanceId);
-            }
-        }
-
-        Object nameObj = instanceConfig.get("name");
-        // 同时支持baseUrl和base-url两种字段名
-        Object baseUrlObj = instanceConfig.get("baseUrl");
-        if (baseUrlObj == null) {
-            baseUrlObj = instanceConfig.get("base-url");
-        }
-
-        String name = nameObj instanceof String ? (String) nameObj : null;
-        String baseUrl = baseUrlObj instanceof String ? (String) baseUrlObj : null;
-
-        if (name != null && !name.trim().isEmpty() &&
-            baseUrl != null && !baseUrl.trim().isEmpty()) {
-            // 使用UUID生成唯一ID
-            return SecurityUtils.generateId();
-        }
-        return null;
-    }
-    
-    /**
-     * 验证字符串是否为有效的UUID
-     * @param uuid UUID字符串
-     * @return 是否有效
-     */
-    private boolean isValidUUID(String uuid) {
-        try {
-            UUID.fromString(uuid);
-            return true;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
-    }
-
-    /**
-     * 清除持久化配置，恢复到YAML默认配置
+     * 清除持久化配置，恢复到YAML默认配置 注意：此方法仅用于清除存储中的配置，版本控制由ConfigurationService处理
      */
     public void resetToYamlConfig() {
         try {
@@ -243,6 +189,7 @@ public class ConfigMergeService {
 
     /**
      * 检查是否存在持久化配置
+     *
      * @return true如果存在持久化配置
      */
     public boolean hasPersistedConfig() {
@@ -260,6 +207,12 @@ public class ConfigMergeService {
             return false;
         }
     }
+
+    /**
+     * 获取默认配置（YAML配置）
+     *
+     * @return 默认配置Map
+     */
     public Map<String, Object> getDefaultConfig() {
         return configurationHelper.convertModelRouterPropertiesToMap(modelRouterProperties);
     }

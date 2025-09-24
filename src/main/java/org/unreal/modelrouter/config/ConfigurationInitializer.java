@@ -8,6 +8,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 配置初始化器
  * 在Spring Boot应用启动完成后执行配置初始化工作
@@ -49,8 +52,17 @@ public class ConfigurationInitializer implements CommandLineRunner {
 
             logger.info("配置初始化完成");
 
+            Map<String, Object> currentConfig = configurationService.getAllConfigurations();
+            // 添加版本元数据
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("operation", "createService");
+            metadata.put("operationDetail", "初始化系统配置");
+            metadata.put("serviceType", "all");
+            metadata.put("timestamp", System.currentTimeMillis());
+            currentConfig.put("_metadata", metadata);
+
             // 4. 保存初始版本为 0
-            configurationService.saveAsNewVersion(configurationService.getAllConfigurations());
+            configurationService.saveAsNewVersion(currentConfig, "初始化配置", "System");
 
             logger.info("已将初始配置保存为版本 0");
 
@@ -91,7 +103,7 @@ public class ConfigurationInitializer implements CommandLineRunner {
 
             // 检查是否存在持久化配置
             boolean hasPersistedConfig = configurationService instanceof ConfigurationService &&
-                    ((ConfigurationService) configurationService).hasPersistedConfig();
+                    configurationService.hasPersistedConfig();
             logger.info("持久化配置状态: {}", hasPersistedConfig ? "存在" : "仅使用YAML配置");
 
         } catch (Exception e) {
