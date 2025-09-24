@@ -3,22 +3,21 @@ package org.unreal.modelrouter.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.JwtAccountConfigStatus;
 import org.unreal.modelrouter.dto.JwtAccountRequest;
 import org.unreal.modelrouter.dto.JwtAccountResponse;
 import org.unreal.modelrouter.security.config.JwtUserProperties;
 import org.unreal.modelrouter.security.service.JwtAccountConfigurationService;
-import org.unreal.modelrouter.controller.response.RouterResponse;
 import reactor.core.publisher.Mono;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 
 import java.util.List;
 import java.util.Map;
@@ -62,20 +61,20 @@ public class JwtAccountController {
     @PreAuthorize("hasRole('ADMIN') or authentication.name == #username")
     public Mono<RouterResponse<JwtAccountResponse>> getAccountByUsername(
             @Parameter(description = "用户名", required = true)
-            @PathVariable @NotBlank String username) {
+            @PathVariable("username") @NotBlank String username) {
         log.debug("获取JWT账户: {}", username);
         
         return accountConfigurationService.getAccountByUsername(username)
-                .<RouterResponse<JwtAccountResponse>>map(account -> {
+                .map(account -> {
                     if (account == null) {
-                        return RouterResponse.<JwtAccountResponse>error("JWT账户不存在: " + username, "ACCOUNT_NOT_FOUND");
+                        return RouterResponse.error("JWT账户不存在: " + username, "ACCOUNT_NOT_FOUND");
                     }
                     JwtAccountResponse response = jwtUserProperties.convertToResponse(account);
                     return RouterResponse.success(response, "成功获取JWT账户");
                 })
                 .onErrorResume(ex -> {
                     log.error("获取JWT账户失败: " + username, ex);
-                    return Mono.just(RouterResponse.<JwtAccountResponse>error("获取JWT账户失败: " + ex.getMessage(), "ACCOUNT_GET_ERROR"));
+                    return Mono.just(RouterResponse.error("获取JWT账户失败: " + ex.getMessage(), "ACCOUNT_GET_ERROR"));
                 });
     }
 
@@ -94,7 +93,7 @@ public class JwtAccountController {
                 .then(Mono.just(RouterResponse.<Void>success("JWT账户创建成功: " + request.getUsername())))
                 .onErrorResume(ex -> {
                     log.error("创建JWT账户失败: " + request.getUsername(), ex);
-                    return Mono.just(RouterResponse.<Void>error("创建JWT账户失败: " + ex.getMessage(), "ACCOUNT_CREATE_ERROR"));
+                    return Mono.just(RouterResponse.error("创建JWT账户失败: " + ex.getMessage(), "ACCOUNT_CREATE_ERROR"));
                 });
     }
 
@@ -103,7 +102,7 @@ public class JwtAccountController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Void>> updateAccount(
             @Parameter(description = "用户名", required = true)
-            @PathVariable @NotBlank String username,
+            @PathVariable("username") @NotBlank String username,
             @Parameter(description = "新的账户信息", required = true)
             @RequestBody @Valid JwtAccountRequest request) {
         log.info("更新JWT账户: {}", username);
@@ -113,7 +112,7 @@ public class JwtAccountController {
                 .then(Mono.just(RouterResponse.<Void>success("JWT账户更新成功: " + username)))
                 .onErrorResume(ex -> {
                     log.error("更新JWT账户失败: " + username, ex);
-                    return Mono.just(RouterResponse.<Void>error("更新JWT账户失败: " + ex.getMessage(), "ACCOUNT_UPDATE_ERROR"));
+                    return Mono.just(RouterResponse.error("更新JWT账户失败: " + ex.getMessage(), "ACCOUNT_UPDATE_ERROR"));
                 });
     }
 
@@ -122,7 +121,7 @@ public class JwtAccountController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Void>> deleteAccount(
             @Parameter(description = "用户名", required = true)
-            @PathVariable @NotBlank String username) {
+            @PathVariable("username") @NotBlank String username) {
         log.info("删除JWT账户: {}", username);
         
         return accountConfigurationService.deleteAccount(username)
@@ -130,7 +129,7 @@ public class JwtAccountController {
                 .then(Mono.just(RouterResponse.<Void>success("JWT账户删除成功: " + username)))
                 .onErrorResume(ex -> {
                     log.error("删除JWT账户失败: " + username, ex);
-                    return Mono.just(RouterResponse.<Void>error("删除JWT账户失败: " + ex.getMessage(), "ACCOUNT_DELETE_ERROR"));
+                    return Mono.just(RouterResponse.error("删除JWT账户失败: " + ex.getMessage(), "ACCOUNT_DELETE_ERROR"));
                 });
     }
 
@@ -139,7 +138,7 @@ public class JwtAccountController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Void>> setAccountEnabled(
             @Parameter(description = "用户名", required = true)
-            @PathVariable @NotBlank String username,
+            @PathVariable("username") @NotBlank String username,
             @Parameter(description = "是否启用", required = true)
             @RequestParam boolean enabled) {
         log.info("{}JWT账户: {}", enabled ? "启用" : "禁用", username);
@@ -150,7 +149,7 @@ public class JwtAccountController {
                         RouterResponse.<Void>success(String.format("JWT账户%s成功: %s", enabled ? "启用" : "禁用", username))))
                 .onErrorResume(ex -> {
                     log.error("{}JWT账户失败: {}", enabled ? "启用" : "禁用", username, ex);
-                    return Mono.just(RouterResponse.<Void>error(
+                    return Mono.just(RouterResponse.error(
                         String.format("JWT账户%s失败: %s", enabled ? "启用" : "禁用", ex.getMessage()), 
                         "ACCOUNT_STATUS_ERROR"));
                 });
@@ -173,7 +172,7 @@ public class JwtAccountController {
                 .then(Mono.just(RouterResponse.<Void>success("JWT账户批量更新成功，数量: " + requests.size())))
                 .onErrorResume(ex -> {
                     log.error("批量更新JWT账户失败，数量: " + requests.size(), ex);
-                    return Mono.just(RouterResponse.<Void>error("批量更新JWT账户失败: " + ex.getMessage(), "ACCOUNT_BATCH_UPDATE_ERROR"));
+                    return Mono.just(RouterResponse.error("批量更新JWT账户失败: " + ex.getMessage(), "ACCOUNT_BATCH_UPDATE_ERROR"));
                 });
     }
 
@@ -198,7 +197,7 @@ public class JwtAccountController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Map<String, Object>>> getAccountVersionConfig(
             @Parameter(description = "版本号，0表示YAML原始配置", required = true)
-            @PathVariable int version) {
+            @PathVariable("version") int version) {
         log.debug("获取JWT账户配置版本: {}", version);
         
         return Mono.fromCallable(() -> accountConfigurationService.getAccountVersionConfig(version))
@@ -219,14 +218,14 @@ public class JwtAccountController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Void>> applyAccountVersion(
             @Parameter(description = "版本号", required = true)
-            @PathVariable int version) {
+            @PathVariable("version") int version) {
         log.info("应用JWT账户配置版本: {}", version);
         
         return Mono.fromRunnable(() -> accountConfigurationService.applyAccountVersion(version))
                 .then(Mono.just(RouterResponse.<Void>success("JWT账户配置版本应用成功: " + version)))
                 .onErrorResume(ex -> {
                     log.error("应用JWT账户配置版本失败: " + version, ex);
-                    return Mono.just(RouterResponse.<Void>error("应用JWT账户配置版本失败: " + ex.getMessage(), "VERSION_APPLY_ERROR"));
+                    return Mono.just(RouterResponse.error("应用JWT账户配置版本失败: " + ex.getMessage(), "VERSION_APPLY_ERROR"));
                 });
     }
 
@@ -257,7 +256,7 @@ public class JwtAccountController {
                 .then(Mono.just(RouterResponse.<Void>success("JWT账户配置已重置为默认值")))
                 .onErrorResume(ex -> {
                     log.error("重置JWT账户配置为默认值失败", ex);
-                    return Mono.just(RouterResponse.<Void>error("重置JWT账户配置为默认值失败: " + ex.getMessage(), "RESET_DEFAULT_ERROR"));
+                    return Mono.just(RouterResponse.error("重置JWT账户配置为默认值失败: " + ex.getMessage(), "RESET_DEFAULT_ERROR"));
                 });
     }
 

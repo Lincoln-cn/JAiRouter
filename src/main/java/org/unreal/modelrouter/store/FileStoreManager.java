@@ -1,11 +1,9 @@
 package org.unreal.modelrouter.store;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.unreal.modelrouter.util.JacksonHelper;
 import org.unreal.modelrouter.util.PathSanitizer;
 import org.unreal.modelrouter.util.SafeFileOperations;
 
@@ -24,13 +22,9 @@ public class FileStoreManager extends BaseStoreManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(FileStoreManager.class);
 
     private final String storagePath;
-    private final ObjectMapper objectMapper;
 
     public FileStoreManager(final String storagePath) {
         this.storagePath = storagePath;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
-        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         initializeStorage();
     }
 
@@ -57,7 +51,7 @@ public class FileStoreManager extends BaseStoreManager {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
             Path configPath = PathSanitizer.sanitizePath(storagePath)
                     .resolve(sanitizedKey + ".json");
-            SafeFileOperations.writeJsonFile(configPath, config, objectMapper);
+            SafeFileOperations.writeJsonFile(configPath, config, JacksonHelper.getObjectMapper());
         } catch (IOException e) {
             LOGGER.error("Failed to save config for key: " + key, e);
             throw new RuntimeException("Failed to save config", e);
@@ -75,7 +69,8 @@ public class FileStoreManager extends BaseStoreManager {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
             Path configPath = PathSanitizer.sanitizePath(storagePath)
                     .resolve(sanitizedKey + ".json");
-            return SafeFileOperations.readJsonFile(configPath, objectMapper, new TypeReference<>() { });
+            return SafeFileOperations.readJsonFile(configPath, JacksonHelper.getObjectMapper(), new TypeReference<>() {
+            });
         } catch (IOException e) {
             // 对于文件不存在的情况，静默处理，因为这是正常现象（新安装或默认初始化）
             if (e.getMessage() != null && e.getMessage().contains("File does not exist")) {
@@ -171,7 +166,7 @@ public class FileStoreManager extends BaseStoreManager {
             try {
                 String sanitizedKey = PathSanitizer.sanitizeFileName(key);
                 File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
-                objectMapper.writeValue(versionFile, config);
+                JacksonHelper.getObjectMapper().writeValue(versionFile, config);
             } catch (IOException e) {
                 LOGGER.error("Failed to save config version for key: " + key + ", version: " + version, e);
             }
@@ -245,7 +240,8 @@ public class FileStoreManager extends BaseStoreManager {
             if (!versionFile.exists()) {
                 return null;
             }
-            return objectMapper.readValue(versionFile, new TypeReference<>() { });
+            return JacksonHelper.getObjectMapper().readValue(versionFile, new TypeReference<>() {
+            });
         } catch (IOException e) {
             LOGGER.error("Failed to read config version for key: " + key + ", version: " + version, e);
             return null;
@@ -267,92 +263,6 @@ public class FileStoreManager extends BaseStoreManager {
             }
         } catch (IOException e) {
             LOGGER.error("Failed to delete config version for key: " + key + ", version: " + version, e);
-        }
-    }
-
-    /**
-     * 压缩指定版本的配置文件
-     * @param key 配置键
-     * @param version 版本号
-     * @return 压缩是否成功
-     */
-    public boolean compressConfigVersion(String key, int version) {
-        try {
-            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
-            File compressedFile = new File(storagePath, sanitizedKey + "@" + version + ".json.gz");
-            
-            if (!versionFile.exists()) {
-                LOGGER.warn("Config version file does not exist: " + versionFile.getAbsolutePath());
-                return false;
-            }
-            
-            // 如果压缩文件已存在，先删除
-            if (compressedFile.exists()) {
-                Files.delete(compressedFile.toPath());
-            }
-            
-            // 压缩文件
-            try (java.io.FileInputStream fis = new java.io.FileInputStream(versionFile);
-                 java.util.zip.GZIPOutputStream gzos = new java.util.zip.GZIPOutputStream(new java.io.FileOutputStream(compressedFile))) {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = fis.read(buffer)) > 0) {
-                    gzos.write(buffer, 0, len);
-                }
-            }
-            
-            // 删除原始文件
-            Files.delete(versionFile.toPath());
-            
-            LOGGER.info("Successfully compressed config version file: " + versionFile.getAbsolutePath());
-            return true;
-        } catch (IOException e) {
-            LOGGER.error("Failed to compress config version for key: " + key + ", version: " + version, e);
-            return false;
-        }
-    }
-
-    /**
-     * 解压缩指定版本的配置文件
-     * @param key 配置键
-     * @param version 版本号
-     * @return 解压缩是否成功
-     */
-    public boolean decompressConfigVersion(String key, int version) {
-        try {
-            String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-            File compressedFile = new File(storagePath, sanitizedKey + "@" + version + ".json.gz");
-            File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
-            
-            if (!compressedFile.exists()) {
-                LOGGER.warn("Compressed config version file does not exist: " + compressedFile.getAbsolutePath());
-                return false;
-            }
-            
-            // 如果原始文件已存在，先删除
-            if (versionFile.exists()) {
-                Files.delete(versionFile.toPath());
-            }
-            
-            // 解压缩文件
-            try (java.util.zip.GZIPInputStream gzis = new java.util.zip.GZIPInputStream(new java.io.FileInputStream(compressedFile));
-                 java.io.FileOutputStream fos = new java.io.FileOutputStream(versionFile)) {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = gzis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
-                }
-            }
-            
-            // 删除压缩文件
-            Files.delete(compressedFile.toPath());
-            
-            LOGGER.info("Successfully decompressed config version file: " + compressedFile.getAbsolutePath());
-            return true;
-        } catch (IOException e) {
-            LOGGER.error("Failed to decompress config version for key: " + key + ", version: " + version, e);
-            return false;
         }
     }
 
@@ -465,7 +375,7 @@ public class FileStoreManager extends BaseStoreManager {
             // 对于未压缩的JSON文件，尝试解析以验证格式
             if (isUncompressed) {
                 try {
-                    objectMapper.readValue(file, new TypeReference<Map<String, Object>>() {
+                    JacksonHelper.getObjectMapper().readValue(file, new TypeReference<Map<String, Object>>() {
                     });
                     return true;
                 } catch (IOException e) {
@@ -489,5 +399,11 @@ public class FileStoreManager extends BaseStoreManager {
             LOGGER.error("Error validating version file: " + file.getAbsolutePath(), e);
             return false;
         }
+    }
+
+    @Override
+    public Map<String, Object> getLatestConfig(String configKey) {
+        int latestVersion = getConfigVersions(configKey).stream().max(Integer::compareTo).orElse(0);
+        return getConfigByVersion(configKey, latestVersion);
     }
 }

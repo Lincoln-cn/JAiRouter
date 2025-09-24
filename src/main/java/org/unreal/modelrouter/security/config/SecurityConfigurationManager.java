@@ -12,7 +12,6 @@ import reactor.core.publisher.Mono;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * 安全配置管理器
@@ -230,59 +229,6 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
                 return false;
             }
         });
-    }
-
-    @Override
-    public Mono<String> backupConfiguration() {
-        return Mono.fromCallable(() -> {
-            log.info("创建安全配置备份");
-            
-            try {
-                String backupId = "security-backup-" + System.currentTimeMillis();
-                Map<String, Object> currentConfig = getCurrentPersistedSecurityConfig();
-                
-                // 创建备份（可以扩展为更复杂的备份逻辑）
-                storeManager.saveConfig("security-backup-" + backupId, currentConfig);
-                
-                log.info("安全配置备份创建完成: {}", backupId);
-                return backupId;
-                
-            } catch (Exception e) {
-                log.error("创建安全配置备份失败", e);
-                throw new RuntimeException("创建安全配置备份失败", e);
-            }
-        });
-    }
-
-    @Override
-    public Mono<Void> restoreConfiguration(String backupId) {
-        return Mono.fromRunnable(() -> {
-            log.info("恢复安全配置，备份ID: {}", backupId);
-            
-            try {
-                Map<String, Object> backupConfig = storeManager.getConfig("security-backup-" + backupId);
-                if (backupConfig == null) {
-                    throw new IllegalArgumentException("备份不存在: " + backupId);
-                }
-                
-                // 验证备份配置
-                if (!validateSecurityConfig(backupConfig)) {
-                    throw new IllegalArgumentException("备份配置验证失败: " + backupId);
-                }
-                
-                // 保存为新版本
-                saveSecurityAsNewVersion(backupConfig);
-                
-                // 刷新运行时配置
-                refreshSecurityRuntimeConfig(backupConfig);
-                
-                log.info("安全配置恢复完成，备份ID: {}", backupId);
-                
-            } catch (Exception e) {
-                log.error("恢复安全配置失败，备份ID: " + backupId, e);
-                throw new RuntimeException("恢复安全配置失败", e);
-            }
-        }).then();
     }
 
     @Override

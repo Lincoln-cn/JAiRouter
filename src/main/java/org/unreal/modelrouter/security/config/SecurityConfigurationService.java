@@ -47,19 +47,6 @@ public interface SecurityConfigurationService {
     Mono<Boolean> validateConfiguration(SecurityProperties properties);
     
     /**
-     * 备份当前配置
-     * @return 备份操作结果
-     */
-    Mono<String> backupConfiguration();
-    
-    /**
-     * 从备份恢复配置
-     * @param backupId 备份ID
-     * @return 恢复操作结果
-     */
-    Mono<Void> restoreConfiguration(String backupId);
-    
-    /**
      * 重新加载配置
      * @return 重新加载操作结果
      */

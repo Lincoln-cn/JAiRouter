@@ -150,65 +150,6 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     }
 
     @Override
-    public Mono<String> backupConfiguration() {
-        return Mono.fromCallable(() -> {
-            String backupId = "backup-" + UUID.randomUUID().toString();
-            SecurityProperties backup = copySecurityProperties(securityProperties);
-            
-            // 存储到内存备份
-            configBackups.put(backupId, backup);
-            
-            // 持久化备份
-            // 注意：这里需要将对象转换为Map格式以适配StoreManager接口
-            
-            // 记录备份事件
-            recordConfigurationChange("CONFIG_BACKUP", "系统", "创建配置备份: " + backupId, null, backup);
-            
-            log.info("配置备份创建完成，备份ID: {}", backupId);
-            return backupId;
-        });
-    }
-
-    @Override
-    public Mono<Void> restoreConfiguration(String backupId) {
-        return Mono.fromCallable(() -> {
-            SecurityProperties backup = configBackups.get(backupId);
-            if (backup == null) {
-                // 尝试从持久化存储加载
-                // 注意：这里需要从Map格式转换为对象
-                Map<String, Object> backupMap = storeManager.getConfig(BACKUP_KEY_PREFIX + backupId);
-                if (backupMap != null) {
-                    // 这里需要实现Map到SecurityProperties的转换逻辑
-                    // 暂时返回null，实际实现中需要添加转换逻辑
-                }
-            }
-            
-            if (backup == null) {
-                throw new IllegalArgumentException("备份不存在: " + backupId);
-            }
-            
-            return backup;
-        }).flatMap(backup -> {
-            log.info("开始恢复配置，备份ID: {}", backupId);
-            
-            // 记录当前配置作为变更前的值
-            SecurityProperties oldConfig = copySecurityProperties(securityProperties);
-            
-            // 恢复配置
-            restoreSecurityProperties(backup);
-            
-            // 记录配置变更事件
-            recordConfigurationChange("CONFIG_RESTORE", "系统", "恢复配置: " + backupId, oldConfig, backup);
-            
-            // 发布配置变更事件
-            publishConfigurationChangeEvent("config-restore", oldConfig, backup);
-            
-            log.info("配置恢复完成，备份ID: {}", backupId);
-            return Mono.empty();
-        });
-    }
-
-    @Override
     public Mono<Void> reloadConfiguration() {
         return Mono.fromRunnable(() -> {
             log.info("开始重新加载配置");
@@ -218,17 +159,17 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
                 // 注意：这里需要从Map格式转换为对象
                 Map<String, Object> apiKeysMap = storeManager.getConfig(API_KEYS_KEY);
                 if (apiKeysMap != null) {
-                    // 这里需要实现Map到List<ApiKeyInfo>的转换逻辑
+                    // TODO 这里需要实现Map到List<ApiKeyInfo>的转换逻辑
                 }
                 
                 Map<String, Object> jwtConfigMap = storeManager.getConfig(JWT_CONFIG_KEY);
                 if (jwtConfigMap != null) {
-                    // 这里需要实现Map到JwtConfig的转换逻辑
+                    // TODO这里需要实现Map到JwtConfig的转换逻辑
                 }
                 
                 Map<String, Object> rulesMap = storeManager.getConfig(SANITIZATION_RULES_KEY);
                 if (rulesMap != null) {
-                    // 这里需要实现Map到List<SanitizationRule>的转换逻辑
+                    // TODO这里需要实现Map到List<SanitizationRule>的转换逻辑
                 }
                 // 注意：脱敏规则的应用需要在脱敏服务中处理
                 
