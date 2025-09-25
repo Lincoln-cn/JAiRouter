@@ -116,7 +116,7 @@ jairouter:
             max-idle: 8
             min-idle: 0
         local:
-          enabled: false
+          enabled: true
 
   # 错误追踪配置 - 向后兼容模式
   monitoring:
