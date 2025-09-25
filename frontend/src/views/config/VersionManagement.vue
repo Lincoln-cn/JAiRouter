@@ -5,26 +5,20 @@
         <div class="card-header">
           <div class="header-title">
             <el-icon>
-              <History/>
+              <History />
             </el-icon>
             <span>版本管理</span>
           </div>
           <el-button type="primary" @click="handleRefresh">
             <el-icon>
-              <Refresh/>
+              <Refresh />
             </el-icon>
             刷新
           </el-button>
         </div>
       </template>
 
-      <el-alert
-          :closable="false"
-          class="desc-alert"
-          show-icon
-          title="操作说明"
-          type="info"
-      >
+      <el-alert :closable="false" class="desc-alert" show-icon title="操作说明" type="info">
         <template #description>
           <ul class="desc-list">
             <li><b>应用：</b>将此版本的配置设为当前版本。</li>
@@ -36,12 +30,12 @@
 
       <div class="table-wrap">
         <el-table v-loading="loading" :data="versions" border class="version-table" fit>
-          <el-table-column align="center" label="版本号" prop="version" width="110"/>
+          <el-table-column align="center" label="版本号" prop="version" width="110" />
           <el-table-column align="center" label="状态" prop="status" width="120">
             <template #default="scope">
               <el-tag :type="scope.row.status === 'current' ? 'success' : 'info'" size="large">
                 <el-icon v-if="scope.row.status === 'current'" style="margin-right:2px">
-                  <SuccessFilled/>
+                  <SuccessFilled />
                 </el-icon>
                 {{ scope.row.status === 'current' ? '当前版本' : '历史版本' }}
               </el-tag>
@@ -65,29 +59,20 @@
               <span class="timestamp">{{ formatTimestamp(scope.row.timestamp) }}</span>
             </template>
           </el-table-column>
-          <el-table-column align="center" fixed="right" label="操作" width="240">
+          <el-table-column align="center" fixed="right" label="操作" width="360">
             <template #default="scope">
-              <el-button circle icon="el-icon-view" size="small" title="查看" @click="handleView(scope.row)"/>
-              <el-button
-                  :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
-                  :loading="applyingVersions.has(scope.row.version)"
-                  circle
-                  icon="el-icon-check"
-                  size="small"
-                  title="应用"
-                  type="primary"
-                  @click="handleApply(scope.row)"
-              />
-              <el-button
-                  :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
-                  :loading="deletingVersions.has(scope.row.version)"
-                  circle
-                  icon="el-icon-delete"
-                  size="small"
-                  title="删除"
-                  type="danger"
-                  @click="handleDelete(scope.row)"
-              />
+              <el-button @click="handleView(scope.row)"
+              >
+                查看
+              </el-button>
+              <el-button :disabled="scope.row.status === 'current' || applyingVersions.has(scope.row.version)"
+                :loading="applyingVersions.has(scope.row.version)" type="primary" @click="handleApply(scope.row)">
+                应用
+              </el-button>
+              <el-button :disabled="scope.row.status === 'current' || deletingVersions.has(scope.row.version)"
+                :loading="deletingVersions.has(scope.row.version)" type="danger" @click="handleDelete(scope.row)">
+                删除
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -121,7 +106,7 @@
       <div class="config-preview">
         <div class="preview-title">
           <el-icon>
-            <Document/>
+            <Document />
           </el-icon>
           配置预览
         </div>
@@ -138,24 +123,9 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref} from 'vue'
-import {ElLoading, ElMessage, ElMessageBox} from 'element-plus'
-import {applyVersion, deleteConfigVersion, getAllVersionInfo} from '@/api/config.ts'
-
-// 定义版本配置类型
-interface VersionConfig {
-  [key: string]: any
-}
-
-// 定义版本类型
-interface Version {
-  version: number
-  status: 'current' | 'history'
-  config: VersionConfig
-  operation?: string
-  operationDetail?: string
-  timestamp?: number
-}
+import { onMounted, ref } from 'vue'
+import { ElLoading, ElMessage, ElMessageBox } from 'element-plus'
+import { applyVersion, deleteConfigVersion, getAllVersionInfo, type Version } from '@/api/version.ts'
 
 const versions = ref<Version[]>([])
 const detailDialogVisible = ref(false)
@@ -216,7 +186,7 @@ const getOperationDisplayName = (operation: string | undefined) => {
 const formatTimestamp = (timestamp: number | undefined) => {
   if (!timestamp) return '-'
   const d = new Date(timestamp)
-  return d.toLocaleString('zh-CN', {hour12: false})
+  return d.toLocaleString('zh-CN', { hour12: false })
 }
 
 // 获取版本列表（使用优化接口）
@@ -262,7 +232,7 @@ const handleView = (row: Version) => {
 const handleApply = async (row: Version) => {
   // 显示详细的确认对话框
   const confirmResult = await ElMessageBox.confirm(
-      `
+    `
     <div>
       <p><strong>版本应用确认</strong></p>
       <p>版本号：${row.version}</p>
@@ -274,16 +244,16 @@ const handleApply = async (row: Version) => {
       </p>
     </div>
     `,
-      '应用配置版本',
-      {
-        confirmButtonText: '确定应用',
-        cancelButtonText: '取消',
-        type: 'warning',
-        dangerouslyUseHTMLString: true,
-        showClose: false,
-        closeOnClickModal: false,
-        closeOnPressEscape: false
-      }
+    '应用配置版本',
+    {
+      confirmButtonText: '确定应用',
+      cancelButtonText: '取消',
+      type: 'warning',
+      dangerouslyUseHTMLString: true,
+      showClose: false,
+      closeOnClickModal: false,
+      closeOnPressEscape: false
+    }
   ).catch(() => {
     // 用户取消操作
     return false
@@ -368,7 +338,7 @@ const handleApply = async (row: Version) => {
 
     // 显示详细错误对话框
     ElMessageBox.alert(
-        `
+      `
       <div>
         <p><strong>错误详情：</strong></p>
         <p>${errorMessage}</p>
@@ -381,12 +351,12 @@ const handleApply = async (row: Version) => {
         </p>
       </div>
       `,
-        errorTitle,
-        {
-          confirmButtonText: '我知道了',
-          type: 'error',
-          dangerouslyUseHTMLString: true
-        }
+      errorTitle,
+      {
+        confirmButtonText: '我知道了',
+        type: 'error',
+        dangerouslyUseHTMLString: true
+      }
     )
   } finally {
     // 清除按钮加载状态
@@ -399,7 +369,7 @@ const handleDelete = async (row: Version) => {
   // 检查是否为当前版本
   if (row.status === 'current') {
     ElMessageBox.alert(
-        `
+      `
       <div>
         <p><i class="el-icon-warning" style="color: #e6a23c;"></i> <strong>无法删除当前版本</strong></p>
         <p>版本 ${row.version} 是当前正在使用的版本，不能被删除。</p>
@@ -410,19 +380,19 @@ const handleDelete = async (row: Version) => {
         </p>
       </div>
       `,
-        '删除失败',
-        {
-          confirmButtonText: '我知道了',
-          type: 'warning',
-          dangerouslyUseHTMLString: true
-        }
+      '删除失败',
+      {
+        confirmButtonText: '我知道了',
+        type: 'warning',
+        dangerouslyUseHTMLString: true
+      }
     )
     return
   }
 
   // 显示详细的删除确认对话框
   const confirmResult = await ElMessageBox.confirm(
-      `
+    `
     <div>
       <p><strong>版本删除确认</strong></p>
       <p>版本号：${row.version}</p>
@@ -438,17 +408,17 @@ const handleDelete = async (row: Version) => {
       </p>
     </div>
     `,
-      '删除配置版本',
-      {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
-        type: 'error',
-        dangerouslyUseHTMLString: true,
-        showClose: false,
-        closeOnClickModal: false,
-        closeOnPressEscape: false,
-        buttonSize: 'default'
-      }
+    '删除配置版本',
+    {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'error',
+      dangerouslyUseHTMLString: true,
+      showClose: false,
+      closeOnClickModal: false,
+      closeOnPressEscape: false,
+      buttonSize: 'default'
+    }
   ).catch(() => {
     // 用户取消操作
     return false
@@ -569,6 +539,7 @@ onMounted(() => {
 .version-dialog :deep(.el-descriptions__label) {
   font-weight: 600;
 }
+
 .config-preview {
   max-height: 300px;
   overflow-y: auto;
@@ -578,6 +549,7 @@ onMounted(() => {
   margin-top: 12px;
   padding: 12px 12px 0 12px;
 }
+
 .config-preview pre {
   background: transparent;
   padding: 0;
