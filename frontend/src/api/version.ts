@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { RouterResponse } from '@/types'
+import type {RouterResponse} from '@/types'
 
 // 定义版本配置类型
 export interface VersionConfig {
@@ -34,6 +34,10 @@ export const getAllVersionInfo = () => {
 // 应用指定版本的配置
 export const applyVersion = (version: number) => {
   return request.post<RouterResponse<void>>(`/config/version/apply/${version}`)
+}
+// 获取指定版本号的详情信息
+export const getConfigByVersion = (version: number) => {
+    return request.get<RouterResponse<Record<string, any>>>(`/config/version/${version}`)
 }
 
 // 删除指定版本的配置

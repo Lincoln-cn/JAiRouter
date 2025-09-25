@@ -76,23 +76,19 @@ public class ServiceInstanceController {
     public ResponseEntity<RouterResponse<Map<String, Object>>> getServiceInstance(
             @Parameter(description = "服务类型", example = "chat")
             @PathVariable("serviceType") String serviceType,
-            @Parameter(description = "模型名称", example = "qwen2:7b")
-            @RequestParam String modelName,
-            @Parameter(description = "基础URL", example = "http://localhost:8000")
-            @RequestParam String baseUrl) {
+            @RequestParam String instanceId) {
         try {
             // 使用ConfigurationService生成实例ID
-            String decodedInstanceId = configurationService.buildInstanceId(modelName, baseUrl);
-            Map<String, Object> instance = configurationService.getServiceInstance(serviceType, decodedInstanceId);
+            Map<String, Object> instance = configurationService.getServiceInstance(serviceType, instanceId);
 
             if (instance == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(RouterResponse.error("实例不存在: " + decodedInstanceId));
+                        .body(RouterResponse.error("实例不存在: " + instanceId));
             }
 
             return ResponseEntity.ok(RouterResponse.success(instance, "获取实例信息成功"));
         } catch (Exception e) {
-            logger.error("获取实例信息失败: serviceType={}, modelName={} , baseUrl={}", serviceType, modelName, baseUrl, e);
+            logger.error("获取实例信息失败: serviceType={}, instanceId={}", serviceType, instanceId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(RouterResponse.error("获取实例信息失败: " + e.getMessage()));
         }

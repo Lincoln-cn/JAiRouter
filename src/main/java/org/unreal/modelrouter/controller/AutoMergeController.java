@@ -50,44 +50,11 @@ public class AutoMergeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<Integer, String>>> scanVersionFiles() {
         logger.info("接收到扫描配置文件请求");
-        
-        try {
-            Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
-            return ResponseEntity.ok(RouterResponse.success(versionFiles,
-                    String.format("扫描完成，找到 %d 个版本文件", versionFiles.size())));
-            
-        } catch (Exception e) {
-            logger.error("扫描配置文件时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("扫描失败: " + e.getMessage()));
-        }
-    }
 
+        Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
+        return ResponseEntity.ok(RouterResponse.success(versionFiles,
+                String.format("扫描完成，找到 %d 个版本文件", versionFiles.size())));
 
-    /**
-     * 从版本管理系统扫描版本文件
-     *
-     * @return 版本文件映射
-     */
-    @GetMapping("/scan/version-manager")
-    @Operation(summary = "从版本管理系统扫描版本", description = "从版本管理系统获取所有可用版本")
-    @ApiResponse(responseCode = "200", description = "扫描成功",
-            content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = RouterResponse.class)))
-    @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Map<Integer, String>>> scanVersionFilesFromVersionManager() {
-        logger.info("接收到从版本管理系统扫描版本请求");
-
-        try {
-            Map<Integer, String> versionFiles = autoMergeService.scanVersionFilesFromVersionManager();
-            return ResponseEntity.ok(RouterResponse.success(versionFiles,
-                    String.format("从版本管理系统扫描完成，找到 %d 个版本", versionFiles.size())));
-
-        } catch (Exception e) {
-            logger.error("从版本管理系统扫描版本时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("扫描失败: " + e.getMessage()));
-        }
     }
 
     /**
@@ -103,84 +70,39 @@ public class AutoMergeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getMergePreview() {
         logger.info("接收到获取合并预览请求");
-        
-        try {
-            Map<String, Object> preview = autoMergeService.getMergePreview();
-            
-            if (preview.containsKey("error")) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error("预览生成失败: " + preview.get("error")));
-            }
-            
-            return ResponseEntity.ok(RouterResponse.success(preview, "预览生成成功"));
-            
-        } catch (Exception e) {
-            logger.error("生成合并预览时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("预览生成失败: " + e.getMessage()));
+        Map<String, Object> preview = autoMergeService.getMergePreview();
+
+        if (preview.containsKey("error")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(RouterResponse.error("预览生成失败: " + preview.get("error")));
         }
+        return ResponseEntity.ok(RouterResponse.success(preview, "预览生成成功"));
+
     }
 
-    /**
-     * 获取基于版本管理系统的合并预览
-     *
-     * @return 合并预览结果
-     */
-    @GetMapping("/preview/version-manager")
-    @Operation(summary = "获取版本管理系统合并预览", description = "基于版本管理系统预览配置合并后的结果")
-    @ApiResponse(responseCode = "200", description = "预览生成成功",
-            content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = RouterResponse.class)))
-    @ApiResponse(responseCode = "400", description = "没有找到可合并的版本")
-    @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Map<String, Object>>> getMergePreviewFromVersionManager() {
-        logger.info("接收到获取版本管理系统合并预览请求");
-
-        try {
-            Map<String, Object> preview = autoMergeService.getMergePreviewFromVersionManager();
-
-            if (preview.containsKey("error")) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error("预览生成失败: " + preview.get("error")));
-            }
-
-            return ResponseEntity.ok(RouterResponse.success(preview, "版本管理系统预览生成成功"));
-
-        } catch (Exception e) {
-            logger.error("生成版本管理系统合并预览时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("预览生成失败: " + e.getMessage()));
-        }
-    }
     /**
      * 执行自动合并
      * @return 合并结果
      */
     @PostMapping("/execute")
-    @Operation(summary = "执行自动合并", description = "合并 config 目录下的多版本配置文件，并重置版本从1开始")
+    @Operation(summary = "执行自动合并", description = "合并 config 目录下的多版本配置文件，并重置版本")
     @ApiResponse(responseCode = "200", description = "合并成功",
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "合并失败，没有找到可合并的文件")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<MergeResult>> performAutoMerge() {
+    public ResponseEntity<RouterResponse<MergeResult>> performMerge() {
         logger.info("接收到执行自动合并请求");
 
-        try {
-            MergeResult result = autoMergeService.performAutoMerge();
-            
-            if (result.success()) {
-                return ResponseEntity.ok(RouterResponse.success(result, result.message()));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error(result.message()));
-            }
-            
-        } catch (Exception e) {
-            logger.error("执行自动合并时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("合并失败: " + e.getMessage()));
+        MergeResult result = autoMergeService.performMerge();
+
+        if (result.success()) {
+            return ResponseEntity.ok(RouterResponse.success(result, result.message()));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(RouterResponse.error(result.message()));
         }
+
     }
 
     /**
@@ -197,21 +119,15 @@ public class AutoMergeController {
     public ResponseEntity<RouterResponse<MergeResult>> backupConfigFiles() {
         logger.info("接收到备份配置文件请求");
 
-        try {
-            MergeResult result = autoMergeService.backupConfigFiles();
-            
-            if (result.success()) {
-                return ResponseEntity.ok(RouterResponse.success(result, result.message()));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error(result.message()));
-            }
-            
-        } catch (Exception e) {
-            logger.error("备份配置文件时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("备份失败: " + e.getMessage()));
+        MergeResult result = autoMergeService.backupConfigFiles();
+
+        if (result.success()) {
+            return ResponseEntity.ok(RouterResponse.success(result, result.message()));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(RouterResponse.error(result.message()));
         }
+
     }
 
     /**
@@ -229,24 +145,18 @@ public class AutoMergeController {
     public ResponseEntity<RouterResponse<MergeResult>> cleanupConfigFiles(
             @Parameter(description = "是否删除原始配置文件", example = "false")
             @RequestParam(defaultValue = "false") boolean deleteOriginals) {
-        
+
         logger.info("接收到清理配置文件请求，删除原始文件: {}", deleteOriginals);
 
-        try {
-            MergeResult result = autoMergeService.cleanupConfigFiles(deleteOriginals);
-            
-            if (result.success()) {
-                return ResponseEntity.ok(RouterResponse.success(result, result.message()));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error(result.message()));
-            }
-            
-        } catch (Exception e) {
-            logger.error("清理配置文件时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("清理失败: " + e.getMessage()));
+        MergeResult result = autoMergeService.cleanupConfigFiles(deleteOriginals);
+
+        if (result.success()) {
+            return ResponseEntity.ok(RouterResponse.success(result, result.message()));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(RouterResponse.error(result.message()));
         }
+
     }
 
     /**
@@ -261,24 +171,18 @@ public class AutoMergeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getServiceStatus() {
         logger.info("接收到获取合并服务状态请求");
-        
-        try {
-            Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
-            
-            Map<String, Object> statusData = Map.of(
-                    "availableVersionFiles", versionFiles.size(),
-                    "versionFiles", versionFiles,
-                    "configDirectory", "config",
-                    "serviceReady", true
-            );
-            
-            return ResponseEntity.ok(RouterResponse.success(statusData, "状态获取成功"));
-            
-        } catch (Exception e) {
-            logger.error("获取合并服务状态时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("状态获取失败: " + e.getMessage()));
-        }
+
+        Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
+
+        Map<String, Object> statusData = Map.of(
+                "availableVersionFiles", versionFiles.size(),
+                "versionFiles", versionFiles,
+                "configDirectory", "config",
+                "serviceReady", true
+        );
+
+        return ResponseEntity.ok(RouterResponse.success(statusData, "状态获取成功"));
+
     }
 
     /**
@@ -296,70 +200,64 @@ public class AutoMergeController {
     public ResponseEntity<RouterResponse<Map<String, Object>>> performBatchOperation(
             @Parameter(description = "是否删除原始配置文件", example = "false")
             @RequestParam(defaultValue = "false") boolean deleteOriginals) {
-        
+
         logger.info("接收到批量操作请求，删除原始文件: {}", deleteOriginals);
-        
-        try {
-            Map<String, Object> backupMap = new HashMap<>();
-            backupMap.put("executed", false);
-            backupMap.put("result", null);
-            
-            Map<String, Object> mergeMap = new HashMap<>();
-            mergeMap.put("executed", false);
-            mergeMap.put("result", null);
-            
-            Map<String, Object> cleanupMap = new HashMap<>();
-            cleanupMap.put("executed", false);
-            cleanupMap.put("result", null);
-            
-            Map<String, Object> batchResult = new HashMap<>();
-            batchResult.put("backup", backupMap);
-            batchResult.put("merge", mergeMap);
-            batchResult.put("cleanup", cleanupMap);
-            
-            // 1. 备份
-            logger.info("开始执行备份操作");
-            MergeResult backupResult = autoMergeService.backupConfigFiles();
-            ((Map<String, Object>) batchResult.get("backup")).put("executed", true);
-            ((Map<String, Object>) batchResult.get("backup")).put("result", backupResult);
-            
-            if (!backupResult.success()) {
-                logger.warn("备份操作失败，终止批量操作");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error("批量操作失败：备份阶段失败 - " + backupResult.message()));
-            }
-            
-            // 2. 合并
-            logger.info("开始执行合并操作");
-            MergeResult mergeResult = autoMergeService.performAutoMerge();
-            ((Map<String, Object>) batchResult.get("merge")).put("executed", true);
-            ((Map<String, Object>) batchResult.get("merge")).put("result", mergeResult);
-            
-            if (!mergeResult.success()) {
-                logger.warn("合并操作失败，终止批量操作");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(RouterResponse.error("批量操作失败：合并阶段失败 - " + mergeResult.message()));
-            }
-            
-            // 3. 清理（可选）
-            if (deleteOriginals) {
-                logger.info("开始执行清理操作");
-                MergeResult cleanupResult = autoMergeService.cleanupConfigFiles(true);
-                ((Map<String, Object>) batchResult.get("cleanup")).put("executed", true);
-                ((Map<String, Object>) batchResult.get("cleanup")).put("result", cleanupResult);
-                
-                if (!cleanupResult.success()) {
-                    logger.warn("清理操作失败，但不影响整体结果");
-                }
-            }
-            
-            return ResponseEntity.ok(RouterResponse.success(batchResult, "批量操作完成"));
-            
-        } catch (Exception e) {
-            logger.error("批量操作时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("批量操作失败: " + e.getMessage()));
+
+        Map<String, Object> backupMap = new HashMap<>();
+        backupMap.put("executed", false);
+        backupMap.put("result", null);
+
+        Map<String, Object> mergeMap = new HashMap<>();
+        mergeMap.put("executed", false);
+        mergeMap.put("result", null);
+
+        Map<String, Object> cleanupMap = new HashMap<>();
+        cleanupMap.put("executed", false);
+        cleanupMap.put("result", null);
+
+        Map<String, Object> batchResult = new HashMap<>();
+        batchResult.put("backup", backupMap);
+        batchResult.put("merge", mergeMap);
+        batchResult.put("cleanup", cleanupMap);
+
+        // 1. 备份
+        logger.info("开始执行备份操作");
+        MergeResult backupResult = autoMergeService.backupConfigFiles();
+        ((Map<String, Object>) batchResult.get("backup")).put("executed", true);
+        ((Map<String, Object>) batchResult.get("backup")).put("result", backupResult);
+
+        if (!backupResult.success()) {
+            logger.warn("备份操作失败，终止批量操作");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(RouterResponse.error("批量操作失败：备份阶段失败 - " + backupResult.message()));
         }
+
+        // 2. 合并
+        logger.info("开始执行合并操作");
+        MergeResult mergeResult = autoMergeService.performMerge();
+        ((Map<String, Object>) batchResult.get("merge")).put("executed", true);
+        ((Map<String, Object>) batchResult.get("merge")).put("result", mergeResult);
+
+        if (!mergeResult.success()) {
+            logger.warn("合并操作失败，终止批量操作");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(RouterResponse.error("批量操作失败：合并阶段失败 - " + mergeResult.message()));
+        }
+
+        // 3. 清理（可选）
+        if (deleteOriginals) {
+            logger.info("开始执行清理操作");
+            MergeResult cleanupResult = autoMergeService.cleanupConfigFiles(true);
+            ((Map<String, Object>) batchResult.get("cleanup")).put("executed", true);
+            ((Map<String, Object>) batchResult.get("cleanup")).put("result", cleanupResult);
+
+            if (!cleanupResult.success()) {
+                logger.warn("清理操作失败，但不影响整体结果");
+            }
+        }
+
+        return ResponseEntity.ok(RouterResponse.success(batchResult, "批量操作完成"));
+
     }
 
     /**
@@ -374,24 +272,18 @@ public class AutoMergeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Object>>> validateConfigFiles() {
         logger.info("接收到验证配置文件请求");
-        
-        try {
-            Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
-            Map<String, Object> validationResult = Map.of(
-                    "totalFiles", versionFiles.size(),
-                    "validFiles", versionFiles.size(), // 简化实现，实际应该验证每个文件
-                    "invalidFiles", 0,
-                    "details", versionFiles
-            );
-            
-            return ResponseEntity.ok(RouterResponse.success(validationResult, 
-                    String.format("验证完成，共 %d 个文件", versionFiles.size())));
-            
-        } catch (Exception e) {
-            logger.error("验证配置文件时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("验证失败: " + e.getMessage()));
-        }
+
+        Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
+        Map<String, Object> validationResult = Map.of(
+                "totalFiles", versionFiles.size(),
+                "validFiles", versionFiles.size(), // 简化实现，实际应该验证每个文件
+                "invalidFiles", 0,
+                "details", versionFiles
+        );
+
+        return ResponseEntity.ok(RouterResponse.success(validationResult,
+                String.format("验证完成，共 %d 个文件", versionFiles.size())));
+
     }
 
     /**
@@ -406,26 +298,20 @@ public class AutoMergeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getConfigStatistics() {
         logger.info("接收到获取配置文件统计信息请求");
-        
-        try {
-            Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
-            Map<String, Object> preview = autoMergeService.getMergePreview();
-            
-            Map<String, Object> statistics = Map.of(
-                    "totalVersionFiles", versionFiles.size(),
-                    "oldestVersion", versionFiles.isEmpty() ? null : versionFiles.keySet().iterator().next(),
-                    "newestVersion", versionFiles.isEmpty() ? null : 
-                            versionFiles.keySet().stream().max(Integer::compareTo).orElse(null),
-                    "previewAvailable", !preview.containsKey("error"),
-                    "configDirectory", "config"
-            );
-            
-            return ResponseEntity.ok(RouterResponse.success(statistics, "统计信息获取成功"));
-            
-        } catch (Exception e) {
-            logger.error("获取配置文件统计信息时发生错误", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("统计信息获取失败: " + e.getMessage()));
-        }
+
+        Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
+        Map<String, Object> preview = autoMergeService.getMergePreview();
+
+        Map<String, Object> statistics = Map.of(
+                "totalVersionFiles", versionFiles.size(),
+                "oldestVersion", versionFiles.isEmpty() ? null : versionFiles.keySet().iterator().next(),
+                "newestVersion", versionFiles.isEmpty() ? null :
+                        versionFiles.keySet().stream().max(Integer::compareTo).orElse(null),
+                "previewAvailable", !preview.containsKey("error"),
+                "configDirectory", "config"
+        );
+
+        return ResponseEntity.ok(RouterResponse.success(statistics, "统计信息获取成功"));
+
     }
 }
