@@ -78,3 +78,37 @@ export interface MergeResult {
   success: boolean
   message: string
 }
+
+// API Key Management Types
+export interface ApiKeyInfo {
+  keyId: string
+  description: string
+  createdAt: string
+  expiresAt: string
+  enabled: boolean
+  permissions: string[]
+  expired?: boolean
+}
+
+export interface ApiKeyCreationResponse {
+  keyId: string
+  keyValue: string
+  description: string
+  createdAt: string
+}
+
+// API Key Management Request Types
+export interface CreateApiKeyRequest {
+  keyId?: string
+  description: string
+  permissions: string[]
+  enabled?: boolean
+  expiresAt?: string
+}
+
+export interface UpdateApiKeyRequest {
+  description?: string
+  permissions?: string[]
+  enabled?: boolean
+  expiresAt?: string
+}
