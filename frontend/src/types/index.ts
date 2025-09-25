@@ -40,3 +40,41 @@ export interface DashboardOverview {
     diskUsage: number
   }
 }
+
+// Config Merge Management Types
+export interface VersionFile {
+  version: number
+  filePath: string
+}
+
+export interface Statistics {
+  totalVersionFiles?: number
+  oldestVersion?: number | null
+  newestVersion?: number | null
+  previewAvailable?: boolean
+}
+
+export interface ServiceStatus {
+  availableVersionFiles?: number
+  configDirectory?: string
+  serviceReady?: boolean
+}
+
+export interface MergePreviewData {
+  mergedConfig?: Record<string, any>
+  mergeStatistics?: {
+    sourceVersionCount?: number
+    totalServiceTypes?: number
+    totalSourceInstances?: number
+    mergedInstances?: number
+    instanceReduction?: number
+    mergedServiceTypes?: number
+  }
+}
+
+export interface MergeResult {
+  conflicts?: string[]
+  warnings?: string[]
+  success: boolean
+  message: string
+}
