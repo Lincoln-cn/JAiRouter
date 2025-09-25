@@ -106,4 +106,16 @@ public class ConfigMetadata {
     public boolean hasVersion(int version) {
         return existingVersions != null && existingVersions.contains(version);
     }
+
+
+    public void clean() {
+        configKey = "";
+        currentVersion = -99;
+        initialVersion = -99;
+        createdAt = LocalDateTime.now();
+        lastModified = LocalDateTime.now();
+        lastModifiedBy = "Merge";
+        totalVersions = 0;
+        existingVersions = new HashSet<>();
+    }
 }
