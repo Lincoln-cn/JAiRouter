@@ -59,7 +59,7 @@ jairouter:
         - keyId: "dev-admin-key"
           keyValue: "dev-admin-12345-abcde-67890-fghij"
           description: "开发环境管理员测试密钥"
-          permissions: ["admin", "read", "write", "delete"]
+          permissions: ["ADMIN", "READ", "WRITE", "DELETE"]
           expiresAt: "2025-12-31T23:59:59"
           enabled: true
           metadata:
@@ -68,7 +68,7 @@ jairouter:
         - keyId: "dev-user-key"
           keyValue: "dev-user-67890-klmno-12345-pqrst"
           description: "开发环境普通用户测试密钥"
-          permissions: ["read"]
+          permissions: ["READ"]
           expiresAt: "2025-06-30T23:59:59"
           enabled: true
           metadata:
