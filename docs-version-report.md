@@ -2,20 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 131
-- 近7天变更: 7
+- 总文档数: 135
+- 近7天变更: 13
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-09-24 02:58:52
+- 最后扫描: 2025-09-25 03:01:10
 
 ## 最近变更
 
+- **CREATED**: docs/zh/configuration/version-management.md ( → 1.0.0) - 2025-09-25
+- **CREATED**: docs/zh/configuration/store-config.md ( → 1.0.0) - 2025-09-25
+- **MODIFIED**: docs/zh/configuration/index.md (1.0.1 → 1.0.2) - 2025-09-25
+- **CREATED**: docs/en/configuration/version-management.md ( → 1.0.0) - 2025-09-25
+- **CREATED**: docs/en/configuration/store-config.md ( → 1.0.0) - 2025-09-25
+- **MODIFIED**: docs/en/configuration/index.md (1.0.1 → 1.0.2) - 2025-09-25
+- **MODIFIED**: docs-version-report.md (1.0.37 → 1.0.38) - 2025-09-25
 - **MODIFIED**: docs-version-report.md (1.0.36 → 1.0.37) - 2025-09-24
 - **MODIFIED**: docs-version-report.md (1.0.35 → 1.0.36) - 2025-09-23
 - **MODIFIED**: docs-version-report.md (1.0.34 → 1.0.35) - 2025-09-22
-- **MODIFIED**: docs-version-report.md (1.0.33 → 1.0.34) - 2025-09-21
-- **MODIFIED**: docs-version-report.md (1.0.32 → 1.0.33) - 2025-09-20
-- **MODIFIED**: docs-version-report.md (1.0.31 → 1.0.32) - 2025-09-19
-- **MODIFIED**: docs-version-report.md (1.0.30 → 1.0.31) - 2025-09-18
 
 ## 过期文档 (30天未更新)
 
@@ -41,12 +44,14 @@
   - docs/en/configuration/load-balancing.md
   - docs/en/configuration/rate-limiting.md
   - docs/en/monitoring/index.md
-- **docs/en/configuration/index.md**: 依赖 5 个文档
+- **docs/en/configuration/index.md**: 依赖 7 个文档
   - docs/en/configuration/application-config.md
   - docs/en/configuration/circuit-breaker.md
   - docs/en/configuration/dynamic-config.md
   - docs/en/configuration/load-balancing.md
   - docs/en/configuration/rate-limiting.md
+  - docs/en/configuration/store-config.md
+  - docs/en/configuration/version-management.md
 - **docs/en/configuration/load-balancing.md**: 依赖 3 个文档
   - docs/en/configuration/circuit-breaker.md
   - docs/en/configuration/rate-limiting.md
@@ -183,12 +188,14 @@
   - docs/zh/configuration/load-balancing.md
   - docs/zh/configuration/rate-limiting.md
   - docs/zh/monitoring/index.md
-- **docs/zh/configuration/index.md**: 依赖 5 个文档
+- **docs/zh/configuration/index.md**: 依赖 7 个文档
   - docs/zh/configuration/application-config.md
   - docs/zh/configuration/circuit-breaker.md
   - docs/zh/configuration/dynamic-config.md
   - docs/zh/configuration/load-balancing.md
   - docs/zh/configuration/rate-limiting.md
+  - docs/zh/configuration/store-config.md
+  - docs/zh/configuration/version-management.md
 - **docs/zh/configuration/load-balancing.md**: 依赖 4 个文档
   - docs/zh/configuration/circuit-breaker.md
   - docs/zh/configuration/rate-limiting.md
@@ -457,7 +464,13 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.37 - 2025-09-24 (153f47ae)
+- **docs/zh/configuration/version-management.md**: v1.0.0 - 2025-09-25 (32bd1673)
+- **docs/zh/configuration/store-config.md**: v1.0.0 - 2025-09-25 (21313fa8)
+- **docs/zh/configuration/index.md**: v1.0.2 - 2025-09-25 (32bd1673)
+- **docs/en/configuration/version-management.md**: v1.0.0 - 2025-09-25 (32bd1673)
+- **docs/en/configuration/store-config.md**: v1.0.0 - 2025-09-25 (32bd1673)
+- **docs/en/configuration/index.md**: v1.0.2 - 2025-09-25 (32bd1673)
+- **docs-version-report.md**: v1.0.38 - 2025-09-25 (69c9f693)
 - **docs/zh/configuration/application-config.md**: v1.0.2 - 2025-09-06 (dbe39921)
 - **docs/en/deployment/production.md**: v1.0.2 - 2025-09-06 (dbe39921)
 - **docs/en/deployment/kubernetes.md**: v1.0.3 - 2025-09-06 (dbe39921)
@@ -527,7 +540,6 @@
 - **docs/zh/configuration/rate-limiting.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/configuration/modular-config.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/zh/configuration/load-balancing.md**: v1.0.1 - 2025-08-29 (dbe39921)
-- **docs/zh/configuration/index.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/configuration/dynamic-config.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/configuration/circuit-breaker.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/api-reference/universal-api.md**: v1.0.1 - 2025-08-29 (dbe39921)
@@ -576,7 +588,6 @@
 - **docs/en/configuration/rate-limiting.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/configuration/modular-config.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/en/configuration/load-balancing.md**: v1.0.1 - 2025-08-29 (dbe39921)
-- **docs/en/configuration/index.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/configuration/dynamic-config.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/configuration/circuit-breaker.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/api-reference/universal-api.md**: v1.0.1 - 2025-08-29 (dbe39921)
