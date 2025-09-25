@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.37",
-      "LastModified": "2025-09-24T02:58:51.816709",
-      "ContentHash": "7b95aec9ae4a4879",
-      "GitCommit": "153f47ae",
+      "Version": "1.0.38",
+      "LastModified": "2025-09-25T03:01:10.338154",
+      "ContentHash": "2bb887ab4d4d6f45",
+      "GitCommit": "69c9f693",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -129,10 +129,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.141732",
-      "ContentHash": "10c1c5773774bf2c",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.2",
+      "LastModified": "2025-09-25T03:01:10.363306",
+      "ContentHash": "6a5d143d1936d04e",
+      "GitCommit": "32bd1673",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -140,7 +140,9 @@
         "docs/en/configuration/circuit-breaker.md",
         "docs/en/configuration/dynamic-config.md",
         "docs/en/configuration/load-balancing.md",
-        "docs/en/configuration/rate-limiting.md"
+        "docs/en/configuration/rate-limiting.md",
+        "docs/en/configuration/store-config.md",
+        "docs/en/configuration/version-management.md"
       ]
     },
     "docs/en/configuration/load-balancing.md": {
@@ -731,10 +733,10 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.319542",
-      "ContentHash": "ea27b354cbab8d89",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.2",
+      "LastModified": "2025-09-25T03:01:10.530351",
+      "ContentHash": "3899f4479074afc4",
+      "GitCommit": "32bd1673",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -742,7 +744,9 @@
         "docs/zh/configuration/circuit-breaker.md",
         "docs/zh/configuration/dynamic-config.md",
         "docs/zh/configuration/load-balancing.md",
-        "docs/zh/configuration/rate-limiting.md"
+        "docs/zh/configuration/rate-limiting.md",
+        "docs/zh/configuration/store-config.md",
+        "docs/zh/configuration/version-management.md"
       ]
     },
     "docs/zh/configuration/load-balancing.md": {
@@ -1739,6 +1743,46 @@
         "docs/zh/tracing/performance-tuning.md",
         "docs/zh/tracing/troubleshooting.md"
       ]
+    },
+    "docs/en/configuration/store-config.md": {
+      "FilePath": "docs/en/configuration/store-config.md",
+      "Version": "1.0.0",
+      "LastModified": "2025-09-25T03:01:10.372871",
+      "ContentHash": "4b71cedad194dee7",
+      "GitCommit": "32bd1673",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/en/configuration/version-management.md": {
+      "FilePath": "docs/en/configuration/version-management.md",
+      "Version": "1.0.0",
+      "LastModified": "2025-09-25T03:01:10.374676",
+      "ContentHash": "8fc4a0f1f3d5e4c8",
+      "GitCommit": "32bd1673",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/zh/configuration/store-config.md": {
+      "FilePath": "docs/zh/configuration/store-config.md",
+      "Version": "1.0.0",
+      "LastModified": "2025-09-25T03:01:10.540187",
+      "ContentHash": "20a8b939bdaadc79",
+      "GitCommit": "21313fa8",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/zh/configuration/version-management.md": {
+      "FilePath": "docs/zh/configuration/version-management.md",
+      "Version": "1.0.0",
+      "LastModified": "2025-09-25T03:01:10.542024",
+      "ContentHash": "969095a64644f8bf",
+      "GitCommit": "32bd1673",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
     }
   },
   "changes": [
@@ -4333,7 +4377,63 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-09-24T02:58:51.816716",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.37",
+      "NewVersion": "1.0.38",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-25T03:01:10.338160",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-25T03:01:10.363319",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/store-config.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2025-09-25T03:01:10.372875",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/configuration/version-management.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2025-09-25T03:01:10.374681",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-09-25T03:01:10.530358",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/store-config.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2025-09-25T03:01:10.540192",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/configuration/version-management.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2025-09-25T03:01:10.542029",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2025-09-24T02:58:52.206410"
+  "last_updated": "2025-09-25T03:01:10.795675"
 }
