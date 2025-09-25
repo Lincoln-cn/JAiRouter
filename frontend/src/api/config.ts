@@ -1,55 +1,5 @@
 import request from '@/utils/request'
-import type {RouterResponse} from '@/types'
-
-// 定义版本配置类型
-export interface ConfigVersion {
-  version: number
-  config: Record<string, any>
-  createTime?: string
-  description?: string
-}
-
-// 定义版本信息类型
-export interface VersionInfo {
-  version: number
-  config: Record<string, any>
-  current: boolean
-    operation?: string
-    operationDetail?: string
-    timestamp?: number
-}
-
-// 获取配置的所有版本列表
-export const getConfigVersions = () => {
-  return request.get<RouterResponse<number[]>>('/config/version')
-}
-
-// 获取当前配置版本
-export const getCurrentVersion = () => {
-  return request.get<RouterResponse<number>>('/config/version/current')
-}
-
-// 获取指定版本的配置详情
-export const getConfigByVersion = (version: number) => {
-  return request.get<RouterResponse<Record<string, any>>>(`/config/version/${version}`)
-}
-
-// 应用指定版本的配置
-// 将指定版本的配置内容设置为当前配置，用于复用历史配置
-// 应用操作会创建一个新的版本记录
-export const applyVersion = (version: number) => {
-  return request.post<RouterResponse<void>>(`/config/version/apply/${version}`)
-}
-
-// 删除指定版本的配置
-export const deleteConfigVersion = (version: number) => {
-  return request.delete<RouterResponse<void>>(`/config/version/${version}`)
-}
-
-// 获取所有版本的详细信息（优化接口）
-export const getAllVersionInfo = () => {
-  return request.get<RouterResponse<VersionInfo[]>>('/config/version/info')
-}
+import type { RouterResponse, Statistics, ServiceStatus, MergePreviewData, MergeResult } from '@/types'
 
 // 配置合并相关接口
 // 扫描版本配置文件
@@ -59,12 +9,12 @@ export const scanVersionFiles = () => {
 
 // 获取合并预览
 export const getMergePreview = () => {
-  return request.get<RouterResponse<Record<string, any>>>('/config/merge/preview')
+  return request.get<RouterResponse<MergePreviewData>>('/config/merge/preview')
 }
 
 // 执行自动合并
 export const performAutoMerge = () => {
-  return request.post<RouterResponse<any>>('/config/merge/execute')
+  return request.post<RouterResponse<MergeResult>>('/config/merge/execute')
 }
 
 // 备份配置文件
@@ -81,12 +31,12 @@ export const cleanupConfigFiles = (deleteOriginals: boolean = false) => {
 
 // 获取合并服务状态
 export const getMergeServiceStatus = () => {
-  return request.get<RouterResponse<Record<string, any>>>('/config/merge/status')
+  return request.get<RouterResponse<ServiceStatus>>('/config/merge/status')
 }
 
 // 批量操作：备份 + 合并 + 清理
 export const performBatchOperation = (deleteOriginals: boolean = false) => {
-  return request.post<RouterResponse<Record<string, any>>>('/config/merge/batch', null, {
+  return request.post<RouterResponse<MergeResult>>('/config/merge/batch', null, {
     params: { deleteOriginals }
   })
 }
@@ -98,7 +48,17 @@ export const validateConfigFiles = () => {
 
 // 获取配置文件统计信息
 export const getConfigStatistics = () => {
-  return request.get<RouterResponse<Record<string, any>>>('/config/merge/statistics')
+  return request.get<RouterResponse<Statistics>>('/config/merge/statistics')
+}
+
+// 预览指定版本的配置文件内容
+export const previewConfigFile = (version: number) => {
+  return request.get<RouterResponse<Record<string, any>>>(`/config/merge/preview/${version}`)
+}
+
+// 删除指定版本的配置文件
+export const deleteConfigFile = (version: number) => {
+  return request.delete<RouterResponse<any>>(`/config/version/${version}`)
 }
 
 // 版本管理系统集成接口
@@ -109,15 +69,15 @@ export const scanVersionFilesFromVersionManager = () => {
 
 // 获取基于版本管理系统的合并预览
 export const getMergePreviewFromVersionManager = () => {
-    return request.get<RouterResponse<Record<string, any>>>('/config/merge/preview/version-manager')
+    return request.get<RouterResponse<MergePreviewData>>('/config/merge/preview/version-manager')
 }
 
 // 执行基于版本管理系统的自动合并
 export const performAutoMergeWithVersionManager = () => {
-    return request.post<RouterResponse<any>>('/config/merge/execute/version-manager')
+    return request.post<RouterResponse<MergeResult>>('/config/merge/execute/version-manager')
 }
 
 // 执行原子性配置合并操作
 export const performAtomicMergeWithVersionManager = () => {
-    return request.post<RouterResponse<any>>('/config/merge/execute/atomic')
+    return request.post<RouterResponse<MergeResult>>('/config/merge/execute/atomic')
 }

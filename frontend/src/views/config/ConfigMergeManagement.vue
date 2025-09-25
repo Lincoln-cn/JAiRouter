@@ -288,6 +288,7 @@ import {ElMessage, ElMessageBox} from 'element-plus'
 import {
   backupConfigFiles,
   cleanupConfigFiles,
+  deleteConfigFile,
   getConfigStatistics,
   getMergePreview,
   getMergePreviewFromVersionManager,
@@ -296,9 +297,11 @@ import {
   performAutoMerge,
   performAutoMergeWithVersionManager,
   performBatchOperation,
+  previewConfigFile,
   scanVersionFiles,
   scanVersionFilesFromVersionManager
 } from '@/api/config.ts'
+import type { VersionFile, Statistics, ServiceStatus, MergePreviewData, MergeResult } from '@/types'
 import {
   Coin,
   Connection,
@@ -316,24 +319,6 @@ import {
   Upload,
   View,
 } from '@element-plus/icons-vue'
-
-interface VersionFile {
-  version: number
-  filePath: string
-}
-
-interface Statistics {
-  totalVersionFiles?: number
-  oldestVersion?: number | null
-  newestVersion?: number | null
-  previewAvailable?: boolean
-}
-
-interface ServiceStatus {
-  availableVersionFiles?: number
-  configDirectory?: string
-  serviceReady?: boolean
-}
 
 interface OperationLog {
   timestamp: string
@@ -353,7 +338,7 @@ const atomicMergeLoading = ref(false)
 
 const versionFiles = ref<Record<number, string>>({})
 const versionFilesList = ref<VersionFile[]>([])
-const previewData = ref<Record<string, any>>({})
+const previewData = ref<MergePreviewData>({})
 const statistics = ref<Statistics>({
   totalVersionFiles: 0,
   oldestVersion: null,
@@ -504,7 +489,7 @@ const handleModeChange = (value: boolean) => {
 const fetchStatistics = async () => {
   try {
     const response = await getConfigStatistics()
-    statistics.value = response.data.data || {}
+    statistics.value = response.data.data as Statistics || {}
     addLog('获取统计信息完成')
   } catch (error) {
     console.error('获取统计信息失败:', error)
@@ -517,7 +502,7 @@ const fetchStatistics = async () => {
 const fetchServiceStatus = async () => {
   try {
     const response = await getMergeServiceStatus()
-    status.value = response.data.data || {}
+    status.value = response.data.data as ServiceStatus || {}
     addLog('获取服务状态完成')
   } catch (error) {
     console.error('获取服务状态失败:', error)
@@ -563,7 +548,7 @@ const handlePreview = async () => {
       addLog('生成合并预览完成', 'success')
     }
 
-    previewData.value = response.data.data || {}
+    previewData.value = response.data.data as MergePreviewData || {}
 
     // 版本管理系统模式下处理冲突和警告信息
     if (useVersionManager.value && previewData.value.mergeStatistics) {
@@ -634,7 +619,7 @@ const handleMerge = async () => {
 
         // 版本管理系统模式下显示更详细的结果信息
         if (useVersionManager.value && response.data.data) {
-          const result = response.data.data
+          const result = response.data.data as MergeResult
           if (result.conflicts && result.conflicts.length > 0) {
             ElMessage.warning(`合并完成，但发现 ${result.conflicts.length} 个冲突`)
           }
@@ -694,7 +679,7 @@ const handleAtomicMerge = async () => {
 
         // 显示详细的合并结果
         if (response.data.data) {
-          const result = response.data.data
+          const result = response.data.data as MergeResult
           if (result.conflicts && result.conflicts.length > 0) {
             ElMessage.warning(`合并完成，处理了 ${result.conflicts.length} 个冲突`)
             mergeConflicts.value = result.conflicts
@@ -848,23 +833,9 @@ const handleBatchOperation = async () => {
 // 预览文件内容
 const handlePreviewFile = async (row: VersionFile) => {
   try {
-    // 这里应该调用一个API来读取文件内容，暂时用模拟数据
+    const response = await previewConfigFile(row.version)
     currentFilePath.value = row.filePath
-    // 模拟文件内容
-    currentFileContent.value = {
-      version: row.version,
-      message: "这是版本文件的内容预览",
-      services: {
-        chat: {
-          instances: [
-            {
-              name: "chat-service-1",
-              baseUrl: "http://localhost:8080"
-            }
-          ]
-        }
-      }
-    }
+    currentFileContent.value = response.data.data || {}
     previewDialogVisible.value = true
     addLog(`预览文件: ${row.filePath}`, 'info')
   } catch (error) {
@@ -882,7 +853,7 @@ const handleDeleteFile = (row: VersionFile) => {
     type: 'warning'
   }).then(async () => {
     try {
-      // 这里应该调用一个API来删除文件，暂时模拟操作
+      await deleteConfigFile(row.version)
       ElMessage.success('文件删除成功')
       addLog(`删除文件: ${row.filePath}`, 'success')
       // 刷新数据
