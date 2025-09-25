@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { RouterResponse, Statistics, ServiceStatus, MergePreviewData, MergeResult } from '@/types'
+import type {MergePreviewData, MergeResult, RouterResponse, ServiceStatus, Statistics} from '@/types'
 
 // 配置合并相关接口
 // 扫描版本配置文件
@@ -49,16 +49,6 @@ export const validateConfigFiles = () => {
 // 获取配置文件统计信息
 export const getConfigStatistics = () => {
   return request.get<RouterResponse<Statistics>>('/config/merge/statistics')
-}
-
-// 预览指定版本的配置文件内容
-export const previewConfigFile = (version: number) => {
-  return request.get<RouterResponse<Record<string, any>>>(`/config/merge/preview/${version}`)
-}
-
-// 删除指定版本的配置文件
-export const deleteConfigFile = (version: number) => {
-  return request.delete<RouterResponse<any>>(`/config/version/${version}`)
 }
 
 // 版本管理系统集成接口
