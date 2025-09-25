@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.entity.*;
 import org.unreal.modelrouter.util.InstanceIdUtils;
+import org.unreal.modelrouter.util.SecurityUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -226,10 +226,11 @@ public class AutoMergeService {
     /**
      * 改进的配置合并方法，支持版本管理系统格式和冲突检测
      *
-     * @param configs 配置列表 (按版本顺序)
+     * @param configs          配置列表 (按版本顺序)
+     * @param mergeDescription
      * @return 合并结果，包含合并后的配置和冲突信息
      */
-    public MergeConfigResult mergeConfigsWithConflictDetection(List<Map<String, Object>> configs) {
+    public MergeConfigResult mergeConfigsWithConflictDetection(List<Map<String, Object>> configs, String mergeDescription) {
         if (configs.isEmpty()) {
             return new MergeConfigResult(new HashMap<>(), new ArrayList<>(), new ArrayList<>());
         }
@@ -285,7 +286,7 @@ public class AutoMergeService {
         }
 
         // 后处理：确保合并结果的完整性
-        Map<String, Object> finalMerged = postProcessMergedConfig(merged, warnings);
+        Map<String, Object> finalMerged = postProcessMergedConfig(merged, warnings, mergeDescription);
 
         logger.info("配置合并完成，发现 {} 个冲突，{} 个警告", conflicts.size(), warnings.size());
 
@@ -615,12 +616,13 @@ public class AutoMergeService {
     /**
      * 后处理合并后的配置，确保完整性
      *
-     * @param merged   合并后的配置
-     * @param warnings 警告列表
+     * @param merged           合并后的配置
+     * @param warnings         警告列表
+     * @param mergeDescription
      * @return 最终配置
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> postProcessMergedConfig(Map<String, Object> merged, List<String> warnings) {
+    private Map<String, Object> postProcessMergedConfig(Map<String, Object> merged, List<String> warnings, String mergeDescription) {
         Map<String, Object> processed = new HashMap<>(merged);
 
         // 确保services字段存在
@@ -652,9 +654,11 @@ public class AutoMergeService {
 
         // 添加合并元数据
         Map<String, Object> mergeMetadata = new HashMap<>();
-        mergeMetadata.put("mergedAt", LocalDateTime.now().toString());
+        mergeMetadata.put("operationDetail", mergeDescription);
+        mergeMetadata.put("operation", "Merge");
+        mergeMetadata.put("timestamp", System.currentTimeMillis());
         mergeMetadata.put("mergeType", "auto-merge-with-version-manager");
-        processed.put("_mergeMetadata", mergeMetadata);
+        processed.put("_metadata", mergeMetadata);
 
         return processed;
     }
@@ -709,7 +713,7 @@ public class AutoMergeService {
      * 执行自动合并操作
      * @return 合并结果
      */
-    public MergeResult performAutoMerge() {
+    public MergeResult performMerge() {
         logger.info("开始执行自动合并操作");
         
         List<String> mergedFiles = new ArrayList<>();
@@ -748,16 +752,21 @@ public class AutoMergeService {
             // 4. 清除现有版本配置
             clearExistingVersions();
 
-            // 5. 保存合并后的配置为版本1
-            storeManager.saveConfigVersion("model-router-config", mergedConfig, 1);
-            logger.info("已保存合并后的配置为版本1");
+            configurationService.cleanVersion();
+            String mergeDescription = "执行文件合并，成功合并 %d 个配置文件，重置版本".formatted(configs.size());
+            Map<String, Object> mergeMetadata = new HashMap<>();
+            mergeMetadata.put("operationDetail", mergeDescription);
+            mergeMetadata.put("operation", "Merge");
+            mergeMetadata.put("timestamp", System.currentTimeMillis());
+            mergeMetadata.put("mergeType", "auto-merge-with-version-manager");
+            mergedConfig.put("_metadata", mergeMetadata);
 
-            // 6. 刷新配置服务
-            configurationService.applyVersion(1);
+            configurationService.saveAsNewVersion(mergedConfig, "手动合并配置文件", SecurityUtils.getCurrentUserId());
+
             logger.info("已应用合并后的配置");
 
-            return new MergeResult(true, 
-                    String.format("成功合并 %d 个配置文件，重置版本为1", configs.size()),
+            return new MergeResult(true,
+                    String.format("成功合并 %d 个配置文件，重置版本", configs.size()),
                     configs.size(), 1, mergedFiles, errors);
 
         } catch (Exception e) {
@@ -815,7 +824,8 @@ public class AutoMergeService {
             }
 
             // 3. 合并配置，启用冲突检测
-            MergeConfigResult mergeResult = mergeConfigsWithConflictDetection(configs);
+            String mergeDescription = String.format("执行智能合并版本: %s", versions);
+            MergeConfigResult mergeResult = mergeConfigsWithConflictDetection(configs, mergeDescription);
             Map<String, Object> mergedConfig = mergeResult.mergedConfig();
 
             // 记录合并过程中的冲突和警告
@@ -837,7 +847,7 @@ public class AutoMergeService {
             logger.info("成功合并 {} 个版本的配置", configs.size());
 
             // 4. 通过ConfigurationService保存合并后的配置为新版本
-            String mergeDescription = String.format("自动合并版本: %s", versions);
+
             int newVersion = configurationService.saveAsNewVersionIfChanged(
                     mergedConfig,
                     mergeDescription,
@@ -926,7 +936,8 @@ public class AutoMergeService {
             }
 
             // 4. 执行合并操作
-            MergeConfigResult mergeResult = mergeConfigsWithConflictDetection(configs);
+            String mergeDescription = String.format("执行原子合并版本: %s", versions);
+            MergeConfigResult mergeResult = mergeConfigsWithConflictDetection(configs, mergeDescription);
             Map<String, Object> mergedConfig = mergeResult.mergedConfig();
 
             // 检查是否有严重冲突需要中止操作
@@ -955,7 +966,7 @@ public class AutoMergeService {
 
             // 5. 原子性保存合并结果
             try {
-                String mergeDescription = String.format("原子性自动合并版本: %s (冲突: %d, 警告: %d)",
+                mergeDescription = String.format("原子性自动合并版本: %s (冲突: %d, 警告: %d)",
                         versions, mergeResult.conflicts().size(), mergeResult.warnings().size());
 
                 int newVersion = configurationService.saveAsNewVersionIfChanged(

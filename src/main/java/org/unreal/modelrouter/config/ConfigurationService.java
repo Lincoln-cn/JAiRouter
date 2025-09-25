@@ -12,7 +12,9 @@ import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.StoreManager;
 import org.unreal.modelrouter.tracing.config.SamplingConfigurationValidator;
+import org.unreal.modelrouter.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.util.ApplicationContextProvider;
+import org.unreal.modelrouter.util.InstanceIdUtils;
 import org.unreal.modelrouter.util.JacksonHelper;
 import org.unreal.modelrouter.util.SecurityUtils;
 
@@ -344,21 +346,6 @@ public class ConfigurationService {
                 }
             }
         }
-
-        // 如果版本历史为空，尝试基于元数据扫描
-        if (versions.isEmpty()) {
-            ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-            if (metadata != null) {
-                // 扫描一个合理的范围
-                int maxScan = Math.max(metadata.getCurrentVersion() + 10, 100);
-                for (int i = 1; i <= maxScan; i++) {
-                    if (storeManager.versionExists(CURRENT_KEY, i)) {
-                        versions.add(i);
-                    }
-                }
-            }
-        }
-
         // 排序并去重
         versions = versions.stream().distinct().sorted().collect(Collectors.toList());
         return versions;
@@ -1007,7 +994,7 @@ public class ConfigurationService {
                             String baseUrl = (String) instance.get("baseUrl");
                             // 检查是否已存在instanceId，如果不存在才生成新的
                             if (!instance.containsKey("instanceId") || instance.get("instanceId") == null) {
-                                String instanceId = buildInstanceId(name, baseUrl);
+                                String instanceId = InstanceIdUtils.getInstanceId(instance);
                                 instance.put("instanceId", instanceId);
                             }
 
@@ -1088,13 +1075,13 @@ public class ConfigurationService {
      * 获取指定实例的详细信息
      *
      * @param serviceType 服务类型
-     * @param instanceId 实例ID (name@baseUrl)
+     * @param instanceId 实例ID
      * @return 实例配置
      */
     public Map<String, Object> getServiceInstance(String serviceType, String instanceId) {
         List<Map<String, Object>> instances = getServiceInstances(serviceType);
         return instances.stream()
-                .filter(instance -> instanceId.equals(buildInstanceId(instance)))
+                .filter(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)))
                 .map(instance -> {
                     // 添加健康状态信息
                     String baseUrl = (String) instance.get("baseUrl");
@@ -1387,7 +1374,7 @@ public class ConfigurationService {
         // 先查找实例位置和原始配置
         for (int i = 0; i < instances.size(); i++) {
             Map<String, Object> instance = instances.get(i);
-            String currentInstanceId = buildInstanceId(instance);
+            String currentInstanceId = InstanceIdUtils.getInstanceId(instance);
             logger.info("比较实例ID: 请求ID={}, 配置ID={}, 匹配结果={}", instanceId, currentInstanceId, instanceId.equals(currentInstanceId));
             if (instanceId.equals(currentInstanceId)) {
                 targetIndex = i;
@@ -1398,6 +1385,7 @@ public class ConfigurationService {
         }
 
         if (found) {
+            instanceConfig.setInstanceId(instanceId);
             // 合并更新配置
             Map<String, Object> updatedInstance = mergeInstanceConfig(oldInstance, configurationHelper.convertInstanceToMap(instanceConfig));
             Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(updatedInstance);
@@ -1409,7 +1397,7 @@ public class ConfigurationService {
             logger.warn("实例不存在: {}，服务 {} 中的所有实例:", instanceId, serviceType);
             for (int i = 0; i < instances.size(); i++) {
                 Map<String, Object> instance = instances.get(i);
-                String currentInstanceId = buildInstanceId(instance);
+                String currentInstanceId = InstanceIdUtils.getInstanceId(instance);
                 logger.warn("  实例 {}: ID={}, name={}, baseUrl={}", i, currentInstanceId, instance.get("name"), instance.get("baseUrl"));
             }
             throw new IllegalArgumentException("实例不存在: " + instanceId);
@@ -1469,7 +1457,7 @@ public class ConfigurationService {
         List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
 
         // 删除匹配的实例
-        boolean removed = instances.removeIf(instance -> instanceId.equals(buildInstanceId(instance)));
+        boolean removed = instances.removeIf(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)));
 
         if (!removed) {
             throw new IllegalArgumentException("实例不存在: " + instanceId);
@@ -1625,7 +1613,7 @@ public class ConfigurationService {
 
         for (int i = 0; i < instances.size(); i++) {
             Map<String, Object> instance = instances.get(i);
-            String currentInstanceId = buildInstanceId(instance);
+            String currentInstanceId = InstanceIdUtils.getInstanceId(instance);
             if (instanceId.equals(currentInstanceId)) {
                 Map<String, Object> updatedInstance = mergeInstanceConfig(instance, configurationHelper.convertInstanceToMap(instanceConfig));
                 Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(updatedInstance);
@@ -1645,7 +1633,7 @@ public class ConfigurationService {
      * 从实例列表中删除实例
      */
     private void deleteInstanceFromList(List<Map<String, Object>> instances, String instanceId, List<String> operationDetails) {
-        boolean removed = instances.removeIf(instance -> instanceId.equals(buildInstanceId(instance)));
+        boolean removed = instances.removeIf(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)));
 
         if (!removed) {
             throw new IllegalArgumentException("实例不存在: " + instanceId);
@@ -1690,20 +1678,6 @@ public class ConfigurationService {
         }
     }
 
-    /**
-     * 根据模块名称和基础URL构建实例ID
-     *
-     * @param moduleName 模块名称
-     * @param baseUrl 基础URL
-     * @return 实例ID
-     */
-    public String buildInstanceId(String moduleName, String baseUrl) {
-        if (moduleName != null && baseUrl != null) {
-            // 使用模块名称和基础URL生成一致的ID，而不是随机UUID
-            return moduleName + "@" + baseUrl;
-        }
-        return "unknown";
-    }
 
     /**
      * 重置配置为YAML默认值
@@ -1752,7 +1726,7 @@ public class ConfigurationService {
             String name = (String) normalized.get("name");
             String baseUrl = (String) normalized.get("baseUrl");
             if (name != null && baseUrl != null) {
-                normalized.put("instanceId", buildInstanceId(name, baseUrl));
+                normalized.put("instanceId", InstanceIdUtils.getInstanceId(instanceConfig));
             }
         }
 
@@ -1769,28 +1743,6 @@ public class ConfigurationService {
             return new HashMap<>((Map<String, Object>) servicesObj);
         }
         return new HashMap<>();
-    }
-
-    /**
-     * 构建实例ID
-     */
-    private String buildInstanceId(Map<String, Object> instance) {
-        String name = (String) instance.get("name");
-        // 同时支持baseUrl和base-url两种字段名
-        String baseUrl = (String) instance.get("baseUrl");
-        if (baseUrl == null) {
-            baseUrl = (String) instance.get("base-url");
-        }
-        // 检查是否已存在instanceId字段
-        String instanceId = (String) instance.get("instanceId");
-        if (instanceId != null && !instanceId.isEmpty()) {
-            return instanceId;
-        }
-        if (name != null && baseUrl != null) {
-            // 使用name和baseUrl生成一致的ID，而不是随机UUID
-            return name + "@" + baseUrl;
-        }
-        return null;
     }
 
     /**
@@ -1881,7 +1833,7 @@ public class ConfigurationService {
             String name = (String) merged.get("name");
             String baseUrl = (String) merged.get("baseUrl");
             if (name != null && baseUrl != null) {
-                merged.put("instanceId", buildInstanceId(name, baseUrl));
+                merged.put("instanceId", InstanceIdUtils.getInstanceId(existing));
             }
         }
 
@@ -2144,9 +2096,9 @@ public class ConfigurationService {
      * @return SamplingConfig对象
      */
     @SuppressWarnings("unchecked")
-    private org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig convertMapToSamplingConfig(Map<String, Object> configMap) {
-        org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig config
-                = new org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig();
+    private TracingConfiguration.SamplingConfig convertMapToSamplingConfig(Map<String, Object> configMap) {
+        TracingConfiguration.SamplingConfig config
+                = new TracingConfiguration.SamplingConfig();
 
         if (configMap.containsKey("ratio")) {
             Object ratioObj = configMap.get("ratio");
@@ -2420,38 +2372,6 @@ public class ConfigurationService {
     }
 
     /**
-     * 删除版本后更新版本范围
-     *
-     * @param metadata       配置元数据
-     * @param deletedVersion 被删除的版本号
-     */
-    private void updateVersionRangeAfterDeletion(ConfigMetadata metadata, int deletedVersion) {
-        try {
-            // 获取实际存在的版本文件
-            List<Integer> existingVersions = new ArrayList<>();
-
-            // 检查从初始版本到当前版本范围内哪些版本实际存在
-            for (int i = metadata.getInitialVersion(); i <= metadata.getCurrentVersion(); i++) {
-                if (i != deletedVersion && storeManager.versionExists(CURRENT_KEY, i)) {
-                    existingVersions.add(i);
-                }
-            }
-
-            if (!existingVersions.isEmpty()) {
-                // 更新版本范围为实际存在的版本范围
-                Collections.sort(existingVersions);
-
-                logger.debug("版本范围已更新: {} - {}", metadata.getInitialVersion(), metadata.getCurrentVersion());
-            } else {
-                logger.warn("删除版本 {} 后没有剩余版本，这不应该发生", deletedVersion);
-            }
-
-        } catch (Exception e) {
-            logger.error("更新版本范围失败", e);
-        }
-    }
-
-    /**
      * 应用版本后更新当前版本状态
      *
      * @param appliedVersion 应用的版本号
@@ -2549,6 +2469,18 @@ public class ConfigurationService {
         return false;
     }
 
+    public void cleanVersion() {
+        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
+        List<VersionInfo> versionInfos = versionHistoryMap.get(CURRENT_KEY);
+
+        metadata.clean();
+        saveMetadata(CURRENT_KEY, metadata);
+        versionInfos.clear();
+        saveVersionHistory(CURRENT_KEY, versionInfos);
+
+
+    }
+
     /**
      * 实例操作类型
      */
@@ -2557,9 +2489,9 @@ public class ConfigurationService {
     }
 
     /**
-         * 实例操作定义
-         */
-        public record InstanceOperation(InstanceOperationType type, String instanceId,
-                                        ModelRouterProperties.ModelInstance instanceConfig) {
+     * 实例操作定义
+     */
+    public record InstanceOperation(InstanceOperationType type, String instanceId,
+                                    ModelRouterProperties.ModelInstance instanceConfig) {
     }
 }
