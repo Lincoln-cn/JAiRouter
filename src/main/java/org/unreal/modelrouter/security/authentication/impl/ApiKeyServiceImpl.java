@@ -18,34 +18,33 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * API Key管理服务实现类
- * 提供API Key的CRUD操作、验证功能和缓存机制
+ * API Key管理服务实现类 提供API Key的CRUD操作、验证功能和缓存机制
  */
 @Slf4j
 @Service
 public class ApiKeyServiceImpl implements ApiKeyService {
-    
+
     private static final String API_KEYS_STORE_KEY = "security.api-keys";
     private static final String USAGE_STATS_STORE_KEY = "security.usage-statistics";
-    
+
     private final StoreManager storeManager;
     private final ObjectMapper objectMapper;
     private final SecurityProperties securityProperties;
-    
+
     // API Key缓存：keyValue -> ApiKeyInfo
     private final Map<String, ApiKeyInfo> apiKeyCache = new ConcurrentHashMap<>();
     // API Key ID索引：keyId -> keyValue
     private final Map<String, String> keyIdIndex = new ConcurrentHashMap<>();
     // 使用统计缓存：keyId -> UsageStatistics
     private final Map<String, UsageStatistics> usageStatsCache = new ConcurrentHashMap<>();
-    
+
     @Autowired
     public ApiKeyServiceImpl(StoreManager storeManager, ObjectMapper objectMapper, SecurityProperties securityProperties) {
         this.storeManager = storeManager;
         this.objectMapper = objectMapper;
         this.securityProperties = securityProperties;
     }
-    
+
     /**
      * 初始化方法，从存储中加载API Key数据到缓存
      */
@@ -61,7 +60,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         }
         log.info("API Key服务初始化完成，加载了 {} 个API Key", apiKeyCache.size());
     }
-    
+
     /**
      * 从配置文件加载API Key
      */
@@ -78,7 +77,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         }
         log.debug("从配置加载了 {} 个API Key", configKeys != null ? configKeys.size() : 0);
     }
-    
+
     @Override
     public Mono<ApiKeyInfo> validateApiKey(String keyValue) {
         return Mono.defer(() -> {
@@ -86,20 +85,20 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 if (keyValue == null || keyValue.trim().isEmpty()) {
                     return Mono.error(AuthenticationException.missingApiKey());
                 }
-                
+
                 ApiKeyInfo apiKeyInfo = apiKeyCache.get(keyValue);
                 if (apiKeyInfo == null) {
                     return Mono.error(AuthenticationException.invalidApiKey());
                 }
-                
+
                 if (!apiKeyInfo.isEnabled()) {
                     return Mono.error(new AuthenticationException("API Key已被禁用", AuthenticationException.INVALID_API_KEY));
                 }
-                
+
                 if (apiKeyInfo.getExpiresAt() != null && apiKeyInfo.getExpiresAt().isBefore(LocalDateTime.now())) {
                     return Mono.error(AuthenticationException.expiredApiKey());
                 }
-                
+
                 log.debug("API Key验证成功: {}", apiKeyInfo.getKeyId());
                 return Mono.just(apiKeyInfo);
             } catch (Exception e) {
@@ -107,7 +106,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 return Mono.error(e);
             }
         });
-    }    
+    }
 
     @Override
     public Mono<ApiKeyInfo> createApiKey(ApiKeyInfo apiKeyInfo) {
@@ -115,24 +114,24 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             if (apiKeyInfo.getKeyId() == null || apiKeyInfo.getKeyId().trim().isEmpty()) {
                 throw new IllegalArgumentException("API Key ID不能为空");
             }
-            
+
             if (apiKeyInfo.getKeyValue() == null || apiKeyInfo.getKeyValue().trim().isEmpty()) {
                 throw new IllegalArgumentException("API Key值不能为空");
             }
-            
+
             if (keyIdIndex.containsKey(apiKeyInfo.getKeyId())) {
                 throw new IllegalArgumentException("API Key ID已存在: " + apiKeyInfo.getKeyId());
             }
-            
+
             if (apiKeyCache.containsKey(apiKeyInfo.getKeyValue())) {
                 throw new IllegalArgumentException("API Key值已存在");
             }
-            
+
             // 设置创建时间
             if (apiKeyInfo.getCreatedAt() == null) {
                 apiKeyInfo.setCreatedAt(LocalDateTime.now());
             }
-            
+
             // 初始化使用统计
             if (apiKeyInfo.getUsage() == null) {
                 apiKeyInfo.setUsage(UsageStatistics.builder()
@@ -142,21 +141,21 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                         .dailyUsage(new HashMap<>())
                         .build());
             }
-            
+
             // 更新缓存
             apiKeyCache.put(apiKeyInfo.getKeyValue(), apiKeyInfo);
             keyIdIndex.put(apiKeyInfo.getKeyId(), apiKeyInfo.getKeyValue());
             usageStatsCache.put(apiKeyInfo.getKeyId(), apiKeyInfo.getUsage());
-            
+
             // 持久化到存储
             saveApiKeysToStore();
             saveUsageStatsToStore();
-            
+
             log.info("创建API Key成功: {}", apiKeyInfo.getKeyId());
             return apiKeyInfo;
         });
     }
-    
+
     @Override
     public Mono<ApiKeyInfo> updateApiKey(String keyId, ApiKeyInfo apiKeyInfo) {
         return Mono.fromCallable(() -> {
@@ -164,27 +163,27 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             if (keyValue == null) {
                 throw new IllegalArgumentException("API Key不存在: " + keyId);
             }
-            
+
             ApiKeyInfo existingKey = apiKeyCache.get(keyValue);
             if (existingKey == null) {
                 throw new IllegalArgumentException("API Key缓存不一致: " + keyId);
             }
-            
+
             // 更新字段（保持keyId和keyValue不变）
             existingKey.setDescription(apiKeyInfo.getDescription());
             existingKey.setEnabled(apiKeyInfo.isEnabled());
             existingKey.setExpiresAt(apiKeyInfo.getExpiresAt());
             existingKey.setPermissions(apiKeyInfo.getPermissions());
             existingKey.setMetadata(apiKeyInfo.getMetadata());
-            
+
             // 持久化到存储
             saveApiKeysToStore();
-            
+
             log.info("更新API Key成功: {}", keyId);
             return existingKey;
         });
     }
-    
+
     @Override
     public Mono<Void> deleteApiKey(String keyId) {
         return Mono.fromRunnable(() -> {
@@ -192,25 +191,25 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             if (keyValue == null) {
                 throw new IllegalArgumentException("API Key不存在: " + keyId);
             }
-            
+
             // 从缓存中移除
             apiKeyCache.remove(keyValue);
             keyIdIndex.remove(keyId);
             usageStatsCache.remove(keyId);
-            
+
             // 持久化到存储
             saveApiKeysToStore();
             saveUsageStatsToStore();
-            
+
             log.info("删除API Key成功: {}", keyId);
         });
     }
-    
+
     @Override
     public Mono<List<ApiKeyInfo>> getAllApiKeys() {
         return Mono.fromCallable(() -> new ArrayList<>(apiKeyCache.values()));
     }
-    
+
     @Override
     public Mono<ApiKeyInfo> getApiKeyById(String keyId) {
         return Mono.fromCallable(() -> {
@@ -218,16 +217,16 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             if (keyValue == null) {
                 throw new IllegalArgumentException("API Key不存在: " + keyId);
             }
-            
+
             ApiKeyInfo apiKeyInfo = apiKeyCache.get(keyValue);
             if (apiKeyInfo == null) {
                 throw new IllegalArgumentException("API Key缓存不一致: " + keyId);
             }
-            
+
             return apiKeyInfo;
         });
-    }  
-  
+    }
+
     @Override
     public Mono<Void> updateUsageStatistics(String keyId, boolean success) {
         return Mono.fromRunnable(() -> {
@@ -236,7 +235,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 log.warn("未找到API Key的使用统计: {}", keyId);
                 return;
             }
-            
+
             // 更新统计数据
             stats.setTotalRequests(stats.getTotalRequests() + 1);
             if (success) {
@@ -245,7 +244,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 stats.setFailedRequests(stats.getFailedRequests() + 1);
             }
             stats.setLastUsedAt(LocalDateTime.now());
-            
+
             // 更新每日使用统计
             String today = LocalDateTime.now().toLocalDate().toString();
             Map<String, Long> dailyUsage = stats.getDailyUsage();
@@ -254,7 +253,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                 stats.setDailyUsage(dailyUsage);
             }
             dailyUsage.put(today, dailyUsage.getOrDefault(today, 0L) + 1);
-            
+
             // 更新API Key中的使用统计
             String keyValue = keyIdIndex.get(keyId);
             if (keyValue != null) {
@@ -263,14 +262,14 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                     apiKeyInfo.setUsage(stats);
                 }
             }
-            
+
             // 异步持久化（避免阻塞）
             saveUsageStatsToStoreAsync();
-            
+
             log.debug("更新API Key使用统计: {} (成功: {})", keyId, success);
         });
     }
-    
+
     @Override
     public Mono<UsageStatistics> getUsageStatistics(String keyId) {
         return Mono.fromCallable(() -> {
@@ -281,17 +280,19 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             return stats;
         });
     }
-    
+
     /**
      * 从存储中加载API Key数据到缓存
      */
     private void loadApiKeysFromStore() {
         try {
-            //如果不存在配置文件，则创建默认配置文件
+            // 只有当配置文件不存在时才创建默认配置文件
             if (!storeManager.exists(API_KEYS_STORE_KEY)) {
+                log.info("API Key配置文件不存在，创建默认配置文件");
                 createDefaultApiKeyConfig();
+                return; // 创建默认配置后直接返回，避免重复加载
             }
-            
+
             Map<String, Object> config = storeManager.getConfig(API_KEYS_STORE_KEY);
             if (config != null) {
                 // 检查配置文件结构是否正确
@@ -318,25 +319,17 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                     log.warn("API Key配置文件结构不正确，期望包含'apiKeys'字段，当前内容: {}", config);
                 }
             } else {
-                // 配置文件内容为null，重新创建
-                log.warn("API Key配置文件内容为null，重新创建默认配置文件");
-                createDefaultApiKeyConfig();
+                // 配置文件内容为null，这种情况不应该发生，因为exists检查已经通过
+                log.warn("API Key配置文件内容为null，但文件存在");
             }
 
             log.debug("从存储加载了 {} 个API Key", apiKeyCache.size());
         } catch (Exception e) {
             log.error("加载API Key数据失败，可能由于JSON文件损坏，请检查文件格式", e);
-            // 尝试重新创建配置文件
-            try {
-                log.info("尝试重新创建API Key配置文件");
-                createDefaultApiKeyConfig();
-                log.info("API Key配置文件已重新创建");
-            } catch (Exception recreateException) {
-                log.error("重新创建API Key配置文件失败", recreateException);
-            }
+            // 不再自动重新创建配置文件，避免覆盖现有数据
         }
     }
-    
+
     /**
      * 创建默认的API Key配置文件
      */
@@ -346,17 +339,19 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         storeManager.saveConfig(API_KEYS_STORE_KEY, defaultConfig);
         log.info("创建默认API Key配置文件: {}", API_KEYS_STORE_KEY);
     }
-    
+
     /**
      * 从存储中加载使用统计数据到缓存
      */
     private void loadUsageStatsFromStore() {
         try {
-            // 如果不存在配置文件，则创建默认配置文件
+            // 只有当配置文件不存在时才创建默认配置文件
             if (!storeManager.exists(USAGE_STATS_STORE_KEY)) {
+                log.info("使用统计配置文件不存在，创建默认配置文件");
                 createDefaultUsageStatsConfig();
+                return; // 创建默认配置后直接返回，避免重复加载
             }
-            
+
             Map<String, Object> config = storeManager.getConfig(USAGE_STATS_STORE_KEY);
             if (config != null) {
                 // 检查配置文件结构是否正确
@@ -380,25 +375,17 @@ public class ApiKeyServiceImpl implements ApiKeyService {
                     log.warn("使用统计配置文件结构不正确，期望包含'usageStats'字段，当前内容: {}", config);
                 }
             } else {
-                // 配置文件内容为null，重新创建
-                log.warn("使用统计配置文件内容为null，重新创建默认配置文件");
-                createDefaultUsageStatsConfig();
+                // 配置文件内容为null，这种情况不应该发生，因为exists检查已经通过
+                log.warn("使用统计配置文件内容为null，但文件存在");
             }
-            
+
             log.debug("从存储加载了 {} 个使用统计", usageStatsCache.size());
         } catch (Exception e) {
             log.error("加载使用统计数据失败", e);
-            // 尝试重新创建配置文件
-            try {
-                log.info("尝试重新创建使用统计配置文件");
-                createDefaultUsageStatsConfig();
-                log.info("使用统计配置文件已重新创建");
-            } catch (Exception recreateException) {
-                log.error("重新创建使用统计配置文件失败", recreateException);
-            }
+            // 不再自动重新创建配置文件，避免覆盖现有数据
         }
     }
-    
+
     /**
      * 创建默认的使用统计配置文件
      */
@@ -408,7 +395,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         storeManager.saveConfig(USAGE_STATS_STORE_KEY, defaultConfig);
         log.info("创建默认使用统计配置文件: {}", USAGE_STATS_STORE_KEY);
     }
-    
+
     /**
      * 保存API Key数据到存储
      */
@@ -423,7 +410,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             log.error("保存API Key数据失败", e);
         }
     }
-    
+
     /**
      * 保存使用统计数据到存储
      */
@@ -437,7 +424,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             log.error("保存使用统计数据失败", e);
         }
     }
-    
+
     /**
      * 异步保存使用统计数据到存储
      */
