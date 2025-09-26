@@ -4,12 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.cache.ApiKeyCache;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.UsageStatistics;
-import org.unreal.modelrouter.exception.AuthenticationException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

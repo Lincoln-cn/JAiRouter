@@ -3,7 +3,7 @@ package org.unreal.modelrouter.security;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 
 /**
  * 测试用安全配置属性类

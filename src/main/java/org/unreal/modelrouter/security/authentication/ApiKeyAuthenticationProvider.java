@@ -9,7 +9,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
@@ -147,52 +147,16 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
             log.warn("发布认证失败事件失败: {}", e.getMessage());
         }
     }
-    
+
     /**
-     * API Key认证成功事件
-     */
-    public static class ApiKeyAuthenticationSuccessEvent {
-        private final Object source;
-        private final ApiKeyInfo apiKeyInfo;
-        
-        public ApiKeyAuthenticationSuccessEvent(Object source, ApiKeyInfo apiKeyInfo) {
-            this.source = source;
-            this.apiKeyInfo = apiKeyInfo;
-        }
-        
-        public Object getSource() {
-            return source;
-        }
-        
-        public ApiKeyInfo getApiKeyInfo() {
-            return apiKeyInfo;
-        }
+         * API Key认证成功事件
+         */
+        public record ApiKeyAuthenticationSuccessEvent(Object source, ApiKeyInfo apiKeyInfo) {
     }
-    
+
     /**
-     * API Key认证失败事件
-     */
-    public static class ApiKeyAuthenticationFailureEvent {
-        private final Object source;
-        private final String apiKey;
-        private final String reason;
-        
-        public ApiKeyAuthenticationFailureEvent(Object source, String apiKey, String reason) {
-            this.source = source;
-            this.apiKey = apiKey;
-            this.reason = reason;
-        }
-        
-        public Object getSource() {
-            return source;
-        }
-        
-        public String getApiKey() {
-            return apiKey;
-        }
-        
-        public String getReason() {
-            return reason;
-        }
+         * API Key认证失败事件
+         */
+        public record ApiKeyAuthenticationFailureEvent(Object source, String apiKey, String reason) {
     }
 }

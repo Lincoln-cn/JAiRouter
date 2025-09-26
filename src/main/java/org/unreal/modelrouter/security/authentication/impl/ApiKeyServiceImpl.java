@@ -7,14 +7,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.ApiKeyProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.UsageStatistics;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -65,7 +69,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
      * 从配置文件加载API Key
      */
     private void loadApiKeysFromConfig() {
-        List<ApiKeyInfo> configKeys = securityProperties.getApiKey().getKeys();
+        List<ApiKeyInfo> configKeys = securityProperties.getApiKey().getKeys().stream().map(ApiKeyProperties::covertTo).toList();
         if (configKeys != null && !configKeys.isEmpty()) {
             for (ApiKeyInfo apiKeyInfo : configKeys) {
                 // 只有当密钥不在缓存中时才添加（避免重复）

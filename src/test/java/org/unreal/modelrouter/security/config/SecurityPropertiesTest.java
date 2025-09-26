@@ -1,17 +1,18 @@
 package org.unreal.modelrouter.security.config;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.BindResult;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySource;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.unreal.modelrouter.security.config.properties.*;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -48,7 +49,7 @@ class SecurityPropertiesTest {
 
     @Test
     void testApiKeyConfigValidation() {
-        SecurityProperties.ApiKeyConfig apiKeyConfig = properties.getApiKey();
+        ApiKeyConfig apiKeyConfig = properties.getApiKey();
         
         // 测试有效配置
         apiKeyConfig.setHeaderName("X-API-Key");
@@ -95,7 +96,7 @@ class SecurityPropertiesTest {
 
     @Test
     void testJwtConfigValidation() {
-        SecurityProperties.JwtConfig jwtConfig = properties.getJwt();
+        JwtConfig jwtConfig = properties.getJwt();
         jwtConfig.setEnabled(true);
         
         // 测试有效配置
@@ -163,10 +164,10 @@ class SecurityPropertiesTest {
 
     @Test
     void testSanitizationConfigValidation() {
-        SecurityProperties.SanitizationConfig sanitizationConfig = properties.getSanitization();
+        SanitizationConfig sanitizationConfig = properties.getSanitization();
         
         // 测试请求脱敏配置
-        SecurityProperties.SanitizationConfig.RequestSanitization requestConfig = sanitizationConfig.getRequest();
+        SanitizationConfig.RequestSanitization requestConfig = sanitizationConfig.getRequest();
         requestConfig.setMaskingChar("*");
         
         Set<ConstraintViolation<SecurityProperties>> violations = validator.validate(properties);
@@ -187,7 +188,7 @@ class SecurityPropertiesTest {
         requestConfig.setMaskingChar("*");
         
         // 测试响应脱敏配置
-        SecurityProperties.SanitizationConfig.ResponseSanitization responseConfig = sanitizationConfig.getResponse();
+        SanitizationConfig.ResponseSanitization responseConfig = sanitizationConfig.getResponse();
         responseConfig.setMaskingChar("*");
         
         violations = validator.validate(properties);
@@ -202,7 +203,7 @@ class SecurityPropertiesTest {
 
     @Test
     void testAuditConfigValidation() {
-        SecurityProperties.AuditConfig auditConfig = properties.getAudit();
+        AuditConfig auditConfig = properties.getAudit();
         
         // 测试有效配置
         auditConfig.setLogLevel("INFO");
@@ -319,7 +320,7 @@ class SecurityPropertiesTest {
                 .enabled(true)
                 .createdAt(LocalDateTime.now())
                 .expiresAt(LocalDateTime.now().plusDays(180))
-                .permissions(Arrays.asList("read"))
+                .permissions(List.of("read"))
                 .build();
 
         properties.getApiKey().setKeys(Arrays.asList(apiKey1, apiKey2));
@@ -335,12 +336,12 @@ class SecurityPropertiesTest {
     @Test
     void testSensitiveWordsAndPatternsConfiguration() {
         // 测试敏感词和模式配置
-        SecurityProperties.SanitizationConfig.RequestSanitization requestConfig = properties.getSanitization().getRequest();
+        SanitizationConfig.RequestSanitization requestConfig = properties.getSanitization().getRequest();
         requestConfig.setSensitiveWords(Arrays.asList("password", "secret", "token"));
         requestConfig.setPiiPatterns(Arrays.asList("\\d{11}", "\\d{18}", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"));
         requestConfig.setWhitelistUsers(Arrays.asList("admin-key", "system-key"));
-        
-        SecurityProperties.SanitizationConfig.ResponseSanitization responseConfig = properties.getSanitization().getResponse();
+
+        SanitizationConfig.ResponseSanitization responseConfig = properties.getSanitization().getResponse();
         responseConfig.setSensitiveWords(Arrays.asList("internal", "debug"));
         responseConfig.setPiiPatterns(Arrays.asList("\\d{11}", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"));
         
@@ -360,7 +361,7 @@ class SecurityPropertiesTest {
         properties.setEnabled(true);
         
         // API Key配置
-        SecurityProperties.ApiKeyConfig apiKeyConfig = properties.getApiKey();
+        ApiKeyConfig apiKeyConfig = properties.getApiKey();
         apiKeyConfig.setEnabled(true);
         apiKeyConfig.setHeaderName("X-API-Key");
         apiKeyConfig.setDefaultExpirationDays(365);
@@ -368,7 +369,7 @@ class SecurityPropertiesTest {
         apiKeyConfig.setCacheExpirationSeconds(3600);
         
         // JWT配置
-        SecurityProperties.JwtConfig jwtConfig = properties.getJwt();
+        JwtConfig jwtConfig = properties.getJwt();
         jwtConfig.setEnabled(true);
         jwtConfig.setSecret("this-is-a-very-long-secret-key-for-jwt-signing-at-least-32-chars");
         jwtConfig.setAlgorithm("HS256");
@@ -378,24 +379,24 @@ class SecurityPropertiesTest {
         jwtConfig.setBlacklistEnabled(true);
         
         // 脱敏配置
-        SecurityProperties.SanitizationConfig sanitizationConfig = properties.getSanitization();
+        SanitizationConfig sanitizationConfig = properties.getSanitization();
         sanitizationConfig.getRequest().setEnabled(true);
         sanitizationConfig.getRequest().setSensitiveWords(Arrays.asList("password", "secret"));
-        sanitizationConfig.getRequest().setPiiPatterns(Arrays.asList("\\d{11}"));
+        sanitizationConfig.getRequest().setPiiPatterns(List.of("\\d{11}"));
         sanitizationConfig.getRequest().setMaskingChar("*");
-        sanitizationConfig.getRequest().setWhitelistUsers(Arrays.asList("admin"));
+        sanitizationConfig.getRequest().setWhitelistUsers(List.of("admin"));
         sanitizationConfig.getRequest().setLogSanitization(true);
         sanitizationConfig.getRequest().setFailOnError(false);
         
         sanitizationConfig.getResponse().setEnabled(true);
-        sanitizationConfig.getResponse().setSensitiveWords(Arrays.asList("internal"));
-        sanitizationConfig.getResponse().setPiiPatterns(Arrays.asList("\\d{11}"));
+        sanitizationConfig.getResponse().setSensitiveWords(List.of("internal"));
+        sanitizationConfig.getResponse().setPiiPatterns(List.of("\\d{11}"));
         sanitizationConfig.getResponse().setMaskingChar("*");
         sanitizationConfig.getResponse().setLogSanitization(true);
         sanitizationConfig.getResponse().setFailOnError(false);
         
         // 审计配置
-        SecurityProperties.AuditConfig auditConfig = properties.getAudit();
+        AuditConfig auditConfig = properties.getAudit();
         auditConfig.setEnabled(true);
         auditConfig.setLogLevel("INFO");
         auditConfig.setIncludeRequestBody(false);

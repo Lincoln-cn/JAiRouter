@@ -7,16 +7,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
-import org.unreal.modelrouter.security.config.SecurityProperties;
-import org.unreal.modelrouter.security.service.JwtTokenRefreshService;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.service.AccountManager;
+import org.unreal.modelrouter.security.service.JwtTokenRefreshService;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;

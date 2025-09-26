@@ -10,12 +10,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.constants.SecurityConstants;
-import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Mono;
@@ -23,11 +23,12 @@ import reactor.test.StepVerifier;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.lenient;
 
 /**
  * API Key认证过滤器的单元测试
@@ -141,7 +142,7 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testFilter_InsufficientPermissions() {
         // 准备测试数据 - API Key只有read权限，但请求是POST
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", Arrays.asList("read"));
+        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", List.of("read"));
         MockServerHttpRequest request = MockServerHttpRequest
                 .post("/api/test")
                 .header("X-API-Key", "valid-api-key")
@@ -168,7 +169,7 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testFilter_AdminPermissionAllowsAll() {
         // 准备测试数据 - API Key有admin权限
-        ApiKeyInfo apiKeyInfo = createTestApiKey("admin-key", Arrays.asList("admin"));
+        ApiKeyInfo apiKeyInfo = createTestApiKey("admin-key", List.of("admin"));
         MockServerHttpRequest request = MockServerHttpRequest
                 .delete("/api/test")
                 .header("X-API-Key", "admin-api-key")
@@ -213,7 +214,7 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testFilter_AuthorizationHeader() {
         // 准备测试数据 - 使用Authorization头
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", Arrays.asList("read"));
+        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", List.of("read"));
         MockServerHttpRequest request = MockServerHttpRequest
                 .get("/api/test")
                 .header("Authorization", "Bearer valid-api-key")
@@ -287,9 +288,9 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testPermissionMapping() {
         // 测试不同HTTP方法的权限映射
-        ApiKeyInfo readOnlyKey = createTestApiKey("read-key", Arrays.asList("read"));
-        ApiKeyInfo writeKey = createTestApiKey("write-key", Arrays.asList("write"));
-        ApiKeyInfo deleteKey = createTestApiKey("delete-key", Arrays.asList("delete"));
+        ApiKeyInfo readOnlyKey = createTestApiKey("read-key", List.of("read"));
+        ApiKeyInfo writeKey = createTestApiKey("write-key", List.of("write"));
+        ApiKeyInfo deleteKey = createTestApiKey("delete-key", List.of("delete"));
 
         // GET请求需要read权限
         testPermissionForMethod(readOnlyKey, HttpMethod.GET, true);
