@@ -7,7 +7,8 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
 import org.unreal.modelrouter.sanitization.SanitizationService;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SanitizationConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.RuleType;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SanitizationStrategy;
@@ -68,7 +69,7 @@ public class DefaultSanitizationService implements SanitizationService {
      * 加载请求脱敏规则
      */
     private void loadRequestRules() {
-        SecurityProperties.SanitizationConfig.RequestSanitization requestConfig = 
+        SanitizationConfig.RequestSanitization requestConfig =
                 securityProperties.getSanitization().getRequest();
         
         // 加载敏感词规则
@@ -112,7 +113,7 @@ public class DefaultSanitizationService implements SanitizationService {
      * 加载响应脱敏规则
      */
     private void loadResponseRules() {
-        SecurityProperties.SanitizationConfig.ResponseSanitization responseConfig = 
+        SanitizationConfig.ResponseSanitization responseConfig =
                 securityProperties.getSanitization().getResponse();
         
         // 加载敏感词规则
@@ -344,32 +345,16 @@ public class DefaultSanitizationService implements SanitizationService {
             return new RuleStatistics(totalRules, enabledRules, requestRules, responseRules);
         });
     }
-    
+
     /**
-     * 规则统计信息
-     */
-    public static class RuleStatistics {
-        private final long totalRules;
-        private final long enabledRules;
-        private final long requestRules;
-        private final long responseRules;
-        
-        public RuleStatistics(long totalRules, long enabledRules, long requestRules, long responseRules) {
-            this.totalRules = totalRules;
-            this.enabledRules = enabledRules;
-            this.requestRules = requestRules;
-            this.responseRules = responseRules;
-        }
-        
-        public long getTotalRules() { return totalRules; }
-        public long getEnabledRules() { return enabledRules; }
-        public long getRequestRules() { return requestRules; }
-        public long getResponseRules() { return responseRules; }
-        
+         * 规则统计信息
+         */
+        public record RuleStatistics(long totalRules, long enabledRules, long requestRules, long responseRules) {
+
         @Override
-        public String toString() {
-            return String.format("RuleStatistics{total=%d, enabled=%d, request=%d, response=%d}", 
-                    totalRules, enabledRules, requestRules, responseRules);
+            public String toString() {
+                return String.format("RuleStatistics{total=%d, enabled=%d, request=%d, response=%d}",
+                        totalRules, enabledRules, requestRules, responseRules);
+            }
         }
-    }
 }

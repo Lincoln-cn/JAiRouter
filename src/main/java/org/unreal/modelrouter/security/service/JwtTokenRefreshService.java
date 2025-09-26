@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;

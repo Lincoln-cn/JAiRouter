@@ -13,7 +13,9 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.filter.DefaultAuthenticationConverter;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.ApiKeyConfig;
+import org.unreal.modelrouter.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.security.model.JwtAuthentication;
 import reactor.core.publisher.Mono;
@@ -33,10 +35,10 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
     private SecurityProperties securityProperties;
     
     @Mock
-    private SecurityProperties.ApiKeyConfig apiKeyConfig;
+    private ApiKeyConfig apiKeyConfig;
     
     @Mock
-    private SecurityProperties.JwtConfig jwtConfig;
+    private JwtConfig jwtConfig;
     
     @Mock
     private ServerAuthenticationConverter authenticationConverter;
@@ -125,7 +127,7 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
         // When & Then
         StepVerifier.create(converter.convert(exchange))
                 .assertNext(auth -> {
-                    assertTrue(auth instanceof ApiKeyAuthentication);
+                    assertInstanceOf(ApiKeyAuthentication.class, auth);
                     assertEquals("test-api-key", auth.getCredentials());
                 })
                 .verifyComplete();
@@ -149,7 +151,7 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
         // When & Then
         StepVerifier.create(converter.convert(exchange))
                 .assertNext(auth -> {
-                    assertTrue(auth instanceof JwtAuthentication);
+                    assertInstanceOf(JwtAuthentication.class, auth);
                     assertEquals("jwt-token-123", auth.getCredentials());
                 })
                 .verifyComplete();
@@ -192,7 +194,7 @@ class SpringSecurityApiKeyAuthenticationFilterTest {
         // When & Then
         StepVerifier.create(converter.convert(exchange))
                 .assertNext(auth -> {
-                    assertTrue(auth instanceof ApiKeyAuthentication);
+                    assertInstanceOf(ApiKeyAuthentication.class, auth);
                     assertEquals("test-api-key", auth.getCredentials());
                 })
                 .verifyComplete();

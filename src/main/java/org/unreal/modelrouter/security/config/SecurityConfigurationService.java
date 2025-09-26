@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.security.config;
 
+import org.unreal.modelrouter.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;
@@ -31,7 +33,7 @@ public interface SecurityConfigurationService {
      * @param jwtConfig JWT配置
      * @return 更新操作结果
      */
-    Mono<Void> updateJwtConfig(SecurityProperties.JwtConfig jwtConfig);
+    Mono<Void> updateJwtConfig(JwtConfig jwtConfig);
     
     /**
      * 获取当前安全配置

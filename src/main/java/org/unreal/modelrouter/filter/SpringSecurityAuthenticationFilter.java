@@ -15,7 +15,7 @@ import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.security.config.ExcludedPathsConfig;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import reactor.core.publisher.Mono;
 
 /**
