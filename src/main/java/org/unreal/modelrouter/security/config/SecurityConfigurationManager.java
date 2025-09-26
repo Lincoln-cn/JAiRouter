@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
@@ -122,7 +124,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
                 saveSecurityAsNewVersion(currentConfig);
                 
                 // 更新内存中的配置
-                securityProperties.getApiKey().setKeys(apiKeys);
+                securityProperties.getApiKey().setKeys(apiKeys.stream().map(ApiKeyInfo::covertTo).toList());
                 
                 // 发布配置变更事件
                 publishConfigurationChangeEvent("api-keys", null, apiKeys);
@@ -165,7 +167,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     }
 
     @Override
-    public Mono<Void> updateJwtConfig(SecurityProperties.JwtConfig jwtConfig) {
+    public Mono<Void> updateJwtConfig(JwtConfig jwtConfig) {
         return Mono.fromRunnable(() -> {
             log.info("更新JWT配置");
             
@@ -177,7 +179,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
                 Map<String, Object> currentConfig = getCurrentPersistedSecurityConfig();
                 
                 // 记录变更前的值
-                SecurityProperties.JwtConfig oldConfig = copyJwtConfig(securityProperties.getJwt());
+                JwtConfig oldConfig = copyJwtConfig(securityProperties.getJwt());
                 
                 // 更新JWT配置
                 Map<String, Object> jwtConfigMap = convertJwtConfigToMap(jwtConfig);
@@ -330,7 +332,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
             Map<String, Object> apiKeyConfig = (Map<String, Object>) config.get("apiKey");
             if (apiKeyConfig.containsKey("keys")) {
                 List<ApiKeyInfo> keys = (List<ApiKeyInfo>) apiKeyConfig.get("keys");
-                securityProperties.getApiKey().setKeys(keys);
+                securityProperties.getApiKey().setKeys(keys.stream().map(ApiKeyInfo::covertTo).toList());
             }
         }
         
@@ -347,7 +349,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
      * 从Map更新JWT配置
      */
     private void updateJwtConfigFromMap(Map<String, Object> jwtConfigMap) {
-        SecurityProperties.JwtConfig jwtConfig = securityProperties.getJwt();
+        JwtConfig jwtConfig = securityProperties.getJwt();
         
         if (jwtConfigMap.containsKey("enabled")) {
             jwtConfig.setEnabled((Boolean) jwtConfigMap.get("enabled"));
@@ -364,7 +366,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 将JWT配置转换为Map
      */
-    private Map<String, Object> convertJwtConfigToMap(SecurityProperties.JwtConfig jwtConfig) {
+    private Map<String, Object> convertJwtConfigToMap(JwtConfig jwtConfig) {
         Map<String, Object> map = new HashMap<>();
         map.put("enabled", jwtConfig.isEnabled());
         map.put("secret", jwtConfig.getSecret());
@@ -379,7 +381,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 验证JWT配置
      */
-    private void validateJwtConfig(SecurityProperties.JwtConfig jwtConfig) {
+    private void validateJwtConfig(JwtConfig jwtConfig) {
         if (jwtConfig.isEnabled()) {
             if (jwtConfig.getSecret() == null || jwtConfig.getSecret().length() < 32) {
                 throw new IllegalArgumentException("JWT密钥长度至少32个字符");
@@ -393,8 +395,8 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 复制JWT配置
      */
-    private SecurityProperties.JwtConfig copyJwtConfig(SecurityProperties.JwtConfig source) {
-        SecurityProperties.JwtConfig copy = new SecurityProperties.JwtConfig();
+    private JwtConfig copyJwtConfig(JwtConfig source) {
+        JwtConfig copy = new JwtConfig();
         copy.setEnabled(source.isEnabled());
         copy.setSecret(source.getSecret());
         copy.setAlgorithm(source.getAlgorithm());
@@ -408,8 +410,8 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 更新JWT配置属性
      */
-    private void updateJwtConfigProperties(SecurityProperties.JwtConfig newConfig) {
-        SecurityProperties.JwtConfig current = securityProperties.getJwt();
+    private void updateJwtConfigProperties(JwtConfig newConfig) {
+        JwtConfig current = securityProperties.getJwt();
         current.setEnabled(newConfig.isEnabled());
         current.setSecret(newConfig.getSecret());
         current.setAlgorithm(newConfig.getAlgorithm());

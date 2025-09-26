@@ -7,9 +7,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
-import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
+import org.unreal.modelrouter.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -37,7 +38,7 @@ class JwtTokenRefreshServiceTest {
     void setUp() {
         // 初始化安全配置
         securityProperties = new SecurityProperties();
-        SecurityProperties.JwtConfig jwtConfig = new SecurityProperties.JwtConfig();
+        JwtConfig jwtConfig = new JwtConfig();
         jwtConfig.setEnabled(true);
         jwtConfig.setExpirationMinutes(60);
         jwtConfig.setRefreshExpirationDays(7);
@@ -264,7 +265,7 @@ class JwtTokenRefreshServiceTest {
     @Test
     void testRevokeTokens_EmptyList_ShouldComplete() {
         // 准备测试数据
-        List<String> tokens = Arrays.asList();
+        List<String> tokens = List.of();
         
         // 执行测试
         StepVerifier.create(tokenRefreshService.revokeTokens(tokens))

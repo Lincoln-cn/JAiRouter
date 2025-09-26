@@ -10,16 +10,17 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
-import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
-import org.unreal.modelrouter.security.authentication.ApiKeyService;
-import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
+import org.unreal.modelrouter.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.security.authentication.ApiKeyService;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -70,7 +71,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testSuccessfulAuthentication() {
         // 准备测试数据
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", Arrays.asList("read"));
+        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", List.of("read"));
         when(apiKeyService.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
         when(apiKeyService.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
 
@@ -111,7 +112,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testInsufficientPermissions() {
         // 只有read权限的API Key尝试POST请求
-        ApiKeyInfo apiKeyInfo = createTestApiKey("read-only-key", Arrays.asList("read"));
+        ApiKeyInfo apiKeyInfo = createTestApiKey("read-only-key", List.of("read"));
         when(apiKeyService.validateApiKey("read-only-api-key")).thenReturn(Mono.just(apiKeyInfo));
 
         webTestClient.post()
@@ -127,7 +128,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testAdminPermissionAllowsAll() {
         // admin权限应该允许所有操作
-        ApiKeyInfo apiKeyInfo = createTestApiKey("admin-key", Arrays.asList("admin"));
+        ApiKeyInfo apiKeyInfo = createTestApiKey("admin-key", List.of("admin"));
         when(apiKeyService.validateApiKey("admin-api-key")).thenReturn(Mono.just(apiKeyInfo));
         when(apiKeyService.updateUsageStatistics("admin-key", true)).thenReturn(Mono.empty());
 
@@ -142,7 +143,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testAuthorizationHeaderSupport() {
         // 测试通过Authorization头传递API Key
-        ApiKeyInfo apiKeyInfo = createTestApiKey("bearer-key", Arrays.asList("read"));
+        ApiKeyInfo apiKeyInfo = createTestApiKey("bearer-key", List.of("read"));
         when(apiKeyService.validateApiKey("bearer-api-key")).thenReturn(Mono.just(apiKeyInfo));
         when(apiKeyService.updateUsageStatistics("bearer-key", true)).thenReturn(Mono.empty());
 
@@ -194,7 +195,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testPermissionMapping() {
         // 测试不同HTTP方法的权限要求
-        ApiKeyInfo writeKey = createTestApiKey("write-key", Arrays.asList("write"));
+        ApiKeyInfo writeKey = createTestApiKey("write-key", List.of("write"));
         when(apiKeyService.validateApiKey("write-api-key")).thenReturn(Mono.just(writeKey));
         when(apiKeyService.updateUsageStatistics("write-key", true)).thenReturn(Mono.empty());
 
@@ -216,7 +217,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testEmptyPermissionsList() {
         // 空权限列表应该允许所有操作
-        ApiKeyInfo noPermissionsKey = createTestApiKey("no-perms-key", Arrays.asList());
+        ApiKeyInfo noPermissionsKey = createTestApiKey("no-perms-key", List.of());
         when(apiKeyService.validateApiKey("no-perms-api-key")).thenReturn(Mono.just(noPermissionsKey));
         when(apiKeyService.updateUsageStatistics("no-perms-key", true)).thenReturn(Mono.empty());
 
