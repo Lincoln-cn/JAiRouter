@@ -12,8 +12,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.security.config.JwtUserProperties;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.JwtUserProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;

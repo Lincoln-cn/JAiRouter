@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
@@ -26,7 +28,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     private final StoreManager storeManager;
     private final ApplicationEventPublisher eventPublisher;
     private final SecurityConfigurationValidator validator;
-    
+
     private static final String API_KEYS_CONFIG_KEY = "security.api-keys";
     private static final String SANITIZATION_RULES_CONFIG_KEY = "security.sanitization-rules";
     private static final String JWT_CONFIG_KEY = "security.jwt-config";
@@ -40,23 +42,23 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     public Mono<Void> updateApiKeys(List<ApiKeyInfo> apiKeys) {
         return Mono.fromRunnable(() -> {
             log.info("Updating API Keys configuration, count: {}", apiKeys.size());
-            
+
             try {
                 // 验证配置
                 validateApiKeysList(apiKeys);
-                
+
                 // 转换为存储格式
                 Map<String, Object> configMap = convertApiKeysToMap(apiKeys);
-                
+
                 // 更新配置版本
                 storeManager.updateConfig(
-                    API_KEYS_CONFIG_KEY,
+                        API_KEYS_CONFIG_KEY,
                         configMap
                 );
-                
+
                 // 更新内存中的配置
-                securityProperties.getApiKey().setKeys(apiKeys);
-                
+                securityProperties.getApiKey().setKeys(apiKeys.stream().map(ApiKeyInfo::covertTo).toList());
+
             } catch (Exception e) {
                 log.error("Failed to update API Keys configuration", e);
                 throw new RuntimeException("Failed to update API Keys configuration", e);
@@ -68,19 +70,19 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     public Mono<Void> updateSanitizationRules(List<SanitizationRule> rules) {
         return Mono.fromRunnable(() -> {
             log.info("Updating sanitization rules configuration, count: {}", rules.size());
-            
+
             try {
                 // 验证配置
                 validateSanitizationRules(rules);
-                
+
                 // 转换为存储格式
                 Map<String, Object> configMap = convertSanitizationRulesToMap(rules);
 
                 storeManager.updateConfig(
-                    SANITIZATION_RULES_CONFIG_KEY,
+                        SANITIZATION_RULES_CONFIG_KEY,
                         configMap
                 );
-                
+
             } catch (Exception e) {
                 log.error("Failed to update sanitization rules configuration", e);
                 throw new RuntimeException("Failed to update sanitization rules configuration", e);
@@ -89,25 +91,25 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     @Override
-    public Mono<Void> updateJwtConfig(SecurityProperties.JwtConfig jwtConfig) {
+    public Mono<Void> updateJwtConfig(JwtConfig jwtConfig) {
         return Mono.fromRunnable(() -> {
             log.info("Updating JWT configuration");
-            
+
             try {
                 // 验证配置
                 validateJwtConfig(jwtConfig);
-                
+
                 // 记录变更前的值
-                SecurityProperties.JwtConfig oldConfig = copyJwtConfig(securityProperties.getJwt());
-                
+                JwtConfig oldConfig = copyJwtConfig(securityProperties.getJwt());
+
                 // 转换为存储格式
                 Map<String, Object> configMap = convertJwtConfigToMap(jwtConfig);
 
                 storeManager.updateConfig(
-                    JWT_CONFIG_KEY,
+                        JWT_CONFIG_KEY,
                         configMap
                 );
-                
+
                 // 更新内存中的配置
                 updateJwtConfigProperties(jwtConfig);
 
@@ -130,17 +132,17 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     public Mono<Boolean> validateConfiguration(SecurityProperties properties) {
         return Mono.fromCallable(() -> {
             log.debug("Validating security configuration");
-            
+
             try {
-                SecurityConfigurationValidator.ValidationResult result = 
+                SecurityConfigurationValidator.ValidationResult result =
                         validator.validateConfiguration(properties);
-                
+
                 if (!result.isValid()) {
                     log.warn("Security configuration validation failed: {}", result.getErrors());
                 }
-                
+
                 return result.isValid();
-                
+
             } catch (Exception e) {
                 log.warn("Security configuration validation failed with exception", e);
                 return false;
@@ -152,12 +154,12 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     public Mono<Void> reloadConfiguration() {
         return Mono.fromRunnable(() -> {
             log.info("Reloading security configurations");
-            
+
             try {
                 loadLatestConfigurations();
-                
+
                 log.info("Security configurations reloaded successfully");
-                
+
             } catch (Exception e) {
                 log.error("Failed to reload security configurations", e);
                 throw new RuntimeException("Failed to reload security configurations", e);
@@ -169,31 +171,32 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     public Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(int limit) {
         return Mono.fromCallable(() -> {
             log.debug("Getting configuration history, limit: {}", limit);
-            
+
             // 这里可以从 configVersionManager 获取版本历史
             // 并转换为 SecurityConfigurationChangeEvent 格式
-            
+
             return List.of(); // 临时返回空列表
         });
     }
+
     /**
      * 应用启动时加载最新配置
      */
     private void loadLatestConfigurations() {
         log.info("Loading latest security configurations...");
-        
+
         try {
             // 加载API Keys配置
             loadLatestApiKeysConfig();
-            
+
             // 加载JWT配置
             loadLatestJwtConfig();
-            
+
             // 加载脱敏规则配置
             loadLatestSanitizationRulesConfig();
-            
+
             log.info("Latest security configurations loaded successfully");
-            
+
         } catch (Exception e) {
             log.error("Failed to load latest security configurations", e);
             throw new RuntimeException("Failed to load latest security configurations", e);
@@ -204,7 +207,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         Map<String, Object> configMap = storeManager.getLatestConfig(API_KEYS_CONFIG_KEY);
         if (configMap != null) {
             List<ApiKeyInfo> apiKeys = convertMapToApiKeys(configMap);
-            securityProperties.getApiKey().setKeys(apiKeys);
+            securityProperties.getApiKey().setKeys(apiKeys.stream().map(ApiKeyInfo::covertTo).toList());
             log.debug("Loaded {} API keys from latest configuration", apiKeys.size());
         }
     }
@@ -212,7 +215,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     private void loadLatestJwtConfig() {
         Map<String, Object> configMap = storeManager.getLatestConfig(JWT_CONFIG_KEY);
         if (configMap != null) {
-            SecurityProperties.JwtConfig jwtConfig = convertMapToJwtConfig(configMap);
+            JwtConfig jwtConfig = convertMapToJwtConfig(configMap);
             updateJwtConfigProperties(jwtConfig);
             log.debug("Loaded JWT configuration from latest version");
         }
@@ -239,7 +242,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         return (List<ApiKeyInfo>) configMap.get("keys");
     }
 
-    private Map<String, Object> convertJwtConfigToMap(SecurityProperties.JwtConfig jwtConfig) {
+    private Map<String, Object> convertJwtConfigToMap(JwtConfig jwtConfig) {
         Map<String, Object> map = new HashMap<>();
         map.put("enabled", jwtConfig.isEnabled());
         map.put("secret", jwtConfig.getSecret());
@@ -251,8 +254,8 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         return map;
     }
 
-    private SecurityProperties.JwtConfig convertMapToJwtConfig(Map<String, Object> configMap) {
-        SecurityProperties.JwtConfig jwtConfig = new SecurityProperties.JwtConfig();
+    private JwtConfig convertMapToJwtConfig(Map<String, Object> configMap) {
+        JwtConfig jwtConfig = new JwtConfig();
         jwtConfig.setEnabled((Boolean) configMap.get("enabled"));
         jwtConfig.setSecret((String) configMap.get("secret"));
         jwtConfig.setAlgorithm((String) configMap.get("algorithm"));
@@ -282,12 +285,12 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         // 实现脱敏规则验证逻辑
     }
 
-    private void validateJwtConfig(SecurityProperties.JwtConfig jwtConfig) {
+    private void validateJwtConfig(JwtConfig jwtConfig) {
         // 实现JWT配置验证逻辑
     }
 
-    private SecurityProperties.JwtConfig copyJwtConfig(SecurityProperties.JwtConfig source) {
-        SecurityProperties.JwtConfig copy = new SecurityProperties.JwtConfig();
+    private JwtConfig copyJwtConfig(JwtConfig source) {
+        JwtConfig copy = new JwtConfig();
         copy.setEnabled(source.isEnabled());
         copy.setSecret(source.getSecret());
         copy.setAlgorithm(source.getAlgorithm());
@@ -303,8 +306,8 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         return source; // 临时返回
     }
 
-    private void updateJwtConfigProperties(SecurityProperties.JwtConfig newConfig) {
-        SecurityProperties.JwtConfig current = securityProperties.getJwt();
+    private void updateJwtConfigProperties(JwtConfig newConfig) {
+        JwtConfig current = securityProperties.getJwt();
         current.setEnabled(newConfig.isEnabled());
         current.setSecret(newConfig.getSecret());
         current.setAlgorithm(newConfig.getAlgorithm());

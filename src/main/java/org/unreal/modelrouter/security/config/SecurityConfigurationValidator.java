@@ -2,6 +2,7 @@ package org.unreal.modelrouter.security.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.security.config.properties.*;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 
 import java.time.LocalDateTime;
@@ -79,7 +80,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证API Key配置
      */
-    private void validateApiKeyConfig(SecurityProperties.ApiKeyConfig config, ValidationResult result) {
+    private void validateApiKeyConfig(ApiKeyConfig config, ValidationResult result) {
         if (config.isEnabled()) {
             // 验证请求头名称
             if (config.getHeaderName() == null || config.getHeaderName().trim().isEmpty()) {
@@ -95,18 +96,9 @@ public class SecurityConfigurationValidator {
                 result.addWarning("API Key默认过期天数超过10年，建议设置较短的过期时间");
             }
 
-            // 验证缓存配置
-            if (config.isCacheEnabled()) {
-                if (config.getCacheExpirationSeconds() < 60) {
-                    result.addError("API Key缓存过期时间不能少于60秒");
-                } else if (config.getCacheExpirationSeconds() > 86400) {
-                    result.addError("API Key缓存过期时间不能超过24小时");
-                }
-            }
-
             // 验证API Key列表
             if (config.getKeys() != null) {
-                validateApiKeyList(config.getKeys(), result);
+                validateApiKeyList(config.getKeys().stream().map(ApiKeyProperties::covertTo).toList(), result);
             }
         }
     }
@@ -161,7 +153,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证JWT配置
      */
-    private void validateJwtConfig(SecurityProperties.JwtConfig config, ValidationResult result) {
+    private void validateJwtConfig(JwtConfig config, ValidationResult result) {
         // 验证密钥
         if (config.getSecret() == null || config.getSecret().length() < 32) {
             result.addError("JWT密钥长度至少32个字符");
@@ -200,7 +192,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证脱敏配置
      */
-    private void validateSanitizationConfig(SecurityProperties.SanitizationConfig config, ValidationResult result) {
+    private void validateSanitizationConfig(SanitizationConfig config, ValidationResult result) {
         // 验证请求脱敏配置
         if (config.getRequest() != null) {
             validateRequestSanitizationConfig(config.getRequest(), result);
@@ -216,7 +208,7 @@ public class SecurityConfigurationValidator {
      * 验证请求脱敏配置
      */
     private void validateRequestSanitizationConfig(
-            SecurityProperties.SanitizationConfig.RequestSanitization config, ValidationResult result) {
+            SanitizationConfig.RequestSanitization config, ValidationResult result) {
         
         // 验证掩码字符
         if (config.getMaskingChar() == null || config.getMaskingChar().trim().isEmpty()) {
@@ -245,7 +237,7 @@ public class SecurityConfigurationValidator {
      * 验证响应脱敏配置
      */
     private void validateResponseSanitizationConfig(
-            SecurityProperties.SanitizationConfig.ResponseSanitization config, ValidationResult result) {
+            SanitizationConfig.ResponseSanitization config, ValidationResult result) {
         
         // 验证掩码字符
         if (config.getMaskingChar() == null || config.getMaskingChar().trim().isEmpty()) {
@@ -325,7 +317,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证审计配置
      */
-    private void validateAuditConfig(SecurityProperties.AuditConfig config, ValidationResult result) {
+    private void validateAuditConfig(AuditConfig config, ValidationResult result) {
         // 验证日志级别
         if (config.getLogLevel() == null || !SUPPORTED_LOG_LEVELS.contains(config.getLogLevel())) {
             result.addError("不支持的日志级别: " + config.getLogLevel() + 
@@ -348,7 +340,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证告警阈值配置
      */
-    private void validateAlertThresholds(SecurityProperties.AuditConfig.AlertThresholds thresholds, ValidationResult result) {
+    private void validateAlertThresholds(AuditConfig.AlertThresholds thresholds, ValidationResult result) {
         if (thresholds.getAuthFailuresPerMinute() <= 0) {
             result.addError("认证失败告警阈值必须大于0");
         } else if (thresholds.getAuthFailuresPerMinute() > 1000) {

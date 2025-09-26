@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.config;
+package org.unreal.modelrouter.security.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

@@ -2,11 +2,13 @@ package org.unreal.modelrouter.security.config;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -118,7 +120,7 @@ class SecurityConfigurationValidatorTest {
                 .enabled(true)
                 .build();
         
-        properties.getApiKey().setKeys(Arrays.asList(invalidApiKey));
+        properties.getApiKey().setKeys(Collections.singletonList(invalidApiKey));
         
         SecurityConfigurationValidator.ValidationResult result = validator.validateConfiguration(properties);
         
@@ -139,7 +141,7 @@ class SecurityConfigurationValidatorTest {
                 .expiresAt(LocalDateTime.now().minusDays(1))  // 已过期
                 .build();
         
-        properties.getApiKey().setKeys(Arrays.asList(expiredApiKey));
+        properties.getApiKey().setKeys(Collections.singletonList(expiredApiKey));
         
         SecurityConfigurationValidator.ValidationResult result = validator.validateConfiguration(properties);
         
@@ -223,7 +225,7 @@ class SecurityConfigurationValidatorTest {
 
     @Test
     void testValidateSanitizationConfig_InvalidPiiPattern() {
-        properties.getSanitization().getRequest().setPiiPatterns(Arrays.asList("[invalid"));  // 无效的正则表达式
+        properties.getSanitization().getRequest().setPiiPatterns(List.of("[invalid"));  // 无效的正则表达式
         
         SecurityConfigurationValidator.ValidationResult result = validator.validateConfiguration(properties);
         
@@ -293,7 +295,7 @@ class SecurityConfigurationValidatorTest {
                 .expiresAt(LocalDateTime.now().plusDays(365))
                 .permissions(Arrays.asList("read", "write"))
                 .build();
-        properties.getApiKey().setKeys(Arrays.asList(validApiKey));
+        properties.getApiKey().setKeys(Collections.singletonList(validApiKey));
         
         // JWT配置
         properties.getJwt().setEnabled(true);
@@ -306,11 +308,11 @@ class SecurityConfigurationValidatorTest {
         // 脱敏配置
         properties.getSanitization().getRequest().setMaskingChar("*");
         properties.getSanitization().getRequest().setSensitiveWords(Arrays.asList("password", "secret"));
-        properties.getSanitization().getRequest().setPiiPatterns(Arrays.asList("\\d{11}"));
+        properties.getSanitization().getRequest().setPiiPatterns(List.of("\\d{11}"));
         
         properties.getSanitization().getResponse().setMaskingChar("*");
-        properties.getSanitization().getResponse().setSensitiveWords(Arrays.asList("internal"));
-        properties.getSanitization().getResponse().setPiiPatterns(Arrays.asList("\\d{11}"));
+        properties.getSanitization().getResponse().setSensitiveWords(List.of("internal"));
+        properties.getSanitization().getResponse().setPiiPatterns(List.of("\\d{11}"));
         
         // 审计配置
         properties.getAudit().setLogLevel("INFO");

@@ -1,9 +1,8 @@
 package org.unreal.modelrouter.security;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.*;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
@@ -152,7 +151,7 @@ class SecurityModuleFoundationTest {
     @Test
     void testApiKeyConfigDefaults() {
         // 测试API Key配置的默认值
-        SecurityProperties.ApiKeyConfig config = new SecurityProperties.ApiKeyConfig();
+        ApiKeyConfig config = new ApiKeyConfig();
         assertTrue(config.isEnabled());
         assertEquals("X-API-Key", config.getHeaderName());
         assertEquals(365L, config.getDefaultExpirationDays());
@@ -165,7 +164,7 @@ class SecurityModuleFoundationTest {
     @Test
     void testJwtConfigDefaults() {
         // 测试JWT配置的默认值
-        SecurityProperties.JwtConfig config = new SecurityProperties.JwtConfig();
+        JwtConfig config = new JwtConfig();
         assertFalse(config.isEnabled());
         assertEquals("HS256", config.getAlgorithm());
         assertEquals(60L, config.getExpirationMinutes());
@@ -177,19 +176,19 @@ class SecurityModuleFoundationTest {
     @Test
     void testSanitizationConfigDefaults() {
         // 测试脱敏配置的默认值
-        SecurityProperties.SanitizationConfig config = new SecurityProperties.SanitizationConfig();
+        SanitizationConfig config = new SanitizationConfig();
         assertNotNull(config.getRequest());
         assertNotNull(config.getResponse());
-        
-        SecurityProperties.SanitizationConfig.RequestSanitization requestConfig = config.getRequest();
+
+        SanitizationConfig.RequestSanitization requestConfig = config.getRequest();
         assertTrue(requestConfig.isEnabled());
         assertEquals("*", requestConfig.getMaskingChar());
         assertTrue(requestConfig.isLogSanitization());
         assertNotNull(requestConfig.getSensitiveWords());
         assertNotNull(requestConfig.getPiiPatterns());
         assertNotNull(requestConfig.getWhitelistUsers());
-        
-        SecurityProperties.SanitizationConfig.ResponseSanitization responseConfig = config.getResponse();
+
+        SanitizationConfig.ResponseSanitization responseConfig = config.getResponse();
         assertTrue(responseConfig.isEnabled());
         assertEquals("*", responseConfig.getMaskingChar());
         assertTrue(responseConfig.isLogSanitization());
@@ -200,7 +199,7 @@ class SecurityModuleFoundationTest {
     @Test
     void testAuditConfigDefaults() {
         // 测试审计配置的默认值
-        SecurityProperties.AuditConfig config = new SecurityProperties.AuditConfig();
+        AuditConfig config = new AuditConfig();
         assertTrue(config.isEnabled());
         assertEquals("INFO", config.getLogLevel());
         assertFalse(config.isIncludeRequestBody());
@@ -208,8 +207,8 @@ class SecurityModuleFoundationTest {
         assertEquals(90, config.getRetentionDays());
         assertFalse(config.isAlertEnabled());
         assertNotNull(config.getAlertThresholds());
-        
-        SecurityProperties.AuditConfig.AlertThresholds thresholds = config.getAlertThresholds();
+
+        AuditConfig.AlertThresholds thresholds = config.getAlertThresholds();
         assertEquals(10, thresholds.getAuthFailuresPerMinute());
         assertEquals(100, thresholds.getSanitizationOperationsPerMinute());
     }

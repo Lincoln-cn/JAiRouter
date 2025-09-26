@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import lombok.Builder;
 import lombok.Data;
+import org.unreal.modelrouter.security.config.properties.ApiKeyProperties;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -148,5 +149,18 @@ public class ApiKeyInfo {
      */
     public static String generateApiKey() {
         return generateApiKey("sk-", 32);
+    }
+
+
+    public ApiKeyProperties covertTo() {
+        ApiKeyProperties apiKeyProperties = new ApiKeyProperties();
+        apiKeyProperties.setKeyId(this.keyId);
+        apiKeyProperties.setKeyValue(this.keyValue);
+        apiKeyProperties.setEnabled(this.isEnabled());
+        apiKeyProperties.setDescription(this.description);
+        apiKeyProperties.setExpiresAt(this.expiresAt);
+        apiKeyProperties.setMetadata(this.metadata);
+        apiKeyProperties.setPermissions(this.getPermissions());
+        return apiKeyProperties;
     }
 }

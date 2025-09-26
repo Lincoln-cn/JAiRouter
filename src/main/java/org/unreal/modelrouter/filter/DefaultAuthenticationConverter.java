@@ -1,14 +1,14 @@
 package org.unreal.modelrouter.filter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.web.server.ServerWebExchange;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.security.model.JwtAuthentication;
 import reactor.core.publisher.Mono;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -31,12 +31,12 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
         String jwtToken = null;
 
         // 首先尝试提取API Key（如果启用）
-        if (Boolean.TRUE.equals(securityProperties.getApiKey().isEnabled())) {
+        if (securityProperties.getApiKey().isEnabled()) {
             apiKey = extractApiKey(exchange);
         }
 
         // 然后尝试提取JWT令牌（如果启用）
-        if (Boolean.TRUE.equals(securityProperties.getJwt().isEnabled())) {
+        if (securityProperties.getJwt().isEnabled()) {
             jwtToken = extractJwtToken(exchange);
         }
 
