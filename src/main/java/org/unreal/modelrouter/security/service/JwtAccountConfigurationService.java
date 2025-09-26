@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.security.config.JwtUserProperties;
 import org.unreal.modelrouter.security.config.SecurityConfigurationChangeEvent;
+import org.unreal.modelrouter.security.config.properties.JwtUserProperties;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.core.publisher.Mono;
 

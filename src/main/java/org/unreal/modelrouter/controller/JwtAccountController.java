@@ -15,7 +15,7 @@ import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.JwtAccountConfigStatus;
 import org.unreal.modelrouter.dto.JwtAccountRequest;
 import org.unreal.modelrouter.dto.JwtAccountResponse;
-import org.unreal.modelrouter.security.config.JwtUserProperties;
+import org.unreal.modelrouter.security.config.properties.JwtUserProperties;
 import org.unreal.modelrouter.security.service.JwtAccountConfigurationService;
 import reactor.core.publisher.Mono;
 

@@ -5,13 +5,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.sanitization.impl.DefaultSanitizationService;
-import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.exception.SanitizationException;
+import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
+import org.unreal.modelrouter.sanitization.impl.DefaultSanitizationService;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.RuleType;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SanitizationStrategy;
-import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -21,7 +21,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.lenient;
 
 /**
  * DefaultSanitizationService 单元测试
@@ -47,7 +46,7 @@ class DefaultSanitizationServiceTest {
         
         // 设置响应脱敏配置
         securityProperties.getSanitization().getResponse().setSensitiveWords(Arrays.asList("internal", "debug"));
-        securityProperties.getSanitization().getResponse().setPiiPatterns(Arrays.asList("\\d{11}"));
+        securityProperties.getSanitization().getResponse().setPiiPatterns(List.of("\\d{11}"));
         securityProperties.getSanitization().getResponse().setMaskingChar("*");
         
         // Mock rule engine with lenient stubbing
@@ -393,13 +392,13 @@ class DefaultSanitizationServiceTest {
         
         StepVerifier.create(sanitizationService.getRuleStatistics())
                 .assertNext(stats -> {
-                    assertTrue(stats.getTotalRules() > 0);
-                    assertTrue(stats.getEnabledRules() > 0);
-                    assertTrue(stats.getRequestRules() > 0);
-                    assertTrue(stats.getResponseRules() > 0);
+                    assertTrue(stats.totalRules() > 0);
+                    assertTrue(stats.enabledRules() > 0);
+                    assertTrue(stats.requestRules() > 0);
+                    assertTrue(stats.responseRules() > 0);
                     
                     // 验证统计信息的一致性
-                    assertEquals(stats.getRequestRules() + stats.getResponseRules(), stats.getTotalRules());
+                    assertEquals(stats.requestRules() + stats.responseRules(), stats.totalRules());
                 })
                 .verifyComplete();
     }

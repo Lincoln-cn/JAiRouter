@@ -10,8 +10,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.core.ReactiveValueOperations;
-import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.JwtAuthentication;
 import org.unreal.modelrouter.security.model.JwtPrincipal;
 import reactor.core.publisher.Mono;
@@ -25,7 +26,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,7 +50,7 @@ class DefaultJwtTokenValidatorTest {
     void setUp() {
         // 初始化安全配置
         securityProperties = new SecurityProperties();
-        SecurityProperties.JwtConfig jwtConfig = new SecurityProperties.JwtConfig();
+        JwtConfig jwtConfig = new JwtConfig();
         jwtConfig.setEnabled(true);
         jwtConfig.setSecret("test-secret-key-that-is-long-enough-for-hmac-sha256-algorithm");
         jwtConfig.setAlgorithm("HS256");
@@ -97,7 +99,7 @@ class DefaultJwtTokenValidatorTest {
     void testValidateToken_ExpiredToken_ShouldReturnError() {
         // 准备过期的令牌
         String subject = "testuser";
-        List<String> roles = Arrays.asList("user");
+        List<String> roles = List.of("user");
         String token = createExpiredToken(subject, roles);
         
         // 执行测试
@@ -117,7 +119,7 @@ class DefaultJwtTokenValidatorTest {
             .setIssuer("jairouter-test")
             .setIssuedAt(new Date())
             .setExpiration(new Date(System.currentTimeMillis() + 3600000))
-            .claim("roles", Arrays.asList("user"))
+            .claim("roles", List.of("user"))
             .signWith(wrongKey, SignatureAlgorithm.HS256)
             .compact();
         
@@ -133,7 +135,7 @@ class DefaultJwtTokenValidatorTest {
     void testValidateToken_BlacklistedToken_ShouldReturnError() {
         // 准备测试数据
         String subject = "testuser";
-        List<String> roles = Arrays.asList("user");
+        List<String> roles = List.of("user");
         String token = createValidToken(subject, roles);
         
         // 模拟令牌在黑名单中
@@ -175,7 +177,7 @@ class DefaultJwtTokenValidatorTest {
     void testRefreshToken_ExpiredTokenBeyondRefreshWindow_ShouldReturnError() {
         // 准备超出刷新窗口的过期令牌
         String subject = "testuser";
-        List<String> roles = Arrays.asList("user");
+        List<String> roles = List.of("user");
         
         Date issuedAt = new Date(System.currentTimeMillis() - Duration.ofDays(10).toMillis());
         Date expiration = new Date(System.currentTimeMillis() - Duration.ofDays(8).toMillis());
@@ -201,7 +203,7 @@ class DefaultJwtTokenValidatorTest {
     @Test
     void testIsTokenBlacklisted_TokenNotInBlacklist_ShouldReturnFalse() {
         // 准备测试数据
-        String token = createValidToken("testuser", Arrays.asList("user"));
+        String token = createValidToken("testuser", List.of("user"));
         
         // 模拟Redis返回false
         when(redisTemplate.hasKey(anyString())).thenReturn(Mono.just(false));
@@ -215,7 +217,7 @@ class DefaultJwtTokenValidatorTest {
     @Test
     void testIsTokenBlacklisted_TokenInBlacklist_ShouldReturnTrue() {
         // 准备测试数据
-        String token = createValidToken("testuser", Arrays.asList("user"));
+        String token = createValidToken("testuser", List.of("user"));
         
         // 模拟Redis返回true
         when(redisTemplate.hasKey(anyString())).thenReturn(Mono.just(true));
@@ -229,7 +231,7 @@ class DefaultJwtTokenValidatorTest {
     @Test
     void testBlacklistToken_ValidToken_ShouldComplete() {
         // 准备测试数据
-        String token = createValidToken("testuser", Arrays.asList("user"));
+        String token = createValidToken("testuser", List.of("user"));
         
         // 执行测试
         StepVerifier.create(jwtTokenValidator.blacklistToken(token))
@@ -240,7 +242,7 @@ class DefaultJwtTokenValidatorTest {
     void testExtractUserId_ValidToken_ShouldReturnUserId() {
         // 准备测试数据
         String subject = "testuser";
-        String token = createValidToken(subject, Arrays.asList("user"));
+        String token = createValidToken(subject, List.of("user"));
         
         // 执行测试
         StepVerifier.create(jwtTokenValidator.extractUserId(token))
@@ -260,7 +262,7 @@ class DefaultJwtTokenValidatorTest {
             .setIssuedAt(new Date())
             .setExpiration(new Date(System.currentTimeMillis() + 3600000))
             .setId(UUID.randomUUID().toString())
-            .claim("roles", Arrays.asList("user"))
+            .claim("roles", List.of("user"))
             .claim("userId", userId)
             .signWith(signingKey, SignatureAlgorithm.HS256)
             .compact();

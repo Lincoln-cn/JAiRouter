@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
+import org.unreal.modelrouter.security.config.properties.ApiKeyProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.store.StoreManager;
 
 import java.time.LocalDateTime;
@@ -265,7 +266,7 @@ public class SecurityConfigurationBackupService {
 
         // 加密API Key值
         if (encrypted.getApiKey().getKeys() != null) {
-            for (ApiKeyInfo apiKey : encrypted.getApiKey().getKeys()) {
+            for (ApiKeyProperties apiKey : encrypted.getApiKey().getKeys()) {
                 if (apiKey.getKeyValue() != null) {
                     apiKey.setKeyValue(encryptionService.encryptApiKeyValue(apiKey.getKeyValue()));
                 }
@@ -288,7 +289,7 @@ public class SecurityConfigurationBackupService {
 
         // 解密API Key值
         if (decrypted.getApiKey().getKeys() != null) {
-            for (ApiKeyInfo apiKey : decrypted.getApiKey().getKeys()) {
+            for (ApiKeyProperties apiKey : decrypted.getApiKey().getKeys()) {
                 if (apiKey.getKeyValue() != null) {
                     apiKey.setKeyValue(encryptionService.decryptApiKeyValue(apiKey.getKeyValue()));
                 }
@@ -488,29 +489,14 @@ public class SecurityConfigurationBackupService {
     }
 
     /**
-     * 备份验证结果
-     */
-    public static class BackupValidationResult {
-        private final boolean valid;
-        private final String message;
-        private final SecurityConfigurationValidator.ValidationResult configValidationResult;
+         * 备份验证结果
+         */
+        public record BackupValidationResult(boolean valid, String message,
+                                             SecurityConfigurationValidator.ValidationResult configValidationResult) {
+            public BackupValidationResult(boolean valid, String message) {
+                this(valid, message, null);
+            }
 
-        public BackupValidationResult(boolean valid, String message) {
-            this(valid, message, null);
-        }
-
-        public BackupValidationResult(boolean valid, String message, 
-                SecurityConfigurationValidator.ValidationResult configValidationResult) {
-            this.valid = valid;
-            this.message = message;
-            this.configValidationResult = configValidationResult;
-        }
-
-        public boolean isValid() { return valid; }
-        public String getMessage() { return message; }
-        public SecurityConfigurationValidator.ValidationResult getConfigValidationResult() { 
-            return configValidationResult; 
-        }
     }
 
     /**

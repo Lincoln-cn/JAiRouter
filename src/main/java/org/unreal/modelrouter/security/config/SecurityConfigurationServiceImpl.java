@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.security.config.properties.*;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
@@ -44,10 +45,10 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
             log.info("开始更新API Key配置，数量: {}", apiKeys.size());
             
             // 记录变更前的值
-            List<ApiKeyInfo> oldKeys = new ArrayList<>(securityProperties.getApiKey().getKeys());
+            List<ApiKeyProperties> oldKeys = new ArrayList<>(securityProperties.getApiKey().getKeys());
             
             // 更新配置
-            securityProperties.getApiKey().setKeys(apiKeys);
+            securityProperties.getApiKey().setKeys(apiKeys.stream().map(ApiKeyInfo::covertTo).toList());
             
             // 持久化到存储
             // 注意：这里需要将对象转换为Map格式以适配StoreManager接口
@@ -82,12 +83,12 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     }
 
     @Override
-    public Mono<Void> updateJwtConfig(SecurityProperties.JwtConfig jwtConfig) {
+    public Mono<Void> updateJwtConfig(JwtConfig jwtConfig) {
         return Mono.fromRunnable(() -> {
             log.info("开始更新JWT配置");
             
             // 记录变更前的值
-            SecurityProperties.JwtConfig oldConfig = copyJwtConfig(securityProperties.getJwt());
+            JwtConfig oldConfig = copyJwtConfig(securityProperties.getJwt());
             
             // 更新配置
             updateJwtConfigProperties(jwtConfig);
@@ -239,7 +240,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证API Key配置
      */
-    private void validateApiKeyConfig(SecurityProperties.ApiKeyConfig config) {
+    private void validateApiKeyConfig(ApiKeyConfig config) {
         if (config.isEnabled()) {
             if (config.getHeaderName() == null || config.getHeaderName().trim().isEmpty()) {
                 throw new IllegalArgumentException("API Key请求头名称不能为空");
@@ -248,17 +249,13 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
             if (config.getDefaultExpirationDays() <= 0) {
                 throw new IllegalArgumentException("API Key默认过期天数必须大于0");
             }
-            
-            if (config.isCacheEnabled() && config.getCacheExpirationSeconds() <= 0) {
-                throw new IllegalArgumentException("API Key缓存过期时间必须大于0");
-            }
         }
     }
 
     /**
      * 验证JWT配置
      */
-    private void validateJwtConfig(SecurityProperties.JwtConfig config) {
+    private void validateJwtConfig(JwtConfig config) {
         if (config.getSecret() == null || config.getSecret().length() < 32) {
             throw new IllegalArgumentException("JWT密钥长度至少32个字符");
         }
@@ -279,7 +276,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证脱敏配置
      */
-    private void validateSanitizationConfig(SecurityProperties.SanitizationConfig config) {
+    private void validateSanitizationConfig(SanitizationConfig config) {
         if (config.getRequest() != null) {
             validateSanitizationSubConfig(config.getRequest().getMaskingChar(), "请求脱敏掩码字符");
         }
@@ -305,7 +302,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证审计配置
      */
-    private void validateAuditConfig(SecurityProperties.AuditConfig config) {
+    private void validateAuditConfig(AuditConfig config) {
         if (config.getRetentionDays() <= 0) {
             throw new IllegalArgumentException("审计日志保留天数必须大于0");
         }
@@ -329,12 +326,11 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
         copy.setEnabled(source.isEnabled());
         
         // 复制API Key配置
-        SecurityProperties.ApiKeyConfig apiKeyConfig = new SecurityProperties.ApiKeyConfig();
+        ApiKeyConfig apiKeyConfig = new ApiKeyConfig();
         apiKeyConfig.setEnabled(source.getApiKey().isEnabled());
         apiKeyConfig.setHeaderName(source.getApiKey().getHeaderName());
         apiKeyConfig.setKeys(new ArrayList<>(source.getApiKey().getKeys()));
         apiKeyConfig.setDefaultExpirationDays(source.getApiKey().getDefaultExpirationDays());
-        apiKeyConfig.setCacheEnabled(source.getApiKey().isCacheEnabled());
         apiKeyConfig.setCacheExpirationSeconds(source.getApiKey().getCacheExpirationSeconds());
         copy.setApiKey(apiKeyConfig);
         
@@ -342,12 +338,12 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
         copy.setJwt(copyJwtConfig(source.getJwt()));
         
         // 复制脱敏配置
-        SecurityProperties.SanitizationConfig sanitizationConfig = new SecurityProperties.SanitizationConfig();
+        SanitizationConfig sanitizationConfig = new SanitizationConfig();
         // ... 复制脱敏配置的详细实现
         copy.setSanitization(sanitizationConfig);
         
         // 复制审计配置
-        SecurityProperties.AuditConfig auditConfig = new SecurityProperties.AuditConfig();
+        AuditConfig auditConfig = new AuditConfig();
         auditConfig.setEnabled(source.getAudit().isEnabled());
         auditConfig.setLogLevel(source.getAudit().getLogLevel());
         auditConfig.setIncludeRequestBody(source.getAudit().isIncludeRequestBody());
@@ -362,8 +358,8 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 复制JWT配置
      */
-    private SecurityProperties.JwtConfig copyJwtConfig(SecurityProperties.JwtConfig source) {
-        SecurityProperties.JwtConfig copy = new SecurityProperties.JwtConfig();
+    private JwtConfig copyJwtConfig(JwtConfig source) {
+        JwtConfig copy = new JwtConfig();
         copy.setEnabled(source.isEnabled());
         copy.setSecret(source.getSecret());
         copy.setAlgorithm(source.getAlgorithm());
@@ -377,8 +373,8 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 更新JWT配置属性
      */
-    private void updateJwtConfigProperties(SecurityProperties.JwtConfig newConfig) {
-        SecurityProperties.JwtConfig current = securityProperties.getJwt();
+    private void updateJwtConfigProperties(JwtConfig newConfig) {
+        JwtConfig current = securityProperties.getJwt();
         current.setEnabled(newConfig.isEnabled());
         current.setSecret(newConfig.getSecret());
         current.setAlgorithm(newConfig.getAlgorithm());
@@ -395,19 +391,17 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
         securityProperties.setEnabled(backup.isEnabled());
         
         // 恢复API Key配置
-        SecurityProperties.ApiKeyConfig currentApiKey = securityProperties.getApiKey();
-        SecurityProperties.ApiKeyConfig backupApiKey = backup.getApiKey();
+        ApiKeyConfig currentApiKey = securityProperties.getApiKey();
+        ApiKeyConfig backupApiKey = backup.getApiKey();
         currentApiKey.setEnabled(backupApiKey.isEnabled());
         currentApiKey.setHeaderName(backupApiKey.getHeaderName());
         currentApiKey.setKeys(new ArrayList<>(backupApiKey.getKeys()));
         currentApiKey.setDefaultExpirationDays(backupApiKey.getDefaultExpirationDays());
-        currentApiKey.setCacheEnabled(backupApiKey.isCacheEnabled());
         currentApiKey.setCacheExpirationSeconds(backupApiKey.getCacheExpirationSeconds());
         
         // 恢复JWT配置
         updateJwtConfigProperties(backup.getJwt());
         
-        // 恢复其他配置...
     }
 
 }

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.unreal.modelrouter.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
@@ -87,7 +89,7 @@ class SecurityConfigurationServiceImplTest {
     @Test
     void testUpdateJwtConfig() {
         // 准备测试数据
-        SecurityProperties.JwtConfig jwtConfig = new SecurityProperties.JwtConfig();
+        JwtConfig jwtConfig = new JwtConfig();
         jwtConfig.setEnabled(true);
         jwtConfig.setSecret("this-is-a-very-long-secret-key-for-jwt-signing-at-least-32-chars");
         jwtConfig.setAlgorithm("HS256");
@@ -101,7 +103,7 @@ class SecurityConfigurationServiceImplTest {
                 .verifyComplete();
 
         // 验证结果
-        SecurityProperties.JwtConfig updatedConfig = securityProperties.getJwt();
+        JwtConfig updatedConfig = securityProperties.getJwt();
         assertTrue(updatedConfig.isEnabled());
         assertEquals("this-is-a-very-long-secret-key-for-jwt-signing-at-least-32-chars", updatedConfig.getSecret());
         assertEquals("HS256", updatedConfig.getAlgorithm());
@@ -208,7 +210,7 @@ class SecurityConfigurationServiceImplTest {
                         .build()
         );
 
-        SecurityProperties.JwtConfig storedJwtConfig = new SecurityProperties.JwtConfig();
+        JwtConfig storedJwtConfig = new JwtConfig();
         storedJwtConfig.setEnabled(true);
         storedJwtConfig.setSecret("stored-jwt-secret-key-at-least-32-chars");
 

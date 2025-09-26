@@ -36,7 +36,7 @@ public class ApiKeyManagementController {
      * 获取所有API密钥（不包含密钥值）
      */
     @GetMapping
-    @Operation(summary = "获取所有API密钥", description = "获取系统中所有API密钥的信息（不包含实际的密钥值）")
+    @Operation(summary = "获取所有API密钥", description = "获取系统中所有API密钥的信息")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<List<ApiKeyInfo>>> getAllApiKeys() {
         return apiKeyService.getAllApiKeys()
