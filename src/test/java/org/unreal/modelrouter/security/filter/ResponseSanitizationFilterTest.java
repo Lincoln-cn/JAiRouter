@@ -14,22 +14,21 @@ import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
-import org.unreal.modelrouter.filter.ResponseSanitizationFilter;
-import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.config.SecurityProperties;
 import org.unreal.modelrouter.exception.SanitizationException;
-import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.filter.ResponseSanitizationFilter;
 import org.unreal.modelrouter.sanitization.SanitizationService;
+import org.unreal.modelrouter.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.lenient;
 
 /**
  * ResponseSanitizationFilter 单元测试

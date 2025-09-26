@@ -6,7 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.security.authentication.ApiKeyAuthenticationProvider.ApiKeyAuthenticationFailureEvent;
 import org.unreal.modelrouter.security.authentication.ApiKeyAuthenticationProvider.ApiKeyAuthenticationSuccessEvent;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 
 /**
  * 认证事件监听器
@@ -25,12 +25,12 @@ public class AuthenticationEventListener {
     @EventListener
     public void handleApiKeyAuthenticationSuccess(ApiKeyAuthenticationSuccessEvent event) {
         log.info("API Key认证成功: keyId={}, description={}", 
-                event.getApiKeyInfo().getKeyId(), 
-                event.getApiKeyInfo().getDescription());
+                event.apiKeyInfo().getKeyId(),
+                event.apiKeyInfo().getDescription());
         
         // 可以在这里添加认证成功后的业务逻辑
         // 例如：更新使用统计、发送通知等
-        updateApiKeyUsageStatistics(event.getApiKeyInfo());
+        updateApiKeyUsageStatistics(event.apiKeyInfo());
     }
     
     /**
@@ -38,11 +38,11 @@ public class AuthenticationEventListener {
      */
     @EventListener
     public void handleApiKeyAuthenticationFailure(ApiKeyAuthenticationFailureEvent event) {
-        log.warn("API Key认证失败: reason={}", event.getReason());
+        log.warn("API Key认证失败: reason={}", event.reason());
         
         // 可以在这里添加认证失败后的业务逻辑
         // 例如：记录失败次数、触发安全告警等
-        handleAuthenticationFailure(event.getApiKey(), event.getReason());
+        handleAuthenticationFailure(event.apiKey(), event.reason());
     }
     
     /**

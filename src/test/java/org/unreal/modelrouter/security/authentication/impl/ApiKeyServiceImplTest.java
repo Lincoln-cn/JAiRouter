@@ -7,13 +7,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.exception.AuthenticationException;
-import org.unreal.modelrouter.security.config.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -358,7 +360,7 @@ class ApiKeyServiceImplTest {
                 .description("测试API Key")
                 .enabled(enabled)
                 .expiresAt(expiresAt)
-                .permissions(Arrays.asList("read"))
+                .permissions(List.of("read"))
                 .metadata(new HashMap<>())
                 .build();
     }

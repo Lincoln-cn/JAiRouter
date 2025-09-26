@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -19,10 +20,13 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.unreal.modelrouter.exceptionhandler.ReactiveGlobalExceptionHandler;
 import org.unreal.modelrouter.filter.DefaultAuthenticationConverter;
+import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.tracing.config.TracingSecurityConfiguration;
-import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
+
+import java.util.List;
 
 /**
  * Spring Security配置类
@@ -147,8 +151,8 @@ public class SecurityConfiguration {
         UserDetailsService userDetailsService = applicationContext.getBean(UserDetailsService.class);
 
         return new org.springframework.security.authentication.ProviderManager(
-                java.util.Arrays.asList(
-                        new org.springframework.security.authentication.dao.DaoAuthenticationProvider(passwordEncoder) {{
+                List.of(
+                        new DaoAuthenticationProvider(passwordEncoder) {{
                             setUserDetailsService(userDetailsService);
                         }}
                 )

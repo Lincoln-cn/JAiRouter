@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.security.config.properties.ApiKeyConfig;
+import org.unreal.modelrouter.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.service.JwtAccountConfigurationService;
 
 import java.util.List;
@@ -133,7 +136,7 @@ public class SecurityConfigurationInitializer {
      */
     @SuppressWarnings("unchecked")
     private void updateApiKeyConfig(Map<String, Object> apiKeyConfig) {
-        SecurityProperties.ApiKeyConfig config = securityProperties.getApiKey();
+        ApiKeyConfig config = securityProperties.getApiKey();
         
         if (apiKeyConfig.containsKey("enabled")) {
             config.setEnabled((Boolean) apiKeyConfig.get("enabled"));
@@ -147,9 +150,6 @@ public class SecurityConfigurationInitializer {
         if (apiKeyConfig.containsKey("defaultExpirationDays")) {
             config.setDefaultExpirationDays(((Number) apiKeyConfig.get("defaultExpirationDays")).longValue());
         }
-        if (apiKeyConfig.containsKey("cacheEnabled")) {
-            config.setCacheEnabled((Boolean) apiKeyConfig.get("cacheEnabled"));
-        }
         if (apiKeyConfig.containsKey("cacheExpirationSeconds")) {
             config.setCacheExpirationSeconds(((Number) apiKeyConfig.get("cacheExpirationSeconds")).longValue());
         }
@@ -159,7 +159,7 @@ public class SecurityConfigurationInitializer {
      * 更新JWT配置
      */
     private void updateJwtConfig(Map<String, Object> jwtConfig) {
-        SecurityProperties.JwtConfig config = securityProperties.getJwt();
+        JwtConfig config = securityProperties.getJwt();
         
         if (jwtConfig.containsKey("enabled")) {
             config.setEnabled((Boolean) jwtConfig.get("enabled"));
