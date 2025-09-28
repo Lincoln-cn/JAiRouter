@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 135
-- 近7天变更: 14
+- 近7天变更: 13
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-09-27 02:53:59
+- 最后扫描: 2025-09-28 03:08:06
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.40 → 1.0.41) - 2025-09-28
 - **MODIFIED**: docs-version-report.md (1.0.39 → 1.0.40) - 2025-09-27
 - **MODIFIED**: docs-version-report.md (1.0.38 → 1.0.39) - 2025-09-26
 - **CREATED**: docs/zh/configuration/version-management.md ( → 1.0.0) - 2025-09-25
@@ -18,12 +19,107 @@
 - **CREATED**: docs/en/configuration/store-config.md ( → 1.0.0) - 2025-09-25
 - **MODIFIED**: docs/en/configuration/index.md (1.0.1 → 1.0.2) - 2025-09-25
 - **MODIFIED**: docs-version-report.md (1.0.37 → 1.0.38) - 2025-09-25
-- **MODIFIED**: docs-version-report.md (1.0.36 → 1.0.37) - 2025-09-24
 
 ## 过期文档 (30天未更新)
 
+- README-EN.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- README.md (版本: 1.0.2, 最后更新: 2025-08-29)
+- docs/README.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/api-reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/api-reference/management-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/api-reference/openapi-spec.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/api-reference/universal-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/configuration/circuit-breaker.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/configuration/dynamic-config.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/configuration/load-balancing.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/configuration/rate-limiting.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/deployment/github-pages.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/deployment/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/development/architecture.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/development/code-quality.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/development/contributing.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/development/deployment-testing.md (版本: 1.0.2, 最后更新: 2025-08-29)
+- docs/en/development/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/development/performance-optimization.md (版本: 1.0.2, 最后更新: 2025-08-29)
+- docs/en/development/testing.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/getting-started/first-steps.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/getting-started/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/getting-started/quick-start.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/monitoring/alerts.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/monitoring/configuration.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/monitoring/dashboards.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/monitoring/metrics.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/monitoring/performance.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/monitoring/troubleshooting.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/reference/changelog.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/reference/roadmap.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/troubleshooting/performance.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/api-reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/api-reference/management-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/api-reference/openapi-spec.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/api-reference/universal-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/configuration/circuit-breaker.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/configuration/dynamic-config.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/configuration/load-balancing.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/configuration/rate-limiting.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/deployment/github-pages.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/development/architecture.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/development/code-quality.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/development/contributing.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/development/deployment-testing.md (版本: 1.0.2, 最后更新: 2025-08-29)
+- docs/zh/development/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/development/performance-optimization.md (版本: 1.0.2, 最后更新: 2025-08-29)
+- docs/zh/development/testing.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/getting-started/first-steps.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/getting-started/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/monitoring/alert_rules_guide.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/monitoring/alerts.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/monitoring/configuration.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/monitoring/dashboards.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/monitoring/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/monitoring/metrics.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/monitoring/performance.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/monitoring/troubleshooting.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/reference/changelog.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/reference/roadmap.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/troubleshooting/performance.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/monitoring-api.md (版本: 1.0.0, 最后更新: 2025-08-20)
 - docs/zh/api-reference/monitoring-api.md (版本: 1.0.0, 最后更新: 2025-08-20)
+- docs/en/configuration/modular-config.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/development/tracing-integration.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/monitoring/error-tracking.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/monitoring/slow-query-alerts.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/security/api-key-management.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/security/data-sanitization.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/security/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/security/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/tracing/config-reference.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/tracing/operations-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/tracing/performance-tuning.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/tracing/quickstart.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/tracing/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/configuration/modular-config.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/development/tracing-integration.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/monitoring/error-tracking.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/monitoring/slow-query-alerts.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/security/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/tracing/config-reference.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/tracing/operations-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/tracing/performance-tuning.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/tracing/quickstart.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/tracing/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
 
 ## 依赖关系分析
 
@@ -464,7 +560,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.40 - 2025-09-27 (59adb0eb)
+- **docs-version-report.md**: v1.0.41 - 2025-09-28 (8d2f3e33)
 - **docs/zh/configuration/version-management.md**: v1.0.0 - 2025-09-25 (32bd1673)
 - **docs/zh/configuration/store-config.md**: v1.0.0 - 2025-09-25 (21313fa8)
 - **docs/zh/configuration/index.md**: v1.0.2 - 2025-09-25 (32bd1673)
