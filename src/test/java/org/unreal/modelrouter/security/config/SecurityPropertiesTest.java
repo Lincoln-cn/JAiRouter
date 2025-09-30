@@ -11,7 +11,6 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySource;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.unreal.modelrouter.security.config.properties.*;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 
 import java.time.LocalDateTime;
 import java.util.*;

@@ -6,12 +6,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.unreal.modelrouter.security.cache.impl.InMemoryApiKeyCache;
-import org.unreal.modelrouter.security.cache.impl.RedisApiKeyCache;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.model.UsageStatistics;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -23,7 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * API Key缓存性能测试
@@ -34,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ApiKeyCachePerformanceTest {
     
     private InMemoryApiKeyCache inMemoryCache;
-    private List<ApiKeyInfo> testApiKeys;
+    private List<ApiKey> testApiKeys;
     
     @BeforeEach
     void setUp() {
@@ -107,7 +105,7 @@ class ApiKeyCachePerformanceTest {
             executor.submit(() -> {
                 try {
                     for (int j = 0; j < operationsPerThread; j++) {
-                        ApiKeyInfo testKey = testApiKeys.get(j % 100);
+                        ApiKey testKey = testApiKeys.get(j % 100);
                         
                         // 随机执行读取或写入操作
                         if (j % 2 == 0) {
@@ -187,7 +185,7 @@ class ApiKeyCachePerformanceTest {
      */
     @Test
     void testLargeDatasetPerformance() {
-        List<ApiKeyInfo> largeDataset = generateTestApiKeys(10000);
+        List<ApiKey> largeDataset = generateTestApiKeys(10000);
         
         long startTime = System.currentTimeMillis();
         
@@ -200,7 +198,7 @@ class ApiKeyCachePerformanceTest {
         long writeDuration = writeEndTime - startTime;
         
         // 随机读取1000个条目
-        List<ApiKeyInfo> randomSample = largeDataset.subList(0, 1000);
+        List<ApiKey> randomSample = largeDataset.subList(0, 1000);
         
         long readStartTime = System.currentTimeMillis();
         
@@ -231,7 +229,7 @@ class ApiKeyCachePerformanceTest {
         long initialMemory = runtime.totalMemory() - runtime.freeMemory();
         
         // 写入大量数据
-        List<ApiKeyInfo> largeDataset = generateTestApiKeys(5000);
+        List<ApiKey> largeDataset = generateTestApiKeys(5000);
         Flux.fromIterable(largeDataset)
                 .flatMap(apiKey -> inMemoryCache.put(apiKey.getKeyValue(), apiKey))
                 .blockLast();
@@ -260,11 +258,11 @@ class ApiKeyCachePerformanceTest {
     /**
      * 生成测试用的API Key数据
      */
-    private List<ApiKeyInfo> generateTestApiKeys(int count) {
-        List<ApiKeyInfo> apiKeys = new ArrayList<>();
+    private List<ApiKey> generateTestApiKeys(int count) {
+        List<ApiKey> apiKeys = new ArrayList<>();
         
         for (int i = 0; i < count; i++) {
-            ApiKeyInfo apiKey = ApiKeyInfo.builder()
+            ApiKey apiKey = ApiKey.builder()
                     .keyId("test-key-" + i)
                     .keyValue("test-value-" + i + "-" + System.currentTimeMillis())
                     .description("测试API Key " + i)

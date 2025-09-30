@@ -1,74 +1,86 @@
 <template>
   <div class="api-key-management">
-    <el-card>
+    <el-card class="main-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>API密钥管理</span>
-          <el-button type="primary" @click="handleCreateApiKey">创建API密钥</el-button>
+          <span class="main-title">
+            <el-icon><key/></el-icon>
+            API密钥管理
+          </span>
+          <el-button icon="Plus" type="primary" @click="handleCreateApiKey">创建API密钥</el-button>
         </div>
       </template>
-      
-      <el-table :data="apiKeys" style="width: 100%" v-loading="loading">
-        <el-table-column prop="keyId" label="密钥ID" width="180" />
-        <el-table-column prop="description" label="描述" />
-        <el-table-column prop="permissions" label="权限" width="450">
+
+      <el-table v-loading="loading" :data="apiKeys" border stripe style="width: 100%">
+        <el-table-column label="密钥ID" prop="keyId" width="220">
+          <template #default="scope">
+            <el-tag effect="plain" type="info">{{ scope.row.keyId }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="描述" min-width="120" prop="description">
+          <template #default="scope">
+            <span class="desc-text">{{ scope.row.description || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="权限" prop="permissions" width="250">
           <template #default="scope">
             <el-tag
-              v-for="permission in scope.row.permissions"
-              :key="permission"
-              :type="getPermissionTagType(permission)"
-              size="small"
-              style="margin-right: 5px;"
+                v-for="permission in scope.row.permissions"
+                :key="permission"
+                :type="getPermissionTagType(permission)"
+                size="small"
+                style="margin-right: 5px;"
             >
               {{ formatPermission(permission) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="200" />
-        <el-table-column prop="expiresAt" label="过期时间" width="200" />
-        <el-table-column label="剩余天数" width="120">
+        <el-table-column label="创建时间" prop="createdAt" width="180"/>
+        <el-table-column label="过期时间" prop="expiresAt" width="180"/>
+        <el-table-column label="剩余天数" width="110">
           <template #default="scope">
             <span :class="getDaysClass(scope.row)">{{ getRemainingDays(scope.row.expiresAt) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="enabled" label="状态" width="100">
+        <el-table-column label="状态" prop="enabled" width="80">
           <template #default="scope">
             <el-switch
-              v-model="scope.row.enabled"
-              @change="handleStatusChange(scope.row)"
+                v-model="scope.row.enabled"
+                active-color="#13ce66"
+                inactive-color="#ff4949"
+                @change="handleStatusChange(scope.row)"
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200">
+        <el-table-column fixed="right" label="操作" width="180">
           <template #default="scope">
-            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
-    
+
     <!-- 创建/编辑API密钥对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px">
-      <el-form :model="form" label-width="100px" ref="formRef">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" center width="500px">
+      <el-form ref="formRef" :model="form" label-width="100px" status-icon>
         <el-form-item label="密钥ID" prop="keyId" :rules="keyIdRules">
-          <el-input v-model="form.keyId" :disabled="isEdit">
-            <template #append>
-              <el-button @click="generateKeyId" :disabled="isEdit">生成</el-button>
-            </template>
-          </el-input>
-          <div class="key-id-hint">长度不少于32个字符，包含字母、数字和特殊字符</div>
+          <el-input v-model="form.keyId" :disabled="isEdit" maxlength="64" placeholder="请输入密钥ID"
+                    show-word-limit/>
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="form.description" type="textarea" />
+          <el-input v-model="form.description" maxlength="128" placeholder="密钥用途描述" show-word-limit
+                    type="textarea"/>
         </el-form-item>
         <el-form-item label="过期时间">
           <el-date-picker
-            v-model="form.expiresAt"
-            type="datetime"
-            placeholder="选择过期时间"
-            format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DD HH:mm:ss"
+              v-model="form.expiresAt"
+              clearable
+              format="YYYY-MM-DD HH:mm:ss"
+              placeholder="选择过期时间"
+              style="width: 100%;"
+              type="datetime"
+              value-format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
         <el-form-item label="权限">
@@ -87,21 +99,38 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 创建成功后弹窗，展示密钥值 -->
+    <el-dialog v-model="showKeyValueDialog" :close-on-click-modal="false" center title="API密钥已创建" width="400px">
+      <div class="key-value-dialog-content">
+        <el-icon style="font-size: 24px; color: #409EFF;">
+          <key/>
+        </el-icon>
+        <p class="key-value-tip">请妥善保存以下密钥值，密钥值仅此一次显示：</p>
+        <el-input v-model="createdKeyValue" readonly>
+          <template #append>
+            <el-button icon="CopyDocument" type="primary" @click="copyKeyValue">复制</el-button>
+          </template>
+        </el-input>
+        <el-alert :closable="false" show-icon style="margin-top: 12px;" type="warning">
+          密钥值只会显示一次，关闭弹窗后无法再次获取！
+        </el-alert>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="closeKeyValueDialog">已保存并关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { 
-  getApiKeys, 
-  createApiKey, 
-  updateApiKey, 
-  deleteApiKey, 
-  enableApiKey, 
-  disableApiKey 
-} from '@/api/apiKey'
-import type { ApiKeyInfo, CreateApiKeyRequest, UpdateApiKeyRequest, ApiKeyCreationResponse } from '@/types'
+import {onMounted, ref} from 'vue'
+import {ElMessage, ElMessageBox} from 'element-plus'
+import {createApiKey, deleteApiKey, disableApiKey, enableApiKey, getApiKeys, updateApiKey} from '@/api/apiKey'
+import type {ApiKeyCreationResponse, ApiKeyInfo, CreateApiKeyRequest, UpdateApiKeyRequest} from '@/types'
+import {Key} from '@element-plus/icons-vue'
 
 // 定义API密钥类型
 interface ApiKey extends ApiKeyInfo {
@@ -127,18 +156,7 @@ const form = ref({
 
 // 密钥ID验证规则
 const keyIdRules = [
-  { required: true, message: '请输入密钥ID', trigger: 'blur' },
-  { min: 32, message: '密钥ID长度不能少于32个字符', trigger: 'blur' },
-  {
-    validator: (rule: any, value: string, callback: any) => {
-      if (value && !/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).+$/.test(value)) {
-        callback(new Error('密钥ID必须包含字母、数字和特殊字符'))
-      } else {
-        callback()
-      }
-    },
-    trigger: 'blur'
-  }
+  {required: true, message: '请输入密钥ID', trigger: 'blur'}
 ]
 
 // 获取权限标签类型
@@ -173,86 +191,46 @@ const formatPermission = (permission: string) => {
   }
 }
 
-// 生成复杂的密钥ID
-const generateKeyId = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|;:,.<>?'
-  let keyId = ''
-  for (let i = 0; i < 32; i++) {
-    keyId += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  // 确保包含所有类型的字符
-  const hasLetter = /[a-zA-Z]/.test(keyId)
-  const hasDigit = /\d/.test(keyId)
-  const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(keyId)
-  
-  if (!hasLetter) keyId = keyId.substring(0, 31) + 'A'
-  if (!hasDigit) keyId = keyId.substring(0, 30) + '0' + keyId.substring(30)
-  if (!hasSpecial) keyId = keyId.substring(0, 29) + '!' + keyId.substring(29)
-  
-  form.value.keyId = keyId
-}
-
 // 获取剩余天数
 const getRemainingDays = (expiresAt: string): string => {
-  if (!expiresAt) {
-    return '永不过期'
-  }
-  
+  if (!expiresAt) return '永不过期'
   const expireDate = new Date(expiresAt)
   const currentDate = new Date()
   const diffTime = expireDate.getTime() - currentDate.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
-  if (diffDays < 0) {
-    return '已过期'
-  }
-  
+  if (diffDays < 0) return '已过期'
   return `${diffDays}天`
 }
 
 // 获取剩余天数的样式类
 const getDaysClass = (row: ApiKey): string => {
-  if (!row.expiresAt) {
-    return ''
-  }
-  
+  if (!row.expiresAt) return ''
   const expireDate = new Date(row.expiresAt)
   const currentDate = new Date()
   const diffTime = expireDate.getTime() - currentDate.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
-  if (diffDays < 0) {
-    return 'expired-days'
-  }
-  
-  if (diffDays < 30) {
-    return 'warning-days'
-  }
-  
+  if (diffDays < 0) return 'expired-days'
+  if (diffDays < 30) return 'warning-days'
   return ''
 }
 
 // 格式化日期时间
 const formatDateTime = (dateString: string): string => {
-  if (!dateString) {
-    return ''
-  }
-  
+  if (!dateString) return ''
   const date = new Date(dateString)
   return date.getFullYear() + '-' +
-    String(date.getMonth() + 1).padStart(2, '0') + '-' +
-    String(date.getDate()).padStart(2, '0') + ' ' +
-    String(date.getHours()).padStart(2, '0') + ':' +
-    String(date.getMinutes()).padStart(2, '0') + ':' +
-    String(date.getSeconds()).padStart(2, '0')
+      String(date.getMonth() + 1).padStart(2, '0') + '-' +
+      String(date.getDate()).padStart(2, '0') + ' ' +
+      String(date.getHours()).padStart(2, '0') + ':' +
+      String(date.getMinutes()).padStart(2, '0') + ':' +
+      String(date.getSeconds()).padStart(2, '0')
 }
 
-// 获取API密钥列表
+// API密钥列表
 const fetchApiKeys = async () => {
   loading.value = true
   try {
     const data = await getApiKeys()
-    // 格式化日期时间
     const formattedData = data.map(key => ({
       ...key,
       createdAt: formatDateTime(key.createdAt),
@@ -266,7 +244,7 @@ const fetchApiKeys = async () => {
   }
 }
 
-// 创建API密钥
+// 创建API密钥弹窗
 const handleCreateApiKey = () => {
   dialogTitle.value = '创建API密钥'
   isEdit.value = false
@@ -280,12 +258,11 @@ const handleCreateApiKey = () => {
   dialogVisible.value = true
 }
 
-// 编辑API密钥
+// 编辑API密钥弹窗
 const handleEdit = (row: ApiKey) => {
   dialogTitle.value = '编辑API密钥'
   isEdit.value = true
-  // 反格式化日期时间以用于表单
-  const editRow = { ...row }
+  const editRow = {...row}
   form.value = editRow
   dialogVisible.value = true
 }
@@ -307,13 +284,15 @@ const handleDelete = (row: ApiKey) => {
   })
 }
 
+// 创建成功后弹窗及密钥值处理
+const showKeyValueDialog = ref(false)
+const createdKeyValue = ref('')
+
 // 保存API密钥
 const handleSave = async () => {
   saveLoading.value = true
   try {
-    // 验证表单
     await formRef.value.validate()
-    
     if (isEdit.value) {
       // 编辑
       const updateData: UpdateApiKeyRequest = {
@@ -322,7 +301,6 @@ const handleSave = async () => {
         enabled: form.value.enabled,
         permissions: form.value.permissions
       }
-      
       await updateApiKey(form.value.keyId, updateData)
       ElMessage.success('编辑成功')
     } else {
@@ -334,27 +312,33 @@ const handleSave = async () => {
         enabled: form.value.enabled,
         permissions: form.value.permissions
       }
-      
-      // 移除空字符串的过期时间
-      if (!createData.expiresAt) {
-        delete createData.expiresAt;
-      }
-      
+      if (!createData.expiresAt) delete createData.expiresAt;
       const response: ApiKeyCreationResponse = await createApiKey(createData)
-      ElMessage.success('创建成功')
+      createdKeyValue.value = response.keyValue
+      showKeyValueDialog.value = true
+      ElMessage.success('创建成功，请妥善保存密钥值！')
     }
-    
     dialogVisible.value = false
     await fetchApiKeys()
   } catch (error: any) {
-    console.error('保存API密钥失败:', error)
     ElMessage.error(isEdit.value ? '编辑失败: ' + (error.message || '') : '创建失败: ' + (error.message || ''))
   } finally {
     saveLoading.value = false
   }
 }
 
-// 处理状态变更
+// 复制密钥值
+const copyKeyValue = () => {
+  navigator.clipboard.writeText(createdKeyValue.value)
+      .then(() => ElMessage.success('密钥值已复制'))
+      .catch(() => ElMessage.error('复制失败'))
+}
+const closeKeyValueDialog = () => {
+  showKeyValueDialog.value = false
+  createdKeyValue.value = ''
+}
+
+// 状态切换
 const handleStatusChange = async (row: ApiKey) => {
   try {
     if (row.enabled) {
@@ -366,27 +350,47 @@ const handleStatusChange = async (row: ApiKey) => {
     }
     await fetchApiKeys()
   } catch (error) {
-    // 回滚状态
     row.enabled = !row.enabled
     ElMessage.error('状态变更失败')
   }
 }
 
-// 组件挂载时获取数据
+// 挂载时加载
 onMounted(() => {
   fetchApiKeys()
 })
 </script>
 
 <style scoped>
+.api-key-management {
+  padding: 30px 40px;
+  background: #f8fafe;
+  min-height: 100vh;
+}
+
+.main-card {
+  border-radius: 16px;
+  box-shadow: 0 2px 12px 0 rgba(32, 103, 216, 0.06);
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.api-key-management {
-  padding: 20px;
+.main-title {
+  font-size: 21px;
+  font-weight: 600;
+  color: #2C3E50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.desc-text {
+  color: #606266;
+  font-size: 15px;
 }
 
 .warning-days {
@@ -403,5 +407,25 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
   margin-top: 5px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.key-value-dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.key-value-tip {
+  font-size: 15px;
+  color: #555;
+  margin-bottom: 6px;
 }
 </style>

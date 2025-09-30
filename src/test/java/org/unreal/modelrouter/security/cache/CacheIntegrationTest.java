@@ -2,7 +2,7 @@ package org.unreal.modelrouter.security.cache;
 
 import org.junit.jupiter.api.Test;
 import org.unreal.modelrouter.security.cache.impl.InMemoryApiKeyCache;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.model.UsageStatistics;
 import reactor.test.StepVerifier;
 
@@ -18,8 +18,8 @@ class CacheIntegrationTest {
     @Test
     void testInMemoryCacheBasicOperations() {
         InMemoryApiKeyCache cache = new InMemoryApiKeyCache(null);
-        
-        ApiKeyInfo testApiKey = ApiKeyInfo.builder()
+
+        ApiKey testApiKey = ApiKey.builder()
                 .keyId("test-key-1")
                 .keyValue("test-value-1")
                 .description("测试API Key")
@@ -62,8 +62,8 @@ class CacheIntegrationTest {
     @Test
     void testCacheExpiration() {
         InMemoryApiKeyCache cache = new InMemoryApiKeyCache(null);
-        
-        ApiKeyInfo testApiKey = ApiKeyInfo.builder()
+
+        ApiKey testApiKey = ApiKey.builder()
                 .keyId("test-key-2")
                 .keyValue("test-value-2")
                 .description("测试过期API Key")

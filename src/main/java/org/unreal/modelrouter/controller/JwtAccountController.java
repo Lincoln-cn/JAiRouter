@@ -16,7 +16,7 @@ import org.unreal.modelrouter.dto.JwtAccountConfigStatus;
 import org.unreal.modelrouter.dto.JwtAccountRequest;
 import org.unreal.modelrouter.dto.JwtAccountResponse;
 import org.unreal.modelrouter.security.config.properties.JwtUserProperties;
-import org.unreal.modelrouter.security.service.JwtAccountConfigurationService;
+import org.unreal.modelrouter.security.service.JwtAccountService;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -34,7 +34,7 @@ import java.util.Map;
 @Tag(name = "JWT账户管理", description = "JWT用户账户的动态管理API")
 public class JwtAccountController {
 
-    private final JwtAccountConfigurationService accountConfigurationService;
+    private final JwtAccountService accountConfigurationService;
     private final JwtUserProperties jwtUserProperties;
 
     // ==================== 账户查询接口 ====================

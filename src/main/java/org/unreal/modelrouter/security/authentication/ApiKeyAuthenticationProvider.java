@@ -9,10 +9,10 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.security.service.ApiKeyService;
 
 /**
  * API Key认证提供者
@@ -25,7 +25,6 @@ import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     
     private final ApiKeyService apiKeyService;
-    private final SecurityProperties securityProperties;
     private final ApplicationEventPublisher eventPublisher;
     private final SecurityAuditService auditService;
     
@@ -39,31 +38,31 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
         }
         
         ApiKeyAuthentication apiKeyAuth = (ApiKeyAuthentication) authentication;
-        String apiKey = (String) apiKeyAuth.getCredentials();
+        String apiKeyValue = (String) apiKeyAuth.getCredentials();
         
         try {
             // 验证API Key
-            ApiKeyInfo apiKeyInfo = apiKeyService.validateApiKey(apiKey).block();
-            
-            if (apiKeyInfo == null) {
+            ApiKey apiKey = apiKeyService.validateApiKey(apiKeyValue).block();
+
+            if (apiKey == null) {
                 log.debug("API Key验证失败: 无效的API Key");
-                publishAuthenticationFailureEvent(apiKey, "无效的API Key");
+                publishAuthenticationFailureEvent(apiKeyValue, "无效的API Key");
                 throw new SecurityAuthenticationException("INVALID_API_KEY", "无效的API Key");
             }
             
             // 创建已认证的Authentication对象
             ApiKeyAuthentication authenticatedAuth = new ApiKeyAuthentication(
-                    apiKeyInfo.getKeyId(),
-                    apiKey,
-                    apiKeyInfo.getPermissions()
+                    apiKey.getKeyId(),
+                    apiKeyValue,
+                    apiKey.getPermissions()
             );
             authenticatedAuth.setAuthenticated(true);
-            authenticatedAuth.setDetails(apiKeyInfo);
+            authenticatedAuth.setDetails(apiKey);
             
             // 发布认证成功事件
-            publishAuthenticationSuccessEvent(apiKeyInfo);
-            
-            log.debug("API Key认证成功: {}", apiKeyInfo.getKeyId());
+            publishAuthenticationSuccessEvent(apiKey);
+
+            log.debug("API Key认证成功: {}", apiKey.getKeyId());
             return authenticatedAuth;
             
         } catch (Exception e) {
@@ -71,7 +70,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
             
             // 如果是SecurityAuthenticationException，说明已经发布过事件了，不要重复发布
             if (!(e instanceof SecurityAuthenticationException)) {
-                publishAuthenticationFailureEvent(apiKey, e.getMessage());
+                publishAuthenticationFailureEvent(apiKeyValue, e.getMessage());
             }
             
             if (e instanceof AuthenticationException) {
@@ -94,12 +93,12 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     /**
      * 发布认证成功事件
      */
-    private void publishAuthenticationSuccessEvent(ApiKeyInfo apiKeyInfo) {
+    private void publishAuthenticationSuccessEvent(ApiKey apiKey) {
         try {
             // 创建审计事件
             SecurityAuditEvent auditEvent = SecurityAuditEvent.builder()
                     .eventType("API_KEY_AUTH_SUCCESS")
-                    .userId(apiKeyInfo.getKeyId())
+                    .userId(apiKey.getKeyId())
                     .resource("API_KEY_AUTH")
                     .action("AUTHENTICATE")
                     .success(true)
@@ -112,7 +111,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
             );
             
             // 发布Spring事件
-            eventPublisher.publishEvent(new ApiKeyAuthenticationSuccessEvent(this, apiKeyInfo));
+            eventPublisher.publishEvent(new ApiKeyAuthenticationSuccessEvent(this, apiKey));
             
         } catch (Exception e) {
             log.warn("发布认证成功事件失败: {}", e.getMessage());
@@ -151,7 +150,10 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     /**
          * API Key认证成功事件
          */
-        public record ApiKeyAuthenticationSuccessEvent(Object source, ApiKeyInfo apiKeyInfo) {
+    public record ApiKeyAuthenticationSuccessEvent(Object source, ApiKey apiKey) {
+        public ApiKey apiKeyInfo() {
+            return apiKey;
+        }
     }
 
     /**

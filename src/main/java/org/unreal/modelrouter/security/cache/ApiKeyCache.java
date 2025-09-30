@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.security.cache;
 
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -16,24 +16,24 @@ public interface ApiKeyCache {
      * @param keyValue API Key值
      * @return API Key信息，如果不存在则返回empty
      */
-    Mono<ApiKeyInfo> get(String keyValue);
+    Mono<ApiKey> get(String keyValue);
     
     /**
      * 将API Key信息存入缓存
      * @param keyValue API Key值
-     * @param apiKeyInfo API Key信息
+     * @param apiKey API Key信息
      * @param ttl 缓存过期时间
      * @return 缓存操作结果
      */
-    Mono<Void> put(String keyValue, ApiKeyInfo apiKeyInfo, Duration ttl);
+    Mono<Void> put(String keyValue, ApiKey apiKey, Duration ttl);
     
     /**
      * 将API Key信息存入缓存（使用默认过期时间）
      * @param keyValue API Key值
-     * @param apiKeyInfo API Key信息
+     * @param apiKey API Key信息
      * @return 缓存操作结果
      */
-    Mono<Void> put(String keyValue, ApiKeyInfo apiKeyInfo);
+    Mono<Void> put(String keyValue, ApiKey apiKey);
     
     /**
      * 从缓存中移除API Key

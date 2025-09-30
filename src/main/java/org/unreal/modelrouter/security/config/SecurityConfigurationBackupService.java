@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.security.config.properties.ApiKeyProperties;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.store.StoreManager;
 
@@ -266,7 +266,7 @@ public class SecurityConfigurationBackupService {
 
         // 加密API Key值
         if (encrypted.getApiKey().getKeys() != null) {
-            for (ApiKeyProperties apiKey : encrypted.getApiKey().getKeys()) {
+            for (ApiKey apiKey : encrypted.getApiKey().getKeys()) {
                 if (apiKey.getKeyValue() != null) {
                     apiKey.setKeyValue(encryptionService.encryptApiKeyValue(apiKey.getKeyValue()));
                 }
@@ -289,7 +289,7 @@ public class SecurityConfigurationBackupService {
 
         // 解密API Key值
         if (decrypted.getApiKey().getKeys() != null) {
-            for (ApiKeyProperties apiKey : decrypted.getApiKey().getKeys()) {
+            for (ApiKey apiKey : decrypted.getApiKey().getKeys()) {
                 if (apiKey.getKeyValue() != null) {
                     apiKey.setKeyValue(encryptionService.decryptApiKeyValue(apiKey.getKeyValue()));
                 }

@@ -3,7 +3,6 @@ package org.unreal.modelrouter.security;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.TestPropertySource;
 import org.unreal.modelrouter.security.config.properties.*;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.security.model.UsageStatistics;
@@ -47,8 +46,8 @@ class SecurityModuleFoundationTest {
             .lastUsedAt(LocalDateTime.now())
             .dailyUsage(new HashMap<>())
             .build();
-        
-        ApiKeyInfo apiKey = ApiKeyInfo.builder()
+
+        ApiKey apiKey = ApiKey.builder()
             .keyId("test-key-001")
             .keyValue("test-api-key-value")
             .description("测试API Key")
@@ -155,7 +154,6 @@ class SecurityModuleFoundationTest {
         assertTrue(config.isEnabled());
         assertEquals("X-API-Key", config.getHeaderName());
         assertEquals(365L, config.getDefaultExpirationDays());
-        assertTrue(config.isCacheEnabled());
         assertEquals(3600L, config.getCacheExpirationSeconds());
         assertNotNull(config.getKeys());
         assertTrue(config.getKeys().isEmpty());
