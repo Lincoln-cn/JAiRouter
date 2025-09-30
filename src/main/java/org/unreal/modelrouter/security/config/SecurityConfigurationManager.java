@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.core.publisher.Mono;
@@ -108,7 +108,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     // ==================== SecurityConfigurationService 实现 ====================
 
     @Override
-    public Mono<Void> updateApiKeys(List<ApiKeyInfo> apiKeys) {
+    public Mono<Void> updateApiKeys(List<ApiKey> apiKeys) {
         return Mono.fromRunnable(() -> {
             log.info("更新API Keys配置，数量: {}", apiKeys.size());
             
@@ -124,7 +124,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
                 saveSecurityAsNewVersion(currentConfig);
                 
                 // 更新内存中的配置
-                securityProperties.getApiKey().setKeys(apiKeys.stream().map(ApiKeyInfo::covertTo).toList());
+                securityProperties.getApiKey().setKeys(apiKeys);
                 
                 // 发布配置变更事件
                 publishConfigurationChangeEvent("api-keys", null, apiKeys);
@@ -331,8 +331,8 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
         if (config.containsKey("apiKey")) {
             Map<String, Object> apiKeyConfig = (Map<String, Object>) config.get("apiKey");
             if (apiKeyConfig.containsKey("keys")) {
-                List<ApiKeyInfo> keys = (List<ApiKeyInfo>) apiKeyConfig.get("keys");
-                securityProperties.getApiKey().setKeys(keys.stream().map(ApiKeyInfo::covertTo).toList());
+                List<ApiKey> keys = (List<ApiKey>) apiKeyConfig.get("keys");
+                securityProperties.getApiKey().setKeys(keys);
             }
         }
         

@@ -2,8 +2,8 @@ package org.unreal.modelrouter.security.config;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -86,7 +86,6 @@ class SecurityConfigurationValidatorTest {
     void testValidateApiKeyConfig_InvalidCacheExpiration() {
         properties.getApiKey().setEnabled(true);
         properties.getApiKey().setHeaderName("X-API-Key");
-        properties.getApiKey().setCacheEnabled(true);
         properties.getApiKey().setCacheExpirationSeconds(30);
         
         SecurityConfigurationValidator.ValidationResult result = validator.validateConfiguration(properties);
@@ -112,8 +111,8 @@ class SecurityConfigurationValidatorTest {
     void testValidateApiKeyList_InvalidKeyValue() {
         properties.getApiKey().setEnabled(true);
         properties.getApiKey().setHeaderName("X-API-Key");
-        
-        ApiKeyInfo invalidApiKey = ApiKeyInfo.builder()
+
+        ApiKey invalidApiKey = ApiKey.builder()
                 .keyId("test-key")
                 .keyValue("invalid@key!")  // 包含无效字符
                 .description("测试密钥")
@@ -132,8 +131,8 @@ class SecurityConfigurationValidatorTest {
     void testValidateApiKeyList_ExpiredKey() {
         properties.getApiKey().setEnabled(true);
         properties.getApiKey().setHeaderName("X-API-Key");
-        
-        ApiKeyInfo expiredApiKey = ApiKeyInfo.builder()
+
+        ApiKey expiredApiKey = ApiKey.builder()
                 .keyId("expired-key")
                 .keyValue("validkeyvalue123")
                 .description("过期密钥")
@@ -154,15 +153,15 @@ class SecurityConfigurationValidatorTest {
     void testValidateApiKeyList_DuplicateKeyId() {
         properties.getApiKey().setEnabled(true);
         properties.getApiKey().setHeaderName("X-API-Key");
-        
-        ApiKeyInfo apiKey1 = ApiKeyInfo.builder()
+
+        ApiKey apiKey1 = ApiKey.builder()
                 .keyId("duplicate-key")
                 .keyValue("validkeyvalue123")
                 .description("密钥1")
                 .enabled(true)
                 .build();
-        
-        ApiKeyInfo apiKey2 = ApiKeyInfo.builder()
+
+        ApiKey apiKey2 = ApiKey.builder()
                 .keyId("duplicate-key")  // 重复的Key ID
                 .keyValue("validkeyvalue456")
                 .description("密钥2")
@@ -284,10 +283,9 @@ class SecurityConfigurationValidatorTest {
         properties.getApiKey().setEnabled(true);
         properties.getApiKey().setHeaderName("X-API-Key");
         properties.getApiKey().setDefaultExpirationDays(365);
-        properties.getApiKey().setCacheEnabled(true);
         properties.getApiKey().setCacheExpirationSeconds(3600);
-        
-        ApiKeyInfo validApiKey = ApiKeyInfo.builder()
+
+        ApiKey validApiKey = ApiKey.builder()
                 .keyId("valid-key")
                 .keyValue("validkeyvalue123456")
                 .description("有效密钥")

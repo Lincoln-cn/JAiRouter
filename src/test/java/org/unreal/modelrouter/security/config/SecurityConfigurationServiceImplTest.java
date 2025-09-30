@@ -6,9 +6,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.test.StepVerifier;
@@ -49,7 +49,7 @@ class SecurityConfigurationServiceImplTest {
     @Test
     void testUpdateApiKeys() {
         // 准备测试数据
-        ApiKeyInfo apiKey1 = ApiKeyInfo.builder()
+        ApiKey apiKey1 = ApiKey.builder()
                 .keyId("test-key-1")
                 .keyValue("test-value-1")
                 .description("测试密钥1")
@@ -59,7 +59,7 @@ class SecurityConfigurationServiceImplTest {
                 .permissions(Arrays.asList("read", "write"))
                 .build();
 
-        ApiKeyInfo apiKey2 = ApiKeyInfo.builder()
+        ApiKey apiKey2 = ApiKey.builder()
                 .keyId("test-key-2")
                 .keyValue("test-value-2")
                 .description("测试密钥2")
@@ -69,7 +69,7 @@ class SecurityConfigurationServiceImplTest {
                 .permissions(List.of("read"))
                 .build();
 
-        List<ApiKeyInfo> apiKeys = Arrays.asList(apiKey1, apiKey2);
+        List<ApiKey> apiKeys = Arrays.asList(apiKey1, apiKey2);
 
         // 执行测试
         StepVerifier.create(configurationService.updateApiKeys(apiKeys))
@@ -145,7 +145,6 @@ class SecurityConfigurationServiceImplTest {
         validConfig.getApiKey().setEnabled(true);
         validConfig.getApiKey().setHeaderName("X-API-Key");
         validConfig.getApiKey().setDefaultExpirationDays(365);
-        validConfig.getApiKey().setCacheEnabled(true);
         validConfig.getApiKey().setCacheExpirationSeconds(3600);
         
         // JWT配置
@@ -201,8 +200,8 @@ class SecurityConfigurationServiceImplTest {
     @Test
     void testReloadConfiguration() {
         // 模拟存储返回的配置
-        List<ApiKeyInfo> storedApiKeys = Collections.singletonList(
-                ApiKeyInfo.builder()
+        List<ApiKey> storedApiKeys = Collections.singletonList(
+                ApiKey.builder()
                         .keyId("stored-key")
                         .keyValue("stored-value")
                         .description("存储的密钥")
@@ -234,8 +233,8 @@ class SecurityConfigurationServiceImplTest {
     @Test
     void testGetConfigurationHistory() {
         // 先执行一些配置更新操作来生成历史记录
-        List<ApiKeyInfo> apiKeys = Collections.singletonList(
-                ApiKeyInfo.builder()
+        List<ApiKey> apiKeys = Collections.singletonList(
+                ApiKey.builder()
                         .keyId("history-test-key")
                         .keyValue("history-test-value")
                         .description("历史测试密钥")

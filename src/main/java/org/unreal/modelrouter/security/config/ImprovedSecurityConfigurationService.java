@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.core.publisher.Mono;
@@ -39,7 +39,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
      */
 
     @Override
-    public Mono<Void> updateApiKeys(List<ApiKeyInfo> apiKeys) {
+    public Mono<Void> updateApiKeys(List<ApiKey> apiKeys) {
         return Mono.fromRunnable(() -> {
             log.info("Updating API Keys configuration, count: {}", apiKeys.size());
 
@@ -57,7 +57,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
                 );
 
                 // 更新内存中的配置
-                securityProperties.getApiKey().setKeys(apiKeys.stream().map(ApiKeyInfo::covertTo).toList());
+                securityProperties.getApiKey().setKeys(apiKeys);
 
             } catch (Exception e) {
                 log.error("Failed to update API Keys configuration", e);
@@ -206,8 +206,8 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     private void loadLatestApiKeysConfig() {
         Map<String, Object> configMap = storeManager.getLatestConfig(API_KEYS_CONFIG_KEY);
         if (configMap != null) {
-            List<ApiKeyInfo> apiKeys = convertMapToApiKeys(configMap);
-            securityProperties.getApiKey().setKeys(apiKeys.stream().map(ApiKeyInfo::covertTo).toList());
+            List<ApiKey> apiKeys = convertMapToApiKeys(configMap);
+            securityProperties.getApiKey().setKeys(apiKeys);
             log.debug("Loaded {} API keys from latest configuration", apiKeys.size());
         }
     }
@@ -231,15 +231,15 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     // 转换方法（需要根据实际的数据结构实现）
-    private Map<String, Object> convertApiKeysToMap(List<ApiKeyInfo> apiKeys) {
+    private Map<String, Object> convertApiKeysToMap(List<ApiKey> apiKeys) {
         Map<String, Object> map = new HashMap<>();
         map.put("keys", apiKeys);
         return map;
     }
 
     @SuppressWarnings("unchecked")
-    private List<ApiKeyInfo> convertMapToApiKeys(Map<String, Object> configMap) {
-        return (List<ApiKeyInfo>) configMap.get("keys");
+    private List<ApiKey> convertMapToApiKeys(Map<String, Object> configMap) {
+        return (List<ApiKey>) configMap.get("keys");
     }
 
     private Map<String, Object> convertJwtConfigToMap(JwtConfig jwtConfig) {
@@ -277,7 +277,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         return (List<SanitizationRule>) configMap.get("rules");
     }
 
-    private void validateApiKeysList(List<ApiKeyInfo> apiKeys) {
+    private void validateApiKeysList(List<ApiKey> apiKeys) {
         // 实现API Keys验证逻辑
     }
 
