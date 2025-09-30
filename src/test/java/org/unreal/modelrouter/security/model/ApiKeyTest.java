@@ -1,233 +1,277 @@
 package org.unreal.modelrouter.security.model;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
- * ApiKeyInfo数据模型单元测试
+ * ApiKey统一数据模型单元测试
  */
-class ApiKeyInfoTest {
-    
-    private ApiKeyInfo.ApiKeyInfoBuilder baseBuilder;
-    
+public class ApiKeyTest {
+
+    private ApiKey.ApiKeyBuilder baseBuilder;
+
     @BeforeEach
     void setUp() {
-        baseBuilder = ApiKeyInfo.builder()
+        baseBuilder = ApiKey.builder()
                 .keyId("test-key-001")
                 .keyValue("sk-test-key-value-123")
-                .description("测试API Key")
-                .createdAt(LocalDateTime.now().minusDays(1))
-                .expiresAt(LocalDateTime.now().plusDays(30))
+                .description("测试API密钥")
+                .permissions(Arrays.asList("READ", "WRITE"))
                 .enabled(true)
-                .permissions(Arrays.asList("read", "write"))
-                .metadata(new HashMap<>());
+                .createdAt(LocalDateTime.now());
     }
-    
+
     @Test
-    void testApiKeyInfoBuilder() {
+    void testApiKeyBuilder() {
         // Given
         LocalDateTime createdAt = LocalDateTime.now().minusDays(1);
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
         Map<String, Object> metadata = new HashMap<>();
-        metadata.put("source", "test");
-        
+        metadata.put("environment", "test");
+
         // When
-        ApiKeyInfo apiKey = ApiKeyInfo.builder()
+        ApiKey apiKey = ApiKey.builder()
                 .keyId("test-key-001")
                 .keyValue("sk-test-key-value-123")
-                .description("测试API Key")
+                .description("测试API密钥")
+                .permissions(Arrays.asList("READ", "WRITE", "ADMIN"))
+                .enabled(true)
                 .createdAt(createdAt)
                 .expiresAt(expiresAt)
-                .enabled(true)
-                .permissions(Arrays.asList("read", "write"))
                 .metadata(metadata)
                 .build();
-        
+
         // Then
         assertEquals("test-key-001", apiKey.getKeyId());
         assertEquals("sk-test-key-value-123", apiKey.getKeyValue());
-        assertEquals("测试API Key", apiKey.getDescription());
+        assertEquals("测试API密钥", apiKey.getDescription());
+        assertEquals(3, apiKey.getPermissions().size());
+        assertTrue(apiKey.isEnabled());
         assertEquals(createdAt, apiKey.getCreatedAt());
         assertEquals(expiresAt, apiKey.getExpiresAt());
-        assertTrue(apiKey.isEnabled());
-        assertEquals(Arrays.asList("read", "write"), apiKey.getPermissions());
         assertEquals(metadata, apiKey.getMetadata());
     }
-    
+
     @Test
     void testIsExpired_NotExpired() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .build();
-        
-        // When & Then
+
+        // Then
         assertFalse(apiKey.isExpired());
     }
-    
+
     @Test
     void testIsExpired_Expired() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .expiresAt(LocalDateTime.now().minusDays(1))
                 .build();
-        
-        // When & Then
+
+        // Then
         assertTrue(apiKey.isExpired());
     }
-    
+
     @Test
     void testIsExpired_NoExpirationDate() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .expiresAt(null)
                 .build();
-        
-        // When & Then
+
+        // Then
         assertFalse(apiKey.isExpired());
     }
-    
+
     @Test
     void testIsValid_ValidKey() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .enabled(true)
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .build();
-        
-        // When & Then
+
+        // Then
         assertTrue(apiKey.isValid());
     }
-    
+
     @Test
     void testIsValid_DisabledKey() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .enabled(false)
                 .expiresAt(LocalDateTime.now().plusDays(1))
                 .build();
-        
-        // When & Then
+
+        // Then
         assertFalse(apiKey.isValid());
     }
-    
+
     @Test
     void testIsValid_ExpiredKey() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .enabled(true)
                 .expiresAt(LocalDateTime.now().minusDays(1))
                 .build();
-        
-        // When & Then
+
+        // Then
         assertFalse(apiKey.isValid());
     }
-    
+
     @Test
     void testHasPermission_HasPermission() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .permissions(Arrays.asList("read", "write", "admin"))
                 .build();
-        
-        // When & Then
-        assertTrue(apiKey.hasPermission("read"));
+
+        // Then
+        assertTrue(apiKey.hasPermission("READ"));
         assertTrue(apiKey.hasPermission("write"));
-        assertTrue(apiKey.hasPermission("admin"));
+        assertTrue(apiKey.hasPermission("ADMIN"));
     }
-    
+
     @Test
     void testHasPermission_NoPermission() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .permissions(Arrays.asList("read", "write"))
                 .build();
-        
-        // When & Then
+
+        // Then
         assertFalse(apiKey.hasPermission("admin"));
-        assertFalse(apiKey.hasPermission("delete"));
+        assertFalse(apiKey.hasPermission("DELETE"));
     }
-    
+
     @Test
     void testHasPermission_NullPermissions() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
+        ApiKey apiKey = baseBuilder
                 .permissions(null)
                 .build();
-        
-        // When & Then
+
+        // Then
         assertFalse(apiKey.hasPermission("read"));
     }
-    
+
     @Test
     void testHasPermission_EmptyPermissions() {
         // Given
-        ApiKeyInfo apiKey = baseBuilder
-                .permissions(Arrays.asList())
+        ApiKey apiKey = baseBuilder
+                .permissions(List.of())
                 .build();
-        
-        // When & Then
+
+        // Then
         assertFalse(apiKey.hasPermission("read"));
     }
-    
+
+    @Test
+    void testCreateSecureCopy() {
+        // Given
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("test", "value");
+
+        ApiKey originalKey = baseBuilder
+                .keyValue("sk-secret-key-123")
+                .metadata(metadata)
+                .build();
+
+        // When
+        ApiKey secureCopy = originalKey.createSecureCopy();
+
+        // Then
+        assertEquals(originalKey.getKeyId(), secureCopy.getKeyId());
+        assertNull(secureCopy.getKeyValue()); // 安全副本不包含keyValue
+        assertEquals(originalKey.getDescription(), secureCopy.getDescription());
+        assertEquals(originalKey.getPermissions(), secureCopy.getPermissions());
+        assertEquals(originalKey.getExpiresAt(), secureCopy.getExpiresAt());
+        assertEquals(originalKey.getCreatedAt(), secureCopy.getCreatedAt());
+        assertEquals(originalKey.isEnabled(), secureCopy.isEnabled());
+        assertEquals(originalKey.getMetadata(), secureCopy.getMetadata());
+    }
+
+    @Test
+    void testCreateCreationResponse() {
+        // Given
+        ApiKey originalKey = baseBuilder
+                .keyValue("sk-secret-key-123")
+                .build();
+
+        // When
+        ApiKey creationResponse = originalKey.createCreationResponse();
+
+        // Then
+        assertEquals(originalKey.getKeyId(), creationResponse.getKeyId());
+        assertEquals(originalKey.getKeyValue(), creationResponse.getKeyValue()); // 创建响应包含keyValue
+        assertEquals(originalKey.getDescription(), creationResponse.getDescription());
+        assertEquals(originalKey.getPermissions(), creationResponse.getPermissions());
+        assertEquals(originalKey.isEnabled(), creationResponse.isEnabled());
+    }
+
     @Test
     void testGenerateApiKey_WithPrefixAndLength() {
         // When
-        String apiKey = ApiKeyInfo.generateApiKey("test-", 16);
-        
+        String apiKey = ApiKey.generateApiKey("test-", 16);
+
         // Then
         assertNotNull(apiKey);
         assertTrue(apiKey.startsWith("test-"));
         assertEquals(21, apiKey.length()); // "test-" (5) + 16 = 21
         assertTrue(apiKey.matches("test-[A-Za-z0-9]{16}"));
     }
-    
+
     @Test
     void testGenerateApiKey_DefaultParameters() {
         // When
-        String apiKey = ApiKeyInfo.generateApiKey();
-        
+        String apiKey = ApiKey.generateApiKey();
+
         // Then
         assertNotNull(apiKey);
         assertTrue(apiKey.startsWith("sk-"));
         assertEquals(35, apiKey.length()); // "sk-" (3) + 32 = 35
         assertTrue(apiKey.matches("sk-[A-Za-z0-9]{32}"));
     }
-    
+
     @Test
     void testGenerateApiKey_NullPrefix() {
         // When
-        String apiKey = ApiKeyInfo.generateApiKey(null, 10);
-        
+        String apiKey = ApiKey.generateApiKey(null, 10);
+
         // Then
         assertNotNull(apiKey);
-        assertTrue(apiKey.startsWith("sk-"));
+        assertTrue(apiKey.startsWith("sk-")); // 默认前缀
         assertEquals(13, apiKey.length()); // "sk-" (3) + 10 = 13
     }
-    
+
     @Test
     void testGenerateApiKey_InvalidLength() {
         // When
-        String apiKey = ApiKeyInfo.generateApiKey("test-", 0);
-        
+        String apiKey = ApiKey.generateApiKey("test-", 0);
+
         // Then
         assertNotNull(apiKey);
         assertTrue(apiKey.startsWith("test-"));
-        assertEquals(37, apiKey.length()); // "test-" (5) + 32 (default) = 37
+        assertEquals(37, apiKey.length()); // "test-" (5) + 32 (默认长度) = 37
     }
-    
+
     @Test
     void testGenerateApiKey_Uniqueness() {
         // When
-        String apiKey1 = ApiKeyInfo.generateApiKey();
-        String apiKey2 = ApiKeyInfo.generateApiKey();
-        
+        String apiKey1 = ApiKey.generateApiKey();
+        String apiKey2 = ApiKey.generateApiKey();
+
         // Then
         assertNotEquals(apiKey1, apiKey2);
     }

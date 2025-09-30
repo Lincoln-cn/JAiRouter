@@ -9,7 +9,7 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.security.cache.ApiKeyCache;
 import org.unreal.modelrouter.security.cache.CacheMetrics;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -39,18 +39,18 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<ApiKeyInfo> get(String keyValue) {
+    public Mono<ApiKey> get(String keyValue) {
         long startTime = System.nanoTime();
         String cacheKey = buildCacheKey(keyValue);
         
         return redisTemplate.opsForValue()
                 .get(cacheKey)
-                .flatMap(this::deserializeApiKeyInfo)
-                .doOnNext(apiKeyInfo -> {
+                .flatMap(this::deserializeApiKey)
+                .doOnNext(apiKey -> {
                     if (cacheMetrics != null) {
                         cacheMetrics.recordCacheHit();
                     }
-                    log.debug("从Redis缓存获取API Key: {}", apiKeyInfo.getKeyId());
+                    log.debug("从Redis缓存获取API Key: {}", apiKey.getKeyId());
                 })
                 .switchIfEmpty(Mono.fromRunnable(() -> {
                     if (cacheMetrics != null) {
@@ -72,18 +72,18 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(String keyValue, ApiKeyInfo apiKeyInfo, Duration ttl) {
+    public Mono<Void> put(String keyValue, ApiKey apiKey, Duration ttl) {
         long startTime = System.nanoTime();
         String cacheKey = buildCacheKey(keyValue);
-        
-        return serializeApiKeyInfo(apiKeyInfo)
+
+        return serializeApiKey(apiKey)
                 .flatMap(serialized -> redisTemplate.opsForValue().set(cacheKey, serialized, ttl))
                 .then()
                 .doOnSuccess(unused -> {
                     if (cacheMetrics != null) {
                         cacheMetrics.recordCacheWrite();
                     }
-                    log.debug("API Key缓存到Redis: {} (TTL: {})", apiKeyInfo.getKeyId(), ttl);
+                    log.debug("API Key缓存到Redis: {} (TTL: {})", apiKey.getKeyId(), ttl);
                 })
                 .doOnError(error -> {
                     if (cacheMetrics != null) {
@@ -100,8 +100,8 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(String keyValue, ApiKeyInfo apiKeyInfo) {
-        return put(keyValue, apiKeyInfo, DEFAULT_TTL);
+    public Mono<Void> put(String keyValue, ApiKey apiKey) {
+        return put(keyValue, apiKey, DEFAULT_TTL);
     }
     
     @Override
@@ -161,10 +161,10 @@ public class RedisApiKeyCache implements ApiKeyCache {
     /**
      * 序列化API Key信息
      */
-    private Mono<String> serializeApiKeyInfo(ApiKeyInfo apiKeyInfo) {
+    private Mono<String> serializeApiKey(ApiKey apiKey) {
         return Mono.fromCallable(() -> {
             try {
-                return objectMapper.writeValueAsString(apiKeyInfo);
+                return objectMapper.writeValueAsString(apiKey);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("序列化API Key信息失败", e);
             }
@@ -174,10 +174,10 @@ public class RedisApiKeyCache implements ApiKeyCache {
     /**
      * 反序列化API Key信息
      */
-    private Mono<ApiKeyInfo> deserializeApiKeyInfo(String serialized) {
+    private Mono<ApiKey> deserializeApiKey(String serialized) {
         return Mono.fromCallable(() -> {
             try {
-                return objectMapper.readValue(serialized, ApiKeyInfo.class);
+                return objectMapper.readValue(serialized, ApiKey.class);
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("反序列化API Key信息失败", e);
             }

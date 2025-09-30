@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.security.config;
 
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;
 
@@ -19,7 +19,7 @@ public interface SecurityConfigurationService {
      * @param apiKeys API Key列表
      * @return 更新操作结果
      */
-    Mono<Void> updateApiKeys(List<ApiKeyInfo> apiKeys);
+    Mono<Void> updateApiKeys(List<ApiKey> apiKeys);
     
     /**
      * 动态更新脱敏规则配置

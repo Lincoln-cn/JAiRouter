@@ -7,8 +7,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
+import org.unreal.modelrouter.security.service.ApiKeyService;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.test.StepVerifier;
 
@@ -34,33 +35,32 @@ class ApiKeyServiceImplTest {
     private SecurityProperties securityProperties;
 
     private ObjectMapper objectMapper;
-    private ApiKeyServiceImpl apiKeyService;
+    private ApiKeyService apiKeyService;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        apiKeyService = new ApiKeyServiceImpl(storeManager, objectMapper,securityProperties);
+        apiKeyService = new ApiKeyService(storeManager, objectMapper, securityProperties);
         
         // 模拟存储为空的情况
         when(storeManager.getConfig(anyString())).thenReturn(null);
-        
-        // 初始化服务
-        apiKeyService.init();
+
+        apiKeyService.loadLatestApiKeyConfig();
     }
 
     @Test
     void testValidateApiKey_Success() {
         // 准备测试数据
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key-001", "test-api-key-value", true, null);
+        ApiKey apiKey = createTestApiKey("test-key-001", "test-api-key-value", true, null);
         
         // 先创建API Key
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
-                .expectNext(apiKeyInfo)
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
+                .expectNext(apiKey)
                 .verifyComplete();
         
         // 测试验证API Key
         StepVerifier.create(apiKeyService.validateApiKey("test-api-key-value"))
-                .expectNext(apiKeyInfo)
+                .expectNext(apiKey)
                 .verifyComplete();
     }
 
@@ -88,11 +88,11 @@ class ApiKeyServiceImplTest {
     @Test
     void testValidateApiKey_DisabledKey() {
         // 准备测试数据 - 禁用的API Key
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key-002", "disabled-api-key", false, null);
+        ApiKey apiKey = createTestApiKey("test-key-002", "disabled-api-key", false, null);
         
         // 先创建API Key
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
-                .expectNext(apiKeyInfo)
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
+                .expectNext(apiKey)
                 .verifyComplete();
         
         // 测试验证禁用的API Key
@@ -105,11 +105,11 @@ class ApiKeyServiceImplTest {
     void testValidateApiKey_ExpiredKey() {
         // 准备测试数据 - 过期的API Key
         LocalDateTime expiredTime = LocalDateTime.now().minusDays(1);
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key-003", "expired-api-key", true, expiredTime);
+        ApiKey apiKey = createTestApiKey("test-key-003", "expired-api-key", true, expiredTime);
         
         // 先创建API Key
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
-                .expectNext(apiKeyInfo)
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
+                .expectNext(apiKey)
                 .verifyComplete();
         
         // 测试验证过期的API Key
@@ -120,10 +120,10 @@ class ApiKeyServiceImplTest {
 
     @Test
     void testCreateApiKey_Success() {
-        ApiKeyInfo apiKeyInfo = createTestApiKey("new-key-001", "new-api-key-value", true, null);
-        
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
-                .expectNext(apiKeyInfo)
+        ApiKey apiKey = createTestApiKey("new-key-001", "new-api-key-value", true, null);
+
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
+                .expectNext(apiKey)
                 .verifyComplete();
         
         // 验证存储方法被调用
@@ -133,50 +133,50 @@ class ApiKeyServiceImplTest {
 
     @Test
     void testCreateApiKey_EmptyKeyId() {
-        ApiKeyInfo apiKeyInfo = createTestApiKey("", "test-value", true, null);
-        
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
+        ApiKey apiKey = createTestApiKey("", "test-value", true, null);
+
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
                 .expectError(IllegalArgumentException.class)
                 .verify();
     }
 
     @Test
     void testCreateApiKey_EmptyKeyValue() {
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", "", true, null);
-        
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
+        ApiKey apiKey = createTestApiKey("test-key", "", true, null);
+
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
                 .expectError(IllegalArgumentException.class)
                 .verify();
     }
 
     @Test
     void testCreateApiKey_DuplicateKeyId() {
-        ApiKeyInfo apiKeyInfo1 = createTestApiKey("duplicate-key", "value1", true, null);
-        ApiKeyInfo apiKeyInfo2 = createTestApiKey("duplicate-key", "value2", true, null);
+        ApiKey apiKey1 = createTestApiKey("duplicate-key", "value1", true, null);
+        ApiKey apiKey2 = createTestApiKey("duplicate-key", "value2", true, null);
         
         // 创建第一个API Key
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo1))
-                .expectNext(apiKeyInfo1)
+        StepVerifier.create(apiKeyService.createApiKey(apiKey1))
+                .expectNext(apiKey1)
                 .verifyComplete();
         
         // 尝试创建重复的API Key ID
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo2))
+        StepVerifier.create(apiKeyService.createApiKey(apiKey2))
                 .expectError(IllegalArgumentException.class)
                 .verify();
     }
 
     @Test
     void testCreateApiKey_DuplicateKeyValue() {
-        ApiKeyInfo apiKeyInfo1 = createTestApiKey("key1", "duplicate-value", true, null);
-        ApiKeyInfo apiKeyInfo2 = createTestApiKey("key2", "duplicate-value", true, null);
+        ApiKey apiKey1 = createTestApiKey("key1", "duplicate-value", true, null);
+        ApiKey apiKey2 = createTestApiKey("key2", "duplicate-value", true, null);
         
         // 创建第一个API Key
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo1))
-                .expectNext(apiKeyInfo1)
+        StepVerifier.create(apiKeyService.createApiKey(apiKey1))
+                .expectNext(apiKey1)
                 .verifyComplete();
         
         // 尝试创建重复的API Key值
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo2))
+        StepVerifier.create(apiKeyService.createApiKey(apiKey2))
                 .expectError(IllegalArgumentException.class)
                 .verify();
     }
@@ -184,13 +184,13 @@ class ApiKeyServiceImplTest {
     @Test
     void testUpdateApiKey_Success() {
         // 先创建API Key
-        ApiKeyInfo originalKey = createTestApiKey("update-key", "update-value", true, null);
+        ApiKey originalKey = createTestApiKey("update-key", "update-value", true, null);
         StepVerifier.create(apiKeyService.createApiKey(originalKey))
                 .expectNext(originalKey)
                 .verifyComplete();
         
         // 准备更新数据
-        ApiKeyInfo updateInfo = ApiKeyInfo.builder()
+        ApiKey updateInfo = ApiKey.builder()
                 .description("更新后的描述")
                 .enabled(false)
                 .permissions(Arrays.asList("read", "write"))
@@ -211,7 +211,7 @@ class ApiKeyServiceImplTest {
 
     @Test
     void testUpdateApiKey_NotFound() {
-        ApiKeyInfo updateInfo = ApiKeyInfo.builder()
+        ApiKey updateInfo = ApiKey.builder()
                 .description("更新描述")
                 .build();
         
@@ -223,9 +223,9 @@ class ApiKeyServiceImplTest {
     @Test
     void testDeleteApiKey_Success() {
         // 先创建API Key
-        ApiKeyInfo apiKeyInfo = createTestApiKey("delete-key", "delete-value", true, null);
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
-                .expectNext(apiKeyInfo)
+        ApiKey apiKey = createTestApiKey("delete-key", "delete-value", true, null);
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
+                .expectNext(apiKey)
                 .verifyComplete();
         
         // 执行删除
@@ -248,8 +248,8 @@ class ApiKeyServiceImplTest {
     @Test
     void testGetAllApiKeys() {
         // 创建多个API Key
-        ApiKeyInfo key1 = createTestApiKey("key1", "value1", true, null);
-        ApiKeyInfo key2 = createTestApiKey("key2", "value2", true, null);
+        ApiKey key1 = createTestApiKey("key1", "value1", true, null);
+        ApiKey key2 = createTestApiKey("key2", "value2", true, null);
         
         StepVerifier.create(apiKeyService.createApiKey(key1))
                 .expectNext(key1)
@@ -271,14 +271,14 @@ class ApiKeyServiceImplTest {
 
     @Test
     void testGetApiKeyById_Success() {
-        ApiKeyInfo apiKeyInfo = createTestApiKey("get-key", "get-value", true, null);
-        
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
-                .expectNext(apiKeyInfo)
+        ApiKey apiKey = createTestApiKey("get-key", "get-value", true, null);
+
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
+                .expectNext(apiKey)
                 .verifyComplete();
         
         StepVerifier.create(apiKeyService.getApiKeyById("get-key"))
-                .expectNext(apiKeyInfo)
+                .expectNext(apiKey)
                 .verifyComplete();
     }
 
@@ -292,9 +292,9 @@ class ApiKeyServiceImplTest {
     @Test
     void testUpdateUsageStatistics_Success() {
         // 先创建API Key
-        ApiKeyInfo apiKeyInfo = createTestApiKey("stats-key", "stats-value", true, null);
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
-                .expectNext(apiKeyInfo)
+        ApiKey apiKey = createTestApiKey("stats-key", "stats-value", true, null);
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
+                .expectNext(apiKey)
                 .verifyComplete();
         
         // 更新使用统计 - 成功请求
@@ -327,9 +327,9 @@ class ApiKeyServiceImplTest {
     @Test
     void testGetUsageStatistics_Success() {
         // 先创建API Key
-        ApiKeyInfo apiKeyInfo = createTestApiKey("usage-key", "usage-value", true, null);
-        StepVerifier.create(apiKeyService.createApiKey(apiKeyInfo))
-                .expectNext(apiKeyInfo)
+        ApiKey apiKey = createTestApiKey("usage-key", "usage-value", true, null);
+        StepVerifier.create(apiKeyService.createApiKey(apiKey))
+                .expectNext(apiKey)
                 .verifyComplete();
         
         // 获取使用统计
@@ -353,8 +353,8 @@ class ApiKeyServiceImplTest {
     /**
      * 创建测试用的API Key信息
      */
-    private ApiKeyInfo createTestApiKey(String keyId, String keyValue, boolean enabled, LocalDateTime expiresAt) {
-        return ApiKeyInfo.builder()
+    private ApiKey createTestApiKey(String keyId, String keyValue, boolean enabled, LocalDateTime expiresAt) {
+        return ApiKey.builder()
                 .keyId(keyId)
                 .keyValue(keyValue)
                 .description("测试API Key")

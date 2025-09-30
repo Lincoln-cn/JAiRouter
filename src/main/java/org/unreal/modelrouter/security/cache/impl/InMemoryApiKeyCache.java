@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.security.cache.ApiKeyCache;
 import org.unreal.modelrouter.security.cache.CacheMetrics;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -39,7 +39,7 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<ApiKeyInfo> get(String keyValue) {
+    public Mono<ApiKey> get(String keyValue) {
         long startTime = System.nanoTime();
         
         return Mono.fromCallable(() -> {
@@ -71,8 +71,8 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
                 if (cacheMetrics != null) {
                     cacheMetrics.recordCacheHit();
                 }
-                log.debug("从内存缓存获取API Key: {}", entry.apiKeyInfo.getKeyId());
-                return entry.apiKeyInfo;
+                log.debug("从内存缓存获取API Key: {}", entry.apiKey.getKeyId());
+                return entry.apiKey;
             } catch (Exception e) {
                 log.warn("从内存缓存获取API Key时发生异常: {}", keyValue != null ? keyValue : "null", e);
                 return null; // 返回null而不是抛出异常，确保switchIfEmpty能正常工作
@@ -91,12 +91,12 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(String keyValue, ApiKeyInfo apiKeyInfo, Duration ttl) {
+    public Mono<Void> put(String keyValue, ApiKey apiKey, Duration ttl) {
         long startTime = System.nanoTime();
         
         return Mono.<Void>fromRunnable(() -> {
             LocalDateTime expiresAt = LocalDateTime.now().plus(ttl);
-            CacheEntry entry = new CacheEntry(apiKeyInfo, expiresAt);
+                    CacheEntry entry = new CacheEntry(apiKey, expiresAt);
             CacheEntry previous = cache.put(keyValue, entry);
             boolean isNew = previous == null;
             
@@ -106,7 +106,7 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
                     cacheMetrics.incrementCacheSize();
                 }
             }
-            log.debug("API Key缓存到内存: {} (TTL: {})", apiKeyInfo.getKeyId(), ttl);
+                    log.debug("API Key缓存到内存: {} (TTL: {})", apiKey.getKeyId(), ttl);
         })
         .doFinally(signalType -> {
             if (cacheMetrics != null) {
@@ -117,8 +117,8 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(String keyValue, ApiKeyInfo apiKeyInfo) {
-        return put(keyValue, apiKeyInfo, DEFAULT_TTL);
+    public Mono<Void> put(String keyValue, ApiKey apiKey) {
+        return put(keyValue, apiKey, DEFAULT_TTL);
     }
     
     @Override
@@ -129,7 +129,7 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
                 if (cacheMetrics != null) {
                     cacheMetrics.recordCacheEviction();
                 }
-                log.debug("从内存缓存移除API Key: {}", removed.apiKeyInfo.getKeyId());
+                log.debug("从内存缓存移除API Key: {}", removed.apiKey.getKeyId());
             }
         });
     }
@@ -169,7 +169,7 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
             CacheEntry entry = cache.get(keyValue);
             if (entry != null) {
                 LocalDateTime newExpiresAt = LocalDateTime.now().plus(ttl);
-                CacheEntry updatedEntry = new CacheEntry(entry.apiKeyInfo, newExpiresAt);
+                CacheEntry updatedEntry = new CacheEntry(entry.apiKey, newExpiresAt);
                 cache.put(keyValue, updatedEntry);
                 log.debug("更新内存缓存API Key过期时间: {} -> {}", keyValue, ttl);
             }
@@ -196,21 +196,14 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
             log.error("清理过期缓存条目时发生错误", e);
         }
     }
-    
+
     /**
-     * 缓存条目
-     */
-    private static class CacheEntry {
-        private final ApiKeyInfo apiKeyInfo;
-        private final LocalDateTime expiresAt;
-        
-        public CacheEntry(ApiKeyInfo apiKeyInfo, LocalDateTime expiresAt) {
-            this.apiKeyInfo = apiKeyInfo;
-            this.expiresAt = expiresAt;
-        }
-        
+         * 缓存条目
+         */
+        private record CacheEntry(ApiKey apiKey, LocalDateTime expiresAt) {
+
         public boolean isExpired() {
-            return LocalDateTime.now().isAfter(expiresAt);
+                return LocalDateTime.now().isAfter(expiresAt);
+            }
         }
-    }
 }

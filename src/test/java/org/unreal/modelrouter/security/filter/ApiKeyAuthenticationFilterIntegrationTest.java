@@ -13,13 +13,12 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.authentication.ApiKeyService;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.security.service.ApiKeyService;
 import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -71,7 +70,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testSuccessfulAuthentication() {
         // 准备测试数据
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", List.of("read"));
+        ApiKey apiKeyInfo = createTestApiKey("test-key", List.of("read"));
         when(apiKeyService.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
         when(apiKeyService.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
 
@@ -112,7 +111,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testInsufficientPermissions() {
         // 只有read权限的API Key尝试POST请求
-        ApiKeyInfo apiKeyInfo = createTestApiKey("read-only-key", List.of("read"));
+        ApiKey apiKeyInfo = createTestApiKey("read-only-key", List.of("read"));
         when(apiKeyService.validateApiKey("read-only-api-key")).thenReturn(Mono.just(apiKeyInfo));
 
         webTestClient.post()
@@ -128,7 +127,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testAdminPermissionAllowsAll() {
         // admin权限应该允许所有操作
-        ApiKeyInfo apiKeyInfo = createTestApiKey("admin-key", List.of("admin"));
+        ApiKey apiKeyInfo = createTestApiKey("admin-key", List.of("admin"));
         when(apiKeyService.validateApiKey("admin-api-key")).thenReturn(Mono.just(apiKeyInfo));
         when(apiKeyService.updateUsageStatistics("admin-key", true)).thenReturn(Mono.empty());
 
@@ -143,7 +142,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testAuthorizationHeaderSupport() {
         // 测试通过Authorization头传递API Key
-        ApiKeyInfo apiKeyInfo = createTestApiKey("bearer-key", List.of("read"));
+        ApiKey apiKeyInfo = createTestApiKey("bearer-key", List.of("read"));
         when(apiKeyService.validateApiKey("bearer-api-key")).thenReturn(Mono.just(apiKeyInfo));
         when(apiKeyService.updateUsageStatistics("bearer-key", true)).thenReturn(Mono.empty());
 
@@ -195,7 +194,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testPermissionMapping() {
         // 测试不同HTTP方法的权限要求
-        ApiKeyInfo writeKey = createTestApiKey("write-key", List.of("write"));
+        ApiKey writeKey = createTestApiKey("write-key", List.of("write"));
         when(apiKeyService.validateApiKey("write-api-key")).thenReturn(Mono.just(writeKey));
         when(apiKeyService.updateUsageStatistics("write-key", true)).thenReturn(Mono.empty());
 
@@ -217,7 +216,7 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     @Test
     void testEmptyPermissionsList() {
         // 空权限列表应该允许所有操作
-        ApiKeyInfo noPermissionsKey = createTestApiKey("no-perms-key", List.of());
+        ApiKey noPermissionsKey = createTestApiKey("no-perms-key", List.of());
         when(apiKeyService.validateApiKey("no-perms-api-key")).thenReturn(Mono.just(noPermissionsKey));
         when(apiKeyService.updateUsageStatistics("no-perms-key", true)).thenReturn(Mono.empty());
 
@@ -244,8 +243,8 @@ class ApiKeyAuthenticationFilterIntegrationTest {
     /**
      * 创建测试用的API Key信息
      */
-    private ApiKeyInfo createTestApiKey(String keyId, java.util.List<String> permissions) {
-        return ApiKeyInfo.builder()
+    private ApiKey createTestApiKey(String keyId, java.util.List<String> permissions) {
+        return ApiKey.builder()
                 .keyId(keyId)
                 .keyValue("test-api-key-value")
                 .description("测试API Key")

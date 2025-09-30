@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.security.config.properties.ApiKeyConfig;
 import org.unreal.modelrouter.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.service.JwtAccountConfigurationService;
+import org.unreal.modelrouter.security.service.ApiKeyService;
+import org.unreal.modelrouter.security.service.JwtAccountService;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,8 @@ public class SecurityConfigurationInitializer {
     private final SecurityProperties securityProperties;
     private final SecurityConfigMergeService configMergeService;
     private final SecurityConfigurationManager configurationManager;
-    private final JwtAccountConfigurationService jwtAccountConfigurationService;
+    private final JwtAccountService jwtAccountService;
+    private final ApiKeyService apiKeyService;
     /**
      * 应用启动完成后初始化安全配置
      * 参考 ConfigurationService 的模式，处理配置的初始化和加载
@@ -47,6 +49,8 @@ public class SecurityConfigurationInitializer {
             
             // 初始化JWT账户配置
             initializeJwtAccountConfig();
+
+            initializeApiKeyConfig();
             
             log.info("安全配置初始化完成");
             
@@ -194,12 +198,12 @@ public class SecurityConfigurationInitializer {
         log.info("开始初始化JWT账户配置...");
         
         try {
-            if (!jwtAccountConfigurationService.hasPersistedAccountConfig()) {
+            if (!jwtAccountService.hasPersistedAccountConfig()) {
                 // 如果没有持久化的JWT账户配置，将YAML配置保存为第一个版本
-                initializeJwtAccountFromYaml();
+                jwtAccountService.initializeJwtAccountFromYaml();
             } else {
                 // 如果有持久化配置，加载最新版本
-                loadLatestJwtAccountConfig();
+                jwtAccountService.loadLatestJwtAccountConfig();
             }
             
             log.info("JWT账户配置初始化完成");
@@ -211,42 +215,25 @@ public class SecurityConfigurationInitializer {
         }
     }
 
-    /**
-     * 从YAML配置初始化JWT账户持久化存储
-     */
-    private void initializeJwtAccountFromYaml() {
-        log.info("首次启动，将YAML JWT账户配置保存为版本1");
-        
+    private void initializeApiKeyConfig() {
+        log.info("开始初始化APIKEY配置...");
+
         try {
-            // 获取YAML默认JWT账户配置
-            Map<String, Object> defaultAccountConfig = jwtAccountConfigurationService.getAccountVersionConfig(0);
-            
-            // 保存为第一个版本
-            jwtAccountConfigurationService.saveAccountAsNewVersion(defaultAccountConfig);
-            
-            log.info("YAML JWT账户配置已保存为版本1");
-            
+            if (!apiKeyService.hasPersistedAccountConfig()) {
+                // 如果没有持久化的JWT账户配置，将YAML配置保存为第一个版本
+                apiKeyService.initializeApiKeyFromYaml();
+            } else {
+                // 如果有持久化配置，加载最新版本
+                apiKeyService.loadLatestApiKeyConfig();
+            }
+
+            log.info("JWT账户配置初始化完成");
+
         } catch (Exception e) {
-            log.error("从YAML配置初始化JWT账户失败", e);
-            throw new RuntimeException("Failed to initialize JWT accounts from YAML config", e);
+            log.error("JWT账户配置初始化失败", e);
+            // JWT账户配置初始化失败不应该阻止整个应用启动
+            log.warn("JWT账户配置初始化失败，将使用YAML默认配置");
         }
     }
-
-    /**
-     * 加载最新的持久化JWT账户配置
-     */
-    private void loadLatestJwtAccountConfig() {
-        log.info("发现持久化JWT账户配置，加载最新版本");
-        
-        try {
-            int currentVersion = jwtAccountConfigurationService.getCurrentAccountVersion();
-            log.info("已加载JWT账户配置版本 {}", currentVersion);
-            
-        } catch (Exception e) {
-            log.error("加载持久化JWT账户配置失败", e);
-            throw new RuntimeException("Failed to load persisted JWT account config", e);
-        }
-    }
-
 
 }

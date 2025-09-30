@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.security.config.properties.*;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SanitizationRule;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.core.publisher.Mono;
@@ -40,15 +39,15 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     private static final String JWT_CONFIG_KEY = CONFIG_KEY_PREFIX + "jwt";
 
     @Override
-    public Mono<Void> updateApiKeys(List<ApiKeyInfo> apiKeys) {
+    public Mono<Void> updateApiKeys(List<ApiKey> apiKeys) {
         return Mono.fromRunnable(() -> {
             log.info("开始更新API Key配置，数量: {}", apiKeys.size());
             
             // 记录变更前的值
-            List<ApiKeyProperties> oldKeys = new ArrayList<>(securityProperties.getApiKey().getKeys());
+            List<ApiKey> oldKeys = new ArrayList<>(securityProperties.getApiKey().getKeys());
             
             // 更新配置
-            securityProperties.getApiKey().setKeys(apiKeys.stream().map(ApiKeyInfo::covertTo).toList());
+            securityProperties.getApiKey().setKeys(apiKeys.stream().toList());
             
             // 持久化到存储
             // 注意：这里需要将对象转换为Map格式以适配StoreManager接口

@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +30,7 @@ public class ApiKeyConfig {
      * 预配置的API Key列表
      */
     @Valid
-    private List<ApiKeyProperties> keys = new ArrayList<>();
+    private List<ApiKey> keys;
 
     /**
      * 默认过期天数
@@ -46,6 +45,4 @@ public class ApiKeyConfig {
     @Min(60)
     @Max(86400)
     private long cacheExpirationSeconds = 3600;
-
-
 }

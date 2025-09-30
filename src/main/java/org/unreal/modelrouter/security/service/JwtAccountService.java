@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class JwtAccountConfigurationService {
+public class JwtAccountService {
 
     private final JwtUserProperties jwtUserProperties;
     private final StoreManager storeManager;
@@ -670,4 +670,42 @@ public class JwtAccountConfigurationService {
             return false;
         }
     }
+
+    /**
+     * 从YAML配置初始化JWT账户持久化存储
+     */
+    public void initializeJwtAccountFromYaml() {
+        log.info("首次启动，将YAML JWT账户配置保存为版本1");
+
+        try {
+            // 获取YAML默认JWT账户配置
+            Map<String, Object> defaultAccountConfig = getAccountVersionConfig(0);
+
+            // 保存为第一个版本
+            saveAccountAsNewVersion(defaultAccountConfig);
+
+            log.info("YAML JWT账户配置已保存为版本1");
+
+        } catch (Exception e) {
+            log.error("从YAML配置初始化JWT账户失败", e);
+            throw new RuntimeException("Failed to initialize JWT accounts from YAML config", e);
+        }
+    }
+
+    /**
+     * 加载最新的持久化JWT账户配置
+     */
+    public void loadLatestJwtAccountConfig() {
+        log.info("发现持久化JWT账户配置，加载最新版本");
+
+        try {
+            int currentVersion = getCurrentAccountVersion();
+            log.info("已加载JWT账户配置版本 {}", currentVersion);
+
+        } catch (Exception e) {
+            log.error("加载持久化JWT账户配置失败", e);
+            throw new RuntimeException("Failed to load persisted JWT account config", e);
+        }
+    }
+
 }
