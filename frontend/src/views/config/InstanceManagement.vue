@@ -392,6 +392,7 @@ const form = reactive<ServiceInstance>({
   baseUrl: '',
   path: '',
   weight: 1,
+  instanceId: '',
   status: 'active',
   rateLimit: {
     enabled: false,

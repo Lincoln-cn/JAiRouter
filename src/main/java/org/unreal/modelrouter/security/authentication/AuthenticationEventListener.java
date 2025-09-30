@@ -6,6 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.security.authentication.ApiKeyAuthenticationProvider.ApiKeyAuthenticationFailureEvent;
 import org.unreal.modelrouter.security.authentication.ApiKeyAuthenticationProvider.ApiKeyAuthenticationSuccessEvent;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 
 /**
@@ -48,11 +49,11 @@ public class AuthenticationEventListener {
     /**
      * 更新API Key使用统计
      */
-    private void updateApiKeyUsageStatistics(org.unreal.modelrouter.security.model.ApiKeyInfo apiKeyInfo) {
+    private void updateApiKeyUsageStatistics(ApiKey apiKey) {
         try {
             // 这里可以实现使用统计的更新逻辑
             // 例如：增加请求计数、更新最后使用时间等
-            log.debug("更新API Key使用统计: {}", apiKeyInfo.getKeyId());
+            log.debug("更新API Key使用统计: {}", apiKey.getKeyId());
             
             // 示例：如果启用了审计，可以记录使用情况
             if (securityProperties.getAudit().isEnabled()) {

@@ -8,13 +8,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.unreal.modelrouter.exception.SecurityAuthenticationException;
-import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.JwtAuthentication;
+import org.unreal.modelrouter.security.service.ApiKeyService;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -56,7 +56,7 @@ class CustomReactiveAuthenticationManagerTest {
     void testAuthenticateApiKey_Success() {
         // Given
         String apiKey = "test-api-key";
-        ApiKeyInfo apiKeyInfo = ApiKeyInfo.builder()
+        ApiKey apiKeyInfo = ApiKey.builder()
                 .keyId("test-key-id")
                 .keyValue(apiKey)
                 .permissions(List.of("read", "write"))
