@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.store.StoreManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +17,7 @@ import java.util.Map;
  * 安全配置合并服务
  * 负责合并应用配置和持久化存储中的安全配置
  * 持久化存储中的配置优先级更高
- * 
+ *
  * 参考 ConfigMergeService 的实现模式
  */
 @Slf4j
@@ -24,7 +26,7 @@ import java.util.Map;
 public class SecurityConfigMergeService {
 
     private static final String SECURITY_CONFIG_KEY = "security-config";
-    
+
     private final StoreManager storeManager;
     private final SecurityProperties securityProperties;
     private final ObjectMapper objectMapper;
@@ -46,7 +48,7 @@ public class SecurityConfigMergeService {
                     return config;
                 }
             }
-            
+
             // 如果没有版本配置，尝试获取当前配置
             if (storeManager.exists(SECURITY_CONFIG_KEY)) {
                 Map<String, Object> config = storeManager.getConfig(SECURITY_CONFIG_KEY);
@@ -55,7 +57,7 @@ public class SecurityConfigMergeService {
                     return config;
                 }
             }
-            
+
             log.info("未找到持久化安全配置，将仅使用YAML配置");
             return new HashMap<>();
         } catch (Exception e) {
@@ -84,11 +86,11 @@ public class SecurityConfigMergeService {
     public Map<String, Object> getMergedSecurityConfig() {
         Map<String, Object> defaultConfig = getDefaultSecurityConfig();
         Map<String, Object> persistedConfig = getPersistedSecurityConfig();
-        
+
         if (persistedConfig.isEmpty()) {
             return defaultConfig;
         }
-        
+
         return deepMergeConfigs(defaultConfig, persistedConfig);
     }
 
@@ -103,7 +105,7 @@ public class SecurityConfigMergeService {
             if (!versions.isEmpty()) {
                 return true;
             }
-            
+
             // 检查是否有当前配置
             return storeManager.exists(SECURITY_CONFIG_KEY);
         } catch (Exception e) {
@@ -122,12 +124,12 @@ public class SecurityConfigMergeService {
             for (Integer version : versions) {
                 storeManager.deleteConfigVersion(SECURITY_CONFIG_KEY, version);
             }
-            
+
             // 删除当前配置
             if (storeManager.exists(SECURITY_CONFIG_KEY)) {
                 storeManager.deleteConfig(SECURITY_CONFIG_KEY);
             }
-            
+
             log.info("已清除所有持久化安全配置，恢复到YAML默认配置");
         } catch (Exception e) {
             log.error("清除持久化安全配置时发生错误", e);
@@ -177,7 +179,25 @@ public class SecurityConfigMergeService {
                 } else if (baseValue instanceof List && overrideValue instanceof List) {
                     // 对于List类型，安全配置中主要是API Keys和脱敏规则
                     // 直接覆盖（因为安全配置的列表通常是完整替换）
-                    result.put(key, overrideValue);
+                    List combined = new ArrayList();
+                    combined.addAll((List<?>) baseValue);
+                    combined.addAll((List<?>) overrideValue);
+                    Map<String, Object> map = new HashMap<>();
+                    if (combined.size() > 0) {
+                        if (!combined.isEmpty() && combined.get(0) instanceof ApiKey) {
+                            for (Object o : combined) {
+                                ApiKey item = (ApiKey) o;
+                                map.put(item.getKeyId(), item); // 后面的会覆盖前面的
+                            }
+                        } else {
+                            for (Object o : combined) {
+                                map.put(o.toString(), o);
+                            }
+                        }
+                        result.put(key, new ArrayList<>(map.values()));
+                    } else {
+                        result.put(key, new ArrayList<>());
+                    }
                 } else {
                     // 基本类型直接覆盖
                     result.put(key, overrideValue);
