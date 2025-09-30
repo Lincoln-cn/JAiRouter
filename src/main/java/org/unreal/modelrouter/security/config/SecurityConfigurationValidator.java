@@ -3,7 +3,6 @@ package org.unreal.modelrouter.security.config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.security.config.properties.*;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -98,7 +97,7 @@ public class SecurityConfigurationValidator {
 
             // 验证API Key列表
             if (config.getKeys() != null) {
-                validateApiKeyList(config.getKeys().stream().map(ApiKeyProperties::covertTo).toList(), result);
+                validateApiKeyList(config.getKeys(), result);
             }
         }
     }
@@ -106,14 +105,14 @@ public class SecurityConfigurationValidator {
     /**
      * 验证API Key列表
      */
-    private void validateApiKeyList(List<ApiKeyInfo> apiKeys, ValidationResult result) {
+    private void validateApiKeyList(List<ApiKey> apiKeys, ValidationResult result) {
         if (apiKeys.isEmpty()) {
             result.addWarning("API Key列表为空，系统将无法进行API Key认证");
             return;
         }
 
         for (int i = 0; i < apiKeys.size(); i++) {
-            ApiKeyInfo apiKey = apiKeys.get(i);
+            ApiKey apiKey = apiKeys.get(i);
             String prefix = "API Key[" + i + "]";
 
             // 验证Key ID

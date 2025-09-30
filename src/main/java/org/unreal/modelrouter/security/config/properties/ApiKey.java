@@ -1,15 +1,18 @@
-package org.unreal.modelrouter.security.model;
+package org.unreal.modelrouter.security.config.properties;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import org.unreal.modelrouter.security.config.properties.ApiKeyProperties;
+import lombok.NoArgsConstructor;
+import org.unreal.modelrouter.security.model.UsageStatistics;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -17,11 +20,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * API Key信息数据模型
+ * 统一的API Key数据模型
+ * 合并了原来的ApiKeyProperties和ApiKeyInfo类
  */
 @Data
 @Builder
-public class ApiKeyInfo {
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ApiKey {
 
     /**
      * API Key唯一标识符
@@ -29,9 +36,9 @@ public class ApiKeyInfo {
     private String keyId;
 
     /**
-     * API Key值（敏感信息，序列化时忽略）
+     * API Key值 - 仅在创建时返回，其他时候为null以确保安全
      */
-    @JsonIgnore
+//    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String keyValue;
 
     /**
@@ -40,12 +47,9 @@ public class ApiKeyInfo {
     private String description;
 
     /**
-     * 创建时间
+     * 权限列表
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @JsonSerialize(using = LocalDateTimeSerializer.class)
-    private LocalDateTime createdAt;
+    private List<String> permissions;
 
     /**
      * 过期时间
@@ -56,14 +60,17 @@ public class ApiKeyInfo {
     private LocalDateTime expiresAt;
 
     /**
+     * 创建时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    private LocalDateTime createdAt;
+
+    /**
      * 是否启用
      */
     private boolean enabled;
-
-    /**
-     * 权限列表
-     */
-    private List<String> permissions;
 
     /**
      * 元数据信息
@@ -85,7 +92,9 @@ public class ApiKeyInfo {
         return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
     }
 
-    // 用于反序列化expired字段的setter方法（无实际作用，仅用于兼容旧数据）
+    /**
+     * 用于反序列化expired字段的setter方法（无实际作用，仅用于兼容旧数据）
+     */
     @JsonProperty("expired")
     public void setExpired(boolean expired) {
         // 仅用于反序列化，实际值由expiresAt字段计算得出
@@ -114,6 +123,44 @@ public class ApiKeyInfo {
 
         return permissions.stream()
                 .anyMatch(p -> p != null && p.equalsIgnoreCase(permission));
+    }
+
+    /**
+     * 创建一个不包含keyValue的安全副本，用于API响应
+     *
+     * @return 安全的ApiKey副本
+     */
+    public ApiKey createSecureCopy() {
+        return ApiKey.builder()
+                .keyId(this.keyId)
+                .keyValue(null) // 安全起见，不包含keyValue
+                .description(this.description)
+                .permissions(this.permissions)
+                .expiresAt(this.expiresAt)
+                .createdAt(this.createdAt)
+                .enabled(this.enabled)
+                .metadata(this.metadata)
+                .usage(this.usage)
+                .build();
+    }
+
+    /**
+     * 创建一个包含keyValue的副本，仅用于创建API Key时的响应
+     *
+     * @return 包含keyValue的ApiKey副本
+     */
+    public ApiKey createCreationResponse() {
+        return ApiKey.builder()
+                .keyId(this.keyId)
+                .keyValue(this.keyValue) // 仅在创建时包含keyValue
+                .description(this.description)
+                .permissions(this.permissions)
+                .expiresAt(this.expiresAt)
+                .createdAt(this.createdAt)
+                .enabled(this.enabled)
+                .metadata(this.metadata)
+                .usage(this.usage)
+                .build();
     }
 
     /**
@@ -149,18 +196,5 @@ public class ApiKeyInfo {
      */
     public static String generateApiKey() {
         return generateApiKey("sk-", 32);
-    }
-
-
-    public ApiKeyProperties covertTo() {
-        ApiKeyProperties apiKeyProperties = new ApiKeyProperties();
-        apiKeyProperties.setKeyId(this.keyId);
-        apiKeyProperties.setKeyValue(this.keyValue);
-        apiKeyProperties.setEnabled(this.isEnabled());
-        apiKeyProperties.setDescription(this.description);
-        apiKeyProperties.setExpiresAt(this.expiresAt);
-        apiKeyProperties.setMetadata(this.metadata);
-        apiKeyProperties.setPermissions(this.getPermissions());
-        return apiKeyProperties;
     }
 }

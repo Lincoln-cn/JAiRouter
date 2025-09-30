@@ -13,10 +13,8 @@ import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.constants.SecurityConstants;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -37,7 +35,7 @@ import static org.mockito.Mockito.*;
 class ApiKeyAuthenticationFilterTest {
 
     @Mock
-    private ApiKeyService apiKeyService;
+    private ApiKeyServiceInterface apiKeyServiceInterface;
 
     @Mock
     private SecurityAuditService auditService;
@@ -72,8 +70,8 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyService.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        when(apiKeyService.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
+        when(apiKeyServiceInterface.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
@@ -85,8 +83,8 @@ class ApiKeyAuthenticationFilterTest {
         assertEquals(Arrays.asList("read", "write"), exchange.getAttributes().get(SecurityConstants.USER_PERMISSIONS));
 
         // 验证服务调用
-        verify(apiKeyService).validateApiKey("valid-api-key");
-        verify(apiKeyService).updateUsageStatistics("test-key", true);
+        verify(apiKeyServiceInterface).validateApiKey("valid-api-key");
+        verify(apiKeyServiceInterface).updateUsageStatistics("test-key", true);
         verify(filterChain).filter(exchange);
         verify(auditService).recordEvent(any(SecurityAuditEvent.class));
     }
@@ -107,7 +105,7 @@ class ApiKeyAuthenticationFilterTest {
         assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
 
         // 验证服务没有被调用
-        verify(apiKeyService, never()).validateApiKey(anyString());
+        verify(apiKeyServiceInterface, never()).validateApiKey(anyString());
         verify(filterChain, never()).filter(any());
         // 缺少API Key的情况下，审计服务应该被调用
         verify(auditService).recordEvent(any(SecurityAuditEvent.class));
@@ -123,7 +121,7 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用 - 返回认证异常
-        when(apiKeyService.validateApiKey("invalid-api-key"))
+        when(apiKeyServiceInterface.validateApiKey("invalid-api-key"))
                 .thenReturn(Mono.error(AuthenticationException.invalidApiKey()));
 
         // 执行测试
@@ -134,7 +132,7 @@ class ApiKeyAuthenticationFilterTest {
         assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
 
         // 验证服务调用
-        verify(apiKeyService).validateApiKey("invalid-api-key");
+        verify(apiKeyServiceInterface).validateApiKey("invalid-api-key");
         verify(filterChain, never()).filter(any());
         verify(auditService).recordEvent(any(SecurityAuditEvent.class));
     }
@@ -150,7 +148,7 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyService.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
@@ -160,7 +158,7 @@ class ApiKeyAuthenticationFilterTest {
         assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
 
         // 验证服务调用
-        verify(apiKeyService).validateApiKey("valid-api-key");
+        verify(apiKeyServiceInterface).validateApiKey("valid-api-key");
         verify(filterChain, never()).filter(any());
         // 权限不足的情况下，审计服务应该被调用
         verify(auditService).recordEvent(any(SecurityAuditEvent.class));
@@ -177,8 +175,8 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyService.validateApiKey("admin-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        when(apiKeyService.updateUsageStatistics("admin-key", true)).thenReturn(Mono.empty());
+        when(apiKeyServiceInterface.validateApiKey("admin-api-key")).thenReturn(Mono.just(apiKeyInfo));
+        when(apiKeyServiceInterface.updateUsageStatistics("admin-key", true)).thenReturn(Mono.empty());
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
@@ -188,8 +186,8 @@ class ApiKeyAuthenticationFilterTest {
         assertEquals(apiKeyInfo, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
 
         // 验证服务调用
-        verify(apiKeyService).validateApiKey("admin-api-key");
-        verify(apiKeyService).updateUsageStatistics("admin-key", true);
+        verify(apiKeyServiceInterface).validateApiKey("admin-api-key");
+        verify(apiKeyServiceInterface).updateUsageStatistics("admin-key", true);
         verify(filterChain).filter(exchange);
     }
 
@@ -206,7 +204,7 @@ class ApiKeyAuthenticationFilterTest {
                 .verifyComplete();
 
         // 验证直接通过，没有进行认证
-        verify(apiKeyService, never()).validateApiKey(anyString());
+        verify(apiKeyServiceInterface, never()).validateApiKey(anyString());
         verify(filterChain).filter(exchange);
         verify(auditService, never()).recordEvent(any());
     }
@@ -222,8 +220,8 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyService.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        when(apiKeyService.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
+        when(apiKeyServiceInterface.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
@@ -231,7 +229,7 @@ class ApiKeyAuthenticationFilterTest {
 
         // 验证认证成功
         assertEquals(apiKeyInfo, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
-        verify(apiKeyService).validateApiKey("valid-api-key");
+        verify(apiKeyServiceInterface).validateApiKey("valid-api-key");
         verify(filterChain).filter(exchange);
     }
 
@@ -246,8 +244,8 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyService.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        when(apiKeyService.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
+        when(apiKeyServiceInterface.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
@@ -255,7 +253,7 @@ class ApiKeyAuthenticationFilterTest {
 
         // 验证认证成功（空权限列表应该允许所有操作）
         assertEquals(apiKeyInfo, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
-        verify(apiKeyService).validateApiKey("valid-api-key");
+        verify(apiKeyServiceInterface).validateApiKey("valid-api-key");
         verify(filterChain).filter(exchange);
     }
 
@@ -269,7 +267,7 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用 - 抛出非认证异常
-        when(apiKeyService.validateApiKey("valid-api-key"))
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key"))
                 .thenReturn(Mono.error(new RuntimeException("Database connection failed")));
 
         // 执行测试
@@ -280,7 +278,7 @@ class ApiKeyAuthenticationFilterTest {
         assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
 
         // 验证服务调用
-        verify(apiKeyService).validateApiKey("valid-api-key");
+        verify(apiKeyServiceInterface).validateApiKey("valid-api-key");
         verify(filterChain, never()).filter(any());
         verify(auditService).recordEvent(any(SecurityAuditEvent.class));
     }
@@ -312,9 +310,9 @@ class ApiKeyAuthenticationFilterTest {
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-        lenient().when(apiKeyService.validateApiKey("test-api-key")).thenReturn(Mono.just(apiKeyInfo));
+        lenient().when(apiKeyServiceInterface.validateApiKey("test-api-key")).thenReturn(Mono.just(apiKeyInfo));
         if (shouldSucceed) {
-            lenient().when(apiKeyService.updateUsageStatistics(apiKeyInfo.getKeyId(), true)).thenReturn(Mono.empty());
+            lenient().when(apiKeyServiceInterface.updateUsageStatistics(apiKeyInfo.getKeyId(), true)).thenReturn(Mono.empty());
         }
 
         StepVerifier.create(filter.filter(exchange, filterChain))
@@ -329,7 +327,7 @@ class ApiKeyAuthenticationFilterTest {
         }
 
         // 重置mock
-        reset(filterChain, apiKeyService);
+        reset(filterChain, apiKeyServiceInterface);
         lenient().when(auditService.recordEvent(any(SecurityAuditEvent.class))).thenReturn(Mono.empty());
         lenient().when(filterChain.filter(any())).thenReturn(Mono.empty());
     }

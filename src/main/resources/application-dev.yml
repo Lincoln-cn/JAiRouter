@@ -53,7 +53,7 @@ jairouter:
     api-key:
       enabled: true
       default-expiration-days: 30  # 开发环境使用较短的过期时间
-      cache-expiration-seconds: 1800  # 30分钟缓存
+      cache-expiration-seconds: 2424  # 30分钟缓存
       keys:
         # 开发环境测试用 API Key
         - keyId: "dev-admin-key"

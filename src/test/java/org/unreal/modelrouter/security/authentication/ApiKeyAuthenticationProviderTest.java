@@ -10,10 +10,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.unreal.modelrouter.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
-import org.unreal.modelrouter.security.model.ApiKeyInfo;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.security.service.ApiKeyService;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -46,7 +47,7 @@ class ApiKeyAuthenticationProviderTest {
     @BeforeEach
     void setUp() {
         authenticationProvider = new ApiKeyAuthenticationProvider(
-                apiKeyService, securityProperties, eventPublisher, auditService
+                apiKeyService, eventPublisher, auditService
         );
     }
     
@@ -63,7 +64,7 @@ class ApiKeyAuthenticationProviderTest {
     void testAuthenticate_Success() {
         // Given
         String apiKey = "test-api-key";
-        ApiKeyInfo apiKeyInfo = ApiKeyInfo.builder()
+        ApiKey apiKeyInfo = ApiKey.builder()
                 .keyId("test-key-id")
                 .keyValue(apiKey)
                 .description("Test API Key")
@@ -161,7 +162,7 @@ class ApiKeyAuthenticationProviderTest {
     void testAuthenticate_EventPublishingFailure() {
         // Given
         String apiKey = "test-api-key";
-        ApiKeyInfo apiKeyInfo = ApiKeyInfo.builder()
+        ApiKey apiKeyInfo = ApiKey.builder()
                 .keyId("test-key-id")
                 .keyValue(apiKey)
                 .permissions(List.of("read"))

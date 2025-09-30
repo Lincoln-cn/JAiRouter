@@ -11,11 +11,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.test.context.TestPropertySource;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
-import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -31,7 +31,7 @@ class SecurityConfigurationTest {
     private SecurityProperties securityProperties;
     
     @Mock
-    private ApiKeyService apiKeyService;
+    private ApiKeyServiceInterface apiKeyServiceInterface;
     
     @Mock
     private JwtTokenValidator jwtTokenValidator;
@@ -48,7 +48,7 @@ class SecurityConfigurationTest {
     void testReactiveAuthenticationManagerCreation() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, applicationContext
+                securityProperties, apiKeyServiceInterface, applicationContext
         );
         
         // When
@@ -63,7 +63,7 @@ class SecurityConfigurationTest {
     void testSecurityWebFilterChainCreation() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, applicationContext
+                securityProperties, apiKeyServiceInterface, applicationContext
         );
         ReactiveAuthenticationManager authManager = securityConfiguration.reactiveAuthenticationManager();
         SpringSecurityAuthenticationFilter securityFilter = mock(SpringSecurityAuthenticationFilter.class);
@@ -82,7 +82,7 @@ class SecurityConfigurationTest {
     void testSecurityPropertiesInjection() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, applicationContext
+                securityProperties, apiKeyServiceInterface, applicationContext
         );
         
         // When & Then

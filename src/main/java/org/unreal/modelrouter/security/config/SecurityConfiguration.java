@@ -21,9 +21,9 @@ import org.springframework.security.web.server.context.NoOpServerSecurityContext
 import org.unreal.modelrouter.exceptionhandler.ReactiveGlobalExceptionHandler;
 import org.unreal.modelrouter.filter.DefaultAuthenticationConverter;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
-import org.unreal.modelrouter.security.authentication.ApiKeyService;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.security.service.ApiKeyService;
 import org.unreal.modelrouter.tracing.config.TracingSecurityConfiguration;
 
 import java.util.List;
