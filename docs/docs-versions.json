@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.43",
-      "LastModified": "2025-09-30T02:58:07.687411",
-      "ContentHash": "b8c9f5ec1da9cb4c",
-      "GitCommit": "6459cd64",
+      "Version": "1.0.44",
+      "LastModified": "2025-10-01T03:11:03.684195",
+      "ContentHash": "6770b5afcce666c0",
+      "GitCommit": "e9954e4c",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1756,10 +1756,10 @@
     },
     "docs/en/configuration/version-management.md": {
       "FilePath": "docs/en/configuration/version-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-09-25T03:01:10.374676",
-      "ContentHash": "8fc4a0f1f3d5e4c8",
-      "GitCommit": "32bd1673",
+      "Version": "1.0.1",
+      "LastModified": "2025-10-01T03:11:03.722576",
+      "ContentHash": "375607db1b38c506",
+      "GitCommit": "7ef4d8d2",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1776,10 +1776,10 @@
     },
     "docs/zh/configuration/version-management.md": {
       "FilePath": "docs/zh/configuration/version-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-09-25T03:01:10.542024",
-      "ContentHash": "969095a64644f8bf",
-      "GitCommit": "32bd1673",
+      "Version": "1.0.1",
+      "LastModified": "2025-10-01T03:11:03.904228",
+      "ContentHash": "bdef634722ff293f",
+      "GitCommit": "7ef4d8d2",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4473,7 +4473,31 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-09-30T02:58:07.687420",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.43",
+      "NewVersion": "1.0.44",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-01T03:11:03.684203",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/version-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-01T03:11:03.722585",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/version-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-01T03:11:03.904237",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-09-30T02:58:08.153654"
+  "last_updated": "2025-10-01T03:11:04.152262"
 }
