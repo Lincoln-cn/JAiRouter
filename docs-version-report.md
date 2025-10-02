@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 135
-- 近7天变更: 15
+- 近7天变更: 16
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-10-01 03:11:04
+- 最后扫描: 2025-10-02 02:57:04
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.44 → 1.0.45) - 2025-10-02
 - **MODIFIED**: docs/zh/configuration/version-management.md (1.0.0 → 1.0.1) - 2025-10-01
 - **MODIFIED**: docs/en/configuration/version-management.md (1.0.0 → 1.0.1) - 2025-10-01
 - **MODIFIED**: docs-version-report.md (1.0.43 → 1.0.44) - 2025-10-01
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.39 → 1.0.40) - 2025-09-27
 - **MODIFIED**: docs-version-report.md (1.0.38 → 1.0.39) - 2025-09-26
 - **CREATED**: docs/zh/configuration/version-management.md ( → 1.0.0) - 2025-09-25
-- **CREATED**: docs/zh/configuration/store-config.md ( → 1.0.0) - 2025-09-25
 
 ## 过期文档 (30天未更新)
 
@@ -560,9 +560,9 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.45 - 2025-10-02 (3373ca38)
 - **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
-- **docs-version-report.md**: v1.0.44 - 2025-10-01 (e9954e4c)
 - **docs/zh/configuration/store-config.md**: v1.0.0 - 2025-09-25 (21313fa8)
 - **docs/zh/configuration/index.md**: v1.0.2 - 2025-09-25 (32bd1673)
 - **docs/en/configuration/store-config.md**: v1.0.0 - 2025-09-25 (32bd1673)
