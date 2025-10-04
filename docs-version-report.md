@@ -5,10 +5,11 @@
 - 总文档数: 135
 - 近7天变更: 10
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-10-03 02:56:33
+- 最后扫描: 2025-10-04 02:51:10
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.46 → 1.0.47) - 2025-10-04
 - **MODIFIED**: docs-version-report.md (1.0.45 → 1.0.46) - 2025-10-03
 - **MODIFIED**: docs-version-report.md (1.0.44 → 1.0.45) - 2025-10-02
 - **MODIFIED**: docs/zh/configuration/version-management.md (1.0.0 → 1.0.1) - 2025-10-01
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.41 → 1.0.42) - 2025-09-29
 - **MODIFIED**: docs-version-report.md (1.0.40 → 1.0.41) - 2025-09-28
 - **MODIFIED**: docs-version-report.md (1.0.39 → 1.0.40) - 2025-09-27
-- **MODIFIED**: docs-version-report.md (1.0.38 → 1.0.39) - 2025-09-26
 
 ## 过期文档 (30天未更新)
 
@@ -583,7 +583,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.46 - 2025-10-03 (3a065d8c)
+- **docs-version-report.md**: v1.0.47 - 2025-10-04 (861a6f0e)
 - **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/zh/configuration/store-config.md**: v1.0.0 - 2025-09-25 (21313fa8)
