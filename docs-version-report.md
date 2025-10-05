@@ -5,10 +5,11 @@
 - 总文档数: 135
 - 近7天变更: 10
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-10-04 02:51:10
+- 最后扫描: 2025-10-05 03:07:12
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.47 → 1.0.48) - 2025-10-05
 - **MODIFIED**: docs-version-report.md (1.0.46 → 1.0.47) - 2025-10-04
 - **MODIFIED**: docs-version-report.md (1.0.45 → 1.0.46) - 2025-10-03
 - **MODIFIED**: docs-version-report.md (1.0.44 → 1.0.45) - 2025-10-02
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.42 → 1.0.43) - 2025-09-30
 - **MODIFIED**: docs-version-report.md (1.0.41 → 1.0.42) - 2025-09-29
 - **MODIFIED**: docs-version-report.md (1.0.40 → 1.0.41) - 2025-09-28
-- **MODIFIED**: docs-version-report.md (1.0.39 → 1.0.40) - 2025-09-27
 
 ## 过期文档 (30天未更新)
 
@@ -75,9 +75,11 @@
 - docs/zh/configuration/load-balancing.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/configuration/rate-limiting.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/deployment/china-optimization.md (版本: 1.0.2, 最后更新: 2025-09-02)
+- docs/zh/deployment/docker.md (版本: 1.0.3, 最后更新: 2025-09-04)
 - docs/zh/deployment/github-pages.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/deployment/index.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/deployment/kubernetes.md (版本: 1.0.2, 最后更新: 2025-09-02)
+- docs/zh/deployment/production.md (版本: 1.0.3, 最后更新: 2025-09-04)
 - docs/zh/development/architecture.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/development/code-quality.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/development/contributing.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -583,7 +585,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.47 - 2025-10-04 (861a6f0e)
+- **docs-version-report.md**: v1.0.48 - 2025-10-05 (e2982a43)
 - **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/zh/configuration/store-config.md**: v1.0.0 - 2025-09-25 (21313fa8)
