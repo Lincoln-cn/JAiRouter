@@ -5,10 +5,11 @@
 - 总文档数: 135
 - 近7天变更: 10
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-10-05 03:07:12
+- 最后扫描: 2025-10-06 03:01:40
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.48 → 1.0.49) - 2025-10-06
 - **MODIFIED**: docs-version-report.md (1.0.47 → 1.0.48) - 2025-10-05
 - **MODIFIED**: docs-version-report.md (1.0.46 → 1.0.47) - 2025-10-04
 - **MODIFIED**: docs-version-report.md (1.0.45 → 1.0.46) - 2025-10-03
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.43 → 1.0.44) - 2025-10-01
 - **MODIFIED**: docs-version-report.md (1.0.42 → 1.0.43) - 2025-09-30
 - **MODIFIED**: docs-version-report.md (1.0.41 → 1.0.42) - 2025-09-29
-- **MODIFIED**: docs-version-report.md (1.0.40 → 1.0.41) - 2025-09-28
 
 ## 过期文档 (30天未更新)
 
@@ -29,13 +29,17 @@
 - docs/en/api-reference/management-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/openapi-spec.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/universal-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/configuration/application-config.md (版本: 1.0.2, 最后更新: 2025-09-06)
 - docs/en/configuration/circuit-breaker.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/configuration/dynamic-config.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/configuration/load-balancing.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/configuration/rate-limiting.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/deployment/china-optimization.md (版本: 1.0.2, 最后更新: 2025-09-02)
+- docs/en/deployment/docker.md (版本: 1.0.2, 最后更新: 2025-09-06)
 - docs/en/deployment/github-pages.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/deployment/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/deployment/kubernetes.md (版本: 1.0.3, 最后更新: 2025-09-06)
+- docs/en/deployment/production.md (版本: 1.0.2, 最后更新: 2025-09-06)
 - docs/en/development/architecture.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/development/code-quality.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/development/contributing.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -70,6 +74,7 @@
 - docs/zh/api-reference/management-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/api-reference/openapi-spec.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/api-reference/universal-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/configuration/application-config.md (版本: 1.0.2, 最后更新: 2025-09-06)
 - docs/zh/configuration/circuit-breaker.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/configuration/dynamic-config.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/configuration/load-balancing.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -585,7 +590,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.48 - 2025-10-05 (e2982a43)
+- **docs-version-report.md**: v1.0.49 - 2025-10-06 (7d8731c3)
 - **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/zh/configuration/store-config.md**: v1.0.0 - 2025-09-25 (21313fa8)
