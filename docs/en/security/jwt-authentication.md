@@ -360,6 +360,76 @@ curl -X POST http://localhost:8080/auth/refresh \
      -d '{"refresh_token": "refresh_token_here"}'
 ```
 
+## JWT Token Persistence
+
+### Enable Token Persistence
+
+JAiRouter supports persistent storage of JWT tokens for enhanced management and monitoring:
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      # Token persistence configuration
+      persistence:
+        enabled: true
+        primary-storage: redis    # redis, memory
+        fallback-storage: memory  # memory
+        
+        # Cleanup configuration
+        cleanup:
+          enabled: true
+          schedule: "0 0 2 * * ?"  # Daily at 2 AM
+          retention-days: 30
+          batch-size: 1000
+        
+        # Memory storage configuration
+        memory:
+          max-tokens: 50000
+          cleanup-threshold: 0.8  # 80% triggers cleanup
+          lru-enabled: true
+          
+        # Redis storage configuration
+        redis:
+          key-prefix: "jwt:"
+          default-ttl: 3600
+          connection-timeout: 5000
+          retry-attempts: 3
+          serialization-format: "json"
+```
+
+### Token Management Features
+
+With persistence enabled, you can:
+
+1. **Track Active Tokens**: Monitor all issued tokens and their status
+2. **Token Lifecycle Management**: Automatic status updates and cleanup
+3. **Enhanced Security**: Persistent blacklist with Redis support
+4. **Audit Trail**: Complete audit logging of token operations
+5. **Performance Monitoring**: Metrics and health checks for token operations
+
+### Token Storage Structure
+
+Tokens are stored with the following metadata:
+
+```json
+{
+  "id": "token-uuid-123",
+  "userId": "user123",
+  "tokenHash": "sha256-hash-of-token",
+  "issuedAt": "2025-01-15T10:30:00Z",
+  "expiresAt": "2025-01-15T11:30:00Z",
+  "status": "ACTIVE",
+  "deviceInfo": "Mozilla/5.0...",
+  "ipAddress": "192.168.1.100",
+  "revokeReason": null,
+  "revokedAt": null,
+  "revokedBy": null,
+  "createdAt": "2025-01-15T10:30:00Z",
+  "updatedAt": "2025-01-15T10:30:00Z"
+}
+```
+
 ## Blacklist Functionality
 
 ### Enable Blacklist
@@ -369,9 +439,14 @@ jairouter:
   security:
     jwt:
       blacklist-enabled: true
-      blacklist-cache:
-        expiration-seconds: 86400   # 24 hours
-        max-size: 10000            # Maximum cache entries
+      # Enhanced blacklist persistence
+      blacklist:
+        persistence:
+          enabled: true
+          primary-storage: redis  # redis, memory
+          fallback-storage: memory
+          max-memory-size: 10000
+          cleanup-interval: 3600  # 1 hour
 ```
 
 ### Token Revocation
@@ -383,15 +458,47 @@ curl -X POST http://localhost:8080/auth/logout \
      -H "Authorization: Bearer token_to_revoke"
 ```
 
-### Bulk Revocation
+### Enhanced Token Management
 
-Revoke all tokens for a user:
+With persistence enabled, you can use the management APIs:
 
+#### Get Token List
 ```bash
-curl -X POST http://localhost:8080/auth/revoke-all \
+curl -X GET "http://localhost:8080/api/auth/jwt/tokens?page=0&size=20&status=ACTIVE" \
+     -H "Authorization: Bearer admin_token"
+```
+
+#### Revoke Specific Token
+```bash
+curl -X POST "http://localhost:8080/api/auth/jwt/tokens/token-uuid-123/revoke" \
      -H "Authorization: Bearer admin_token" \
      -H "Content-Type: application/json" \
-     -d '{"user_id": "user123"}'
+     -d '{"reason": "Security policy violation"}'
+```
+
+#### Bulk Token Revocation
+```bash
+curl -X POST "http://localhost:8080/api/auth/jwt/tokens/revoke-batch" \
+     -H "Authorization: Bearer admin_token" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "tokenIds": ["token-uuid-123", "token-uuid-456"],
+       "reason": "Bulk security cleanup"
+     }'
+```
+
+#### Manual Cleanup
+```bash
+curl -X POST "http://localhost:8080/api/auth/jwt/cleanup" \
+     -H "Authorization: Bearer admin_token" \
+     -H "Content-Type: application/json" \
+     -d '{"cleanupType": "ALL"}'
+```
+
+#### Get Blacklist Statistics
+```bash
+curl -X GET "http://localhost:8080/api/auth/jwt/blacklist/stats" \
+     -H "Authorization: Bearer admin_token"
 ```
 
 ## Integration with API Key
@@ -442,29 +549,139 @@ jairouter:
         timeout-ms: 5000
 ```
 
-## Monitoring and Auditing
+## Security Auditing and Monitoring
 
-### Audit Events
+### Enhanced Audit Configuration
 
 ```yaml
 jairouter:
   security:
+    # Enhanced audit configuration
     audit:
       enabled: true
-      event-types:
-        jwt-token-issued: true
-        jwt-token-refreshed: true
-        jwt-token-revoked: true
-        jwt-token-expired: true
-        jwt-validation-failed: true
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 90
+      
+      # JWT operations auditing
+      jwt-operations:
+        enabled: true
+        log-token-details: false  # Don't log full tokens
+        log-user-agent: true
+        log-ip-address: true
+      
+      # API Key operations auditing
+      api-key-operations:
+        enabled: true
+        log-key-details: false   # Don't log full keys
+        log-usage-patterns: true
+        log-ip-address: true
+      
+      # Security events auditing
+      security-events:
+        enabled: true
+        suspicious-activity-detection: true
+        alert-thresholds:
+          failed-auth-per-minute: 10
+          token-revoke-per-minute: 5
+          api-key-usage-per-minute: 100
+      
+      # Audit storage configuration
+      storage:
+        type: "file"
+        file-path: "logs/security-audit.log"
+        rotation:
+          max-file-size: "100MB"
+          max-files: 30
+        # Optional: database storage
+        database:
+          enabled: false
+          table-name: "security_audit_events"
 ```
+
+### Audit Event Types
+
+The system logs the following JWT and API Key events:
+
+#### JWT Token Events
+- **Token Issued**: When a new JWT token is created
+- **Token Refreshed**: When an access token is refreshed
+- **Token Revoked**: When a token is manually revoked
+- **Token Validated**: When a token is validated (success/failure)
+- **Token Expired**: When a token naturally expires
+
+#### API Key Events
+- **Key Created**: When a new API key is generated
+- **Key Used**: When an API key is used for authentication
+- **Key Revoked**: When an API key is revoked
+- **Key Expired**: When an API key expires
+
+#### Security Events
+- **Suspicious Activity**: Unusual authentication patterns
+- **Failed Authentication**: Failed login attempts
+- **Bulk Operations**: Mass token/key operations
+
+### Audit Event Structure
+
+```json
+{
+  "id": "audit-event-uuid",
+  "type": "JWT_TOKEN_ISSUED",
+  "userId": "user123",
+  "resourceId": "token-uuid-123",
+  "action": "ISSUE_TOKEN",
+  "details": "JWT token issued for user login",
+  "ipAddress": "192.168.1.100",
+  "userAgent": "Mozilla/5.0...",
+  "success": true,
+  "timestamp": "2025-01-15T10:30:00Z",
+  "metadata": {
+    "tokenExpiresAt": "2025-01-15T11:30:00Z",
+    "deviceInfo": "Desktop Browser",
+    "authMethod": "username_password"
+  }
+}
+```
+
+### Security Report Generation
+
+Generate comprehensive security reports:
+
+```bash
+# Get security report for the last 30 days
+curl -X GET "http://localhost:8080/api/security/audit/report?from=2025-01-01&to=2025-01-31" \
+     -H "Authorization: Bearer admin_token"
+```
+
+Response includes:
+- Total JWT and API Key operations
+- Failed authentication statistics
+- Suspicious activity alerts
+- Top IP addresses and users
+- Security event trends
 
 ### Monitoring Metrics
 
+#### JWT Token Metrics
 - `jairouter_security_jwt_tokens_issued_total`: Total tokens issued
 - `jairouter_security_jwt_tokens_refreshed_total`: Total tokens refreshed
 - `jairouter_security_jwt_tokens_revoked_total`: Total tokens revoked
 - `jairouter_security_jwt_validation_duration_seconds`: Token validation duration
+- `jairouter_security_jwt_blacklist_size`: Current blacklist size
+- `jairouter_security_jwt_active_tokens`: Number of active tokens
+
+#### API Key Metrics
+- `jairouter_security_api_keys_created_total`: Total API keys created
+- `jairouter_security_api_keys_used_total`: Total API key usage
+- `jairouter_security_api_keys_revoked_total`: Total API keys revoked
+- `jairouter_security_api_key_validation_duration_seconds`: API key validation duration
+
+#### Storage Metrics
+- `jairouter_security_storage_operations_total`: Total storage operations
+- `jairouter_security_storage_errors_total`: Storage operation errors
+- `jairouter_security_redis_connection_status`: Redis connection health
+- `jairouter_security_memory_usage_bytes`: Memory usage for token storage
 
 ## Security Best Practices
 

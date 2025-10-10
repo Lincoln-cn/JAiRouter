@@ -9,6 +9,7 @@ import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.unreal.modelrouter.security.service.ApiKeyService;
 import org.springframework.test.context.TestPropertySource;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
@@ -31,7 +32,7 @@ class SecurityConfigurationTest {
     private SecurityProperties securityProperties;
     
     @Mock
-    private ApiKeyServiceInterface apiKeyServiceInterface;
+    private ApiKeyService apiKeyService;
     
     @Mock
     private JwtTokenValidator jwtTokenValidator;
@@ -48,7 +49,7 @@ class SecurityConfigurationTest {
     void testReactiveAuthenticationManagerCreation() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyServiceInterface, applicationContext
+                securityProperties, apiKeyService, applicationContext
         );
         
         // When
@@ -63,7 +64,7 @@ class SecurityConfigurationTest {
     void testSecurityWebFilterChainCreation() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyServiceInterface, applicationContext
+                securityProperties, apiKeyService, applicationContext
         );
         ReactiveAuthenticationManager authManager = securityConfiguration.reactiveAuthenticationManager();
         SpringSecurityAuthenticationFilter securityFilter = mock(SpringSecurityAuthenticationFilter.class);
@@ -82,7 +83,7 @@ class SecurityConfigurationTest {
     void testSecurityPropertiesInjection() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyServiceInterface, applicationContext
+                securityProperties, apiKeyService, applicationContext
         );
         
         // When & Then

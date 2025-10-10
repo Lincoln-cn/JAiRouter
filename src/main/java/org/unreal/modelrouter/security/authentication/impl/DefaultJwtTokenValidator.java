@@ -4,6 +4,7 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.security.core.Authentication;
@@ -13,10 +14,12 @@ import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.JwtAuthentication;
 import org.unreal.modelrouter.security.model.JwtPrincipal;
+import org.unreal.modelrouter.security.service.EnhancedJwtBlacklistService;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -38,6 +41,10 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     
     private final SecurityProperties securityProperties;
     private final ReactiveStringRedisTemplate redisTemplate;
+    
+    // 使用增强的黑名单服务（可选依赖）
+    @Autowired(required = false)
+    private EnhancedJwtBlacklistService enhancedBlacklistService;
     
     @Override
     public Mono<Authentication> validateToken(String token) {
@@ -144,22 +151,45 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
         }
         
         try {
-            // 从令牌中提取JTI（JWT ID）用作黑名单键
+            // 优先使用增强的黑名单服务
+            if (enhancedBlacklistService != null) {
+                String tokenId = extractTokenId(token);
+                return enhancedBlacklistService.isBlacklisted(tokenId)
+                    .doOnNext(isBlacklisted -> {
+                        if (isBlacklisted) {
+                            log.warn("令牌在增强黑名单中被发现: tokenId={}", tokenId);
+                        }
+                    });
+            }
+            
+            // 降级到原有的Redis检查
             Claims claims = parseToken(token);
             String jti = claims.getId();
             
             if (jti == null) {
                 // 如果没有JTI，使用令牌的哈希值
-                jti = String.valueOf(token.hashCode());
+                jti = calculateTokenHash(token);
             }
             
-            String blacklistKey = BLACKLIST_KEY_PREFIX + jti;
+            final String finalJti = jti; // 创建final变量供lambda使用
+            String blacklistKey = BLACKLIST_KEY_PREFIX + finalJti;
             return redisTemplate.hasKey(blacklistKey)
-                .onErrorReturn(false); // Redis连接失败时默认不在黑名单中
+                .doOnNext(isBlacklisted -> {
+                    if (isBlacklisted) {
+                        log.warn("令牌在Redis黑名单中被发现: jti={}", finalJti);
+                    }
+                })
+                .onErrorResume(ex -> {
+                    log.error("检查Redis黑名单时发生错误: {}", ex.getMessage());
+                    // Redis连接失败时，为了安全起见，应该拒绝令牌
+                    // 但这可能影响正常用户，所以记录严重警告
+                    log.error("Redis黑名单检查失败，令牌状态未知，存在安全风险: jti={}", finalJti);
+                    return Mono.just(false); // 默认允许，但记录错误
+                });
                 
         } catch (Exception e) {
-            log.warn("检查JWT令牌黑名单状态时发生错误: {}", e.getMessage());
-            return Mono.just(false); // 出错时默认不在黑名单中
+            log.error("检查JWT令牌黑名单状态时发生严重错误: {}", e.getMessage(), e);
+            return Mono.just(false); // 出错时默认不在黑名单中，但记录错误
         }
     }
     
@@ -172,29 +202,52 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
         return Mono.fromCallable(() -> {
             try {
                 Claims claims = parseToken(token);
-                String jti = claims.getId();
                 
-                if (jti == null) {
-                    jti = String.valueOf(token.hashCode());
-                }
-                
-                String blacklistKey = BLACKLIST_KEY_PREFIX + jti;
-                
-                // 计算令牌剩余有效期，用作Redis过期时间
+                // 计算令牌剩余有效期
                 Date expiration = claims.getExpiration();
                 long ttlSeconds = Math.max(0, (expiration.getTime() - System.currentTimeMillis()) / 1000);
                 
-                if (ttlSeconds > 0) {
-                    return redisTemplate.opsForValue()
-                        .set(blacklistKey, "blacklisted", Duration.ofSeconds(ttlSeconds))
-                        .then();
-                } else {
-                    // 令牌已过期，无需加入黑名单
+                if (ttlSeconds <= 0) {
+                    log.debug("令牌已过期，无需加入黑名单");
                     return Mono.<Void>empty();
                 }
                 
+                // 优先使用增强的黑名单服务
+                if (enhancedBlacklistService != null) {
+                    String tokenId = extractTokenId(token);
+                    return enhancedBlacklistService.addToBlacklist(tokenId, ttlSeconds)
+                        .doOnNext(success -> {
+                            if (success) {
+                                log.info("令牌已通过增强服务加入黑名单: tokenId={}, ttl={}s", tokenId, ttlSeconds);
+                            } else {
+                                log.error("通过增强服务加入黑名单失败: tokenId={}", tokenId);
+                            }
+                        })
+                        .then();
+                }
+                
+                // 降级到原有的Redis方式
+                String jti = claims.getId();
+                if (jti == null) {
+                    jti = calculateTokenHash(token);
+                }
+                
+                final String finalJti = jti; // 创建final变量供lambda使用
+                String blacklistKey = BLACKLIST_KEY_PREFIX + finalJti;
+                
+                return redisTemplate.opsForValue()
+                    .set(blacklistKey, "blacklisted", Duration.ofSeconds(ttlSeconds))
+                    .doOnNext(success -> {
+                        if (success) {
+                            log.info("令牌已通过Redis加入黑名单: jti={}, ttl={}s", finalJti, ttlSeconds);
+                        } else {
+                            log.error("通过Redis加入黑名单失败: jti={}", finalJti);
+                        }
+                    })
+                    .then();
+                
             } catch (Exception e) {
-                log.warn("将JWT令牌加入黑名单时发生错误: {}", e.getMessage());
+                log.error("将JWT令牌加入黑名单时发生错误: {}", e.getMessage(), e);
                 return Mono.<Void>empty(); // 出错时静默失败
             }
         }).flatMap(mono -> mono);
@@ -292,5 +345,40 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
             return null;
         }
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+    
+    /**
+     * 提取令牌ID（用于黑名单）
+     */
+    private String extractTokenId(String token) {
+        try {
+            Claims claims = parseToken(token);
+            String jti = claims.getId();
+            
+            if (jti != null && !jti.trim().isEmpty()) {
+                return jti.trim();
+            }
+            
+            // 如果没有JTI，使用令牌的哈希值
+            return calculateTokenHash(token);
+            
+        } catch (Exception e) {
+            log.warn("提取令牌ID失败，使用哈希值: {}", e.getMessage());
+            return calculateTokenHash(token);
+        }
+    }
+    
+    /**
+     * 计算令牌哈希值
+     */
+    private String calculateTokenHash(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(hash);
+        } catch (Exception ex) {
+            log.warn("计算令牌SHA-256哈希失败，使用简单哈希: {}", ex.getMessage());
+            return String.valueOf(token.hashCode());
+        }
     }
 }

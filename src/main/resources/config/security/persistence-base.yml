@@ -1,0 +1,131 @@
+# ========================================
+# JWT令牌持久化基础配置
+# ========================================
+jairouter:
+  security:
+    jwt:
+      # 令牌持久化配置
+      persistence:
+        enabled: false  # 默认关闭，各环境按需启用
+        primary-storage: redis    # redis, memory
+        fallback-storage: memory  # memory
+        
+        # 复合存储策略配置
+        composite:
+          enabled: true  # 启用复合存储策略（Redis + StoreManager）
+        
+        # 数据同步配置
+        sync:
+          enabled: true  # 启用数据同步功能
+          
+        # 启动时数据恢复配置
+        startup-recovery:
+          enabled: true  # 启用启动时数据恢复
+        
+        # 清理配置
+        cleanup:
+          enabled: true
+          schedule: "0 0 2 * * ?"  # 每天凌晨2点
+          retention-days: 30
+          batch-size: 1000
+        
+        # 内存存储配置
+        memory:
+          max-tokens: 500
+          cleanup-threshold: 0.8  # 80%时触发清理
+          lru-enabled: true
+          
+        # Redis存储配置
+        redis:
+          enabled: false  # 默认关闭，需要时启用
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:0}"
+          key-prefix: "jwt:"
+          default-ttl: 3600
+          connection-timeout: 5000
+          retry-attempts: 3
+          serialization-format: "json"  # json, binary
+          pool:
+            max-active: 8
+            max-idle: 8
+            min-idle: 0
+            max-wait: -1
+          
+      # 黑名单持久化配置
+      blacklist:
+        persistence:
+          enabled: false  # 默认关闭
+          primary-storage: redis  # redis, memory
+          fallback-storage: memory
+          max-memory-size: 10000
+          cleanup-interval: 3600  # 1小时
+          
+        # 复合存储策略配置
+        composite:
+          enabled: true  # 启用复合存储策略（Redis + StoreManager）
+          
+        # Redis黑名单配置
+        redis:
+          enabled: false  # 默认关闭，需要时启用
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:0}"
+          key-prefix: "jwt:blacklist:"
+          default-ttl: 86400  # 24小时
+          connection-timeout: 5000
+          retry-attempts: 3
+          pool:
+            max-active: 8
+            max-idle: 8
+            min-idle: 0
+            max-wait: -1
+
+# ========================================
+# Redis连接配置（共享）
+# ========================================
+spring:
+  data:
+    redis:
+      # 基础连接配置（当启用Redis时生效）
+      host: "${REDIS_HOST:localhost}"
+      port: "${REDIS_PORT:6379}"
+      password: "${REDIS_PASSWORD:}"
+      database: "${REDIS_DATABASE:0}"
+      timeout: 5000ms
+      
+      # Lettuce连接池配置
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1ms
+        shutdown-timeout: 100ms
+      
+      # 集群配置（如果使用Redis集群）
+      #cluster:
+      #  nodes: "${REDIS_CLUSTER_NODES:}"
+      #  max-redirects: 3
+      
+      # 哨兵配置（如果使用Redis哨兵）
+      #sentinel:
+      #  master: "${REDIS_SENTINEL_MASTER:}"
+      #  nodes: "${REDIS_SENTINEL_NODES:}"
+
+# ========================================
+# 监控和健康检查配置
+# ========================================
+management:
+  health:
+    redis:
+      enabled: true
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      redis:
+        enabled: false  # 默认关闭Redis指标导出

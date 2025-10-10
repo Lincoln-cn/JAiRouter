@@ -167,6 +167,67 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
                             .count();
                     statistics.put("sanitizationCount", sanitizationCount);
                     
+                    // JWT令牌操作统计
+                    long jwtIssuedCount = events.stream()
+                            .filter(e -> "JWT_TOKEN_ISSUED".equals(e.getEventType()))
+                            .count();
+                    long jwtRefreshedCount = events.stream()
+                            .filter(e -> "JWT_TOKEN_REFRESHED".equals(e.getEventType()))
+                            .count();
+                    long jwtRevokedCount = events.stream()
+                            .filter(e -> "JWT_TOKEN_REVOKED".equals(e.getEventType()))
+                            .count();
+                    long jwtValidatedCount = events.stream()
+                            .filter(e -> "JWT_TOKEN_VALIDATED".equals(e.getEventType()))
+                            .count();
+                    
+                    Map<String, Object> jwtStats = new HashMap<>();
+                    jwtStats.put("issuedCount", jwtIssuedCount);
+                    jwtStats.put("refreshedCount", jwtRefreshedCount);
+                    jwtStats.put("revokedCount", jwtRevokedCount);
+                    jwtStats.put("validatedCount", jwtValidatedCount);
+                    jwtStats.put("totalOperations", jwtIssuedCount + jwtRefreshedCount + jwtRevokedCount + jwtValidatedCount);
+                    
+                    statistics.put("jwtTokenStatistics", jwtStats);
+                    
+                    // API Key操作统计
+                    long apiKeyCreatedCount = events.stream()
+                            .filter(e -> "API_KEY_CREATED".equals(e.getEventType()))
+                            .count();
+                    long apiKeyUsedCount = events.stream()
+                            .filter(e -> "API_KEY_USED".equals(e.getEventType()))
+                            .count();
+                    long apiKeyRevokedCount = events.stream()
+                            .filter(e -> "API_KEY_REVOKED".equals(e.getEventType()))
+                            .count();
+                    long apiKeyExpiredCount = events.stream()
+                            .filter(e -> "API_KEY_EXPIRED".equals(e.getEventType()))
+                            .count();
+                    
+                    Map<String, Object> apiKeyStats = new HashMap<>();
+                    apiKeyStats.put("createdCount", apiKeyCreatedCount);
+                    apiKeyStats.put("usedCount", apiKeyUsedCount);
+                    apiKeyStats.put("revokedCount", apiKeyRevokedCount);
+                    apiKeyStats.put("expiredCount", apiKeyExpiredCount);
+                    apiKeyStats.put("totalOperations", apiKeyCreatedCount + apiKeyUsedCount + apiKeyRevokedCount + apiKeyExpiredCount);
+                    
+                    statistics.put("apiKeyStatistics", apiKeyStats);
+                    
+                    // 安全事件统计
+                    long securityAlertCount = events.stream()
+                            .filter(e -> "SECURITY_ALERT".equals(e.getEventType()))
+                            .count();
+                    long suspiciousActivityCount = events.stream()
+                            .filter(e -> "SUSPICIOUS_ACTIVITY".equals(e.getEventType()))
+                            .count();
+                    
+                    Map<String, Object> securityStats = new HashMap<>();
+                    securityStats.put("alertCount", securityAlertCount);
+                    securityStats.put("suspiciousActivityCount", suspiciousActivityCount);
+                    securityStats.put("totalSecurityEvents", securityAlertCount + suspiciousActivityCount);
+                    
+                    statistics.put("securityEventStatistics", securityStats);
+                    
                     return statistics;
                 });
     }
