@@ -1,0 +1,196 @@
+# ========================================
+# JWT持久化监控配置
+# ========================================
+# 此文件包含JWT令牌持久化的监控和指标配置
+
+jairouter:
+  security:
+    monitoring:
+      # ========================================
+      # JWT持久化监控配置
+      # ========================================
+      jwt-persistence:
+        enabled: false  # 默认关闭，各环境按需启用
+        
+        # 指标收集配置
+        metrics:
+          # 令牌操作指标
+          token-operations:
+            enabled: true
+            histogram-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0]
+            include-operations:
+              - create
+              - validate
+              - refresh
+              - revoke
+              - cleanup
+            
+          # 黑名单操作指标
+          blacklist-operations:
+            enabled: true
+            histogram-buckets: [0.001, 0.01, 0.05, 0.1, 0.5, 1.0]
+            include-operations:
+              - add
+              - check
+              - remove
+              - cleanup
+          
+          # 存储健康指标
+          storage-health:
+            enabled: true
+            check-interval: 30  # 秒
+            include-storages:
+              - redis
+              - memory
+              - composite
+            
+          # 性能指标
+          performance:
+            enabled: true
+            response-time-buckets: [0.01, 0.05, 0.1, 0.5, 1.0, 2.0, 5.0, 10.0]
+            throughput-tracking: true
+            error-rate-tracking: true
+            
+          # 容量指标
+          capacity:
+            enabled: true
+            memory-usage-tracking: true
+            redis-usage-tracking: true
+            token-count-tracking: true
+            blacklist-size-tracking: true
+        
+        # ========================================
+        # 告警配置
+        # ========================================
+        alerts:
+          enabled: false  # 默认关闭告警
+          
+          # 性能告警阈值
+          performance-thresholds:
+            token-operation-p99: 1000  # 毫秒
+            blacklist-operation-p99: 100  # 毫秒
+            error-rate: 0.05  # 5%
+            
+          # 容量告警阈值
+          capacity-thresholds:
+            memory-usage-percent: 80
+            redis-usage-percent: 80
+            token-count-max: 100000
+            blacklist-size-max: 50000
+            
+          # 健康检查告警
+          health-check-thresholds:
+            redis-connection-failures: 5
+            memory-allocation-failures: 3
+            storage-sync-failures: 10
+            
+          # 告警通知配置
+          notifications:
+            email:
+              enabled: false
+              recipients: []
+              subject-prefix: "[JWT-Persistence]"
+            webhook:
+              enabled: false
+              url: ""
+              timeout: 5000
+            log:
+              enabled: true
+              level: "WARN"
+        
+        # ========================================
+        # 健康检查配置
+        # ========================================
+        health-checks:
+          enabled: true
+          check-interval: 60  # 秒
+          timeout: 5000  # 毫秒
+          
+          # Redis健康检查
+          redis:
+            enabled: true
+            ping-check: true
+            connection-pool-check: true
+            memory-usage-check: true
+            
+          # 内存存储健康检查
+          memory:
+            enabled: true
+            capacity-check: true
+            gc-pressure-check: true
+            
+          # 复合存储健康检查
+          composite:
+            enabled: true
+            sync-status-check: true
+            consistency-check: true
+        
+        # ========================================
+        # 监控数据导出配置
+        # ========================================
+        export:
+          prometheus:
+            enabled: true
+            metrics-prefix: "jairouter_jwt_persistence"
+            include-labels:
+              - environment
+              - storage_type
+              - operation_type
+              
+          # 自定义指标导出
+          custom-metrics:
+            enabled: false
+            endpoint: "/metrics/jwt-persistence"
+            format: "json"  # json, prometheus
+            
+        # ========================================
+        # 调试和诊断配置
+        # ========================================
+        diagnostics:
+          enabled: false  # 默认关闭，调试时启用
+          
+          # 详细日志配置
+          detailed-logging:
+            enabled: false
+            include-stack-traces: false
+            include-request-context: false
+            log-level: "DEBUG"
+            
+          # 性能分析配置
+          profiling:
+            enabled: false
+            sample-rate: 0.01  # 1%采样率
+            include-operations:
+              - token-validation
+              - blacklist-check
+              
+          # 存储状态导出
+          storage-state-export:
+            enabled: false
+            export-interval: 300  # 5分钟
+            include-token-metadata: false  # 不包含敏感信息
+
+# ========================================
+# 管理端点配置
+# ========================================
+management:
+  endpoint:
+    # JWT令牌管理端点
+    jwt-tokens:
+      enabled: false  # 默认关闭，调试时启用
+      sensitive: true
+      cache:
+        time-to-live: 0  # 不缓存敏感信息
+      
+    # JWT黑名单管理端点
+    jwt-blacklist:
+      enabled: false  # 默认关闭，调试时启用
+      sensitive: true
+      cache:
+        time-to-live: 0  # 不缓存敏感信息
+        
+    # JWT持久化健康检查端点
+    jwt-persistence-health:
+      enabled: true
+      sensitive: false
+      show-details: when-authorized

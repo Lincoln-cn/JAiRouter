@@ -9,13 +9,24 @@ spring:
     allow-circular-references: true
   config:
     import:
+      # 基础配置模块
       - classpath:config/base/server-base.yml
       - classpath:config/base/model-services-base.yml
       - classpath:config/base/monitoring-base.yml
+
+      # 追踪配置模块
       - classpath:config/tracing/tracing-base.yml
+      
+      # 安全配置模块
       - classpath:config/security/security-base.yml
+      - classpath:config/security/persistence-base.yml
+      - classpath:config/security/audit-base.yml
+      
+      # 监控配置模块
       - classpath:config/monitoring/slow-query-alerts.yml
       - classpath:config/monitoring/error-tracking.yml
+      - classpath:config/monitoring/persistence-monitoring-base.yml
+      
   profiles:
     active: dev  # 默认使用开发环境
 

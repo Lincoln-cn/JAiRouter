@@ -401,3 +401,4 @@ model:
 - [Circuit Breaker](circuit-breaker.md) - Circuit breaker configuration
 - [Storage Configuration](store-config.md) - Storage and auto-merge configuration
 - [Version Management](version-management.md) - Configuration version management: Apply vs Rollback
+- [JWT Persistence Configuration](jwt-persistence.md) - JWT token persistence and security audit configuration

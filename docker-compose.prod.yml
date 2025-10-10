@@ -1,0 +1,168 @@
+version: '3.8'
+
+services:
+  jairouter:
+    image: sodlinken/jairouter:latest
+    container_name: jairouter-prod
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - REDIS_HOST=redis-prod
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_MINUTES=${JWT_EXPIRATION_MINUTES:-15}
+      - JWT_REFRESH_EXPIRATION_DAYS=${JWT_REFRESH_EXPIRATION_DAYS:-30}
+      - JAVA_OPTS=-Xms1g -Xmx2g -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - ./config-store:/app/config-store
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    networks:
+      - jairouter-network
+    depends_on:
+      - redis-prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+
+  redis-prod:
+    image: redis:7-alpine
+    container_name: jairouter-redis-prod
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: >
+      sh -c "
+        redis-server /usr/local/etc/redis/redis.conf --requirepass $$REDIS_PASSWORD
+      "
+    volumes:
+      - redis-prod-data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    restart: unless-stopped
+    networks:
+      - jairouter-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+
+  # Redis Sentinel for high availability (optional)
+  redis-sentinel-1:
+    image: redis:7-alpine
+    container_name: redis-sentinel-1
+    ports:
+      - "26379:26379"
+    command: >
+      sh -c "
+        echo 'port 26379' > /tmp/sentinel.conf &&
+        echo 'sentinel monitor mymaster redis-prod 6379 2' >> /tmp/sentinel.conf &&
+        echo 'sentinel auth-pass mymaster ${REDIS_PASSWORD}' >> /tmp/sentinel.conf &&
+        echo 'sentinel down-after-milliseconds mymaster 5000' >> /tmp/sentinel.conf &&
+        echo 'sentinel failover-timeout mymaster 10000' >> /tmp/sentinel.conf &&
+        echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
+        redis-sentinel /tmp/sentinel.conf
+      "
+    networks:
+      - jairouter-network
+    depends_on:
+      - redis-prod
+    profiles:
+      - ha  # Only start with --profile ha
+
+  redis-sentinel-2:
+    image: redis:7-alpine
+    container_name: redis-sentinel-2
+    ports:
+      - "26380:26379"
+    command: >
+      sh -c "
+        echo 'port 26379' > /tmp/sentinel.conf &&
+        echo 'sentinel monitor mymaster redis-prod 6379 2' >> /tmp/sentinel.conf &&
+        echo 'sentinel auth-pass mymaster ${REDIS_PASSWORD}' >> /tmp/sentinel.conf &&
+        echo 'sentinel down-after-milliseconds mymaster 5000' >> /tmp/sentinel.conf &&
+        echo 'sentinel failover-timeout mymaster 10000' >> /tmp/sentinel.conf &&
+        echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
+        redis-sentinel /tmp/sentinel.conf
+      "
+    networks:
+      - jairouter-network
+    depends_on:
+      - redis-prod
+    profiles:
+      - ha  # Only start with --profile ha
+
+  redis-sentinel-3:
+    image: redis:7-alpine
+    container_name: redis-sentinel-3
+    ports:
+      - "26381:26379"
+    command: >
+      sh -c "
+        echo 'port 26379' > /tmp/sentinel.conf &&
+        echo 'sentinel monitor mymaster redis-prod 6379 2' >> /tmp/sentinel.conf &&
+        echo 'sentinel auth-pass mymaster ${REDIS_PASSWORD}' >> /tmp/sentinel.conf &&
+        echo 'sentinel down-after-milliseconds mymaster 5000' >> /tmp/sentinel.conf &&
+        echo 'sentinel failover-timeout mymaster 10000' >> /tmp/sentinel.conf &&
+        echo 'sentinel parallel-syncs mymaster 1' >> /tmp/sentinel.conf &&
+        redis-sentinel /tmp/sentinel.conf
+      "
+    networks:
+      - jairouter-network
+    depends_on:
+      - redis-prod
+    profiles:
+      - ha  # Only start with --profile ha
+
+volumes:
+  redis-prod-data:
+    driver: local
+
+networks:
+  jairouter-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -2,6 +2,12 @@ package org.unreal.modelrouter.dto;
 
 import java.time.LocalDateTime;
 
+/**
+ * @deprecated 此类已被合并到 {@link JwtTokenInfo} 中。
+ * 请使用 JwtTokenInfo 替代此类。
+ * 此类将在未来版本中移除。
+ */
+@Deprecated
 public class TokenResponse {
     private String token;
     private String tokenType;

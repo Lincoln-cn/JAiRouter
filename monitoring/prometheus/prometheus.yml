@@ -104,6 +104,41 @@ scrape_configs:
       - target_label: service
         replacement: 'jairouter-health'
 
+  # Redis监控（用于JWT持久化）
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'jairouter-redis'
+      - target_label: service
+        replacement: 'redis'
+
+  # JWT持久化专用监控端点
+  - job_name: 'jairouter-jwt-persistence'
+    static_configs:
+      - targets: ['jairouter:8080']
+    scrape_interval: 10s
+    metrics_path: '/actuator/prometheus'
+    params:
+      format: ['prometheus']
+    relabel_configs:
+      - target_label: service
+        replacement: 'jairouter-jwt-persistence'
+    metric_relabel_configs:
+      # 只保留JWT相关的指标
+      - source_labels: [__name__]
+        regex: 'jairouter_security_jwt_.*|jairouter_security_api_key_.*|jairouter_security_storage_.*|jairouter_security_audit_.*'
+        action: keep
+      # 重命名JWT指标
+      - source_labels: [__name__]
+        regex: 'jairouter_security_jwt_(.*)'
+        target_label: __name__
+        replacement: 'jwt_${1}'
+
 # 远程写入配置（可选，用于长期存储）
 # remote_write:
 #   - url: "http://remote-storage:9201/write"

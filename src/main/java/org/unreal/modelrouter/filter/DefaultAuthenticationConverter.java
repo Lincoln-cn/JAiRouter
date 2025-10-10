@@ -71,6 +71,7 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
      * 提取JWT令牌
      */
     private String extractJwtToken(ServerWebExchange exchange) {
+        // 首先尝试从配置的自定义头中提取
         String jwtHeader = securityProperties.getJwt().getJwtHeader();
         List<String> jwtHeaders = exchange.getRequest().getHeaders().get(jwtHeader);
         if (jwtHeaders != null && !jwtHeaders.isEmpty()) {
@@ -79,6 +80,15 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
                 return authHeader.substring(7);
             }
             return authHeader;
+        }
+
+        // 如果自定义头中没有找到，尝试从标准的Authorization头中提取
+        List<String> authHeaders = exchange.getRequest().getHeaders().get("Authorization");
+        if (authHeaders != null && !authHeaders.isEmpty()) {
+            String authHeader = authHeaders.get(0);
+            if (authHeader.startsWith("Bearer ")) {
+                return authHeader.substring(7);
+            }
         }
 
         return null;

@@ -1,0 +1,124 @@
+# ========================================
+# JWT审计基础配置
+# ========================================
+# 此文件包含JWT令牌和API Key的审计配置
+
+jairouter:
+  security:
+    audit:
+      # ========================================
+      # JWT和API Key审计配置
+      # ========================================
+      jwt-operations:
+        enabled: true
+        log-token-details: false  # 不记录完整令牌
+        log-user-agent: true
+        log-ip-address: true
+        log-expiration: true
+        log-issuer: true
+        
+        # JWT操作类型配置
+        operation-types:
+          token-creation: true
+          token-validation: true
+          token-refresh: true
+          token-revocation: true
+          token-cleanup: true
+      
+      api-key-operations:
+        enabled: true
+        log-key-details: false   # 不记录完整密钥
+        log-usage-patterns: true
+        log-ip-address: true
+        log-permissions: true
+        log-metadata: true
+        
+        # API Key操作类型配置
+        operation-types:
+          key-validation: true
+          key-usage: true
+          key-creation: false  # 默认不记录密钥创建（敏感操作）
+          key-revocation: true
+          permission-check: true
+      
+      security-events:
+        enabled: true
+        suspicious-activity-detection: true
+        
+        # 安全事件阈值配置
+        alert-thresholds:
+          failed-auth-per-minute: 10
+          token-revoke-per-minute: 5
+          api-key-usage-per-minute: 100
+          suspicious-ip-requests: 20
+          
+        # 可疑活动检测规则
+        suspicious-patterns:
+          multiple-failed-auth: true
+          unusual-access-patterns: true
+          token-abuse: true
+          api-key-abuse: true
+          
+        # 事件类型配置
+        event-types:
+          jwt-token-created: true
+          jwt-token-validated: true
+          jwt-token-expired: true
+          jwt-token-revoked: true
+          jwt-blacklist-added: true
+          api-key-validated: true
+          api-key-failed: true
+          suspicious-activity: true
+          security-violation: true
+      
+      # ========================================
+      # 审计数据保留和清理配置
+      # ========================================
+      retention:
+        jwt-events:
+          retention-days: 90
+          cleanup-schedule: "0 0 3 * * ?"  # 每天凌晨3点清理
+          batch-size: 1000
+        api-key-events:
+          retention-days: 365  # API Key事件保留更长时间
+          cleanup-schedule: "0 0 4 * * ?"  # 每天凌晨4点清理
+          batch-size: 500
+        security-events:
+          retention-days: 180
+          cleanup-schedule: "0 0 5 * * ?"  # 每天凌晨5点清理
+          batch-size: 200
+      
+      # ========================================
+      # 审计存储配置
+      # ========================================
+      storage:
+        # 文件存储配置
+        file:
+          enabled: true
+          separate-files: true  # 为不同类型的事件使用单独文件
+          jwt-file-path: "logs/jwt-audit.log"
+          api-key-file-path: "logs/api-key-audit.log"
+          security-events-file-path: "logs/security-events-audit.log"
+          rotation:
+            max-file-size: "100MB"
+            max-files: 30
+            compress-archived: true
+        
+        # 数据库存储配置（可选）
+        database:
+          enabled: false
+          jwt-table: "jwt_audit_events"
+          api-key-table: "api_key_audit_events"
+          security-events-table: "security_audit_events"
+          connection-pool-size: 5
+          batch-insert-size: 100
+      
+      # ========================================
+      # 审计性能配置
+      # ========================================
+      performance:
+        async-logging: true
+        buffer-size: 1000
+        flush-interval: 5000  # 5秒
+        thread-pool-size: 2
+        queue-capacity: 10000
