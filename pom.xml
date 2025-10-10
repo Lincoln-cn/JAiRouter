@@ -109,7 +109,7 @@
                 <spotbugs.skip>true</spotbugs.skip>
                 <jacoco.skip>true</jacoco.skip>
                 <!-- 跳过前端构建 -->
-                <skip.frontend.build>true</skip.frontend.build>
+                <frontend.build.skip>true</frontend.build.skip>
             </properties>
         </profile>
 
@@ -121,6 +121,8 @@
                 <checkstyle.skip>true</checkstyle.skip>
                 <spotbugs.skip>true</spotbugs.skip>
                 <jacoco.skip>true</jacoco.skip>
+                <!-- 跳过前端构建 -->
+                <frontend.build.skip>true</frontend.build.skip>
             </properties>
             <repositories>
                 <repository>
@@ -501,7 +503,7 @@
                     <workingDirectory>frontend/</workingDirectory>
                     <installDirectory>target</installDirectory>
                     <!-- 添加跳过配置 -->
-                    <skip>${skip.frontend.build}</skip>
+                    <skip>${frontend.build.skip}</skip>
                 </configuration>
                 <executions>
                     <execution>

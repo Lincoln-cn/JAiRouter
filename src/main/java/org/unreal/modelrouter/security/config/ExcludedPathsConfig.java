@@ -42,6 +42,7 @@ public class ExcludedPathsConfig {
             "/v3/api-docs",
             "/webjars/",
             "/api/auth/jwt/login",
+            "/api/auth/jwt/validate",
             "/admin",
             "/favicon.ico",
             "/.well-known"
@@ -50,7 +51,8 @@ public class ExcludedPathsConfig {
         // 认证排除路径模式
         AUTH_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
-            "/api/auth/jwt/login"
+            "/api/auth/jwt/login",
+            "/api/auth/jwt/validate"
         );
         
         // 数据脱敏排除路径

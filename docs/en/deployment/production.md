@@ -797,9 +797,9 @@ security:
         enabled: true
 ```
 
-#### JWT Configuration
+#### JWT Configuration with Persistence
 
-Configure JWT-based user authentication:
+Configure JWT-based user authentication with persistent token management:
 
 ```yaml
 # application-security.yml
@@ -808,8 +808,46 @@ security:
     enabled: true
     secret: your-very-secure-jwt-secret-key-here
     algorithm: HS256
-    expiration-minutes: 60
+    expiration-minutes: 15  # Short-lived tokens for production
+    refresh-expiration-days: 30
     issuer: jairouter-production
+    
+    # JWT Token Persistence Configuration
+    persistence:
+      enabled: true
+      primary-storage: redis
+      fallback-storage: memory
+      
+      # Cleanup configuration
+      cleanup:
+        enabled: true
+        schedule: "0 0 2 * * ?"  # Daily at 2 AM
+        retention-days: 30
+        batch-size: 1000
+      
+      # Memory storage limits
+      memory:
+        max-tokens: 100000
+        cleanup-threshold: 0.8
+        lru-enabled: true
+        
+      # Redis configuration
+      redis:
+        key-prefix: "jwt:"
+        default-ttl: 3600
+        connection-timeout: 3000
+        retry-attempts: 5
+        serialization-format: "json"
+    
+    # Blacklist configuration
+    blacklist:
+      persistence:
+        enabled: true
+        primary-storage: redis
+        fallback-storage: memory
+        max-memory-size: 50000
+        cleanup-interval: 3600
+    
     accounts:
       - username: admin
         password: $2a$10$example-hashed-password
@@ -819,6 +857,79 @@ security:
         password: $2a$10$example-hashed-password
         roles: [USER]
         enabled: true
+
+  # Security Audit Configuration
+  audit:
+    enabled: true
+    log-level: "INFO"
+    retention-days: 180  # Long retention for production
+    
+    # JWT operations auditing
+    jwt-operations:
+      enabled: true
+      log-token-details: false  # Security: never log full tokens
+      log-user-agent: true
+      log-ip-address: true
+    
+    # API Key operations auditing
+    api-key-operations:
+      enabled: true
+      log-key-details: false   # Security: never log full keys
+      log-usage-patterns: true
+      log-ip-address: true
+    
+    # Security events auditing
+    security-events:
+      enabled: true
+      suspicious-activity-detection: true
+      alert-thresholds:
+        failed-auth-per-minute: 20
+        token-revoke-per-minute: 10
+        api-key-usage-per-minute: 500
+    
+    # Audit storage configuration
+    storage:
+      type: "file"
+      file-path: "logs/security-audit.log"
+      rotation:
+        max-file-size: "100MB"
+        max-files: 30
+```
+
+#### Redis Configuration for JWT Persistence
+
+Configure Redis for JWT token storage:
+
+```yaml
+# application-prod.yml
+spring:
+  redis:
+    host: ${REDIS_HOST:redis-cluster}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD}
+    timeout: 5000ms
+    
+    # Connection pool configuration
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 20
+        min-idle: 10
+        max-wait: 2000ms
+      
+      # Cluster configuration (if using Redis Cluster)
+      cluster:
+        refresh:
+          adaptive: true
+          period: 30s
+    
+    # Sentinel configuration (if using Redis Sentinel)
+    sentinel:
+      master: mymaster
+      nodes:
+        - ${REDIS_SENTINEL1:redis-sentinel-1:26379}
+        - ${REDIS_SENTINEL2:redis-sentinel-2:26379}
+        - ${REDIS_SENTINEL3:redis-sentinel-3:26379}
 ```
 
 ### 2. Network Security
