@@ -387,3 +387,4 @@ Choose your deployment method:
 2. **[Kubernetes Deployment](kubernetes.md)** - For orchestrated environments
 3. **[Production Environment](production.md)** - Production-ready configurations
 4. **[China Optimization](china-optimization.md)** - Optimized for China networks
+5. **[JWT Persistence Deployment Checklist](jwt-persistence-deployment-checklist.md)** - Complete checklist for JWT persistence deployment
