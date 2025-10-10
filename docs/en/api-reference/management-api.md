@@ -442,6 +442,189 @@ Force open the circuit breaker.
 #### `POST /api/monitoring/circuit-breaker/force-close`
 Force close the circuit breaker.
 
+## JWT Token Management
+
+### Base Path: `/api/auth/jwt`
+
+#### `GET /api/auth/jwt/tokens`
+Get a list of all JWT tokens with pagination and filtering support.
+
+**Query Parameters:**
+- `page` (integer, optional): Page number, default is 0
+- `size` (integer, optional): Page size, default is 20
+- `userId` (string, optional): Filter by user ID
+- `status` (string, optional): Filter by token status (ACTIVE, REVOKED, EXPIRED)
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "message": "Token list retrieved successfully",
+  "data": {
+    "content": [
+      {
+        "id": "token-uuid-123",
+        "userId": "user123",
+        "tokenHash": "sha256-hash-of-token",
+        "issuedAt": "2025-01-15T10:30:00Z",
+        "expiresAt": "2025-01-15T11:30:00Z",
+        "status": "ACTIVE",
+        "deviceInfo": "Mozilla/5.0...",
+        "ipAddress": "192.168.1.100",
+        "createdAt": "2025-01-15T10:30:00Z",
+        "updatedAt": "2025-01-15T10:30:00Z"
+      }
+    ],
+    "totalElements": 150,
+    "totalPages": 8,
+    "size": 20,
+    "number": 0
+  }
+}
+```
+
+#### `GET /api/auth/jwt/tokens/{tokenId}`
+Get detailed information about a specific JWT token.
+
+**Path Parameters:**
+- `tokenId` (string): Token ID (UUID)
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "message": "Token details retrieved successfully",
+  "data": {
+    "id": "token-uuid-123",
+    "userId": "user123",
+    "tokenHash": "sha256-hash-of-token",
+    "issuedAt": "2025-01-15T10:30:00Z",
+    "expiresAt": "2025-01-15T11:30:00Z",
+    "status": "ACTIVE",
+    "deviceInfo": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    "ipAddress": "192.168.1.100",
+    "revokeReason": null,
+    "revokedAt": null,
+    "revokedBy": null,
+    "createdAt": "2025-01-15T10:30:00Z",
+    "updatedAt": "2025-01-15T10:30:00Z"
+  }
+}
+```
+
+#### `POST /api/auth/jwt/tokens/{tokenId}/revoke`
+Revoke a specific JWT token.
+
+**Path Parameters:**
+- `tokenId` (string): Token ID (UUID)
+
+**Request Body Example:**
+```json
+{
+  "reason": "Security breach detected"
+}
+```
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "message": "Token revoked successfully",
+  "data": {
+    "tokenId": "token-uuid-123",
+    "revokedAt": "2025-01-15T12:00:00Z",
+    "reason": "Security breach detected"
+  }
+}
+```
+
+#### `POST /api/auth/jwt/tokens/revoke-batch`
+Revoke multiple JWT tokens in batch.
+
+**Request Body Example:**
+```json
+{
+  "tokenIds": ["token-uuid-123", "token-uuid-456"],
+  "reason": "Bulk security cleanup"
+}
+```
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "message": "Batch revocation completed",
+  "data": {
+    "successCount": 2,
+    "failureCount": 0,
+    "revokedTokens": ["token-uuid-123", "token-uuid-456"],
+    "failedTokens": []
+  }
+}
+```
+
+#### `POST /api/auth/jwt/cleanup`
+Manually trigger cleanup of expired tokens and blacklist entries.
+
+**Request Body Example:**
+```json
+{
+  "cleanupType": "ALL"
+}
+```
+
+**Available Cleanup Types:**
+- `EXPIRED_TOKENS` - Clean up expired tokens only
+- `EXPIRED_BLACKLIST` - Clean up expired blacklist entries only
+- `ALL` - Clean up both expired tokens and blacklist entries
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "message": "Cleanup completed successfully",
+  "data": {
+    "cleanupType": "ALL",
+    "expiredTokensRemoved": 45,
+    "expiredBlacklistEntriesRemoved": 12,
+    "cleanupDuration": "PT2.5S",
+    "completedAt": "2025-01-15T12:00:00Z"
+  }
+}
+```
+
+#### `GET /api/auth/jwt/blacklist/stats`
+Get JWT blacklist statistics and system health information.
+
+**Response Example:**
+```json
+{
+  "success": true,
+  "message": "Blacklist statistics retrieved successfully",
+  "data": {
+    "blacklistSize": 156,
+    "memoryUsage": {
+      "used": "45MB",
+      "max": "512MB",
+      "usagePercentage": 8.8
+    },
+    "lastCleanup": "2025-01-15T02:00:00Z",
+    "nextScheduledCleanup": "2025-01-16T02:00:00Z",
+    "configurationStatus": {
+      "persistenceEnabled": true,
+      "primaryStorage": "redis",
+      "fallbackStorage": "memory",
+      "redisConnectionStatus": "HEALTHY"
+    },
+    "performanceMetrics": {
+      "averageValidationTime": "2.5ms",
+      "cacheHitRate": 0.95,
+      "totalValidations": 10450
+    }
+  }
+}
+```
+
 ## Model Information Query
 
 ### Base Path: `/api/models`

@@ -107,6 +107,8 @@ public class SecurityConfiguration {
                 .pathMatchers("/admin/**").permitAll()
                 // JWT登录端点允许匿名访问
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll()
+                // JWT验证端点允许匿名访问（用于验证令牌有效性）
+                .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/validate").permitAll()
                 // JWT账户管理端点需要管理员权限
                 .pathMatchers("/api/security/jwt/accounts/**").hasRole("ADMIN")
                 // AI服务端点的细粒度权限控制

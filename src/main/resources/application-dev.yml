@@ -4,6 +4,13 @@
 # 此文件仅包含开发环境特定的配置覆盖
 # 基础配置通过模块化导入，详见 application.yml
 
+# 服务器配置
+server:
+  port: 8080
+  forward-headers-strategy: framework
+  # 启用代理头支持，获取真实客户端IP
+  use-forward-headers: true
+
 # Swagger API 文档配置（仅开发环境）
 springdoc:
   swagger-ui:
@@ -28,6 +35,45 @@ logging:
 
 # 开发环境调试配置
 debug: false
+
+# ========================================
+# 开发环境管理端点配置
+# ========================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info,jwt-persistence-health,jwt-tokens,jwt-blacklist
+  endpoint:
+    # JWT令牌管理端点
+    jwt-tokens:
+      enabled: true  # 开发环境启用令牌管理端点
+      sensitive: true
+      
+    # JWT黑名单管理端点
+    jwt-blacklist:
+      enabled: true  # 开发环境启用黑名单管理端点
+      sensitive: true
+      
+    # JWT持久化健康检查端点
+    jwt-persistence-health:
+      enabled: true  # 开发环境启用持久化健康检查端点
+      sensitive: false
+      show-details: always
+      
+    # 健康检查端点
+    health:
+      show-details: always  # 开发环境显示详细健康信息
+      show-components: always
+      
+    # 指标端点
+    metrics:
+      enabled: true
+  
+  # 健康检查配置
+  health:
+    redis:
+      enabled: false  # 开发环境禁用Redis健康检查
 
 # 开发环境存储配置覆盖
 store:
@@ -84,6 +130,42 @@ jairouter:
       expiration-minutes: 60
       refresh-expiration-days: 7
       issuer: "jairouter"
+      
+      # 开发环境JWT持久化配置
+      persistence:
+        enabled: true
+        primary-storage: memory  # 开发环境使用内存存储
+        fallback-storage: memory
+        composite:
+          enabled: false  # 开发环境关闭复合存储，使用简单内存存储
+        sync:
+          enabled: false  # 开发环境关闭数据同步
+        startup-recovery:
+          enabled: false  # 开发环境关闭启动恢复
+        cleanup:
+          schedule: "0 */5 * * * ?"  # 每5分钟清理一次
+          retention-days: 1
+        redis:
+          enabled: false  # 开发环境默认不启用Redis
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:1}"  # 使用数据库1避免冲突
+      
+      # 开发环境JWT黑名单配置
+      blacklist:
+        persistence:
+          enabled: true
+          primary-storage: memory
+          max-memory-size: 1000
+        composite:
+          enabled: false  # 开发环境关闭复合存储
+        redis:
+          enabled: false  # 开发环境默认不启用Redis
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:1}"
     
     # 开发环境数据脱敏配置（相对宽松）
     sanitization:
@@ -99,6 +181,8 @@ jairouter:
       retention-days: 7  # 开发环境较短的保留期
       alert-enabled: false  # 开发环境关闭告警
       
+
+      
       storage:
         file-path: "logs/dev-security-audit.log"
         rotation:
@@ -110,6 +194,60 @@ jairouter:
       enabled: true
       alerts:
         enabled: false  # 开发环境关闭告警
+      
+      # JWT持久化监控配置
+      jwt-persistence:
+        enabled: true  # 开发环境启用JWT持久化监控
+        
+        # 指标收集配置
+        metrics:
+          token-operations:
+            enabled: true
+          blacklist-operations:
+            enabled: true
+          storage-health:
+            enabled: true
+            check-interval: 30  # 30秒检查间隔
+          performance:
+            enabled: true
+          capacity:
+            enabled: true
+        
+        # 健康检查配置
+        health-checks:
+          enabled: true
+          check-interval: 30  # 30秒检查间隔
+          timeout: 3000  # 3秒超时
+          
+          redis:
+            enabled: true
+            ping-check: true
+            connection-pool-check: true
+            memory-usage-check: true
+            
+          memory:
+            enabled: true
+            capacity-check: true
+            gc-pressure-check: true
+            
+          composite:
+            enabled: false  # 开发环境关闭复合存储检查
+        
+        # 监控数据导出配置
+        export:
+          prometheus:
+            enabled: true
+            metrics-prefix: "jairouter_jwt_persistence_dev"
+            
+        # 调试和诊断配置
+        diagnostics:
+          enabled: true  # 开发环境启用诊断
+          detailed-logging:
+            enabled: true
+            log-level: "DEBUG"
+          profiling:
+            enabled: false  # 开发环境关闭性能分析
+
     
     # 开发环境性能配置
     performance:

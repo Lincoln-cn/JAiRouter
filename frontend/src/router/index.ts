@@ -150,6 +150,12 @@ const router = createRouter({
           name: 'health-check',
           component: () => import('../views/monitoring/HealthCheck.vue'),
           meta: { title: '健康检查', icon: 'monitor' }
+        },
+        {
+          path: 'system',
+          name: 'system-monitoring',
+          component: () => import('../views/monitoring/SystemMonitoring.vue'),
+          meta: { title: '系统监控', icon: 'data-board' }
         }
       ]
     },
