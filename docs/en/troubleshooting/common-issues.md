@@ -576,6 +576,240 @@ grep -i "connection\|refused\|timeout" $LOG_FILE | tail -5
 echo "=== Log Analysis Complete ==="
 ```
 
+## JWT Token Persistence Issues
+
+### Issue 17: JWT Token Persistence Not Working
+
+#### Symptoms
+- Tokens not being stored persistently
+- Token management APIs returning empty results
+- Blacklist not functioning properly
+
+#### Diagnostic Steps
+```bash
+# 1. Check JWT persistence configuration
+curl http://localhost:8080/actuator/configprops | grep jwt.persistence
+
+# 2. Check Redis connectivity (if using Redis storage)
+redis-cli -h localhost -p 6379 ping
+
+# 3. Check token storage health
+curl http://localhost:8080/actuator/health/jwt-persistence
+
+# 4. Check application logs for persistence errors
+tail -f logs/jairouter-debug.log | grep -i "jwt\|persistence\|redis"
+```
+
+#### Solutions
+
+**Enable JWT Persistence**
+```yaml
+jairouter:
+  security:
+    jwt:
+      persistence:
+        enabled: true
+        primary-storage: redis  # or memory
+        fallback-storage: memory
+```
+
+**Check Redis Configuration**
+```yaml
+spring:
+  redis:
+    host: localhost
+    port: 6379
+    password: ${REDIS_PASSWORD:}
+    timeout: 5000ms
+```
+
+**Verify Storage Health**
+```bash
+# Test Redis connectivity
+redis-cli -h localhost -p 6379 info replication
+
+# Check JWT keys in Redis
+redis-cli -h localhost -p 6379 keys "jwt:*"
+```
+
+### Issue 18: High Memory Usage with Token Storage
+
+#### Symptoms
+- Memory usage continuously increasing
+- OutOfMemoryError with token persistence enabled
+- Slow token operations
+
+#### Diagnostic Steps
+```bash
+# 1. Check token storage metrics
+curl http://localhost:8080/actuator/metrics/jairouter.jwt.tokens.active
+
+# 2. Check memory usage
+curl http://localhost:8080/actuator/metrics/jvm.memory.used
+
+# 3. Check cleanup statistics
+curl http://localhost:8080/api/auth/jwt/blacklist/stats
+```
+
+#### Solutions
+
+**Configure Memory Limits**
+```yaml
+jairouter:
+  security:
+    jwt:
+      persistence:
+        memory:
+          max-tokens: 50000       # Limit memory storage
+          cleanup-threshold: 0.8  # Cleanup at 80%
+          lru-enabled: true       # Enable LRU eviction
+```
+
+**Optimize Cleanup Schedule**
+```yaml
+jairouter:
+  security:
+    jwt:
+      persistence:
+        cleanup:
+          enabled: true
+          schedule: "0 */30 * * * ?"  # Every 30 minutes
+          retention-days: 7           # Shorter retention
+          batch-size: 2000           # Larger batches
+```
+
+**Manual Cleanup**
+```bash
+# Trigger manual cleanup
+curl -X POST http://localhost:8080/api/auth/jwt/cleanup \
+     -H "Authorization: Bearer admin_token" \
+     -H "Content-Type: application/json" \
+     -d '{"cleanupType": "ALL"}'
+```
+
+### Issue 19: Redis Connection Failures
+
+#### Symptoms
+- JWT persistence falling back to memory
+- Redis connection timeout errors
+- Token operations failing intermittently
+
+#### Diagnostic Steps
+```bash
+# 1. Check Redis server status
+redis-cli -h localhost -p 6379 info server
+
+# 2. Test network connectivity
+telnet localhost 6379
+
+# 3. Check Redis logs
+tail -f /var/log/redis/redis-server.log
+
+# 4. Monitor connection pool
+curl http://localhost:8080/actuator/metrics/lettuce.command.completion
+```
+
+#### Solutions
+
+**Optimize Redis Configuration**
+```yaml
+spring:
+  redis:
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+        max-wait: 2000ms
+    timeout: 3000ms
+    connect-timeout: 2000ms
+```
+
+**Configure Retry Logic**
+```yaml
+jairouter:
+  security:
+    jwt:
+      persistence:
+        redis:
+          retry-attempts: 3
+          connection-timeout: 3000
+```
+
+**Enable Fallback Storage**
+```yaml
+jairouter:
+  security:
+    jwt:
+      persistence:
+        primary-storage: redis
+        fallback-storage: memory  # Automatic fallback
+```
+
+### Issue 20: Security Audit Log Issues
+
+#### Symptoms
+- Audit logs not being generated
+- Missing security events in logs
+- Audit log files growing too large
+
+#### Diagnostic Steps
+```bash
+# 1. Check audit configuration
+curl http://localhost:8080/actuator/configprops | grep security.audit
+
+# 2. Check audit log files
+ls -la logs/security-audit.log*
+
+# 3. Test audit event generation
+curl -X POST http://localhost:8080/api/auth/jwt/login \
+     -H "Content-Type: application/json" \
+     -d '{"username":"test","password":"test"}'
+
+# 4. Check for audit errors
+grep -i "audit\|security" logs/jairouter-error.log
+```
+
+#### Solutions
+
+**Enable Security Auditing**
+```yaml
+jairouter:
+  security:
+    audit:
+      enabled: true
+      jwt-operations:
+        enabled: true
+      api-key-operations:
+        enabled: true
+      security-events:
+        enabled: true
+```
+
+**Configure Log Rotation**
+```yaml
+jairouter:
+  security:
+    audit:
+      storage:
+        type: "file"
+        file-path: "logs/security-audit.log"
+        rotation:
+          max-file-size: "100MB"
+          max-files: 30
+```
+
+**Optimize Audit Performance**
+```yaml
+jairouter:
+  security:
+    audit:
+      jwt-operations:
+        log-token-details: false  # Reduce log size
+      api-key-operations:
+        log-key-details: false
+```
+
 ## Getting Help
 
 If the above solutions don't resolve your issue, please:

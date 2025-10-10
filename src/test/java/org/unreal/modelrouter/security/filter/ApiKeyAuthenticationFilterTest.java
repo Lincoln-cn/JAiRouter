@@ -13,9 +13,11 @@ import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.constants.SecurityConstants;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.security.service.ApiKeyService;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -35,7 +37,7 @@ import static org.mockito.Mockito.*;
 class ApiKeyAuthenticationFilterTest {
 
     @Mock
-    private ApiKeyServiceInterface apiKeyServiceInterface;
+    private ApiKeyService apiKeyServiceInterface;
 
     @Mock
     private SecurityAuditService auditService;
@@ -62,7 +64,7 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testFilter_Success() {
         // 准备测试数据
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", Arrays.asList("read", "write"));
+        ApiKey ApiKey = createTestApiKey("test-key", Arrays.asList("read", "write"));
         MockServerHttpRequest request = MockServerHttpRequest
                 .get("/api/test")
                 .header("X-API-Key", "valid-api-key")
@@ -70,15 +72,14 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        when(apiKeyServiceInterface.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(ApiKey));
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
                 .verifyComplete();
 
         // 验证认证上下文已设置
-        assertEquals(apiKeyInfo, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
+        assertEquals(ApiKey, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
         assertEquals("test-key", exchange.getAttributes().get(SecurityConstants.AUTHENTICATED_USER_ID));
         assertEquals(Arrays.asList("read", "write"), exchange.getAttributes().get(SecurityConstants.USER_PERMISSIONS));
 
@@ -140,7 +141,7 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testFilter_InsufficientPermissions() {
         // 准备测试数据 - API Key只有read权限，但请求是POST
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", List.of("read"));
+        ApiKey ApiKey = createTestApiKey("test-key", List.of("read"));
         MockServerHttpRequest request = MockServerHttpRequest
                 .post("/api/test")
                 .header("X-API-Key", "valid-api-key")
@@ -148,7 +149,7 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(ApiKey));
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
@@ -167,7 +168,7 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testFilter_AdminPermissionAllowsAll() {
         // 准备测试数据 - API Key有admin权限
-        ApiKeyInfo apiKeyInfo = createTestApiKey("admin-key", List.of("admin"));
+        ApiKey ApiKey = createTestApiKey("admin-key", List.of("admin"));
         MockServerHttpRequest request = MockServerHttpRequest
                 .delete("/api/test")
                 .header("X-API-Key", "admin-api-key")
@@ -175,15 +176,13 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyServiceInterface.validateApiKey("admin-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        when(apiKeyServiceInterface.updateUsageStatistics("admin-key", true)).thenReturn(Mono.empty());
-
+        when(apiKeyServiceInterface.validateApiKey("admin-api-key")).thenReturn(Mono.just(ApiKey));
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
                 .verifyComplete();
 
         // 验证认证上下文已设置
-        assertEquals(apiKeyInfo, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
+        assertEquals(ApiKey, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
 
         // 验证服务调用
         verify(apiKeyServiceInterface).validateApiKey("admin-api-key");
@@ -212,7 +211,7 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testFilter_AuthorizationHeader() {
         // 准备测试数据 - 使用Authorization头
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", List.of("read"));
+        ApiKey ApiKey = createTestApiKey("test-key", List.of("read"));
         MockServerHttpRequest request = MockServerHttpRequest
                 .get("/api/test")
                 .header("Authorization", "Bearer valid-api-key")
@@ -220,15 +219,14 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        when(apiKeyServiceInterface.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(ApiKey));
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
                 .verifyComplete();
 
         // 验证认证成功
-        assertEquals(apiKeyInfo, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
+        assertEquals(ApiKey, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
         verify(apiKeyServiceInterface).validateApiKey("valid-api-key");
         verify(filterChain).filter(exchange);
     }
@@ -236,7 +234,7 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testFilter_EmptyPermissions() {
         // 准备测试数据 - API Key没有配置权限（应该允许所有操作）
-        ApiKeyInfo apiKeyInfo = createTestApiKey("test-key", Collections.emptyList());
+        ApiKey ApiKey = createTestApiKey("test-key", Collections.emptyList());
         MockServerHttpRequest request = MockServerHttpRequest
                 .post("/api/test")
                 .header("X-API-Key", "valid-api-key")
@@ -244,15 +242,14 @@ class ApiKeyAuthenticationFilterTest {
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         // 模拟服务调用
-        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        when(apiKeyServiceInterface.updateUsageStatistics("test-key", true)).thenReturn(Mono.empty());
+        when(apiKeyServiceInterface.validateApiKey("valid-api-key")).thenReturn(Mono.just(ApiKey));
 
         // 执行测试
         StepVerifier.create(filter.filter(exchange, filterChain))
                 .verifyComplete();
 
         // 验证认证成功（空权限列表应该允许所有操作）
-        assertEquals(apiKeyInfo, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
+        assertEquals(ApiKey, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
         verify(apiKeyServiceInterface).validateApiKey("valid-api-key");
         verify(filterChain).filter(exchange);
     }
@@ -286,9 +283,9 @@ class ApiKeyAuthenticationFilterTest {
     @Test
     void testPermissionMapping() {
         // 测试不同HTTP方法的权限映射
-        ApiKeyInfo readOnlyKey = createTestApiKey("read-key", List.of("read"));
-        ApiKeyInfo writeKey = createTestApiKey("write-key", List.of("write"));
-        ApiKeyInfo deleteKey = createTestApiKey("delete-key", List.of("delete"));
+        ApiKey readOnlyKey = createTestApiKey("read-key", List.of("read"));
+        ApiKey writeKey = createTestApiKey("write-key", List.of("write"));
+        ApiKey deleteKey = createTestApiKey("delete-key", List.of("delete"));
 
         // GET请求需要read权限
         testPermissionForMethod(readOnlyKey, HttpMethod.GET, true);
@@ -303,23 +300,20 @@ class ApiKeyAuthenticationFilterTest {
         testPermissionForMethod(deleteKey, HttpMethod.DELETE, true);
     }
 
-    private void testPermissionForMethod(ApiKeyInfo apiKeyInfo, HttpMethod method, boolean shouldSucceed) {
+    private void testPermissionForMethod(ApiKey ApiKey, HttpMethod method, boolean shouldSucceed) {
         MockServerHttpRequest request = MockServerHttpRequest
                 .method(method, "/api/test")
                 .header("X-API-Key", "test-api-key")
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-        lenient().when(apiKeyServiceInterface.validateApiKey("test-api-key")).thenReturn(Mono.just(apiKeyInfo));
-        if (shouldSucceed) {
-            lenient().when(apiKeyServiceInterface.updateUsageStatistics(apiKeyInfo.getKeyId(), true)).thenReturn(Mono.empty());
-        }
+        lenient().when(apiKeyServiceInterface.validateApiKey("test-api-key")).thenReturn(Mono.just(ApiKey));
 
         StepVerifier.create(filter.filter(exchange, filterChain))
                 .verifyComplete();
 
         if (shouldSucceed) {
-            assertEquals(apiKeyInfo, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
+            assertEquals(ApiKey, exchange.getAttributes().get(SecurityConstants.API_KEY_INFO_ATTRIBUTE));
             verify(filterChain).filter(exchange);
         } else {
             assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
@@ -335,8 +329,8 @@ class ApiKeyAuthenticationFilterTest {
     /**
      * 创建测试用的API Key信息
      */
-    private ApiKeyInfo createTestApiKey(String keyId, java.util.List<String> permissions) {
-        return ApiKeyInfo.builder()
+    private ApiKey createTestApiKey(String keyId, java.util.List<String> permissions) {
+        return ApiKey.builder()
                 .keyId(keyId)
                 .keyValue("test-api-key-value")
                 .description("测试API Key")
