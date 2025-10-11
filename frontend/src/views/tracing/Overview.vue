@@ -1,19 +1,31 @@
 <template>
   <div class="tracing-overview">
-    <el-card>
+    <el-alert
+      v-if="stats.totalTraces === 0"
+      title="暂无追踪数据"
+      type="info"
+      description="追踪系统已启用，请通过API网关发送一些请求以生成追踪数据。数据将实时显示在此页面。"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 20px"
+    />
+    
+    <el-card v-loading="loading" element-loading-text="加载中...">
       <template #header>
         <div class="card-header">
           <span>追踪概览</span>
-          <el-button type="primary" @click="handleRefresh">刷新</el-button>
+          <el-button type="primary" @click="handleRefresh" :loading="refreshing">刷新</el-button>
         </div>
       </template>
-      
+
       <el-row :gutter="20" class="stats-row">
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon info">
-                <el-icon><DataLine /></el-icon>
+                <el-icon>
+                  <DataLine />
+                </el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ stats.totalTraces }}</div>
@@ -26,7 +38,9 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon warning">
-                <el-icon><Warning /></el-icon>
+                <el-icon>
+                  <Warning />
+                </el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ stats.errorTraces }}</div>
@@ -39,7 +53,9 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon success">
-                <el-icon><SuccessFilled /></el-icon>
+                <el-icon>
+                  <SuccessFilled />
+                </el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ stats.avgDuration }}ms</div>
@@ -52,7 +68,9 @@
           <el-card class="stat-card">
             <div class="stat-content">
               <div class="stat-icon">
-                <el-icon><ScaleToOriginal /></el-icon>
+                <el-icon>
+                  <ScaleToOriginal />
+                </el-icon>
               </div>
               <div class="stat-info">
                 <div class="stat-value">{{ stats.samplingRate }}%</div>
@@ -62,7 +80,7 @@
           </el-card>
         </el-col>
       </el-row>
-      
+
       <el-row :gutter="20" class="charts-row">
         <el-col :span="12">
           <el-card>
@@ -71,7 +89,16 @@
                 <span>追踪量趋势</span>
               </div>
             </template>
-            <div ref="traceChart" class="chart-container"></div>
+            <div ref="traceChart" class="chart-container" v-show="tracingStats.traceVolumeTrend.length > 0"></div>
+            <div v-show="tracingStats.traceVolumeTrend.length === 0" class="empty-chart">
+              <el-empty description="暂无追踪趋势数据">
+                <template #image>
+                  <el-icon size="60" color="#c0c4cc">
+                    <DataLine />
+                  </el-icon>
+                </template>
+              </el-empty>
+            </div>
           </el-card>
         </el-col>
         <el-col :span="12">
@@ -81,11 +108,20 @@
                 <span>服务延迟分布</span>
               </div>
             </template>
-            <div ref="latencyChart" class="chart-container"></div>
+            <div ref="latencyChart" class="chart-container" v-show="services.length > 0"></div>
+            <div v-show="services.length === 0" class="empty-chart">
+              <el-empty description="暂无服务延迟数据">
+                <template #image>
+                  <el-icon size="60" color="#c0c4cc">
+                    <ScaleToOriginal />
+                  </el-icon>
+                </template>
+              </el-empty>
+            </div>
           </el-card>
         </el-col>
       </el-row>
-      
+
       <el-row :gutter="20" class="services-row">
         <el-col :span="24">
           <el-card>
@@ -94,13 +130,34 @@
                 <span>服务追踪统计</span>
               </div>
             </template>
-            <el-table :data="services" style="width: 100%">
+            <el-table :data="services" style="width: 100%" empty-text="暂无服务数据，请先发送一些请求以生成追踪数据">
               <el-table-column prop="name" label="服务名称" width="180" />
               <el-table-column prop="traces" label="追踪数" width="120" />
-              <el-table-column prop="errors" label="错误数" width="120" />
-              <el-table-column prop="avgDuration" label="平均耗时(ms)" width="150" />
-              <el-table-column prop="p95Duration" label="P95耗时(ms)" width="150" />
-              <el-table-column prop="p99Duration" label="P99耗时(ms)" width="150" />
+              <el-table-column prop="errors" label="错误数" width="120">
+                <template #default="{ row }">
+                  <span :class="{ 'high-error': row.errorRate > 5 }">{{ row.errors }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="avgDuration" label="平均耗时(ms)" width="150">
+                <template #default="{ row }">
+                  <span :class="{ 'high-latency': row.avgDuration > 200 }">{{ row.avgDuration }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="p95Duration" label="P95耗时(ms)" width="150">
+                <template #default="{ row }">
+                  <span :class="{ 'high-latency': row.p95Duration > 500 }">{{ row.p95Duration }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="p99Duration" label="P99耗时(ms)" width="150">
+                <template #default="{ row }">
+                  <span :class="{ 'high-latency': row.p99Duration > 800 }">{{ row.p99Duration }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="errorRate" label="错误率(%)" width="120">
+                <template #default="{ row }">
+                  <span :class="{ 'high-error': row.errorRate > 5 }">{{ row.errorRate }}%</span>
+                </template>
+              </el-table-column>
             </el-table>
           </el-card>
         </el-col>
@@ -110,53 +167,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import {
+  getTracingOverview,
+  getTracingStats,
+  getTracingStatus,
+  getServiceStats,
+  refreshTracingData
+} from '@/api/tracing'
+import type { TracingOverview, TracingStats, ServiceStats } from '@/types'
+
+// 加载状态
+const loading = ref(false)
+const refreshing = ref(false)
 
 // 统计数据
-const stats = ref({
-  totalTraces: 12345,
-  errorTraces: 67,
-  avgDuration: 142,
-  samplingRate: 10
+const stats = ref<TracingOverview>({
+  totalTraces: 0,
+  errorTraces: 0,
+  avgDuration: 0,
+  samplingRate: 0
+})
+
+// 趋势数据
+const tracingStats = ref<TracingStats>({
+  traceVolumeTrend: [],
+  errorTrend: []
 })
 
 // 服务统计数据
-const services = ref([
-  { 
-    name: 'Chat Service', 
-    traces: 5678, 
-    errors: 12, 
-    avgDuration: 125, 
-    p95Duration: 210, 
-    p99Duration: 320 
-  },
-  { 
-    name: 'Embedding Service', 
-    traces: 3456, 
-    errors: 8, 
-    avgDuration: 180, 
-    p95Duration: 280, 
-    p99Duration: 420 
-  },
-  { 
-    name: 'Rerank Service', 
-    traces: 1234, 
-    errors: 32, 
-    avgDuration: 210, 
-    p95Duration: 350, 
-    p99Duration: 580 
-  },
-  { 
-    name: 'API Gateway', 
-    traces: 1977, 
-    errors: 15, 
-    avgDuration: 85, 
-    p95Duration: 150, 
-    p99Duration: 240 
-  }
-])
+const services = ref<ServiceStats[]>([])
 
 // 图表引用
 const traceChart = ref<HTMLElement | null>(null)
@@ -170,7 +212,7 @@ const initCharts = () => {
     traceChartInstance = echarts.init(traceChart.value)
     traceChartInstance.setOption(getTraceChartOption())
   }
-  
+
   if (latencyChart.value) {
     latencyChartInstance = echarts.init(latencyChart.value)
     latencyChartInstance.setOption(getLatencyChartOption())
@@ -179,13 +221,24 @@ const initCharts = () => {
 
 // 追踪量趋势图表配置
 const getTraceChartOption = () => {
+  const timestamps = tracingStats.value.traceVolumeTrend.map(item => {
+    // 确保时间戳是数字类型
+    const timestamp = typeof item.timestamp === 'string' ? parseInt(item.timestamp) : item.timestamp
+    return new Date(timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  })
+  const traceVolumes = tracingStats.value.traceVolumeTrend.map(item => item.value)
+  const errorVolumes = tracingStats.value.errorTrend.map(item => item.value)
+
   return {
     tooltip: {
       trigger: 'axis'
     },
+    legend: {
+      data: ['总追踪数', '错误追踪数']
+    },
     xAxis: {
       type: 'category',
-      data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00']
+      data: timestamps.length > 0 ? timestamps : ['暂无数据']
     },
     yAxis: {
       type: 'value'
@@ -193,13 +246,16 @@ const getTraceChartOption = () => {
     series: [
       {
         name: '总追踪数',
-        data: [1200, 2000, 1500, 800, 700, 1100, 1300],
+        data: traceVolumes.length > 0 ? traceVolumes : [0],
         type: 'line',
-        smooth: true
+        smooth: true,
+        itemStyle: {
+          color: '#409eff'
+        }
       },
       {
         name: '错误追踪数',
-        data: [12, 20, 15, 8, 7, 11, 13],
+        data: errorVolumes.length > 0 ? errorVolumes : [0],
         type: 'line',
         smooth: true,
         itemStyle: {
@@ -210,61 +266,267 @@ const getTraceChartOption = () => {
   }
 }
 
+// 更新追踪趋势图表
+const updateTraceChart = () => {
+  if (traceChartInstance) {
+    traceChartInstance.setOption(getTraceChartOption(), true) // 第二个参数为true表示不合并，完全替换
+  } else if (traceChart.value) {
+    // 如果图表实例不存在，重新创建
+    traceChartInstance = echarts.init(traceChart.value)
+    traceChartInstance.setOption(getTraceChartOption())
+  }
+}
+
 // 服务延迟分布图表配置
 const getLatencyChartOption = () => {
+  const serviceNames = services.value.map(service => service.name)
+  const avgDurations = services.value.map(service => service.avgDuration)
+  const p95Durations = services.value.map(service => service.p95Duration)
+
   return {
     tooltip: {
       trigger: 'axis'
     },
+    legend: {
+      data: ['平均耗时', 'P95耗时']
+    },
     xAxis: {
       type: 'category',
-      data: ['Chat Service', 'Embedding Service', 'Rerank Service', 'API Gateway']
+      data: serviceNames.length > 0 ? serviceNames : ['暂无数据'],
+      axisLabel: {
+        rotate: 45
+      }
     },
     yAxis: {
-      type: 'value'
+      type: 'value',
+      name: '耗时(ms)'
     },
     series: [
       {
         name: '平均耗时',
         type: 'bar',
-        data: [125, 180, 210, 85],
+        data: avgDurations.length > 0 ? avgDurations : [0],
         itemStyle: {
           color: '#409eff'
+        }
+      },
+      {
+        name: 'P95耗时',
+        type: 'bar',
+        data: p95Durations.length > 0 ? p95Durations : [0],
+        itemStyle: {
+          color: '#e6a23c'
         }
       }
     ]
   }
 }
 
-// 窗口大小变化时重置图表
-const handleResize = () => {
-  traceChartInstance?.resize()
-  latencyChartInstance?.resize()
+// 更新延迟分布图表
+const updateLatencyChart = () => {
+  if (latencyChartInstance) {
+    latencyChartInstance.setOption(getLatencyChartOption(), true) // 第二个参数为true表示不合并，完全替换
+  } else if (latencyChart.value) {
+    // 如果图表实例不存在，重新创建
+    latencyChartInstance = echarts.init(latencyChart.value)
+    latencyChartInstance.setOption(getLatencyChartOption())
+  }
 }
 
-// 刷新
-const handleRefresh = () => {
-  // 这里可以调用API获取最新数据
-  ElMessage.success('数据已刷新')
+// 窗口大小变化时重置图表
+const handleResize = () => {
+  setTimeout(() => {
+    traceChartInstance?.resize()
+    latencyChartInstance?.resize()
+  }, 100) // 延迟一点时间确保DOM更新完成
+}
+
+// 加载追踪概览数据
+const loadTracingOverview = async () => {
+  try {
+    const response = await getTracingOverview()
+    console.log('追踪概览数据响应:', response)
+
+    const data = (response.data || response) as any
+    console.log('解析后的数据:', data)
+    
+    if (data) {
+      stats.value = {
+        totalTraces: data.totalTraces || data.traceCount || data.total || 0,
+        errorTraces: data.errorTraces || data.errorCount || data.errors || 0,
+        avgDuration: Math.round(data.avgDuration || data.averageDuration || data.duration || 0),
+        samplingRate: data.samplingRate || data.sampleRate || 0
+      }
+      console.log('更新后的stats:', stats.value)
+    } else {
+      // 数据为空时设置默认值
+      stats.value = {
+        totalTraces: 0,
+        errorTraces: 0,
+        avgDuration: 0,
+        samplingRate: 0
+      }
+    }
+  } catch (error) {
+    console.error('加载追踪概览数据失败:', error)
+    ElMessage.warning('暂无追踪数据，请先发送一些请求以生成追踪数据')
+    // 设置默认值
+    stats.value = {
+      totalTraces: 0,
+      errorTraces: 0,
+      avgDuration: 0,
+      samplingRate: 0
+    }
+  }
+}
+// 加载追踪统计数据
+const loadTracingStats = async () => {
+  try {
+    const response = await getTracingStats()
+    console.log('追踪统计数据响应:', response)
+
+    const data = response.data || response
+    console.log('解析后的统计数据:', data)
+
+    if (data) {
+      tracingStats.value = {
+        traceVolumeTrend: (data as any).traceVolumeTrend || [],
+        errorTrend: (data as any).errorTrend || []
+      }
+
+      if ((data as any).configInfo && typeof (data as any).configInfo.globalSamplingRatio === 'number') {
+        stats.value.samplingRate = Math.round((data as any).configInfo.globalSamplingRatio * 100)
+      }
+
+      console.log('趋势数据点数量:', tracingStats.value.traceVolumeTrend.length)
+      // 等待DOM更新后再更新图表
+      nextTick(() => {
+        updateTraceChart()
+      })
+    } else {
+      // 数据为空时设置默认值
+      tracingStats.value = {
+        traceVolumeTrend: [],
+        errorTrend: []
+      }
+      console.log('趋势数据为空，使用默认值')
+      updateTraceChart()
+    }
+  } catch (error) {
+    console.error('加载追踪统计数据失败:', error)
+    // 设置默认值，不显示错误消息
+    tracingStats.value = {
+      traceVolumeTrend: [],
+      errorTrend: []
+    }
+    updateTraceChart()
+  }
+}
+    
+// 加载服务统计数据
+const loadServiceStats = async () => {
+  try {
+    const response = await getServiceStats()
+    console.log('服务统计数据响应:', response)
+
+    const data = response.data || response
+    console.log('解析后的服务数据:', data)
+
+    if (data) {
+      if (Array.isArray(data)) {
+        services.value = data.filter((item: any) => item && typeof item === 'object' && item.name)
+      } else if ((data as any).services && Array.isArray((data as any).services)) {
+        services.value = (data as any).services.filter((item: any) => item && typeof item === 'object' && item.name)
+      } else {
+        services.value = []
+      }
+
+      console.log('服务数量:', services.value.length)
+      // 等待DOM更新后再更新图表
+      nextTick(() => {
+        updateLatencyChart()
+      })
+    } else {
+      services.value = []
+      console.log('服务数据为空')
+      updateLatencyChart()
+    }
+  } catch (error) {
+    console.error('加载服务统计数据失败:', error)
+    // 设置空数组，不显示错误消息
+    services.value = []
+    updateLatencyChart()
+  }
+}
+    
+// 加载所有数据
+const loadAllData = async () => {
+  loading.value = true
+  try {
+    await Promise.all([
+      loadTracingOverview(),
+      loadTracingStats(),
+      loadServiceStats()
+    ])
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 刷新数据
+const handleRefresh = async () => {
+  refreshing.value = true
+  try {
+    const response = await refreshTracingData()
+    if (response.data?.success !== false) {
+      ElMessage.success('数据刷新成功')
+    }
+    await loadAllData()
+  } catch (error) {
+    console.error('刷新数据失败:', error)
+    ElMessage.warning('刷新完成，如果没有数据请先发送一些请求')
+    await loadAllData()
+  } finally {
+    refreshing.value = false
+  }
 }
 
 // 组件挂载时初始化
-onMounted(() => {
-  initCharts()
+onMounted(async () => {
   window.addEventListener('resize', handleResize)
+  await loadAllData()
+  // 数据加载完成后再初始化图表
+  await nextTick()
+  initCharts()
 })
 
 // 组件卸载前清理
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
-  traceChartInstance?.dispose()
-  latencyChartInstance?.dispose()
+  
+  // 安全地清理图表实例
+  try {
+    if (traceChartInstance && !traceChartInstance.isDisposed()) {
+      traceChartInstance.dispose()
+    }
+    if (latencyChartInstance && !latencyChartInstance.isDisposed()) {
+      latencyChartInstance.dispose()
+    }
+  } catch (error) {
+    console.warn('清理图表实例时出错:', error)
+  }
+  
+  // 重置实例引用
+  traceChartInstance = null
+  latencyChartInstance = null
 })
 </script>
 
 <style scoped>
 .tracing-overview {
-  padding: 20px;
+  padding: 0;
 }
 
 .card-header {
@@ -327,5 +589,22 @@ onBeforeUnmount(() => {
 
 .chart-container {
   height: 300px;
+}
+
+.high-error {
+  color: #f56c6c;
+  font-weight: bold;
+}
+
+.high-latency {
+  color: #e6a23c;
+  font-weight: bold;
+}
+
+.empty-chart {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

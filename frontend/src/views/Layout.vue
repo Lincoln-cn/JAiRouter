@@ -1,34 +1,34 @@
 <template>
   <el-container class="layout-container">
     <el-aside width="200px">
-      <el-menu
-        :default-active="activeMenu"
-        class="layout-menu"
-        background-color="#545c64"
-        text-color="#fff"
-        active-text-color="#ffd04b"
-        :router="false"
-        @select="handleMenuSelect"
-      >
+      <el-menu :default-active="activeMenu" :default-openeds="defaultOpeneds" class="layout-menu"
+        background-color="#545c64" text-color="#fff" active-text-color="#ffd04b" :router="false"
+        @select="handleMenuSelect">
         <div class="logo">
           <div class="logo-icon">
-            <el-icon :size="32"><Connection /></el-icon>
+            <el-icon :size="32">
+              <Connection />
+            </el-icon>
           </div>
           <h2 class="logo-text">JAiRouter</h2>
         </div>
 
         <el-sub-menu index="dashboard">
           <template #title>
-            <el-icon><House /></el-icon>
+            <el-icon>
+              <House />
+            </el-icon>
             <span>概览</span>
           </template>
           <el-menu-item index="/dashboard/main">仪表板</el-menu-item>
         </el-sub-menu>
-        
+
         <!-- 配置管理 -->
         <el-sub-menu index="config">
           <template #title>
-            <el-icon><Setting /></el-icon>
+            <el-icon>
+              <Setting />
+            </el-icon>
             <span>配置管理</span>
           </template>
           <el-menu-item index="/config/services">服务管理</el-menu-item>
@@ -36,60 +36,66 @@
           <el-menu-item index="/config/versions">版本管理</el-menu-item>
           <el-menu-item index="/config/merge">配置合并</el-menu-item>
         </el-sub-menu>
-        
+
         <!-- 安全管理 -->
         <el-sub-menu index="security">
           <template #title>
-            <el-icon><Lock /></el-icon>
+            <el-icon>
+              <Lock />
+            </el-icon>
             <span>安全管理</span>
           </template>
           <el-menu-item index="/security/api-keys">API密钥管理</el-menu-item>
           <el-menu-item index="/security/jwt-tokens">JWT令牌管理</el-menu-item>
           <el-menu-item index="/security/audit-logs">审计日志</el-menu-item>
         </el-sub-menu>
-        
+
         <!-- 系统管理 -->
         <el-sub-menu index="system">
           <template #title>
-            <el-icon><User /></el-icon>
+            <el-icon>
+              <User />
+            </el-icon>
             <span>系统管理</span>
           </template>
           <el-menu-item index="/system/accounts">账户管理</el-menu-item>
         </el-sub-menu>
-        
+
         <!-- 监控管理 -->
         <el-sub-menu index="monitoring">
           <template #title>
-            <el-icon><DataAnalysis /></el-icon>
+            <el-icon>
+              <DataAnalysis />
+            </el-icon>
             <span>监控管理</span>
           </template>
           <el-menu-item index="/monitoring/overview">监控概览</el-menu-item>
           <el-menu-item index="/monitoring/circuit-breaker">熔断器</el-menu-item>
           <el-menu-item index="/monitoring/health">健康检查</el-menu-item>
         </el-sub-menu>
-        
+
         <!-- 追踪管理 -->
         <el-sub-menu index="tracing">
           <template #title>
-            <el-icon><Connection /></el-icon>
+            <el-icon>
+              <Connection />
+            </el-icon>
             <span>追踪管理</span>
           </template>
           <el-menu-item index="/tracing/overview">追踪概览</el-menu-item>
-          <el-menu-item index="/tracing/sampling">采样配置</el-menu-item>
+          <el-menu-item index="/tracing/search">追踪搜索</el-menu-item>
           <el-menu-item index="/tracing/performance">性能分析</el-menu-item>
+          <el-menu-item index="/tracing/sampling">采样配置</el-menu-item>
+          <el-menu-item index="/tracing/management">追踪管理</el-menu-item>
         </el-sub-menu>
       </el-menu>
     </el-aside>
-    
+
     <el-container>
       <el-header class="layout-header">
         <div class="header-left">
           <el-breadcrumb separator="/">
-            <el-breadcrumb-item 
-              v-for="item in breadcrumbs" 
-              :key="item.path" 
-              :to="item.path"
-            >
+            <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.path" :to="item.path">
               {{ item.title }}
             </el-breadcrumb-item>
           </el-breadcrumb>
@@ -109,52 +115,86 @@
           </el-dropdown>
         </div>
       </el-header>
-      
+
       <el-main class="layout-main">
-        <router-view />
+        <router-view :key="route.fullPath" />
       </el-main>
     </el-container>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import {
+  House,
+  Setting,
+  Lock,
+  User,
+  DataAnalysis,
+  Connection
+} from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+// 防止快速连续点击导致的导航问题
+const isNavigating = ref(false)
 
 // 计算当前激活的菜单项
 const activeMenu = computed(() => {
   const { path } = route
   // 对于根路径，激活概览菜单项
   if (path === '/') {
-    return '/dashboard'
+    return '/dashboard/main'
   }
   // 对于仪表板路径，激活概览菜单项
   if (path === '/dashboard/main') {
-    return '/dashboard'
+    return '/dashboard/main'
   }
   return path
+})
+
+// 计算默认打开的子菜单
+const defaultOpeneds = computed(() => {
+  const { path } = route
+  const openeds = []
+
+  if (path === '/dashboard/main') {
+    openeds.push('dashboard')
+  } else if (path.startsWith('/config')) {
+    openeds.push('config')
+  } else if (path.startsWith('/security')) {
+    openeds.push('security')
+  } else if (path.startsWith('/system')) {
+    openeds.push('system')
+  } else if (path.startsWith('/monitoring')) {
+    openeds.push('monitoring')
+  } else if (path.startsWith('/tracing')) {
+    openeds.push('tracing')
+  }
+
+  return openeds
 })
 
 // 面包屑导航
 const breadcrumbs = computed(() => {
   const pathArray = route.path.split('/').filter(item => item)
   const breadcrumbArray = []
-  
+
   // 添加首页面包屑
   breadcrumbArray.push({ path: '/', title: '首页' })
-  
-  // 如果是仪表板页面，添加概览和仪表板面包屑
+
+  // 特殊处理仪表板页面
   if (route.path === '/dashboard/main') {
     breadcrumbArray.push({ path: '/dashboard', title: '概览' })
     breadcrumbArray.push({ path: '/dashboard/main', title: '仪表板' })
     return breadcrumbArray
+
   }
-  
+
   // 处理其他路径的面包屑
   let path = ''
   for (let i = 0; i < pathArray.length; i++) {
@@ -163,7 +203,7 @@ const breadcrumbs = computed(() => {
     if (routeMatched) {
       breadcrumbArray.push({
         path: path,
-        title: routeMatched.meta?.title || routeMatched.name
+        title: (routeMatched.meta?.title as string) || (routeMatched.name as string)
       })
     } else {
       // 查找子路由
@@ -174,21 +214,47 @@ const breadcrumbs = computed(() => {
         if (childRoute) {
           breadcrumbArray.push({
             path: path,
-            title: childRoute.meta?.title || childRoute.name
+            title: (childRoute.meta?.title as string) || (childRoute.name as string)
           })
         }
       }
     }
   }
-  
+
   return breadcrumbArray
 })
 
 // 处理菜单选择
-const handleMenuSelect = (index: string) => {
+const handleMenuSelect = async (index: string) => {
   console.log('菜单选择:', index)
-  // 使用编程式导航而不是让Element Plus处理
-  router.push(index)
+
+  // 防止快速连续点击
+  if (isNavigating.value) {
+    return
+  }
+
+  // 如果已经在目标路由，不进行跳转
+  if (route.path === index) {
+    return
+  }
+
+  isNavigating.value = true
+
+  try {
+    // 使用编程式导航而不是让Element Plus处理
+    await router.push(index)
+  } catch (error: any) {
+    console.error('路由跳转失败:', error)
+    // 如果是导航重复错误，可以忽略
+    if (error?.name !== 'NavigationDuplicated') {
+      console.error('Navigation error:', error)
+    }
+  } finally {
+    // 延迟重置导航状态，防止过快的连续点击
+    setTimeout(() => {
+      isNavigating.value = false
+    }, 300)
+  }
 }
 
 // 处理用户命令
@@ -243,9 +309,11 @@ const handleUserCommand = (command: string) => {
   0% {
     box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
   }
+
   50% {
     box-shadow: 0 0 20px rgba(64, 158, 255, 0.6);
   }
+
   100% {
     box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
   }
