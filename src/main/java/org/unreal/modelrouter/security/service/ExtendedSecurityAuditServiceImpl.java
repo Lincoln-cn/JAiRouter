@@ -23,13 +23,13 @@ import org.springframework.context.annotation.Primary;
 
 /**
  * 扩展的安全审计服务实现类
- * 在现有SecurityAuditServiceImpl基础上添加JWT和API Key审计功能
+ * 提供JWT和API Key审计功能
  */
 @Slf4j
 @Service
 @Primary
 @ConditionalOnProperty(name = "jairouter.security.audit.enabled", havingValue = "true", matchIfMissing = true)
-public class ExtendedSecurityAuditServiceImpl extends SecurityAuditServiceImpl implements ExtendedSecurityAuditService {
+public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditService {
     
     // 扩展的审计事件存储（JWT和API Key相关）
     private final ConcurrentLinkedQueue<AuditEvent> extendedAuditEvents = new ConcurrentLinkedQueue<>();
@@ -389,7 +389,7 @@ public class ExtendedSecurityAuditServiceImpl extends SecurityAuditServiceImpl i
                     auditEvent.setTimestamp(LocalDateTime.now());
                 }
                 
-                // 存储事件
+                // 存储事件到内存（用于查询）
                 extendedAuditEvents.offer(auditEvent);
                 
                 // 更新计数器
@@ -403,9 +403,8 @@ public class ExtendedSecurityAuditServiceImpl extends SecurityAuditServiceImpl i
                     ipOperationCounters.merge(auditEvent.getIpAddress(), 1L, Long::sum);
                 }
                 
-                // 同时记录到基础审计系统
-                SecurityAuditEvent baseEvent = convertToSecurityAuditEvent(auditEvent);
-                super.recordEvent(baseEvent).subscribe();
+                // 记录到结构化日志（用于持久化和分析）
+                recordToStructuredLog(auditEvent);
                 
                 log.debug("扩展审计事件已记录: eventId={}, eventType={}, userId={}", 
                          auditEvent.getId(), auditEvent.getType(), auditEvent.getUserId());
@@ -414,6 +413,281 @@ public class ExtendedSecurityAuditServiceImpl extends SecurityAuditServiceImpl i
                 log.error("记录扩展审计事件失败", e);
             }
         });
+    }
+    
+    /**
+     * 记录到结构化日志
+     */
+    private void recordToStructuredLog(AuditEvent auditEvent) {
+        try {
+            // 创建结构化日志条目
+            Map<String, Object> logEntry = new HashMap<>();
+            logEntry.put("audit_event_id", auditEvent.getId());
+            logEntry.put("audit_event_type", auditEvent.getType().name());
+            logEntry.put("audit_user_id", auditEvent.getUserId());
+            logEntry.put("audit_resource_id", auditEvent.getResourceId());
+            logEntry.put("audit_action", auditEvent.getAction());
+            logEntry.put("audit_details", auditEvent.getDetails());
+            logEntry.put("audit_ip_address", auditEvent.getIpAddress());
+            logEntry.put("audit_user_agent", auditEvent.getUserAgent());
+            logEntry.put("audit_success", auditEvent.isSuccess());
+            logEntry.put("audit_timestamp", auditEvent.getTimestamp().toString());
+            logEntry.put("audit_metadata", auditEvent.getMetadata());
+            
+            // 使用专门的审计日志记录器
+            org.slf4j.Logger auditLogger = org.slf4j.LoggerFactory.getLogger("AUDIT_LOG");
+            
+            // 记录为JSON格式的结构化日志
+            String jsonLog = createJsonLogEntry(logEntry);
+            auditLogger.info("AUDIT_EVENT: {}", jsonLog);
+            
+            // 同时写入文件（简单实现）
+            writeToAuditFile(auditEvent, jsonLog);
+            
+        } catch (Exception e) {
+            log.warn("记录结构化审计日志失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 写入审计日志文件
+     */
+    private void writeToAuditFile(AuditEvent auditEvent, String jsonLog) {
+        try {
+            // 创建审计日志目录
+            java.nio.file.Path auditDir = java.nio.file.Paths.get("logs/audit");
+            if (!java.nio.file.Files.exists(auditDir)) {
+                java.nio.file.Files.createDirectories(auditDir);
+            }
+            
+            // 根据事件类型选择文件
+            String fileName = getAuditFileName(auditEvent.getType());
+            java.nio.file.Path filePath = auditDir.resolve(fileName);
+            
+            // 写入日志条目
+            String logLine = String.format("%s [AUDIT] %s%n", 
+                java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")),
+                jsonLog);
+            
+            java.nio.file.Files.write(filePath, logLine.getBytes(java.nio.charset.StandardCharsets.UTF_8), 
+                java.nio.file.StandardOpenOption.CREATE, 
+                java.nio.file.StandardOpenOption.APPEND);
+                
+        } catch (Exception e) {
+            log.warn("写入审计日志文件失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 根据事件类型获取审计日志文件名
+     */
+    private String getAuditFileName(AuditEventType eventType) {
+        switch (eventType) {
+            case JWT_TOKEN_ISSUED:
+            case JWT_TOKEN_REFRESHED:
+            case JWT_TOKEN_REVOKED:
+            case JWT_TOKEN_VALIDATED:
+            case JWT_TOKEN_EXPIRED:
+                return "jwt-audit.log";
+                
+            case API_KEY_CREATED:
+            case API_KEY_USED:
+            case API_KEY_REVOKED:
+            case API_KEY_EXPIRED:
+            case API_KEY_UPDATED:
+                return "api-key-audit.log";
+                
+            case SECURITY_ALERT:
+            case SUSPICIOUS_ACTIVITY:
+            case AUTHENTICATION_FAILED:
+            case AUTHORIZATION_FAILED:
+                return "security-events-audit.log";
+                
+            default:
+                return "security-audit.log";
+        }
+    }
+    
+    /**
+     * 创建JSON格式的日志条目
+     */
+    private String createJsonLogEntry(Map<String, Object> logEntry) {
+        try {
+            // 简单的JSON序列化
+            StringBuilder json = new StringBuilder("{");
+            boolean first = true;
+            for (Map.Entry<String, Object> entry : logEntry.entrySet()) {
+                if (!first) {
+                    json.append(",");
+                }
+                json.append("\"").append(entry.getKey()).append("\":");
+                
+                Object value = entry.getValue();
+                if (value == null) {
+                    json.append("null");
+                } else if (value instanceof String) {
+                    json.append("\"").append(value.toString().replace("\"", "\\\"")).append("\"");
+                } else if (value instanceof Boolean || value instanceof Number) {
+                    json.append(value.toString());
+                } else {
+                    json.append("\"").append(value.toString().replace("\"", "\\\"")).append("\"");
+                }
+                first = false;
+            }
+            json.append("}");
+            return json.toString();
+        } catch (Exception e) {
+            log.warn("创建JSON日志条目失败: {}", e.getMessage());
+            return logEntry.toString();
+        }
+    }
+    
+    // ========================================
+    // 实现基础SecurityAuditService接口方法
+    // ========================================
+    
+    @Override
+    public Mono<Void> recordEvent(org.unreal.modelrouter.security.model.SecurityAuditEvent event) {
+        return Mono.fromRunnable(() -> {
+            try {
+                // 将SecurityAuditEvent转换为AuditEvent并记录
+                AuditEvent auditEvent = convertFromSecurityAuditEvent(event);
+                recordAuditEvent(auditEvent).subscribe();
+                
+                log.debug("基础安全审计事件已记录: eventId={}, eventType={}", 
+                         event.getEventId(), event.getEventType());
+                
+            } catch (Exception e) {
+                log.error("记录基础安全审计事件失败", e);
+            }
+        });
+    }
+    
+    @Override
+    public Mono<Void> recordAuthenticationEvent(String userId, String clientIp, String userAgent, 
+                                              boolean success, String failureReason) {
+        if (success) {
+            return auditTokenValidated(userId, "auth-" + System.currentTimeMillis(), true, clientIp);
+        } else {
+            return auditSecurityEvent("AUTHENTICATION_FAILED", 
+                failureReason != null ? failureReason : "认证失败", userId, clientIp);
+        }
+    }
+    
+    @Override
+    public Mono<Void> recordSanitizationEvent(String userId, String contentType, String ruleId, int matchCount) {
+        return auditSecurityEvent("DATA_SANITIZATION", 
+            String.format("数据脱敏: contentType=%s, ruleId=%s, matchCount=%d", contentType, ruleId, matchCount), 
+            userId, null);
+    }
+    
+    @Override
+    public Flux<org.unreal.modelrouter.security.model.SecurityAuditEvent> queryEvents(LocalDateTime startTime, LocalDateTime endTime, 
+                                                                                     String eventType, String userId, int limit) {
+        AuditEventQuery query = new AuditEventQuery();
+        query.setStartTime(startTime);
+        query.setEndTime(endTime);
+        query.setUserId(userId);
+        query.setSize(limit);
+        
+        if (eventType != null) {
+            try {
+                AuditEventType type = AuditEventType.valueOf(eventType);
+                query.setEventTypes(List.of(type));
+            } catch (IllegalArgumentException e) {
+                log.warn("无效的事件类型: {}", eventType);
+            }
+        }
+        
+        return findAuditEvents(query)
+            .map(this::convertToSecurityAuditEvent);
+    }
+    
+    @Override
+    public Mono<Map<String, Object>> getSecurityStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+        return generateSecurityReport(startTime, endTime)
+            .map(report -> {
+                Map<String, Object> stats = new HashMap<>();
+                stats.put("totalJwtOperations", report.getTotalJwtOperations());
+                stats.put("totalApiKeyOperations", report.getTotalApiKeyOperations());
+                stats.put("failedAuthentications", report.getFailedAuthentications());
+                stats.put("suspiciousActivities", report.getSuspiciousActivities());
+                stats.put("operationsByType", report.getOperationsByType());
+                stats.put("operationsByUser", report.getOperationsByUser());
+                stats.put("topIpAddresses", report.getTopIpAddresses());
+                stats.put("alertCount", report.getAlerts().size());
+                return stats;
+            });
+    }
+    
+    @Override
+    public Mono<Long> cleanupExpiredLogs(int retentionDays) {
+        return Mono.fromCallable(() -> {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusDays(retentionDays);
+            long removedCount = 0;
+            
+            // 清理过期的审计事件
+            Iterator<AuditEvent> iterator = extendedAuditEvents.iterator();
+            while (iterator.hasNext()) {
+                AuditEvent event = iterator.next();
+                if (event.getTimestamp().isBefore(cutoffTime)) {
+                    iterator.remove();
+                    removedCount++;
+                }
+            }
+            
+            // 清理过期的安全告警
+            Iterator<SecurityAlert> alertIterator = securityAlerts.iterator();
+            while (alertIterator.hasNext()) {
+                SecurityAlert alert = alertIterator.next();
+                if (alert.getTimestamp().isBefore(cutoffTime)) {
+                    alertIterator.remove();
+                }
+            }
+            
+            log.info("清理过期审计日志完成，删除了 {} 条记录", removedCount);
+            return removedCount;
+        });
+    }
+    
+    @Override
+    public Mono<Boolean> shouldTriggerAlert(String eventType, int timeWindowMinutes, int threshold) {
+        return Mono.fromCallable(() -> {
+            LocalDateTime windowStart = LocalDateTime.now().minusMinutes(timeWindowMinutes);
+            
+            long eventCount = extendedAuditEvents.stream()
+                .filter(event -> event.getTimestamp().isAfter(windowStart))
+                .filter(event -> event.getType().name().equals(eventType))
+                .count();
+            
+            return eventCount >= threshold;
+        });
+    }
+    
+    /**
+     * 将SecurityAuditEvent转换为AuditEvent
+     */
+    private AuditEvent convertFromSecurityAuditEvent(org.unreal.modelrouter.security.model.SecurityAuditEvent securityEvent) {
+        AuditEvent auditEvent = new AuditEvent();
+        auditEvent.setId(securityEvent.getEventId());
+        auditEvent.setUserId(securityEvent.getUserId());
+        auditEvent.setAction(securityEvent.getAction());
+        auditEvent.setDetails(securityEvent.getFailureReason() != null ? securityEvent.getFailureReason() : "安全事件");
+        auditEvent.setIpAddress(securityEvent.getClientIp());
+        auditEvent.setUserAgent(securityEvent.getUserAgent());
+        auditEvent.setSuccess(securityEvent.isSuccess());
+        auditEvent.setTimestamp(securityEvent.getTimestamp());
+        auditEvent.setResourceId(securityEvent.getResource());
+        auditEvent.setMetadata(securityEvent.getAdditionalData());
+        
+        // 尝试映射事件类型
+        try {
+            auditEvent.setType(AuditEventType.valueOf(securityEvent.getEventType()));
+        } catch (IllegalArgumentException e) {
+            auditEvent.setType(AuditEventType.SECURITY_ALERT);
+        }
+        
+        return auditEvent;
     }
     
     @Override
@@ -533,8 +807,11 @@ public class ExtendedSecurityAuditServiceImpl extends SecurityAuditServiceImpl i
                type == AuditEventType.API_KEY_UPDATED;
     }
     
-    private SecurityAuditEvent convertToSecurityAuditEvent(AuditEvent auditEvent) {
-        return SecurityAuditEvent.builder()
+    /**
+     * 将AuditEvent转换为SecurityAuditEvent
+     */
+    private org.unreal.modelrouter.security.model.SecurityAuditEvent convertToSecurityAuditEvent(AuditEvent auditEvent) {
+        return org.unreal.modelrouter.security.model.SecurityAuditEvent.builder()
             .eventId(auditEvent.getId())
             .eventType(auditEvent.getType().name())
             .userId(auditEvent.getUserId())

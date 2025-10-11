@@ -43,6 +43,10 @@ public class JwtTokenRefreshService {
     @Autowired(required = false)
     private JwtTokenLifecycleService jwtTokenLifecycleService;
     
+    // 审计服务（用于记录JWT操作）
+    @Autowired(required = false)
+    private ExtendedSecurityAuditService auditService;
+    
     // 内存黑名单缓存（当Redis不可用时的备选方案）
     private final Map<String, Long> memoryBlacklist = new ConcurrentHashMap<>();
     
@@ -52,23 +56,65 @@ public class JwtTokenRefreshService {
      * @return 新的JWT令牌
      */
     public Mono<String> refreshToken(String currentToken) {
+        return refreshToken(currentToken, null, null);
+    }
+    
+    /**
+     * 刷新JWT令牌（带上下文信息用于审计）
+     * @param currentToken 当前的JWT令牌
+     * @param ipAddress IP地址
+     * @param userAgent 用户代理
+     * @return 新的JWT令牌
+     */
+    public Mono<String> refreshToken(String currentToken, String ipAddress, String userAgent) {
         if (currentToken == null || currentToken.trim().isEmpty()) {
             return Mono.error(new AuthenticationException("当前令牌不能为空", "TOKEN_REQUIRED"));
         }
         
         log.debug("开始刷新JWT令牌");
         
-        return jwtTokenValidator.refreshToken(currentToken)
-            .flatMap(newToken -> {
-                // 如果启用了持久化，保存新令牌并撤销旧令牌
-                if (jwtPersistenceService != null) {
-                    return saveTokenOnRefresh(currentToken, newToken)
-                        .thenReturn(newToken);
-                }
-                return Mono.just(newToken);
-            })
+        return jwtTokenValidator.extractUserId(currentToken)
+            .flatMap(userId -> 
+                jwtTokenValidator.refreshToken(currentToken)
+                    .flatMap(newToken -> {
+                        // 记录审计日志
+                        Mono<Void> auditMono = Mono.empty();
+                        if (auditService != null) {
+                            String oldTokenId = TokenHashUtils.hashToken(currentToken);
+                            String newTokenId = TokenHashUtils.hashToken(newToken);
+                            auditMono = auditService.auditTokenRefreshed(userId, oldTokenId, newTokenId, ipAddress)
+                                .onErrorResume(ex -> {
+                                    log.warn("记录令牌刷新审计失败: {}", ex.getMessage());
+                                    return Mono.empty();
+                                });
+                        }
+                        
+                        // 如果启用了持久化，保存新令牌并撤销旧令牌
+                        Mono<Void> persistMono = Mono.empty();
+                        if (jwtPersistenceService != null) {
+                            persistMono = saveTokenOnRefresh(currentToken, newToken);
+                        }
+                        
+                        return Mono.when(auditMono, persistMono).thenReturn(newToken);
+                    })
+            )
             .doOnSuccess(newToken -> log.debug("JWT令牌刷新成功"))
-            .doOnError(error -> log.warn("JWT令牌刷新失败: {}", error.getMessage()));
+            .doOnError(error -> {
+                log.warn("JWT令牌刷新失败: {}", error.getMessage());
+                // 记录失败的审计日志
+                if (auditService != null) {
+                    jwtTokenValidator.extractUserId(currentToken)
+                        .flatMap(userId -> {
+                            String tokenId = TokenHashUtils.hashToken(currentToken);
+                            return auditService.auditTokenValidated(userId, tokenId, false, ipAddress);
+                        })
+                        .onErrorResume(ex -> {
+                            log.warn("记录令牌验证失败审计失败: {}", ex.getMessage());
+                            return Mono.empty();
+                        })
+                        .subscribe();
+                }
+            });
     }
     
     /**
@@ -94,8 +140,12 @@ public class JwtTokenRefreshService {
         
         log.debug("开始撤销JWT令牌");
         
-        return jwtTokenValidator.blacklistToken(token)
-            .then(updateTokenStatusOnRevoke(token, reason, revokedBy))
+        return jwtTokenValidator.extractUserId(token)
+            .flatMap(userId -> 
+                jwtTokenValidator.blacklistToken(token)
+                    .then(updateTokenStatusOnRevoke(token, reason, revokedBy))
+                    .then(recordTokenRevokeAudit(userId, token, reason, revokedBy))
+            )
             .doOnSuccess(v -> {
                 log.debug("JWT令牌撤销成功");
                 // 同时加入内存黑名单作为备选
@@ -108,6 +158,22 @@ public class JwtTokenRefreshService {
             })
             .onErrorResume(ex -> {
                 // 即使Redis操作失败，也认为撤销成功（因为已加入内存黑名单）
+                return Mono.empty();
+            });
+    }
+    
+    /**
+     * 记录令牌撤销审计日志
+     */
+    private Mono<Void> recordTokenRevokeAudit(String userId, String token, String reason, String revokedBy) {
+        if (auditService == null) {
+            return Mono.empty();
+        }
+        
+        String tokenId = TokenHashUtils.hashToken(token);
+        return auditService.auditTokenRevoked(userId, tokenId, reason, revokedBy)
+            .onErrorResume(ex -> {
+                log.warn("记录令牌撤销审计失败: {}", ex.getMessage());
                 return Mono.empty();
             });
     }
@@ -267,49 +333,62 @@ public class JwtTokenRefreshService {
      * @return 保存操作结果
      */
     public Mono<Void> saveTokenMetadata(String token, String userId, String deviceInfo, String ipAddress, String userAgent) {
-        if (jwtPersistenceService == null) {
-            return Mono.empty(); // 未启用持久化时直接返回
+        // 记录审计日志
+        Mono<Void> auditMono = Mono.empty();
+        if (auditService != null) {
+            String tokenId = TokenHashUtils.hashToken(token);
+            auditMono = auditService.auditTokenIssued(userId, tokenId, ipAddress, userAgent)
+                .onErrorResume(ex -> {
+                    log.warn("记录令牌颁发审计失败: {}", ex.getMessage());
+                    return Mono.empty();
+                });
         }
         
-        return Mono.fromCallable(() -> {
-            try {
-                String tokenHash = TokenHashUtils.hashToken(token);
-                
-                JwtTokenInfo tokenInfo = new JwtTokenInfo();
-                tokenInfo.setId(UUID.randomUUID().toString());
-                tokenInfo.setUserId(userId);
-                tokenInfo.setTokenHash(tokenHash);
-                tokenInfo.setToken(null); // 不存储完整令牌，只存储哈希
-                tokenInfo.setTokenType("Bearer");
-                tokenInfo.setStatus(TokenStatus.ACTIVE);
-                tokenInfo.setIssuedAt(LocalDateTime.now());
-                
-                // 从令牌中提取过期时间
+        // 保存持久化数据
+        Mono<Void> persistMono = Mono.empty();
+        if (jwtPersistenceService != null) {
+            persistMono = Mono.fromCallable(() -> {
                 try {
-                    LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(
-                        securityProperties.getJwt().getExpirationMinutes());
-                    tokenInfo.setExpiresAt(expiresAt);
+                    String tokenHash = TokenHashUtils.hashToken(token);
+                    
+                    JwtTokenInfo tokenInfo = new JwtTokenInfo();
+                    tokenInfo.setId(UUID.randomUUID().toString());
+                    tokenInfo.setUserId(userId);
+                    tokenInfo.setTokenHash(tokenHash);
+                    tokenInfo.setToken(null); // 不存储完整令牌，只存储哈希
+                    tokenInfo.setTokenType("Bearer");
+                    tokenInfo.setStatus(TokenStatus.ACTIVE);
+                    tokenInfo.setIssuedAt(LocalDateTime.now());
+                    
+                    // 从令牌中提取过期时间
+                    try {
+                        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(
+                            securityProperties.getJwt().getExpirationMinutes());
+                        tokenInfo.setExpiresAt(expiresAt);
+                    } catch (Exception e) {
+                        log.warn("无法从令牌中提取过期时间，使用默认值", e);
+                        tokenInfo.setExpiresAt(LocalDateTime.now().plusMinutes(
+                            securityProperties.getJwt().getExpirationMinutes()));
+                    }
+                    
+                    tokenInfo.setDeviceInfo(deviceInfo);
+                    tokenInfo.setIpAddress(ipAddress);
+                    tokenInfo.setUserAgent(userAgent);
+                    tokenInfo.setCreatedAt(LocalDateTime.now());
+                    tokenInfo.setUpdatedAt(LocalDateTime.now());
+                    
+                    return tokenInfo;
                 } catch (Exception e) {
-                    log.warn("无法从令牌中提取过期时间，使用默认值", e);
-                    tokenInfo.setExpiresAt(LocalDateTime.now().plusMinutes(
-                        securityProperties.getJwt().getExpirationMinutes()));
+                    log.error("创建令牌元数据时发生错误", e);
+                    throw new RuntimeException("Failed to create token metadata", e);
                 }
-                
-                tokenInfo.setDeviceInfo(deviceInfo);
-                tokenInfo.setIpAddress(ipAddress);
-                tokenInfo.setUserAgent(userAgent);
-                tokenInfo.setCreatedAt(LocalDateTime.now());
-                tokenInfo.setUpdatedAt(LocalDateTime.now());
-                
-                return tokenInfo;
-            } catch (Exception e) {
-                log.error("创建令牌元数据时发生错误", e);
-                throw new RuntimeException("Failed to create token metadata", e);
-            }
-        })
-        .flatMap(jwtPersistenceService::saveToken)
-        .doOnSuccess(v -> log.debug("令牌元数据保存成功: userId={}", userId))
-        .doOnError(error -> log.warn("令牌元数据保存失败: {}", error.getMessage()));
+            })
+            .flatMap(jwtPersistenceService::saveToken)
+            .doOnSuccess(v -> log.debug("令牌元数据保存成功: userId={}", userId))
+            .doOnError(error -> log.warn("令牌元数据保存失败: {}", error.getMessage()));
+        }
+        
+        return Mono.when(auditMono, persistMono);
     }
     
     /**

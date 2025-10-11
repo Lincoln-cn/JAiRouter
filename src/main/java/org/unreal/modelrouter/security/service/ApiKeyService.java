@@ -39,6 +39,10 @@ public class ApiKeyService {
     // API Key ID索引：keyId -> keyValue
     private final Map<String, String> keyIdIndex = new ConcurrentHashMap<>();
 
+    // 审计服务（用于记录API Key操作）
+    @Autowired(required = false)
+    private ExtendedSecurityAuditService auditService;
+
     @Autowired
     public ApiKeyService(StoreManager storeManager,
                          ObjectMapper objectMapper,
@@ -50,31 +54,81 @@ public class ApiKeyService {
 
 
     public Mono<ApiKey> validateApiKey(String keyValue) {
+        return validateApiKey(keyValue, null, null);
+    }
+    
+    public Mono<ApiKey> validateApiKey(String keyValue, String endpoint, String ipAddress) {
         return Mono.defer(() -> {
             try {
                 if (keyValue == null || keyValue.trim().isEmpty()) {
-                    // 没有 keyValue，无法统计 usage
+                    // 记录缺少API Key的审计
+                    if (auditService != null) {
+                        auditService.auditSecurityEvent("API_KEY_MISSING", 
+                            "请求缺少API Key", null, ipAddress)
+                            .onErrorResume(ex -> {
+                                log.warn("记录API Key缺失审计失败: {}", ex.getMessage());
+                                return Mono.empty();
+                            })
+                            .subscribe();
+                    }
                     return Mono.error(AuthenticationException.missingApiKey());
                 }
 
                 ApiKey apiKey = apiKeyCache.get(keyValue);
                 if (apiKey == null) {
-                    // key 不存在，统计失败请求（可选：如果能反查到 keyId 就统计，否则略过）
+                    // 记录无效API Key的审计
+                    if (auditService != null) {
+                        auditService.auditSecurityEvent("API_KEY_INVALID", 
+                            "使用了无效的API Key", null, ipAddress)
+                            .onErrorResume(ex -> {
+                                log.warn("记录无效API Key审计失败: {}", ex.getMessage());
+                                return Mono.empty();
+                            })
+                            .subscribe();
+                    }
                     return Mono.error(AuthenticationException.invalidApiKey());
                 }
 
                 if (!apiKey.isEnabled()) {
                     updateUsageStatistics(apiKey.getKeyId(), false); // 统计失败
+                    // 记录禁用API Key使用审计
+                    if (auditService != null) {
+                        auditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, false)
+                            .onErrorResume(ex -> {
+                                log.warn("记录禁用API Key使用审计失败: {}", ex.getMessage());
+                                return Mono.empty();
+                            })
+                            .subscribe();
+                    }
                     return Mono.error(new AuthenticationException("API Key已被禁用", AuthenticationException.INVALID_API_KEY));
                 }
 
                 if (apiKey.getExpiresAt() != null && apiKey.getExpiresAt().isBefore(LocalDateTime.now())) {
                     updateUsageStatistics(apiKey.getKeyId(), false); // 统计失败
+                    // 记录过期API Key使用审计
+                    if (auditService != null) {
+                        auditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, false)
+                            .onErrorResume(ex -> {
+                                log.warn("记录过期API Key使用审计失败: {}", ex.getMessage());
+                                return Mono.empty();
+                            })
+                            .subscribe();
+                    }
                     return Mono.error(AuthenticationException.expiredApiKey());
                 }
 
                 // 验证成功，统计一次成功请求
                 updateUsageStatistics(apiKey.getKeyId(), true);
+                
+                // 记录成功使用API Key的审计
+                if (auditService != null) {
+                    auditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, true)
+                        .onErrorResume(ex -> {
+                            log.warn("记录API Key使用审计失败: {}", ex.getMessage());
+                            return Mono.empty();
+                        })
+                        .subscribe();
+                }
 
                 log.debug("API Key验证成功: {}", apiKey.getKeyId());
                 return Mono.just(apiKey.createSecureCopy()); // 返回安全副本，不包含keyValue
@@ -86,6 +140,10 @@ public class ApiKeyService {
     }
 
     public Mono<ApiKey> createApiKey(ApiKey apiKey) {
+        return createApiKey(apiKey, "system", null);
+    }
+    
+    public Mono<ApiKey> createApiKey(ApiKey apiKey, String createdBy, String ipAddress) {
         return Mono.fromCallable(() -> {
             if (apiKey.getKeyId() == null || apiKey.getKeyId().trim().isEmpty()) {
                 throw new IllegalArgumentException("API Key ID不能为空");
@@ -124,6 +182,16 @@ public class ApiKeyService {
 
             // 持久化到存储
             saveApiKeysToStore();
+            
+            // 记录API Key创建审计
+            if (auditService != null) {
+                auditService.auditApiKeyCreated(apiKey.getKeyId(), createdBy, ipAddress)
+                    .onErrorResume(ex -> {
+                        log.warn("记录API Key创建审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+            }
 
             log.info("创建API Key成功: {}", apiKey.getKeyId());
             return apiKey; // 返回完整的ApiKey，包含keyValue用于创建响应
@@ -158,6 +226,10 @@ public class ApiKeyService {
     }
 
     public Mono<Void> deleteApiKey(String keyId) {
+        return deleteApiKey(keyId, "system");
+    }
+    
+    public Mono<Void> deleteApiKey(String keyId, String revokedBy) {
         return Mono.fromRunnable(() -> {
             String keyValue = keyIdIndex.get(keyId);
             if (keyValue == null) {
@@ -170,6 +242,16 @@ public class ApiKeyService {
 
             // 持久化到存储
             saveApiKeysToStore();
+            
+            // 记录API Key撤销审计
+            if (auditService != null) {
+                auditService.auditApiKeyRevoked(keyId, "手动删除", revokedBy)
+                    .onErrorResume(ex -> {
+                        log.warn("记录API Key撤销审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+            }
 
             log.info("删除API Key成功: {}", keyId);
         });
