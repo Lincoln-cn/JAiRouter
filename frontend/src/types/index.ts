@@ -112,3 +112,147 @@ export interface UpdateApiKeyRequest {
   enabled?: boolean
   expiresAt?: string
 }
+
+// Tracing Management Types
+export interface TracingOverview {
+  totalTraces: number
+  errorTraces: number
+  avgDuration: number
+  samplingRate: number
+}
+
+export interface TracingStats {
+  traceVolumeTrend: TimeSeriesData[]
+  errorTrend: TimeSeriesData[]
+}
+
+export interface ServiceStats {
+  name: string
+  traces: number
+  errors: number
+  avgDuration: number
+  p95Duration: number
+  p99Duration: number
+  errorRate: number
+}
+
+export interface TimeSeriesData {
+  timestamp: string
+  value: number
+}
+
+// Performance Analysis Types
+export interface PerformanceStats {
+  latencyDistribution: ServiceLatency[]
+  latencyTrend: LatencyTrendData
+  slowTraces: SlowTrace[]
+}
+
+export interface LatencyAnalysis {
+  distribution: ServiceLatency[]
+  trend: LatencyTrendData
+  percentiles: PercentileData
+}
+
+export interface ErrorAnalysis {
+  errorRateDistribution: ServiceErrorRate[]
+  errorTrend: TimeSeriesData[]
+  commonErrors: CommonError[]
+}
+
+export interface ThroughputAnalysis {
+  requestDistribution: ServiceThroughput[]
+  qpsTrend: TimeSeriesData[]
+}
+
+export interface ServiceLatency {
+  service: string
+  avgLatency: number
+  p95Latency: number
+  p99Latency: number
+}
+
+export interface LatencyTrendData {
+  timestamps: string[]
+  avgLatency: number[]
+  p95Latency: number[]
+  p99Latency: number[]
+}
+
+export interface PercentileData {
+  p50: number
+  p95: number
+  p99: number
+  p999: number
+}
+
+export interface ServiceErrorRate {
+  service: string
+  errorRate: number
+  totalRequests: number
+  errorCount: number
+}
+
+export interface ServiceThroughput {
+  service: string
+  requestsPerSecond: number
+  totalRequests: number
+}
+
+export interface SlowTrace {
+  traceId: string
+  service: string
+  operation: string
+  duration: number
+  startTime: string
+}
+
+export interface CommonError {
+  errorType: string
+  service: string
+  operation: string
+  count: number
+  lastOccurrence: string
+}
+
+export interface TraceDetails {
+  traceId: string
+  spans: SpanInfo[]
+  totalDuration: number
+  services: string[]
+}
+
+export interface SpanInfo {
+  spanId: string
+  service: string
+  operation: string
+  duration: number
+  startTime: string
+  status: string
+}
+
+// Sampling Configuration Types
+export interface SamplingConfig {
+  globalRate: number
+  adaptiveSampling: boolean
+  alwaysSamplePaths: string[]
+  neverSamplePaths: string[]
+  serviceConfigs: ServiceSamplingConfig[]
+}
+
+export interface ServiceSamplingConfig {
+  service: string
+  rate: number
+}
+
+export interface SamplingStats {
+  totalSamples: number
+  droppedSamples: number
+  samplingEfficiency: number
+}
+
+// Common Types
+export interface TimeRange {
+  startTime?: string
+  endTime?: string
+}

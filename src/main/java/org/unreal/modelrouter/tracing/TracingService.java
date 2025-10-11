@@ -9,6 +9,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.tracing.async.AsyncTracingProcessor;
+import org.unreal.modelrouter.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.tracing.memory.TracingMemoryManager;
 import org.unreal.modelrouter.tracing.performance.TracingPerformanceMonitor;
 import org.unreal.modelrouter.tracing.query.TraceQueryService;
@@ -42,6 +43,7 @@ public class TracingService {
     private final TracingMemoryManager memoryManager;
     private final TracingPerformanceMonitor performanceMonitor;
     private final TraceQueryService traceQueryService;
+    private final TracingConfiguration tracingConfiguration;
     
     /**
      * 为HTTP请求创建根追踪上下文
@@ -55,12 +57,16 @@ public class TracingService {
             
             // 从请求头中提取追踪上下文
             Map<String, String> headers = extractHeaders(request);
-            TracingContext context = new DefaultTracingContext(tracer);
+            TracingContext context;
             
-            // 如果请求头中包含追踪信息，则提取上下文
+            // 如果请求头中包含追踪信息，则提取上下文（来自上游服务的追踪）
             if (hasTracingHeaders(headers)) {
-                context = context.extractContext(headers);
+                context = new DefaultTracingContext(tracer).extractContext(headers);
                 log.debug("从请求头提取追踪上下文，traceId: {}", context.getTraceId());
+            } else {
+                // 创建新的根追踪上下文（新的请求链路开始）
+                context = new DefaultTracingContext(tracer);
+                log.debug("创建新的根追踪上下文，traceId: {}", context.getTraceId());
             }
             
             // 创建HTTP服务器Span
@@ -193,7 +199,7 @@ public class TracingService {
             );
             
             // 记录追踪数据到查询服务
-            String serviceName = "jairouter-gateway";
+            String serviceName = tracingConfiguration.getServiceName();
             List<TraceQueryService.SpanRecord> spanRecords = new ArrayList<>();
             Instant startTimeInstant = Instant.ofEpochMilli(startTime);
             Instant endTimeInstant = Instant.ofEpochMilli(startTime + duration);
@@ -275,7 +281,7 @@ public class TracingService {
             ).subscribe();
             
             // 记录错误追踪数据到查询服务
-            String serviceName = "jairouter-gateway";
+            String serviceName = tracingConfiguration.getServiceName();
             List<TraceQueryService.SpanRecord> errorSpanRecords = new ArrayList<>();
             Map<String, Object> errorAttributes = new HashMap<>();
             errorAttributes.put("error.type", error.getClass().getSimpleName());
@@ -553,8 +559,50 @@ public class TracingService {
                 "pressure_level", memoryStats.getPressureLevel().name()
             ));
             
+            // 生成趋势数据（模拟数据，实际项目中应该从时序数据库获取）
+            stats.put("traceVolumeTrend", generateTraceVolumeTrend());
+            stats.put("errorTrend", generateErrorTrend());
+            
             return stats;
         });
+    }
+    
+    /**
+     * 生成追踪量趋势数据（模拟）
+     */
+    private List<Map<String, Object>> generateTraceVolumeTrend() {
+        List<Map<String, Object>> trend = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        
+        // 生成最近1小时的数据点（每5分钟一个点）
+        for (int i = 12; i >= 0; i--) {
+            long timestamp = now - (i * 5 * 60 * 1000); // 5分钟间隔
+            Map<String, Object> point = new HashMap<>();
+            point.put("timestamp", timestamp);
+            point.put("value", 50 + (int)(Math.random() * 100)); // 模拟50-150的追踪量
+            trend.add(point);
+        }
+        
+        return trend;
+    }
+    
+    /**
+     * 生成错误趋势数据（模拟）
+     */
+    private List<Map<String, Object>> generateErrorTrend() {
+        List<Map<String, Object>> trend = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        
+        // 生成最近1小时的数据点（每5分钟一个点）
+        for (int i = 12; i >= 0; i--) {
+            long timestamp = now - (i * 5 * 60 * 1000); // 5分钟间隔
+            Map<String, Object> point = new HashMap<>();
+            point.put("timestamp", timestamp);
+            point.put("value", (int)(Math.random() * 10)); // 模拟0-10的错误数
+            trend.add(point);
+        }
+        
+        return trend;
     }
     
     /**
