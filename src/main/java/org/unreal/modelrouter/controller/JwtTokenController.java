@@ -70,19 +70,19 @@ public class JwtTokenController {
 
         log.debug("收到用户登录请求: username={}", request.getUsername());
 
-        return accountManager.authenticateAndGenerateToken(request.getUsername(), request.getPassword(), securityProperties)
+        // 收集请求上下文信息
+        String clientIp = getClientIpAddress(exchange);
+        String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
+        
+        return accountManager.authenticateAndGenerateToken(request.getUsername(), request.getPassword(), securityProperties, clientIp, userAgent)
                 .flatMap(token -> {
                     LoginResponse response = new LoginResponse();
                     response.setToken(token);
                     response.setTokenType("Bearer");
                     response.setExpiresIn(securityProperties.getJwt().getExpirationMinutes() * 60L);
 
-                    // 如果持久化服务可用，保存令牌元数据
+                    // 如果持久化服务可用，保存令牌元数据（包含审计）
                     if (jwtPersistenceService != null) {
-                        // 收集请求上下文信息
-                        String clientIp = getClientIpAddress(exchange);
-                        String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
-                        
                         return tokenRefreshService.saveTokenMetadata(token, request.getUsername(), userAgent, clientIp, userAgent)
                                 .then(Mono.just(RouterResponse.success(response, "登录成功")))
                                 .onErrorResume(ex -> {
@@ -118,7 +118,11 @@ public class JwtTokenController {
 
         log.debug("收到JWT令牌刷新请求: user={}", authentication != null ? authentication.getName() : "anonymous");
 
-        return tokenRefreshService.refreshToken(request.getToken())
+        // 收集请求上下文信息
+        String clientIp = getClientIpAddress(exchange);
+        String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
+        
+        return tokenRefreshService.refreshToken(request.getToken(), clientIp, userAgent)
                 .flatMap(newToken -> {
                     JwtTokenInfo response = new JwtTokenInfo();
                     response.setToken(newToken);
@@ -128,9 +132,6 @@ public class JwtTokenController {
 
                     // 如果持久化服务可用，保存新令牌元数据（包含设备信息和IP地址）
                     if (jwtPersistenceService != null && authentication != null) {
-                        String clientIp = getClientIpAddress(exchange);
-                        String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
-                        
                         return tokenRefreshService.saveTokenOnRefreshWithContext(request.getToken(), newToken, userAgent, clientIp, userAgent)
                                 .then(Mono.just(RouterResponse.success(response, "令牌刷新成功")))
                                 .onErrorResume(ex -> {

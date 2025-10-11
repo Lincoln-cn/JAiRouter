@@ -181,7 +181,38 @@ jairouter:
       retention-days: 7  # 开发环境较短的保留期
       alert-enabled: false  # 开发环境关闭告警
       
-
+      # 扩展审计配置
+      extended:
+        enabled: true  # 启用扩展审计功能
+        
+        # 持久化配置
+        persistence:
+          enabled: true
+          storage-type: "file"  # 使用文件存储
+          
+          # 文件存储配置
+          file:
+            enabled: true
+            base-path: "logs/audit"
+            separate-files: true  # 为不同类型的事件使用单独文件
+            
+            # 文件轮转配置
+            rotation:
+              max-file-size: "10MB"  # 开发环境较小的文件大小
+              max-files: 30
+              compress-archived: true
+              
+        # 结构化日志配置
+        structured-logging:
+          enabled: true
+          format: "json"  # JSON格式
+          include-metadata: true
+          
+        # 内存缓存配置（用于查询）
+        memory-cache:
+          enabled: true
+          max-events: 10000  # 最多缓存10000个事件
+          cleanup-interval: "PT1H"  # 每小时清理一次过期事件
       
       storage:
         file-path: "logs/dev-security-audit.log"
