@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>审计日志API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 10px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>审计日志API测试页面</h1>
+    <p>此页面用于测试审计日志管理功能的后端API</p>
+
+    <div class="section">
+        <h2>1. 生成测试数据</h2>
+        <button onclick="generateTestData()">生成测试审计数据</button>
+        <div id="generateResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. 查询审计事件</h2>
+        <button onclick="queryAllEvents()">查询所有事件</button>
+        <button onclick="queryJwtEvents()">查询JWT事件</button>
+        <button onclick="queryApiKeyEvents()">查询API Key事件</button>
+        <button onclick="querySecurityEvents()">查询安全事件</button>
+        <div id="queryResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. 生成报告</h2>
+        <button onclick="generateReport()">生成安全报告</button>
+        <button onclick="getStatistics()">获取统计信息</button>
+        <div id="reportResult" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(API_BASE + url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                return { success: response.ok, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+        
+        function displayResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            if (result.success) {
+                element.className = 'result success';
+                element.textContent = JSON.stringify(result.data, null, 2);
+            } else {
+                element.className = 'result error';
+                element.textContent = `错误: ${result.error || result.data?.message || '未知错误'}`;
+            }
+        }
+        
+        async function generateTestData() {
+            const result = await makeRequest('/security/audit/extended/test-data/generate', {
+                method: 'POST'
+            });
+            displayResult('generateResult', result);
+        }
+        
+        async function queryAllEvents() {
+            const result = await makeRequest('/security/audit/extended/query', {
+                method: 'POST',
+                body: JSON.stringify({
+                    page: 0,
+                    size: 20
+                })
+            });
+            displayResult('queryResult', result);
+        }
+        
+        async function queryJwtEvents() {
+            const result = await makeRequest('/security/audit/extended/jwt-tokens?page=0&size=10');
+            displayResult('queryResult', result);
+        }
+        
+        async function queryApiKeyEvents() {
+            const result = await makeRequest('/security/audit/extended/api-keys?page=0&size=10');
+            displayResult('queryResult', result);
+        }
+        
+        async function querySecurityEvents() {
+            const result = await makeRequest('/security/audit/extended/security-events?page=0&size=10');
+            displayResult('queryResult', result);
+        }
+        
+        async function generateReport() {
+            const result = await makeRequest('/security/audit/extended/reports/security');
+            displayResult('reportResult', result);
+        }
+        
+        async function getStatistics() {
+            const result = await makeRequest('/security/audit/extended/statistics/extended');
+            displayResult('reportResult', result);
+        }
+    </script>
+</body>
+</html>
