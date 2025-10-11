@@ -465,6 +465,38 @@ public class ExtendedSecurityAuditController {
                 .doOnSuccess(response -> log.info("批量记录审计事件完成: count={}", auditEvents.size()));
     }
     /**
+     * 生成测试审计数据（仅用于开发和测试）
+     */
+    @PostMapping("/test-data/generate")
+    @Operation(summary = "生成测试审计数据", description = "生成一些测试用的审计事件数据，仅用于开发和测试环境")
+    public Mono<RouterResponse<Map<String, Object>>> generateTestAuditData() {
+        
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 生成一些测试审计事件
+        return extendedAuditService.auditTokenIssued("test-user-1", "token-123", "192.168.1.100", "Mozilla/5.0")
+                .then(extendedAuditService.auditTokenValidated("test-user-1", "token-123", true, "192.168.1.100"))
+                .then(extendedAuditService.auditTokenRefreshed("test-user-1", "token-123", "token-456", "192.168.1.100"))
+                .then(extendedAuditService.auditApiKeyCreated("api-key-789", "admin-user", "192.168.1.101"))
+                .then(extendedAuditService.auditApiKeyUsed("api-key-789", "/api/chat/completions", "192.168.1.102", true))
+                .then(extendedAuditService.auditApiKeyUsed("api-key-789", "/api/embeddings", "192.168.1.103", false))
+                .then(extendedAuditService.auditSecurityEvent("BRUTE_FORCE_ATTEMPT", "Multiple failed login attempts detected", "suspicious-user", "192.168.1.200"))
+                .then(extendedAuditService.auditSuspiciousActivity("Unusual access pattern", "test-user-2", "192.168.1.201", "Access from multiple countries within 1 hour"))
+                .then(extendedAuditService.auditTokenRevoked("test-user-2", "token-789", "Security breach", "admin-user"))
+                .then(extendedAuditService.auditApiKeyRevoked("api-key-old", "Compromised", "admin-user"))
+                .then(Mono.fromCallable(() -> {
+                    Map<String, Object> result = Map.of(
+                        "message", "测试审计数据生成成功",
+                        "eventsGenerated", 10,
+                        "generatedAt", now,
+                        "note", "这些是测试数据，仅用于验证审计日志功能"
+                    );
+                    return RouterResponse.success(result);
+                }))
+                .doOnSuccess(response -> log.info("生成测试审计数据完成，共生成 10 条测试事件"));
+    }
+    
+    /**
      * 获取审计统计信息
      */
     @GetMapping("/statistics/extended")

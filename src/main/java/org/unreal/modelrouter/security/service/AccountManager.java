@@ -4,6 +4,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -32,6 +33,10 @@ public class AccountManager implements UserDetailsService {
     
     private final JwtUserProperties jwtUserProperties;
     private final PasswordEncoder passwordEncoder;
+    
+    // 审计服务（用于记录认证操作）
+    @Autowired(required = false)
+    private ExtendedSecurityAuditService auditService;
     
     /**
      * 验证用户凭据
@@ -74,10 +79,29 @@ public class AccountManager implements UserDetailsService {
      * 验证用户名和密码并生成JWT令牌
      */
     public Mono<String> authenticateAndGenerateToken(String username, String password, SecurityProperties securityProperties) {
+        return authenticateAndGenerateToken(username, password, securityProperties, null, null);
+    }
+    
+    /**
+     * 验证用户名和密码并生成JWT令牌（带上下文信息用于审计）
+     */
+    public Mono<String> authenticateAndGenerateToken(String username, String password, SecurityProperties securityProperties, String ipAddress, String userAgent) {
         // 验证配置中的用户凭据
         return Mono.just(validateCredentials(username, password))
                 .filter(valid -> valid)
-                .switchIfEmpty(Mono.error(new RuntimeException("用户名或密码错误")))
+                .switchIfEmpty(Mono.defer(() -> {
+                    // 记录认证失败审计
+                    if (auditService != null) {
+                        auditService.auditSecurityEvent("AUTHENTICATION_FAILED", 
+                            "用户名或密码错误: " + username, username, ipAddress)
+                            .onErrorResume(ex -> {
+                                log.warn("记录认证失败审计失败: {}", ex.getMessage());
+                                return Mono.empty();
+                            })
+                            .subscribe();
+                    }
+                    return Mono.error(new RuntimeException("用户名或密码错误"));
+                }))
                 .map(valid -> generateJwtToken(username, securityProperties));
     }
     
