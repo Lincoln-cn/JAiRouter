@@ -173,16 +173,28 @@ const router = createRouter({
           meta: { title: '追踪概览', icon: 'connection' }
         },
         {
-          path: 'sampling',
-          name: 'sampling-config',
-          component: () => import('../views/tracing/SamplingConfig.vue'),
-          meta: { title: '采样配置', icon: 'scale-to-original' }
+          path: 'search',
+          name: 'tracing-search',
+          component: () => import('../views/tracing/Search.vue'),
+          meta: { title: '追踪搜索', icon: 'search' }
         },
         {
           path: 'performance',
           name: 'tracing-performance',
           component: () => import('../views/tracing/Performance.vue'),
           meta: { title: '性能分析', icon: 'odometer' }
+        },
+        {
+          path: 'sampling',
+          name: 'tracing-sampling',
+          component: () => import('../views/tracing/SamplingConfig.vue'),
+          meta: { title: '采样配置', icon: 'scale-to-original' }
+        },
+        {
+          path: 'management',
+          name: 'tracing-management',
+          component: () => import('../views/tracing/Management.vue'),
+          meta: { title: '追踪管理', icon: 'setting' }
         }
       ]
     }

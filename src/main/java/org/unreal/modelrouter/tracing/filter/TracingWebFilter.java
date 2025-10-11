@@ -14,6 +14,7 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.tracing.TracingConstants;
 import org.unreal.modelrouter.tracing.TracingContext;
+import org.unreal.modelrouter.tracing.TracingContextHolder;
 import org.unreal.modelrouter.tracing.TracingService;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
 import org.unreal.modelrouter.tracing.performance.TracingPerformanceMonitor;
@@ -66,6 +67,9 @@ public class TracingWebFilter implements WebFilter, Ordered {
             .flatMap(context -> {
                 // 记录请求开始
                 structuredLogger.logRequest(exchange.getRequest(), context);
+                
+                // 设置追踪上下文到ThreadLocal（用于同步代码访问）
+                TracingContextHolder.setCurrentContext(context);
                 
                 // 设置追踪上下文到exchange属性中
                 exchange.getAttributes().put(TracingConstants.ContextKeys.TRACING_CONTEXT, context);
@@ -130,6 +134,9 @@ public class TracingWebFilter implements WebFilter, Ordered {
             // 记录性能指标
             recordPerformanceMetrics(exchange, context, startTime, duration, true);
             
+            // 完成HTTP追踪并记录到查询服务
+            tracingService.finishHttpSpan(exchange, context, duration);
+            
             // 检查是否为慢请求并触发优化
             if (duration > 5000) { // 超过5秒的请求
                 String operationName = buildOperationName(exchange.getRequest());
@@ -160,6 +167,9 @@ public class TracingWebFilter implements WebFilter, Ordered {
             
             // 记录错误性能指标
             recordErrorPerformanceMetrics(exchange, context, startTime, duration, error);
+            
+            // 完成HTTP追踪并记录到查询服务（错误情况）
+            tracingService.finishHttpSpan(exchange, context, duration);
             
             log.debug("HTTP请求处理失败，耗时: {}ms (traceId: {}, spanId: {})", 
                     duration, context.getTraceId(), context.getSpanId(), error);

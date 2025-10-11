@@ -81,16 +81,6 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
             }
             return authHeader;
         }
-
-        // 如果自定义头中没有找到，尝试从标准的Authorization头中提取
-        List<String> authHeaders = exchange.getRequest().getHeaders().get("Authorization");
-        if (authHeaders != null && !authHeaders.isEmpty()) {
-            String authHeader = authHeaders.get(0);
-            if (authHeader.startsWith("Bearer ")) {
-                return authHeader.substring(7);
-            }
-        }
-
         return null;
     }
 }
