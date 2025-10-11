@@ -34,7 +34,7 @@ public class TraceQueryService {
 
     private final TracingMemoryManager memoryManager;
     
-    // 模拟追踪数据存储（实际项目中应该集成真实的追踪存储）
+    // 追踪数据存储（基于内存的实现）
     private final Map<String, TraceRecord> traceStore = new ConcurrentHashMap<>();
     private final Queue<TraceRecord> recentTraces = new ConcurrentLinkedQueue<>();
     private final AtomicLong traceCounter = new AtomicLong(0);
@@ -97,6 +97,38 @@ public class TraceQueryService {
             .map(this::createTraceSummary)
             .sort((a, b) -> b.getStartTime().compareTo(a.getStartTime())) // 按时间倒序
             .take(criteria.getLimit() > 0 ? criteria.getLimit() : 100); // 默认限制100条
+    }
+
+    /**
+     * 分页搜索追踪数据
+     */
+    public Mono<Map<String, Object>> searchTracesWithPagination(TraceSearchCriteria criteria) {
+        return Mono.fromCallable(() -> {
+            List<TraceRecord> allTraces = traceStore.values().stream()
+                .filter(trace -> matchesCriteria(trace, criteria))
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt())) // 按时间倒序
+                .collect(Collectors.toList());
+            
+            int total = allTraces.size();
+            int page = Math.max(1, criteria.getPage());
+            int size = Math.max(1, Math.min(100, criteria.getSize())); // 限制最大100条
+            int offset = (page - 1) * size;
+            
+            List<TraceSummary> pageTraces = allTraces.stream()
+                .skip(offset)
+                .limit(size)
+                .map(this::createTraceSummary)
+                .collect(Collectors.toList());
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("traces", pageTraces);
+            result.put("total", total);
+            result.put("page", page);
+            result.put("size", size);
+            result.put("totalPages", (int) Math.ceil((double) total / size));
+            
+            return result;
+        });
     }
 
     /**
@@ -229,13 +261,51 @@ public class TraceQueryService {
     public Mono<Void> recordTrace(String traceId, String serviceName, 
                                  List<SpanRecord> spans, double duration) {
         return Mono.fromRunnable(() -> {
-            TraceRecord trace = new TraceRecord(
-                traceId, serviceName, spans, duration, Instant.now()
-            );
+            // 检查是否已存在该 traceId 的记录
+            TraceRecord existingTrace = traceStore.get(traceId);
+            
+            TraceRecord trace;
+            if (existingTrace != null) {
+                // 合并 Span 列表
+                List<SpanRecord> mergedSpans = new ArrayList<>(existingTrace.getSpans());
+                
+                // 避免重复添加相同的 Span（基于 spanId）
+                Set<String> existingSpanIds = mergedSpans.stream()
+                    .map(SpanRecord::getSpanId)
+                    .collect(Collectors.toSet());
+                
+                for (SpanRecord newSpan : spans) {
+                    if (!existingSpanIds.contains(newSpan.getSpanId())) {
+                        mergedSpans.add(newSpan);
+                    }
+                }
+                
+                // 计算总持续时间（取最大值）
+                double totalDuration = Math.max(existingTrace.getDuration(), duration);
+                
+                // 创建合并后的追踪记录
+                trace = new TraceRecord(
+                    traceId, serviceName, mergedSpans, totalDuration, existingTrace.getCreatedAt()
+                );
+                
+                log.debug("合并追踪数据: traceId={}, 原有spans={}, 新增spans={}, 总spans={}", 
+                         traceId, existingTrace.getSpans().size(), spans.size(), mergedSpans.size());
+            } else {
+                // 创建新的追踪记录
+                trace = new TraceRecord(
+                    traceId, serviceName, spans, duration, Instant.now()
+                );
+                
+                log.debug("创建新追踪数据: traceId={}, spans={}", traceId, spans.size());
+            }
             
             // 存储到内存
             traceStore.put(traceId, trace);
-            recentTraces.offer(trace);
+            
+            // 只有新记录才添加到 recentTraces
+            if (existingTrace == null) {
+                recentTraces.offer(trace);
+            }
             
             // 限制存储数量
             if (traceStore.size() > MAX_STORED_TRACES) {
@@ -253,8 +323,42 @@ public class TraceQueryService {
                 recentTraces.poll();
             }
             
-            traceCounter.incrementAndGet();
-            log.debug("记录追踪数据: traceId={}, spans={}", traceId, spans.size());
+            if (existingTrace == null) {
+                traceCounter.incrementAndGet();
+            }
+        });
+    }
+
+    /**
+     * 获取服务统计信息
+     */
+    public Mono<List<Map<String, Object>>> getServiceStatistics() {
+        return Mono.fromCallable(() -> {
+            // 按服务聚合统计信息
+            Map<String, ServiceStatistics> serviceStatsMap = new HashMap<>();
+            
+            for (TraceRecord trace : traceStore.values()) {
+                String serviceName = trace.getServiceName();
+                ServiceStatistics stats = serviceStatsMap.computeIfAbsent(serviceName, 
+                    k -> new ServiceStatistics(k));
+                
+                stats.addTrace(trace);
+            }
+            
+            // 转换为前端期望的格式
+            return serviceStatsMap.values().stream()
+                .map(stats -> {
+                    Map<String, Object> serviceData = new HashMap<>();
+                    serviceData.put("name", stats.getServiceName());
+                    serviceData.put("traces", stats.getTraceCount());
+                    serviceData.put("errors", stats.getErrorCount());
+                    serviceData.put("avgDuration", Math.round(stats.getAvgDuration()));
+                    serviceData.put("p95Duration", Math.round(stats.getP95Duration()));
+                    serviceData.put("p99Duration", Math.round(stats.getP99Duration()));
+                    serviceData.put("errorRate", Math.round(stats.getErrorRate() * 100.0 * 100.0) / 100.0);
+                    return serviceData;
+                })
+                .collect(Collectors.toList());
         });
     }
 
@@ -297,6 +401,12 @@ public class TraceQueryService {
         // 服务名过滤
         if (criteria.getServiceName() != null && 
             !criteria.getServiceName().equals(trace.getServiceName())) {
+            return false;
+        }
+        
+        // 追踪ID过滤
+        if (criteria.getTraceId() != null && 
+            !trace.getTraceId().contains(criteria.getTraceId())) {
             return false;
         }
         
@@ -488,10 +598,13 @@ public class TraceQueryService {
         private Instant endTime;
         private String serviceName;
         private String operationName;
+        private String traceId;
         private double minDuration;
         private double maxDuration;
         private Boolean hasError;
         private int limit = 100;
+        private int page = 1;
+        private int size = 20;
     }
 
     @Data
@@ -526,5 +639,63 @@ public class TraceQueryService {
         private final Instant startTime;
         private final Instant endTime;
         private final Instant exportedAt;
+    }
+
+    // 服务统计辅助类
+    private static class ServiceStatistics {
+        private final String serviceName;
+        private final List<Double> durations = new ArrayList<>();
+        private int traceCount = 0;
+        private int errorCount = 0;
+
+        public ServiceStatistics(String serviceName) {
+            this.serviceName = serviceName;
+        }
+
+        public void addTrace(TraceRecord trace) {
+            traceCount++;
+            durations.add(trace.getDuration());
+            
+            boolean hasError = trace.getSpans().stream().anyMatch(SpanRecord::isError);
+            if (hasError) {
+                errorCount++;
+            }
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public int getTraceCount() {
+            return traceCount;
+        }
+
+        public int getErrorCount() {
+            return errorCount;
+        }
+
+        public double getErrorRate() {
+            return traceCount > 0 ? (double) errorCount / traceCount : 0.0;
+        }
+
+        public double getAvgDuration() {
+            return durations.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        }
+
+        public double getP95Duration() {
+            if (durations.isEmpty()) return 0.0;
+            List<Double> sorted = new ArrayList<>(durations);
+            sorted.sort(Double::compareTo);
+            int index = (int) Math.ceil(0.95 * sorted.size()) - 1;
+            return sorted.get(Math.max(0, index));
+        }
+
+        public double getP99Duration() {
+            if (durations.isEmpty()) return 0.0;
+            List<Double> sorted = new ArrayList<>(durations);
+            sorted.sort(Double::compareTo);
+            int index = (int) Math.ceil(0.99 * sorted.size()) - 1;
+            return sorted.get(Math.max(0, index));
+        }
     }
 }

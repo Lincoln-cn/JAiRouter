@@ -34,7 +34,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/actuator/tracing")
+@RequestMapping("/api/tracing/actuator")
 @RequiredArgsConstructor
 @Tag(name = "追踪管理", description = "追踪系统综合管理API")
 public class TracingController {
