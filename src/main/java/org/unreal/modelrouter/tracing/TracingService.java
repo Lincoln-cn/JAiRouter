@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -579,7 +580,7 @@ public class TracingService {
             long timestamp = now - (i * 5 * 60 * 1000); // 5分钟间隔
             Map<String, Object> point = new HashMap<>();
             point.put("timestamp", timestamp);
-            point.put("value", 50 + (int)(Math.random() * 100)); // 模拟50-150的追踪量
+            point.put("value", 50 + (int)(new SecureRandom().nextDouble() * 100)); // 模拟50-150的追踪量
             trend.add(point);
         }
         
@@ -598,7 +599,7 @@ public class TracingService {
             long timestamp = now - (i * 5 * 60 * 1000); // 5分钟间隔
             Map<String, Object> point = new HashMap<>();
             point.put("timestamp", timestamp);
-            point.put("value", (int)(Math.random() * 10)); // 模拟0-10的错误数
+            point.put("value", (int)(new SecureRandom().nextDouble() * 10)); // 模拟0-10的错误数
             trend.add(point);
         }
         

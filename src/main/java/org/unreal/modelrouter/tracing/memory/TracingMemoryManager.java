@@ -430,6 +430,34 @@ public class TracingMemoryManager {
         private final Object data;
         private final long estimatedSize;
         private final Instant timestamp;
+
+        public CachedTraceData(String traceId, String spanId, Object data, long estimatedSize, Instant timestamp) {
+            this.traceId = traceId;
+            this.spanId = spanId;
+            this.data = data;
+            this.estimatedSize = estimatedSize;
+            this.timestamp = timestamp;
+        }
+
+        public String getTraceId() {
+            return traceId;
+        }
+
+        public String getSpanId() {
+            return spanId;
+        }
+
+        public Object getData() {
+            return data;
+        }
+
+        public long getEstimatedSize() {
+            return estimatedSize;
+        }
+
+        public Instant getTimestamp() {
+            return timestamp;
+        }
     }
 
     @Data

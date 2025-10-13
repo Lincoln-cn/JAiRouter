@@ -238,17 +238,17 @@ const loadSamplingConfig = async () => {
     const response = await getSamplingConfig()
     const data = response.data || response
     
-    if (data) {
+    if (data && data.data) {
       globalConfig.value = {
-        globalRate: (data.globalRate || 0.1) * 100,
-        adaptiveSampling: data.adaptiveSampling || true,
-        alwaysSamplePaths: data.alwaysSamplePaths || [],
-        neverSamplePaths: data.neverSamplePaths || []
+        globalRate: (data.data.globalRate || 0.1) * 100,
+        adaptiveSampling: data.data.adaptiveSampling || true,
+        alwaysSamplePaths: data.data.alwaysSamplePaths || [],
+        neverSamplePaths: data.data.neverSamplePaths || []
       }
       
       // 更新服务特定配置
-      if (data.serviceConfigs && Array.isArray(data.serviceConfigs)) {
-        serviceConfigs.value = data.serviceConfigs.map((sc: any) => ({
+      if (data.data.serviceConfigs && Array.isArray(data.data.serviceConfigs)) {
+        serviceConfigs.value = data.data.serviceConfigs.map((sc: any) => ({
           service: sc.service,
           rate: (sc.rate || 0.1) * 100
         }))
@@ -266,12 +266,12 @@ const loadSamplingStats = async () => {
     const response = await getTracingStats()
     const data = response.data || response
     
-    if (data) {
+    if (data && data.data) {
       // 从统计数据中提取采样相关信息
       stats.value = {
-        totalSamples: data.totalSamples || Math.floor(Math.random() * 100000) + 50000,
-        droppedSamples: data.droppedSamples || Math.floor(Math.random() * 10000) + 5000,
-        samplingEfficiency: data.samplingEfficiency || (85 + Math.random() * 10)
+        totalSamples: data.data.totalSamples || Math.floor(Math.random() * 100000) + 50000,
+        droppedSamples: data.data.droppedSamples || Math.floor(Math.random() * 10000) + 5000,
+        samplingEfficiency: data.data.samplingEfficiency || (85 + Math.random() * 10)
       }
     }
   } catch (error) {
