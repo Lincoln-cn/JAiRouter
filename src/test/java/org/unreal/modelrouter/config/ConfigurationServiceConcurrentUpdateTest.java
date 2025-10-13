@@ -11,6 +11,7 @@ import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.ConfigVersionManager;
 import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.tracing.config.SamplingConfigurationValidator;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -31,27 +32,22 @@ class ConfigurationServiceConcurrentUpdateTest {
     private StoreManager storeManager;
 
     @Mock
-    private ConfigVersionManager configVersionManager;
+    private ConfigurationHelper configurationHelper;
 
     @Mock
-    private ModelServiceRegistry modelServiceRegistry;
-
-    @Mock
-    private ServerChecker serverChecker;
+    private ConfigMergeService configMergeService;
 
     @Mock
     private ServiceStateManager serviceStateManager;
 
     @Mock
-    private ConfigurationHelper configurationHelper;
+    private SamplingConfigurationValidator samplingValidator;
 
     private ConfigurationService configurationService;
 
     @BeforeEach
     void setUp() {
-        configurationService = new ConfigurationService();
-        // 注入mock依赖
-        // 这里需要使用反射或者setter方法来注入mock对象
+        configurationService = new ConfigurationService(storeManager, configurationHelper, configMergeService, serviceStateManager, samplingValidator);
     }
 
     @Test

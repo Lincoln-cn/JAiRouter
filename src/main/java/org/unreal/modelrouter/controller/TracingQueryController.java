@@ -4,17 +4,19 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
 
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * 追踪查询控制器
@@ -31,12 +33,16 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/tracing/query")
-@RequiredArgsConstructor
 @Tag(name = "追踪查询", description = "追踪数据查询和分析API")
 public class TracingQueryController {
 
     private final TraceQueryService traceQueryService;
-
+    
+    // 手动添加构造函数
+    public TracingQueryController(TraceQueryService traceQueryService) {
+        this.traceQueryService = traceQueryService;
+    }
+    
     @GetMapping("/trace/{traceId}")
     @Operation(summary = "获取追踪链路详情", description = "根据traceId获取完整的追踪链路信息")
     @ApiResponse(responseCode = "200", description = "成功返回追踪链路")
@@ -47,7 +53,7 @@ public class TracingQueryController {
         return traceQueryService.getTraceChain(traceId)
             .map(traceChain -> {
                 if (traceChain == null) {
-                    return ResponseEntity.notFound().build();
+                    return ResponseEntity.notFound().<Map<String, Object>>build();
                 }
                 
                 Map<String, Object> response = new HashMap<>();
@@ -55,7 +61,7 @@ public class TracingQueryController {
                 response.put("data", traceChain);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @GetMapping("/search")
@@ -92,7 +98,7 @@ public class TracingQueryController {
                 response.put("data", result);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @GetMapping("/recent")
@@ -109,7 +115,7 @@ public class TracingQueryController {
                 response.put("data", traces);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @GetMapping("/services")
@@ -123,7 +129,7 @@ public class TracingQueryController {
                 response.put("data", services);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @GetMapping("/statistics")
@@ -145,7 +151,7 @@ public class TracingQueryController {
                 response.put("data", stats);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @PostMapping("/export")
@@ -161,7 +167,7 @@ public class TracingQueryController {
                 response.put("data", result);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @PostMapping("/cleanup")
@@ -182,7 +188,7 @@ public class TracingQueryController {
                 ));
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @GetMapping("/operations")
@@ -279,33 +285,32 @@ public class TracingQueryController {
         
         return traceQueryService.getServiceStatistics()
             .map(services -> {
-                Map<String, Object> latencyAnalysis = new HashMap<>();
-                
-                // 服务延迟分布
-                Map<String, Double> serviceLatencies = new HashMap<>();
-                Map<String, Double> serviceP95Latencies = new HashMap<>();
-                Map<String, Double> serviceP99Latencies = new HashMap<>();
-                
-                for (Map<String, Object> service : services) {
-                    String serviceName = (String) service.get("name");
-                    serviceLatencies.put(serviceName, ((Number) service.get("avgDuration")).doubleValue());
-                    serviceP95Latencies.put(serviceName, ((Number) service.get("p95Duration")).doubleValue());
-                    serviceP99Latencies.put(serviceName, ((Number) service.get("p99Duration")).doubleValue());
-                }
-                
-                latencyAnalysis.put("serviceLatencies", serviceLatencies);
-                latencyAnalysis.put("serviceP95Latencies", serviceP95Latencies);
-                latencyAnalysis.put("serviceP99Latencies", serviceP99Latencies);
-                
-                // 生成时间序列数据（模拟）
-                latencyAnalysis.put("timeSeriesData", generateLatencyTimeSeries());
-                
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
-                response.put("data", latencyAnalysis);
+                
+                // 构建延迟分析数据结构
+                Map<String, Object> latencyData = new HashMap<>();
+                
+                // 服务延迟分布数据
+                List<Map<String, Object>> distributionData = new ArrayList<>();
+                for (Map<String, Object> service : services) {
+                    Map<String, Object> serviceData = new HashMap<>();
+                    serviceData.put("service", service.get("name"));
+                    serviceData.put("avgLatency", service.get("avgDuration"));
+                    serviceData.put("p95Latency", service.get("p95Duration"));
+                    serviceData.put("p99Latency", service.get("p99Duration"));
+                    distributionData.add(serviceData);
+                }
+                latencyData.put("distribution", distributionData);
+                
+                // 生成延迟趋势数据（模拟）
+                List<Map<String, Object>> trendData = generateLatencyTimeSeries();
+                latencyData.put("trend", trendData);
+                
+                response.put("data", latencyData);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @GetMapping("/performance/errors")
@@ -317,30 +322,36 @@ public class TracingQueryController {
         
         return traceQueryService.getServiceStatistics()
             .map(services -> {
-                Map<String, Object> errorAnalysis = new HashMap<>();
-                
-                // 服务错误率分布
-                Map<String, Double> serviceErrorRates = new HashMap<>();
-                Map<String, Integer> serviceErrorCounts = new HashMap<>();
-                
-                for (Map<String, Object> service : services) {
-                    String serviceName = (String) service.get("name");
-                    serviceErrorRates.put(serviceName, ((Number) service.get("errorRate")).doubleValue());
-                    serviceErrorCounts.put(serviceName, ((Number) service.get("errors")).intValue());
-                }
-                
-                errorAnalysis.put("serviceErrorRates", serviceErrorRates);
-                errorAnalysis.put("serviceErrorCounts", serviceErrorCounts);
-                
-                // 生成错误时间序列数据（模拟）
-                errorAnalysis.put("timeSeriesData", generateErrorTimeSeries());
-                
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
-                response.put("data", errorAnalysis);
+                
+                // 构建错误分析数据结构
+                Map<String, Object> errorData = new HashMap<>();
+                
+                // 错误率分布数据 - 适配前端期望的字段名
+                List<Map<String, Object>> errorRateDistribution = new ArrayList<>();
+                for (Map<String, Object> service : services) {
+                    Map<String, Object> serviceData = new HashMap<>();
+                    serviceData.put("service", service.get("name"));
+                    serviceData.put("errorRate", service.get("errorRate"));
+                    serviceData.put("totalRequests", service.get("traces"));
+                    serviceData.put("errorCount", service.get("errors"));
+                    errorRateDistribution.add(serviceData);
+                }
+                errorData.put("errorRateDistribution", errorRateDistribution);
+                
+                // 生成错误趋势数据（模拟）
+                List<Map<String, Object>> errorTrend = generateErrorTimeSeries();
+                errorData.put("errorTrend", errorTrend);
+                
+                // 常见错误数据（模拟）
+                List<Map<String, Object>> commonErrors = new ArrayList<>();
+                errorData.put("commonErrors", commonErrors);
+                
+                response.put("data", errorData);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     @GetMapping("/performance/throughput")
@@ -352,32 +363,31 @@ public class TracingQueryController {
         
         return traceQueryService.getServiceStatistics()
             .map(services -> {
-                Map<String, Object> throughputAnalysis = new HashMap<>();
-                
-                // 服务请求量分布
-                Map<String, Integer> serviceRequestCounts = new HashMap<>();
-                Map<String, Double> serviceQps = new HashMap<>();
-                
-                for (Map<String, Object> service : services) {
-                    String serviceName = (String) service.get("name");
-                    int traces = ((Number) service.get("traces")).intValue();
-                    serviceRequestCounts.put(serviceName, traces);
-                    // 简化的QPS计算（假设1小时内的数据）
-                    serviceQps.put(serviceName, traces / 3600.0);
-                }
-                
-                throughputAnalysis.put("serviceRequestCounts", serviceRequestCounts);
-                throughputAnalysis.put("serviceQps", serviceQps);
-                
-                // 生成QPS时间序列数据（模拟）
-                throughputAnalysis.put("timeSeriesData", generateThroughputTimeSeries());
-                
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
-                response.put("data", throughputAnalysis);
+                
+                // 构建吞吐量分析数据结构
+                Map<String, Object> throughputData = new HashMap<>();
+                
+                // 请求分布数据 - 适配前端期望的字段名
+                List<Map<String, Object>> requestDistribution = new ArrayList<>();
+                for (Map<String, Object> service : services) {
+                    Map<String, Object> serviceData = new HashMap<>();
+                    serviceData.put("service", service.get("name"));
+                    serviceData.put("requestsPerSecond", ((Number) service.get("traces")).doubleValue() / 3600.0); // 简化计算
+                    serviceData.put("totalRequests", service.get("traces"));
+                    requestDistribution.add(serviceData);
+                }
+                throughputData.put("requestDistribution", requestDistribution);
+                
+                // 生成QPS趋势数据（模拟）
+                List<Map<String, Object>> qpsTrend = generateThroughputTimeSeries();
+                throughputData.put("qpsTrend", qpsTrend);
+                
+                response.put("data", throughputData);
                 return ResponseEntity.ok(response);
             })
-            .onErrorReturn(ResponseEntity.internalServerError().build());
+            .onErrorReturn(ResponseEntity.internalServerError().<Map<String, Object>>build());
     }
 
     // Helper methods for performance analysis
@@ -393,7 +403,7 @@ public class TracingQueryController {
                     .toInstant()
                     .toEpochMilli();
             } catch (Exception ex) {
-                log.warn("无法解析时间字符串: {}", timeStr);
+                System.out.println("无法解析时间字符串: " + timeStr);
                 return System.currentTimeMillis();
             }
         }
@@ -402,16 +412,17 @@ public class TracingQueryController {
     private List<Map<String, Object>> generateLatencyTimeSeries() {
         List<Map<String, Object>> timeSeries = new java.util.ArrayList<>();
         long now = System.currentTimeMillis();
+        Random random = new SecureRandom();
         
         for (int i = 23; i >= 0; i--) {
             Map<String, Object> dataPoint = new HashMap<>();
             long timestamp = now - (i * 3600000); // 每小时一个数据点
             dataPoint.put("timestamp", timestamp);
             dataPoint.put("hour", String.format("%02d:00", (24 - i) % 24));
-            dataPoint.put("p50", 80 + Math.random() * 40);
-            dataPoint.put("p95", 200 + Math.random() * 100);
-            dataPoint.put("p99", 350 + Math.random() * 150);
-            dataPoint.put("avg", 100 + Math.random() * 50);
+            dataPoint.put("p50", 80 + random.nextDouble() * 40);
+            dataPoint.put("p95", 200 + random.nextDouble() * 100);
+            dataPoint.put("p99", 350 + random.nextDouble() * 150);
+            dataPoint.put("avg", 100 + random.nextDouble() * 50);
             timeSeries.add(dataPoint);
         }
         
@@ -421,14 +432,15 @@ public class TracingQueryController {
     private List<Map<String, Object>> generateErrorTimeSeries() {
         List<Map<String, Object>> timeSeries = new java.util.ArrayList<>();
         long now = System.currentTimeMillis();
+        Random random = new SecureRandom();
         
         for (int i = 23; i >= 0; i--) {
             Map<String, Object> dataPoint = new HashMap<>();
             long timestamp = now - (i * 3600000);
             dataPoint.put("timestamp", timestamp);
             dataPoint.put("hour", String.format("%02d:00", (24 - i) % 24));
-            dataPoint.put("errorCount", (int) (Math.random() * 15));
-            dataPoint.put("errorRate", Math.random() * 5.0);
+            dataPoint.put("errorCount", random.nextInt(15));
+            dataPoint.put("errorRate", random.nextDouble() * 5.0);
             timeSeries.add(dataPoint);
         }
         
@@ -438,14 +450,15 @@ public class TracingQueryController {
     private List<Map<String, Object>> generateThroughputTimeSeries() {
         List<Map<String, Object>> timeSeries = new java.util.ArrayList<>();
         long now = System.currentTimeMillis();
+        Random random = new SecureRandom();
         
         for (int i = 23; i >= 0; i--) {
             Map<String, Object> dataPoint = new HashMap<>();
             long timestamp = now - (i * 3600000);
             dataPoint.put("timestamp", timestamp);
             dataPoint.put("hour", String.format("%02d:00", (24 - i) % 24));
-            dataPoint.put("qps", 10 + Math.random() * 20);
-            dataPoint.put("requestCount", (int) (100 + Math.random() * 200));
+            dataPoint.put("qps", 10 + random.nextDouble() * 20);
+            dataPoint.put("requestCount", 100 + random.nextInt(200));
             timeSeries.add(dataPoint);
         }
         

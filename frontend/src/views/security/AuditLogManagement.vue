@@ -269,7 +269,7 @@ const loadAuditLogs = async () => {
 
     // 根据事件类型过滤
     if (searchForm.value.eventType) {
-      query.eventTypes = [searchForm.value.eventType]
+      (query as any).eventType = searchForm.value.eventType
     }
 
     const result = await queryAuditEventsAdvanced(query)

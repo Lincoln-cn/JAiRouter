@@ -17,6 +17,7 @@ import org.unreal.modelrouter.controller.UniversalController;
 import org.unreal.modelrouter.dto.ChatDTO;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -42,13 +43,16 @@ class UniversalControllerMetricsTest {
     private MetricsCollector metricsCollector;
 
     @Mock
+    private TraceQueryService traceQueryService;
+
+    @Mock
     private BaseAdapter mockAdapter;
 
     private UniversalController universalController;
 
     @BeforeEach
     void setUp() {
-        universalController = new UniversalController(adapterRegistry, serviceStateManager, metricsCollector);
+        universalController = new UniversalController(adapterRegistry, serviceStateManager, metricsCollector, traceQueryService);
     }
 
     @Test
@@ -208,7 +212,7 @@ class UniversalControllerMetricsTest {
     void testChatCompletions_WithoutMetricsCollector() {
         // Arrange - Create controller without metrics collector
         UniversalController controllerWithoutMetrics = new UniversalController(
-                adapterRegistry, serviceStateManager, null);
+                adapterRegistry, serviceStateManager, null, null);
         
         ChatDTO.Request request = new ChatDTO.Request(
                 "gpt-3.5-turbo",
