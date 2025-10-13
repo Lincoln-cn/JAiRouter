@@ -1,6 +1,5 @@
 package org.unreal.modelrouter.tracing.query;
 
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -540,16 +539,42 @@ public class TraceQueryService {
 
     // 数据类定义
 
-    @Data
     public static class TraceRecord {
         private final String traceId;
         private final String serviceName;
         private final List<SpanRecord> spans;
         private final double duration;
         private final Instant createdAt;
+
+        public TraceRecord(String traceId, String serviceName, List<SpanRecord> spans, double duration, Instant createdAt) {
+            this.traceId = traceId;
+            this.serviceName = serviceName;
+            this.spans = spans;
+            this.duration = duration;
+            this.createdAt = createdAt;
+        }
+
+        public String getTraceId() {
+            return traceId;
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public List<SpanRecord> getSpans() {
+            return spans;
+        }
+
+        public double getDuration() {
+            return duration;
+        }
+
+        public Instant getCreatedAt() {
+            return createdAt;
+        }
     }
 
-    @Data
     public static class SpanRecord {
         private final String spanId;
         private final String traceId;
@@ -560,18 +585,93 @@ public class TraceQueryService {
         private final boolean error;
         private final String statusCode;
         private final Map<String, Object> attributes;
+
+        public SpanRecord(String spanId, String traceId, String operationName, Instant startTime, Instant endTime,
+                         double duration, boolean error, String statusCode, Map<String, Object> attributes) {
+            this.spanId = spanId;
+            this.traceId = traceId;
+            this.operationName = operationName;
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.duration = duration;
+            this.error = error;
+            this.statusCode = statusCode;
+            this.attributes = attributes;
+        }
+
+        public String getSpanId() {
+            return spanId;
+        }
+
+        public String getTraceId() {
+            return traceId;
+        }
+
+        public String getOperationName() {
+            return operationName;
+        }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
+
+        public Instant getEndTime() {
+            return endTime;
+        }
+
+        public double getDuration() {
+            return duration;
+        }
+
+        public boolean isError() {
+            return error;
+        }
+
+        public String getStatusCode() {
+            return statusCode;
+        }
+
+        public Map<String, Object> getAttributes() {
+            return attributes;
+        }
     }
 
-    @Data
     public static class TraceChain {
         private final String traceId;
         private final String serviceName;
         private final List<SpanRecord> spans;
         private final TraceChainStats stats;
         private final Instant startTime;
+
+        public TraceChain(String traceId, String serviceName, List<SpanRecord> spans, TraceChainStats stats, Instant startTime) {
+            this.traceId = traceId;
+            this.serviceName = serviceName;
+            this.spans = spans;
+            this.stats = stats;
+            this.startTime = startTime;
+        }
+
+        public String getTraceId() {
+            return traceId;
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public List<SpanRecord> getSpans() {
+            return spans;
+        }
+
+        public TraceChainStats getStats() {
+            return stats;
+        }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
     }
 
-    @Data
     public static class TraceChainStats {
         private final int totalSpans;
         private final double totalDuration;
@@ -579,9 +679,41 @@ public class TraceQueryService {
         private final double maxDuration;
         private final long errorCount;
         private final int depth;
+
+        public TraceChainStats(int totalSpans, double totalDuration, double avgDuration, double maxDuration, long errorCount, int depth) {
+            this.totalSpans = totalSpans;
+            this.totalDuration = totalDuration;
+            this.avgDuration = avgDuration;
+            this.maxDuration = maxDuration;
+            this.errorCount = errorCount;
+            this.depth = depth;
+        }
+
+        public int getTotalSpans() {
+            return totalSpans;
+        }
+
+        public double getTotalDuration() {
+            return totalDuration;
+        }
+
+        public double getAvgDuration() {
+            return avgDuration;
+        }
+
+        public double getMaxDuration() {
+            return maxDuration;
+        }
+
+        public long getErrorCount() {
+            return errorCount;
+        }
+
+        public int getDepth() {
+            return depth;
+        }
     }
 
-    @Data
     public static class TraceSummary {
         private final String traceId;
         private final String serviceName;
@@ -590,9 +722,46 @@ public class TraceQueryService {
         private final int spanCount;
         private final boolean hasError;
         private final Instant startTime;
+
+        public TraceSummary(String traceId, String serviceName, String operationName, double duration, int spanCount, boolean hasError, Instant startTime) {
+            this.traceId = traceId;
+            this.serviceName = serviceName;
+            this.operationName = operationName;
+            this.duration = duration;
+            this.spanCount = spanCount;
+            this.hasError = hasError;
+            this.startTime = startTime;
+        }
+
+        public String getTraceId() {
+            return traceId;
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public String getOperationName() {
+            return operationName;
+        }
+
+        public double getDuration() {
+            return duration;
+        }
+
+        public int getSpanCount() {
+            return spanCount;
+        }
+
+        public boolean isHasError() {
+            return hasError;
+        }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
     }
 
-    @Data
     public static class TraceSearchCriteria {
         private Instant startTime;
         private Instant endTime;
@@ -605,9 +774,97 @@ public class TraceQueryService {
         private int limit = 100;
         private int page = 1;
         private int size = 20;
+
+        // Getters and Setters
+        public Instant getStartTime() {
+            return startTime;
+        }
+
+        public void setStartTime(Instant startTime) {
+            this.startTime = startTime;
+        }
+
+        public Instant getEndTime() {
+            return endTime;
+        }
+
+        public void setEndTime(Instant endTime) {
+            this.endTime = endTime;
+        }
+
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        public void setServiceName(String serviceName) {
+            this.serviceName = serviceName;
+        }
+
+        public String getOperationName() {
+            return operationName;
+        }
+
+        public void setOperationName(String operationName) {
+            this.operationName = operationName;
+        }
+
+        public String getTraceId() {
+            return traceId;
+        }
+
+        public void setTraceId(String traceId) {
+            this.traceId = traceId;
+        }
+
+        public double getMinDuration() {
+            return minDuration;
+        }
+
+        public void setMinDuration(double minDuration) {
+            this.minDuration = minDuration;
+        }
+
+        public double getMaxDuration() {
+            return maxDuration;
+        }
+
+        public void setMaxDuration(double maxDuration) {
+            this.maxDuration = maxDuration;
+        }
+
+        public Boolean getHasError() {
+            return hasError;
+        }
+
+        public void setHasError(Boolean hasError) {
+            this.hasError = hasError;
+        }
+
+        public int getLimit() {
+            return limit;
+        }
+
+        public void setLimit(int limit) {
+            this.limit = limit;
+        }
+
+        public int getPage() {
+            return page;
+        }
+
+        public void setPage(int page) {
+            this.page = page;
+        }
+
+        public int getSize() {
+            return size;
+        }
+
+        public void setSize(int size) {
+            this.size = size;
+        }
     }
 
-    @Data
     public static class TraceStatistics {
         private final long totalTraces;
         private final long totalSpans;
@@ -621,17 +878,106 @@ public class TraceQueryService {
         private final Map<String, Long> statusStats;
         private final Instant startTime;
         private final Instant endTime;
+
+        // Constructor
+        public TraceStatistics(long totalTraces, long totalSpans, long successfulTraces, long errorTraces,
+                              double avgDuration, double maxDuration, double minDuration,
+                              Map<String, Long> serviceStats, Map<String, Long> operationStats,
+                              Map<String, Long> statusStats, Instant startTime, Instant endTime) {
+            this.totalTraces = totalTraces;
+            this.totalSpans = totalSpans;
+            this.successfulTraces = successfulTraces;
+            this.errorTraces = errorTraces;
+            this.avgDuration = avgDuration;
+            this.maxDuration = maxDuration;
+            this.minDuration = minDuration;
+            this.serviceStats = serviceStats;
+            this.operationStats = operationStats;
+            this.statusStats = statusStats;
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+
+        // Getters
+        public long getTotalTraces() {
+            return totalTraces;
+        }
+
+        public long getTotalSpans() {
+            return totalSpans;
+        }
+
+        public long getSuccessfulTraces() {
+            return successfulTraces;
+        }
+
+        public long getErrorTraces() {
+            return errorTraces;
+        }
+
+        public double getAvgDuration() {
+            return avgDuration;
+        }
+
+        public double getMaxDuration() {
+            return maxDuration;
+        }
+
+        public double getMinDuration() {
+            return minDuration;
+        }
+
+        public Map<String, Long> getServiceStats() {
+            return serviceStats;
+        }
+
+        public Map<String, Long> getOperationStats() {
+            return operationStats;
+        }
+
+        public Map<String, Long> getStatusStats() {
+            return statusStats;
+        }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
+
+        public Instant getEndTime() {
+            return endTime;
+        }
     }
 
-    @Data
     public static class TraceExportRequest {
         private final Instant startTime;
         private final Instant endTime;
         private final String format; // json, csv
         private final int maxRecords;
+
+        public TraceExportRequest(Instant startTime, Instant endTime, String format, int maxRecords) {
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.format = format;
+            this.maxRecords = maxRecords;
+        }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
+
+        public Instant getEndTime() {
+            return endTime;
+        }
+
+        public String getFormat() {
+            return format;
+        }
+
+        public int getMaxRecords() {
+            return maxRecords;
+        }
     }
 
-    @Data
     public static class TraceExportResult {
         private final int recordCount;
         private final String format;
@@ -639,6 +985,39 @@ public class TraceQueryService {
         private final Instant startTime;
         private final Instant endTime;
         private final Instant exportedAt;
+
+        public TraceExportResult(int recordCount, String format, String data, Instant startTime, Instant endTime, Instant exportedAt) {
+            this.recordCount = recordCount;
+            this.format = format;
+            this.data = data;
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.exportedAt = exportedAt;
+        }
+
+        public int getRecordCount() {
+            return recordCount;
+        }
+
+        public String getFormat() {
+            return format;
+        }
+
+        public String getData() {
+            return data;
+        }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
+
+        public Instant getEndTime() {
+            return endTime;
+        }
+
+        public Instant getExportedAt() {
+            return exportedAt;
+        }
     }
 
     // 服务统计辅助类

@@ -18,6 +18,7 @@ import org.unreal.modelrouter.util.InstanceIdUtils;
 import org.unreal.modelrouter.util.JacksonHelper;
 import org.unreal.modelrouter.util.SecurityUtils;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -197,7 +198,7 @@ public class ConfigurationService {
         // 使用时间戳的后6位 + 3位随机数生成版本号
         long timestamp = System.currentTimeMillis();
         int timestampPart = (int) (timestamp % 1000000); // 取后6位
-        int randomPart = (int) (Math.random() * 1000); // 3位随机数
+        int randomPart = (int) (new SecureRandom().nextDouble() * 1000); // 3位随机数
 
         int candidateVersion = timestampPart * 1000 + randomPart;
 
