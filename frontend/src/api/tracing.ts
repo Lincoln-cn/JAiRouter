@@ -157,13 +157,13 @@ export const getLatencyAnalysis = (timeRange?: TimeRange) => {
 }
 
 export const getErrorAnalysis = (timeRange?: TimeRange) => {
-    return request.get<RouterResponse<ErrorAnalysis>>('/tracing/performance/errors', {
+    return request.get<RouterResponse<ErrorAnalysis>>('/tracing/query/performance/errors', {
         params: timeRange
     })
 }
 
 export const getThroughputAnalysis = (timeRange?: TimeRange) => {
-    return request.get<RouterResponse<ThroughputAnalysis>>('/tracing/performance/throughput', {
+    return request.get<RouterResponse<ThroughputAnalysis>>('/tracing/query/performance/throughput', {
         params: timeRange
     })
 }
