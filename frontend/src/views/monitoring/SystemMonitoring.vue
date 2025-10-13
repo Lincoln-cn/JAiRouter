@@ -14,29 +14,54 @@
           <el-row :gutter="20">
             <el-col :span="8">
               <el-card shadow="never" class="health-card">
-                <el-statistic :value="healthStatus.redis.connected ? '正常' : '异常'" title="Redis连接状态">
+                <el-statistic :value="systemHealth.redis.connected ? '正常' : '异常'" title="Redis连接状态">
                   <template #prefix>
-                    <el-icon :style="{ color: healthStatus.redis.connected ? '#67c23a' : '#f56c6c' }">
-                      <SuccessFilled v-if="healthStatus.redis.connected"/>
+                    <el-icon :style="{ color: systemHealth.redis.connected ? '#67c23a' : '#f56c6c' }">
+                      <SuccessFilled v-if="systemHealth.redis.connected"/>
                       <CircleCloseFilled v-else/>
                     </el-icon>
                   </template>
                 </el-statistic>
                 <div class="health-details">
-                  <p>响应时间: {{ healthStatus.redis.responseTime }}ms</p>
-                  <p>连接池: {{ healthStatus.redis.poolSize }}/{{ healthStatus.redis.maxPoolSize }}</p>
+                  <p>响应时间: {{ systemHealth.redis.responseTime }}ms</p>
+                  <p>键数量: {{ systemHealth.redis.keyCount }}</p>
                 </div>
               </el-card>
             </el-col>
             
             <el-col :span="8">
               <el-card shadow="never" class="health-card">
-                <el-statistic :value="healthStatus.memory.status" title="内存存储状态">
+                <el-statistic :value="systemHealth.memory.status" title="内存存储状态">
                   <template #prefix>
-                    <el-icon :stylealth.overall === 'healthy' ? 'success' : 'danger'" size="large">
-              {{ systemHealth.overall === 'healthy' ? '健康' : '异常' }}
-            </el-tag>
-          </div>
+                    <el-icon :style="{ color: systemHealth.overall === 'healthy' ? '#67c23a' : '#f56c6c' }" size="large">
+                      {{ systemHealth.overall === 'healthy' ? '健康' : '异常' }}
+                    </el-icon>
+                  </template>
+                </el-statistic>
+                <div class="health-details">
+                  <p>响应时间: {{ systemHealth.redis.responseTime }}ms</p>
+                  <p>键数量: {{ systemHealth.redis.keyCount }}</p>
+                </div>
+              </el-card>
+            </el-col>
+            
+            <el-col :span="8">
+              <el-card shadow="never" class="health-card">
+                <el-statistic :value="systemHealth.memory.status" title="内存存储状态">
+                  <template #prefix>
+                    <el-icon :style="{ color: systemHealth.memory.status === 'healthy' ? '#67c23a' : '#e6a23c' }" size="large">
+                      <SuccessFilled v-if="systemHealth.memory.status === 'healthy'"/>
+                      <Warning v-else/>
+                    </el-icon>
+                  </template>
+                </el-statistic>
+                <div class="health-details">
+                  <p>使用率: {{ systemHealth.memory.usagePercentage }}%</p>
+                  <p>令牌数: {{ systemHealth.memory.tokenCount }}</p>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
         </el-card>
       </el-col>
     </el-row>
@@ -341,9 +366,9 @@ const systemConfig = reactive({
 })
 
 // 审计事件数据
-const recentAuditEvents = ref([])
+const recentAuditEvents = ref<AuditEvent[]>([])
 const auditFilter = ref('all')
-const selectedAuditEvent = ref(null)
+const selectedAuditEvent = ref<AuditEvent | null>(null)
 const auditDetailDialogVisible = ref(false)
 
 // 加载状态
@@ -598,214 +623,3 @@ onMounted(async () => {
 }
 </style>
 }
-
-// 获取审-CN')leString('zhe).toLocaTimw Date(date  return ne }
-  
-N')
- zh-CleString('ocaateTime).toL Date(dew return n
-   ber') { === 'numTime(typeof date
-  if  ''
-  rn retume)!dateTi
-  if (number) => { string | me:Tite (dame =Ti formatDate期时间
-const
-// 格式化日: 20
-})
-  size  page: 1,
-eactive({
-ination = rt auditPag审计分页
-cons
-
-//  | null
-})ng], stritringull as [sge: n dateRan '',
- rId:sen: '',
-  uio: '',
-  actentType evve({
- er = reactiiltauditFst 器
-con 审计过滤
-//false)
-e = ref(VisibletailsDialoguditD anull)
-constull>(itEvent | n = ref<AudenttedAuditEvst selec})
-
-contrue
-e,
-  last:  first: truer: 0,
- umb,
-  n20,
-  size: : 0ges totalPa
- lements: 0,  totalE,
-ontent: []>>({
-  cntuditEvelt<Aesu<PagedRs = reft auditEvent
-cons审计事件)
-
-// rue
-  }
-}d: t
-    enable {audit:,
-  
-  }Days: 30 retention
-    * ?',0 2 *le: '0 chedurue,
-    snabled: t
-    eup: {,
-  cleand: true
-  }enable
-    ist: {,
-  blackl
-  }y'age: 'MemorStor  fallback',
-   'RedisStorage:   primarye,
- bled: tru    enace: {
-wtPersisten j
- >({atus<ConfigSts = reftatufigSnst con/ 配置状态
-co
-
-/}
-  ]
-})'
-    CCESSatus: 'SU   st,
-   Time: 1350cution     exes: 15,
- EntriestedBlackliclean      kens: 52,
-  cleanedTo  g(),
-  trin1000).toISOS* 60 *  60  *24 - 3 * now()w Date(Date.mestamp: ne   ti    {
-   },
-CCESS'
-    tus: 'SU
-      stame: 950,executionTi   8,
-   stEntries: lackli  cleanedBs: 38,
-    cleanedToken     ng(),
- 0).toISOStri1000 *  * 624 * 60() - 2 * (Date.now new Date timestamp:    {
- 
-    S'
-    }, 'SUCCESstatus:00,
-      11ionTime:    execut2,
-    1tries:listEnckedBlaclean
-      5,nedTokens: 4   cleag(),
-   oISOStrin1000).t60 * 60 * ow() - 24 * e.nDat Date(tamp: newmes   ti
-    [
-    {ps:nuClea recent
- 50,anupTime: 12  averageCleOString(),
-().toISDate: new tCleanupTime80,
-  lasntries: 32istEeanedBlackltotalCl20,
-  kens: 154dToleaneotalC
-  tupStats>({eans = ref<Cltat cleanupS 清理统计
-const}
-})
-
-//'
-  moryrage: 'MefallbackStoedis',
-    age: 'RaryStor
-    prim true,  enabled:
-  stence: {siper0
-  },
-  nCount: 125  toke 65,
-  gePercent:usa
-    ,tatus: '正常'
-    s memory: { },
-  20
- e:xPoolSiz   ma 8,
-   poolSize:5,
-  e: seTim
-    respontrue,ted: onnec{
-    c
-  redis: s>({althStatuHetatus = ref<lthShea
-const 
-
-// 健康状态e)falsding = ref(nst auditLoa(false)
-coing = refnfigLoad
-const colse)g = ref(fadinatsLoanupStclease)
-const ref(fal = lthLoading hea据
-const// 响应式数olean
-}
-
-bo last: 
- st: booleanumber
-  firumber: n
-  nnumber
-  size: ages: numbertalPmber
-  to nuts:lElemen
-  tota[] content: T<T> {
- dResultce Page
-
-interfany
-}: atadata?ng
-  mestristamp: ean
-  timeess: boolng
-  succstrigent: rAse string
-  uipAddress:  s: string
-detailring
-  urceId: st resog
- trinrId: sring
-  usetion: sting
-  ac
-  type: str: string {
-  iditEventerface Aud数据结构
-int}
-
-// 审计事件n
-  }
-ooleaabled: b  endit: {
-   auber
-  }
- s: numayionD   retent: string
- hedule   sc: boolean
-   enabled{
-    cleanup: lean
-  }
-abled: boo
-    enblacklist: {
-  ring
-  }orage: st  fallbackSt string
-  Storage:
-    primaryleaned: boo enabl
-   sistence: {Per {
-  jwtatusace ConfigSt
-interf构态数据结
-// 配置状 }>
-}
-ing
- stratus:     st
-berTime: numxecution   eber
- ntries: numtEklisleanedBlac
-    cns: numberanedToke    cletring
-: s   timestampArray<{
- anups: centCleumber
-  reeanupTime: nerageClstring
-  avme: anupTitCle lasumber
- s: ntEntrieklisdBlactalCleane tos: number
- nedTokenlCleaotaats {
-  tleanupStace C数据结构
-interf}
-
-// 清理统计tring
-  }
-rage: sfallbackSto
-    e: stringrimaryStoragn
-    p: boolea enabled {
-   ersistence:er
-  }
-  pCount: numbr
-    tokenent: numbeePercg
-    usagus: strinaty: {
-    stmorme  r
-  }
-umbePoolSize: naxr
-    mlSize: numbeer
-    poo numbonseTime:sp
-    re boolean  connected:s: {
-  redi
-  s { HealthStaturface
-inte康状态数据结构/ 健vue'
-
-//icons-ust-pllemenm '@eg } froled, WarninseFil CircleClolled,ccessFiimport { Su
-s'lunt-pemefrom 'eleBox } e, ElMessagagMess El
-import {'vue'om  } frveref, reactinMounted,  oort {">
-impg="ts lanipt setup
-
-<scrtemplate> </div>
-</dialog>
-   </el->
-  template>
-      </pan  </s
-      ton>">关闭</el-butfalseisible = gVDetailsDialock="audit@clion el-butt          <footer">
-log-diaan class="sp
-        <#footer> <template 
-     ions>riptscde  </el-
-    tions-item>l-descrip/e
