@@ -126,39 +126,6 @@ const router = createRouter({
         }
       ]
     },
-    // 监控管理
-    {
-      path: '/monitoring',
-      name: 'monitoring',
-      component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true },
-      children: [
-        {
-          path: 'overview',
-          name: 'monitoring-overview',
-          component: () => import('../views/monitoring/Overview.vue'),
-          meta: { title: '监控概览', icon: 'data-analysis' }
-        },
-        {
-          path: 'circuit-breaker',
-          name: 'circuit-breaker',
-          component: () => import('../views/monitoring/CircuitBreaker.vue'),
-          meta: { title: '熔断器', icon: 'help' }
-        },
-        {
-          path: 'health',
-          name: 'health-check',
-          component: () => import('../views/monitoring/HealthCheck.vue'),
-          meta: { title: '健康检查', icon: 'monitor' }
-        },
-        {
-          path: 'system',
-          name: 'system-monitoring',
-          component: () => import('../views/monitoring/SystemMonitoring.vue'),
-          meta: { title: '系统监控', icon: 'data-board' }
-        }
-      ]
-    },
     // 追踪管理
     {
       path: '/tracing',
