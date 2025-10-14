@@ -196,15 +196,6 @@
                     </div>
                   </el-tab-pane>
                 </el-tabs>
-                <div class="sampling-actions">
-                  <el-button @click="handleResetSamplingConfig" size="small">重置采样配置</el-button>
-                  <el-button type="primary" @click="handleSaveSamplingConfig" :loading="saving" size="small">
-                    保存采样配置
-                  </el-button>
-                  <el-button type="info" @click="handleRefreshSampling" :loading="refreshingSampling" size="small">
-                    刷新采样策略
-                  </el-button>
-                </div>
               </el-tab-pane>
 
               <el-tab-pane label="性能配置" name="performance">

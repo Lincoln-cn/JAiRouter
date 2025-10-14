@@ -61,19 +61,6 @@
           <el-menu-item index="/system/accounts">账户管理</el-menu-item>
         </el-sub-menu>
 
-        <!-- 监控管理 -->
-        <el-sub-menu index="monitoring">
-          <template #title>
-            <el-icon>
-              <DataAnalysis />
-            </el-icon>
-            <span>监控管理</span>
-          </template>
-          <el-menu-item index="/monitoring/overview">监控概览</el-menu-item>
-          <el-menu-item index="/monitoring/circuit-breaker">熔断器</el-menu-item>
-          <el-menu-item index="/monitoring/health">健康检查</el-menu-item>
-        </el-sub-menu>
-
         <!-- 追踪管理 -->
         <el-sub-menu index="tracing">
           <template #title>
