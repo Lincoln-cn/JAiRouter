@@ -1498,8 +1498,9 @@ const updatePerformanceIndicators = (processing: any, memory: any, bottlenecks: 
   if (bottlenecks) {
     activeBottlenecks.value = bottlenecks.length || 0
 
+    // 只有当存在严重瓶颈（CRITICAL级别）时才显示警告
     const criticalBottlenecks = bottlenecks.filter(b =>
-      b.severity === 'CRITICAL' || b.severity === 'HIGH'
+      b.severity === 'CRITICAL'
     )
 
     if (criticalBottlenecks.length > 0) {
@@ -1507,15 +1508,13 @@ const updatePerformanceIndicators = (processing: any, memory: any, bottlenecks: 
     }
   }
 
-  // 内存压力告警
-  if (memory && memory.pressureLevel === 'HIGH') {
-    ElMessage.warning('内存使用率较高，建议进行垃圾回收')
-  } else if (memory && memory.pressureLevel === 'CRITICAL') {
+  // 内存压力告警 - 只在严重情况下提示
+  if (memory && memory.pressureLevel === 'CRITICAL') {
     ElMessage.error('内存使用率过高，请立即进行垃圾回收')
   }
 
-  // 处理队列告警
-  if (processing && processing.queueSize > 500) {
+  // 处理队列告警 - 提高阈值
+  if (processing && processing.queueSize > 1000) {
     ElMessage.warning('处理队列积压严重，建议刷新缓冲区')
   }
 }
@@ -1839,7 +1838,7 @@ onMounted(async () => {
   await loadPerformanceData()
   realTimeMonitoringInterval = setInterval(() => {
     loadRealTimeMetrics()
-  }, 30000)
+  }, 60000)
   loadRealTimeMetrics()
   refreshChartForTab(activeTab.value)
 })
