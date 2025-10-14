@@ -185,12 +185,6 @@ const router = createRouter({
           meta: { title: '性能分析', icon: 'odometer' }
         },
         {
-          path: 'sampling',
-          name: 'tracing-sampling',
-          component: () => import('../views/tracing/SamplingConfig.vue'),
-          meta: { title: '采样配置', icon: 'scale-to-original' }
-        },
-        {
           path: 'management',
           name: 'tracing-management',
           component: () => import('../views/tracing/Management.vue'),
