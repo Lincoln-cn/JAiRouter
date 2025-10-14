@@ -1998,6 +1998,29 @@ public class ConfigurationService {
 
         // 验证配置
         if (samplingConfig != null && !samplingConfig.isEmpty()) {
+            // 处理前端发送的serviceConfigs字段，转换为后端需要的serviceRatios字段
+            if (samplingConfig.containsKey("serviceConfigs")) {
+                Object serviceConfigsObj = samplingConfig.get("serviceConfigs");
+                if (serviceConfigsObj instanceof List) {
+                    List<Map<String, Object>> serviceConfigsList = (List<Map<String, Object>>) serviceConfigsObj;
+                    Map<String, Double> serviceRatios = new HashMap<>();
+                    for (Map<String, Object> serviceConfig : serviceConfigsList) {
+                        if (serviceConfig.containsKey("service") && serviceConfig.containsKey("rate")) {
+                            Object serviceObj = serviceConfig.get("service");
+                            Object rateObj = serviceConfig.get("rate");
+                            if (serviceObj instanceof String && rateObj instanceof Number) {
+                                String service = (String) serviceObj;
+                                Double rate = ((Number) rateObj).doubleValue() / 100.0; // 前端以百分比形式发送
+                                serviceRatios.put(service, rate);
+                            }
+                        }
+                    }
+                    // 移除serviceConfigs字段，添加serviceRatios字段
+                    samplingConfig.remove("serviceConfigs");
+                    samplingConfig.put("serviceRatios", serviceRatios);
+                }
+            }
+
             try {
                 // 将Map转换为TracingConfiguration.SamplingConfig对象进行验证
                 org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig config

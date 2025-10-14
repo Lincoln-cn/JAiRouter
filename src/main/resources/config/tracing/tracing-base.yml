@@ -36,7 +36,8 @@ jairouter:
       default-ratio: 1.0
       service-ratios: {}
       always-sample:
-        - "/api/important"
+        - "/api/v1"
+        - "/api/security"
       never-sample:
         - "/health"
         - "/actuator"
