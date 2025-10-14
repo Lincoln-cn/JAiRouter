@@ -1,218 +1,253 @@
 <template>
-    <div class="tracing-management">
-        <el-row :gutter="20">
-            <!-- 追踪状态控制 -->
-            <el-col :span="12">
-                <el-card>
-                    <template #header>
-                        <div class="card-header">
-                            <span>追踪状态控制</span>
-                            <el-button @click="handleRefreshStatus">刷新</el-button>
-                        </div>
-                    </template>
-
-                    <el-form :model="statusForm" label-width="120px">
-                        <el-form-item label="追踪状态">
-                            <el-switch v-model="statusForm.enabled" active-text="启用" inactive-text="禁用"
-                                @change="handleToggleTracing" />
-                        </el-form-item>
-
-                        <el-form-item label="服务名称">
-                            <el-input v-model="statusForm.serviceName" readonly />
-                        </el-form-item>
-
-                        <el-form-item label="服务版本">
-                            <el-input v-model="statusForm.serviceVersion" readonly />
-                        </el-form-item>
-
-                        <el-form-item label="服务命名空间">
-                            <el-input v-model="statusForm.serviceNamespace" readonly />
-                        </el-form-item>
-
-                        <el-form-item label="OpenTelemetry">
-                            <el-tag :type="statusForm.openTelemetryEnabled ? 'success' : 'danger'">
-                                {{ statusForm.openTelemetryEnabled ? '启用' : '禁用' }}
-                            </el-tag>
-                        </el-form-item>
-
-                        <el-form-item label="导出器类型">
-                            <el-tag>{{ statusForm.exporterType }}</el-tag>
-                        </el-form-item>
-
-                        <el-form-item label="全局采样率">
-                            <el-progress :percentage="statusForm.globalSamplingRatio * 100"
-                                :format="(percentage: number) => `${percentage}%`" />
-                        </el-form-item>
-                    </el-form>
-                </el-card>
-            </el-col>
-
-            <!-- 健康状态 -->
-            <el-col :span="12">
-                <el-card>
-                    <template #header>
-                        <div class="card-header">
-                            <span>健康状态</span>
-                            <el-button @click="handleRefreshHealth">刷新</el-button>
-                        </div>
-                    </template>
-
-                    <el-descriptions :column="1" border>
-                        <el-descriptions-item label="整体状态">
-                            <el-tag :type="healthStatus.status === 'UP' ? 'success' : 'danger'">
-                                {{ healthStatus.status }}
-                            </el-tag>
-                        </el-descriptions-item>
-                        <el-descriptions-item label="内存使用">
-                            <el-progress :percentage="healthStatus.memoryUsage"
-                                :status="healthStatus.memoryUsage > 80 ? 'exception' : 'success'" />
-                        </el-descriptions-item>
-                        <el-descriptions-item label="CPU使用">
-                            <el-progress :percentage="healthStatus.cpuUsage"
-                                :status="healthStatus.cpuUsage > 80 ? 'exception' : 'success'" />
-                        </el-descriptions-item>
-                        <el-descriptions-item label="活跃追踪数">
-                            {{ healthStatus.activeTraces }}
-                        </el-descriptions-item>
-                        <el-descriptions-item label="缓冲区使用">
-                            <el-progress :percentage="healthStatus.bufferUsage"
-                                :status="healthStatus.bufferUsage > 90 ? 'exception' : 'success'" />
-                        </el-descriptions-item>
-                        <el-descriptions-item label="最后更新">
-                            {{ healthStatus.lastUpdate }}
-                        </el-descriptions-item>
-                    </el-descriptions>
-                </el-card>
-            </el-col>
-        </el-row>
-
-        <!-- 配置管理 -->
-        <el-card class="config-card">
+  <div class="tracing-management">
+    <el-row :gutter="24">
+      <!-- 左侧：追踪状态 + 健康状态，采用纵向堆叠卡片 -->
+      <el-col :xl="8" :lg="10" :md="12" :sm="24" :xs="24">
+        <div class="left-section">
+          <el-card class="card-style" shadow="hover">
             <template #header>
-                <div class="card-header">
-                    <span>配置管理</span>
-                    <div class="header-actions">
-                        <el-button @click="handleRefreshConfig">刷新配置</el-button>
-                        <el-button type="primary" @click="handleSaveConfig" :loading="saving">保存配置</el-button>
-                    </div>
+              <div class="card-header">
+                <span>追踪状态控制</span>
+                <el-button @click="handleRefreshStatus" size="small">刷新</el-button>
+              </div>
+            </template>
+            <el-form :model="statusForm" label-width="120px" class="form-style">
+              <el-form-item label="追踪状态">
+                <el-switch v-model="statusForm.enabled" active-text="启用" inactive-text="禁用" @change="handleToggleTracing"/>
+              </el-form-item>
+              <el-form-item label="服务名称">
+                <el-input v-model="statusForm.serviceName" readonly/>
+              </el-form-item>
+              <el-form-item label="服务版本">
+                <el-input v-model="statusForm.serviceVersion" readonly/>
+              </el-form-item>
+              <el-form-item label="服务命名空间">
+                <el-input v-model="statusForm.serviceNamespace" readonly/>
+              </el-form-item>
+              <el-form-item label="OpenTelemetry">
+                <el-tag :type="statusForm.openTelemetryEnabled ? 'success' : 'danger'">
+                  {{ statusForm.openTelemetryEnabled ? '启用' : '禁用' }}
+                </el-tag>
+              </el-form-item>
+              <el-form-item label="导出器类型">
+                <el-tag>{{ statusForm.exporterType }}</el-tag>
+              </el-form-item>
+              <el-form-item label="全局采样率">
+                <el-progress :percentage="statusForm.globalSamplingRatio * 100"
+                  :format="(percentage: number) => `${percentage}%`"/>
+              </el-form-item>
+            </el-form>
+          </el-card>
+          <el-card class="card-style" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span>健康状态</span>
+                <el-button @click="handleRefreshHealth" size="small">刷新</el-button>
+              </div>
+            </template>
+            <el-descriptions :column="1" border class="health-desc">
+              <el-descriptions-item label="整体状态">
+                <el-tag :type="healthStatus.status === 'UP' ? 'success' : 'danger'">
+                  {{ healthStatus.status }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="内存使用">
+                <el-progress :percentage="healthStatus.memoryUsage"
+                  :status="healthStatus.memoryUsage > 80 ? 'exception' : 'success'"/>
+              </el-descriptions-item>
+              <el-descriptions-item label="CPU使用">
+                <el-progress :percentage="healthStatus.cpuUsage"
+                  :status="healthStatus.cpuUsage > 80 ? 'exception' : 'success'"/>
+              </el-descriptions-item>
+              <el-descriptions-item label="活跃追踪数">
+                {{ healthStatus.activeTraces }}
+              </el-descriptions-item>
+              <el-descriptions-item label="缓冲区使用">
+                <el-progress :percentage="healthStatus.bufferUsage"
+                  :status="healthStatus.bufferUsage > 90 ? 'exception' : 'success'"/>
+              </el-descriptions-item>
+              <el-descriptions-item label="最后更新">
+                {{ healthStatus.lastUpdate }}
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-card>
+        </div>
+      </el-col>
+
+      <!-- 右侧：配置管理卡片，改为充满右侧全屏 -->
+      <el-col :xl="16" :lg="14" :md="12" :sm="24" :xs="24">
+        <div class="right-section full-width">
+          <el-card class="config-card card-style fill-card" shadow="hover">
+            <template #header>
+              <div class="card-header config-header">
+                <span>配置管理</span>
+                <div class="header-actions">
+                  <el-button @click="handleRefreshConfig" size="small">刷新配置</el-button>
+                  <el-button type="primary" @click="handleSaveConfig" :loading="saving" size="small">
+                    保存配置
+                  </el-button>
+                  <el-button type="success" @click="handleExportConfig" size="small">
+                    导出配置
+                  </el-button>
+                  <el-button type="warning" @click="handleClearCache" :loading="clearingCache" size="small">
+                    清理缓存
+                  </el-button>
+                  <el-button type="danger" @click="handleCleanupExpired" :loading="cleaningUp" size="small">
+                    清理过期数据
+                  </el-button>
                 </div>
+              </div>
             </template>
 
             <el-tabs v-model="activeConfigTab">
-                <el-tab-pane label="采样配置" name="sampling">
-                    <el-form :model="configForm.sampling" label-width="150px">
-                        <el-form-item label="全局采样率">
-                            <el-slider v-model="configForm.sampling.ratio" :min="0" :max="1" :step="0.01" show-input
-                                :format-tooltip="(val: number) => `${(val * 100).toFixed(1)}%`" />
-                        </el-form-item>
-
-                        <el-form-item label="自适应采样">
-                            <el-switch v-model="configForm.sampling.adaptive.enabled" />
-                        </el-form-item>
-
-                        <el-form-item label="服务特定采样率" v-if="configForm.sampling.serviceRatios">
-                            <el-table :data="Object.entries(configForm.sampling.serviceRatios)" style="width: 100%">
-                                <el-table-column prop="0" label="服务名称" />
-                                <el-table-column prop="1" label="采样率">
-                                    <template #default="{ row }">
-                                        {{ (row[1] * 100).toFixed(1) }}%
-                                    </template>
-                                </el-table-column>
-                            </el-table>
-                        </el-form-item>
-
-                        <el-form-item label="始终采样">
-                            <el-tag v-for="path in configForm.sampling.alwaysSample" :key="path" type="success"
-                                style="margin-right: 8px; margin-bottom: 8px;">
-                                {{ path }}
-                            </el-tag>
-                        </el-form-item>
-
-                        <el-form-item label="从不采样">
-                            <el-tag v-for="path in configForm.sampling.neverSample" :key="path" type="danger"
-                                style="margin-right: 8px; margin-bottom: 8px;">
-                                {{ path }}
-                            </el-tag>
-                        </el-form-item>
+              <el-tab-pane label="采样配置" name="sampling">
+                <el-tabs v-model="activeSamplingTab" tab-position="left">
+                  <el-tab-pane label="全局配置" name="global">
+                    <el-form :model="samplingConfig" label-width="150px" class="form-style">
+                      <el-form-item label="全局采样率(%)">
+                        <el-slider
+                          v-model="samplingConfig.globalRate"
+                          :min="0"
+                          :max="100"
+                          show-input
+                          :marks="{0: '0%', 25: '25%', 50: '50%', 75: '75%', 100: '100%'}"
+                        />
+                      </el-form-item>
+                      <el-form-item label="自适应采样">
+                        <el-switch v-model="samplingConfig.adaptiveSampling"/>
+                      </el-form-item>
+                      <el-form-item label="始终采样路径" v-if="samplingConfig.adaptiveSampling">
+                        <el-select
+                          v-model="samplingConfig.alwaysSamplePaths"
+                          multiple
+                          filterable
+                          allow-create
+                          default-first-option
+                          placeholder="请输入路径，按回车确认"
+                        >
+                          <el-option
+                            v-for="path in defaultPaths"
+                            :key="path"
+                            :label="path"
+                            :value="path"
+                          />
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item label="从不采样路径" v-if="samplingConfig.adaptiveSampling">
+                        <el-select
+                          v-model="samplingConfig.neverSamplePaths"
+                          multiple
+                          filterable
+                          allow-create
+                          default-first-option
+                          placeholder="请输入路径，按回车确认"
+                        >
+                          <el-option
+                            v-for="path in defaultPaths"
+                            :key="path"
+                            :label="path"
+                            :value="path"
+                          />
+                        </el-select>
+                      </el-form-item>
                     </el-form>
-                </el-tab-pane>
-
-                <el-tab-pane label="性能配置" name="performance">
-                    <el-form :model="configForm.performance" label-width="150px">
-                        <el-form-item label="异步处理">
-                            <el-switch v-model="configForm.performance.asyncProcessing" />
-                        </el-form-item>
-
-                        <el-form-item label="线程池核心大小">
-                            <el-input-number v-model="configForm.performance.threadPool.coreSize" :min="1" :max="100" />
-                        </el-form-item>
-
-                        <el-form-item label="缓冲区大小">
-                            <el-input-number v-model="configForm.performance.buffer.size" :min="100" :max="10000" />
-                        </el-form-item>
-
-                        <el-form-item label="内存限制(MB)">
-                            <el-input-number v-model="configForm.performance.memory.memoryLimitMb" :min="64"
-                                :max="2048" />
-                        </el-form-item>
-                    </el-form>
-                </el-tab-pane>
-
-                <el-tab-pane label="导出器配置" name="exporter">
-                    <el-form :model="configForm.exporter" label-width="150px">
-                        <el-form-item label="导出器类型">
-                            <el-select v-model="configForm.exporter.type">
-                                <el-option label="Logging" value="logging" />
-                                <el-option label="OTLP" value="otlp" />
-                                <el-option label="Jaeger" value="jaeger" />
+                  </el-tab-pane>
+                  <el-tab-pane label="服务特定配置" name="service">
+                    <div class="service-config-table">
+                      <el-button type="primary" @click="handleAddServiceConfig" style="margin-bottom: 16px;">
+                        添加服务配置
+                      </el-button>
+                      <el-table :data="samplingConfig.serviceConfigs" style="width: 100%">
+                        <el-table-column prop="service" label="服务名称" width="200">
+                          <template #default="scope">
+                            <el-select v-model="scope.row.service" placeholder="请选择服务" style="width: 90%;">
+                              <el-option
+                                v-for="service in availableServices"
+                                :key="service"
+                                :label="service"
+                                :value="service"
+                              />
                             </el-select>
-                        </el-form-item>
-
-                        <el-form-item label="日志导出">
-                            <el-switch v-model="configForm.exporter.logging.enabled" />
-                        </el-form-item>
-                    </el-form>
-                </el-tab-pane>
-            </el-tabs>
-        </el-card>
-
-        <!-- 操作面板 -->
-        <el-card class="actions-card">
-            <template #header>
-                <div class="card-header">
-                    <span>操作面板</span>
+                          </template>
+                        </el-table-column>
+                        <el-table-column prop="rate" label="采样率(%)" width="200">
+                          <template #default="scope">
+                            <el-slider
+                              v-model="scope.row.rate"
+                              :min="0"
+                              :max="100"
+                              show-input
+                              style="width: 90%;"
+                            />
+                          </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="150">
+                          <template #default="scope">
+                            <el-button
+                              size="small"
+                              type="danger"
+                              @click="handleDeleteServiceConfig(scope.$index)"
+                            >
+                              删除
+                            </el-button>
+                          </template>
+                        </el-table-column>
+                      </el-table>
+                    </div>
+                  </el-tab-pane>
+                </el-tabs>
+                <div class="sampling-actions">
+                  <el-button @click="handleResetSamplingConfig" size="small">重置采样配置</el-button>
+                  <el-button type="primary" @click="handleSaveSamplingConfig" :loading="saving" size="small">
+                    保存采样配置
+                  </el-button>
+                  <el-button type="info" @click="handleRefreshSampling" :loading="refreshingSampling" size="small">
+                    刷新采样策略
+                  </el-button>
                 </div>
-            </template>
+              </el-tab-pane>
 
-            <el-row :gutter="20">
-                <el-col :span="6">
-                    <el-button type="primary" @click="handleRefreshSampling" :loading="refreshingSampling"
-                        style="width: 100%">
-                        刷新采样策略
-                    </el-button>
-                </el-col>
-                <el-col :span="6">
-                    <el-button type="warning" @click="handleClearCache" :loading="clearingCache" style="width: 100%">
-                        清理缓存
-                    </el-button>
-                </el-col>
-                <el-col :span="6">
-                    <el-button type="danger" @click="handleCleanupExpired" :loading="cleaningUp" style="width: 100%">
-                        清理过期数据
-                    </el-button>
-                </el-col>
-                <el-col :span="6">
-                    <el-button @click="handleExportConfig" style="width: 100%">
-                        导出配置
-                    </el-button>
-                </el-col>
-            </el-row>
-        </el-card>
-    </div>
+              <el-tab-pane label="性能配置" name="performance">
+                <el-form :model="configForm.performance" label-width="150px" class="form-style">
+                  <el-form-item label="异步处理">
+                    <el-switch v-model="configForm.performance.asyncProcessing"/>
+                  </el-form-item>
+                  <el-form-item label="线程池核心大小">
+                    <el-input-number v-model="configForm.performance.threadPool.coreSize" :min="1" :max="100"/>
+                  </el-form-item>
+                  <el-form-item label="缓冲区大小">
+                    <el-input-number v-model="configForm.performance.buffer.size" :min="100" :max="10000"/>
+                  </el-form-item>
+                  <el-form-item label="内存限制(MB)">
+                    <el-input-number v-model="configForm.performance.memory.memoryLimitMb" :min="64" :max="2048"/>
+                  </el-form-item>
+                </el-form>
+              </el-tab-pane>
+
+              <el-tab-pane label="导出器配置" name="exporter">
+                <el-form :model="configForm.exporter" label-width="150px" class="form-style">
+                  <el-form-item label="导出器类型">
+                    <el-select v-model="configForm.exporter.type" style="width: 200px;">
+                      <el-option label="Logging" value="logging"/>
+                      <el-option label="OTLP" value="otlp"/>
+                      <el-option label="Jaeger" value="jaeger"/>
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="日志导出">
+                    <el-switch v-model="configForm.exporter.logging.enabled"/>
+                  </el-form-item>
+                </el-form>
+              </el-tab-pane>
+            </el-tabs>
+          </el-card>
+        </div>
+      </el-col>
+    </el-row>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
     getTracingStatus,
@@ -223,8 +258,15 @@ import {
     disableTracing,
     refreshSamplingStrategy,
     refreshTracingData,
-    cleanupExpiredTraces
+    cleanupExpiredTraces,
+    getSamplingConfig,
+    updateSamplingConfig,
+    resetSamplingConfig,
+    getSamplingStats
 } from '@/api/tracing'
+
+// 添加导入获取服务类型的API
+import { getServiceTypes } from '@/api/dashboard'
 
 // 状态表单
 const statusForm = ref({
@@ -249,15 +291,6 @@ const healthStatus = ref({
 
 // 配置表单
 const configForm = ref({
-    sampling: {
-        ratio: 0.1,
-        adaptive: {
-            enabled: true
-        },
-        serviceRatios: {},
-        alwaysSample: [],
-        neverSample: []
-    },
     performance: {
         asyncProcessing: true,
         threadPool: {
@@ -278,12 +311,61 @@ const configForm = ref({
     }
 })
 
+// 采样配置
+const samplingConfig = ref({
+    globalRate: 10,
+    adaptiveSampling: true,
+    alwaysSamplePaths: ['/api/critical', '/api/payment'],
+    neverSamplePaths: ['/api/health', '/api/metrics'],
+    serviceConfigs: [
+        { service: 'chat', rate: 20 },
+        { service: 'embedding', rate: 15 },
+        { service: 'rerank', rate: 10 },
+        { service: 'tts', rate: 10 },
+        { service: 'stt', rate: 10 },
+        { service: 'imgGen', rate: 10 },
+        { service: 'imgEdit', rate: 10 }
+    ]
+})
+
+// 采样统计
+const samplingStats = ref({
+    totalSamples: 123456,
+    droppedSamples: 111111,
+    samplingEfficiency: 90.0
+})
+
+// 默认路径
+const defaultPaths = ref([
+    '/api/critical',
+    '/api/payment',
+    '/api/user',
+    '/api/health',
+    '/api/metrics',
+    '/api/status'
+])
+
+// 可用服务
+const availableServices = ref([
+    'chat',
+    'embedding',
+    'rerank',
+    'tts',
+    'stt',
+    'imgGen',
+    'imgEdit'
+])
+
 // 状态
 const saving = ref(false)
 const refreshingSampling = ref(false)
 const clearingCache = ref(false)
 const cleaningUp = ref(false)
 const activeConfigTab = ref('sampling')
+const activeSamplingTab = ref('global')
+
+// 定时器引用
+const statsRefreshTimer = ref<number | undefined>(undefined)
 
 // 切换追踪状态
 const handleToggleTracing = async (enabled: boolean) => {
@@ -372,16 +454,6 @@ const loadTracingConfig = async () => {
         const data = response.data || response
         if (data) {
             // 更新配置表单
-            if ((data as any).sampling) {
-                configForm.value.sampling = {
-                    ratio: (data as any).sampling.ratio || 0.1,
-                    adaptive: (data as any).sampling.adaptive || { enabled: true },
-                    serviceRatios: (data as any).sampling.serviceRatios || {},
-                    alwaysSample: (data as any).sampling.alwaysSample || [],
-                    neverSample: (data as any).sampling.neverSample || []
-                }
-            }
-
             if ((data as any).performance) {
                 configForm.value.performance = {
                     asyncProcessing: (data as any).performance.asyncProcessing || true,
@@ -407,6 +479,7 @@ const loadTracingConfig = async () => {
 // 刷新配置
 const handleRefreshConfig = () => {
     loadTracingConfig()
+    loadSamplingConfig()
 }
 
 // 保存配置
@@ -421,6 +494,124 @@ const handleSaveConfig = async () => {
     } finally {
         saving.value = false
     }
+}
+
+// 加载采样配置
+const loadSamplingConfig = async () => {
+    try {
+        const response = await getSamplingConfig()
+        const data = response.data || response
+        
+        if (data && data.data) {
+            samplingConfig.value = {
+                globalRate: (data.data.globalRate || 0.1) * 100,
+                adaptiveSampling: data.data.adaptiveSampling || true,
+                alwaysSamplePaths: data.data.alwaysSamplePaths || [],
+                neverSamplePaths: data.data.neverSamplePaths || [],
+                serviceConfigs: data.data.serviceConfigs && Array.isArray(data.data.serviceConfigs) 
+                    ? data.data.serviceConfigs.map((sc: any) => ({
+                        service: sc.service,
+                        rate: (sc.rate || 0.1) * 100
+                    }))
+                    : []
+            }
+        }
+    } catch (error) {
+        console.error('加载采样配置失败:', error)
+        ElMessage.error('加载采样配置失败')
+    }
+}
+
+// 保存采样配置
+const handleSaveSamplingConfig = async () => {
+    // 验证采样配置
+    if (!validateSamplingConfig()) {
+        return
+    }
+    
+    // 验证服务配置
+    if (!validateServiceConfig()) {
+        return
+    }
+    
+    // 优化服务配置
+    optimizeServiceConfig()
+    
+    try {
+        const config = {
+            globalRate: samplingConfig.value.globalRate / 100,
+            adaptiveSampling: samplingConfig.value.adaptiveSampling,
+            alwaysSamplePaths: samplingConfig.value.alwaysSamplePaths,
+            neverSamplePaths: samplingConfig.value.neverSamplePaths,
+            serviceConfigs: samplingConfig.value.serviceConfigs.map(sc => ({
+                service: sc.service,
+                rate: sc.rate / 100
+            }))
+        }
+        
+        saving.value = true
+        await updateSamplingConfig(config)
+        
+        // 刷新采样策略
+        await refreshSamplingStrategy()
+        
+        ElMessage.success('采样配置已保存')
+    } catch (error) {
+        console.error('保存采样配置失败:', error)
+        ElMessage.error('保存采样配置失败: ' + (error as any).message || '未知错误')
+    } finally {
+        saving.value = false
+    }
+}
+
+// 重置采样配置
+const handleResetSamplingConfig = async () => {
+    try {
+        await ElMessageBox.confirm('确定要重置采样配置为默认值吗？此操作不可撤销。', '确认重置', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+        })
+        
+        await resetSamplingConfig()
+        await loadSamplingConfig()
+        ElMessage.success('采样配置已重置')
+    } catch (error) {
+        if (error !== 'cancel') {
+            console.error('重置采样配置失败:', error)
+            ElMessage.error('重置采样配置失败: ' + (error as any).message || '')
+        }
+    }
+}
+
+// 添加服务配置
+const handleAddServiceConfig = () => {
+    // 如果有可用服务，使用第一个作为默认值
+    const defaultService = availableServices.value.length > 0 ? availableServices.value[0] : ''
+    
+    samplingConfig.value.serviceConfigs.push({ 
+        service: defaultService, 
+        rate: 10 
+    })
+}
+
+// 删除服务配置
+const handleDeleteServiceConfig = (index: number) => {
+    if (samplingConfig.value.serviceConfigs.length <= 1) {
+        ElMessage.warning('至少需要保留一个服务配置')
+        return
+    }
+    
+    ElMessageBox.confirm('确定要删除此服务配置吗？', '确认删除', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+    }).then(() => {
+        samplingConfig.value.serviceConfigs.splice(index, 1)
+        ElMessage.success('服务配置已删除')
+    }).catch(() => {
+        // 用户取消删除
+    })
 }
 
 // 刷新采样策略
@@ -482,7 +673,11 @@ const handleCleanupExpired = async () => {
 
 // 导出配置
 const handleExportConfig = () => {
-    const configJson = JSON.stringify(configForm.value, null, 2)
+    const configJson = JSON.stringify({ 
+        tracing: configForm.value, 
+        sampling: samplingConfig.value,
+        samplingStats: samplingStats.value
+    }, null, 2)
     const blob = new Blob([configJson], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
 
@@ -497,35 +692,341 @@ const handleExportConfig = () => {
     ElMessage.success('配置导出成功')
 }
 
+// 加载可用服务
+const loadAvailableServices = async () => {
+    try {
+        // 使用getServiceTypes API获取所有可用服务类型
+        const response = await getServiceTypes()
+        const data = response.data || response
+        
+        if (data && data.success && Array.isArray(data.data)) {
+            // 过滤掉空字符串并去重
+            const serviceTypes = data.data
+                .filter((type: string) => typeof type === 'string' && type.trim() !== '')
+                .map((type: string) => type.trim())
+            
+            if (serviceTypes.length > 0) {
+                availableServices.value = serviceTypes
+                ElMessage.success(`成功加载 ${serviceTypes.length} 个服务类型`)
+            } else {
+                ElMessage.warning('未获取到服务类型列表，使用默认服务配置')
+            }
+        } else {
+            // 如果API调用失败或返回空数据，使用默认的服务类型
+            availableServices.value = [
+                'chat',
+                'embedding',
+                'rerank',
+                'tts',
+                'stt',
+                'imgGen',
+                'imgEdit'
+            ]
+            ElMessage.warning('未获取到服务类型列表，使用默认服务配置')
+        }
+    } catch (error) {
+        console.error('加载服务类型列表失败:', error)
+        // 如果API调用失败，使用默认的服务类型
+        availableServices.value = [
+            'chat',
+            'embedding',
+            'rerank',
+            'tts',
+            'stt',
+            'imgGen',
+            'imgEdit'
+        ]
+        ElMessage.error('加载服务类型列表失败，使用默认配置')
+    }
+}
+
+// 验证采样统计数据的合理性
+const validateSamplingStats = (stats: any) => {
+    // 检查数据是否存在
+    if (!stats) return false
+    
+    // 检查总采样数是否合理
+    if (typeof stats.totalSamples !== 'number' || stats.totalSamples < 0) {
+        return false
+    }
+    
+    // 检查丢弃样本数是否合理
+    if (typeof stats.droppedSamples !== 'number' || stats.droppedSamples < 0) {
+        return false
+    }
+    
+    // 检查丢弃样本数不能超过总采样数
+    if (stats.droppedSamples > stats.totalSamples) {
+        return false
+    }
+    
+    // 检查采样效率是否合理 (0-100之间)
+    if (typeof stats.samplingEfficiency !== 'number' || 
+        stats.samplingEfficiency < 0 || stats.samplingEfficiency > 100) {
+        return false
+    }
+    
+    return true
+}
+
+// 加载采样统计
+const loadSamplingStats = async () => {
+    try {
+        const response = await getSamplingStats()
+        const data = response.data || response
+        
+        if (data && data.data) {
+            // 验证数据合理性
+            if (validateSamplingStats(data.data)) {
+                samplingStats.value = {
+                    totalSamples: data.data.totalSamples || 0,
+                    droppedSamples: data.data.droppedSamples || 0,
+                    samplingEfficiency: data.data.samplingEfficiency || 0
+                }
+            } else {
+                ElMessage.warning('采样统计数据异常，使用默认值')
+                // 使用默认值但给出提示
+                samplingStats.value = {
+                    totalSamples: 0,
+                    droppedSamples: 0,
+                    samplingEfficiency: 0
+                }
+            }
+        } else {
+            ElMessage.warning('未获取到采样统计数据')
+            // 使用默认值
+            samplingStats.value = {
+                totalSamples: 0,
+                droppedSamples: 0,
+                samplingEfficiency: 0
+            }
+        }
+    } catch (error) {
+        console.error('加载采样统计失败:', error)
+        ElMessage.error('加载采样统计失败')
+        // 保留当前值或使用默认值
+    }
+}
+
+// 开始定时刷新采样统计
+const startStatsRefresh = () => {
+    // 如果已有定时器，先清除
+    if (statsRefreshTimer.value) {
+        clearInterval(statsRefreshTimer.value)
+    }
+    
+    // 设置定时刷新（每60秒刷新一次）
+    statsRefreshTimer.value = window.setInterval(() => {
+        loadSamplingStats()
+    }, 60000) as any as number
+}
+
+// 停止定时刷新
+const stopStatsRefresh = () => {
+    if (statsRefreshTimer.value) {
+        clearInterval(statsRefreshTimer.value)
+        statsRefreshTimer.value = undefined
+    }
+}
+
+// 刷新所有采样相关数据
+const refreshAllSamplingData = async () => {
+    try {
+        // 显示加载状态
+        ElMessage.info('正在刷新采样数据...')
+        
+        // 并行加载所有数据
+        await Promise.all([
+            loadSamplingConfig(),
+            loadSamplingStats(),
+            loadAvailableServices()
+        ])
+        
+        ElMessage.success('采样数据刷新完成')
+    } catch (error) {
+        console.error('刷新采样数据失败:', error)
+        ElMessage.error('刷新采样数据失败: ' + (error as any).message || '未知错误')
+    }
+}
+
 // 组件挂载时初始化
 onMounted(() => {
     loadTracingStatus()
     loadHealthStatus()
     loadTracingConfig()
+    refreshAllSamplingData() // 使用新的刷新方法
+    
+    // 开始定时刷新采样统计
+    startStatsRefresh()
 })
-</script>
 
+// 组件卸载时清理定时器
+onUnmounted(() => {
+    stopStatsRefresh()
+})
+
+// 添加一个方法来验证采样配置
+const validateSamplingConfig = () => {
+    // 验证全局采样率
+    if (samplingConfig.value.globalRate < 0 || samplingConfig.value.globalRate > 100) {
+        ElMessage.error('全局采样率必须在0-100之间')
+        return false
+    }
+    
+    // 验证服务配置
+    for (const config of samplingConfig.value.serviceConfigs) {
+        if (!config.service) {
+            ElMessage.error('服务配置中的服务名称不能为空')
+            return false
+        }
+        if (config.rate < 0 || config.rate > 100) {
+            ElMessage.error('服务采样率必须在0-100之间')
+            return false
+        }
+    }
+    
+    return true
+}
+
+// 验证服务配置
+const validateServiceConfig = () => {
+    const serviceConfigs = samplingConfig.value.serviceConfigs
+    
+    // 检查是否有重复的服务配置
+    const serviceNames = serviceConfigs.map(config => config.service).filter(service => service)
+    const uniqueServices = new Set(serviceNames)
+    
+    if (serviceNames.length !== uniqueServices.size) {
+        ElMessage.error('服务配置中存在重复的服务')
+        return false
+    }
+    
+    // 检查是否有空的服务名称
+    if (serviceConfigs.some(config => !config.service)) {
+        ElMessage.error('服务配置中存在空的服务名称')
+        return false
+    }
+    
+    // 检查采样率是否在有效范围内
+    if (serviceConfigs.some(config => config.rate < 0 || config.rate > 100)) {
+        ElMessage.error('服务采样率必须在0-100之间')
+        return false
+    }
+    
+    return true
+}
+
+// 优化服务配置（移除无效配置，确保配置完整性）
+const optimizeServiceConfig = () => {
+    // 移除空的服务配置
+    samplingConfig.value.serviceConfigs = samplingConfig.value.serviceConfigs.filter(
+        config => config.service && config.service.trim() !== ''
+    )
+    
+    // 如果没有服务配置，添加一个默认配置
+    if (samplingConfig.value.serviceConfigs.length === 0 && availableServices.value.length > 0) {
+        samplingConfig.value.serviceConfigs.push({
+            service: availableServices.value[0],
+            rate: 10
+        })
+    }
+}
+
+</script>
 <style scoped>
 .tracing-management {
-    padding: 0;
+  padding: 32px 24px 32px 24px;
+  background: #fafbfc;
+  min-height: 100vh;
+  box-sizing: border-box;
 }
-
+.left-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.right-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+}
+.full-width {
+  height: 100%;
+}
+.fill-card {
+  width: 100%;
+  min-height: 600px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
 .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 500;
+  padding-bottom: 4px;
 }
-
+.config-header {
+  align-items: flex-end;
+}
 .header-actions {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-
-.config-card {
-    margin-top: 20px;
+.card-style {
+  border-radius: 10px;
+  box-shadow: 0 2px 12px 0 rgb(0 0 0 / 7%);
+  margin-bottom: 0;
 }
-
-.actions-card {
-    margin-top: 20px;
+.form-style {
+  padding: 8px 0 0 0;
+}
+.health-desc {
+  margin-top: 8px;
+}
+.sampling-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.service-config-table {
+  margin-top: 8px;
+}
+@media (max-width: 1200px) {
+  .tracing-management {
+    padding: 16px 8px;
+  }
+  .left-section, .right-section {
+    gap: 16px;
+  }
+  .card-header {
+    font-size: 16px;
+  }
+}
+@media (max-width: 768px) {
+  .tracing-management {
+    padding: 8px 4px;
+  }
+  .left-section, .right-section {
+    gap: 8px;
+  }
+  .card-style {
+    box-shadow: 0 1px 6px 0 rgb(0 0 0 / 10%);
+    border-radius: 8px;
+  }
+  .header-actions, .sampling-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .fill-card {
+    min-height: 400px;
+  }
 }
 </style>
