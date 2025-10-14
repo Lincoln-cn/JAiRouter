@@ -272,7 +272,7 @@ const loadAuditLogs = async () => {
       (query as any).eventType = searchForm.value.eventType
     }
 
-    const result = await queryAuditEventsAdvanced(query)
+    const result: ExtendedAuditQueryResponse = await queryAuditEventsAdvanced(query)
     logs.value = result.events
     pagination.value.total = result.totalElements
   } catch (error: any) {

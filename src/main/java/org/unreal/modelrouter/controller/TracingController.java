@@ -274,7 +274,7 @@ public class TracingController {
     /**
      * 更新运行时配置
      */
-    private void updateRuntimeConfiguration(TracingConfiguration newConfig) {
+       private void updateRuntimeConfiguration(TracingConfiguration newConfig) {
         // 更新采样配置
         if (newConfig.getSampling() != null) {
             tracingConfiguration.setSampling(newConfig.getSampling());
@@ -298,6 +298,21 @@ public class TracingController {
             if (newPerf.getBatch() != null) {
                 currentPerf.setBatch(newPerf.getBatch());
             }
+            // 添加线程池配置更新
+            if (newPerf.getThreadPool() != null) {
+                currentPerf.setThreadPool(newPerf.getThreadPool());
+            }
+            // 添加内存配置更新
+            if (newPerf.getMemory() != null) {
+                currentPerf.setMemory(newPerf.getMemory());
+            }
+            // 添加异步处理配置更新
+            currentPerf.setAsyncProcessing(newPerf.isAsyncProcessing());
+        }
+
+         // 更新导出器配置
+        if (newConfig.getExporter() != null) {
+            tracingConfiguration.setExporter(newConfig.getExporter());
         }
         
         // 更新监控配置
