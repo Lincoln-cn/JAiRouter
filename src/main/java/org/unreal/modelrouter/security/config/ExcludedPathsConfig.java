@@ -84,6 +84,7 @@ public class ExcludedPathsConfig {
         DATA_MASKING_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
             "/api/auth/jwt/login",
+            "/api/auth/jwt/refresh",
             "/api/security/jwt/accounts/**"
         );
     }
