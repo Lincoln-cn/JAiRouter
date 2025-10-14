@@ -77,4 +77,57 @@ public class SecurityAuditEvent {
      * 会话ID
      */
     private String sessionId;
+    
+    // 手动添加 getter 方法，确保编译通过
+    public String getEventId() {
+        return eventId;
+    }
+    
+    public String getEventType() {
+        return eventType;
+    }
+    
+    public String getUserId() {
+        return userId;
+    }
+    
+    public String getClientIp() {
+        return clientIp;
+    }
+    
+    public String getUserAgent() {
+        return userAgent;
+    }
+    
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+    
+    public String getResource() {
+        return resource;
+    }
+    
+    public String getAction() {
+        return action;
+    }
+    
+    public boolean isSuccess() {
+        return success;
+    }
+    
+    public String getFailureReason() {
+        return failureReason;
+    }
+    
+    public Map<String, Object> getAdditionalData() {
+        return additionalData;
+    }
+    
+    public String getRequestId() {
+        return requestId;
+    }
+    
+    public String getSessionId() {
+        return sessionId;
+    }
 }
