@@ -45,7 +45,9 @@ public class ExcludedPathsConfig {
             "/api/auth/jwt/validate",
             "/admin",
             "/favicon.ico",
-            "/.well-known"
+            "/.well-known",
+            // 添加模型统计接口到认证排除路径
+            "/models/stats"
         );
 
         // 认证排除路径模式
