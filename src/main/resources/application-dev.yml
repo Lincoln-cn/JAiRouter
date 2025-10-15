@@ -75,11 +75,6 @@ management:
     redis:
       enabled: false  # 开发环境禁用Redis健康检查
 
-# 开发环境存储配置覆盖
-store:
-  type: file
-  auto-merge: true
-
 # 开发环境 WebClient 配置覆盖
 webclient:
   connection-timeout: 5s

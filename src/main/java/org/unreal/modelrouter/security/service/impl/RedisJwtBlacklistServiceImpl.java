@@ -32,7 +32,6 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     
-    @Qualifier("jwtTokenStoreManager")
     private final StoreManager fallbackStoreManager;
     
     // 内存缓存用于提高查询性能

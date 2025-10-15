@@ -142,7 +142,6 @@ jairouter:
     
     # 生产环境数据脱敏配置（严格模式）
     sanitization:
-      
       response:
         enabled: true
         log-sanitization: false

@@ -26,9 +26,10 @@ spring:
 
 # 存储配置
 store:
-  type: file
-  path: "config/"
-  auto-merge: true
+  type: file              # 主存储类型
+  path: ./config  # 存储路径
+  auto-merge: true        # 是否自动合并
+  fallback-storage: memory # 备用存储类型（用于降级）
 
 # WebClient 基础配置
 webclient:

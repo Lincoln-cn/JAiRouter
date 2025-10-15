@@ -32,7 +32,6 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     
-    @Qualifier("jwtTokenStoreManager")
     private final StoreManager fallbackStoreManager;
     
     // Redis键前缀
