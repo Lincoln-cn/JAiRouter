@@ -31,7 +31,7 @@ request.interceptors.request.use(
     )
     
     if (token && config.headers && !isTokenEndpoint) {
-      config.headers['Jairouter_token'] = token
+      config.headers['Jairouter_Token'] = token
     }
     return config
   },
