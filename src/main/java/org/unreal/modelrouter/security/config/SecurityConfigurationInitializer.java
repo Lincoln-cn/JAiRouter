@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.security.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -33,7 +34,7 @@ public class SecurityConfigurationInitializer {
      * 应用启动完成后初始化安全配置
      * 参考 ConfigurationService 的模式，处理配置的初始化和加载
      */
-    @EventListener(ApplicationReadyEvent.class)
+    @PostConstruct
     public void initializeSecurityConfigurations() {
         log.info("开始初始化安全配置...");
         

@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.monitoring.config;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -28,7 +29,7 @@ public class MonitoringConfigurationValidator {
     /**
      * 在应用启动完成后验证监控配置
      */
-    @EventListener(ApplicationReadyEvent.class)
+    @PostConstruct
     public void validateConfiguration() {
         logger.info("开始验证监控配置...");
 
