@@ -51,7 +51,7 @@ public class AutoMergeController {
     public ResponseEntity<RouterResponse<Map<Integer, String>>> scanVersionFiles() {
         logger.info("接收到扫描配置文件请求");
 
-        Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
+       Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
         return ResponseEntity.ok(RouterResponse.success(versionFiles,
                 String.format("扫描完成，找到 %d 个版本文件", versionFiles.size())));
 
@@ -310,13 +310,12 @@ public class AutoMergeController {
             newestVersion = versionFiles.keySet().stream().max(Integer::compareTo).orElse(null);
         }
 
-        Map<String, Object> statistics = Map.of(
-                "totalVersionFiles", versionFiles.size(),
-                "oldestVersion", oldestVersion,
-                "newestVersion", newestVersion,
-                "previewAvailable", !preview.containsKey("error"),
-                "configDirectory", "config"
-        );
+        Map<String, Object> statistics = new HashMap<>();
+        statistics.put("totalVersionFiles", versionFiles.size());
+        statistics.put("oldestVersion", oldestVersion);
+        statistics.put("newestVersion", newestVersion);
+        statistics.put("previewAvailable", !preview.containsKey("error"));
+        statistics.put("configDirectory", "config");
 
         return ResponseEntity.ok(RouterResponse.success(statistics, "统计信息获取成功"));
 
