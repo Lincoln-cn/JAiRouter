@@ -25,7 +25,6 @@ import java.util.*;
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.persistence.enabled", havingValue = "true")
 public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     
-    @Qualifier("jwtTokenStoreManager")
     private final StoreManager storeManager;
     
     // 存储键前缀

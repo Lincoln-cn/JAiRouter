@@ -1,6 +1,8 @@
 package org.unreal.modelrouter.store;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
  * StoreManager配置类
  * 用于在Spring环境中配置和创建StoreManager Bean
  */
+@Slf4j
 @Configuration
 @ConfigurationProperties(prefix = "store")
 public class StoreManagerConfiguration {
@@ -16,6 +19,9 @@ public class StoreManagerConfiguration {
     private String type = "file";
     private String path = "./config-store";
     private boolean autoMerge = true;
+    
+    // JWT持久化相关配置
+    private String fallbackStorage = "memory";
 
     /**
      * 获取存储类型
@@ -64,6 +70,22 @@ public class StoreManagerConfiguration {
     public void setAutoMerge(boolean autoMerge) {
         this.autoMerge = autoMerge;
     }
+    
+    /**
+     * 获取JWT备用存储类型
+     * @return JWT备用存储类型
+     */
+    public String getFallbackStorage() {
+        return fallbackStorage;
+    }
+    
+    /**
+     * 设置JWT备用存储类型
+     * @param fallbackStorage JWT备用存储类型
+     */
+    public void setFallbackStorage(String fallbackStorage) {
+        this.fallbackStorage = fallbackStorage;
+    }
 
     /**
      * 创建StoreManager Bean
@@ -72,6 +94,23 @@ public class StoreManagerConfiguration {
     @Bean
     @ConditionalOnMissingBean(StoreManager.class)
     public StoreManager storeManager() {
-        return StoreManagerFactory.createStoreManager(type, path);
+        try {
+            String storageType = type;
+            String storagePath = path + "/jwt";
+
+            log.info("Initializing  StoreManager with type: {} and path: {}", storageType, storagePath);
+
+            StoreManager storeManager = StoreManagerFactory.createStoreManager(storageType, storagePath);
+
+            log.info("Successfully initialized StoreManager");
+            return storeManager;
+
+        } catch (Exception e) {
+            log.warn("Failed to initialize primary storage, falling back to memory storage: {}", e.getMessage());
+
+            // 回退到内存存储
+            return StoreManagerFactory.createMemoryStoreManager();
+        }
     }
+    
 }

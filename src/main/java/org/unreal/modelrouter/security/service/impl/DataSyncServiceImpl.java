@@ -35,7 +35,6 @@ public class DataSyncServiceImpl implements DataSyncService {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     
-    @Qualifier("jwtTokenStoreManager")
     private final StoreManager storeManager;
     
     private final StorageHealthService storageHealthService;

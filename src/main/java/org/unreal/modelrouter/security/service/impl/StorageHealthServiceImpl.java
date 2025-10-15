@@ -28,7 +28,6 @@ public class StorageHealthServiceImpl implements StorageHealthService {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     
-    @Qualifier("jwtTokenStoreManager")
     private final StoreManager storeManager;
     
     // 健康状态缓存
