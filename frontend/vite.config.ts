@@ -59,19 +59,17 @@ export default defineConfig({
     }
   },
   server: {
-    host: '127.0.0.1',
+    host: '0.0.0.0',
     port: 3000,
     proxy: {
-      '/admin/api': {
-        target: 'http://localhost:8080',
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
-        // 重写路径，去掉 /admin 前缀
-        rewrite: (path) => path.replace(/^\/admin/, ''),
         configure: (proxy, options) => {
           // 添加请求日志
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log(`[Vite Proxy] Request: ${req.method} ${req.url} -> ${options.target}${req.url?.replace(/^\/admin/, '')}`)
+            console.log(`[Vite Proxy] Request: ${req.method} ${req.url} -> ${options.target}${req.url}`)
           });
           // 添加响应日志
           proxy.on('proxyRes', (proxyRes, req, res) => {

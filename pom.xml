@@ -11,7 +11,8 @@
 
     <groupId>org.unreal</groupId>
     <artifactId>model-router</artifactId>
-    <version>0.9.0</version>
+    <version>0.9.9</version>
+    <packaging>jar</packaging>
 
     <name>model-router</name>
     <url>http://maven.apache.org</url>
@@ -96,6 +97,9 @@
             <properties>
                 <spring.profiles.active>prod</spring.profiles.active>
                 <maven.test.skip>true</maven.test.skip>
+                <checkstyle.skip>true</checkstyle.skip>
+                <spotbugs.skip>true</spotbugs.skip>
+                <jacoco.skip>true</jacoco.skip>
             </properties>
         </profile>
 
@@ -116,12 +120,11 @@
         <profile>
             <id>china</id>
             <properties>
+                <spring.profiles.active>prod</spring.profiles.active>
                 <maven.test.skip>true</maven.test.skip>
                 <checkstyle.skip>true</checkstyle.skip>
                 <spotbugs.skip>true</spotbugs.skip>
                 <jacoco.skip>true</jacoco.skip>
-                <!-- 跳过前端构建 -->
-                <frontend.build.skip>true</frontend.build.skip>
             </properties>
             <repositories>
                 <repository>
@@ -324,21 +327,18 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-zipkin</artifactId>
-            <version>${opentelemetry.version}</version>
         </dependency>
 
         <!-- OpenTelemetry OTLP Exporter -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <version>${opentelemetry.version}</version>
         </dependency>
 
         <!-- OpenTelemetry Logging Exporter (for development) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-logging</artifactId>
-            <version>${opentelemetry.version}</version>
         </dependency>
 
         <!-- Logstash Logback Encoder for structured JSON logging -->
