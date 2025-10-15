@@ -195,6 +195,14 @@ docker run -d \
   sodlinken/jairouter:dev
 ```
 
+docker run \
+  --name jairouter-dev \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JAVA_OPTS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n" \
+  sodlinken/jairouter:0.9.9
+
 ### 3. 使用运行脚本
 
 ```
