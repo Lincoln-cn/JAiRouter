@@ -302,11 +302,18 @@ public class AutoMergeController {
         Map<Integer, String> versionFiles = autoMergeService.scanVersionFiles();
         Map<String, Object> preview = autoMergeService.getMergePreview();
 
+        Integer oldestVersion = null;
+        Integer newestVersion = null;
+        
+        if (!versionFiles.isEmpty()) {
+            oldestVersion = versionFiles.keySet().iterator().next();
+            newestVersion = versionFiles.keySet().stream().max(Integer::compareTo).orElse(null);
+        }
+
         Map<String, Object> statistics = Map.of(
                 "totalVersionFiles", versionFiles.size(),
-                "oldestVersion", versionFiles.isEmpty() ? null : versionFiles.keySet().iterator().next(),
-                "newestVersion", versionFiles.isEmpty() ? null :
-                        versionFiles.keySet().stream().max(Integer::compareTo).orElse(null),
+                "oldestVersion", oldestVersion,
+                "newestVersion", newestVersion,
                 "previewAvailable", !preview.containsKey("error"),
                 "configDirectory", "config"
         );
