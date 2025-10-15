@@ -33,27 +33,6 @@ store:
 
 Different environments can have different storage configurations:
 
-### Development Environment (dev)
-
-# application-dev.yml
-store:
-  path: "config-dev/"
-  auto-merge: true
-
-### Staging Environment (staging)
-
-# application-staging.yml
-store:
-  path: "config-staging/"
-  auto-merge: true
-
-### Production Environment (prod)
-
-# application-prod.yml
-store:
-  path: "config-prod/"
-  auto-merge: true
-
 ## Auto-Merge Configuration
 
 The auto-merge function is used to scan and process multi-version configuration files in the configuration directory.
