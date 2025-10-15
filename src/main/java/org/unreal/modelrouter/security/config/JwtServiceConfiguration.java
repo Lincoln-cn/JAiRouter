@@ -32,7 +32,7 @@ public class JwtServiceConfiguration {
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
     public JwtPersistenceService redisJwtPersistenceService(
             @Qualifier("jwtReactiveRedisTemplate") ReactiveRedisTemplate<String, String> redisTemplate,
-            @Qualifier("jwtTokenStoreManager") StoreManager storeManager) {
+            StoreManager storeManager) {
         
         log.info("Initializing Redis-based JWT persistence service");
         return new RedisJwtTokenPersistenceServiceImpl(redisTemplate, storeManager);
@@ -46,7 +46,7 @@ public class JwtServiceConfiguration {
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "false", matchIfMissing = true)
     public JwtPersistenceService storeManagerJwtPersistenceService(
-            @Qualifier("jwtTokenStoreManager") StoreManager storeManager) {
+            StoreManager storeManager) {
         
         log.info("Initializing StoreManager-based JWT persistence service");
         return new JwtTokenPersistenceServiceImpl(storeManager);
@@ -61,7 +61,7 @@ public class JwtServiceConfiguration {
     @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
     public JwtBlacklistService redisJwtBlacklistService(
             @Qualifier("jwtReactiveRedisTemplate") ReactiveRedisTemplate<String, String> redisTemplate,
-            @Qualifier("jwtTokenStoreManager") StoreManager storeManager) {
+            StoreManager storeManager) {
         
         log.info("Initializing Redis-based JWT blacklist service");
         return new RedisJwtBlacklistServiceImpl(redisTemplate, storeManager);
@@ -74,8 +74,7 @@ public class JwtServiceConfiguration {
     @Bean
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "false", matchIfMissing = true)
-    public JwtBlacklistService storeManagerJwtBlacklistService(
-            @Qualifier("jwtTokenStoreManager") StoreManager storeManager) {
+    public JwtBlacklistService storeManagerJwtBlacklistService(StoreManager storeManager) {
         
         log.info("Initializing StoreManager-based JWT blacklist service");
         return new JwtBlacklistServiceImpl(storeManager);
