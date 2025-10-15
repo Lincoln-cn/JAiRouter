@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.57",
-      "LastModified": "2025-10-14T03:00:27.750203",
-      "ContentHash": "a6985bd730a19ef6",
-      "GitCommit": "e0a11f76",
+      "Version": "1.0.58",
+      "LastModified": "2025-10-15T03:04:35.115796",
+      "ContentHash": "9db6dca89ccef2ee",
+      "GitCommit": "420a2e4a",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -61,10 +61,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.123086",
-      "ContentHash": "654bd6fbcecc24b1",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.2",
+      "LastModified": "2025-10-15T03:04:35.123628",
+      "ContentHash": "e8ac56c244630dee",
+      "GitCommit": "c8b5d0df",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -129,16 +129,17 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-25T03:01:10.363306",
-      "ContentHash": "6a5d143d1936d04e",
-      "GitCommit": "32bd1673",
+      "Version": "1.0.3",
+      "LastModified": "2025-10-15T03:04:35.143436",
+      "ContentHash": "5b01c432577418d2",
+      "GitCommit": "c8b5d0df",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/application-config.md",
         "docs/en/configuration/circuit-breaker.md",
         "docs/en/configuration/dynamic-config.md",
+        "docs/en/configuration/jwt-persistence.md",
         "docs/en/configuration/load-balancing.md",
         "docs/en/configuration/rate-limiting.md",
         "docs/en/configuration/store-config.md",
@@ -209,15 +210,16 @@
     },
     "docs/en/deployment/index.md": {
       "FilePath": "docs/en/deployment/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.157521",
-      "ContentHash": "12899acf11a9cf3e",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.2",
+      "LastModified": "2025-10-15T03:04:35.170158",
+      "ContentHash": "7271515282c2511e",
+      "GitCommit": "c8b5d0df",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/deployment/china-optimization.md",
         "docs/en/deployment/docker.md",
+        "docs/en/deployment/jwt-persistence-deployment-checklist.md",
         "docs/en/deployment/kubernetes.md",
         "docs/en/deployment/production.md"
       ]
@@ -238,10 +240,10 @@
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-06T02:53:49.000133",
-      "ContentHash": "f4c6706f9607d1ae",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.3",
+      "LastModified": "2025-10-15T03:04:35.177714",
+      "ContentHash": "c83eaf46afa5330b",
+      "GitCommit": "c8b5d0df",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -601,10 +603,10 @@
     },
     "docs/en/troubleshooting/common-issues.md": {
       "FilePath": "docs/en/troubleshooting/common-issues.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.288867",
-      "ContentHash": "ca13379249c707c0",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.3",
+      "LastModified": "2025-10-15T03:04:35.301208",
+      "ContentHash": "4f8bba5cf242a22e",
+      "GitCommit": "c8b5d0df",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1402,10 +1404,10 @@
     },
     "docs/en/security/jwt-authentication.md": {
       "FilePath": "docs/en/security/jwt-authentication.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-09-02T03:06:00.263083",
-      "ContentHash": "47c52ef132343ea0",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.2",
+      "LastModified": "2025-10-15T03:04:35.275470",
+      "ContentHash": "37c7edbb560842b4",
+      "GitCommit": "c8b5d0df",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1783,6 +1785,45 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
+    },
+    "audit-log-troubleshooting-guide.md": {
+      "FilePath": "audit-log-troubleshooting-guide.md",
+      "Version": "1.0.0",
+      "LastModified": "2025-10-15T03:04:35.113699",
+      "ContentHash": "fd182b01dff39dcb",
+      "GitCommit": "43364f14",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/en/configuration/jwt-persistence.md": {
+      "FilePath": "docs/en/configuration/jwt-persistence.md",
+      "Version": "1.0.0",
+      "LastModified": "2025-10-15T03:04:35.145494",
+      "ContentHash": "1f580ef17c11f5b1",
+      "GitCommit": "c8b5d0df",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/monitoring/index.md",
+        "docs/en/security/jwt-authentication.md",
+        "docs/en/troubleshooting/performance.md"
+      ]
+    },
+    "docs/en/deployment/jwt-persistence-deployment-checklist.md": {
+      "FilePath": "docs/en/deployment/jwt-persistence-deployment-checklist.md",
+      "Version": "1.0.0",
+      "LastModified": "2025-10-15T03:04:35.172349",
+      "ContentHash": "e8942d43ff9a4197",
+      "GitCommit": "c8b5d0df",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/configuration/jwt-persistence.md",
+        "docs/en/monitoring/index.md",
+        "docs/en/security/jwt-authentication.md",
+        "docs/en/troubleshooting/common-issues.md"
+      ]
     }
   },
   "changes": [
@@ -4601,7 +4642,87 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-10-14T03:00:27.750212",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "audit-log-troubleshooting-guide.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2025-10-15T03:04:35.113706",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.57",
+      "NewVersion": "1.0.58",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-15T03:04:35.115801",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-15T03:04:35.123632",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-15T03:04:35.143441",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/jwt-persistence.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2025-10-15T03:04:35.145498",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/deployment/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-15T03:04:35.170164",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/jwt-persistence-deployment-checklist.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2025-10-15T03:04:35.172353",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-15T03:04:35.177719",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/jwt-authentication.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-15T03:04:35.275478",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/common-issues.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-15T03:04:35.301214",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-10-14T03:00:28.262411"
+  "last_updated": "2025-10-15T03:04:35.632988"
 }
