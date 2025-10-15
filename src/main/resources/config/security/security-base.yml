@@ -35,9 +35,6 @@ jairouter:
       blacklist-cache:
         expiration-seconds: 86400
         max-size: 10000
-      
-
-      
       # 用户账户配置
       accounts:
         - username: "admin"
@@ -95,7 +92,6 @@ jairouter:
         configuration-changed: true
         security-alert: true
         suspicious-activity: true
-      
       storage:
         type: "file"
         file-path: "logs/security-audit.log"

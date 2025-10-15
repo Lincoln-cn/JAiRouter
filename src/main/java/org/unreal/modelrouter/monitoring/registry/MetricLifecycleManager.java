@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.monitoring.registry;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -41,7 +43,7 @@ public class MetricLifecycleManager {
         this.customMeterRegistry = customMeterRegistry;
     }
     
-    @EventListener(ApplicationReadyEvent.class)
+    @PostConstruct
     public void onApplicationReady() {
         isRunning.set(true);
         logger.info("MetricLifecycleManager started");
@@ -50,7 +52,7 @@ public class MetricLifecycleManager {
         performHealthCheck();
     }
     
-    @EventListener(ContextClosedEvent.class)
+    @PreDestroy
     public void onApplicationShutdown() {
         isRunning.set(false);
         logger.info("MetricLifecycleManager stopped");
