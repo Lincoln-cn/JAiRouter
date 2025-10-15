@@ -14,6 +14,7 @@ import org.unreal.modelrouter.util.JacksonHelper;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -210,11 +211,11 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 
                 // 更新状态和时间
                 tokenData.put("status", status.name());
-                tokenData.put("updatedAt", LocalDateTime.now().toString());
+                tokenData.put("updatedAt",LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 
                 // 如果是撤销状态，设置撤销时间
                 if (TokenStatus.REVOKED.equals(status)) {
-                    tokenData.put("revokedAt", LocalDateTime.now().toString());
+                    tokenData.put("revokedAt", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 }
                 
                 // 保存更新后的数据
