@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
 public class StoreManagerConfiguration {
 
     private String type = "file";
-    private String path = "./config-store";
+    private String path = "./config";
     private boolean autoMerge = true;
     
     // JWT持久化相关配置
