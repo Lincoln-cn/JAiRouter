@@ -3,7 +3,7 @@ import type {DashboardOverview, RouterResponse} from '@/types'
 
 // 获取服务统计信息
 export const getServiceStats = () => {
-  return request.get<RouterResponse<Object>>('/api/models/stats')
+  return request.get<RouterResponse<Object>>('/models/stats')
 }
 
 // 获取服务类型列表

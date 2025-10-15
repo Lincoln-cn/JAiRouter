@@ -95,12 +95,10 @@ public class StoreManagerConfiguration {
     @ConditionalOnMissingBean(StoreManager.class)
     public StoreManager storeManager() {
         try {
-            String storageType = type;
-            String storagePath = path + "/jwt";
 
-            log.info("Initializing  StoreManager with type: {} and path: {}", storageType, storagePath);
+            log.info("Initializing  StoreManager with type: {} and path: {}", type, path);
 
-            StoreManager storeManager = StoreManagerFactory.createStoreManager(storageType, storagePath);
+            StoreManager storeManager = StoreManagerFactory.createStoreManager(type, path);
 
             log.info("Successfully initialized StoreManager");
             return storeManager;

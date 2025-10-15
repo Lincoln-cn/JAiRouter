@@ -83,21 +83,22 @@ public class AutoMergeService {
                 return versionFiles;
             }
 
-            Files.list(configPath)
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".json"))
-                    .forEach(path -> {
-                        String fileName = path.getFileName().toString();
-                        Matcher matcher = VERSION_PATTERN.matcher(fileName);
-                        if (matcher.matches()) {
-                            try {
-                                int version = Integer.parseInt(matcher.group(1));
-                                versionFiles.put(version, path.toString());
-                            } catch (NumberFormatException e) {
-                                logger.warn("无法解析版本号: {}", fileName);
-                            }
-                        }
-                    });
+            try (var files = Files.list(configPath)) {
+                files.filter(Files::isRegularFile)
+                     .filter(path -> path.toString().endsWith(".json"))
+                     .forEach(path -> {
+                         String fileName = path.getFileName().toString();
+                         Matcher matcher = VERSION_PATTERN.matcher(fileName);
+                         if (matcher.matches()) {
+                             try {
+                                 int version = Integer.parseInt(matcher.group(1));
+                                 versionFiles.put(version, path.toString());
+                             } catch (NumberFormatException e) {
+                                 logger.warn("无法解析版本号: {}", fileName);
+                             }
+                         }
+                     });
+            }
 
             logger.info("扫描到 {} 个版本配置文件", versionFiles.size());
             
