@@ -19,7 +19,6 @@ JAiRouter 支持多种存储类型，默认使用文件存储。
 ```yaml
 store:
   type: file        # 存储类型，默认为 file
-  path: "config/"   # 存储路径，默认为 config/
   auto-merge: true  # 是否启用自动合并功能，默认为 true
 ```
 
@@ -31,36 +30,7 @@ store:
 | `store.path` | `config/` | 配置文件存储的目录路径 |
 | `store.auto-merge` | `true` | 是否启用自动合并功能 |
 
-## 环境特定配置
 
-不同环境可以有不同的存储配置：
-
-### 开发环境 (dev)
-
-```yaml
-# application-dev.yml
-store:
-  path: "config-dev/"
-  auto-merge: true
-```
-
-### 预发布环境 (staging)
-
-```yaml
-# application-staging.yml
-store:
-  path: "config-staging/"
-  auto-merge: true
-```
-
-### 生产环境 (prod)
-
-```yaml
-# application-prod.yml
-store:
-  path: "config-prod/"
-  auto-merge: true
-```
 
 ## 自动合并配置
 
