@@ -8,6 +8,7 @@ import org.unreal.modelrouter.dto.AuditEvent;
 import org.unreal.modelrouter.dto.AuditEventQuery;
 import org.unreal.modelrouter.dto.AuditEventType;
 import org.unreal.modelrouter.dto.SecurityReport;
+import org.unreal.modelrouter.security.audit.ExtendedSecurityAuditServiceImpl;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
