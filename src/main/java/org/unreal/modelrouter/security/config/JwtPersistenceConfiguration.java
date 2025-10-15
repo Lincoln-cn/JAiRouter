@@ -24,7 +24,7 @@ public class JwtPersistenceConfiguration {
     public static class JwtPersistenceProperties {
         private String primaryStorage = "memory";
         private String fallbackStorage = "memory";
-        private String storagePath = "config-store/jwt-tokens";
+        private String storagePath = "config-store";
         private Memory memory = new Memory();
         
         public static class Memory {
