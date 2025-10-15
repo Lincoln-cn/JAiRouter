@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.service;
+package org.unreal.modelrouter.security.audit;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -8,8 +8,7 @@ import org.unreal.modelrouter.dto.AuditEventQuery;
 import org.unreal.modelrouter.dto.AuditEventType;
 import org.unreal.modelrouter.dto.SecurityAlert;
 import org.unreal.modelrouter.dto.SecurityReport;
-import org.unreal.modelrouter.security.audit.SecurityAuditServiceImpl;
-import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.security.service.ExtendedSecurityAuditService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
