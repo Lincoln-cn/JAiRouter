@@ -2,20 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 135
-- 近7天变更: 7
+- 总文档数: 138
+- 近7天变更: 16
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-10-14 03:00:28
+- 最后扫描: 2025-10-15 03:04:35
 
 ## 最近变更
 
-- **MODIFIED**: docs-version-report.md (1.0.56 → 1.0.57) - 2025-10-14
-- **MODIFIED**: docs-version-report.md (1.0.55 → 1.0.56) - 2025-10-13
-- **MODIFIED**: docs-version-report.md (1.0.54 → 1.0.55) - 2025-10-12
-- **MODIFIED**: docs-version-report.md (1.0.53 → 1.0.54) - 2025-10-11
-- **MODIFIED**: docs-version-report.md (1.0.52 → 1.0.53) - 2025-10-10
-- **MODIFIED**: docs-version-report.md (1.0.51 → 1.0.52) - 2025-10-09
-- **MODIFIED**: docs-version-report.md (1.0.50 → 1.0.51) - 2025-10-08
+- **MODIFIED**: docs/en/troubleshooting/common-issues.md (1.0.2 → 1.0.3) - 2025-10-15
+- **MODIFIED**: docs/en/security/jwt-authentication.md (1.0.1 → 1.0.2) - 2025-10-15
+- **MODIFIED**: docs/en/deployment/production.md (1.0.2 → 1.0.3) - 2025-10-15
+- **CREATED**: docs/en/deployment/jwt-persistence-deployment-checklist.md ( → 1.0.0) - 2025-10-15
+- **MODIFIED**: docs/en/deployment/index.md (1.0.1 → 1.0.2) - 2025-10-15
+- **CREATED**: docs/en/configuration/jwt-persistence.md ( → 1.0.0) - 2025-10-15
+- **MODIFIED**: docs/en/configuration/index.md (1.0.2 → 1.0.3) - 2025-10-15
+- **MODIFIED**: docs/en/api-reference/management-api.md (1.0.1 → 1.0.2) - 2025-10-15
+- **MODIFIED**: docs-version-report.md (1.0.57 → 1.0.58) - 2025-10-15
+- **CREATED**: audit-log-troubleshooting-guide.md ( → 1.0.0) - 2025-10-15
 
 ## 过期文档 (30天未更新)
 
@@ -23,7 +26,6 @@
 - README.md (版本: 1.0.2, 最后更新: 2025-08-29)
 - docs/README.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/en/api-reference/management-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/openapi-spec.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/universal-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/configuration/application-config.md (版本: 1.0.2, 最后更新: 2025-09-06)
@@ -34,9 +36,7 @@
 - docs/en/deployment/china-optimization.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/deployment/docker.md (版本: 1.0.2, 最后更新: 2025-09-06)
 - docs/en/deployment/github-pages.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/en/deployment/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/deployment/kubernetes.md (版本: 1.0.3, 最后更新: 2025-09-06)
-- docs/en/deployment/production.md (版本: 1.0.2, 最后更新: 2025-09-06)
 - docs/en/development/architecture.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/development/code-quality.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/development/contributing.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -63,7 +63,6 @@
 - docs/en/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/reference/roadmap.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/en/troubleshooting/common-issues.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/troubleshooting/performance.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -122,7 +121,6 @@
 - docs/en/security/api-key-management.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/security/data-sanitization.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/security/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/security/jwt-authentication.md (版本: 1.0.1, 最后更新: 2025-09-02)
 - docs/en/security/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/config-reference.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
@@ -167,10 +165,11 @@
   - docs/en/configuration/load-balancing.md
   - docs/en/configuration/rate-limiting.md
   - docs/en/monitoring/index.md
-- **docs/en/configuration/index.md**: 依赖 7 个文档
+- **docs/en/configuration/index.md**: 依赖 8 个文档
   - docs/en/configuration/application-config.md
   - docs/en/configuration/circuit-breaker.md
   - docs/en/configuration/dynamic-config.md
+  - docs/en/configuration/jwt-persistence.md
   - docs/en/configuration/load-balancing.md
   - docs/en/configuration/rate-limiting.md
   - docs/en/configuration/store-config.md
@@ -187,9 +186,10 @@
   - docs/en/deployment/docker.md
   - docs/en/deployment/production.md
   - docs/en/troubleshooting/index.md
-- **docs/en/deployment/index.md**: 依赖 4 个文档
+- **docs/en/deployment/index.md**: 依赖 5 个文档
   - docs/en/deployment/china-optimization.md
   - docs/en/deployment/docker.md
+  - docs/en/deployment/jwt-persistence-deployment-checklist.md
   - docs/en/deployment/kubernetes.md
   - docs/en/deployment/production.md
 - **docs/en/deployment/kubernetes.md**: 依赖 3 个文档
@@ -584,18 +584,34 @@
   - docs/zh/tracing/operations-guide.md
   - docs/zh/tracing/performance-tuning.md
   - docs/zh/tracing/troubleshooting.md
+- **docs/en/configuration/jwt-persistence.md**: 依赖 3 个文档
+  - docs/en/monitoring/index.md
+  - docs/en/security/jwt-authentication.md
+  - docs/en/troubleshooting/performance.md
+- **docs/en/deployment/jwt-persistence-deployment-checklist.md**: 依赖 4 个文档
+  - docs/en/configuration/jwt-persistence.md
+  - docs/en/monitoring/index.md
+  - docs/en/security/jwt-authentication.md
+  - docs/en/troubleshooting/common-issues.md
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.57 - 2025-10-14 (e0a11f76)
+- **docs/en/troubleshooting/common-issues.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
+- **docs/en/security/jwt-authentication.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
+- **docs/en/deployment/production.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
+- **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.0 - 2025-10-15 (c8b5d0df)
+- **docs/en/deployment/index.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
+- **docs/en/configuration/jwt-persistence.md**: v1.0.0 - 2025-10-15 (c8b5d0df)
+- **docs/en/configuration/index.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
+- **docs/en/api-reference/management-api.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
+- **docs-version-report.md**: v1.0.58 - 2025-10-15 (420a2e4a)
+- **audit-log-troubleshooting-guide.md**: v1.0.0 - 2025-10-15 (43364f14)
 - **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/zh/configuration/store-config.md**: v1.0.0 - 2025-09-25 (21313fa8)
 - **docs/zh/configuration/index.md**: v1.0.2 - 2025-09-25 (32bd1673)
 - **docs/en/configuration/store-config.md**: v1.0.0 - 2025-09-25 (32bd1673)
-- **docs/en/configuration/index.md**: v1.0.2 - 2025-09-25 (32bd1673)
 - **docs/zh/configuration/application-config.md**: v1.0.2 - 2025-09-06 (dbe39921)
-- **docs/en/deployment/production.md**: v1.0.2 - 2025-09-06 (dbe39921)
 - **docs/en/deployment/kubernetes.md**: v1.0.3 - 2025-09-06 (dbe39921)
 - **docs/en/deployment/docker.md**: v1.0.2 - 2025-09-06 (dbe39921)
 - **docs/en/configuration/application-config.md**: v1.0.2 - 2025-09-06 (dbe39921)
@@ -616,8 +632,6 @@
 - **docs/zh/deployment/index.md**: v1.0.2 - 2025-09-02 (dbe39921)
 - **docs/zh/deployment/china-optimization.md**: v1.0.2 - 2025-09-02 (dbe39921)
 - **docs/en/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (dbe39921)
-- **docs/en/troubleshooting/common-issues.md**: v1.0.2 - 2025-09-02 (dbe39921)
-- **docs/en/security/jwt-authentication.md**: v1.0.1 - 2025-09-02 (dbe39921)
 - **docs/en/reference/faq.md**: v1.0.2 - 2025-09-02 (dbe39921)
 - **docs/en/monitoring/testing.md**: v1.0.3 - 2025-09-02 (dbe39921)
 - **docs/en/monitoring/setup.md**: v1.0.2 - 2025-09-02 (dbe39921)
@@ -706,7 +720,6 @@
 - **docs/en/development/contributing.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/development/code-quality.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/development/architecture.md**: v1.0.1 - 2025-08-29 (dbe39921)
-- **docs/en/deployment/index.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/deployment/github-pages.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/configuration/rate-limiting.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/configuration/modular-config.md**: v1.0.0 - 2025-08-29 (dbe39921)
@@ -715,7 +728,6 @@
 - **docs/en/configuration/circuit-breaker.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/api-reference/universal-api.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/api-reference/openapi-spec.md**: v1.0.1 - 2025-08-29 (dbe39921)
-- **docs/en/api-reference/management-api.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/api-reference/index.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/README.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **README.md**: v1.0.2 - 2025-08-29 (dbe39921)
