@@ -89,9 +89,6 @@ const loginRules = reactive<FormRules<typeof loginForm>>({
 })
 
 const handleLogin = async () => {
-  // 添加调试信息
-  console.log('登录按钮被点击')
-  console.log('表单数据:', loginForm)
   
   // 标记已尝试登录
   loginAttempted.value = true
@@ -104,8 +101,6 @@ const handleLogin = async () => {
     
     // 调用用户 store 的登录方法
     const response = await userStore.login(loginForm.username, loginForm.password)
-    
-    console.log(t('login.success'), response)
     
     // 跳转到仪表板 (将使用Layout组件)
     router.push('/dashboard')
