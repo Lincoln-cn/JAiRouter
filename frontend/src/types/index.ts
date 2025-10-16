@@ -119,11 +119,35 @@ export interface TracingOverview {
   errorTraces: number
   avgDuration: number
   samplingRate: number
+  successfulTraces?: number
+  totalSpans?: number
+  maxDuration?: number
+  minDuration?: number
 }
 
 export interface TracingStats {
   traceVolumeTrend: TimeSeriesData[]
   errorTrend: TimeSeriesData[]
+  processing?: {
+    queue_size: number
+    processed_count: number
+    is_running: boolean
+    success_rate: number
+    dropped_count: number
+  }
+  configInfo?: {
+    serviceName: string
+    exporterType: string
+    globalSamplingRatio: number
+    enabled: boolean
+  }
+  memory?: {
+    cache_size: number
+    pressure_level: string
+    cache_hit_ratio: number
+    heap_usage_ratio: number
+  }
+  timestamp?: string
 }
 
 export interface ServiceStats {
@@ -137,7 +161,7 @@ export interface ServiceStats {
 }
 
 export interface TimeSeriesData {
-  timestamp: string
+  timestamp: string | number
   value: number
 }
 
