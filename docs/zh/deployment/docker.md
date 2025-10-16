@@ -178,6 +178,26 @@ docker run -d \
   sodlinken/jairouter:latest
 ```
 
+docker run  \
+  --name jairouter \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e PROD_ADMIN_API_KEY=adminkey \
+  -e PROD_SERVICE_API_KEY=serviceaoi \
+  -e PROD_READONLY_API_KEY=readonly \
+  -e JAIROUTER_SECURITY_ENABLED=true \
+  -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
+  -e JAIROUTER_SECURITY_JWT_ENABLED=true \
+  -e PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0" \
+  --restart unless-stopped \
+  --health-cmd="curl -f http://localhost:8080/actuator/health || exit 1" \
+  --health-interval=30s \
+  --health-timeout=10s \
+  --health-retries=3 \
+  --health-start-period=60s \
+  sodlinken/jairouter:latest
+
 ### 2. 开发环境运行
 
 ```
