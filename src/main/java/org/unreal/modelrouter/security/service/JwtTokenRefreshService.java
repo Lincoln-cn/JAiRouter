@@ -11,6 +11,7 @@ import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.util.TokenHashUtils;
+import org.unreal.modelrouter.security.audit.ExtendedSecurityAuditService;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
