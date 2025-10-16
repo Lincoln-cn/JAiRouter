@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.security.config.properties.JwtUserProperties;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.security.audit.ExtendedSecurityAuditService;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
