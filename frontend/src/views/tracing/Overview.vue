@@ -168,6 +168,9 @@ import {
 } from '@/api/tracing'
 import type { TracingOverview, TracingStats, ServiceStats } from '@/types'
 
+// 图表更新定时器
+let chartUpdateTimer: number | null = null
+
 // 加载状态
 const loading = ref(false)
 const refreshing = ref(false)
@@ -205,14 +208,34 @@ watch([tracingStats, services], () => {
 
 // 初始化图表
 const initCharts = () => {
+  // 清理已存在的图表实例
+  if (traceChartInstance) {
+    traceChartInstance.dispose()
+    traceChartInstance = null
+  }
+  
+  if (latencyChartInstance) {
+    latencyChartInstance.dispose()
+    latencyChartInstance = null
+  }
+  
   if (traceChart.value) {
-    traceChartInstance = echarts.init(traceChart.value)
-    traceChartInstance.setOption(getTraceChartOption())
+    try {
+      traceChartInstance = echarts.init(traceChart.value)
+      traceChartInstance.setOption(getTraceChartOption())
+    } catch (error) {
+      console.error('初始化追踪趋势图表失败:', error)
+    }
   }
 
   if (latencyChart.value) {
-    latencyChartInstance = echarts.init(latencyChart.value)
-    latencyChartInstance.setOption(getLatencyChartOption())
+    try {
+      latencyChartInstance = echarts.init(latencyChart.value)
+      const option = getLatencyChartOption()
+      latencyChartInstance.setOption(option)
+    } catch (error) {
+      console.error('初始化延迟分布图表失败:', error)
+    }
   }
   
   // 立即尝试更新图表，确保即使在初始化后数据到达也能正确显示
@@ -239,9 +262,9 @@ const getTraceChartOption = () => {
   return {
     tooltip: {
       trigger: 'axis',
-      formatter: (params) => {
+      formatter: (params: any[]) => {
         let tooltipText = params[0].axisValueLabel + '<br/>'
-        params.forEach(param => {
+        params.forEach((param: any) => {
           tooltipText += `${param.marker} ${param.seriesName}: ${param.value}<br/>`
         })
         return tooltipText
@@ -301,13 +324,20 @@ const getTraceChartOption = () => {
 
 // 更新追踪趋势图表
 const updateTraceChart = () => {
-  console.log('更新追踪趋势图表，数据:', tracingStats.value)
   if (traceChartInstance) {
     traceChartInstance.setOption(getTraceChartOption(), true) // 第二个参数为true表示不合并，完全替换
+    // 强制重新渲染
+    traceChartInstance.resize()
   } else if (traceChart.value) {
     // 如果图表实例不存在，重新创建
-    traceChartInstance = echarts.init(traceChart.value)
-    traceChartInstance.setOption(getTraceChartOption())
+    try {
+      traceChartInstance = echarts.init(traceChart.value)
+      traceChartInstance.setOption(getTraceChartOption())
+      // 强制重新渲染
+      traceChartInstance.resize()
+    } catch (error) {
+      console.error('创建追踪趋势图表实例失败:', error)
+    }
   }
 }
 
@@ -317,7 +347,7 @@ const getLatencyChartOption = () => {
   const avgDurations = services.value.map(service => service.avgDuration)
   const p95Durations = services.value.map(service => service.p95Duration)
 
-  return {
+  const option = {
     tooltip: {
       trigger: 'axis'
     },
@@ -354,16 +384,28 @@ const getLatencyChartOption = () => {
       }
     ]
   }
+  
+  return option
 }
 
 // 更新延迟分布图表
 const updateLatencyChart = () => {
+  const option = getLatencyChartOption()
+  
   if (latencyChartInstance) {
-    latencyChartInstance.setOption(getLatencyChartOption(), true) // 第二个参数为true表示不合并，完全替换
+    latencyChartInstance.setOption(option, true) // 第二个参数为true表示不合并，完全替换
+    // 强制重新渲染
+    latencyChartInstance.resize()
   } else if (latencyChart.value) {
     // 如果图表实例不存在，重新创建
-    latencyChartInstance = echarts.init(latencyChart.value)
-    latencyChartInstance.setOption(getLatencyChartOption())
+    try {
+      latencyChartInstance = echarts.init(latencyChart.value)
+      latencyChartInstance.setOption(option)
+      // 强制重新渲染
+      latencyChartInstance.resize()
+    } catch (error) {
+      console.error('创建图表实例失败:', error)
+    }
   }
 }
 
@@ -420,30 +462,32 @@ const loadTracingStats = async () => {
   try {
     const response = await getTracingStats()
 
-    const data = response.data.data || response
+    const data = response.data || response
 
     if (data) {
+      // 正确处理返回的数据结构
       tracingStats.value = {
         traceVolumeTrend: (data as any).traceVolumeTrend || [],
-        errorTrend: (data as any).errorTrend || []
+        errorTrend: (data as any).errorTrend || [],
+        processing: (data as any).processing,
+        configInfo: (data as any).configInfo,
+        memory: (data as any).memory,
+        timestamp: (data as any).timestamp
       }
 
-      // 检查多种可能的采样率字段
+      // 正确设置采样率
       const configInfo = (data as any).configInfo;
       if (configInfo && typeof configInfo.globalSamplingRatio === 'number') {
         stats.value.samplingRate = Math.round(configInfo.globalSamplingRatio * 100);
       } else if (configInfo && typeof configInfo.samplingRate === 'number') {
         stats.value.samplingRate = configInfo.samplingRate;
       }
-
-      console.log('趋势数据点数量:', tracingStats.value.traceVolumeTrend.length)
     } else {
       // 数据为空时设置默认值
       tracingStats.value = {
         traceVolumeTrend: [],
         errorTrend: []
       }
-      console.log('趋势数据为空，使用默认值')
     }
   } catch (error) {
     console.error('加载追踪统计数据失败:', error)
@@ -459,24 +503,12 @@ const loadTracingStats = async () => {
 const loadServiceStats = async () => {
   try {
     const response = await getServiceStats()
-    console.log('服务统计数据响应:', response)
-
-    const data = response.data.data || response
-    console.log('解析后的服务数据:', data)
+    const data = response.data?.data || response.data
 
     if (data) {
-      if (Array.isArray(data)) {
-        services.value = data.filter((item: any) => item && typeof item === 'object' && item.name)
-      } else if ((data as any).services && Array.isArray((data as any).services)) {
-        services.value = (data as any).services.filter((item: any) => item && typeof item === 'object' && item.name)
-      } else {
-        services.value = []
-      }
-
-      console.log('服务数量:', services.value.length)
+      services.value = data
     } else {
       services.value = []
-      console.log('服务数据为空')
     }
   } catch (error) {
     console.error('加载服务统计数据失败:', error)
