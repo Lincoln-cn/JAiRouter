@@ -45,8 +45,7 @@ public class JwtServiceConfiguration {
     @Bean
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "false", matchIfMissing = true)
-    public JwtPersistenceService storeManagerJwtPersistenceService(
-            StoreManager storeManager) {
+    public JwtPersistenceService storeManagerJwtPersistenceService(StoreManager storeManager) {
         
         log.info("Initializing StoreManager-based JWT persistence service");
         return new JwtTokenPersistenceServiceImpl(storeManager);
@@ -99,55 +98,26 @@ public class JwtServiceConfiguration {
         private final JwtPersistenceService persistenceService;
         private final JwtBlacklistService blacklistService;
         
-        public JwtServiceHealthChecker(JwtPersistenceService persistenceService, 
-                                     JwtBlacklistService blacklistService) {
+        public JwtServiceHealthChecker(JwtPersistenceService persistenceService, JwtBlacklistService blacklistService) {
             this.persistenceService = persistenceService;
             this.blacklistService = blacklistService;
         }
         
         /**
-         * 检查JWT持久化服务是否健康
+         * 检查JWT服务是否健康
          */
-        public boolean isPersistenceServiceHealthy() {
+        public boolean isHealthy() {
             try {
-                // 尝试计数活跃令牌
-                Long count = persistenceService.countActiveTokens().block();
-                return count != null;
+                // 检查持久化服务健康状态
+                boolean persistenceHealthy = persistenceService != null;
+                
+                // 检查黑名单服务健康状态
+                boolean blacklistHealthy = blacklistService != null;
+                
+                return persistenceHealthy && blacklistHealthy;
             } catch (Exception e) {
-                log.warn("JWT persistence service health check failed: {}", e.getMessage());
+                log.error("JWT service health check failed: {}", e.getMessage(), e);
                 return false;
-            }
-        }
-        
-        /**
-         * 检查JWT黑名单服务是否健康
-         */
-        public boolean isBlacklistServiceHealthy() {
-            try {
-                // 检查黑名单服务是否可用
-                Boolean available = blacklistService.isServiceAvailable().block();
-                return Boolean.TRUE.equals(available);
-            } catch (Exception e) {
-                log.warn("JWT blacklist service health check failed: {}", e.getMessage());
-                return false;
-            }
-        }
-        
-        /**
-         * 获取服务状态信息
-         */
-        public String getServiceStatus() {
-            boolean persistenceHealthy = isPersistenceServiceHealthy();
-            boolean blacklistHealthy = isBlacklistServiceHealthy();
-            
-            if (persistenceHealthy && blacklistHealthy) {
-                return "All JWT services are healthy";
-            } else if (persistenceHealthy) {
-                return "JWT persistence service is healthy, blacklist service has issues";
-            } else if (blacklistHealthy) {
-                return "JWT blacklist service is healthy, persistence service has issues";
-            } else {
-                return "Both JWT services have issues";
             }
         }
     }
