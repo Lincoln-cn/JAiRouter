@@ -71,6 +71,27 @@
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
+          <!-- 采样统计信息卡片 -->
+          <el-card class="card-style" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span>采样统计</span>
+                <el-button @click="loadSamplingStats" size="small">刷新</el-button>
+              </div>
+            </template>
+            <el-descriptions :column="1" border class="health-desc">
+              <el-descriptions-item label="总采样数">
+                {{ samplingStats.totalSamples }}
+              </el-descriptions-item>
+              <el-descriptions-item label="丢弃样本数">
+                {{ samplingStats.droppedSamples }}
+              </el-descriptions-item>
+              <el-descriptions-item label="采样效率">
+                <el-progress :percentage="samplingStats.samplingEfficiency"
+                  :format="(percentage: number) => `${percentage.toFixed(1)}%`"/>
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-card>
         </div>
       </el-col>
 
@@ -249,11 +270,7 @@ import {
     disableTracing,
     refreshSamplingStrategy,
     refreshTracingData,
-    cleanupExpiredTraces,
-    getSamplingConfig,
-    updateSamplingConfig,
-    resetSamplingConfig,
-    getSamplingStats
+    cleanupExpiredTraces
 } from '@/api/tracing'
 
 // 添加导入获取服务类型的API
@@ -447,7 +464,8 @@ const loadTracingConfig = async () => {
             // 更新配置表单
             if ((data as any).performance) {
                 configForm.value.performance = {
-                    asyncProcessing: (data as any).performance.asyncProcessing || true,
+                    asyncProcessing: (data as any).performance.asyncProcessing !== undefined ? 
+                        (data as any).performance.asyncProcessing : true,
                     threadPool: (data as any).performance.threadPool || { coreSize: 10 },
                     buffer: (data as any).performance.buffer || { size: 1000 },
                     memory: (data as any).performance.memory || { memoryLimitMb: 512 }
@@ -460,56 +478,68 @@ const loadTracingConfig = async () => {
                     logging: (data as any).exporter.logging || { enabled: true }
                 }
             }
+            
+            // 更新采样配置
+            if ((data as any).sampling) {
+                const samplingData = (data as any).sampling;
+                samplingConfig.value.globalRate = (samplingData.ratio !== undefined ? samplingData.ratio : 0) * 100;
+                samplingConfig.value.adaptiveSampling = samplingData.adaptive?.enabled !== undefined ? 
+                    samplingData.adaptive.enabled : false;
+                samplingConfig.value.alwaysSamplePaths = samplingData.alwaysSample || [];
+                samplingConfig.value.neverSamplePaths = samplingData.neverSample || [];
+                
+                // 处理服务特定配置
+                if (samplingData.serviceRatios) {
+                    samplingConfig.value.serviceConfigs = Object.entries(samplingData.serviceRatios).map(([service, rate]) => ({
+                        service,
+                        rate: (rate as number) * 100
+                    }));
+                }
+            }
         }
     } catch (error) {
         console.error('加载追踪配置失败:', error)
-        ElMessage.error('加载追踪配置失败')
+        ElMessage.error('加载追踪配置失败: ' + (error as any).message || '未知错误')
     }
 }
 
 // 刷新配置
 const handleRefreshConfig = () => {
-    loadTracingConfig()
-    loadSamplingConfig()
+    refreshAllSamplingData()
 }
 
 // 保存配置
 const handleSaveConfig = async () => {
     saving.value = true
     try {
-        await updateTracingConfig(configForm.value)
-        ElMessage.success('配置保存成功')
-    } catch (error) {
-        console.error('保存配置失败:', error)
-        ElMessage.error('保存配置失败')
-    } finally {
-        saving.value = false
-    }
-}
-
-// 加载采样配置
-const loadSamplingConfig = async () => {
-    try {
-        const response = await getSamplingConfig()
-        const data = response.data || response
+        // 构造符合后端要求的数据结构
+        const configToSend = {
+            sampling: {
+                ratio: samplingConfig.value.globalRate / 100,
+                adaptive: {
+                    enabled: samplingConfig.value.adaptiveSampling
+                },
+                alwaysSample: samplingConfig.value.alwaysSamplePaths,
+                neverSample: samplingConfig.value.neverSamplePaths,
+                serviceRatios: samplingConfig.value.serviceConfigs.reduce((acc, config) => {
+                    acc[config.service] = config.rate / 100;
+                    return acc;
+                }, {} as Record<string, number>)
+            },
+            performance: configForm.value.performance,
+            exporter: configForm.value.exporter
+        };
         
-        if (data && data.data) {
-            samplingConfig.value = {
-                globalRate: (data.data.globalRate || 0.1) * 100,
-                adaptiveSampling: data.data.adaptiveSampling || true,
-                alwaysSamplePaths: data.data.alwaysSamplePaths || [],
-                neverSamplePaths: data.data.neverSamplePaths || [],
-                serviceConfigs: data.data.serviceConfigs && Array.isArray(data.data.serviceConfigs) 
-                    ? data.data.serviceConfigs.map((sc: any) => ({
-                        service: sc.service,
-                        rate: (sc.rate || 0.1) * 100
-                    }))
-                    : []
-            }
-        }
+        await updateTracingConfig(configToSend);
+        ElMessage.success('配置保存成功');
+        
+        // 刷新采样策略
+        await refreshSamplingStrategy();
     } catch (error) {
-        console.error('加载采样配置失败:', error)
-        ElMessage.error('加载采样配置失败')
+        console.error('保存配置失败:', error);
+        ElMessage.error('保存配置失败: ' + (error as any).message || '未知错误');
+    } finally {
+        saving.value = false;
     }
 }
 
@@ -529,19 +559,24 @@ const handleSaveSamplingConfig = async () => {
     optimizeServiceConfig()
     
     try {
+        // 构造符合后端要求的数据结构
         const config = {
-            globalRate: samplingConfig.value.globalRate / 100,
-            adaptiveSampling: samplingConfig.value.adaptiveSampling,
-            alwaysSamplePaths: samplingConfig.value.alwaysSamplePaths,
-            neverSamplePaths: samplingConfig.value.neverSamplePaths,
-            serviceConfigs: samplingConfig.value.serviceConfigs.map(sc => ({
-                service: sc.service,
-                rate: sc.rate / 100
-            }))
-        }
+            sampling: {
+                ratio: samplingConfig.value.globalRate / 100,
+                adaptive: {
+                    enabled: samplingConfig.value.adaptiveSampling
+                },
+                alwaysSample: samplingConfig.value.alwaysSamplePaths,
+                neverSample: samplingConfig.value.neverSamplePaths,
+                serviceRatios: samplingConfig.value.serviceConfigs.reduce((acc, config) => {
+                    acc[config.service] = config.rate / 100;
+                    return acc;
+                }, {} as Record<string, number>)
+            }
+        };
         
         saving.value = true
-        await updateSamplingConfig(config)
+        await updateTracingConfig(config)
         
         // 刷新采样策略
         await refreshSamplingStrategy()
@@ -564,8 +599,23 @@ const handleResetSamplingConfig = async () => {
             type: 'warning'
         })
         
-        await resetSamplingConfig()
-        await loadSamplingConfig()
+        // 重置为默认配置
+        samplingConfig.value = {
+            globalRate: 10,
+            adaptiveSampling: true,
+            alwaysSamplePaths: ['/api/critical', '/api/payment'],
+            neverSamplePaths: ['/api/health', '/api/metrics'],
+            serviceConfigs: [
+                { service: 'chat', rate: 20 },
+                { service: 'embedding', rate: 15 },
+                { service: 'rerank', rate: 10 },
+                { service: 'tts', rate: 10 },
+                { service: 'stt', rate: 10 },
+                { service: 'imgGen', rate: 10 },
+                { service: 'imgEdit', rate: 10 }
+            ]
+        }
+        
         ElMessage.success('采样配置已重置')
     } catch (error) {
         if (error !== 'cancel') {
@@ -613,7 +663,7 @@ const handleRefreshSampling = async () => {
         ElMessage.success('采样策略刷新成功')
     } catch (error) {
         console.error('刷新采样策略失败:', error)
-        ElMessage.error('刷新采样策略失败')
+        ElMessage.error('刷新采样策略失败: ' + (error as any).message || '未知错误')
     } finally {
         refreshingSampling.value = false
     }
@@ -763,20 +813,22 @@ const validateSamplingStats = (stats: any) => {
 // 加载采样统计
 const loadSamplingStats = async () => {
     try {
-        const response = await getSamplingStats()
+        const response = await getTracingStats()
         const data = response.data || response
         
-        if (data && data.data) {
-            // 验证数据合理性
-            if (validateSamplingStats(data.data)) {
+        if (data) {
+            // 从前端数据结构中提取采样相关信息
+            const configInfo = (data as any).configInfo;
+            if (configInfo) {
+                // 更新采样统计信息
                 samplingStats.value = {
-                    totalSamples: data.data.totalSamples || 0,
-                    droppedSamples: data.data.droppedSamples || 0,
-                    samplingEfficiency: data.data.samplingEfficiency || 0
+                    totalSamples: (data as any).totalSpansProcessed || 0,
+                    droppedSamples: (data as any).droppedSpans || 0,
+                    samplingEfficiency: configInfo.globalSamplingRatio !== undefined ? 
+                        (configInfo.globalSamplingRatio * 100) : 0
                 }
             } else {
-                ElMessage.warning('采样统计数据异常，使用默认值')
-                // 使用默认值但给出提示
+                // 如果没有configInfo，使用默认值
                 samplingStats.value = {
                     totalSamples: 0,
                     droppedSamples: 0,
@@ -794,7 +846,7 @@ const loadSamplingStats = async () => {
         }
     } catch (error) {
         console.error('加载采样统计失败:', error)
-        ElMessage.error('加载采样统计失败')
+        ElMessage.error('加载采样统计失败: ' + (error as any).message || '未知错误')
         // 保留当前值或使用默认值
     }
 }
@@ -828,9 +880,8 @@ const refreshAllSamplingData = async () => {
         
         // 并行加载所有数据
         await Promise.all([
-            loadSamplingConfig(),
-            loadSamplingStats(),
-            loadAvailableServices()
+            loadTracingConfig(),
+            loadSamplingStats()
         ])
         
         ElMessage.success('采样数据刷新完成')
@@ -844,8 +895,7 @@ const refreshAllSamplingData = async () => {
 onMounted(() => {
     loadTracingStatus()
     loadHealthStatus()
-    loadTracingConfig()
-    refreshAllSamplingData() // 使用新的刷新方法
+    refreshAllSamplingData()
     
     // 开始定时刷新采样统计
     startStatsRefresh()
