@@ -151,7 +151,7 @@ export const getActiveAlerts = () => {
 }
 
 export const getLatencyAnalysis = (timeRange?: TimeRange) => {
-    return request.get<RouterResponse<LatencyAnalysis>>('/tracing/performance/latency', {
+    return request.get<RouterResponse<LatencyAnalysis>>('/tracing/query/performance/latency', {
         params: timeRange
     })
 }
@@ -170,25 +170,4 @@ export const getThroughputAnalysis = (timeRange?: TimeRange) => {
 
 export const getTraceDetails = (traceId: string) => {
     return request.get<RouterResponse<TraceDetails>>(`/tracing/query/trace/${traceId}`)
-}
-
-// 采样配置相关接口
-export const getSamplingConfig = () => {
-    return request.get<RouterResponse<SamplingConfig>>('/config/tracing/sampling')
-}
-
-export const updateSamplingConfig = (config: any, createNewVersion: boolean = true) => {
-    return request.put<RouterResponse<void>>('/config/tracing/sampling', config, {
-        params: { createNewVersion }
-    })
-}
-
-export const resetSamplingConfig = (createNewVersion: boolean = true) => {
-    return request.post<RouterResponse<void>>('/config/tracing/sampling/reset', null, {
-        params: { createNewVersion }
-    })
-}
-
-export const getSamplingStats = () => {
-    return request.get<RouterResponse<SamplingStats>>('/tracing/actuator/stats')
 }
