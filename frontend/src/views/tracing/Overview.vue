@@ -1,15 +1,5 @@
 <template>
   <div class="tracing-overview">
-    <el-alert
-      v-if="stats.totalTraces === 0"
-      title="暂无追踪数据"
-      type="info"
-      description="追踪系统已启用，请通过API网关发送一些请求以生成追踪数据。数据将实时显示在此页面。"
-      :closable="false"
-      show-icon
-      style="margin-bottom: 20px"
-    />
-    
     <el-card v-loading="loading" element-loading-text="加载中...">
       <template #header>
         <div class="card-header">
@@ -167,13 +157,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import {
   getTracingOverview,
   getTracingStats,
-  getTracingStatus,
   getServiceStats,
   refreshTracingData
 } from '@/api/tracing'
@@ -206,6 +195,14 @@ const latencyChart = ref<HTMLElement | null>(null)
 let traceChartInstance: echarts.ECharts | null = null
 let latencyChartInstance: echarts.ECharts | null = null
 
+// 监听数据变化并更新图表
+watch([tracingStats, services], () => {
+  nextTick(() => {
+    updateTraceChart()
+    updateLatencyChart()
+  })
+}, { deep: true })
+
 // 初始化图表
 const initCharts = () => {
   if (traceChart.value) {
@@ -217,31 +214,55 @@ const initCharts = () => {
     latencyChartInstance = echarts.init(latencyChart.value)
     latencyChartInstance.setOption(getLatencyChartOption())
   }
+  
+  // 立即尝试更新图表，确保即使在初始化后数据到达也能正确显示
+  updateTraceChart()
+  updateLatencyChart()
 }
 
 // 追踪量趋势图表配置
 const getTraceChartOption = () => {
+  // 提取时间戳并转换为可读的时间格式
   const timestamps = tracingStats.value.traceVolumeTrend.map(item => {
-    // 确保时间戳是数字类型
     const timestamp = typeof item.timestamp === 'string' ? parseInt(item.timestamp) : item.timestamp
-    return new Date(timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    return new Date(timestamp).toLocaleTimeString('zh-CN', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: false
+    })
   })
+  
+  // 提取追踪量和错误量数据
   const traceVolumes = tracingStats.value.traceVolumeTrend.map(item => item.value)
   const errorVolumes = tracingStats.value.errorTrend.map(item => item.value)
 
   return {
     tooltip: {
-      trigger: 'axis'
+      trigger: 'axis',
+      formatter: (params) => {
+        let tooltipText = params[0].axisValueLabel + '<br/>'
+        params.forEach(param => {
+          tooltipText += `${param.marker} ${param.seriesName}: ${param.value}<br/>`
+        })
+        return tooltipText
+      }
     },
     legend: {
       data: ['总追踪数', '错误追踪数']
     },
     xAxis: {
       type: 'category',
-      data: timestamps.length > 0 ? timestamps : ['暂无数据']
+      data: timestamps.length > 0 ? timestamps : ['暂无数据'],
+      axisLabel: {
+        interval: 0,
+        rotate: 45
+      }
     },
     yAxis: {
-      type: 'value'
+      type: 'value',
+      axisLabel: {
+        formatter: '{value}'
+      }
     },
     series: [
       {
@@ -251,6 +272,9 @@ const getTraceChartOption = () => {
         smooth: true,
         itemStyle: {
           color: '#409eff'
+        },
+        areaStyle: {
+          opacity: 0.1
         }
       },
       {
@@ -260,14 +284,24 @@ const getTraceChartOption = () => {
         smooth: true,
         itemStyle: {
           color: '#f56c6c'
+        },
+        areaStyle: {
+          opacity: 0.1
         }
       }
-    ]
+    ],
+    grid: {
+      left: '10%',
+      right: '10%',
+      bottom: '20%',
+      containLabel: true
+    }
   }
 }
 
 // 更新追踪趋势图表
 const updateTraceChart = () => {
+  console.log('更新追踪趋势图表，数据:', tracingStats.value)
   if (traceChartInstance) {
     traceChartInstance.setOption(getTraceChartOption(), true) // 第二个参数为true表示不合并，完全替换
   } else if (traceChart.value) {
@@ -345,19 +379,21 @@ const handleResize = () => {
 const loadTracingOverview = async () => {
   try {
     const response = await getTracingOverview()
-    console.log('追踪概览数据响应:', response)
 
-    const data = (response.data || response) as any
-    console.log('解析后的数据:', data)
+    const data = (response.data.data || response) as any
     
     if (data) {
+      // 直接使用返回的数据结构，而不是尝试访问 data.data
       stats.value = {
-        totalTraces: data.totalTraces || data.traceCount || data.total || 0,
-        errorTraces: data.errorTraces || data.errorCount || data.errors || 0,
-        avgDuration: Math.round(data.avgDuration || data.averageDuration || data.duration || 0),
-        samplingRate: data.samplingRate || data.sampleRate || 0
+        totalTraces: data.totalTraces || 0,
+        errorTraces: data.errorTraces !== undefined ? data.errorTraces : (data.totalTraces - data.successfulTraces) || 0,
+        avgDuration: Math.round(data.avgDuration || 0),
+        samplingRate: data.samplingRate || 0,
+        successfulTraces: data.successfulTraces,
+        totalSpans: data.totalSpans,
+        maxDuration: data.maxDuration,
+        minDuration: data.minDuration
       }
-      console.log('更新后的stats:', stats.value)
     } else {
       // 数据为空时设置默认值
       stats.value = {
@@ -383,10 +419,8 @@ const loadTracingOverview = async () => {
 const loadTracingStats = async () => {
   try {
     const response = await getTracingStats()
-    console.log('追踪统计数据响应:', response)
 
-    const data = response.data || response
-    console.log('解析后的统计数据:', data)
+    const data = response.data.data || response
 
     if (data) {
       tracingStats.value = {
@@ -394,15 +428,15 @@ const loadTracingStats = async () => {
         errorTrend: (data as any).errorTrend || []
       }
 
-      if ((data as any).configInfo && typeof (data as any).configInfo.globalSamplingRatio === 'number') {
-        stats.value.samplingRate = Math.round((data as any).configInfo.globalSamplingRatio * 100)
+      // 检查多种可能的采样率字段
+      const configInfo = (data as any).configInfo;
+      if (configInfo && typeof configInfo.globalSamplingRatio === 'number') {
+        stats.value.samplingRate = Math.round(configInfo.globalSamplingRatio * 100);
+      } else if (configInfo && typeof configInfo.samplingRate === 'number') {
+        stats.value.samplingRate = configInfo.samplingRate;
       }
 
       console.log('趋势数据点数量:', tracingStats.value.traceVolumeTrend.length)
-      // 等待DOM更新后再更新图表
-      nextTick(() => {
-        updateTraceChart()
-      })
     } else {
       // 数据为空时设置默认值
       tracingStats.value = {
@@ -410,7 +444,6 @@ const loadTracingStats = async () => {
         errorTrend: []
       }
       console.log('趋势数据为空，使用默认值')
-      updateTraceChart()
     }
   } catch (error) {
     console.error('加载追踪统计数据失败:', error)
@@ -419,7 +452,6 @@ const loadTracingStats = async () => {
       traceVolumeTrend: [],
       errorTrend: []
     }
-    updateTraceChart()
   }
 }
     
@@ -429,7 +461,7 @@ const loadServiceStats = async () => {
     const response = await getServiceStats()
     console.log('服务统计数据响应:', response)
 
-    const data = response.data || response
+    const data = response.data.data || response
     console.log('解析后的服务数据:', data)
 
     if (data) {
@@ -442,20 +474,14 @@ const loadServiceStats = async () => {
       }
 
       console.log('服务数量:', services.value.length)
-      // 等待DOM更新后再更新图表
-      nextTick(() => {
-        updateLatencyChart()
-      })
     } else {
       services.value = []
       console.log('服务数据为空')
-      updateLatencyChart()
     }
   } catch (error) {
     console.error('加载服务统计数据失败:', error)
     // 设置空数组，不显示错误消息
     services.value = []
-    updateLatencyChart()
   }
 }
     
