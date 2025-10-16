@@ -35,8 +35,7 @@ public class CacheConfiguration {
                 .hashValue(stringSerializer)
                 .build();
         
-        ReactiveRedisTemplate<String, String> template = new ReactiveRedisTemplate<>(connectionFactory, serializationContext);
-        log.info("Redis响应式模板配置完成");
-        return template;
+        log.info("Initializing security cache Redis template");
+        return new ReactiveRedisTemplate<>(connectionFactory, serializationContext);
     }
 }
