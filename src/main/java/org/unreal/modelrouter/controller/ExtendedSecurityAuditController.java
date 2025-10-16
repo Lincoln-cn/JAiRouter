@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
-import org.unreal.modelrouter.security.service.ExtendedSecurityAuditService;
+import org.unreal.modelrouter.security.audit.ExtendedSecurityAuditService;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
