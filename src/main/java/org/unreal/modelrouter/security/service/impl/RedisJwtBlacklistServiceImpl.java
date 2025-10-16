@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * 结合内存缓存提高查询性能
  */
 @Slf4j
-@Service("redisJwtBlacklistService")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
 public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {

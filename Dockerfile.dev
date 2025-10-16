@@ -22,6 +22,7 @@ RUN mkdir -p /app/logs /app/config /app/config-store && \
 
 # 复制应用 JAR 文件
 COPY target/model-router-*.jar app.jar
+RUN chown jairouter:jairouter app.jar
 
 # 配置文件通过卷挂载提供，无需复制到镜像中
 

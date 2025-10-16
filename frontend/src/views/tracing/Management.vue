@@ -72,7 +72,7 @@
             </el-descriptions>
           </el-card>
           <!-- 采样统计信息卡片 -->
-          <el-card class="card-style" shadow="hover">
+           <el-card class="card-style" shadow="hover">
             <template #header>
               <div class="card-header">
                 <span>采样统计</span>
@@ -120,106 +120,121 @@
               </div>
             </template>
 
-            <el-tabs v-model="activeConfigTab">
-              <el-tab-pane label="采样配置" name="sampling">
-                <el-tabs v-model="activeSamplingTab" tab-position="left">
-                  <el-tab-pane label="全局配置" name="global">
-                    <el-form :model="samplingConfig" label-width="150px" class="form-style">
-                      <el-form-item label="全局采样率(%)">
+            <div class="vertical-config-layout">
+              <!-- 采样配置 - 全局配置 -->
+              <el-card class="config-section" shadow="hover">
+                <template #header>
+                  <div class="section-header">
+                    <span>采样配置 - 全局配置</span>
+                  </div>
+                </template>
+                <el-form :model="samplingConfig" label-width="150px" class="form-style">
+                  <el-form-item label="全局采样率(%)">
+                    <el-slider
+                      v-model="samplingConfig.globalRate"
+                      :min="0"
+                      :max="100"
+                      show-input
+                      :marks="{0: '0%', 25: '25%', 50: '50%', 75: '75%', 100: '100%'}"
+                    />
+                  </el-form-item>
+                  <el-form-item label="自适应采样">
+                    <el-switch v-model="samplingConfig.adaptiveSampling"/>
+                  </el-form-item>
+                  <el-form-item label="始终采样路径" v-if="samplingConfig.adaptiveSampling">
+                    <el-select
+                      v-model="samplingConfig.alwaysSamplePaths"
+                      multiple
+                      filterable
+                      allow-create
+                      default-first-option
+                      placeholder="请输入路径，按回车确认"
+                    >
+                      <el-option
+                        v-for="path in defaultPaths"
+                        :key="path"
+                        :label="path"
+                        :value="path"
+                      />
+                    </el-select>
+                  </el-form-item>
+                  <el-form-item label="从不采样路径" v-if="samplingConfig.adaptiveSampling">
+                    <el-select
+                      v-model="samplingConfig.neverSamplePaths"
+                      multiple
+                      filterable
+                      allow-create
+                      default-first-option
+                      placeholder="请输入路径，按回车确认"
+                    >
+                      <el-option
+                        v-for="path in defaultPaths"
+                        :key="path"
+                        :label="path"
+                        :value="path"
+                      />
+                    </el-select>
+                  </el-form-item>
+                </el-form>
+              </el-card>
+
+              <!-- 采样配置 - 服务特定配置 -->
+              <el-card class="config-section" shadow="hover">
+                <template #header>
+                  <div class="section-header">
+                    <span>采样配置 - 服务特定配置</span>
+                  </div>
+                </template>
+                <div class="service-config-table">
+                  <el-button type="primary" @click="handleAddServiceConfig" style="margin-bottom: 16px;">
+                    添加服务配置
+                  </el-button>
+                  <el-table :data="samplingConfig.serviceConfigs" style="width: 100%">
+                    <el-table-column prop="service" label="服务名称" width="200">
+                      <template #default="scope">
+                        <el-select v-model="scope.row.service" placeholder="请选择服务" style="width: 90%;">
+                          <el-option
+                            v-for="service in availableServices"
+                            :key="service"
+                            :label="service"
+                            :value="service"
+                          />
+                        </el-select>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="rate" label="采样率(%)" width="200">
+                      <template #default="scope">
                         <el-slider
-                          v-model="samplingConfig.globalRate"
+                          v-model="scope.row.rate"
                           :min="0"
                           :max="100"
                           show-input
-                          :marks="{0: '0%', 25: '25%', 50: '50%', 75: '75%', 100: '100%'}"
+                          style="width: 90%;"
                         />
-                      </el-form-item>
-                      <el-form-item label="自适应采样">
-                        <el-switch v-model="samplingConfig.adaptiveSampling"/>
-                      </el-form-item>
-                      <el-form-item label="始终采样路径" v-if="samplingConfig.adaptiveSampling">
-                        <el-select
-                          v-model="samplingConfig.alwaysSamplePaths"
-                          multiple
-                          filterable
-                          allow-create
-                          default-first-option
-                          placeholder="请输入路径，按回车确认"
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="150">
+                      <template #default="scope">
+                        <el-button
+                          size="small"
+                          type="danger"
+                          @click="handleDeleteServiceConfig(scope.$index)"
                         >
-                          <el-option
-                            v-for="path in defaultPaths"
-                            :key="path"
-                            :label="path"
-                            :value="path"
-                          />
-                        </el-select>
-                      </el-form-item>
-                      <el-form-item label="从不采样路径" v-if="samplingConfig.adaptiveSampling">
-                        <el-select
-                          v-model="samplingConfig.neverSamplePaths"
-                          multiple
-                          filterable
-                          allow-create
-                          default-first-option
-                          placeholder="请输入路径，按回车确认"
-                        >
-                          <el-option
-                            v-for="path in defaultPaths"
-                            :key="path"
-                            :label="path"
-                            :value="path"
-                          />
-                        </el-select>
-                      </el-form-item>
-                    </el-form>
-                  </el-tab-pane>
-                  <el-tab-pane label="服务特定配置" name="service">
-                    <div class="service-config-table">
-                      <el-button type="primary" @click="handleAddServiceConfig" style="margin-bottom: 16px;">
-                        添加服务配置
-                      </el-button>
-                      <el-table :data="samplingConfig.serviceConfigs" style="width: 100%">
-                        <el-table-column prop="service" label="服务名称" width="200">
-                          <template #default="scope">
-                            <el-select v-model="scope.row.service" placeholder="请选择服务" style="width: 90%;">
-                              <el-option
-                                v-for="service in availableServices"
-                                :key="service"
-                                :label="service"
-                                :value="service"
-                              />
-                            </el-select>
-                          </template>
-                        </el-table-column>
-                        <el-table-column prop="rate" label="采样率(%)" width="200">
-                          <template #default="scope">
-                            <el-slider
-                              v-model="scope.row.rate"
-                              :min="0"
-                              :max="100"
-                              show-input
-                              style="width: 90%;"
-                            />
-                          </template>
-                        </el-table-column>
-                        <el-table-column label="操作" width="150">
-                          <template #default="scope">
-                            <el-button
-                              size="small"
-                              type="danger"
-                              @click="handleDeleteServiceConfig(scope.$index)"
-                            >
-                              删除
-                            </el-button>
-                          </template>
-                        </el-table-column>
-                      </el-table>
-                    </div>
-                  </el-tab-pane>
-                </el-tabs>
-              </el-tab-pane>
+                          删除
+                        </el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </el-card>
 
-              <el-tab-pane label="性能配置" name="performance">
+              <!-- 性能配置 -->
+              <el-card class="config-section" shadow="hover">
+                <template #header>
+                  <div class="section-header">
+                    <span>性能配置</span>
+                  </div>
+                </template>
                 <el-form :model="configForm.performance" label-width="150px" class="form-style">
                   <el-form-item label="异步处理">
                     <el-switch v-model="configForm.performance.asyncProcessing"/>
@@ -234,9 +249,15 @@
                     <el-input-number v-model="configForm.performance.memory.memoryLimitMb" :min="64" :max="2048"/>
                   </el-form-item>
                 </el-form>
-              </el-tab-pane>
+              </el-card>
 
-              <el-tab-pane label="导出器配置" name="exporter">
+              <!-- 导出器配置 -->
+              <el-card class="config-section" shadow="hover">
+                <template #header>
+                  <div class="section-header">
+                    <span>导出器配置</span>
+                  </div>
+                </template>
                 <el-form :model="configForm.exporter" label-width="150px" class="form-style">
                   <el-form-item label="导出器类型">
                     <el-select v-model="configForm.exporter.type" style="width: 200px;">
@@ -249,8 +270,8 @@
                     <el-switch v-model="configForm.exporter.logging.enabled"/>
                   </el-form-item>
                 </el-form>
-              </el-tab-pane>
-            </el-tabs>
+              </el-card>
+            </div>
           </el-card>
         </div>
       </el-col>
@@ -270,7 +291,8 @@ import {
     disableTracing,
     refreshSamplingStrategy,
     refreshTracingData,
-    cleanupExpiredTraces
+    cleanupExpiredTraces,
+    getTracingStats
 } from '@/api/tracing'
 
 // 添加导入获取服务类型的API
@@ -812,43 +834,45 @@ const validateSamplingStats = (stats: any) => {
 
 // 加载采样统计
 const loadSamplingStats = async () => {
-    try {
-        const response = await getTracingStats()
-        const data = response.data || response
-        
-        if (data) {
-            // 从前端数据结构中提取采样相关信息
-            const configInfo = (data as any).configInfo;
-            if (configInfo) {
-                // 更新采样统计信息
-                samplingStats.value = {
-                    totalSamples: (data as any).totalSpansProcessed || 0,
-                    droppedSamples: (data as any).droppedSpans || 0,
-                    samplingEfficiency: configInfo.globalSamplingRatio !== undefined ? 
-                        (configInfo.globalSamplingRatio * 100) : 0
-                }
-            } else {
-                // 如果没有configInfo，使用默认值
-                samplingStats.value = {
-                    totalSamples: 0,
-                    droppedSamples: 0,
-                    samplingEfficiency: 0
-                }
-            }
-        } else {
-            ElMessage.warning('未获取到采样统计数据')
-            // 使用默认值
-            samplingStats.value = {
-                totalSamples: 0,
-                droppedSamples: 0,
-                samplingEfficiency: 0
-            }
+  try {
+    const response = await getTracingStats()
+    const data = response.data || response
+    
+    if (data) {
+      // 从接口返回的数据中提取正确的字段
+      const processing = (data as any).processing;
+      const configInfo = (data as any).configInfo;
+      
+      if (processing && configInfo) {
+        // 更新采样统计信息
+        samplingStats.value = {
+          totalSamples: processing.processed_count || 0,
+          droppedSamples: processing.dropped_count || 0,
+          samplingEfficiency: configInfo.globalSamplingRatio !== undefined ? 
+            (configInfo.globalSamplingRatio * 100) : 0
         }
-    } catch (error) {
-        console.error('加载采样统计失败:', error)
-        ElMessage.error('加载采样统计失败: ' + (error as any).message || '未知错误')
-        // 保留当前值或使用默认值
+      } else {
+        // 如果数据结构不符合预期，使用默认值
+        samplingStats.value = {
+          totalSamples: 0,
+          droppedSamples: 0,
+          samplingEfficiency: 0
+        }
+      }
+    } else {
+      ElMessage.warning('未获取到采样统计数据')
+      // 使用默认值
+      samplingStats.value = {
+        totalSamples: 0,
+        droppedSamples: 0,
+        samplingEfficiency: 0
+      }
     }
+  } catch (error) {
+    console.error('加载采样统计失败:', error)
+    ElMessage.error('加载采样统计失败: ' + (error as any).message || '未知错误')
+    // 保留当前值或使用默认值
+  }
 }
 
 // 开始定时刷新采样统计
@@ -899,6 +923,9 @@ onMounted(() => {
     
     // 开始定时刷新采样统计
     startStatsRefresh()
+    
+    // 加载可用服务
+    loadAvailableServices()
 })
 
 // 组件卸载时清理定时器

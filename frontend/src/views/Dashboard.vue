@@ -538,11 +538,7 @@ const handleHealthUpdate = (payload: any) => {
     })
   })
 }
-// ===== end handleHealthUpdate =====
 
-/* 以下为原有数据加载与生命周期逻辑（未改动） */
-
-// 数据请求（保留原有功能）
 const fetchServiceConfig = async () => {
   try {
     configLoading.value = true

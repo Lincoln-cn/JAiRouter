@@ -38,12 +38,8 @@ jairouter:
       # 用户账户配置
       accounts:
         - username: "admin"
-          password: "{noop}admin123"  # 开发环境明文密码，生产环境应使用加密
+          password: "{noop}${PROD_JWT_SECRET:UqfpTm2Zw7ff2BNnZb8AQo8t}"  # 环境应使用环境变量
           roles: [ "ADMIN", "USER" ]
-          enabled: true
-        - username: "user"
-          password: "{noop}user123"
-          roles: [ "USER" ]
           enabled: true
 
     # ========================================

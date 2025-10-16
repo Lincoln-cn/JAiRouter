@@ -1,21 +1,4 @@
-# 多阶段构建 Dockerfile for JAiRouter
-# 阶段1: 构建阶段
-FROM maven:3.9.6-eclipse-temurin-17 AS builder
-
-# 设置工作目录
-WORKDIR /app
-
-# 复制 pom.xml 和源代码
-COPY pom.xml .
-COPY src ./src
-COPY checkstyle.xml .
-COPY spotbugs-security-include.xml .
-COPY spotbugs-security-exclude.xml .
-
-# 构建应用程序（跳过测试以加快构建速度）
-RUN mvn clean package -Pfast
-
-# 阶段2: 运行阶段
+# 单阶段构建 Dockerfile for JAiRouter
 FROM eclipse-temurin:17-jre
 
 # 设置维护者信息
@@ -31,11 +14,13 @@ RUN groupadd -r -g 10010 jairouter && \
 WORKDIR /app
 
 # 创建必要的目录
-RUN mkdir -p /app/logs /app/config /app/config-store && \
-    chown -R jairouter:jairouter /app
+RUN mkdir -p /app/logs /app/config /app/config-store /app/config-dev && \
+    chown -R jairouter:jairouter /app  && \
+    chmod -R 766 /app
 
-# 从构建阶段复制 JAR 文件
-COPY --from=builder /app/target/model-router-*.jar app.jar
+# 直接复制外部构建好的 JAR 文件
+COPY target/model-router-*.jar app.jar
+RUN chown jairouter:jairouter app.jar
 
 # 配置文件通过卷挂载提供，无需复制到镜像中
 
@@ -47,9 +32,9 @@ ENV SPRING_PROFILES_ACTIVE=prod
 ENV SERVER_PORT=8080
 
 # 安全功能相关环境变量
-ENV JAIROUTER_SECURITY_ENABLED=false
+ENV JAIROUTER_SECURITY_ENABLED=true
 ENV JAIROUTER_SECURITY_API_KEY_ENABLED=true
-ENV JAIROUTER_SECURITY_JWT_ENABLED=false
+ENV JAIROUTER_SECURITY_JWT_ENABLED=true
 ENV JAIROUTER_SECURITY_SANITIZATION_REQUEST_ENABLED=true
 ENV JAIROUTER_SECURITY_SANITIZATION_RESPONSE_ENABLED=true
 ENV JAIROUTER_SECURITY_AUDIT_ENABLED=true

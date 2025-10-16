@@ -17,10 +17,10 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 追踪服务
@@ -569,7 +569,7 @@ public class TracingService {
     }
     
     /**
-     * 生成追踪量趋势数据（模拟）
+     * 生成追踪量趋势数据（真实数据）
      */
     private List<Map<String, Object>> generateTraceVolumeTrend() {
         List<Map<String, Object>> trend = new ArrayList<>();
@@ -580,7 +580,8 @@ public class TracingService {
             long timestamp = now - (i * 5 * 60 * 1000); // 5分钟间隔
             Map<String, Object> point = new HashMap<>();
             point.put("timestamp", timestamp);
-            point.put("value", 50 + (int)(new SecureRandom().nextDouble() * 100)); // 模拟50-150的追踪量
+            // 使用真实的追踪数据，这里简化处理，实际应该从traceQueryService获取
+            point.put("value", getTraceCountForTimeRange(timestamp, timestamp + 5 * 60 * 1000));
             trend.add(point);
         }
         
@@ -588,7 +589,7 @@ public class TracingService {
     }
     
     /**
-     * 生成错误趋势数据（模拟）
+     * 生成错误趋势数据（真实数据）
      */
     private List<Map<String, Object>> generateErrorTrend() {
         List<Map<String, Object>> trend = new ArrayList<>();
@@ -599,7 +600,8 @@ public class TracingService {
             long timestamp = now - (i * 5 * 60 * 1000); // 5分钟间隔
             Map<String, Object> point = new HashMap<>();
             point.put("timestamp", timestamp);
-            point.put("value", (int)(new SecureRandom().nextDouble() * 10)); // 模拟0-10的错误数
+            // 使用真实的错误数据，这里简化处理，实际应该从traceQueryService获取
+            point.put("value", getErrorCountForTimeRange(timestamp, timestamp + 5 * 60 * 1000));
             trend.add(point);
         }
         
@@ -626,6 +628,32 @@ public class TracingService {
                     return Mono.empty();
                 }
             });
+    }
+    
+    /**
+     * 获取指定时间范围内的追踪数量
+     */
+    private int getTraceCountForTimeRange(long startTime, long endTime) {
+        try {
+            TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block();
+            return stats != null ? (int) stats.getTotalTraces() : 0;
+        } catch (Exception e) {
+            log.debug("获取追踪统计信息时发生错误", e);
+            return 0;
+        }
+    }
+    
+    /**
+     * 获取指定时间范围内的错误数量
+     */
+    private int getErrorCountForTimeRange(long startTime, long endTime) {
+        try {
+            TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block();
+            return stats != null ? (int) stats.getErrorTraces() : 0;
+        } catch (Exception e) {
+            log.debug("获取错误统计信息时发生错误", e);
+            return 0;
+        }
     }
     
     /**
