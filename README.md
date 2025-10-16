@@ -8,20 +8,44 @@ Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流
 ---
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
 
-## ✨ 核心特性
+## 🧭 功能概览（Web 控制台）
 
-| 特性类别          | 支持内容                                                         |
-|---------------|--------------------------------------------------------------|
-| **统一 API 网关** | 支持 OpenAI 兼容格式，统一 `/v1/*` 接口                                 |
-| **服务类型**      | Chat、Embedding、Rerank、TTS、STT、Image Generation、Image Editing |
-| **负载均衡策略**    | Random、Round Robin、Least Connections、IP Hash                 |
-| **限流算法**      | Token Bucket、Leaky Bucket、Sliding Window、Warm Up             |
-| **熔断机制**      | 支持失败阈值、恢复检测、降级策略                                             |
-| **健康检查**      | 每服务独立状态接口，支持自动剔除不可用实例，定时清理不活跃限流器                             |
-| **适配器支持**     | GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI               |
-| **动态配置更新**    | 支持运行时更新服务实例、权重、限流、熔断等配置                                      |
-| **配置持久化**     | 支持内存存储和文件存储两种后端，配置文件自动合并                                     |
-| **测试覆盖**      | 包含负载均衡、限流、熔断、控制器等单元测试                                        |
+| 模块分类 | 功能菜单 | 功能描述 |
+|----------|----------|----------|
+| 🔍 **概览** | 仪表板 | 实时展示系统状态、服务健康度、请求趋势、异常统计等关键信息，支持图表可视化与动态刷新。 |
+| ⚙️ **配置管理** | 服务管理 | 支持动态配置 AI 服务类型、适配器、负载均衡策略，支持服务级限流与熔断规则配置。 |
+|  | 实例管理 | 提供实例的新增、编辑、删除、状态管理，支持实例级限流、熔断、健康检查与权重配置。 |
+|  | 版本管理 | 支持配置版本的全生命周期管理：创建、应用、回滚、删除，支持元数据记录与版本对比。 |
+|  | 配置合并 | 提供多版本配置的智能合并、冲突检测、合并预览与操作日志，支持自动合并与手动干预。 |
+| 🔐 **安全管理** | API 密钥管理 | 支持 API Key 的创建、启用/禁用、权限分配、使用统计与过期提醒，支持敏感字段脱敏。 |
+|  | JWT 令牌管理 | 提供 JWT 令牌的生命周期管理：查询、撤销、刷新、黑名单机制，支持 Redis 与文件持久化。 |
+|  | 审计日志 | 完整记录用户登录、配置变更、令牌操作、密钥管理等关键事件，支持事件类型筛选与追踪。 |
+| 👤 **系统管理** | 账户管理 | 支持管理员账户的创建、权限分配、状态管理与操作日志追踪。 |
+| 📊 **追踪管理** | 追踪概览 | 实时展示追踪数据的健康状态、采样率、服务统计与趋势图表。 |
+|  | 追踪搜索 | 支持多条件组合查询追踪记录，支持按服务、时间、状态、标签等维度筛选。 |
+|  | 性能分析 | 提供服务级性能指标分析：延迟分布、错误率、吞吐量、瓶颈诊断与优化建议。 |
+|  | 追踪管理 | 支持采样策略配置（全局/服务级）、性能配置、导出器配置，支持追踪数据实时刷新。 |
+
+---
+
+## 🚀 核心亮点
+
+- ✅ **全功能 Web 控制台**：从零构建，覆盖配置、安全、追踪、审计等完整管理链路。
+- ✅ **前后端分离架构**：基于 Vue3 + Element Plus，响应式设计，交互友好。
+- ✅ **配置版本控制**：支持配置的多版本管理与回滚，保障变更可追溯。
+- ✅ **追踪与性能监控**：集成分布式追踪与性能分析，助力系统可观测性。
+- ✅ **企业级安全机制**：支持 JWT + API Key 双认证体系，内置审计与脱敏机制。
+- ✅ **高可用与扩展性**：支持 Redis 高可用部署，配置与令牌支持多级存储策略。
+
+---
+
+## 🧩 适用场景
+
+- 企业内部 AI 服务网关统一管理
+- 多模型服务路由与负载均衡
+- API 安全认证与访问控制
+- 分布式系统追踪与性能分析
+- 配置变更审计与版本回滚
 
 ---
 
@@ -51,34 +75,29 @@ Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流
 docker pull sodlinken/jairouter:latest
 
 # 运行容器
-docker run -p 8080:8080 sodlinken/jairouter:latest
+docker run -d \
+  --name jairouter-dev \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JAVA_OPTS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n" \
+  sodlinken/jairouter:dev
 ```
 
 3. 访问服务
 
 ```bash
-curl http://localhost:8080/actuator/health
+curl http://localhost:8080/admin/login
 ```
+![](./docs/capture/login.png)
 
-### 传统方式部署
+用户名:admin
+密码：UqfpTm2Zw7ff2BNnZb8AQo8t
 
-构建项目
+登录成功后，即可进入 Web 界面进行服务配置、管理、追踪与性能分析等操作。
 
-```bash
-./mvnw clean package
-```
+![](./docs/capture/dashboard.png)
 
-启动服务
-
-```bash
-java -jar target/model-router-*.jar
-```
-
-访问服务
-
-```bash
-curl http://localhost:8080/actuator/health
-```
 
 ## 📘 API 文档
 
@@ -98,12 +117,18 @@ curl http://localhost:8080/actuator/health
 | 0.3.1 | ✅  | 中国使用alibaba mvn源加速镜像构建           |  
 | 0.4.0 | ✅  | 监控指标、Prometheus 集成、告警通知          |
 | 0.5.0 | ✅  | 对项目中涉及到的所有文档，使用github pages 进行管理 |
-| 0.6.0 | ✅ | 认证鉴权                             |
-| 0.7.0 | ✅ | 日志追踪                             |
-| 0.8.0 | ✅ | docker hub 发布自动打包发布镜像            |
-| 0.9.0 | 🚧 | 增强监控仪表板和用户管理功能                   |
-| 1.0.0 | 📋 | 企业级部署指南                          |
+| 0.6.0 | ✅  | 认证鉴权                             |
+| 0.7.0 | ✅  | 日志追踪                             |
+| 0.8.0 | ✅  | docker hub 发布自动打包发布镜像            |
+| 0.9.0 | ✅  | 增强监控仪表板和用户管理功能                   |
+| 1.0.0 | ✅  | 企业级部署指南                          |
+| 1.0.x | 🚧  | 集成到自研大模型应用平台                          |
 
 ---
 
-如需进一步扩展，请查看 [DeepWiki 文档](https://deepwiki.com/Lincoln-cn/JAiRouter) 或提交 Issue 参与共建。
+📖 **完整文档与部署指南**：[点击查看](https://docs.jairouter.com)  
+🐙 **开源地址**：[GitHub - JAiRouter](https://github.com/your-org/jairouter)
+
+---
+
+💬 欢迎反馈与共建，让我们一起让 JAiRouter 变得更好！
