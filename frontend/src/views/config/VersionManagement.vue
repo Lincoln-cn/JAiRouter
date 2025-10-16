@@ -195,10 +195,41 @@ const fetchVersions = async () => {
     loading.value = true
     // 使用优化接口一次性获取所有版本信息
     const response = await getAllVersionInfo()
-    const versionInfos = response.data.data || []
+    console.log('Full API Response:', JSON.stringify(response, null, 2)) // 完整响应调试日志
+    
+    // 检查响应结构
+    if (!response || !response.data) {
+      console.error('Invalid API response structure:', response)
+      ElMessage.error('API响应格式错误')
+      return
+    }
+    
+    console.log('Response data:', response.data) // 添加响应数据调试日志
+    console.log('Response data type:', typeof response.data) // 添加数据类型调试日志
+    
+    // 处理可能的双重序列化问题
+    let versionInfos: any[] = []
+    if (typeof response.data === 'string') {
+      // 如果data是字符串，需要先解析
+      try {
+        const parsedData = JSON.parse(response.data)
+        versionInfos = parsedData.data || [] // 注意：这里要取parsedData.data
+      } catch (parseError) {
+        console.error('Failed to parse response data:', parseError)
+        ElMessage.error('解析响应数据失败')
+        return
+      }
+    } else {
+      // 正常情况，data已经是对象
+      versionInfos = response.data.data || []
+    }
+    
+    console.log('Raw Version Infos:', versionInfos) // 添加调试日志
+    console.log('Version Infos type:', typeof versionInfos) // 添加数据类型调试日志
+    console.log('Is array:', Array.isArray(versionInfos)) // 检查是否为数组
 
     // 转换为前端需要的格式
-    const versionDetails: Version[] = versionInfos.map(info => ({
+    const versionDetails: Version[] = versionInfos.map((info: any) => ({
       version: info.version,
       status: info.current ? 'current' : 'history',
       config: info.config || {},
@@ -209,9 +240,11 @@ const fetchVersions = async () => {
 
     // 按版本号降序排列
     versions.value = versionDetails.sort((a, b) => b.version - a.version)
+    console.log('Processed Versions:', versions.value) // 添加调试日志
+    console.log('Versions count:', versions.value.length) // 添加版本数量调试日志
   } catch (error) {
     console.error('获取版本列表失败:', error)
-    ElMessage.error('获取版本列表失败')
+    ElMessage.error('获取版本列表失败: ' + (error as Error).message)
   } finally {
     loading.value = false
   }
