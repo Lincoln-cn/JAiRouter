@@ -156,8 +156,6 @@ const defaultOpeneds = computed(() => {
     openeds.push('security')
   } else if (path.startsWith('/system')) {
     openeds.push('system')
-  } else if (path.startsWith('/monitoring')) {
-    openeds.push('monitoring')
   } else if (path.startsWith('/tracing')) {
     openeds.push('tracing')
   }
@@ -258,11 +256,20 @@ const handleUserCommand = (command: string) => {
 <style scoped>
 .layout-container {
   height: 100vh;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .layout-menu {
-  height: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
   border-right: none;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.layout-menu:hover {
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .logo {
