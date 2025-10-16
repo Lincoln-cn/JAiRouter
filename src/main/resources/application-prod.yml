@@ -61,7 +61,7 @@ jairouter:
       
       # 生产环境JWT持久化配置
       persistence:
-        enabled: true
+        enabled: false  # JWT功能关闭时，持久化也应关闭
         primary-storage: redis
         fallback-storage: memory
         composite:
@@ -73,7 +73,7 @@ jairouter:
         cleanup:
           retention-days: 30
         redis:
-          enabled: true
+          enabled: false  # JWT功能关闭时，Redis持久化也应关闭
           host: "${REDIS_HOST:localhost}"
           port: "${REDIS_PORT:6379}"
           password: "${REDIS_PASSWORD:}"
@@ -88,13 +88,13 @@ jairouter:
       # 生产环境JWT黑名单配置
       blacklist:
         persistence:
-          enabled: true
+          enabled: false  # JWT功能关闭时，黑名单持久化也应关闭
           primary-storage: redis
           max-memory-size: 50000
         composite:
           enabled: true  # 生产环境启用复合存储策略
         redis:
-          enabled: true
+          enabled: false  # JWT功能关闭时，Redis黑名单也应关闭
           host: "${REDIS_HOST:localhost}"
           port: "${REDIS_PORT:6379}"
           password: "${REDIS_PASSWORD:}"
