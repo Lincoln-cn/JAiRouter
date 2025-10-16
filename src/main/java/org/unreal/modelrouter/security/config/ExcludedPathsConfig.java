@@ -75,7 +75,8 @@ public class ExcludedPathsConfig {
             "/v1/debug/",
             "/admin",
             // 排除认证端点
-            "/api/auth/jwt/login"
+            "/api/auth/jwt/login",
+            "/api/config/"
         );
 
         // 数据脱敏排除路径模式
