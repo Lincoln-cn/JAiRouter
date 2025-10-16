@@ -165,8 +165,7 @@ docker run -d \
   -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
   -e JAIROUTER_SECURITY_JWT_ENABLED=true \
   -e PROD_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
-  -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0" \
-  -e PROD_JWT_SECRET=your-prod-jwt-secret \
+  -e JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"\
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
   -v $(pwd)/config-store:/app/config-store \
@@ -194,14 +193,6 @@ docker run -d \
   -v $(pwd)/src:/app/src:ro \
   sodlinken/jairouter:dev
 ```
-
-docker run \
-  --name jairouter-dev \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=dev \
-  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
-  -e JAVA_OPTS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n" \
-  sodlinken/jairouter:0.9.9
 
 ### 3. 使用运行脚本
 
