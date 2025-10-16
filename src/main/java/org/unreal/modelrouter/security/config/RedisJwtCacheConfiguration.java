@@ -11,6 +11,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration;
 
 /**
  * Redis JWT缓存配置类
@@ -136,10 +137,8 @@ public class RedisJwtCacheConfiguration {
      */
     @Bean("jwtReactiveRedisTemplate")
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-    public ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate() {
+    public ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate(ReactiveRedisConnectionFactory connectionFactory) {
         try {
-            ReactiveRedisConnectionFactory connectionFactory = jwtRedisConnectionFactory();
-            
             // 使用String序列化器
             StringRedisSerializer stringSerializer = new StringRedisSerializer();
             
@@ -168,8 +167,8 @@ public class RedisJwtCacheConfiguration {
      */
     @Bean("redisJwtHealthChecker")
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-    public RedisJwtHealthChecker redisJwtHealthChecker() {
-        return new RedisJwtHealthChecker(jwtReactiveRedisTemplate());
+    public RedisJwtHealthChecker redisJwtHealthChecker(ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate) {
+        return new RedisJwtHealthChecker(jwtReactiveRedisTemplate);
     }
     
     /**

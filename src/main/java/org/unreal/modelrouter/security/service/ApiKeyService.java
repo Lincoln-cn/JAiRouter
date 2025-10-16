@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.security.audit.ExtendedSecurityAuditService;
 import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.model.UsageStatistics;
@@ -41,7 +42,7 @@ public class ApiKeyService {
 
     // 审计服务（用于记录API Key操作）
     @Autowired(required = false)
-    private ExtendedSecurityAuditService auditService;
+    private ExtendedSecurityAuditService extendedAuditService;
 
     @Autowired
     public ApiKeyService(StoreManager storeManager,
@@ -62,8 +63,8 @@ public class ApiKeyService {
             try {
                 if (keyValue == null || keyValue.trim().isEmpty()) {
                     // 记录缺少API Key的审计
-                    if (auditService != null) {
-                        auditService.auditSecurityEvent("API_KEY_MISSING", 
+                    if (extendedAuditService != null) {
+                        extendedAuditService.auditSecurityEvent("API_KEY_MISSING", 
                             "请求缺少API Key", null, ipAddress)
                             .onErrorResume(ex -> {
                                 log.warn("记录API Key缺失审计失败: {}", ex.getMessage());
@@ -77,8 +78,8 @@ public class ApiKeyService {
                 ApiKey apiKey = apiKeyCache.get(keyValue);
                 if (apiKey == null) {
                     // 记录无效API Key的审计
-                    if (auditService != null) {
-                        auditService.auditSecurityEvent("API_KEY_INVALID", 
+                    if (extendedAuditService != null) {
+                        extendedAuditService.auditSecurityEvent("API_KEY_INVALID", 
                             "使用了无效的API Key", null, ipAddress)
                             .onErrorResume(ex -> {
                                 log.warn("记录无效API Key审计失败: {}", ex.getMessage());
@@ -92,8 +93,8 @@ public class ApiKeyService {
                 if (!apiKey.isEnabled()) {
                     updateUsageStatistics(apiKey.getKeyId(), false); // 统计失败
                     // 记录禁用API Key使用审计
-                    if (auditService != null) {
-                        auditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, false)
+                    if (extendedAuditService != null) {
+                        extendedAuditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, false)
                             .onErrorResume(ex -> {
                                 log.warn("记录禁用API Key使用审计失败: {}", ex.getMessage());
                                 return Mono.empty();
@@ -106,8 +107,8 @@ public class ApiKeyService {
                 if (apiKey.getExpiresAt() != null && apiKey.getExpiresAt().isBefore(LocalDateTime.now())) {
                     updateUsageStatistics(apiKey.getKeyId(), false); // 统计失败
                     // 记录过期API Key使用审计
-                    if (auditService != null) {
-                        auditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, false)
+                    if (extendedAuditService != null) {
+                        extendedAuditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, false)
                             .onErrorResume(ex -> {
                                 log.warn("记录过期API Key使用审计失败: {}", ex.getMessage());
                                 return Mono.empty();
@@ -121,8 +122,8 @@ public class ApiKeyService {
                 updateUsageStatistics(apiKey.getKeyId(), true);
                 
                 // 记录成功使用API Key的审计
-                if (auditService != null) {
-                    auditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, true)
+                if (extendedAuditService != null) {
+                    extendedAuditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, true)
                         .onErrorResume(ex -> {
                             log.warn("记录API Key使用审计失败: {}", ex.getMessage());
                             return Mono.empty();
@@ -184,8 +185,8 @@ public class ApiKeyService {
             saveApiKeysToStore();
             
             // 记录API Key创建审计
-            if (auditService != null) {
-                auditService.auditApiKeyCreated(apiKey.getKeyId(), createdBy, ipAddress)
+            if (extendedAuditService != null) {
+                extendedAuditService.auditApiKeyCreated(apiKey.getKeyId(), createdBy, ipAddress)
                     .onErrorResume(ex -> {
                         log.warn("记录API Key创建审计失败: {}", ex.getMessage());
                         return Mono.empty();
@@ -244,8 +245,8 @@ public class ApiKeyService {
             saveApiKeysToStore();
             
             // 记录API Key撤销审计
-            if (auditService != null) {
-                auditService.auditApiKeyRevoked(keyId, "手动删除", revokedBy)
+            if (extendedAuditService != null) {
+                extendedAuditService.auditApiKeyRevoked(keyId, "手动删除", revokedBy)
                     .onErrorResume(ex -> {
                         log.warn("记录API Key撤销审计失败: {}", ex.getMessage());
                         return Mono.empty();

@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.security.service;
+package org.unreal.modelrouter.security.audit;
 
 import org.unreal.modelrouter.dto.AuditEvent;
 import org.unreal.modelrouter.dto.AuditEventQuery;
