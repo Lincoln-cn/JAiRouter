@@ -5,10 +5,11 @@
 - 总文档数: 138
 - 近7天变更: 16
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-10-15 03:04:35
+- 最后扫描: 2025-10-16 03:03:21
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.58 → 1.0.59) - 2025-10-16
 - **MODIFIED**: docs/en/troubleshooting/common-issues.md (1.0.2 → 1.0.3) - 2025-10-15
 - **MODIFIED**: docs/en/security/jwt-authentication.md (1.0.1 → 1.0.2) - 2025-10-15
 - **MODIFIED**: docs/en/deployment/production.md (1.0.2 → 1.0.3) - 2025-10-15
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/en/configuration/index.md (1.0.2 → 1.0.3) - 2025-10-15
 - **MODIFIED**: docs/en/api-reference/management-api.md (1.0.1 → 1.0.2) - 2025-10-15
 - **MODIFIED**: docs-version-report.md (1.0.57 → 1.0.58) - 2025-10-15
-- **CREATED**: audit-log-troubleshooting-guide.md ( → 1.0.0) - 2025-10-15
 
 ## 过期文档 (30天未更新)
 
@@ -596,6 +596,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.59 - 2025-10-16 (c325c8d4)
 - **docs/en/troubleshooting/common-issues.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
 - **docs/en/security/jwt-authentication.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
 - **docs/en/deployment/production.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
@@ -604,7 +605,6 @@
 - **docs/en/configuration/jwt-persistence.md**: v1.0.0 - 2025-10-15 (c8b5d0df)
 - **docs/en/configuration/index.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
 - **docs/en/api-reference/management-api.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
-- **docs-version-report.md**: v1.0.58 - 2025-10-15 (420a2e4a)
 - **audit-log-troubleshooting-guide.md**: v1.0.0 - 2025-10-15 (43364f14)
 - **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
 - **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
