@@ -34,7 +34,7 @@
               </el-form-item>
               <el-form-item label="全局采样率">
                 <el-progress :percentage="statusForm.globalSamplingRatio * 100"
-                  :format="percentage => `${percentage}%`"/>
+                  :format="(percentage: number) => `${percentage}%`"/>
               </el-form-item>
             </el-form>
           </el-card>
@@ -88,7 +88,7 @@
               </el-descriptions-item>
               <el-descriptions-item label="采样效率">
                 <el-progress :percentage="samplingStats.samplingEfficiency"
-                  :format="percentage => `${percentage.toFixed(1)}%`"/>
+                  :format="(percentage: number) => `${percentage.toFixed(1)}%`"/>
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
