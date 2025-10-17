@@ -2,22 +2,22 @@
   "versions": {
     "README-EN.md": {
       "FilePath": "README-EN.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.109951",
-      "ContentHash": "0d31c3c903d272e4",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.2",
+      "LastModified": "2025-10-17T03:01:40.620439",
+      "ContentHash": "863bfe035cd960e0",
+      "GitCommit": "37e5bdcc",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "README-EN.md"
+        "README.md"
       ]
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-08-29T03:02:12.111976",
-      "ContentHash": "55af3cdb4fbe6dd0",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.3",
+      "LastModified": "2025-10-17T03:01:40.622359",
+      "ContentHash": "49b07ab5b65a2a07",
+      "GitCommit": "37e5bdcc",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.59",
-      "LastModified": "2025-10-16T03:03:21.288440",
-      "ContentHash": "8440806405cf77d7",
-      "GitCommit": "c325c8d4",
+      "Version": "1.0.60",
+      "LastModified": "2025-10-17T03:01:40.624666",
+      "ContentHash": "a0d880d96a6c6e90",
+      "GitCommit": "7b3f46ab",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -798,10 +798,10 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.3",
-      "LastModified": "2025-09-04T02:55:19.478640",
-      "ContentHash": "406154bf3df552fe",
-      "GitCommit": "dbe39921",
+      "Version": "1.0.4",
+      "LastModified": "2025-10-17T03:01:40.892836",
+      "ContentHash": "e04d2451ce3c7e85",
+      "GitCommit": "8b591212",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1748,10 +1748,10 @@
     },
     "docs/en/configuration/store-config.md": {
       "FilePath": "docs/en/configuration/store-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-09-25T03:01:10.372871",
-      "ContentHash": "4b71cedad194dee7",
-      "GitCommit": "32bd1673",
+      "Version": "1.0.1",
+      "LastModified": "2025-10-17T03:01:40.670030",
+      "ContentHash": "7db6feb1893daa96",
+      "GitCommit": "ee4f9e85",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1768,10 +1768,10 @@
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-09-25T03:01:10.540187",
-      "ContentHash": "20a8b939bdaadc79",
-      "GitCommit": "21313fa8",
+      "Version": "1.0.1",
+      "LastModified": "2025-10-17T03:01:40.883915",
+      "ContentHash": "95977c7c9ec006ba",
+      "GitCommit": "ee4f9e85",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1782,16 +1782,6 @@
       "LastModified": "2025-10-01T03:11:03.904228",
       "ContentHash": "bdef634722ff293f",
       "GitCommit": "7ef4d8d2",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "audit-log-troubleshooting-guide.md": {
-      "FilePath": "audit-log-troubleshooting-guide.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-10-15T03:04:35.113699",
-      "ContentHash": "fd182b01dff39dcb",
-      "GitCommit": "43364f14",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4730,7 +4720,63 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-10-16T03:03:21.288446",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-EN.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-17T03:01:40.620446",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-17T03:01:40.622363",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.59",
+      "NewVersion": "1.0.60",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-17T03:01:40.624671",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/store-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-17T03:01:40.670036",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/store-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-17T03:01:40.883924",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-10-17T03:01:40.892841",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "audit-log-troubleshooting-guide.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2025-10-17T03:01:41.073504",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2025-10-16T03:03:21.801389"
+  "last_updated": "2025-10-17T03:01:41.184150"
 }
