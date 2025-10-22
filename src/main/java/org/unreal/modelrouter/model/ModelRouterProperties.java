@@ -149,6 +149,7 @@ public class ModelRouterProperties {
         private int weight = 1;
         private String status = "active"; // 添加状态字段，默认为active
         private String instanceId; // 添加唯一ID字段
+        private String adapter; // 适配器配置
         private RateLimitConfig rateLimit; // 实例级别限流配置
         private CircuitBreakerConfig circuitBreaker; // 实例级别熔断器配置
 
@@ -202,6 +203,14 @@ public class ModelRouterProperties {
         
         public void setInstanceId(String instanceId) {
             this.instanceId = instanceId;
+        }
+
+        public String getAdapter() {
+            return adapter;
+        }
+
+        public void setAdapter(String adapter) {
+            this.adapter = adapter;
         }
 
         public RateLimitConfig getRateLimit() {

@@ -26,6 +26,7 @@ public class UpdateInstanceDTO {
         private String path;
         private Integer weight;
         private String status; // 添加status字段
+        private String adapter; // 添加adapter字段
         private ModelRouterProperties.RateLimitConfig rateLimit; // 使用ModelRouterProperties中的限流配置字段
         private ModelRouterProperties.CircuitBreakerConfig circuitBreaker; // 使用ModelRouterProperties中的熔断配置字段
 
@@ -70,6 +71,14 @@ public class UpdateInstanceDTO {
             this.status = status;
         }
 
+        public String getAdapter() {
+            return adapter;
+        }
+
+        public void setAdapter(String adapter) {
+            this.adapter = adapter;
+        }
+
         public ModelRouterProperties.RateLimitConfig getRateLimit() {
             return rateLimit;
         }
@@ -95,6 +104,10 @@ public class UpdateInstanceDTO {
             // 添加status字段设置
             if (status != null) {
                 modelInstance.setStatus(status);
+            }
+            // 添加adapter字段设置
+            if (adapter != null) {
+                modelInstance.setAdapter(adapter);
             }
             // 添加限流配置设置
             if (rateLimit != null) {
