@@ -51,6 +51,21 @@ public class AdapterRegistry {
     }
 
     /**
+     * 根据实例获取对应的Adapter（实例级适配器优先）
+     */
+    public ServiceCapability getAdapter(final ModelServiceRegistry.ServiceType serviceType, 
+                                       final ModelRouterProperties.ModelInstance instance) {
+        String adapterName = getAdapterName(serviceType, instance);
+        ServiceCapability adapter = adapters.get(adapterName.toLowerCase());
+
+        if (adapter == null) {
+            throw new IllegalArgumentException("Unsupported adapter: " + adapterName);
+        }
+
+        return adapter;
+    }
+
+    /**
      * 获取指定服务类型的adapter名称
      */
     private String getAdapterName(final ModelServiceRegistry.ServiceType serviceType) {
@@ -64,6 +79,27 @@ public class AdapterRegistry {
         }
 
         return adapterName;
+    }
+
+    /**
+     * 获取指定实例的adapter名称（实例级适配器优先）
+     */
+    private String getAdapterName(final ModelServiceRegistry.ServiceType serviceType, 
+                                 final ModelRouterProperties.ModelInstance instance) {
+        // 1. 优先使用实例级配置
+        if (instance != null && instance.getAdapter() != null && !instance.getAdapter().trim().isEmpty()) {
+            return instance.getAdapter();
+        }
+
+        // 2. 回退到服务级配置
+        String adapterName = registry.getServiceAdapter(serviceType);
+        if (adapterName != null && !adapterName.trim().isEmpty()) {
+            return adapterName;
+        }
+
+        // 3. 最后回退到全局配置
+        return Optional.ofNullable(properties.getAdapter())
+                .orElse("normal");
     }
 
     /**
