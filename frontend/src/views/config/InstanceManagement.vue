@@ -5,46 +5,41 @@
         <div class="card-header">
           <div class="header-left">
             <div class="header-title">
-              <el-icon><Management /></el-icon>
+              <el-icon>
+                <Management />
+              </el-icon>
               <span>实例管理</span>
             </div>
 
             <div class="header-tools">
-              <el-input
-                v-model="searchQuery"
-                placeholder="搜索实例名 / URL / 路径（回车或停止输入生效）"
-                clearable
-                size="medium"
-                class="search-input"
-                @clear="handleSearchClear"
-                @keyup.enter.native="applySearch"
-              >
+              <el-input v-model="searchQuery" placeholder="搜索实例名 / URL / 路径（回车或停止输入生效）" clearable size="medium"
+                class="search-input" @clear="handleSearchClear" @keyup.enter.native="applySearch">
                 <template #prefix>
-                  <el-icon><Search /></el-icon>
+                  <el-icon>
+                    <Search />
+                  </el-icon>
                 </template>
               </el-input>
 
-              <el-select
-                v-model="statusFilter"
-                placeholder="状态"
-                clearable
-                size="medium"
-                class="filter-select"
-              >
+              <el-select v-model="statusFilter" placeholder="状态" clearable size="medium" class="filter-select">
                 <el-option label="全部" value=""></el-option>
                 <el-option label="启用" value="active"></el-option>
                 <el-option label="禁用" value="inactive"></el-option>
               </el-select>
 
               <el-button type="text" class="refresh-button" @click="refreshCurrent">
-                <el-icon><Refresh /></el-icon>
+                <el-icon>
+                  <Refresh />
+                </el-icon>
               </el-button>
             </div>
           </div>
 
           <div class="header-actions">
             <el-button type="primary" @click="handleAddInstance" size="medium">
-              <el-icon><Plus /></el-icon>
+              <el-icon>
+                <Plus />
+              </el-icon>
               添加实例
             </el-button>
           </div>
@@ -53,23 +48,12 @@
 
       <div class="tabs-wrap">
         <el-tabs v-model="activeServiceType" class="service-tabs" type="card">
-          <el-tab-pane
-            v-for="serviceType in serviceTypes"
-            :key="serviceType"
-            :label="serviceTypeMap[serviceType] || serviceType"
-            :name="serviceType"
-          >
+          <el-tab-pane v-for="serviceType in serviceTypes" :key="serviceType"
+            :label="serviceTypeMap[serviceType] || serviceType" :name="serviceType">
             <div class="table-area">
               <el-skeleton :loading="loading && !hasInstances" :rows="6" animated>
                 <template #default>
-                  <el-table
-                    :data="paginated"
-                    style="width: 100%"
-                    class="instance-table"
-                    row-key="id"
-                    border
-                    fit
-                  >
+                  <el-table :data="paginated" style="width: 100%" class="instance-table" row-key="id" border fit>
                     <el-table-column prop="name" label="实例名称" min-width="180" />
                     <el-table-column prop="baseUrl" label="基础URL" min-width="260">
                       <template #default="scope">
@@ -84,12 +68,19 @@
                       </template>
                     </el-table-column>
                     <el-table-column prop="weight" label="权重" width="90" align="center" />
+                    <el-table-column prop="adapter" label="适配器" width="140" align="center">
+                      <template #default="scope">
+                        <el-tag :type="scope.row.adapter ? 'primary' : 'warning'" class="table-tag" size="small">
+                          {{ scope.row.adapter || globalAdapter || '未配置' }}
+                        </el-tag>
+                        <div v-if="!scope.row.adapter && globalAdapter" class="adapter-note">
+                          (全局)
+                        </div>
+                      </template>
+                    </el-table-column>
                     <el-table-column prop="status" label="状态" width="110" align="center">
                       <template #default="scope">
-                        <el-tag
-                          :type="scope.row.status === 'active' ? 'success' : 'info'"
-                          class="table-tag"
-                        >
+                        <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" class="table-tag">
                           {{ scope.row.status === 'active' ? '启用' : '禁用' }}
                         </el-tag>
                       </template>
@@ -97,26 +88,16 @@
 
                     <el-table-column label="操作" width="170" align="center" fixed="right">
                       <template #default="scope">
-                        <el-button
-                          size="small"
-                          @click="handleEdit(scope.row)"
-                          type="primary"
-                          plain
-                          circle
-                          title="编辑"
-                        >
-                          <el-icon><Edit /></el-icon>
+                        <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle title="编辑">
+                          <el-icon>
+                            <Edit />
+                          </el-icon>
                         </el-button>
 
-                        <el-button
-                          size="small"
-                          type="danger"
-                          @click="handleDelete(scope.row)"
-                          plain
-                          circle
-                          title="删除"
-                        >
-                          <el-icon><Delete /></el-icon>
+                        <el-button size="small" type="danger" @click="handleDelete(scope.row)" plain circle title="删除">
+                          <el-icon>
+                            <Delete />
+                          </el-icon>
                         </el-button>
                       </template>
                     </el-table-column>
@@ -131,15 +112,9 @@
                       共 {{ filtered.length }} 条（第 {{ currentPage }} / {{ totalPages }} 页）
                     </div>
                     <div class="footer-actions">
-                      <el-pagination
-                        v-model:current-page="currentPage"
-                        :page-size="pageSize"
-                        :total="filtered.length"
-                        layout="prev, pager, next, sizes, jumper"
-                        :page-sizes="[5, 10, 20, 50]"
-                        @size-change="handleSizeChange"
-                        @current-change="handlePageChange"
-                      />
+                      <el-pagination v-model:current-page="currentPage" :page-size="pageSize" :total="filtered.length"
+                        layout="prev, pager, next, sizes, jumper" :page-sizes="[5, 10, 20, 50]"
+                        @size-change="handleSizeChange" @current-change="handlePageChange" />
                     </div>
                   </div>
                 </template>
@@ -151,13 +126,8 @@
     </el-card>
 
     <!-- 添加/编辑实例对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="820px"
-      :before-close="handleDialogClose"
-      class="instance-dialog"
-    >
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="820px" :before-close="handleDialogClose"
+      class="instance-dialog">
       <el-form :model="form" label-width="120px" ref="formRef">
         <el-divider content-position="left">基本信息</el-divider>
 
@@ -200,13 +170,22 @@
 
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
-              <el-switch
-                v-model="form.status"
-                active-value="active"
-                inactive-value="inactive"
-                active-text="启用"
-                inactive-text="禁用"
-              />
+              <el-switch v-model="form.status" active-value="active" inactive-value="inactive" active-text="启用"
+                inactive-text="禁用" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="适配器" prop="adapter">
+              <el-select v-model="form.adapter" placeholder="请选择适配器（留空使用全局配置）" clearable>
+                <el-option v-for="adapter in adapters" :key="adapter.name || adapter" :label="adapter.name || adapter"
+                  :value="adapter.name || adapter" />
+              </el-select>
+              <div v-if="!form.adapter && globalAdapter" class="form-note">
+                当前将使用全局适配器: {{ globalAdapter }}
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -308,9 +287,9 @@
 </template>
 
 <script setup lang="ts">
-import {computed, onMounted, reactive, ref, watch} from 'vue'
-import type {FormInstance} from 'element-plus'
-import {ElMessage, ElMessageBox} from 'element-plus'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import type { FormInstance } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   addServiceInstance,
   deleteServiceInstance,
@@ -318,6 +297,7 @@ import {
   getServiceTypes,
   updateServiceInstance
 } from '@/api/dashboard'
+import { getAdapters, getAllConfigurations } from '@/api/service'
 
 // 服务类型映射（保持原有）
 const serviceTypeMap: Record<string, string> = {
@@ -339,6 +319,11 @@ const serviceTypes = ref<string[]>([])
 // 当前激活的服务类型
 const activeServiceType = ref('chat')
 
+// 适配器相关数据
+const adapters = ref<any[]>([])
+const globalConfig = ref<any>({})
+const globalAdapter = ref<string>('')
+
 // 定义实例类型
 interface ServiceInstance {
   id: string | number  // 修改为联合类型以支持字符串ID
@@ -349,6 +334,7 @@ interface ServiceInstance {
   weight: number
   status: 'active' | 'inactive'
   instanceId: string
+  adapter?: string  // 适配器配置
   rateLimit: {
     enabled: boolean
     algorithm: string
@@ -394,6 +380,7 @@ const form = reactive<ServiceInstance>({
   weight: 1,
   instanceId: '',
   status: 'active',
+  adapter: '',
   rateLimit: {
     enabled: false,
     algorithm: 'token-bucket',
@@ -468,6 +455,35 @@ watch(activeServiceType, (newServiceType) => {
   }
 })
 
+// 获取适配器列表
+const fetchAdapters = async () => {
+  try {
+    const response = await getAdapters()
+    if (response.data?.success) {
+      adapters.value = response.data.data || []
+      console.log('获取到的适配器列表:', adapters.value)
+    }
+  } catch (error) {
+    console.error('获取适配器列表失败:', error)
+  }
+}
+
+// 获取全局配置
+const fetchGlobalConfig = async () => {
+  try {
+    const response = await getAllConfigurations()
+    if (response.data?.success) {
+      globalConfig.value = response.data.data || {}
+      // 从全局配置中提取默认适配器
+      globalAdapter.value = globalConfig.value.adapter || ''
+      console.log('获取到的全局配置:', globalConfig.value)
+      console.log('全局默认适配器:', globalAdapter.value)
+    }
+  } catch (error) {
+    console.error('获取全局配置失败:', error)
+  }
+}
+
 // 获取服务类型并按 serviceOrder 排序显示
 const fetchServiceTypes = async () => {
   try {
@@ -512,7 +528,8 @@ const fetchServiceInstances = (serviceType: string) => {
         const typedData: ServiceInstance[] = data.map((item) => ({
           ...item,
           id: item.instanceId || Date.now() + Math.random(), // 使用后端返回的instanceId作为唯一标识符，如果没有则使用随机数
-          serviceType: serviceType
+          serviceType: serviceType,
+          adapter: item.adapter || '' // 确保适配器字段存在
         }))
         instancesCache.value[serviceType] = typedData
         instances.value[serviceType] = [...typedData]
@@ -535,6 +552,9 @@ const refreshCurrent = () => {
   console.log('刷新当前选项卡，服务类型:', t);
   delete instancesCache.value[t]
   fetchServiceInstances(t)
+  // 同时刷新适配器列表和全局配置
+  fetchAdapters()
+  fetchGlobalConfig()
   ElMessage.success('刷新中...')
 }
 
@@ -550,6 +570,7 @@ const handleAddInstance = () => {
     path: '',
     weight: 1,
     status: 'active',
+    adapter: '',
     rateLimit: {
       enabled: false,
       algorithm: 'token-bucket',
@@ -643,7 +664,7 @@ const handleSave = async () => {
     // 确保使用当前选项卡的服务类型
     const serviceType = activeServiceType.value;
     console.log('保存实例，使用服务类型:', serviceType);
-    
+
     // 构造实例数据，包含限流和熔断配置
     const instanceData = {
       name: form.name,
@@ -651,6 +672,7 @@ const handleSave = async () => {
       path: form.path,
       weight: form.weight,
       status: form.status,
+      adapter: form.adapter || null, // 适配器配置，空值时传null使用全局配置
       rateLimit: form.rateLimit.enabled ? form.rateLimit : null, // 只有启用时才传递限流配置
       circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : null // 只有启用时才传递熔断配置
     }
@@ -659,7 +681,7 @@ const handleSave = async () => {
       // 使用后端返回的实例ID
       const updateData = {
         instanceId: form.instanceId,
-        instance: instanceData 
+        instance: instanceData
       }
       console.log('更新实例请求数据:', updateData)
       // 使用正确的服务类型发送请求
@@ -668,7 +690,7 @@ const handleSave = async () => {
       if (response.data?.success) {
         // 编辑成功后，清除缓存并重新获取实例列表以确保数据同步
         delete instancesCache.value[serviceType]
-        await fetchServiceInstances(serviceType)
+        fetchServiceInstances(serviceType)
         ElMessage.success('编辑成功')
       } else {
         ElMessage.error(response.data?.message || '编辑失败')
@@ -680,10 +702,9 @@ const handleSave = async () => {
       console.log(`发送添加请求到: /api/config/instance/add/${serviceType}?createNewVersion=true`)
       const response = await addServiceInstance(serviceType, instanceData, true)
       if (response.data?.success) {
-        const newInstance: ServiceInstance = { ...form, id: Date.now() }
-        if (!instances.value[serviceType]) instances.value[serviceType] = []
-        instances.value[serviceType].push(newInstance)
-        instancesCache.value[serviceType] = [...instances.value[serviceType]]
+        // 添加成功后，清除缓存并重新获取实例列表以确保数据同步
+        delete instancesCache.value[serviceType]
+        fetchServiceInstances(serviceType)
         ElMessage.success('添加成功')
       } else {
         ElMessage.error(response.data?.message || '添加失败')
@@ -708,6 +729,8 @@ const handlePageChange = (page: number) => { currentPage.value = page }
 // 初始化
 onMounted(() => {
   fetchServiceTypes()
+  fetchAdapters()
+  fetchGlobalConfig()
 })
 </script>
 
@@ -793,7 +816,7 @@ onMounted(() => {
   background: #fff;
   border-radius: 8px;
   padding: 12px;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
 }
 
 /* table */
@@ -877,5 +900,19 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 12px;
   padding: 10px 20px;
+}
+
+/* 适配器相关样式 */
+.adapter-note {
+  font-size: 11px;
+  color: #909399;
+  margin-top: 2px;
+}
+
+.form-note {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.4;
 }
 </style>
