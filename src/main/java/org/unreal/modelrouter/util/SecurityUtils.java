@@ -175,25 +175,114 @@ public class SecurityUtils {
     }
 
     /**
-     * 获取当前用户ID
+     * 获取当前用户ID（响应式版本）
      * 在没有认证上下文的情况下返回系统默认用户
+     * 
+     * 推荐在响应式环境中使用此方法，如WebFlux Controller或Filter中
+     * 
+     * 用户ID提取优先级：
+     * 1. JWT token中的userId claim
+     * 2. JWT token的subject
+     * 3. Authentication.getName()
+     * 4. 默认返回"system"
+     *
+     * @return 包含当前用户ID的Mono
+     */
+    public static reactor.core.publisher.Mono<String> getCurrentUserIdReactive() {
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.getContext()
+                .cast(org.springframework.security.core.context.SecurityContext.class)
+                .map(securityContext -> extractUserIdFromAuthentication(securityContext.getAuthentication()))
+                .onErrorReturn("system") // 发生任何错误时返回系统用户
+                .switchIfEmpty(reactor.core.publisher.Mono.just("system")); // 如果没有上下文，返回系统用户
+    }
+
+    /**
+     * 从ServerWebExchange中获取当前用户ID
+     * 适用于在WebFilter或Controller中使用
+     * 
+     * 注意：此方法与getCurrentUserIdReactive()功能相同，
+     * 但提供了更明确的API用于在有ServerWebExchange上下文时使用
+     *
+     * @param exchange ServerWebExchange（当前未使用，但保留用于未来扩展）
+     * @return 包含当前用户ID的Mono
+     */
+    public static reactor.core.publisher.Mono<String> getCurrentUserId(ServerWebExchange exchange) {
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.getContext()
+                .cast(org.springframework.security.core.context.SecurityContext.class)
+                .map(securityContext -> extractUserIdFromAuthentication(securityContext.getAuthentication()))
+                .onErrorReturn("system")
+                .switchIfEmpty(reactor.core.publisher.Mono.just("system"));
+    }
+
+    /**
+     * 获取当前用户ID（阻塞版本）
+     * 在没有认证上下文的情况下返回系统默认用户
+     * 
+     * 注意：此方法会阻塞当前线程，不推荐在响应式环境中使用
+     * 推荐在非响应式代码或工具类中使用
+     * 
+     * 对于响应式环境，请使用 getCurrentUserIdReactive() 方法
      *
      * @return 当前用户ID
      */
     public static String getCurrentUserId() {
-        // TODO: 在实际实现中，这里应该从Spring Security上下文或JWT token中获取用户ID
-        // 目前返回系统默认用户，避免空指针异常
         try {
-            // 尝试从Spring Security上下文获取用户信息
-            // SecurityContext context = SecurityContextHolder.getContext();
-            // Authentication authentication = context.getAuthentication();
-            // if (authentication != null && authentication.isAuthenticated()) {
-            //     return authentication.getName();
-            // }
-            return "system";
+            // 使用响应式版本并阻塞获取结果，适用于工具类方法
+            return getCurrentUserIdReactive()
+                    .blockOptional() // 阻塞获取结果
+                    .orElse("system"); // 如果没有结果，返回系统用户
+                    
         } catch (Exception e) {
-            // 如果获取用户信息失败，返回系统默认用户
+            // 如果获取用户信息失败，记录警告并返回系统默认用户
+            // 注意：这里不使用log，因为可能在静态初始化时调用
+            System.err.println("获取当前用户ID时发生异常: " + e.getMessage());
             return "system";
         }
+    }
+
+    /**
+     * 从Authentication对象中提取用户ID的辅助方法
+     *
+     * @param authentication 认证对象
+     * @return 用户ID
+     */
+    private static String extractUserIdFromAuthentication(org.springframework.security.core.Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return "system";
+        }
+
+        // 检查是否为JWT认证
+        if (authentication instanceof org.unreal.modelrouter.security.model.JwtAuthentication) {
+            org.unreal.modelrouter.security.model.JwtAuthentication jwtAuth = 
+                (org.unreal.modelrouter.security.model.JwtAuthentication) authentication;
+            
+            // 优先从JWT Principal中获取用户ID
+            Object details = jwtAuth.getDetails();
+            if (details instanceof org.unreal.modelrouter.security.model.JwtPrincipal) {
+                org.unreal.modelrouter.security.model.JwtPrincipal principal = 
+                    (org.unreal.modelrouter.security.model.JwtPrincipal) details;
+                
+                // 尝试从claims中获取userId
+                String userId = principal.getStringClaim("userId");
+                if (userId != null && !userId.trim().isEmpty()) {
+                    return userId.trim();
+                }
+            }
+            
+            // 如果没有userId claim，使用principal（subject）
+            String principal = (String) jwtAuth.getPrincipal();
+            if (principal != null && !principal.trim().isEmpty()) {
+                return principal.trim();
+            }
+        }
+        
+        // 对于其他类型的认证，使用getName()方法
+        String name = authentication.getName();
+        if (name != null && !name.trim().isEmpty() && !"anonymous".equals(name)) {
+            return name.trim();
+        }
+        
+        // 如果没有有效的用户信息，返回系统默认用户
+        return "system";
     }
 }
