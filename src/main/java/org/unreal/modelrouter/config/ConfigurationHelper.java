@@ -902,6 +902,13 @@ public class ConfigurationHelper {
             instance.setInstanceId((String) instanceMap.get("instanceId"));
         }
         
+        // 设置请求头配置
+        if (instanceMap.containsKey("headers") && instanceMap.get("headers") instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, String> headers = (Map<String, String>) instanceMap.get("headers");
+            instance.setHeaders(headers);
+        }
+        
         // 设置限流配置
         if (instanceMap.containsKey("rateLimit") && instanceMap.get("rateLimit") instanceof Map) {
             Map<String, Object> rateLimitMap = (Map<String, Object>) instanceMap.get("rateLimit");

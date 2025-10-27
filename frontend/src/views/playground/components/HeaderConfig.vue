@@ -190,7 +190,6 @@ const headerTemplates = [
 ]
 
 // 计算属性
-const hasCustomHeaders = computed(() => customHeadersList.value.length > 0)
 
 // 方法定义
 const syncCustomHeadersList = () => {
