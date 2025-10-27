@@ -371,7 +371,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                 .header("Authorization", finalAuth);
 
         // 设置Content-Type（如果需要）
-        requestSpec = configureRequestHeaders(requestSpec, request);
+        requestSpec = configureRequestHeaders(requestSpec, request, selectedInstance);
 
         if (responseType == byte[].class) {
             // ... (二进制文件处理逻辑保持不变)
@@ -621,7 +621,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                 .uri(adaptModelName(path))
                 .header("Authorization", getAuthorizationHeader(adaptModelName(authorization), getAdapterType()));
 
-        requestSpec = configureRequestHeaders(requestSpec, request);
+        requestSpec = configureRequestHeaders(requestSpec, request, selectedInstance);
 
         // 记录请求大小
         long requestSize = calculateRequestSize(transformedRequest);
@@ -676,6 +676,27 @@ public abstract class BaseAdapter implements ServiceCapability {
             requestSpec.contentType(MediaType.MULTIPART_FORM_DATA);
         }
         return requestSpec;
+    }
+
+    /**
+     * 配置请求头（带实例配置） - 子类可以重写
+     */
+    protected <T> WebClient.RequestBodySpec configureRequestHeaders(
+            final WebClient.RequestBodySpec requestSpec,
+            final T request,
+            final ModelRouterProperties.ModelInstance instance) {
+        // 首先应用默认的请求头配置
+        WebClient.RequestBodySpec spec = configureRequestHeaders(requestSpec, request);
+        
+        // 然后应用实例配置中的自定义headers
+        if (instance != null && instance.getHeaders() != null) {
+            for (Map.Entry<String, String> header : instance.getHeaders().entrySet()) {
+                spec = spec.header(header.getKey(), header.getValue());
+                logger.debug("应用实例自定义请求头: {} = {}", header.getKey(), header.getValue());
+            }
+        }
+        
+        return spec;
     }
 
     /**

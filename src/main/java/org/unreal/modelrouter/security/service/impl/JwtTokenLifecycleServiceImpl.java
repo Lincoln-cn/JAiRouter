@@ -77,7 +77,7 @@ public class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
                 statusChange.put("newStatus", newStatus.name());
                 statusChange.put("reason", reason);
                 statusChange.put("updatedBy", updatedBy);
-                statusChange.put("timestamp", LocalDateTime.now().toString());
+                statusChange.put("timestamp", LocalDateTime.now());
                 
                 List<Map<String, Object>> statusHistory = (List<Map<String, Object>>) metadata.get("statusHistory");
                 if (statusHistory == null) {

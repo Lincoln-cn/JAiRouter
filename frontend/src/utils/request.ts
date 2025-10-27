@@ -4,7 +4,7 @@ import type { ApiResponse } from '@/types'
 // Create axios instance
 const request: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000, // 增加到60秒
   headers: {
     'Content-Type': 'application/json'
   }
@@ -47,10 +47,25 @@ request.interceptors.response.use(
   },
   error => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('admin_token')
-      // 使用相对路径而不是硬编码路径
-      window.location.href = '/login'
+      // 检查请求是否来自API测试场
+      // 通过检查请求URL中是否包含v1 API端点来判断
+      const isPlaygroundApiRequest = error.config?.url && (
+        error.config.url.includes('/v1/chat/completions') ||
+        error.config.url.includes('/v1/embeddings') ||
+        error.config.url.includes('/v1/rerank') ||
+        error.config.url.includes('/v1/audio/speech') ||
+        error.config.url.includes('/v1/audio/transcriptions') ||
+        error.config.url.includes('/v1/images/generations') ||
+        error.config.url.includes('/v1/images/edits')
+      )
+      
+      if (!isPlaygroundApiRequest) {
+        // Handle unauthorized access for platform management requests
+        localStorage.removeItem('admin_token')
+        // 使用相对路径而不是硬编码路径
+        window.location.href = '/login'
+      }
+      // API测试场的401错误不进行路由跳转，让组件自行处理和显示错误信息
     }
     return Promise.reject(error)
   }

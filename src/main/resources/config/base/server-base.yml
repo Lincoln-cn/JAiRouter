@@ -33,9 +33,9 @@ store:
 
 # WebClient 基础配置
 webclient:
-  connection-timeout: 10s
-  read-timeout: 30s
-  write-timeout: 30s
+  connection-timeout: 15s
+  read-timeout: 60s
+  write-timeout: 60s
   max-in-memory-size: 10MB
 
 # 基础日志配置

@@ -328,7 +328,7 @@ public class StorageHealthServiceImpl implements StorageHealthService {
             try {
                 String testKey = "health_check_" + System.currentTimeMillis();
                 Map<String, Object> testData = Map.of(
-                    "timestamp", LocalDateTime.now().toString(),
+                    "timestamp", LocalDateTime.now(),
                     "test", true
                 );
                 

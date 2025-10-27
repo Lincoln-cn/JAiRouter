@@ -23,7 +23,7 @@ import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
 
 @RestController
-@RequestMapping("/v1")
+@RequestMapping("/api/v1")
 @Tag(name = "统一模型接口", description = "提供兼容OpenAI格式的统一模型服务接口")
 public class UniversalController {
 

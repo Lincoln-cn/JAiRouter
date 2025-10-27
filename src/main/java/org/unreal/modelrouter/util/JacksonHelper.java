@@ -7,6 +7,11 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+
+import java.io.IOException;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
@@ -52,9 +57,39 @@ public class JacksonHelper {
         module.addSerializer(new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(NORM_DATETIME_PATTERN)));
         module.addSerializer(new LocalTimeSerializer(DateTimeFormatter.ofPattern(NORM_TIME_PATTERN)));
         module.addSerializer(new LocalDateSerializer(DateTimeFormatter.ofPattern(NORM_DATE_PATTERN)));
-        module.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(NORM_DATETIME_PATTERN)));
+        module.addDeserializer(LocalDateTime.class, new FlexibleLocalDateTimeDeserializer());
         module.addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern(NORM_DATE_PATTERN)));
         module.addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern(NORM_TIME_PATTERN)));
         return module;
+    }
+
+    /**
+     * 灵活的LocalDateTime反序列化器，支持多种格式
+     */
+    private static class FlexibleLocalDateTimeDeserializer extends JsonDeserializer<LocalDateTime> {
+        @Override
+        public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            String value = p.getValueAsString();
+            if (value == null || value.trim().isEmpty()) {
+                return null;
+            }
+            
+            try {
+                // 首先尝试标准格式
+                return LocalDateTime.parse(value, DateTimeFormatter.ofPattern(NORM_DATETIME_PATTERN));
+            } catch (Exception e1) {
+                try {
+                    // 尝试ISO格式 (toString()产生的格式)
+                    return LocalDateTime.parse(value);
+                } catch (Exception e2) {
+                    try {
+                        // 尝试其他常见格式
+                        return LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    } catch (Exception e3) {
+                        throw new IOException("Unable to parse LocalDateTime from: " + value, e3);
+                    }
+                }
+            }
+        }
     }
 }

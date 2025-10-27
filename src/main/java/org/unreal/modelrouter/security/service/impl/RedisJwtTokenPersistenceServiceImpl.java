@@ -489,10 +489,10 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
                 
                 if (tokenData != null) {
                     tokenData.put("status", status.name());
-                    tokenData.put("updatedAt", LocalDateTime.now().toString());
+                    tokenData.put("updatedAt", LocalDateTime.now());
                     
                     if (TokenStatus.REVOKED.equals(status)) {
-                        tokenData.put("revokedAt", LocalDateTime.now().toString());
+                        tokenData.put("revokedAt", LocalDateTime.now());
                     }
                     
                     fallbackStoreManager.updateConfig(tokenKey, tokenData);
