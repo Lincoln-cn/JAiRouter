@@ -78,6 +78,20 @@
                         </div>
                       </template>
                     </el-table-column>
+                    <el-table-column prop="headers" label="请求头" width="120" align="center">
+                      <template #default="scope">
+                        <el-tooltip v-if="scope.row.headers && Object.keys(scope.row.headers).length > 0" 
+                                    :content="Object.entries(scope.row.headers).map(([k, v]) => `${k}: ${v}`).join('\n')" 
+                                    placement="top">
+                          <el-tag type="success" class="table-tag" size="small">
+                            {{ Object.keys(scope.row.headers).length }} 个
+                          </el-tag>
+                        </el-tooltip>
+                        <el-tag v-else type="info" class="table-tag" size="small">
+                          无
+                        </el-tag>
+                      </template>
+                    </el-table-column>
                     <el-table-column prop="status" label="状态" width="110" align="center">
                       <template #default="scope">
                         <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" class="table-tag">
@@ -86,7 +100,7 @@
                       </template>
                     </el-table-column>
 
-                    <el-table-column label="操作" width="170" align="center" fixed="right">
+                    <el-table-column label="操作" width="120" align="center" fixed="right">
                       <template #default="scope">
                         <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle title="编辑">
                           <el-icon>
@@ -189,6 +203,65 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <el-divider content-position="left">请求头配置</el-divider>
+        
+        <div class="headers-section">
+          <div class="headers-actions">
+            <el-button type="primary" size="small" @click="addCustomHeader">
+              <el-icon><Plus /></el-icon>
+              添加请求头
+            </el-button>
+            <el-button type="success" size="small" @click="addAuthorizationHeader">
+              <el-icon><Key /></el-icon>
+              添加Authorization
+            </el-button>
+            <el-button type="warning" size="small" @click="clearAllHeaders" v-if="customHeadersList.length > 0">
+              <el-icon><Delete /></el-icon>
+              清除所有
+            </el-button>
+          </div>
+          
+          <div class="headers-list" v-if="customHeadersList.length > 0">
+            <div 
+              v-for="(header, index) in customHeadersList" 
+              :key="index"
+              class="header-item"
+            >
+              <el-input
+                v-model="header.key"
+                placeholder="请求头名称（如：Authorization）"
+                size="small"
+                @input="onCustomHeaderChange"
+                class="header-key"
+              />
+              <el-input
+                v-model="header.value"
+                placeholder="请求头值（如：Bearer your-token-here）"
+                size="small"
+                @input="onCustomHeaderChange"
+                class="header-value"
+                :type="header.key.toLowerCase() === 'authorization' ? 'password' : 'text'"
+                :show-password="header.key.toLowerCase() === 'authorization'"
+              />
+              <el-button 
+                type="danger" 
+                size="small" 
+                @click="removeCustomHeader(index)"
+                class="remove-btn"
+              >
+                <el-icon><Close /></el-icon>
+              </el-button>
+            </div>
+          </div>
+          
+          <el-empty 
+            v-else 
+            description="暂无自定义请求头" 
+            :image-size="60"
+            class="empty-headers"
+          />
+        </div>
 
         <el-divider content-position="left">限流配置</el-divider>
         <el-form-item label="启用限流">
@@ -297,6 +370,7 @@ import {
   getServiceTypes,
   updateServiceInstance
 } from '@/api/dashboard'
+import { Plus, Delete, Close, Key } from '@element-plus/icons-vue'
 import { getAdapters, getAllConfigurations } from '@/api/service'
 
 // 服务类型映射（保持原有）
@@ -335,6 +409,7 @@ interface ServiceInstance {
   status: 'active' | 'inactive'
   instanceId: string
   adapter?: string  // 适配器配置
+  headers?: Record<string, string>  // 请求头配置
   rateLimit: {
     enabled: boolean
     algorithm: string
@@ -381,6 +456,7 @@ const form = reactive<ServiceInstance>({
   instanceId: '',
   status: 'active',
   adapter: '',
+  headers: {},
   rateLimit: {
     enabled: false,
     algorithm: 'token-bucket',
@@ -397,6 +473,62 @@ const form = reactive<ServiceInstance>({
     successThreshold: 2
   }
 })
+
+// 请求头管理
+interface HeaderItem {
+  key: string
+  value: string
+}
+
+const customHeadersList = ref<HeaderItem[]>([])
+
+// 同步请求头列表
+const syncCustomHeadersList = () => {
+  customHeadersList.value = Object.entries(form.headers || {}).map(([key, value]) => ({
+    key,
+    value
+  }))
+}
+
+// 请求头变化处理
+const onCustomHeaderChange = () => {
+  const headers: Record<string, string> = {}
+  customHeadersList.value.forEach(header => {
+    if (header.key.trim() && header.value.trim()) {
+      headers[header.key.trim()] = header.value.trim()
+    }
+  })
+  form.headers = headers
+  console.log('请求头变化 - customHeadersList:', customHeadersList.value)
+  console.log('请求头变化 - 生成的headers:', headers)
+  console.log('请求头变化 - form.headers:', form.headers)
+}
+
+// 添加请求头
+const addCustomHeader = () => {
+  customHeadersList.value.push({ key: '', value: '' })
+}
+
+// 移除请求头
+const removeCustomHeader = (index: number) => {
+  customHeadersList.value.splice(index, 1)
+  onCustomHeaderChange()
+}
+
+// 清除所有请求头
+const clearAllHeaders = () => {
+  customHeadersList.value = []
+  form.headers = {}
+}
+
+// 添加常用请求头模板
+const addAuthorizationHeader = () => {
+  const existingAuth = customHeadersList.value.find(h => h.key.toLowerCase() === 'authorization')
+  if (!existingAuth) {
+    customHeadersList.value.push({ key: 'Authorization', value: 'Bearer your-api-key-here' })
+    onCustomHeaderChange()
+  }
+}
 
 // 简单防抖
 function debounce<T extends (...args: any[]) => void>(fn: T, wait = 300) {
@@ -529,8 +661,11 @@ const fetchServiceInstances = (serviceType: string) => {
           ...item,
           id: item.instanceId || Date.now() + Math.random(), // 使用后端返回的instanceId作为唯一标识符，如果没有则使用随机数
           serviceType: serviceType,
-          adapter: item.adapter || '' // 确保适配器字段存在
+          adapter: item.adapter || '', // 确保适配器字段存在
+          headers: item.headers || {} // 确保headers字段存在
         }))
+        console.log('获取实例数据 - 原始数据:', data)
+        console.log('获取实例数据 - 处理后数据:', typedData)
         instancesCache.value[serviceType] = typedData
         instances.value[serviceType] = [...typedData]
       } else {
@@ -571,6 +706,7 @@ const handleAddInstance = () => {
     weight: 1,
     status: 'active',
     adapter: '',
+    headers: {},
     rateLimit: {
       enabled: false,
       algorithm: 'token-bucket',
@@ -587,6 +723,7 @@ const handleAddInstance = () => {
       successThreshold: 2
     }
   })
+  customHeadersList.value = []
   console.log('添加实例，使用服务类型:', activeServiceType.value)
   dialogVisible.value = true
 }
@@ -599,6 +736,8 @@ const handleEdit = (row: ServiceInstance) => {
     ...row,
     // 确保使用当前激活的页签对应的服务类型，而不是实例原来的服务类型
     serviceType: activeServiceType.value,
+    // 确保headers字段存在
+    headers: row.headers || {},
     // 使用后端返回的实例ID而不是根据表单数据重新构建
     rateLimit: {
       enabled: row.rateLimit?.enabled || false,
@@ -616,6 +755,7 @@ const handleEdit = (row: ServiceInstance) => {
       successThreshold: row.circuitBreaker?.successThreshold || 2
     }
   })
+  syncCustomHeadersList()
   console.log('编辑实例，设置originalInstanceId:', form.instanceId)
   console.log('编辑实例，使用服务类型:', form.serviceType)
   dialogVisible.value = true
@@ -673,9 +813,15 @@ const handleSave = async () => {
       weight: form.weight,
       status: form.status,
       adapter: form.adapter || null, // 适配器配置，空值时传null使用全局配置
+      headers: form.headers || {}, // 请求头配置，确保至少是空对象
       rateLimit: form.rateLimit.enabled ? form.rateLimit : null, // 只有启用时才传递限流配置
       circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : null // 只有启用时才传递熔断配置
     }
+    
+    console.log('构造的实例数据:', instanceData)
+    console.log('form.headers:', form.headers)
+    console.log('headers条件判断:', form.headers && Object.keys(form.headers).length > 0)
+    console.log('最终headers值:', instanceData.headers)
 
     if (isEdit.value) {
       // 使用后端返回的实例ID
@@ -914,5 +1060,112 @@ onMounted(() => {
   color: #909399;
   margin-top: 4px;
   line-height: 1.4;
+}
+
+/* 请求头配置样式 */
+.headers-section {
+  margin: 16px 0;
+}
+
+.headers-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.headers-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 12px;
+  background-color: #fafafa;
+}
+
+.header-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.header-key {
+  flex: 1;
+  min-width: 150px;
+}
+
+.header-value {
+  flex: 2;
+  min-width: 200px;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.empty-headers {
+  margin: 20px 0;
+  background-color: #fafafa;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  padding: 20px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-key,
+  .header-value {
+    flex: none;
+    min-width: auto;
+  }
+  
+  .remove-btn {
+    align-self: center;
+    margin-top: 5px;
+  }
+  
+  .headers-actions {
+    justify-content: center;
+  }
+}
+
+/* 滚动条样式 */
+.headers-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.headers-list::-webkit-scrollbar-track {
+  background: var(--el-bg-color-page);
+  border-radius: 3px;
+}
+
+.headers-list::-webkit-scrollbar-thumb {
+  background: var(--el-border-color);
+  border-radius: 3px;
+}
+
+.headers-list::-webkit-scrollbar-thumb:hover {
+  background: var(--el-border-color-dark);
+}
+
+/* 动画效果 */
+.header-item {
+  transition: all 0.3s ease;
+}
+
+.header-item:hover {
+  background-color: var(--el-bg-color);
+  border-radius: 4px;
+  padding: 5px;
+  margin: 5px 0;
 }
 </style>

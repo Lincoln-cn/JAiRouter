@@ -2,6 +2,7 @@ package org.unreal.modelrouter.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.unreal.modelrouter.model.ModelRouterProperties;
+import java.util.Map;
 
 /**
  * {
@@ -27,6 +28,7 @@ public class UpdateInstanceDTO {
         private Integer weight;
         private String status; // 添加status字段
         private String adapter; // 添加adapter字段
+        private Map<String, String> headers; // 添加请求头配置字段
         private ModelRouterProperties.RateLimitConfig rateLimit; // 使用ModelRouterProperties中的限流配置字段
         private ModelRouterProperties.CircuitBreakerConfig circuitBreaker; // 使用ModelRouterProperties中的熔断配置字段
 
@@ -79,6 +81,14 @@ public class UpdateInstanceDTO {
             this.adapter = adapter;
         }
 
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+
+        public void setHeaders(Map<String, String> headers) {
+            this.headers = headers;
+        }
+
         public ModelRouterProperties.RateLimitConfig getRateLimit() {
             return rateLimit;
         }
@@ -109,6 +119,8 @@ public class UpdateInstanceDTO {
             if (adapter != null) {
                 modelInstance.setAdapter(adapter);
             }
+            // 添加headers字段设置
+            modelInstance.setHeaders(headers); // 直接设置，包括null和空Map
             // 添加限流配置设置
             if (rateLimit != null) {
                 ModelRouterProperties.RateLimitConfig rateLimitConfig = new ModelRouterProperties.RateLimitConfig();
