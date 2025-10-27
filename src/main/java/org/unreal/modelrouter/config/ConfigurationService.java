@@ -1247,7 +1247,10 @@ public class ConfigurationService {
         List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.computeIfAbsent("instances", k -> new ArrayList<>());
 
         // 验证实例配置
-        Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(configurationHelper.convertInstanceToMap(instanceConfig));
+        Map<String, Object> instanceMap = configurationHelper.convertInstanceToMap(instanceConfig);
+        logger.debug("转换后的实例配置Map: {}", instanceMap);
+        logger.debug("实例配置中的headers字段: {}", instanceMap != null ? instanceMap.get("headers") : "null");
+        Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(instanceMap);
 
         // 检查是否已存在（通过name和baseUrl判断）
         String name = (String) validatedInstance.get("name");
@@ -1388,8 +1391,15 @@ public class ConfigurationService {
         if (found) {
             instanceConfig.setInstanceId(instanceId);
             // 合并更新配置
-            Map<String, Object> updatedInstance = mergeInstanceConfig(oldInstance, configurationHelper.convertInstanceToMap(instanceConfig));
+            Map<String, Object> newInstanceMap = configurationHelper.convertInstanceToMap(instanceConfig);
+            logger.debug("更新实例 - 转换后的实例配置Map: {}", newInstanceMap);
+            logger.debug("更新实例 - 实例配置中的headers字段: {}", newInstanceMap != null ? newInstanceMap.get("headers") : "null");
+            Map<String, Object> updatedInstance = mergeInstanceConfig(oldInstance, newInstanceMap);
+            logger.debug("更新实例 - 合并后的实例配置: {}", updatedInstance);
+            logger.debug("更新实例 - 合并后的headers字段: {}", updatedInstance.get("headers"));
             Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(updatedInstance);
+            logger.debug("更新实例 - 验证后的实例配置: {}", validatedInstance);
+            logger.debug("更新实例 - 验证后的headers字段: {}", validatedInstance.get("headers"));
             instances.set(targetIndex, validatedInstance);
         }
 
@@ -1730,6 +1740,10 @@ public class ConfigurationService {
                 normalized.put("instanceId", InstanceIdUtils.getInstanceId(instanceConfig));
             }
         }
+
+        logger.debug("验证和标准化实例配置 - 输入: {}", instanceConfig);
+        logger.debug("验证和标准化实例配置 - 输出: {}", normalized);
+        logger.debug("验证和标准化实例配置 - headers字段: {}", normalized.get("headers"));
 
         return normalized;
     }
