@@ -74,6 +74,17 @@
           <el-menu-item index="/tracing/performance">性能分析</el-menu-item>
           <el-menu-item index="/tracing/management">追踪管理</el-menu-item>
         </el-sub-menu>
+
+        <!-- API测试试验场 -->
+        <el-sub-menu index="playground">
+          <template #title>
+            <el-icon>
+              <Monitor />
+            </el-icon>
+            <span>API测试试验场</span>
+          </template>
+          <el-menu-item index="/playground/main">API测试试验场</el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
 
@@ -118,8 +129,8 @@ import {
   Setting,
   Lock,
   User,
-  DataAnalysis,
-  Connection
+  Connection,
+  Monitor
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -158,6 +169,8 @@ const defaultOpeneds = computed(() => {
     openeds.push('system')
   } else if (path.startsWith('/tracing')) {
     openeds.push('tracing')
+  } else if (path.startsWith('/playground')) {
+    openeds.push('playground')
   }
 
   return openeds

@@ -203,7 +203,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 }
                 
                 // 添加当前时间戳
-                stats.put("lastUpdated", LocalDateTime.now().toString());
+                stats.put("lastUpdated", LocalDateTime.now());
                 
                 // 计算过期条目数量
                 long expiredCount = countExpiredEntries();
@@ -277,7 +277,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
             }
             
             indexData.put("tokenHashes", tokenHashes);
-            indexData.put("updatedAt", LocalDateTime.now().toString());
+            indexData.put("updatedAt", LocalDateTime.now());
             
             storeManager.saveConfig(BLACKLIST_INDEX_KEY, indexData);
             
@@ -335,7 +335,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 statsData.put("totalCleaned", totalCleaned + cleanedCount);
             }
             
-            statsData.put("lastUpdated", LocalDateTime.now().toString());
+            statsData.put("lastUpdated", LocalDateTime.now());
             
             storeManager.saveConfig(BLACKLIST_STATS_KEY, statsData);
             

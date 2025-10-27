@@ -210,11 +210,11 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 
                 // 更新状态和时间
                 tokenData.put("status", status.name());
-                tokenData.put("updatedAt",LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                tokenData.put("updatedAt", LocalDateTime.now());
                 
                 // 如果是撤销状态，设置撤销时间
                 if (TokenStatus.REVOKED.equals(status)) {
-                    tokenData.put("revokedAt", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    tokenData.put("revokedAt", LocalDateTime.now());
                 }
                 
                 // 保存更新后的数据
@@ -432,7 +432,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                             
                             // 更新状态和相关信息
                             tokenData.put("status", status.name());
-                            tokenData.put("updatedAt", LocalDateTime.now().toString());
+                            tokenData.put("updatedAt", LocalDateTime.now());
                             
                             if (reason != null) {
                                 tokenData.put("revokeReason", reason);
@@ -441,7 +441,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                                 tokenData.put("revokedBy", updatedBy);
                             }
                             if (TokenStatus.REVOKED.equals(status)) {
-                                tokenData.put("revokedAt", LocalDateTime.now().toString());
+                                tokenData.put("revokedAt", LocalDateTime.now());
                             }
                             
                             // 保存更新后的数据
@@ -538,7 +538,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
             }
             
             indexData.put("tokenHashes", tokenHashes);
-            indexData.put("updatedAt", LocalDateTime.now().toString());
+            indexData.put("updatedAt", LocalDateTime.now());
             
             storeManager.saveConfig(indexKey, indexData);
             
@@ -579,7 +579,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
             }
             
             indexData.put("tokenHashes", tokenHashes);
-            indexData.put("updatedAt", LocalDateTime.now().toString());
+            indexData.put("updatedAt", LocalDateTime.now());
             
             storeManager.saveConfig(indexKey, indexData);
             
@@ -647,7 +647,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 counterData.put("count", count + 1);
             }
             
-            counterData.put("updatedAt", LocalDateTime.now().toString());
+            counterData.put("updatedAt", LocalDateTime.now());
             storeManager.saveConfig(TOKEN_COUNTER_KEY, counterData);
             
         } catch (Exception e) {

@@ -150,6 +150,7 @@ public class ModelRouterProperties {
         private String status = "active"; // 添加状态字段，默认为active
         private String instanceId; // 添加唯一ID字段
         private String adapter; // 适配器配置
+        private Map<String, String> headers; // 添加请求头配置
         private RateLimitConfig rateLimit; // 实例级别限流配置
         private CircuitBreakerConfig circuitBreaker; // 实例级别熔断器配置
 
@@ -227,6 +228,14 @@ public class ModelRouterProperties {
 
         public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
             this.circuitBreaker = circuitBreaker;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+
+        public void setHeaders(Map<String, String> headers) {
+            this.headers = headers;
         }
     }
 

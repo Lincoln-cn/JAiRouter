@@ -720,7 +720,7 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
             statsData.put("cleanupFailureCount", cleanupFailureCounter.count());
             
             // 时间戳
-            statsData.put("updatedAt", LocalDateTime.now().toString());
+            statsData.put("updatedAt", LocalDateTime.now());
             statsData.put("systemTime", System.currentTimeMillis());
             
             // 版本信息（用于统计数据迁移）

@@ -158,6 +158,21 @@ const router = createRouter({
           meta: { title: '追踪管理', icon: 'setting' }
         }
       ]
+    },
+    // API测试试验场
+    {
+      path: '/playground',
+      name: 'playground',
+      component: () => import('../views/Layout.vue'),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'main',
+          name: 'playground-main',
+          component: () => import('../views/playground/PlaygroundMain.vue'),
+          meta: { title: 'API测试试验场', icon: 'monitor' }
+        }
+      ]
     }
   ]
 })

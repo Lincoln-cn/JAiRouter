@@ -420,7 +420,7 @@ public class SecurityConfigurationBackupService {
             String json = objectMapper.writeValueAsString(backupInfos);
             Map<String, Object> indexMap = new HashMap<>();
             indexMap.put("data", json);
-            indexMap.put("timestamp", LocalDateTime.now().toString());
+            indexMap.put("timestamp", LocalDateTime.now());
             
             storeManager.saveConfig(BACKUP_INDEX_KEY, indexMap);
         } catch (Exception e) {
