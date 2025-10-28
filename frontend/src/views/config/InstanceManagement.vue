@@ -80,9 +80,9 @@
                     </el-table-column>
                     <el-table-column prop="headers" label="请求头" width="120" align="center">
                       <template #default="scope">
-                        <el-tooltip v-if="scope.row.headers && Object.keys(scope.row.headers).length > 0" 
-                                    :content="Object.entries(scope.row.headers).map(([k, v]) => `${k}: ${v}`).join('\n')" 
-                                    placement="top">
+                        <el-tooltip v-if="scope.row.headers && Object.keys(scope.row.headers).length > 0"
+                          :content="Object.entries(scope.row.headers).map(([k, v]) => `${k}: ${v}`).join('\n')"
+                          placement="top">
                           <el-tag type="success" class="table-tag" size="small">
                             {{ Object.keys(scope.row.headers).length }} 个
                           </el-tag>
@@ -205,62 +205,69 @@
         </el-row>
 
         <el-divider content-position="left">请求头配置</el-divider>
-        
+
         <div class="headers-section">
-          <div class="headers-actions">
-            <el-button type="primary" size="small" @click="addCustomHeader">
-              <el-icon><Plus /></el-icon>
-              添加请求头
-            </el-button>
-            <el-button type="success" size="small" @click="addAuthorizationHeader">
-              <el-icon><Key /></el-icon>
-              添加Authorization
-            </el-button>
-            <el-button type="warning" size="small" @click="clearAllHeaders" v-if="customHeadersList.length > 0">
-              <el-icon><Delete /></el-icon>
-              清除所有
-            </el-button>
+          <el-row :gutter="20">
+            <el-col :span="24">
+              <el-form-item label="请求头管理">
+                <div class="headers-actions">
+                  <el-button type="primary" size="small" @click="addCustomHeader">
+                    <el-icon>
+                      <Plus />
+                    </el-icon>
+                    添加请求头
+                  </el-button>
+                  <el-button type="success" size="small" @click="addAuthorizationHeader">
+                    <el-icon>
+                      <Key />
+                    </el-icon>
+                    添加Authorization
+                  </el-button>
+                  <el-button type="warning" size="small" @click="clearAllHeaders" v-if="customHeadersList.length > 0">
+                    <el-icon>
+                      <Delete />
+                    </el-icon>
+                    清除所有
+                  </el-button>
+                </div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <div v-if="customHeadersList.length > 0" class="headers-list">
+            <el-row v-for="(header, index) in customHeadersList" :key="index" :gutter="20" class="header-row">
+              <el-col :span="10">
+                <el-form-item :label="`请求头名称 ${index + 1}`">
+                  <el-input v-model="header.key" placeholder="如：Authorization" @input="onCustomHeaderChange" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item :label="`请求头值 ${index + 1}`">
+                  <el-input v-model="header.value" placeholder="如：Bearer your-token-here" @input="onCustomHeaderChange"
+                    :type="header.key.toLowerCase() === 'authorization' ? 'password' : 'text'"
+                    :show-password="header.key.toLowerCase() === 'authorization'" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="2">
+                <div class="header-delete-wrapper">
+                  <el-button type="danger" size="small" @click="removeCustomHeader(index)" circle
+                    class="remove-header-btn" title="删除此请求头">
+                    <el-icon>
+                      <Close />
+                    </el-icon>
+                  </el-button>
+                </div>
+              </el-col>
+            </el-row>
           </div>
-          
-          <div class="headers-list" v-if="customHeadersList.length > 0">
-            <div 
-              v-for="(header, index) in customHeadersList" 
-              :key="index"
-              class="header-item"
-            >
-              <el-input
-                v-model="header.key"
-                placeholder="请求头名称（如：Authorization）"
-                size="small"
-                @input="onCustomHeaderChange"
-                class="header-key"
-              />
-              <el-input
-                v-model="header.value"
-                placeholder="请求头值（如：Bearer your-token-here）"
-                size="small"
-                @input="onCustomHeaderChange"
-                class="header-value"
-                :type="header.key.toLowerCase() === 'authorization' ? 'password' : 'text'"
-                :show-password="header.key.toLowerCase() === 'authorization'"
-              />
-              <el-button 
-                type="danger" 
-                size="small" 
-                @click="removeCustomHeader(index)"
-                class="remove-btn"
-              >
-                <el-icon><Close /></el-icon>
-              </el-button>
-            </div>
-          </div>
-          
-          <el-empty 
-            v-else 
-            description="暂无自定义请求头" 
-            :image-size="60"
-            class="empty-headers"
-          />
+
+          <el-row v-else :gutter="20">
+            <el-col :span="24">
+              <el-form-item>
+                <el-empty description="暂无自定义请求头，点击上方按钮添加" :image-size="60" class="empty-headers" />
+              </el-form-item>
+            </el-col>
+          </el-row>
         </div>
 
         <el-divider content-position="left">限流配置</el-divider>
@@ -817,7 +824,7 @@ const handleSave = async () => {
       rateLimit: form.rateLimit.enabled ? form.rateLimit : null, // 只有启用时才传递限流配置
       circuitBreaker: form.circuitBreaker.enabled ? form.circuitBreaker : null // 只有启用时才传递熔断配置
     }
-    
+
     console.log('构造的实例数据:', instanceData)
     console.log('form.headers:', form.headers)
     console.log('headers条件判断:', form.headers && Object.keys(form.headers).length > 0)
@@ -1062,79 +1069,84 @@ onMounted(() => {
   line-height: 1.4;
 }
 
-/* 请求头配置样式 */
+/* 请求头配置样式 - 与基本信息保持一致 */
 .headers-section {
-  margin: 16px 0;
+  margin: 0;
+  padding: 0;
 }
 
 .headers-actions {
   display: flex;
   gap: 10px;
-  margin-bottom: 15px;
   flex-wrap: wrap;
-}
-
-.headers-list {
-  max-height: 300px;
-  overflow-y: auto;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  padding: 12px;
-  background-color: #fafafa;
-}
-
-.header-item {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
   align-items: center;
 }
 
-.header-key {
-  flex: 1;
-  min-width: 150px;
+.headers-list {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #fafbfc;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
 }
 
-.header-value {
-  flex: 2;
-  min-width: 200px;
+.header-row {
+  margin-bottom: 16px;
+  padding-top: 16px;
+  background-color: #ffffff;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  transition: all 0.3s ease;
 }
 
-.remove-btn {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  padding: 0;
+.header-row:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+}
+
+.header-row:last-child {
+  margin-bottom: 0;
 }
 
 .empty-headers {
-  margin: 20px 0;
-  background-color: #fafafa;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  padding: 20px;
+  margin: 0;
+  background-color: transparent;
+  border: none;
+  padding: 20px 0;
+}
+
+/* 操作按钮样式 */
+.header-delete-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-header-btn {
+  transition: all 0.3s ease;
+}
+
+.remove-header-btn:hover {
+  transform: scale(1.1);
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .header-item {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .header-key,
-  .header-value {
-    flex: none;
-    min-width: auto;
-  }
-  
-  .remove-btn {
-    align-self: center;
-    margin-top: 5px;
-  }
-  
   .headers-actions {
     justify-content: center;
+  }
+
+  .header-row .el-col {
+    margin-bottom: 8px;
+  }
+
+  .header-row .el-col:last-child {
+    margin-bottom: 0;
+  }
+
+  .header-delete-wrapper {
+    margin-top: 10px;
+    height: auto;
   }
 }
 
@@ -1157,15 +1169,15 @@ onMounted(() => {
   background: var(--el-border-color-dark);
 }
 
-/* 动画效果 */
-.header-item {
-  transition: all 0.3s ease;
+/* 表单项标签样式统一 */
+.headers-section .el-form-item__label {
+  font-weight: 600;
+  font-size: 14px;
+  color: #213142;
 }
 
-.header-item:hover {
-  background-color: var(--el-bg-color);
-  border-radius: 4px;
-  padding: 5px;
-  margin: 5px 0;
+/* 请求头启用开关样式 */
+.headers-section .el-switch {
+  margin-left: 0;
 }
 </style>

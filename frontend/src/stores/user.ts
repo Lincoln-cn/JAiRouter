@@ -55,7 +55,10 @@ export const useUserStore = defineStore('user', () => {
           console.error('自动刷新令牌失败:', error)
           // 如果刷新失败，清除令牌并跳转到登录页
           clearToken()
-          window.location.href = '/login'
+          // 使用router进行跳转，确保使用正确的base path
+          import('@/router').then(({ default: router }) => {
+            router.push('/login')
+          })
         }
       }
     }, 30 * 60 * 1000) // 30分钟
