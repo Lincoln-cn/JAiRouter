@@ -16,24 +16,106 @@
             </div>
           </template>
 
-          <el-form ref="formRef" :model="rerankConfig" :rules="formRules" label-width="120px" class="rerank-form">
-            <!-- 模型选择 -->
-            <el-form-item label="模型" prop="model" required>
-              <div class="model-select-container">
-                <el-select v-model="rerankConfig.model" placeholder="请选择模型" filterable allow-create style="width: 100%"
-                  :loading="modelsLoading">
-                  <el-option v-for="model in availableModels" :key="model" :label="model" :value="model" />
+          <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" class="rerank-form">
+            <!-- 实例选择 -->
+            <el-form-item label="选择实例" prop="selectedInstanceId">
+              <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                <el-select 
+                  v-model="selectedInstanceId" 
+                  placeholder="请选择重排序服务实例"
+                  @change="onInstanceChange"
+                  style="flex: 1"
+                  :loading="instancesLoading"
+                  clearable
+                >
+                  <el-option
+                    v-for="instance in availableInstances"
+                    :key="instance.instanceId"
+                    :label="instance.name"
+                    :value="instance.instanceId"
+                  >
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span>{{ instance.name }}</span>
+                      <el-tag 
+                        v-if="instance.headers && Object.keys(instance.headers).length > 0"
+                        type="success" 
+                        size="small"
+                      >
+                        {{ Object.keys(instance.headers).length }} 个请求头
+                      </el-tag>
+                    </div>
+                  </el-option>
                   <template #empty>
                     <div style="padding: 10px; text-align: center; color: #999;">
-                      {{ modelsLoading ? '加载中...' : '暂无可用模型，请先在实例管理中添加重排序服务实例' }}
+                      {{ instancesLoading ? '加载中...' : '暂无可用实例，请先在实例管理中添加重排序服务实例' }}
                     </div>
                   </template>
                 </el-select>
-                <el-button type="info" size="small" @click="fetchAvailableModels" class="refresh-btn"
-                  :loading="modelsLoading" title="刷新模型列表">
-                  <el-icon>
-                    <Refresh />
-                  </el-icon>
+                <el-button 
+                  type="info" 
+                  size="small" 
+                  @click="fetchInstances"
+                  :loading="instancesLoading"
+                  title="刷新实例列表"
+                >
+                  <el-icon><Refresh /></el-icon>
+                </el-button>
+              </div>
+            </el-form-item>
+
+            <!-- 请求头配置 -->
+            <el-form-item v-if="selectedInstanceInfo" label="请求头配置">
+              <div class="headers-config">
+                <div class="headers-list">
+                  <div 
+                    v-for="(header, index) in headersList" 
+                    :key="index"
+                    class="header-item"
+                  >
+                    <el-input
+                      v-model="header.key"
+                      placeholder="请求头名称"
+                      size="small"
+                      @input="onHeaderChange"
+                      class="header-key"
+                      :disabled="header.fromInstance"
+                    />
+                    <el-input
+                      v-model="header.value"
+                      placeholder="请求头值"
+                      size="small"
+                      @input="onHeaderChange"
+                      class="header-value"
+                      :type="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key') ? 'password' : 'text'"
+                      :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')"
+                    />
+                    <el-tag 
+                      v-if="header.fromInstance" 
+                      type="success" 
+                      size="small"
+                      class="instance-tag"
+                    >
+                      实例
+                    </el-tag>
+                    <el-button 
+                      v-else
+                      type="danger" 
+                      size="small" 
+                      @click="removeHeader(index)"
+                      class="remove-btn"
+                    >
+                      <el-icon><Close /></el-icon>
+                    </el-button>
+                  </div>
+                </div>
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="addHeader"
+                  class="add-header-btn"
+                >
+                  <el-icon><Plus /></el-icon>
+                  添加请求头
                 </el-button>
               </div>
             </el-form-item>
@@ -212,14 +294,13 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Position, Plus, Delete, Close, Refresh } from '@element-plus/icons-vue'
 import { sendUniversalRequest } from '@/api/universal'
-import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
+import { getServiceInstances } from '@/api/dashboard'
 import type { UniversalApiRequest } from '@/api/universal'
 import type {
   RerankRequestConfig,
   GlobalConfig,
   PlaygroundResponse,
-  RequestState,
-  ValidationRules
+  RequestState
 } from '../types/playground'
 
 // Props
@@ -235,6 +316,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   response: [response: PlaygroundResponse | null, loading?: boolean, error?: string | null]
   request: [request: any | null, size?: number]
+  'update:globalConfig': [config: GlobalConfig]
 }>()
 
 // 表单引用
@@ -249,6 +331,16 @@ const rerankConfig = ref<RerankRequestConfig>({
   returnDocuments: true
 })
 
+// 表单数据（包含所有需要验证的字段）
+const formData = reactive({
+  selectedInstanceId: '',
+  model: rerankConfig.value.model,
+  query: rerankConfig.value.query,
+  documents: rerankConfig.value.documents,
+  topN: rerankConfig.value.topN,
+  returnDocuments: rerankConfig.value.returnDocuments
+})
+
 // 请求状态
 const requestState = reactive<RequestState>({
   loading: false,
@@ -260,29 +352,155 @@ const requestState = reactive<RequestState>({
 const activeCollapse = ref<string[]>([])
 const responseCollapse = ref<string[]>([])
 
-// 模型列表（从实例管理获取）
-const availableModels = ref<string[]>([])
-const modelsLoading = ref(false)
+// 实例选择相关状态
+const availableInstances = ref<any[]>([])
+const instancesLoading = ref(false)
+const selectedInstanceId = ref('')
+const selectedInstanceInfo = ref<any>(null)
 
-// 获取可用模型列表
-const fetchAvailableModels = async () => {
-  modelsLoading.value = true
+// 请求头配置状态
+interface HeaderItem {
+  key: string
+  value: string
+  fromInstance: boolean
+}
+
+const headersList = ref<HeaderItem[]>([])
+const currentHeaders = ref<Record<string, string>>({})
+
+// 获取可用实例列表
+const fetchInstances = async () => {
+  instancesLoading.value = true
   try {
-    const serviceType = getInstanceServiceType('rerank')
-    const models = await getModelsByServiceType(serviceType)
-    availableModels.value = models
+    const response = await getServiceInstances('rerank')
+    if (response.data?.success) {
+      availableInstances.value = response.data.data || []
+      ElMessage.success(`已刷新实例列表，找到 ${availableInstances.value.length} 个可用实例`)
+    } else {
+      availableInstances.value = []
+      ElMessage.warning('获取实例列表失败')
+    }
   } catch (error) {
-    console.error('获取模型列表失败:', error)
-    ElMessage.error('获取模型列表失败')
+    console.error('获取实例列表失败:', error)
+    availableInstances.value = []
+    ElMessage.error('获取实例列表失败')
   } finally {
-    modelsLoading.value = false
+    instancesLoading.value = false
   }
+}
+
+// 实例选择变化处理
+const onInstanceChange = (instanceId: string) => {
+  // 同步到formData
+  formData.selectedInstanceId = instanceId
+  
+  if (!instanceId) {
+    selectedInstanceInfo.value = null
+    rerankConfig.value.model = ''
+    formData.model = ''
+    headersList.value = []
+    currentHeaders.value = {}
+    return
+  }
+  
+  const instance = availableInstances.value.find(inst => inst.instanceId === instanceId)
+  if (instance) {
+    selectedInstanceInfo.value = instance
+    
+    // 使用实例名称作为默认模型
+    rerankConfig.value.model = instance.name || 'default-model'
+    formData.model = instance.name || 'default-model'
+    
+    // 初始化请求头列表
+    initializeHeaders(instance.headers || {})
+    
+    ElMessage.success(`已选择实例 "${instance.name}"`)
+  }
+}
+
+// 初始化请求头列表
+const initializeHeaders = (instanceHeaders: Record<string, string>) => {
+  headersList.value = []
+  currentHeaders.value = {}
+  
+  // 添加实例的请求头（标记为来自实例，不可删除）
+  Object.entries(instanceHeaders).forEach(([key, value]) => {
+    headersList.value.push({
+      key,
+      value,
+      fromInstance: true
+    })
+    currentHeaders.value[key] = value
+  })
+  
+  // 添加全局配置中的自定义请求头
+  Object.entries(props.globalConfig.customHeaders || {}).forEach(([key, value]) => {
+    if (!currentHeaders.value[key]) {
+      headersList.value.push({
+        key,
+        value,
+        fromInstance: false
+      })
+      currentHeaders.value[key] = value
+    }
+  })
+}
+
+// 添加请求头
+const addHeader = () => {
+  headersList.value.push({
+    key: '',
+    value: '',
+    fromInstance: false
+  })
+}
+
+// 删除请求头
+const removeHeader = (index: number) => {
+  const header = headersList.value[index]
+  if (!header.fromInstance) {
+    headersList.value.splice(index, 1)
+    onHeaderChange()
+  }
+}
+
+// 请求头变化处理
+const onHeaderChange = () => {
+  // 重新构建headers对象
+  const newHeaders: Record<string, string> = {}
+  
+  headersList.value.forEach(header => {
+    if (header.key.trim() && header.value.trim()) {
+      newHeaders[header.key.trim()] = header.value.trim()
+    }
+  })
+  
+  currentHeaders.value = newHeaders
+  
+  // 更新全局配置
+  const updatedGlobalConfig = {
+    ...props.globalConfig,
+    customHeaders: newHeaders
+  }
+  
+  emit('update:globalConfig', updatedGlobalConfig)
 }
 
 // 表单验证规则
 const formRules: any = {
-  model: [
-    { required: true, message: '请输入模型名称', trigger: 'blur' }
+  selectedInstanceId: [
+    { 
+      required: true, 
+      message: '请选择一个重排序服务实例', 
+      trigger: 'change',
+      validator: (_rule: any, value: string, callback: Function) => {
+        if (!value || value.trim() === '') {
+          callback(new Error('请选择一个重排序服务实例'))
+        } else {
+          callback()
+        }
+      }
+    }
   ],
   query: [
     { required: true, message: '请输入查询文本', trigger: 'blur' },
@@ -293,7 +511,7 @@ const formRules: any = {
       required: true,
       message: '请至少添加一个文档',
       trigger: 'change',
-      validator: (rule: any, value: string[], callback: Function) => {
+      validator: (_rule: any, value: string[], callback: Function) => {
         if (!value || value.length === 0) {
           callback(new Error('请至少添加一个文档'))
         } else if (value.some(doc => !doc.trim())) {
@@ -308,10 +526,10 @@ const formRules: any = {
 
 // 计算属性
 const canSendRequest = computed(() => {
-  return rerankConfig.value.model.trim() &&
-    rerankConfig.value.query.trim() &&
-    rerankConfig.value.documents.length > 0 &&
-    rerankConfig.value.documents.every(doc => doc.trim()) &&
+  return formData.selectedInstanceId &&
+    formData.query.trim() &&
+    formData.documents.length > 0 &&
+    formData.documents.every(doc => doc.trim()) &&
     !requestState.loading
 })
 
@@ -349,9 +567,18 @@ const clearAllDocuments = async () => {
 // 发送重排序请求
 const sendRerankRequest = async () => {
   try {
+    // 检查是否选择了实例
+    if (!formData.selectedInstanceId) {
+      ElMessage.error('请选择一个重排序服务实例')
+      return
+    }
+
     // 表单验证
-    const valid = await formRef.value?.validate()
-    if (!valid) {
+    try {
+      const valid = await formRef.value?.validate()
+      if (!valid) return
+    } catch (error) {
+      console.log('表单验证失败:', error)
       return
     }
 
@@ -377,10 +604,7 @@ const sendRerankRequest = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(props.globalConfig.authorization && {
-          'Authorization': props.globalConfig.authorization
-        }),
-        ...props.globalConfig.customHeaders
+        ...currentHeaders.value
       },
       body: requestBody
     }
@@ -447,23 +671,47 @@ const getScoreColor = (score: number) => {
 }
 
 // 监听全局配置变化
-watch(() => props.globalConfig, (newConfig) => {
+watch(() => props.globalConfig, () => {
   // 可以在这里处理全局配置变化
 }, { deep: true })
+
+// 同步 rerankConfig 和 formData
+watch(() => rerankConfig.value.query, (newQuery) => {
+  formData.query = newQuery
+})
+
+watch(() => rerankConfig.value.documents, (newDocuments) => {
+  formData.documents = newDocuments
+}, { deep: true })
+
+watch(() => rerankConfig.value.topN, (newTopN) => {
+  formData.topN = newTopN
+})
+
+watch(() => rerankConfig.value.returnDocuments, (newReturnDocuments) => {
+  formData.returnDocuments = newReturnDocuments
+})
 
 // 初始化时添加一个示例文档
 if (rerankConfig.value.documents.length === 0) {
   rerankConfig.value.documents.push('')
 }
 
-// 监听全局刷新模型事件
+// 监听全局刷新实例事件
 const handleRefreshModels = () => {
-  fetchAvailableModels()
+  fetchInstances()
 }
 
-// 组件挂载时获取模型列表
+// 组件挂载时获取实例列表
 onMounted(() => {
-  fetchAvailableModels()
+  fetchInstances()
+
+  // 同步初始状态
+  formData.selectedInstanceId = selectedInstanceId.value
+  formData.query = rerankConfig.value.query
+  formData.documents = rerankConfig.value.documents
+  formData.topN = rerankConfig.value.topN
+  formData.returnDocuments = rerankConfig.value.returnDocuments
 
   // 监听全局刷新事件
   document.addEventListener('playground-refresh-models', handleRefreshModels)
@@ -508,6 +756,31 @@ onUnmounted(() => {
 .response-card :deep(.el-card__body) {
   height: calc(100% - 60px);
   overflow-y: auto;
+}
+
+/* 让请求头配置占满宽度 */
+.headers-config {
+  width: 100%;
+}
+
+.headers-list {
+  width: 100%;
+}
+
+.header-item {
+  width: 100%;
+}
+
+/* 让表单项占满宽度 */
+.el-form-item__content {
+  width: 100% !important;
+}
+
+/* 让选择器和输入框占满宽度 */
+.el-select,
+.el-input,
+.el-textarea {
+  width: 100% !important;
 }
 
 .card-header {
@@ -848,5 +1121,50 @@ onUnmounted(() => {
 .documents-list::-webkit-scrollbar-thumb:hover,
 .results-list::-webkit-scrollbar-thumb:hover {
   background: var(--el-text-color-disabled);
+}
+
+/* 请求头配置样式 */
+.headers-config {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  padding: 15px;
+  background-color: var(--el-bg-color-page);
+}
+
+.headers-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.header-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.header-key {
+  flex: 1;
+  min-width: 120px;
+}
+
+.header-value {
+  flex: 2;
+}
+
+.instance-tag {
+  flex-shrink: 0;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.add-header-btn {
+  width: 100%;
 }
 </style>

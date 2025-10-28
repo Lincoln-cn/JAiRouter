@@ -5,53 +5,35 @@
         <div class="card-header">
           <span>API 测试试验场</span>
           <div class="header-actions">
-            <el-button type="primary" :size="isMobile ? 'small' : 'default'"
-              @click="showHeaderConfig = !showHeaderConfig">
-              <el-icon>
-                <Setting />
-              </el-icon>
-              <span v-if="!isMobile">请求头配置</span>
-            </el-button>
             <el-button v-if="!isMobile" type="info" size="default" @click="showKeyboardShortcuts = true">
               <el-icon>
                 <InfoFilled />
               </el-icon>
               快捷键
             </el-button>
-            <el-button 
-              type="success" 
-              :size="isMobile ? 'small' : 'default'"
-              @click="refreshAllModels"
-              :loading="refreshingModels"
-            >
-              <el-icon><Refresh /></el-icon>
-              <span v-if="!isMobile">刷新模型</span>
+            <el-button type="success" :size="isMobile ? 'small' : 'default'" @click="refreshAllModels"
+              :loading="refreshingModels">
+              <el-icon>
+                <Refresh />
+              </el-icon>
+              <span v-if="!isMobile">刷新实例</span>
             </el-button>
           </div>
         </div>
       </template>
 
-      <!-- 全局请求头配置面板 -->
-      <el-collapse-transition>
-        <div v-show="showHeaderConfig" class="header-config-panel">
-          <HeaderConfig v-model:global-config="globalConfig" @config-updated="onGlobalConfigUpdated" />
-        </div>
-      </el-collapse-transition>
-
-      <!-- 配置管理面板 -->
-      <ConfigManager :current-service-type="activeTab" :current-config="getCurrentConfig()"
-        :global-config="globalConfig" @config-loaded="onConfigLoaded" @config-saved="onConfigSaved"
-        @config-deleted="onConfigDeleted" />
-
       <el-tabs v-model="activeTab" type="card" class="playground-tabs" @tab-change="onTabChange">
         <el-tab-pane label="对话" name="chat">
-          <ChatPlayground :global-config="globalConfig" @response="onResponse" @request="onRequest" />
+          <ChatPlayground :global-config="globalConfig" @response="onResponse" @request="onRequest"
+            @update:global-config="onGlobalConfigUpdated" />
         </el-tab-pane>
         <el-tab-pane label="文本嵌入" name="embedding">
-          <EmbeddingPlayground :global-config="globalConfig" @response="onResponse" @request="onRequest" />
+          <EmbeddingPlayground :global-config="globalConfig" @response="onResponse" @request="onRequest"
+            @update:global-config="onGlobalConfigUpdated" />
         </el-tab-pane>
         <el-tab-pane label="重排序" name="rerank">
-          <RerankPlayground :global-config="globalConfig" @response="onResponse" @request="onRequest" />
+          <RerankPlayground :global-config="globalConfig" @response="onResponse" @request="onRequest"
+            @update:global-config="onGlobalConfigUpdated" />
         </el-tab-pane>
         <el-tab-pane label="语音" name="audio">
           <AudioPlayground :global-config="globalConfig" @response="onResponse" @request="onRequest" />
@@ -93,10 +75,6 @@
               <kbd>Ctrl</kbd> + <kbd>R</kbd>
               <span>重置表单</span>
             </div>
-            <div class="shortcut-item">
-              <kbd>Ctrl</kbd> + <kbd>H</kbd>
-              <span>切换请求头配置</span>
-            </div>
           </div>
 
           <div class="shortcut-group">
@@ -130,17 +108,15 @@
 
 <script setup lang="ts">
 import { ref, reactive, provide, computed, onMounted, onUnmounted } from 'vue'
-import { Setting, InfoFilled, Refresh } from '@element-plus/icons-vue'
+import { InfoFilled, Refresh } from '@element-plus/icons-vue'
 import ChatPlayground from './components/ChatPlayground.vue'
 import EmbeddingPlayground from './components/EmbeddingPlayground.vue'
 import RerankPlayground from './components/RerankPlayground.vue'
 import AudioPlayground from './components/AudioPlayground.vue'
 import ImagePlayground from './components/ImagePlayground.vue'
-import HeaderConfig from './components/HeaderConfig.vue'
 import ResponsePanel from './components/ResponsePanel.vue'
 import RequestPanel from './components/RequestPanel.vue'
 import PerformanceMonitor from './components/PerformanceMonitor.vue'
-import ConfigManager from './components/ConfigManager.vue'
 import type {
   ServiceType,
   GlobalConfig,
@@ -152,7 +128,6 @@ import type {
 
 // 选项卡状态管理
 const activeTab = ref<ServiceType>('chat')
-const showHeaderConfig = ref(false)
 const showKeyboardShortcuts = ref(false)
 const refreshingModels = ref(false)
 
@@ -230,34 +205,7 @@ const onPerformanceMetrics = (metrics: any) => {
   performanceMonitor.value?.addMetrics(metrics)
 }
 
-// 配置管理相关方法
-const getCurrentConfig = () => {
-  return currentConfigs[activeTab.value] || {}
-}
-
-const onConfigLoaded = (config: SavedConfiguration) => {
-  // 加载配置到当前服务类型
-  if (config.config) {
-    currentConfigs[config.serviceType] = { ...config.config }
-
-    // 如果配置包含全局配置，也要应用
-    if (config.config.globalConfig) {
-      Object.assign(globalConfig, config.config.globalConfig)
-    }
-  }
-}
-
-const onConfigSaved = (config: SavedConfiguration) => {
-  // 配置保存成功的回调
-  console.log('配置已保存:', config.name)
-}
-
-const onConfigDeleted = (configId: string) => {
-  // 配置删除成功的回调
-  console.log('配置已删除:', configId)
-}
-
-// 更新当前配置的方法，供子组件调用
+// 简化的配置管理
 const updateCurrentConfig = (serviceType: ServiceType, config: any) => {
   currentConfigs[serviceType] = { ...config }
 }
@@ -291,12 +239,7 @@ const handleKeydown = (event: KeyboardEvent) => {
         // 触发重置表单
         triggerResetForm()
         break
-      case 'h':
-      case 'H':
-        event.preventDefault()
-        // 切换请求头配置
-        showHeaderConfig.value = !showHeaderConfig.value
-        break
+
       case '1':
       case '2':
       case '3':
@@ -354,11 +297,11 @@ const triggerCancelRequest = () => {
 // 刷新所有模型列表
 const refreshAllModels = () => {
   refreshingModels.value = true
-  
+
   // 通知所有子组件刷新模型列表
   const event = new CustomEvent('playground-refresh-models')
   document.dispatchEvent(event)
-  
+
   // 2秒后结束loading状态
   setTimeout(() => {
     refreshingModels.value = false
@@ -381,7 +324,6 @@ defineExpose({
   activeTab,
   globalConfig,
   currentResponse,
-  getCurrentConfig,
   updateCurrentConfig,
   isMobile,
   isTablet
@@ -454,20 +396,7 @@ defineExpose({
   box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
-/* 配置面板样式 */
-.header-config-panel {
-  margin-bottom: 24px;
-  padding: 20px;
-  background: linear-gradient(135deg, var(--el-bg-color) 0%, var(--el-bg-color-page) 100%);
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-light);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
-}
 
-.header-config-panel:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
 
 /* 选项卡样式 - 统一系统主题 */
 .playground-tabs {
@@ -747,37 +676,6 @@ defineExpose({
   }
 }
 
-/* 深色主题适配 */
-@media (prefers-color-scheme: dark) {
-  .playground-container :deep(.el-card__header) {
-    background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
-    border-bottom-color: var(--el-color-primary-light-5);
-    color: var(--el-text-color-primary) !important;
-  }
-
-  .card-header {
-    color: var(--el-text-color-primary) !important;
-  }
-
-  .header-config-panel {
-    background: linear-gradient(135deg, var(--el-bg-color-overlay) 0%, var(--el-bg-color) 100%);
-    border-color: var(--el-border-color);
-  }
-
-  .panels-section {
-    background: linear-gradient(135deg, var(--el-bg-color) 0%, var(--el-bg-color-overlay) 100%);
-  }
-
-  .playground-tabs :deep(.el-tabs__header) {
-    background-color: var(--el-bg-color-overlay);
-    border-bottom-color: var(--el-border-color);
-  }
-
-  .playground-tabs :deep(.el-tabs__content) {
-    background-color: var(--el-bg-color-overlay);
-  }
-}
-
 /* 加载动画和过渡效果 */
 .playground-container {
   animation: slideInUp 0.4s ease-out;
@@ -838,9 +736,7 @@ defineExpose({
     color: var(--el-bg-color);
   }
 
-  .header-config-panel {
-    border: 2px solid var(--el-border-color-dark);
-  }
+
 }
 
 /* 键盘快捷键帮助样式 */
