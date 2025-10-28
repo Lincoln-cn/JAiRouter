@@ -255,10 +255,10 @@ const handleMenuSelect = async (index: string) => {
 }
 
 // 处理用户命令
-const handleUserCommand = (command: string) => {
+const handleUserCommand = async (command: string) => {
   if (command === 'logout') {
-    userStore.logout()
-    router.push('/login')
+    await userStore.logout()
+    router.push({ name: 'login' })
   } else if (command === 'profile') {
     // 跳转到个人资料页面
     console.log('跳转到个人资料页面')

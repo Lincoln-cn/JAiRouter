@@ -21,7 +21,7 @@ export default defineConfig({
       dts: 'components.d.ts'
     }),
   ],
-  base: '/admin/',
+  base: '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -74,6 +74,10 @@ export default defineConfig({
           // 添加响应日志
           proxy.on('proxyRes', (proxyRes, req, res) => {
             console.log(`[Vite Proxy] Response: ${req.method} ${req.url} -> Status: ${proxyRes.statusCode}`)
+          });
+          // 添加错误日志
+          proxy.on('error', (err, req, res) => {
+            console.error(`[Vite Proxy] Error: ${req.method} ${req.url} ->`, err.message)
           });
         }
       }
