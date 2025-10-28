@@ -3,39 +3,107 @@
     <el-row :gutter="20" class="playground-row">
       <el-col :span="12">
         <el-card header="嵌入配置" class="config-card">
-          <el-form ref="formRef" :model="embeddingConfig" :rules="formRules" label-width="120px"
+          <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px"
             @submit.prevent="sendRequest">
-            <!-- 模型选择 -->
-            <el-form-item label="模型" prop="model" required>
-              <div style="display: flex; gap: 8px; align-items: center;">
+            <!-- 实例选择 -->
+            <el-form-item label="选择实例" prop="selectedInstanceId" :rules="formRules.selectedInstanceId">
+              <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
                 <el-select 
-                  v-model="embeddingConfig.model" 
-                  placeholder="请选择模型"
-                  filterable
-                  allow-create
+                  v-model="selectedInstanceId" 
+                  placeholder="请选择嵌入服务实例"
+                  @change="onInstanceChange"
                   style="flex: 1"
-                  :loading="modelsLoading"
+                  :loading="instancesLoading"
+                  clearable
                 >
                   <el-option
-                    v-for="model in availableModels"
-                    :key="model"
-                    :label="model"
-                    :value="model"
-                  />
+                    v-for="instance in availableInstances"
+                    :key="instance.instanceId"
+                    :label="instance.name"
+                    :value="instance.instanceId"
+                  >
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span>{{ instance.name }}</span>
+                      <el-tag 
+                        v-if="instance.headers && Object.keys(instance.headers).length > 0"
+                        type="success" 
+                        size="small"
+                      >
+                        {{ Object.keys(instance.headers).length }} 个请求头
+                      </el-tag>
+                    </div>
+                  </el-option>
                   <template #empty>
                     <div style="padding: 10px; text-align: center; color: #999;">
-                      {{ modelsLoading ? '加载中...' : '暂无可用模型，请先在实例管理中添加嵌入服务实例' }}
+                      {{ instancesLoading ? '加载中...' : '暂无可用实例，请先在实例管理中添加嵌入服务实例' }}
                     </div>
                   </template>
                 </el-select>
                 <el-button 
                   type="info" 
                   size="small" 
-                  @click="fetchAvailableModels"
-                  :loading="modelsLoading"
-                  title="刷新模型列表"
+                  @click="fetchInstances"
+                  :loading="instancesLoading"
+                  title="刷新实例列表"
                 >
                   <el-icon><Refresh /></el-icon>
+                </el-button>
+              </div>
+            </el-form-item>
+
+            <!-- 请求头配置 -->
+            <el-form-item v-if="selectedInstanceInfo" label="请求头配置">
+              <div class="headers-config">
+                <div class="headers-list">
+                  <div 
+                    v-for="(header, index) in headersList" 
+                    :key="index"
+                    class="header-item"
+                  >
+                    <el-input
+                      v-model="header.key"
+                      placeholder="请求头名称"
+                      size="small"
+                      @input="onHeaderChange"
+                      class="header-key"
+                      :disabled="header.fromInstance"
+                    />
+                    <el-input
+                      v-model="header.value"
+                      placeholder="请求头值"
+                      size="small"
+                      @input="onHeaderChange"
+                      class="header-value"
+                      :type="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key') ? 'password' : 'text'"
+                      :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')"
+                    />
+                    <el-tag 
+                      v-if="header.fromInstance" 
+                      type="success" 
+                      size="small"
+                      class="instance-tag"
+                    >
+                      实例
+                    </el-tag>
+                    <el-button 
+                      v-else
+                      type="danger" 
+                      size="small" 
+                      @click="removeHeader(index)"
+                      class="remove-btn"
+                    >
+                      <el-icon><Close /></el-icon>
+                    </el-button>
+                  </div>
+                </div>
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="addHeader"
+                  class="add-header-btn"
+                >
+                  <el-icon><Plus /></el-icon>
+                  添加请求头
                 </el-button>
               </div>
             </el-form-item>
@@ -178,12 +246,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, nextTick, onMounted } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Connection, Refresh, Plus, Delete, Loading, Check, DocumentCopy } from '@element-plus/icons-vue'
+import { Connection, Refresh, Plus, Delete, Loading, Check, DocumentCopy, Close } from '@element-plus/icons-vue'
 
 import { sendUniversalRequest } from '@/api/universal'
 import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
+import { getServiceInstances } from '@/api/dashboard'
 import type {
   EmbeddingRequestConfig,
   GlobalConfig,
@@ -205,6 +274,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   response: [response: PlaygroundResponse | null, loading?: boolean, error?: string | null]
   request: [request: any | null, size?: number]
+  'update:globalConfig': [config: GlobalConfig]
 }>()
 
 // 表单引用
@@ -225,6 +295,16 @@ const embeddingConfig = reactive<EmbeddingRequestConfig>({
   user: ''
 })
 
+// 表单数据（包含所有需要验证的字段）
+const formData = reactive({
+  selectedInstanceId: '',
+  model: embeddingConfig.model,
+  input: embeddingConfig.input,
+  encodingFormat: embeddingConfig.encodingFormat,
+  dimensions: embeddingConfig.dimensions,
+  user: embeddingConfig.user
+})
+
 // 当前请求信息
 const currentRequest = ref<PlaygroundRequest | null>(null)
 
@@ -235,6 +315,43 @@ const embeddingError = ref<string | null>(null)
 // 模型列表（从实例管理获取）
 const availableModels = ref<string[]>([])
 const modelsLoading = ref(false)
+
+// 实例选择相关状态
+const availableInstances = ref<any[]>([])
+const instancesLoading = ref(false)
+const selectedInstanceId = ref('')
+const selectedInstanceInfo = ref<any>(null)
+
+// 请求头配置状态
+interface HeaderItem {
+  key: string
+  value: string
+  fromInstance: boolean
+}
+
+const headersList = ref<HeaderItem[]>([])
+const currentHeaders = ref<Record<string, string>>({})
+
+// 获取可用实例列表
+const fetchInstances = async () => {
+  instancesLoading.value = true
+  try {
+    const response = await getServiceInstances('embedding')
+    if (response.data?.success) {
+      availableInstances.value = response.data.data || []
+      ElMessage.success(`已刷新实例列表，找到 ${availableInstances.value.length} 个可用实例`)
+    } else {
+      availableInstances.value = []
+      ElMessage.warning('获取实例列表失败')
+    }
+  } catch (error) {
+    console.error('获取实例列表失败:', error)
+    availableInstances.value = []
+    ElMessage.error('获取实例列表失败')
+  } finally {
+    instancesLoading.value = false
+  }
+}
 
 // 获取可用模型列表
 const fetchAvailableModels = async () => {
@@ -258,16 +375,123 @@ const fetchAvailableModels = async () => {
   }
 }
 
+// 实例选择变化处理
+const onInstanceChange = (instanceId: string) => {
+  // 同步到formData
+  formData.selectedInstanceId = instanceId
+  
+  if (!instanceId) {
+    selectedInstanceInfo.value = null
+    embeddingConfig.model = ''
+    formData.model = ''
+    headersList.value = []
+    currentHeaders.value = {}
+    return
+  }
+  
+  const instance = availableInstances.value.find(inst => inst.instanceId === instanceId)
+  if (instance) {
+    selectedInstanceInfo.value = instance
+    
+    // 使用实例名称作为默认模型
+    embeddingConfig.model = instance.name || 'default-model'
+    formData.model = instance.name || 'default-model'
+    
+    // 初始化请求头列表
+    initializeHeaders(instance.headers || {})
+    
+    ElMessage.success(`已选择实例 "${instance.name}"`)
+  }
+}
+
+// 初始化请求头列表
+const initializeHeaders = (instanceHeaders: Record<string, string>) => {
+  headersList.value = []
+  currentHeaders.value = {}
+  
+  // 添加实例的请求头（标记为来自实例，不可删除）
+  Object.entries(instanceHeaders).forEach(([key, value]) => {
+    headersList.value.push({
+      key,
+      value,
+      fromInstance: true
+    })
+    currentHeaders.value[key] = value
+  })
+  
+  // 添加全局配置中的自定义请求头
+  Object.entries(props.globalConfig.customHeaders || {}).forEach(([key, value]) => {
+    if (!currentHeaders.value[key]) {
+      headersList.value.push({
+        key,
+        value,
+        fromInstance: false
+      })
+      currentHeaders.value[key] = value
+    }
+  })
+}
+
+// 添加请求头
+const addHeader = () => {
+  headersList.value.push({
+    key: '',
+    value: '',
+    fromInstance: false
+  })
+}
+
+// 删除请求头
+const removeHeader = (index: number) => {
+  const header = headersList.value[index]
+  if (!header.fromInstance) {
+    headersList.value.splice(index, 1)
+    onHeaderChange()
+  }
+}
+
+// 请求头变化处理
+const onHeaderChange = () => {
+  // 重新构建headers对象
+  const newHeaders: Record<string, string> = {}
+  
+  headersList.value.forEach(header => {
+    if (header.key.trim() && header.value.trim()) {
+      newHeaders[header.key.trim()] = header.value.trim()
+    }
+  })
+  
+  currentHeaders.value = newHeaders
+  
+  // 更新全局配置
+  const updatedGlobalConfig = {
+    ...props.globalConfig,
+    customHeaders: newHeaders
+  }
+  
+  emit('update:globalConfig', updatedGlobalConfig)
+}
+
 // 表单验证规则
 const formRules: FormRules = {
-  model: [
-    { required: true, message: '请输入模型名称', trigger: 'blur' },
-    { min: 1, max: 100, message: '模型名称长度应在 1 到 100 个字符之间', trigger: 'blur' }
+  selectedInstanceId: [
+    { 
+      required: true, 
+      message: '请选择一个嵌入服务实例', 
+      trigger: 'change',
+      validator: (_rule, value, callback) => {
+        if (!value || value.trim() === '') {
+          callback(new Error('请选择一个嵌入服务实例'))
+        } else {
+          callback()
+        }
+      }
+    }
   ],
   input: [
     { required: true, message: '请输入要嵌入的文本', trigger: 'blur' },
     {
-      validator: (rule, value, callback) => {
+      validator: (_rule, value, callback) => {
         if (inputMode.value === 'single') {
           if (!value || value.trim() === '') {
             callback(new Error('请输入要嵌入的文本'))
@@ -296,9 +520,12 @@ const formRules: FormRules = {
 
 // 计算属性
 const canSendRequest = computed(() => {
-  return embeddingConfig.model.trim() !== '' &&
-    embeddingConfig.input !== '' &&
-    !loading.value
+  const hasInstance = formData.selectedInstanceId && formData.selectedInstanceId.trim() !== ''
+  const hasInput = inputMode.value === 'single' 
+    ? singleInput.value && singleInput.value.trim() !== ''
+    : batchInputs.value.some(text => text && text.trim() !== '')
+  
+  return hasInstance && hasInput && !loading.value
 })
 
 // 监听输入模式变化
@@ -324,8 +551,10 @@ const onInputModeChange = () => {
 const updateInput = () => {
   if (inputMode.value === 'single') {
     embeddingConfig.input = singleInput.value
+    formData.input = singleInput.value
   } else {
     embeddingConfig.input = batchInputs.value.filter(text => text.trim() !== '')
+    formData.input = batchInputs.value.filter(text => text.trim() !== '')
   }
 }
 
@@ -348,11 +577,7 @@ const removeBatchInput = (index: number) => {
 const buildRequest = (): PlaygroundRequest => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...props.globalConfig.customHeaders
-  }
-
-  if (props.globalConfig.authorization) {
-    headers['Authorization'] = props.globalConfig.authorization
+    ...currentHeaders.value
   }
 
   // 处理输入数据
@@ -448,6 +673,12 @@ const sendRequest = async () => {
   if (!formRef.value) return
 
   try {
+    // 检查是否选择了实例
+    if (!formData.selectedInstanceId) {
+      ElMessage.error('请选择一个嵌入服务实例')
+      return
+    }
+
     // 输入验证
     const inputError = validateInput()
     if (inputError) {
@@ -456,8 +687,13 @@ const sendRequest = async () => {
     }
 
     // 表单验证
-    const valid = await formRef.value.validate()
-    if (!valid) return
+    try {
+      const valid = await formRef.value.validate()
+      if (!valid) return
+    } catch (error) {
+      console.log('表单验证失败:', error)
+      return
+    }
 
     loading.value = true
     embeddingError.value = null
@@ -535,6 +771,20 @@ const resetForm = async () => {
       dimensions: undefined,
       user: ''
     })
+    
+    // 重置表单数据
+    Object.assign(formData, {
+      selectedInstanceId: '',
+      input: '',
+      model: '',
+      encodingFormat: 'float',
+      dimensions: undefined,
+      user: ''
+    })
+    
+    // 重置实例选择
+    selectedInstanceId.value = ''
+    selectedInstanceInfo.value = null
 
     // 重置输入状态
     inputMode.value = 'single'
@@ -602,7 +852,12 @@ const initializeDefaults = () => {
 // 组件挂载时初始化
 onMounted(() => {
   initializeDefaults()
+  fetchInstances()
   fetchAvailableModels()
+  
+  // 同步初始状态
+  formData.selectedInstanceId = selectedInstanceId.value
+  formData.input = embeddingConfig.input
 })
 </script>
 
@@ -640,6 +895,31 @@ onMounted(() => {
 .result-card :deep(.el-card__body) {
   height: calc(100% - 60px);
   overflow-y: auto;
+}
+
+/* 让请求头配置占满宽度 */
+.headers-config {
+  width: 100%;
+}
+
+.headers-list {
+  width: 100%;
+}
+
+.header-item {
+  width: 100%;
+}
+
+/* 让表单项占满宽度 */
+.el-form-item__content {
+  width: 100% !important;
+}
+
+/* 让选择器和输入框占满宽度 */
+.el-select,
+.el-input,
+.el-textarea {
+  width: 100% !important;
 }
 
 .batch-input-container {
@@ -810,6 +1090,51 @@ onMounted(() => {
   min-height: 300px;
 }
 
+/* 请求头配置样式 */
+.headers-config {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  padding: 15px;
+  background-color: var(--el-bg-color-page);
+}
+
+.headers-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.header-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.header-key {
+  flex: 1;
+  min-width: 120px;
+}
+
+.header-value {
+  flex: 2;
+}
+
+.instance-tag {
+  flex-shrink: 0;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.add-header-btn {
+  width: 100%;
+}
+
 /* 深色主题适配 */
 @media (prefers-color-scheme: dark) {
   .el-form-item:last-child {
@@ -821,6 +1146,16 @@ onMounted(() => {
   }
 
   .embedding-item {
+    border-color: var(--el-border-color);
+  }
+  
+  .headers-preview {
+    background-color: var(--el-bg-color-overlay);
+    border-color: var(--el-border-color);
+  }
+  
+  .header-preview-item {
+    background-color: var(--el-bg-color);
     border-color: var(--el-border-color);
   }
 }

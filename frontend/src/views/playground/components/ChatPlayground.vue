@@ -3,44 +3,75 @@
     <el-row :gutter="20">
       <el-col :span="12">
         <el-card header="对话配置">
-          <el-form 
-            ref="formRef"
-            :model="chatConfig" 
-            :rules="formRules"
-            label-width="120px"
-            @submit.prevent="sendRequest"
-          >
-            <!-- 模型选择 -->
-            <el-form-item label="模型" prop="model">
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <el-select 
-                  v-model="chatConfig.model" 
-                  placeholder="请选择模型"
-                  filterable
-                  allow-create
-                  style="flex: 1"
-                  :loading="modelsLoading"
-                >
-                  <el-option
-                    v-for="model in availableModels"
-                    :key="model"
-                    :label="model"
-                    :value="model"
-                  />
+          <el-form ref="formRef" :model="chatConfig" :rules="formRules" label-width="120px"
+            @submit.prevent="sendRequest">
+            <!-- 实例选择 -->
+            <el-form-item label="选择实例">
+              <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                <el-select v-model="selectedInstanceId" placeholder="请选择对话服务实例" @change="onInstanceChange"
+                  style="flex: 1" :loading="instancesLoading" clearable
+                  :class="{ 'instance-required': !selectedInstanceId }">
+                  <el-option v-for="instance in availableInstances" :key="instance.instanceId" :label="instance.name"
+                    :value="instance.instanceId">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span>{{ instance.name }}</span>
+                      <el-tag v-if="instance.headers && Object.keys(instance.headers).length > 0" type="success"
+                        size="small">
+                        {{ Object.keys(instance.headers).length }} 个请求头
+                      </el-tag>
+                    </div>
+                  </el-option>
                   <template #empty>
                     <div style="padding: 10px; text-align: center; color: #999;">
-                      {{ modelsLoading ? '加载中...' : '暂无可用模型，请先在实例管理中添加对话服务实例' }}
+                      {{ instancesLoading ? '加载中...' : '暂无可用实例，请先在实例管理中添加对话服务实例' }}
                     </div>
                   </template>
                 </el-select>
-                <el-button 
-                  type="info" 
-                  size="small" 
-                  @click="fetchAvailableModels"
-                  :loading="modelsLoading"
-                  title="刷新模型列表"
-                >
-                  <el-icon><Refresh /></el-icon>
+                <el-button type="info" size="small" @click="fetchInstances" :loading="instancesLoading" title="刷新实例列表">
+                  <el-icon>
+                    <Refresh />
+                  </el-icon>
+                </el-button>
+              </div>
+              <div v-if="!selectedInstanceId" class="instance-hint">
+                <el-text type="danger" size="small">请选择一个对话服务实例</el-text>
+              </div>
+              <div v-else-if="selectedInstanceInfo" class="instance-selected">
+                <el-text type="success" size="small">
+                  <el-icon>
+                    <Check />
+                  </el-icon>
+                  已选择实例: {{ selectedInstanceInfo.name }}
+                </el-text>
+              </div>
+            </el-form-item>
+
+            <!-- 请求头配置 -->
+            <el-form-item v-if="selectedInstanceInfo" label="请求头配置">
+              <div class="headers-config">
+                <div class="headers-list">
+                  <div v-for="(header, index) in headersList" :key="index" class="header-item">
+                    <el-input v-model="header.key" placeholder="请求头名称" size="small" @input="onHeaderChange"
+                      class="header-key" :disabled="header.fromInstance" />
+                    <el-input v-model="header.value" placeholder="请求头值" size="small" @input="onHeaderChange"
+                      class="header-value"
+                      :type="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key') ? 'password' : 'text'"
+                      :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')" />
+                    <el-tag v-if="header.fromInstance" type="success" size="small" class="instance-tag">
+                      实例
+                    </el-tag>
+                    <el-button v-else type="danger" size="small" @click="removeHeader(index)" class="remove-btn">
+                      <el-icon>
+                        <Close />
+                      </el-icon>
+                    </el-button>
+                  </div>
+                </div>
+                <el-button type="primary" size="small" @click="addHeader" class="add-header-btn">
+                  <el-icon>
+                    <Plus />
+                  </el-icon>
+                  添加请求头
                 </el-button>
               </div>
             </el-form-item>
@@ -48,50 +79,21 @@
             <!-- 消息列表 -->
             <el-form-item label="消息列表" prop="messages">
               <div class="messages-container">
-                <div 
-                  v-for="(message, index) in chatConfig.messages" 
-                  :key="index"
-                  class="message-item"
-                >
+                <div v-for="(message, index) in chatConfig.messages" :key="index" class="message-item">
                   <div class="message-header">
-                    <el-select 
-                      v-model="message.role" 
-                      placeholder="角色"
-                      style="width: 120px"
-                    >
+                    <el-select v-model="message.role" placeholder="角色" style="width: 120px">
                       <el-option label="系统" value="system" />
                       <el-option label="用户" value="user" />
                       <el-option label="助手" value="assistant" />
                     </el-select>
-                    <el-button 
-                      type="danger" 
-                      size="small" 
-                      :icon="Delete"
-                      circle
-                      @click="removeMessage(index)"
-                    />
+                    <el-button type="danger" size="small" :icon="Delete" circle @click="removeMessage(index)" />
                   </div>
-                  <el-input
-                    v-model="message.content"
-                    type="textarea"
-                    :rows="3"
-                    placeholder="请输入消息内容"
-                    class="message-content"
-                  />
-                  <el-input
-                    v-if="message.role !== 'system'"
-                    v-model="message.name"
-                    placeholder="名称（可选）"
-                    size="small"
-                    class="message-name"
-                  />
+                  <el-input v-model="message.content" type="textarea" :rows="3" placeholder="请输入消息内容"
+                    class="message-content" />
+                  <el-input v-if="message.role !== 'system'" v-model="message.name" placeholder="名称（可选）" size="small"
+                    class="message-name" />
                 </div>
-                <el-button 
-                  type="primary" 
-                  size="small" 
-                  :icon="Plus"
-                  @click="addMessage"
-                >
+                <el-button type="primary" size="small" :icon="Plus" @click="addMessage">
                   添加消息
                 </el-button>
               </div>
@@ -108,12 +110,7 @@
                   </el-col>
                   <el-col :span="12">
                     <el-form-item label="最大令牌数">
-                      <el-input-number 
-                        v-model="chatConfig.maxTokens"
-                        :min="1"
-                        :max="32000"
-                        style="width: 100%"
-                      />
+                      <el-input-number v-model="chatConfig.maxTokens" :min="1" :max="32000" style="width: 100%" />
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -121,26 +118,14 @@
                 <el-row :gutter="16">
                   <el-col :span="12">
                     <el-form-item label="温度">
-                      <el-slider 
-                        v-model="chatConfig.temperature"
-                        :min="0"
-                        :max="2"
-                        :step="0.1"
-                        show-input
-                        :show-input-controls="false"
-                      />
+                      <el-slider v-model="chatConfig.temperature" :min="0" :max="2" :step="0.1" show-input
+                        :show-input-controls="false" />
                     </el-form-item>
                   </el-col>
                   <el-col :span="12">
                     <el-form-item label="Top P">
-                      <el-slider 
-                        v-model="chatConfig.topP"
-                        :min="0"
-                        :max="1"
-                        :step="0.1"
-                        show-input
-                        :show-input-controls="false"
-                      />
+                      <el-slider v-model="chatConfig.topP" :min="0" :max="1" :step="0.1" show-input
+                        :show-input-controls="false" />
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -148,20 +133,12 @@
                 <el-row :gutter="16">
                   <el-col :span="12">
                     <el-form-item label="Top K">
-                      <el-input-number 
-                        v-model="chatConfig.topK"
-                        :min="1"
-                        :max="100"
-                        style="width: 100%"
-                      />
+                      <el-input-number v-model="chatConfig.topK" :min="1" :max="100" style="width: 100%" />
                     </el-form-item>
                   </el-col>
                   <el-col :span="12">
                     <el-form-item label="用户标识">
-                      <el-input 
-                        v-model="chatConfig.user"
-                        placeholder="用户标识（可选）"
-                      />
+                      <el-input v-model="chatConfig.user" placeholder="用户标识（可选）" />
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -169,36 +146,20 @@
                 <el-row :gutter="16">
                   <el-col :span="12">
                     <el-form-item label="频率惩罚">
-                      <el-slider 
-                        v-model="chatConfig.frequencyPenalty"
-                        :min="-2"
-                        :max="2"
-                        :step="0.1"
-                        show-input
-                        :show-input-controls="false"
-                      />
+                      <el-slider v-model="chatConfig.frequencyPenalty" :min="-2" :max="2" :step="0.1" show-input
+                        :show-input-controls="false" />
                     </el-form-item>
                   </el-col>
                   <el-col :span="12">
                     <el-form-item label="存在惩罚">
-                      <el-slider 
-                        v-model="chatConfig.presencePenalty"
-                        :min="-2"
-                        :max="2"
-                        :step="0.1"
-                        show-input
-                        :show-input-controls="false"
-                      />
+                      <el-slider v-model="chatConfig.presencePenalty" :min="-2" :max="2" :step="0.1" show-input
+                        :show-input-controls="false" />
                     </el-form-item>
                   </el-col>
                 </el-row>
 
                 <el-form-item label="停止词">
-                  <el-input 
-                    v-model="stopWordsInput"
-                    placeholder="多个停止词用逗号分隔"
-                    @blur="updateStopWords"
-                  />
+                  <el-input v-model="stopWordsInput" placeholder="多个停止词用逗号分隔" @blur="updateStopWords" />
                 </el-form-item>
               </el-collapse-item>
             </el-collapse>
@@ -206,57 +167,45 @@
             <!-- 发送按钮 -->
             <el-form-item>
               <div class="action-buttons">
-                <el-button 
-                  type="primary" 
-                  :loading="loading"
-                  @click="sendRequest"
-                  :disabled="!canSendRequest"
-                  size="default"
-                  class="send-button"
-                >
+                <el-button type="primary" :loading="loading" @click="sendRequest" :disabled="!canSendRequest"
+                  size="default" class="send-button">
                   <template #loading>
                     <div class="loading-content">
-                      <el-icon class="is-loading"><Loading /></el-icon>
+                      <el-icon class="is-loading">
+                        <Loading />
+                      </el-icon>
                       <span>{{ loadingText }}</span>
                     </div>
                   </template>
                   <template #default>
-                    <el-icon><Promotion /></el-icon>
+                    <el-icon>
+                      <Promotion />
+                    </el-icon>
                     <span>发送请求</span>
                   </template>
                 </el-button>
                 <el-button @click="resetForm" :disabled="loading">
-                  <el-icon><RefreshLeft /></el-icon>
+                  <el-icon>
+                    <RefreshLeft />
+                  </el-icon>
                   重置
                 </el-button>
-                <el-button 
-                  v-if="loading" 
-                  type="danger" 
-                  @click="cancelRequest"
-                  size="default"
-                >
-                  <el-icon><Close /></el-icon>
+                <el-button v-if="loading" type="danger" @click="cancelRequest" size="default">
+                  <el-icon>
+                    <Close />
+                  </el-icon>
                   取消
                 </el-button>
               </div>
-              
+
               <!-- 请求状态指示器 -->
               <div v-if="requestStatus" class="request-status">
-                <el-alert
-                  :title="requestStatus.message"
-                  :type="requestStatus.type"
-                  :closable="false"
-                  show-icon
-                  class="status-alert"
-                >
+                <el-alert :title="requestStatus.message" :type="requestStatus.type" :closable="false" show-icon
+                  class="status-alert">
                   <template v-if="requestStatus.type === 'info' && loading" #default>
                     <div class="progress-info">
-                      <el-progress 
-                        :percentage="requestProgress" 
-                        :show-text="false"
-                        :stroke-width="4"
-                        class="request-progress"
-                      />
+                      <el-progress :percentage="requestProgress" :show-text="false" :stroke-width="4"
+                        class="request-progress" />
                       <span class="progress-text">{{ requestStatus.message }}</span>
                     </div>
                   </template>
@@ -266,44 +215,41 @@
           </el-form>
         </el-card>
       </el-col>
-      
+
       <el-col :span="12">
         <el-card header="对话结果" class="result-card">
           <div class="chat-result">
             <div v-if="loading" class="loading-state">
-              <el-icon class="is-loading"><Loading /></el-icon>
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
               <p>{{ loadingText }}</p>
             </div>
-            
+
             <div v-else-if="requestStatus && requestStatus.type === 'error'" class="error-state">
-              <el-alert 
-                :title="requestStatus.message" 
-                type="error" 
-                show-icon 
-                :closable="false"
-              />
+              <el-alert :title="requestStatus.message" type="error" show-icon :closable="false" />
             </div>
-            
+
             <div v-else-if="chatResponse" class="response-content">
               <div class="response-info">
                 <el-tag type="success">
-                  <el-icon><Check /></el-icon>
+                  <el-icon>
+                    <Check />
+                  </el-icon>
                   对话生成成功
                 </el-tag>
                 <span class="duration-info">
                   耗时: {{ chatResponse.duration }}ms
                 </span>
               </div>
-              
+
               <div class="message-response">
                 <div class="response-header">
                   <span class="role-tag">Assistant</span>
-                  <el-button 
-                    type="text" 
-                    size="small" 
-                    @click="copyResponse"
-                  >
-                    <el-icon><DocumentCopy /></el-icon>
+                  <el-button type="text" size="small" @click="copyResponse">
+                    <el-icon>
+                      <DocumentCopy />
+                    </el-icon>
                     复制
                   </el-button>
                 </div>
@@ -311,7 +257,7 @@
                   {{ getResponseContent() }}
                 </div>
               </div>
-              
+
               <div v-if="getUsageInfo()" class="usage-info">
                 <el-descriptions :column="3" size="small" border>
                   <el-descriptions-item label="提示令牌">
@@ -326,12 +272,9 @@
                 </el-descriptions>
               </div>
             </div>
-            
+
             <div v-else class="empty-state">
-              <el-empty 
-                description="发送对话请求后，生成的回复将在此处显示" 
-                :image-size="80"
-              />
+              <el-empty description="发送对话请求后，生成的回复将在此处显示" :image-size="80" />
             </div>
           </div>
         </el-card>
@@ -346,12 +289,13 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, Delete, Loading, Promotion, RefreshLeft, Close, Check, DocumentCopy, Refresh } from '@element-plus/icons-vue'
 import { sendUniversalRequest, sendUniversalStreamRequest } from '@/api/universal'
 import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
-import type { 
-  ChatRequestConfig, 
+import { getServiceInstances } from '@/api/dashboard'
+import type {
+  ChatRequestConfig,
   ChatMessage,
-  GlobalConfig, 
+  GlobalConfig,
   PlaygroundResponse,
-  PlaygroundRequest 
+  PlaygroundRequest
 } from '../types/playground'
 import { DEFAULT_CONFIGS, SERVICE_ENDPOINTS } from '../types/playground'
 
@@ -368,6 +312,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   response: [response: PlaygroundResponse | null, loading?: boolean, error?: string | null]
   request: [request: PlaygroundRequest | null, size?: number]
+  'update:globalConfig': [config: GlobalConfig]
 }>()
 
 // 表单引用
@@ -391,6 +336,55 @@ let abortController: AbortController | null = null
 const availableModels = ref<string[]>([])
 const modelsLoading = ref(false)
 
+// 实例选择相关状态
+const availableInstances = ref<any[]>([])
+const instancesLoading = ref(false)
+const selectedInstanceId = ref('')
+const selectedInstanceInfo = ref<any>(null)
+
+// 请求头配置状态
+interface HeaderItem {
+  key: string
+  value: string
+  fromInstance: boolean
+}
+
+const headersList = ref<HeaderItem[]>([])
+const currentHeaders = ref<Record<string, string>>({})
+
+// 获取可用实例列表
+const fetchInstances = async () => {
+  instancesLoading.value = true
+  try {
+    const response = await getServiceInstances('chat')
+    if (response.data?.success) {
+      const newInstances = response.data.data || []
+
+      // 检查当前选择的实例是否还在新列表中
+      const currentInstanceExists = selectedInstanceId.value &&
+        newInstances.some(inst => inst.instanceId === selectedInstanceId.value)
+
+      availableInstances.value = newInstances
+
+      // 如果当前选择的实例不在新列表中，给出提示但不清空选择
+      if (selectedInstanceId.value && !currentInstanceExists) {
+        ElMessage.warning(`当前选择的实例在刷新后不可用，请重新选择`)
+      }
+
+      ElMessage.success(`已刷新实例列表，找到 ${availableInstances.value.length} 个可用实例`)
+    } else {
+      availableInstances.value = []
+      ElMessage.warning('获取实例列表失败')
+    }
+  } catch (error) {
+    console.error('获取实例列表失败:', error)
+    availableInstances.value = []
+    ElMessage.error('获取实例列表失败')
+  } finally {
+    instancesLoading.value = false
+  }
+}
+
 // 获取可用模型列表
 const fetchAvailableModels = async () => {
   modelsLoading.value = true
@@ -398,12 +392,12 @@ const fetchAvailableModels = async () => {
     const serviceType = getInstanceServiceType('chat')
     const models = await getModelsByServiceType(serviceType)
     availableModels.value = models
-    
+
     // 如果当前选择的模型不在可用列表中，给出提示
     if (chatConfig.model && !models.includes(chatConfig.model)) {
       ElMessage.warning(`当前选择的模型 "${chatConfig.model}" 在实例管理中不存在或未启用，请检查实例配置`)
     }
-    
+
     ElMessage.success(`已刷新模型列表，找到 ${models.length} 个可用模型`)
   } catch (error) {
     console.error('获取模型列表失败:', error)
@@ -411,6 +405,124 @@ const fetchAvailableModels = async () => {
   } finally {
     modelsLoading.value = false
   }
+}
+
+// 实例选择变化处理
+const onInstanceChange = (instanceId: string) => {
+  console.log('实例选择变化:', { instanceId, currentSelected: selectedInstanceId.value })
+
+  if (!instanceId) {
+    console.log('清空实例选择')
+    selectedInstanceInfo.value = null
+    chatConfig.model = ''
+    headersList.value = []
+    currentHeaders.value = {}
+    return
+  }
+
+  const instance = availableInstances.value.find(inst => inst.instanceId === instanceId)
+  if (instance) {
+    console.log('找到实例:', instance.name)
+    selectedInstanceInfo.value = instance
+
+    // 使用实例名称作为默认模型
+    chatConfig.model = instance.name || 'default-model'
+
+    // 初始化请求头列表
+    initializeHeaders(instance.headers || {})
+
+    ElMessage.success(`已选择实例 "${instance.name}"`)
+  } else {
+    console.log('未找到实例:', instanceId)
+  }
+}
+
+// 初始化请求头列表
+const initializeHeaders = (instanceHeaders: Record<string, string>) => {
+  headersList.value = []
+  currentHeaders.value = {}
+
+  // 添加实例的请求头（标记为来自实例，不可删除）
+  Object.entries(instanceHeaders).forEach(([key, value]) => {
+    headersList.value.push({
+      key,
+      value,
+      fromInstance: true
+    })
+    currentHeaders.value[key] = value
+  })
+
+  // 添加全局配置中的自定义请求头
+  Object.entries(props.globalConfig.customHeaders || {}).forEach(([key, value]) => {
+    if (!currentHeaders.value[key]) {
+      headersList.value.push({
+        key,
+        value,
+        fromInstance: false
+      })
+      currentHeaders.value[key] = value
+    }
+  })
+}
+
+// 添加请求头
+const addHeader = () => {
+  headersList.value.push({
+    key: '',
+    value: '',
+    fromInstance: false
+  })
+}
+
+// 删除请求头
+const removeHeader = (index: number) => {
+  const header = headersList.value[index]
+  if (!header.fromInstance) {
+    headersList.value.splice(index, 1)
+    onHeaderChange()
+  }
+}
+
+// 请求头变化处理
+const onHeaderChange = () => {
+  console.log('请求头变化处理开始', {
+    selectedInstanceId: selectedInstanceId.value,
+    selectedInstanceInfo: !!selectedInstanceInfo.value
+  })
+
+  // 重新构建headers对象
+  const newHeaders: Record<string, string> = {}
+  const customHeaders: Record<string, string> = {}
+
+  headersList.value.forEach(header => {
+    if (header.key.trim() && header.value.trim()) {
+      const key = header.key.trim()
+      const value = header.value.trim()
+      newHeaders[key] = value
+
+      // 只有非实例来源的请求头才加入自定义请求头
+      if (!header.fromInstance) {
+        customHeaders[key] = value
+      }
+    }
+  })
+
+  currentHeaders.value = newHeaders
+
+  // 更新全局配置（只更新自定义请求头，不影响实例请求头）
+  const updatedGlobalConfig = {
+    ...props.globalConfig,
+    customHeaders: customHeaders
+  }
+
+  console.log('请求头变化处理完成', {
+    selectedInstanceId: selectedInstanceId.value,
+    selectedInstanceInfo: !!selectedInstanceInfo.value,
+    newHeadersCount: Object.keys(newHeaders).length,
+    customHeadersCount: Object.keys(customHeaders).length
+  })
+
+  emit('update:globalConfig', updatedGlobalConfig)
 }
 
 // 对话配置
@@ -437,12 +549,9 @@ const chatResponse = ref<PlaygroundResponse | null>(null)
 
 // 表单验证规则
 const formRules: FormRules = {
-  model: [
-    { required: true, message: '请选择或输入模型名称', trigger: 'blur' }
-  ],
   messages: [
-    { 
-      required: true, 
+    {
+      required: true,
       validator: (_rule, value, callback) => {
         if (!value || value.length === 0) {
           callback(new Error('至少需要添加一条消息'))
@@ -452,18 +561,34 @@ const formRules: FormRules = {
           callback()
         }
       },
-      trigger: 'blur' 
+      trigger: 'blur'
     }
   ]
 }
 
 // 计算属性
 const canSendRequest = computed(() => {
-  return chatConfig.model && 
-         chatConfig.messages.length > 0 && 
-         chatConfig.messages.every(msg => msg.content.trim()) &&
-         !loading.value
+  return selectedInstanceId.value &&
+    selectedInstanceInfo.value &&
+    chatConfig.messages.length > 0 &&
+    chatConfig.messages.every(msg => msg.content.trim()) &&
+    !loading.value
 })
+
+// 确保实例信息的一致性
+const ensureInstanceConsistency = () => {
+  if (selectedInstanceId.value && !selectedInstanceInfo.value) {
+    console.log('检测到实例状态不一致，尝试修复')
+    const instance = availableInstances.value.find(inst => inst.instanceId === selectedInstanceId.value)
+    if (instance) {
+      selectedInstanceInfo.value = instance
+      console.log('实例状态已修复:', instance.name)
+    } else {
+      console.log('无法找到对应的实例，清空选择')
+      selectedInstanceId.value = ''
+    }
+  }
+}
 
 // 监听停止词输入变化
 const updateStopWords = () => {
@@ -510,7 +635,7 @@ const resetForm = async () => {
     await ElMessageBox.confirm('确定要重置所有配置吗？', '确认重置', {
       type: 'warning'
     })
-    
+
     Object.assign(chatConfig, {
       ...DEFAULT_CONFIGS.chat,
       model: '',
@@ -525,10 +650,10 @@ const resetForm = async () => {
       stop: undefined,
       user: ''
     })
-    
+
     stopWordsInput.value = ''
     currentRequest.value = null
-    
+
     ElMessage.success('配置已重置')
   } catch {
     // 用户取消重置
@@ -538,22 +663,26 @@ const resetForm = async () => {
 // 构建请求
 const buildRequest = (): PlaygroundRequest => {
   const endpoint = SERVICE_ENDPOINTS.chat
-  
+
   // 构建请求头
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   }
-  
+
   // 添加授权头
   if (props.globalConfig?.authorization) {
     headers['Authorization'] = props.globalConfig.authorization
   }
-  
-  // 添加自定义头
-  if (props.globalConfig?.customHeaders) {
-    Object.assign(headers, props.globalConfig.customHeaders)
-  }
-  
+
+  // 添加当前配置的请求头
+  Object.assign(headers, currentHeaders.value)
+
+  console.log('构建请求头:', {
+    globalAuth: !!props.globalConfig?.authorization,
+    customHeaders: Object.keys(currentHeaders.value),
+    finalHeaders: Object.keys(headers)
+  })
+
   // 构建请求体，过滤掉空值
   const requestBody: any = {
     model: chatConfig.model,
@@ -563,7 +692,7 @@ const buildRequest = (): PlaygroundRequest => {
       ...(msg.name && { name: msg.name })
     }))
   }
-  
+
   // 添加可选参数
   if (chatConfig.stream !== undefined) requestBody.stream = chatConfig.stream
   if (chatConfig.maxTokens) requestBody.max_tokens = chatConfig.maxTokens
@@ -574,7 +703,7 @@ const buildRequest = (): PlaygroundRequest => {
   if (chatConfig.presencePenalty !== undefined) requestBody.presence_penalty = chatConfig.presencePenalty
   if (chatConfig.stop !== undefined) requestBody.stop = chatConfig.stop
   if (chatConfig.user) requestBody.user = chatConfig.user
-  
+
   return {
     endpoint: endpoint.path,
     method: endpoint.method,
@@ -596,7 +725,7 @@ const cancelRequest = () => {
     message: '请求已取消'
   }
   emitResponse(null, false, '请求已取消')
-  
+
   // 3秒后清除状态
   setTimeout(() => {
     requestStatus.value = null
@@ -606,7 +735,7 @@ const cancelRequest = () => {
 // 更新请求状态
 const updateRequestStatus = (type: 'success' | 'warning' | 'info' | 'error', message: string) => {
   requestStatus.value = { type, message }
-  
+
   // 成功和错误状态3秒后自动清除
   if (type === 'success' || type === 'error') {
     setTimeout(() => {
@@ -618,7 +747,7 @@ const updateRequestStatus = (type: 'success' | 'warning' | 'info' | 'error', mes
 // 发送请求
 const sendRequest = async () => {
   if (!formRef.value) return
-  
+
   try {
     // 表单验证
     const valid = await formRef.value.validate()
@@ -626,23 +755,40 @@ const sendRequest = async () => {
       updateRequestStatus('error', '请检查表单输入')
       return
     }
-    
-    // 验证模型是否存在
-    if (chatConfig.model && availableModels.value.length > 0 && !availableModels.value.includes(chatConfig.model)) {
+
+    // 确保实例状态一致性
+    ensureInstanceConsistency()
+
+    // 验证实例选择
+    if (!selectedInstanceInfo.value) {
+      updateRequestStatus('error', '请先选择一个对话服务实例')
+      ElMessage.error('请先选择一个对话服务实例')
+      return
+    }
+
+    // 验证模型配置
+    if (!chatConfig.model) {
+      updateRequestStatus('error', '模型名称不能为空')
+      ElMessage.error('模型名称不能为空')
+      return
+    }
+
+    // 验证模型是否存在（如果有可用模型列表）
+    if (availableModels.value.length > 0 && !availableModels.value.includes(chatConfig.model)) {
       updateRequestStatus('error', `模型 "${chatConfig.model}" 在实例管理中不存在或未启用，请先在实例管理中添加对应的chat服务实例`)
       ElMessage.error(`模型 "${chatConfig.model}" 不可用，请检查实例管理配置`)
       return
     }
-    
+
     // 创建新的取消控制器
     abortController = new AbortController()
-    
+
     loading.value = true
     requestProgress.value = 0
     loadingText.value = '准备发送请求...'
     updateRequestStatus('info', '正在验证配置...')
     emitResponse(null, true, null)
-    
+
     // 模拟进度更新
     const progressInterval = setInterval(() => {
       if (requestProgress.value < 90) {
@@ -659,11 +805,17 @@ const sendRequest = async () => {
         }
       }
     }, 200)
-    
+
     // 构建请求
     const request = buildRequest()
+    console.log('构建的请求:', {
+      endpoint: request.endpoint,
+      method: request.method,
+      headers: Object.keys(request.headers),
+      bodySize: JSON.stringify(request.body).length
+    })
     emitRequest(request, JSON.stringify(request.body).length)
-    
+
     if (chatConfig.stream) {
       // 处理流式响应
       await handleStreamRequest(request)
@@ -671,21 +823,45 @@ const sendRequest = async () => {
       // 处理普通响应
       await handleNormalRequest(request)
     }
-    
+
     clearInterval(progressInterval)
     requestProgress.value = 100
-    
+
   } catch (error) {
     console.error('发送请求失败:', error)
-    const errorMessage = error instanceof Error ? error.message : '发送请求失败'
-    
+
+    // 更好的错误处理
+    let errorMessage = '发送请求失败'
+
+    if (error instanceof Error) {
+      errorMessage = error.message
+    } else if (typeof error === 'object' && error !== null) {
+      // 处理API响应错误
+      const errorObj = error as any
+      if ('message' in errorObj && typeof errorObj.message === 'string') {
+        errorMessage = errorObj.message
+      } else if ('statusText' in errorObj && typeof errorObj.statusText === 'string') {
+        errorMessage = `${errorObj.status || 'Unknown'}: ${errorObj.statusText}`
+      } else if ('data' in errorObj && errorObj.data && typeof errorObj.data === 'object') {
+        // 处理嵌套的错误信息
+        const dataObj = errorObj.data as any
+        if (dataObj.message) {
+          errorMessage = dataObj.message
+        } else if (dataObj.error) {
+          errorMessage = dataObj.error
+        }
+      }
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    }
+
     if (errorMessage.includes('aborted')) {
       updateRequestStatus('warning', '请求已取消')
     } else {
       updateRequestStatus('error', `请求失败: ${errorMessage}`)
       ElMessage.error(errorMessage)
     }
-    
+
     emitResponse(null, false, errorMessage)
   } finally {
     loading.value = false
@@ -698,14 +874,14 @@ const sendRequest = async () => {
 const handleNormalRequest = async (request: PlaygroundRequest) => {
   try {
     updateRequestStatus('info', '正在处理请求...')
-    
+
     const response = await sendUniversalRequest({
       endpoint: request.endpoint,
       method: request.method,
       headers: request.headers,
       body: request.body
     })
-    
+
     // 构建PlaygroundResponse
     const playgroundResponse: PlaygroundResponse = {
       status: response.status,
@@ -715,9 +891,9 @@ const handleNormalRequest = async (request: PlaygroundRequest) => {
       duration: response.duration,
       timestamp: response.timestamp
     }
-    
+
     emitResponse(playgroundResponse, false, null)
-    
+
     if (response.status >= 200 && response.status < 300) {
       updateRequestStatus('success', `请求成功 (${response.duration}ms)`)
       ElMessage.success({
@@ -733,26 +909,39 @@ const handleNormalRequest = async (request: PlaygroundRequest) => {
         showClose: true
       })
     }
-    
+
   } catch (error: any) {
     console.error('API请求失败:', error)
-    
+
     // 如果是UniversalApiResponse错误，直接使用
-    if (error.status !== undefined) {
+    if (error && typeof error === 'object' && error.status !== undefined) {
       const playgroundResponse: PlaygroundResponse = {
         status: error.status,
-        statusText: error.statusText,
-        headers: error.headers,
-        data: error.data,
-        duration: error.duration,
-        timestamp: error.timestamp
+        statusText: error.statusText || 'Unknown Error',
+        headers: error.headers || {},
+        data: error.data || { error: 'Unknown error occurred' },
+        duration: error.duration || 0,
+        timestamp: error.timestamp || new Date().toISOString()
       }
       emitResponse(playgroundResponse, false, null)
-      updateRequestStatus('error', `请求失败: ${error.status} ${error.statusText}`)
+
+      // 构建更详细的错误信息
+      let errorDetail = `${error.status} ${error.statusText || 'Unknown Error'}`
+      if (error.data && typeof error.data === 'object') {
+        const dataObj = error.data as any
+        if (dataObj.message) {
+          errorDetail += `: ${dataObj.message}`
+        } else if (dataObj.error) {
+          errorDetail += `: ${dataObj.error}`
+        }
+      }
+
+      updateRequestStatus('error', `请求失败: ${errorDetail}`)
     } else {
       // 其他错误
-      updateRequestStatus('error', `网络错误: ${error.message || '请求失败'}`)
-      emitResponse(null, false, error.message || '请求失败')
+      const errorMessage = error?.message || error?.toString() || '请求失败'
+      updateRequestStatus('error', `网络错误: ${errorMessage}`)
+      emitResponse(null, false, errorMessage)
     }
   }
 }
@@ -762,10 +951,10 @@ const handleStreamRequest = async (request: PlaygroundRequest) => {
   let streamResponse: PlaygroundResponse | null = null
   let streamContent = ''
   let messageCount = 0
-  
+
   try {
     updateRequestStatus('info', '正在建立流式连接...')
-    
+
     await sendUniversalStreamRequest(
       {
         endpoint: request.endpoint,
@@ -777,17 +966,17 @@ const handleStreamRequest = async (request: PlaygroundRequest) => {
       (data: any) => {
         try {
           messageCount++
-          
+
           // 处理流式数据
           if (data.choices && data.choices[0] && data.choices[0].delta) {
             const delta = data.choices[0].delta
             if (delta.content) {
               streamContent += delta.content
             }
-            
+
             // 更新流式状态
             updateRequestStatus('info', `正在接收流式数据... (${messageCount} 条消息)`)
-            
+
             // 构建当前的响应数据
             const currentData = {
               ...data,
@@ -799,7 +988,7 @@ const handleStreamRequest = async (request: PlaygroundRequest) => {
                 }
               }]
             }
-            
+
             streamResponse = {
               status: 200,
               statusText: 'OK',
@@ -808,7 +997,7 @@ const handleStreamRequest = async (request: PlaygroundRequest) => {
               duration: Date.now() - Date.parse(request.headers['timestamp'] || new Date().toISOString()),
               timestamp: new Date().toISOString()
             }
-            
+
             emitResponse(streamResponse, true, null)
           }
         } catch (parseError) {
@@ -842,11 +1031,28 @@ const handleStreamRequest = async (request: PlaygroundRequest) => {
         }
       }
     )
-    
+
   } catch (error: any) {
     console.error('流式请求失败:', error)
-    updateRequestStatus('error', `流式请求失败: ${error.message || '未知错误'}`)
-    emitResponse(null, false, error.message || '流式请求失败')
+
+    // 更好的流式请求错误处理
+    let errorMessage = '流式请求失败'
+
+    if (error instanceof Error) {
+      errorMessage = error.message
+    } else if (typeof error === 'object' && error !== null) {
+      const errorObj = error as any
+      if (errorObj.message) {
+        errorMessage = errorObj.message
+      } else if (errorObj.statusText) {
+        errorMessage = `${errorObj.status || 'Unknown'}: ${errorObj.statusText}`
+      }
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    }
+
+    updateRequestStatus('error', `流式请求失败: ${errorMessage}`)
+    emitResponse(null, false, errorMessage)
   }
 }
 
@@ -876,8 +1082,9 @@ onMounted(() => {
   document.addEventListener('playground-send-request', handleKeyboardShortcuts)
   document.addEventListener('playground-reset-form', handleKeyboardShortcuts)
   document.addEventListener('playground-cancel-request', handleKeyboardShortcuts)
-  
-  // 获取可用模型列表
+
+  // 获取可用实例和模型列表
+  fetchInstances()
   fetchAvailableModels()
 })
 
@@ -891,14 +1098,14 @@ onUnmounted(() => {
 // 获取实际的数据对象（处理包装格式）
 const getActualData = () => {
   if (!chatResponse.value) return null
-  
+
   let data = chatResponse.value.data
-  
+
   // 检查是否是包装的响应格式 (有success, message, data字段)
   if (data.success !== undefined && data.data) {
     data = data.data
   }
-  
+
   return data
 }
 
@@ -906,12 +1113,12 @@ const getActualData = () => {
 const getResponseContent = () => {
   const data = getActualData()
   if (!data) return ''
-  
+
   if (data.choices && data.choices[0]) {
     const content = data.choices[0].message?.content || data.choices[0].delta?.content || ''
     return content
   }
-  
+
   return ''
 }
 
@@ -925,7 +1132,7 @@ const getUsageInfo = () => {
 const copyResponse = async () => {
   const content = getResponseContent()
   if (!content) return
-  
+
   try {
     await navigator.clipboard.writeText(content)
     ElMessage.success('响应内容已复制到剪贴板')
@@ -980,6 +1187,32 @@ if (chatConfig.messages.length === 0) {
   border-radius: 6px;
   padding: 15px;
   background-color: var(--el-bg-color-page);
+  width: 100%;
+}
+
+/* 让请求头配置占满宽度 */
+.headers-config {
+  width: 100%;
+}
+
+.headers-list {
+  width: 100%;
+}
+
+.header-item {
+  width: 100%;
+}
+
+/* 让表单项占满宽度 */
+.el-form-item__content {
+  width: 100% !important;
+}
+
+/* 让选择器和输入框占满宽度 */
+.el-select,
+.el-input,
+.el-textarea {
+  width: 100% !important;
 }
 
 .message-item {
@@ -1032,13 +1265,13 @@ if (chatConfig.messages.length === 0) {
   .chat-playground {
     padding: 10px;
   }
-  
+
   .message-header {
     flex-direction: column;
     gap: 8px;
     align-items: stretch;
   }
-  
+
   .message-header .el-select {
     width: 100% !important;
   }
@@ -1049,7 +1282,7 @@ if (chatConfig.messages.length === 0) {
   .messages-container {
     background-color: var(--el-bg-color-overlay);
   }
-  
+
   .message-item {
     background-color: var(--el-bg-color-page);
   }
@@ -1148,6 +1381,7 @@ if (chatConfig.messages.length === 0) {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1175,6 +1409,7 @@ if (chatConfig.messages.length === 0) {
   0% {
     left: -100%;
   }
+
   100% {
     left: 100%;
   }
@@ -1186,16 +1421,16 @@ if (chatConfig.messages.length === 0) {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .send-button {
     min-width: auto;
     width: 100%;
   }
-  
+
   .request-status {
     margin-top: 12px;
   }
-  
+
   .progress-info {
     gap: 6px;
   }
@@ -1206,11 +1441,11 @@ if (chatConfig.messages.length === 0) {
   .status-alert {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
-  
+
   .request-progress :deep(.el-progress-bar__outer) {
     background-color: var(--el-color-primary-light-3);
   }
-  
+
   .send-button.is-loading::after {
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   }
@@ -1221,7 +1456,7 @@ if (chatConfig.messages.length === 0) {
   .status-alert {
     border: 2px solid var(--el-text-color-primary);
   }
-  
+
   .send-button {
     border: 2px solid var(--el-color-primary);
   }
@@ -1315,16 +1550,85 @@ if (chatConfig.messages.length === 0) {
 
 /* 减少动画模式 */
 @media (prefers-reduced-motion: reduce) {
+
   .send-button,
   .status-alert,
   .request-progress :deep(.el-progress-bar__inner) {
     transition: none;
     animation: none;
   }
-  
+
   .send-button:not(:disabled):hover {
     transform: none;
   }
+}
+
+/* 请求头配置样式 */
+.headers-config {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  padding: 15px;
+  background-color: var(--el-bg-color-page);
+}
+
+.headers-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.header-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.header-key {
+  flex: 1;
+  min-width: 120px;
+}
+
+.header-value {
+  flex: 2;
+}
+
+.instance-tag {
+  flex-shrink: 0;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.add-header-btn {
+  width: 100%;
+}
+
+/* 实例选择样式 */
+.instance-required :deep(.el-input__wrapper) {
+  border-color: var(--el-color-danger) !important;
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
+}
+
+.instance-required :deep(.el-input__wrapper):hover {
+  border-color: var(--el-color-danger) !important;
+}
+
+.instance-hint {
+  margin-top: 4px;
+  padding-left: 4px;
+}
+
+.instance-selected {
+  margin-top: 4px;
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* 深色主题适配 */
@@ -1332,8 +1636,18 @@ if (chatConfig.messages.length === 0) {
   .response-header {
     background-color: var(--el-bg-color-overlay);
   }
-  
+
   .message-response {
+    border-color: var(--el-border-color);
+  }
+
+  .headers-preview {
+    background-color: var(--el-bg-color-overlay);
+    border-color: var(--el-border-color);
+  }
+
+  .header-preview-item {
+    background-color: var(--el-bg-color);
     border-color: var(--el-border-color);
   }
 }

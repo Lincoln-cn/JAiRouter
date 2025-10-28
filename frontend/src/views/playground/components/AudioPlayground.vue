@@ -7,60 +7,85 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-card header="TTS 配置" class="config-card">
-                <el-form 
-                  ref="ttsFormRef"
-                  :model="ttsConfig" 
-                  :rules="ttsRules"
-                  label-width="120px"
-                  @submit.prevent="sendTtsRequest"
-                >
-                  <el-form-item label="模型" prop="model" required>
-                    <div class="model-select-container">
-                      <el-select 
-                        v-model="ttsConfig.model" 
-                        placeholder="请选择TTS模型"
-                        filterable
-                        allow-create
-                        style="width: 100%"
-                        :loading="ttsModelsLoading"
-                      >
-                        <el-option
-                          v-for="model in ttsAvailableModels"
-                          :key="model"
-                          :label="model"
-                          :value="model"
-                        />
+                <el-form ref="ttsFormRef" :model="ttsFormData" :rules="ttsRules" label-width="120px"
+                  @submit.prevent="sendTtsRequest">
+                  <!-- 实例选择 -->
+                  <el-form-item label="选择实例" prop="selectedInstanceId" required>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                      <el-select v-model="selectedTtsInstanceId" placeholder="请选择TTS服务实例" @change="onTtsInstanceChange"
+                        style="flex: 1" :loading="ttsInstancesLoading" clearable>
+                        <el-option v-for="instance in availableTtsInstances" :key="instance.instanceId"
+                          :label="instance.name" :value="instance.instanceId">
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>{{ instance.name }}</span>
+                            <el-tag v-if="instance.headers && Object.keys(instance.headers).length > 0" type="success"
+                              size="small">
+                              {{ Object.keys(instance.headers).length }} 个请求头
+                            </el-tag>
+                          </div>
+                        </el-option>
                         <template #empty>
                           <div style="padding: 10px; text-align: center; color: #999;">
-                            {{ ttsModelsLoading ? '加载中...' : '暂无可用模型，请先在实例管理中添加TTS服务实例' }}
+                            {{ ttsInstancesLoading ? '加载中...' : '暂无可用实例，请先在实例管理中添加TTS服务实例' }}
                           </div>
                         </template>
                       </el-select>
-                      <el-button 
-                        type="info" 
-                        size="small" 
-                        @click="fetchTtsModels"
-                        class="refresh-btn"
-                        :loading="ttsModelsLoading"
-                        title="刷新TTS模型列表"
-                      >
-                        <el-icon><Refresh /></el-icon>
+                      <el-button type="info" size="small" @click="fetchTtsInstances" :loading="ttsInstancesLoading"
+                        title="刷新实例列表">
+                        <el-icon>
+                          <Refresh />
+                        </el-icon>
+                      </el-button>
+                    </div>
+                    <div v-if="!selectedTtsInstanceId" class="instance-hint">
+                      <el-text type="danger" size="small">请选择一个TTS服务实例</el-text>
+                    </div>
+                    <div v-else-if="selectedTtsInstanceInfo" class="instance-selected">
+                      <el-text type="success" size="small">
+                        <el-icon>
+                          <Check />
+                        </el-icon>
+                        已选择实例: {{ selectedTtsInstanceInfo.name }}
+                      </el-text>
+                    </div>
+                  </el-form-item>
+
+                  <!-- 请求头配置 -->
+                  <el-form-item v-if="selectedTtsInstanceInfo" label="请求头配置">
+                    <div class="headers-config">
+                      <div class="headers-list">
+                        <div v-for="(header, index) in ttsHeadersList" :key="index" class="header-item">
+                          <el-input v-model="header.key" placeholder="请求头名称" size="small" @input="onTtsHeaderChange"
+                            class="header-key" :disabled="header.fromInstance" />
+                          <el-input v-model="header.value" placeholder="请求头值" size="small" @input="onTtsHeaderChange"
+                            class="header-value"
+                            :type="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key') ? 'password' : 'text'"
+                            :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')" />
+                          <el-tag v-if="header.fromInstance" type="success" size="small" class="instance-tag">
+                            实例
+                          </el-tag>
+                          <el-button v-else type="danger" size="small" @click="removeTtsHeader(index)"
+                            class="remove-btn">
+                            <el-icon>
+                              <Close />
+                            </el-icon>
+                          </el-button>
+                        </div>
+                      </div>
+                      <el-button type="primary" size="small" @click="addTtsHeader" class="add-header-btn">
+                        <el-icon>
+                          <Plus />
+                        </el-icon>
+                        添加请求头
                       </el-button>
                     </div>
                   </el-form-item>
-                  
+
                   <el-form-item label="输入文本" prop="input" required>
-                    <el-input 
-                      v-model="ttsConfig.input" 
-                      type="textarea" 
-                      :rows="4"
-                      placeholder="请输入要转换为语音的文本"
-                      maxlength="4096"
-                      show-word-limit
-                      clearable
-                    />
+                    <el-input v-model="ttsConfig.input" type="textarea" :rows="4" placeholder="请输入要转换为语音的文本"
+                      maxlength="4096" show-word-limit clearable />
                   </el-form-item>
-                  
+
                   <el-form-item label="语音">
                     <el-select v-model="ttsConfig.voice" placeholder="选择语音">
                       <el-option label="Alloy" value="alloy" />
@@ -71,7 +96,7 @@
                       <el-option label="Shimmer" value="shimmer" />
                     </el-select>
                   </el-form-item>
-                  
+
                   <el-form-item label="音频格式">
                     <el-select v-model="ttsConfig.responseFormat" placeholder="选择音频格式">
                       <el-option label="MP3" value="mp3" />
@@ -80,27 +105,19 @@
                       <el-option label="FLAC" value="flac" />
                     </el-select>
                   </el-form-item>
-                  
+
                   <el-form-item label="语速">
-                    <el-slider 
-                      v-model="ttsConfig.speed" 
-                      :min="0.25" 
-                      :max="4.0" 
-                      :step="0.25"
-                      show-input
-                      :show-input-controls="false"
-                    />
+                    <el-slider v-model="ttsConfig.speed" :min="0.25" :max="4.0" :step="0.25" show-input
+                      :show-input-controls="false" />
                     <div class="speed-hint">范围: 0.25 - 4.0，默认: 1.0</div>
                   </el-form-item>
-                  
+
                   <el-form-item>
-                    <el-button 
-                      type="primary" 
-                      @click="sendTtsRequest"
-                      :loading="ttsLoading"
-                      :disabled="!canSendTtsRequest"
-                    >
-                      <el-icon><Microphone /></el-icon>
+                    <el-button type="primary" @click="sendTtsRequest" :loading="ttsLoading"
+                      :disabled="!canSendTtsRequest">
+                      <el-icon>
+                        <Microphone />
+                      </el-icon>
                       生成语音
                     </el-button>
                     <el-button @click="resetTtsForm">重置</el-button>
@@ -108,64 +125,54 @@
                 </el-form>
               </el-card>
             </el-col>
-            
+
             <el-col :span="12">
               <el-card header="音频结果" class="result-card">
                 <div class="audio-result">
                   <div v-if="ttsLoading" class="loading-state">
-                    <el-icon class="is-loading"><Loading /></el-icon>
+                    <el-icon class="is-loading">
+                      <Loading />
+                    </el-icon>
                     <p>正在生成语音...</p>
                   </div>
-                  
+
                   <div v-else-if="ttsError" class="error-state">
-                    <el-alert 
-                      :title="ttsError" 
-                      type="error" 
-                      show-icon 
-                      :closable="false"
-                    />
+                    <el-alert :title="ttsError" type="error" show-icon :closable="false" />
                   </div>
-                  
+
                   <div v-else-if="ttsAudioUrl" class="audio-player">
                     <div class="audio-info">
                       <el-tag type="success">
-                        <el-icon><Check /></el-icon>
+                        <el-icon>
+                          <Check />
+                        </el-icon>
                         语音生成成功
                       </el-tag>
                       <span class="duration-info">
                         耗时: {{ ttsDuration }}ms
                       </span>
                     </div>
-                    
-                    <audio 
-                      ref="ttsAudioRef"
-                      :src="ttsAudioUrl" 
-                      controls 
-                      preload="metadata"
-                      class="audio-control"
-                    >
+
+                    <audio ref="ttsAudioRef" :src="ttsAudioUrl" controls preload="metadata" class="audio-control">
                       您的浏览器不支持音频播放
                     </audio>
-                    
+
                     <div class="audio-actions">
-                      <el-button 
-                        type="primary" 
-                        size="small"
-                        @click="downloadTtsAudio"
-                      >
-                        <el-icon><Download /></el-icon>
+                      <el-button type="primary" size="small" @click="downloadTtsAudio">
+                        <el-icon>
+                          <Download />
+                        </el-icon>
                         下载音频
                       </el-button>
-                      <el-button 
-                        size="small"
-                        @click="clearTtsResult"
-                      >
-                        <el-icon><Delete /></el-icon>
+                      <el-button size="small" @click="clearTtsResult">
+                        <el-icon>
+                          <Delete />
+                        </el-icon>
                         清除结果
                       </el-button>
                     </div>
                   </div>
-                  
+
                   <div v-else class="empty-state">
                     <el-empty description="请配置参数并生成语音" />
                   </div>
@@ -175,68 +182,94 @@
           </el-row>
         </div>
       </el-tab-pane>
-      
+
       <!-- STT 选项卡 -->
       <el-tab-pane label="语音转文本 (STT)" name="stt">
         <div class="service-content">
           <el-row :gutter="20">
             <el-col :span="12">
               <el-card header="STT 配置" class="config-card">
-                <el-form 
-                  ref="sttFormRef"
-                  :model="sttConfig" 
-                  :rules="sttRules"
-                  label-width="120px"
-                  @submit.prevent="sendSttRequest"
-                >
-                  <el-form-item label="模型" prop="model" required>
-                    <div class="model-select-container">
-                      <el-select 
-                        v-model="sttConfig.model" 
-                        placeholder="请选择STT模型"
-                        filterable
-                        allow-create
-                        style="width: 100%"
-                        :loading="sttModelsLoading"
-                      >
-                        <el-option
-                          v-for="model in sttAvailableModels"
-                          :key="model"
-                          :label="model"
-                          :value="model"
-                        />
+                <el-form ref="sttFormRef" :model="sttFormData" :rules="sttRules" label-width="120px"
+                  @submit.prevent="sendSttRequest">
+                  <!-- 实例选择 -->
+                  <el-form-item label="选择实例" prop="selectedInstanceId" required>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                      <el-select v-model="selectedSttInstanceId" placeholder="请选择STT服务实例" @change="onSttInstanceChange"
+                        style="flex: 1" :loading="sttInstancesLoading" clearable>
+                        <el-option v-for="instance in availableSttInstances" :key="instance.instanceId"
+                          :label="instance.name" :value="instance.instanceId">
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>{{ instance.name }}</span>
+                            <el-tag v-if="instance.headers && Object.keys(instance.headers).length > 0" type="success"
+                              size="small">
+                              {{ Object.keys(instance.headers).length }} 个请求头
+                            </el-tag>
+                          </div>
+                        </el-option>
                         <template #empty>
                           <div style="padding: 10px; text-align: center; color: #999;">
-                            {{ sttModelsLoading ? '加载中...' : '暂无可用模型，请先在实例管理中添加STT服务实例' }}
+                            {{ sttInstancesLoading ? '加载中...' : '暂无可用实例，请先在实例管理中添加STT服务实例' }}
                           </div>
                         </template>
                       </el-select>
-                      <el-button 
-                        type="info" 
-                        size="small" 
-                        @click="fetchSttModels"
-                        class="refresh-btn"
-                        :loading="sttModelsLoading"
-                        title="刷新STT模型列表"
-                      >
-                        <el-icon><Refresh /></el-icon>
+                      <el-button type="info" size="small" @click="fetchSttInstances" :loading="sttInstancesLoading"
+                        title="刷新实例列表">
+                        <el-icon>
+                          <Refresh />
+                        </el-icon>
+                      </el-button>
+                    </div>
+                    <div v-if="!selectedSttInstanceId" class="instance-hint">
+                      <el-text type="danger" size="small">请选择一个STT服务实例</el-text>
+                    </div>
+                    <div v-else-if="selectedSttInstanceInfo" class="instance-selected">
+                      <el-text type="success" size="small">
+                        <el-icon>
+                          <Check />
+                        </el-icon>
+                        已选择实例: {{ selectedSttInstanceInfo.name }}
+                      </el-text>
+                    </div>
+                  </el-form-item>
+
+                  <!-- 请求头配置 -->
+                  <el-form-item v-if="selectedSttInstanceInfo" label="请求头配置">
+                    <div class="headers-config">
+                      <div class="headers-list">
+                        <div v-for="(header, index) in sttHeadersList" :key="index" class="header-item">
+                          <el-input v-model="header.key" placeholder="请求头名称" size="small" @input="onSttHeaderChange"
+                            class="header-key" :disabled="header.fromInstance" />
+                          <el-input v-model="header.value" placeholder="请求头值" size="small" @input="onSttHeaderChange"
+                            class="header-value"
+                            :type="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key') ? 'password' : 'text'"
+                            :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')" />
+                          <el-tag v-if="header.fromInstance" type="success" size="small" class="instance-tag">
+                            实例
+                          </el-tag>
+                          <el-button v-else type="danger" size="small" @click="removeSttHeader(index)"
+                            class="remove-btn">
+                            <el-icon>
+                              <Close />
+                            </el-icon>
+                          </el-button>
+                        </div>
+                      </div>
+                      <el-button type="primary" size="small" @click="addSttHeader" class="add-header-btn">
+                        <el-icon>
+                          <Plus />
+                        </el-icon>
+                        添加请求头
                       </el-button>
                     </div>
                   </el-form-item>
-                  
+
                   <el-form-item label="音频文件" prop="file" required>
-                    <el-upload
-                      ref="sttUploadRef"
-                      class="upload-demo"
-                      drag
-                      :auto-upload="false"
-                      :limit="1"
-                      accept="audio/*,.mp3,.wav,.m4a,.flac,.opus"
-                      :on-change="onSttFileChange"
-                      :on-remove="onSttFileRemove"
-                      :file-list="sttFileList"
-                    >
-                      <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+                    <el-upload ref="sttUploadRef" class="upload-demo" drag :auto-upload="false" :limit="1"
+                      accept="audio/*,.mp3,.wav,.m4a,.flac,.opus" :on-change="onSttFileChange"
+                      :on-remove="onSttFileRemove" :file-list="sttFileList">
+                      <el-icon class="el-icon--upload">
+                        <UploadFilled />
+                      </el-icon>
                       <div class="el-upload__text">
                         将音频文件拖到此处，或<em>点击上传</em>
                       </div>
@@ -247,13 +280,9 @@
                       </template>
                     </el-upload>
                   </el-form-item>
-                  
+
                   <el-form-item label="语言">
-                    <el-select 
-                      v-model="sttConfig.language" 
-                      placeholder="选择语言（可选）"
-                      clearable
-                    >
+                    <el-select v-model="sttConfig.language" placeholder="选择语言（可选）" clearable>
                       <el-option label="自动检测" value="" />
                       <el-option label="中文" value="zh" />
                       <el-option label="英文" value="en" />
@@ -264,19 +293,12 @@
                       <el-option label="西班牙文" value="es" />
                     </el-select>
                   </el-form-item>
-                  
+
                   <el-form-item label="提示词">
-                    <el-input 
-                      v-model="sttConfig.prompt" 
-                      type="textarea" 
-                      :rows="2"
-                      placeholder="可选的提示词，用于指导转录风格"
-                      maxlength="244"
-                      show-word-limit
-                      clearable
-                    />
+                    <el-input v-model="sttConfig.prompt" type="textarea" :rows="2" placeholder="可选的提示词，用于指导转录风格"
+                      maxlength="244" show-word-limit clearable />
                   </el-form-item>
-                  
+
                   <el-form-item label="响应格式">
                     <el-select v-model="sttConfig.responseFormat" placeholder="选择响应格式">
                       <el-option label="JSON" value="json" />
@@ -286,27 +308,19 @@
                       <el-option label="详细JSON" value="verbose_json" />
                     </el-select>
                   </el-form-item>
-                  
+
                   <el-form-item label="温度">
-                    <el-slider 
-                      v-model="sttConfig.temperature" 
-                      :min="0" 
-                      :max="1" 
-                      :step="0.1"
-                      show-input
-                      :show-input-controls="false"
-                    />
+                    <el-slider v-model="sttConfig.temperature" :min="0" :max="1" :step="0.1" show-input
+                      :show-input-controls="false" />
                     <div class="temperature-hint">范围: 0 - 1，默认: 0</div>
                   </el-form-item>
-                  
+
                   <el-form-item>
-                    <el-button 
-                      type="primary" 
-                      @click="sendSttRequest"
-                      :loading="sttLoading"
-                      :disabled="!canSendSttRequest"
-                    >
-                      <el-icon><VideoPlay /></el-icon>
+                    <el-button type="primary" @click="sendSttRequest" :loading="sttLoading"
+                      :disabled="!canSendSttRequest">
+                      <el-icon>
+                        <VideoPlay />
+                      </el-icon>
                       转录音频
                     </el-button>
                     <el-button @click="resetSttForm">重置</el-button>
@@ -314,63 +328,53 @@
                 </el-form>
               </el-card>
             </el-col>
-            
+
             <el-col :span="12">
               <el-card header="转录结果" class="result-card">
                 <div class="stt-result">
                   <div v-if="sttLoading" class="loading-state">
-                    <el-icon class="is-loading"><Loading /></el-icon>
+                    <el-icon class="is-loading">
+                      <Loading />
+                    </el-icon>
                     <p>正在转录音频...</p>
                   </div>
-                  
+
                   <div v-else-if="sttError" class="error-state">
-                    <el-alert 
-                      :title="sttError" 
-                      type="error" 
-                      show-icon 
-                      :closable="false"
-                    />
+                    <el-alert :title="sttError" type="error" show-icon :closable="false" />
                   </div>
-                  
+
                   <div v-else-if="sttResult" class="transcription-result">
                     <div class="result-info">
                       <el-tag type="success">
-                        <el-icon><Check /></el-icon>
+                        <el-icon>
+                          <Check />
+                        </el-icon>
                         转录完成
                       </el-tag>
                       <span class="duration-info">
                         耗时: {{ sttDuration }}ms
                       </span>
                     </div>
-                    
+
                     <div class="transcription-text">
-                      <el-input 
-                        v-model="sttResult.text" 
-                        type="textarea" 
-                        :rows="6"
-                        readonly
-                        class="result-textarea"
-                      />
+                      <el-input v-model="sttResult.text" type="textarea" :rows="6" readonly class="result-textarea" />
                     </div>
-                    
+
                     <div class="result-actions">
-                      <el-button 
-                        type="primary" 
-                        size="small"
-                        @click="copySttResult"
-                      >
-                        <el-icon><CopyDocument /></el-icon>
+                      <el-button type="primary" size="small" @click="copySttResult">
+                        <el-icon>
+                          <CopyDocument />
+                        </el-icon>
                         复制文本
                       </el-button>
-                      <el-button 
-                        size="small"
-                        @click="clearSttResult"
-                      >
-                        <el-icon><Delete /></el-icon>
+                      <el-button size="small" @click="clearSttResult">
+                        <el-icon>
+                          <Delete />
+                        </el-icon>
                         清除结果
                       </el-button>
                     </div>
-                    
+
                     <!-- 详细信息（如果有） -->
                     <div v-if="sttResult.segments || sttResult.language" class="result-details">
                       <el-collapse>
@@ -392,7 +396,7 @@
                       </el-collapse>
                     </div>
                   </div>
-                  
+
                   <div v-else class="empty-state">
                     <el-empty description="请上传音频文件并开始转录" />
                   </div>
@@ -407,25 +411,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, inject, nextTick, onMounted } from 'vue'
+import { ref, reactive, computed, inject, nextTick, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type UploadFile, type UploadFiles } from 'element-plus'
-import { 
-  UploadFilled, 
-  Microphone, 
-  VideoPlay, 
-  Loading, 
-  Check, 
-  Download, 
-  Delete, 
+import {
+  UploadFilled,
+  Microphone,
+  VideoPlay,
+  Loading,
+  Check,
+  Download,
+  Delete,
   CopyDocument,
-  Refresh 
+  Refresh,
+  Plus,
+  Close
 } from '@element-plus/icons-vue'
 import { sendUniversalRequest } from '@/api/universal'
 import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
-import type { 
-  TtsRequestConfig, 
-  SttRequestConfig, 
-  GlobalConfig, 
+import { getServiceInstances } from '@/api/dashboard'
+import type {
+  TtsRequestConfig,
+  SttRequestConfig,
+  GlobalConfig,
   PlaygroundResponse,
   TabState,
   ValidationRules,
@@ -463,13 +470,27 @@ const ttsConfig = ref<TtsRequestConfig>({
   responseFormat: 'mp3',
   speed: 1.0
 })
+
+// TTS表单数据（包含所有需要验证的字段）
+const ttsFormData = reactive({
+  selectedInstanceId: '',
+  model: ttsConfig.value.model,
+  input: ttsConfig.value.input,
+  voice: ttsConfig.value.voice,
+  responseFormat: ttsConfig.value.responseFormat,
+  speed: ttsConfig.value.speed
+})
 const ttsLoading = ref(false)
 const ttsError = ref<string | null>(null)
 const ttsAudioUrl = ref<string | null>(null)
 
-// TTS模型列表
-const ttsAvailableModels = ref<string[]>([])
-const ttsModelsLoading = ref(false)
+// TTS实例选择相关状态
+const availableTtsInstances = ref<any[]>([])
+const ttsInstancesLoading = ref(false)
+const selectedTtsInstanceId = ref('')
+const selectedTtsInstanceInfo = ref<any>(null)
+const ttsHeadersList = ref<Array<{ key: string, value: string, fromInstance: boolean }>>([])
+const currentTtsHeaders = ref<Record<string, string>>({})
 const ttsAudioBlob = ref<Blob | null>(null)
 const ttsDuration = ref(0)
 const ttsAudioRef = ref<HTMLAudioElement>()
@@ -483,21 +504,47 @@ const sttConfig = ref<Omit<SttRequestConfig, 'file'> & { file?: File }>({
   responseFormat: 'json',
   temperature: 0
 })
+
+// STT表单数据（包含所有需要验证的字段）
+const sttFormData = reactive({
+  selectedInstanceId: '',
+  model: sttConfig.value.model,
+  file: sttConfig.value.file,
+  language: sttConfig.value.language,
+  prompt: sttConfig.value.prompt,
+  responseFormat: sttConfig.value.responseFormat,
+  temperature: sttConfig.value.temperature
+})
 const sttLoading = ref(false)
 const sttError = ref<string | null>(null)
 const sttResult = ref<any>(null)
 
-// STT模型列表
-const sttAvailableModels = ref<string[]>([])
-const sttModelsLoading = ref(false)
+// STT实例选择相关状态
+const availableSttInstances = ref<any[]>([])
+const sttInstancesLoading = ref(false)
+const selectedSttInstanceId = ref('')
+const selectedSttInstanceInfo = ref<any>(null)
+const sttHeadersList = ref<Array<{ key: string, value: string, fromInstance: boolean }>>([])
+const currentSttHeaders = ref<Record<string, string>>({})
 const sttDuration = ref(0)
 const sttUploadRef = ref()
 const sttFileList = ref<UploadFile[]>([])
 
 // 表单验证规则
 const ttsRules: ValidationRules = {
-  model: [
-    { required: true, message: '请输入模型名称', trigger: 'blur' }
+  selectedInstanceId: [
+    {
+      required: true,
+      message: '请选择一个TTS服务实例',
+      trigger: 'change',
+      validator: (_rule: any, value: string, callback: Function) => {
+        if (!value || value.trim() === '') {
+          callback(new Error('请选择一个TTS服务实例'))
+        } else {
+          callback()
+        }
+      }
+    }
   ],
   input: [
     { required: true, message: '请输入要转换的文本', trigger: 'blur' },
@@ -506,8 +553,19 @@ const ttsRules: ValidationRules = {
 }
 
 const sttRules: ValidationRules = {
-  model: [
-    { required: true, message: '请输入模型名称', trigger: 'blur' }
+  selectedInstanceId: [
+    {
+      required: true,
+      message: '请选择一个STT服务实例',
+      trigger: 'change',
+      validator: (_rule: any, value: string, callback: Function) => {
+        if (!value || value.trim() === '') {
+          callback(new Error('请选择一个STT服务实例'))
+        } else {
+          callback()
+        }
+      }
+    }
   ],
   file: [
     { required: true, message: '请上传音频文件', trigger: 'change' }
@@ -516,15 +574,16 @@ const sttRules: ValidationRules = {
 
 // 计算属性
 const canSendTtsRequest = computed(() => {
-  return ttsConfig.value.model && 
-         ttsConfig.value.input && 
-         !ttsLoading.value
+  return ttsFormData.selectedInstanceId &&
+    ttsFormData.input &&
+    ttsFormData.input.trim() !== '' &&
+    !ttsLoading.value
 })
 
 const canSendSttRequest = computed(() => {
-  return sttConfig.value.model && 
-         sttConfig.value.file && 
-         !sttLoading.value
+  return sttFormData.selectedInstanceId &&
+    sttFormData.file &&
+    !sttLoading.value
 })
 
 // 选项卡切换处理
@@ -533,57 +592,255 @@ const onAudioTabChange = (tabName: string) => {
   if (tabState) {
     tabState.activeAudioTab = activeAudioTab.value
   }
-  
+
   // 清除之前的错误和结果
   clearTtsResult()
   clearSttResult()
 }
 
 // 获取TTS模型列表
-const fetchTtsModels = async () => {
-  ttsModelsLoading.value = true
+// 获取TTS实例列表
+const fetchTtsInstances = async () => {
+  ttsInstancesLoading.value = true
   try {
-    const serviceType = getInstanceServiceType('tts')
-    const models = await getModelsByServiceType(serviceType)
-    ttsAvailableModels.value = models
+    const response = await getServiceInstances('tts')
+    if (response.data?.success) {
+      availableTtsInstances.value = response.data.data || []
+      ElMessage.success(`已刷新实例列表，找到 ${availableTtsInstances.value.length} 个可用实例`)
+    } else {
+      availableTtsInstances.value = []
+      ElMessage.warning('获取实例列表失败')
+    }
   } catch (error) {
-    console.error('获取TTS模型列表失败:', error)
-    ElMessage.error('获取TTS模型列表失败')
+    console.error('获取实例列表失败:', error)
+    availableTtsInstances.value = []
+    ElMessage.error('获取实例列表失败')
   } finally {
-    ttsModelsLoading.value = false
+    ttsInstancesLoading.value = false
   }
 }
 
-// 获取STT模型列表
-const fetchSttModels = async () => {
-  sttModelsLoading.value = true
-  try {
-    const serviceType = getInstanceServiceType('stt')
-    const models = await getModelsByServiceType(serviceType)
-    sttAvailableModels.value = models
-  } catch (error) {
-    console.error('获取STT模型列表失败:', error)
-    ElMessage.error('获取STT模型列表失败')
-  } finally {
-    sttModelsLoading.value = false
+// TTS实例选择变化处理
+const onTtsInstanceChange = (instanceId: string) => {
+  // 同步到formData
+  ttsFormData.selectedInstanceId = instanceId
+
+  if (!instanceId) {
+    selectedTtsInstanceInfo.value = null
+    ttsConfig.value.model = ''
+    ttsFormData.model = ''
+    ttsHeadersList.value = []
+    currentTtsHeaders.value = {}
+    return
   }
+
+  const instance = availableTtsInstances.value.find(inst => inst.instanceId === instanceId)
+  if (instance) {
+    selectedTtsInstanceInfo.value = instance
+
+    // 使用实例名称作为默认模型
+    ttsConfig.value.model = instance.name || 'default-model'
+    ttsFormData.model = instance.name || 'default-model'
+
+    // 初始化请求头列表
+    initializeTtsHeaders(instance.headers || {})
+
+    ElMessage.success(`已选择实例 "${instance.name}"`)
+  }
+}
+
+// 初始化TTS请求头列表
+const initializeTtsHeaders = (instanceHeaders: Record<string, string>) => {
+  ttsHeadersList.value = []
+  currentTtsHeaders.value = {}
+
+  // 添加实例的请求头（标记为来自实例，不可删除）
+  Object.entries(instanceHeaders).forEach(([key, value]) => {
+    ttsHeadersList.value.push({
+      key,
+      value,
+      fromInstance: true
+    })
+    currentTtsHeaders.value[key] = value
+  })
+
+  // 添加全局配置中的自定义请求头
+  Object.entries(props.globalConfig.customHeaders || {}).forEach(([key, value]) => {
+    if (!currentTtsHeaders.value[key]) {
+      ttsHeadersList.value.push({
+        key,
+        value,
+        fromInstance: false
+      })
+      currentTtsHeaders.value[key] = value
+    }
+  })
+}
+
+// 添加TTS请求头
+const addTtsHeader = () => {
+  ttsHeadersList.value.push({
+    key: '',
+    value: '',
+    fromInstance: false
+  })
+}
+
+// 删除TTS请求头
+const removeTtsHeader = (index: number) => {
+  const header = ttsHeadersList.value[index]
+  if (!header.fromInstance) {
+    ttsHeadersList.value.splice(index, 1)
+    onTtsHeaderChange()
+  }
+}
+
+// TTS请求头变化处理
+const onTtsHeaderChange = () => {
+  // 重新构建headers对象
+  const newHeaders: Record<string, string> = {}
+
+  ttsHeadersList.value.forEach(header => {
+    if (header.key.trim() && header.value.trim()) {
+      newHeaders[header.key.trim()] = header.value.trim()
+    }
+  })
+
+  currentTtsHeaders.value = newHeaders
+}
+
+// 获取STT实例列表
+const fetchSttInstances = async () => {
+  sttInstancesLoading.value = true
+  try {
+    const response = await getServiceInstances('stt')
+    if (response.data?.success) {
+      availableSttInstances.value = response.data.data || []
+      ElMessage.success(`已刷新实例列表，找到 ${availableSttInstances.value.length} 个可用实例`)
+    } else {
+      availableSttInstances.value = []
+      ElMessage.warning('获取实例列表失败')
+    }
+  } catch (error) {
+    console.error('获取实例列表失败:', error)
+    availableSttInstances.value = []
+    ElMessage.error('获取实例列表失败')
+  } finally {
+    sttInstancesLoading.value = false
+  }
+}
+
+// STT实例选择变化处理
+const onSttInstanceChange = (instanceId: string) => {
+  // 同步到formData
+  sttFormData.selectedInstanceId = instanceId
+
+  if (!instanceId) {
+    selectedSttInstanceInfo.value = null
+    sttConfig.value.model = ''
+    sttFormData.model = ''
+    sttHeadersList.value = []
+    currentSttHeaders.value = {}
+    return
+  }
+
+  const instance = availableSttInstances.value.find(inst => inst.instanceId === instanceId)
+  if (instance) {
+    selectedSttInstanceInfo.value = instance
+
+    // 使用实例名称作为默认模型
+    sttConfig.value.model = instance.name || 'default-model'
+    sttFormData.model = instance.name || 'default-model'
+
+    // 初始化请求头列表
+    initializeSttHeaders(instance.headers || {})
+
+    ElMessage.success(`已选择实例 "${instance.name}"`)
+  }
+}
+
+// 初始化STT请求头列表
+const initializeSttHeaders = (instanceHeaders: Record<string, string>) => {
+  sttHeadersList.value = []
+  currentSttHeaders.value = {}
+
+  // 添加实例的请求头（标记为来自实例，不可删除）
+  Object.entries(instanceHeaders).forEach(([key, value]) => {
+    sttHeadersList.value.push({
+      key,
+      value,
+      fromInstance: true
+    })
+    currentSttHeaders.value[key] = value
+  })
+
+  // 添加全局配置中的自定义请求头
+  Object.entries(props.globalConfig.customHeaders || {}).forEach(([key, value]) => {
+    if (!currentSttHeaders.value[key]) {
+      sttHeadersList.value.push({
+        key,
+        value,
+        fromInstance: false
+      })
+      currentSttHeaders.value[key] = value
+    }
+  })
+}
+
+// 添加STT请求头
+const addSttHeader = () => {
+  sttHeadersList.value.push({
+    key: '',
+    value: '',
+    fromInstance: false
+  })
+}
+
+// 删除STT请求头
+const removeSttHeader = (index: number) => {
+  const header = sttHeadersList.value[index]
+  if (!header.fromInstance) {
+    sttHeadersList.value.splice(index, 1)
+    onSttHeaderChange()
+  }
+}
+
+// STT请求头变化处理
+const onSttHeaderChange = () => {
+  // 重新构建headers对象
+  const newHeaders: Record<string, string> = {}
+
+  sttHeadersList.value.forEach(header => {
+    if (header.key.trim() && header.value.trim()) {
+      newHeaders[header.key.trim()] = header.value.trim()
+    }
+  })
+
+  currentSttHeaders.value = newHeaders
 }
 
 // TTS 相关方法
 const sendTtsRequest = async () => {
   if (!ttsFormRef.value) return
-  
+
+  // 检查是否选择了实例
+  if (!ttsFormData.selectedInstanceId) {
+    ElMessage.error('请选择一个TTS服务实例')
+    return
+  }
+
   try {
     const valid = await ttsFormRef.value.validate()
     if (!valid) return
-  } catch {
+  } catch (error) {
+    console.log('表单验证失败:', error)
     return
   }
-  
+
   ttsLoading.value = true
   ttsError.value = null
   emit('response', null, true)
-  
+
   try {
     const requestBody = {
       model: ttsConfig.value.model,
@@ -592,31 +849,27 @@ const sendTtsRequest = async () => {
       response_format: ttsConfig.value.responseFormat,
       speed: ttsConfig.value.speed
     }
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...props.globalConfig.customHeaders
+      ...currentTtsHeaders.value
     }
-    
-    if (props.globalConfig.authorization) {
-      headers['Authorization'] = props.globalConfig.authorization
-    }
-    
+
     const ttsRequest = {
       endpoint: '/v1/audio/speech',
       method: 'POST',
       headers,
       body: requestBody
     }
-    
+
     // 发送request事件
     const requestSize = JSON.stringify(requestBody).length
     emit('request', ttsRequest, requestSize)
-    
+
     const response = await sendUniversalRequest(ttsRequest)
-    
+
     ttsDuration.value = response.duration
-    
+
     // 处理音频响应
     const actualData = getActualData(response.data)
     if (actualData instanceof Blob) {
@@ -627,10 +880,10 @@ const sendTtsRequest = async () => {
     } else {
       throw new Error('未收到有效的音频数据')
     }
-    
+
     emit('response', response)
     ElMessage.success('语音生成成功')
-    
+
   } catch (error: any) {
     console.error('TTS request failed:', error)
     ttsError.value = error.data?.error?.message || error.message || '语音生成失败'
@@ -643,7 +896,7 @@ const sendTtsRequest = async () => {
 
 const downloadTtsAudio = () => {
   if (!ttsAudioBlob.value && !ttsAudioUrl.value) return
-  
+
   const link = document.createElement('a')
   link.href = ttsAudioUrl.value!
   link.download = `tts_audio_${Date.now()}.${ttsConfig.value.responseFormat}`
@@ -683,7 +936,7 @@ const onSttFileChange = (file: UploadFile, fileList: UploadFiles) => {
       sttConfig.value.file = undefined
       return
     }
-    
+
     sttConfig.value.file = file.raw
     sttFileList.value = [file]
   }
@@ -696,46 +949,49 @@ const onSttFileRemove = () => {
 
 const sendSttRequest = async () => {
   if (!sttFormRef.value) return
-  
+
+  // 检查是否选择了实例
+  if (!sttFormData.selectedInstanceId) {
+    ElMessage.error('请选择一个STT服务实例')
+    return
+  }
+
   try {
     const valid = await sttFormRef.value.validate()
     if (!valid) return
-  } catch {
+  } catch (error) {
+    console.log('表单验证失败:', error)
     return
   }
-  
+
   if (!sttConfig.value.file) {
     ElMessage.error('请先上传音频文件')
     return
   }
-  
+
   sttLoading.value = true
   sttError.value = null
   emit('response', null, true)
-  
+
   try {
     const requestBody: any = {
       model: sttConfig.value.model,
       response_format: sttConfig.value.responseFormat,
       temperature: sttConfig.value.temperature
     }
-    
+
     if (sttConfig.value.language) {
       requestBody.language = sttConfig.value.language
     }
-    
+
     if (sttConfig.value.prompt) {
       requestBody.prompt = sttConfig.value.prompt
     }
-    
+
     const headers: Record<string, string> = {
-      ...props.globalConfig.customHeaders
+      ...currentSttHeaders.value
     }
-    
-    if (props.globalConfig.authorization) {
-      headers['Authorization'] = props.globalConfig.authorization
-    }
-    
+
     const sttRequest = {
       endpoint: '/v1/audio/transcriptions',
       method: 'POST',
@@ -743,19 +999,19 @@ const sendSttRequest = async () => {
       body: requestBody,
       files: [sttConfig.value.file]
     }
-    
+
     // 发送request事件
     const requestSize = JSON.stringify(requestBody).length + (sttConfig.value.file?.size || 0)
     emit('request', sttRequest, requestSize)
-    
+
     const response = await sendUniversalRequest(sttRequest)
-    
+
     sttDuration.value = response.duration
     sttResult.value = getActualData(response.data)
-    
+
     emit('response', response)
     ElMessage.success('音频转录成功')
-    
+
   } catch (error: any) {
     console.error('STT request failed:', error)
     sttError.value = error.data?.error?.message || error.message || '音频转录失败'
@@ -768,7 +1024,7 @@ const sendSttRequest = async () => {
 
 const copySttResult = async () => {
   if (!sttResult.value?.text) return
-  
+
   try {
     await navigator.clipboard.writeText(sttResult.value.text)
     ElMessage.success('转录文本已复制到剪贴板')
@@ -810,31 +1066,83 @@ if (tabState?.activeAudioTab) {
 // 获取实际的数据对象（处理包装格式）
 const getActualData = (responseData: any) => {
   if (!responseData) return null
-  
+
   // 对于Blob数据，直接返回
   if (responseData instanceof Blob) {
     return responseData
   }
-  
+
   // 检查是否是包装的响应格式 (有success, message, data字段)
   if (responseData.success !== undefined && responseData.data) {
     return responseData.data
   }
-  
+
   return responseData
 }
 
+// 同步 ttsConfig 和 ttsFormData
+watch(() => ttsConfig.value.input, (newInput) => {
+  ttsFormData.input = newInput
+})
+
+watch(() => ttsConfig.value.voice, (newVoice) => {
+  ttsFormData.voice = newVoice
+})
+
+watch(() => ttsConfig.value.responseFormat, (newResponseFormat) => {
+  ttsFormData.responseFormat = newResponseFormat
+})
+
+watch(() => ttsConfig.value.speed, (newSpeed) => {
+  ttsFormData.speed = newSpeed
+})
+
+// 同步 sttConfig 和 sttFormData
+watch(() => sttConfig.value.file, (newFile) => {
+  sttFormData.file = newFile
+})
+
+watch(() => sttConfig.value.language, (newLanguage) => {
+  sttFormData.language = newLanguage
+})
+
+watch(() => sttConfig.value.prompt, (newPrompt) => {
+  sttFormData.prompt = newPrompt
+})
+
+watch(() => sttConfig.value.responseFormat, (newResponseFormat) => {
+  sttFormData.responseFormat = newResponseFormat
+})
+
+watch(() => sttConfig.value.temperature, (newTemperature) => {
+  sttFormData.temperature = newTemperature
+})
+
 // 监听全局刷新模型事件
 const handleRefreshModels = () => {
-  fetchTtsModels()
-  fetchSttModels()
+  fetchTtsInstances()
+  fetchSttInstances()
 }
 
-// 组件挂载时获取模型列表
+// 组件挂载时获取实例列表
 onMounted(() => {
-  fetchTtsModels()
-  fetchSttModels()
-  
+  fetchTtsInstances()
+  fetchSttInstances()
+
+  // 同步初始状态
+  ttsFormData.selectedInstanceId = selectedTtsInstanceId.value
+  ttsFormData.input = ttsConfig.value.input
+  ttsFormData.voice = ttsConfig.value.voice
+  ttsFormData.responseFormat = ttsConfig.value.responseFormat
+  ttsFormData.speed = ttsConfig.value.speed
+
+  sttFormData.selectedInstanceId = selectedSttInstanceId.value
+  sttFormData.file = sttConfig.value.file
+  sttFormData.language = sttConfig.value.language
+  sttFormData.prompt = sttConfig.value.prompt
+  sttFormData.responseFormat = sttConfig.value.responseFormat
+  sttFormData.temperature = sttConfig.value.temperature
+
   // 监听全局刷新事件
   document.addEventListener('playground-refresh-models', handleRefreshModels)
 })
@@ -880,6 +1188,31 @@ onUnmounted(() => {
 .config-card :deep(.el-card__body) {
   height: calc(100% - 60px);
   overflow: auto;
+}
+
+/* 让请求头配置占满宽度 */
+.headers-config {
+  width: 100%;
+}
+
+.headers-list {
+  width: 100%;
+}
+
+.header-item {
+  width: 100%;
+}
+
+/* 让表单项占满宽度 */
+.el-form-item__content {
+  width: 100% !important;
+}
+
+/* 让选择器和输入框占满宽度 */
+.el-select,
+.el-input,
+.el-textarea {
+  width: 100% !important;
 }
 
 .result-card :deep(.el-card__body) {
@@ -1039,23 +1372,23 @@ onUnmounted(() => {
   .audio-playground {
     padding: 10px;
   }
-  
+
   .service-content .el-row {
     flex-direction: column;
   }
-  
+
   .service-content .el-col {
     width: 100% !important;
     margin-bottom: 20px;
   }
-  
+
   .audio-info,
   .result-info {
     flex-direction: column;
     gap: 10px;
     align-items: flex-start;
   }
-  
+
   .audio-actions,
   .result-actions {
     flex-wrap: wrap;
@@ -1069,7 +1402,7 @@ onUnmounted(() => {
     background-color: var(--el-bg-color-overlay);
     color: var(--el-text-color-primary);
   }
-  
+
   .segment {
     background-color: var(--el-bg-color-overlay);
   }
@@ -1084,6 +1417,7 @@ onUnmounted(() => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -1116,7 +1450,7 @@ onUnmounted(() => {
 }
 
 /* 按钮组样式 */
-.el-form-item .el-button + .el-button {
+.el-form-item .el-button+.el-button {
   margin-left: 10px;
 }
 </style>
