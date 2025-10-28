@@ -9,42 +9,119 @@
               <el-card header="图像生成配置" class="config-card">
                 <el-form 
                   ref="generateFormRef"
-                  :model="generateConfig" 
+                  :model="generateFormData" 
                   :rules="generateRules"
                   label-width="120px"
                   @submit.prevent="sendGenerateRequest"
                 >
-                  <el-form-item label="模型" prop="model" required>
-                    <div class="model-select-container">
+                  <!-- 实例选择 -->
+                  <el-form-item label="选择实例" prop="selectedInstanceId" required>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
                       <el-select 
-                        v-model="generateConfig.model" 
-                        placeholder="请选择图像生成模型"
-                        filterable
-                        allow-create
-                        style="width: 100%"
-                        :loading="generateModelsLoading"
+                        v-model="selectedGenerateInstanceId" 
+                        placeholder="请选择图像生成服务实例"
+                        @change="onGenerateInstanceChange"
+                        style="flex: 1"
+                        :loading="generateInstancesLoading"
+                        clearable
                       >
                         <el-option
-                          v-for="model in generateAvailableModels"
-                          :key="model"
-                          :label="model"
-                          :value="model"
-                        />
+                          v-for="instance in availableGenerateInstances"
+                          :key="instance.instanceId"
+                          :label="instance.name"
+                          :value="instance.instanceId"
+                        >
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>{{ instance.name }}</span>
+                            <el-tag 
+                              v-if="instance.headers && Object.keys(instance.headers).length > 0"
+                              type="success" 
+                              size="small"
+                            >
+                              {{ Object.keys(instance.headers).length }} 个请求头
+                            </el-tag>
+                          </div>
+                        </el-option>
                         <template #empty>
                           <div style="padding: 10px; text-align: center; color: #999;">
-                            {{ generateModelsLoading ? '加载中...' : '暂无可用模型，请先在实例管理中添加图像生成服务实例' }}
+                            {{ generateInstancesLoading ? '加载中...' : '暂无可用实例，请先在实例管理中添加图像生成服务实例' }}
                           </div>
                         </template>
                       </el-select>
                       <el-button 
                         type="info" 
                         size="small" 
-                        @click="fetchGenerateModels"
-                        class="refresh-btn"
-                        :loading="generateModelsLoading"
-                        title="刷新图像生成模型列表"
+                        @click="fetchGenerateInstances"
+                        :loading="generateInstancesLoading"
+                        title="刷新实例列表"
                       >
                         <el-icon><Refresh /></el-icon>
+                      </el-button>
+                    </div>
+                    <div v-if="!selectedGenerateInstanceId" class="instance-hint">
+                      <el-text type="danger" size="small">请选择一个图像生成服务实例</el-text>
+                    </div>
+                    <div v-else-if="selectedGenerateInstanceInfo" class="instance-selected">
+                      <el-text type="success" size="small">
+                        <el-icon><Check /></el-icon>
+                        已选择实例: {{ selectedGenerateInstanceInfo.name }}
+                      </el-text>
+                    </div>
+                  </el-form-item>
+
+                  <!-- 请求头配置 -->
+                  <el-form-item v-if="selectedGenerateInstanceInfo" label="请求头配置">
+                    <div class="headers-config">
+                      <div class="headers-list">
+                        <div 
+                          v-for="(header, index) in generateHeadersList" 
+                          :key="index"
+                          class="header-item"
+                        >
+                          <el-input
+                            v-model="header.key"
+                            placeholder="请求头名称"
+                            size="small"
+                            @input="onGenerateHeaderChange"
+                            class="header-key"
+                            :disabled="header.fromInstance"
+                          />
+                          <el-input
+                            v-model="header.value"
+                            placeholder="请求头值"
+                            size="small"
+                            @input="onGenerateHeaderChange"
+                            class="header-value"
+                            :type="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key') ? 'password' : 'text'"
+                            :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')"
+                          />
+                          <el-tag 
+                            v-if="header.fromInstance" 
+                            type="success" 
+                            size="small"
+                            class="instance-tag"
+                          >
+                            实例
+                          </el-tag>
+                          <el-button 
+                            v-else
+                            type="danger" 
+                            size="small" 
+                            @click="removeGenerateHeader(index)"
+                            class="remove-btn"
+                          >
+                            <el-icon><Close /></el-icon>
+                          </el-button>
+                        </div>
+                      </div>
+                      <el-button 
+                        type="primary" 
+                        size="small" 
+                        @click="addGenerateHeader"
+                        class="add-header-btn"
+                      >
+                        <el-icon><Plus /></el-icon>
+                        添加请求头
                       </el-button>
                     </div>
                   </el-form-item>
@@ -227,42 +304,119 @@
               <el-card header="图像编辑配置" class="config-card">
                 <el-form 
                   ref="editFormRef"
-                  :model="editConfig" 
+                  :model="editFormData" 
                   :rules="editRules"
                   label-width="120px"
                   @submit.prevent="sendEditRequest"
                 >
-                  <el-form-item label="模型" prop="model" required>
-                    <div class="model-select-container">
+                  <!-- 实例选择 -->
+                  <el-form-item label="选择实例" prop="selectedInstanceId" required>
+                    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
                       <el-select 
-                        v-model="editConfig.model" 
-                        placeholder="请选择图像编辑模型"
-                        filterable
-                        allow-create
-                        style="width: 100%"
-                        :loading="editModelsLoading"
+                        v-model="selectedEditInstanceId" 
+                        placeholder="请选择图像编辑服务实例"
+                        @change="onEditInstanceChange"
+                        style="flex: 1"
+                        :loading="editInstancesLoading"
+                        clearable
                       >
                         <el-option
-                          v-for="model in editAvailableModels"
-                          :key="model"
-                          :label="model"
-                          :value="model"
-                        />
+                          v-for="instance in availableEditInstances"
+                          :key="instance.instanceId"
+                          :label="instance.name"
+                          :value="instance.instanceId"
+                        >
+                          <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>{{ instance.name }}</span>
+                            <el-tag 
+                              v-if="instance.headers && Object.keys(instance.headers).length > 0"
+                              type="success" 
+                              size="small"
+                            >
+                              {{ Object.keys(instance.headers).length }} 个请求头
+                            </el-tag>
+                          </div>
+                        </el-option>
                         <template #empty>
                           <div style="padding: 10px; text-align: center; color: #999;">
-                            {{ editModelsLoading ? '加载中...' : '暂无可用模型，请先在实例管理中添加图像编辑服务实例' }}
+                            {{ editInstancesLoading ? '加载中...' : '暂无可用实例，请先在实例管理中添加图像编辑服务实例' }}
                           </div>
                         </template>
                       </el-select>
                       <el-button 
                         type="info" 
                         size="small" 
-                        @click="fetchEditModels"
-                        class="refresh-btn"
-                        :loading="editModelsLoading"
-                        title="刷新图像编辑模型列表"
+                        @click="fetchEditInstances"
+                        :loading="editInstancesLoading"
+                        title="刷新实例列表"
                       >
                         <el-icon><Refresh /></el-icon>
+                      </el-button>
+                    </div>
+                    <div v-if="!selectedEditInstanceId" class="instance-hint">
+                      <el-text type="danger" size="small">请选择一个图像编辑服务实例</el-text>
+                    </div>
+                    <div v-else-if="selectedEditInstanceInfo" class="instance-selected">
+                      <el-text type="success" size="small">
+                        <el-icon><Check /></el-icon>
+                        已选择实例: {{ selectedEditInstanceInfo.name }}
+                      </el-text>
+                    </div>
+                  </el-form-item>
+
+                  <!-- 请求头配置 -->
+                  <el-form-item v-if="selectedEditInstanceInfo" label="请求头配置">
+                    <div class="headers-config">
+                      <div class="headers-list">
+                        <div 
+                          v-for="(header, index) in editHeadersList" 
+                          :key="index"
+                          class="header-item"
+                        >
+                          <el-input
+                            v-model="header.key"
+                            placeholder="请求头名称"
+                            size="small"
+                            @input="onEditHeaderChange"
+                            class="header-key"
+                            :disabled="header.fromInstance"
+                          />
+                          <el-input
+                            v-model="header.value"
+                            placeholder="请求头值"
+                            size="small"
+                            @input="onEditHeaderChange"
+                            class="header-value"
+                            :type="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key') ? 'password' : 'text'"
+                            :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')"
+                          />
+                          <el-tag 
+                            v-if="header.fromInstance" 
+                            type="success" 
+                            size="small"
+                            class="instance-tag"
+                          >
+                            实例
+                          </el-tag>
+                          <el-button 
+                            v-else
+                            type="danger" 
+                            size="small" 
+                            @click="removeEditHeader(index)"
+                            class="remove-btn"
+                          >
+                            <el-icon><Close /></el-icon>
+                          </el-button>
+                        </div>
+                      </div>
+                      <el-button 
+                        type="primary" 
+                        size="small" 
+                        @click="addEditHeader"
+                        class="add-header-btn"
+                      >
+                        <el-icon><Plus /></el-icon>
+                        添加请求头
                       </el-button>
                     </div>
                   </el-form-item>
@@ -453,14 +607,14 @@
     >
       <div class="preview-container">
         <img 
-          v-if="previewImage"
-          :src="previewImage.url || `data:image/png;base64,${previewImage.b64_json}`"
-          :alt="previewImage.alt || 'Preview image'"
+          v-if="previewImageData"
+          :src="previewImageData.url || `data:image/png;base64,${previewImageData.b64_json}`"
+          :alt="previewImageData.alt || 'Preview image'"
           class="preview-image"
         />
-        <div v-if="previewImage?.revised_prompt" class="preview-info">
+        <div v-if="previewImageData?.revised_prompt" class="preview-info">
           <h4>修订提示词:</h4>
-          <p>{{ previewImage.revised_prompt }}</p>
+          <p>{{ previewImageData.revised_prompt }}</p>
         </div>
       </div>
       <template #footer>
@@ -478,7 +632,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, inject, nextTick, onMounted } from 'vue'
+import { ref, reactive, computed, inject, nextTick, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type UploadFile, type UploadFiles } from 'element-plus'
 import { 
   UploadFilled, 
@@ -489,10 +643,13 @@ import {
   Download, 
   Delete, 
   ZoomIn,
-  Refresh
+  Refresh,
+  Plus,
+  Close
 } from '@element-plus/icons-vue'
 import { sendUniversalRequest } from '@/api/universal'
 import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
+import { getServiceInstances } from '@/api/dashboard'
 import type { 
   ImageGenerateRequestConfig, 
   ImageEditRequestConfig, 
@@ -537,13 +694,30 @@ const generateConfig = ref<ImageGenerateRequestConfig>({
   responseFormat: 'url',
   user: ''
 })
+
+// 表单数据（包含所有需要验证的字段）
+const generateFormData = reactive({
+  selectedInstanceId: '',
+  model: generateConfig.value.model,
+  prompt: generateConfig.value.prompt,
+  n: generateConfig.value.n,
+  quality: generateConfig.value.quality,
+  size: generateConfig.value.size,
+  style: generateConfig.value.style,
+  responseFormat: generateConfig.value.responseFormat,
+  user: generateConfig.value.user
+})
 const generateLoading = ref(false)
 const generateError = ref<string | null>(null)
 const generateImages = ref<any[]>([])
 
-// 图像生成模型列表
-const generateAvailableModels = ref<string[]>([])
-const generateModelsLoading = ref(false)
+// 图像生成实例选择相关状态
+const availableGenerateInstances = ref<any[]>([])
+const generateInstancesLoading = ref(false)
+const selectedGenerateInstanceId = ref('')
+const selectedGenerateInstanceInfo = ref<any>(null)
+const generateHeadersList = ref<Array<{key: string, value: string, fromInstance: boolean}>>([])
+const currentGenerateHeaders = ref<Record<string, string>>({})
 const generateDuration = ref(0)
 
 // 图像编辑相关状态
@@ -557,13 +731,29 @@ const editConfig = ref<Omit<ImageEditRequestConfig, 'images'> & { images?: File[
   user: '',
   images: []
 })
+
+// 图像编辑表单数据（包含所有需要验证的字段）
+const editFormData = reactive({
+  selectedInstanceId: '',
+  model: editConfig.value.model,
+  prompt: editConfig.value.prompt,
+  n: editConfig.value.n,
+  size: editConfig.value.size,
+  responseFormat: editConfig.value.responseFormat,
+  user: editConfig.value.user,
+  images: editConfig.value.images
+})
 const editLoading = ref(false)
 const editError = ref<string | null>(null)
 const editImages = ref<any[]>([])
 
-// 图像编辑模型列表
-const editAvailableModels = ref<string[]>([])
-const editModelsLoading = ref(false)
+// 图像编辑实例选择相关状态
+const availableEditInstances = ref<any[]>([])
+const editInstancesLoading = ref(false)
+const selectedEditInstanceId = ref('')
+const selectedEditInstanceInfo = ref<any>(null)
+const editHeadersList = ref<Array<{key: string, value: string, fromInstance: boolean}>>([])
+const currentEditHeaders = ref<Record<string, string>>({})
 const editDuration = ref(0)
 const editUploadRef = ref()
 const editFileList = ref<UploadFile[]>([])
@@ -575,8 +765,19 @@ const previewImageIndex = ref(0)
 
 // 表单验证规则
 const generateRules: ValidationRules = {
-  model: [
-    { required: true, message: '请输入模型名称', trigger: 'blur' }
+  selectedInstanceId: [
+    { 
+      required: true, 
+      message: '请选择一个图像生成服务实例', 
+      trigger: 'change',
+      validator: (_rule: any, value: string, callback: Function) => {
+        if (!value || value.trim() === '') {
+          callback(new Error('请选择一个图像生成服务实例'))
+        } else {
+          callback()
+        }
+      }
+    }
   ],
   prompt: [
     { required: true, message: '请输入图像生成提示词', trigger: 'blur' },
@@ -585,8 +786,19 @@ const generateRules: ValidationRules = {
 }
 
 const editRules: ValidationRules = {
-  model: [
-    { required: true, message: '请输入模型名称', trigger: 'blur' }
+  selectedInstanceId: [
+    { 
+      required: true, 
+      message: '请选择一个图像编辑服务实例', 
+      trigger: 'change',
+      validator: (_rule: any, value: string, callback: Function) => {
+        if (!value || value.trim() === '') {
+          callback(new Error('请选择一个图像编辑服务实例'))
+        } else {
+          callback()
+        }
+      }
+    }
   ],
   prompt: [
     { required: true, message: '请输入图像编辑提示词', trigger: 'blur' },
@@ -624,44 +836,241 @@ const onImageTabChange = (tabName: string) => {
   clearEditResult()
 }
 
-// 获取图像生成模型列表
-const fetchGenerateModels = async () => {
-  generateModelsLoading.value = true
+// 获取图像生成实例列表
+const fetchGenerateInstances = async () => {
+  generateInstancesLoading.value = true
   try {
-    const serviceType = getInstanceServiceType('imageGenerate')
-    const models = await getModelsByServiceType(serviceType)
-    generateAvailableModels.value = models
+    const response = await getServiceInstances('imgGen')
+    if (response.data?.success) {
+      availableGenerateInstances.value = response.data.data || []
+      ElMessage.success(`已刷新实例列表，找到 ${availableGenerateInstances.value.length} 个可用实例`)
+    } else {
+      availableGenerateInstances.value = []
+      ElMessage.warning('获取实例列表失败')
+    }
   } catch (error) {
-    console.error('获取图像生成模型列表失败:', error)
-    ElMessage.error('获取图像生成模型列表失败')
+    console.error('获取实例列表失败:', error)
+    availableGenerateInstances.value = []
+    ElMessage.error('获取实例列表失败')
   } finally {
-    generateModelsLoading.value = false
+    generateInstancesLoading.value = false
   }
 }
 
-// 获取图像编辑模型列表
-const fetchEditModels = async () => {
-  editModelsLoading.value = true
-  try {
-    const serviceType = getInstanceServiceType('imageEdit')
-    const models = await getModelsByServiceType(serviceType)
-    editAvailableModels.value = models
-  } catch (error) {
-    console.error('获取图像编辑模型列表失败:', error)
-    ElMessage.error('获取图像编辑模型列表失败')
-  } finally {
-    editModelsLoading.value = false
+// 图像生成实例选择变化处理
+const onGenerateInstanceChange = (instanceId: string) => {
+  // 同步到formData
+  generateFormData.selectedInstanceId = instanceId
+  
+  if (!instanceId) {
+    selectedGenerateInstanceInfo.value = null
+    generateConfig.value.model = ''
+    generateFormData.model = ''
+    generateHeadersList.value = []
+    currentGenerateHeaders.value = {}
+    return
   }
+  
+  const instance = availableGenerateInstances.value.find(inst => inst.instanceId === instanceId)
+  if (instance) {
+    selectedGenerateInstanceInfo.value = instance
+    
+    // 使用实例名称作为默认模型
+    generateConfig.value.model = instance.name || 'default-model'
+    generateFormData.model = instance.name || 'default-model'
+    
+    // 初始化请求头列表
+    initializeGenerateHeaders(instance.headers || {})
+    
+    ElMessage.success(`已选择实例 "${instance.name}"`)
+  }
+}
+
+// 初始化图像生成请求头列表
+const initializeGenerateHeaders = (instanceHeaders: Record<string, string>) => {
+  generateHeadersList.value = []
+  currentGenerateHeaders.value = {}
+  
+  // 添加实例的请求头（标记为来自实例，不可删除）
+  Object.entries(instanceHeaders).forEach(([key, value]) => {
+    generateHeadersList.value.push({
+      key,
+      value,
+      fromInstance: true
+    })
+    currentGenerateHeaders.value[key] = value
+  })
+  
+  // 添加全局配置中的自定义请求头
+  Object.entries(props.globalConfig.customHeaders || {}).forEach(([key, value]) => {
+    if (!currentGenerateHeaders.value[key]) {
+      generateHeadersList.value.push({
+        key,
+        value,
+        fromInstance: false
+      })
+      currentGenerateHeaders.value[key] = value
+    }
+  })
+}
+
+// 添加图像生成请求头
+const addGenerateHeader = () => {
+  generateHeadersList.value.push({
+    key: '',
+    value: '',
+    fromInstance: false
+  })
+}
+
+// 删除图像生成请求头
+const removeGenerateHeader = (index: number) => {
+  const header = generateHeadersList.value[index]
+  if (!header.fromInstance) {
+    generateHeadersList.value.splice(index, 1)
+    onGenerateHeaderChange()
+  }
+}
+
+// 图像生成请求头变化处理
+const onGenerateHeaderChange = () => {
+  // 重新构建headers对象
+  const newHeaders: Record<string, string> = {}
+  
+  generateHeadersList.value.forEach(header => {
+    if (header.key.trim() && header.value.trim()) {
+      newHeaders[header.key.trim()] = header.value.trim()
+    }
+  })
+  
+  currentGenerateHeaders.value = newHeaders
+}
+
+// 获取图像编辑实例列表
+const fetchEditInstances = async () => {
+  editInstancesLoading.value = true
+  try {
+    const response = await getServiceInstances('imgEdit')
+    if (response.data?.success) {
+      availableEditInstances.value = response.data.data || []
+      ElMessage.success(`已刷新实例列表，找到 ${availableEditInstances.value.length} 个可用实例`)
+    } else {
+      availableEditInstances.value = []
+      ElMessage.warning('获取实例列表失败')
+    }
+  } catch (error) {
+    console.error('获取实例列表失败:', error)
+    availableEditInstances.value = []
+    ElMessage.error('获取实例列表失败')
+  } finally {
+    editInstancesLoading.value = false
+  }
+}
+
+// 图像编辑实例选择变化处理
+const onEditInstanceChange = (instanceId: string) => {
+  // 同步到formData
+  editFormData.selectedInstanceId = instanceId
+  
+  if (!instanceId) {
+    selectedEditInstanceInfo.value = null
+    editConfig.value.model = ''
+    editFormData.model = ''
+    editHeadersList.value = []
+    currentEditHeaders.value = {}
+    return
+  }
+  
+  const instance = availableEditInstances.value.find(inst => inst.instanceId === instanceId)
+  if (instance) {
+    selectedEditInstanceInfo.value = instance
+    
+    // 使用实例名称作为默认模型
+    editConfig.value.model = instance.name || 'default-model'
+    editFormData.model = instance.name || 'default-model'
+    
+    // 初始化请求头列表
+    initializeEditHeaders(instance.headers || {})
+    
+    ElMessage.success(`已选择实例 "${instance.name}"`)
+  }
+}
+
+// 初始化图像编辑请求头列表
+const initializeEditHeaders = (instanceHeaders: Record<string, string>) => {
+  editHeadersList.value = []
+  currentEditHeaders.value = {}
+  
+  // 添加实例的请求头（标记为来自实例，不可删除）
+  Object.entries(instanceHeaders).forEach(([key, value]) => {
+    editHeadersList.value.push({
+      key,
+      value,
+      fromInstance: true
+    })
+    currentEditHeaders.value[key] = value
+  })
+  
+  // 添加全局配置中的自定义请求头
+  Object.entries(props.globalConfig.customHeaders || {}).forEach(([key, value]) => {
+    if (!currentEditHeaders.value[key]) {
+      editHeadersList.value.push({
+        key,
+        value,
+        fromInstance: false
+      })
+      currentEditHeaders.value[key] = value
+    }
+  })
+}
+
+// 添加图像编辑请求头
+const addEditHeader = () => {
+  editHeadersList.value.push({
+    key: '',
+    value: '',
+    fromInstance: false
+  })
+}
+
+// 删除图像编辑请求头
+const removeEditHeader = (index: number) => {
+  const header = editHeadersList.value[index]
+  if (!header.fromInstance) {
+    editHeadersList.value.splice(index, 1)
+    onEditHeaderChange()
+  }
+}
+
+// 图像编辑请求头变化处理
+const onEditHeaderChange = () => {
+  // 重新构建headers对象
+  const newHeaders: Record<string, string> = {}
+  
+  editHeadersList.value.forEach(header => {
+    if (header.key.trim() && header.value.trim()) {
+      newHeaders[header.key.trim()] = header.value.trim()
+    }
+  })
+  
+  currentEditHeaders.value = newHeaders
 }
 
 // 图像生成相关方法
 const sendGenerateRequest = async () => {
   if (!generateFormRef.value) return
   
+  // 检查是否选择了实例
+  if (!generateFormData.selectedInstanceId) {
+    ElMessage.error('请选择一个图像生成服务实例')
+    return
+  }
+  
   try {
     const valid = await generateFormRef.value.validate()
     if (!valid) return
-  } catch {
+  } catch (error) {
+    console.log('表单验证失败:', error)
     return
   }
   
@@ -683,11 +1092,7 @@ const sendGenerateRequest = async () => {
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...props.globalConfig.customHeaders
-    }
-    
-    if (props.globalConfig.authorization) {
-      headers['Authorization'] = props.globalConfig.authorization
+      ...currentGenerateHeaders.value
     }
     
     const generateRequest = {
@@ -824,10 +1229,17 @@ const onEditFileRemove = (file: UploadFile, fileList: UploadFiles) => {
 const sendEditRequest = async () => {
   if (!editFormRef.value) return
   
+  // 检查是否选择了实例
+  if (!editFormData.selectedInstanceId) {
+    ElMessage.error('请选择一个图像编辑服务实例')
+    return
+  }
+  
   try {
     const valid = await editFormRef.value.validate()
     if (!valid) return
-  } catch {
+  } catch (error) {
+    console.log('表单验证失败:', error)
     return
   }
   
@@ -851,11 +1263,7 @@ const sendEditRequest = async () => {
     }
     
     const headers: Record<string, string> = {
-      ...props.globalConfig.customHeaders
-    }
-    
-    if (props.globalConfig.authorization) {
-      headers['Authorization'] = props.globalConfig.authorization
+      ...currentEditHeaders.value
     }
     
     const editRequest = {
@@ -933,16 +1341,88 @@ const getActualData = (responseData: any) => {
   return responseData
 }
 
+// 同步 generateConfig 和 generateFormData
+watch(() => generateConfig.value.prompt, (newPrompt) => {
+  generateFormData.prompt = newPrompt
+})
+
+watch(() => generateConfig.value.n, (newN) => {
+  generateFormData.n = newN
+})
+
+watch(() => generateConfig.value.quality, (newQuality) => {
+  generateFormData.quality = newQuality
+})
+
+watch(() => generateConfig.value.size, (newSize) => {
+  generateFormData.size = newSize
+})
+
+watch(() => generateConfig.value.style, (newStyle) => {
+  generateFormData.style = newStyle
+})
+
+watch(() => generateConfig.value.responseFormat, (newResponseFormat) => {
+  generateFormData.responseFormat = newResponseFormat
+})
+
+watch(() => generateConfig.value.user, (newUser) => {
+  generateFormData.user = newUser
+})
+
+// 同步 editConfig 和 editFormData
+watch(() => editConfig.value.prompt, (newPrompt) => {
+  editFormData.prompt = newPrompt
+})
+
+watch(() => editConfig.value.n, (newN) => {
+  editFormData.n = newN
+})
+
+watch(() => editConfig.value.size, (newSize) => {
+  editFormData.size = newSize
+})
+
+watch(() => editConfig.value.responseFormat, (newResponseFormat) => {
+  editFormData.responseFormat = newResponseFormat
+})
+
+watch(() => editConfig.value.user, (newUser) => {
+  editFormData.user = newUser
+})
+
+watch(() => editConfig.value.images, (newImages) => {
+  editFormData.images = newImages
+}, { deep: true })
+
 // 监听全局刷新模型事件
 const handleRefreshModels = () => {
-  fetchGenerateModels()
-  fetchEditModels()
+  fetchGenerateInstances()
+  fetchEditInstances()
 }
 
-// 组件挂载时获取模型列表
+// 组件挂载时获取实例列表
 onMounted(() => {
-  fetchGenerateModels()
-  fetchEditModels()
+  fetchGenerateInstances()
+  fetchEditInstances()
+  
+  // 同步初始状态
+  generateFormData.selectedInstanceId = selectedGenerateInstanceId.value
+  generateFormData.prompt = generateConfig.value.prompt
+  generateFormData.n = generateConfig.value.n
+  generateFormData.quality = generateConfig.value.quality
+  generateFormData.size = generateConfig.value.size
+  generateFormData.style = generateConfig.value.style
+  generateFormData.responseFormat = generateConfig.value.responseFormat
+  generateFormData.user = generateConfig.value.user
+  
+  editFormData.selectedInstanceId = selectedEditInstanceId.value
+  editFormData.prompt = editConfig.value.prompt
+  editFormData.n = editConfig.value.n
+  editFormData.size = editConfig.value.size
+  editFormData.responseFormat = editConfig.value.responseFormat
+  editFormData.user = editConfig.value.user
+  editFormData.images = editConfig.value.images
   
   // 监听全局刷新事件
   document.addEventListener('playground-refresh-models', handleRefreshModels)
@@ -995,6 +1475,31 @@ onUnmounted(() => {
 .result-card :deep(.el-card__body) {
   height: calc(100% - 60px);
   overflow: auto;
+}
+
+/* 让请求头配置占满宽度 */
+.headers-config {
+  width: 100%;
+}
+
+.headers-list {
+  width: 100%;
+}
+
+.header-item {
+  width: 100%;
+}
+
+/* 让表单项占满宽度 */
+.el-form-item__content {
+  width: 100% !important;
+}
+
+/* 让选择器和输入框占满宽度 */
+.el-select,
+.el-input,
+.el-textarea {
+  width: 100% !important;
 }
 
 /* 图像结果样式 */
