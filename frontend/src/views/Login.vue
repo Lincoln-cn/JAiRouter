@@ -103,7 +103,7 @@ const handleLogin = async () => {
     const response = await userStore.login(loginForm.username, loginForm.password)
     
     // 跳转到仪表板 (将使用Layout组件)
-    router.push('/dashboard')
+    router.push({ name: 'dashboard-main' })
   } catch (error: any) {
     console.error('登录失败:', error)
     // 显示错误消息给用户
@@ -117,7 +117,7 @@ const handleLogin = async () => {
 onMounted(() => {
   if (userStore.isAuthenticated()) {
     // 如果已经登录，直接跳转到仪表板
-    router.push('/dashboard')
+    router.push({ name: 'dashboard-main' })
   }
 })
 </script>

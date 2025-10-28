@@ -62,8 +62,10 @@ request.interceptors.response.use(
       if (!isPlaygroundApiRequest) {
         // Handle unauthorized access for platform management requests
         localStorage.removeItem('admin_token')
-        // 使用相对路径而不是硬编码路径
-        window.location.href = '/login'
+        // 使用router进行跳转，确保使用正确的base path
+        import('@/router').then(({ default: router }) => {
+          router.push({ name: 'login' })
+        })
       }
       // API测试场的401错误不进行路由跳转，让组件自行处理和显示错误信息
     }
