@@ -27,7 +27,8 @@
                     </div>
                   </template>
                 </el-select>
-                <el-button type="info" size="small" @click="fetchInstances" :loading="instancesLoading" title="刷新实例列表">
+                <el-button type="info" size="small" @click="() => fetchInstances(true)" :loading="instancesLoading"
+                  title="刷新实例列表">
                   <el-icon>
                     <Refresh />
                   </el-icon>
@@ -219,24 +220,20 @@
       <el-col :span="12">
         <el-card header="对话结果" class="result-card">
           <div class="chat-result">
-            <div v-if="loading" class="loading-state">
-              <el-icon class="is-loading">
-                <Loading />
-              </el-icon>
-              <p>{{ loadingText }}</p>
-            </div>
-
-            <div v-else-if="requestStatus && requestStatus.type === 'error'" class="error-state">
+            <!-- 错误状态 -->
+            <div v-if="requestStatus && requestStatus.type === 'error'" class="error-state">
               <el-alert :title="requestStatus.message" type="error" show-icon :closable="false" />
             </div>
 
+            <!-- 有响应内容时显示（包括流式响应） -->
             <div v-else-if="chatResponse" class="response-content">
               <div class="response-info">
-                <el-tag type="success">
+                <el-tag :type="loading ? 'warning' : 'success'">
                   <el-icon>
-                    <Check />
+                    <Loading v-if="loading" class="is-loading" />
+                    <Check v-else />
                   </el-icon>
-                  对话生成成功
+                  {{ loading ? '正在生成中...' : '对话生成成功' }}
                 </el-tag>
                 <span class="duration-info">
                   耗时: {{ chatResponse.duration }}ms
@@ -246,19 +243,20 @@
               <div class="message-response">
                 <div class="response-header">
                   <span class="role-tag">Assistant</span>
-                  <el-button type="text" size="small" @click="copyResponse">
+                  <el-button type="text" size="small" @click="copyResponse" :disabled="loading">
                     <el-icon>
                       <DocumentCopy />
                     </el-icon>
                     复制
                   </el-button>
                 </div>
-                <div class="response-text">
+                <div class="response-text" ref="responseTextRef">
                   {{ getResponseContent() }}
+                  <span v-if="loading" class="typing-cursor">|</span>
                 </div>
               </div>
 
-              <div v-if="getUsageInfo()" class="usage-info">
+              <div v-if="getUsageInfo() && !loading" class="usage-info">
                 <el-descriptions :column="3" size="small" border>
                   <el-descriptions-item label="提示令牌">
                     {{ getUsageInfo().prompt_tokens }}
@@ -273,6 +271,15 @@
               </div>
             </div>
 
+            <!-- 纯加载状态（没有响应内容时） -->
+            <div v-else-if="loading" class="loading-state">
+              <el-icon class="is-loading">
+                <Loading />
+              </el-icon>
+              <p>{{ loadingText }}</p>
+            </div>
+
+            <!-- 空状态 -->
             <div v-else class="empty-state">
               <el-empty description="发送对话请求后，生成的回复将在此处显示" :image-size="80" />
             </div>
@@ -284,12 +291,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, reactive, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Delete, Loading, Promotion, RefreshLeft, Close, Check, DocumentCopy, Refresh } from '@element-plus/icons-vue'
 import { sendUniversalRequest, sendUniversalStreamRequest } from '@/api/universal'
-import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
-import { getServiceInstances } from '@/api/dashboard'
+import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import type {
   ChatRequestConfig,
   ChatMessage,
@@ -332,15 +338,31 @@ const requestStatus = ref<{
 // 请求取消控制器
 let abortController: AbortController | null = null
 
-// 模型列表（从实例管理获取）
-const availableModels = ref<string[]>([])
-const modelsLoading = ref(false)
+// 使用优化后的数据管理
+const {
+  availableInstances,
+  availableModels,
+  instancesLoading,
+  modelsLoading,
+  selectedInstanceId,
+  selectedInstanceInfo,
+  hasInstances,
+  hasModels,
+  onInstanceChange: handleInstanceChange,
+  initializeData,
+  refreshData,
+  fetchInstances,
+  fetchModels
+} = usePlaygroundData('chat')
 
-// 实例选择相关状态
-const availableInstances = ref<any[]>([])
-const instancesLoading = ref(false)
-const selectedInstanceId = ref('')
-const selectedInstanceInfo = ref<any>(null)
+// 添加调试监听
+watch(availableInstances, (newInstances) => {
+  console.log('[ChatPlayground] availableInstances 更新:', newInstances.length, newInstances)
+}, { immediate: true })
+
+watch(instancesLoading, (loading) => {
+  console.log('[ChatPlayground] instancesLoading 更新:', loading)
+}, { immediate: true })
 
 // 请求头配置状态
 interface HeaderItem {
@@ -352,68 +374,16 @@ interface HeaderItem {
 const headersList = ref<HeaderItem[]>([])
 const currentHeaders = ref<Record<string, string>>({})
 
-// 获取可用实例列表
-const fetchInstances = async () => {
-  instancesLoading.value = true
-  try {
-    const response = await getServiceInstances('chat')
-    if (response.data?.success) {
-      const newInstances = response.data.data || []
-
-      // 检查当前选择的实例是否还在新列表中
-      const currentInstanceExists = selectedInstanceId.value &&
-        newInstances.some(inst => inst.instanceId === selectedInstanceId.value)
-
-      availableInstances.value = newInstances
-
-      // 如果当前选择的实例不在新列表中，给出提示但不清空选择
-      if (selectedInstanceId.value && !currentInstanceExists) {
-        ElMessage.warning(`当前选择的实例在刷新后不可用，请重新选择`)
-      }
-
-      ElMessage.success(`已刷新实例列表，找到 ${availableInstances.value.length} 个可用实例`)
-    } else {
-      availableInstances.value = []
-      ElMessage.warning('获取实例列表失败')
-    }
-  } catch (error) {
-    console.error('获取实例列表失败:', error)
-    availableInstances.value = []
-    ElMessage.error('获取实例列表失败')
-  } finally {
-    instancesLoading.value = false
-  }
-}
-
-// 获取可用模型列表
-const fetchAvailableModels = async () => {
-  modelsLoading.value = true
-  try {
-    const serviceType = getInstanceServiceType('chat')
-    const models = await getModelsByServiceType(serviceType)
-    availableModels.value = models
-
-    // 如果当前选择的模型不在可用列表中，给出提示
-    if (chatConfig.model && !models.includes(chatConfig.model)) {
-      ElMessage.warning(`当前选择的模型 "${chatConfig.model}" 在实例管理中不存在或未启用，请检查实例配置`)
-    }
-
-    ElMessage.success(`已刷新模型列表，找到 ${models.length} 个可用模型`)
-  } catch (error) {
-    console.error('获取模型列表失败:', error)
-    ElMessage.error('获取模型列表失败')
-  } finally {
-    modelsLoading.value = false
-  }
-}
-
-// 实例选择变化处理
+// 实例选择变化处理（扩展 composable 的功能）
 const onInstanceChange = (instanceId: string) => {
+  // 调用 composable 的处理函数
+  handleInstanceChange(instanceId)
+
+  // 处理组件特有的逻辑
   console.log('实例选择变化:', { instanceId, currentSelected: selectedInstanceId.value })
 
   if (!instanceId) {
     console.log('清空实例选择')
-    selectedInstanceInfo.value = null
     chatConfig.model = ''
     headersList.value = []
     currentHeaders.value = {}
@@ -423,7 +393,6 @@ const onInstanceChange = (instanceId: string) => {
   const instance = availableInstances.value.find(inst => inst.instanceId === instanceId)
   if (instance) {
     console.log('找到实例:', instance.name)
-    selectedInstanceInfo.value = instance
 
     // 使用实例名称作为默认模型
     chatConfig.model = instance.name || 'default-model'
@@ -530,7 +499,7 @@ const chatConfig = reactive<ChatRequestConfig>({
   ...DEFAULT_CONFIGS.chat,
   model: '',
   messages: [],
-  stream: false,
+  stream: true, // 默认开启流式响应
   maxTokens: 1000,
   temperature: 0.7,
   topP: 1.0,
@@ -546,6 +515,9 @@ const currentRequest = ref<PlaygroundRequest | null>(null)
 
 // 对话响应结果
 const chatResponse = ref<PlaygroundResponse | null>(null)
+
+// 响应文本区域引用
+const responseTextRef = ref<HTMLElement>()
 
 // 表单验证规则
 const formRules: FormRules = {
@@ -575,20 +547,7 @@ const canSendRequest = computed(() => {
     !loading.value
 })
 
-// 确保实例信息的一致性
-const ensureInstanceConsistency = () => {
-  if (selectedInstanceId.value && !selectedInstanceInfo.value) {
-    console.log('检测到实例状态不一致，尝试修复')
-    const instance = availableInstances.value.find(inst => inst.instanceId === selectedInstanceId.value)
-    if (instance) {
-      selectedInstanceInfo.value = instance
-      console.log('实例状态已修复:', instance.name)
-    } else {
-      console.log('无法找到对应的实例，清空选择')
-      selectedInstanceId.value = ''
-    }
-  }
-}
+// 实例一致性由 composable 自动处理，无需手动维护
 
 // 监听停止词输入变化
 const updateStopWords = () => {
@@ -640,7 +599,7 @@ const resetForm = async () => {
       ...DEFAULT_CONFIGS.chat,
       model: '',
       messages: [],
-      stream: false,
+      stream: true, // 默认开启流式响应
       maxTokens: 1000,
       temperature: 0.7,
       topP: 1.0,
@@ -756,8 +715,7 @@ const sendRequest = async () => {
       return
     }
 
-    // 确保实例状态一致性
-    ensureInstanceConsistency()
+    // 实例状态一致性由 composable 自动维护
 
     // 验证实例选择
     if (!selectedInstanceInfo.value) {
@@ -951,9 +909,12 @@ const handleStreamRequest = async (request: PlaygroundRequest) => {
   let streamResponse: PlaygroundResponse | null = null
   let streamContent = ''
   let messageCount = 0
+  const startTime = Date.now()
 
   try {
     updateRequestStatus('info', '正在建立流式连接...')
+
+    console.log('流式请求headers:', request.headers)
 
     await sendUniversalStreamRequest(
       {
@@ -967,15 +928,20 @@ const handleStreamRequest = async (request: PlaygroundRequest) => {
         try {
           messageCount++
 
+          console.log('收到流式数据:', data)
+
           // 处理流式数据
           if (data.choices && data.choices[0] && data.choices[0].delta) {
             const delta = data.choices[0].delta
             if (delta.content) {
               streamContent += delta.content
+              console.log('累积内容长度:', streamContent.length, '新增内容:', delta.content)
             }
 
-            // 更新流式状态
-            updateRequestStatus('info', `正在接收流式数据... (${messageCount} 条消息)`)
+            // 更新流式状态（减少频繁更新）
+            if (messageCount % 5 === 0 || delta.content) {
+              updateRequestStatus('info', `正在接收流式数据... (${messageCount} 条消息, ${streamContent.length} 字符)`)
+            }
 
             // 构建当前的响应数据
             const currentData = {
@@ -994,14 +960,18 @@ const handleStreamRequest = async (request: PlaygroundRequest) => {
               statusText: 'OK',
               headers: { 'content-type': 'text/event-stream' },
               data: currentData,
-              duration: Date.now() - Date.parse(request.headers['timestamp'] || new Date().toISOString()),
+              duration: Date.now() - startTime,
               timestamp: new Date().toISOString()
             }
 
+            // 立即更新界面显示
             emitResponse(streamResponse, true, null)
+          } else {
+            // 处理其他类型的流式数据
+            console.log('收到非标准格式的流式数据:', data)
           }
         } catch (parseError) {
-          console.warn('解析流式数据失败:', parseError)
+          console.warn('解析流式数据失败:', parseError, '原始数据:', data)
           updateRequestStatus('warning', '部分流式数据解析失败')
         }
       },
@@ -1077,22 +1047,33 @@ const handleKeyboardShortcuts = (event: Event) => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   // 监听键盘快捷键事件
   document.addEventListener('playground-send-request', handleKeyboardShortcuts)
   document.addEventListener('playground-reset-form', handleKeyboardShortcuts)
   document.addEventListener('playground-cancel-request', handleKeyboardShortcuts)
+  document.addEventListener('playground-refresh-models', handleGlobalRefresh)
 
-  // 获取可用实例和模型列表
-  fetchInstances()
-  fetchAvailableModels()
+  // 等待下一个 tick 确保组件完全挂载
+  await nextTick()
+
+  // 初始化数据（使用缓存，静默加载）
+  console.log('[ChatPlayground] 开始初始化数据...')
+  await initializeData()
+  console.log('[ChatPlayground] 数据初始化完成')
 })
+
+// 处理全局刷新事件
+const handleGlobalRefresh = () => {
+  refreshData()
+}
 
 onUnmounted(() => {
   // 清理事件监听器
   document.removeEventListener('playground-send-request', handleKeyboardShortcuts)
   document.removeEventListener('playground-reset-form', handleKeyboardShortcuts)
   document.removeEventListener('playground-cancel-request', handleKeyboardShortcuts)
+  document.removeEventListener('playground-refresh-models', handleGlobalRefresh)
 })
 
 // 获取实际的数据对象（处理包装格式）
@@ -1112,10 +1093,13 @@ const getActualData = () => {
 // 获取响应内容
 const getResponseContent = () => {
   const data = getActualData()
+  console.log('getResponseContent - data:', data)
+
   if (!data) return ''
 
   if (data.choices && data.choices[0]) {
     const content = data.choices[0].message?.content || data.choices[0].delta?.content || ''
+    console.log('getResponseContent - 提取的内容:', content?.length, '字符')
     return content
   }
 
@@ -1145,7 +1129,32 @@ const copyResponse = async () => {
 
 // 重写emit调用，同时更新本地状态
 const emitResponse = (response: PlaygroundResponse | null, loading = false, error: string | null = null) => {
+  console.log('emitResponse 被调用:', {
+    hasResponse: !!response,
+    loading: loading,
+    error: error,
+    responseData: response?.data
+  })
+
   chatResponse.value = response
+
+  // 调试流式更新
+  if (response && loading) {
+    const content = response.data?.choices?.[0]?.message?.content
+    if (content) {
+      console.log('更新界面内容，当前长度:', content.length, '最新内容:', content.slice(-20))
+
+      // 自动滚动到底部，显示最新内容
+      nextTick(() => {
+        if (responseTextRef.value) {
+          responseTextRef.value.scrollTop = responseTextRef.value.scrollHeight
+        }
+      })
+    }
+  }
+
+  console.log('chatResponse.value 已更新:', !!chatResponse.value)
+
   emit('response', response, loading, error)
 }
 
@@ -1535,6 +1544,50 @@ if (chatConfig.messages.length === 0) {
   white-space: pre-wrap;
   word-break: break-word;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: var(--el-bg-color-page);
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+/* 滚动条样式 */
+.response-text::-webkit-scrollbar {
+  width: 8px;
+}
+
+.response-text::-webkit-scrollbar-track {
+  background: var(--el-bg-color-page);
+  border-radius: 4px;
+}
+
+.response-text::-webkit-scrollbar-thumb {
+  background: var(--el-border-color-dark);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.response-text::-webkit-scrollbar-thumb:hover {
+  background: var(--el-color-primary-light-5);
+}
+
+.typing-cursor {
+  animation: blink 1s infinite;
+  color: var(--el-color-primary);
+  font-weight: bold;
+}
+
+@keyframes blink {
+
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .usage-info {
