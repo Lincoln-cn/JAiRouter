@@ -10,7 +10,7 @@ import { SERVICE_ENDPOINTS } from '@/views/playground/types/playground'
 // 创建专用于playground的axios实例
 const playgroundRequest: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 60000, // 增加超时时间，因为AI模型响应可能较慢
+  timeout: 180000, // 3分钟超时，适合AI模型的长时间响应
   headers: {
     'Content-Type': 'application/json'
   }
