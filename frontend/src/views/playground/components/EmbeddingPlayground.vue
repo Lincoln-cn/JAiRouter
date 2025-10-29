@@ -42,7 +42,7 @@
                 <el-button 
                   type="info" 
                   size="small" 
-                  @click="fetchInstances"
+                  @click="() => fetchInstances(true)"
                   :loading="instancesLoading"
                   title="刷新实例列表"
                 >
@@ -246,13 +246,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, nextTick, onMounted } from 'vue'
+import { ref, reactive, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Connection, Refresh, Plus, Delete, Loading, Check, DocumentCopy, Close } from '@element-plus/icons-vue'
 
 import { sendUniversalRequest } from '@/api/universal'
-import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
-import { getServiceInstances } from '@/api/dashboard'
+import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import type {
   EmbeddingRequestConfig,
   GlobalConfig,
@@ -312,15 +311,23 @@ const currentRequest = ref<PlaygroundRequest | null>(null)
 const embeddingResponse = ref<PlaygroundResponse | null>(null)
 const embeddingError = ref<string | null>(null)
 
-// 模型列表（从实例管理获取）
-const availableModels = ref<string[]>([])
-const modelsLoading = ref(false)
-
-// 实例选择相关状态
-const availableInstances = ref<any[]>([])
-const instancesLoading = ref(false)
-const selectedInstanceId = ref('')
-const selectedInstanceInfo = ref<any>(null)
+// 使用优化后的数据管理
+const {
+  availableInstances,
+  availableModels,
+  instancesLoading,
+  modelsLoading,
+  selectedInstanceId,
+  selectedInstanceInfo,
+  hasInstances,
+  hasModels,
+  onInstanceChange: handleInstanceChange,
+  setSelectedInstanceId,
+  initializeData,
+  refreshData,
+  fetchInstances,
+  fetchModels
+} = usePlaygroundData('embedding')
 
 // 请求头配置状态
 interface HeaderItem {
@@ -332,56 +339,14 @@ interface HeaderItem {
 const headersList = ref<HeaderItem[]>([])
 const currentHeaders = ref<Record<string, string>>({})
 
-// 获取可用实例列表
-const fetchInstances = async () => {
-  instancesLoading.value = true
-  try {
-    const response = await getServiceInstances('embedding')
-    if (response.data?.success) {
-      availableInstances.value = response.data.data || []
-      ElMessage.success(`已刷新实例列表，找到 ${availableInstances.value.length} 个可用实例`)
-    } else {
-      availableInstances.value = []
-      ElMessage.warning('获取实例列表失败')
-    }
-  } catch (error) {
-    console.error('获取实例列表失败:', error)
-    availableInstances.value = []
-    ElMessage.error('获取实例列表失败')
-  } finally {
-    instancesLoading.value = false
-  }
-}
-
-// 获取可用模型列表
-const fetchAvailableModels = async () => {
-  modelsLoading.value = true
-  try {
-    const serviceType = getInstanceServiceType('embedding')
-    const models = await getModelsByServiceType(serviceType)
-    availableModels.value = models
-    
-    // 如果当前选择的模型不在可用列表中，给出提示
-    if (embeddingConfig.model && !models.includes(embeddingConfig.model)) {
-      ElMessage.warning(`当前选择的模型 "${embeddingConfig.model}" 在实例管理中不存在或未启用，请检查实例配置`)
-    }
-    
-    ElMessage.success(`已刷新模型列表，找到 ${models.length} 个可用模型`)
-  } catch (error) {
-    console.error('获取模型列表失败:', error)
-    ElMessage.error('获取模型列表失败')
-  } finally {
-    modelsLoading.value = false
-  }
-}
-
-// 实例选择变化处理
+// 实例选择变化处理（扩展 composable 的功能）
 const onInstanceChange = (instanceId: string) => {
+  // 调用 composable 的处理函数
+  handleInstanceChange(instanceId)
   // 同步到formData
   formData.selectedInstanceId = instanceId
   
   if (!instanceId) {
-    selectedInstanceInfo.value = null
     embeddingConfig.model = ''
     formData.model = ''
     headersList.value = []
@@ -391,7 +356,6 @@ const onInstanceChange = (instanceId: string) => {
   
   const instance = availableInstances.value.find(inst => inst.instanceId === instanceId)
   if (instance) {
-    selectedInstanceInfo.value = instance
     
     // 使用实例名称作为默认模型
     embeddingConfig.model = instance.name || 'default-model'
@@ -783,8 +747,7 @@ const resetForm = async () => {
     })
     
     // 重置实例选择
-    selectedInstanceId.value = ''
-    selectedInstanceInfo.value = null
+    setSelectedInstanceId('')
 
     // 重置输入状态
     inputMode.value = 'single'
@@ -852,13 +815,27 @@ const initializeDefaults = () => {
 // 组件挂载时初始化
 onMounted(() => {
   initializeDefaults()
-  fetchInstances()
-  fetchAvailableModels()
+  
+  // 初始化数据（使用缓存，静默加载）
+  initializeData()
+  
+  // 监听全局刷新事件
+  document.addEventListener('playground-refresh-models', handleGlobalRefresh)
   
   // 同步初始状态
   formData.selectedInstanceId = selectedInstanceId.value
   formData.input = embeddingConfig.input
 })
+
+onUnmounted(() => {
+  // 清理事件监听器
+  document.removeEventListener('playground-refresh-models', handleGlobalRefresh)
+})
+
+// 处理全局刷新事件
+const handleGlobalRefresh = () => {
+  refreshData()
+}
 </script>
 
 <style scoped>
