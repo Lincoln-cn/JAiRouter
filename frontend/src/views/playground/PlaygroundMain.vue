@@ -295,24 +295,43 @@ const triggerCancelRequest = () => {
 }
 
 // 刷新所有模型列表
-const refreshAllModels = () => {
+const refreshAllModels = async () => {
   refreshingModels.value = true
 
-  // 通知所有子组件刷新模型列表
-  const event = new CustomEvent('playground-refresh-models')
-  document.dispatchEvent(event)
-
-  // 2秒后结束loading状态
-  setTimeout(() => {
+  try {
+    // 使用缓存管理器刷新所有数据
+    const { refreshAllCache } = await import('@/stores/playgroundCache')
+    await refreshAllCache()
+    
+    // 通知所有子组件数据已刷新
+    const event = new CustomEvent('playground-refresh-models')
+    document.dispatchEvent(event)
+  } catch (error) {
+    console.error('刷新数据失败:', error)
+  } finally {
     refreshingModels.value = false
-  }, 2000)
+  }
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('resize', handleResize)
   // 初始化时获取窗口大小
   handleResize()
+  
+  // 预加载常用数据到缓存
+  try {
+    const { preloadCommonData } = await import('@/stores/playgroundCache')
+    preloadCommonData()
+    
+    // 开发环境下添加调试工具
+    if (process.env.NODE_ENV === 'development') {
+      await import('@/utils/debugPlayground')
+      console.log('💡 调试提示: 在控制台输入 debugPlaygroundData() 可以查看数据加载情况')
+    }
+  } catch (error) {
+    console.error('预加载数据失败:', error)
+  }
 })
 
 onUnmounted(() => {

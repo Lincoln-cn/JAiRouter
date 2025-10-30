@@ -220,7 +220,8 @@ export const DEFAULT_CONFIGS = {
     model: '',
     messages: [],
     temperature: 0.7,
-    maxTokens: 1000
+    maxTokens: 1000,
+    stream: true // 默认开启流式响应
   } as Partial<ChatRequestConfig>,
 
   embedding: {
