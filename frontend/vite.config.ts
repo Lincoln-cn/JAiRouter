@@ -21,7 +21,7 @@ export default defineConfig({
       dts: 'components.d.ts'
     }),
   ],
-  base: '/',
+  base: '/admin/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

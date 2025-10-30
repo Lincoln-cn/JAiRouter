@@ -632,7 +632,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, inject, nextTick, onMounted, watch } from 'vue'
+import { ref, reactive, computed, inject, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type UploadFile, type UploadFiles } from 'element-plus'
 import { 
   UploadFilled, 
@@ -648,8 +648,7 @@ import {
   Close
 } from '@element-plus/icons-vue'
 import { sendUniversalRequest } from '@/api/universal'
-import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
-import { getServiceInstances } from '@/api/dashboard'
+import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import type { 
   ImageGenerateRequestConfig, 
   ImageEditRequestConfig, 
@@ -711,11 +710,18 @@ const generateLoading = ref(false)
 const generateError = ref<string | null>(null)
 const generateImages = ref<any[]>([])
 
-// 图像生成实例选择相关状态
-const availableGenerateInstances = ref<any[]>([])
-const generateInstancesLoading = ref(false)
-const selectedGenerateInstanceId = ref('')
-const selectedGenerateInstanceInfo = ref<any>(null)
+// 使用优化后的数据管理 - 图像生成
+const {
+  availableInstances: availableGenerateInstances,
+  instancesLoading: generateInstancesLoading,
+  selectedInstanceId: selectedGenerateInstanceId,
+  selectedInstanceInfo: selectedGenerateInstanceInfo,
+  hasInstances: hasGenerateInstances,
+  onInstanceChange: handleGenerateInstanceChange,
+  initializeData: initializeGenerateData,
+  refreshData: refreshGenerateData,
+  fetchInstances: fetchGenerateInstances
+} = usePlaygroundData('imageGenerate')
 const generateHeadersList = ref<Array<{key: string, value: string, fromInstance: boolean}>>([])
 const currentGenerateHeaders = ref<Record<string, string>>({})
 const generateDuration = ref(0)
@@ -747,11 +753,18 @@ const editLoading = ref(false)
 const editError = ref<string | null>(null)
 const editImages = ref<any[]>([])
 
-// 图像编辑实例选择相关状态
-const availableEditInstances = ref<any[]>([])
-const editInstancesLoading = ref(false)
-const selectedEditInstanceId = ref('')
-const selectedEditInstanceInfo = ref<any>(null)
+// 使用优化后的数据管理 - 图像编辑
+const {
+  availableInstances: availableEditInstances,
+  instancesLoading: editInstancesLoading,
+  selectedInstanceId: selectedEditInstanceId,
+  selectedInstanceInfo: selectedEditInstanceInfo,
+  hasInstances: hasEditInstances,
+  onInstanceChange: handleEditInstanceChange,
+  initializeData: initializeEditData,
+  refreshData: refreshEditData,
+  fetchInstances: fetchEditInstances
+} = usePlaygroundData('imageEdit')
 const editHeadersList = ref<Array<{key: string, value: string, fromInstance: boolean}>>([])
 const currentEditHeaders = ref<Record<string, string>>({})
 const editDuration = ref(0)
@@ -836,34 +849,15 @@ const onImageTabChange = (tabName: string) => {
   clearEditResult()
 }
 
-// 获取图像生成实例列表
-const fetchGenerateInstances = async () => {
-  generateInstancesLoading.value = true
-  try {
-    const response = await getServiceInstances('imgGen')
-    if (response.data?.success) {
-      availableGenerateInstances.value = response.data.data || []
-      ElMessage.success(`已刷新实例列表，找到 ${availableGenerateInstances.value.length} 个可用实例`)
-    } else {
-      availableGenerateInstances.value = []
-      ElMessage.warning('获取实例列表失败')
-    }
-  } catch (error) {
-    console.error('获取实例列表失败:', error)
-    availableGenerateInstances.value = []
-    ElMessage.error('获取实例列表失败')
-  } finally {
-    generateInstancesLoading.value = false
-  }
-}
-
-// 图像生成实例选择变化处理
+// 图像生成实例选择变化处理（扩展 composable 的功能）
 const onGenerateInstanceChange = (instanceId: string) => {
+  // 调用 composable 的处理函数
+  handleGenerateInstanceChange(instanceId)
+  
   // 同步到formData
   generateFormData.selectedInstanceId = instanceId
   
   if (!instanceId) {
-    selectedGenerateInstanceInfo.value = null
     generateConfig.value.model = ''
     generateFormData.model = ''
     generateHeadersList.value = []
@@ -873,8 +867,6 @@ const onGenerateInstanceChange = (instanceId: string) => {
   
   const instance = availableGenerateInstances.value.find(inst => inst.instanceId === instanceId)
   if (instance) {
-    selectedGenerateInstanceInfo.value = instance
-    
     // 使用实例名称作为默认模型
     generateConfig.value.model = instance.name || 'default-model'
     generateFormData.model = instance.name || 'default-model'
@@ -946,34 +938,15 @@ const onGenerateHeaderChange = () => {
   currentGenerateHeaders.value = newHeaders
 }
 
-// 获取图像编辑实例列表
-const fetchEditInstances = async () => {
-  editInstancesLoading.value = true
-  try {
-    const response = await getServiceInstances('imgEdit')
-    if (response.data?.success) {
-      availableEditInstances.value = response.data.data || []
-      ElMessage.success(`已刷新实例列表，找到 ${availableEditInstances.value.length} 个可用实例`)
-    } else {
-      availableEditInstances.value = []
-      ElMessage.warning('获取实例列表失败')
-    }
-  } catch (error) {
-    console.error('获取实例列表失败:', error)
-    availableEditInstances.value = []
-    ElMessage.error('获取实例列表失败')
-  } finally {
-    editInstancesLoading.value = false
-  }
-}
-
-// 图像编辑实例选择变化处理
+// 图像编辑实例选择变化处理（扩展 composable 的功能）
 const onEditInstanceChange = (instanceId: string) => {
+  // 调用 composable 的处理函数
+  handleEditInstanceChange(instanceId)
+  
   // 同步到formData
   editFormData.selectedInstanceId = instanceId
   
   if (!instanceId) {
-    selectedEditInstanceInfo.value = null
     editConfig.value.model = ''
     editFormData.model = ''
     editHeadersList.value = []
@@ -983,8 +956,6 @@ const onEditInstanceChange = (instanceId: string) => {
   
   const instance = availableEditInstances.value.find(inst => inst.instanceId === instanceId)
   if (instance) {
-    selectedEditInstanceInfo.value = instance
-    
     // 使用实例名称作为默认模型
     editConfig.value.model = instance.name || 'default-model'
     editFormData.model = instance.name || 'default-model'
@@ -1403,8 +1374,9 @@ const handleRefreshModels = () => {
 
 // 组件挂载时获取实例列表
 onMounted(() => {
-  fetchGenerateInstances()
-  fetchEditInstances()
+  // 初始化数据（使用缓存，静默加载）
+  initializeGenerateData()
+  initializeEditData()
   
   // 同步初始状态
   generateFormData.selectedInstanceId = selectedGenerateInstanceId.value
@@ -1425,15 +1397,23 @@ onMounted(() => {
   editFormData.images = editConfig.value.images
   
   // 监听全局刷新事件
-  document.addEventListener('playground-refresh-models', handleRefreshModels)
+  document.addEventListener('playground-refresh-models', handleGlobalRefresh)
 })
 
-// 组件卸载时清理资源
-import { onUnmounted } from 'vue'
 onUnmounted(() => {
-  clearGenerateResult()
-  clearEditResult()
-  document.removeEventListener('playground-refresh-models', handleRefreshModels)
+  // 清理事件监听器
+  document.removeEventListener('playground-refresh-models', handleGlobalRefresh)
+})
+
+// 处理全局刷新事件
+const handleGlobalRefresh = () => {
+  refreshGenerateData()
+  refreshEditData()
+}
+
+onUnmounted(() => {
+  // 清理事件监听器
+  document.removeEventListener('playground-refresh-models', handleGlobalRefresh)
 })
 </script>
 

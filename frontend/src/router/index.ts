@@ -180,22 +180,22 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
-  
+
   // 添加调试信息
-  console.log('路由守卫触发:', { 
-    to: to.path, 
+  console.log('路由守卫触发:', {
+    to: to.path,
     from: from.path,
     fullPath: to.fullPath
   })
   console.log('用户认证状态:', userStore.isAuthenticated())
-  
+
   // 特殊处理根路径的重定向
   if (to.path === '/') {
     console.log('根路径重定向到仪表板')
     next({ name: 'dashboard-main' })
     return
   }
-  
+
   // 检查是否需要认证
   if (to.meta.requiresAuth !== false) {
     // 检查是否有token
@@ -204,7 +204,7 @@ router.beforeEach((to, from, next) => {
       next({ name: 'login' })
       return
     }
-    
+
     // 检查token是否过期（超过1小时）
     const token = localStorage.getItem('admin_token')
     if (token && isTokenExpired(token)) {
@@ -214,7 +214,7 @@ router.beforeEach((to, from, next) => {
       return
     }
   }
-  
+
   // 已登录用户访问登录页的处理
   if (to.name === 'login' && userStore.isAuthenticated()) {
     // 检查token是否过期
@@ -230,7 +230,7 @@ router.beforeEach((to, from, next) => {
     }
     return
   }
-  
+
   console.log('正常路由跳转')
   next()
 })
