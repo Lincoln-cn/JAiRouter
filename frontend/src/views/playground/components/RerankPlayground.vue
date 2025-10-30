@@ -1,34 +1,22 @@
 <template>
   <div class="rerank-playground">
-    <el-row :gutter="20" class="playground-row">
+    <el-row :gutter="20">
       <el-col :span="12">
         <el-card header="重排序配置">
-          <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px" class="rerank-form"
+          <el-form ref="formRef" :model="formData" :rules="formRules" label-width="120px"
             @submit.prevent="sendRerankRequest">
             <!-- 实例选择 -->
-            <el-form-item label="选择实例" prop="selectedInstanceId">
+            <el-form-item label="选择实例">
               <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-                <el-select 
-                  v-model="selectedInstanceId" 
-                  placeholder="请选择重排序服务实例"
-                  @change="onInstanceChange"
-                  style="flex: 1"
-                  :loading="instancesLoading"
-                  clearable
-                >
-                  <el-option
-                    v-for="instance in availableInstances"
-                    :key="instance.instanceId"
-                    :label="instance.name"
-                    :value="instance.instanceId"
-                  >
+                <el-select v-model="selectedInstanceId" placeholder="请选择重排序服务实例" @change="onInstanceChange"
+                  style="flex: 1" :loading="instancesLoading" clearable
+                  :class="{ 'instance-required': !selectedInstanceId }">
+                  <el-option v-for="instance in availableInstances" :key="instance.instanceId" :label="instance.name"
+                    :value="instance.instanceId">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <span>{{ instance.name }}</span>
-                      <el-tag 
-                        v-if="instance.headers && Object.keys(instance.headers).length > 0"
-                        type="success" 
-                        size="small"
-                      >
+                      <el-tag v-if="instance.headers && Object.keys(instance.headers).length > 0" type="success"
+                        size="small">
                         {{ Object.keys(instance.headers).length }} 个请求头
                       </el-tag>
                     </div>
@@ -39,15 +27,23 @@
                     </div>
                   </template>
                 </el-select>
-                <el-button 
-                  type="info" 
-                  size="small" 
-                  @click="() => fetchInstances(true)"
-                  :loading="instancesLoading"
-                  title="刷新实例列表"
-                >
-                  <el-icon><Refresh /></el-icon>
+                <el-button type="info" size="small" @click="() => fetchInstances(true)" :loading="instancesLoading"
+                  title="刷新实例列表">
+                  <el-icon>
+                    <Refresh />
+                  </el-icon>
                 </el-button>
+              </div>
+              <div v-if="!selectedInstanceId" class="instance-hint">
+                <el-text type="danger" size="small">请选择一个重排序服务实例</el-text>
+              </div>
+              <div v-else-if="selectedInstanceInfo" class="instance-selected">
+                <el-text type="success" size="small">
+                  <el-icon>
+                    <Check />
+                  </el-icon>
+                  已选择实例: {{ selectedInstanceInfo.name }}
+                </el-text>
               </div>
             </el-form-item>
 
@@ -55,54 +51,27 @@
             <el-form-item v-if="selectedInstanceInfo" label="请求头配置">
               <div class="headers-config">
                 <div class="headers-list">
-                  <div 
-                    v-for="(header, index) in headersList" 
-                    :key="index"
-                    class="header-item"
-                  >
-                    <el-input
-                      v-model="header.key"
-                      placeholder="请求头名称"
-                      size="small"
-                      @input="onHeaderChange"
-                      class="header-key"
-                      :disabled="header.fromInstance"
-                    />
-                    <el-input
-                      v-model="header.value"
-                      placeholder="请求头值"
-                      size="small"
-                      @input="onHeaderChange"
+                  <div v-for="(header, index) in headersList" :key="index" class="header-item">
+                    <el-input v-model="header.key" placeholder="请求头名称" size="small" @input="onHeaderChange"
+                      class="header-key" :disabled="header.fromInstance" />
+                    <el-input v-model="header.value" placeholder="请求头值" size="small" @input="onHeaderChange"
                       class="header-value"
                       :type="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key') ? 'password' : 'text'"
-                      :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')"
-                    />
-                    <el-tag 
-                      v-if="header.fromInstance" 
-                      type="success" 
-                      size="small"
-                      class="instance-tag"
-                    >
+                      :show-password="header.key.toLowerCase().includes('authorization') || header.key.toLowerCase().includes('key')" />
+                    <el-tag v-if="header.fromInstance" type="success" size="small" class="instance-tag">
                       实例
                     </el-tag>
-                    <el-button 
-                      v-else
-                      type="danger" 
-                      size="small" 
-                      @click="removeHeader(index)"
-                      class="remove-btn"
-                    >
-                      <el-icon><Close /></el-icon>
+                    <el-button v-else type="danger" size="small" @click="removeHeader(index)" class="remove-btn">
+                      <el-icon>
+                        <Close />
+                      </el-icon>
                     </el-button>
                   </div>
                 </div>
-                <el-button 
-                  type="primary" 
-                  size="small" 
-                  @click="addHeader"
-                  class="add-header-btn"
-                >
-                  <el-icon><Plus /></el-icon>
+                <el-button type="primary" size="small" @click="addHeader" class="add-header-btn">
+                  <el-icon>
+                    <Plus />
+                  </el-icon>
                   添加请求头
                 </el-button>
               </div>
@@ -114,17 +83,18 @@
                 show-word-limit maxlength="1000" />
             </el-form-item>
 
-            <!-- 文档列表管理 -->
+            <!-- 文档列表 -->
             <el-form-item label="文档列表" prop="documents" required>
               <div class="documents-container">
                 <div v-for="(document, index) in rerankConfig.documents" :key="index" class="document-item">
                   <div class="document-header">
                     <el-tag type="primary" size="small">文档 {{ index + 1 }}</el-tag>
-                    <el-button type="danger" size="small" :icon="Delete" circle @click="removeDocument(index)" />
+                    <el-button type="danger" size="small" :icon="Delete" circle @click="removeDocument(index)"
+                      :disabled="rerankConfig.documents.length <= 1" />
                   </div>
                   <el-input v-model="rerankConfig.documents[index]" type="textarea" :rows="3"
-                    :placeholder="`请输入第 ${index + 1} 个文档内容`" class="document-content" 
-                    show-word-limit maxlength="2000" />
+                    :placeholder="`请输入第 ${index + 1} 个文档内容`" class="document-content" show-word-limit
+                    maxlength="2000" />
                 </div>
                 <el-button type="primary" size="small" :icon="Plus" @click="addDocument"
                   :disabled="rerankConfig.documents.length >= 20">
@@ -133,30 +103,27 @@
               </div>
             </el-form-item>
 
-            <!-- 重排序参数配置 -->
-            <el-form-item>
-              <el-collapse v-model="activeCollapse" class="params-collapse">
-                <el-collapse-item title="高级参数" name="params">
-                  <el-form-item label="返回数量" prop="topN">
-                    <el-input-number v-model="rerankConfig.topN" :min="1" :max="rerankConfig.documents.length || 20"
-                      placeholder="返回文档数量" style="width: 100%" />
-                    <div class="param-description">
-                      指定返回重排序后的前N个文档，默认为全部文档
-                    </div>
-                  </el-form-item>
-
-                  <el-form-item label="返回文档内容" prop="returnDocuments">
-                    <el-switch v-model="rerankConfig.returnDocuments" active-text="是" inactive-text="否" />
-                    <div class="param-description">
-                      是否在响应中包含原始文档内容
-                    </div>
-                  </el-form-item>
-                </el-collapse-item>
-              </el-collapse>
-            </el-form-item>
+            <!-- 高级参数 -->
+            <el-collapse v-model="activeCollapse" class="config-collapse">
+              <el-collapse-item title="高级参数" name="advanced">
+                <el-row :gutter="16">
+                  <el-col :span="12">
+                    <el-form-item label="返回数量">
+                      <el-input-number v-model="rerankConfig.topN" :min="1" :max="rerankConfig.documents.length || 20"
+                        style="width: 100%" />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item label="返回文档内容">
+                      <el-switch v-model="rerankConfig.returnDocuments" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </el-collapse-item>
+            </el-collapse>
 
             <!-- 发送按钮 -->
-            <el-form-item>
+            <el-form-item class="send-form-item">
               <div class="action-buttons">
                 <el-button type="primary" :loading="requestState.loading" @click="sendRerankRequest"
                   :disabled="!canSendRequest" size="default" class="send-button">
@@ -187,20 +154,6 @@
                   </el-icon>
                   取消
                 </el-button>
-              </div>
-
-              <!-- 请求状态指示器 -->
-              <div v-if="requestStatus" class="request-status">
-                <el-alert :title="requestStatus.message" :type="requestStatus.type" :closable="false" show-icon
-                  class="status-alert">
-                  <template v-if="requestStatus.type === 'info' && requestState.loading" #default>
-                    <div class="progress-info">
-                      <el-progress :percentage="requestProgress" :show-text="false" :stroke-width="4"
-                        class="request-progress" />
-                      <span class="progress-text">{{ requestStatus.message }}</span>
-                    </div>
-                  </template>
-                </el-alert>
               </div>
             </el-form-item>
           </el-form>
@@ -306,7 +259,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Position, Plus, Delete, Close, Refresh, Loading, RefreshLeft } from '@element-plus/icons-vue'
+import { Position, Plus, Delete, Close, Refresh, Loading, RefreshLeft, Check } from '@element-plus/icons-vue'
 import { sendUniversalRequest } from '@/api/universal'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import type { UniversalApiRequest } from '@/api/universal'
@@ -366,12 +319,7 @@ const requestState = reactive<RequestState>({
 const activeCollapse = ref<string[]>([])
 const responseCollapse = ref<string[]>([])
 
-// 请求状态指示器
-const requestStatus = ref<{
-  type: 'success' | 'warning' | 'info' | 'error'
-  message: string
-} | null>(null)
-const requestProgress = ref(0)
+
 
 // 使用优化后的数据管理
 const {
@@ -402,7 +350,7 @@ const onInstanceChange = (instanceId: string) => {
   handleInstanceChange(instanceId)
   // 同步到formData
   formData.selectedInstanceId = instanceId
-  
+
   if (!instanceId) {
     rerankConfig.value.model = ''
     formData.model = ''
@@ -410,17 +358,17 @@ const onInstanceChange = (instanceId: string) => {
     currentHeaders.value = {}
     return
   }
-  
+
   const instance = availableInstances.value.find(inst => inst.instanceId === instanceId)
   if (instance) {
-    
+
     // 使用实例名称作为默认模型
     rerankConfig.value.model = instance.name || 'default-model'
     formData.model = instance.name || 'default-model'
-    
+
     // 初始化请求头列表
     initializeHeaders(instance.headers || {})
-    
+
     ElMessage.success(`已选择实例 "${instance.name}"`)
   }
 }
@@ -429,7 +377,7 @@ const onInstanceChange = (instanceId: string) => {
 const initializeHeaders = (instanceHeaders: Record<string, string>) => {
   headersList.value = []
   currentHeaders.value = {}
-  
+
   // 添加实例的请求头（标记为来自实例，不可删除）
   Object.entries(instanceHeaders).forEach(([key, value]) => {
     headersList.value.push({
@@ -439,7 +387,7 @@ const initializeHeaders = (instanceHeaders: Record<string, string>) => {
     })
     currentHeaders.value[key] = value
   })
-  
+
   // 添加全局配置中的自定义请求头
   Object.entries(props.globalConfig.customHeaders || {}).forEach(([key, value]) => {
     if (!currentHeaders.value[key]) {
@@ -475,30 +423,30 @@ const removeHeader = (index: number) => {
 const onHeaderChange = () => {
   // 重新构建headers对象
   const newHeaders: Record<string, string> = {}
-  
+
   headersList.value.forEach(header => {
     if (header.key.trim() && header.value.trim()) {
       newHeaders[header.key.trim()] = header.value.trim()
     }
   })
-  
+
   currentHeaders.value = newHeaders
-  
+
   // 更新全局配置
   const updatedGlobalConfig = {
     ...props.globalConfig,
     customHeaders: newHeaders
   }
-  
+
   emit('update:globalConfig', updatedGlobalConfig)
 }
 
 // 表单验证规则
 const formRules: any = {
   selectedInstanceId: [
-    { 
-      required: true, 
-      message: '请选择一个重排序服务实例', 
+    {
+      required: true,
+      message: '请选择一个重排序服务实例',
       trigger: 'change',
       validator: (_rule: any, value: string, callback: Function) => {
         if (!value || value.trim() === '') {
@@ -571,17 +519,7 @@ const clearAllDocuments = async () => {
   }
 }
 
-// 更新请求状态
-const updateRequestStatus = (type: 'success' | 'warning' | 'info' | 'error', message: string) => {
-  requestStatus.value = { type, message }
 
-  // 成功和错误状态3秒后自动清除
-  if (type === 'success' || type === 'error') {
-    setTimeout(() => {
-      requestStatus.value = null
-    }, 3000)
-  }
-}
 
 // 重置表单
 const resetForm = async () => {
@@ -610,11 +548,9 @@ const resetForm = async () => {
 
     // 清空选择的实例
     selectedInstanceId.value = ''
-    selectedInstanceInfo.value = null
     headersList.value = []
     currentHeaders.value = {}
 
-    requestStatus.value = null
     ElMessage.success('配置已重置')
   } catch {
     // 用户取消重置
@@ -624,14 +560,8 @@ const resetForm = async () => {
 // 取消请求
 const cancelRequest = () => {
   requestState.loading = false
-  requestProgress.value = 0
-  updateRequestStatus('warning', '请求已取消')
   emit('response', null, false, '请求已取消')
-
-  // 3秒后清除状态
-  setTimeout(() => {
-    requestStatus.value = null
-  }, 3000)
+  ElMessage.warning('请求已取消')
 }
 
 // 发送重排序请求
@@ -656,23 +586,7 @@ const sendRerankRequest = async () => {
     requestState.loading = true
     requestState.error = null
     requestState.response = null
-    requestProgress.value = 0
-    updateRequestStatus('info', '正在验证配置...')
     emit('response', null, true, null)
-
-    // 模拟进度更新
-    const progressInterval = setInterval(() => {
-      if (requestProgress.value < 90) {
-        requestProgress.value += Math.random() * 10
-        if (requestProgress.value < 30) {
-          updateRequestStatus('info', '正在连接服务器...')
-        } else if (requestProgress.value < 60) {
-          updateRequestStatus('info', '正在发送请求数据...')
-        } else {
-          updateRequestStatus('info', '正在等待服务器响应...')
-        }
-      }
-    }, 200)
 
     // 构建请求
     const requestBody = {
@@ -703,13 +617,9 @@ const sendRerankRequest = async () => {
     const response = await sendUniversalRequest(apiRequest)
 
     // 处理成功响应
-    clearInterval(progressInterval)
-    requestProgress.value = 100
     requestState.response = response
     requestState.error = null
     emit('response', response, false, null)
-
-    updateRequestStatus('success', `请求成功 (${response.duration}ms)`)
     ElMessage.success('重排序请求成功')
 
   } catch (error: any) {
@@ -719,16 +629,12 @@ const sendRerankRequest = async () => {
       error.message ||
       '重排序请求失败'
 
-    clearInterval(progressInterval)
     requestState.error = errorMessage
     requestState.response = error.status ? error : null
     emit('response', error.status ? error : null, false, errorMessage)
-
-    updateRequestStatus('error', `请求失败: ${errorMessage}`)
     ElMessage.error(errorMessage)
   } finally {
     requestState.loading = false
-    requestProgress.value = 0
   }
 }
 
@@ -761,6 +667,8 @@ const getScoreColor = (score: number) => {
   if (score >= 0.4) return '#f56c6c'
   return '#909399'
 }
+
+
 
 // 监听全局配置变化
 watch(() => props.globalConfig, () => {
@@ -827,58 +735,29 @@ onUnmounted(() => {
   height: 100%;
 }
 
-.model-select-container {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.model-select-container .el-select {
-  flex: 1;
-}
-
-.refresh-btn {
-  flex-shrink: 0;
-}
-
-.playground-row {
-  height: 100%;
-}
-
-.config-card,
-.response-card {
-  height: 100%;
-}
-
-.config-card :deep(.el-card__body),
-.response-card :deep(.el-card__body) {
-  height: calc(100% - 60px);
-  overflow-y: auto;
-}
-
-/* 让请求头配置占满宽度 */
-.headers-config {
+/* 基础样式 */
+.el-form-item {
   width: 100%;
 }
 
-.headers-list {
-  width: 100%;
-}
-
-.header-item {
-  width: 100%;
-}
-
-/* 让表单项占满宽度 */
 .el-form-item__content {
   width: 100% !important;
 }
 
-/* 让选择器和输入框占满宽度 */
-.el-select,
-.el-input,
-.el-textarea {
-  width: 100% !important;
+/* 实例选择样式 */
+.instance-required {
+  border-color: var(--el-color-danger) !important;
+}
+
+.instance-hint {
+  margin-top: 8px;
+}
+
+.instance-selected {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .card-header {
@@ -898,44 +777,22 @@ onUnmounted(() => {
 }
 
 /* 文档管理样式 */
-.documents-section {
+.documents-container {
+  width: 100%;
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
   padding: 12px;
   background-color: var(--el-bg-color-page);
 }
 
-.documents-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.documents-count {
-  font-size: 14px;
-  color: var(--el-text-color-regular);
-  font-weight: 500;
-}
-
-.documents-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.documents-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
 .document-item {
+  width: 100%;
   margin-bottom: 12px;
   padding: 12px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
   background-color: var(--el-bg-color);
+  box-sizing: border-box;
 }
 
 .document-item:last-child {
@@ -947,35 +804,37 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  width: 100%;
 }
 
-.document-index {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--el-text-color-primary);
+.document-content {
+  margin-top: 8px;
+  width: 100%;
 }
 
-/* 参数配置样式 */
-.params-collapse {
+.document-content :deep(.el-textarea) {
+  width: 100%;
+}
+
+.document-content :deep(.el-textarea__inner) {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 配置折叠面板样式 */
+.config-collapse {
   border: none;
 }
 
-.params-collapse :deep(.el-collapse-item__header) {
+.config-collapse :deep(.el-collapse-item__header) {
   background-color: var(--el-bg-color-page);
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
   padding: 0 12px;
 }
 
-.params-collapse :deep(.el-collapse-item__content) {
+.config-collapse :deep(.el-collapse-item__content) {
   padding: 12px 0 0 0;
-}
-
-.param-description {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 4px;
-  line-height: 1.4;
 }
 
 /* 响应内容样式 */
@@ -1148,21 +1007,6 @@ onUnmounted(() => {
     padding: 12px;
   }
 
-  .playground-row {
-    flex-direction: column;
-  }
-
-  .documents-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .documents-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-
   .card-header {
     flex-direction: column;
     gap: 8px;
@@ -1184,61 +1028,22 @@ onUnmounted(() => {
   }
 }
 
-/* 深色主题适配 */
-@media (prefers-color-scheme: dark) {
-  .documents-section {
-    background-color: var(--el-bg-color-overlay);
-  }
 
-  .document-item {
-    background-color: var(--el-bg-color-overlay);
-  }
 
-  .result-item {
-    background-color: var(--el-bg-color-overlay);
-  }
 
-  .content-text {
-    background-color: var(--el-bg-color);
-  }
-
-  .json-content {
-    background-color: var(--el-bg-color);
-  }
-}
-
-/* 滚动条样式 */
-.documents-list::-webkit-scrollbar,
-.results-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.documents-list::-webkit-scrollbar-track,
-.results-list::-webkit-scrollbar-track {
-  background: var(--el-bg-color-page);
-  border-radius: 3px;
-}
-
-.documents-list::-webkit-scrollbar-thumb,
-.results-list::-webkit-scrollbar-thumb {
-  background: var(--el-border-color-dark);
-  border-radius: 3px;
-}
-
-.documents-list::-webkit-scrollbar-thumb:hover,
-.results-list::-webkit-scrollbar-thumb:hover {
-  background: var(--el-text-color-disabled);
-}
 
 /* 请求头配置样式 */
 .headers-config {
+  width: 100%;
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
   padding: 15px;
   background-color: var(--el-bg-color-page);
+  box-sizing: border-box;
 }
 
 .headers-list {
+  width: 100%;
   max-height: 300px;
   overflow-y: auto;
   margin-bottom: 10px;
@@ -1249,6 +1054,7 @@ onUnmounted(() => {
   gap: 10px;
   margin-bottom: 10px;
   align-items: center;
+  width: 100%;
 }
 
 .header-key {
@@ -1256,8 +1062,16 @@ onUnmounted(() => {
   min-width: 120px;
 }
 
+.header-key :deep(.el-input) {
+  width: 100%;
+}
+
 .header-value {
   flex: 2;
+}
+
+.header-value :deep(.el-input) {
+  width: 100%;
 }
 
 .instance-tag {
@@ -1276,6 +1090,10 @@ onUnmounted(() => {
 }
 
 /* 发送按钮样式 */
+.send-form-item {
+  margin-top: 24px;
+}
+
 .action-buttons {
   display: flex;
   gap: 12px;
@@ -1301,34 +1119,9 @@ onUnmounted(() => {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
-}
-
-/* 请求状态指示器样式 */
-.request-status {
-  margin-top: 16px;
-}
-
-.status-alert {
-  border-radius: 6px;
-}
-
-.progress-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.request-progress {
-  flex: 1;
-}
-
-.progress-text {
-  font-size: 13px;
-  color: var(--el-text-color-regular);
-  white-space: nowrap;
 }
 </style>
