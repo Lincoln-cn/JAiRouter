@@ -411,7 +411,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, inject, nextTick, onMounted, watch } from 'vue'
+import { ref, reactive, computed, inject, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type UploadFile, type UploadFiles } from 'element-plus'
 import {
   UploadFilled,
@@ -427,8 +427,7 @@ import {
   Close
 } from '@element-plus/icons-vue'
 import { sendUniversalRequest } from '@/api/universal'
-import { getModelsByServiceType, getInstanceServiceType } from '@/api/models'
-import { getServiceInstances } from '@/api/dashboard'
+import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import type {
   TtsRequestConfig,
   SttRequestConfig,
@@ -484,11 +483,18 @@ const ttsLoading = ref(false)
 const ttsError = ref<string | null>(null)
 const ttsAudioUrl = ref<string | null>(null)
 
-// TTS实例选择相关状态
-const availableTtsInstances = ref<any[]>([])
-const ttsInstancesLoading = ref(false)
-const selectedTtsInstanceId = ref('')
-const selectedTtsInstanceInfo = ref<any>(null)
+// 使用优化后的数据管理 - TTS
+const {
+  availableInstances: availableTtsInstances,
+  instancesLoading: ttsInstancesLoading,
+  selectedInstanceId: selectedTtsInstanceId,
+  selectedInstanceInfo: selectedTtsInstanceInfo,
+  hasInstances: hasTtsInstances,
+  onInstanceChange: handleTtsInstanceChange,
+  initializeData: initializeTtsData,
+  refreshData: refreshTtsData,
+  fetchInstances: fetchTtsInstances
+} = usePlaygroundData('tts')
 const ttsHeadersList = ref<Array<{ key: string, value: string, fromInstance: boolean }>>([])
 const currentTtsHeaders = ref<Record<string, string>>({})
 const ttsAudioBlob = ref<Blob | null>(null)
@@ -519,11 +525,18 @@ const sttLoading = ref(false)
 const sttError = ref<string | null>(null)
 const sttResult = ref<any>(null)
 
-// STT实例选择相关状态
-const availableSttInstances = ref<any[]>([])
-const sttInstancesLoading = ref(false)
-const selectedSttInstanceId = ref('')
-const selectedSttInstanceInfo = ref<any>(null)
+// 使用优化后的数据管理 - STT
+const {
+  availableInstances: availableSttInstances,
+  instancesLoading: sttInstancesLoading,
+  selectedInstanceId: selectedSttInstanceId,
+  selectedInstanceInfo: selectedSttInstanceInfo,
+  hasInstances: hasSttInstances,
+  onInstanceChange: handleSttInstanceChange,
+  initializeData: initializeSttData,
+  refreshData: refreshSttData,
+  fetchInstances: fetchSttInstances
+} = usePlaygroundData('stt')
 const sttHeadersList = ref<Array<{ key: string, value: string, fromInstance: boolean }>>([])
 const currentSttHeaders = ref<Record<string, string>>({})
 const sttDuration = ref(0)
@@ -598,35 +611,15 @@ const onAudioTabChange = (tabName: string) => {
   clearSttResult()
 }
 
-// 获取TTS模型列表
-// 获取TTS实例列表
-const fetchTtsInstances = async () => {
-  ttsInstancesLoading.value = true
-  try {
-    const response = await getServiceInstances('tts')
-    if (response.data?.success) {
-      availableTtsInstances.value = response.data.data || []
-      ElMessage.success(`已刷新实例列表，找到 ${availableTtsInstances.value.length} 个可用实例`)
-    } else {
-      availableTtsInstances.value = []
-      ElMessage.warning('获取实例列表失败')
-    }
-  } catch (error) {
-    console.error('获取实例列表失败:', error)
-    availableTtsInstances.value = []
-    ElMessage.error('获取实例列表失败')
-  } finally {
-    ttsInstancesLoading.value = false
-  }
-}
-
-// TTS实例选择变化处理
+// TTS实例选择变化处理（扩展 composable 的功能）
 const onTtsInstanceChange = (instanceId: string) => {
+  // 调用 composable 的处理函数
+  handleTtsInstanceChange(instanceId)
+  
   // 同步到formData
   ttsFormData.selectedInstanceId = instanceId
 
   if (!instanceId) {
-    selectedTtsInstanceInfo.value = null
     ttsConfig.value.model = ''
     ttsFormData.model = ''
     ttsHeadersList.value = []
@@ -636,8 +629,6 @@ const onTtsInstanceChange = (instanceId: string) => {
 
   const instance = availableTtsInstances.value.find(inst => inst.instanceId === instanceId)
   if (instance) {
-    selectedTtsInstanceInfo.value = instance
-
     // 使用实例名称作为默认模型
     ttsConfig.value.model = instance.name || 'default-model'
     ttsFormData.model = instance.name || 'default-model'
@@ -709,34 +700,15 @@ const onTtsHeaderChange = () => {
   currentTtsHeaders.value = newHeaders
 }
 
-// 获取STT实例列表
-const fetchSttInstances = async () => {
-  sttInstancesLoading.value = true
-  try {
-    const response = await getServiceInstances('stt')
-    if (response.data?.success) {
-      availableSttInstances.value = response.data.data || []
-      ElMessage.success(`已刷新实例列表，找到 ${availableSttInstances.value.length} 个可用实例`)
-    } else {
-      availableSttInstances.value = []
-      ElMessage.warning('获取实例列表失败')
-    }
-  } catch (error) {
-    console.error('获取实例列表失败:', error)
-    availableSttInstances.value = []
-    ElMessage.error('获取实例列表失败')
-  } finally {
-    sttInstancesLoading.value = false
-  }
-}
-
-// STT实例选择变化处理
+// STT实例选择变化处理（扩展 composable 的功能）
 const onSttInstanceChange = (instanceId: string) => {
+  // 调用 composable 的处理函数
+  handleSttInstanceChange(instanceId)
+  
   // 同步到formData
   sttFormData.selectedInstanceId = instanceId
 
   if (!instanceId) {
-    selectedSttInstanceInfo.value = null
     sttConfig.value.model = ''
     sttFormData.model = ''
     sttHeadersList.value = []
@@ -746,8 +718,6 @@ const onSttInstanceChange = (instanceId: string) => {
 
   const instance = availableSttInstances.value.find(inst => inst.instanceId === instanceId)
   if (instance) {
-    selectedSttInstanceInfo.value = instance
-
     // 使用实例名称作为默认模型
     sttConfig.value.model = instance.name || 'default-model'
     sttFormData.model = instance.name || 'default-model'
@@ -1126,8 +1096,9 @@ const handleRefreshModels = () => {
 
 // 组件挂载时获取实例列表
 onMounted(() => {
-  fetchTtsInstances()
-  fetchSttInstances()
+  // 初始化数据（使用缓存，静默加载）
+  initializeTtsData()
+  initializeSttData()
 
   // 同步初始状态
   ttsFormData.selectedInstanceId = selectedTtsInstanceId.value
@@ -1144,15 +1115,19 @@ onMounted(() => {
   sttFormData.temperature = sttConfig.value.temperature
 
   // 监听全局刷新事件
-  document.addEventListener('playground-refresh-models', handleRefreshModels)
+  document.addEventListener('playground-refresh-models', handleGlobalRefresh)
 })
 
-// 组件卸载时清理资源
-import { onUnmounted } from 'vue'
 onUnmounted(() => {
-  clearTtsResult()
-  document.removeEventListener('playground-refresh-models', handleRefreshModels)
+  // 清理事件监听器
+  document.removeEventListener('playground-refresh-models', handleGlobalRefresh)
 })
+
+// 处理全局刷新事件
+const handleGlobalRefresh = () => {
+  refreshTtsData()
+  refreshSttData()
+}
 </script>
 
 <style scoped>

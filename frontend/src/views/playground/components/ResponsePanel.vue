@@ -404,22 +404,39 @@ const formatResponseSize = (data: any) => {
   return `${sizeValue.toFixed(1)} ${units[unitIndex]}`
 }
 
-// 监听响应变化，自动切换到响应体选项卡并发送性能指标
+// 监听响应变化，自动切换到响应体选项卡
 watch(() => props.response, (newResponse) => {
   if (newResponse) {
     activeTab.value = 'body'
-    
-    // 发送性能指标
-    const responseSize = getResponseSize(newResponse)
+  }
+})
+
+// 用于跟踪是否已发送性能指标
+const metricsSent = ref(false)
+
+// 监听loading状态变化，只在请求完成时发送性能指标
+watch(() => props.loading, (newLoading, oldLoading) => {
+  // 当loading从true变为false时，表示请求完成
+  if (oldLoading && !newLoading && props.response && !metricsSent.value) {
+    const responseSize = getResponseSize(props.response)
     emit('performanceMetrics', {
-      duration: newResponse.duration,
+      duration: props.response.duration,
       requestSize: props.requestSize || 0,
       responseSize,
-      status: newResponse.status,
+      status: props.response.status,
       method: props.method || 'POST',
       endpoint: props.endpoint || '',
-      timestamp: newResponse.timestamp
+      timestamp: props.response.timestamp
     })
+    metricsSent.value = true
+  }
+})
+
+// 重置指标发送状态
+watch(() => props.response, (newResponse, oldResponse) => {
+  // 当开始新请求时重置状态
+  if (newResponse !== oldResponse) {
+    metricsSent.value = false
   }
 })
 
@@ -537,6 +554,8 @@ defineExpose({
   overflow: auto;
   border: 1px solid var(--el-border-color-light);
   border-radius: 4px;
+  max-height: 400px;
+  min-height: 200px;
 }
 
 .formatted-content,
@@ -549,16 +568,18 @@ defineExpose({
 .text-content,
 .raw-text {
   margin: 0;
-  padding: 15px;
-  background-color: var(--el-bg-color);
+  padding: 16px;
+  background: var(--el-bg-color);
   border: none;
   border-radius: 4px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
+  color: var(--el-text-color-primary);
   white-space: pre-wrap;
   word-break: break-all;
-  overflow-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .json-content {
@@ -650,27 +671,40 @@ defineExpose({
 }
 
 /* 滚动条样式 */
+.json-content::-webkit-scrollbar,
+.text-content::-webkit-scrollbar,
+.raw-text::-webkit-scrollbar,
 .body-content::-webkit-scrollbar,
 .response-headers::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
+.json-content::-webkit-scrollbar-track,
+.text-content::-webkit-scrollbar-track,
+.raw-text::-webkit-scrollbar-track,
 .body-content::-webkit-scrollbar-track,
 .response-headers::-webkit-scrollbar-track {
   background: var(--el-bg-color-page);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
+.json-content::-webkit-scrollbar-thumb,
+.text-content::-webkit-scrollbar-thumb,
+.raw-text::-webkit-scrollbar-thumb,
 .body-content::-webkit-scrollbar-thumb,
 .response-headers::-webkit-scrollbar-thumb {
-  background: var(--el-border-color);
-  border-radius: 3px;
+  background: var(--el-border-color-dark);
+  border-radius: 4px;
+  transition: background 0.3s ease;
 }
 
+.json-content::-webkit-scrollbar-thumb:hover,
+.text-content::-webkit-scrollbar-thumb:hover,
+.raw-text::-webkit-scrollbar-thumb:hover,
 .body-content::-webkit-scrollbar-thumb:hover,
 .response-headers::-webkit-scrollbar-thumb:hover {
-  background: var(--el-border-color-dark);
+  background: var(--el-color-primary-light-5);
 }
 
 /* 语法高亮 */
