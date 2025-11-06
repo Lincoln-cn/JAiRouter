@@ -2,11 +2,11 @@
   "versions": {
     "README-EN.md": {
       "FilePath": "README-EN.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-10-17T03:01:40.620439",
-      "ContentHash": "863bfe035cd960e0",
-      "GitCommit": "37e5bdcc",
-      "Author": "Lincoln",
+      "Version": "1.0.3",
+      "LastModified": "2025-11-06T03:14:10.599536",
+      "ContentHash": "e50f7da66f03d511",
+      "GitCommit": "8d20cec5",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "README.md"
@@ -14,11 +14,11 @@
     },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.3",
-      "LastModified": "2025-10-17T03:01:40.622359",
-      "ContentHash": "49b07ab5b65a2a07",
-      "GitCommit": "37e5bdcc",
-      "Author": "Lincoln",
+      "Version": "1.0.4",
+      "LastModified": "2025-11-06T03:14:10.601501",
+      "ContentHash": "28e23fc214528d47",
+      "GitCommit": "77bf8f18",
+      "Author": "Leo Lin",
       "ChangeSummary": "",
       "Dependencies": [
         "README-EN.md"
@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.79",
-      "LastModified": "2025-11-05T03:11:40.690459",
-      "ContentHash": "c7d5e5a13d4d0308",
-      "GitCommit": "158b719a",
+      "Version": "1.0.80",
+      "LastModified": "2025-11-06T03:14:10.603509",
+      "ContentHash": "7df2f8adf0436190",
+      "GitCommit": "475be0c4",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4928,7 +4928,31 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-11-05T03:11:40.690466",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-EN.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-06T03:14:10.599545",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-06T03:14:10.601507",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.79",
+      "NewVersion": "1.0.80",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-06T03:14:10.603515",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-11-05T03:11:41.268713"
+  "last_updated": "2025-11-06T03:14:11.199197"
 }
