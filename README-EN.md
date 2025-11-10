@@ -121,8 +121,8 @@ After starting the project, you can access the automatically generated API docum
 
 ---
 
-📖 **Full Documentation & Deployment Guide**: [Click Here](https://docs.jairouter.com)  
-🐙 **Source Code Repository**: [GitHub - JAiRouter](https://github.com/your-org/jairouter)
+📖 **Full Documentation & Deployment Guide**: [Click Here](https://jairouter.com)  
+🐙 **Source Code Repository**: [GitHub - JAiRouter](https://github.com/Lincoln-cn/jairouter)
 
 ---
 
