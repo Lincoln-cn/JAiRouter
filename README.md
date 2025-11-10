@@ -126,8 +126,8 @@ curl http://localhost:8080/admin/login
 
 ---
 
-📖 **完整文档与部署指南**：[点击查看](https://docs.jairouter.com)  
-🐙 **开源地址**：[GitHub - JAiRouter](https://github.com/your-org/jairouter)
+📖 **完整文档与部署指南**：[点击查看](https://jairouter.com)  
+🐙 **开源地址**：[GitHub - JAiRouter](https://github.com/Lincoln-cn/jairouter)
 
 ---
 

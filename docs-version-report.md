@@ -3,19 +3,21 @@
 ## 版本统计
 
 - 总文档数: 137
-- 近7天变更: 7
+- 近7天变更: 9
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-10-30 03:11:35
+- 最后扫描: 2025-11-10 03:19:41
 
 ## 最近变更
 
-- **MODIFIED**: docs-version-report.md (1.0.72 → 1.0.73) - 2025-10-30
-- **MODIFIED**: docs-version-report.md (1.0.71 → 1.0.72) - 2025-10-29
-- **MODIFIED**: docs-version-report.md (1.0.70 → 1.0.71) - 2025-10-28
-- **MODIFIED**: docs-version-report.md (1.0.69 → 1.0.70) - 2025-10-27
-- **MODIFIED**: docs-version-report.md (1.0.68 → 1.0.69) - 2025-10-26
-- **MODIFIED**: docs-version-report.md (1.0.67 → 1.0.68) - 2025-10-25
-- **MODIFIED**: docs-version-report.md (1.0.66 → 1.0.67) - 2025-10-24
+- **MODIFIED**: docs-version-report.md (1.0.83 → 1.0.84) - 2025-11-10
+- **MODIFIED**: docs-version-report.md (1.0.82 → 1.0.83) - 2025-11-09
+- **MODIFIED**: docs-version-report.md (1.0.81 → 1.0.82) - 2025-11-08
+- **MODIFIED**: docs-version-report.md (1.0.80 → 1.0.81) - 2025-11-07
+- **MODIFIED**: docs-version-report.md (1.0.79 → 1.0.80) - 2025-11-06
+- **MODIFIED**: README.md (1.0.3 → 1.0.4) - 2025-11-06
+- **MODIFIED**: README-EN.md (1.0.2 → 1.0.3) - 2025-11-06
+- **MODIFIED**: docs-version-report.md (1.0.78 → 1.0.79) - 2025-11-05
+- **MODIFIED**: docs-version-report.md (1.0.77 → 1.0.78) - 2025-11-04
 
 ## 过期文档 (30天未更新)
 
@@ -140,6 +142,8 @@
 - docs/zh/tracing/quickstart.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
+- docs/zh/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
 
 ## 依赖关系分析
 
@@ -591,12 +595,12 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.73 - 2025-10-30 (7517d9a9)
+- **docs-version-report.md**: v1.0.84 - 2025-11-10 (dd5b0849)
+- **README.md**: v1.0.4 - 2025-11-06 (77bf8f18)
+- **README-EN.md**: v1.0.3 - 2025-11-06 (8d20cec5)
 - **docs/zh/deployment/docker.md**: v1.0.4 - 2025-10-17 (8b591212)
 - **docs/zh/configuration/store-config.md**: v1.0.1 - 2025-10-17 (ee4f9e85)
 - **docs/en/configuration/store-config.md**: v1.0.1 - 2025-10-17 (ee4f9e85)
-- **README.md**: v1.0.3 - 2025-10-17 (37e5bdcc)
-- **README-EN.md**: v1.0.2 - 2025-10-17 (37e5bdcc)
 - **docs/en/troubleshooting/common-issues.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
 - **docs/en/security/jwt-authentication.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
 - **docs/en/deployment/production.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
