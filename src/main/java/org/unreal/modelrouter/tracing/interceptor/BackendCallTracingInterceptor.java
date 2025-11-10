@@ -63,8 +63,13 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
         // 获取当前追踪上下文
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
+        
+        logger.debug("BackendCallTracingInterceptor.filter() 被调用: url={}, hasContext={}", 
+            request.url(), tracingContext != null);
+        
         if (tracingContext == null || !tracingContext.isActive()) {
             // 如果没有追踪上下文，直接执行请求
+            logger.debug("没有活跃的追踪上下文，跳过追踪");
             return next.exchange(request);
         }
         

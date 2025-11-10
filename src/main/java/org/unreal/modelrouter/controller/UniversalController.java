@@ -31,17 +31,20 @@ public class UniversalController {
     private final ModelServiceRegistry registry;
     private final ServiceStateManager serviceStateManager;
     private final MetricsCollector metricsCollector;
+    private final org.unreal.modelrouter.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor;
 
     private final Logger logger = LoggerFactory.getLogger(UniversalController.class);
 
     public UniversalController(AdapterRegistry adapterRegistry,
                                ModelServiceRegistry registry,
                                ServiceStateManager serviceStateManager,
-                               @Autowired(required = false) MetricsCollector metricsCollector) {
+                               @Autowired(required = false) MetricsCollector metricsCollector,
+                               @Autowired(required = false) org.unreal.modelrouter.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor) {
         this.adapterRegistry = adapterRegistry;
         this.registry = registry;
         this.serviceStateManager = serviceStateManager;
         this.metricsCollector = metricsCollector;
+        this.tracingInterceptor = tracingInterceptor;
     }
 
     @PostMapping("/chat/completions")
@@ -50,6 +53,22 @@ public class UniversalController {
             @RequestBody(required = false) ChatDTO.Request request,
             ServerHttpRequest httpRequest) {
 
+        if (tracingInterceptor != null) {
+            return tracingInterceptor.traceControllerCall(
+                ModelServiceRegistry.ServiceType.chat,
+                request.model(),
+                httpRequest,
+                "chatCompletions",
+                () -> handleServiceRequestWithInstanceAdapter(
+                    ModelServiceRegistry.ServiceType.chat,
+                    request.model(),
+                    httpRequest,
+                    (adapter) -> adapter.chat(request, authorization, httpRequest)
+                            .map(resp -> (ResponseEntity<?>) resp)
+                )
+            );
+        }
+        
         return handleServiceRequestWithInstanceAdapter(
                 ModelServiceRegistry.ServiceType.chat,
                 request.model(),
@@ -67,6 +86,22 @@ public class UniversalController {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
+        }
+
+        if (tracingInterceptor != null) {
+            return tracingInterceptor.traceControllerCall(
+                ModelServiceRegistry.ServiceType.embedding,
+                request.model(),
+                httpRequest,
+                "embeddings",
+                () -> handleServiceRequestWithInstanceAdapter(
+                    ModelServiceRegistry.ServiceType.embedding,
+                    request.model(),
+                    httpRequest,
+                    (adapter) -> adapter.embedding(request, authorization, httpRequest)
+                            .map(resp -> (ResponseEntity<?>) resp)
+                )
+            );
         }
 
         return handleServiceRequestWithInstanceAdapter(
@@ -89,6 +124,22 @@ public class UniversalController {
             throw new ServerWebInputException("Request body is required");
         }
 
+        if (tracingInterceptor != null) {
+            return tracingInterceptor.traceControllerCall(
+                ModelServiceRegistry.ServiceType.rerank,
+                request.model(),
+                httpRequest,
+                "rerank",
+                () -> handleServiceRequestWithInstanceAdapter(
+                    ModelServiceRegistry.ServiceType.rerank,
+                    request.model(),
+                    httpRequest,
+                    (adapter) -> adapter.rerank(request, authorization, httpRequest)
+                            .map(resp -> (ResponseEntity<?>) resp)
+                )
+            );
+        }
+
         return handleServiceRequestWithInstanceAdapter(
                 ModelServiceRegistry.ServiceType.rerank,
                 request.model(),
@@ -106,6 +157,22 @@ public class UniversalController {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
+        }
+
+        if (tracingInterceptor != null) {
+            return tracingInterceptor.traceControllerCall(
+                ModelServiceRegistry.ServiceType.tts,
+                request.model(),
+                httpRequest,
+                "textToSpeech",
+                () -> handleServiceRequestWithInstanceAdapter(
+                    ModelServiceRegistry.ServiceType.tts,
+                    request.model(),
+                    httpRequest,
+                    (adapter) -> adapter.tts(request, authorization, httpRequest)
+                            .map(resp -> (ResponseEntity<?>) resp)
+                )
+            );
         }
 
         return handleServiceRequestWithInstanceAdapter(
@@ -130,6 +197,22 @@ public class UniversalController {
 
         SttDTO.Request request = new SttDTO.Request(model, file, language, prompt, responseFormat, temperature);
 
+        if (tracingInterceptor != null) {
+            return tracingInterceptor.traceControllerCall(
+                ModelServiceRegistry.ServiceType.stt,
+                request.model(),
+                httpRequest,
+                "speechToText",
+                () -> handleServiceRequestWithInstanceAdapter(
+                    ModelServiceRegistry.ServiceType.stt,
+                    request.model(),
+                    httpRequest,
+                    (adapter) -> adapter.stt(request, authorization, httpRequest)
+                            .map(resp -> (ResponseEntity<?>) resp)
+                )
+            );
+        }
+
         return handleServiceRequestWithInstanceAdapter(
                 ModelServiceRegistry.ServiceType.stt,
                 request.model(),
@@ -149,6 +232,22 @@ public class UniversalController {
             throw new ServerWebInputException("Request body is required");
         }
 
+        if (tracingInterceptor != null) {
+            return tracingInterceptor.traceControllerCall(
+                ModelServiceRegistry.ServiceType.imgGen,
+                request.model(),
+                httpRequest,
+                "imageGenerate",
+                () -> handleServiceRequestWithInstanceAdapter(
+                    ModelServiceRegistry.ServiceType.imgGen,
+                    request.model(),
+                    httpRequest,
+                    (adapter) -> adapter.imageGenerate(request, authorization, httpRequest)
+                            .map(resp -> (ResponseEntity<?>) resp)
+                )
+            );
+        }
+
         return handleServiceRequestWithInstanceAdapter(
                 ModelServiceRegistry.ServiceType.imgGen,
                 request.model(),
@@ -166,6 +265,22 @@ public class UniversalController {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
+        }
+
+        if (tracingInterceptor != null) {
+            return tracingInterceptor.traceControllerCall(
+                ModelServiceRegistry.ServiceType.imgEdit,
+                request.model(),
+                httpRequest,
+                "imageEdits",
+                () -> handleServiceRequestWithInstanceAdapter(
+                    ModelServiceRegistry.ServiceType.imgEdit,
+                    request.model(),
+                    httpRequest,
+                    (adapter) -> adapter.imageEdit(request, authorization, httpRequest)
+                            .map(resp -> (ResponseEntity<?>) resp)
+                )
+            );
         }
 
         return handleServiceRequestWithInstanceAdapter(
@@ -331,6 +446,11 @@ public class UniversalController {
         ModelRouterProperties.ModelInstance selectedInstance;
         try {
             selectedInstance = registry.selectInstance(serviceType, modelName, clientIp);
+            
+            // 追踪实例选择
+            if (tracingInterceptor != null) {
+                tracingInterceptor.traceInstanceSelection(serviceType, modelName, clientIp, selectedInstance);
+            }
         } catch (Exception e) {
             logger.error("Failed to select instance for service: {}, model: {}", serviceType, modelName, e);
             return Mono.error(e);
@@ -338,20 +458,43 @@ public class UniversalController {
 
         // 2. 根据选中的实例获取适配器
         ServiceCapability adapter;
+        String adapterName;
         try {
             adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
+            adapterName = selectedInstance.getAdapter() != null ? selectedInstance.getAdapter() : "default";
             logger.info("Selected adapter '{}' for instance '{}' in service '{}'", 
-                       selectedInstance.getAdapter() != null ? selectedInstance.getAdapter() : "default",
-                       selectedInstance.getName(), serviceType);
+                       adapterName, selectedInstance.getName(), serviceType);
         } catch (Exception e) {
             logger.error("Failed to get adapter for instance: {}", selectedInstance.getName(), e);
             return Mono.error(e);
         }
 
-        // 3. 使用选中的适配器处理请求
+        // 3. 使用选中的适配器处理请求，并追踪适配器调用
+        final String finalAdapterName = adapterName;
         return handleServiceRequest(
                 serviceType,
-                () -> requestSupplier.get(adapter),
+                () -> {
+                    try {
+                        if (tracingInterceptor != null) {
+                            return tracingInterceptor.traceAdapterCall(
+                                finalAdapterName,
+                                serviceType,
+                                selectedInstance,
+                                () -> {
+                                    try {
+                                        return requestSupplier.get(adapter);
+                                    } catch (Exception e) {
+                                        return Mono.error(e);
+                                    }
+                                }
+                            );
+                        } else {
+                            return requestSupplier.get(adapter);
+                        }
+                    } catch (Exception e) {
+                        return Mono.error(e);
+                    }
+                },
                 httpRequest,
                 modelName
         );
