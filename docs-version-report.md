@@ -5,33 +5,37 @@
 - 总文档数: 137
 - 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-11-13 03:14:56
+- 最后扫描: 2025-11-14 03:13:15
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.87 → 1.0.88) - 2025-11-14
 - **MODIFIED**: docs-version-report.md (1.0.86 → 1.0.87) - 2025-11-13
 - **MODIFIED**: docs-version-report.md (1.0.85 → 1.0.86) - 2025-11-12
 - **MODIFIED**: docs-version-report.md (1.0.84 → 1.0.85) - 2025-11-11
 - **MODIFIED**: docs-version-report.md (1.0.83 → 1.0.84) - 2025-11-10
 - **MODIFIED**: docs-version-report.md (1.0.82 → 1.0.83) - 2025-11-09
 - **MODIFIED**: docs-version-report.md (1.0.81 → 1.0.82) - 2025-11-08
-- **MODIFIED**: docs-version-report.md (1.0.80 → 1.0.81) - 2025-11-07
 
 ## 过期文档 (30天未更新)
 
 - docs/README.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/api-reference/management-api.md (版本: 1.0.2, 最后更新: 2025-10-15)
 - docs/en/api-reference/openapi-spec.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/universal-api.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/configuration/application-config.md (版本: 1.0.2, 最后更新: 2025-09-06)
 - docs/en/configuration/circuit-breaker.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/configuration/dynamic-config.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/configuration/index.md (版本: 1.0.3, 最后更新: 2025-10-15)
 - docs/en/configuration/load-balancing.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/configuration/rate-limiting.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/deployment/china-optimization.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/deployment/docker.md (版本: 1.0.2, 最后更新: 2025-09-06)
 - docs/en/deployment/github-pages.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/deployment/index.md (版本: 1.0.2, 最后更新: 2025-10-15)
 - docs/en/deployment/kubernetes.md (版本: 1.0.3, 最后更新: 2025-09-06)
+- docs/en/deployment/production.md (版本: 1.0.3, 最后更新: 2025-10-15)
 - docs/en/development/architecture.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/development/code-quality.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/development/contributing.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -58,6 +62,7 @@
 - docs/en/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/reference/roadmap.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/troubleshooting/common-issues.md (版本: 1.0.3, 最后更新: 2025-10-15)
 - docs/en/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/troubleshooting/performance.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -116,6 +121,7 @@
 - docs/en/security/api-key-management.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/security/data-sanitization.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/security/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/security/jwt-authentication.md (版本: 1.0.2, 最后更新: 2025-10-15)
 - docs/en/security/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/config-reference.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
@@ -142,6 +148,8 @@
 - docs/zh/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
 - docs/zh/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
+- docs/en/configuration/jwt-persistence.md (版本: 1.0.0, 最后更新: 2025-10-15)
+- docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.0, 最后更新: 2025-10-15)
 
 ## 依赖关系分析
 
@@ -593,7 +601,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.87 - 2025-11-13 (5b9c1b78)
+- **docs-version-report.md**: v1.0.88 - 2025-11-14 (6c4b7ac3)
 - **README.md**: v1.0.4 - 2025-11-06 (77bf8f18)
 - **README-EN.md**: v1.0.3 - 2025-11-06 (8d20cec5)
 - **docs/zh/deployment/docker.md**: v1.0.4 - 2025-10-17 (8b591212)
