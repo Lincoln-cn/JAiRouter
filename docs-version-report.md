@@ -5,17 +5,17 @@
 - 总文档数: 137
 - 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-11-15 03:07:22
+- 最后扫描: 2025-11-16 03:18:30
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.89 → 1.0.90) - 2025-11-16
 - **MODIFIED**: docs-version-report.md (1.0.88 → 1.0.89) - 2025-11-15
 - **MODIFIED**: docs-version-report.md (1.0.87 → 1.0.88) - 2025-11-14
 - **MODIFIED**: docs-version-report.md (1.0.86 → 1.0.87) - 2025-11-13
 - **MODIFIED**: docs-version-report.md (1.0.85 → 1.0.86) - 2025-11-12
 - **MODIFIED**: docs-version-report.md (1.0.84 → 1.0.85) - 2025-11-11
 - **MODIFIED**: docs-version-report.md (1.0.83 → 1.0.84) - 2025-11-10
-- **MODIFIED**: docs-version-report.md (1.0.82 → 1.0.83) - 2025-11-09
 
 ## 过期文档 (30天未更新)
 
@@ -77,6 +77,7 @@
 - docs/zh/configuration/load-balancing.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/configuration/rate-limiting.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/deployment/china-optimization.md (版本: 1.0.2, 最后更新: 2025-09-02)
+- docs/zh/deployment/docker.md (版本: 1.0.4, 最后更新: 2025-10-17)
 - docs/zh/deployment/github-pages.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/deployment/index.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/deployment/kubernetes.md (版本: 1.0.2, 最后更新: 2025-09-02)
@@ -146,7 +147,9 @@
 - docs/zh/tracing/quickstart.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/configuration/store-config.md (版本: 1.0.1, 最后更新: 2025-10-17)
 - docs/en/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
+- docs/zh/configuration/store-config.md (版本: 1.0.1, 最后更新: 2025-10-17)
 - docs/zh/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
 - docs/en/configuration/jwt-persistence.md (版本: 1.0.0, 最后更新: 2025-10-15)
 - docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.0, 最后更新: 2025-10-15)
@@ -601,7 +604,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.89 - 2025-11-15 (5f1a085a)
+- **docs-version-report.md**: v1.0.90 - 2025-11-16 (d52efb3b)
 - **README.md**: v1.0.4 - 2025-11-06 (77bf8f18)
 - **README-EN.md**: v1.0.3 - 2025-11-06 (8d20cec5)
 - **docs/zh/deployment/docker.md**: v1.0.4 - 2025-10-17 (8b591212)
