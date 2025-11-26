@@ -20,6 +20,8 @@ JAiRouter 的 API Key 认证功能为系统提供了安全的访问控制机制�
 - **使用统计**：记录每个 API Key 的使用情况
 - **缓存优化**：支持 Redis 和本地缓存，提升认证性能
 - **动态管理**：支持运行时添加、删除和更新 API Key
+- **持久化存储**：支持将 API Key 信息存储在 H2 数据库中
+- **H2 数据库默认存储**：H2 数据库现在是 API Key 数据的默认持久化存储方式，提供更好的性能和可靠性
 
 ## 快速开始
 
@@ -183,6 +185,121 @@ jairouter:
             expire-after-write: 3600
 ```
 
+## API Key 持久化存储
+
+### 启用 API Key 持久化
+
+JAiRouter 支持将 API Key 持久化存储以增强管理和监控：
+
+```yaml
+jairouter:
+  security:
+    api-key:
+      # API Key 持久化配置
+      persistence:
+        enabled: true
+        primary-storage: h2    # h2, redis, memory
+        fallback-storage: memory  # memory
+        
+        # 清理配置
+        cleanup:
+          enabled: true
+          schedule: "0 0 3 * * ?"  # 每天凌晨3点
+          retention-days: 365
+          batch-size: 1000
+        
+        # 内存存储配置
+        memory:
+          max-keys: 10000
+          cleanup-threshold: 0.8  # 80%触发清理
+          lru-enabled: true
+          
+        # H2 数据库存储配置
+        h2:
+          table-name: "api_keys"  # 表名
+          max-batch-size: 1000    # 批量操作最大大小
+```
+
+### API Key 管理功能
+
+启用持久化后，您可以：
+
+1. **跟踪 API Key**：监控所有 API Key 及其状态
+2. **生命周期管理**：自动状态更新和清理
+3. **增强安全性**：支持 H2 数据库的持久化存储
+4. **审计跟踪**：完整的 API Key 操作审计日志
+5. **性能监控**：API Key 操作的指标和健康检查
+
+### H2 数据库存储优势
+
+使用 H2 数据库存储 API Key 具有以下优势：
+
+1. **默认存储方式**：H2 数据库现在是 API Key 的默认存储方式
+2. **持久化**：数据不会因应用重启而丢失
+3. **高性能**：嵌入式数据库，无网络开销
+4. **易于维护**：单一数据库文件，便于备份
+5. **强大查询**：支持复杂的 SQL 查询
+6. **事务支持**：保证数据一致性
+7. **可视化管理**：H2 控制台便于调试
+8. **生产就绪**：满足生产环境要求
+
+### H2 数据库表结构
+
+API Key 在 H2 数据库中存储在以下表中：
+
+#### api_keys 表
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键 |
+| key_id | VARCHAR(255) | Key ID |
+| key_value_hash | VARCHAR(500) | Key 值哈希（不存储明文） |
+| description | VARCHAR(1000) | 描述 |
+| permissions | TEXT | 权限列表（JSON） |
+| expires_at | TIMESTAMP | 过期时间 |
+| enabled | BOOLEAN | 是否启用 |
+| created_at | TIMESTAMP | 创建时间 |
+| updated_at | TIMESTAMP | 更新时间 |
+| metadata | TEXT | 元数据（JSON） |
+| usage_statistics | TEXT | 使用统计（JSON） |
+
+#### 索引优化
+
+系统自动创建以下索引以提高查询性能：
+
+- `idx_apikey_key_id`: Key ID索引
+- `idx_apikey_enabled`: 启用状态索引
+- `idx_apikey_expires_at`: 过期时间索引
+- `idx_apikey_created_at`: 创建时间索引
+
+### API Key 存储结构
+
+API Key 存储包含以下元数据：
+
+```json
+{
+  "id": "key-uuid-123",
+  "keyId": "admin-key-001",
+  "keyValueHash": "sha256-hash-of-key",
+  "description": "管理员API密钥",
+  "permissions": ["admin", "read", "write", "delete"],
+  "expiresAt": "2025-12-31T23:59:59",
+  "enabled": true,
+  "createdAt": "2025-01-15T10:30:00Z",
+  "updatedAt": "2025-01-15T10:30:00Z",
+  "metadata": {
+    "createdBy": "admin",
+    "department": "IT"
+  },
+  "usageStatistics": {
+    "totalRequests": 1000,
+    "successfulRequests": 950,
+    "failedRequests": 50,
+    "lastUsedAt": "2025-01-15T10:30:00Z"
+  }
+}
+```
+
 ## 监控和审计
 
 ### 使用统计
@@ -205,6 +322,10 @@ jairouter:
     audit:
       enabled: true
       event-types:
+        api-key-created: true
+        api-key-used: true
+        api-key-revoked: true
+        api-key-expired: true
         authentication-success: true
         authentication-failure: true
 ```
@@ -217,6 +338,123 @@ jairouter:
 - `jairouter_security_authentication_successes_total`：认证成功总数
 - `jairouter_security_authentication_failures_total`：认证失败总数
 - `jairouter_security_authentication_duration_seconds`：认证耗时
+- `jairouter_security_api_keys_created_total`：创建的 API Key 总数
+- `jairouter_security_api_keys_used_total`：API Key 使用总数
+- `jairouter_security_api_keys_revoked_total`：撤销的 API Key 总数
+
+## 安全审计和监控
+
+### 增强的审计配置
+
+```yaml
+jairouter:
+  security:
+    # 增强的审计配置
+    audit:
+      enabled: true
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 90
+      
+      # API Key 操作审计
+      api-key-operations:
+        enabled: true
+        log-key-details: false  # 不记录完整密钥
+        log-usage-patterns: true
+        log-ip-address: true
+      
+      # JWT 操作审计
+      jwt-operations:
+        enabled: true
+        log-token-details: false  # 不记录完整令牌
+        log-user-agent: true
+        log-ip-address: true
+      
+      # 安全事件审计
+      security-events:
+        enabled: true
+        suspicious-activity-detection: true
+        alert-thresholds:
+          failed-auth-per-minute: 10
+          api-key-usage-per-minute: 100
+          token-revoke-per-minute: 5
+      
+      # 审计存储配置
+      storage:
+        type: "h2"              # 选项: h2, file, database
+        h2:
+          table-name: "security_audit_events"  # H2表名
+        file-path: "logs/security-audit.log"
+        rotation:
+          max-file-size: "100MB"
+          max-files: 30
+        # 可选: 数据库存储
+        database:
+          enabled: false
+          table-name: "security_audit_events"
+```
+
+### 审计事件类型
+
+系统记录以下 API Key 和 JWT 事件：
+
+#### API Key 事件
+- **密钥创建**：生成新 API 密钥时
+- **密钥使用**：使用 API 密钥进行认证时
+- **密钥撤销**：撤销 API 密钥时
+- **密钥过期**：API 密钥过期时
+
+#### JWT 令牌事件
+- **令牌颁发**：创建新 JWT 令牌时
+- **令牌刷新**：刷新访问令牌时
+- **令牌撤销**：手动撤销令牌时
+- **令牌验证**：验证令牌时（成功/失败）
+- **令牌过期**：令牌自然过期时
+
+#### 安全事件
+- **可疑活动**：异常认证模式
+- **认证失败**：失败的登录尝试
+- **批量操作**：大量令牌/密钥操作
+
+### 审计事件结构
+
+```json
+{
+  "id": "audit-event-uuid",
+  "type": "API_KEY_USED",
+  "userId": "user123",
+  "resourceId": "key-uuid-123",
+  "action": "USE_KEY",
+  "details": "使用 API Key 访问服务",
+  "ipAddress": "192.168.1.100",
+  "userAgent": "Mozilla/5.0...",
+  "success": true,
+  "timestamp": "2025-01-15T10:30:00Z",
+  "metadata": {
+    "keyId": "admin-key-001",
+    "endpoint": "/v1/chat/completions",
+    "method": "POST"
+  }
+}
+```
+
+### 安全报告生成
+
+生成综合安全报告：
+
+```bash
+# 获取最近30天的安全报告
+curl -X GET "http://localhost:8080/api/security/audit/report?from=2025-01-01&to=2025-01-31" \
+     -H "Authorization: Bearer admin_token"
+```
+
+响应包括：
+- API Key 和 JWT 操作总数
+- 失败认证统计
+- 可疑活动警报
+- 顶级 IP 地址和用户
+- 安全事件趋势
 
 ## 最佳实践
 

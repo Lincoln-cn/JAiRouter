@@ -20,6 +20,7 @@ services:
       - ./config:/app/config
       - ./logs:/app/logs
       - ./src:/app/src:ro
+      - ./data:/app/r2dbc:h2:file/data
     networks:
       - jairouter-network
     depends_on:

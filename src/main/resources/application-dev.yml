@@ -83,6 +83,22 @@ webclient:
   max-in-memory-size: 5MB
 
 # ========================================
+# 开发环境 H2 数据库配置（覆盖默认配置）
+# ========================================
+spring:
+  r2dbc:
+    # 开发环境使用独立的数据库文件
+    url: r2dbc:h2:file///./data/jairouter-dev?DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
+  
+  # H2 控制台（开发环境启用）
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+
+# ========================================
 # 开发环境安全配置覆盖
 # ========================================
 # 仅包含开发环境的安全配置差异
@@ -171,6 +187,7 @@ jairouter:
     # 开发环境审计配置
     audit:
       enabled: true
+      storage: h2  # 开发环境使用 H2 存储审计日志
       log-level: "DEBUG"  # 开发环境使用详细日志
       include-request-body: true   # 开发环境可以包含请求体用于调试
       include-response-body: true  # 开发环境可以包含响应体用于调试
@@ -209,12 +226,6 @@ jairouter:
           enabled: true
           max-events: 10000  # 最多缓存10000个事件
           cleanup-interval: "PT1H"  # 每小时清理一次过期事件
-      
-      storage:
-        file-path: "logs/dev-security-audit.log"
-        rotation:
-          max-file-size: "10MB"  # 开发环境较小的文件大小
-          max-files: 5
     
     # 开发环境监控配置
     monitoring:

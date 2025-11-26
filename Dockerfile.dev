@@ -17,7 +17,7 @@ RUN groupadd -r -g 10010 jairouter && \
 WORKDIR /app
 
 # 创建必要的目录
-RUN mkdir -p /app/logs /app/config /app/config-store && \
+RUN mkdir -p /app/logs /app/config /app/config-store /app/r2dbc:h2:file/data && \
     chown -R jairouter:jairouter /app
 
 # 复制应用 JAR 文件

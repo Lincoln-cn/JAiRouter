@@ -19,6 +19,8 @@ JAiRouter supports JWT (JSON Web Token) authentication, which can be integrated 
 - **Blacklist Functionality**: Supports token revocation and logout
 - **Coexistence with API Key**: Can be used alongside API Key authentication
 - **Username/Password Login**: Supports obtaining JWT tokens via username and password
+- **Persistent Storage**: Supports storing JWT accounts and token information in H2 database
+- **H2 Database Default Storage**: H2 database is now the default persistent storage method for JWT data, providing better performance and reliability
 
 ## Quick Start
 
@@ -373,7 +375,7 @@ jairouter:
       # Token persistence configuration
       persistence:
         enabled: true
-        primary-storage: redis    # redis, memory
+        primary-storage: h2    # h2, redis, memory
         fallback-storage: memory  # memory
         
         # Cleanup configuration
@@ -389,13 +391,10 @@ jairouter:
           cleanup-threshold: 0.8  # 80% triggers cleanup
           lru-enabled: true
           
-        # Redis storage configuration
-        redis:
-          key-prefix: "jwt:"
-          default-ttl: 3600
-          connection-timeout: 5000
-          retry-attempts: 3
-          serialization-format: "json"
+        # H2 database storage configuration
+        h2:
+          table-name: "jwt_tokens"  # Table name
+          max-batch-size: 1000      # Maximum batch size
 ```
 
 ### Token Management Features
@@ -404,9 +403,56 @@ With persistence enabled, you can:
 
 1. **Track Active Tokens**: Monitor all issued tokens and their status
 2. **Token Lifecycle Management**: Automatic status updates and cleanup
-3. **Enhanced Security**: Persistent blacklist with Redis support
+3. **Enhanced Security**: Persistent blacklist with H2 database support
 4. **Audit Trail**: Complete audit logging of token operations
 5. **Performance Monitoring**: Metrics and health checks for token operations
+
+### H2 Database Storage Advantages
+
+Using H2 database storage for JWT tokens provides the following advantages:
+
+1. **Default Storage Method**: H2 database is now the default storage method for JWT tokens
+2. **Persistence**: Data is not lost when the application restarts
+3. **High Performance**: Embedded database with no network overhead
+4. **Easy Maintenance**: Single database file, easy to backup
+5. **Powerful Queries**: Support for complex SQL queries
+6. **Transaction Support**: Ensures data consistency
+7. **Visual Management**: H2 console for easy debugging
+8. **Production Ready**: Meets production environment requirements
+
+### H2 Database Table Structure
+
+JWT tokens are stored in the H2 database in the following tables:
+
+#### jwt_tokens Table
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | VARCHAR(255) | Unique token identifier |
+| user_id | VARCHAR(255) | User ID |
+| token_hash | VARCHAR(255) | Token hash value |
+| issued_at | TIMESTAMP | Issue time |
+| expires_at | TIMESTAMP | Expiration time |
+| status | VARCHAR(50) | Token status (ACTIVE, REVOKED, EXPIRED) |
+| device_info | VARCHAR(500) | Device information |
+| ip_address | VARCHAR(50) | IP address |
+| user_agent | VARCHAR(500) | User agent |
+| revoke_reason | VARCHAR(1000) | Revocation reason |
+| revoked_at | TIMESTAMP | Revocation time |
+| revoked_by | VARCHAR(255) | Revoked by |
+| created_at | TIMESTAMP | Creation time |
+| updated_at | TIMESTAMP | Update time |
+
+#### Index Optimization
+
+The system automatically creates the following indexes to improve query performance:
+
+- `idx_jwt_token_id`: Token ID index
+- `idx_jwt_user_id`: User ID index
+- `idx_jwt_token_hash`: Token hash index
+- `idx_jwt_expires_at`: Expiration time index
+- `idx_jwt_status`: Status index
+- `idx_jwt_issued_at`: Issue time index
 
 ### Token Storage Structure
 
@@ -443,7 +489,7 @@ jairouter:
       blacklist:
         persistence:
           enabled: true
-          primary-storage: redis  # redis, memory
+          primary-storage: h2  # h2, redis, memory
           fallback-storage: memory
           max-memory-size: 10000
           cleanup-interval: 3600  # 1 hour
@@ -500,6 +546,37 @@ curl -X POST "http://localhost:8080/api/auth/jwt/cleanup" \
 curl -X GET "http://localhost:8080/api/auth/jwt/blacklist/stats" \
      -H "Authorization: Bearer admin_token"
 ```
+
+### H2 Blacklist Storage
+
+JWT blacklist now uses H2 database storage by default, providing the following advantages:
+
+1. **Persistent Storage**: Blacklist data is not lost when the application restarts
+2. **High Performance Queries**: Fast checking of whether tokens are on the blacklist through index optimization
+3. **Automatic Cleanup**: Regular cleanup of expired blacklist records
+4. **Easy Backup**: Single database file for easy backup and recovery
+
+#### jwt_blacklist Table Structure
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | BIGINT | Primary key |
+| token_hash | VARCHAR(255) | Token hash value (unique) |
+| user_id | VARCHAR(255) | User ID |
+| revoked_at | TIMESTAMP | Revocation time |
+| expires_at | TIMESTAMP | Expiration time |
+| reason | VARCHAR(1000) | Revocation reason |
+| revoked_by | VARCHAR(255) | Revoked by |
+| created_at | TIMESTAMP | Creation time |
+
+#### Index Optimization
+
+The system automatically creates the following indexes to improve blacklist query performance:
+
+- `idx_blacklist_token_hash`: Token hash index (unique)
+- `idx_blacklist_user_id`: User ID index
+- `idx_blacklist_expires_at`: Expiration time index
+- `idx_blacklist_revoked_at`: Revocation time index
 
 ## Integration with API Key
 
@@ -589,7 +666,9 @@ jairouter:
       
       # Audit storage configuration
       storage:
-        type: "file"
+        type: "h2"              # Options: h2, file, database
+        h2:
+          table-name: "security_audit_events"  # H2 table name
         file-path: "logs/security-audit.log"
         rotation:
           max-file-size: "100MB"
@@ -621,6 +700,45 @@ The system logs the following JWT and API Key events:
 - **Suspicious Activity**: Unusual authentication patterns
 - **Failed Authentication**: Failed login attempts
 - **Bulk Operations**: Mass token/key operations
+
+### H2 Audit Storage
+
+Security audit events now use H2 database storage by default, providing the following advantages:
+
+1. **Persistent Storage**: Audit data is not lost when the application restarts
+2. **High Performance Queries**: Support for complex audit event queries and analysis
+3. **Easy Analysis**: SQL queries for audit data analysis
+4. **Backup and Recovery**: Single database file for easy backup and recovery
+
+#### security_audit Table Structure
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | BIGINT | Primary key |
+| event_id | VARCHAR(255) | Unique event identifier |
+| event_type | VARCHAR(100) | Event type |
+| user_id | VARCHAR(255) | User ID |
+| client_ip | VARCHAR(50) | Client IP |
+| user_agent | VARCHAR(500) | User agent |
+| timestamp | TIMESTAMP | Event time |
+| resource | VARCHAR(500) | Accessed resource |
+| action | VARCHAR(100) | Performed action |
+| success | BOOLEAN | Whether successful |
+| failure_reason | VARCHAR(1000) | Failure reason |
+| additional_data | TEXT | Additional data (JSON) |
+| request_id | VARCHAR(255) | Request ID |
+| session_id | VARCHAR(255) | Session ID |
+
+#### Index Optimization
+
+The system automatically creates the following indexes to improve audit query performance:
+
+- `idx_audit_event_id`: Event ID index
+- `idx_audit_timestamp`: Timestamp index
+- `idx_audit_user_id`: User ID index
+- `idx_audit_event_type`: Event type index
+- `idx_audit_client_ip`: Client IP index
+- `idx_audit_success`: Success status index
 
 ### Audit Event Structure
 
@@ -680,7 +798,7 @@ Response includes:
 #### Storage Metrics
 - `jairouter_security_storage_operations_total`: Total storage operations
 - `jairouter_security_storage_errors_total`: Storage operation errors
-- `jairouter_security_redis_connection_status`: Redis connection health
+- `jairouter_security_h2_connection_status`: H2 connection health
 - `jairouter_security_memory_usage_bytes`: Memory usage for token storage
 
 ## Security Best Practices
