@@ -4,6 +4,29 @@
 # 此文件仅包含生产环境特定的配置覆盖
 # 基础配置通过模块化导入，详见 application.yml
 
+# ========================================
+# 生产环境 H2 数据库配置（覆盖默认配置）
+# ========================================
+store:
+  migration:
+    enabled: false  # 生产环境关闭自动迁移
+  security-migration:
+    enabled: false  # 生产环境关闭安全数据迁移
+
+spring:
+  r2dbc:
+    # 生产环境使用独立的数据库文件
+    url: r2dbc:h2:file///./data/jairouter-prod?DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
+    pool:
+      initial-size: 20  # 生产环境更大的连接池
+      max-size: 50
+      max-idle-time: 30m
+  
+  # H2 控制台（生产环境关闭）
+  h2:
+    console:
+      enabled: false
+
 # 生产环境日志配置（最小化输出）
 logging:
   level:
@@ -115,9 +138,10 @@ jairouter:
     # 生产环境审计配置
     audit:
       enabled: true
+      storage: h2  # 生产环境使用 H2 存储审计日志
       include-request-body: false   # 生产环境不包含请求体
       include-response-body: false  # 生产环境不包含响应体
-      retention-days: 365  # 生产环境长期保留
+      retention-days: 90  # 生产环境保留90天
       alert-enabled: true
       
       alert-thresholds:
@@ -129,17 +153,6 @@ jairouter:
       event-types:
         authentication-success: false    # 生产环境不记录成功认证（减少日志量）
         sanitization-applied: false      # 生产环境不记录脱敏操作（减少日志量）
-      
-
-      
-      storage:
-        file-path: "logs/prod-security-audit.log"
-        rotation:
-          max-file-size: "500MB"  # 生产环境更大的文件大小
-          max-files: 100
-        # 生产环境可考虑使用数据库存储
-        database:
-          enabled: false  # 根据需要启用
     
     # 生产环境监控配置
     monitoring:

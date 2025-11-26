@@ -49,4 +49,5 @@ build/
 /scripts/docs copy/
 /site/
 app.log
-/src/main/resources/static/admin
+/src/main/resources/static/admin/data/
+/r2dbc:h2:file/

@@ -29,6 +29,27 @@ spring:
       
   profiles:
     active: dev  # 默认使用开发环境
+  
+  # H2 数据库配置（默认配置）
+  r2dbc:
+    url: r2dbc:h2:file///./data/jairouter?DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
+    username: sa
+    password:
+  
+  # H2 控制台（默认关闭，开发环境可启用）
+  h2:
+    console:
+      enabled: false
+
+# ========================================
+# 存储配置（默认使用 H2）
+# ========================================
+store:
+  type: h2  # 存储类型：file, memory, h2
+  migration:
+    enabled: true  # 是否启用配置迁移
+  security-migration:
+    enabled: true  # 是否启用安全数据迁移
 
 # ========================================
 # 配置模块说明

@@ -1,13 +1,21 @@
 # ========================================
 # JWT令牌持久化基础配置
 # ========================================
+# H2 数据库存储配置
+store:
+  type: h2  # 默认使用 H2 数据库存储
+  migration:
+    enabled: false  # 默认关闭自动迁移，首次启动时手动启用
+  security-migration:
+    enabled: false  # 默认关闭安全数据迁移，首次启动时手动启用
+
 jairouter:
   security:
     jwt:
       # 令牌持久化配置
       persistence:
         enabled: false  # 默认关闭，各环境按需启用
-        primary-storage: redis    # redis, memory
+        primary-storage: file    # file（使用 H2）, redis, memory
         fallback-storage: memory  # memory
         
         # 复合存储策略配置
@@ -57,7 +65,7 @@ jairouter:
       blacklist:
         persistence:
           enabled: false  # 默认关闭
-          primary-storage: redis  # redis, memory
+          primary-storage: file  # file（使用 H2）, redis, memory
           fallback-storage: memory
           max-memory-size: 10000
           cleanup-interval: 3600  # 1小时
@@ -83,10 +91,33 @@ jairouter:
             min-idle: 0
             max-wait: -1
 
+    # 安全审计配置
+    audit:
+      enabled: true
+      storage: h2  # 默认使用 H2 数据库存储审计日志
+      retentionDays: 30
+
 # ========================================
-# Redis连接配置（共享）
+# Spring 配置（R2DBC 和 Redis）
 # ========================================
 spring:
+  # Spring Data R2DBC 配置
+  r2dbc:
+    username: sa
+    password:
+    pool:
+      initial-size: 10
+      max-size: 20
+      max-idle-time: 30m
+  
+  # SQL 初始化配置（用于 R2DBC）
+  sql:
+    init:
+      mode: always  # 总是执行初始化脚本
+      schema-locations: classpath:schema.sql
+      continue-on-error: false
+  
+  # Redis连接配置（共享）
   data:
     redis:
       # 基础连接配置（当启用Redis时生效）

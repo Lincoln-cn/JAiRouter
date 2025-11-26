@@ -53,6 +53,20 @@ public class JwtTokenController {
     
     @Autowired(required = false)
     private JwtBlacklistService jwtBlacklistService;
+    
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("=== JwtTokenController initialized ===");
+        log.info("JwtPersistenceService available: {}", jwtPersistenceService != null);
+        log.info("JwtCleanupService available: {}", jwtCleanupService != null);
+        log.info("JwtBlacklistService available: {}", jwtBlacklistService != null);
+        if (jwtPersistenceService != null) {
+            log.info("JwtPersistenceService class: {}", jwtPersistenceService.getClass().getSimpleName());
+        } else {
+            log.warn("!!! JwtPersistenceService is NULL - Token persistence will NOT work !!!");
+            log.warn("Check configuration: jairouter.security.jwt.persistence.enabled should be true");
+        }
+    }
 
     /**
      * 用户登录获取JWT令牌
@@ -83,14 +97,17 @@ public class JwtTokenController {
 
                     // 如果持久化服务可用，保存令牌元数据（包含审计）
                     if (jwtPersistenceService != null) {
+                        log.info("保存令牌元数据到H2数据库: username={}, ip={}", request.getUsername(), clientIp);
                         return tokenRefreshService.saveTokenMetadata(token, request.getUsername(), userAgent, clientIp, userAgent)
+                                .doOnSuccess(v -> log.info("✓ 令牌元数据已成功保存到H2数据库: username={}", request.getUsername()))
                                 .then(Mono.just(RouterResponse.success(response, "登录成功")))
                                 .onErrorResume(ex -> {
                                     // 持久化失败不影响登录成功，只记录日志
-                                    log.warn("保存令牌元数据失败: {}", ex.getMessage());
+                                    log.error("✗ 保存令牌元数据失败: {}", ex.getMessage(), ex);
                                     return Mono.just(RouterResponse.success(response, "登录成功"));
                                 });
                     } else {
+                        log.warn("!!! JwtPersistenceService不可用，令牌未持久化 !!!");
                         return Mono.just(RouterResponse.success(response, "登录成功"));
                     }
                 })
@@ -584,11 +601,13 @@ public class JwtTokenController {
      */
     private Mono<Void> updateTokenStatusInPersistence(String token, TokenStatus status, String reason, String updatedBy) {
         if (jwtPersistenceService == null) {
+            log.warn("!!! JwtPersistenceService不可用，无法更新令牌状态到H2 !!!");
             return Mono.empty(); // 服务不可用时直接返回
         }
 
         try {
             String tokenHash = calculateTokenHash(token);
+            log.info("更新令牌状态到H2: tokenHash={}, status={}, reason={}", tokenHash.substring(0, 10) + "...", status, reason);
             return jwtPersistenceService.findByTokenHash(tokenHash)
                     .flatMap(tokenInfo -> {
                         tokenInfo.setStatus(status);
@@ -598,12 +617,13 @@ public class JwtTokenController {
                         tokenInfo.setUpdatedAt(LocalDateTime.now());
                         return jwtPersistenceService.saveToken(tokenInfo);
                     })
+                    .doOnSuccess(v -> log.info("✓ 令牌状态已更新到H2: status={}", status))
                     .onErrorResume(ex -> {
-                        log.warn("更新令牌持久化状态失败: {}", ex.getMessage());
+                        log.error("✗ 更新令牌持久化状态失败: {}", ex.getMessage(), ex);
                         return Mono.empty(); // 失败时不影响主流程
                     });
         } catch (Exception ex) {
-            log.warn("更新令牌持久化状态异常: {}", ex.getMessage());
+            log.error("✗ 更新令牌持久化状态异常: {}", ex.getMessage(), ex);
             return Mono.empty();
         }
     }

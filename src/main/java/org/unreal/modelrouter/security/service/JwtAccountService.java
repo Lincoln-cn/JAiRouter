@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.security.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -8,8 +10,11 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.security.config.SecurityConfigurationChangeEvent;
 import org.unreal.modelrouter.security.config.properties.JwtUserProperties;
 import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.store.entity.JwtAccountEntity;
+import org.unreal.modelrouter.store.repository.JwtAccountRepository;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,6 +32,8 @@ public class JwtAccountService {
     private final StoreManager storeManager;
     private final ApplicationEventPublisher eventPublisher;
     private final PasswordEncoder passwordEncoder;
+    private final JwtAccountRepository jwtAccountRepository;
+    private final ObjectMapper objectMapper;
 
     private static final String JWT_ACCOUNTS_CONFIG_KEY = "jwt-accounts-config";
 
@@ -109,22 +116,31 @@ public class JwtAccountService {
      * @return 账户列表
      */
     public Mono<List<JwtUserProperties.UserAccount>> getAllAccounts() {
-        return Mono.fromCallable(() -> {
-            log.debug("获取所有JWT账户");
-            // 优先从持久化配置中获取账户列表，如果不存在则使用默认配置
-            try {
-                Map<String, Object> currentConfig = getCurrentPersistedAccountConfig();
-                List<JwtUserProperties.UserAccount> accounts = getAccountsFromConfig(currentConfig);
-                if (accounts != null && !accounts.isEmpty()) {
-                    return accounts;
-                }
-            } catch (Exception e) {
-                log.warn("从持久化配置获取账户列表失败，使用默认配置", e);
-            }
-            // 回退到默认配置
-            List<JwtUserProperties.UserAccount> accounts = jwtUserProperties.getAccounts();
-            return accounts != null ? new ArrayList<>(accounts) : new ArrayList<>();
-        });
+        return jwtAccountRepository.findAll()
+                .map(entity -> {
+                    try {
+                        List<String> roles = objectMapper.readValue(entity.getRoles(), 
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                        
+                        JwtUserProperties.UserAccount account = new JwtUserProperties.UserAccount();
+                        account.setUsername(entity.getUsername());
+                        account.setPassword(entity.getPassword());
+                        account.setRoles(roles);
+                        account.setEnabled(entity.getEnabled());
+                        return account;
+                    } catch (JsonProcessingException e) {
+                        log.error("反序列化JWT账户角色失败: {}", entity.getUsername(), e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collectList()
+                .doOnSuccess(accounts -> {
+                    log.info("从数据库获取到 {} 个JWT账户", accounts.size());
+                    for (JwtUserProperties.UserAccount acc : accounts) {
+                        log.debug("  - 账户: {}, 角色: {}, 启用: {}", acc.getUsername(), acc.getRoles(), acc.isEnabled());
+                    }
+                });
     }
 
     /**
@@ -133,13 +149,30 @@ public class JwtAccountService {
      * @return 账户信息
      */
     public Mono<JwtUserProperties.UserAccount> getAccountByUsername(String username) {
-        return Mono.fromCallable(() -> {
-            log.debug("获取JWT账户: {}", username);
-            return jwtUserProperties.getAccounts().stream()
-                    .filter(account -> account.getUsername().equals(username))
-                    .findFirst()
-                    .orElse(null);
-        });
+        return jwtAccountRepository.findByUsername(username)
+                .map(entity -> {
+                    try {
+                        List<String> roles = objectMapper.readValue(entity.getRoles(), 
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                        
+                        JwtUserProperties.UserAccount account = new JwtUserProperties.UserAccount();
+                        account.setUsername(entity.getUsername());
+                        account.setPassword(entity.getPassword());
+                        account.setRoles(roles);
+                        account.setEnabled(entity.getEnabled());
+                        return account;
+                    } catch (JsonProcessingException e) {
+                        log.error("反序列化JWT账户角色失败: {}", entity.getUsername(), e);
+                        return null;
+                    }
+                })
+                .doOnSuccess(account -> {
+                    if (account != null) {
+                        log.debug("从数据库获取JWT账户: {}", username);
+                    } else {
+                        log.debug("数据库中未找到JWT账户: {}", username);
+                    }
+                });
     }
 
     /**
@@ -148,49 +181,69 @@ public class JwtAccountService {
      * @return 创建结果
      */
     public Mono<Void> createAccount(JwtUserProperties.UserAccount account) {
-        return Mono.fromRunnable(() -> {
-            log.info("创建新的JWT账户: {}", account.getUsername());
-            
-            try {
-                // 验证账户信息
-                validateAccount(account);
-                
-                // 检查用户名是否已存在
-                boolean exists = jwtUserProperties.getAccounts().stream()
-                        .anyMatch(existingAccount -> existingAccount.getUsername().equals(account.getUsername()));
-                
-                if (exists) {
-                    throw new IllegalArgumentException("用户名已存在: " + account.getUsername());
-                }
-                
-                // 加密密码
-                JwtUserProperties.UserAccount encryptedAccount = encryptAccountPassword(account);
-                
-                // 获取当前配置
-                Map<String, Object> currentConfig = getCurrentPersistedAccountConfig();
-                List<JwtUserProperties.UserAccount> accounts = getAccountsFromConfig(currentConfig);
-                
-                // 添加新账户
-                accounts.add(encryptedAccount);
-                currentConfig.put("accounts", accounts);
-                
-                // 保存为新版本
-                saveAccountAsNewVersion(currentConfig);
-                
-                // 更新内存中的配置
-                // 重新获取最新的配置来确保内存中的配置是最新的
-                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
-                
-                // 发布配置变更事件
-                publishAccountChangeEvent("account-create", null, encryptedAccount);
-                
-                log.info("JWT账户创建成功: {}", account.getUsername());
-                
-            } catch (Exception e) {
-                log.error("创建JWT账户失败: " + account.getUsername(), e);
-                throw new RuntimeException("创建JWT账户失败", e);
-            }
-        }).then();
+        log.info("创建新的JWT账户: {}", account.getUsername());
+        
+        // 验证账户信息
+        try {
+            validateAccount(account);
+        } catch (Exception e) {
+            return Mono.error(new RuntimeException("账户信息验证失败", e));
+        }
+        
+        // 检查用户名是否已存在（检查数据库）
+        return jwtAccountRepository.existsByUsername(account.getUsername())
+                .flatMap(exists -> {
+                    if (Boolean.TRUE.equals(exists)) {
+                        return Mono.error(new IllegalArgumentException("用户名已存在: " + account.getUsername()));
+                    }
+                    
+                    try {
+                        // 加密密码
+                        JwtUserProperties.UserAccount encryptedAccount = encryptAccountPassword(account);
+                        
+                        // 1. 保存到 jwt_accounts 表
+                        JwtAccountEntity entity = JwtAccountEntity.builder()
+                                .username(encryptedAccount.getUsername())
+                                .password(encryptedAccount.getPassword())
+                                .roles(objectMapper.writeValueAsString(encryptedAccount.getRoles()))
+                                .enabled(encryptedAccount.isEnabled())
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
+                        
+                        return jwtAccountRepository.save(entity)
+                                .doOnSuccess(saved -> {
+                                    log.info("JWT账户已保存到数据库表: {}", account.getUsername());
+                                    
+                                    // 2. 更新内存中的配置（同步操作，在响应式链外执行）
+                                    List<JwtUserProperties.UserAccount> currentAccounts = jwtUserProperties.getAccounts();
+                                    if (currentAccounts == null) {
+                                        currentAccounts = new ArrayList<>();
+                                    }
+                                    List<JwtUserProperties.UserAccount> updatedAccounts = new ArrayList<>(currentAccounts);
+                                    updatedAccounts.add(encryptedAccount);
+                                    jwtUserProperties.setAccounts(updatedAccounts);
+                                    
+                                    log.info("JWT账户已添加到内存配置，当前账户数量: {}", updatedAccounts.size());
+                                    
+                                    // 3. 发布配置变更事件
+                                    publishAccountChangeEvent("account-create", null, encryptedAccount);
+                                    
+                                    log.info("JWT账户创建成功: {}", account.getUsername());
+                                })
+                                .then();
+                    } catch (JsonProcessingException e) {
+                        log.error("序列化JWT账户角色失败: " + account.getUsername(), e);
+                        return Mono.error(new RuntimeException("创建JWT账户失败", e));
+                    }
+                })
+                .onErrorMap(e -> {
+                    if (e instanceof IllegalArgumentException || e instanceof RuntimeException) {
+                        return e;
+                    }
+                    log.error("创建JWT账户失败: " + account.getUsername(), e);
+                    return new RuntimeException("创建JWT账户失败", e);
+                });
     }
 
     /**
@@ -207,51 +260,71 @@ public class JwtAccountService {
                 // 验证账户信息
                 validateAccount(account);
                 
-                // 获取当前配置
+                // 1. 更新数据库表
+                JwtAccountEntity existingEntity = jwtAccountRepository.findByUsername(username).block();
+                if (existingEntity == null) {
+                    throw new IllegalArgumentException("账户不存在: " + username);
+                }
+                
+                JwtUserProperties.UserAccount oldAccount = new JwtUserProperties.UserAccount();
+                oldAccount.setUsername(existingEntity.getUsername());
+                oldAccount.setPassword(existingEntity.getPassword());
+                oldAccount.setEnabled(existingEntity.getEnabled());
+                
+                // 如果密码发生变化，重新加密
+                String newPassword = account.getPassword();
+                if (!existingEntity.getPassword().equals(account.getPassword())) {
+                    newPassword = encryptPassword(account.getPassword());
+                }
+                
+                existingEntity.setPassword(newPassword);
+                existingEntity.setRoles(objectMapper.writeValueAsString(account.getRoles()));
+                existingEntity.setEnabled(account.isEnabled());
+                existingEntity.setUpdatedAt(LocalDateTime.now());
+                
+                jwtAccountRepository.save(existingEntity).block();
+                log.info("JWT账户已更新到数据库表: {}", username);
+                
+                // 2. 更新配置存储
                 Map<String, Object> currentConfig = getCurrentPersistedAccountConfig();
                 List<JwtUserProperties.UserAccount> accounts = getAccountsFromConfig(currentConfig);
                 
-                // 查找并更新账户
                 boolean found = false;
-                JwtUserProperties.UserAccount oldAccount = null;
-                
                 for (int i = 0; i < accounts.size(); i++) {
                     JwtUserProperties.UserAccount existingAccount = accounts.get(i);
                     if (existingAccount.getUsername().equals(username)) {
-                        oldAccount = copyAccount(existingAccount);
-                        
-                        // 更新账户信息
-                        existingAccount.setPassword(account.getPassword());
+                        existingAccount.setPassword(newPassword);
                         existingAccount.setRoles(new ArrayList<>(account.getRoles()));
                         existingAccount.setEnabled(account.isEnabled());
-                        
-                        // 如果密码发生变化，重新加密
-                        if (!oldAccount.getPassword().equals(account.getPassword())) {
-                            existingAccount.setPassword(encryptPassword(account.getPassword()));
-                        }
-                        
                         found = true;
                         break;
                     }
                 }
                 
                 if (!found) {
-                    throw new IllegalArgumentException("账户不存在: " + username);
+                    // 如果配置中不存在，添加进去
+                    JwtUserProperties.UserAccount updatedAccount = new JwtUserProperties.UserAccount();
+                    updatedAccount.setUsername(username);
+                    updatedAccount.setPassword(newPassword);
+                    updatedAccount.setRoles(new ArrayList<>(account.getRoles()));
+                    updatedAccount.setEnabled(account.isEnabled());
+                    accounts.add(updatedAccount);
                 }
                 
-                // 保存为新版本
                 currentConfig.put("accounts", accounts);
                 saveAccountAsNewVersion(currentConfig);
                 
-                // 更新内存中的配置
-                // 重新获取最新的配置来确保内存中的配置是最新的
-                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
+                // 3. 更新内存中的配置
+                refreshAccountRuntimeConfig(currentConfig);
                 
-                // 发布配置变更事件
+                // 4. 发布配置变更事件
                 publishAccountChangeEvent("account-update", oldAccount, account);
                 
                 log.info("JWT账户更新成功: {}", username);
                 
+            } catch (JsonProcessingException e) {
+                log.error("序列化JWT账户角色失败: " + username, e);
+                throw new RuntimeException("更新JWT账户失败", e);
             } catch (Exception e) {
                 log.error("更新JWT账户失败: " + username, e);
                 throw new RuntimeException("更新JWT账户失败", e);
@@ -265,51 +338,42 @@ public class JwtAccountService {
      * @return 删除结果
      */
     public Mono<Void> deleteAccount(String username) {
-        return Mono.fromRunnable(() -> {
-            log.info("删除JWT账户: {}", username);
-            
-            try {
-                // 获取当前配置
-                Map<String, Object> currentConfig = getCurrentPersistedAccountConfig();
-                List<JwtUserProperties.UserAccount> accounts = getAccountsFromConfig(currentConfig);
-                
-                // 查找并删除账户
-                JwtUserProperties.UserAccount deletedAccount = null;
-                boolean removed = false;
-                
-                Iterator<JwtUserProperties.UserAccount> iterator = accounts.iterator();
-                while (iterator.hasNext()) {
-                    JwtUserProperties.UserAccount account = iterator.next();
-                    if (account.getUsername().equals(username)) {
-                        deletedAccount = copyAccount(account);
-                        iterator.remove();
-                        removed = true;
-                        break;
+        log.info("删除JWT账户: {}", username);
+        
+        return jwtAccountRepository.findByUsername(username)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("账户不存在: " + username)))
+                .flatMap(existingEntity -> {
+                    JwtUserProperties.UserAccount deletedAccount = new JwtUserProperties.UserAccount();
+                    deletedAccount.setUsername(existingEntity.getUsername());
+                    deletedAccount.setPassword(existingEntity.getPassword());
+                    deletedAccount.setEnabled(existingEntity.getEnabled());
+                    
+                    return jwtAccountRepository.deleteByUsername(username)
+                            .doOnSuccess(v -> {
+                                log.info("JWT账户已从数据库表删除: {}", username);
+                                
+                                // 2. 更新内存中的配置
+                                List<JwtUserProperties.UserAccount> currentAccounts = jwtUserProperties.getAccounts();
+                                if (currentAccounts != null) {
+                                    List<JwtUserProperties.UserAccount> updatedAccounts = new ArrayList<>(currentAccounts);
+                                    updatedAccounts.removeIf(acc -> acc.getUsername().equals(username));
+                                    jwtUserProperties.setAccounts(updatedAccounts);
+                                    log.info("JWT账户已从内存配置删除，当前账户数量: {}", updatedAccounts.size());
+                                }
+                                
+                                // 3. 发布配置变更事件
+                                publishAccountChangeEvent("account-delete", deletedAccount, null);
+                                
+                                log.info("JWT账户删除成功: {}", username);
+                            });
+                })
+                .onErrorMap(e -> {
+                    if (e instanceof IllegalArgumentException) {
+                        return e;
                     }
-                }
-                
-                if (!removed) {
-                    throw new IllegalArgumentException("账户不存在: " + username);
-                }
-                
-                // 保存为新版本
-                currentConfig.put("accounts", accounts);
-                saveAccountAsNewVersion(currentConfig);
-                
-                // 更新内存中的配置
-                // 重新获取最新的配置来确保内存中的配置是最新的
-                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
-                
-                // 发布配置变更事件
-                publishAccountChangeEvent("account-delete", deletedAccount, null);
-                
-                log.info("JWT账户删除成功: {}", username);
-                
-            } catch (Exception e) {
-                log.error("删除JWT账户失败: " + username, e);
-                throw new RuntimeException("删除JWT账户失败", e);
-            }
-        }).then();
+                    log.error("删除JWT账户失败: " + username, e);
+                    return new RuntimeException("删除JWT账户失败", e);
+                });
     }
 
     /**
@@ -323,40 +387,49 @@ public class JwtAccountService {
             log.info("{}JWT账户: {}", enabled ? "启用" : "禁用", username);
             
             try {
-                // 获取当前配置
+                // 1. 更新数据库表
+                JwtAccountEntity existingEntity = jwtAccountRepository.findByUsername(username).block();
+                if (existingEntity == null) {
+                    throw new IllegalArgumentException("账户不存在: " + username);
+                }
+                
+                JwtUserProperties.UserAccount oldAccount = new JwtUserProperties.UserAccount();
+                oldAccount.setUsername(existingEntity.getUsername());
+                oldAccount.setPassword(existingEntity.getPassword());
+                oldAccount.setEnabled(existingEntity.getEnabled());
+                
+                existingEntity.setEnabled(enabled);
+                existingEntity.setUpdatedAt(LocalDateTime.now());
+                jwtAccountRepository.save(existingEntity).block();
+                log.info("JWT账户状态已更新到数据库表: {} -> {}", username, enabled ? "启用" : "禁用");
+                
+                // 2. 更新配置存储
                 Map<String, Object> currentConfig = getCurrentPersistedAccountConfig();
                 List<JwtUserProperties.UserAccount> accounts = getAccountsFromConfig(currentConfig);
                 
-                // 查找并更新账户状态
                 boolean found = false;
-                JwtUserProperties.UserAccount oldAccount = null;
+                JwtUserProperties.UserAccount newAccount = null;
                 
                 for (JwtUserProperties.UserAccount account : accounts) {
                     if (account.getUsername().equals(username)) {
-                        oldAccount = copyAccount(account);
                         account.setEnabled(enabled);
+                        newAccount = account;
                         found = true;
                         break;
                     }
                 }
                 
                 if (!found) {
-                    throw new IllegalArgumentException("账户不存在: " + username);
+                    throw new IllegalArgumentException("配置中账户不存在: " + username);
                 }
                 
-                // 保存为新版本
                 currentConfig.put("accounts", accounts);
                 saveAccountAsNewVersion(currentConfig);
                 
-                // 更新内存中的配置
-                // 重新获取最新的配置来确保内存中的配置是最新的
-                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
+                // 3. 更新内存中的配置
+                refreshAccountRuntimeConfig(currentConfig);
                 
-                // 发布配置变更事件
-                JwtUserProperties.UserAccount newAccount = accounts.stream()
-                    .filter(account -> account.getUsername().equals(username))
-                    .findFirst()
-                    .orElse(null);
+                // 4. 发布配置变更事件
                 publishAccountChangeEvent("account-status-change", oldAccount, newAccount);
                 
                 log.info("JWT账户状态更新成功: {} -> {}", username, enabled ? "启用" : "禁用");
@@ -397,25 +470,42 @@ public class JwtAccountService {
                         .map(this::encryptAccountPassword)
                         .collect(Collectors.toList());
                 
-                // 获取当前配置
+                // 1. 清空数据库表
+                jwtAccountRepository.deleteAll().block();
+                log.info("已清空JWT账户数据库表");
+                
+                // 2. 批量保存到数据库表
+                for (JwtUserProperties.UserAccount account : encryptedAccounts) {
+                    JwtAccountEntity entity = JwtAccountEntity.builder()
+                            .username(account.getUsername())
+                            .password(account.getPassword())
+                            .roles(objectMapper.writeValueAsString(account.getRoles()))
+                            .enabled(account.isEnabled())
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    jwtAccountRepository.save(entity).block();
+                }
+                log.info("已批量保存 {} 个JWT账户到数据库表", encryptedAccounts.size());
+                
+                // 3. 更新配置存储
                 Map<String, Object> currentConfig = getCurrentPersistedAccountConfig();
                 List<JwtUserProperties.UserAccount> oldAccounts = getAccountsFromConfig(currentConfig);
                 
-                // 更新配置
                 currentConfig.put("accounts", encryptedAccounts);
-                
-                // 保存为新版本
                 saveAccountAsNewVersion(currentConfig);
                 
-                // 更新内存中的配置
-                // 重新获取最新的配置来确保内存中的配置是最新的
-                refreshAccountRuntimeConfig(getCurrentPersistedAccountConfig());
+                // 4. 更新内存中的配置
+                refreshAccountRuntimeConfig(currentConfig);
                 
-                // 发布配置变更事件
+                // 5. 发布配置变更事件
                 publishAccountChangeEvent("accounts-batch-update", oldAccounts, encryptedAccounts);
                 
                 log.info("JWT账户批量更新成功，数量: {}", accounts.size());
                 
+            } catch (JsonProcessingException e) {
+                log.error("序列化JWT账户角色失败", e);
+                throw new RuntimeException("批量更新JWT账户失败", e);
             } catch (Exception e) {
                 log.error("批量更新JWT账户失败", e);
                 throw new RuntimeException("批量更新JWT账户失败", e);
@@ -504,31 +594,58 @@ public class JwtAccountService {
     private List<JwtUserProperties.UserAccount> getAccountsFromConfig(Map<String, Object> config) {
         Object accountsObj = config.get("accounts");
         if (accountsObj instanceof List) {
-            List<JwtUserProperties.UserAccount> accounts = new ArrayList<>();
-            List<Map<String, Object>> accountsList = (List<Map<String, Object>>) accountsObj;
+            List<?> accountsList = (List<?>) accountsObj;
             
-            for (Map<String, Object> accountMap : accountsList) {
-                JwtUserProperties.UserAccount account = new JwtUserProperties.UserAccount();
-                account.setUsername((String) accountMap.get("username"));
-                account.setPassword((String) accountMap.get("password"));
-                account.setEnabled((Boolean) accountMap.get("enabled"));
-                
-                // 处理角色列表
-                Object rolesObj = accountMap.get("roles");
-                if (rolesObj instanceof List) {
-                    List<String> roles = new ArrayList<>();
-                    for (Object role : (List<?>) rolesObj) {
-                        roles.add((String) role);
-                    }
-                    account.setRoles(roles);
-                } else {
-                    account.setRoles(new ArrayList<>());
-                }
-                
-                accounts.add(account);
+            // 如果列表为空，直接返回空列表
+            if (accountsList.isEmpty()) {
+                return new ArrayList<>();
             }
             
-            return accounts;
+            // 检查第一个元素的类型
+            Object firstElement = accountsList.get(0);
+            
+            // 如果已经是UserAccount类型，直接返回（需要复制以避免修改原对象）
+            if (firstElement instanceof JwtUserProperties.UserAccount) {
+                List<JwtUserProperties.UserAccount> accounts = new ArrayList<>();
+                for (Object obj : accountsList) {
+                    if (obj instanceof JwtUserProperties.UserAccount) {
+                        accounts.add(copyAccount((JwtUserProperties.UserAccount) obj));
+                    }
+                }
+                return accounts;
+            }
+            
+            // 如果是Map类型，需要转换
+            if (firstElement instanceof Map) {
+                List<JwtUserProperties.UserAccount> accounts = new ArrayList<>();
+                for (Object obj : accountsList) {
+                    if (obj instanceof Map) {
+                        Map<String, Object> accountMap = (Map<String, Object>) obj;
+                        JwtUserProperties.UserAccount account = new JwtUserProperties.UserAccount();
+                        account.setUsername((String) accountMap.get("username"));
+                        account.setPassword((String) accountMap.get("password"));
+                        
+                        // 处理enabled字段，默认为true
+                        Object enabledObj = accountMap.get("enabled");
+                        account.setEnabled(enabledObj != null ? (Boolean) enabledObj : true);
+                        
+                        // 处理角色列表
+                        Object rolesObj = accountMap.get("roles");
+                        if (rolesObj instanceof List) {
+                            List<String> roles = new ArrayList<>();
+                            for (Object role : (List<?>) rolesObj) {
+                                roles.add((String) role);
+                            }
+                            account.setRoles(roles);
+                        } else {
+                            account.setRoles(new ArrayList<>());
+                        }
+                        
+                        accounts.add(account);
+                    }
+                }
+                return accounts;
+            }
         }
         return new ArrayList<>();
     }
@@ -620,18 +737,31 @@ public class JwtAccountService {
      */
     private void refreshAccountRuntimeConfig(Map<String, Object> config) {
         try {
+            log.info("=== 开始刷新运行时JWT账户配置 ===");
+            log.info("配置内容: {}", config);
+            
             if (config.containsKey("enabled")) {
                 jwtUserProperties.setEnabled((Boolean) config.get("enabled"));
+                log.info("已更新enabled状态: {}", config.get("enabled"));
             }
             
             if (config.containsKey("accounts")) {
+                log.info("配置中包含accounts字段");
                 List<JwtUserProperties.UserAccount> accounts = getAccountsFromConfig(config);
+                log.info("从配置中解析出的账户数量: {}", accounts.size());
+                for (JwtUserProperties.UserAccount acc : accounts) {
+                    log.info("  - 解析账户: {}, 角色: {}", acc.getUsername(), acc.getRoles());
+                }
+                
                 jwtUserProperties.setAccounts(new ArrayList<>(accounts));
+                log.info("已设置到jwtUserProperties，当前账户数量: {}", jwtUserProperties.getAccounts().size());
+            } else {
+                log.warn("配置中不包含accounts字段！");
             }
             
-            log.debug("运行时JWT账户配置已刷新");
+            log.info("=== 运行时JWT账户配置刷新完成 ===");
         } catch (Exception e) {
-            log.warn("刷新运行时JWT账户配置失败", e);
+            log.error("刷新运行时JWT账户配置失败", e);
         }
     }
 
@@ -700,7 +830,18 @@ public class JwtAccountService {
 
         try {
             int currentVersion = getCurrentAccountVersion();
-            log.info("已加载JWT账户配置版本 {}", currentVersion);
+            if (currentVersion > 0) {
+                Map<String, Object> config = getAccountVersionConfig(currentVersion);
+                if (config != null) {
+                    log.info("加载JWT账户配置版本 {}", currentVersion);
+                    refreshAccountRuntimeConfig(config);
+                    log.info("已将JWT账户配置版本 {} 应用到运行时", currentVersion);
+                } else {
+                    log.warn("JWT账户配置版本 {} 不存在，使用YAML默认配置", currentVersion);
+                }
+            } else {
+                log.info("没有持久化的JWT账户配置版本，使用YAML默认配置");
+            }
 
         } catch (Exception e) {
             log.error("加载持久化JWT账户配置失败", e);

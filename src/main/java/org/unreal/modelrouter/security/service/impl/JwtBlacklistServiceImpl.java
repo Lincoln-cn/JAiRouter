@@ -32,6 +32,13 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     private static final String BLACKLIST_INDEX_KEY = "jwt_blacklist_index";
     private static final String BLACKLIST_STATS_KEY = "jwt_blacklist_stats";
     
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("=== JwtBlacklistServiceImpl initialized with StoreManager: {} ===", 
+                storeManager.getClass().getSimpleName());
+        log.info("JWT Blacklist persistence is ENABLED and using H2 database storage");
+    }
+    
     @Override
     public Mono<Void> addToBlacklist(String tokenHash, String reason, String addedBy) {
         return Mono.fromRunnable(() -> {

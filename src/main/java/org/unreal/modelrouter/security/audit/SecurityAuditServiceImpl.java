@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * 提供安全事件的记录、查询和分析功能
  */
 @Slf4j
-@Service
+@Service("memorySecurityAuditService")
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jairouter.security.audit.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "jairouter.security.audit.storage", havingValue = "memory")
 public class SecurityAuditServiceImpl implements SecurityAuditService {
     
     // 内存存储审计事件（生产环境应使用数据库或专门的日志系统）
