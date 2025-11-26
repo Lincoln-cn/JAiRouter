@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.store;
 
+import org.unreal.modelrouter.store.repository.ConfigRepository;
+
 /**
  * StoreManager工厂类
  * 用于创建不同类型的StoreManager实例
@@ -28,8 +30,17 @@ public final class StoreManagerFactory {
     }
 
     /**
+     * 创建基于H2数据库的存储管理器
+     * @param configRepository 配置仓库
+     * @return H2StoreManager实例
+     */
+    public static StoreManager createH2StoreManager(final ConfigRepository configRepository) {
+        return new H2StoreManager(configRepository);
+    }
+
+    /**
      * 根据类型创建存储管理器
-     * @param type 存储类型 (file, memory)
+     * @param type 存储类型 (file, memory, h2)
      * @param storagePath 存储路径（仅对文件存储有效）
      * @return StoreManager实例
      */
@@ -37,6 +48,7 @@ public final class StoreManagerFactory {
         return switch (type.toLowerCase()) {
             case "file" -> new FileStoreManager(storagePath);
             case "memory" -> new MemoryStoreManager();
+            case "h2" -> throw new IllegalArgumentException("H2 store manager requires ConfigRepository, use createH2StoreManager() instead");
             default -> throw new IllegalArgumentException("Unsupported store type: " + type);
         };
     }

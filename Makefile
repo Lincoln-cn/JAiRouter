@@ -90,7 +90,7 @@ docker-build-jib: ## 使用 Jib 构建 Docker 镜像
 .PHONY: docker-run
 docker-run: ## 运行生产环境 Docker 容器
 	@echo "运行生产环境 Docker 容器..."
-	@mkdir -p logs config config-store
+	@mkdir -p logs config config-store data
 	docker run -d \
 		--name $(PROJECT_NAME)-prod \
 		-p 8080:8080 \
@@ -98,6 +98,7 @@ docker-run: ## 运行生产环境 Docker 容器
 		-v $$(pwd)/config:/app/config:ro \
 		-v $$(pwd)/logs:/app/logs \
 		-v $$(pwd)/config-store:/app/config-store \
+		-v $$(pwd)/data:/app/r2dbc:h2:file/data \
 		--restart unless-stopped \
 		$(DOCKER_IMAGE):latest
 
@@ -105,7 +106,7 @@ docker-run: ## 运行生产环境 Docker 容器
 .PHONY: docker-run-dev
 docker-run-dev: ## 运行开发环境 Docker 容器
 	@echo "运行开发环境 Docker 容器..."
-	@mkdir -p logs config config-store
+	@mkdir -p logs config config-store data
 	docker run -d \
 		--name $(PROJECT_NAME)-dev \
 		-p 8080:8080 \
@@ -114,6 +115,7 @@ docker-run-dev: ## 运行开发环境 Docker 容器
 		-v $$(pwd)/config:/app/config \
 		-v $$(pwd)/logs:/app/logs \
 		-v $$(pwd)/config-store:/app/config-store \
+		-v $$(pwd)/data:/app/r2dbc:h2:file/data \
 		$(DOCKER_IMAGE):$(VERSION)-dev
 
 # Docker Compose 启动

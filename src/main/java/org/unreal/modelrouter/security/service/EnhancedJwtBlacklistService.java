@@ -16,9 +16,9 @@ import java.util.concurrent.ConcurrentMap;
  * 提供双重保障：Redis + 本地缓存，确保撤销的令牌真正被阻止
  */
 @Slf4j
-@Service
+@Service("redisJwtBlacklistService")
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jairouter.security.jwt.blacklist-enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
 public class EnhancedJwtBlacklistService {
     
     private static final String BLACKLIST_KEY_PREFIX = "jwt:blacklist:";

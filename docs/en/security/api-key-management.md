@@ -1,11 +1,11 @@
 # API Key Management Guide
 
-<!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**:   
-> **作者**: 
-<!-- /版本信息 -->
+<!-- Version Information -->
+> **Document Version**: 1.0.0  
+> **Last Updated**: 2025-08-19  
+> **Git Commit**:   
+> **Author**: 
+<!-- /Version Information -->
 
 
 
@@ -20,6 +20,8 @@ The API Key authentication feature of JAiRouter provides a secure access control
 - **Usage Statistics**: Records usage statistics for each API Key
 - **Cache Optimization**: Supports Redis and local caching to improve authentication performance
 - **Dynamic Management**: Supports adding, deleting, and updating API Keys at runtime
+- **Persistent Storage**: Supports storing API Key information in H2 database
+- **H2 Database Default Storage**: H2 database is now the default persistent storage method for API Key data, providing better performance and reliability
 
 ## Quick Start
 
@@ -107,23 +109,49 @@ For security reasons, it is recommended to set API Keys through environment vari
 ### Linux/macOS
 
 ```bash
-export ADMIN_API_KEY="your-admin-api-key-here"
-export USER_API_KEY="your-user-api-key-here"
+# Production Environment API Key Configuration
+export PROD_ADMIN_API_KEY="your-production-admin-api-key-here"
+export PROD_SERVICE_API_KEY="your-production-service-api-key-here"
+export PROD_READONLY_API_KEY="your-production-readonly-api-key-here"
+
+# API Key Expiration Time Configuration
+export PROD_ADMIN_KEY_EXPIRES="2025-12-31T23:59:59"
+export PROD_SERVICE_KEY_EXPIRES="2025-12-31T23:59:59"
+export PROD_READONLY_KEY_EXPIRES="2025-12-31T23:59:59"
 ```
 
 ### Windows
 
 ```cmd
-set ADMIN_API_KEY=your-admin-api-key-here
-set USER_API_KEY=your-user-api-key-here
+# Production Environment API Key Configuration
+set PROD_ADMIN_API_KEY=your-production-admin-api-key-here
+set PROD_SERVICE_API_KEY=your-production-service-api-key-here
+set PROD_READONLY_API_KEY=your-production-readonly-api-key-here
+
+# API Key Expiration Time Configuration
+set PROD_ADMIN_KEY_EXPIRES=2025-12-31T23:59:59
+set PROD_SERVICE_KEY_EXPIRES=2025-12-31T23:59:59
+set PROD_READONLY_KEY_EXPIRES=2025-12-31T23:59:59
 ```
 
 ### Docker
 
 ```bash
-docker run -e ADMIN_API_KEY="your-admin-api-key-here" \
-           -e USER_API_KEY="your-user-api-key-here" \
-           jairouter:latest
+# Production Environment Docker Deployment
+docker run -d \
+  --name jairouter-prod \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e PROD_ADMIN_API_KEY="your-production-admin-api-key-here" \
+  -e PROD_SERVICE_API_KEY="your-production-service-api-key-here" \
+  -e PROD_READONLY_API_KEY="your-production-readonly-api-key-here" \
+  -e PROD_JWT_SECRET="your-production-jwt-secret-here" \
+  -e REDIS_HOST="your-redis-host" \
+  -e REDIS_PORT="your-redis-port" \
+  -e REDIS_PASSWORD="your-redis-password" \
+  -v $(pwd)/config:/app/config:ro \
+  -v $(pwd)/logs:/app/logs \
+  sodlinken/jairouter:latest
 ```
 
 ## Cache Configuration
@@ -157,6 +185,121 @@ jairouter:
             expire-after-write: 3600
 ```
 
+## API Key Persistence Storage
+
+### Enable API Key Persistence
+
+JAiRouter supports persistent storage of API Keys for enhanced management and monitoring:
+
+```yaml
+jairouter:
+  security:
+    api-key:
+      # API Key persistence configuration
+      persistence:
+        enabled: true
+        primary-storage: h2    # h2, redis, memory
+        fallback-storage: memory  # memory
+        
+        # Cleanup configuration
+        cleanup:
+          enabled: true
+          schedule: "0 0 3 * * ?"  # Daily at 3 AM
+          retention-days: 365
+          batch-size: 1000
+        
+        # Memory storage configuration
+        memory:
+          max-keys: 10000
+          cleanup-threshold: 0.8  # 80% triggers cleanup
+          lru-enabled: true
+          
+        # H2 database storage configuration
+        h2:
+          table-name: "api_keys"  # Table name
+          max-batch-size: 1000    # Maximum batch size
+```
+
+### API Key Management Features
+
+With persistence enabled, you can:
+
+1. **Track API Keys**: Monitor all API Keys and their status
+2. **Lifecycle Management**: Automatic status updates and cleanup
+3. **Enhanced Security**: Persistent storage with H2 database support
+4. **Audit Trail**: Complete audit logging of API Key operations
+5. **Performance Monitoring**: Metrics and health checks for API Key operations
+
+### H2 Database Storage Advantages
+
+Using H2 database storage for API Keys provides the following advantages:
+
+1. **Default Storage Method**: H2 database is now the default storage method for API Keys
+2. **Persistence**: Data is not lost when the application restarts
+3. **High Performance**: Embedded database with no network overhead
+4. **Easy Maintenance**: Single database file, easy to backup
+5. **Powerful Queries**: Support for complex SQL queries
+6. **Transaction Support**: Ensures data consistency
+7. **Visual Management**: H2 console for easy debugging
+8. **Production Ready**: Meets production environment requirements
+
+### H2 Database Table Structure
+
+API Keys are stored in the H2 database in the following tables:
+
+#### api_keys Table
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | BIGINT | Primary key |
+| key_id | VARCHAR(255) | Key ID |
+| key_value_hash | VARCHAR(500) | Key value hash (no plaintext storage) |
+| description | VARCHAR(1000) | Description |
+| permissions | TEXT | Permission list (JSON) |
+| expires_at | TIMESTAMP | Expiration time |
+| enabled | BOOLEAN | Whether enabled |
+| created_at | TIMESTAMP | Creation time |
+| updated_at | TIMESTAMP | Update time |
+| metadata | TEXT | Metadata (JSON) |
+| usage_statistics | TEXT | Usage statistics (JSON) |
+
+#### Index Optimization
+
+The system automatically creates the following indexes to improve query performance:
+
+- `idx_apikey_key_id`: Key ID index
+- `idx_apikey_enabled`: Enabled status index
+- `idx_apikey_expires_at`: Expiration time index
+- `idx_apikey_created_at`: Creation time index
+
+### API Key Storage Structure
+
+API Keys are stored with the following metadata:
+
+```json
+{
+  "id": "key-uuid-123",
+  "keyId": "admin-key-001",
+  "keyValueHash": "sha256-hash-of-key",
+  "description": "Administrator API Key",
+  "permissions": ["admin", "read", "write", "delete"],
+  "expiresAt": "2025-12-31T23:59:59",
+  "enabled": true,
+  "createdAt": "2025-01-15T10:30:00Z",
+  "updatedAt": "2025-01-15T10:30:00Z",
+  "metadata": {
+    "createdBy": "admin",
+    "department": "IT"
+  },
+  "usageStatistics": {
+    "totalRequests": 1000,
+    "successfulRequests": 950,
+    "failedRequests": 50,
+    "lastUsedAt": "2025-01-15T10:30:00Z"
+  }
+}
+```
+
 ## Monitoring and Auditing
 
 ### Usage Statistics
@@ -179,6 +322,10 @@ jairouter:
     audit:
       enabled: true
       event-types:
+        api-key-created: true
+        api-key-used: true
+        api-key-revoked: true
+        api-key-expired: true
         authentication-success: true
         authentication-failure: true
 ```
@@ -191,6 +338,123 @@ The system provides the following Prometheus metrics:
 - `jairouter_security_authentication_successes_total`: Total number of successful authentications
 - `jairouter_security_authentication_failures_total`: Total number of failed authentications
 - `jairouter_security_authentication_duration_seconds`: Authentication duration
+- `jairouter_security_api_keys_created_total`: Total number of API Keys created
+- `jairouter_security_api_keys_used_total`: Total API Key usage
+- `jairouter_security_api_keys_revoked_total`: Total number of API Keys revoked
+
+## Security Auditing and Monitoring
+
+### Enhanced Audit Configuration
+
+```yaml
+jairouter:
+  security:
+    # Enhanced audit configuration
+    audit:
+      enabled: true
+      log-level: "INFO"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 90
+      
+      # API Key operations auditing
+      api-key-operations:
+        enabled: true
+        log-key-details: false  # Don't log full keys
+        log-usage-patterns: true
+        log-ip-address: true
+      
+      # JWT operations auditing
+      jwt-operations:
+        enabled: true
+        log-token-details: false  # Don't log full tokens
+        log-user-agent: true
+        log-ip-address: true
+      
+      # Security events auditing
+      security-events:
+        enabled: true
+        suspicious-activity-detection: true
+        alert-thresholds:
+          failed-auth-per-minute: 10
+          api-key-usage-per-minute: 100
+          token-revoke-per-minute: 5
+      
+      # Audit storage configuration
+      storage:
+        type: "h2"              # Options: h2, file, database
+        h2:
+          table-name: "security_audit_events"  # H2 table name
+        file-path: "logs/security-audit.log"
+        rotation:
+          max-file-size: "100MB"
+          max-files: 30
+        # Optional: database storage
+        database:
+          enabled: false
+          table-name: "security_audit_events"
+```
+
+### Audit Event Types
+
+The system logs the following API Key and JWT events:
+
+#### API Key Events
+- **Key Created**: When a new API key is generated
+- **Key Used**: When an API key is used for authentication
+- **Key Revoked**: When an API key is revoked
+- **Key Expired**: When an API key expires
+
+#### JWT Token Events
+- **Token Issued**: When a new JWT token is created
+- **Token Refreshed**: When an access token is refreshed
+- **Token Revoked**: When a token is manually revoked
+- **Token Validated**: When a token is validated (success/failure)
+- **Token Expired**: When a token naturally expires
+
+#### Security Events
+- **Suspicious Activity**: Unusual authentication patterns
+- **Failed Authentication**: Failed login attempts
+- **Bulk Operations**: Mass token/key operations
+
+### Audit Event Structure
+
+```json
+{
+  "id": "audit-event-uuid",
+  "type": "API_KEY_USED",
+  "userId": "user123",
+  "resourceId": "key-uuid-123",
+  "action": "USE_KEY",
+  "details": "Using API Key to access service",
+  "ipAddress": "192.168.1.100",
+  "userAgent": "Mozilla/5.0...",
+  "success": true,
+  "timestamp": "2025-01-15T10:30:00Z",
+  "metadata": {
+    "keyId": "admin-key-001",
+    "endpoint": "/v1/chat/completions",
+    "method": "POST"
+  }
+}
+```
+
+### Security Report Generation
+
+Generate comprehensive security reports:
+
+```bash
+# Get security report for the last 30 days
+curl -X GET "http://localhost:8080/api/security/audit/report?from=2025-01-01&to=2025-01-31" \
+     -H "Authorization: Bearer admin_token"
+```
+
+Response includes:
+- Total API Key and JWT operations
+- Failed authentication statistics
+- Suspicious activity alerts
+- Top IP addresses and users
+- Security event trends
 
 ## Best Practices
 

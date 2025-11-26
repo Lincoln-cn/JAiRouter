@@ -24,12 +24,16 @@ import org.springframework.context.annotation.Primary;
  * 提供JWT和API Key审计功能
  */
 @Slf4j
-@Service
-@Primary
+@Service("extendedSecurityAuditService")
 @ConditionalOnProperty(name = "jairouter.security.audit.enabled", havingValue = "true", matchIfMissing = true)
 public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditService {
     
-    // 扩展的审计事件存储（JWT和API Key相关）
+    private final org.unreal.modelrouter.store.repository.SecurityAuditRepository securityAuditRepository;
+    
+    @org.springframework.beans.factory.annotation.Value("${jairouter.security.audit.storage:memory}")
+    private String storageType;
+    
+    // 扩展的审计事件存储（JWT和API Key相关）- 用于内存模式或缓存
     private final ConcurrentLinkedQueue<AuditEvent> extendedAuditEvents = new ConcurrentLinkedQueue<>();
     
     // 事件类型计数器
@@ -43,6 +47,14 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     
     // 安全告警存储
     private final ConcurrentLinkedQueue<SecurityAlert> securityAlerts = new ConcurrentLinkedQueue<>();
+    
+    public ExtendedSecurityAuditServiceImpl(
+            @org.springframework.beans.factory.annotation.Autowired(required = false) 
+            org.unreal.modelrouter.store.repository.SecurityAuditRepository securityAuditRepository) {
+        this.securityAuditRepository = securityAuditRepository;
+        log.info("ExtendedSecurityAuditService initialized with storage type: {}", 
+                securityAuditRepository != null ? "h2" : "memory");
+    }
     
     // JWT令牌审计方法
     
@@ -293,11 +305,97 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     
     @Override
     public Flux<AuditEvent> findAuditEvents(AuditEventQuery query) {
+        // 如果配置了 H2 存储，从数据库查询
+        if (securityAuditRepository != null) {
+            return findAuditEventsFromH2(query);
+        }
+        
+        // 否则从内存查询
         return Flux.fromIterable(extendedAuditEvents)
             .filter(event -> matchesQuery(event, query))
             .sort(this::compareEvents)
             .skip((long) query.getPage() * query.getSize())
             .take(query.getSize());
+    }
+    
+    /**
+     * 从 H2 数据库查询审计事件
+     */
+    private Flux<AuditEvent> findAuditEventsFromH2(AuditEventQuery query) {
+        // 构建查询
+        Flux<org.unreal.modelrouter.store.entity.SecurityAuditEntity> entityFlux;
+        
+        if (query.getEventTypes() != null && !query.getEventTypes().isEmpty()) {
+            // 按事件类型查询
+            List<String> eventTypeNames = query.getEventTypes().stream()
+                    .map(Enum::name)
+                    .collect(Collectors.toList());
+            
+            entityFlux = securityAuditRepository.findByEventTypeInAndTimestampBetween(
+                    eventTypeNames,
+                    query.getStartTime(),
+                    query.getEndTime()
+            );
+        } else if (query.getUserId() != null) {
+            // 按用户ID查询
+            entityFlux = securityAuditRepository.findByUserIdAndTimestampBetween(
+                    query.getUserId(),
+                    query.getStartTime(),
+                    query.getEndTime()
+            );
+        } else if (query.getIpAddress() != null) {
+            // 按IP地址查询
+            entityFlux = securityAuditRepository.findByClientIpAndTimestampBetween(
+                    query.getIpAddress(),
+                    query.getStartTime(),
+                    query.getEndTime()
+            );
+        } else {
+            // 按时间范围查询
+            entityFlux = securityAuditRepository.findByTimestampBetween(
+                    query.getStartTime(),
+                    query.getEndTime()
+            );
+        }
+        
+        // 转换为 AuditEvent 并应用过滤和分页
+        return entityFlux
+                .map(this::convertToAuditEvent)
+                .filter(event -> matchesQuery(event, query))
+                .sort(this::compareEvents)
+                .skip((long) query.getPage() * query.getSize())
+                .take(query.getSize());
+    }
+    
+    /**
+     * 将 SecurityAuditEntity 转换为 AuditEvent
+     */
+    private AuditEvent convertToAuditEvent(org.unreal.modelrouter.store.entity.SecurityAuditEntity entity) {
+        AuditEvent event = new AuditEvent();
+        event.setId(entity.getEventId());
+        event.setType(AuditEventType.valueOf(entity.getEventType()));
+        event.setUserId(entity.getUserId());
+        event.setResourceId(entity.getResource());
+        event.setAction(entity.getAction());
+        event.setDetails(entity.getSuccess() ? "操作成功" : entity.getFailureReason());
+        event.setIpAddress(entity.getClientIp());
+        event.setUserAgent(entity.getUserAgent());
+        event.setSuccess(entity.getSuccess());
+        event.setTimestamp(entity.getTimestamp());
+        
+        // 解析 JSON 元数据
+        if (entity.getAdditionalData() != null && !entity.getAdditionalData().isEmpty()) {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> metadata = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .readValue(entity.getAdditionalData(), Map.class);
+                event.setMetadata(metadata);
+            } catch (Exception e) {
+                log.warn("解析审计事件元数据失败: {}", e.getMessage());
+            }
+        }
+        
+        return event;
     }
     
     @Override
@@ -377,40 +475,81 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
  
     @Override
     public Mono<Void> recordAuditEvent(AuditEvent auditEvent) {
-        return Mono.fromRunnable(() -> {
-            try {
-                // 设置事件ID和时间戳
-                if (auditEvent.getId() == null) {
-                    auditEvent.setId(UUID.randomUUID().toString());
+        // 设置事件ID和时间戳
+        if (auditEvent.getId() == null) {
+            auditEvent.setId(UUID.randomUUID().toString());
+        }
+        if (auditEvent.getTimestamp() == null) {
+            auditEvent.setTimestamp(LocalDateTime.now());
+        }
+        
+        // 存储事件到内存（用于快速查询和缓存）
+        extendedAuditEvents.offer(auditEvent);
+        
+        // 更新计数器
+        eventTypeCounters.merge(auditEvent.getType(), 1L, Long::sum);
+        
+        if (auditEvent.getUserId() != null) {
+            userOperationCounters.merge(auditEvent.getUserId(), 1L, Long::sum);
+        }
+        
+        if (auditEvent.getIpAddress() != null) {
+            ipOperationCounters.merge(auditEvent.getIpAddress(), 1L, Long::sum);
+        }
+        
+        // 记录到结构化日志
+        recordToStructuredLog(auditEvent);
+        
+        // 如果配置了 H2 存储，则持久化到数据库
+        if (securityAuditRepository != null) {
+            return persistToH2(auditEvent)
+                    .doOnSuccess(v -> log.debug("扩展审计事件已持久化到H2: eventId={}, eventType={}, userId={}", 
+                            auditEvent.getId(), auditEvent.getType(), auditEvent.getUserId()))
+                    .doOnError(e -> log.error("持久化审计事件到H2失败: eventId={}, error={}", 
+                            auditEvent.getId(), e.getMessage()))
+                    .onErrorResume(e -> Mono.empty()); // 持久化失败不影响主流程
+        }
+        
+        log.debug("扩展审计事件已记录到内存: eventId={}, eventType={}, userId={}", 
+                auditEvent.getId(), auditEvent.getType(), auditEvent.getUserId());
+        
+        return Mono.empty();
+    }
+    
+    /**
+     * 持久化审计事件到 H2 数据库
+     */
+    private Mono<Void> persistToH2(AuditEvent auditEvent) {
+        try {
+            org.unreal.modelrouter.store.entity.SecurityAuditEntity entity = 
+                    new org.unreal.modelrouter.store.entity.SecurityAuditEntity();
+            
+            entity.setEventId(auditEvent.getId());
+            entity.setEventType(auditEvent.getType().name());
+            entity.setUserId(auditEvent.getUserId());
+            entity.setClientIp(auditEvent.getIpAddress());
+            entity.setUserAgent(auditEvent.getUserAgent());
+            entity.setTimestamp(auditEvent.getTimestamp());
+            entity.setResource(auditEvent.getResourceId());
+            entity.setAction(auditEvent.getAction());
+            entity.setSuccess(auditEvent.isSuccess());
+            entity.setFailureReason(auditEvent.isSuccess() ? null : auditEvent.getDetails());
+            
+            // 将 metadata 转换为 JSON 字符串
+            if (auditEvent.getMetadata() != null && !auditEvent.getMetadata().isEmpty()) {
+                try {
+                    entity.setAdditionalData(new com.fasterxml.jackson.databind.ObjectMapper()
+                            .writeValueAsString(auditEvent.getMetadata()));
+                } catch (Exception e) {
+                    log.warn("转换审计事件元数据为JSON失败: {}", e.getMessage());
                 }
-                if (auditEvent.getTimestamp() == null) {
-                    auditEvent.setTimestamp(LocalDateTime.now());
-                }
-                
-                // 存储事件到内存（用于查询）
-                extendedAuditEvents.offer(auditEvent);
-                
-                // 更新计数器
-                eventTypeCounters.merge(auditEvent.getType(), 1L, Long::sum);
-                
-                if (auditEvent.getUserId() != null) {
-                    userOperationCounters.merge(auditEvent.getUserId(), 1L, Long::sum);
-                }
-                
-                if (auditEvent.getIpAddress() != null) {
-                    ipOperationCounters.merge(auditEvent.getIpAddress(), 1L, Long::sum);
-                }
-                
-                // 记录到结构化日志（用于持久化和分析）
-                recordToStructuredLog(auditEvent);
-                
-                log.debug("扩展审计事件已记录: eventId={}, eventType={}, userId={}", 
-                         auditEvent.getId(), auditEvent.getType(), auditEvent.getUserId());
-                
-            } catch (Exception e) {
-                log.error("记录扩展审计事件失败", e);
             }
-        });
+            
+            return securityAuditRepository.save(entity).then();
+        } catch (Exception e) {
+            log.error("创建SecurityAuditEntity失败", e);
+            return Mono.error(e);
+        }
     }
     
     /**

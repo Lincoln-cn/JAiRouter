@@ -18,6 +18,7 @@ services:
       - ./config:/app/config:ro
       - ./logs:/app/logs
       - ./config-store:/app/config-store
+      - ./data:/app/r2dbc:h2:file/data
     restart: unless-stopped
     networks:
       - jairouter-network

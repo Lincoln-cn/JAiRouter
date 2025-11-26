@@ -19,6 +19,7 @@ services:
       - ./config:/app/config:ro
       - ./logs:/app/logs
       - ./config-store:/app/config-store
+      - ./data:/app/r2dbc:h2:file/data
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     networks:

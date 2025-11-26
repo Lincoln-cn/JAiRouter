@@ -17,11 +17,11 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ConfigurationInitializer{
+@org.springframework.context.annotation.DependsOn("h2DatabaseInitializer")
+public class ConfigurationInitializer {
 
     private final ConfigurationService configurationService;
     private final ModelServiceRegistry modelServiceRegistry;
-
 
     @PostConstruct
     public void initConfigurations() throws Exception {

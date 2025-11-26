@@ -14,7 +14,7 @@ RUN groupadd -r -g 10010 jairouter && \
 WORKDIR /app
 
 # 创建必要的目录
-RUN mkdir -p /app/logs /app/config /app/config-store /app/config-dev && \
+RUN mkdir -p /app/logs /app/config /app/config-store /app/config-dev /app/r2dbc:h2:file/data && \
     chown -R jairouter:jairouter /app  && \
     chmod -R 766 /app
 
