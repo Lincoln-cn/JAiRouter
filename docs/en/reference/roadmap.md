@@ -1,4 +1,4 @@
-﻿# Roadmap
+﻿﻿﻿# Roadmap
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
@@ -44,16 +44,56 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
   - Security audit logs
   - Protection against malicious requests
 
+- **H2 Database Integration**
+  - H2 embedded database as default storage
+  - Persistent storage for configuration, audit logs, API keys, and JWT accounts
+  - Automatic data migration from file/memory storage
+  - H2 console for database management
+
+- **Monitoring Enhancement**
+  - Prometheus metrics collection
+  - Grafana dashboard templates
+  - Pre-configured alert rules
+  - Business and infrastructure metrics
+
+- **Distributed Tracing**
+  - End-to-end request tracing
+  - Jaeger/Zipkin integration
+  - Low-overhead tracing implementation
+  - Detailed span attributes and events
+
 #### Technical Improvements
 - Spring Security integration
 - Database support (PostgreSQL/MySQL)
 - Cache layer optimization (Redis)
 - Security scanning and vulnerability fixes
+- H2 database performance optimization
+- Docker build optimization for Chinese users
 
 #### Expected Benefits
 - Support for enterprise-level multi-tenant deployment
 - Compliance with security requirements
 - Complete user management system
+- 5-20x performance improvement for data operations
+- Enhanced system observability
+- Faster build times for Chinese users
+
+#### Implementation Status
+- ✅ Security module base architecture
+- ✅ API Key authentication core functionality
+- ✅ JWT token support
+- ✅ Data sanitization features
+- ✅ Security configuration management
+- ✅ Security audit and monitoring
+- ✅ Global exception handling
+- ✅ Performance optimization and caching implementation
+- ✅ Integration testing and end-to-end testing
+- ✅ H2 database integration
+- ✅ Monitoring system integration
+- ✅ Distributed tracing implementation
+- ✅ Docker build optimization
+- 🔄 Documentation and configuration completion
+- ⏳ Deployment and migration support
 
 ---
 
