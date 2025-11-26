@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.84",
-      "LastModified": "2025-11-10T03:19:41.104717",
-      "ContentHash": "2556f66c440ef1a0",
-      "GitCommit": "dd5b0849",
+      "Version": "1.0.100",
+      "LastModified": "2025-11-26T03:15:08.976119",
+      "ContentHash": "f43eabbe4d186759",
+      "GitCommit": "b075865a",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1817,1094 +1817,6 @@
     }
   },
   "changes": [
-    {
-      "FilePath": "README-EN.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:26.801001",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:26.885103",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:26.956345",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/README.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.031909",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/api-reference/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.103525",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/api-reference/management-api.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.204914",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/api-reference/openapi-spec.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.303375",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/api-reference/universal-api.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.381202",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/configuration/application-config.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.463760",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/configuration/circuit-breaker.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.546245",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/configuration/dynamic-config.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.635803",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/configuration/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.705438",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/configuration/load-balancing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.782801",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/configuration/rate-limiting.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.858613",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/deployment/china-optimization.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:27.979148",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/deployment/docker.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.053372",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/deployment/github-pages.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.133443",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/deployment/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.203962",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/deployment/kubernetes.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.284891",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/deployment/production.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.356942",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/development/architecture.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.433862",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/development/code-quality.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.502763",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/development/contributing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.580901",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/development/deployment-testing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.655519",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/development/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.742742",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/development/performance-optimization.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.808280",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/development/testing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.885336",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/getting-started/first-steps.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:28.966199",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/getting-started/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.041164",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/getting-started/installation.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.109856",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/getting-started/quick-start.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.192627",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.268729",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/alerts.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.344561",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/configuration.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.410172",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/dashboards.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.487737",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.557636",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/metrics.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.640736",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/performance.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.707137",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/setup.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.781206",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/testing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.853444",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/monitoring/troubleshooting.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:29.938171",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/reference/changelog.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.006390",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/reference/faq.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.086252",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/reference/glossary.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.158414",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/reference/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.243667",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/reference/roadmap.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.304918",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/security/api-key-management.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.431726",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/security/data-sanitization.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.532908",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/security/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.632985",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/security/jwt-authentication.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.732646",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/security/troubleshooting.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.827194",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/troubleshooting/common-issues.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.898195",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/troubleshooting/debugging.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:30.972017",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/troubleshooting/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.043841",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/troubleshooting/performance.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.115151",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/api-reference/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.204803",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/api-reference/management-api.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.284142",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/api-reference/openapi-spec.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.363915",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/api-reference/universal-api.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.446467",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/configuration/application-config.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.530814",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/configuration/circuit-breaker.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.611232",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/configuration/dynamic-config.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.699900",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/configuration/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.786907",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/configuration/load-balancing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.874821",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:31.962996",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/deployment/china-optimization.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.050094",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/deployment/docker.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.140410",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/deployment/github-pages.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.218281",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/deployment/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.309223",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/deployment/kubernetes.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.414682",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/deployment/production.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.517495",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/architecture.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.612953",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/code-quality.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.706872",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/contributing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.801338",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/deployment-testing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.890389",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:32.982608",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/performance-optimization.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.068335",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/testing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.159803",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/getting-started/first-steps.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.255280",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/getting-started/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.349564",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/getting-started/installation.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.442163",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/getting-started/quick-start.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.535427",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.633288",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/alert_rules_guide.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.727197",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/alerts.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.832028",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/configuration.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:33.925022",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/dashboards.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.014417",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.117575",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/metrics.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.217304",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/performance.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.313445",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/setup.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.412433",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/testing.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.508447",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/troubleshooting.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.601684",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/reference/changelog.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.692410",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/reference/faq.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.781081",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/reference/glossary.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.875443",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/reference/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:34.985449",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/reference/roadmap.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.087515",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/security/api-key-management.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.205836",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/security/data-sanitization.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.341004",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/security/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.470168",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/security/jwt-authentication.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.592923",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/security/troubleshooting.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.709923",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/troubleshooting/common-issues.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.800977",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/troubleshooting/debugging.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.887994",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/troubleshooting/index.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:35.974134",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/troubleshooting/performance.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-19T11:20:36.061346",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-19T07:48:21.825977",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-19T07:48:21.827722",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/security/api-key-management.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.037947",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/en/security/data-sanitization.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.037976",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/en/security/index.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.037990",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/en/security/jwt-authentication.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.038003",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/en/security/troubleshooting.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.038015",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/zh/security/api-key-management.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.038032",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/zh/security/data-sanitization.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.038045",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/zh/security/index.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.038056",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/zh/security/jwt-authentication.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.038068",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/zh/security/troubleshooting.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-08-19T07:48:22.038078",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-20T03:08:21.373448",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/api-reference/monitoring-api.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-20T03:08:21.382213",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/development/deployment-testing.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-20T03:08:21.423488",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/development/performance-optimization.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-20T03:08:21.427951",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/monitoring/testing.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-20T03:08:21.461133",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/api-reference/monitoring-api.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-08-20T03:08:21.491585",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/deployment-testing.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-20T03:08:21.537273",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/development/performance-optimization.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-20T03:08:21.541753",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/monitoring/testing.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-20T03:08:21.578953",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-21T03:07:19.874426",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.3",
-      "NewVersion": "1.0.4",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-22T03:08:15.097273",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.4",
-      "NewVersion": "1.0.5",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-23T03:02:11.139709",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.5",
-      "NewVersion": "1.0.6",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-24T03:19:05.914761",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.6",
-      "NewVersion": "1.0.7",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-25T03:15:29.737779",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.7",
-      "NewVersion": "1.0.8",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-26T03:09:22.892112",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.8",
-      "NewVersion": "1.0.9",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-27T03:02:27.278673",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.9",
-      "NewVersion": "1.0.10",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-08-28T03:02:20.195465",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "README-EN.md",
       "OldVersion": "1.0.0",
@@ -4984,7 +3896,135 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-11-10T03:19:41.104724",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.84",
+      "NewVersion": "1.0.85",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-11T03:13:47.701006",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.85",
+      "NewVersion": "1.0.86",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-12T03:12:40.923202",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.86",
+      "NewVersion": "1.0.87",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-13T03:14:55.385313",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.87",
+      "NewVersion": "1.0.88",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-14T03:13:14.858915",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.88",
+      "NewVersion": "1.0.89",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-15T03:07:22.025397",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.89",
+      "NewVersion": "1.0.90",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-16T03:18:29.706734",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.90",
+      "NewVersion": "1.0.91",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-17T03:16:33.281117",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.91",
+      "NewVersion": "1.0.92",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-18T03:12:41.446632",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.92",
+      "NewVersion": "1.0.93",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-19T03:12:03.062869",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.93",
+      "NewVersion": "1.0.94",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-20T03:09:48.672055",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.94",
+      "NewVersion": "1.0.95",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-21T03:10:48.011897",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.95",
+      "NewVersion": "1.0.96",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-22T03:04:36.384316",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.96",
+      "NewVersion": "1.0.97",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-23T03:27:46.712446",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.97",
+      "NewVersion": "1.0.98",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-24T03:24:20.007235",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.98",
+      "NewVersion": "1.0.99",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-25T03:15:02.825158",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.99",
+      "NewVersion": "1.0.100",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-11-26T03:15:08.976128",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-11-10T03:19:41.689516"
+  "last_updated": "2025-11-26T03:15:09.568296"
 }
