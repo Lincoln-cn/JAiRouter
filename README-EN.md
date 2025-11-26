@@ -117,7 +117,9 @@ After starting the project, you can access the automatically generated API docum
 | 0.8.0   | ✅     | Automated packaging and publishing images to Docker Hub       |
 | 0.9.0   | ✅     | Enhanced monitoring dashboard and user management features    |
 | 1.0.0   | ✅     | Enterprise deployment guide                                   |
-| 1.0.x   | 🚧     | Integration into self-developed large model application platform |
+| 1.1.0   | ✅     | Add API playground feature         |
+| 1.2.5   | ✅     | Add H2 database support for persistence and set as default         |
+| 1.3.0   | 🚧     | Integration into self-developed large model application platform |
 
 ---
 
