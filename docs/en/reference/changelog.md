@@ -24,12 +24,24 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 ### [Unreleased] - In Development
 
 #### New Features
+- **Security Module**: Complete enterprise-grade security features including API Key authentication, JWT token support, and bidirectional data sanitization
+- **Multi-tenancy Support**: Tenant isolation, resource quotas, and tenant-based configuration management
+- **Authentication and Authorization**: API Key authentication mechanism, JWT Token support, OAuth 2.0 integration, and Role-Based Access Control (RBAC)
+- **Data Protection**: Request/response data obfuscation, encrypted storage of sensitive information, and security audit logs
+- **H2 Database Support**: H2 embedded database as default storage with automatic data migration for configuration, security audit, API keys, and JWT accounts
+- **Monitoring Integration**: Complete Prometheus + Grafana monitoring stack with business and infrastructure metrics collection
+- **Distributed Tracing**: End-to-end distributed tracing with Jaeger/Zipkin integration for full request lifecycle tracking
 - Complete documentation system and user guides
 - Multi-language documentation support (Chinese/English)
 - Enhanced monitoring and alerting capabilities
 - More adapter support
 
 #### Improvements & Optimizations
+- **Spring Security Integration**: Full integration with Spring Security framework for robust authentication and authorization
+- **Cache Layer Optimization**: Redis cache optimization for improved performance
+- **Database Support**: Added support for PostgreSQL and MySQL databases
+- **H2 Storage Performance**: 5-20x performance improvement over file storage for configuration and security data operations
+- **Docker Build Optimization**: China-optimized Docker builds with Alibaba Cloud Maven mirror, 5-10x faster dependency downloads
 - Performance optimization and memory management improvements
 - Better error handling and logging
 - Configuration validation and user experience enhancements
@@ -38,6 +50,9 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - Fixed known memory leak issues
 - Resolved race conditions in concurrent scenarios
 - Improved stability of configuration hot updates
+- Security scanning and vulnerability fixes
+- Fixed configuration file path issues in container environments
+- Resolved DNS resolution issues in Docker containers
 
 ---
 
