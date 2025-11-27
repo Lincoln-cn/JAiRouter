@@ -3,19 +3,22 @@
 ## 版本统计
 
 - 总文档数: 137
-- 近7天变更: 7
+- 近7天变更: 19
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-11-26 03:15:09
+- 最后扫描: 2025-11-27 03:11:57
 
 ## 最近变更
 
-- **MODIFIED**: docs-version-report.md (1.0.99 → 1.0.100) - 2025-11-26
-- **MODIFIED**: docs-version-report.md (1.0.98 → 1.0.99) - 2025-11-25
-- **MODIFIED**: docs-version-report.md (1.0.97 → 1.0.98) - 2025-11-24
-- **MODIFIED**: docs-version-report.md (1.0.96 → 1.0.97) - 2025-11-23
-- **MODIFIED**: docs-version-report.md (1.0.95 → 1.0.96) - 2025-11-22
-- **MODIFIED**: docs-version-report.md (1.0.94 → 1.0.95) - 2025-11-21
-- **MODIFIED**: docs-version-report.md (1.0.93 → 1.0.94) - 2025-11-20
+- **MODIFIED**: docs/zh/security/jwt-authentication.md (1.0.1 → 1.0.2) - 2025-11-27
+- **MODIFIED**: docs/zh/security/api-key-management.md (1.0.1 → 1.0.2) - 2025-11-27
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.1 → 1.0.2) - 2025-11-27
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.1 → 1.0.2) - 2025-11-27
+- **MODIFIED**: docs/zh/configuration/store-config.md (1.0.1 → 1.0.2) - 2025-11-27
+- **MODIFIED**: docs/en/security/jwt-authentication.md (1.0.2 → 1.0.3) - 2025-11-27
+- **MODIFIED**: docs/en/security/api-key-management.md (1.0.0 → 1.0.1) - 2025-11-27
+- **MODIFIED**: docs/en/reference/roadmap.md (1.0.1 → 1.0.2) - 2025-11-27
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.1 → 1.0.2) - 2025-11-27
+- **MODIFIED**: docs/en/configuration/store-config.md (1.0.1 → 1.0.2) - 2025-11-27
 
 ## 过期文档 (30天未更新)
 
@@ -57,11 +60,9 @@
 - docs/en/monitoring/setup.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/monitoring/testing.md (版本: 1.0.3, 最后更新: 2025-09-02)
 - docs/en/monitoring/troubleshooting.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/en/reference/changelog.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/reference/faq.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/en/reference/roadmap.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/troubleshooting/common-issues.md (版本: 1.0.3, 最后更新: 2025-10-15)
 - docs/en/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -104,11 +105,9 @@
 - docs/zh/monitoring/setup.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/monitoring/testing.md (版本: 1.0.3, 最后更新: 2025-09-02)
 - docs/zh/monitoring/troubleshooting.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/zh/reference/changelog.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/reference/faq.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/zh/reference/roadmap.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/troubleshooting/common-issues.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -119,10 +118,8 @@
 - docs/en/development/tracing-integration.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/monitoring/error-tracking.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/monitoring/slow-query-alerts.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/security/api-key-management.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/security/data-sanitization.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/security/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/security/jwt-authentication.md (版本: 1.0.2, 最后更新: 2025-10-15)
 - docs/en/security/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/config-reference.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
@@ -135,10 +132,8 @@
 - docs/zh/development/tracing-integration.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/monitoring/error-tracking.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/monitoring/slow-query-alerts.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/zh/security/api-key-management.md (版本: 1.0.1, 最后更新: 2025-09-02)
 - docs/zh/security/data-sanitization.md (版本: 1.0.1, 最后更新: 2025-09-02)
 - docs/zh/security/index.md (版本: 1.0.1, 最后更新: 2025-09-02)
-- docs/zh/security/jwt-authentication.md (版本: 1.0.1, 最后更新: 2025-09-02)
 - docs/zh/security/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/config-reference.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
@@ -147,9 +142,7 @@
 - docs/zh/tracing/quickstart.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/configuration/store-config.md (版本: 1.0.1, 最后更新: 2025-10-17)
 - docs/en/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
-- docs/zh/configuration/store-config.md (版本: 1.0.1, 最后更新: 2025-10-17)
 - docs/zh/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
 - docs/en/configuration/jwt-persistence.md (版本: 1.0.0, 最后更新: 2025-10-15)
 - docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.0, 最后更新: 2025-10-15)
@@ -604,22 +597,29 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.100 - 2025-11-26 (b075865a)
-- **README.md**: v1.0.4 - 2025-11-06 (77bf8f18)
-- **README-EN.md**: v1.0.3 - 2025-11-06 (8d20cec5)
+- **docs/zh/security/jwt-authentication.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
+- **docs/zh/security/api-key-management.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
+- **docs/zh/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
+- **docs/zh/reference/changelog.md**: v1.0.2 - 2025-11-27 (ed9127f6)
+- **docs/zh/configuration/store-config.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
+- **docs/en/security/jwt-authentication.md**: v1.0.3 - 2025-11-27 (82a7f5bd)
+- **docs/en/security/api-key-management.md**: v1.0.1 - 2025-11-27 (82a7f5bd)
+- **docs/en/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
+- **docs/en/reference/changelog.md**: v1.0.2 - 2025-11-27 (ed9127f6)
+- **docs/en/configuration/store-config.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
+- **docs-version-report.md**: v1.0.101 - 2025-11-27 (183f7584)
+- **README.md**: v1.0.5 - 2025-11-27 (26c16ede)
+- **README-EN.md**: v1.0.4 - 2025-11-27 (26c16ede)
 - **docs/zh/deployment/docker.md**: v1.0.4 - 2025-10-17 (8b591212)
-- **docs/zh/configuration/store-config.md**: v1.0.1 - 2025-10-17 (ee4f9e85)
-- **docs/en/configuration/store-config.md**: v1.0.1 - 2025-10-17 (ee4f9e85)
 - **docs/en/troubleshooting/common-issues.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
-- **docs/en/security/jwt-authentication.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
 - **docs/en/deployment/production.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
-- **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.0 - 2025-10-15 (c8b5d0df)
+- **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.0 - 2025-10-15 (82a7f5bd)
 - **docs/en/deployment/index.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
-- **docs/en/configuration/jwt-persistence.md**: v1.0.0 - 2025-10-15 (c8b5d0df)
+- **docs/en/configuration/jwt-persistence.md**: v1.0.0 - 2025-10-15 (82a7f5bd)
 - **docs/en/configuration/index.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
 - **docs/en/api-reference/management-api.md**: v1.0.2 - 2025-10-15 (c8b5d0df)
-- **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
-- **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (7ef4d8d2)
+- **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (82a7f5bd)
+- **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (82a7f5bd)
 - **docs/zh/configuration/index.md**: v1.0.2 - 2025-09-25 (32bd1673)
 - **docs/zh/configuration/application-config.md**: v1.0.2 - 2025-09-06 (dbe39921)
 - **docs/en/deployment/kubernetes.md**: v1.0.3 - 2025-09-06 (dbe39921)
@@ -628,10 +628,8 @@
 - **docs/zh/deployment/production.md**: v1.0.3 - 2025-09-04 (dbe39921)
 - **docs/zh/troubleshooting/debugging.md**: v1.0.2 - 2025-09-02 (dbe39921)
 - **docs/zh/troubleshooting/common-issues.md**: v1.0.2 - 2025-09-02 (dbe39921)
-- **docs/zh/security/jwt-authentication.md**: v1.0.1 - 2025-09-02 (dbe39921)
 - **docs/zh/security/index.md**: v1.0.1 - 2025-09-02 (dbe39921)
 - **docs/zh/security/data-sanitization.md**: v1.0.1 - 2025-09-02 (dbe39921)
-- **docs/zh/security/api-key-management.md**: v1.0.1 - 2025-09-02 (dbe39921)
 - **docs/zh/reference/faq.md**: v1.0.2 - 2025-09-02 (dbe39921)
 - **docs/zh/monitoring/testing.md**: v1.0.3 - 2025-09-02 (dbe39921)
 - **docs/zh/monitoring/setup.md**: v1.0.2 - 2025-09-02 (dbe39921)
@@ -657,10 +655,8 @@
 - **docs/zh/tracing/index.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/zh/tracing/config-reference.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/zh/security/troubleshooting.md**: v1.0.0 - 2025-08-29 (dbe39921)
-- **docs/zh/reference/roadmap.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/reference/index.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/reference/glossary.md**: v1.0.1 - 2025-08-29 (dbe39921)
-- **docs/zh/reference/changelog.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/monitoring/troubleshooting.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/monitoring/slow-query-alerts.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/zh/monitoring/performance.md**: v1.0.1 - 2025-08-29 (dbe39921)
@@ -704,11 +700,8 @@
 - **docs/en/security/troubleshooting.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/en/security/index.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/en/security/data-sanitization.md**: v1.0.0 - 2025-08-29 (dbe39921)
-- **docs/en/security/api-key-management.md**: v1.0.0 - 2025-08-29 (dbe39921)
-- **docs/en/reference/roadmap.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/reference/index.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/reference/glossary.md**: v1.0.1 - 2025-08-29 (dbe39921)
-- **docs/en/reference/changelog.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/monitoring/troubleshooting.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/en/monitoring/slow-query-alerts.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/en/monitoring/performance.md**: v1.0.1 - 2025-08-29 (dbe39921)
