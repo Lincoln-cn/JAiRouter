@@ -5,10 +5,11 @@
 - 总文档数: 137
 - 近7天变更: 19
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-11-27 03:11:57
+- 最后扫描: 2025-11-28 03:11:42
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.101 → 1.0.102) - 2025-11-28
 - **MODIFIED**: docs/zh/security/jwt-authentication.md (1.0.1 → 1.0.2) - 2025-11-27
 - **MODIFIED**: docs/zh/security/api-key-management.md (1.0.1 → 1.0.2) - 2025-11-27
 - **MODIFIED**: docs/zh/reference/roadmap.md (1.0.1 → 1.0.2) - 2025-11-27
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/en/security/api-key-management.md (1.0.0 → 1.0.1) - 2025-11-27
 - **MODIFIED**: docs/en/reference/roadmap.md (1.0.1 → 1.0.2) - 2025-11-27
 - **MODIFIED**: docs/en/reference/changelog.md (1.0.1 → 1.0.2) - 2025-11-27
-- **MODIFIED**: docs/en/configuration/store-config.md (1.0.1 → 1.0.2) - 2025-11-27
 
 ## 过期文档 (30天未更新)
 
@@ -597,6 +597,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.102 - 2025-11-28 (63d12203)
 - **docs/zh/security/jwt-authentication.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/security/api-key-management.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
@@ -607,7 +608,6 @@
 - **docs/en/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
 - **docs/en/reference/changelog.md**: v1.0.2 - 2025-11-27 (ed9127f6)
 - **docs/en/configuration/store-config.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
-- **docs-version-report.md**: v1.0.101 - 2025-11-27 (183f7584)
 - **README.md**: v1.0.5 - 2025-11-27 (26c16ede)
 - **README-EN.md**: v1.0.4 - 2025-11-27 (26c16ede)
 - **docs/zh/deployment/docker.md**: v1.0.4 - 2025-10-17 (8b591212)
