@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.108",
-      "LastModified": "2025-12-04T03:19:42.786978",
-      "ContentHash": "1f67032d11f2002f",
-      "GitCommit": "67c3e792",
+      "Version": "1.0.109",
+      "LastModified": "2025-12-05T03:19:08.696492",
+      "ContentHash": "a9d67bdcb3f98534",
+      "GitCommit": "e1a0d2c9",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1819,54 +1819,6 @@
   "changes": [
     {
       "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.18",
-      "NewVersion": "1.0.19",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-09-06T02:53:48.949079",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/configuration/application-config.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-09-06T02:53:48.969472",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/deployment/docker.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-09-06T02:53:48.990902",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/deployment/kubernetes.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-09-06T02:53:48.997962",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/deployment/production.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-09-06T02:53:49.000138",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/configuration/application-config.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-09-06T02:53:49.148205",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.19",
       "NewVersion": "1.0.20",
       "ChangeType": "MODIFIED",
@@ -2872,7 +2824,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2025-12-04T03:19:42.786984",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.108",
+      "NewVersion": "1.0.109",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2025-12-05T03:19:08.696499",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2025-12-04T03:19:43.355471"
+  "last_updated": "2025-12-05T03:19:09.276007"
 }
