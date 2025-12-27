@@ -5,20 +5,22 @@
 - 总文档数: 137
 - 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2025-12-26 03:25:04
+- 最后扫描: 2025-12-27 03:23:17
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.130 → 1.0.131) - 2025-12-27
 - **MODIFIED**: docs-version-report.md (1.0.129 → 1.0.130) - 2025-12-26
 - **MODIFIED**: docs-version-report.md (1.0.128 → 1.0.129) - 2025-12-25
 - **MODIFIED**: docs-version-report.md (1.0.127 → 1.0.128) - 2025-12-24
 - **MODIFIED**: docs-version-report.md (1.0.126 → 1.0.127) - 2025-12-23
 - **MODIFIED**: docs-version-report.md (1.0.125 → 1.0.126) - 2025-12-22
 - **MODIFIED**: docs-version-report.md (1.0.124 → 1.0.125) - 2025-12-21
-- **MODIFIED**: docs-version-report.md (1.0.123 → 1.0.124) - 2025-12-20
 
 ## 过期文档 (30天未更新)
 
+- README-EN.md (版本: 1.0.4, 最后更新: 2025-11-27)
+- README.md (版本: 1.0.5, 最后更新: 2025-11-27)
 - docs/README.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/management-api.md (版本: 1.0.2, 最后更新: 2025-10-15)
@@ -57,9 +59,11 @@
 - docs/en/monitoring/setup.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/monitoring/testing.md (版本: 1.0.3, 最后更新: 2025-09-02)
 - docs/en/monitoring/troubleshooting.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/reference/changelog.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/en/reference/faq.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/en/reference/roadmap.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/en/troubleshooting/common-issues.md (版本: 1.0.3, 最后更新: 2025-10-15)
 - docs/en/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -102,9 +106,11 @@
 - docs/zh/monitoring/setup.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/monitoring/testing.md (版本: 1.0.3, 最后更新: 2025-09-02)
 - docs/zh/monitoring/troubleshooting.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/reference/changelog.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/zh/reference/faq.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
+- docs/zh/reference/roadmap.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/zh/troubleshooting/common-issues.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -115,8 +121,10 @@
 - docs/en/development/tracing-integration.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/monitoring/error-tracking.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/monitoring/slow-query-alerts.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/security/api-key-management.md (版本: 1.0.1, 最后更新: 2025-11-27)
 - docs/en/security/data-sanitization.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/security/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/security/jwt-authentication.md (版本: 1.0.3, 最后更新: 2025-11-27)
 - docs/en/security/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/config-reference.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
@@ -129,8 +137,10 @@
 - docs/zh/development/tracing-integration.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/monitoring/error-tracking.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/monitoring/slow-query-alerts.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/zh/security/api-key-management.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/zh/security/data-sanitization.md (版本: 1.0.1, 最后更新: 2025-09-02)
 - docs/zh/security/index.md (版本: 1.0.1, 最后更新: 2025-09-02)
+- docs/zh/security/jwt-authentication.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/zh/security/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/config-reference.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
@@ -139,7 +149,9 @@
 - docs/zh/tracing/quickstart.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
+- docs/en/configuration/store-config.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/en/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
+- docs/zh/configuration/store-config.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/zh/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
 - docs/en/configuration/jwt-persistence.md (版本: 1.0.0, 最后更新: 2025-10-15)
 - docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.0, 最后更新: 2025-10-15)
@@ -594,7 +606,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.130 - 2025-12-26 (577ebb66)
+- **docs-version-report.md**: v1.0.131 - 2025-12-27 (36061701)
 - **docs/zh/security/jwt-authentication.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/security/api-key-management.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
