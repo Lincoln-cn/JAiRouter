@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.147",
-      "LastModified": "2026-01-12T03:49:59.401830",
-      "ContentHash": "4f454c309430db63",
-      "GitCommit": "bc2034cc",
+      "Version": "1.0.148",
+      "LastModified": "2026-01-13T03:38:16.486378",
+      "ContentHash": "b8a351f71e49c16d",
+      "GitCommit": "ea261559",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1818,86 +1818,6 @@
   },
   "changes": [
     {
-      "FilePath": "audit-log-troubleshooting-guide.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-10-15T03:04:35.113706",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.57",
-      "NewVersion": "1.0.58",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-15T03:04:35.115801",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/api-reference/management-api.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-15T03:04:35.123632",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/configuration/index.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-15T03:04:35.143441",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/configuration/jwt-persistence.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-10-15T03:04:35.145498",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/deployment/index.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-15T03:04:35.170164",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/deployment/jwt-persistence-deployment-checklist.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2025-10-15T03:04:35.172353",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/deployment/production.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-15T03:04:35.177719",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/security/jwt-authentication.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-15T03:04:35.275478",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/troubleshooting/common-issues.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-15T03:04:35.301214",
-      "Description": "文档modified"
-    },
-    {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.58",
       "NewVersion": "1.0.59",
@@ -2768,7 +2688,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-01-12T03:49:59.401838",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.147",
+      "NewVersion": "1.0.148",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-01-13T03:38:16.486385",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-01-12T03:49:59.957324"
+  "last_updated": "2026-01-13T03:38:17.116006"
 }
