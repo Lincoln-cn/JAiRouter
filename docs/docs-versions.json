@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.149",
-      "LastModified": "2026-01-14T03:48:00.495991",
-      "ContentHash": "af05a835c09c7739",
-      "GitCommit": "0ba8cfe3",
+      "Version": "1.0.150",
+      "LastModified": "2026-01-15T03:41:33.731288",
+      "ContentHash": "a5a279a7def04223",
+      "GitCommit": "c0c62d62",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1818,62 +1818,6 @@
   },
   "changes": [
     {
-      "FilePath": "README-EN.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-17T03:01:40.620446",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-17T03:01:40.622363",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.59",
-      "NewVersion": "1.0.60",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-17T03:01:40.624671",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/configuration/store-config.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-17T03:01:40.670036",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/configuration/store-config.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-17T03:01:40.883924",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/deployment/docker.md",
-      "OldVersion": "1.0.3",
-      "NewVersion": "1.0.4",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-10-17T03:01:40.892841",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "audit-log-troubleshooting-guide.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2025-10-17T03:01:41.073504",
-      "Description": "文档已删除"
-    },
-    {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.60",
       "NewVersion": "1.0.61",
@@ -2696,7 +2640,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-01-14T03:48:00.495998",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.149",
+      "NewVersion": "1.0.150",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-01-15T03:41:33.731298",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-01-14T03:48:01.123288"
+  "last_updated": "2026-01-15T03:41:34.372742"
 }
