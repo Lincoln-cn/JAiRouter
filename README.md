@@ -1,5 +1,9 @@
 ﻿# JAiRouter
 
+<p align="center">
+  <img src="logo/JAiRouterLogo.png" alt="JAiRouter Logo" width="200">
+</p>
+
 JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关，用于统一管理和路由各种 AI 模型服务（如
 Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流、熔断、健康检查、动态配置更新等功能。
 
