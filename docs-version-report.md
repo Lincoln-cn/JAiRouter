@@ -3,24 +3,24 @@
 ## 版本统计
 
 - 总文档数: 137
-- 近7天变更: 7
+- 近7天变更: 9
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-02-08 04:32:43
+- 最后扫描: 2026-02-09 04:27:10
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.174 → 1.0.175) - 2026-02-09
+- **MODIFIED**: README.md (1.0.5 → 1.0.6) - 2026-02-09
+- **MODIFIED**: README-EN.md (1.0.4 → 1.0.5) - 2026-02-09
 - **MODIFIED**: docs-version-report.md (1.0.173 → 1.0.174) - 2026-02-08
 - **MODIFIED**: docs-version-report.md (1.0.172 → 1.0.173) - 2026-02-07
 - **MODIFIED**: docs-version-report.md (1.0.171 → 1.0.172) - 2026-02-06
 - **MODIFIED**: docs-version-report.md (1.0.170 → 1.0.171) - 2026-02-05
 - **MODIFIED**: docs-version-report.md (1.0.169 → 1.0.170) - 2026-02-04
 - **MODIFIED**: docs-version-report.md (1.0.168 → 1.0.169) - 2026-02-03
-- **MODIFIED**: docs-version-report.md (1.0.167 → 1.0.168) - 2026-02-02
 
 ## 过期文档 (30天未更新)
 
-- README-EN.md (版本: 1.0.4, 最后更新: 2025-11-27)
-- README.md (版本: 1.0.5, 最后更新: 2025-11-27)
 - docs/README.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/api-reference/management-api.md (版本: 1.0.2, 最后更新: 2025-10-15)
@@ -606,7 +606,9 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.174 - 2026-02-08 (eb12fcaa)
+- **docs-version-report.md**: v1.0.175 - 2026-02-09 (ca036147)
+- **README.md**: v1.0.6 - 2026-02-09 (6921d0fb)
+- **README-EN.md**: v1.0.5 - 2026-02-09 (6921d0fb)
 - **docs/zh/security/jwt-authentication.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/security/api-key-management.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
@@ -617,8 +619,6 @@
 - **docs/en/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
 - **docs/en/reference/changelog.md**: v1.0.2 - 2025-11-27 (ed9127f6)
 - **docs/en/configuration/store-config.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
-- **README.md**: v1.0.5 - 2025-11-27 (26c16ede)
-- **README-EN.md**: v1.0.4 - 2025-11-27 (26c16ede)
 - **docs/zh/deployment/docker.md**: v1.0.4 - 2025-10-17 (8b591212)
 - **docs/en/troubleshooting/common-issues.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
 - **docs/en/deployment/production.md**: v1.0.3 - 2025-10-15 (c8b5d0df)
