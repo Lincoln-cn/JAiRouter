@@ -3,21 +3,19 @@
 ## 版本统计
 
 - 总文档数: 137
-- 近7天变更: 9
+- 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-02-16 04:26:07
+- 最后扫描: 2026-02-17 04:20:52
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.181 → 1.0.182) - 2026-02-17
 - **MODIFIED**: docs-version-report.md (1.0.180 → 1.0.181) - 2026-02-16
 - **MODIFIED**: docs-version-report.md (1.0.179 → 1.0.180) - 2026-02-14
 - **MODIFIED**: docs-version-report.md (1.0.178 → 1.0.179) - 2026-02-13
 - **MODIFIED**: docs-version-report.md (1.0.177 → 1.0.178) - 2026-02-12
 - **MODIFIED**: docs-version-report.md (1.0.176 → 1.0.177) - 2026-02-11
 - **MODIFIED**: docs-version-report.md (1.0.175 → 1.0.176) - 2026-02-10
-- **MODIFIED**: docs-version-report.md (1.0.174 → 1.0.175) - 2026-02-09
-- **MODIFIED**: README.md (1.0.5 → 1.0.6) - 2026-02-09
-- **MODIFIED**: README-EN.md (1.0.4 → 1.0.5) - 2026-02-09
 
 ## 过期文档 (30天未更新)
 
@@ -606,7 +604,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.181 - 2026-02-16 (1848c5eb)
+- **docs-version-report.md**: v1.0.182 - 2026-02-17 (dfb7fcf5)
 - **README.md**: v1.0.6 - 2026-02-09 (6921d0fb)
 - **README-EN.md**: v1.0.5 - 2026-02-09 (6921d0fb)
 - **docs/zh/security/jwt-authentication.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
