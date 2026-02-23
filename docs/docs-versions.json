@@ -26,10 +26,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.187",
-      "LastModified": "2026-02-22T04:18:24.809203",
-      "ContentHash": "13cea56a3a0214f9",
-      "GitCommit": "8aa0fee1",
+      "Version": "1.0.188",
+      "LastModified": "2026-02-23T04:25:05.812592",
+      "ContentHash": "f7c58c741ac74f30",
+      "GitCommit": "42a71716",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1819,14 +1819,6 @@
   "changes": [
     {
       "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.98",
-      "NewVersion": "1.0.99",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-11-25T03:15:02.825158",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.99",
       "NewVersion": "1.0.100",
       "ChangeType": "MODIFIED",
@@ -2640,7 +2632,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-02-22T04:18:24.809210",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.187",
+      "NewVersion": "1.0.188",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-23T04:25:05.812598",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-02-22T04:18:25.497089"
+  "last_updated": "2026-02-23T04:25:06.490026"
 }
