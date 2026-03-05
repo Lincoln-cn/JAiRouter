@@ -3,20 +3,22 @@
 ## 版本统计
 
 - 总文档数: 137
-- 近7天变更: 8
+- 近7天变更: 11
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-03-04 04:09:06
+- 最后扫描: 2026-03-05 04:12:30
 
 ## 最近变更
 
+- **DELETED**: README-EN.md (1.0.5 → ) - 2026-03-05
+- **MODIFIED**: docs-version-report.md (1.0.197 → 1.0.198) - 2026-03-05
+- **MODIFIED**: README.md (1.0.6 → 1.0.7) - 2026-03-05
+- **CREATED**: README-ZH.md ( → 1.0.0) - 2026-03-05
 - **MODIFIED**: docs-version-report.md (1.0.196 → 1.0.197) - 2026-03-04
 - **MODIFIED**: docs-version-report.md (1.0.195 → 1.0.196) - 2026-03-03
 - **MODIFIED**: docs-version-report.md (1.0.194 → 1.0.195) - 2026-03-02
 - **MODIFIED**: docs-version-report.md (1.0.193 → 1.0.194) - 2026-03-01
 - **MODIFIED**: docs-version-report.md (1.0.192 → 1.0.193) - 2026-02-28
 - **MODIFIED**: docs-version-report.md (1.0.191 → 1.0.192) - 2026-02-27
-- **MODIFIED**: docs-version-report.md (1.0.190 → 1.0.191) - 2026-02-26
-- **MODIFIED**: docs-version-report.md (1.0.189 → 1.0.190) - 2026-02-25
 
 ## 过期文档 (30天未更新)
 
@@ -157,10 +159,8 @@
 
 ## 依赖关系分析
 
-- **README-EN.md**: 依赖 1 个文档
-  - README.md
 - **README.md**: 依赖 1 个文档
-  - README-EN.md
+  - README-ZH.md
 - **docs/en/api-reference/index.md**: 依赖 4 个文档
   - docs/en/api-reference/management-api.md
   - docs/en/api-reference/monitoring-api.md
@@ -602,12 +602,14 @@
   - docs/en/monitoring/index.md
   - docs/en/security/jwt-authentication.md
   - docs/en/troubleshooting/common-issues.md
+- **README-ZH.md**: 依赖 1 个文档
+  - README.md
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.197 - 2026-03-04 (2bfcedb6)
-- **README.md**: v1.0.6 - 2026-02-09 (6921d0fb)
-- **README-EN.md**: v1.0.5 - 2026-02-09 (6921d0fb)
+- **docs-version-report.md**: v1.0.198 - 2026-03-05 (a5647071)
+- **README.md**: v1.0.7 - 2026-03-05 (e95a2a0b)
+- **README-ZH.md**: v1.0.0 - 2026-03-05 (e95a2a0b)
 - **docs/zh/security/jwt-authentication.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/security/api-key-management.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
