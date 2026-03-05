@@ -4,81 +4,79 @@
   <img src="logo/JAiRouterLogo.png" alt="JAiRouter Logo" width="400">
 </p>
 
-JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关，用于统一管理和路由各种 AI 模型服务（如
-Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流、熔断、健康检查、动态配置更新等功能。
+JAiRouter is a Spring Boot-based model service routing and load balancing gateway designed to centrally manage and route various AI model services (such as Chat, Embedding, Rerank, TTS, etc.), supporting multiple load balancing strategies, rate limiting, circuit breaking, health checks, dynamic configuration updates, and more.
 
-[English Introduction](README-EN.md)
+[中文介绍](README-ZH.md)
 
 ---
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
 
-## 🧭 功能概览（Web 控制台）
+## 🧭 Feature Overview (Web Console)
 
-| 模块分类 | 功能菜单 | 功能描述 |
-|----------|----------|----------|
-| 🔍 **概览** | 仪表板 | 实时展示系统状态、服务健康度、请求趋势、异常统计等关键信息，支持图表可视化与动态刷新。 |
-| ⚙️ **配置管理** | 服务管理 | 支持动态配置 AI 服务类型、适配器、负载均衡策略，支持服务级限流与熔断规则配置。 |
-|  | 实例管理 | 提供实例的新增、编辑、删除、状态管理，支持实例级限流、熔断、健康检查与权重配置。 |
-|  | 版本管理 | 支持配置版本的全生命周期管理：创建、应用、回滚、删除，支持元数据记录与版本对比。 |
-|  | 配置合并 | 提供多版本配置的智能合并、冲突检测、合并预览与操作日志，支持自动合并与手动干预。 |
-| 🔐 **安全管理** | API 密钥管理 | 支持 API Key 的创建、启用/禁用、权限分配、使用统计与过期提醒，支持敏感字段脱敏。 |
-|  | JWT 令牌管理 | 提供 JWT 令牌的生命周期管理：查询、撤销、刷新、黑名单机制，支持 Redis 与文件持久化。 |
-|  | 审计日志 | 完整记录用户登录、配置变更、令牌操作、密钥管理等关键事件，支持事件类型筛选与追踪。 |
-| 👤 **系统管理** | 账户管理 | 支持管理员账户的创建、权限分配、状态管理与操作日志追踪。 |
-| 📊 **追踪管理** | 追踪概览 | 实时展示追踪数据的健康状态、采样率、服务统计与趋势图表。 |
-|  | 追踪搜索 | 支持多条件组合查询追踪记录，支持按服务、时间、状态、标签等维度筛选。 |
-|  | 性能分析 | 提供服务级性能指标分析：延迟分布、错误率、吞吐量、瓶颈诊断与优化建议。 |
-|  | 追踪管理 | 支持采样策略配置（全局/服务级）、性能配置、导出器配置，支持追踪数据实时刷新。 |
-
----
-
-## 🚀 核心亮点
-
-- ✅ **全功能 Web 控制台**：从零构建，覆盖配置、安全、追踪、审计等完整管理链路。
-- ✅ **前后端分离架构**：基于 Vue3 + Element Plus，响应式设计，交互友好。
-- ✅ **配置版本控制**：支持配置的多版本管理与回滚，保障变更可追溯。
-- ✅ **追踪与性能监控**：集成分布式追踪与性能分析，助力系统可观测性。
-- ✅ **企业级安全机制**：支持 JWT + API Key 双认证体系，内置审计与脱敏机制。
-- ✅ **高可用与扩展性**：支持 Redis 高可用部署，配置与令牌支持多级存储策略。
+| Module Category     | Menu             | Description                                                                                      |
+|---------------------|------------------|--------------------------------------------------------------------------------------------------|
+| 🔍 **Overview**      | Dashboard        | Real-time display of system status, service health, request trends, exception statistics, with chart visualization and dynamic refresh support. |
+| ⚙️ **Configuration Management** | Service Management   | Supports dynamic configuration of AI service types, adapters, load balancing policies, and service-level rate limiting and circuit breaker rules. |
+|                     | Instance Management  | Provides instance creation, editing, deletion, status management, and supports instance-level rate limiting, circuit breaking, health checks, and weight configuration. |
+|                     | Version Management   | Full lifecycle management of configuration versions: create, apply, rollback, delete; metadata recording and version comparison supported. |
+|                     | Configuration Merge  | Intelligent merging of multi-version configurations with conflict detection, merge preview, operation logs, auto-merge, and manual intervention. |
+| 🔐 **Security Management** | API Key Management   | Supports API key creation, enable/disable, permission assignment, usage statistics, expiration reminders, and field desensitization for sensitive data. |
+|                     | JWT Token Management | Lifecycle management of JWT tokens: query, revoke, refresh, blacklist mechanism; supports Redis and file persistence. |
+|                     | Audit Logs           | Comprehensive logging of user login, configuration changes, token operations, key management events, with event type filtering and tracking. |
+| 👤 **System Management** | Account Management   | Supports admin account creation, permission allocation, status management, and action log tracking. |
+| 📊 **Trace Management** | Trace Overview       | Real-time display of trace data health status, sampling rate, service statistics, and trend charts. |
+|                     | Trace Search         | Multi-condition combined queries for trace records, supporting filtering by service, time, status, tags, etc. |
+|                     | Performance Analysis | Service-level performance analysis including latency distribution, error rates, throughput, bottleneck diagnosis, and optimization suggestions. |
+|                     | Trace Management     | Configurable sampling strategies (global/service-level), performance settings, exporter configuration, real-time refresh of trace data. |
 
 ---
 
-## 🧩 适用场景
+## 🚀 Core Highlights
 
-- 企业内部 AI 服务网关统一管理
-- 多模型服务路由与负载均衡
-- API 安全认证与访问控制
-- 分布式系统追踪与性能分析
-- 配置变更审计与版本回滚
+- ✅ **Full-featured Web Console**: Built from scratch covering complete management chains such as configuration, security, tracing, and auditing.
+- ✅ **Frontend-backend Separation Architecture**: Based on Vue3 + Element Plus with responsive design and friendly interaction.
+- ✅ **Configuration Version Control**: Supports multi-version configuration management and rollback to ensure traceability of changes.
+- ✅ **Tracing & Performance Monitoring**: Integrated distributed tracing and performance analysis to enhance system observability.
+- ✅ **Enterprise-grade Security Mechanism**: Dual authentication system with JWT + API Key, built-in audit and desensitization mechanisms.
+- ✅ **High Availability & Scalability**: Supports high availability deployment via Redis, multi-tier storage strategy for configurations and tokens.
 
 ---
 
-## 📚 在线文档
+## 🧩 Use Cases
 
-完整的项目文档已迁移至 GitHub Pages，可在线访问：
+- Centralized internal AI service gateway management
+- Multi-model service routing and load balancing
+- API security authentication and access control
+- Distributed system tracing and performance analysis
+- Configuration change audit and version rollback
 
-- [中文文档](https://jairouter.com/)
+---
+
+## 📚 Online Documentation
+
+Complete project documentation has been migrated to GitHub Pages and can be accessed online:
+
+- [Chinese Documentation](https://jairouter.com/)
 - [English Documentation](https://jairouter.com/en/)
 
-文档内容包括：
+Documentation includes:
 
-- 快速开始指南
-- 详细配置说明
-- API 参考
-- 部署指南
-- 监控配置
-- 开发指南
-- 故障排查
+- Quick Start Guide
+- Detailed Configuration Instructions
+- API Reference
+- Deployment Guide
+- Monitoring Configuration
+- Development Guide
+- Troubleshooting
 
 ---
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-```
-# 拉取最新镜像
+# Pull the latest image
 docker pull sodlinken/jairouter:latest
 
-# 运行容器
+# Run container
 docker run -d \
   --name jairouter-dev \
   -p 8080:8080 \
@@ -86,55 +84,52 @@ docker run -d \
   -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
   -e JAVA_OPTS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n" \
   sodlinken/jairouter:dev
-```
 
-3. 访问服务
+3. Access Service
 
-```bash
 curl http://localhost:8080/admin/login
-```
 ![](./docs/capture/login.png)
 
-用户名:admin
-密码：UqfpTm2Zw7ff2BNnZb8AQo8t
+Username: admin  
+Password: UqfpTm2Zw7ff2BNnZb8AQo8t  
 
-登录成功后，即可进入 Web 界面进行服务配置、管理、追踪与性能分析等操作。
+After successful login, you can enter the web interface to perform service configuration, management, tracing, and performance analysis operations.
 
 ![](./docs/capture/dashboard.png)
 
 
-## 📘 API 文档
+## 📘 API Documentation
 
-启动项目后，可通过以下地址访问自动生成的 API 文档：
+After starting the project, you can access the automatically generated API documentation at the following addresses:
 
 - **Swagger UI**: http://127.0.0.1:8080/swagger-ui/index.html
 - **OpenAPI JSON**: http://127.0.0.1:8080/v3/api-docs
 
-## 📌 开发计划（更新状态）
+## 📌 Development Roadmap (Status Update)
 
-| 阶段    | 状态 | 内容                               |
-|-------|----|----------------------------------|
-| 0.1.0 | ✅  | 基础网关、适配器、负载均衡、健康检查               |
-| 0.2.0 | ✅  | 限流、熔断、降级、配置持久化、动态更新接口            |
-| 0.2.1 | ✅  | 定时清理任务、内存优化、客户端IP限流增强、配置文件自动合并   |
-| 0.3.0 | ✅  | Docker 容器化、多环境部署、监控集成            |
-| 0.3.1 | ✅  | 中国使用alibaba mvn源加速镜像构建           |  
-| 0.4.0 | ✅  | 监控指标、Prometheus 集成、告警通知          |
-| 0.5.0 | ✅  | 对项目中涉及到的所有文档，使用github pages 进行管理 |
-| 0.6.0 | ✅  | 认证鉴权                             |
-| 0.7.0 | ✅  | 日志追踪                             |
-| 0.8.0 | ✅  | docker hub 发布自动打包发布镜像            |
-| 0.9.0 | ✅  | 增强监控仪表板和用户管理功能                   |
-| 1.0.0 | ✅  | 企业级部署指南                          |
-| 1.1.0 | ✅  | 增加API试验场功能          |
-| 1.2.5 | ✅  | 将持久化功能增加h2数据库支持，并将该功能设置为默认         |
-| 1.3.0 | 🚧  | 集成到自研大模型应用平台                          |
-
----
-
-📖 **完整文档与部署指南**：[点击查看](https://jairouter.com)  
-🐙 **开源地址**：[GitHub - JAiRouter](https://github.com/Lincoln-cn/jairouter)
+| Phase   | Status | Content                                                       |
+|---------|--------|---------------------------------------------------------------|
+| 0.1.0   | ✅     | Basic gateway, adapter, load balancing, health check          |
+| 0.2.0   | ✅     | Rate limiting, circuit breaking, degradation, config persistence, dynamic update APIs |
+| 0.2.1   | ✅     | Scheduled cleanup tasks, memory optimization, enhanced client IP rate limiting, automatic config file merging |
+| 0.3.0   | ✅     | Docker containerization, multi-environment deployment, monitoring integration |
+| 0.3.1   | ✅     | Accelerated image building using Alibaba Maven mirror in China |
+| 0.4.0   | ✅     | Monitoring metrics, Prometheus integration, alert notifications |
+| 0.5.0   | ✅     | Managing all documents involved in the project via GitHub Pages |
+| 0.6.0   | ✅     | Authentication and authorization                              |
+| 0.7.0   | ✅     | Log tracing                                                   |
+| 0.8.0   | ✅     | Automated packaging and publishing images to Docker Hub       |
+| 0.9.0   | ✅     | Enhanced monitoring dashboard and user management features    |
+| 1.0.0   | ✅     | Enterprise deployment guide                                   |
+| 1.1.0   | ✅     | Add API playground feature         |
+| 1.2.5   | ✅     | Add H2 database support for persistence and set as default         |
+| 1.3.0   | 🚧     | Integration into self-developed large model application platform |
 
 ---
 
-💬 欢迎反馈与共建，让我们一起让 JAiRouter 变得更好！
+📖 **Full Documentation & Deployment Guide**: [Click Here](https://jairouter.com)  
+🐙 **Source Code Repository**: [GitHub - JAiRouter](https://github.com/Lincoln-cn/jairouter)
+
+---
+
+💬 Welcome feedback and collaboration—let's make JAiRouter better together!
