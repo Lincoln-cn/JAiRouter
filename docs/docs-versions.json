@@ -1,35 +1,23 @@
 {
   "versions": {
-    "README-EN.md": {
-      "FilePath": "README-EN.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-02-09T04:27:09.421136",
-      "ContentHash": "d64e89648ab0cc69",
-      "GitCommit": "6921d0fb",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "README.md"
-      ]
-    },
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-02-09T04:27:09.423018",
-      "ContentHash": "63aa475230d8d900",
-      "GitCommit": "6921d0fb",
+      "Version": "1.0.7",
+      "LastModified": "2026-03-05T04:12:30.104508",
+      "ContentHash": "6af7f6b0d49266c6",
+      "GitCommit": "e95a2a0b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "README-EN.md"
+        "README-ZH.md"
       ]
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.197",
-      "LastModified": "2026-03-04T04:09:05.670977",
-      "ContentHash": "b3c9cfdcec6a87e4",
-      "GitCommit": "2bfcedb6",
+      "Version": "1.0.198",
+      "LastModified": "2026-03-05T04:12:30.106705",
+      "ContentHash": "3c709d54c72d0e0a",
+      "GitCommit": "a5647071",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1814,17 +1802,21 @@
         "docs/en/security/jwt-authentication.md",
         "docs/en/troubleshooting/common-issues.md"
       ]
+    },
+    "README-ZH.md": {
+      "FilePath": "README-ZH.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-03-05T04:12:30.102375",
+      "ContentHash": "df1ba8e14bb7edf0",
+      "GitCommit": "e95a2a0b",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "README.md"
+      ]
     }
   },
   "changes": [
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.108",
-      "NewVersion": "1.0.109",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2025-12-05T03:19:08.696499",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.109",
@@ -2544,7 +2536,39 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-03-04T04:09:05.670985",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-03-05T04:12:30.102383",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-03-05T04:12:30.104513",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.197",
+      "NewVersion": "1.0.198",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-03-05T04:12:30.106710",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-EN.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-03-05T04:12:30.736666",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-03-04T04:09:06.401461"
+  "last_updated": "2026-03-05T04:12:30.840603"
 }
