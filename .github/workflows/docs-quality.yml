@@ -59,7 +59,7 @@ jobs:
         use-verbose-mode: 'yes'
         config-file: '.github/mlc_config.json'
         folder-path: 'docs'
-        file-path: './README.md, ./README-EN.md'
+        file-path: './README.md, ./README-ZH.md'
       continue-on-error: true
     
     - name: 检查链接有效性 (自定义脚本)

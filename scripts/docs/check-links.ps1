@@ -292,7 +292,7 @@ function Start-LinkCheck {
     $mdFiles += Get-ChildItem -Path $DocsDir -Filter "*.md" -Recurse
     
     # 也检查根目录的 README 文件
-    foreach ($readme in @("README.md", "README-EN.md")) {
+    foreach ($readme in @("README.md", "README-ZH.md")) {
         if (Test-Path $readme) {
             $mdFiles += Get-Item $readme
         }
