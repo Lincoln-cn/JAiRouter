@@ -39,6 +39,7 @@ JAiRouter is a Spring Boot-based model service routing and load balancing gatewa
 - ✅ **Tracing & Performance Monitoring**: Integrated distributed tracing and performance analysis to enhance system observability.
 - ✅ **Enterprise-grade Security Mechanism**: Dual authentication system with JWT + API Key, built-in audit and desensitization mechanisms.
 - ✅ **High Availability & Scalability**: Supports high availability deployment via Redis, multi-tier storage strategy for configurations and tokens.
+- ✅ **Multi-backend Adapter Support**: Supports latest API features for GPUStack, Ollama, VLLM, Xinference, LocalAI and other backend services.
 
 ---
 

@@ -125,24 +125,30 @@ graph TB
     A --> E[XinferenceAdapter]
     A --> F[LocalAIAdapter]
     A --> G[OpenAIAdapter]
-    
+
     subgraph "适配器功能"
         H[请求转换]
         I[响应映射]
         J[错误处理]
         K[流式处理]
+        L[扩展参数支持]
+        M[API兼容性]
     end
-    
+
     B --> H
     B --> I
     B --> J
     B --> K
+    B --> L
+    B --> M
 ```
 
 **职责：**
 - 统一不同后端服务的调用方式
 - 请求/响应格式转换
 - 协议适配和错误处理
+- 支持最新的 API 特性
+- 扩展参数处理
 
 ### 4. 负载均衡层 (Load Balancer Layer)
 
