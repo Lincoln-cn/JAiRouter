@@ -58,6 +58,15 @@
 - **缩写词汇**: 常用技术缩写的完整解释
 - **概念关系**: 术语间的关联和层次结构
 
+### [适配器更新文档](adapter-updates.md)
+记录了对所有适配器的最新更新，以支持最新的 API 特性：
+- **VllmAdapter**: 支持最新的 vLLM OpenAI 兼容 API
+- **GpuStackAdapter**: 支持最新的 GPUStack API 特性
+- **LocalAiAdapter**: 支持最新的 LocalAI API 特性
+- **NormalOpenAiAdapter**: 支持完整的 OpenAI API 特性
+- **OllamaAdapter**: 支持最新的 Ollama API 特性
+- **XinferenceAdapter**: 支持最新的 Xinference API 特性
+
 ## 快速导航
 
 ### 🆕 新用户推荐阅读顺序

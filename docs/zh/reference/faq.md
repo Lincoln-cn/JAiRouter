@@ -29,6 +29,24 @@
 
 未来还将支持 Anthropic Claude、Google Gemini、Cohere 等更多服务。
 
+### Q2.1: 适配器支持最新的 API 特性吗？
+
+**A**: 是的，JAiRouter 的所有适配器都已更新以支持最新的 API 特性：
+
+- **VllmAdapter**: 支持最新的 vLLM OpenAI 兼容 API，包括所有扩展参数
+- **GpuStackAdapter**: 支持最新的 GPUStack API 特性
+- **LocalAiAdapter**: 支持最新的 LocalAI API 特性
+- **NormalOpenAiAdapter**: 支持完整的 OpenAI API 特性
+- **OllamaAdapter**: 支持最新的 Ollama API 特性
+- **XinferenceAdapter**: 支持最新的 Xinference API 特性
+
+所有适配器都支持：
+- 完整的 OpenAI 兼容参数
+- 扩展参数处理（通过 `extra_body`）
+- 标准化的响应格式
+- 改进的流式响应处理
+- 统一的错误处理机制
+
 ### Q3: JAiRouter 与其他 API 网关有什么区别？
 
 **A**: JAiRouter 专门为 AI 模型服务设计，具有以下特色：
