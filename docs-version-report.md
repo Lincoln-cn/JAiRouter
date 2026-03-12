@@ -2,23 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 137
-- 近7天变更: 10
+- 总文档数: 138
+- 近7天变更: 14
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-03-11 04:10:28
+- 最后扫描: 2026-03-12 04:14:10
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/reference/index.md (1.0.1 → 1.0.2) - 2026-03-12
+- **MODIFIED**: docs/zh/reference/faq.md (1.0.2 → 1.0.3) - 2026-03-12
+- **CREATED**: docs/zh/reference/adapter-updates.md ( → 1.0.0) - 2026-03-12
+- **MODIFIED**: docs/zh/development/contributing.md (1.0.1 → 1.0.2) - 2026-03-12
+- **MODIFIED**: docs/zh/development/architecture.md (1.0.1 → 1.0.2) - 2026-03-12
+- **MODIFIED**: docs-version-report.md (1.0.204 → 1.0.205) - 2026-03-12
+- **MODIFIED**: README.md (1.0.7 → 1.0.8) - 2026-03-12
+- **MODIFIED**: README-ZH.md (1.0.0 → 1.0.1) - 2026-03-12
 - **MODIFIED**: docs-version-report.md (1.0.203 → 1.0.204) - 2026-03-11
 - **MODIFIED**: docs-version-report.md (1.0.202 → 1.0.203) - 2026-03-10
-- **MODIFIED**: docs-version-report.md (1.0.201 → 1.0.202) - 2026-03-09
-- **MODIFIED**: docs-version-report.md (1.0.200 → 1.0.201) - 2026-03-08
-- **MODIFIED**: docs-version-report.md (1.0.199 → 1.0.200) - 2026-03-07
-- **MODIFIED**: docs-version-report.md (1.0.198 → 1.0.199) - 2026-03-06
-- **DELETED**: README-EN.md (1.0.5 → ) - 2026-03-05
-- **MODIFIED**: docs-version-report.md (1.0.197 → 1.0.198) - 2026-03-05
-- **MODIFIED**: README.md (1.0.6 → 1.0.7) - 2026-03-05
-- **CREATED**: README-ZH.md ( → 1.0.0) - 2026-03-05
 
 ## 过期文档 (30天未更新)
 
@@ -85,9 +85,7 @@
 - docs/zh/deployment/index.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/deployment/kubernetes.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/deployment/production.md (版本: 1.0.3, 最后更新: 2025-09-04)
-- docs/zh/development/architecture.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/development/code-quality.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/zh/development/contributing.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/development/deployment-testing.md (版本: 1.0.2, 最后更新: 2025-08-29)
 - docs/zh/development/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/development/performance-optimization.md (版本: 1.0.2, 最后更新: 2025-08-29)
@@ -108,9 +106,7 @@
 - docs/zh/monitoring/testing.md (版本: 1.0.3, 最后更新: 2025-09-02)
 - docs/zh/monitoring/troubleshooting.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/reference/changelog.md (版本: 1.0.2, 最后更新: 2025-11-27)
-- docs/zh/reference/faq.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/zh/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/reference/roadmap.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/zh/troubleshooting/common-issues.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
@@ -457,11 +453,12 @@
 - **docs/zh/reference/faq.md**: 依赖 2 个文档
   - docs/zh/development/contributing.md
   - docs/zh/reference/roadmap.md
-- **docs/zh/reference/index.md**: 依赖 8 个文档
+- **docs/zh/reference/index.md**: 依赖 9 个文档
   - docs/zh/api-reference/index.md
   - docs/zh/configuration/index.md
   - docs/zh/deployment/index.md
   - docs/zh/monitoring/index.md
+  - docs/zh/reference/adapter-updates.md
   - docs/zh/reference/changelog.md
   - docs/zh/reference/faq.md
   - docs/zh/reference/glossary.md
@@ -604,12 +601,21 @@
   - docs/en/troubleshooting/common-issues.md
 - **README-ZH.md**: 依赖 1 个文档
   - README.md
+- **docs/zh/reference/adapter-updates.md**: 依赖 3 个文档
+  - docs/zh/api-reference/index.md
+  - docs/zh/configuration/index.md
+  - docs/zh/troubleshooting/index.md
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.204 - 2026-03-11 (89fcd2a8)
-- **README.md**: v1.0.7 - 2026-03-05 (e95a2a0b)
-- **README-ZH.md**: v1.0.0 - 2026-03-05 (e95a2a0b)
+- **docs/zh/reference/index.md**: v1.0.2 - 2026-03-12 (5cc48238)
+- **docs/zh/reference/faq.md**: v1.0.3 - 2026-03-12 (5cc48238)
+- **docs/zh/reference/adapter-updates.md**: v1.0.0 - 2026-03-12 (5cc48238)
+- **docs/zh/development/contributing.md**: v1.0.2 - 2026-03-12 (5cc48238)
+- **docs/zh/development/architecture.md**: v1.0.2 - 2026-03-12 (5cc48238)
+- **docs-version-report.md**: v1.0.205 - 2026-03-12 (51142e98)
+- **README.md**: v1.0.8 - 2026-03-12 (5cc48238)
+- **README-ZH.md**: v1.0.1 - 2026-03-12 (5cc48238)
 - **docs/zh/security/jwt-authentication.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/security/api-key-management.md**: v1.0.2 - 2025-11-27 (82a7f5bd)
 - **docs/zh/reference/roadmap.md**: v1.0.2 - 2025-11-27 (ed9127f6)
@@ -640,7 +646,6 @@
 - **docs/zh/troubleshooting/common-issues.md**: v1.0.2 - 2025-09-02 (dbe39921)
 - **docs/zh/security/index.md**: v1.0.1 - 2025-09-02 (dbe39921)
 - **docs/zh/security/data-sanitization.md**: v1.0.1 - 2025-09-02 (dbe39921)
-- **docs/zh/reference/faq.md**: v1.0.2 - 2025-09-02 (dbe39921)
 - **docs/zh/monitoring/testing.md**: v1.0.3 - 2025-09-02 (dbe39921)
 - **docs/zh/monitoring/setup.md**: v1.0.2 - 2025-09-02 (dbe39921)
 - **docs/zh/getting-started/quick-start.md**: v1.0.2 - 2025-09-02 (dbe39921)
@@ -665,7 +670,6 @@
 - **docs/zh/tracing/index.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/zh/tracing/config-reference.md**: v1.0.0 - 2025-08-29 (dbe39921)
 - **docs/zh/security/troubleshooting.md**: v1.0.0 - 2025-08-29 (dbe39921)
-- **docs/zh/reference/index.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/reference/glossary.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/monitoring/troubleshooting.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/monitoring/slow-query-alerts.md**: v1.0.0 - 2025-08-29 (dbe39921)
@@ -685,9 +689,7 @@
 - **docs/zh/development/performance-optimization.md**: v1.0.2 - 2025-08-29 (dbe39921)
 - **docs/zh/development/index.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/development/deployment-testing.md**: v1.0.2 - 2025-08-29 (dbe39921)
-- **docs/zh/development/contributing.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/development/code-quality.md**: v1.0.1 - 2025-08-29 (dbe39921)
-- **docs/zh/development/architecture.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/deployment/github-pages.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/configuration/rate-limiting.md**: v1.0.1 - 2025-08-29 (dbe39921)
 - **docs/zh/configuration/modular-config.md**: v1.0.0 - 2025-08-29 (dbe39921)
