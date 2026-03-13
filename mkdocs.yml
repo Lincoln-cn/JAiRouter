@@ -118,6 +118,7 @@ plugins:
             部署测试: Deployment Testing
             性能优化: Performance Optimization
             常见问题: Common Issues
+            关键问题修复: Key Issue Fixes
             性能问题: Performance Issues
             调试指南: Debugging Guide
             参考资料: Reference
@@ -207,6 +208,7 @@ nav:
   - 开发指南:
     - zh/development/index.md
     - 架构说明: zh/development/architecture.md
+    - 架构重构: zh/development/architecture-refactoring.md
     - 贡献指南: zh/development/contributing.md
     - 测试指南: zh/development/testing.md
     - 代码质量: zh/development/code-quality.md
@@ -215,6 +217,7 @@ nav:
   - 故障排查:
     - zh/troubleshooting/index.md
     - 常见问题: zh/troubleshooting/common-issues.md
+    - 关键问题修复: zh/troubleshooting/issue-fixes.md
     - 性能问题: zh/troubleshooting/performance.md
     - 调试指南: zh/troubleshooting/debugging.md
   - 参考资料:

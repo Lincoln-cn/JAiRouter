@@ -39,6 +39,9 @@ class RedisJwtTokenPersistenceServiceImplTest {
     @BeforeEach
     void setUp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(redisTemplate.opsForSet()).thenReturn(mock(org.springframework.data.redis.core.ReactiveSetOperations.class));
+        when(redisTemplate.expire(anyString(), any())).thenReturn(Mono.just(true));
+        when(valueOperations.increment(anyString())).thenReturn(Mono.just(1L));
         service = new RedisJwtTokenPersistenceServiceImpl(redisTemplate, fallbackStoreManager);
     }
     

@@ -3,18 +3,25 @@ package org.unreal.modelrouter.security.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.dto.AuditEvent;
 import org.unreal.modelrouter.dto.AuditEventQuery;
 import org.unreal.modelrouter.dto.AuditEventType;
 import org.unreal.modelrouter.dto.SecurityReport;
 import org.unreal.modelrouter.security.audit.ExtendedSecurityAuditServiceImpl;
+import org.unreal.modelrouter.store.entity.SecurityAuditEntity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * ExtendedSecurityAuditServiceImpl 单元测试
@@ -24,9 +31,24 @@ class ExtendedSecurityAuditServiceImplTest {
     
     private ExtendedSecurityAuditServiceImpl auditService;
     
+    @Mock
+    private org.unreal.modelrouter.store.repository.SecurityAuditRepository securityAuditRepository;
+
     @BeforeEach
     void setUp() {
-        auditService = new ExtendedSecurityAuditServiceImpl();
+        auditService = new ExtendedSecurityAuditServiceImpl(securityAuditRepository);
+        
+        // 配置mock对象以避免NullPointer异常
+        when(securityAuditRepository.findByEventTypeInAndTimestampBetween(any(), any(), any()))
+            .thenReturn(Flux.empty());
+        when(securityAuditRepository.findByUserIdAndTimestampBetween(any(), any(), any()))
+            .thenReturn(Flux.empty());
+        when(securityAuditRepository.findByClientIpAndTimestampBetween(any(), any(), any()))
+            .thenReturn(Flux.empty());
+        when(securityAuditRepository.findByTimestampBetween(any(), any()))
+            .thenReturn(Flux.empty());
+        when(securityAuditRepository.save(any()))
+            .thenReturn(Mono.empty());
     }
     
     @Test

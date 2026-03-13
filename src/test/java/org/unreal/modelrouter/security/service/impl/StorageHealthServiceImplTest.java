@@ -37,7 +37,9 @@ class StorageHealthServiceImplTest {
     void setUp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.delete(anyString())).thenReturn(Mono.just(1L));
-        
+        when(storeManager.getAllKeys()).thenReturn(Mono.empty()); // 避免null pointer
+        when(storeManager.getConfig(anyString())).thenReturn(null); // 避免null pointer
+
         storageHealthService = new StorageHealthServiceImpl(redisTemplate, storeManager);
     }
     
