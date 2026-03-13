@@ -44,7 +44,10 @@ class JwtTokenRefreshServiceTest {
         jwtConfig.setRefreshExpirationDays(7);
         jwtConfig.setBlacklistEnabled(true);
         securityProperties.setJwt(jwtConfig);
-        
+
+        // 配置mock对象以避免NullPointer异常
+        when(jwtTokenValidator.extractUserId(anyString())).thenReturn(Mono.just("test-user-id"));
+
         // 创建测试对象
         tokenRefreshService = new JwtTokenRefreshService(jwtTokenValidator, securityProperties);
     }

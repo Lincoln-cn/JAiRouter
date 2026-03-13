@@ -23,6 +23,8 @@
         <docker.image.name>${docker.image.prefix}/${project.artifactId}</docker.image.name>
         <opentelemetry.version>1.35.0</opentelemetry.version>
         <opentelemetry-instrumentation.version>1.32.0</opentelemetry-instrumentation.version>
+        <!-- 默认跳过前端构建，使用 -Pfrontend 启用 -->
+        <frontend.build.skip>true</frontend.build.skip>
     </properties>
 
     <profiles>
@@ -100,6 +102,16 @@
                 <checkstyle.skip>true</checkstyle.skip>
                 <spotbugs.skip>true</spotbugs.skip>
                 <jacoco.skip>true</jacoco.skip>
+                <!-- 生产环境启用前端构建 -->
+                <frontend.build.skip>false</frontend.build.skip>
+            </properties>
+        </profile>
+
+        <!-- 前端构建 Profile -->
+        <profile>
+            <id>frontend</id>
+            <properties>
+                <frontend.build.skip>false</frontend.build.skip>
             </properties>
         </profile>
 
@@ -111,7 +123,7 @@
                 <checkstyle.skip>true</checkstyle.skip>
                 <spotbugs.skip>true</spotbugs.skip>
                 <jacoco.skip>true</jacoco.skip>
-                <!-- 跳过前端构建 -->
+                <!-- 快速构建跳过前端构建 -->
                 <frontend.build.skip>true</frontend.build.skip>
             </properties>
         </profile>
@@ -512,7 +524,15 @@
                 </configuration>
             </plugin>
 
-            <!-- Frontend Maven Plugin -->
+            <!--
+                Frontend Maven Plugin - 前端构建插件
+                默认情况下跳过前端构建以提高开发效率
+                使用方法:
+                1. mvn clean package -Pfrontend  - 启用前端构建
+                2. mvn clean package -Pprod      - 生产环境（自动启用前端构建）
+                3. mvn clean package -Pfast      - 快速构建（跳过前端）
+                4. mvn clean package -Dfrontend.build.skip=false  - 命令行启用前端
+            -->
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
@@ -520,7 +540,7 @@
                 <configuration>
                     <workingDirectory>frontend/</workingDirectory>
                     <installDirectory>target</installDirectory>
-                    <!-- 添加跳过配置 -->
+                    <!-- 通过属性控制是否跳过，默认跳过 -->
                     <!--suppress UnresolvedMavenProperty -->
                     <skip>${frontend.build.skip}</skip>
                 </configuration>
