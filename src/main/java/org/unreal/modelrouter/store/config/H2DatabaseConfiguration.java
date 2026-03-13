@@ -51,6 +51,9 @@ public class H2DatabaseConfiguration extends AbstractR2dbcConfiguration {
 
         // 确保 data 目录存在
         ensureDataDirectoryExists(dataDirectory);
+        
+        // 保存数据目录配置（确保每次启动都记录使用的目录）
+        saveDataDirectoryConfig(dataDirectory);
 
         // 构建数据库文件路径
         String dbFileName = extractDbNameFromUrl(r2dbcUrl);
@@ -221,8 +224,6 @@ public class H2DatabaseConfiguration extends AbstractR2dbcConfiguration {
             boolean created = dataDirectory.mkdirs();
             if (created) {
                 log.info("Created data directory: {}", dataDirectory.getAbsolutePath());
-                // 保存目录配置
-                saveDataDirectoryConfig(dataDirectory);
             } else {
                 log.warn("Failed to create data directory: {}", dataDirectory.getAbsolutePath());
             }
