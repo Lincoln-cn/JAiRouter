@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.startsWith;
 import org.mockito.Mock;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import org.unreal.modelrouter.tracing.config.TracingConfiguration;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,7 +76,10 @@ class TracingWebFilterTest {
     
     @Mock
     private TracingPerformanceMonitor performanceMonitor;
-    
+
+    @Mock
+    private TracingConfiguration tracingConfiguration;
+
     @Mock
     private ServerWebExchange exchange;
     
@@ -105,7 +109,7 @@ class TracingWebFilterTest {
         tracingContext = new DefaultTracingContext(tracer);
         
         // 创建TracingWebFilter实例
-        tracingWebFilter = new TracingWebFilter(tracingService, structuredLogger, performanceMonitor);
+        tracingWebFilter = new TracingWebFilter(tracingService, structuredLogger, performanceMonitor, tracingConfiguration);
         
         // 设置基本Mock行为
         when(exchange.getRequest()).thenReturn(request);

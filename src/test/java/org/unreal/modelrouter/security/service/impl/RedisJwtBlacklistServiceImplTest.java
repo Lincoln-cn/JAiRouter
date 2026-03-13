@@ -45,6 +45,8 @@ class RedisJwtBlacklistServiceImplTest {
     void setUp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.opsForSet()).thenReturn(setOperations);
+        when(redisTemplate.hasKey(anyString())).thenReturn(Mono.just(false)); // 遫避免null pointer
+        when(redisTemplate.delete(anyString())).thenReturn(Mono.just(1L)); // 遫避免null pointer
         service = new RedisJwtBlacklistServiceImpl(redisTemplate, fallbackStoreManager);
     }
     

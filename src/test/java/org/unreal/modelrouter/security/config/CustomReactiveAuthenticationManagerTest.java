@@ -47,6 +47,10 @@ class CustomReactiveAuthenticationManagerTest {
     
     @BeforeEach
     void setUp() {
+        // 配置mock对象以避免NullPointer异常
+        when(securityProperties.getApiKey()).thenReturn(new org.unreal.modelrouter.security.config.properties.ApiKeyConfig());
+        when(securityProperties.getJwt()).thenReturn(new JwtConfig());
+        
         authenticationManager = new CustomReactiveAuthenticationManager(
                 apiKeyService, jwtTokenValidator, securityProperties
         );
