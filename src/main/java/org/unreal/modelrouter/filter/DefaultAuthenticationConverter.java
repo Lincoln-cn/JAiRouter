@@ -71,15 +71,37 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
      * 提取JWT令牌
      */
     private String extractJwtToken(ServerWebExchange exchange) {
-        // 首先尝试从配置的自定义头中提取
+        // 首先尝试从配置的自定义头中提取（大小写不敏感）
         String jwtHeader = securityProperties.getJwt().getJwtHeader();
-        List<String> jwtHeaders = exchange.getRequest().getHeaders().get(jwtHeader);
-        if (jwtHeaders != null && !jwtHeaders.isEmpty()) {
-            String authHeader = jwtHeaders.get(0);
+        String authHeader = getHeaderIgnoreCase(exchange, jwtHeader);
+        if (authHeader != null) {
             if (authHeader.startsWith("Bearer ")) {
                 return authHeader.substring(7);
             }
             return authHeader;
+        }
+        return null;
+    }
+
+    /**
+     * 大小写不敏感地获取请求头
+     */
+    private String getHeaderIgnoreCase(ServerWebExchange exchange, String headerName) {
+        // 首先尝试直接获取
+        List<String> values = exchange.getRequest().getHeaders().get(headerName);
+        if (values != null && !values.isEmpty()) {
+            return values.get(0);
+        }
+
+        // 如果直接获取失败，进行大小写不敏感的搜索
+        String lowerHeaderName = headerName.toLowerCase();
+        for (String key : exchange.getRequest().getHeaders().keySet()) {
+            if (key.toLowerCase().equals(lowerHeaderName)) {
+                List<String> headerValues = exchange.getRequest().getHeaders().get(key);
+                if (headerValues != null && !headerValues.isEmpty()) {
+                    return headerValues.get(0);
+                }
+            }
         }
         return null;
     }

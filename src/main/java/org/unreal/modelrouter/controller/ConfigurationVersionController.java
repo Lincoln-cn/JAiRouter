@@ -15,6 +15,7 @@ import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.VersionInfoResponse;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,8 +54,10 @@ public class ConfigurationVersionController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<List<Integer>>> getConfigVersions() {
-        List<Integer> versions = configurationService.getAllVersions();
-        return Mono.just(RouterResponse.success(versions, "获取配置版本列表成功"));
+        return Mono.fromSupplier(() -> {
+            List<Integer> versions = configurationService.getAllVersions();
+            return RouterResponse.success(versions, "获取配置版本列表成功");
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -73,11 +76,13 @@ public class ConfigurationVersionController {
     public Mono<RouterResponse<Map<String, Object>>> getConfigByVersion(
             @Parameter(description = "版本号", example = "1")
             @PathVariable("version") int version) {
-        Map<String, Object> config = configurationService.getVersionConfig(version);
-        if (config == null) {
-            return Mono.just(RouterResponse.error("指定版本的配置不存在: " + version));
-        }
-        return Mono.just(RouterResponse.success(config, "获取配置版本详情成功"));
+        return Mono.fromSupplier(() -> {
+            Map<String, Object> config = configurationService.getVersionConfig(version);
+            if (config == null) {
+                return RouterResponse.<Map<String, Object>>error("指定版本的配置不存在: " + version);
+            }
+            return RouterResponse.success(config, "获取配置版本详情成功");
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
 
@@ -97,13 +102,15 @@ public class ConfigurationVersionController {
     public Mono<RouterResponse<Void>> deleteConfigVersion(
             @Parameter(description = "版本号", example = "1")
             @PathVariable("version") int version) {
-        int currentVersion = configurationService.getCurrentVersion();
-        if (version == currentVersion) {
-            return Mono.just(RouterResponse.error("不能删除当前版本"));
-        }
-        // 调用ConfigurationService删除指定版本
-        configurationService.deleteConfigVersion(version);
-        return Mono.just(RouterResponse.success(null, "配置版本删除成功"));
+        return Mono.fromSupplier(() -> {
+            int currentVersion = configurationService.getCurrentVersion();
+            if (version == currentVersion) {
+                return RouterResponse.<Void>error("不能删除当前版本");
+            }
+            // 调用ConfigurationService删除指定版本
+            configurationService.deleteConfigVersion(version);
+            return RouterResponse.<Void>success(null, "配置版本删除成功");
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -118,8 +125,10 @@ public class ConfigurationVersionController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<Integer>> getCurrentVersion() {
-        int currentVersion = configurationService.getCurrentVersion();
-        return Mono.just(RouterResponse.success(currentVersion, "获取当前配置版本成功"));
+        return Mono.fromSupplier(() -> {
+            int currentVersion = configurationService.getCurrentVersion();
+            return RouterResponse.success(currentVersion, "获取当前配置版本成功");
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -138,8 +147,10 @@ public class ConfigurationVersionController {
     public Mono<RouterResponse<String>> applyVersion(
             @Parameter(description = "版本号", example = "1")
             @PathVariable("version") int version) {
-        configurationService.applyVersion(version);
-        return Mono.just(RouterResponse.success("配置应用成功"));
+        return Mono.fromSupplier(() -> {
+            configurationService.applyVersion(version);
+            return RouterResponse.<String>success("配置应用成功");
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -154,47 +165,49 @@ public class ConfigurationVersionController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<List<VersionInfoResponse>>> getAllVersionInfo() {
-        // 获取所有版本号
-        List<Integer> versionNumbers = configurationService.getAllVersions();
+        return Mono.fromSupplier(() -> {
+            // 获取所有版本号
+            List<Integer> versionNumbers = configurationService.getAllVersions();
 
-        // 获取实际当前版本号
-        int currentVersion = configurationService.getActualCurrentVersion();
+            // 获取实际当前版本号
+            int currentVersion = configurationService.getActualCurrentVersion();
 
-        // 构建所有版本的详细信息
-        List<VersionInfoResponse> versionInfos = new ArrayList<>();
+            // 构建所有版本的详细信息
+            List<VersionInfoResponse> versionInfos = new ArrayList<>();
 
-        for (Integer version : versionNumbers) {
-            // 获取配置详情
-            Map<String, Object> config = configurationService.getVersionConfig(version);
+            for (Integer version : versionNumbers) {
+                // 获取配置详情
+                Map<String, Object> config = configurationService.getVersionConfig(version);
 
-            VersionInfoResponse versionInfo = new VersionInfoResponse();
-            versionInfo.setVersion(version);
-            versionInfo.setConfig(config != null ? config : new HashMap<>());
-            versionInfo.setCurrent(version == currentVersion);
+                VersionInfoResponse versionInfo = new VersionInfoResponse();
+                versionInfo.setVersion(version);
+                versionInfo.setConfig(config != null ? config : new HashMap<>());
+                versionInfo.setCurrent(version == currentVersion);
 
-            // 从配置中提取操作类型和详细信息
-            if (config != null && config.containsKey("_metadata")) {
-                Map<String, Object> metadata = (Map<String, Object>) config.get("_metadata");
-                if (metadata != null) {
-                    if (metadata.containsKey("operation")) {
-                        versionInfo.setOperation((String) metadata.get("operation"));
-                    }
-                    if (metadata.containsKey("operationDetail")) {
-                        versionInfo.setOperationDetail((String) metadata.get("operationDetail"));
-                    }
-                    if (metadata.containsKey("timestamp")) {
-                        Object timestampObj = metadata.get("timestamp");
-                        if (timestampObj instanceof Number) {
-                            versionInfo.setTimestamp(((Number) timestampObj).longValue());
+                // 从配置中提取操作类型和详细信息
+                if (config != null && config.containsKey("_metadata")) {
+                    Map<String, Object> metadata = (Map<String, Object>) config.get("_metadata");
+                    if (metadata != null) {
+                        if (metadata.containsKey("operation")) {
+                            versionInfo.setOperation((String) metadata.get("operation"));
+                        }
+                        if (metadata.containsKey("operationDetail")) {
+                            versionInfo.setOperationDetail((String) metadata.get("operationDetail"));
+                        }
+                        if (metadata.containsKey("timestamp")) {
+                            Object timestampObj = metadata.get("timestamp");
+                            if (timestampObj instanceof Number) {
+                                versionInfo.setTimestamp(((Number) timestampObj).longValue());
+                            }
                         }
                     }
                 }
+                versionInfos.add(versionInfo);
             }
-            versionInfos.add(versionInfo);
-        }
-        // 按版本号降序排列
-        versionInfos.sort((a, b) -> b.getVersion().compareTo(a.getVersion()));
-        return Mono.just(RouterResponse.success(versionInfos, "获取所有版本详细信息成功"));
+            // 按版本号降序排列
+            versionInfos.sort((a, b) -> b.getVersion().compareTo(a.getVersion()));
+            return RouterResponse.success(versionInfos, "获取所有版本详细信息成功");
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
 }

@@ -35,6 +35,9 @@ public class StoreManagerConfiguration {
     @Autowired(required = false)
     private ConfigRepository configRepository;
 
+    @Autowired(required = false)
+    private ReactiveH2StoreManager reactiveH2StoreManager;
+
     /**
      * 获取存储类型
      * @return 存储类型
@@ -191,12 +194,12 @@ public class StoreManagerConfiguration {
             StoreManager storeManager;
             
             if ("h2".equalsIgnoreCase(type)) {
-                if (configRepository == null) {
-                    log.warn("ConfigRepository not available for H2 storage, falling back to file storage");
+                if (reactiveH2StoreManager == null) {
+                    log.warn("ReactiveH2StoreManager not available for H2 storage, falling back to file storage");
                     storeManager = StoreManagerFactory.createFileStoreManager(path);
                 } else {
                     log.info("Creating H2 StoreManager with database URL: {}", h2Url);
-                    storeManager = StoreManagerFactory.createH2StoreManager(configRepository);
+                    storeManager = new H2StoreManager(reactiveH2StoreManager);
                 }
             } else {
                 storeManager = StoreManagerFactory.createStoreManager(type, path);
