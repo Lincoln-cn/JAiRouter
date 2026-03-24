@@ -31,11 +31,11 @@ public final class StoreManagerFactory {
 
     /**
      * 创建基于H2数据库的存储管理器
-     * @param configRepository 配置仓库
+     * @param reactiveH2StoreManager 响应式H2存储管理器
      * @return H2StoreManager实例
      */
-    public static StoreManager createH2StoreManager(final ConfigRepository configRepository) {
-        return new H2StoreManager(configRepository);
+    public static StoreManager createH2StoreManager(final ReactiveH2StoreManager reactiveH2StoreManager) {
+        return new H2StoreManager(reactiveH2StoreManager);
     }
 
     /**
