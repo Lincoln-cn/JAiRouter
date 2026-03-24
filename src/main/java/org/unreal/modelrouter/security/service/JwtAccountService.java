@@ -802,10 +802,10 @@ public class JwtAccountService {
     }
 
     /**
-     * 从YAML配置初始化JWT账户持久化存储
+     * 从YAML配置初始化JWT账户持久化存储，并将默认账号写入数据库
      */
     public void initializeJwtAccountFromYaml() {
-        log.info("首次启动，将YAML JWT账户配置保存为版本1");
+        log.info("首次启动，将YAML JWT账户配置保存为版本1并初始化数据库");
 
         try {
             // 获取YAML默认JWT账户配置
@@ -815,6 +815,40 @@ public class JwtAccountService {
             saveAccountAsNewVersion(defaultAccountConfig);
 
             log.info("YAML JWT账户配置已保存为版本1");
+
+            // 将默认账号写入数据库
+            List<JwtUserProperties.UserAccount> defaultAccounts = jwtUserProperties.getAccounts();
+            if (defaultAccounts != null && !defaultAccounts.isEmpty()) {
+                log.info("开始将 {} 个默认账号写入数据库", defaultAccounts.size());
+
+                for (JwtUserProperties.UserAccount account : defaultAccounts) {
+                    try {
+                        // 加密密码
+                        JwtUserProperties.UserAccount encryptedAccount = encryptAccountPassword(account);
+
+                        // 保存到数据库
+                        JwtAccountEntity entity = JwtAccountEntity.builder()
+                                .username(encryptedAccount.getUsername())
+                                .password(encryptedAccount.getPassword())
+                                .roles(objectMapper.writeValueAsString(encryptedAccount.getRoles()))
+                                .enabled(encryptedAccount.isEnabled())
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
+
+                        jwtAccountRepository.save(entity)
+                                .doOnSuccess(saved -> log.info("默认账号已写入数据库: {}", account.getUsername()))
+                                .doOnError(e -> log.error("写入默认账号失败: {}", account.getUsername(), e))
+                                .block();
+
+                    } catch (Exception e) {
+                        log.error("初始化默认账号到数据库失败: {}", account.getUsername(), e);
+                    }
+                }
+                log.info("默认账号初始化完成");
+            } else {
+                log.warn("YAML配置中没有默认账号");
+            }
 
         } catch (Exception e) {
             log.error("从YAML配置初始化JWT账户失败", e);
@@ -846,6 +880,64 @@ public class JwtAccountService {
         } catch (Exception e) {
             log.error("加载持久化JWT账户配置失败", e);
             throw new RuntimeException("Failed to load persisted JWT account config", e);
+        }
+    }
+
+    /**
+     * 如果数据库中没有账号，则初始化默认账号
+     * 用于在配置已存在但数据库为空的情况下补充初始化
+     */
+    public void initializeDefaultAccountsIfNeeded() {
+        log.info("检查是否需要初始化默认账号到数据库...");
+
+        try {
+            // 检查数据库中是否已有账号
+            Long accountCount = jwtAccountRepository.count().block();
+            if (accountCount != null && accountCount > 0) {
+                log.info("数据库中已有 {} 个账号，跳过默认账号初始化", accountCount);
+                return;
+            }
+
+            log.info("数据库中没有账号，开始从YAML配置初始化默认账号");
+
+            // 从YAML配置获取默认账号
+            List<JwtUserProperties.UserAccount> defaultAccounts = jwtUserProperties.getAccounts();
+            if (defaultAccounts == null || defaultAccounts.isEmpty()) {
+                log.warn("YAML配置中没有默认账号");
+                return;
+            }
+
+            log.info("开始将 {} 个默认账号写入数据库", defaultAccounts.size());
+
+            for (JwtUserProperties.UserAccount account : defaultAccounts) {
+                try {
+                    // 加密密码
+                    JwtUserProperties.UserAccount encryptedAccount = encryptAccountPassword(account);
+
+                    // 保存到数据库
+                    JwtAccountEntity entity = JwtAccountEntity.builder()
+                            .username(encryptedAccount.getUsername())
+                            .password(encryptedAccount.getPassword())
+                            .roles(objectMapper.writeValueAsString(encryptedAccount.getRoles()))
+                            .enabled(encryptedAccount.isEnabled())
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+
+                    jwtAccountRepository.save(entity)
+                            .doOnSuccess(saved -> log.info("默认账号已写入数据库: {}", account.getUsername()))
+                            .doOnError(e -> log.error("写入默认账号失败: {}", account.getUsername(), e))
+                            .block();
+
+                } catch (Exception e) {
+                    log.error("初始化默认账号到数据库失败: {}", account.getUsername(), e);
+                }
+            }
+
+            log.info("默认账号初始化完成，共写入 {} 个账号", defaultAccounts.size());
+
+        } catch (Exception e) {
+            log.error("检查并初始化默认账号失败", e);
         }
     }
 

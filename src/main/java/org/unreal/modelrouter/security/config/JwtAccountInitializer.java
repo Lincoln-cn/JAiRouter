@@ -31,10 +31,13 @@ public class JwtAccountInitializer {
                 // 加载最新的持久化配置
                 jwtAccountService.loadLatestJwtAccountConfig();
                 log.info("JWT账户配置初始化完成 - 已加载持久化配置");
+
+                // 检查数据库中是否已有账号，如果没有则初始化默认账号
+                jwtAccountService.initializeDefaultAccountsIfNeeded();
             } else {
-                // 首次启动，将YAML配置保存为版本1
+                // 首次启动，将YAML配置保存为版本1并初始化数据库
                 jwtAccountService.initializeJwtAccountFromYaml();
-                log.info("JWT账户配置初始化完成 - 已从YAML创建初始版本");
+                log.info("JWT账户配置初始化完成 - 已从YAML创建初始版本并初始化数据库");
             }
         } catch (Exception e) {
             log.error("JWT账户配置初始化失败", e);
