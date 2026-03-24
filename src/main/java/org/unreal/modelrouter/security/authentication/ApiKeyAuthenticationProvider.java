@@ -13,6 +13,7 @@ import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.security.service.ApiKeyService;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * API Key认证提供者
@@ -42,7 +43,9 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
         
         try {
             // 验证API Key
-            ApiKey apiKey = apiKeyService.validateApiKey(apiKeyValue).block();
+            ApiKey apiKey = apiKeyService.validateApiKey(apiKeyValue)
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .block();
 
             if (apiKey == null) {
                 log.debug("API Key验证失败: 无效的API Key");

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -254,8 +255,11 @@ public class TracingQueryController {
             long now = System.currentTimeMillis();
             long start = startTime != null ? parseTimeString(startTime) : now - 3600000;
             long end = endTime != null ? parseTimeString(endTime) : now;
-            
-            return traceQueryService.getTraceStatistics(start, end).block();
+            return new long[]{start, end};
+        })
+        .subscribeOn(Schedulers.boundedElastic())
+        .flatMap(timeRange -> {
+            return traceQueryService.getTraceStatistics(timeRange[0], timeRange[1]);
         })
         .map(stats -> {
             Map<String, Object> performanceStats = new HashMap<>();
@@ -265,9 +269,9 @@ public class TracingQueryController {
             performanceStats.put("avgLatency", stats.getAvgDuration());
             performanceStats.put("maxLatency", stats.getMaxDuration());
             performanceStats.put("minLatency", stats.getMinDuration());
-            performanceStats.put("errorRate", stats.getTotalTraces() > 0 ? 
+            performanceStats.put("errorRate", stats.getTotalTraces() > 0 ?
                 (double) stats.getErrorTraces() / stats.getTotalTraces() * 100 : 0.0);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", performanceStats);
