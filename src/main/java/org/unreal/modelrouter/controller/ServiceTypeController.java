@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.config.ConfigurationValidator;
 import org.unreal.modelrouter.controller.response.RouterResponse;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.*;
 
@@ -51,15 +53,15 @@ public class ServiceTypeController {
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Map<String, Object>>> getAllConfigurations() {
-        try {
-            Map<String, Object> configs = configurationService.getAllConfigurations();
-            return ResponseEntity.ok(RouterResponse.success(configs, "获取配置成功"));
-        } catch (Exception e) {
-            logger.error("获取所有配置失败", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(RouterResponse.error("获取配置失败: " + e.getMessage()));
-        }
+    public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> getAllConfigurations() {
+        return Mono.fromSupplier(() -> configurationService.getAllConfigurations())
+                .subscribeOn(Schedulers.boundedElastic())
+                .map(configs -> ResponseEntity.ok(RouterResponse.success(configs, "获取配置成功")))
+                .onErrorResume(e -> {
+                    logger.error("获取所有配置失败", e);
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(RouterResponse.error("获取配置失败：" + e.getMessage())));
+                });
     }
 
     /**
