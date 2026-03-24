@@ -165,9 +165,18 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                     if (key.startsWith(TOKEN_PREFIX)) {
                         try {
                             Map<String, Object> tokenData = storeManager.getConfig(key);
-                            if (tokenData != null) {
+                            // 检查数据是否有效：必须包含 tokenHash 或 id 字段
+                            if (tokenData != null && !tokenData.isEmpty()
+                                    && (tokenData.containsKey("tokenHash") || tokenData.containsKey("id"))) {
                                 JwtTokenInfo token = convertFromMap(tokenData);
-                                allTokens.add(token);
+                                // 再次检查转换后的对象是否有效
+                                if (token.getTokenHash() != null || token.getId() != null) {
+                                    allTokens.add(token);
+                                } else {
+                                    log.warn("Skipping invalid token data from key {}: missing tokenHash and id", key);
+                                }
+                            } else {
+                                log.debug("Skipping empty or invalid token data from key {}", key);
                             }
                         } catch (Exception e) {
                             log.warn("Failed to load token from key {}: {}", key, e.getMessage());
