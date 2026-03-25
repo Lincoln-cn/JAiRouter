@@ -1,17 +1,103 @@
 {
   "dashboard": {
     "title": "Dashboard",
-    "welcome": "Welcome to JAiRouter Admin Interface"
+    "welcome": "Welcome to JAiRouter Admin",
+    "overview": "Overview",
+    "services": "Services",
+    "instances": "Instances",
+    "playground": "Playground",
+    "monitoring": "Monitoring",
+    "settings": "Settings"
   },
   "login": {
     "title": "JAiRouter Admin",
-    "subtitle": "Please sign in to your account",
+    "subtitle": "Please login to your account",
     "username": "Username",
     "password": "Password",
-    "submit": "Sign In",
-    "usernameRequired": "Please enter username",
-    "passwordRequired": "Please enter password",
+    "submit": "Login",
+    "usernameRequired": "Username is required",
+    "passwordRequired": "Password is required",
     "success": "Login successful",
-    "failed": "Login failed"
+    "failed": "Login failed",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "reset": "Reset",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info",
+    "action": "Action",
+    "status": "Status",
+    "name": "Name",
+    "type": "Type",
+    "description": "Description",
+    "createTime": "Create Time",
+    "updateTime": "Update Time",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "service": {
+    "management": "Service Management",
+    "add": "Add Service",
+    "edit": "Edit Service",
+    "delete": "Delete Service",
+    "name": "Service Name",
+    "type": "Service Type",
+    "adapter": "Adapter",
+    "loadBalance": "Load Balance",
+    "rateLimit": "Rate Limit",
+    "instances": "Instances",
+    "health": "Health Status"
+  },
+  "instance": {
+    "management": "Instance Management",
+    "add": "Add Instance",
+    "edit": "Edit Instance",
+    "delete": "Delete Instance",
+    "name": "Instance Name",
+    "baseUrl": "Base URL",
+    "weight": "Weight",
+    "headers": "Headers",
+    "healthCheck": "Health Check",
+    "status": {
+      "healthy": "Healthy",
+      "unhealthy": "Unhealthy",
+      "unknown": "Unknown"
+    }
+  },
+  "playground": {
+    "title": "Playground",
+    "chat": "Chat Debug",
+    "embedding": "Embedding Debug",
+    "rerank": "Rerank Debug",
+    "tts": "TTS Debug",
+    "send": "Send",
+    "response": "Response",
+    "config": "Config"
+  },
+  "monitoring": {
+    "title": "Monitoring",
+    "metrics": "Metrics",
+    "tracing": "Tracing",
+    "logging": "Logging",
+    "alerts": "Alerts"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General Settings",
+    "security": "Security Settings",
+    "apiKeys": "API Keys",
+    "jwtTokens": "JWT Tokens",
+    "auditLog": "Audit Log"
   }
 }

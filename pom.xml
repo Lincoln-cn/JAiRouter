@@ -19,12 +19,19 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <docker.image.prefix>jairouter</docker.image.prefix>
         <docker.image.name>${docker.image.prefix}/${project.artifactId}</docker.image.name>
         <opentelemetry.version>1.35.0</opentelemetry.version>
         <opentelemetry-instrumentation.version>1.32.0</opentelemetry-instrumentation.version>
         <!-- 默认跳过前端构建，使用 -Pfrontend 启用 -->
         <frontend.build.skip>true</frontend.build.skip>
+        <!-- 构建优化配置 -->
+        <maven.test.skip>false</maven.test.skip>
+        <maven.javadoc.skip>false</maven.javadoc.skip>
     </properties>
 
     <profiles>
