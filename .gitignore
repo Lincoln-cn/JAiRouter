@@ -40,7 +40,6 @@ build/
 ### Mac OS ###
 .DS_Store
 
-/innerdoc/
 /config/
 /config-dev/
 /config-store/
