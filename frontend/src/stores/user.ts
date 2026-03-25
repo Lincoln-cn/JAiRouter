@@ -3,6 +3,14 @@ import { ref } from 'vue'
 import request from '@/utils/request'
 import type { ApiResponse } from '@/types'
 
+// 用户信息接口
+export interface UserInfo {
+  username: string
+  roles?: string[]
+  permissions?: string[]
+  [key: string]: unknown
+}
+
 // 定义登录响应数据类型
 interface LoginResponseData {
   token: string
@@ -14,7 +22,7 @@ interface LoginResponseData {
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(localStorage.getItem('admin_token'))
-  const userInfo = ref<any>(null)
+  const userInfo = ref<UserInfo | null>(null)
   let refreshTimer: number | null = null
 
   const setToken = (newToken: string) => {
