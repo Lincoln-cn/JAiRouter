@@ -50,3 +50,4 @@ build/
 app.log
 /src/main/resources/static/admin/data/
 /r2dbc:h2:file/
+/innerdoc/
