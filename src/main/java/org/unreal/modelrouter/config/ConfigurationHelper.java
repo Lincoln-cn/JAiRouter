@@ -38,21 +38,15 @@ public class ConfigurationHelper {
     );
 
     private ConfigurationValidator configurationValidator;
-    private ConfigurationHelper configurationHelper;
 
     /**
      * Sets the configuration validator for this helper.
-     * 
+     *
      * @param configurationValidator the configuration validator to set
      */
     @Autowired
     public void setConfigurationValidator(final ConfigurationValidator configurationValidator) {
         this.configurationValidator = configurationValidator;
-    }
-    
-    @Autowired
-    public void setConfigurationHelper(final ConfigurationHelper configurationHelper) {
-        this.configurationHelper = configurationHelper;
     }
 
     /**
@@ -622,7 +616,7 @@ public class ConfigurationHelper {
         
         try {
             // 使用ConfigurationHelper来解析服务类型，支持更多格式
-            return configurationHelper.parseServiceType(serviceType) != null;
+            return this.parseServiceType(serviceType) != null;
         } catch (Exception e) {
             return false;
         }
