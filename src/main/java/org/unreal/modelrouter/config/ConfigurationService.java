@@ -1793,11 +1793,37 @@ public class ConfigurationService {
      * 验证服务类型是否有效
      */
     private boolean isValidServiceType(String serviceType) {
+        if (serviceType == null) {
+            return false;
+        }
+
         try {
-            configurationHelper.parseServiceType(serviceType);
+            // 标准化处理：转小写，移除空格、下划线和连字符
+            String normalizedKey = serviceType.toLowerCase(java.util.Locale.ROOT)
+                    .replaceAll("[\\s_-]+", "");
+            // 直接匹配枚举值
+            ModelServiceRegistry.ServiceType.valueOf(normalizedKey);
             return true;
         } catch (Exception e) {
-            return false;
+            // 处理常见的别名映射
+            String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
+            return lowerServiceType.equals("chat")
+                || lowerServiceType.equals("chat-completion")
+                || lowerServiceType.equals("chat-completions")
+                || lowerServiceType.equals("embedding")
+                || lowerServiceType.equals("embeddings")
+                || lowerServiceType.equals("rerank")
+                || lowerServiceType.equals("re-rank")
+                || lowerServiceType.equals("tts")
+                || lowerServiceType.equals("text-to-speech")
+                || lowerServiceType.equals("stt")
+                || lowerServiceType.equals("speech-to-text")
+                || lowerServiceType.equals("imggen")
+                || lowerServiceType.equals("image-generation")
+                || lowerServiceType.equals("image-generate")
+                || lowerServiceType.equals("imgedit")
+                || lowerServiceType.equals("image-edit")
+                || lowerServiceType.equals("image-editing");
         }
     }
 

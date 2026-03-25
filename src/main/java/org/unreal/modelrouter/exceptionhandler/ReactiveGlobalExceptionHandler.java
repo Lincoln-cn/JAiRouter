@@ -88,6 +88,10 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
                     if (status == null) {
                         status = HttpStatus.INTERNAL_SERVER_ERROR;
                     }
+                } else if (ex instanceof IllegalArgumentException) {
+                    logger.warn("参数验证异常：message={}", ex.getMessage());
+                    errorResponse = RouterResponse.error("参数验证失败：" + ex.getMessage(), "400");
+                    status = HttpStatus.BAD_REQUEST;
                 } else {
                     logger.error("系统异常", ex);
                     String errorMessage = ex.getMessage();
