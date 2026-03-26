@@ -1,20 +1,140 @@
--- 配置数据表
--- 使用引号确保表名和列名保持小写
-CREATE TABLE IF NOT EXISTS "config_data" (
-    "id" BIGINT AUTO_INCREMENT PRIMARY KEY,
-    "config_key" VARCHAR(255) NOT NULL,
-    "config_value" TEXT NOT NULL,
-    "version" INT NOT NULL,
-    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "is_latest" BOOLEAN NOT NULL DEFAULT FALSE,
-    CONSTRAINT "uk_config_key_version" UNIQUE ("config_key", "version")
+-- ========================================
+-- 配置管理表结构（完全关系型）
+-- ========================================
+
+-- 配置主表 - 存储配置的整体元信息和版本控制
+CREATE TABLE IF NOT EXISTS `config_main` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `config_key` VARCHAR(255) NOT NULL UNIQUE,
+    `current_version` INT NOT NULL DEFAULT 0,
+    `initial_version` INT NOT NULL DEFAULT 1,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_by` VARCHAR(255),
+    `updated_by` VARCHAR(255),
+    `description` VARCHAR(1000)
 );
 
--- 创建索引以提高查询性能
-CREATE INDEX IF NOT EXISTS "idx_config_key" ON "config_data"("config_key");
-CREATE INDEX IF NOT EXISTS "idx_is_latest" ON "config_data"("is_latest");
-CREATE INDEX IF NOT EXISTS "idx_config_key_latest" ON "config_data"("config_key", "is_latest");
+CREATE INDEX IF NOT EXISTS `idx_config_main_key` ON `config_main`(`config_key`);
+
+-- 配置版本表 - 存储每个版本的完整配置快照（JSON 格式）
+CREATE TABLE IF NOT EXISTS `config_version` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `config_key` VARCHAR(255) NOT NULL,
+    `version` INT NOT NULL,
+    `config_data` TEXT NOT NULL, -- 存储 JSON 格式的配置数据
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_by` VARCHAR(255),
+    `description` VARCHAR(1000),
+    `change_type` VARCHAR(50), -- CREATE, UPDATE, DELETE, ROLLBACK
+    `is_current` BOOLEAN NOT NULL DEFAULT FALSE,
+    `archive_path` VARCHAR(500), -- 归档文件路径
+    `is_archived` BOOLEAN NOT NULL DEFAULT FALSE,
+    UNIQUE KEY `uk_config_key_version` (`config_key`, `version`)
+);
+
+CREATE INDEX IF NOT EXISTS `idx_config_version_key_current` ON `config_version`(`config_key`, `is_current`);
+CREATE INDEX IF NOT EXISTS `idx_config_version_created` ON `config_version`(`created_at`);
+CREATE INDEX IF NOT EXISTS `idx_config_version_archived` ON `config_version`(`is_archived`);
+
+-- 服务配置表 - 存储每个服务的配置
+CREATE TABLE IF NOT EXISTS `service_config` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `config_key` VARCHAR(255) NOT NULL,
+    `service_type` VARCHAR(100) NOT NULL, -- chat, embedding, rerank, tts, stt, imgGen, imgEdit
+    `load_balance_type` VARCHAR(50), -- random, round-robin, least-connections, ip-hash
+    `load_balance_hash_algorithm` VARCHAR(50) DEFAULT 'md5',
+    `adapter` VARCHAR(100),
+    `rate_limit_enabled` BOOLEAN DEFAULT TRUE,
+    `rate_limit_algorithm` VARCHAR(50) DEFAULT 'token-bucket',
+    `rate_limit_capacity` INT DEFAULT 1000,
+    `rate_limit_rate` INT DEFAULT 100,
+    `rate_limit_scope` VARCHAR(50) DEFAULT 'service',
+    `rate_limit_client_ip_enable` BOOLEAN DEFAULT TRUE,
+    `circuit_breaker_enabled` BOOLEAN DEFAULT TRUE,
+    `circuit_breaker_failure_threshold` INT DEFAULT 5,
+    `circuit_breaker_timeout` INT DEFAULT 60000,
+    `circuit_breaker_success_threshold` INT DEFAULT 2,
+    `fallback_enabled` BOOLEAN DEFAULT TRUE,
+    `fallback_strategy` VARCHAR(50) DEFAULT 'default',
+    `fallback_cache_size` INT,
+    `fallback_cache_ttl` INT,
+    `version` INT NOT NULL,
+    `is_latest` BOOLEAN NOT NULL DEFAULT TRUE,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uk_config_service_version` (`config_key`, `service_type`, `version`)
+);
+
+CREATE INDEX IF NOT EXISTS `idx_service_config_key_latest` ON `service_config`(`config_key`, `service_type`, `is_latest`);
+CREATE INDEX IF NOT EXISTS `idx_service_config_type` ON `service_config`(`service_type`);
+
+-- 服务实例表 - 存储每个服务的具体实例信息
+CREATE TABLE IF NOT EXISTS `service_instance` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `service_config_id` BIGINT NOT NULL,
+    `instance_name` VARCHAR(255) NOT NULL,
+    `base_url` VARCHAR(500) NOT NULL,
+    `path` VARCHAR(500),
+    `weight` INT NOT NULL DEFAULT 1,
+    `headers` TEXT, -- 存储认证信息等 headers(JSON 格式)
+    `rate_limit_enabled` BOOLEAN DEFAULT TRUE,
+    `rate_limit_algorithm` VARCHAR(50) DEFAULT 'token-bucket',
+    `rate_limit_capacity` INT,
+    `rate_limit_rate` INT,
+    `rate_limit_scope` VARCHAR(50) DEFAULT 'instance',
+    `status` VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, INACTIVE, ERROR
+    `last_health_check` TIMESTAMP,
+    `health_status` VARCHAR(50) DEFAULT 'UNKNOWN', -- HEALTHY, UNHEALTHY, UNKNOWN
+    `error_message` TEXT,
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_service_config_id` (`service_config_id`),
+    INDEX `idx_instance_status` (`status`),
+    INDEX `idx_instance_health` (`health_status`),
+    CONSTRAINT `fk_service_config` FOREIGN KEY (`service_config_id`) 
+        REFERENCES `service_config`(`id`) ON DELETE CASCADE
+);
+
+-- 配置变更历史表 - 记录所有配置变更操作（审计日志）
+CREATE TABLE IF NOT EXISTS `config_change_history` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `config_key` VARCHAR(255) NOT NULL,
+    `operation_type` VARCHAR(50) NOT NULL, -- CREATE, UPDATE, DELETE, APPLY_VERSION
+    `target_type` VARCHAR(50), -- CONFIG, SERVICE, INSTANCE
+    `target_id` VARCHAR(255),
+    `old_value` TEXT, -- JSON 格式
+    `new_value` TEXT, -- JSON 格式
+    `changed_by` VARCHAR(255),
+    `changed_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `description` VARCHAR(1000),
+    `request_id` VARCHAR(255),
+    `client_ip` VARCHAR(50)
+);
+
+CREATE INDEX IF NOT EXISTS `idx_config_change_key_time` ON `config_change_history`(`config_key`, `changed_at`);
+CREATE INDEX IF NOT EXISTS `idx_config_change_operation` ON `config_change_history`(`operation_type`);
+CREATE INDEX IF NOT EXISTS `idx_config_change_user` ON `config_change_history`(`changed_by`);
+
+-- 配置归档表 - 记录归档文件信息
+CREATE TABLE IF NOT EXISTS `config_archive` (
+    `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `config_key` VARCHAR(255) NOT NULL,
+    `archive_path` VARCHAR(500) NOT NULL,
+    `archive_type` VARCHAR(50) NOT NULL DEFAULT 'ZIP', -- ZIP, TAR.GZ
+    `version_range_start` INT NOT NULL,
+    `version_range_end` INT NOT NULL,
+    `archived_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `archived_by` VARCHAR(255),
+    `file_size_bytes` BIGINT,
+    `checksum` VARCHAR(100), -- SHA-256 校验和
+    `retention_days` INT DEFAULT 365,
+    `expiry_date` TIMESTAMP,
+    `status` VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, EXPIRED, DELETED
+    INDEX `idx_config_archive_key` ON `config_archive`(`config_key`),
+    INDEX `idx_config_archive_status` ON `config_archive`(`status`),
+    INDEX `idx_config_archive_expiry` ON `config_archive`(`expiry_date`)
+);
 
 -- 安全审计表
 CREATE TABLE IF NOT EXISTS "security_audit" (
