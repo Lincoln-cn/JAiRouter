@@ -89,12 +89,14 @@ CREATE TABLE IF NOT EXISTS `service_instance` (
     `error_message` TEXT,
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX `idx_service_config_id` (`service_config_id`),
-    INDEX `idx_instance_status` (`status`),
-    INDEX `idx_instance_health` (`health_status`),
     CONSTRAINT `fk_service_config` FOREIGN KEY (`service_config_id`) 
         REFERENCES `service_config`(`id`) ON DELETE CASCADE
 );
+
+-- 服务实例表索引
+CREATE INDEX IF NOT EXISTS `idx_service_config_id` ON `service_instance`(`service_config_id`);
+CREATE INDEX IF NOT EXISTS `idx_instance_status` ON `service_instance`(`status`);
+CREATE INDEX IF NOT EXISTS `idx_instance_health` ON `service_instance`(`health_status`);
 
 -- 配置变更历史表 - 记录所有配置变更操作（审计日志）
 CREATE TABLE IF NOT EXISTS `config_change_history` (
@@ -130,11 +132,13 @@ CREATE TABLE IF NOT EXISTS `config_archive` (
     `checksum` VARCHAR(100), -- SHA-256 校验和
     `retention_days` INT DEFAULT 365,
     `expiry_date` TIMESTAMP,
-    `status` VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, EXPIRED, DELETED
-    INDEX `idx_config_archive_key` ON `config_archive`(`config_key`),
-    INDEX `idx_config_archive_status` ON `config_archive`(`status`),
-    INDEX `idx_config_archive_expiry` ON `config_archive`(`expiry_date`)
+    `status` VARCHAR(50) NOT NULL DEFAULT 'ACTIVE' -- ACTIVE, EXPIRED, DELETED
 );
+
+-- 配置归档表索引
+CREATE INDEX IF NOT EXISTS `idx_config_archive_key` ON `config_archive`(`config_key`);
+CREATE INDEX IF NOT EXISTS `idx_config_archive_status` ON `config_archive`(`status`);
+CREATE INDEX IF NOT EXISTS `idx_config_archive_expiry` ON `config_archive`(`expiry_date`);
 
 -- 安全审计表
 CREATE TABLE IF NOT EXISTS "security_audit" (
