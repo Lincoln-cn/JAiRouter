@@ -36,30 +36,11 @@ public class SecurityConfigurationInitializer {
      */
     @PostConstruct
     public void initializeSecurityConfigurations() {
-        log.info("开始初始化安全配置...");
-        
-        try {
-            // 初始化安全配置
-            if (!configMergeService.hasPersistedSecurityConfig()) {
-                // 如果没有持久化配置，将YAML配置保存为第一个版本
-                initializeFromYamlConfig();
-            } else {
-                // 如果有持久化配置，加载最新版本并更新SecurityProperties
-                loadLatestPersistedConfig();
-            }
-            
-            // 初始化JWT账户配置
-            initializeJwtAccountConfig();
-
-            initializeApiKeyConfig();
-            
-            log.info("安全配置初始化完成");
-            
-        } catch (Exception e) {
-            log.error("安全配置初始化失败", e);
-            throw new RuntimeException("Failed to initialize security configurations", e);
-        }
+        log.info("跳过安全配置初始化（V1.4.4 数据库模式）");
+        // V1.4.4: 暂时跳过初始化，避免与新的数据库配置管理冲突
+        log.info("安全配置初始化已跳过（V1.4.4 数据库模式）");
     }
+
 
     /**
      * 从YAML配置初始化持久化存储
