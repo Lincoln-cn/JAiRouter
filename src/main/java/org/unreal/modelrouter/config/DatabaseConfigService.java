@@ -336,6 +336,495 @@ public class DatabaseConfigService {
         return instanceData;
     }
 
+    // ==================== 服务管理 ====================
+
+    /**
+     * 更新服务配置（合并模式）
+     *
+     * @param serviceType  服务类型
+     * @param serviceConfig 新的服务配置（将与现有配置合并）
+     * @return 更新后的完整服务配置
+     */
+    public Map<String, Object> updateServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
+        try {
+            CountDownLatch latch = new CountDownLatch(1);
+            final Map<String, Object>[] resultHolder = new Map[1];
+
+            Schedulers.boundedElastic().schedule(() -> {
+                try {
+                    resultHolder[0] = doUpdateServiceConfig(serviceType, serviceConfig);
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            if (latch.await(60, TimeUnit.SECONDS)) {
+                return resultHolder[0];
+            } else {
+                log.error("更新服务配置超时：{}", serviceType);
+                return new HashMap<>();
+            }
+        } catch (InterruptedException e) {
+            log.error("更新服务配置时被打断：{}", serviceType, e);
+            Thread.currentThread().interrupt();
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * 更新服务配置的实际实现
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> doUpdateServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
+        try {
+            // 1. 检查服务是否存在
+            Boolean exists = serviceConfigRepository
+                    .existsByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+
+            if (Boolean.FALSE.equals(exists)) {
+                throw new IllegalArgumentException("服务类型不存在：" + serviceType);
+            }
+
+            // 2. 获取现有服务配置
+            ServiceConfigEntity existingEntity = serviceConfigRepository
+                    .findLatestByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+
+            if (existingEntity == null) {
+                throw new IllegalArgumentException("服务配置不存在：" + serviceType);
+            }
+
+            // 3. 合并配置
+            Map<String, Object> existingConfig = buildServiceConfigMap(existingEntity);
+            Map<String, Object> mergedConfig = mergeServiceConfig(existingConfig, serviceConfig);
+
+            // 4. 更新服务配置实体
+            ServiceConfigEntity updatedEntity = buildServiceConfigEntityFromMap(
+                    serviceType, mergedConfig, existingEntity.getVersion());
+
+            updatedEntity.setId(existingEntity.getId());
+            updatedEntity.setVersion(existingEntity.getVersion());
+            updatedEntity.setIsLatest(true);
+
+            // 5. 保存更新
+            ServiceConfigEntity savedEntity = serviceConfigRepository.save(updatedEntity).block();
+
+            // 6. 处理实例列表（如果有）
+            if (mergedConfig.containsKey("instances")) {
+                updateServiceInstances(savedEntity.getId(),
+                        (List<Map<String, Object>>) mergedConfig.get("instances"));
+            }
+
+            log.info("服务配置更新成功：{}", serviceType);
+            return buildServiceConfigMap(savedEntity);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("更新服务配置失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
+            throw new RuntimeException("更新服务配置失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 添加新服务
+     *
+     * @param serviceType  服务类型
+     * @param serviceConfig 服务配置
+     * @return 创建后的服务配置
+     */
+    public Map<String, Object> addService(String serviceType, Map<String, Object> serviceConfig) {
+        try {
+            CountDownLatch latch = new CountDownLatch(1);
+            final Map<String, Object>[] resultHolder = new Map[1];
+
+            Schedulers.boundedElastic().schedule(() -> {
+                try {
+                    resultHolder[0] = doAddService(serviceType, serviceConfig);
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            if (latch.await(60, TimeUnit.SECONDS)) {
+                return resultHolder[0];
+            } else {
+                log.error("添加服务超时：{}", serviceType);
+                return new HashMap<>();
+            }
+        } catch (InterruptedException e) {
+            log.error("添加服务时被打断：{}", serviceType, e);
+            Thread.currentThread().interrupt();
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * 添加新服务的实际实现
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> doAddService(String serviceType, Map<String, Object> serviceConfig) {
+        try {
+            // 1. 检查服务是否已存在
+            Boolean exists = serviceConfigRepository
+                    .existsByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+
+            if (Boolean.TRUE.equals(exists)) {
+                throw new IllegalArgumentException("服务已存在：" + serviceType);
+            }
+
+            // 2. 获取当前最大版本号
+            Integer currentVersion = getCurrentVersion();
+            Integer newVersion = currentVersion != null ? currentVersion + 1 : 1;
+
+            // 3. 构建服务配置实体
+            ServiceConfigEntity newEntity = buildServiceConfigEntityFromMap(serviceType, serviceConfig, newVersion);
+            newEntity.setIsLatest(true);
+
+            // 4. 保存新服务配置
+            ServiceConfigEntity savedEntity = serviceConfigRepository.save(newEntity).block();
+
+            // 5. 处理实例列表（如果有）
+            if (serviceConfig.containsKey("instances")) {
+                updateServiceInstances(savedEntity.getId(),
+                        (List<Map<String, Object>>) serviceConfig.get("instances"));
+            }
+
+            // 6. 更新配置主表的版本号（如果需要）
+            updateConfigMainVersion(newVersion);
+
+            log.info("服务添加成功：{}", serviceType);
+            return buildServiceConfigMap(savedEntity);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("添加服务失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
+            throw new RuntimeException("添加服务失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 删除服务
+     *
+     * @param serviceType 服务类型
+     * @return 是否删除成功
+     */
+    public boolean deleteService(String serviceType) {
+        try {
+            CountDownLatch latch = new CountDownLatch(1);
+            final Boolean[] resultHolder = new Boolean[1];
+
+            Schedulers.boundedElastic().schedule(() -> {
+                try {
+                    resultHolder[0] = doDeleteService(serviceType);
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            if (latch.await(60, TimeUnit.SECONDS)) {
+                return resultHolder[0];
+            } else {
+                log.error("删除服务超时：{}", serviceType);
+                return false;
+            }
+        } catch (InterruptedException e) {
+            log.error("删除服务时被打断：{}", serviceType, e);
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /**
+     * 删除服务的实际实现
+     */
+    private Boolean doDeleteService(String serviceType) {
+        try {
+            // 1. 检查服务是否存在
+            Boolean exists = serviceConfigRepository
+                    .existsByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+
+            if (Boolean.FALSE.equals(exists)) {
+                throw new IllegalArgumentException("服务类型不存在：" + serviceType);
+            }
+
+            // 2. 获取服务配置
+            ServiceConfigEntity existingEntity = serviceConfigRepository
+                    .findLatestByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+
+            if (existingEntity == null) {
+                throw new IllegalArgumentException("服务配置不存在：" + serviceType);
+            }
+
+            // 3. 删除关联的实例
+            serviceInstanceRepository.deleteAllByServiceConfigId(existingEntity.getId()).block();
+
+            // 4. 删除服务配置
+            serviceConfigRepository.deleteByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType).block();
+
+            log.info("服务删除成功：{}", serviceType);
+            return true;
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("删除服务失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
+            throw new RuntimeException("删除服务失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 添加服务实例
+     *
+     * @param serviceType  服务类型
+     * @param instanceConfig 实例配置
+     * @return 创建后的实例配置
+     */
+    public Map<String, Object> addServiceInstance(String serviceType, Map<String, Object> instanceConfig) {
+        try {
+            CountDownLatch latch = new CountDownLatch(1);
+            final Map<String, Object>[] resultHolder = new Map[1];
+
+            Schedulers.boundedElastic().schedule(() -> {
+                try {
+                    resultHolder[0] = doAddServiceInstance(serviceType, instanceConfig);
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            if (latch.await(60, TimeUnit.SECONDS)) {
+                return resultHolder[0];
+            } else {
+                log.error("添加服务实例超时：{}", serviceType);
+                return new HashMap<>();
+            }
+        } catch (InterruptedException e) {
+            log.error("添加服务实例时被打断：{}", serviceType, e);
+            Thread.currentThread().interrupt();
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * 添加服务实例的实际实现
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> doAddServiceInstance(String serviceType, Map<String, Object> instanceConfig) {
+        try {
+            // 1. 获取服务配置
+            ServiceConfigEntity serviceConfig = serviceConfigRepository
+                    .findLatestByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+
+            if (serviceConfig == null) {
+                throw new IllegalArgumentException("服务类型不存在：" + serviceType);
+            }
+
+            // 2. 验证实例配置
+            Map<String, Object> validatedInstance = validateInstanceConfig(instanceConfig);
+            String instanceName = (String) validatedInstance.get("name");
+            String baseUrl = (String) validatedInstance.get("baseUrl");
+
+            // 3. 检查实例是否已存在
+            Boolean instanceExists = serviceInstanceRepository
+                    .findByServiceConfigIdAndInstanceName(serviceConfig.getId(), instanceName)
+                    .hasElement()
+                    .block();
+
+            if (Boolean.TRUE.equals(instanceExists)) {
+                throw new IllegalArgumentException("实例已存在：" + instanceName);
+            }
+
+            // 4. 构建实例实体
+            ServiceInstanceEntity newInstance = buildInstanceEntityFromMap(
+                    serviceConfig.getId(), validatedInstance);
+
+            // 5. 保存实例
+            ServiceInstanceEntity savedInstance = serviceInstanceRepository.save(newInstance).block();
+
+            log.info("服务实例添加成功：{}@{}", serviceType, instanceName);
+            return buildInstanceMap(savedInstance);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("添加服务实例失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
+            throw new RuntimeException("添加服务实例失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 更新服务实例
+     *
+     * @param serviceType  服务类型
+     * @param instanceId   实例 ID
+     * @param instanceConfig 新的实例配置
+     * @return 更新后的实例配置
+     */
+    public Map<String, Object> updateServiceInstance(String serviceType, String instanceId,
+                                                      Map<String, Object> instanceConfig) {
+        try {
+            CountDownLatch latch = new CountDownLatch(1);
+            final Map<String, Object>[] resultHolder = new Map[1];
+
+            Schedulers.boundedElastic().schedule(() -> {
+                try {
+                    resultHolder[0] = doUpdateServiceInstance(serviceType, instanceId, instanceConfig);
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            if (latch.await(60, TimeUnit.SECONDS)) {
+                return resultHolder[0];
+            } else {
+                log.error("更新服务实例超时：{}#{}", serviceType, instanceId);
+                return new HashMap<>();
+            }
+        } catch (InterruptedException e) {
+            log.error("更新服务实例时被打断：{}#{}", serviceType, instanceId, e);
+            Thread.currentThread().interrupt();
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * 更新服务实例的实际实现
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> doUpdateServiceInstance(String serviceType, String instanceId,
+                                                         Map<String, Object> instanceConfig) {
+        try {
+            // 1. 获取服务配置
+            ServiceConfigEntity serviceConfig = serviceConfigRepository
+                    .findLatestByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+
+            if (serviceConfig == null) {
+                throw new IllegalArgumentException("服务类型不存在：" + serviceType);
+            }
+
+            // 2. 查找实例
+            ServiceInstanceEntity existingInstance = serviceInstanceRepository
+                    .findById(Long.parseLong(instanceId))
+                    .block();
+
+            if (existingInstance == null) {
+                throw new IllegalArgumentException("实例不存在：" + instanceId);
+            }
+
+            // 3. 验证实例属于该服务
+            if (!existingInstance.getServiceConfigId().equals(serviceConfig.getId())) {
+                throw new IllegalArgumentException("实例不属于该服务：" + instanceId);
+            }
+
+            // 4. 合并配置
+            Map<String, Object> existingConfig = buildInstanceMap(existingInstance);
+            Map<String, Object> mergedConfig = mergeInstanceConfig(existingConfig, instanceConfig);
+            Map<String, Object> validatedConfig = validateInstanceConfig(mergedConfig);
+
+            // 5. 更新实例实体
+            ServiceInstanceEntity updatedInstance = buildInstanceEntityFromMap(
+                    serviceConfig.getId(), validatedConfig);
+            updatedInstance.setId(existingInstance.getId());
+
+            // 6. 保存更新
+            ServiceInstanceEntity savedInstance = serviceInstanceRepository.save(updatedInstance).block();
+
+            log.info("服务实例更新成功：{}#{}", serviceType, instanceId);
+            return buildInstanceMap(savedInstance);
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("更新服务实例失败：serviceType={}, instanceId={}, error={}",
+                    serviceType, instanceId, e.getMessage(), e);
+            throw new RuntimeException("更新服务实例失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 删除服务实例
+     *
+     * @param serviceType 服务类型
+     * @param instanceId  实例 ID
+     * @return 是否删除成功
+     */
+    public boolean deleteServiceInstance(String serviceType, String instanceId) {
+        try {
+            CountDownLatch latch = new CountDownLatch(1);
+            final Boolean[] resultHolder = new Boolean[1];
+
+            Schedulers.boundedElastic().schedule(() -> {
+                try {
+                    resultHolder[0] = doDeleteServiceInstance(serviceType, instanceId);
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            if (latch.await(60, TimeUnit.SECONDS)) {
+                return resultHolder[0];
+            } else {
+                log.error("删除服务实例超时：{}#{}", serviceType, instanceId);
+                return false;
+            }
+        } catch (InterruptedException e) {
+            log.error("删除服务实例时被打断：{}#{}", serviceType, instanceId, e);
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    /**
+     * 删除服务实例的实际实现
+     */
+    private Boolean doDeleteServiceInstance(String serviceType, String instanceId) {
+        try {
+            // 1. 获取服务配置
+            ServiceConfigEntity serviceConfig = serviceConfigRepository
+                    .findLatestByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+
+            if (serviceConfig == null) {
+                throw new IllegalArgumentException("服务类型不存在：" + serviceType);
+            }
+
+            // 2. 查找实例
+            ServiceInstanceEntity existingInstance = serviceInstanceRepository
+                    .findById(Long.parseLong(instanceId))
+                    .block();
+
+            if (existingInstance == null) {
+                throw new IllegalArgumentException("实例不存在：" + instanceId);
+            }
+
+            // 3. 验证实例属于该服务
+            if (!existingInstance.getServiceConfigId().equals(serviceConfig.getId())) {
+                throw new IllegalArgumentException("实例不属于该服务：" + instanceId);
+            }
+
+            // 4. 删除实例
+            serviceInstanceRepository.deleteById(existingInstance.getId()).block();
+
+            log.info("服务实例删除成功：{}#{}", serviceType, instanceId);
+            return true;
+
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("删除服务实例失败：serviceType={}, instanceId={}, error={}",
+                    serviceType, instanceId, e.getMessage(), e);
+            throw new RuntimeException("删除服务实例失败：" + e.getMessage(), e);
+        }
+    }
+
     // ==================== 配置元数据 ====================
 
     /**
@@ -426,6 +915,41 @@ public class DatabaseConfigService {
      */
     Map<String, Object> buildInstanceMapForTest(final ServiceInstanceEntity instance) {
         return buildInstanceMap(instance);
+    }
+
+    /**
+     * 合并服务配置（包级可见，用于测试）
+     */
+    Map<String, Object> mergeServiceConfigForTest(Map<String, Object> existing, Map<String, Object> updates) {
+        return mergeServiceConfig(existing, updates);
+    }
+
+    /**
+     * 合并实例配置（包级可见，用于测试）
+     */
+    Map<String, Object> mergeInstanceConfigForTest(Map<String, Object> existing, Map<String, Object> updates) {
+        return mergeInstanceConfig(existing, updates);
+    }
+
+    /**
+     * 验证实例配置（包级可见，用于测试）
+     */
+    Map<String, Object> validateInstanceConfigForTest(Map<String, Object> instanceConfig) {
+        return validateInstanceConfig(instanceConfig);
+    }
+
+    /**
+     * 安全获取 Boolean 值（包级可见，用于测试）
+     */
+    Boolean getBooleanForTest(Map<String, Object> map, String key, Boolean defaultValue) {
+        return getBoolean(map, key, defaultValue);
+    }
+
+    /**
+     * 安全获取 Integer 值（包级可见，用于测试）
+     */
+    Integer getIntegerForTest(Map<String, Object> map, String key, Integer defaultValue) {
+        return getInteger(map, key, defaultValue);
     }
 
     // ==================== 版本管理 ====================
@@ -773,14 +1297,351 @@ public class DatabaseConfigService {
     /**
      * 保存变更历史
      */
-    private void saveChangeHistory(final String operationType, final String targetType, 
+    private void saveChangeHistory(final String operationType, final String targetType,
                                    final String targetId, final String description, final String changedBy) {
         try {
             // 简化实现，实际应该保存到 config_change_history 表
-            log.debug("记录变更历史：operation={}, target={}, targetId={}, description={}", 
+            log.debug("记录变更历史：operation={}, target={}, targetId={}, description={}",
                     operationType, targetType, targetId, description);
         } catch (Exception e) {
             log.warn("保存变更历史失败：{}", e.getMessage());
         }
+    }
+
+    // ==================== 辅助方法 ====================
+
+    /**
+     * 合并服务配置
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> mergeServiceConfig(Map<String, Object> existing, Map<String, Object> updates) {
+        Map<String, Object> merged = new HashMap<>(existing);
+
+        for (Map.Entry<String, Object> entry : updates.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            if ("instances".equals(key) && value instanceof List) {
+                // instances 字段不合并，直接替换
+                merged.put(key, value);
+            } else if (existing.containsKey(key)
+                    && existing.get(key) instanceof Map
+                    && value instanceof Map) {
+                // 递归合并 Map 类型字段
+                Map<String, Object> existingMap = (Map<String, Object>) existing.get(key);
+                Map<String, Object> updateMap = (Map<String, Object>) value;
+                merged.put(key, mergeServiceConfig(existingMap, updateMap));
+            } else {
+                merged.put(key, value);
+            }
+        }
+
+        return merged;
+    }
+
+    /**
+     * 合并实例配置
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> mergeInstanceConfig(Map<String, Object> existing, Map<String, Object> updates) {
+        Map<String, Object> merged = new HashMap<>(existing);
+
+        for (Map.Entry<String, Object> entry : updates.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            if ("headers".equals(key) && value instanceof Map && existing.get(key) instanceof Map) {
+                // headers 字段需要合并
+                Map<String, String> existingHeaders = (Map<String, String>) existing.get(key);
+                Map<String, String> updateHeaders = (Map<String, String>) value;
+                Map<String, String> mergedHeaders = new HashMap<>(existingHeaders);
+                mergedHeaders.putAll(updateHeaders);
+                merged.put(key, mergedHeaders);
+            } else if (existing.containsKey(key)
+                    && existing.get(key) instanceof Map
+                    && value instanceof Map) {
+                // 递归合并 Map 类型字段
+                Map<String, Object> existingMap = (Map<String, Object>) existing.get(key);
+                Map<String, Object> updateMap = (Map<String, Object>) value;
+                merged.put(key, mergeInstanceConfig(existingMap, updateMap));
+            } else {
+                merged.put(key, value);
+            }
+        }
+
+        return merged;
+    }
+
+    /**
+     * 验证实例配置
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> validateInstanceConfig(Map<String, Object> instanceConfig) {
+        Map<String, Object> validated = new HashMap<>();
+
+        // 必填字段
+        if (instanceConfig.containsKey("name")) {
+            validated.put("name", (String) instanceConfig.get("name"));
+        } else {
+            throw new IllegalArgumentException("实例配置缺少必填字段：name");
+        }
+
+        if (instanceConfig.containsKey("baseUrl")) {
+            validated.put("baseUrl", (String) instanceConfig.get("baseUrl"));
+        } else {
+            throw new IllegalArgumentException("实例配置缺少必填字段：baseUrl");
+        }
+
+        // 可选字段
+        validated.put("path", instanceConfig.containsKey("path")
+                ? (String) instanceConfig.get("path") : "/");
+        validated.put("weight", instanceConfig.containsKey("weight")
+                ? ((Number) instanceConfig.get("weight")).intValue() : 1);
+        validated.put("status", instanceConfig.containsKey("status")
+                ? (String) instanceConfig.get("status") : "ACTIVE");
+        validated.put("healthStatus", instanceConfig.containsKey("healthStatus")
+                ? (String) instanceConfig.get("healthStatus") : "UNKNOWN");
+
+        // headers
+        if (instanceConfig.containsKey("headers") && instanceConfig.get("headers") instanceof Map) {
+            validated.put("headers", instanceConfig.get("headers"));
+        }
+
+        // 限流配置
+        if (instanceConfig.containsKey("rateLimit") && instanceConfig.get("rateLimit") instanceof Map) {
+            validated.put("rateLimit", instanceConfig.get("rateLimit"));
+        }
+
+        return validated;
+    }
+
+    /**
+     * 从 Map 构建 ServiceConfigEntity
+     */
+    @SuppressWarnings("unchecked")
+    private ServiceConfigEntity buildServiceConfigEntityFromMap(
+            String serviceType, Map<String, Object> config, Integer version) {
+
+        ServiceConfigEntity.ServiceConfigEntityBuilder builder = ServiceConfigEntity.builder()
+                .configKey(DEFAULT_CONFIG_KEY)
+                .serviceType(serviceType)
+                .version(version);
+
+        // 负载均衡配置
+        if (config.containsKey("loadBalance") && config.get("loadBalance") instanceof Map) {
+            Map<String, Object> loadBalance = (Map<String, Object>) config.get("loadBalance");
+            if (loadBalance.containsKey("type")) {
+                builder.loadBalanceType((String) loadBalance.get("type"));
+            }
+            if (loadBalance.containsKey("hashAlgorithm")) {
+                builder.loadBalanceHashAlgorithm((String) loadBalance.get("hashAlgorithm"));
+            }
+        }
+
+        // 适配器
+        if (config.containsKey("adapter")) {
+            builder.adapter((String) config.get("adapter"));
+        }
+
+        // 限流配置
+        if (config.containsKey("rateLimit") && config.get("rateLimit") instanceof Map) {
+            Map<String, Object> rateLimit = (Map<String, Object>) config.get("rateLimit");
+            builder.rateLimitEnabled(getBoolean(rateLimit, "enabled", false));
+            if (rateLimit.containsKey("algorithm")) {
+                builder.rateLimitAlgorithm((String) rateLimit.get("algorithm"));
+            }
+            if (rateLimit.containsKey("capacity")) {
+                builder.rateLimitCapacity(getInteger(rateLimit, "capacity", 100));
+            }
+            if (rateLimit.containsKey("rate")) {
+                builder.rateLimitRate(getInteger(rateLimit, "rate", 10));
+            }
+            if (rateLimit.containsKey("scope")) {
+                builder.rateLimitScope((String) rateLimit.get("scope"));
+            }
+            if (rateLimit.containsKey("clientIpEnable")) {
+                builder.rateLimitClientIpEnable(getBoolean(rateLimit, "clientIpEnable", false));
+            }
+        }
+
+        // 熔断配置
+        if (config.containsKey("circuitBreaker") && config.get("circuitBreaker") instanceof Map) {
+            Map<String, Object> circuitBreaker = (Map<String, Object>) config.get("circuitBreaker");
+            builder.circuitBreakerEnabled(getBoolean(circuitBreaker, "enabled", false));
+            if (circuitBreaker.containsKey("failureThreshold")) {
+                builder.circuitBreakerFailureThreshold(getInteger(circuitBreaker, "failureThreshold", 5));
+            }
+            if (circuitBreaker.containsKey("timeout")) {
+                builder.circuitBreakerTimeout(getInteger(circuitBreaker, "timeout", 3000));
+            }
+            if (circuitBreaker.containsKey("successThreshold")) {
+                builder.circuitBreakerSuccessThreshold(getInteger(circuitBreaker, "successThreshold", 3));
+            }
+        }
+
+        // 降级配置
+        if (config.containsKey("fallback") && config.get("fallback") instanceof Map) {
+            Map<String, Object> fallback = (Map<String, Object>) config.get("fallback");
+            builder.fallbackEnabled(getBoolean(fallback, "enabled", false));
+            if (fallback.containsKey("strategy")) {
+                builder.fallbackStrategy((String) fallback.get("strategy"));
+            }
+            if (fallback.containsKey("cacheSize")) {
+                builder.fallbackCacheSize(getInteger(fallback, "cacheSize", 100));
+            }
+            if (fallback.containsKey("cacheTtl")) {
+                builder.fallbackCacheTtl(getInteger(fallback, "cacheTtl", 300));
+            }
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * 从 Map 构建 ServiceInstanceEntity
+     */
+    @SuppressWarnings("unchecked")
+    private ServiceInstanceEntity buildInstanceEntityFromMap(
+            Long serviceConfigId, Map<String, Object> instanceConfig) {
+
+        ServiceInstanceEntity.ServiceInstanceEntityBuilder builder = ServiceInstanceEntity.builder()
+                .serviceConfigId(serviceConfigId);
+
+        // 必填字段
+        if (instanceConfig.containsKey("name")) {
+            builder.instanceName((String) instanceConfig.get("name"));
+        }
+        if (instanceConfig.containsKey("baseUrl")) {
+            builder.baseUrl((String) instanceConfig.get("baseUrl"));
+        }
+
+        // 可选字段
+        if (instanceConfig.containsKey("path")) {
+            builder.path((String) instanceConfig.get("path"));
+        }
+        if (instanceConfig.containsKey("weight")) {
+            builder.weight(((Number) instanceConfig.get("weight")).intValue());
+        }
+        if (instanceConfig.containsKey("status")) {
+            builder.status((String) instanceConfig.get("status"));
+        }
+        if (instanceConfig.containsKey("healthStatus")) {
+            builder.healthStatus((String) instanceConfig.get("healthStatus"));
+        }
+
+        // headers - 转为 JSON 字符串
+        if (instanceConfig.containsKey("headers") && instanceConfig.get("headers") instanceof Map) {
+            try {
+                builder.headers(objectMapper.writeValueAsString(instanceConfig.get("headers")));
+            } catch (JsonProcessingException e) {
+                log.warn("序列化 headers 失败：{}", e.getMessage());
+            }
+        }
+
+        // 限流配置
+        if (instanceConfig.containsKey("rateLimit") && instanceConfig.get("rateLimit") instanceof Map) {
+            Map<String, Object> rateLimit = (Map<String, Object>) instanceConfig.get("rateLimit");
+            builder.rateLimitEnabled(getBoolean(rateLimit, "enabled", false));
+            if (rateLimit.containsKey("algorithm")) {
+                builder.rateLimitAlgorithm((String) rateLimit.get("algorithm"));
+            }
+            if (rateLimit.containsKey("capacity")) {
+                builder.rateLimitCapacity(getInteger(rateLimit, "capacity", 100));
+            }
+            if (rateLimit.containsKey("rate")) {
+                builder.rateLimitRate(getInteger(rateLimit, "rate", 10));
+            }
+            if (rateLimit.containsKey("scope")) {
+                builder.rateLimitScope((String) rateLimit.get("scope"));
+            }
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * 更新服务实例列表
+     */
+    @SuppressWarnings("unchecked")
+    private void updateServiceInstances(Long serviceConfigId, List<Map<String, Object>> instances) {
+        if (instances == null) {
+            return;
+        }
+
+        // 1. 删除现有实例
+        serviceInstanceRepository.deleteAllByServiceConfigId(serviceConfigId).block();
+
+        // 2. 添加新实例
+        for (Map<String, Object> instanceConfig : instances) {
+            try {
+                Map<String, Object> validatedInstance = validateInstanceConfig(instanceConfig);
+                ServiceInstanceEntity newInstance = buildInstanceEntityFromMap(serviceConfigId, validatedInstance);
+                serviceInstanceRepository.save(newInstance).block();
+            } catch (Exception e) {
+                log.warn("添加实例失败：config={}, error={}", instanceConfig, e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 更新配置主表版本号
+     */
+    private void updateConfigMainVersion(Integer newVersion) {
+        try {
+            ConfigMainEntity configMain = configMainRepository.findByConfigKey(DEFAULT_CONFIG_KEY).block();
+
+            if (configMain == null) {
+                // 创建新的配置主记录
+                ConfigMainEntity newConfigMain = ConfigMainEntity.builder()
+                        .configKey(DEFAULT_CONFIG_KEY)
+                        .currentVersion(newVersion)
+                        .initialVersion(newVersion)
+                        .build();
+                configMainRepository.save(newConfigMain).block();
+            } else {
+                // 更新现有记录
+                configMain.setCurrentVersion(newVersion);
+                configMain.setUpdatedAt(LocalDateTime.now());
+                configMainRepository.save(configMain).block();
+            }
+        } catch (Exception e) {
+            log.error("更新配置主表失败：version={}, error={}", newVersion, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 安全获取 Boolean 值
+     */
+    private Boolean getBoolean(Map<String, Object> map, String key, Boolean defaultValue) {
+        if (map.containsKey(key)) {
+            Object value = map.get(key);
+            if (value instanceof Boolean) {
+                return (Boolean) value;
+            } else if (value instanceof Number) {
+                return ((Number) value).intValue() != 0;
+            } else if (value instanceof String) {
+                return Boolean.parseBoolean((String) value);
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
+     * 安全获取 Integer 值
+     */
+    private Integer getInteger(Map<String, Object> map, String key, Integer defaultValue) {
+        if (map.containsKey(key)) {
+            Object value = map.get(key);
+            if (value instanceof Number) {
+                return ((Number) value).intValue();
+            } else if (value instanceof String) {
+                try {
+                    return Integer.parseInt((String) value);
+                } catch (NumberFormatException e) {
+                    log.warn("解析整数失败：key={}, value={}", key, value);
+                }
+            }
+        }
+        return defaultValue;
     }
 }
