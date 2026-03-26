@@ -39,6 +39,7 @@ public class ConfigurationService {
     private final ConfigMergeService configMergeService;
     private final ServiceStateManager serviceStateManager;
     private final SamplingConfigurationValidator samplingValidator;
+    private final DatabaseConfigService databaseConfigService;
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
 
     private static final long REQUEST_DEDUP_WINDOW_MS = 1000; // 1秒内的重复请求将被忽略
@@ -63,12 +64,14 @@ public class ConfigurationService {
                                 ConfigurationHelper configurationHelper,
                                 ConfigMergeService configMergeService,
                                 ServiceStateManager serviceStateManager,
-                                SamplingConfigurationValidator samplingValidator) {
+                                SamplingConfigurationValidator samplingValidator,
+                                DatabaseConfigService databaseConfigService) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
         this.serviceStateManager = serviceStateManager;
         this.samplingValidator = samplingValidator;
+        this.databaseConfigService = databaseConfigService;
         initializeVersionControl();
     }
 
@@ -1149,39 +1152,28 @@ public class ConfigurationService {
      *
      * @param serviceType 服务类型
      * @param serviceConfig 新的服务配置
+     * @return 更新后的完整服务配置
      */
-    public void updateServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
-        logger.info("更新服务配置: {}", serviceType);
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> updateServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
+        logger.info("更新服务配置：{}", serviceType);
 
-        Map<String, Object> currentConfig = getCurrentPersistedConfig();
-        Map<String, Object> services = getServicesFromConfig(currentConfig);
-
-        if (!services.containsKey(serviceType)) {
-            throw new IllegalArgumentException("服务类型不存在: " + serviceType);
+        // 使用 DatabaseConfigService 进行数据库更新
+        try {
+            Map<String, Object> updatedConfig = databaseConfigService.updateServiceConfig(serviceType, serviceConfig);
+            
+            // 刷新运行时配置
+            refreshRuntimeConfig();
+            
+            logger.info("服务 {} 配置更新成功", serviceType);
+            return updatedConfig;
+            
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            logger.error("更新服务配置失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
+            throw new RuntimeException("更新服务配置失败：" + e.getMessage(), e);
         }
-
-        // 获取现有配置并合并更新
-        Map<String, Object> existingConfig = (Map<String, Object>) services.get(serviceType);
-        Map<String, Object> updatedConfig = mergeServiceConfig(existingConfig, serviceConfig);
-
-        // 验证和标准化配置
-        Map<String, Object> validatedConfig = validateAndNormalizeServiceConfig(updatedConfig);
-        services.put(serviceType, validatedConfig);
-        currentConfig.put("services", services);
-
-        // 添加版本元数据
-        Map<String, Object> metadata = new HashMap<>();
-        metadata.put("operation", "updateService");
-        metadata.put("operationDetail", "更新服务配置: " + serviceType);
-        metadata.put("serviceType", serviceType);
-        metadata.put("timestamp", System.currentTimeMillis());
-        currentConfig.put("_metadata", metadata);
-
-        // 保存为新版本并刷新配置
-        saveAsNewVersion(currentConfig);
-        refreshRuntimeConfig();
-
-        logger.info("服务 {} 配置更新成功", serviceType);
     }
 
     /**
