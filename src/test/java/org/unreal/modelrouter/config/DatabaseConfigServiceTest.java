@@ -388,4 +388,155 @@ class DatabaseConfigServiceTest {
         assertTrue(result.containsKey("headers"));
         assertTrue(result.containsKey("rateLimit"));
     }
+
+    // ==================== 配置合并功能测试 ====================
+
+    @Test
+    @DisplayName("合并服务配置 - 部分更新")
+    void mergeServiceConfig_PartialUpdate() {
+        Map<String, Object> existing = new HashMap<>();
+        existing.put("adapter", "gpustack");
+        
+        Map<String, Object> loadBalance = new HashMap<>();
+        loadBalance.put("type", "round-robin");
+        loadBalance.put("hashAlgorithm", "md5");
+        existing.put("loadBalance", loadBalance);
+        
+        Map<String, Object> rateLimit = new HashMap<>();
+        rateLimit.put("enabled", false);
+        rateLimit.put("capacity", 100);
+        existing.put("rateLimit", rateLimit);
+
+        Map<String, Object> updates = new HashMap<>();
+        Map<String, Object> updatedRateLimit = new HashMap<>();
+        updatedRateLimit.put("enabled", true);
+        updatedRateLimit.put("capacity", 200);
+        updates.put("rateLimit", updatedRateLimit);
+
+        Map<String, Object> merged = databaseConfigService.mergeServiceConfigForTest(existing, updates);
+
+        assertEquals("gpustack", merged.get("adapter"));
+        assertEquals("round-robin", ((Map<String, Object>) merged.get("loadBalance")).get("type"));
+        assertTrue((Boolean) ((Map<String, Object>) merged.get("rateLimit")).get("enabled"));
+        assertEquals(200, ((Map<String, Object>) merged.get("rateLimit")).get("capacity"));
+    }
+
+    @Test
+    @DisplayName("合并服务配置 - instances 字段直接替换")
+    void mergeServiceConfig_InstancesReplace() {
+        Map<String, Object> existing = new HashMap<>();
+        List<Map<String, Object>> existingInstances = new ArrayList<>();
+        Map<String, Object> instance1 = new HashMap<>();
+        instance1.put("name", "instance1");
+        existingInstances.add(instance1);
+        existing.put("instances", existingInstances);
+
+        List<Map<String, Object>> newInstances = new ArrayList<>();
+        Map<String, Object> instance2 = new HashMap<>();
+        instance2.put("name", "instance2");
+        newInstances.add(instance2);
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("instances", newInstances);
+
+        Map<String, Object> merged = databaseConfigService.mergeServiceConfigForTest(existing, updates);
+
+        assertEquals(1, ((List<?>) merged.get("instances")).size());
+        assertEquals("instance2", ((Map<String, Object>) ((List<?>) merged.get("instances")).get(0)).get("name"));
+    }
+
+    @Test
+    @DisplayName("合并实例配置 - headers 合并")
+    void mergeInstanceConfig_HeadersMerge() {
+        Map<String, Object> existing = new HashMap<>();
+        existing.put("name", "test-instance");
+        existing.put("baseUrl", "http://localhost:8080");
+        
+        Map<String, String> existingHeaders = new HashMap<>();
+        existingHeaders.put("Authorization", "Bearer old-token");
+        existingHeaders.put("Content-Type", "application/json");
+        existing.put("headers", existingHeaders);
+
+        Map<String, Object> updates = new HashMap<>();
+        Map<String, String> updateHeaders = new HashMap<>();
+        updateHeaders.put("Authorization", "Bearer new-token");
+        updateHeaders.put("X-Custom-Header", "custom-value");
+        updates.put("headers", updateHeaders);
+
+        Map<String, Object> merged = databaseConfigService.mergeInstanceConfigForTest(existing, updates);
+
+        assertEquals("test-instance", merged.get("name"));
+        Map<String, String> mergedHeaders = (Map<String, String>) merged.get("headers");
+        assertEquals("Bearer new-token", mergedHeaders.get("Authorization"));
+        assertEquals("application/json", mergedHeaders.get("Content-Type"));
+        assertEquals("custom-value", mergedHeaders.get("X-Custom-Header"));
+    }
+
+    @Test
+    @DisplayName("验证实例配置 - 必填字段检查")
+    void validateInstanceConfig_RequiredFields() {
+        Map<String, Object> validConfig = new HashMap<>();
+        validConfig.put("name", "test-instance");
+        validConfig.put("baseUrl", "http://localhost:8080");
+
+        Map<String, Object> result = databaseConfigService.validateInstanceConfigForTest(validConfig);
+
+        assertEquals("test-instance", result.get("name"));
+        assertEquals("http://localhost:8080", result.get("baseUrl"));
+        assertEquals("/", result.get("path"));
+        assertEquals(1, result.get("weight"));
+        assertEquals("ACTIVE", result.get("status"));
+    }
+
+    @Test
+    @DisplayName("验证实例配置 - 缺少 name 字段")
+    void validateInstanceConfig_MissingName() {
+        Map<String, Object> invalidConfig = new HashMap<>();
+        invalidConfig.put("baseUrl", "http://localhost:8080");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            databaseConfigService.validateInstanceConfigForTest(invalidConfig);
+        });
+    }
+
+    @Test
+    @DisplayName("验证实例配置 - 缺少 baseUrl 字段")
+    void validateInstanceConfig_MissingBaseUrl() {
+        Map<String, Object> invalidConfig = new HashMap<>();
+        invalidConfig.put("name", "test-instance");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            databaseConfigService.validateInstanceConfigForTest(invalidConfig);
+        });
+    }
+
+    @Test
+    @DisplayName("安全获取 Boolean 值 - 各种类型")
+    void getBoolean_VariousTypes() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("boolValue", true);
+        map.put("numberValue", 1);
+        map.put("stringValue", "true");
+        map.put("invalidString", "invalid");
+
+        assertTrue(databaseConfigService.getBooleanForTest(map, "boolValue", false));
+        assertTrue(databaseConfigService.getBooleanForTest(map, "numberValue", false));
+        assertTrue(databaseConfigService.getBooleanForTest(map, "stringValue", false));
+        assertFalse(databaseConfigService.getBooleanForTest(map, "invalidString", false));
+        assertTrue(databaseConfigService.getBooleanForTest(map, "nonexistent", true));
+    }
+
+    @Test
+    @DisplayName("安全获取 Integer 值 - 各种类型")
+    void getInteger_VariousTypes() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("numberValue", 42);
+        map.put("stringValue", "100");
+        map.put("invalidString", "invalid");
+
+        assertEquals(42, databaseConfigService.getIntegerForTest(map, "numberValue", 0));
+        assertEquals(100, databaseConfigService.getIntegerForTest(map, "stringValue", 0));
+        assertEquals(0, databaseConfigService.getIntegerForTest(map, "invalidString", 0));
+        assertEquals(999, databaseConfigService.getIntegerForTest(map, "nonexistent", 999));
+    }
 }
