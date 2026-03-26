@@ -234,7 +234,7 @@ public class ServiceTypeController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "参数验证失败")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Void>> updateServiceConfig(
+    public ResponseEntity<RouterResponse<Map<String, Object>>> updateServiceConfig(
             @Parameter(description = "服务类型", example = "chat")
             @PathVariable("serviceType") String serviceType,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "服务配置信息")
@@ -246,8 +246,8 @@ public class ServiceTypeController {
                     .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors)));
         }
 
-        configurationService.updateServiceConfig(serviceType, serviceConfig);
-        return ResponseEntity.ok(RouterResponse.success(null, "服务配置更新成功"));
+        Map<String, Object> updatedConfig = configurationService.updateServiceConfig(serviceType, serviceConfig);
+        return ResponseEntity.ok(RouterResponse.success(updatedConfig, "服务配置更新成功"));
 
     }
 
