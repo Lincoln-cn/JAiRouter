@@ -14,6 +14,8 @@ import org.unreal.modelrouter.store.repository.ConfigMainRepository;
 import org.unreal.modelrouter.store.repository.ConfigVersionRepository;
 import org.unreal.modelrouter.store.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.store.repository.ServiceInstanceRepository;
+import org.unreal.modelrouter.store.repository.ConfigArchiveRepository;
+import org.unreal.modelrouter.store.repository.ConfigChangeHistoryRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -42,6 +44,12 @@ class DatabaseConfigServiceTest {
     @Mock
     private ServiceInstanceRepository serviceInstanceRepository;
 
+    @Mock
+    private ConfigArchiveRepository configArchiveRepository;
+
+    @Mock
+    private ConfigChangeHistoryRepository configChangeHistoryRepository;
+
     private ObjectMapper objectMapper;
 
     private DatabaseConfigService databaseConfigService;
@@ -55,7 +63,9 @@ class DatabaseConfigServiceTest {
                 configVersionRepository,
                 serviceConfigRepository,
                 serviceInstanceRepository,
-                objectMapper
+                objectMapper,
+                configArchiveRepository,
+                configChangeHistoryRepository
         );
     }
 
