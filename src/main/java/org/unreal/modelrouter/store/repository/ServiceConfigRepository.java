@@ -73,6 +73,34 @@ public interface ServiceConfigRepository extends R2dbcRepository<ServiceConfigEn
     Mono<Integer> deleteByConfigKey(@Param("configKey") String configKey);
 
     /**
+     * 更新服务配置
+     */
+    @Modifying
+    @Query("""
+        UPDATE service_config SET 
+            load_balance_type = :#{#entity.loadBalanceType},
+            load_balance_hash_algorithm = :#{#entity.loadBalanceHashAlgorithm},
+            adapter = :#{#entity.adapter},
+            rate_limit_enabled = :#{#entity.rateLimitEnabled},
+            rate_limit_algorithm = :#{#entity.rateLimitAlgorithm},
+            rate_limit_capacity = :#{#entity.rateLimitCapacity},
+            rate_limit_rate = :#{#entity.rateLimitRate},
+            rate_limit_scope = :#{#entity.rateLimitScope},
+            rate_limit_client_ip_enable = :#{#entity.rateLimitClientIpEnable},
+            circuit_breaker_enabled = :#{#entity.circuitBreakerEnabled},
+            circuit_breaker_failure_threshold = :#{#entity.circuitBreakerFailureThreshold},
+            circuit_breaker_timeout = :#{#entity.circuitBreakerTimeout},
+            circuit_breaker_success_threshold = :#{#entity.circuitBreakerSuccessThreshold},
+            fallback_enabled = :#{#entity.fallbackEnabled},
+            fallback_strategy = :#{#entity.fallbackStrategy},
+            fallback_cache_size = :#{#entity.fallbackCacheSize},
+            fallback_cache_ttl = :#{#entity.fallbackCacheTtl},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = :#{#entity.id}
+        """)
+    Mono<Integer> updateServiceConfig(@Param("entity") ServiceConfigEntity entity);
+
+    /**
      * 获取所有服务类型
      */
     @Query("SELECT DISTINCT service_type FROM service_config WHERE config_key = :configKey AND is_latest = true")
