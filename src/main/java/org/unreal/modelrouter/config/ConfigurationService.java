@@ -1032,6 +1032,15 @@ public class ConfigurationService {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> getServiceConfig(String serviceType) {
+        // V1.4.4: 使用 DatabaseConfigService 从数据库读取
+        if (databaseConfigService != null) {
+            Map<String, Object> dbConfig = databaseConfigService.getServiceConfig(serviceType);
+            if (dbConfig != null && !dbConfig.isEmpty()) {
+                return dbConfig;
+            }
+        }
+        
+        // 降级到文件存储
         Map<String, Object> config = getAllConfigurations();
         Map<String, Object> services = getServicesFromConfig(config);
         return (Map<String, Object>) services.get(serviceType);
