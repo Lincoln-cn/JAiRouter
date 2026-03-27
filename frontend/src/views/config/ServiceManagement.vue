@@ -730,12 +730,28 @@ const handleSave = async () => {
         if (response.data?.success) {
           ElMessage.success(isEdit.value ? '服务编辑成功' : '服务添加成功')
           dialogVisible.value = false
-          // 清除缓存，强制刷新数据
+          // 清除所有缓存，强制刷新数据
           const cacheKey = 'services_data'
           delete serviceCache.value[cacheKey]
           const serviceCacheKey = `service_config_${form.type}`
           delete serviceCache.value[serviceCacheKey]
+          // 立即刷新列表，不使用防抖
+          if (fetchTimer) {
+            clearTimeout(fetchTimer)
+            fetchTimer = null
+          }
           await fetchServices()
+          // 如果是编辑，刷新后高亮显示
+          if (isEdit.value) {
+            setTimeout(() => {
+              const row = document.querySelector(`[data-type="${form.type}"]`)
+              if (row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                row.classList.add('highlight-row')
+                setTimeout(() => row.classList.remove('highlight-row'), 2000)
+              }
+            }, 500)
+          }
         } else {
           ElMessage.error(response.data?.message || (isEdit.value ? '编辑失败' : '添加失败'))
         }
