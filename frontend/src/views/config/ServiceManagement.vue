@@ -727,6 +727,11 @@ const handleSave = async () => {
         if (response.data?.success) {
           ElMessage.success(isEdit.value ? '服务编辑成功' : '服务添加成功')
           dialogVisible.value = false
+          // 清除缓存，强制刷新数据
+          const cacheKey = 'services_data'
+          delete serviceCache.value[cacheKey]
+          const serviceCacheKey = `service_config_${form.type}`
+          delete serviceCache.value[serviceCacheKey]
           await fetchServices()
         } else {
           ElMessage.error(response.data?.message || (isEdit.value ? '编辑失败' : '添加失败'))
