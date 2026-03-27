@@ -34,7 +34,7 @@
                 <el-option label="全部" value=""></el-option>
                 <el-option label="随机" value="random" />
                 <el-option label="轮询" value="round-robin" />
-                <el-option label="权重" value="weighted" />
+                <el-option label="最少连接" value="least-connections" />
               </el-select>
 
               <el-select
@@ -230,7 +230,8 @@
           >
             <el-option label="随机" value="random" />
             <el-option label="轮询" value="round-robin" />
-            <el-option label="权重" value="weighted" />
+            <el-option label="最少连接" value="least-connections" />
+            <el-option label="IP 哈希" value="ip-hash" />
           </el-select>
         </el-form-item>
 
@@ -466,7 +467,8 @@ const getLoadBalanceTagType = (type: string) => {
   switch (type) {
     case 'random': return 'primary'
     case 'round-robin': return 'success'
-    case 'weighted': return 'warning'
+    case 'least-connections': return 'warning'
+    case 'ip-hash': return 'info'
     default: return 'info'
   }
 }
@@ -474,7 +476,8 @@ const formatLoadBalanceType = (type: string) => {
   switch (type) {
     case 'random': return '随机'
     case 'round-robin': return '轮询'
-    case 'weighted': return '权重'
+    case 'least-connections': return '最少连接'
+    case 'ip-hash': return 'IP 哈希'
     default: return type
   }
 }
