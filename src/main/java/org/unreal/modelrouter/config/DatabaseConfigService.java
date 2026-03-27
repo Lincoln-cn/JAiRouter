@@ -427,19 +427,23 @@ public class DatabaseConfigService {
             updatedEntity.setVersion(existingEntity.getVersion());
             updatedEntity.setIsLatest(true);
 
-            // 5. 保存更新
-            ServiceConfigEntity savedEntity = serviceConfigRepository.save(updatedEntity).block();
+            // 5. 保存更新 - 使用自定义 UPDATE 方法
+            serviceConfigRepository.updateServiceConfig(updatedEntity).block();
             
-            log.info("savedEntity: adapter={}", savedEntity.getAdapter());
-
+            log.info("服务配置更新成功：{}", serviceType);
+            
             // 6. 处理实例列表（如果有）
             if (mergedConfig.containsKey("instances")) {
-                updateServiceInstances(savedEntity.getId(),
+                updateServiceInstances(updatedEntity.getId(),
                         (List<Map<String, Object>>) mergedConfig.get("instances"));
             }
-
-            log.info("服务配置更新成功：{}", serviceType);
-            return buildServiceConfigMap(savedEntity);
+            
+            // 重新读取更新后的实体
+            ServiceConfigEntity resultEntity = serviceConfigRepository
+                    .findLatestByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
+                    .block();
+            
+            return buildServiceConfigMap(resultEntity);
 
         } catch (IllegalArgumentException e) {
             throw e;
