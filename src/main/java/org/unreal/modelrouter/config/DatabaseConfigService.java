@@ -346,19 +346,29 @@ public class DatabaseConfigService {
      * @return 更新后的完整服务配置
      */
     public Map<String, Object> updateServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
+        log.info("updateServiceConfig 被调用：serviceType={}", serviceType);
         try {
             CountDownLatch latch = new CountDownLatch(1);
             final Map<String, Object>[] resultHolder = new Map[1];
 
+            log.info("准备调度异步任务：serviceType={}", serviceType);
             Schedulers.boundedElastic().schedule(() -> {
                 try {
+                    log.info("异步任务开始执行：serviceType={}", serviceType);
                     resultHolder[0] = doUpdateServiceConfig(serviceType, serviceConfig);
+                    log.info("异步任务执行完成：serviceType={}, result={}", serviceType, resultHolder[0] != null ? "not null" : "null");
+                } catch (Exception e) {
+                    log.error("异步任务执行异常：serviceType={}, error={}", serviceType, e.getMessage(), e);
+                    resultHolder[0] = null;
                 } finally {
                     latch.countDown();
+                    log.info("异步任务 latch.countDown: serviceType={}", serviceType);
                 }
             });
 
+            log.info("等待异步任务完成：serviceType={}", serviceType);
             if (latch.await(60, TimeUnit.SECONDS)) {
+                log.info("updateServiceConfig 返回结果：serviceType={}, result={}", serviceType, resultHolder[0] != null ? "not null" : "null");
                 return resultHolder[0];
             } else {
                 log.error("更新服务配置超时：{}", serviceType);
@@ -377,6 +387,8 @@ public class DatabaseConfigService {
     @SuppressWarnings("unchecked")
     private Map<String, Object> doUpdateServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
         try {
+            log.info("开始更新服务配置：serviceType={}, serviceConfig={}", serviceType, serviceConfig);
+            
             // 1. 检查服务是否存在
             Boolean exists = serviceConfigRepository
                     .existsByConfigKeyAndServiceType(DEFAULT_CONFIG_KEY, serviceType)
@@ -394,14 +406,22 @@ public class DatabaseConfigService {
             if (existingEntity == null) {
                 throw new IllegalArgumentException("服务配置不存在：" + serviceType);
             }
+            
+            log.info("现有服务配置：adapter={}, loadBalanceType={}", 
+                existingEntity.getAdapter(), existingEntity.getLoadBalanceType());
 
             // 3. 合并配置
             Map<String, Object> existingConfig = buildServiceConfigMap(existingEntity);
+            log.info("existingConfig: adapter={}", existingConfig.get("adapter"));
+            
             Map<String, Object> mergedConfig = mergeServiceConfig(existingConfig, serviceConfig);
+            log.info("mergedConfig: adapter={}", mergedConfig.get("adapter"));
 
             // 4. 更新服务配置实体
             ServiceConfigEntity updatedEntity = buildServiceConfigEntityFromMap(
                     serviceType, mergedConfig, existingEntity.getVersion());
+            
+            log.info("updatedEntity: adapter={}", updatedEntity.getAdapter());
 
             updatedEntity.setId(existingEntity.getId());
             updatedEntity.setVersion(existingEntity.getVersion());
@@ -409,6 +429,8 @@ public class DatabaseConfigService {
 
             // 5. 保存更新
             ServiceConfigEntity savedEntity = serviceConfigRepository.save(updatedEntity).block();
+            
+            log.info("savedEntity: adapter={}", savedEntity.getAdapter());
 
             // 6. 处理实例列表（如果有）
             if (mergedConfig.containsKey("instances")) {
