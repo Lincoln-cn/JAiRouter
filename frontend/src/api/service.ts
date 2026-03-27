@@ -38,7 +38,7 @@ export const createService = (serviceType: string, serviceConfig: any) => {
 
 // 更新服务配置
 export const updateServiceConfig = (serviceType: string, serviceConfig: any) => {
-  return request.put<RouterResponse<void>>(`/config/type/services/${serviceType}`, serviceConfig)
+  return request.put<RouterResponse<any>>(`/config/type/services/${serviceType}`, serviceConfig)
 }
 
 // 删除服务
