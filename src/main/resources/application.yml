@@ -96,3 +96,11 @@ store:
 # 启动开发环境：java -jar app.jar --spring.profiles.active=dev
 # 启动生产环境：java -jar app.jar --spring.profiles.active=prod
 # 启动兼容模式：java -jar app.jar --spring.profiles.active=legacy
+
+# 开发环境日志配置
+logging:
+  level:
+    org.unreal.modelrouter.config.ConfigurationService: DEBUG
+    org.unreal.modelrouter.config.DatabaseConfigService: DEBUG
+    org.unreal.modelrouter.controller.ServiceTypeController: DEBUG
+

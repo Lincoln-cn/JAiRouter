@@ -19,21 +19,7 @@
       "Bash(print)",
       "Bash(eof)",
       "Bash(python3 *)",
-      "Bash(curl *)",
-      "Bash(nohup *)",
-      "Bash(sleep *)",
-      "Bash(npm run *)",
-      "Bash(git add *)",
-      "Bash(git commit *)",
-      "Bash(git show *)",
-      "Bash(pkill *)",
-      "Bash(mvn *)",
-      "Bash(sed *)",
-      "Bash(git tag *)",
-      "Bash(git push *)",
-      "Bash(cat *)",
-      "Bash(rm *)"
+      "Bash(curl *)"
     ]
-  },
-  "$version": 3
+  }
 }
