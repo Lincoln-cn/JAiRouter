@@ -374,11 +374,12 @@ import {
   addServiceInstance,
   deleteServiceInstance,
   getServiceInstances,
-  getServiceTypes,
-  updateServiceInstance
-} from '@/api/dashboard'
-import { Plus, Delete, Close, Key } from '@element-plus/icons-vue'
+  updateServiceInstance,
+  type InstanceConfig
+} from '@/api/instance'
+import { getServiceTypes } from '@/api/dashboard'
 import { getAdapters, getAllConfigurations } from '@/api/service'
+import { Plus, Delete, Close, Key } from '@element-plus/icons-vue'
 
 // 服务类型映射（保持原有）
 const serviceTypeMap: Record<string, string> = {
@@ -780,7 +781,7 @@ const handleDelete = (row: ServiceInstance) => {
       const serviceType = activeServiceType.value;
       console.log('删除实例，使用服务类型:', serviceType);
       console.log(`发送删除请求到: /api/config/instance/del/${serviceType}?instanceId=${row.instanceId}&createNewVersion=true`)
-      const response = await deleteServiceInstance(serviceType, row.instanceId, true)
+      const response = await deleteServiceInstance(serviceType, row.instanceId)
       if (response.data?.success) {
         instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== row.id)
         instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
@@ -836,10 +837,7 @@ const handleSave = async () => {
         instanceId: form.instanceId,
         instance: instanceData
       }
-      console.log('更新实例请求数据:', updateData)
-      // 使用正确的服务类型发送请求
-      console.log(`发送更新请求到: /api/config/instance/update/${serviceType}?createNewVersion=true`)
-      const response = await updateServiceInstance(serviceType, updateData, true)
+      const response = await updateServiceInstance(serviceType, form.instanceId, instanceData)
       if (response.data?.success) {
         // 编辑成功后，清除缓存并重新获取实例列表以确保数据同步
         delete instancesCache.value[serviceType]
@@ -853,7 +851,7 @@ const handleSave = async () => {
     } else {
       // 使用正确的服务类型发送请求
       console.log(`发送添加请求到: /api/config/instance/add/${serviceType}?createNewVersion=true`)
-      const response = await addServiceInstance(serviceType, instanceData, true)
+      const response = await addServiceInstance(serviceType, instanceData)
       if (response.data?.success) {
         // 添加成功后，清除缓存并重新获取实例列表以确保数据同步
         delete instancesCache.value[serviceType]
