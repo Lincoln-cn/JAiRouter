@@ -17,6 +17,7 @@ import org.unreal.modelrouter.store.repository.ConfigArchiveRepository;
 import org.unreal.modelrouter.store.repository.ConfigChangeHistoryRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.unreal.modelrouter.vo.ServiceInstanceVO;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
@@ -299,43 +300,69 @@ public class DatabaseConfigService {
     }
 
     /**
-     * 构建实例 Map
+     * 构建实例 VO
      */
-    private Map<String, Object> buildInstanceMap(final ServiceInstanceEntity instance) {
-        Map<String, Object> instanceData = new HashMap<>();
-        instanceData.put("name", instance.getInstanceName());
-        instanceData.put("baseUrl", instance.getBaseUrl());
-        instanceData.put("path", instance.getPath());
-        instanceData.put("weight", instance.getWeight());
-        String status = instance.getStatus();
-        log.info("buildInstanceMap: instance.getStatus()={}, normalized={}", status, status != null ? status.toLowerCase() : null);
-        instanceData.put("status", status != null ? status.toLowerCase() : "active");
-        instanceData.put("healthStatus", instance.getHealthStatus());
-
+    private ServiceInstanceVO buildInstanceVO(final ServiceInstanceEntity instance) {
+        // 构建限流配置 VO
+        ServiceInstanceVO.RateLimitVO rateLimitVO = null;
+        if (instance.getRateLimitEnabled() != null && instance.getRateLimitEnabled()) {
+            rateLimitVO = ServiceInstanceVO.RateLimitVO.builder()
+                    .enabled(instance.getRateLimitEnabled())
+                    .algorithm(instance.getRateLimitAlgorithm())
+                    .capacity(instance.getRateLimitCapacity())
+                    .rate(instance.getRateLimitRate())
+                    .scope(instance.getRateLimitScope())
+                    .build();
+        }
+        
         // 解析 headers
+        Object headers = null;
         if (instance.getHeaders() != null && !instance.getHeaders().isEmpty()) {
             try {
                 @SuppressWarnings("unchecked")
-                Map<String, String> headers = objectMapper.readValue(
+                Map<String, String> headersMap = objectMapper.readValue(
                         instance.getHeaders(), Map.class);
-                instanceData.put("headers", headers);
+                headers = headersMap;
             } catch (JsonProcessingException e) {
                 log.warn("解析实例 headers 失败：{}", e.getMessage());
             }
         }
+        
+        // 构建实例 VO
+        String status = instance.getStatus();
+        log.info("buildInstanceVO: instance.getStatus()={}, normalized={}", status, status != null ? status.toLowerCase() : null);
+        
+        return ServiceInstanceVO.builder()
+                .instanceId(instance.getId() != null ? instance.getId().toString() : null)
+                .name(instance.getInstanceName())
+                .baseUrl(instance.getBaseUrl())
+                .path(instance.getPath())
+                .weight(instance.getWeight())
+                .status(status != null ? status.toLowerCase() : "active")
+                .healthStatus(instance.getHealthStatus())
+                .headers(headers)
+                .rateLimit(rateLimitVO)
+                .build();
+    }
 
-        // 实例限流配置
-        if (instance.getRateLimitEnabled() != null && instance.getRateLimitEnabled()) {
-            Map<String, Object> rateLimit = new HashMap<>();
-            rateLimit.put("enabled", instance.getRateLimitEnabled());
-            rateLimit.put("algorithm", instance.getRateLimitAlgorithm());
-            rateLimit.put("capacity", instance.getRateLimitCapacity());
-            rateLimit.put("rate", instance.getRateLimitRate());
-            rateLimit.put("scope", instance.getRateLimitScope());
-            instanceData.put("rateLimit", rateLimit);
-        }
-
-        return instanceData;
+    /**
+     * 构建实例 Map（保留向后兼容）
+     * @deprecated 使用 buildInstanceVO 替代
+     */
+    @Deprecated
+    private Map<String, Object> buildInstanceMap(final ServiceInstanceEntity instance) {
+        ServiceInstanceVO vo = buildInstanceVO(instance);
+        Map<String, Object> result = new HashMap<>();
+        result.put("instanceId", vo.getInstanceId());
+        result.put("name", vo.getName());
+        result.put("baseUrl", vo.getBaseUrl());
+        result.put("path", vo.getPath());
+        result.put("weight", vo.getWeight());
+        result.put("status", vo.getStatus());
+        result.put("healthStatus", vo.getHealthStatus());
+        result.put("headers", vo.getHeaders());
+        result.put("rateLimit", vo.getRateLimit());
+        return result;
     }
 
     // ==================== 服务管理 ====================
