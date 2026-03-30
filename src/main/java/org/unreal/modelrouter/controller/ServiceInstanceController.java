@@ -14,12 +14,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.config.ConfigurationValidator;
+import org.unreal.modelrouter.config.DatabaseConfigService;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.UpdateInstanceDTO;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @deprecated 使用 {@link ServiceInstanceConfigController} 替代
@@ -36,11 +36,13 @@ public class ServiceInstanceController {
 
     private final ConfigurationService configurationService;
     private final ConfigurationValidator configurationValidator;
+    private final DatabaseConfigService databaseConfigService;
 
     @Autowired
-    public ServiceInstanceController(ConfigurationService configurationService, ConfigurationValidator configurationValidator) {
+    public ServiceInstanceController(ConfigurationService configurationService, ConfigurationValidator configurationValidator, DatabaseConfigService databaseConfigService) {
         this.configurationService = configurationService;
         this.configurationValidator = configurationValidator;
+        this.databaseConfigService = databaseConfigService;
     }
 
 
@@ -187,7 +189,23 @@ public class ServiceInstanceController {
                         .body(RouterResponse.error("实例baseUrl格式不正确"));
             }
 
-            configurationService.updateServiceInstance(serviceType, instanceConfig.getInstanceId(), instanceConfig.getInstance().covertTo());
+            // 使用 DatabaseConfigService 更新实例（从数据库读取）
+            Map<String, Object> instanceData = new HashMap<>();
+            instanceData.put("name", instanceConfig.getInstance().getName());
+            instanceData.put("baseUrl", instanceConfig.getInstance().getBaseUrl());
+            instanceData.put("path", instanceConfig.getInstance().getPath());
+            instanceData.put("weight", instanceConfig.getInstance().getWeight());
+            instanceData.put("status", instanceConfig.getInstance().getStatus());
+            instanceData.put("headers", instanceConfig.getInstance().getHeaders());
+            if (instanceConfig.getInstance().getRateLimit() != null) {
+                instanceData.put("rateLimitEnabled", instanceConfig.getInstance().getRateLimit().getEnabled());
+                instanceData.put("rateLimitAlgorithm", instanceConfig.getInstance().getRateLimit().getAlgorithm());
+                instanceData.put("rateLimitCapacity", instanceConfig.getInstance().getRateLimit().getCapacity());
+                instanceData.put("rateLimitRate", instanceConfig.getInstance().getRateLimit().getRate());
+                instanceData.put("rateLimitScope", instanceConfig.getInstance().getRateLimit().getScope());
+                instanceData.put("rateLimitClientIpEnable", instanceConfig.getInstance().getRateLimit().getClientIpEnable());
+            }
+            databaseConfigService.updateServiceInstance(serviceType, instanceConfig.getInstanceId(), instanceData);
 
             return ResponseEntity.ok(RouterResponse.success(null, "实例更新成功"));
         } catch (IllegalArgumentException e) {
