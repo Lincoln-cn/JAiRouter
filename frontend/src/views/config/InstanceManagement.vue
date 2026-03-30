@@ -833,10 +833,6 @@ const handleSave = async () => {
 
     if (isEdit.value) {
       // 使用后端返回的实例ID
-      const updateData = {
-        instanceId: form.instanceId,
-        instance: instanceData
-      }
       const response = await updateServiceInstance(serviceType, form.instanceId, instanceData)
       if (response.data?.success) {
         // 编辑成功后，清除缓存并重新获取实例列表以确保数据同步
