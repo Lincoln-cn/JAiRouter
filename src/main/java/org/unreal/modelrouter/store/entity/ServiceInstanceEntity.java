@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 public class ServiceInstanceEntity {
 
     @Id
+    @Column("id")
     private Long id;
 
     @Column("service_config_id")

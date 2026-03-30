@@ -81,4 +81,27 @@ public interface ServiceInstanceRepository extends R2dbcRepository<ServiceInstan
      */
     @Query("SELECT COUNT(*) FROM service_instance WHERE service_config_id = :serviceConfigId AND health_status = 'HEALTHY'")
     Mono<Long> countHealthyInstancesByServiceConfigId(@Param("serviceConfigId") Long serviceConfigId);
+
+    /**
+     * 更新实例状态和基本信息
+     */
+    @Modifying
+    @Query("""
+        UPDATE SERVICE_INSTANCE SET 
+            "STATUS" = :status,
+            "INSTANCE_NAME" = :instanceName,
+            "BASE_URL" = :baseUrl,
+            "PATH" = :path,
+            "WEIGHT" = :weight,
+            "UPDATED_AT" = CURRENT_TIMESTAMP
+        WHERE "ID" = :id
+        """)
+    Mono<Integer> updateInstanceStatus(
+        @Param("id") Long id,
+        @Param("status") String status,
+        @Param("instanceName") String instanceName,
+        @Param("baseUrl") String baseUrl,
+        @Param("path") String path,
+        @Param("weight") Integer weight
+    );
 }
