@@ -21,10 +21,15 @@ import org.unreal.modelrouter.model.ModelRouterProperties;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated 使用 {@link ServiceInstanceConfigController} 替代
+ * 旧的服务实例控制器，已废弃
+ */
+@Deprecated
 @RestController
 @RequestMapping("/api/config/instance")
 @CrossOrigin(origins = "*")
-@Tag(name = "服务实例管理", description = "提供服务实例的增删改查相关接口")
+@Tag(name = "服务实例管理（已废弃）", description = "⚠️ 已废弃，请使用新的服务实例管理接口")
 public class ServiceInstanceController {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceInstanceController.class);

@@ -32,7 +32,15 @@
       "Bash(git tag *)",
       "Bash(git push *)",
       "Bash(cat *)",
-      "Bash(rm *)"
+      "Bash(rm *)",
+      "Bash(python3)",
+      "Bash(lines *)",
+      "Bash(new_lines *)",
+      "Bash(skip_next *)",
+      "Bash(lines)",
+      "Bash(continue)",
+      "Bash(new_lines.append)",
+      "Bash(f.writelines)"
     ]
   },
   "$version": 3
