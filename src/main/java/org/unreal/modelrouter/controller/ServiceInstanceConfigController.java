@@ -66,7 +66,7 @@ public class ServiceInstanceConfigController {
     /**
      * 获取单个实例详情
      */
-    @GetMapping("/{serviceType}/{instanceId}")
+    @GetMapping("/{serviceType}/{instanceId:[a-zA-Z0-9-]+}")
     @Operation(summary = "获取实例详情", description = "获取指定实例的详细信息")
     @ApiResponse(responseCode = "200", description = "成功获取实例详情")
     @ApiResponse(responseCode = "404", description = "实例不存在")

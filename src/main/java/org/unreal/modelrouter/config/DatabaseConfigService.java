@@ -307,7 +307,9 @@ public class DatabaseConfigService {
         instanceData.put("baseUrl", instance.getBaseUrl());
         instanceData.put("path", instance.getPath());
         instanceData.put("weight", instance.getWeight());
-        instanceData.put("status", instance.getStatus());
+        String status = instance.getStatus();
+        log.info("buildInstanceMap: instance.getStatus()={}, normalized={}", status, status != null ? status.toLowerCase() : null);
+        instanceData.put("status", status != null ? status.toLowerCase() : "active");
         instanceData.put("healthStatus", instance.getHealthStatus());
 
         // 解析 headers
@@ -1423,8 +1425,17 @@ public class DatabaseConfigService {
                 ? (String) instanceConfig.get("path") : "/");
         validated.put("weight", instanceConfig.containsKey("weight")
                 ? ((Number) instanceConfig.get("weight")).intValue() : 1);
-        validated.put("status", instanceConfig.containsKey("status")
-                ? (String) instanceConfig.get("status") : "ACTIVE");
+        // status 字段：支持大小写，统一转为小写
+        log.info("validateInstanceConfig: instanceConfig.containsKey(status)={}, status value={}", 
+            instanceConfig.containsKey("status"), instanceConfig.get("status"));
+        if (instanceConfig.containsKey("status")) {
+            String status = (String) instanceConfig.get("status");
+            log.info("validateInstanceConfig: 使用传入的 status={}, normalized={}", status, status.toLowerCase());
+            validated.put("status", status.toLowerCase());
+        } else {
+            log.info("validateInstanceConfig: 使用默认 status=active");
+            validated.put("status", "active"); // 默认值
+        }
         validated.put("healthStatus", instanceConfig.containsKey("healthStatus")
                 ? (String) instanceConfig.get("healthStatus") : "UNKNOWN");
 
