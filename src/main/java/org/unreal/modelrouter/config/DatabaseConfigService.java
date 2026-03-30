@@ -789,8 +789,21 @@ public class DatabaseConfigService {
                     serviceConfig.getId(), validatedConfig);
             updatedInstance.setId(existingInstance.getId());
 
-            // 6. 保存更新
-            ServiceInstanceEntity savedInstance = serviceInstanceRepository.save(updatedInstance).block();
+            // 6. 保存更新 - 使用自定义 UPDATE 语句确保 status 字段被正确更新
+            log.info("更新实例：id={}, status={}, name={}", 
+                updatedInstance.getId(), updatedInstance.getStatus(), updatedInstance.getInstanceName());
+            int rows = serviceInstanceRepository.updateInstanceStatus(
+                updatedInstance.getId(),
+                updatedInstance.getStatus(),
+                updatedInstance.getInstanceName(),
+                updatedInstance.getBaseUrl(),
+                updatedInstance.getPath(),
+                updatedInstance.getWeight()
+            ).block();
+            log.info("更新结果：rows={}", rows);
+            
+            // 重新读取更新后的实例
+            ServiceInstanceEntity savedInstance = serviceInstanceRepository.findById(updatedInstance.getId()).block();
 
             log.info("服务实例更新成功：{}#{}", serviceType, instanceId);
             return buildInstanceMap(savedInstance);
@@ -1404,6 +1417,12 @@ public class DatabaseConfigService {
         for (Map.Entry<String, Object> entry : updates.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
+
+            // status 字段直接覆盖，不合并
+            if ("status".equals(key)) {
+                merged.put(key, value);
+                continue;
+            }
 
             if ("headers".equals(key) && value instanceof Map && existing.get(key) instanceof Map) {
                 // headers 字段需要合并
