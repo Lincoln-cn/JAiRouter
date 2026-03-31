@@ -87,14 +87,14 @@ public interface ServiceInstanceRepository extends R2dbcRepository<ServiceInstan
      */
     @Modifying
     @Query("""
-        UPDATE SERVICE_INSTANCE SET 
-            "STATUS" = :status,
-            "INSTANCE_NAME" = :instanceName,
-            "BASE_URL" = :baseUrl,
-            "PATH" = :path,
-            "WEIGHT" = :weight,
-            "UPDATED_AT" = CURRENT_TIMESTAMP
-        WHERE "ID" = :id
+        UPDATE service_instance SET 
+            status = :status,
+            instance_name = :instanceName,
+            base_url = :baseUrl,
+            path = :path,
+            weight = :weight,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = :id
         """)
     Mono<Integer> updateInstanceStatus(
         @Param("id") Long id,

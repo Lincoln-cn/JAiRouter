@@ -1,51 +1,140 @@
-用户要求我根据对话历史生成一个综合的项目总结，使用 markdown 格式。我需要从 state_snapshot 中提取关键信息，并按照指定的格式组织内容。
+The user wants me to create a comprehensive project summary based on the conversation history. Let me analyze what happened:
 
-让我分析 state_snapshot 中的信息：
+1. **Overall Goal**: V1.4.4 配置管理数据库化 - migrating configuration storage from file/memory to H2 database with version management, service management, and archiving capabilities.
 
-1. Overall Goal: V1.4.4 配置管理数据库化 - 将配置存储从文件/内存转向 H2 数据库，实现完整的配置版本管理、服务管理和归档功能。
+2. **Key Issues Discovered**:
+   - Instance status field wasn't being updated correctly
+   - Multiple root causes found:
+     - `buildInstanceMap` wasn't returning `instanceId` field
+     - H2 database column name case sensitivity issues (ID vs id)
+     - R2DBC save() method not properly updating status field
+     - Frontend was using old API endpoints initially
+     - Token expiration issues during testing
 
-2. Key Knowledge: 包含构建命令、测试命令、Git 仓库信息、当前版本、数据库表、实体类、Repository、测试覆盖情况、已知问题等
+3. **Fixes Applied**:
+   - Added `instanceId` field to `buildInstanceMap` return data
+   - Created `ServiceInstanceVO` for better type constraints
+   - Added `@Column("id")` to `@Id` field in `ServiceInstanceEntity`
+   - Created custom `updateInstanceStatus` method in Repository with explicit UPDATE SQL
+   - Modified `mergeInstanceConfig` to directly override status field
+   - Fixed frontend to use new RESTful API endpoints
+   - Fixed status field case handling (ACTIVE/active → lowercase)
 
-3. Recent Actions: 完成第一阶段和第二阶段，编写测试，提交代码，创建 tag，修复问题等
+4. **Current State**:
+   - Service is running but status update still not working despite all fixes
+   - Controller logs show "实例更新成功" but database not reflecting changes
+   - This is a critical blocking issue
 
-4. Current Plan: 7 个任务，其中 2 个已完成，5 个待完成
+5. **Files Modified**:
+   - `DatabaseConfigService.java`
+   - `ServiceInstanceEntity.java`
+   - `ServiceInstanceRepository.java`
+   - `ServiceInstanceConfigController.java`
+   - `ServiceInstanceVO.java` (new)
+   - Frontend files
 
-我需要将这些信息组织成用户指定的 markdown 格式。# Project Summary
+Let me create a comprehensive summary.# Project Summary
 
 ## Overall Goal
-V1.4.4 配置管理数据库化 - 将配置存储从文件/内存转向 H2 数据库，实现完整的配置版本管理、服务管理和归档功能。
+V1.4.4 配置管理数据库化 - 将配置存储从文件/内存迁移到 H2 数据库，实现完整的配置版本管理、服务管理和归档功能，并修复实例状态更新问题。
 
 ## Key Knowledge
-- **项目信息**: Jairouter ModelRouter，Git 仓库 https://gitee.com/sodlinken/modelrouter.git
-- **当前版本**: V1.4.4（本地已提交，未推送到远程）
-- **构建命令**: `mvn compile -P fast`（跳过 checkstyle 和测试）
-- **测试命令**: `mvn surefire:test -Dtest=DatabaseConfigService*Test`
-- **数据库**: H2 内嵌数据库
-- **数据库表** (6 个): `config_main`, `config_version`, `service_config`, `service_instance`, `config_change_history`, `config_archive`
-- **实体类** (6 个): `ConfigMainEntity`, `ConfigVersionEntity`, `ServiceConfigEntity`, `ServiceInstanceEntity`, `ConfigChangeHistoryEntity`, `ConfigArchiveEntity`
-- **Repository**: 6 个接口对应 6 个实体
-- **测试覆盖**: 26 个测试用例全部通过
-- **已知问题**: 部分旧测试文件（`RateLimiterTest`, `H2StoreManagerTest`）有编译错误，不影响新功能
+
+### Technology Stack
+- **Backend**: Spring Boot 3.5.5 + WebFlux + R2DBC + H2 Database
+- **Frontend**: Vue 3 + TypeScript + Element Plus
+- **Build**: Maven (`mvn compile -P fast` skips checkstyle/tests)
+- **Test**: `mvn surefire:test -Dtest=DatabaseConfigService*Test`
+
+### Database Schema
+- **Tables**: `config_main`, `config_version`, `service_config`, `service_instance`, `config_change_history`, `config_archive`
+- **H2 Quirk**: Column names default to UPPERCASE; requires explicit `@Column` annotations for proper mapping
+
+### API Endpoints (New - Recommended)
+| Method | Path | Description |
+|--------|------|-------------|
+| PUT | `/api/config/service/{serviceType}/adapter` | Update adapter |
+| PUT | `/api/config/service/{serviceType}/load-balance` | Update load balance |
+| GET | `/api/config/service/{serviceType}` | Get service config |
+| DELETE | `/api/config/service/{serviceType}` | Delete service |
+| GET | `/api/config/instance/{serviceType}` | Get instances |
+| PUT | `/api/config/instance/{serviceType}/{instanceId}` | Update instance |
+| POST | `/api/config/instance/{serviceType}` | Add instance |
+| DELETE | `/api/config/instance/{serviceType}/{instanceId}` | Delete instance |
+
+### Critical Files
+- `DatabaseConfigService.java` (1674 lines) - Core database config service
+- `ServiceInstanceVO.java` - Value object for instance data
+- `ServiceInstanceEntity.java` - JPA entity with `@Column` mappings
+- `ServiceInstanceRepository.java` - R2DBC repository with custom queries
+- `ServiceInstanceConfigController.java` - REST controller
 
 ## Recent Actions
-- ✅ 完成 V1.4.4 第一阶段：基础架构（数据库表、实体类、Repository、ConfigInitializer、DatabaseConfigService 基础功能）
-- ✅ 完成 V1.4.4 第二阶段：版本管理功能（getVersionConfig, saveAsNewVersion, applyVersion, deleteVersion, getVersionInfo）
-- ✅ 编写并运行单元测试：26 个测试用例全部通过
-- ✅ 提交代码到 Git：2 次提交到本地 master 分支
-- ✅ 创建 V1.4.4 tag（本地）
-- ✅ 修复了首次创建版本时的 Mono null 检查问题
-- ✅ 修复了测试中的异常包装断言问题
+
+### Issue Discovery & Fixes
+1. **[FIXED]** `buildInstanceMap` missing `instanceId` field - Added instanceId to return data
+2. **[FIXED]** H2 column name case sensitivity - Added `@Column("id")` to `@Id` field in `ServiceInstanceEntity`
+3. **[FIXED]** R2DBC `save()` not updating status - Created custom `updateInstanceStatus()` method with explicit UPDATE SQL
+4. **[FIXED]** `mergeInstanceConfig` not overriding status - Added special handling for status field
+5. **[FIXED]** Frontend using old API endpoints - Updated to use new RESTful endpoints
+6. **[FIXED]** Status field case inconsistency - Normalized to lowercase (active/inactive)
+7. **[FIXED]** Path variable not matching UUID with hyphens - Added regex pattern `/{instanceId:[a-zA-Z0-9-]+}`
+
+### Current Status
+- ✅ Service starts successfully (port 8080)
+- ✅ API authentication working
+- ✅ Add instance works correctly
+- ✅ Controller logs show "实例更新成功"
+- ❌ **CRITICAL**: Database status field NOT updating despite successful response
+- ❌ DatabaseConfigService debug logs NOT appearing (async execution issue suspected)
+
+### Test Results
+```
+1. Add instance (status: active) → SUCCESS
+2. Update instance (status: inactive) → Response SUCCESS
+3. Get instances → status STILL shows "active" ❌
+```
 
 ## Current Plan
-1. [DONE] V1.4.4 第一阶段：数据库基础架构
-2. [DONE] V1.4.4 第二阶段：版本管理功能
-3. [TODO] V1.4.4 第三阶段：配置合并功能（服务/实例的增删改查）
-4. [TODO] V1.4.4 第四阶段：updateServiceConfig API 修复（返回完整响应）
-5. [TODO] V1.4.4 第五阶段：归档功能（旧版本压缩存储）
-6. [TODO] 推送 V1.4.4 到远程仓库
-7. [TODO] 更新 innerdoc 和 docs 目录下的文档
+
+1. [DONE] V1.4.4 Phase 1: Database infrastructure (tables, entities, repositories)
+2. [DONE] V1.4.4 Phase 2: Version management functionality
+3. [DONE] V1.4.4 Phase 3: Config merge functionality
+4. [DONE] V1.4.4 Phase 4: updateServiceConfig API fix
+5. [DONE] Service config management refactoring (ServiceConfigController)
+6. [DONE] Instance management refactoring (ServiceInstanceConfigController)
+7. [DONE] Frontend migration to new APIs
+8. [DONE] Status field case handling fix
+9. [DONE] H2 column name mapping fix
+10. [IN PROGRESS] **CRITICAL**: Debug why status update doesn't persist to database
+    - Suspect: Async scheduler not executing `doUpdateServiceInstance`
+    - Next: Add logging at method entry, check boundedElastic scheduler
+11. [TODO] V1.4.4 Phase 5: Archive functionality
+12. [TODO] Push V1.4.4 to remote repository
+13. [TODO] Update documentation (innerdoc/docs)
+
+## Unresolved Issues
+
+### Critical Blocking Issue
+**Instance status update returns success but doesn't persist**
+
+Symptoms:
+- Controller logs show "实例更新成功"
+- DatabaseConfigService debug logs NOT appearing
+- GET request after UPDATE still shows old status
+
+Suspected Root Causes:
+1. Async `Schedulers.boundedElastic()` not executing the update
+2. Transaction not being committed
+3. Custom UPDATE query not matching records (ID mismatch)
+
+Next Debug Steps:
+1. Add logging at `updateServiceInstance()` method entry
+2. Check if `CountDownLatch` is timing out
+3. Verify `serviceInstanceRepository.updateInstanceStatus()` returns affected rows > 0
+4. Check for silent exceptions in async execution
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-03-26T03:47:04.639Z 
+**Update time**: 2026-03-30T11:27:43.809Z 
