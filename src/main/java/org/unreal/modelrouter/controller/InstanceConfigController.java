@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.dto.InstanceCreateRequest;
+import org.unreal.modelrouter.dto.InstanceUpdateRequest;
 import org.unreal.modelrouter.service.InstanceConfigService;
 import org.unreal.modelrouter.vo.ServiceInstanceVO;
 import reactor.core.publisher.Mono;
@@ -89,21 +91,25 @@ public class InstanceConfigController {
             @Parameter(description = "服务类型", example = "chat")
             @PathVariable("serviceType") String serviceType,
             @Parameter(description = "实例配置", required = true)
-            @RequestBody Map<String, Object> instanceConfig) {
-        log.info("添加实例：serviceType={}, config={}", serviceType, instanceConfig);
+            @RequestBody InstanceCreateRequest request) {
+        log.info("添加实例：serviceType={}, name={}", serviceType, request.getName());
         
         // 验证必填字段
-        if (instanceConfig.get("name") == null || ((String) instanceConfig.get("name")).trim().isEmpty()) {
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
             return Mono.just(ResponseEntity.badRequest()
                     .body(RouterResponse.error("实例名称不能为空")));
         }
-        if (instanceConfig.get("baseUrl") == null || ((String) instanceConfig.get("baseUrl")).trim().isEmpty()) {
+        if (request.getBaseUrl() == null || request.getBaseUrl().trim().isEmpty()) {
             return Mono.just(ResponseEntity.badRequest()
                     .body(RouterResponse.error("baseUrl 不能为空")));
         }
         
+        // 转换为 Map
+        Map<String, Object> instanceConfig = convertToMap(request);
+        
         return instanceConfigService.addInstance(serviceType, instanceConfig)
-                .map(instance -> ResponseEntity.ok(RouterResponse.success(instance, "实例添加成功")))
+                .<ResponseEntity<RouterResponse<ServiceInstanceVO>>>map(instance -> 
+                    ResponseEntity.ok(RouterResponse.success(instance, "实例添加成功")))
                 .onErrorResume(e -> {
                     log.error("添加实例失败：serviceType={}, error={}", serviceType, e.getMessage());
                     return Mono.just(ResponseEntity.internalServerError()
@@ -125,18 +131,21 @@ public class InstanceConfigController {
             @Parameter(description = "实例 ID")
             @PathVariable("instanceId") String instanceId,
             @Parameter(description = "实例配置", required = true)
-            @RequestBody Map<String, Object> instanceConfig) {
-        log.info("更新实例：serviceType={}, instanceId={}, config={}", serviceType, instanceId, instanceConfig);
+            @RequestBody InstanceUpdateRequest request) {
+        log.info("更新实例：serviceType={}, instanceId={}, name={}", serviceType, instanceId, request.getName());
         
         // 验证必填字段
-        if (instanceConfig.get("name") == null || ((String) instanceConfig.get("name")).trim().isEmpty()) {
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
             return Mono.just(ResponseEntity.badRequest()
                     .body(RouterResponse.error("实例名称不能为空")));
         }
-        if (instanceConfig.get("baseUrl") == null || ((String) instanceConfig.get("baseUrl")).trim().isEmpty()) {
+        if (request.getBaseUrl() == null || request.getBaseUrl().trim().isEmpty()) {
             return Mono.just(ResponseEntity.badRequest()
                     .body(RouterResponse.error("baseUrl 不能为空")));
         }
+        
+        // 转换为 Map
+        Map<String, Object> instanceConfig = convertToMap(request);
         
         return instanceConfigService.updateInstance(serviceType, instanceId, instanceConfig)
                 .<ResponseEntity<RouterResponse<ServiceInstanceVO>>>map(instance -> {
@@ -173,5 +182,55 @@ public class InstanceConfigController {
                     return Mono.just(ResponseEntity.internalServerError()
                             .body(RouterResponse.error("删除实例失败：" + e.getMessage())));
                 });
+    }
+
+    /**
+     * 将 DTO 转换为 Map
+     */
+    private Map<String, Object> convertToMap(Object request) {
+        Map<String, Object> config = new HashMap<>();
+        config.put("name", request instanceof InstanceCreateRequest ? 
+            ((InstanceCreateRequest) request).getName() : ((InstanceUpdateRequest) request).getName());
+        config.put("baseUrl", request instanceof InstanceCreateRequest ? 
+            ((InstanceCreateRequest) request).getBaseUrl() : ((InstanceUpdateRequest) request).getBaseUrl());
+        
+        if (request instanceof InstanceCreateRequest) {
+            InstanceCreateRequest r = (InstanceCreateRequest) request;
+            if (r.getPath() != null) config.put("path", r.getPath());
+            if (r.getWeight() != null) config.put("weight", r.getWeight());
+            if (r.getStatus() != null) config.put("status", r.getStatus());
+            if (r.getHeaders() != null) config.put("headers", r.getHeaders());
+            buildRateLimitConfig(config, r.getRateLimitEnabled(), r.getRateLimitAlgorithm(),
+                    r.getRateLimitCapacity(), r.getRateLimitRate(), r.getRateLimitScope(),
+                    r.getRateLimitClientIpEnable());
+        } else {
+            InstanceUpdateRequest r = (InstanceUpdateRequest) request;
+            if (r.getPath() != null) config.put("path", r.getPath());
+            if (r.getWeight() != null) config.put("weight", r.getWeight());
+            if (r.getStatus() != null) config.put("status", r.getStatus());
+            if (r.getHeaders() != null) config.put("headers", r.getHeaders());
+            buildRateLimitConfig(config, r.getRateLimitEnabled(), r.getRateLimitAlgorithm(),
+                    r.getRateLimitCapacity(), r.getRateLimitRate(), r.getRateLimitScope(),
+                    r.getRateLimitClientIpEnable());
+        }
+        
+        return config;
+    }
+
+    /**
+     * 构建限流配置
+     */
+    private void buildRateLimitConfig(Map<String, Object> config, Boolean enabled, String algorithm,
+                                      Integer capacity, Integer rate, String scope, Boolean clientIpEnable) {
+        if (enabled != null) {
+            Map<String, Object> rateLimit = new HashMap<>();
+            rateLimit.put("enabled", enabled);
+            if (algorithm != null) rateLimit.put("algorithm", algorithm);
+            if (capacity != null) rateLimit.put("capacity", capacity);
+            if (rate != null) rateLimit.put("rate", rate);
+            if (scope != null) rateLimit.put("scope", scope);
+            if (clientIpEnable != null) rateLimit.put("clientIpEnable", clientIpEnable);
+            config.put("rateLimit", rateLimit);
+        }
     }
 }
