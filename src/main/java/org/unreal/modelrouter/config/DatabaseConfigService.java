@@ -724,29 +724,8 @@ public class DatabaseConfigService {
      */
     public Map<String, Object> updateServiceInstance(String serviceType, String instanceId,
                                                       Map<String, Object> instanceConfig) {
-        try {
-            CountDownLatch latch = new CountDownLatch(1);
-            final Map<String, Object>[] resultHolder = new Map[1];
-
-            Schedulers.boundedElastic().schedule(() -> {
-                try {
-                    resultHolder[0] = doUpdateServiceInstance(serviceType, instanceId, instanceConfig);
-                } finally {
-                    latch.countDown();
-                }
-            });
-
-            if (latch.await(60, TimeUnit.SECONDS)) {
-                return resultHolder[0];
-            } else {
-                log.error("更新服务实例超时：{}#{}", serviceType, instanceId);
-                return new HashMap<>();
-            }
-        } catch (InterruptedException e) {
-            log.error("更新服务实例时被打断：{}#{}", serviceType, instanceId, e);
-            Thread.currentThread().interrupt();
-            return new HashMap<>();
-        }
+        log.info("更新服务实例：serviceType={}, instanceId={}", serviceType, instanceId);
+        return doUpdateServiceInstance(serviceType, instanceId, instanceConfig);
     }
 
     /**

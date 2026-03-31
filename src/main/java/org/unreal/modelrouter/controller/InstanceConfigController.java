@@ -1,0 +1,177 @@
+package org.unreal.modelrouter.controller;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.service.InstanceConfigService;
+import org.unreal.modelrouter.vo.ServiceInstanceVO;
+import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 实例配置控制器 - 负责实例的增删改查
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/config/instance")
+@RequiredArgsConstructor
+@Tag(name = "实例配置管理", description = "提供实例配置的增删改查接口")
+public class InstanceConfigController {
+
+    private final InstanceConfigService instanceConfigService;
+
+    /**
+     * 获取服务实例列表
+     */
+    @GetMapping("/{serviceType}")
+    @Operation(summary = "获取服务实例列表", description = "获取指定服务的所有实例")
+    @ApiResponse(responseCode = "200", description = "成功获取实例列表")
+    @ApiResponse(responseCode = "404", description = "服务不存在")
+    public Mono<ResponseEntity<RouterResponse<List<ServiceInstanceVO>>>> getInstances(
+            @Parameter(description = "服务类型", example = "chat")
+            @PathVariable("serviceType") String serviceType) {
+        log.info("获取服务实例列表：serviceType={}", serviceType);
+        return instanceConfigService.getInstances(serviceType)
+                .map(instances -> ResponseEntity.ok(RouterResponse.success(instances, "获取实例列表成功")))
+                .onErrorResume(e -> {
+                    log.error("获取实例列表失败：serviceType={}, error={}", serviceType, e.getMessage());
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.error("获取实例列表失败：" + e.getMessage())));
+                });
+    }
+
+    /**
+     * 获取单个实例详情
+     */
+    @GetMapping("/{serviceType}/{instanceId}")
+    @Operation(summary = "获取实例详情", description = "获取指定实例的详细信息")
+    @ApiResponse(responseCode = "200", description = "成功获取实例详情")
+    @ApiResponse(responseCode = "404", description = "实例不存在")
+    public Mono<ResponseEntity<RouterResponse<ServiceInstanceVO>>> getInstance(
+            @Parameter(description = "服务类型", example = "chat")
+            @PathVariable("serviceType") String serviceType,
+            @Parameter(description = "实例 ID")
+            @PathVariable("instanceId") String instanceId) {
+        log.info("获取实例详情：serviceType={}, instanceId={}", serviceType, instanceId);
+        return instanceConfigService.getInstance(serviceType, instanceId)
+                .<ResponseEntity<RouterResponse<ServiceInstanceVO>>>map(instance -> {
+                    if (instance == null) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(RouterResponse.error("实例不存在：" + instanceId));
+                    }
+                    return ResponseEntity.ok(RouterResponse.success(instance, "获取实例详情成功"));
+                })
+                .onErrorResume(e -> {
+                    log.error("获取实例详情失败：serviceType={}, instanceId={}, error={}", serviceType, instanceId, e.getMessage());
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.error("获取实例详情失败：" + e.getMessage())));
+                });
+    }
+
+    /**
+     * 添加实例
+     */
+    @PostMapping("/{serviceType}")
+    @Operation(summary = "添加实例", description = "添加新的服务实例")
+    @ApiResponse(responseCode = "200", description = "实例添加成功")
+    @ApiResponse(responseCode = "400", description = "参数验证失败")
+    public Mono<ResponseEntity<RouterResponse<ServiceInstanceVO>>> addInstance(
+            @Parameter(description = "服务类型", example = "chat")
+            @PathVariable("serviceType") String serviceType,
+            @Parameter(description = "实例配置", required = true)
+            @RequestBody Map<String, Object> instanceConfig) {
+        log.info("添加实例：serviceType={}, config={}", serviceType, instanceConfig);
+        
+        // 验证必填字段
+        if (instanceConfig.get("name") == null || ((String) instanceConfig.get("name")).trim().isEmpty()) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(RouterResponse.error("实例名称不能为空")));
+        }
+        if (instanceConfig.get("baseUrl") == null || ((String) instanceConfig.get("baseUrl")).trim().isEmpty()) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(RouterResponse.error("baseUrl 不能为空")));
+        }
+        
+        return instanceConfigService.addInstance(serviceType, instanceConfig)
+                .map(instance -> ResponseEntity.ok(RouterResponse.success(instance, "实例添加成功")))
+                .onErrorResume(e -> {
+                    log.error("添加实例失败：serviceType={}, error={}", serviceType, e.getMessage());
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.error("添加实例失败：" + e.getMessage())));
+                });
+    }
+
+    /**
+     * 更新实例
+     */
+    @PutMapping("/{serviceType}/{instanceId}")
+    @Operation(summary = "更新实例", description = "更新指定实例的配置")
+    @ApiResponse(responseCode = "200", description = "实例更新成功")
+    @ApiResponse(responseCode = "400", description = "参数验证失败")
+    @ApiResponse(responseCode = "404", description = "实例不存在")
+    public Mono<ResponseEntity<RouterResponse<ServiceInstanceVO>>> updateInstance(
+            @Parameter(description = "服务类型", example = "chat")
+            @PathVariable("serviceType") String serviceType,
+            @Parameter(description = "实例 ID")
+            @PathVariable("instanceId") String instanceId,
+            @Parameter(description = "实例配置", required = true)
+            @RequestBody Map<String, Object> instanceConfig) {
+        log.info("更新实例：serviceType={}, instanceId={}, config={}", serviceType, instanceId, instanceConfig);
+        
+        // 验证必填字段
+        if (instanceConfig.get("name") == null || ((String) instanceConfig.get("name")).trim().isEmpty()) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(RouterResponse.error("实例名称不能为空")));
+        }
+        if (instanceConfig.get("baseUrl") == null || ((String) instanceConfig.get("baseUrl")).trim().isEmpty()) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(RouterResponse.error("baseUrl 不能为空")));
+        }
+        
+        return instanceConfigService.updateInstance(serviceType, instanceId, instanceConfig)
+                .<ResponseEntity<RouterResponse<ServiceInstanceVO>>>map(instance -> {
+                    if (instance == null) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(RouterResponse.error("实例不存在：" + instanceId));
+                    }
+                    return ResponseEntity.ok(RouterResponse.success(instance, "实例更新成功"));
+                })
+                .onErrorResume(e -> {
+                    log.error("更新实例失败：serviceType={}, instanceId={}, error={}", serviceType, instanceId, e.getMessage());
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.error("更新实例失败：" + e.getMessage())));
+                });
+    }
+
+    /**
+     * 删除实例
+     */
+    @DeleteMapping("/{serviceType}/{instanceId}")
+    @Operation(summary = "删除实例", description = "删除指定的实例")
+    @ApiResponse(responseCode = "200", description = "实例删除成功")
+    @ApiResponse(responseCode = "404", description = "实例不存在")
+    public Mono<ResponseEntity<RouterResponse<Void>>> deleteInstance(
+            @Parameter(description = "服务类型", example = "chat")
+            @PathVariable("serviceType") String serviceType,
+            @Parameter(description = "实例 ID")
+            @PathVariable("instanceId") String instanceId) {
+        log.info("删除实例：serviceType={}, instanceId={}", serviceType, instanceId);
+        return instanceConfigService.deleteInstance(serviceType, instanceId)
+                .then(Mono.<ResponseEntity<RouterResponse<Void>>>just(ResponseEntity.ok(RouterResponse.success(null, "实例删除成功"))))
+                .onErrorResume(e -> {
+                    log.error("删除实例失败：serviceType={}, instanceId={}, error={}", serviceType, instanceId, e.getMessage());
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.error("删除实例失败：" + e.getMessage())));
+                });
+    }
+}

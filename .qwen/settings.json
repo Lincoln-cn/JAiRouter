@@ -40,7 +40,10 @@
       "Bash(lines)",
       "Bash(continue)",
       "Bash(new_lines.append)",
-      "Bash(f.writelines)"
+      "Bash(f.writelines)",
+      "Bash(old_method *)",
+      "Bash(new_method *)",
+      "Bash(old_method, *)"
     ]
   },
   "$version": 3
