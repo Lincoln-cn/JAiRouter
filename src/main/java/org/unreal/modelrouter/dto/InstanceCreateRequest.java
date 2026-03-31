@@ -9,14 +9,14 @@ import lombok.NoArgsConstructor;
 import java.util.Map;
 
 /**
- * 实例更新请求 DTO
+ * 实例创建请求 DTO
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "实例更新请求")
-public class InstanceUpdateRequest {
+@Schema(description = "实例创建请求")
+public class InstanceCreateRequest {
 
     @Schema(description = "实例名称", example = "qwen3:4b", required = true)
     private String name;
