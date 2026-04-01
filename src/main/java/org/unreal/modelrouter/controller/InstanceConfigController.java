@@ -11,10 +11,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.InstanceCreateRequest;
+import org.unreal.modelrouter.dto.InstanceUpdateFlatRequest;
 import org.unreal.modelrouter.dto.InstanceUpdateRequest;
 import org.unreal.modelrouter.service.InstanceConfigService;
 import org.unreal.modelrouter.vo.ServiceInstanceVO;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.HashMap;
 import java.util.List;
@@ -233,4 +235,105 @@ public class InstanceConfigController {
             config.put("rateLimit", rateLimit);
         }
     }
+
+    /**
+     * 更新实例（简化版 - 直接接收扁平化格式）
+     * 新增接口，不影响现有逻辑
+     */
+    @PutMapping("/{serviceType}/{instanceId}/flat")
+    @Operation(summary = "更新实例（简化版）", description = "直接接收扁平化格式的实例配置")
+    @ApiResponse(responseCode = "200", description = "实例更新成功")
+    @ApiResponse(responseCode = "400", description = "参数验证失败")
+    @ApiResponse(responseCode = "404", description = "实例不存在")
+    public Mono<ResponseEntity<RouterResponse<ServiceInstanceVO>>> updateInstanceFlat(
+            @Parameter(description = "服务类型", example = "chat")
+            @PathVariable("serviceType") String serviceType,
+            @Parameter(description = "实例 ID")
+            @PathVariable("instanceId") String instanceId,
+            @Parameter(description = "实例配置（扁平化格式）", required = true)
+            @RequestBody InstanceUpdateFlatRequest request) {
+        log.info("简化版更新实例：serviceType={}, instanceId={}, name={}", serviceType, instanceId, request.getName());
+
+        // 验证必填字段
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(RouterResponse.error("实例名称不能为空")));
+        }
+        if (request.getBaseUrl() == null || request.getBaseUrl().trim().isEmpty()) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(RouterResponse.error("baseUrl 不能为空")));
+        }
+
+        // 转换为 Map（扁平格式）
+        Map<String, Object> instanceConfig = flatRequestToMap(request);
+
+        return instanceConfigService.updateInstance(serviceType, instanceId, instanceConfig)
+                .<ResponseEntity<RouterResponse<ServiceInstanceVO>>>map(instance -> {
+                    if (instance == null) {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(RouterResponse.error("实例不存在：" + instanceId));
+                    }
+                    return ResponseEntity.ok(RouterResponse.success(instance, "实例更新成功"));
+                })
+                .onErrorResume(e -> {
+                    log.error("更新实例失败：serviceType={}, instanceId={}, error={}", serviceType, instanceId, e.getMessage());
+                    return Mono.just(ResponseEntity.internalServerError()
+                            .body(RouterResponse.error("更新实例失败：" + e.getMessage())));
+                })
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 将扁平化 DTO 转换为 Map（辅助方法）
+     */
+    private Map<String, Object> flatRequestToMap(InstanceUpdateFlatRequest request) {
+        Map<String, Object> config = new HashMap<>();
+        config.put("name", request.getName());
+        config.put("baseUrl", request.getBaseUrl());
+        if (request.getPath() != null) config.put("path", request.getPath());
+        if (request.getWeight() != null) config.put("weight", request.getWeight());
+        if (request.getStatus() != null) config.put("status", request.getStatus());
+        if (request.getAdapter() != null) config.put("adapter", request.getAdapter());
+        if (request.getHeaders() != null) config.put("headers", request.getHeaders());
+        
+        // 限流器配置 - 直接传递扁平字段
+        if (request.getRateLimitEnabled() != null) {
+            config.put("rateLimitEnabled", request.getRateLimitEnabled());
+        }
+        if (request.getRateLimitAlgorithm() != null) {
+            config.put("rateLimitAlgorithm", request.getRateLimitAlgorithm());
+        }
+        if (request.getRateLimitCapacity() != null) {
+            config.put("rateLimitCapacity", request.getRateLimitCapacity());
+        }
+        if (request.getRateLimitRate() != null) {
+            config.put("rateLimitRate", request.getRateLimitRate());
+        }
+        if (request.getRateLimitScope() != null) {
+            config.put("rateLimitScope", request.getRateLimitScope());
+        }
+        if (request.getRateLimitKey() != null) {
+            config.put("rateLimitKey", request.getRateLimitKey());
+        }
+        if (request.getRateLimitClientIpEnable() != null) {
+            config.put("rateLimitClientIpEnable", request.getRateLimitClientIpEnable());
+        }
+        
+        // 熔断器配置 - 直接传递扁平字段
+        if (request.getCircuitBreakerEnabled() != null) {
+            config.put("circuitBreakerEnabled", request.getCircuitBreakerEnabled());
+        }
+        if (request.getCircuitBreakerFailureThreshold() != null) {
+            config.put("circuitBreakerFailureThreshold", request.getCircuitBreakerFailureThreshold());
+        }
+        if (request.getCircuitBreakerTimeout() != null) {
+            config.put("circuitBreakerTimeout", request.getCircuitBreakerTimeout());
+        }
+        if (request.getCircuitBreakerSuccessThreshold() != null) {
+            config.put("circuitBreakerSuccessThreshold", request.getCircuitBreakerSuccessThreshold());
+        }
+        
+        return config;
+    }
+
 }
