@@ -315,6 +315,17 @@ public class DatabaseConfigService {
                     .build();
         }
         
+        // 构建熔断配置 VO
+        ServiceInstanceVO.CircuitBreakerVO circuitBreakerVO = null;
+        if (instance.getCircuitBreakerEnabled() != null && instance.getCircuitBreakerEnabled()) {
+            circuitBreakerVO = ServiceInstanceVO.CircuitBreakerVO.builder()
+                    .enabled(instance.getCircuitBreakerEnabled())
+                    .failureThreshold(instance.getCircuitBreakerFailureThreshold())
+                    .timeout(instance.getCircuitBreakerTimeout())
+                    .successThreshold(instance.getCircuitBreakerSuccessThreshold())
+                    .build();
+        }
+        
         // 解析 headers
         Object headers = null;
         if (instance.getHeaders() != null && !instance.getHeaders().isEmpty()) {
@@ -330,7 +341,8 @@ public class DatabaseConfigService {
         
         // 构建实例 VO
         String status = instance.getStatus();
-        log.info("buildInstanceVO: instance.getStatus()={}, normalized={}", status, status != null ? status.toLowerCase() : null);
+        log.info("buildInstanceVO: instanceId={}, rateLimitEnabled={}, circuitBreakerEnabled={}", 
+            instance.getId(), instance.getRateLimitEnabled(), instance.getCircuitBreakerEnabled());
         
         return ServiceInstanceVO.builder()
                 .instanceId(instance.getId() != null ? instance.getId().toString() : null)
@@ -342,6 +354,7 @@ public class DatabaseConfigService {
                 .healthStatus(instance.getHealthStatus())
                 .headers(headers)
                 .rateLimit(rateLimitVO)
+                .circuitBreaker(circuitBreakerVO)
                 .build();
     }
 
