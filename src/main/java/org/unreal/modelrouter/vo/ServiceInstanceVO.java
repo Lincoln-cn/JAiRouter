@@ -60,6 +60,11 @@ public class ServiceInstanceVO {
     private RateLimitVO rateLimit;
     
     /**
+     * 熔断器配置
+     */
+    private CircuitBreakerVO circuitBreaker;
+    
+    /**
      * 限流配置 VO
      */
     @Data
@@ -74,5 +79,19 @@ public class ServiceInstanceVO {
         private String scope;
         private String key;
         private Boolean clientIpEnable;
+    }
+    
+    /**
+     * 熔断器配置 VO
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CircuitBreakerVO {
+        private Boolean enabled;
+        private Integer failureThreshold;
+        private Integer timeout;
+        private Integer successThreshold;
     }
 }
