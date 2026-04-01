@@ -1600,7 +1600,31 @@ public class DatabaseConfigService {
             }
         }
 
-        // 限流配置
+        // 限流配置 - 支持扁平格式（新接口）和嵌套格式（旧接口）
+        // 扁平格式字段优先处理
+        if (instanceConfig.containsKey("rateLimitEnabled")) {
+            builder.rateLimitEnabled(getBoolean(instanceConfig, "rateLimitEnabled", false));
+        }
+        if (instanceConfig.containsKey("rateLimitAlgorithm")) {
+            builder.rateLimitAlgorithm((String) instanceConfig.get("rateLimitAlgorithm"));
+        }
+        if (instanceConfig.containsKey("rateLimitCapacity")) {
+            builder.rateLimitCapacity(getInteger(instanceConfig, "rateLimitCapacity", 100));
+        }
+        if (instanceConfig.containsKey("rateLimitRate")) {
+            builder.rateLimitRate(getInteger(instanceConfig, "rateLimitRate", 10));
+        }
+        if (instanceConfig.containsKey("rateLimitScope")) {
+            builder.rateLimitScope((String) instanceConfig.get("rateLimitScope"));
+        }
+        if (instanceConfig.containsKey("rateLimitKey")) {
+            builder.rateLimitKey((String) instanceConfig.get("rateLimitKey"));
+        }
+        if (instanceConfig.containsKey("rateLimitClientIpEnable")) {
+            builder.rateLimitClientIpEnable(getBoolean(instanceConfig, "rateLimitClientIpEnable", false));
+        }
+        
+        // 嵌套格式（兼容旧接口）
         if (instanceConfig.containsKey("rateLimit") && instanceConfig.get("rateLimit") instanceof Map) {
             Map<String, Object> rateLimit = (Map<String, Object>) instanceConfig.get("rateLimit");
             builder.rateLimitEnabled(getBoolean(rateLimit, "enabled", false));
@@ -1615,6 +1639,36 @@ public class DatabaseConfigService {
             }
             if (rateLimit.containsKey("scope")) {
                 builder.rateLimitScope((String) rateLimit.get("scope"));
+            }
+        }
+
+        // 熔断器配置 - 支持扁平格式（新接口）和嵌套格式（旧接口）
+        // 扁平格式字段优先处理
+        if (instanceConfig.containsKey("circuitBreakerEnabled")) {
+            builder.circuitBreakerEnabled(getBoolean(instanceConfig, "circuitBreakerEnabled", false));
+        }
+        if (instanceConfig.containsKey("circuitBreakerFailureThreshold")) {
+            builder.circuitBreakerFailureThreshold(getInteger(instanceConfig, "circuitBreakerFailureThreshold", 5));
+        }
+        if (instanceConfig.containsKey("circuitBreakerTimeout")) {
+            builder.circuitBreakerTimeout(getInteger(instanceConfig, "circuitBreakerTimeout", 60000));
+        }
+        if (instanceConfig.containsKey("circuitBreakerSuccessThreshold")) {
+            builder.circuitBreakerSuccessThreshold(getInteger(instanceConfig, "circuitBreakerSuccessThreshold", 2));
+        }
+        
+        // 嵌套格式（兼容旧接口）
+        if (instanceConfig.containsKey("circuitBreaker") && instanceConfig.get("circuitBreaker") instanceof Map) {
+            Map<String, Object> circuitBreaker = (Map<String, Object>) instanceConfig.get("circuitBreaker");
+            builder.circuitBreakerEnabled(getBoolean(circuitBreaker, "enabled", false));
+            if (circuitBreaker.containsKey("failureThreshold")) {
+                builder.circuitBreakerFailureThreshold(getInteger(circuitBreaker, "failureThreshold", 5));
+            }
+            if (circuitBreaker.containsKey("timeout")) {
+                builder.circuitBreakerTimeout(getInteger(circuitBreaker, "timeout", 60000));
+            }
+            if (circuitBreaker.containsKey("successThreshold")) {
+                builder.circuitBreakerSuccessThreshold(getInteger(circuitBreaker, "successThreshold", 2));
             }
         }
 
