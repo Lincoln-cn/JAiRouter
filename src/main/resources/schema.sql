@@ -83,6 +83,12 @@ CREATE TABLE IF NOT EXISTS service_instance (
     rate_limit_capacity INT,
     rate_limit_rate INT,
     rate_limit_scope VARCHAR(50) DEFAULT 'instance',
+    rate_limit_key VARCHAR(255),
+    rate_limit_client_ip_enable BOOLEAN DEFAULT FALSE,
+    circuit_breaker_enabled BOOLEAN DEFAULT FALSE,
+    circuit_breaker_failure_threshold INT DEFAULT 5,
+    circuit_breaker_timeout INT DEFAULT 60000,
+    circuit_breaker_success_threshold INT DEFAULT 2,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, INACTIVE, ERROR
     last_health_check TIMESTAMP,
     health_status VARCHAR(50) DEFAULT 'UNKNOWN', -- HEALTHY, UNHEALTHY, UNKNOWN
