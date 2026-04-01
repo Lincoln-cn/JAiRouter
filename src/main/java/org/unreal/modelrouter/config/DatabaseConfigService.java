@@ -1792,40 +1792,4 @@ public class DatabaseConfigService {
             log.error("更新配置主表失败：version={}, error={}", newVersion, e.getMessage(), e);
         }
     }
-
-    /**
-     * 安全获取 Boolean 值
-     */
-    private Boolean getBoolean(Map<String, Object> map, String key, Boolean defaultValue) {
-        if (map.containsKey(key)) {
-            Object value = map.get(key);
-            if (value instanceof Boolean) {
-                return (Boolean) value;
-            } else if (value instanceof Number) {
-                return ((Number) value).intValue() != 0;
-            } else if (value instanceof String) {
-                return Boolean.parseBoolean((String) value);
-            }
-        }
-        return defaultValue;
-    }
-
-    /**
-     * 安全获取 Integer 值
-     */
-    private Integer getInteger(Map<String, Object> map, String key, Integer defaultValue) {
-        if (map.containsKey(key)) {
-            Object value = map.get(key);
-            if (value instanceof Number) {
-                return ((Number) value).intValue();
-            } else if (value instanceof String) {
-                try {
-                    return Integer.parseInt((String) value);
-                } catch (NumberFormatException e) {
-                    log.warn("解析整数失败：key={}, value={}", key, value);
-                }
-            }
-        }
-        return defaultValue;
-    }
 }
