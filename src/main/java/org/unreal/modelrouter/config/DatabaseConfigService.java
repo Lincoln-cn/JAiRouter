@@ -1013,6 +1013,47 @@ public class DatabaseConfigService {
     }
 
     /**
+     * 安全获取 Boolean 值
+     */
+    private Boolean getBoolean(Map<String, Object> map, String key, Boolean defaultValue) {
+        if (!map.containsKey(key)) {
+            return defaultValue;
+        }
+        Object value = map.get(key);
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof String) {
+            return Boolean.parseBoolean((String) value);
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue() != 0;
+        }
+        return defaultValue;
+    }
+
+    /**
+     * 安全获取 Integer 值
+     */
+    private Integer getInteger(Map<String, Object> map, String key, Integer defaultValue) {
+        if (!map.containsKey(key)) {
+            return defaultValue;
+        }
+        Object value = map.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
+    }
+
+    /**
      * 安全获取 Boolean 值（包级可见，用于测试）
      */
     Boolean getBooleanForTest(Map<String, Object> map, String key, Boolean defaultValue) {
