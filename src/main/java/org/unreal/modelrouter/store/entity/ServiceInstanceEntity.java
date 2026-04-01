@@ -59,6 +59,24 @@ public class ServiceInstanceEntity {
     @Column("rate_limit_scope")
     private String rateLimitScope;
 
+    @Column("rate_limit_key")
+    private String rateLimitKey;
+
+    @Column("rate_limit_client_ip_enable")
+    private Boolean rateLimitClientIpEnable;
+
+    @Column("circuit_breaker_enabled")
+    private Boolean circuitBreakerEnabled;
+
+    @Column("circuit_breaker_failure_threshold")
+    private Integer circuitBreakerFailureThreshold;
+
+    @Column("circuit_breaker_timeout")
+    private Integer circuitBreakerTimeout;
+
+    @Column("circuit_breaker_success_threshold")
+    private Integer circuitBreakerSuccessThreshold;
+
     @Column("status")
     private String status; // ACTIVE, INACTIVE, ERROR
 
