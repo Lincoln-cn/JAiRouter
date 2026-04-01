@@ -768,11 +768,35 @@ public class DatabaseConfigService {
                     serviceConfig.getId(), validatedConfig);
             updatedInstance.setId(existingInstance.getId());
 
-            // 6. 保存更新 - 使用 save 方法保存完整的 Entity
+            // 6. 保存更新 - 使用 updateInstanceFull 更新所有字段
             log.info("更新实例：id={}, rateLimitEnabled={}, circuitBreakerEnabled={}", 
                 updatedInstance.getId(), updatedInstance.getRateLimitEnabled(), updatedInstance.getCircuitBreakerEnabled());
-            ServiceInstanceEntity savedInstance = serviceInstanceRepository.save(updatedInstance).block();
-            log.info("更新结果：saved={}", savedInstance != null);
+            int rows = serviceInstanceRepository.updateInstanceFull(
+                updatedInstance.getId(),
+                updatedInstance.getServiceConfigId(),
+                updatedInstance.getInstanceName(),
+                updatedInstance.getBaseUrl(),
+                updatedInstance.getPath(),
+                updatedInstance.getWeight(),
+                updatedInstance.getHeaders(),
+                updatedInstance.getRateLimitEnabled(),
+                updatedInstance.getRateLimitAlgorithm(),
+                updatedInstance.getRateLimitCapacity(),
+                updatedInstance.getRateLimitRate(),
+                updatedInstance.getRateLimitScope(),
+                updatedInstance.getRateLimitKey(),
+                updatedInstance.getRateLimitClientIpEnable(),
+                updatedInstance.getCircuitBreakerEnabled(),
+                updatedInstance.getCircuitBreakerFailureThreshold(),
+                updatedInstance.getCircuitBreakerTimeout(),
+                updatedInstance.getCircuitBreakerSuccessThreshold(),
+                updatedInstance.getStatus(),
+                updatedInstance.getHealthStatus()
+            ).block();
+            log.info("更新结果：rows={}", rows);
+            
+            // 重新读取更新后的实例
+            ServiceInstanceEntity savedInstance = serviceInstanceRepository.findById(updatedInstance.getId()).block();
 
             log.info("服务实例更新成功：{}#{}", serviceType, instanceId);
             return buildInstanceMap(savedInstance);

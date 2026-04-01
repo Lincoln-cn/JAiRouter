@@ -77,7 +77,8 @@ CREATE TABLE IF NOT EXISTS service_instance (
     base_url VARCHAR(500) NOT NULL,
     path VARCHAR(500),
     weight INT NOT NULL DEFAULT 1,
-    headers TEXT, -- 存储认证信息等 headers(JSON 格式)
+    headers TEXT,
+    -- 限流器配置字段
     rate_limit_enabled BOOLEAN DEFAULT TRUE,
     rate_limit_algorithm VARCHAR(50) DEFAULT 'token-bucket',
     rate_limit_capacity INT,
@@ -85,13 +86,15 @@ CREATE TABLE IF NOT EXISTS service_instance (
     rate_limit_scope VARCHAR(50) DEFAULT 'instance',
     rate_limit_key VARCHAR(255),
     rate_limit_client_ip_enable BOOLEAN DEFAULT FALSE,
+    -- 熔断器配置字段
     circuit_breaker_enabled BOOLEAN DEFAULT FALSE,
     circuit_breaker_failure_threshold INT DEFAULT 5,
     circuit_breaker_timeout INT DEFAULT 60000,
     circuit_breaker_success_threshold INT DEFAULT 2,
-    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE, INACTIVE, ERROR
+    -- 状态字段
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
     last_health_check TIMESTAMP,
-    health_status VARCHAR(50) DEFAULT 'UNKNOWN', -- HEALTHY, UNHEALTHY, UNKNOWN
+    health_status VARCHAR(50) DEFAULT 'UNKNOWN',
     error_message TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
