@@ -768,21 +768,11 @@ public class DatabaseConfigService {
                     serviceConfig.getId(), validatedConfig);
             updatedInstance.setId(existingInstance.getId());
 
-            // 6. 保存更新 - 使用自定义 UPDATE 语句确保 status 字段被正确更新
-            log.info("更新实例：id={}, status={}, name={}", 
-                updatedInstance.getId(), updatedInstance.getStatus(), updatedInstance.getInstanceName());
-            int rows = serviceInstanceRepository.updateInstanceStatus(
-                updatedInstance.getId(),
-                updatedInstance.getStatus(),
-                updatedInstance.getInstanceName(),
-                updatedInstance.getBaseUrl(),
-                updatedInstance.getPath(),
-                updatedInstance.getWeight()
-            ).block();
-            log.info("更新结果：rows={}", rows);
-            
-            // 重新读取更新后的实例
-            ServiceInstanceEntity savedInstance = serviceInstanceRepository.findById(updatedInstance.getId()).block();
+            // 6. 保存更新 - 使用 save 方法保存完整的 Entity
+            log.info("更新实例：id={}, rateLimitEnabled={}, circuitBreakerEnabled={}", 
+                updatedInstance.getId(), updatedInstance.getRateLimitEnabled(), updatedInstance.getCircuitBreakerEnabled());
+            ServiceInstanceEntity savedInstance = serviceInstanceRepository.save(updatedInstance).block();
+            log.info("更新结果：saved={}", savedInstance != null);
 
             log.info("服务实例更新成功：{}#{}", serviceType, instanceId);
             return buildInstanceMap(savedInstance);
