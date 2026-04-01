@@ -8,6 +8,7 @@ import org.unreal.modelrouter.store.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.store.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.store.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.vo.ServiceInstanceVO;
+import org.unreal.modelrouter.dto.InstanceUpdateFlatRequest;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -84,6 +85,45 @@ public class InstanceConfigService {
         return Mono.fromCallable(() -> {
                 // 确保 instanceId 在 instanceConfig 中
                 instanceConfig.put("instanceId", instanceId);
+                
+                // 调用 DatabaseConfigService 更新实例
+                Map<String, Object> result = databaseConfigService.updateServiceInstance(serviceType, instanceId, instanceConfig);
+                return convertToVO(result);
+            })
+            .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 更新实例（简化版 - 直接使用扁平化 DTO）
+     */
+    public Mono<ServiceInstanceVO> updateInstanceFlat(String serviceType, String instanceId, InstanceUpdateFlatRequest request) {
+        log.info("简化版更新实例：serviceType={}, instanceId={}, name={}", serviceType, instanceId, request.getName());
+        return Mono.fromCallable(() -> {
+                // 将 DTO 转换为 Map（扁平格式）
+                Map<String, Object> instanceConfig = new HashMap<>();
+                instanceConfig.put("instanceId", instanceId);
+                instanceConfig.put("name", request.getName());
+                instanceConfig.put("baseUrl", request.getBaseUrl());
+                if (request.getPath() != null) instanceConfig.put("path", request.getPath());
+                if (request.getWeight() != null) instanceConfig.put("weight", request.getWeight());
+                if (request.getStatus() != null) instanceConfig.put("status", request.getStatus());
+                if (request.getAdapter() != null) instanceConfig.put("adapter", request.getAdapter());
+                if (request.getHeaders() != null) instanceConfig.put("headers", request.getHeaders());
+                
+                // 限流器配置 - 扁平字段
+                if (request.getRateLimitEnabled() != null) instanceConfig.put("rateLimitEnabled", request.getRateLimitEnabled());
+                if (request.getRateLimitAlgorithm() != null) instanceConfig.put("rateLimitAlgorithm", request.getRateLimitAlgorithm());
+                if (request.getRateLimitCapacity() != null) instanceConfig.put("rateLimitCapacity", request.getRateLimitCapacity());
+                if (request.getRateLimitRate() != null) instanceConfig.put("rateLimitRate", request.getRateLimitRate());
+                if (request.getRateLimitScope() != null) instanceConfig.put("rateLimitScope", request.getRateLimitScope());
+                if (request.getRateLimitKey() != null) instanceConfig.put("rateLimitKey", request.getRateLimitKey());
+                if (request.getRateLimitClientIpEnable() != null) instanceConfig.put("rateLimitClientIpEnable", request.getRateLimitClientIpEnable());
+                
+                // 熔断器配置 - 扁平字段
+                if (request.getCircuitBreakerEnabled() != null) instanceConfig.put("circuitBreakerEnabled", request.getCircuitBreakerEnabled());
+                if (request.getCircuitBreakerFailureThreshold() != null) instanceConfig.put("circuitBreakerFailureThreshold", request.getCircuitBreakerFailureThreshold());
+                if (request.getCircuitBreakerTimeout() != null) instanceConfig.put("circuitBreakerTimeout", request.getCircuitBreakerTimeout());
+                if (request.getCircuitBreakerSuccessThreshold() != null) instanceConfig.put("circuitBreakerSuccessThreshold", request.getCircuitBreakerSuccessThreshold());
                 
                 // 调用 DatabaseConfigService 更新实例
                 Map<String, Object> result = databaseConfigService.updateServiceInstance(serviceType, instanceId, instanceConfig);
