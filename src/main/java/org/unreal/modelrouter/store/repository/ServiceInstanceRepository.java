@@ -83,7 +83,58 @@ public interface ServiceInstanceRepository extends R2dbcRepository<ServiceInstan
     Mono<Long> countHealthyInstancesByServiceConfigId(@Param("serviceConfigId") Long serviceConfigId);
 
     /**
-     * 更新实例状态和基本信息
+     * 更新实例的所有字段（包括限流器和熔断器配置）
+     */
+    @Modifying
+    @Query("""
+        UPDATE service_instance SET 
+            service_config_id = :serviceConfigId,
+            instance_name = :instanceName,
+            base_url = :baseUrl,
+            path = :path,
+            weight = :weight,
+            headers = :headers,
+            rate_limit_enabled = :rateLimitEnabled,
+            rate_limit_algorithm = :rateLimitAlgorithm,
+            rate_limit_capacity = :rateLimitCapacity,
+            rate_limit_rate = :rateLimitRate,
+            rate_limit_scope = :rateLimitScope,
+            rate_limit_key = :rateLimitKey,
+            rate_limit_client_ip_enable = :rateLimitClientIpEnable,
+            circuit_breaker_enabled = :circuitBreakerEnabled,
+            circuit_breaker_failure_threshold = :circuitBreakerFailureThreshold,
+            circuit_breaker_timeout = :circuitBreakerTimeout,
+            circuit_breaker_success_threshold = :circuitBreakerSuccessThreshold,
+            status = :status,
+            health_status = :healthStatus,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = :id
+        """)
+    Mono<Integer> updateInstanceFull(
+        @Param("id") Long id,
+        @Param("serviceConfigId") Long serviceConfigId,
+        @Param("instanceName") String instanceName,
+        @Param("baseUrl") String baseUrl,
+        @Param("path") String path,
+        @Param("weight") Integer weight,
+        @Param("headers") String headers,
+        @Param("rateLimitEnabled") Boolean rateLimitEnabled,
+        @Param("rateLimitAlgorithm") String rateLimitAlgorithm,
+        @Param("rateLimitCapacity") Integer rateLimitCapacity,
+        @Param("rateLimitRate") Integer rateLimitRate,
+        @Param("rateLimitScope") String rateLimitScope,
+        @Param("rateLimitKey") String rateLimitKey,
+        @Param("rateLimitClientIpEnable") Boolean rateLimitClientIpEnable,
+        @Param("circuitBreakerEnabled") Boolean circuitBreakerEnabled,
+        @Param("circuitBreakerFailureThreshold") Integer circuitBreakerFailureThreshold,
+        @Param("circuitBreakerTimeout") Integer circuitBreakerTimeout,
+        @Param("circuitBreakerSuccessThreshold") Integer circuitBreakerSuccessThreshold,
+        @Param("status") String status,
+        @Param("healthStatus") String healthStatus
+    );
+
+    /**
+     * 更新实例状态和基本信息（旧方法，保留向后兼容）
      */
     @Modifying
     @Query("""
