@@ -100,7 +100,7 @@
                       </template>
                     </el-table-column>
 
-                    <el-table-column label="操作" width="220" align="center" fixed="right">
+                    <el-table-column label="操作" width="120" align="center" fixed="right">
                       <template #default="scope">
                         <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle title="编辑">
                           <el-icon>
@@ -138,22 +138,6 @@
         </el-tabs>
       </div>
     </el-card>
-
-    <!-- 限流器配置弹窗 -->
-    <RateLimitConfig
-      v-model="rateLimitDialogVisible"
-      :title="rateLimitDialogTitle"
-      :initial-data="rateLimitFormData"
-      @save="handleRateLimitSave"
-    />
-
-    <!-- 熔断器配置弹窗 -->
-    <CircuitBreakerConfig
-      v-model="circuitBreakerDialogVisible"
-      :title="circuitBreakerDialogTitle"
-      :initial-data="circuitBreakerFormData"
-      @save="handleCircuitBreakerSave"
-    />
 
     <!-- 添加/编辑实例对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="820px" :before-close="handleDialogClose"
@@ -459,16 +443,6 @@ const instances = ref<Record<string, ServiceInstance[]>>({})
 const loading = ref(false)
 const saveLoading = ref(false)
 const dialogVisible = ref(false)
-// 限流器独立配置
-const rateLimitDialogVisible = ref(false)
-const rateLimitDialogTitle = ref('限流器配置')
-const rateLimitFormData = ref<any>({})
-const rateLimitEditInstance = ref<any>(null)
-// 熔断器独立配置
-const circuitBreakerDialogVisible = ref(false)
-const circuitBreakerDialogTitle = ref('熔断器配置')
-const circuitBreakerFormData = ref<any>({})
-const circuitBreakerEditInstance = ref<any>(null)
 const dialogTitle = ref('')
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
@@ -898,110 +872,6 @@ const handleSave = async () => {
 // 分页事件
 const handleSizeChange = (size: number) => { pageSize.value = size; currentPage.value = 1 }
 const handlePageChange = (page: number) => { currentPage.value = page }
-
-// 打开限流器配置弹窗
-const openRateLimitConfig = (row: any) => {
-  rateLimitEditInstance.value = row
-  rateLimitDialogTitle.value = `限流器配置 - ${row.name}`
-  rateLimitFormData.value = { rateLimit: row.rateLimit || { enabled: false } }
-  rateLimitDialogVisible.value = true
-}
-
-// 打开熔断器配置弹窗
-const openCircuitBreakerConfig = (row: any) => {
-  circuitBreakerEditInstance.value = row
-  circuitBreakerDialogTitle.value = `熔断器配置 - ${row.name}`
-  circuitBreakerFormData.value = { circuitBreaker: row.circuitBreaker || { enabled: false } }
-  circuitBreakerDialogVisible.value = true
-}
-
-// 保存限流器配置
-const handleRateLimitSave = async (configData: any) => {
-  if (!rateLimitEditInstance.value) return
-  saveLoading.value = true
-  try {
-    const serviceType = activeServiceType.value
-    const instance = rateLimitEditInstance.value
-    const updateData = {
-      instanceId: instance.instanceId,
-      name: instance.name,
-      baseUrl: instance.baseUrl,
-      path: instance.path,
-      weight: instance.weight,
-      status: instance.status,
-      adapter: instance.adapter,
-      headers: instance.headers || {},
-      rateLimitEnabled: configData.rateLimit?.enabled || false,
-      rateLimitAlgorithm: configData.rateLimit?.algorithm || 'token-bucket',
-      rateLimitCapacity: configData.rateLimit?.capacity || 100,
-      rateLimitRate: configData.rateLimit?.rate || 10,
-      rateLimitScope: configData.rateLimit?.scope || 'instance',
-      rateLimitKey: configData.rateLimit?.key || '',
-      rateLimitClientIpEnable: configData.rateLimit?.clientIpEnable || false,
-      circuitBreakerEnabled: instance.circuitBreaker?.enabled || false,
-      circuitBreakerFailureThreshold: instance.circuitBreaker?.failureThreshold || 5,
-      circuitBreakerTimeout: instance.circuitBreaker?.timeout || 60000,
-      circuitBreakerSuccessThreshold: instance.circuitBreaker?.successThreshold || 2
-    }
-    const response = await updateServiceInstance(serviceType, instance.instanceId, updateData)
-    if (response.data?.success) {
-      ElMessage.success('限流器配置保存成功')
-      delete instancesCache.value[serviceType]
-      fetchServiceInstances(serviceType)
-    } else {
-      ElMessage.error(response.data?.message || '保存失败')
-    }
-  } catch (error) {
-    console.error('保存限流器配置失败:', error)
-    ElMessage.error('保存限流器配置失败')
-  } finally {
-    saveLoading.value = false
-  }
-}
-
-// 保存熔断器配置
-const handleCircuitBreakerSave = async (configData: any) => {
-  if (!circuitBreakerEditInstance.value) return
-  saveLoading.value = true
-  try {
-    const serviceType = activeServiceType.value
-    const instance = circuitBreakerEditInstance.value
-    const updateData = {
-      instanceId: instance.instanceId,
-      name: instance.name,
-      baseUrl: instance.baseUrl,
-      path: instance.path,
-      weight: instance.weight,
-      status: instance.status,
-      adapter: instance.adapter,
-      headers: instance.headers || {},
-      rateLimitEnabled: instance.rateLimit?.enabled || false,
-      rateLimitAlgorithm: instance.rateLimit?.algorithm || 'token-bucket',
-      rateLimitCapacity: instance.rateLimit?.capacity || 100,
-      rateLimitRate: instance.rateLimit?.rate || 10,
-      rateLimitScope: instance.rateLimit?.scope || 'instance',
-      rateLimitKey: instance.rateLimit?.key || '',
-      rateLimitClientIpEnable: instance.rateLimit?.clientIpEnable || false,
-      circuitBreakerEnabled: configData.circuitBreaker?.enabled || false,
-      circuitBreakerFailureThreshold: configData.circuitBreaker?.failureThreshold || 5,
-      circuitBreakerTimeout: configData.circuitBreaker?.timeout || 60000,
-      circuitBreakerSuccessThreshold: configData.circuitBreaker?.successThreshold || 2
-    }
-    const response = await updateServiceInstance(serviceType, instance.instanceId, updateData)
-    if (response.data?.success) {
-      ElMessage.success('熔断器配置保存成功')
-      delete instancesCache.value[serviceType]
-      fetchServiceInstances(serviceType)
-    } else {
-      ElMessage.error(response.data?.message || '保存失败')
-    }
-  } catch (error) {
-    console.error('保存熔断器配置失败:', error)
-    ElMessage.error('保存熔断器配置失败')
-  } finally {
-    saveLoading.value = false
-  }
-}
 
 // 初始化
 onMounted(() => {
