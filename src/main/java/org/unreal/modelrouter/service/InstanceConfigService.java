@@ -152,8 +152,10 @@ public class InstanceConfigService {
             return null;
         }
 
+        // 构建限流配置 VO - 支持嵌套和扁平两种格式
         ServiceInstanceVO.RateLimitVO rateLimit = null;
         if (instance.containsKey("rateLimit") && instance.get("rateLimit") instanceof Map) {
+            // 嵌套格式
             Map<String, Object> rl = (Map<String, Object>) instance.get("rateLimit");
             rateLimit = ServiceInstanceVO.RateLimitVO.builder()
                     .enabled((Boolean) rl.get("enabled"))
@@ -164,6 +166,44 @@ public class InstanceConfigService {
                     .key((String) rl.get("key"))
                     .clientIpEnable((Boolean) rl.get("clientIpEnable"))
                     .build();
+        } else if (instance.containsKey("rateLimitEnabled")) {
+            // 扁平格式
+            Boolean enabled = (Boolean) instance.get("rateLimitEnabled");
+            if (enabled != null && enabled) {
+                rateLimit = ServiceInstanceVO.RateLimitVO.builder()
+                        .enabled(enabled)
+                        .algorithm((String) instance.get("rateLimitAlgorithm"))
+                        .capacity((Integer) instance.get("rateLimitCapacity"))
+                        .rate((Integer) instance.get("rateLimitRate"))
+                        .scope((String) instance.get("rateLimitScope"))
+                        .key((String) instance.get("rateLimitKey"))
+                        .clientIpEnable((Boolean) instance.get("rateLimitClientIpEnable"))
+                        .build();
+            }
+        }
+
+        // 构建熔断器配置 VO - 支持嵌套和扁平两种格式
+        ServiceInstanceVO.CircuitBreakerVO circuitBreaker = null;
+        if (instance.containsKey("circuitBreaker") && instance.get("circuitBreaker") instanceof Map) {
+            // 嵌套格式
+            Map<String, Object> cb = (Map<String, Object>) instance.get("circuitBreaker");
+            circuitBreaker = ServiceInstanceVO.CircuitBreakerVO.builder()
+                    .enabled((Boolean) cb.get("enabled"))
+                    .failureThreshold((Integer) cb.get("failureThreshold"))
+                    .timeout((Integer) cb.get("timeout"))
+                    .successThreshold((Integer) cb.get("successThreshold"))
+                    .build();
+        } else if (instance.containsKey("circuitBreakerEnabled")) {
+            // 扁平格式
+            Boolean cbEnabled = (Boolean) instance.get("circuitBreakerEnabled");
+            if (cbEnabled != null && cbEnabled) {
+                circuitBreaker = ServiceInstanceVO.CircuitBreakerVO.builder()
+                        .enabled(cbEnabled)
+                        .failureThreshold((Integer) instance.get("circuitBreakerFailureThreshold"))
+                        .timeout((Integer) instance.get("circuitBreakerTimeout"))
+                        .successThreshold((Integer) instance.get("circuitBreakerSuccessThreshold"))
+                        .build();
+            }
         }
 
         return ServiceInstanceVO.builder()
@@ -176,6 +216,7 @@ public class InstanceConfigService {
                 .healthStatus((String) instance.get("healthStatus"))
                 .headers(instance.get("headers"))
                 .rateLimit(rateLimit)
+                .circuitBreaker(circuitBreaker)
                 .build();
     }
 }

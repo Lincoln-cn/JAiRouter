@@ -341,8 +341,11 @@ public class DatabaseConfigService {
         
         // 构建实例 VO
         String status = instance.getStatus();
-        log.info("buildInstanceVO: instanceId={}, rateLimitEnabled={}, circuitBreakerEnabled={}", 
-            instance.getId(), instance.getRateLimitEnabled(), instance.getCircuitBreakerEnabled());
+        log.info("buildInstanceVO: instanceId={}, rateLimitEnabled={}, rateLimitAlgorithm={}, circuitBreakerEnabled={}, circuitBreakerFailureThreshold={}", 
+            instance.getId(), instance.getRateLimitEnabled(), instance.getRateLimitAlgorithm(), 
+            instance.getCircuitBreakerEnabled(), instance.getCircuitBreakerFailureThreshold());
+        log.info("buildInstanceVO: rateLimitVO={}, circuitBreakerVO={}", 
+            rateLimitVO != null ? "not null" : "null", circuitBreakerVO != null ? "not null" : "null");
         
         return ServiceInstanceVO.builder()
                 .instanceId(instance.getId() != null ? instance.getId().toString() : null)
