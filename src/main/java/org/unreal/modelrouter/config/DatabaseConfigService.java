@@ -1538,8 +1538,51 @@ public class DatabaseConfigService {
         }
 
         // 限流配置
+        // 限流器配置 - 支持扁平格式和嵌套格式
         if (instanceConfig.containsKey("rateLimit") && instanceConfig.get("rateLimit") instanceof Map) {
             validated.put("rateLimit", instanceConfig.get("rateLimit"));
+        } else {
+            // 扁平格式字段
+            if (instanceConfig.containsKey("rateLimitEnabled")) {
+                validated.put("rateLimitEnabled", instanceConfig.get("rateLimitEnabled"));
+            }
+            if (instanceConfig.containsKey("rateLimitAlgorithm")) {
+                validated.put("rateLimitAlgorithm", instanceConfig.get("rateLimitAlgorithm"));
+            }
+            if (instanceConfig.containsKey("rateLimitCapacity")) {
+                validated.put("rateLimitCapacity", instanceConfig.get("rateLimitCapacity"));
+            }
+            if (instanceConfig.containsKey("rateLimitRate")) {
+                validated.put("rateLimitRate", instanceConfig.get("rateLimitRate"));
+            }
+            if (instanceConfig.containsKey("rateLimitScope")) {
+                validated.put("rateLimitScope", instanceConfig.get("rateLimitScope"));
+            }
+            if (instanceConfig.containsKey("rateLimitKey")) {
+                validated.put("rateLimitKey", instanceConfig.get("rateLimitKey"));
+            }
+            if (instanceConfig.containsKey("rateLimitClientIpEnable")) {
+                validated.put("rateLimitClientIpEnable", instanceConfig.get("rateLimitClientIpEnable"));
+            }
+        }
+        
+        // 熔断器配置 - 支持扁平格式和嵌套格式
+        if (instanceConfig.containsKey("circuitBreaker") && instanceConfig.get("circuitBreaker") instanceof Map) {
+            validated.put("circuitBreaker", instanceConfig.get("circuitBreaker"));
+        } else {
+            // 扁平格式字段
+            if (instanceConfig.containsKey("circuitBreakerEnabled")) {
+                validated.put("circuitBreakerEnabled", instanceConfig.get("circuitBreakerEnabled"));
+            }
+            if (instanceConfig.containsKey("circuitBreakerFailureThreshold")) {
+                validated.put("circuitBreakerFailureThreshold", instanceConfig.get("circuitBreakerFailureThreshold"));
+            }
+            if (instanceConfig.containsKey("circuitBreakerTimeout")) {
+                validated.put("circuitBreakerTimeout", instanceConfig.get("circuitBreakerTimeout"));
+            }
+            if (instanceConfig.containsKey("circuitBreakerSuccessThreshold")) {
+                validated.put("circuitBreakerSuccessThreshold", instanceConfig.get("circuitBreakerSuccessThreshold"));
+            }
         }
 
         return validated;
