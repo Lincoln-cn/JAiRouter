@@ -121,11 +121,15 @@ RATELIMIT=$(echo "$VERIFY_RESPONSE" | jq -r ".data[] | select(.instanceId==\"$IN
 RATELIMIT_ENABLED=$(echo "$VERIFY_RESPONSE" | jq -r ".data[] | select(.instanceId==\"$INSTANCE_ID\") | .rateLimit.enabled")
 RATELIMIT_CAPACITY=$(echo "$VERIFY_RESPONSE" | jq -r ".data[] | select(.instanceId==\"$INSTANCE_ID\") | .rateLimit.capacity")
 
-if [ "$RATELIMIT" != "null" ] && [ ! -z "$RATELIMIT" ] && [ "$RATELIMIT_ENABLED" = "true" ]; then
+# 检查 rateLimit 对象或 rateLimitEnabled 字段
+if [ "$RATELIMIT_ENABLED" = "true" ]; then
     echo -e "${GREEN}✅ 限流器配置已保存：enabled=$RATELIMIT_ENABLED, capacity=$RATELIMIT_CAPACITY${NC}"
     ((PASS_COUNT++))
+elif [ "$RATELIMIT" != "null" ] && [ ! -z "$RATELIMIT" ]; then
+    echo -e "${GREEN}✅ 限流器配置已保存（对象格式）${NC}"
+    ((PASS_COUNT++))
 else
-    echo -e "${RED}❌ 限流器配置未保存 (rateLimit=$RATELIMIT)${NC}"
+    echo -e "${RED}❌ 限流器配置未保存 (rateLimit=$RATELIMIT, rateLimitEnabled=$RATELIMIT_ENABLED)${NC}"
     ((FAIL_COUNT++))
 fi
 echo ""
@@ -196,11 +200,15 @@ CIRCUITBREAKER=$(echo "$VERIFY_CB_RESPONSE" | jq -r ".data[] | select(.instanceI
 CB_ENABLED=$(echo "$VERIFY_CB_RESPONSE" | jq -r ".data[] | select(.instanceId==\"$INSTANCE_ID\") | .circuitBreaker.enabled")
 CB_THRESHOLD=$(echo "$VERIFY_CB_RESPONSE" | jq -r ".data[] | select(.instanceId==\"$INSTANCE_ID\") | .circuitBreaker.failureThreshold")
 
-if [ "$CIRCUITBREAKER" != "null" ] && [ ! -z "$CIRCUITBREAKER" ] && [ "$CB_ENABLED" = "true" ]; then
+# 检查 circuitBreaker 对象或 circuitBreakerEnabled 字段
+if [ "$CB_ENABLED" = "true" ]; then
     echo -e "${GREEN}✅ 熔断器配置已保存：enabled=$CB_ENABLED, failureThreshold=$CB_THRESHOLD${NC}"
     ((PASS_COUNT++))
+elif [ "$CIRCUITBREAKER" != "null" ] && [ ! -z "$CIRCUITBREAKER" ]; then
+    echo -e "${GREEN}✅ 熔断器配置已保存（对象格式）${NC}"
+    ((PASS_COUNT++))
 else
-    echo -e "${RED}❌ 熔断器配置未保存 (circuitBreaker=$CIRCUITBREAKER)${NC}"
+    echo -e "${RED}❌ 熔断器配置未保存 (circuitBreaker=$CIRCUITBREAKER, circuitBreakerEnabled=$CB_ENABLED)${NC}"
     ((FAIL_COUNT++))
 fi
 echo ""

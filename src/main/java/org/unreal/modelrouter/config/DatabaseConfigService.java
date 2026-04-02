@@ -375,6 +375,7 @@ public class DatabaseConfigService {
         result.put("healthStatus", vo.getHealthStatus());
         result.put("headers", vo.getHeaders());
         result.put("rateLimit", vo.getRateLimit());
+        result.put("circuitBreaker", vo.getCircuitBreaker());
         return result;
     }
 
