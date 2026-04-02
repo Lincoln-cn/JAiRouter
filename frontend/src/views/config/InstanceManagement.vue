@@ -285,64 +285,7 @@
             </el-col>
           </el-row>
         </div>
-
-        <el-divider content-position="left">限流配置</el-divider>
-        <el-form-item label="启用限流">
-          <el-switch v-model="form.rateLimit.enabled" active-text="启用" inactive-text="禁用" />
-        </el-form-item>
-
-        <div v-if="form.rateLimit.enabled">
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="算法">
-                <el-select v-model="form.rateLimit.algorithm" placeholder="请选择算法">
-                  <el-option label="令牌桶" value="token-bucket" />
-                  <el-option label="漏桶" value="leaky-bucket" />
-                  <el-option label="滑动窗口" value="sliding-window" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="12">
-              <el-form-item label="作用域">
-                <el-select v-model="form.rateLimit.scope" placeholder="请选择作用域">
-                  <el-option label="实例级别" value="instance" />
-                  <el-option label="客户端IP级别" value="client-ip" />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="容量">
-                <el-input-number v-model="form.rateLimit.capacity" :min="1" :max="10000" />
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="12">
-              <el-form-item label="速率">
-                <el-input-number v-model="form.rateLimit.rate" :min="1" :max="10000" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="限流键值">
-                <el-input v-model="form.rateLimit.key" placeholder="请输入限流键值（可选）" />
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="12">
-              <el-form-item label="客户端IP限流">
-                <el-switch v-model="form.rateLimit.clientIpEnable" active-text="启用" inactive-text="禁用" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </div>
-
-        <el-divider content-position="left">熔断器配置</el-divider>
+        
         <el-form-item label="启用熔断器">
           <el-switch v-model="form.circuitBreaker.enabled" active-text="启用" inactive-text="禁用" />
         </el-form-item>
