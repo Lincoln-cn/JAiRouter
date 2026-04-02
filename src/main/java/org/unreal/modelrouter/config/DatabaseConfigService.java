@@ -379,6 +379,18 @@ public class DatabaseConfigService {
         result.put("headers", vo.getHeaders());
         result.put("rateLimit", vo.getRateLimit());
         result.put("circuitBreaker", vo.getCircuitBreaker());
+        // 添加扁平字段（供 convertToVO 使用）
+        result.put("rateLimitEnabled", instance.getRateLimitEnabled());
+        result.put("rateLimitAlgorithm", instance.getRateLimitAlgorithm());
+        result.put("rateLimitCapacity", instance.getRateLimitCapacity());
+        result.put("rateLimitRate", instance.getRateLimitRate());
+        result.put("rateLimitScope", instance.getRateLimitScope());
+        result.put("rateLimitKey", instance.getRateLimitKey());
+        result.put("rateLimitClientIpEnable", instance.getRateLimitClientIpEnable());
+        result.put("circuitBreakerEnabled", instance.getCircuitBreakerEnabled());
+        result.put("circuitBreakerFailureThreshold", instance.getCircuitBreakerFailureThreshold());
+        result.put("circuitBreakerTimeout", instance.getCircuitBreakerTimeout());
+        result.put("circuitBreakerSuccessThreshold", instance.getCircuitBreakerSuccessThreshold());
         return result;
     }
 
