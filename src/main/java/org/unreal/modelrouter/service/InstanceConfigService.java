@@ -148,6 +148,10 @@ public class InstanceConfigService {
      * 将 Map 转换为 ServiceInstanceVO
      */
     private ServiceInstanceVO convertToVO(Map<String, Object> instance) {
+        log.info("convertToVO: instance={}, rateLimitEnabled={}, circuitBreakerEnabled={}", 
+            instance != null ? instance.get("name") : "null",
+            instance != null ? instance.get("rateLimitEnabled") : "null",
+            instance != null ? instance.get("circuitBreakerEnabled") : "null");
         if (instance == null) {
             return null;
         }
