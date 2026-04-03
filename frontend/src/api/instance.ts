@@ -38,6 +38,11 @@ export const updateServiceInstance = (serviceType: string, instanceId: string, i
   return request.put<RouterResponse<any>>(`/config/instance/${serviceType}/${instanceId}`, instanceConfig)
 }
 
+// 更新服务实例（使用扁平化格式）
+export const updateServiceInstanceFlat = (serviceType: string, instanceId: string, instanceConfig: InstanceConfig) => {
+  return request.put<RouterResponse<any>>(`/config/instance/${serviceType}/${instanceId}/flat`, instanceConfig)
+}
+
 // 删除服务实例
 export const deleteServiceInstance = (serviceType: string, instanceId: string) => {
   return request.delete<RouterResponse<void>>(`/config/instance/${serviceType}/${instanceId}`)
