@@ -1,5 +1,6 @@
 /**
- * 配置变更审计服务实现类（简化版）
+ * 配置变更审计服务实现类（JPA 版本）
+ * v1.5.1: 从 R2DBC 迁移到 JPA
  */
 package org.unreal.modelrouter.audit;
 
@@ -7,9 +8,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -19,17 +19,18 @@ import java.util.UUID;
 @Slf4j
 public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
 
-    private final R2dbcEntityTemplate r2dbcTemplate;
+    private final ConfigChangeAuditRepository auditRepository;
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public ConfigChangeAuditServiceImpl(R2dbcEntityTemplate r2dbcTemplate, ObjectMapper objectMapper) {
-        this.r2dbcTemplate = r2dbcTemplate;
+    public ConfigChangeAuditServiceImpl(ConfigChangeAuditRepository auditRepository, ObjectMapper objectMapper) {
+        this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    public Mono<Void> recordConfigCreation(
+    @Transactional
+    public void recordConfigCreation(
         String configKey,
         String configType,
         Map<String, Object> configValue,
@@ -37,11 +38,12 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
         String operatorIp,
         String reason
     ) {
-        return recordChange("CREATE", configKey, configType, null, configValue, operator, operatorIp, reason);
+        recordChange("CREATE", configKey, configType, null, configValue, operator, operatorIp, reason);
     }
 
     @Override
-    public Mono<Void> recordConfigUpdate(
+    @Transactional
+    public void recordConfigUpdate(
         String configKey,
         String configType,
         Map<String, Object> oldValue,
@@ -50,11 +52,12 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
         String operatorIp,
         String reason
     ) {
-        return recordChange("UPDATE", configKey, configType, oldValue, newValue, operator, operatorIp, reason);
+        recordChange("UPDATE", configKey, configType, oldValue, newValue, operator, operatorIp, reason);
     }
 
     @Override
-    public Mono<Void> recordConfigDeletion(
+    @Transactional
+    public void recordConfigDeletion(
         String configKey,
         String configType,
         Map<String, Object> oldValue,
@@ -62,13 +65,10 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
         String operatorIp,
         String reason
     ) {
-        return recordChange("DELETE", configKey, configType, oldValue, null, operator, operatorIp, reason);
+        recordChange("DELETE", configKey, configType, oldValue, null, operator, operatorIp, reason);
     }
 
-    /**
-     * 记录配置变更
-     */
-    private Mono<Void> recordChange(
+    private void recordChange(
         String operation,
         String configKey,
         String configType,
@@ -78,44 +78,36 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
         String operatorIp,
         String reason
     ) {
-        ConfigChangeAuditEntity entity = new ConfigChangeAuditEntity();
-        entity.setEventId(UUID.randomUUID().toString());
-        entity.setConfigKey(configKey);
-        entity.setConfigType(configType);
-        entity.setOperation(operation);
-        entity.setOperator(operator != null ? operator : "system");
-        entity.setOperatorIp(operatorIp);
-        entity.setOldValueJson(toJson(oldValue));
-        entity.setNewValueJson(toJson(newValue));
-        entity.setChangeSummary(generateChangeSummary(operation, configType, configKey));
-        entity.setReason(reason);
-        entity.setTimestamp(LocalDateTime.now());
-
-        return r2dbcTemplate.insert(entity)
-            .then()
-            .doOnSuccess(unused -> log.debug("记录配置变更审计事件：{} {} {}", operation, configType, configKey))
-            .doOnError(error -> log.error("记录配置变更审计事件失败：{} {} {}", operation, configType, configKey, error));
-    }
-
-    /**
-     * 生成变更摘要
-     */
-    private String generateChangeSummary(String operation, String configType, String configKey) {
-        return String.format("%s %s 配置：%s", operation, configType, configKey);
-    }
-
-    /**
-     * 对象转 JSON
-     */
-    private String toJson(Object obj) {
-        if (obj == null) {
-            return null;
-        }
         try {
-            return objectMapper.writeValueAsString(obj);
+            ConfigChangeAuditEntity audit = ConfigChangeAuditEntity.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .configKey(configKey)
+                    .configType(configType)
+                    .operation(operation)
+                    .operator(operator)
+                    .operatorIp(operatorIp)
+                    .oldValueJson(oldValue != null ? objectMapper.writeValueAsString(oldValue) : null)
+                    .newValueJson(newValue != null ? objectMapper.writeValueAsString(newValue) : null)
+                    .changeSummary(generateChangeSummary(oldValue, newValue))
+                    .reason(reason)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            auditRepository.save(audit);
+            log.debug("Recorded config change audit: {} - {}", operation, configKey);
         } catch (JsonProcessingException e) {
-            log.error("序列化对象失败", e);
-            throw new RuntimeException("序列化对象失败", e);
+            log.error("Failed to serialize config value for audit", e);
         }
+    }
+
+    private String generateChangeSummary(Map<String, Object> oldValue, Map<String, Object> newValue) {
+        if (oldValue == null && newValue != null) {
+            return "Created new configuration";
+        } else if (oldValue != null && newValue == null) {
+            return "Deleted configuration";
+        } else if (oldValue != null && newValue != null) {
+            return "Updated configuration";
+        }
+        return "Unknown change";
     }
 }
