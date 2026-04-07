@@ -11,9 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.ConfigurationService;
+import org.unreal.modelrouter.config.dto.RouterConfiguration;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.VersionInfoResponse;
 import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.version.diff.ConfigDiff;
+import org.unreal.modelrouter.version.diff.VersionDiffService;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -35,11 +38,15 @@ public class ConfigurationVersionController {
 
     private final ConfigurationService configurationService;
     private final StoreManager storeManager;
+    private final VersionDiffService versionDiffService;
 
     @Autowired
-    public ConfigurationVersionController(ConfigurationService configurationService, StoreManager storeManager) {
+    public ConfigurationVersionController(ConfigurationService configurationService,
+                                          StoreManager storeManager,
+                                          VersionDiffService versionDiffService) {
         this.configurationService = configurationService;
         this.storeManager = storeManager;
+        this.versionDiffService = versionDiffService;
     }
 
     /**
@@ -176,17 +183,18 @@ public class ConfigurationVersionController {
             List<VersionInfoResponse> versionInfos = new ArrayList<>();
 
             for (Integer version : versionNumbers) {
-                // 获取配置详情
-                Map<String, Object> config = configurationService.getVersionConfig(version);
+                // 获取配置详情（Map 格式）
+                Map<String, Object> configMap = configurationService.getVersionConfig(version);
 
                 VersionInfoResponse versionInfo = new VersionInfoResponse();
                 versionInfo.setVersion(version);
-                versionInfo.setConfig(config != null ? config : new HashMap<>());
+                // 使用充血模型转换为强类型 DTO
+                versionInfo.setConfigFromMap(configMap != null ? configMap : new HashMap<>());
                 versionInfo.setCurrent(version == currentVersion);
 
                 // 从配置中提取操作类型和详细信息
-                if (config != null && config.containsKey("_metadata")) {
-                    Map<String, Object> metadata = (Map<String, Object>) config.get("_metadata");
+                if (configMap != null && configMap.containsKey("_metadata")) {
+                    Map<String, Object> metadata = (Map<String, Object>) configMap.get("_metadata");
                     if (metadata != null) {
                         if (metadata.containsKey("operation")) {
                             versionInfo.setOperation((String) metadata.get("operation"));
@@ -207,6 +215,93 @@ public class ConfigurationVersionController {
             // 按版本号降序排列
             versionInfos.sort((a, b) -> b.getVersion().compareTo(a.getVersion()));
             return RouterResponse.success(versionInfos, "获取所有版本详细信息成功");
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 比较两个配置版本之间的差异
+     *
+     * @param sourceVersion 源版本号（较旧版本）
+     * @param targetVersion 目标版本号（较新版本）
+     * @return 版本差异信息
+     */
+    @GetMapping("/compare/{sourceVersion}/{targetVersion}")
+    @Operation(summary = "比较两个版本差异",
+               description = "比较两个配置版本之间的差异，返回新增、删除、修改的配置项")
+    @ApiResponse(responseCode = "200", description = "成功获取版本差异",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RouterResponse.class)))
+    @ApiResponse(responseCode = "400", description = "版本号不合法或版本不存在")
+    @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    public Mono<RouterResponse<ConfigDiff>> compareVersions(
+            @Parameter(description = "源版本号（较旧版本）", example = "1")
+            @PathVariable("sourceVersion") int sourceVersion,
+            @Parameter(description = "目标版本号（较新版本）", example = "2")
+            @PathVariable("targetVersion") int targetVersion) {
+        return Mono.fromSupplier(() -> {
+            // 验证版本号
+            if (sourceVersion < 0 || targetVersion < 0) {
+                return RouterResponse.<ConfigDiff>error("版本号必须为非负数");
+            }
+            if (sourceVersion == targetVersion) {
+                return RouterResponse.<ConfigDiff>error("源版本和目标版本不能相同");
+            }
+
+            try {
+                ConfigDiff diff = versionDiffService.compareVersions(sourceVersion, targetVersion);
+                return RouterResponse.success(diff, String.format(
+                        "版本 %d 与 %d 对比完成，共发现 %d 处差异",
+                        sourceVersion, targetVersion, diff.getTotalChanges()));
+            } catch (IllegalArgumentException e) {
+                return RouterResponse.<ConfigDiff>error(e.getMessage());
+            }
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 比较指定版本与当前配置（上一个版本）的差异
+     * 便捷接口，用于快速查看某个版本的变更内容
+     *
+     * @param version 版本号
+     * @return 该版本相对于上一版本的差异
+     */
+    @GetMapping("/compare/{version}")
+    @Operation(summary = "查看版本变更内容",
+               description = "查看指定版本相对于上一版本的变更内容（第一版则与空配置对比）")
+    @ApiResponse(responseCode = "200", description = "成功获取版本变更内容",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = RouterResponse.class)))
+    @ApiResponse(responseCode = "400", description = "版本不存在")
+    @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    public Mono<RouterResponse<ConfigDiff>> getVersionChanges(
+            @Parameter(description = "版本号", example = "2")
+            @PathVariable("version") int version) {
+        return Mono.fromSupplier(() -> {
+            if (version <= 0) {
+                return RouterResponse.<ConfigDiff>error("版本号必须为正整数");
+            }
+
+            try {
+                // 获取所有版本
+                List<Integer> allVersions = configurationService.getAllVersions();
+                if (!allVersions.contains(version)) {
+                    return RouterResponse.<ConfigDiff>error("版本不存在: " + version);
+                }
+
+                // 找到上一版本
+                int previousVersion = 0; // 0 表示初始状态（空配置）
+                int index = allVersions.indexOf(version);
+                if (index > 0) {
+                    previousVersion = allVersions.get(index - 1);
+                }
+
+                ConfigDiff diff = versionDiffService.compareVersions(previousVersion, version);
+                return RouterResponse.success(diff, String.format(
+                        "版本 %d 的变更内容（基于版本 %d），共 %d 处变更",
+                        version, previousVersion, diff.getTotalChanges()));
+            } catch (IllegalArgumentException e) {
+                return RouterResponse.<ConfigDiff>error(e.getMessage());
+            }
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
