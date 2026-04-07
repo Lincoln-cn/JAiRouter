@@ -1,10 +1,9 @@
 /**
  * 配置变更审计服务接口
  * 记录配置变更历史，支持版本追溯和回滚审计
+ * v1.5.1: 从 R2DBC 迁移到 JPA
  */
 package org.unreal.modelrouter.audit;
-
-import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
@@ -18,9 +17,8 @@ public interface ConfigChangeAuditService {
      * @param operator 操作人
      * @param operatorIp 操作人 IP
      * @param reason 变更原因
-     * @return 记录操作结果
      */
-    Mono<Void> recordConfigCreation(
+    void recordConfigCreation(
         String configKey,
         String configType,
         Map<String, Object> configValue,
@@ -38,9 +36,8 @@ public interface ConfigChangeAuditService {
      * @param operator 操作人
      * @param operatorIp 操作人 IP
      * @param reason 变更原因
-     * @return 记录操作结果
      */
-    Mono<Void> recordConfigUpdate(
+    void recordConfigUpdate(
         String configKey,
         String configType,
         Map<String, Object> oldValue,
@@ -58,9 +55,8 @@ public interface ConfigChangeAuditService {
      * @param operator 操作人
      * @param operatorIp 操作人 IP
      * @param reason 变更原因
-     * @return 记录操作结果
      */
-    Mono<Void> recordConfigDeletion(
+    void recordConfigDeletion(
         String configKey,
         String configType,
         Map<String, Object> oldValue,
