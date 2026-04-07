@@ -3,6 +3,7 @@ package org.unreal.modelrouter.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.config.DatabaseConfigService;
 import org.unreal.modelrouter.store.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.store.repository.ServiceConfigRepository;
@@ -28,6 +29,7 @@ public class InstanceConfigService {
     private final ServiceConfigRepository serviceConfigRepository;
     private final ServiceInstanceRepository serviceInstanceRepository;
     private final DatabaseConfigService databaseConfigService;
+    private final ConfigurationService configurationService;
 
     /**
      * 获取服务实例列表
@@ -85,12 +87,46 @@ public class InstanceConfigService {
         return Mono.fromCallable(() -> {
                 // 确保 instanceId 在 instanceConfig 中
                 instanceConfig.put("instanceId", instanceId);
-                
+
                 // 调用 DatabaseConfigService 更新实例
                 Map<String, Object> result = databaseConfigService.updateServiceInstance(serviceType, instanceId, instanceConfig);
+
+                // 保存版本
+                saveVersion(serviceType, "更新实例", "更新实例: " + instanceConfig.get("name"));
+
                 return convertToVO(result);
             })
             .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    /**
+     * 保存配置版本
+     */
+    private void saveVersion(String serviceType, String operation, String detail) {
+        log.info("开始保存配置版本：operation={}, detail={}", operation, detail);
+        try {
+            // 获取当前完整配置
+            Map<String, Object> currentConfig = configurationService.getAllConfigurations();
+            log.info("获取到当前配置：config={}", currentConfig);
+            if (currentConfig != null) {
+                // 添加版本元数据
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("operation", operation);
+                metadata.put("operationDetail", detail);
+                metadata.put("serviceType", serviceType);
+                metadata.put("timestamp", System.currentTimeMillis());
+                currentConfig.put("_metadata", metadata);
+
+                // 保存为新版本
+                String userId = "system";
+                int version = configurationService.saveAsNewVersion(currentConfig, detail, userId);
+                log.info("已保存配置版本：version={}, operation={}, detail={}", version, operation, detail);
+            } else {
+                log.warn("当前配置为空，无法保存版本");
+            }
+        } catch (Exception e) {
+            log.error("保存配置版本失败：operation={}, detail={}", operation, detail, e);
+        }
     }
 
     /**

@@ -87,8 +87,8 @@ webclient:
 # ========================================
 spring:
   r2dbc:
-    # 开发环境使用独立的数据库文件
-    url: r2dbc:h2:file///./data/jairouter-dev?DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
+    # 开发环境使用内存数据库
+    url: r2dbc:h2:mem:///jairouter-dev?DB_CLOSE_DELAY=-1;MODE=LEGACY;DATABASE_TO_UPPER=FALSE
   
   # H2 控制台（开发环境启用）
   h2:
