@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.store.repository;
 
-import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.store.entity.ApiKeyEntity;
 import reactor.core.publisher.Flux;
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 注意：R2DBC H2 使用位置参数 $1, $2 而不是命名参数
  */
 @Repository
-public interface ApiKeyRepository extends R2dbcRepository<ApiKeyEntity, Long> {
+public interface ApiKeyRepository extends JpaRepository<ApiKeyEntity, Long> {
 
     /**
      * 根据 keyId 查找

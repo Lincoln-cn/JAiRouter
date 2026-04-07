@@ -5,9 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -18,46 +16,48 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("config_archive")
+@Entity
+@Table(name = "config_archive")
 public class ConfigArchiveEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("config_key")
+    @Column(name = "config_key")
     private String configKey;
 
-    @Column("archive_path")
+    @Column(name = "archive_path")
     private String archivePath;
 
-    @Column("archive_type")
+    @Column(name = "archive_type")
     private String archiveType; // ZIP, TAR.GZ
 
-    @Column("version_range_start")
+    @Column(name = "version_range_start")
     private Integer versionRangeStart;
 
-    @Column("version_range_end")
+    @Column(name = "version_range_end")
     private Integer versionRangeEnd;
 
-    @Column("archived_at")
+    @Column(name = "archived_at")
     @CreatedDate
     private LocalDateTime archivedAt;
 
-    @Column("archived_by")
+    @Column(name = "archived_by")
     private String archivedBy;
 
-    @Column("file_size_bytes")
+    @Column(name = "file_size_bytes")
     private Long fileSizeBytes;
 
-    @Column("checksum")
+    @Column(name = "checksum")
     private String checksum; // SHA-256 校验和
 
-    @Column("retention_days")
+    @Column(name = "retention_days")
     private Integer retentionDays;
 
-    @Column("expiry_date")
+    @Column(name = "expiry_date")
     private LocalDateTime expiryDate;
 
-    @Column("status")
+    @Column(name = "status")
     private String status; // ACTIVE, EXPIRED, DELETED
 }

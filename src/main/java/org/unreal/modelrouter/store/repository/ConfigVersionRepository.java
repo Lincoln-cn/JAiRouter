@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.store.repository;
 
-import org.springframework.data.r2dbc.repository.Modifying;
-import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.store.entity.ConfigVersionEntity;
 import reactor.core.publisher.Flux;
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 注意：R2DBC H2 使用位置参数 $1, $2 而不是命名参数
  */
 @Repository
-public interface ConfigVersionRepository extends R2dbcRepository<ConfigVersionEntity, Long> {
+public interface ConfigVersionRepository extends JpaRepository<ConfigVersionEntity, Long> {
 
     /**
      * 根据配置键和版本号查找

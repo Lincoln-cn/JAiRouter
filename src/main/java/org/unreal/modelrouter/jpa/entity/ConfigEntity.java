@@ -1,46 +1,48 @@
-package org.unreal.modelrouter.store.entity;
+package org.unreal.modelrouter.jpa.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
 /**
  * 配置实体类 (JPA 版本)
- * v1.5.1: 从 R2DBC 迁移到 JPA
+ * v1.5.1: 替代 R2DBC 的 ConfigEntity
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Entity
 @Table(name = "config_data")
 public class ConfigEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "config_key")
+    @Column(name = "config_key", nullable = false, length = 255)
     private String configKey;
 
-    @Column(name = "config_value")
+    @Column(name = "config_value", nullable = false, columnDefinition = "TEXT")
     private String configValue;
 
-    @Column(name = "version")
+    @Column(name = "version", nullable = false)
     private Integer version;
 
-    @Column(name = "created_at")
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "is_latest")
+    @Column(name = "is_latest", nullable = false)
     private Boolean isLatest;
 }

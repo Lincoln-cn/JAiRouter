@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -17,48 +15,50 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("security_audit")
+@Entity
+@Table(name = "security_audit")
 public class SecurityAuditEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("event_id")
+    @Column(name = "event_id")
     private String eventId;
 
-    @Column("event_type")
+    @Column(name = "event_type")
     private String eventType;
 
-    @Column("user_id")
+    @Column(name = "user_id")
     private String userId;
 
-    @Column("client_ip")
+    @Column(name = "client_ip")
     private String clientIp;
 
-    @Column("user_agent")
+    @Column(name = "user_agent")
     private String userAgent;
 
-    @Column("timestamp")
+    @Column(name = "timestamp")
     private LocalDateTime timestamp;
 
-    @Column("resource")
+    @Column(name = "resource")
     private String resource;
 
-    @Column("action")
+    @Column(name = "action")
     private String action;
 
-    @Column("success")
+    @Column(name = "success")
     private Boolean success;
 
-    @Column("failure_reason")
+    @Column(name = "failure_reason")
     private String failureReason;
 
-    @Column("additional_data")
+    @Column(name = "additional_data")
     private String additionalData; // JSON 格式存储
 
-    @Column("request_id")
+    @Column(name = "request_id")
     private String requestId;
 
-    @Column("session_id")
+    @Column(name = "session_id")
     private String sessionId;
 }

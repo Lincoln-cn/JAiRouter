@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.store.repository;
 
-import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.store.entity.ConfigChangeHistoryEntity;
@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
  * 配置变更历史表数据仓库
  */
 @Repository
-public interface ConfigChangeHistoryRepository extends R2dbcRepository<ConfigChangeHistoryEntity, Long> {
+public interface ConfigChangeHistoryRepository extends JpaRepository<ConfigChangeHistoryEntity, Long> {
 
     /**
      * 根据配置键查找变更历史（按时间倒序）
