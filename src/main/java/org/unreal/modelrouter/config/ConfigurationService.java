@@ -340,12 +340,19 @@ public class ConfigurationService {
     private List<Integer> scanExistingVersions() {
         List<Integer> versions = new ArrayList<>();
 
-        // 从版本历史中获取已知版本
+        // 首先从 storeManager 获取所有版本（支持 H2 数据库和文件存储）
+        List<Integer> storeVersions = storeManager.getConfigVersions(CURRENT_KEY);
+        if (storeVersions != null && !storeVersions.isEmpty()) {
+            versions.addAll(storeVersions);
+            logger.debug("从 storeManager 获取到 {} 个版本", storeVersions.size());
+        }
+
+        // 从版本历史中获取已知版本（作为补充）
         List<VersionInfo> versionHistory = versionHistoryMap.get(CURRENT_KEY);
         if (versionHistory != null) {
             for (VersionInfo versionInfo : versionHistory) {
                 int version = versionInfo.getVersion();
-                if (storeManager.versionExists(CURRENT_KEY, version)) {
+                if (storeManager.versionExists(CURRENT_KEY, version) && !versions.contains(version)) {
                     versions.add(version);
                 }
             }
@@ -1170,13 +1177,29 @@ public class ConfigurationService {
         // 使用 DatabaseConfigService 进行数据库更新
         try {
             Map<String, Object> updatedConfig = databaseConfigService.updateServiceConfig(serviceType, serviceConfig);
-            
+
+            // 获取当前完整配置（从数据库获取所有服务配置）
+            Map<String, Object> currentConfig = getAllConfigurations();
+            if (currentConfig != null) {
+                // 添加版本元数据
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("operation", "updateService");
+                metadata.put("operationDetail", "更新服务配置: " + serviceType);
+                metadata.put("serviceType", serviceType);
+                metadata.put("timestamp", System.currentTimeMillis());
+                currentConfig.put("_metadata", metadata);
+
+                // 强制保存为新版本（不使用条件判断）
+                String userId = SecurityUtils.getCurrentUserId();
+                saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, userId);
+            }
+
             // 刷新运行时配置
             refreshRuntimeConfig();
-            
+
             logger.info("服务 {} 配置更新成功", serviceType);
             return updatedConfig;
-            
+
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {

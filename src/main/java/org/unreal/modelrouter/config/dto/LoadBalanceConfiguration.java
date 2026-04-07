@@ -1,7 +1,11 @@
 package org.unreal.modelrouter.config.dto;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 负载均衡配置 DTO
+ * 充血模型：包含与 Map 的互相转换能力
  */
 public record LoadBalanceConfiguration(
         String type,
@@ -42,5 +46,36 @@ public record LoadBalanceConfiguration(
             }
             return ROUND_ROBIN;
         }
+    }
+
+    /**
+     * 从 Map 转换为 DTO
+     */
+    public static LoadBalanceConfiguration fromMap(Map<String, Object> map) {
+        if (map == null) {
+            return defaultConfig();
+        }
+        return new LoadBalanceConfiguration(
+                getString(map, "type"),
+                getString(map, "hashAlgorithm")
+        );
+    }
+
+    /**
+     * 转换为 Map
+     */
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        if (type != null) map.put("type", type);
+        if (hashAlgorithm != null) map.put("hashAlgorithm", hashAlgorithm);
+        return map;
+    }
+
+    private static String getString(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof String) {
+            return (String) value;
+        }
+        return null;
     }
 }

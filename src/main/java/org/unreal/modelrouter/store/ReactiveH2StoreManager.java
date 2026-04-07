@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.store.entity.ConfigEntity;
 import org.unreal.modelrouter.store.repository.ConfigRepository;
@@ -26,6 +27,7 @@ public class ReactiveH2StoreManager implements ReactiveVersionedStoreManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveH2StoreManager.class);
 
     private final ConfigRepository configRepository;
+    private final DatabaseClient databaseClient;
 
     @Override
     public Mono<Void> saveConfig(String key, Map<String, Object> config) {
@@ -102,8 +104,11 @@ public class ReactiveH2StoreManager implements ReactiveVersionedStoreManager {
 
     @Override
     public Flux<Integer> getConfigVersions(String key) {
-        return configRepository.findAllByConfigKey(key)
-                .map(ConfigEntity::getVersion)
+        // 直接使用 DatabaseClient 执行 SQL，使用 ? 占位符
+        return databaseClient.sql("SELECT version FROM config_data WHERE config_key = ? ORDER BY version ASC")
+                .bind(0, key)
+                .map((row, metadata) -> row.get("version", Integer.class))
+                .all()
                 .doOnError(e -> LOGGER.error("Failed to get config versions for key: {}", key, e));
     }
 

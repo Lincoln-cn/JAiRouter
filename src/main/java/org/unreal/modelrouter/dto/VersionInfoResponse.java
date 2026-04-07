@@ -1,14 +1,17 @@
 package org.unreal.modelrouter.dto;
 
+import org.unreal.modelrouter.config.dto.RouterConfiguration;
+
 import java.util.Map;
 
 /**
  * 版本信息数据传输对象
+ * 使用强类型 RouterConfiguration 替代 Map<String, Object>
  */
 public class VersionInfoResponse {
 
     private Integer version;
-    private Map<String, Object> config;
+    private RouterConfiguration config;
     private Boolean current;
     private String operation;
     private String operationDetail;
@@ -23,12 +26,26 @@ public class VersionInfoResponse {
         this.version = version;
     }
 
-    public Map<String, Object> getConfig() {
+    public RouterConfiguration getConfig() {
         return config;
     }
 
-    public void setConfig(Map<String, Object> config) {
+    public void setConfig(RouterConfiguration config) {
         this.config = config;
+    }
+
+    /**
+     * 兼容旧代码：获取 Map 格式的配置
+     */
+    public Map<String, Object> getConfigAsMap() {
+        return config != null ? config.toMap() : Map.of();
+    }
+
+    /**
+     * 兼容旧代码：设置 Map 格式的配置
+     */
+    public void setConfigFromMap(Map<String, Object> configMap) {
+        this.config = RouterConfiguration.fromMap(configMap);
     }
 
     public Boolean getCurrent() {
