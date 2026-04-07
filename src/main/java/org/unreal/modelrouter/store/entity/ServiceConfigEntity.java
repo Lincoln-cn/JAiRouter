@@ -5,10 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.*;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
@@ -19,80 +17,82 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("service_config")
+@Entity
+@Table(name = "service_config")
 public class ServiceConfigEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("config_key")
+    @Column(name = "config_key")
     private String configKey;
 
-    @Column("service_type")
+    @Column(name = "service_type")
     private String serviceType; // chat, embedding, rerank, tts, stt, imgGen, imgEdit
 
-    @Column("load_balance_type")
+    @Column(name = "load_balance_type")
     private String loadBalanceType; // random, round-robin, least-connections, ip-hash
 
-    @Column("load_balance_hash_algorithm")
+    @Column(name = "load_balance_hash_algorithm")
     private String loadBalanceHashAlgorithm;
 
-    @Column("adapter")
+    @Column(name = "adapter")
     private String adapter;
 
-    @Column("rate_limit_enabled")
+    @Column(name = "rate_limit_enabled")
     private Boolean rateLimitEnabled;
 
-    @Column("rate_limit_algorithm")
+    @Column(name = "rate_limit_algorithm")
     private String rateLimitAlgorithm;
 
-    @Column("rate_limit_capacity")
+    @Column(name = "rate_limit_capacity")
     private Integer rateLimitCapacity;
 
-    @Column("rate_limit_rate")
+    @Column(name = "rate_limit_rate")
     private Integer rateLimitRate;
 
-    @Column("rate_limit_scope")
+    @Column(name = "rate_limit_scope")
     private String rateLimitScope;
 
-    @Column("rate_limit_client_ip_enable")
+    @Column(name = "rate_limit_client_ip_enable")
     private Boolean rateLimitClientIpEnable;
 
-    @Column("circuit_breaker_enabled")
+    @Column(name = "circuit_breaker_enabled")
     private Boolean circuitBreakerEnabled;
 
-    @Column("circuit_breaker_failure_threshold")
+    @Column(name = "circuit_breaker_failure_threshold")
     private Integer circuitBreakerFailureThreshold;
 
-    @Column("circuit_breaker_timeout")
+    @Column(name = "circuit_breaker_timeout")
     private Integer circuitBreakerTimeout;
 
-    @Column("circuit_breaker_success_threshold")
+    @Column(name = "circuit_breaker_success_threshold")
     private Integer circuitBreakerSuccessThreshold;
 
-    @Column("fallback_enabled")
+    @Column(name = "fallback_enabled")
     private Boolean fallbackEnabled;
 
-    @Column("fallback_strategy")
+    @Column(name = "fallback_strategy")
     private String fallbackStrategy;
 
-    @Column("fallback_cache_size")
+    @Column(name = "fallback_cache_size")
     private Integer fallbackCacheSize;
 
-    @Column("fallback_cache_ttl")
+    @Column(name = "fallback_cache_ttl")
     private Integer fallbackCacheTtl;
 
-    @Column("version")
+    @Column(name = "version")
     private Integer version;
 
-    @Column("is_latest")
+    @Column(name = "is_latest")
     private Boolean isLatest;
 
-    @Column("created_at")
+    @Column(name = "created_at")
     @CreatedDate
     private LocalDateTime createdAt;
 
-    @Column("updated_at")
+    @Column(name = "updated_at")
     @LastModifiedDate
     private LocalDateTime updatedAt;
 }

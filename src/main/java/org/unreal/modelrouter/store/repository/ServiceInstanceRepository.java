@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.store.repository;
 
-import org.springframework.data.r2dbc.repository.Modifying;
-import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.store.entity.ServiceInstanceEntity;
@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
  * 服务实例表数据仓库
  */
 @Repository
-public interface ServiceInstanceRepository extends R2dbcRepository<ServiceInstanceEntity, Long> {
+public interface ServiceInstanceRepository extends JpaRepository<ServiceInstanceEntity, Long> {
 
     /**
      * 根据服务配置 ID 查找所有实例

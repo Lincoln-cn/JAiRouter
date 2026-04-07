@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.store.repository;
 
-import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.store.entity.ConfigEntity;
 import reactor.core.publisher.Flux;
@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
  * 注意：R2DBC H2 使用位置参数 $1, $2 而不是命名参数
  */
 @Repository
-public interface ConfigRepository extends R2dbcRepository<ConfigEntity, Long> {
+public interface ConfigRepository extends JpaRepository<ConfigEntity, Long> {
 
     /**
      * 根据配置键查找最新版本

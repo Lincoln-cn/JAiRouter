@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.store.repository;
 
-import org.springframework.data.r2dbc.repository.Modifying;
-import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.store.entity.ServiceConfigEntity;
@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
  * 服务配置表数据仓库
  */
 @Repository
-public interface ServiceConfigRepository extends R2dbcRepository<ServiceConfigEntity, Long> {
+public interface ServiceConfigRepository extends JpaRepository<ServiceConfigEntity, Long> {
 
     /**
      * 根据配置键和服务类型查找最新版本

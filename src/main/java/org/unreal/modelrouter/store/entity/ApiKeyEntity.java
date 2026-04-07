@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -17,36 +15,38 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("api_keys")
+@Entity
+@Table(name = "api_keys")
 public class ApiKeyEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("key_id")
+    @Column(name = "key_id")
     private String keyId;
 
-    @Column("key_value")
+    @Column(name = "key_value")
     private String keyValue;
 
-    @Column("description")
+    @Column(name = "description")
     private String description;
 
-    @Column("permissions")
+    @Column(name = "permissions")
     private String permissions; // JSON 格式存储
 
-    @Column("expires_at")
+    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
-    @Column("created_at")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column("enabled")
+    @Column(name = "enabled")
     private Boolean enabled;
 
-    @Column("metadata")
+    @Column(name = "metadata")
     private String metadata; // JSON 格式存储
 
-    @Column("usage_statistics")
+    @Column(name = "usage_statistics")
     private String usageStatistics; // JSON 格式存储
 }
