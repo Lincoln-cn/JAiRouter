@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.store.repository;
 
-import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.store.entity.JwtAccountEntity;
@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
  * JWT 账户数据仓库
  */
 @Repository
-public interface JwtAccountRepository extends R2dbcRepository<JwtAccountEntity, Long> {
+public interface JwtAccountRepository extends JpaRepository<JwtAccountEntity, Long> {
 
     /**
      * 根据用户名查找

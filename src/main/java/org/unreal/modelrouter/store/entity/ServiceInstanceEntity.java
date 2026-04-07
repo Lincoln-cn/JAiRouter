@@ -5,10 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.*;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
@@ -19,81 +17,83 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("service_instance")
+@Entity
+@Table(name = "service_instance")
 public class ServiceInstanceEntity {
 
     @Id
-    @Column("id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column("service_config_id")
+    @Column(name = "service_config_id")
     private Long serviceConfigId;
 
-    @Column("instance_name")
+    @Column(name = "instance_name")
     private String instanceName;
 
-    @Column("base_url")
+    @Column(name = "base_url")
     private String baseUrl;
 
-    @Column("path")
+    @Column(name = "path")
     private String path;
 
-    @Column("weight")
+    @Column(name = "weight")
     private Integer weight;
 
-    @Column("headers")
+    @Column(name = "headers")
     private String headers; // JSON 格式的 headers
 
-    @Column("rate_limit_enabled")
+    @Column(name = "rate_limit_enabled")
     private Boolean rateLimitEnabled;
 
-    @Column("rate_limit_algorithm")
+    @Column(name = "rate_limit_algorithm")
     private String rateLimitAlgorithm;
 
-    @Column("rate_limit_capacity")
+    @Column(name = "rate_limit_capacity")
     private Integer rateLimitCapacity;
 
-    @Column("rate_limit_rate")
+    @Column(name = "rate_limit_rate")
     private Integer rateLimitRate;
 
-    @Column("rate_limit_scope")
+    @Column(name = "rate_limit_scope")
     private String rateLimitScope;
 
-    @Column("rate_limit_key")
+    @Column(name = "rate_limit_key")
     private String rateLimitKey;
 
-    @Column("rate_limit_client_ip_enable")
+    @Column(name = "rate_limit_client_ip_enable")
     private Boolean rateLimitClientIpEnable;
 
-    @Column("circuit_breaker_enabled")
+    @Column(name = "circuit_breaker_enabled")
     private Boolean circuitBreakerEnabled;
 
-    @Column("circuit_breaker_failure_threshold")
+    @Column(name = "circuit_breaker_failure_threshold")
     private Integer circuitBreakerFailureThreshold;
 
-    @Column("circuit_breaker_timeout")
+    @Column(name = "circuit_breaker_timeout")
     private Integer circuitBreakerTimeout;
 
-    @Column("circuit_breaker_success_threshold")
+    @Column(name = "circuit_breaker_success_threshold")
     private Integer circuitBreakerSuccessThreshold;
 
-    @Column("status")
+    @Column(name = "status")
     private String status; // ACTIVE, INACTIVE, ERROR
 
-    @Column("last_health_check")
+    @Column(name = "last_health_check")
     private LocalDateTime lastHealthCheck;
 
-    @Column("health_status")
+    @Column(name = "health_status")
     private String healthStatus; // HEALTHY, UNHEALTHY, UNKNOWN
 
-    @Column("error_message")
+    @Column(name = "error_message")
     private String errorMessage;
 
-    @Column("created_at")
+    @Column(name = "created_at")
     @CreatedDate
     private LocalDateTime createdAt;
 
-    @Column("updated_at")
+    @Column(name = "updated_at")
     @LastModifiedDate
     private LocalDateTime updatedAt;
 }

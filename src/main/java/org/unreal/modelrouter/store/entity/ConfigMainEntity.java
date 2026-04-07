@@ -5,10 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.*;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
@@ -19,35 +17,37 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("config_main")
+@Entity
+@Table(name = "config_main")
 public class ConfigMainEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("config_key")
+    @Column(name = "config_key")
     private String configKey;
 
-    @Column("current_version")
+    @Column(name = "current_version")
     private Integer currentVersion;
 
-    @Column("initial_version")
+    @Column(name = "initial_version")
     private Integer initialVersion;
 
-    @Column("created_at")
+    @Column(name = "created_at")
     @CreatedDate
     private LocalDateTime createdAt;
 
-    @Column("updated_at")
+    @Column(name = "updated_at")
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Column("created_by")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column("updated_by")
+    @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column("description")
+    @Column(name = "description")
     private String description;
 }

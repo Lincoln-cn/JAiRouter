@@ -18,8 +18,7 @@ import org.unreal.modelrouter.store.repository.ConfigMainRepository;
 import org.unreal.modelrouter.store.repository.ConfigVersionRepository;
 import org.unreal.modelrouter.store.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.store.repository.ServiceInstanceRepository;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
+// v1.5.1: 移除 R2DBC 相关导入
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -55,7 +54,7 @@ public class ConfigInitializer implements CommandLineRunner {
         
         try {
             // 同步 YAML 配置到数据库
-            syncYamlConfigToDatabase().block();
+            syncYamlConfigToDatabase();
             log.info("配置初始化完成");
         } catch (Exception e) {
             log.error("配置初始化失败：{}", e.getMessage(), e);
@@ -152,7 +151,7 @@ public class ConfigInitializer implements CommandLineRunner {
                             .build();
                     return configMainRepository.save(newConfig);
                 }))
-                .block();
+                ;
     }
 
     /**
@@ -164,7 +163,7 @@ public class ConfigInitializer implements CommandLineRunner {
             String configJson = objectMapper.writeValueAsString(modelRouterProperties);
             
             // 将所有版本标记为非当前
-            configVersionRepository.markAllAsNotCurrent(DEFAULT_CONFIG_KEY).block();
+            configVersionRepository.markAllAsNotCurrent(DEFAULT_CONFIG_KEY);
             
             // 创建新版本记录
             ConfigVersionEntity versionEntity = ConfigVersionEntity.builder()
@@ -178,7 +177,7 @@ public class ConfigInitializer implements CommandLineRunner {
                     .isArchived(false)
                     .build();
             
-            configVersionRepository.save(versionEntity).block();
+            configVersionRepository.save(versionEntity);
             
         } catch (JsonProcessingException e) {
             log.error("将配置转换为 JSON 失败：{}", e.getMessage(), e);
@@ -197,7 +196,7 @@ public class ConfigInitializer implements CommandLineRunner {
         }
         
         // 将所有现有服务配置标记为非最新
-        serviceConfigRepository.markAllAsNotLatest(DEFAULT_CONFIG_KEY).block();
+        serviceConfigRepository.markAllAsNotLatest(DEFAULT_CONFIG_KEY);
         
         for (Map.Entry<String, ServiceConfig> entry : services.entrySet()) {
             String serviceType = entry.getKey();
@@ -248,7 +247,7 @@ public class ConfigInitializer implements CommandLineRunner {
                         .build();
                 
                 ServiceConfigEntity savedServiceConfig = serviceConfigRepository
-                        .save(serviceConfigEntity).block();
+                        .save(serviceConfigEntity);
                 
                 // 保存服务实例
                 saveServiceInstances(savedServiceConfig.getId(), serviceConfig);
@@ -304,7 +303,7 @@ public class ConfigInitializer implements CommandLineRunner {
                         .updatedAt(LocalDateTime.now())
                         .build();
                 
-                serviceInstanceRepository.save(instanceEntity).block();
+                serviceInstanceRepository.save(instanceEntity);
                 
             } catch (Exception e) {
                 log.error("保存服务实例失败：instanceName={}, error={}", 

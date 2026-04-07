@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.store.repository;
 
-import org.springframework.data.r2dbc.repository.Query;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.store.entity.JwtBlacklistEntity;
 import reactor.core.publisher.Flux;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * JWT 黑名单数据仓库
  */
 @Repository
-public interface JwtBlacklistRepository extends R2dbcRepository<JwtBlacklistEntity, Long> {
+public interface JwtBlacklistRepository extends JpaRepository<JwtBlacklistEntity, Long> {
 
     /**
      * 根据令牌哈希查找黑名单记录

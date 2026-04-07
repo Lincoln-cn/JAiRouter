@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -17,27 +15,29 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("jwt_accounts")
+@Entity
+@Table(name = "jwt_accounts")
 public class JwtAccountEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("username")
+    @Column(name = "username")
     private String username;
 
-    @Column("password")
+    @Column(name = "password")
     private String password;
 
-    @Column("roles")
+    @Column(name = "roles")
     private String roles; // JSON 格式存储
 
-    @Column("enabled")
+    @Column(name = "enabled")
     private Boolean enabled;
 
-    @Column("created_at")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column("updated_at")
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

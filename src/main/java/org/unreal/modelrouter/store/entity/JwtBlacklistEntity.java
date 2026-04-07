@@ -4,9 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -17,30 +15,32 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("jwt_blacklist")
+@Entity
+@Table(name = "jwt_blacklist")
 public class JwtBlacklistEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("token_hash")
+    @Column(name = "token_hash")
     private String tokenHash;
 
-    @Column("user_id")
+    @Column(name = "user_id")
     private String userId;
 
-    @Column("revoked_at")
+    @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
-    @Column("expires_at")
+    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
-    @Column("reason")
+    @Column(name = "reason")
     private String reason;
 
-    @Column("revoked_by")
+    @Column(name = "revoked_by")
     private String revokedBy;
 
-    @Column("created_at")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

@@ -3,13 +3,11 @@
  */
 package org.unreal.modelrouter.audit;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 
@@ -20,45 +18,47 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("config_change_audit_log")
+@Entity
+@Table(name = "config_change_audit_log")
 public class ConfigChangeAuditEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("event_id")
+    @Column(name = "event_id")
     private String eventId;
 
-    @Column("config_key")
+    @Column(name = "config_key")
     private String configKey;
 
-    @Column("config_type")
+    @Column(name = "config_type")
     private String configType;
 
-    @Column("operation")
+    @Column(name = "operation")
     private String operation;
 
-    @Column("operator")
+    @Column(name = "operator")
     private String operator;
 
-    @Column("operator_ip")
+    @Column(name = "operator_ip")
     private String operatorIp;
 
-    @Column("old_value")
+    @Column(name = "old_value")
     private String oldValueJson;
 
-    @Column("new_value")
+    @Column(name = "new_value")
     private String newValueJson;
 
-    @Column("change_summary")
+    @Column(name = "change_summary")
     private String changeSummary;
 
-    @Column("reason")
+    @Column(name = "reason")
     private String reason;
 
-    @Column("timestamp")
+    @Column(name = "timestamp")
     private LocalDateTime timestamp;
 
-    @Column("trace_id")
+    @Column(name = "trace_id")
     private String traceId;
 }

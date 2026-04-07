@@ -5,9 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Column;
-import org.springframework.data.relational.core.mapping.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -18,40 +16,42 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("config_version")
+@Entity
+@Table(name = "config_version")
 public class ConfigVersionEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column("config_key")
+    @Column(name = "config_key")
     private String configKey;
 
-    @Column("version")
+    @Column(name = "version")
     private Integer version;
 
-    @Column("config_data")
+    @Column(name = "config_data")
     private String configData; // JSON 格式的完整配置数据
 
-    @Column("created_at")
+    @Column(name = "created_at")
     @CreatedDate
     private LocalDateTime createdAt;
 
-    @Column("created_by")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column("description")
+    @Column(name = "description")
     private String description;
 
-    @Column("change_type")
+    @Column(name = "change_type")
     private String changeType; // CREATE, UPDATE, DELETE, ROLLBACK
 
-    @Column("is_current")
+    @Column(name = "is_current")
     private Boolean isCurrent;
 
-    @Column("archive_path")
+    @Column(name = "archive_path")
     private String archivePath;
 
-    @Column("is_archived")
+    @Column(name = "is_archived")
     private Boolean isArchived;
 }
