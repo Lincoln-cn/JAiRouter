@@ -100,7 +100,7 @@
                       </template>
                     </el-table-column>
 
-                    <el-table-column label="操作" width="180" align="center" fixed="right">
+                    <el-table-column label="操作" width="200" align="center" fixed="right">
                       <template #default="scope">
                         <el-button size="small" @click="handleEdit(scope.row)" type="primary" plain circle title="编辑实例">
                           <el-icon>
@@ -120,7 +120,7 @@
                           </el-icon>
                         </el-button>
 
-                        <el-button size="small" type="danger" @click="handleDelete(scope.row)" plain circle title="删除">
+                        <el-button size="small" type="info" @click="handleDelete(scope.row)" plain circle title="删除">
                           <el-icon>
                             <Delete />
                           </el-icon>
@@ -317,12 +317,18 @@ import {
   addServiceInstance,
   deleteServiceInstance,
   getServiceInstances,
-  updateServiceInstanceFlat,
-  type InstanceConfig
+  updateServiceInstance,
+  getRateLimitConfig,
+  saveRateLimitConfig,
+  getCircuitBreakerConfig,
+  saveCircuitBreakerConfig,
+  type InstanceConfig,
+  type RateLimitConfig as RateLimitConfigType,
+  type CircuitBreakerConfig as CircuitBreakerConfigType
 } from '@/api/instance'
 import { getServiceTypes } from '@/api/dashboard'
 import { getAdapters, getAllConfigurations } from '@/api/service'
-import { Plus, Delete, Close, Key, Timer, WarningFilled } from '@element-plus/icons-vue'
+import { Plus, Delete, Close, Key, Timer, WarningFilled, Edit } from '@element-plus/icons-vue'
 import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
 
@@ -695,31 +701,19 @@ const handleAddInstance = () => {
 const handleEdit = (row: ServiceInstance) => {
   dialogTitle.value = '编辑实例'
   isEdit.value = true
+  // 使用数据库ID（row.id）作为instanceId
+  const dbId = row.id
   Object.assign(form, {
     ...row,
     // 确保使用当前激活的页签对应的服务类型，而不是实例原来的服务类型
     serviceType: activeServiceType.value,
     // 确保headers字段存在
     headers: row.headers || {},
-    // 使用后端返回的实例ID而不是根据表单数据重新构建
-    rateLimit: {
-      enabled: row.rateLimit?.enabled || false,
-      algorithm: row.rateLimit?.algorithm || 'token-bucket',
-      capacity: row.rateLimit?.capacity || 100,
-      rate: row.rateLimit?.rate || 10,
-      scope: row.rateLimit?.scope || 'instance',
-      key: row.rateLimit?.key || '',
-      clientIpEnable: row.rateLimit?.clientIpEnable || false
-    },
-    circuitBreaker: {
-      enabled: row.circuitBreaker?.enabled || false,
-      failureThreshold: row.circuitBreaker?.failureThreshold || 5,
-      timeout: row.circuitBreaker?.timeout || 60000,
-      successThreshold: row.circuitBreaker?.successThreshold || 2
-    }
+    // 使用数据库ID
+    instanceId: String(dbId)
   })
   syncCustomHeadersList()
-  console.log('编辑实例，设置originalInstanceId:', form.instanceId)
+  console.log('编辑实例，使用数据库ID:', dbId)
   console.log('编辑实例，使用服务类型:', form.serviceType)
   dialogVisible.value = true
 }
@@ -734,11 +728,12 @@ const handleDelete = (row: ServiceInstance) => {
     try {
       // 确保使用当前激活的页签对应的服务类型
       const serviceType = activeServiceType.value;
-      console.log('删除实例，使用服务类型:', serviceType);
-      console.log(`发送删除请求到: /api/config/instance/del/${serviceType}?instanceId=${row.instanceId}&createNewVersion=true`)
-      const response = await deleteServiceInstance(serviceType, row.instanceId)
+      // 使用数据库ID
+      const dbId = row.id
+      console.log('删除实例，使用数据库ID:', dbId)
+      const response = await deleteServiceInstance(serviceType, String(dbId))
       if (response.data?.success) {
-        instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== row.id)
+        instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== dbId)
         instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
         ElMessage.success('删除成功')
       } else {
@@ -796,7 +791,7 @@ const handleSave = async () => {
 
     if (isEdit.value) {
       // 使用后端返回的实例ID
-      const response = await updateServiceInstanceFlat(serviceType, form.instanceId, instanceData)
+      const response = await updateServiceInstance(serviceType, form.instanceId, instanceData)
       if (response.data?.success) {
         // 编辑成功后，清除缓存并重新获取实例列表以确保数据同步
         delete instancesCache.value[serviceType]
@@ -836,13 +831,14 @@ const handleSave = async () => {
 const handleSizeChange = (size: number) => { pageSize.value = size; currentPage.value = 1 }
 const handlePageChange = (page: number) => { currentPage.value = page }
 
-// 当前正在编辑的实例
+// 当前正在编辑的实例（使用数据库ID）
 const currentEditInstanceId = ref<string>('')
 const currentEditServiceType = ref<string>('')
 
 // 打开限流器配置弹窗
 const openRateLimitConfig = (row: any) => {
-  currentEditInstanceId.value = row.instanceId
+  // 使用数据库ID
+  currentEditInstanceId.value = String(row.id)
   currentEditServiceType.value = activeServiceType.value
   rateLimitDialogTitle.value = `限流器配置 - ${row.name}`
   // 从 row.rateLimit 中提取配置，转换为组件期望的嵌套格式
@@ -863,7 +859,8 @@ const openRateLimitConfig = (row: any) => {
 
 // 打开熔断器配置弹窗
 const openCircuitBreakerConfig = (row: any) => {
-  currentEditInstanceId.value = row.instanceId
+  // 使用数据库ID
+  currentEditInstanceId.value = String(row.id)
   currentEditServiceType.value = activeServiceType.value
   circuitBreakerDialogTitle.value = `熔断器配置 - ${row.name}`
   // 从 row.circuitBreaker 中提取配置，转换为组件期望的嵌套格式
@@ -888,42 +885,21 @@ const handleRateLimitSave = async (configData: any) => {
     const serviceType = currentEditServiceType.value
     const instanceId = currentEditInstanceId.value
 
-    // 先获取当前实例的完整数据
-    const currentInstance = instancesCache.value[serviceType]?.find(i => i.instanceId === instanceId)
-    if (!currentInstance) {
-      ElMessage.error('未找到实例')
-      return
-    }
-
     // 从嵌套格式中提取限流器配置
     const rateLimitConfig = configData.rateLimit || configData
 
-    // 构造扁平格式的请求数据
-    const updateData = {
-      instanceId: currentInstance.instanceId,
-      name: currentInstance.name,
-      baseUrl: currentInstance.baseUrl,
-      path: currentInstance.path,
-      weight: currentInstance.weight,
-      status: currentInstance.status,
-      adapter: currentInstance.adapter,
-      headers: currentInstance.headers || {},
-      // 限流器配置 - 扁平格式
-      rateLimitEnabled: rateLimitConfig.enabled || false,
-      rateLimitAlgorithm: rateLimitConfig.algorithm || 'token-bucket',
-      rateLimitCapacity: rateLimitConfig.capacity || 100,
-      rateLimitRate: rateLimitConfig.rate || 10,
-      rateLimitScope: rateLimitConfig.scope || 'instance',
-      rateLimitKey: rateLimitConfig.key || '',
-      rateLimitClientIpEnable: rateLimitConfig.clientIpEnable || false,
-      // 熔断器配置 - 保持原有配置
-      circuitBreakerEnabled: currentInstance.circuitBreaker?.enabled || false,
-      circuitBreakerFailureThreshold: currentInstance.circuitBreaker?.failureThreshold || 5,
-      circuitBreakerTimeout: currentInstance.circuitBreaker?.timeout || 60000,
-      circuitBreakerSuccessThreshold: currentInstance.circuitBreaker?.successThreshold || 2
+    // 构造请求数据
+    const config: RateLimitConfigType = {
+      enabled: rateLimitConfig.enabled || false,
+      algorithm: rateLimitConfig.algorithm || 'token-bucket',
+      capacity: rateLimitConfig.capacity || 100,
+      rate: rateLimitConfig.rate || 10,
+      scope: rateLimitConfig.scope || 'instance',
+      key: rateLimitConfig.key || '',
+      clientIpEnable: rateLimitConfig.clientIpEnable || false
     }
 
-    const response = await updateServiceInstanceFlat(serviceType, instanceId, updateData)
+    const response = await saveRateLimitConfig(serviceType, instanceId, config)
 
     if (response.data?.success) {
       ElMessage.success('限流器配置保存成功')
@@ -950,42 +926,18 @@ const handleCircuitBreakerSave = async (configData: any) => {
     const serviceType = currentEditServiceType.value
     const instanceId = currentEditInstanceId.value
 
-    // 先获取当前实例的完整数据
-    const currentInstance = instancesCache.value[serviceType]?.find(i => i.instanceId === instanceId)
-    if (!currentInstance) {
-      ElMessage.error('未找到实例')
-      return
-    }
-
     // 从嵌套格式中提取熔断器配置
     const circuitBreakerConfig = configData.circuitBreaker || configData
 
-    // 构造扁平格式的请求数据
-    const updateData = {
-      instanceId: currentInstance.instanceId,
-      name: currentInstance.name,
-      baseUrl: currentInstance.baseUrl,
-      path: currentInstance.path,
-      weight: currentInstance.weight,
-      status: currentInstance.status,
-      adapter: currentInstance.adapter,
-      headers: currentInstance.headers || {},
-      // 限流器配置 - 保持原有配置
-      rateLimitEnabled: currentInstance.rateLimit?.enabled || false,
-      rateLimitAlgorithm: currentInstance.rateLimit?.algorithm || 'token-bucket',
-      rateLimitCapacity: currentInstance.rateLimit?.capacity || 100,
-      rateLimitRate: currentInstance.rateLimit?.rate || 10,
-      rateLimitScope: currentInstance.rateLimit?.scope || 'instance',
-      rateLimitKey: currentInstance.rateLimit?.key || '',
-      rateLimitClientIpEnable: currentInstance.rateLimit?.clientIpEnable || false,
-      // 熔断器配置 - 扁平格式
-      circuitBreakerEnabled: circuitBreakerConfig.enabled || false,
-      circuitBreakerFailureThreshold: circuitBreakerConfig.failureThreshold || 5,
-      circuitBreakerTimeout: circuitBreakerConfig.timeout || 60000,
-      circuitBreakerSuccessThreshold: circuitBreakerConfig.successThreshold || 2
+    // 构造请求数据
+    const config: CircuitBreakerConfigType = {
+      enabled: circuitBreakerConfig.enabled || false,
+      failureThreshold: circuitBreakerConfig.failureThreshold || 5,
+      timeout: circuitBreakerConfig.timeout || 60000,
+      successThreshold: circuitBreakerConfig.successThreshold || 2
     }
 
-    const response = await updateServiceInstanceFlat(serviceType, instanceId, updateData)
+    const response = await saveCircuitBreakerConfig(serviceType, instanceId, config)
 
     if (response.data?.success) {
       ElMessage.success('熔断器配置保存成功')

@@ -1,6 +1,9 @@
 package org.unreal.modelrouter.jpa.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.unreal.modelrouter.jpa.entity.ServiceConfigEntity;
 
@@ -28,4 +31,11 @@ public interface ServiceConfigRepository extends JpaRepository<ServiceConfigEnti
      * 根据配置键查找
      */
     List<ServiceConfigEntity> findByConfigKey(String configKey);
+
+    /**
+     * 根据服务类型删除所有配置
+     */
+    @Modifying
+    @Query("DELETE FROM ServiceConfigEntity c WHERE c.serviceType = :serviceType")
+    void deleteAllByServiceType(@Param("serviceType") String serviceType);
 }
