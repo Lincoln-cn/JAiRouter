@@ -1,22 +1,30 @@
 package org.unreal.modelrouter.jpa;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.ConfigurationHelper;
 import org.unreal.modelrouter.jpa.entity.ConfigEntity;
+import org.unreal.modelrouter.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.jpa.repository.ConfigRepository;
+import org.unreal.modelrouter.jpa.repository.JwtAccountRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.security.config.properties.JwtAccountProperties;
+import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.service.ApiKeyService;
 import org.unreal.modelrouter.util.JacksonHelper;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,9 +40,13 @@ public class JpaDatabaseInitializer {
     private final ConfigRepository configRepository;
     private final ServiceConfigRepository serviceConfigRepository;
     private final ServiceInstanceRepository serviceInstanceRepository;
+    private final JwtAccountRepository jwtAccountRepository;
     private final ModelRouterProperties modelRouterProperties;
     private final ConfigurationHelper configurationHelper;
     private final ApiKeyService apiKeyService;
+    private final SecurityProperties securityProperties;
+    private final PasswordEncoder passwordEncoder;
+    private final ObjectMapper objectMapper;
 
     @PostConstruct
     public void initialize() {
@@ -45,6 +57,9 @@ public class JpaDatabaseInitializer {
 
         // 2. 初始化 API Keys
         initializeApiKeys();
+
+        // 3. 初始化 JWT 账户
+        initializeJwtAccounts();
 
         log.info("JPA database initialization completed");
     }
@@ -183,6 +198,74 @@ public class JpaDatabaseInitializer {
             log.info("API Keys initialization completed");
         } catch (Exception e) {
             log.error("Failed to initialize API Keys: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 初始化 JWT 账户
+     * 从 YAML 配置加载账户到数据库
+     */
+    private void initializeJwtAccounts() {
+        try {
+            log.info("Initializing JWT accounts...");
+
+            // 检查数据库是否已有账户
+            long accountCount = jwtAccountRepository.count();
+            if (accountCount > 0) {
+                log.info("Database already has {} JWT accounts, skipping initialization", accountCount);
+                return;
+            }
+
+            // 从 YAML 配置获取账户列表
+            List<JwtAccountProperties> accounts = securityProperties.getJwt().getAccounts();
+            if (accounts == null || accounts.isEmpty()) {
+                log.warn("No JWT accounts configured in YAML, skipping initialization");
+                return;
+            }
+
+            // 保存账户到数据库
+            int savedCount = 0;
+            for (JwtAccountProperties account : accounts) {
+                if (jwtAccountRepository.existsByUsername(account.getUsername())) {
+                    log.debug("JWT account {} already exists, skipping", account.getUsername());
+                    continue;
+                }
+
+                // 处理密码（支持 {noop} 前缀表示明文密码）
+                String password = account.getPassword();
+                String encodedPassword;
+                if (password != null && password.startsWith("{noop}")) {
+                    // 明文密码，需要加密存储
+                    encodedPassword = passwordEncoder.encode(password.substring(6));
+                } else {
+                    // 已经是明文，直接加密
+                    encodedPassword = passwordEncoder.encode(password);
+                }
+
+                // 将 roles 转为 JSON 字符串存储
+                String rolesJson;
+                try {
+                    rolesJson = objectMapper.writeValueAsString(account.getRoles());
+                } catch (JsonProcessingException e) {
+                    log.error("Failed to serialize roles for account {}: {}", account.getUsername(), e.getMessage());
+                    rolesJson = "[]";
+                }
+
+                JwtAccountEntity entity = JwtAccountEntity.builder()
+                        .username(account.getUsername())
+                        .password(encodedPassword)
+                        .roles(rolesJson)
+                        .enabled(account.isEnabled())
+                        .build();
+
+                jwtAccountRepository.save(entity);
+                savedCount++;
+                log.info("Created JWT account: {} with roles: {}", account.getUsername(), account.getRoles());
+            }
+
+            log.info("JWT accounts initialization completed, saved {} accounts", savedCount);
+        } catch (Exception e) {
+            log.error("Failed to initialize JWT accounts: {}", e.getMessage(), e);
         }
     }
 }
