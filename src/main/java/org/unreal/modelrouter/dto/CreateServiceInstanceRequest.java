@@ -5,27 +5,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 /**
- * 服务实例 DTO
+ * 创建服务实例请求 DTO
  * v1.5.2: 用于替代 Map 传递数据
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceInstanceDTO {
+public class CreateServiceInstanceRequest {
 
-    private Long id;
-    private Long serviceConfigId;
     private String name;
     private String baseUrl;
     private String path;
     private Integer weight;
-    private String status;
-    private String healthStatus;
-    private String errorMessage;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

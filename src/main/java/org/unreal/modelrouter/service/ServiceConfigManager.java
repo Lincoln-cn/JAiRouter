@@ -4,17 +4,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.unreal.modelrouter.dto.CreateServiceConfigRequest;
+import org.unreal.modelrouter.dto.ServiceConfigDTO;
 import org.unreal.modelrouter.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
  * 服务配置管理器
- * v1.5.2: 使用 JPA 实现服务配置管理
+ * v1.5.2: 使用 JPA 实现服务配置管理，使用 DTO 替代 Map
  */
 @Slf4j
 @Service
@@ -26,26 +27,26 @@ public class ServiceConfigManager {
     /**
      * 获取所有服务配置
      */
-    public List<Map<String, Object>> getAllServiceConfigs() {
+    public List<ServiceConfigDTO> getAllServiceConfigs() {
         return serviceConfigRepository.findAllByIsLatestTrue()
                 .stream()
-                .map(this::convertToMap)
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     /**
      * 获取指定类型的服务配置
      */
-    public Optional<Map<String, Object>> getServiceConfig(String serviceType) {
+    public Optional<ServiceConfigDTO> getServiceConfig(String serviceType) {
         return serviceConfigRepository.findFirstByServiceTypeAndIsLatestTrue(serviceType)
-                .map(this::convertToMap);
+                .map(this::convertToDTO);
     }
 
     /**
      * 保存或更新服务配置
      */
     @Transactional
-    public Map<String, Object> saveServiceConfig(String serviceType, Map<String, Object> config) {
+    public ServiceConfigDTO saveServiceConfig(String serviceType, CreateServiceConfigRequest request) {
         // 标记旧版本为非最新
         serviceConfigRepository.findFirstByServiceTypeAndIsLatestTrue(serviceType)
                 .ifPresent(oldConfig -> {
@@ -57,8 +58,8 @@ public class ServiceConfigManager {
         ServiceConfigEntity entity = ServiceConfigEntity.builder()
                 .configKey("model-router-config")
                 .serviceType(serviceType)
-                .adapter((String) config.get("adapter"))
-                .loadBalanceType((String) config.get("loadBalanceType"))
+                .adapter(request.getAdapter())
+                .loadBalanceType(request.getLoadBalanceType())
                 .version(getNextVersion(serviceType))
                 .isLatest(true)
                 .build();
@@ -66,7 +67,7 @@ public class ServiceConfigManager {
         ServiceConfigEntity saved = serviceConfigRepository.save(entity);
         log.info("Saved service config for type: {} with version: {}", serviceType, saved.getVersion());
         
-        return convertToMap(saved);
+        return convertToDTO(saved);
     }
 
     /**
@@ -88,15 +89,17 @@ public class ServiceConfigManager {
                 .orElse(1);
     }
 
-    private Map<String, Object> convertToMap(ServiceConfigEntity entity) {
-        return Map.of(
-                "id", entity.getId(),
-                "serviceType", entity.getServiceType(),
-                "adapter", entity.getAdapter() != null ? entity.getAdapter() : "",
-                "loadBalanceType", entity.getLoadBalanceType() != null ? entity.getLoadBalanceType() : "random",
-                "version", entity.getVersion(),
-                "createdAt", entity.getCreatedAt(),
-                "updatedAt", entity.getUpdatedAt()
-        );
+    private ServiceConfigDTO convertToDTO(ServiceConfigEntity entity) {
+        return ServiceConfigDTO.builder()
+                .id(entity.getId())
+                .configKey(entity.getConfigKey())
+                .serviceType(entity.getServiceType())
+                .adapter(entity.getAdapter())
+                .loadBalanceType(entity.getLoadBalanceType())
+                .version(entity.getVersion())
+                .isLatest(entity.getIsLatest())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
     }
 }

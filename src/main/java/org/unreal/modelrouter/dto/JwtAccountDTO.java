@@ -6,26 +6,22 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * 服务实例 DTO
+ * JWT 账户 DTO
  * v1.5.2: 用于替代 Map 传递数据
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceInstanceDTO {
+public class JwtAccountDTO {
 
     private Long id;
-    private Long serviceConfigId;
-    private String name;
-    private String baseUrl;
-    private String path;
-    private Integer weight;
-    private String status;
-    private String healthStatus;
-    private String errorMessage;
+    private String username;
+    private List<String> roles;
+    private Boolean enabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
