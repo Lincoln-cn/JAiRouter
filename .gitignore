@@ -102,9 +102,12 @@ application.log
 # Configuration (Runtime Generated)
 # -----------------------------------------------------------------------------
 # Runtime config directories (keep templates)
-config/
+/config/
 config-dev/
 config-store/
+
+# Allow source code config directories
+!src/**/config/
 
 # Environment files (keep .env.example)
 .env

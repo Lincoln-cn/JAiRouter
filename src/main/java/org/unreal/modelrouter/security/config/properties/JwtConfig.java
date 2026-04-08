@@ -1,7 +1,10 @@
 package org.unreal.modelrouter.security.config.properties;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * JWT配置类
@@ -58,4 +61,10 @@ public class JwtConfig {
      * 是否启用令牌黑名单
      */
     private boolean blacklistEnabled = true;
+
+    /**
+     * 预配置的JWT账户列表
+     */
+    @Valid
+    private List<JwtAccountProperties> accounts;
 }
