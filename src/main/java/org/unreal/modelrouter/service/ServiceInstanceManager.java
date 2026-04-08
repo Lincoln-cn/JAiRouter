@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.unreal.modelrouter.dto.CreateServiceInstanceRequest;
-import org.unreal.modelrouter.dto.ServiceInstanceDTO;
+import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.jpa.entity.InstanceCircuitBreakerEntity;
+import org.unreal.modelrouter.jpa.entity.InstanceRateLimitEntity;
 import org.unreal.modelrouter.jpa.entity.ServiceInstanceEntity;
+import org.unreal.modelrouter.jpa.repository.InstanceCircuitBreakerRepository;
+import org.unreal.modelrouter.jpa.repository.InstanceRateLimitRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 
 import java.util.List;
@@ -23,6 +26,8 @@ import java.util.stream.Collectors;
 public class ServiceInstanceManager {
 
     private final ServiceInstanceRepository serviceInstanceRepository;
+    private final InstanceRateLimitRepository rateLimitRepository;
+    private final InstanceCircuitBreakerRepository circuitBreakerRepository;
 
     /**
      * 获取服务下的所有实例
@@ -103,6 +108,9 @@ public class ServiceInstanceManager {
      */
     @Transactional
     public void deleteInstance(Long id) {
+        // 同时删除关联的限流器和熔断器配置
+        rateLimitRepository.deleteByInstanceId(id);
+        circuitBreakerRepository.deleteByInstanceId(id);
         serviceInstanceRepository.deleteById(id);
         log.info("Deleted service instance: {}", id);
     }
@@ -119,8 +127,137 @@ public class ServiceInstanceManager {
         });
     }
 
+    // ==================== 限流器配置管理 ====================
+
+    /**
+     * 获取实例的限流器配置
+     */
+    public Optional<InstanceRateLimitDTO> getRateLimitConfig(Long instanceId) {
+        return rateLimitRepository.findByInstanceId(instanceId)
+                .map(this::convertRateLimitToDTO);
+    }
+
+    /**
+     * 保存或更新限流器配置
+     */
+    @Transactional
+    public InstanceRateLimitDTO saveRateLimitConfig(Long instanceId, InstanceRateLimitDTO dto) {
+        // 确保实例存在
+        if (!serviceInstanceRepository.existsById(instanceId)) {
+            throw new RuntimeException("Instance not found: " + instanceId);
+        }
+
+        InstanceRateLimitEntity entity = rateLimitRepository
+                .findByInstanceId(instanceId)
+                .orElse(InstanceRateLimitEntity.builder()
+                        .instanceId(instanceId)
+                        .enabled(false)
+                        .algorithm("token-bucket")
+                        .capacity(100)
+                        .rate(10)
+                        .scope("instance")
+                        .clientIpEnable(false)
+                        .build());
+
+        // 更新字段
+        if (dto.getEnabled() != null) {
+            entity.setEnabled(dto.getEnabled());
+        }
+        if (dto.getAlgorithm() != null) {
+            entity.setAlgorithm(dto.getAlgorithm());
+        }
+        if (dto.getCapacity() != null) {
+            entity.setCapacity(dto.getCapacity());
+        }
+        if (dto.getRate() != null) {
+            entity.setRate(dto.getRate());
+        }
+        if (dto.getScope() != null) {
+            entity.setScope(dto.getScope());
+        }
+        if (dto.getKey() != null) {
+            entity.setRateLimitKey(dto.getKey());
+        }
+        if (dto.getClientIpEnable() != null) {
+            entity.setClientIpEnable(dto.getClientIpEnable());
+        }
+
+        InstanceRateLimitEntity saved = rateLimitRepository.save(entity);
+        log.info("Saved rate limit config for instance: {}", instanceId);
+        return convertRateLimitToDTO(saved);
+    }
+
+    /**
+     * 删除限流器配置
+     */
+    @Transactional
+    public void deleteRateLimitConfig(Long instanceId) {
+        rateLimitRepository.deleteByInstanceId(instanceId);
+        log.info("Deleted rate limit config for instance: {}", instanceId);
+    }
+
+    // ==================== 熔断器配置管理 ====================
+
+    /**
+     * 获取实例的熔断器配置
+     */
+    public Optional<InstanceCircuitBreakerDTO> getCircuitBreakerConfig(Long instanceId) {
+        return circuitBreakerRepository.findByInstanceId(instanceId)
+                .map(this::convertCircuitBreakerToDTO);
+    }
+
+    /**
+     * 保存或更新熔断器配置
+     */
+    @Transactional
+    public InstanceCircuitBreakerDTO saveCircuitBreakerConfig(Long instanceId, InstanceCircuitBreakerDTO dto) {
+        // 确保实例存在
+        if (!serviceInstanceRepository.existsById(instanceId)) {
+            throw new RuntimeException("Instance not found: " + instanceId);
+        }
+
+        InstanceCircuitBreakerEntity entity = circuitBreakerRepository
+                .findByInstanceId(instanceId)
+                .orElse(InstanceCircuitBreakerEntity.builder()
+                        .instanceId(instanceId)
+                        .enabled(false)
+                        .failureThreshold(5)
+                        .timeoutMs(60000)
+                        .successThreshold(2)
+                        .build());
+
+        // 更新字段
+        if (dto.getEnabled() != null) {
+            entity.setEnabled(dto.getEnabled());
+        }
+        if (dto.getFailureThreshold() != null) {
+            entity.setFailureThreshold(dto.getFailureThreshold());
+        }
+        if (dto.getTimeout() != null) {
+            entity.setTimeoutMs(dto.getTimeout());
+        }
+        if (dto.getSuccessThreshold() != null) {
+            entity.setSuccessThreshold(dto.getSuccessThreshold());
+        }
+
+        InstanceCircuitBreakerEntity saved = circuitBreakerRepository.save(entity);
+        log.info("Saved circuit breaker config for instance: {}", instanceId);
+        return convertCircuitBreakerToDTO(saved);
+    }
+
+    /**
+     * 删除熔断器配置
+     */
+    @Transactional
+    public void deleteCircuitBreakerConfig(Long instanceId) {
+        circuitBreakerRepository.deleteByInstanceId(instanceId);
+        log.info("Deleted circuit breaker config for instance: {}", instanceId);
+    }
+
+    // ==================== 转换方法 ====================
+
     private ServiceInstanceDTO convertToDTO(ServiceInstanceEntity entity) {
-        return ServiceInstanceDTO.builder()
+        ServiceInstanceDTO dto = ServiceInstanceDTO.builder()
                 .id(entity.getId())
                 .serviceConfigId(entity.getServiceConfigId())
                 .name(entity.getInstanceName())
@@ -132,6 +269,41 @@ public class ServiceInstanceManager {
                 .errorMessage(entity.getErrorMessage())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
+                .build();
+
+        // 加载限流器配置
+        rateLimitRepository.findByInstanceId(entity.getId())
+                .ifPresent(rateLimit -> dto.setRateLimit(convertRateLimitToDTO(rateLimit)));
+
+        // 加载熔断器配置
+        circuitBreakerRepository.findByInstanceId(entity.getId())
+                .ifPresent(cb -> dto.setCircuitBreaker(convertCircuitBreakerToDTO(cb)));
+
+        return dto;
+    }
+
+    private InstanceRateLimitDTO convertRateLimitToDTO(InstanceRateLimitEntity entity) {
+        return InstanceRateLimitDTO.builder()
+                .id(entity.getId())
+                .instanceId(entity.getInstanceId())
+                .enabled(entity.getEnabled())
+                .algorithm(entity.getAlgorithm())
+                .capacity(entity.getCapacity())
+                .rate(entity.getRate())
+                .scope(entity.getScope())
+                .key(entity.getRateLimitKey())
+                .clientIpEnable(entity.getClientIpEnable())
+                .build();
+    }
+
+    private InstanceCircuitBreakerDTO convertCircuitBreakerToDTO(InstanceCircuitBreakerEntity entity) {
+        return InstanceCircuitBreakerDTO.builder()
+                .id(entity.getId())
+                .instanceId(entity.getInstanceId())
+                .enabled(entity.getEnabled())
+                .failureThreshold(entity.getFailureThreshold())
+                .timeout(entity.getTimeoutMs())
+                .successThreshold(entity.getSuccessThreshold())
                 .build();
     }
 }

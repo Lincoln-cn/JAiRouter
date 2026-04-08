@@ -65,6 +65,14 @@ stop_service() {
 # 清理旧的静态资源
 clean_old_assets() {
     print_info "正在清理旧的静态资源文件..."
+    
+    # 清理 src/main/resources/static/admin（防止旧文件被 Maven 复制）
+    local src_static_dir="${PROJECT_ROOT}/src/main/resources/static/admin"
+    if [ -d "${src_static_dir}" ]; then
+        print_info "清理 src/main/resources/static/admin 目录..."
+        rm -rf "${src_static_dir}"
+    fi
+    
     if [ -d "${STATIC_DIR}/assets" ]; then
         rm -rf "${STATIC_DIR}/assets/*"
         print_success "旧静态资源已清理"
@@ -78,6 +86,11 @@ clean_old_assets() {
 build_frontend() {
     print_info "正在构建前端..."
     cd "${FRONTEND_DIR}"
+
+    # 清理旧的构建文件
+    print_info "清理旧的前端构建文件..."
+    rm -rf dist
+    rm -rf node_modules/.vite
 
     # 检查 node_modules 是否存在
     if [ ! -d "node_modules" ]; then
@@ -100,6 +113,12 @@ build_frontend() {
 copy_assets() {
     print_info "正在复制静态资源到目标目录..."
 
+    # 清理目标目录
+    if [ -d "${STATIC_DIR}" ]; then
+        print_info "清理目标静态资源目录..."
+        rm -rf "${STATIC_DIR}"
+    fi
+
     # 确保目标目录存在
     mkdir -p "${STATIC_DIR}"
 
@@ -107,7 +126,7 @@ copy_assets() {
     cp -r "${FRONTEND_DIR}/dist"/* "${STATIC_DIR}/"
 
     # 验证文件数量
-    local file_count=$(find "${STATIC_DIR}/assets" -name "InstanceManagement-*.js" | wc -l)
+    local file_count=$(find "${STATIC_DIR}/assets" -name "InstanceManagement-*.js" 2>/dev/null | wc -l)
     if [ "$file_count" -gt 1 ]; then
         print_warning "发现多个 InstanceManagement JS 文件，正在清理..."
         # 保留最新的一个，删除其他的
@@ -130,6 +149,21 @@ build_backend() {
         exit 1
     fi
     print_success "后端编译完成"
+    
+    # Maven copy-resources 不会清理目标目录，需要手动清理重复的 JS 文件
+    print_info "清理重复的 JS 文件..."
+    local assets_dir="${PROJECT_ROOT}/target/classes/static/admin/assets"
+    if [ -d "${assets_dir}" ]; then
+        # 查找重复的文件并删除旧的
+        for pattern in "InstanceManagement-*.js" "index-*.js"; do
+            local file_count=$(find "${assets_dir}" -name "${pattern}" 2>/dev/null | wc -l)
+            if [ "$file_count" -gt 1 ]; then
+                print_warning "发现 $file_count 个 ${pattern} 文件，保留最新的..."
+                cd "${assets_dir}"
+                ls -t ${pattern} | tail -n +2 | xargs -r rm -f
+            fi
+        done
+    fi
 }
 
 # 启动服务

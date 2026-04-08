@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * v1.5.1: 替代 R2DBC 的配置
  */
 @Configuration
-@EnableJpaRepositories(basePackages = "org.unreal.modelrouter.jpa.repository")
+@EnableJpaRepositories(basePackages = {"org.unreal.modelrouter.jpa.repository", "org.unreal.modelrouter.audit"})
 @EnableTransactionManagement
 public class JpaConfig {
     // JPA 配置通过 application.yml 完成
