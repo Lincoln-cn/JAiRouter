@@ -1,133 +1,143 @@
-# JAiRouter 构建部署脚本使用说明
+# JAiRouter 脚本目录
 
-## 脚本列表
+本目录包含项目所有的脚本文件，按功能分类管理。
 
-### 1. build-and-deploy.sh - 标准构建部署脚本
+## 目录结构
 
-**位置**: `scripts/build-and-deploy.sh`
+```
+scripts/
+├── build/          # 构建部署脚本
+├── dev/            # 开发辅助脚本
+├── docs/           # 文档管理脚本
+├── migration/      # 数据迁移脚本
+├── monitoring/     # 监控部署脚本
+├── test/           # 测试脚本
+└── tools/          # 工具脚本
+```
 
-**功能**: 完整的构建部署流程，避免静态资源版本混乱
+## 脚本分类说明
 
-**用法**:
+### build/ - 构建部署
+
+| 脚本 | 说明 |
+|------|------|
+| `build-and-deploy.sh` | 标准构建部署脚本，完整的构建部署流程 |
+| `deploy-security.sh/ps1` | 安全功能部署脚本 |
+| `docker-build.sh/ps1` | Docker 镜像构建 |
+| `docker-build-china.sh/ps1` | Docker 镜像构建（国内镜像加速） |
+| `docker-run.sh/ps1` | Docker 容器运行 |
+
+### dev/ - 开发辅助
+
+| 脚本 | 说明 |
+|------|------|
+| `dev-start.sh` | 快速启动开发环境 |
+| `run-dev.sh/ps1` | 快速构建并运行应用 |
+| `quick-fix-assets.sh` | 快速修复静态资源版本问题 |
+| `quick-test-fixes.sh` | 快速测试 JWT 安全修复 |
+
+### docs/ - 文档管理
+
+文档相关的管理和验证脚本。
+
+### migration/ - 数据迁移
+
+| 脚本 | 说明 |
+|------|------|
+| `migrate_database.sh` | 数据库迁移脚本 |
+| `migrate-to-security.sh/ps1` | 安全功能迁移脚本 |
+
+### monitoring/ - 监控部署
+
+| 脚本 | 说明 |
+|------|------|
+| `setup-monitoring.sh/ps1` | 监控栈一键部署（Prometheus、Grafana 等） |
+| `run-monitoring-tests.sh/ps1` | 监控系统集成测试 |
+
+### test/ - 测试脚本
+
+各类功能测试和验证脚本，包括：
+- E2E 测试
+- API 集成测试
+- 版本管理测试
+- 安全功能测试
+- 熔断器/限流器测试
+
+### tools/ - 工具脚本
+
+| 脚本 | 说明 |
+|------|------|
+| `fix_frontend_complete.py` | 前端配置完整修复 |
+| `fix_frontend_independent_config.sh` | 前端独立配置修复 |
+| `quick_fix_frontend.sh` | 前端快速修复 |
+| `generate_sitemap.py` | 生成站点地图 |
+| `validate-jwt-persistence-config.sh` | JWT 持久化配置验证 |
+
+## 常用脚本使用
+
+### 标准构建部署
+
 ```bash
 # 完整构建部署（推荐用于生产环境）
-./scripts/build-and-deploy.sh
+./scripts/build/build-and-deploy.sh
 
-# 仅构建和部署前端（开发调试，不重启服务）
-./scripts/build-and-deploy.sh -f
+# 仅构建和部署前端
+./scripts/build/build-and-deploy.sh -f
 
-# 跳过构建，仅清理和复制资源
-./scripts/build-and-deploy.sh -s
-
-# 仅验证当前部署状态
-./scripts/build-and-deploy.sh -v
+# 验证部署状态
+./scripts/build/build-and-deploy.sh -v
 ```
 
-**执行流程**:
-1. 停止正在运行的 Spring Boot 服务
-2. 清理旧的静态资源文件（防止版本混乱）
-3. 构建前端（npm run build）
-4. 复制前端资源到 target/classes/static/admin
-5. 编译后端（mvn clean compile）
-6. 启动 Spring Boot 服务
-7. 验证部署状态
+### Docker 操作
 
-### 2. quick-fix-assets.sh - 快速修复脚本
-
-**位置**: `scripts/quick-fix-assets.sh`
-
-**功能**: 快速解决静态资源版本混乱问题
-
-**用法**:
 ```bash
-# 一键修复静态资源问题
-./scripts/quick-fix-assets.sh
+# 构建镜像
+./scripts/build/docker-build.sh
+
+# 国内镜像加速构建
+./scripts/build/docker-build-china.sh
+
+# 运行容器
+./scripts/build/docker-run.sh [环境] [版本]
 ```
 
-**适用场景**:
-- 页面显示旧版本（按钮数量不对）
-- 静态资源文件版本混乱
-- 需要快速重置到最新版本
-
-## 常见问题
-
-### Q: 为什么页面会显示旧版本？
-
-**原因**: Maven 复制前端资源时不会自动清理旧文件，导致多个版本的 JS/CSS 文件共存，浏览器可能加载到旧版本。
-
-**解决方案**:
-1. 使用标准脚本：`./scripts/build-and-deploy.sh`
-2. 或使用快速修复：`./scripts/quick-fix-assets.sh`
-
-### Q: 如何验证部署是否成功？
+### 开发调试
 
 ```bash
-# 方法1: 使用脚本验证
-./scripts/build-and-deploy.sh -v
+# 快速启动开发环境
+./scripts/dev/dev-start.sh
 
-# 方法2: 手动检查
-ls -la target/classes/static/admin/assets/InstanceManagement-*.js
-# 应该只显示1个文件
-
-# 方法3: 检查按钮数量
-curl -s http://localhost:8080/admin/assets/InstanceManagement-*.js | grep -o "限流器配置\|熔断器配置" | wc -l
-# 应该显示 >= 4
+# 快速修复静态资源问题
+./scripts/dev/quick-fix-assets.sh
 ```
 
-### Q: 开发时如何快速更新前端？
+### 监控部署
 
 ```bash
-# 仅更新前端，不重启服务
-./scripts/build-and-deploy.sh -f
+# 部署监控栈
+./scripts/monitoring/setup-monitoring.sh
 
-# 然后强制刷新浏览器 (Ctrl+Shift+R)
-```
-
-## 最佳实践
-
-### 开发环境
-```bash
-# 修改前端代码后
-./scripts/build-and-deploy.sh -f
-```
-
-### 生产环境
-```bash
-# 完整部署流程
-./scripts/build-and-deploy.sh
-```
-
-### 出现问题时
-```bash
-# 快速修复
-./scripts/quick-fix-assets.sh
+# 运行监控测试
+./scripts/monitoring/run-monitoring-tests.sh
 ```
 
 ## 注意事项
 
-1. **强制刷新浏览器**: 部署后务必使用 `Ctrl+Shift+R` (Windows/Linux) 或 `Cmd+Shift+R` (Mac) 强制刷新
-2. **禁用缓存**: 开发时建议在浏览器开发者工具中勾选 "Disable cache"
-3. **无痕模式**: 如果问题持续，尝试使用无痕模式访问
+1. **脚本执行权限**: 确保脚本有执行权限 `chmod +x scripts/**/*.sh`
+2. **跨平台**: `.sh` 文件用于 Linux/macOS，`.ps1` 文件用于 Windows PowerShell
+3. **强制刷新浏览器**: 部署后务必使用 `Ctrl+Shift+R` 强制刷新
 
-## 技术细节
+## 静态资源版本问题
 
-### 静态资源版本混乱的根本原因
+如果页面显示旧版本，这是因为 Maven 复制前端资源时不会自动清理旧文件。
 
-Vue 项目构建后会生成带哈希值的文件名（如 `InstanceManagement-CnP0C_dz.js`），每次构建哈希值都会变化。Maven 的 `copy-resources` 插件会复制新文件，但不会删除旧文件，导致：
-
-```
-assets/
-├── InstanceManagement-BkKBX1kb.js  (旧版本)
-├── InstanceManagement-CnP0C_dz.js  (新版本)
-└── ...
+**解决方案**:
+```bash
+./scripts/dev/quick-fix-assets.sh
 ```
 
-浏览器可能加载到旧版本，导致页面显示不一致。
-
-### 脚本的解决方案
-
-1. **清理阶段**: 删除 `target/classes/static/admin/assets/*` 所有文件
-2. **复制阶段**: 只复制最新构建的文件
-3. **验证阶段**: 检查 InstanceManagement 文件数量，如果多于1个则删除旧的
-
-这样可以确保只有一个版本的静态资源文件，避免版本混乱。
+或手动清理:
+```bash
+rm -rf target/classes/static/admin/assets/*
+./scripts/build/build-and-deploy.sh -f
+```
