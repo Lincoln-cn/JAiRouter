@@ -39,7 +39,7 @@ public class ConfigurationService {
     private final ConfigMergeService configMergeService;
     private final ServiceStateManager serviceStateManager;
     private final SamplingConfigurationValidator samplingValidator;
-    private final DatabaseConfigService databaseConfigService;
+    // v1.5.1: 移除 DatabaseConfigService 依赖
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
 
     private static final long REQUEST_DEDUP_WINDOW_MS = 1000; // 1秒内的重复请求将被忽略
@@ -64,14 +64,12 @@ public class ConfigurationService {
                                 ConfigurationHelper configurationHelper,
                                 ConfigMergeService configMergeService,
                                 ServiceStateManager serviceStateManager,
-                                SamplingConfigurationValidator samplingValidator,
-                                DatabaseConfigService databaseConfigService) {
+                                SamplingConfigurationValidator samplingValidator) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
         this.serviceStateManager = serviceStateManager;
         this.samplingValidator = samplingValidator;
-        this.databaseConfigService = databaseConfigService;
         initializeVersionControl();
     }
 
@@ -1039,15 +1037,7 @@ public class ConfigurationService {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> getServiceConfig(String serviceType) {
-        // V1.4.4: 使用 DatabaseConfigService 从数据库读取
-        if (databaseConfigService != null) {
-            Map<String, Object> dbConfig = databaseConfigService.getServiceConfig(serviceType);
-            if (dbConfig != null && !dbConfig.isEmpty()) {
-                return dbConfig;
-            }
-        }
-        
-        // 降级到文件存储
+        // v1.5.1: 从 StoreManager 读取配置
         Map<String, Object> config = getAllConfigurations();
         Map<String, Object> services = getServicesFromConfig(config);
         return (Map<String, Object>) services.get(serviceType);
@@ -1174,13 +1164,14 @@ public class ConfigurationService {
     public Map<String, Object> updateServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
         logger.info("更新服务配置：{}", serviceType);
 
-        // 使用 DatabaseConfigService 进行数据库更新
         try {
-            Map<String, Object> updatedConfig = databaseConfigService.updateServiceConfig(serviceType, serviceConfig);
-
-            // 获取当前完整配置（从数据库获取所有服务配置）
+            // v1.5.1: 直接更新 StoreManager
             Map<String, Object> currentConfig = getAllConfigurations();
             if (currentConfig != null) {
+                Map<String, Object> services = getServicesFromConfig(currentConfig);
+                services.put(serviceType, serviceConfig);
+                storeManager.saveConfig("model-router-config", currentConfig);
+
                 // 添加版本元数据
                 Map<String, Object> metadata = new HashMap<>();
                 metadata.put("operation", "updateService");
@@ -1189,7 +1180,7 @@ public class ConfigurationService {
                 metadata.put("timestamp", System.currentTimeMillis());
                 currentConfig.put("_metadata", metadata);
 
-                // 强制保存为新版本（不使用条件判断）
+                // 保存为新版本
                 String userId = SecurityUtils.getCurrentUserId();
                 saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, userId);
             }
@@ -1198,7 +1189,7 @@ public class ConfigurationService {
             refreshRuntimeConfig();
 
             logger.info("服务 {} 配置更新成功", serviceType);
-            return updatedConfig;
+            return serviceConfig;
 
         } catch (IllegalArgumentException e) {
             throw e;
