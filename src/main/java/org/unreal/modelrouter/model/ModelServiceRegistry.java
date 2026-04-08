@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  */
 @Configuration
 @EnableConfigurationProperties(ModelRouterProperties.class)
-@org.springframework.context.annotation.DependsOn("h2DatabaseInitializer")
+@org.springframework.context.annotation.DependsOn("jpaDatabaseInitializer")
 public class ModelServiceRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ModelServiceRegistry.class);

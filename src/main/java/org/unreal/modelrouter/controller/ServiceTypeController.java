@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.config.ConfigurationValidator;
 import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.dto.UpdateServiceConfigRequest;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -225,7 +226,7 @@ public class ServiceTypeController {
     }
 
     /**
-     * 更新服务配置
+     * 更新服务配置（强类型 DTO 版本）
      */
     @PutMapping("/services/{serviceType}")
     @Operation(summary = "更新服务配置", description = "更新指定服务类型的配置信息")
@@ -234,21 +235,24 @@ public class ServiceTypeController {
                     schema = @Schema(implementation = RouterResponse.class)))
     @ApiResponse(responseCode = "400", description = "参数验证失败")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
-    public ResponseEntity<RouterResponse<Map<String, Object>>> updateServiceConfig(
+    public ResponseEntity<RouterResponse<UpdateServiceConfigRequest>> updateServiceConfig(
             @Parameter(description = "服务类型", example = "chat")
             @PathVariable("serviceType") String serviceType,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "服务配置信息")
-            @RequestBody Map<String, Object> serviceConfig) {
-        List<String> errors = validateServiceConfiguration(serviceType, serviceConfig);
+            @RequestBody UpdateServiceConfigRequest request) {
 
-        if (!errors.isEmpty()) {
+        logger.info("更新服务配置: serviceType={}, adapter={}", serviceType, request.getAdapter());
+
+        // 验证服务类型
+        if (!configurationValidator.isValidServiceType(serviceType)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors)));
+                    .body(RouterResponse.error("无效的服务类型: " + serviceType));
         }
 
-        Map<String, Object> updatedConfig = configurationService.updateServiceConfig(serviceType, serviceConfig);
-        return ResponseEntity.ok(RouterResponse.success(updatedConfig, "服务配置更新成功"));
+        // 更新配置
+        configurationService.updateServiceConfigDto(serviceType, request);
 
+        return ResponseEntity.ok(RouterResponse.success(request, "服务配置更新成功"));
     }
 
     /**

@@ -18,7 +18,7 @@ import org.unreal.modelrouter.model.ModelServiceRegistry;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@org.springframework.context.annotation.DependsOn("h2DatabaseInitializer")
+@org.springframework.context.annotation.DependsOn("jpaDatabaseInitializer")
 public class ConfigurationInitializer {
 
     private final ConfigurationService configurationService;

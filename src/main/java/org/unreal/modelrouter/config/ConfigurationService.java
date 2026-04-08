@@ -6,6 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.checker.ServerChecker;
 import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.dto.CircuitBreakerConfig;
+import org.unreal.modelrouter.dto.LoadBalanceConfig;
+import org.unreal.modelrouter.dto.RateLimitConfig;
+import org.unreal.modelrouter.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.entity.ConfigMetadata;
 import org.unreal.modelrouter.entity.VersionInfo;
 import org.unreal.modelrouter.model.ModelRouterProperties;
@@ -1165,27 +1169,27 @@ public class ConfigurationService {
         logger.info("更新服务配置：{}", serviceType);
 
         try {
-            // v1.5.1: 直接更新 StoreManager
             Map<String, Object> currentConfig = getAllConfigurations();
-            if (currentConfig != null) {
-                Map<String, Object> services = getServicesFromConfig(currentConfig);
-                services.put(serviceType, serviceConfig);
-                storeManager.saveConfig("model-router-config", currentConfig);
-
-                // 添加版本元数据
-                Map<String, Object> metadata = new HashMap<>();
-                metadata.put("operation", "updateService");
-                metadata.put("operationDetail", "更新服务配置: " + serviceType);
-                metadata.put("serviceType", serviceType);
-                metadata.put("timestamp", System.currentTimeMillis());
-                currentConfig.put("_metadata", metadata);
-
-                // 保存为新版本
-                String userId = SecurityUtils.getCurrentUserId();
-                saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, userId);
+            if (currentConfig == null) {
+                throw new IllegalStateException("无法获取当前配置");
             }
-
-            // 刷新运行时配置
+            
+            Map<String, Object> services = getServicesFromConfig(currentConfig);
+            Map<String, Object> existingServiceConfig = (Map<String, Object>) services.get(serviceType);
+            
+            if (existingServiceConfig != null) {
+                // 简单方案：保留 instances，用新配置覆盖其他字段
+                Object instances = existingServiceConfig.get("instances");
+                services.put(serviceType, serviceConfig);
+                if (instances != null) {
+                    serviceConfig.put("instances", instances);
+                }
+            } else {
+                services.put(serviceType, serviceConfig);
+            }
+            
+            storeManager.saveConfig("model-router-config", currentConfig);
+            saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
             refreshRuntimeConfig();
 
             logger.info("服务 {} 配置更新成功", serviceType);
@@ -1193,6 +1197,82 @@ public class ConfigurationService {
 
         } catch (IllegalArgumentException e) {
             throw e;
+        } catch (Exception e) {
+            logger.error("更新服务配置失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
+            throw new RuntimeException("更新服务配置失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 使用强类型 DTO 更新服务配置
+     * 简单方案：只更新传入的配置项，保留 instances
+     */
+    @SuppressWarnings("unchecked")
+    public void updateServiceConfigDto(String serviceType, UpdateServiceConfigRequest request) {
+        logger.info("更新服务配置(DTO)：serviceType={}", serviceType);
+
+        try {
+            Map<String, Object> currentConfig = getCurrentPersistedConfig();
+            if (currentConfig == null) {
+                currentConfig = configMergeService.getDefaultConfig();
+            }
+            
+            Map<String, Object> services = getServicesFromConfig(currentConfig);
+            Map<String, Object> existingServiceConfig = (Map<String, Object>) services.get(serviceType);
+            
+            // 构建新配置
+            Map<String, Object> newConfig = new HashMap<>();
+            
+            // 保留现有的 instances
+            if (existingServiceConfig != null && existingServiceConfig.containsKey("instances")) {
+                newConfig.put("instances", existingServiceConfig.get("instances"));
+            }
+            
+            // 更新传入的配置
+            if (request.getAdapter() != null) {
+                newConfig.put("adapter", request.getAdapter());
+            }
+            
+            LoadBalanceConfig lb = request.getLoadBalance();
+            if (lb != null) {
+                Map<String, Object> lbMap = new HashMap<>();
+                lbMap.put("type", lb.getType());
+                if (lb.getHashAlgorithm() != null) {
+                    lbMap.put("hashAlgorithm", lb.getHashAlgorithm());
+                }
+                newConfig.put("loadBalance", lbMap);
+            }
+            
+            RateLimitConfig rl = request.getRateLimit();
+            if (rl != null) {
+                Map<String, Object> rlMap = new HashMap<>();
+                rlMap.put("enabled", rl.getEnabled());
+                rlMap.put("algorithm", rl.getAlgorithm());
+                rlMap.put("capacity", rl.getCapacity());
+                rlMap.put("rate", rl.getRate());
+                rlMap.put("scope", rl.getScope());
+                rlMap.put("key", rl.getKey());
+                rlMap.put("clientIpEnable", rl.getClientIpEnable());
+                newConfig.put("rateLimit", rlMap);
+            }
+            
+            CircuitBreakerConfig cb = request.getCircuitBreaker();
+            if (cb != null) {
+                Map<String, Object> cbMap = new HashMap<>();
+                cbMap.put("enabled", cb.getEnabled());
+                cbMap.put("failureThreshold", cb.getFailureThreshold());
+                cbMap.put("timeout", cb.getTimeout());
+                cbMap.put("successThreshold", cb.getSuccessThreshold());
+                newConfig.put("circuitBreaker", cbMap);
+            }
+            
+            services.put(serviceType, newConfig);
+            storeManager.saveConfig("model-router-config", currentConfig);
+            saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
+            refreshRuntimeConfig();
+
+            logger.info("服务 {} 配置更新成功", serviceType);
+
         } catch (Exception e) {
             logger.error("更新服务配置失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
             throw new RuntimeException("更新服务配置失败：" + e.getMessage(), e);
@@ -1770,9 +1850,14 @@ public class ConfigurationService {
     private Map<String, Object> getServicesFromConfig(Map<String, Object> config) {
         Object servicesObj = config.get("services");
         if (servicesObj instanceof Map) {
-            return new HashMap<>((Map<String, Object>) servicesObj);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> services = (Map<String, Object>) servicesObj;
+            return services; // 直接返回原 Map，以便修改后影响原 config
         }
-        return new HashMap<>();
+        // 如果不存在 services，创建新的并添加到 config
+        Map<String, Object> services = new HashMap<>();
+        config.put("services", services);
+        return services;
     }
 
     /**

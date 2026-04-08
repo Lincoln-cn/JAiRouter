@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.unreal.modelrouter.dto.CreateServiceConfigRequest;
-import org.unreal.modelrouter.dto.ServiceConfigDTO;
+import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
+import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 /**
  * 服务配置管理器
- * v1.5.2: 使用 JPA 实现服务配置管理，使用 DTO 替代 Map
+ * 使用强类型 DTO 处理服务配置
  */
 @Slf4j
 @Service
@@ -23,51 +23,47 @@ import java.util.stream.Collectors;
 public class ServiceConfigManager {
 
     private final ServiceConfigRepository serviceConfigRepository;
+    private final ServiceInstanceRepository serviceInstanceRepository;
 
     /**
      * 获取所有服务配置
      */
     public List<ServiceConfigDTO> getAllServiceConfigs() {
-        return serviceConfigRepository.findAllByIsLatestTrue()
-                .stream()
-                .map(this::convertToDTO)
+        List<ServiceConfigEntity> entities = serviceConfigRepository.findAllByIsLatestTrue();
+        return entities.stream()
+                .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
     /**
-     * 获取指定类型的服务配置
+     * 获取指定服务类型的配置
      */
     public Optional<ServiceConfigDTO> getServiceConfig(String serviceType) {
-        return serviceConfigRepository.findFirstByServiceTypeAndIsLatestTrue(serviceType)
-                .map(this::convertToDTO);
+        return serviceConfigRepository
+                .findFirstByServiceTypeAndIsLatestTrue(serviceType)
+                .map(this::toDTO);
     }
 
     /**
-     * 保存或更新服务配置
+     * 保存服务配置
      */
     @Transactional
     public ServiceConfigDTO saveServiceConfig(String serviceType, CreateServiceConfigRequest request) {
-        // 标记旧版本为非最新
-        serviceConfigRepository.findFirstByServiceTypeAndIsLatestTrue(serviceType)
-                .ifPresent(oldConfig -> {
-                    oldConfig.setIsLatest(false);
-                    serviceConfigRepository.save(oldConfig);
-                });
+        log.info("保存服务配置: serviceType={}", serviceType);
 
-        // 创建新配置
         ServiceConfigEntity entity = ServiceConfigEntity.builder()
                 .configKey("model-router-config")
                 .serviceType(serviceType)
                 .adapter(request.getAdapter())
                 .loadBalanceType(request.getLoadBalanceType())
-                .version(getNextVersion(serviceType))
+                .version(1)
                 .isLatest(true)
                 .build();
 
         ServiceConfigEntity saved = serviceConfigRepository.save(entity);
-        log.info("Saved service config for type: {} with version: {}", serviceType, saved.getVersion());
-        
-        return convertToDTO(saved);
+        log.info("服务配置保存成功: id={}", saved.getId());
+
+        return toDTO(saved);
     }
 
     /**
@@ -75,21 +71,43 @@ public class ServiceConfigManager {
      */
     @Transactional
     public void deleteServiceConfig(String serviceType) {
-        serviceConfigRepository.findFirstByServiceTypeAndIsLatestTrue(serviceType)
-                .ifPresent(config -> {
-                    config.setIsLatest(false);
-                    serviceConfigRepository.save(config);
-                    log.info("Deleted service config for type: {}", serviceType);
-                });
+        log.info("删除服务配置: serviceType={}", serviceType);
+        serviceConfigRepository.deleteAllByServiceType(serviceType);
     }
 
-    private Integer getNextVersion(String serviceType) {
-        return serviceConfigRepository.findFirstByServiceTypeAndIsLatestTrue(serviceType)
-                .map(config -> config.getVersion() + 1)
-                .orElse(1);
+    /**
+     * 更新服务配置（不含实例）
+     */
+    @Transactional
+    public void updateServiceConfig(String serviceType, UpdateServiceConfigRequest request) {
+        log.info("更新服务配置: serviceType={}, adapter={}", 
+                serviceType, request.getAdapter());
+
+        ServiceConfigEntity entity = serviceConfigRepository
+                .findFirstByServiceTypeAndIsLatestTrue(serviceType)
+                .orElseGet(() -> ServiceConfigEntity.builder()
+                        .configKey("model-router-config")
+                        .serviceType(serviceType)
+                        .version(1)
+                        .isLatest(true)
+                        .build());
+
+        // 更新适配器
+        if (request.getAdapter() != null) {
+            entity.setAdapter(request.getAdapter());
+        }
+
+        // 更新负载均衡类型
+        LoadBalanceConfig lb = request.getLoadBalance();
+        if (lb != null && lb.getType() != null) {
+            entity.setLoadBalanceType(lb.getType());
+        }
+
+        serviceConfigRepository.save(entity);
+        log.info("服务配置更新成功: serviceType={}", serviceType);
     }
 
-    private ServiceConfigDTO convertToDTO(ServiceConfigEntity entity) {
+    private ServiceConfigDTO toDTO(ServiceConfigEntity entity) {
         return ServiceConfigDTO.builder()
                 .id(entity.getId())
                 .configKey(entity.getConfigKey())

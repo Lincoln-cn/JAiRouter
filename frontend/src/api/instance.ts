@@ -10,12 +10,29 @@ export interface InstanceConfig {
   weight?: number
   status?: 'active' | 'inactive'
   headers?: Record<string, string>
-  rateLimitEnabled?: boolean
-  rateLimitAlgorithm?: string
-  rateLimitCapacity?: number
-  rateLimitRate?: number
-  rateLimitScope?: string
-  rateLimitClientIpEnable?: boolean
+}
+
+// 限流器配置接口
+export interface RateLimitConfig {
+  id?: number
+  instanceId?: number
+  enabled: boolean
+  algorithm: string
+  capacity: number
+  rate: number
+  scope: string
+  key?: string
+  clientIpEnable: boolean
+}
+
+// 熔断器配置接口
+export interface CircuitBreakerConfig {
+  id?: number
+  instanceId?: number
+  enabled: boolean
+  failureThreshold: number
+  timeout: number
+  successThreshold: number
 }
 
 // 获取服务实例列表
@@ -38,38 +55,39 @@ export const updateServiceInstance = (serviceType: string, instanceId: string, i
   return request.put<RouterResponse<any>>(`/config/instance/${serviceType}/${instanceId}`, instanceConfig)
 }
 
-// 更新服务实例（使用扁平化格式）
-export const updateServiceInstanceFlat = (serviceType: string, instanceId: string, instanceConfig: InstanceConfig) => {
-  return request.put<RouterResponse<any>>(`/config/instance/${serviceType}/${instanceId}/flat`, instanceConfig)
-}
-
 // 删除服务实例
 export const deleteServiceInstance = (serviceType: string, instanceId: string) => {
   return request.delete<RouterResponse<void>>(`/config/instance/${serviceType}/${instanceId}`)
 }
 
-// ==================== 已废弃的旧接口 ====================
+// ==================== 限流器配置 API ====================
 
 /**
- * @deprecated 使用 updateServiceInstance 替代
- * 旧版更新实例接口
+ * 获取实例的限流器配置
  */
-export const updateServiceInstanceOld = (serviceType: string, instanceConfig: any, createNewVersion = false) => {
-  return request.put<RouterResponse<void>>(`/config/instance/update/${serviceType}?createNewVersion=${createNewVersion}`, instanceConfig)
+export const getRateLimitConfig = (serviceType: string, instanceId: string) => {
+  return request.get<RouterResponse<RateLimitConfig>>(`/config/instance/${serviceType}/${instanceId}/rate-limit`)
 }
 
 /**
- * @deprecated 使用 addServiceInstance 替代
- * 旧版添加实例接口
+ * 保存实例的限流器配置
  */
-export const addServiceInstanceOld = (serviceType: string, instanceConfig: any, createNewVersion = false) => {
-  return request.post<RouterResponse<void>>(`/config/instance/add/${serviceType}?createNewVersion=${createNewVersion}`, instanceConfig)
+export const saveRateLimitConfig = (serviceType: string, instanceId: string, config: RateLimitConfig) => {
+  return request.put<RouterResponse<RateLimitConfig>>(`/config/instance/${serviceType}/${instanceId}/rate-limit`, config)
+}
+
+// ==================== 熔断器配置 API ====================
+
+/**
+ * 获取实例的熔断器配置
+ */
+export const getCircuitBreakerConfig = (serviceType: string, instanceId: string) => {
+  return request.get<RouterResponse<CircuitBreakerConfig>>(`/config/instance/${serviceType}/${instanceId}/circuit-breaker`)
 }
 
 /**
- * @deprecated 使用 deleteServiceInstance 替代
- * 旧版删除实例接口
+ * 保存实例的熔断器配置
  */
-export const deleteServiceInstanceOld = (serviceType: string, instanceId: string, createNewVersion = false) => {
-  return request.delete<RouterResponse<void>>(`/config/instance/del/${serviceType}?instanceId=${instanceId}&createNewVersion=${createNewVersion}`)
+export const saveCircuitBreakerConfig = (serviceType: string, instanceId: string, config: CircuitBreakerConfig) => {
+  return request.put<RouterResponse<CircuitBreakerConfig>>(`/config/instance/${serviceType}/${instanceId}/circuit-breaker`, config)
 }
