@@ -4,14 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.unreal.modelrouter.dto.CreateServiceConfigRequest;
+import org.unreal.modelrouter.dto.ServiceConfigDTO;
 import org.unreal.modelrouter.service.ServiceConfigManager;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 服务配置控制器
- * v1.5.2: 使用 JPA 实现
+ * v1.5.2: 使用 JPA 实现，使用 DTO 替代 Map
  */
 @Slf4j
 @RestController
@@ -25,7 +26,7 @@ public class ServiceConfigController {
      * 获取所有服务配置
      */
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getAllServices() {
+    public ResponseEntity<List<ServiceConfigDTO>> getAllServices() {
         log.debug("Getting all service configs");
         return ResponseEntity.ok(serviceConfigManager.getAllServiceConfigs());
     }
@@ -34,7 +35,7 @@ public class ServiceConfigController {
      * 获取指定类型的服务配置
      */
     @GetMapping("/{serviceType}")
-    public ResponseEntity<Map<String, Object>> getService(@PathVariable String serviceType) {
+    public ResponseEntity<ServiceConfigDTO> getService(@PathVariable String serviceType) {
         log.debug("Getting service config for type: {}", serviceType);
         return serviceConfigManager.getServiceConfig(serviceType)
                 .map(ResponseEntity::ok)
@@ -45,11 +46,11 @@ public class ServiceConfigController {
      * 创建或更新服务配置
      */
     @PostMapping("/{serviceType}")
-    public ResponseEntity<Map<String, Object>> saveService(
+    public ResponseEntity<ServiceConfigDTO> saveService(
             @PathVariable String serviceType,
-            @RequestBody Map<String, Object> config) {
+            @RequestBody CreateServiceConfigRequest request) {
         log.info("Saving service config for type: {}", serviceType);
-        Map<String, Object> saved = serviceConfigManager.saveServiceConfig(serviceType, config);
+        ServiceConfigDTO saved = serviceConfigManager.saveServiceConfig(serviceType, request);
         return ResponseEntity.ok(saved);
     }
 
