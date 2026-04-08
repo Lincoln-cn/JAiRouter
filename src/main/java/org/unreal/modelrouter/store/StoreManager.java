@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 存储管理器接口
+ * v1.5.1: 简化为只支持基本配置操作
+ */
 public interface StoreManager {
 
     /**
@@ -48,13 +52,13 @@ public interface StoreManager {
     void updateConfig(String key, Map<String, Object> config);
 
     /**
-     * 保存配置的版本
+     * 保存配置的特定版本
      * @param key 配置键
      * @param config 配置内容
      * @param version 版本号
      */
     default void saveConfigVersion(String key, Map<String, Object> config, int version) {
-        // 默认实现为空，具体实现在子类中
+        // 默认实现为空，子类可以覆盖
     }
 
     /**
@@ -87,8 +91,7 @@ public interface StoreManager {
 
     /**
      * 验证指定版本是否存在
-     *
-     * @param key     配置键
+     * @param key 配置键
      * @param version 版本号
      * @return 版本是否存在
      */
@@ -98,10 +101,9 @@ public interface StoreManager {
 
     /**
      * 获取指定版本的文件路径
-     *
-     * @param key     配置键
+     * @param key 配置键
      * @param version 版本号
-     * @return 版本文件的实际路径，如果版本不存在则返回null
+     * @return 版本文件的实际路径
      */
     default String getVersionFilePath(String key, int version) {
         return null;
@@ -109,14 +111,18 @@ public interface StoreManager {
 
     /**
      * 获取指定版本的创建时间
-     *
-     * @param key     配置键
+     * @param key 配置键
      * @param version 版本号
-     * @return 版本创建时间，如果版本不存在则返回null
+     * @return 版本创建时间
      */
     default LocalDateTime getVersionCreatedTime(String key, int version) {
         return null;
     }
 
+    /**
+     * 获取最新配置
+     * @param configKey 配置键
+     * @return 最新配置
+     */
     Map<String, Object> getLatestConfig(String configKey);
 }
