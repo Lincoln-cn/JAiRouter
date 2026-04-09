@@ -17,7 +17,6 @@ public class StoreManagerConfiguration {
 
     private String type = "jpa";
     private String path = "./config";
-    private boolean autoMerge = true;
 
     /**
      * 创建StoreManager Bean (v1.5.1: 使用 JPA)
@@ -45,13 +44,5 @@ public class StoreManagerConfiguration {
 
     public void setPath(String path) {
         this.path = path;
-    }
-
-    public boolean isAutoMerge() {
-        return autoMerge;
-    }
-
-    public void setAutoMerge(boolean autoMerge) {
-        this.autoMerge = autoMerge;
     }
 }

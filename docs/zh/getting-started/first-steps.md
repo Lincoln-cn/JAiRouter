@@ -548,17 +548,17 @@ curl "http://localhost:8080/api/config/instance/type/chat"
 
 ### 配置文件版本管理
 
-JAiRouter 支持配置文件版本管理：
+JAiRouter 支持配置文件版本管理，通过版本管理 API 可以查看历史版本、回滚配置：
 
 ```bash
-# 扫描配置文件版本
-curl "http://localhost:8080/api/config/merge/scan"
+# 获取所有版本信息
+curl "http://localhost:8080/api/config/versions"
 
-# 预览合并结果
-curl "http://localhost:8080/api/config/merge/preview"
+# 获取特定版本配置
+curl "http://localhost:8080/api/config/versions/1"
 
-# 执行配置合并
-curl -X POST "http://localhost:8080/api/config/merge/execute"
+# 回滚到指定版本
+curl -X POST "http://localhost:8080/api/config/versions/1/apply"
 ```
 
 ## 监控和日志

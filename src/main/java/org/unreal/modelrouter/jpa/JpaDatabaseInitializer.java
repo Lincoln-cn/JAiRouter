@@ -24,6 +24,7 @@ import org.unreal.modelrouter.security.service.ApiKeyService;
 import org.unreal.modelrouter.util.JacksonHelper;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -101,9 +102,17 @@ public class JpaDatabaseInitializer {
 
     /**
      * 保存完整的模型路由配置到 config_data 表
+     * v1.5.4: 添加元数据用于版本管理显示
      */
     private void saveModelRouterConfig() {
         Map<String, Object> configMap = configurationHelper.convertModelRouterPropertiesToMap(modelRouterProperties);
+        
+        // 添加初始化元数据
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("operation", "init");
+        metadata.put("operationDetail", "系统初始化配置");
+        metadata.put("timestamp", System.currentTimeMillis());
+        configMap.put("_metadata", metadata);
 
         String configValue;
         try {

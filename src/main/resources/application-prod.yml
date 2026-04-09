@@ -33,7 +33,6 @@ logging:
     root: WARN
     org.unreal.modelrouter.controller: INFO
     org.unreal.modelrouter.config.ConfigurationService: INFO
-    org.unreal.modelrouter.store.AutoMergeService: INFO
     org.unreal.modelrouter.checker.ServerChecker: WARN
     org.unreal.modelrouter.checker.RateLimiterCleanupChecker: WARN
     org.unreal.modelrouter.ratelimit: ERROR

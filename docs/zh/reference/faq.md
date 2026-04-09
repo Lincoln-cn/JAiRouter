@@ -268,14 +268,17 @@ curl -X POST http://localhost:8080/actuator/loggers/org.unreal.modelrouter \
 # 备份配置目录
 cp -r config/ config-backup-$(date +%Y%m%d)
 
-# 使用 API 备份
-curl -X POST http://localhost:8080/api/config/merge/backup
+# 使用版本管理 API 查看当前版本
+curl -X GET http://localhost:8080/api/config/versions
 ```
 
 恢复配置：
 ```bash
 # 恢复配置文件
 cp -r config-backup-20250115/ config/
+
+# 或使用版本管理 API 回滚
+curl -X POST http://localhost:8080/api/config/versions/1/apply
 
 # 重启服务使配置生效
 docker restart jairouter

@@ -26,9 +26,8 @@ spring:
 
 # 存储配置
 store:
-  type: file              # 主存储类型
-  path: ./config  # 存储路径
-  auto-merge: true        # 是否自动合并
+  type: jpa               # v1.5.1+: 使用 JPA 数据库存储
+  path: ./config          # 配置路径（用于导入导出）
   fallback-storage: memory # 备用存储类型（用于降级）
 
 # WebClient 基础配置
