@@ -1,4 +1,4 @@
-﻿﻿﻿# 更新日志
+﻿﻿# 更新日志
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0  
@@ -176,7 +176,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 #### API 变更
 - 新增动态配置管理 API (`/api/config/instance/*`)
-- 新增配置文件合并 API (`/api/config/merge/*`)
+- 新增配置版本管理 API (`/api/config/versions/*`)
 - 扩展健康检查 API，包含更多状态信息
 
 ---

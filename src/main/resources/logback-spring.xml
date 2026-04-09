@@ -181,21 +181,6 @@
             <appender-ref ref="TRACING_APPENDER"/>
         </logger>
         
-        <logger name="org.unreal.modelrouter.store.AutoMergeService" level="INFO" additivity="false">
-            <appender-ref ref="ASYNC_FILE"/>
-            <appender-ref ref="ASYNC_ERROR"/>
-            <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
-        </logger>
-        
-        <!-- 监控相关日志 -->
-        <logger name="org.unreal.modelrouter.checker.ServerChecker" level="WARN" additivity="false">
-            <appender-ref ref="ASYNC_FILE"/>
-            <appender-ref ref="ASYNC_ERROR"/>
-            <appender-ref ref="ASYNC_STRUCTURED"/>
-            <appender-ref ref="TRACING_APPENDER"/>
-        </logger>
-        
         <logger name="org.unreal.modelrouter.checker.RateLimiterCleanupChecker" level="WARN" additivity="false">
             <appender-ref ref="ASYNC_FILE"/>
             <appender-ref ref="ASYNC_ERROR"/>

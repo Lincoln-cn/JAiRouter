@@ -1,114 +1,65 @@
-The user wants me to generate a comprehensive project summary in markdown format based on the conversation history. Let me analyze the context provided and create a well-structured summary.
-
-From the scratchpad and state_snapshot, I can extract:
-
-1. **Overall Goal**: 启动 JAiRouter v1.5.x 服务供用户手工测试 API 端点
-
-2. **Key Knowledge**:
-   - This is a Spring Boot 3.5.5 WebFlux project (JAiRouter)
-   - Migration from R2DBC to JPA is in progress (v1.5.x)
-   - Using H2 database in memory mode
-   - H2 database showing "Table already exists" errors
-   - The issue is JPA/Hibernate schema generation conflicts
-   - Multiple files were modified for JPA migration
-   - Unit tests pass (20 tests)
-   - Service compiles successfully but fails to start
-
-3. **Recent Actions**:
-   - 20+ attempts to start service, all failed
-   - Multiple cleanups of database files
-   - Completed JPA migration code changes
-   - Compilation successful
-   - Created/modified multiple files for JPA migration
-
-4. **Current Plan**:
-   - JPA migration code changes: DONE
-   - Recompilation: DONE
-   - Resolve H2 database table conflict: IN PROGRESS
-   - Verify health endpoint: TODO
-   - Provide manual testing guide: TODO
-
-Let me create the comprehensive markdown summary.# Project Summary
+# Project Summary
 
 ## Overall Goal
-启动 JAiRouter v1.5.x 服务，供用户手工测试 API 端点。
+修复版本管理系统，确保服务/实例修改后"操作类型"和"操作详情"能正确记录并显示在版本列表中。
 
 ## Key Knowledge
-
-### 项目架构
-- **技术栈**: Java 17, Spring Boot 3.5.5 (WebFlux/Reactive), H2 数据库, JPA/Hibernate
-- **当前版本分支**: `feature/v1.5.1-jpa-infrastructure`
-- **迁移方向**: R2DBC → JPA 破坏性修改（v1.5.x 重大架构调整）
-
-### 配置信息
-- **服务端口**: 8080 (dev profile)
-- **Swagger UI**: http://localhost:8080/swagger-ui/index.html
-- **健康检查**: /actuator/health
-- **数据库**: H2 内存模式，JPA/Hibernate 自动建表
-- **数据库文件位置**: `/home/ubuntu/jairouter/modelrouter/data/`
-
-### 已完成的 JPA 迁移修改
-| 文件 | 状态 | 说明 |
-|------|------|------|
-| `jpa/JpaDatabaseInitializer.java` | 创建 | 纯 JPA 数据库初始化，替换旧 H2DatabaseInitializer |
-| `jpa/config/JpaConfig.java` | 修改 | 添加 audit 包扫描 |
-| `config/ConfigPersistenceService.java` | 修改 | JPA 版本，替换 R2DBC 实现 |
-| `config/VersionControlService.java` | 修改 | 简化版本控制，JPA 兼容 |
-| `security/audit/ExtendedSecurityAuditServiceImpl.java` | 创建 | JPA 实现扩展审计接口 |
-| `config/H2DatabaseInitializer.java` | 删除 | 旧兼容文件已移除 |
-
-### 构建与测试
-- **单元测试**: 20 个测试通过
-- **编译**: 成功 (`mvn clean package`)
-- **问题**: 服务启动失败，H2 数据库表已存在冲突
+- **项目**: JAiRouter - AI Model Service Routing Gateway
+- **技术栈**: Spring Boot 3.5.5 (WebFlux), Java 17, Vue 3 + TypeScript, H2 数据库, R2DBC
+- **版本管理架构**: 双轨存储 - ConfigurationService (内存/文件存储) + JpaStoreManager (H2 数据库 config_data 表)
+- **元数据存储**: 配置 JSON 中的 `_metadata` 字段，包含 `operation`, `operationDetail`, `timestamp`
+- **认证信息**:
+  - JWT 登录端点: `/api/auth/jwt/login`
+  - JWT 登录: admin / UqfpTm2Zw7ff2BNnZb8AQo8t
+  - Header: `Jairouter_Token`
+- **构建命令**: `mvn package -Dmaven.test.skip=true -Dspotbugs.skip=true -Dcheckstyle.skip=true -q`
+- **运行命令**: `nohup java -jar target/model-router-1.2.5.jar --spring.profiles.active=dev > app.log 2>&1 &`
+- **端口**: 8080
+- **版本号生成策略**: 简单递增 (maxVersion + 1)
+- **配置键**: model-router-config
 
 ## Recent Actions
+1. **问题分析**: 发现 `ConfigurationService` 在构造函数中初始化版本控制，而 `JpaDatabaseInitializer` 在 `@PostConstruct` 中初始化数据库，导致版本元数据同步顺序错误
 
-### 成功完成
-1. ✅ 完成 v1.5.x JPA 迁移代码修改
-2. ✅ 重新编译打包成功
-3. ✅ 单元测试全部通过（20个测试）
+2. **代码修复**:
+   - **ConfigurationService.java**: 
+     - 添加 `@DependsOn("jpaDatabaseInitializer")` 确保初始化顺序
+     - 将 `initializeVersionControl()` 从构造函数移到 `@PostConstruct` 方法
+     - 添加版本创建调用链追踪日志
+   - **ServiceInstanceManager.java**: 之前已修改，添加 `_metadata` 字段
+   - **JpaDatabaseInitializer.java**: 之前已修改，为初始配置添加元数据
+   - **JpaStoreManager.java**: 之前已修改，正确标记最新版本
 
-### 当前问题（阻塞中）
-**H2 数据库表重复创建冲突**：
-- 症状：服务启动时 Hibernate 尝试创建表，但 H2 报告表已存在
-- 涉及表：`jwt_accounts`, `service_config`, `service_instance`
-- 已尝试解决方案：
-  - 删除 `.db` 文件 → 问题依旧
-  - `pkill` 清理进程 → 问题依旧
-- 根因推测：Hibernate schema generation 配置冲突，表被两种机制重复创建
+3. **验证结果**:
+   - 初始版本正确显示: operation="init", operationDetail="系统初始化配置" ✅
+   - 添加实例后: operation="instanceChange", operationDetail="添加服务实例: xxx" ✅
+   - 更新实例后: operation="instanceChange", operationDetail="更新服务实例: xxx" ✅
+   - 删除实例后: operation="instanceChange", operationDetail="删除服务实例: xxx" ✅
+   - **没有重复版本问题！每个操作只创建一个版本**
 
 ## Current Plan
+1. [DONE] 分析版本管理元数据缺失问题
+2. [DONE] 修复初始化顺序问题（ConfigurationService 需依赖 JpaDatabaseInitializer）
+3. [DONE] 添加版本创建调用链追踪日志
+4. [DONE] 测试验证 - 所有操作正确记录版本信息，无重复版本问题
+5. [DONE] 测试完成，问题已解决
 
-1. [DONE] 完成 v1.5.x JPA 迁移代码修改
-2. [DONE] 重新编译打包成功
-3. [IN PROGRESS] 解决 H2 数据库表已存在冲突
-   - 需要调查：Hibernate `ddl-auto` 配置与 `JpaDatabaseInitializer` 的冲突
-   - 可能方案：检查 `spring.jpa.hibernate.ddl-auto` 设置，禁用自动建表或修改初始化逻辑
-4. [TODO] 服务成功启动后验证 `/actuator/health`
-5. [TODO] 提供手工测试指南和 API 端点文档
+## Key Files Modified
+- `src/main/java/org/unreal/modelrouter/config/ConfigurationService.java` - 添加依赖关系和初始化顺序修复
+- `src/main/java/org/unreal/modelrouter/service/ServiceInstanceManager.java` - 添加 `_metadata` 字段
+- `src/main/java/org/unreal/modelrouter/jpa/JpaDatabaseInitializer.java` - 添加初始元数据
+- `src/main/java/org/unreal/modelrouter/jpa/JpaStoreManager.java` - 版本标记逻辑
 
----
-
-## 关键文件路径
-
+## Test Results Summary
 ```
-/home/ubuntu/jairouter/modelrouter/
-├── src/main/java/org/unreal/modelrouter/
-│   ├── jpa/
-│   │   ├── JpaDatabaseInitializer.java      # 新建
-│   │   └── config/JpaConfig.java            # 已修改
-│   ├── config/
-│   │   ├── ConfigPersistenceService.java     # 已修改
-│   │   ├── VersionControlService.java        # 已修改
-│   │   └── ConfigurationInitializer.java     # 已修改
-│   └── security/audit/
-│       └── ExtendedSecurityAuditServiceImpl.java  # 新建
-├── data/                                    # H2 数据库文件目录
-└── pom.xml
+版本 1: operation="init", operationDetail="系统初始化配置" ✅
+版本 2: operation="instanceChange", operationDetail="添加服务实例: test-version-instance" ✅
+版本 3: operation="instanceChange", operationDetail="更新服务实例: test-version-instance" ✅
+版本 4: operation="instanceChange", operationDetail="删除服务实例: test-version-instance" ✅
 ```
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-04-08T07:17:49.058Z 
+**Update time**: 2026-04-09T10:11:00Z
+**Status**: 问题已解决 ✅

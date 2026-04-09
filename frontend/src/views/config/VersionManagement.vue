@@ -137,8 +137,14 @@ const deletingVersions = ref<Set<number>>(new Set())
 // 获取操作类型标签类型
 const getOperationTagType = (operation: string | undefined) => {
   switch (operation) {
+    case 'init':
+      return 'success'
+    case 'instanceChange':
+      return 'primary'
     case 'apply':
       return 'primary'
+    case 'serviceConfigChange':
+      return 'info'
     case 'createService':
       return 'success'
     case 'updateService':
@@ -153,6 +159,10 @@ const getOperationTagType = (operation: string | undefined) => {
       return 'danger'
     case 'updateTracingSampling':
       return 'info'
+    case 'rateLimitChange':
+      return 'warning'
+    case 'circuitBreakerChange':
+      return 'warning'
     default:
       return 'info'
   }
@@ -161,8 +171,14 @@ const getOperationTagType = (operation: string | undefined) => {
 // 获取操作类型显示名称
 const getOperationDisplayName = (operation: string | undefined) => {
   switch (operation) {
+    case 'init':
+      return '系统初始化'
+    case 'instanceChange':
+      return '实例变更'
     case 'apply':
-      return '应用'
+      return '应用版本'
+    case 'serviceConfigChange':
+      return '服务配置变更'
     case 'createService':
       return '创建服务'
     case 'updateService':
@@ -177,8 +193,12 @@ const getOperationDisplayName = (operation: string | undefined) => {
       return '删除实例'
     case 'updateTracingSampling':
       return '更新采样配置'
+    case 'rateLimitChange':
+      return '限流配置变更'
+    case 'circuitBreakerChange':
+      return '熔断配置变更'
     default:
-      return '未知操作'
+      return operation || '未知操作'
   }
 }
 

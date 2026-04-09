@@ -19,7 +19,6 @@ JAiRouter is a Spring Boot-based model service routing and load balancing gatewa
 | ⚙️ **Configuration Management** | Service Management   | Supports dynamic configuration of AI service types, adapters, load balancing policies, and service-level rate limiting and circuit breaker rules. |
 |                     | Instance Management  | Provides instance creation, editing, deletion, status management, and supports instance-level rate limiting, circuit breaking, health checks, and weight configuration. |
 |                     | Version Management   | Full lifecycle management of configuration versions: create, apply, rollback, delete; metadata recording and version comparison supported. |
-|                     | Configuration Merge  | Intelligent merging of multi-version configurations with conflict detection, merge preview, operation logs, auto-merge, and manual intervention. |
 | 🔐 **Security Management** | API Key Management   | Supports API key creation, enable/disable, permission assignment, usage statistics, expiration reminders, and field desensitization for sensitive data. |
 |                     | JWT Token Management | Lifecycle management of JWT tokens: query, revoke, refresh, blacklist mechanism; supports Redis and file persistence. |
 |                     | Audit Logs           | Comprehensive logging of user login, configuration changes, token operations, key management events, with event type filtering and tracking. |
