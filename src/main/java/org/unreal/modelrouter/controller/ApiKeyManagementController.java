@@ -9,19 +9,27 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.security.dto.*;
+import org.unreal.modelrouter.security.dto.ApiKeyBatchExportVO;
+import org.unreal.modelrouter.security.dto.ApiKeyBatchImportRequest;
+import org.unreal.modelrouter.security.dto.ApiKeyBatchImportResult;
+import org.unreal.modelrouter.security.dto.ApiKeyCreationVO;
+import org.unreal.modelrouter.security.dto.ApiKeyCreateRequest;
+import org.unreal.modelrouter.security.dto.ApiKeyListVO;
+import org.unreal.modelrouter.security.dto.ApiKeyUpdateRequest;
+import org.unreal.modelrouter.security.dto.ApiKeyVO;
 import org.unreal.modelrouter.security.service.ApiKeyService;
 import reactor.core.publisher.Mono;
 
 /**
  * API 密钥管理控制器
  * 提供 API 密钥的增删改查等管理功能的 REST API
- * 
+ *
  * 安全改进：
  * 1. 使用强类型 DTO/VO，不使用 Map
  * 2. keyValue 使用 SHA-256 哈希存储
  * 3. 仅在创建时返回原始 keyValue
  * 4. 支持 IP 白名单和每日请求限制
+ * 5. 支持密钥轮换机制和创建者信息记录
  */
 @Slf4j
 @RestController
@@ -70,14 +78,14 @@ public class ApiKeyManagementController {
      * 仅在创建时返回原始 keyValue，请前端弹窗提示用户保存
      */
     @PostMapping
-    @Operation(summary = "创建新的API密钥", 
+    @Operation(summary = "创建新的API密钥",
                description = "创建一个新的API密钥，返回的密钥值仅此一次显示，请妥善保存")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyCreationVO>> createApiKey(
-            @Parameter(description = "API密钥创建请求") 
+            @Parameter(description = "API密钥创建请求")
             @Valid @RequestBody ApiKeyCreateRequest request) {
         return apiKeyService.createApiKey(request)
-                .map(vo -> RouterResponse.success(vo, 
+                .map(vo -> RouterResponse.success(vo,
                         "创建API密钥成功，请妥善保存密钥值，此密钥值仅此一次显示"))
                 .onErrorResume(e -> {
                     log.error("创建API密钥失败", e);
@@ -91,12 +99,12 @@ public class ApiKeyManagementController {
      * 注意：keyValue 不可更新
      */
     @PutMapping("/{keyId}")
-    @Operation(summary = "更新API密钥", 
+    @Operation(summary = "更新API密钥",
                description = "更新指定API密钥的信息（不包含密钥值，密钥值不可更新）")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyVO>> updateApiKey(
             @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId,
-            @Parameter(description = "API密钥更新请求") 
+            @Parameter(description = "API密钥更新请求")
             @Valid @RequestBody ApiKeyUpdateRequest request) {
         return apiKeyService.updateApiKey(keyId, request)
                 .map(vo -> RouterResponse.success(vo, "更新API密钥成功"))
@@ -159,7 +167,7 @@ public class ApiKeyManagementController {
      * 旧的密钥值将失效，新的密钥值仅显示一次
      */
     @PostMapping("/{keyId}/reset")
-    @Operation(summary = "重置API密钥", 
+    @Operation(summary = "重置API密钥",
                description = "重置API密钥值，旧的密钥值将失效，新的密钥值仅此一次显示")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyCreationVO>> resetApiKey(
@@ -174,17 +182,85 @@ public class ApiKeyManagementController {
                             .permissions(oldKey.getPermissions())
                             .enabled(oldKey.isEnabled())
                             .expiresAt(oldKey.getExpiresAt())
+                            .rotationPeriodDays(oldKey.getRotationPeriodDays())
                             .build();
-                    
+
                     // 先删除旧密钥
                     return apiKeyService.deleteApiKey(keyId)
                             .then(apiKeyService.createApiKey(newRequest));
                 })
-                .map(vo -> RouterResponse.success(vo, 
+                .map(vo -> RouterResponse.success(vo,
                         "重置API密钥成功，请妥善保存新的密钥值，此密钥值仅此一次显示"))
                 .onErrorResume(e -> {
                     log.error("重置API密钥失败: {}", keyId, e);
-                    return Mono.just(RouterResponse.error("重置API密钥失败: " + e.getMessage(), 
+                    return Mono.just(RouterResponse.error("重置API密钥失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    /**
+     * 强制轮换 API 密钥
+     * 生成新的 keyValue 并更新 lastRotatedAt 时间戳
+     * 旧的密钥值将失效，新的密钥值仅显示一次
+     * 与 reset 不同，rotate 保留原有 keyId 和所有属性，仅更新 keyValue 和 lastRotatedAt
+     */
+    @PostMapping("/{keyId}/rotate")
+    @Operation(summary = "强制轮换API密钥",
+               description = "强制轮换API密钥值，旧的密钥值将失效，新的密钥值仅此一次显示")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<ApiKeyCreationVO>> forceRotateApiKey(
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
+        return apiKeyService.forceRotateKey(keyId, "admin")
+                .map(vo -> RouterResponse.success(vo,
+                        "密钥轮换成功，请妥善保存新的密钥值，此密钥值仅此一次显示"))
+                .onErrorResume(e -> {
+                    log.error("强制轮换API密钥失败: {}", keyId, e);
+                    return Mono.just(RouterResponse.error("密钥轮换失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    /**
+     * 批量导出 API 密钥配置
+     * 导出的数据不包含 keyValue 和 keyHash，仅包含可恢复的配置信息
+     * 可用于备份或迁移到其他系统
+     */
+    @GetMapping("/export")
+    @Operation(summary = "批量导出API密钥",
+               description = "导出所有API密钥的配置信息（不包含密钥值），可用于备份或迁移")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<ApiKeyBatchExportVO>> exportApiKeys() {
+        return apiKeyService.exportApiKeys()
+                .map(vo -> RouterResponse.success(vo, "导出API密钥配置成功"))
+                .onErrorResume(e -> {
+                    log.error("导出API密钥失败", e);
+                    return Mono.just(RouterResponse.error("导出API密钥失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    /**
+     * 批量导入 API 密钥
+     * 导入时会为每个密钥生成新的 keyValue
+     * MERGE 模式：保留现有密钥，仅添加新密钥
+     * REPLACE 模式：删除所有现有密钥，导入新密钥
+     */
+    @PostMapping("/import")
+    @Operation(summary = "批量导入API密钥",
+               description = "批量导入API密钥配置，导入时会为每个密钥生成新的密钥值")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<ApiKeyBatchImportResult>> importApiKeys(
+            @Parameter(description = "API密钥批量导入请求")
+            @Valid @RequestBody ApiKeyBatchImportRequest request) {
+        return apiKeyService.importApiKeys(request, "admin", null)
+                .map(result -> {
+                    String message = String.format("批量导入完成：成功 %d，失败 %d",
+                            result.getSuccessCount(), result.getFailureCount());
+                    return RouterResponse.success(result, message);
+                })
+                .onErrorResume(e -> {
+                    log.error("批量导入API密钥失败", e);
+                    return Mono.just(RouterResponse.error("批量导入API密钥失败: " + e.getMessage(),
                             "INTERNAL_ERROR"));
                 });
     }

@@ -193,6 +193,9 @@ public class ApiKeyService {
                     .enabled(request.getEnabled() != null ? request.getEnabled() : true)
                     .expiresAt(request.getExpiresAt())
                     .createdAt(LocalDateTime.now())
+                    .createdBy(createdBy)
+                    .creatorIpAddress(ipAddress)
+                    .rotationPeriodDays(request.getRotationPeriodDays() != null ? request.getRotationPeriodDays() : 0)
                     .allowedIpAddresses(request.getAllowedIpAddresses())
                     .dailyRequestLimit(request.getDailyRequestLimit() != null ? request.getDailyRequestLimit() : 0L)
                     .usage(UsageStatistics.builder()
@@ -266,6 +269,9 @@ public class ApiKeyService {
             }
             if (request.getDailyRequestLimit() != null) {
                 existingKey.setDailyRequestLimit(request.getDailyRequestLimit());
+            }
+            if (request.getRotationPeriodDays() != null) {
+                existingKey.setRotationPeriodDays(request.getRotationPeriodDays());
             }
 
             // 持久化到存储
@@ -458,6 +464,11 @@ public class ApiKeyService {
                 .enabled(apiKey.isEnabled())
                 .expired(apiKey.isExpired())
                 .createdAt(apiKey.getCreatedAt())
+                .createdBy(apiKey.getCreatedBy())
+                .creatorIpAddress(apiKey.getCreatorIpAddress())
+                .rotationPeriodDays(apiKey.getRotationPeriodDays())
+                .lastRotatedAt(apiKey.getLastRotatedAt())
+                .needsRotation(apiKey.needsRotation())
                 .expiresAt(apiKey.getExpiresAt())
                 .build();
 
@@ -717,5 +728,443 @@ public class ApiKeyService {
                 item.setDailyRequestLimit(0L);
             }
         }).toList();
+    }
+
+    // ============ 密钥轮换方法 ============
+
+    /**
+     * 轮换所有需要轮换的密钥
+     *
+     * @return 轮换的密钥数量
+     */
+    public Mono<Integer> rotateExpiredKeys() {
+        return Mono.fromCallable(() -> {
+            int rotatedCount = 0;
+            LocalDateTime now = LocalDateTime.now();
+
+            for (ApiKey apiKey : apiKeyCache.values()) {
+                if (apiKey.needsRotation() && apiKey.isEnabled()) {
+                    try {
+                        rotateKeyInternal(apiKey, now);
+                        rotatedCount++;
+                        log.info("自动轮换密钥: {}", apiKey.getKeyId());
+                    } catch (Exception e) {
+                        log.error("轮换密钥失败: {}", apiKey.getKeyId(), e);
+                    }
+                }
+            }
+
+            if (rotatedCount > 0) {
+                saveApiKeysToStore();
+            }
+
+            return rotatedCount;
+        });
+    }
+
+    /**
+     * 强制轮换指定密钥
+     *
+     * @param keyId    API Key ID
+     * @param rotatedBy 轮换操作者
+     * @return 创建响应 VO（包含新的 keyValue）
+     */
+    public Mono<ApiKeyCreationVO> forceRotateKey(String keyId, String rotatedBy) {
+        return Mono.fromCallable(() -> {
+            String keyHash = keyIdIndex.get(keyId);
+            if (keyHash == null) {
+                throw new IllegalArgumentException("API Key不存在: " + keyId);
+            }
+
+            ApiKey apiKey = apiKeyCache.get(keyHash);
+            if (apiKey == null) {
+                throw new IllegalArgumentException("API Key缓存不一致: " + keyId);
+            }
+
+            // 生成新的 keyValue
+            String originalKeyValue = ApiKey.generateApiKey("sk-", 32);
+            String newKeyHash = ApiKeyHashUtil.hashApiKey(originalKeyValue);
+
+            // 更新缓存：移除旧的 keyHash，添加新的
+            apiKeyCache.remove(keyHash);
+            apiKey.setKeyHash(newKeyHash);
+            apiKey.setLastRotatedAt(LocalDateTime.now());
+            apiKeyCache.put(newKeyHash, apiKey);
+            keyIdIndex.put(keyId, newKeyHash);
+
+            // 持久化
+            saveApiKeysToStore();
+
+            // 记录审计
+            auditApiKeyRotated(keyId, rotatedBy);
+
+            log.info("强制轮换密钥成功: {}, 操作者: {}", keyId, rotatedBy);
+
+            return ApiKeyCreationVO.builder()
+                    .keyId(keyId)
+                    .keyValue(originalKeyValue)  // 仅此一次返回原始值
+                    .description(apiKey.getDescription())
+                    .permissions(apiKey.getPermissions())
+                    .enabled(apiKey.isEnabled())
+                    .createdAt(apiKey.getCreatedAt())
+                    .expiresAt(apiKey.getExpiresAt())
+                    .lastRotatedAt(apiKey.getLastRotatedAt())
+                    .warning("密钥已轮换，新的密钥值仅显示一次，请妥善保存！")
+                    .build();
+        });
+    }
+
+    /**
+     * 内部轮换密钥方法
+     */
+    private void rotateKeyInternal(ApiKey apiKey, LocalDateTime now) {
+        String keyId = apiKey.getKeyId();
+        String oldKeyHash = apiKey.getKeyHash();
+
+        // 生成新的 keyValue
+        String originalKeyValue = ApiKey.generateApiKey("sk-", 32);
+        String newKeyHash = ApiKeyHashUtil.hashApiKey(originalKeyValue);
+
+        // 更新缓存
+        apiKeyCache.remove(oldKeyHash);
+        apiKey.setKeyHash(newKeyHash);
+        apiKey.setLastRotatedAt(now);
+        apiKeyCache.put(newKeyHash, apiKey);
+        keyIdIndex.put(keyId, newKeyHash);
+    }
+
+    /**
+     * 获取密钥轮换统计信息
+     *
+     * @return 轮换统计
+     */
+    public Mono<RotationStats> getRotationStats() {
+        return Mono.fromCallable(() -> {
+            int totalKeys = apiKeyCache.size();
+            int keysWithRotation = 0;
+            int keysNeedingRotation = 0;
+            int rotatedToday = 0;
+            LocalDateTime todayStart = LocalDateTime.now().toLocalDate().atStartOfDay();
+
+            for (ApiKey apiKey : apiKeyCache.values()) {
+                if (apiKey.getRotationPeriodDays() > 0) {
+                    keysWithRotation++;
+                }
+                if (apiKey.needsRotation()) {
+                    keysNeedingRotation++;
+                }
+                if (apiKey.getLastRotatedAt() != null &&
+                        !apiKey.getLastRotatedAt().isBefore(todayStart)) {
+                    rotatedToday++;
+                }
+            }
+
+            return new RotationStats(totalKeys, keysWithRotation, keysNeedingRotation, rotatedToday);
+        });
+    }
+
+    /**
+     * 密钥轮换统计内部类
+     */
+    public static class RotationStats {
+        private final int totalKeys;
+        private final int keysWithRotation;
+        private final int keysNeedingRotation;
+        private final int rotatedToday;
+
+        public RotationStats(int totalKeys, int keysWithRotation, int keysNeedingRotation, int rotatedToday) {
+            this.totalKeys = totalKeys;
+            this.keysWithRotation = keysWithRotation;
+            this.keysNeedingRotation = keysNeedingRotation;
+            this.rotatedToday = rotatedToday;
+        }
+
+        public int getTotalKeys() { return totalKeys; }
+        public int getKeysWithRotation() { return keysWithRotation; }
+        public int getKeysNeedingRotation() { return keysNeedingRotation; }
+        public int getRotatedToday() { return rotatedToday; }
+    }
+
+    private void auditApiKeyRotated(String keyId, String rotatedBy) {
+        if (extendedAuditService != null) {
+            extendedAuditService.auditSecurityEvent("API_KEY_ROTATED",
+                    "密钥已轮换", keyId, null)
+                    .onErrorResume(ex -> {
+                        log.warn("记录密钥轮换审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
+    }
+
+    // ============ 过期密钥清理方法 ============
+
+    /**
+     * 清理过期密钥
+     * 自动禁用已过期但尚未禁用的密钥
+     *
+     * @return 处理的密钥数量
+     */
+    public Mono<Integer> cleanupExpiredKeys() {
+        return Mono.fromCallable(() -> {
+            int cleanedCount = 0;
+            LocalDateTime now = LocalDateTime.now();
+
+            for (ApiKey apiKey : apiKeyCache.values()) {
+                // 检查是否过期且仍启用
+                if (apiKey.isExpired() && apiKey.isEnabled()) {
+                    try {
+                        apiKey.setEnabled(false);
+                        cleanedCount++;
+                        log.info("自动禁用过期密钥: {}", apiKey.getKeyId());
+                        auditApiKeyExpired(apiKey.getKeyId());
+                    } catch (Exception e) {
+                        log.error("禁用过期密钥失败: {}", apiKey.getKeyId(), e);
+                    }
+                }
+            }
+
+            if (cleanedCount > 0) {
+                saveApiKeysToStore();
+            }
+
+            return cleanedCount;
+        });
+    }
+
+    /**
+     * 获取过期密钥统计信息
+     *
+     * @return 过期统计
+     */
+    public Mono<ExpirationStats> getExpirationStats() {
+        return Mono.fromCallable(() -> {
+            int totalKeys = apiKeyCache.size();
+            int expiredKeys = 0;
+            int expiringToday = 0;
+            int disabledKeys = 0;
+            LocalDateTime todayEnd = LocalDateTime.now().toLocalDate().atTime(23, 59, 59);
+
+            for (ApiKey apiKey : apiKeyCache.values()) {
+                if (apiKey.isExpired()) {
+                    expiredKeys++;
+                } else if (apiKey.getExpiresAt() != null &&
+                        !apiKey.getExpiresAt().isAfter(todayEnd)) {
+                    expiringToday++;
+                }
+                if (!apiKey.isEnabled()) {
+                    disabledKeys++;
+                }
+            }
+
+            return new ExpirationStats(totalKeys, expiredKeys, expiringToday, disabledKeys);
+        });
+    }
+
+    /**
+     * 过期密钥统计内部类
+     */
+    public static class ExpirationStats {
+        private final int totalKeys;
+        private final int expiredKeys;
+        private final int expiringToday;
+        private final int disabledKeys;
+
+        public ExpirationStats(int totalKeys, int expiredKeys, int expiringToday, int disabledKeys) {
+            this.totalKeys = totalKeys;
+            this.expiredKeys = expiredKeys;
+            this.expiringToday = expiringToday;
+            this.disabledKeys = disabledKeys;
+        }
+
+        public int getTotalKeys() { return totalKeys; }
+        public int getExpiredKeys() { return expiredKeys; }
+        public int getExpiringToday() { return expiringToday; }
+        public int getDisabledKeys() { return disabledKeys; }
+    }
+
+    private void auditApiKeyExpired(String keyId) {
+        if (extendedAuditService != null) {
+            extendedAuditService.auditSecurityEvent("API_KEY_EXPIRED",
+                    "密钥已过期，自动禁用", keyId, null)
+                    .onErrorResume(ex -> {
+                        log.warn("记录密钥过期审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
+    }
+
+    // ============ 批量导入/导出方法 ============
+
+    /**
+     * 批量导出 API Key 配置
+     * 导出的数据不包含 keyValue 和 keyHash，仅包含可恢复的配置信息
+     *
+     * @return 导出响应 VO
+     */
+    public Mono<ApiKeyBatchExportVO> exportApiKeys() {
+        return Mono.fromCallable(() -> {
+            List<ApiKeyBatchExportVO.ExportedKey> exportedKeys = apiKeyCache.values().stream()
+                    .map(apiKey -> ApiKeyBatchExportVO.ExportedKey.builder()
+                            .keyId(apiKey.getKeyId())
+                            .description(apiKey.getDescription())
+                            .permissions(apiKey.getPermissions())
+                            .enabled(apiKey.isEnabled())
+                            .createdAt(apiKey.getCreatedAt())
+                            .createdBy(apiKey.getCreatedBy())
+                            .expiresAt(apiKey.getExpiresAt())
+                            .allowedIpAddresses(apiKey.getAllowedIpAddresses())
+                            .dailyRequestLimit(apiKey.getDailyRequestLimit())
+                            .rotationPeriodDays(apiKey.getRotationPeriodDays())
+                            .lastRotatedAt(apiKey.getLastRotatedAt())
+                            .build())
+                    .sorted(Comparator.comparing(ApiKeyBatchExportVO.ExportedKey::getCreatedAt).reversed())
+                    .toList();
+
+            return ApiKeyBatchExportVO.builder()
+                    .exportTime(LocalDateTime.now())
+                    .total(exportedKeys.size())
+                    .keys(exportedKeys)
+                    .build();
+        });
+    }
+
+    /**
+     * 批量导入 API Key
+     *
+     * @param request   导入请求
+     * @param importedBy 导入操作者
+     * @param ipAddress  操作者 IP
+     * @return 导入结果 VO
+     */
+    public Mono<ApiKeyBatchImportResult> importApiKeys(ApiKeyBatchImportRequest request,
+                                                        String importedBy, String ipAddress) {
+        return Mono.fromCallable(() -> {
+            List<ApiKeyCreationVO> importedKeys = new ArrayList<>();
+            List<ApiKeyBatchImportResult.ImportError> errors = new ArrayList<>();
+            int successCount = 0;
+            int failureCount = 0;
+
+            // 如果是替换模式，先清除所有现有密钥
+            if (request.getMode() == ApiKeyBatchImportRequest.ImportMode.REPLACE) {
+                apiKeyCache.clear();
+                keyIdIndex.clear();
+                log.info("批量导入：REPLACE 模式，已清除所有现有密钥");
+            }
+
+            // 导入每个密钥
+            for (ApiKeyBatchImportRequest.ApiKeyImportItem item : request.getKeys()) {
+                try {
+                    // 生成 keyId
+                    String keyId = item.getKeyId() != null && !item.getKeyId().trim().isEmpty()
+                            ? item.getKeyId()
+                            : "key-" + UUID.randomUUID().toString().substring(0, 8);
+
+                    // 检查 keyId 是否已存在（MERGE 模式）
+                    if (request.getMode() == ApiKeyBatchImportRequest.ImportMode.MERGE
+                            && keyIdIndex.containsKey(keyId)) {
+                        errors.add(ApiKeyBatchImportResult.ImportError.builder()
+                                .keyId(keyId)
+                                .reason("API Key ID已存在")
+                                .build());
+                        failureCount++;
+                        continue;
+                    }
+
+                    // 生成原始 keyValue
+                    String originalKeyValue = ApiKey.generateApiKey("sk-", 32);
+                    String keyHash = ApiKeyHashUtil.hashApiKey(originalKeyValue);
+
+                    // 解析过期时间
+                    LocalDateTime expiresAt = null;
+                    if (item.getExpiresAt() != null && !item.getExpiresAt().trim().isEmpty()) {
+                        try {
+                            expiresAt = LocalDateTime.parse(item.getExpiresAt(),
+                                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        } catch (Exception e) {
+                            log.warn("解析过期时间失败: {}", item.getExpiresAt());
+                        }
+                    }
+
+                    // 构建 ApiKey 实体
+                    ApiKey apiKey = ApiKey.builder()
+                            .keyId(keyId)
+                            .keyHash(keyHash)
+                            .keyValue(null)
+                            .keyPrefix("sk-")
+                            .description(item.getDescription())
+                            .permissions(item.getPermissions())
+                            .enabled(item.getEnabled() != null ? item.getEnabled() : true)
+                            .expiresAt(expiresAt)
+                            .createdAt(LocalDateTime.now())
+                            .createdBy(importedBy)
+                            .creatorIpAddress(ipAddress)
+                            .rotationPeriodDays(item.getRotationPeriodDays() != null ? item.getRotationPeriodDays() : 0)
+                            .allowedIpAddresses(item.getAllowedIpAddresses())
+                            .dailyRequestLimit(item.getDailyRequestLimit() != null ? item.getDailyRequestLimit() : 0L)
+                            .usage(UsageStatistics.builder()
+                                    .totalRequests(0L)
+                                    .successfulRequests(0L)
+                                    .failedRequests(0L)
+                                    .dailyUsage(new HashMap<>())
+                                    .build())
+                            .build();
+
+                    // 更新缓存
+                    apiKeyCache.put(keyHash, apiKey);
+                    keyIdIndex.put(keyId, keyHash);
+
+                    // 构建响应
+                    importedKeys.add(ApiKeyCreationVO.builder()
+                            .keyId(keyId)
+                            .keyValue(originalKeyValue)  // 仅此一次返回原始值
+                            .description(apiKey.getDescription())
+                            .permissions(apiKey.getPermissions())
+                            .enabled(apiKey.isEnabled())
+                            .createdAt(apiKey.getCreatedAt())
+                            .expiresAt(apiKey.getExpiresAt())
+                            .warning("密钥值只会显示一次，请妥善保存！")
+                            .build());
+
+                    successCount++;
+                    log.info("批量导入成功: {}", keyId);
+
+                } catch (Exception e) {
+                    errors.add(ApiKeyBatchImportResult.ImportError.builder()
+                            .keyId(item.getKeyId())
+                            .reason("导入失败: " + e.getMessage())
+                            .build());
+                    failureCount++;
+                    log.error("批量导入失败: {}", item.getKeyId(), e);
+                }
+            }
+
+            // 持久化
+            saveApiKeysToStore();
+
+            // 记录审计
+            auditBatchImport(importedBy, ipAddress, successCount, failureCount);
+
+            return ApiKeyBatchImportResult.builder()
+                    .totalAttempted(request.getKeys().size())
+                    .successCount(successCount)
+                    .failureCount(failureCount)
+                    .importedKeys(importedKeys)
+                    .errors(errors)
+                    .build();
+        });
+    }
+
+    private void auditBatchImport(String importedBy, String ipAddress, int successCount, int failureCount) {
+        if (extendedAuditService != null) {
+            extendedAuditService.auditSecurityEvent("API_KEY_BATCH_IMPORT",
+                    "批量导入完成: 成功 " + successCount + ", 失败 " + failureCount, null, ipAddress)
+                    .onErrorResume(ex -> {
+                        log.warn("记录批量导入审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
     }
 }

@@ -59,4 +59,9 @@ public class ApiKeyUpdateRequest {
      * 每日请求上限（0 表示无限制）
      */
     private Long dailyRequestLimit;
+
+    /**
+     * 密钥轮换周期（天数），0 表示不自动轮换
+     */
+    private Integer rotationPeriodDays;
 }

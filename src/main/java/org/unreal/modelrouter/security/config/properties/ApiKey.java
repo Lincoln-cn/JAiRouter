@@ -17,6 +17,7 @@ import org.unreal.modelrouter.security.util.ApiKeyHashUtil;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -97,6 +98,30 @@ public class ApiKey {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime createdAt;
+
+    /**
+     * 创建者用户名
+     */
+    private String createdBy;
+
+    /**
+     * 创建者 IP 地址
+     */
+    private String creatorIpAddress;
+
+    /**
+     * 密钥轮换周期（天数），0 表示不自动轮换
+     */
+    @Builder.Default
+    private int rotationPeriodDays = 0;
+
+    /**
+     * 上次轮换时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    private LocalDateTime lastRotatedAt;
 
     /**
      * 是否启用
@@ -188,6 +213,29 @@ public class ApiKey {
     }
 
     /**
+     * 检查是否需要进行密钥轮换
+     * 如果设置了轮换周期，且距离上次轮换已超过周期天数，则需要轮换
+     *
+     * @return 是否需要轮换
+     */
+    @JsonIgnore
+    public boolean needsRotation() {
+        if (rotationPeriodDays <= 0) {
+            return false; // 不自动轮换
+        }
+        if (lastRotatedAt == null) {
+            // 从未轮换过，检查创建时间
+            if (createdAt == null) {
+                return false;
+            }
+            long daysSinceCreation = ChronoUnit.DAYS.between(createdAt, LocalDateTime.now());
+            return daysSinceCreation >= rotationPeriodDays;
+        }
+        long daysSinceLastRotation = ChronoUnit.DAYS.between(lastRotatedAt, LocalDateTime.now());
+        return daysSinceLastRotation >= rotationPeriodDays;
+    }
+
+    /**
      * 验证提供的 API Key 是否匹配存储的哈希值
      *
      * @param providedKey 用户提供的原始 API Key
@@ -222,6 +270,10 @@ public class ApiKey {
                 .permissions(this.permissions)
                 .expiresAt(this.expiresAt)
                 .createdAt(this.createdAt)
+                .createdBy(this.createdBy)
+                .creatorIpAddress(this.creatorIpAddress)
+                .rotationPeriodDays(this.rotationPeriodDays)
+                .lastRotatedAt(this.lastRotatedAt)
                 .enabled(this.enabled)
                 .metadata(this.metadata)
                 .usage(this.usage)
@@ -247,6 +299,10 @@ public class ApiKey {
                 .permissions(this.permissions)
                 .expiresAt(this.expiresAt)
                 .createdAt(this.createdAt)
+                .createdBy(this.createdBy)
+                .creatorIpAddress(this.creatorIpAddress)
+                .rotationPeriodDays(this.rotationPeriodDays)
+                .lastRotatedAt(this.lastRotatedAt)
                 .enabled(this.enabled)
                 .metadata(this.metadata)
                 .usage(this.usage)
