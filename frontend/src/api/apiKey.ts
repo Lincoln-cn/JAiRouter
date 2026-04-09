@@ -1,114 +1,90 @@
 import request from '@/utils/request'
 import type { RouterResponse } from '@/types'
+import type { 
+  ApiKeyVO, 
+  ApiKeyListVO, 
+  ApiKeyCreationVO, 
+  ApiKeyCreateRequest, 
+  ApiKeyUpdateRequest 
+} from '@/types'
 
-// 定义API密钥类型
-export interface ApiKeyInfo {
-  keyId: string
-  description: string
-  createdAt: string
-  expiresAt: string
-  enabled: boolean
-  permissions: string[]
-  expired?: boolean
+/**
+ * 获取所有 API 密钥列表
+ * @returns API 密钥列表 VO
+ */
+export const getApiKeys = async (): Promise<ApiKeyListVO> => {
+  const response = await request.get<RouterResponse<ApiKeyListVO>>('/auth/api-keys')
+  return response.data.data!
 }
 
-// 创建API密钥请求类型
-export interface CreateApiKeyRequest {
-  keyId?: string
-  description: string
-  permissions: string[]
-  enabled?: boolean
-  expiresAt?: string
+/**
+ * 根据 ID 获取 API 密钥详情
+ * @param keyId API 密钥 ID
+ * @returns API 密钥 VO
+ */
+export const getApiKeyById = async (keyId: string): Promise<ApiKeyVO> => {
+  const response = await request.get<RouterResponse<ApiKeyVO>>(`/auth/api-keys/${keyId}`)
+  return response.data.data!
 }
 
-// 更新API密钥请求类型
-export interface UpdateApiKeyRequest {
-  description?: string
-  permissions?: string[]
-  enabled?: boolean
-  expiresAt?: string
+/**
+ * 创建新的 API 密钥
+ * 注意：keyValue 仅在创建时返回一次，请提示用户保存
+ * @param apiKey 创建请求
+ * @returns 创建响应 VO（包含 keyValue）
+ */
+export const createApiKey = async (apiKey: ApiKeyCreateRequest): Promise<ApiKeyCreationVO> => {
+  const response = await request.post<RouterResponse<ApiKeyCreationVO>>('/auth/api-keys', apiKey)
+  return response.data.data!
 }
 
-// 创建API密钥响应类型
-export interface ApiKeyCreationResponse {
-  keyId: string
-  keyValue: string
-  description: string
-  createdAt: string
+/**
+ * 更新 API 密钥信息
+ * 注意：keyValue 不可更新
+ * @param keyId API 密钥 ID
+ * @param apiKey 更新请求
+ * @returns 更新后的 API 密钥 VO
+ */
+export const updateApiKey = async (keyId: string, apiKey: ApiKeyUpdateRequest): Promise<ApiKeyVO> => {
+  const response = await request.put<RouterResponse<ApiKeyVO>>(`/auth/api-keys/${keyId}`, apiKey)
+  return response.data.data!
 }
 
-// 获取所有API密钥
-export const getApiKeys = async (): Promise<ApiKeyInfo[]> => {
-  try {
-    const response = await request.get<RouterResponse<ApiKeyInfo[]>>('/auth/api-keys')
-    return response.data.data || []
-  } catch (error) {
-    console.error('获取API密钥列表失败:', error)
-    throw error
-  }
-}
-
-// 根据ID获取API密钥
-export const getApiKeyById = async (keyId: string): Promise<ApiKeyInfo> => {
-  try {
-    const response = await request.get<RouterResponse<ApiKeyInfo>>(`/auth/api-keys/${keyId}`)
-    return response.data.data!
-  } catch (error) {
-    console.error(`获取API密钥 ${keyId} 失败:`, error)
-    throw error
-  }
-}
-
-// 创建API密钥
-export const createApiKey = async (apiKey: CreateApiKeyRequest): Promise<ApiKeyCreationResponse> => {
-  try {
-    const response = await request.post<RouterResponse<ApiKeyCreationResponse>>('/auth/api-keys', apiKey)
-    return response.data.data!
-  } catch (error) {
-    console.error('创建API密钥失败:', error)
-    throw error
-  }
-}
-
-// 更新API密钥
-export const updateApiKey = async (keyId: string, apiKey: UpdateApiKeyRequest): Promise<ApiKeyInfo> => {
-  try {
-    const response = await request.put<RouterResponse<ApiKeyInfo>>(`/auth/api-keys/${keyId}`, apiKey)
-    return response.data.data!
-  } catch (error) {
-    console.error(`更新API密钥 ${keyId} 失败:`, error)
-    throw error
-  }
-}
-
-// 删除API密钥
+/**
+ * 删除 API 密钥
+ * @param keyId API 密钥 ID
+ */
 export const deleteApiKey = async (keyId: string): Promise<void> => {
-  try {
-    await request.delete<RouterResponse<void>>(`/auth/api-keys/${keyId}`)
-  } catch (error) {
-    console.error(`删除API密钥 ${keyId} 失败:`, error)
-    throw error
-  }
+  await request.delete<RouterResponse<void>>(`/auth/api-keys/${keyId}`)
 }
 
-// 禁用API密钥
-export const disableApiKey = async (keyId: string): Promise<ApiKeyInfo> => {
-  try {
-    const response = await request.patch<RouterResponse<ApiKeyInfo>>(`/auth/api-keys/${keyId}/disable`)
-    return response.data.data!
-  } catch (error) {
-    console.error(`禁用API密钥 ${keyId} 失败:`, error)
-    throw error
-  }
+/**
+ * 禁用 API 密钥
+ * @param keyId API 密钥 ID
+ * @returns 更新后的 API 密钥 VO
+ */
+export const disableApiKey = async (keyId: string): Promise<ApiKeyVO> => {
+  const response = await request.patch<RouterResponse<ApiKeyVO>>(`/auth/api-keys/${keyId}/disable`)
+  return response.data.data!
 }
 
-// 启用API密钥
-export const enableApiKey = async (keyId: string): Promise<ApiKeyInfo> => {
-  try {
-    const response = await request.patch<RouterResponse<ApiKeyInfo>>(`/auth/api-keys/${keyId}/enable`)
-    return response.data.data!
-  } catch (error) {
-    console.error(`启用API密钥 ${keyId} 失败:`, error)
-    throw error
-  }
+/**
+ * 启用 API 密钥
+ * @param keyId API 密钥 ID
+ * @returns 更新后的 API 密钥 VO
+ */
+export const enableApiKey = async (keyId: string): Promise<ApiKeyVO> => {
+  const response = await request.patch<RouterResponse<ApiKeyVO>>(`/auth/api-keys/${keyId}/enable`)
+  return response.data.data!
+}
+
+/**
+ * 重置 API 密钥（生成新的 keyValue）
+ * 旧的密钥值将失效，新的密钥值仅显示一次
+ * @param keyId API 密钥 ID
+ * @returns 创建响应 VO（包含新的 keyValue）
+ */
+export const resetApiKey = async (keyId: string): Promise<ApiKeyCreationVO> => {
+  const response = await request.post<RouterResponse<ApiKeyCreationVO>>(`/auth/api-keys/${keyId}/reset`)
+  return response.data.data!
 }

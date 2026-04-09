@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.unreal.modelrouter.security.model.UsageStatistics;
+import org.unreal.modelrouter.security.util.ApiKeyHashUtil;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -22,6 +23,8 @@ import java.util.Map;
 /**
  * 统一的API Key数据模型
  * 合并了原来的ApiKeyProperties和ApiKeyInfo类
+ * 
+ * 安全改进：keyValue 使用 SHA-256 哈希存储（keyHash 字段）
  */
 @Data
 @Builder
@@ -37,9 +40,37 @@ public class ApiKey {
 
     /**
      * API Key值 - 仅在创建时返回，其他时候为null以确保安全
+     * 注意：此字段已废弃，请使用 keyHash 存储
+     * @deprecated 使用 keyHash 替代
      */
-//    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Deprecated
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String keyValue;
+
+    /**
+     * API Key 的哈希值（SHA-256 + 盐值）
+     * 用于安全存储和验证
+     */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String keyHash;
+
+    /**
+     * API Key 前缀（如 "sk-"）
+     * 用于识别密钥类型
+     */
+    private String keyPrefix;
+
+    /**
+     * 允许使用的 IP 白名单
+     * 为空表示不限制
+     */
+    private List<String> allowedIpAddresses;
+
+    /**
+     * 每日请求上限（0 表示无限制）
+     */
+    @Builder.Default
+    private long dailyRequestLimit = 0L;
 
     /**
      * API Key描述信息
@@ -126,7 +157,56 @@ public class ApiKey {
     }
 
     /**
-     * 创建一个不包含keyValue的安全副本，用于API响应
+     * 检查指定 IP 是否在白名单中
+     * 如果白名单为空，则允许所有 IP
+     *
+     * @param ipAddress IP 地址
+     * @return 是否允许
+     */
+    public boolean isIpAllowed(String ipAddress) {
+        if (allowedIpAddresses == null || allowedIpAddresses.isEmpty()) {
+            return true;
+        }
+        return allowedIpAddresses.contains(ipAddress);
+    }
+
+    /**
+     * 检查是否超过每日请求限制
+     *
+     * @return 是否超限
+     */
+    public boolean isDailyLimitExceeded() {
+        if (dailyRequestLimit <= 0) {
+            return false;
+        }
+        if (usage == null) {
+            return false;
+        }
+        String today = LocalDateTime.now().toLocalDate().toString();
+        Long todayCount = usage.getDailyUsage() != null ? usage.getDailyUsage().get(today) : 0L;
+        return todayCount != null && todayCount >= dailyRequestLimit;
+    }
+
+    /**
+     * 验证提供的 API Key 是否匹配存储的哈希值
+     *
+     * @param providedKey 用户提供的原始 API Key
+     * @return 是否匹配
+     */
+    public boolean verifyKey(String providedKey) {
+        if (keyHash != null && !keyHash.isEmpty()) {
+            return ApiKeyHashUtil.verifyApiKey(providedKey, keyHash);
+        }
+        // 兼容旧数据：如果只有 keyValue（明文存储），则直接比较
+        // 这种情况应该尽快迁移到哈希存储
+        if (keyValue != null && !keyValue.isEmpty()) {
+            return keyValue.equals(providedKey);
+        }
+        return false;
+    }
+
+    /**
+     * 创建一个不包含敏感信息的安全副本，用于API响应
      *
      * @return 安全的ApiKey副本
      */
@@ -134,6 +214,10 @@ public class ApiKey {
         return ApiKey.builder()
                 .keyId(this.keyId)
                 .keyValue(null) // 安全起见，不包含keyValue
+                .keyHash(null)  // 不包含哈希值
+                .keyPrefix(this.keyPrefix)
+                .allowedIpAddresses(this.allowedIpAddresses)
+                .dailyRequestLimit(this.dailyRequestLimit)
                 .description(this.description)
                 .permissions(this.permissions)
                 .expiresAt(this.expiresAt)
@@ -146,13 +230,19 @@ public class ApiKey {
 
     /**
      * 创建一个包含keyValue的副本，仅用于创建API Key时的响应
+     * 注意：keyValue 仅在此方法中返回一次，其他任何时候都不应返回
      *
+     * @param originalKeyValue 原始的未哈希的 keyValue（仅在创建时可用）
      * @return 包含keyValue的ApiKey副本
      */
-    public ApiKey createCreationResponse() {
+    public ApiKey createCreationResponse(String originalKeyValue) {
         return ApiKey.builder()
                 .keyId(this.keyId)
-                .keyValue(this.keyValue) // 仅在创建时包含keyValue
+                .keyValue(originalKeyValue) // 仅在创建时包含原始keyValue
+                .keyHash(null)  // 不返回哈希值
+                .keyPrefix(this.keyPrefix)
+                .allowedIpAddresses(this.allowedIpAddresses)
+                .dailyRequestLimit(this.dailyRequestLimit)
                 .description(this.description)
                 .permissions(this.permissions)
                 .expiresAt(this.expiresAt)
