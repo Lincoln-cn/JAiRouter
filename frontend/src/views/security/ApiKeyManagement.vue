@@ -1,71 +1,152 @@
 <template>
   <div class="api-key-management">
+    <!-- 统计卡片 -->
+    <el-row :gutter="20" class="stats-row">
+      <el-col :span="6">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content">
+            <div class="stat-icon" style="background: #409EFF;">
+              <el-icon><Key /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ listData.total }}</div>
+              <div class="stat-label">总密钥数</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content">
+            <div class="stat-icon" style="background: #67C23A;">
+              <el-icon><CircleCheck /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ listData.enabledCount }}</div>
+              <div class="stat-label">已启用</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content">
+            <div class="stat-icon" style="background: #F56C6C;">
+              <el-icon><CircleClose /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ listData.disabledCount }}</div>
+              <div class="stat-label">已禁用</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-content">
+            <div class="stat-icon" style="background: #E6A23C;">
+              <el-icon><Warning /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ listData.expiredCount }}</div>
+              <div class="stat-label">已过期</div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 主卡片 -->
     <el-card class="main-card" shadow="hover">
       <template #header>
         <div class="card-header">
           <span class="main-title">
-            <el-icon><key/></el-icon>
+            <el-icon><Key /></el-icon>
             API密钥管理
           </span>
           <el-button icon="Plus" type="primary" @click="handleCreateApiKey">创建API密钥</el-button>
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="apiKeys" border stripe style="width: 100%">
-        <el-table-column label="密钥ID" prop="keyId" width="220">
+      <div class="table-wrapper">
+        <el-table v-loading="loading" :data="apiKeys" border stripe :max-height="500">
+        <el-table-column label="密钥ID" prop="keyId" width="180">
           <template #default="scope">
             <el-tag effect="plain" type="info">{{ scope.row.keyId }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="描述" min-width="120" prop="description">
+        <el-table-column label="描述" width="200" show-overflow-tooltip>
           <template #default="scope">
-            <span class="desc-text">{{ scope.row.description || '-' }}</span>
+            <span>{{ scope.row.description || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="权限" prop="permissions" width="250">
+        <el-table-column label="权限" prop="permissions" width="160">
           <template #default="scope">
-            <el-tag
-                v-for="permission in scope.row.permissions"
-                :key="permission"
-                :type="getPermissionTagType(permission)"
-                size="small"
-                style="margin-right: 5px;"
-            >
-              {{ formatPermission(permission) }}
+            <div class="permission-tags">
+              <el-tag
+                  v-for="permission in scope.row.permissions"
+                  :key="permission"
+                  :type="getPermissionTagType(permission)"
+                  size="small"
+              >
+                {{ formatPermission(permission) }}
+              </el-tag>
+            </div>
+            <span v-if="!scope.row.permissions?.length">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" prop="createdAt" width="160"/>
+        <el-table-column label="过期时间" prop="expiresAt" width="160">
+          <template #default="scope">
+            <span :class="{ 'expired-text': scope.row.expired }">
+              {{ scope.row.expiresAt || '永不过期' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="剩余天数" width="100" align="center">
+          <template #default="scope">
+            <el-tag :type="getRemainingDaysType(scope.row)" size="small">
+              {{ getRemainingDaysText(scope.row) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="createdAt" width="180"/>
-        <el-table-column label="过期时间" prop="expiresAt" width="180"/>
-        <el-table-column label="剩余天数" width="110">
+        <el-table-column label="使用统计" width="140" align="center">
           <template #default="scope">
-            <span :class="getDaysClass(scope.row)">{{ getRemainingDays(scope.row.expiresAt) }}</span>
+            <el-tooltip :content="`成功: ${scope.row.successfulRequests}, 失败: ${scope.row.failedRequests}`">
+              <span class="usage-stat">
+                {{ scope.row.totalRequests }}
+                <span class="usage-detail">({{ scope.row.successfulRequests }}/{{ scope.row.failedRequests }})</span>
+              </span>
+            </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="状态" prop="enabled" width="80">
+        <el-table-column label="状态" prop="enabled" width="80" align="center">
           <template #default="scope">
             <el-switch
                 v-model="scope.row.enabled"
+                :disabled="scope.row.expired"
                 active-color="#13ce66"
                 inactive-color="#ff4949"
                 @change="handleStatusChange(scope.row)"
             />
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="180">
+        <el-table-column fixed="right" label="操作" width="260">
           <template #default="scope">
             <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button icon="Refresh" size="small" type="warning" @click="handleReset(scope.row)">重置</el-button>
             <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+      </div>
     </el-card>
 
     <!-- 创建/编辑API密钥对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" center width="500px">
-      <el-form ref="formRef" :model="form" label-width="100px" status-icon>
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" center width="550px">
+      <el-form ref="formRef" :model="form" label-width="120px" status-icon>
         <el-form-item label="密钥ID" prop="keyId" :rules="keyIdRules">
-          <el-input v-model="form.keyId" :disabled="isEdit" maxlength="64" placeholder="请输入密钥ID"
+          <el-input v-model="form.keyId" :disabled="isEdit" maxlength="64" placeholder="留空则自动生成"
                     show-word-limit/>
         </el-form-item>
         <el-form-item label="描述">
@@ -77,7 +158,7 @@
               v-model="form.expiresAt"
               clearable
               format="YYYY-MM-DD HH:mm:ss"
-              placeholder="选择过期时间"
+              placeholder="留空则永不过期"
               style="width: 100%;"
               type="datetime"
               value-format="YYYY-MM-DD HH:mm:ss"
@@ -91,6 +172,23 @@
             <el-checkbox label="ADMIN">管理员</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
+        <el-form-item label="IP白名单">
+          <el-select
+              v-model="form.allowedIpAddresses"
+              allow-create
+              clearable
+              filterable
+              multiple
+              placeholder="留空则不限制IP"
+              style="width: 100%;"
+          >
+          </el-select>
+          <div class="form-hint">允许使用此密钥的IP地址，留空表示不限制</div>
+        </el-form-item>
+        <el-form-item label="每日请求上限">
+          <el-input-number v-model="form.dailyRequestLimit" :min="0" :step="100" placeholder="0表示不限制"/>
+          <div class="form-hint">0 表示不限制</div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -101,24 +199,27 @@
     </el-dialog>
 
     <!-- 创建成功后弹窗，展示密钥值 -->
-    <el-dialog v-model="showKeyValueDialog" :close-on-click-modal="false" center title="API密钥已创建" width="400px">
+    <el-dialog v-model="showKeyValueDialog" :close-on-click-modal="false" center title="API密钥已创建" width="450px">
       <div class="key-value-dialog-content">
-        <el-icon style="font-size: 24px; color: #409EFF;">
-          <key/>
+        <el-icon style="font-size: 48px; color: #409EFF; margin-bottom: 16px;">
+          <Key />
         </el-icon>
         <p class="key-value-tip">请妥善保存以下密钥值，密钥值仅此一次显示：</p>
-        <el-input v-model="createdKeyValue" readonly>
+        <el-input v-model="createdKeyValue" readonly size="large">
           <template #append>
             <el-button icon="CopyDocument" type="primary" @click="copyKeyValue">复制</el-button>
           </template>
         </el-input>
-        <el-alert :closable="false" show-icon style="margin-top: 12px;" type="warning">
-          密钥值只会显示一次，关闭弹窗后无法再次获取！
+        <el-alert :closable="false" show-icon style="margin-top: 16px;" type="warning">
+          <template #title>
+            <strong>重要提醒</strong>
+          </template>
+          密钥值只会显示一次，关闭弹窗后无法再次获取！如果丢失，请使用重置功能生成新密钥。
         </el-alert>
       </div>
       <template #footer>
         <span class="dialog-footer">
-          <el-button type="primary" @click="closeKeyValueDialog">已保存并关闭</el-button>
+          <el-button type="primary" @click="closeKeyValueDialog" size="large">我已保存，关闭</el-button>
         </span>
       </template>
     </el-dialog>
@@ -126,18 +227,41 @@
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref} from 'vue'
-import {ElMessage, ElMessageBox} from 'element-plus'
-import {createApiKey, deleteApiKey, disableApiKey, enableApiKey, getApiKeys, updateApiKey} from '@/api/apiKey'
-import type {ApiKeyCreationResponse, ApiKeyInfo, CreateApiKeyRequest, UpdateApiKeyRequest} from '@/types'
-import {Key} from '@element-plus/icons-vue'
+import { onMounted, ref, reactive } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Key, CircleCheck, CircleClose, Warning } from '@element-plus/icons-vue'
+import { 
+  createApiKey, 
+  deleteApiKey, 
+  disableApiKey, 
+  enableApiKey, 
+  getApiKeys, 
+  updateApiKey,
+  resetApiKey 
+} from '@/api/apiKey'
+import type { 
+  ApiKeyVO, 
+  ApiKeyListVO, 
+  ApiKeyCreationVO, 
+  ApiKeyCreateRequest, 
+  ApiKeyUpdateRequest 
+} from '@/types'
 
-// 定义API密钥类型
-interface ApiKey extends ApiKeyInfo {
-  expired?: boolean
-}
+// 列表数据
+const listData = reactive<ApiKeyListVO>({
+  items: [],
+  total: 0,
+  enabledCount: 0,
+  disabledCount: 0,
+  expiredCount: 0,
+  summary: {
+    todayTotalRequests: 0,
+    todaySuccessfulRequests: 0,
+    todayFailedRequests: 0
+  }
+})
 
-const apiKeys = ref<ApiKey[]>([])
+const apiKeys = ref<ApiKeyVO[]>([])
 const loading = ref(false)
 const saveLoading = ref(false)
 const dialogVisible = ref(false)
@@ -151,12 +275,14 @@ const form = ref({
   description: '',
   expiresAt: '',
   enabled: true,
-  permissions: [] as string[]
+  permissions: [] as string[],
+  allowedIpAddresses: [] as string[],
+  dailyRequestLimit: 0
 })
 
 // 密钥ID验证规则
 const keyIdRules = [
-  {required: true, message: '请输入密钥ID', trigger: 'blur'}
+  { max: 64, message: '密钥ID长度不能超过64字符', trigger: 'blur' }
 ]
 
 // 获取权限标签类型
@@ -191,27 +317,20 @@ const formatPermission = (permission: string) => {
   }
 }
 
-// 获取剩余天数
-const getRemainingDays = (expiresAt: string): string => {
-  if (!expiresAt) return '永不过期'
-  const expireDate = new Date(expiresAt)
-  const currentDate = new Date()
-  const diffTime = expireDate.getTime() - currentDate.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  if (diffDays < 0) return '已过期'
-  return `${diffDays}天`
+// 获取剩余天数文本
+const getRemainingDaysText = (row: ApiKeyVO): string => {
+  if (row.remainingDays === null || row.remainingDays === undefined) return '永久'
+  if (row.remainingDays < 0) return '已过期'
+  return `${row.remainingDays}天`
 }
 
-// 获取剩余天数的样式类
-const getDaysClass = (row: ApiKey): string => {
-  if (!row.expiresAt) return ''
-  const expireDate = new Date(row.expiresAt)
-  const currentDate = new Date()
-  const diffTime = expireDate.getTime() - currentDate.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  if (diffDays < 0) return 'expired-days'
-  if (diffDays < 30) return 'warning-days'
-  return ''
+// 获取剩余天数标签类型
+const getRemainingDaysType = (row: ApiKeyVO): 'success' | 'warning' | 'danger' | 'info' => {
+  if (row.remainingDays === null || row.remainingDays === undefined) return 'info'
+  if (row.remainingDays < 0) return 'danger'
+  if (row.remainingDays < 7) return 'danger'
+  if (row.remainingDays < 30) return 'warning'
+  return 'success'
 }
 
 // 格式化日期时间
@@ -226,17 +345,26 @@ const formatDateTime = (dateString: string): string => {
       String(date.getSeconds()).padStart(2, '0')
 }
 
-// API密钥列表
+// 获取API密钥列表
 const fetchApiKeys = async () => {
   loading.value = true
   try {
     const data = await getApiKeys()
-    const formattedData = data.map(key => ({
+    // 格式化日期
+    const formattedItems = data.items.map(key => ({
       ...key,
       createdAt: formatDateTime(key.createdAt),
-      expiresAt: formatDateTime(key.expiresAt)
+      expiresAt: formatDateTime(key.expiresAt),
+      lastUsedAt: formatDateTime(key.lastUsedAt || '')
     }))
-    apiKeys.value = formattedData
+    
+    apiKeys.value = formattedItems
+    listData.items = formattedItems
+    listData.total = data.total
+    listData.enabledCount = data.enabledCount
+    listData.disabledCount = data.disabledCount
+    listData.expiredCount = data.expiredCount
+    listData.summary = data.summary
   } catch (error) {
     ElMessage.error('获取API密钥列表失败')
   } finally {
@@ -253,24 +381,33 @@ const handleCreateApiKey = () => {
     description: '',
     expiresAt: '',
     enabled: true,
-    permissions: []
+    permissions: [],
+    allowedIpAddresses: [],
+    dailyRequestLimit: 0
   }
   dialogVisible.value = true
 }
 
 // 编辑API密钥弹窗
-const handleEdit = (row: ApiKey) => {
+const handleEdit = (row: ApiKeyVO) => {
   dialogTitle.value = '编辑API密钥'
   isEdit.value = true
-  const editRow = {...row}
-  form.value = editRow
+  form.value = {
+    keyId: row.keyId,
+    description: row.description || '',
+    expiresAt: row.expiresAt || '',
+    enabled: row.enabled,
+    permissions: row.permissions || [],
+    allowedIpAddresses: [],
+    dailyRequestLimit: 0
+  }
   dialogVisible.value = true
 }
 
 // 删除API密钥
-const handleDelete = (row: ApiKey) => {
-  ElMessageBox.confirm(`确定要删除API密钥 ${row.keyId} 吗？`, '提示', {
-    confirmButtonText: '确定',
+const handleDelete = (row: ApiKeyVO) => {
+  ElMessageBox.confirm(`确定要删除API密钥 ${row.keyId} 吗？此操作不可恢复。`, '删除确认', {
+    confirmButtonText: '确定删除',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
@@ -284,6 +421,29 @@ const handleDelete = (row: ApiKey) => {
   })
 }
 
+// 重置API密钥
+const handleReset = (row: ApiKeyVO) => {
+  ElMessageBox.confirm(
+    `确定要重置API密钥 ${row.keyId} 吗？旧的密钥值将立即失效，新的密钥值仅显示一次。`,
+    '重置确认',
+    {
+      confirmButtonText: '确定重置',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      const response: ApiKeyCreationVO = await resetApiKey(row.keyId)
+      createdKeyValue.value = response.keyValue
+      showKeyValueDialog.value = true
+      await fetchApiKeys()
+      ElMessage.success('密钥重置成功，请保存新的密钥值！')
+    } catch (error: any) {
+      ElMessage.error('重置失败: ' + (error.message || ''))
+    }
+  })
+}
+
 // 创建成功后弹窗及密钥值处理
 const showKeyValueDialog = ref(false)
 const createdKeyValue = ref('')
@@ -292,28 +452,34 @@ const createdKeyValue = ref('')
 const handleSave = async () => {
   saveLoading.value = true
   try {
-    await formRef.value.validate()
+    if (formRef.value) {
+      await formRef.value.validate()
+    }
+    
     if (isEdit.value) {
       // 编辑
-      const updateData: UpdateApiKeyRequest = {
+      const updateData: ApiKeyUpdateRequest = {
         description: form.value.description,
-        expiresAt: form.value.expiresAt,
+        expiresAt: form.value.expiresAt || undefined,
         enabled: form.value.enabled,
-        permissions: form.value.permissions
+        permissions: form.value.permissions,
+        allowedIpAddresses: form.value.allowedIpAddresses,
+        dailyRequestLimit: form.value.dailyRequestLimit
       }
       await updateApiKey(form.value.keyId, updateData)
       ElMessage.success('编辑成功')
     } else {
       // 新增
-      const createData: CreateApiKeyRequest = {
+      const createData: ApiKeyCreateRequest = {
         keyId: form.value.keyId || undefined,
         description: form.value.description,
         expiresAt: form.value.expiresAt || undefined,
         enabled: form.value.enabled,
-        permissions: form.value.permissions
+        permissions: form.value.permissions,
+        allowedIpAddresses: form.value.allowedIpAddresses,
+        dailyRequestLimit: form.value.dailyRequestLimit
       }
-      if (!createData.expiresAt) delete createData.expiresAt;
-      const response: ApiKeyCreationResponse = await createApiKey(createData)
+      const response: ApiKeyCreationVO = await createApiKey(createData)
       createdKeyValue.value = response.keyValue
       showKeyValueDialog.value = true
       ElMessage.success('创建成功，请妥善保存密钥值！')
@@ -330,16 +496,17 @@ const handleSave = async () => {
 // 复制密钥值
 const copyKeyValue = () => {
   navigator.clipboard.writeText(createdKeyValue.value)
-      .then(() => ElMessage.success('密钥值已复制'))
-      .catch(() => ElMessage.error('复制失败'))
+      .then(() => ElMessage.success('密钥值已复制到剪贴板'))
+      .catch(() => ElMessage.error('复制失败，请手动复制'))
 }
+
 const closeKeyValueDialog = () => {
   showKeyValueDialog.value = false
   createdKeyValue.value = ''
 }
 
 // 状态切换
-const handleStatusChange = async (row: ApiKey) => {
+const handleStatusChange = async (row: ApiKeyVO) => {
   try {
     if (row.enabled) {
       await enableApiKey(row.keyId)
@@ -363,14 +530,66 @@ onMounted(() => {
 
 <style scoped>
 .api-key-management {
-  padding: 30px 40px;
-  background: #f8fafe;
+  padding: 20px;
+  background: #f5f7fa;
   min-height: 100vh;
 }
 
+.stats-row {
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  border-radius: 8px;
+}
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  margin-right: 16px;
+}
+
+.stat-info {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+  margin-top: 4px;
+}
+
 .main-card {
-  border-radius: 16px;
-  box-shadow: 0 2px 12px 0 rgba(32, 103, 216, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-wrapper .el-table {
+  min-width: 100%;
+  width: max-content;
 }
 
 .card-header {
@@ -380,9 +599,9 @@ onMounted(() => {
 }
 
 .main-title {
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 600;
-  color: #2C3E50;
+  color: #303133;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -390,23 +609,40 @@ onMounted(() => {
 
 .desc-text {
   color: #606266;
-  font-size: 15px;
+  font-size: 14px;
 }
 
-.warning-days {
-  color: #e6a23c;
-  font-weight: bold;
+.permission-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 140px;
+  line-height: 1.8;
 }
 
-.expired-days {
-  color: #f56c6c;
-  font-weight: bold;
+.permission-tags .el-tag {
+  margin: 0;
 }
 
-.key-id-hint {
+.expired-text {
+  color: #F56C6C;
+}
+
+.usage-stat {
+  font-weight: 500;
+  color: #409EFF;
+}
+
+.usage-detail {
   font-size: 12px;
   color: #909399;
-  margin-top: 5px;
+  margin-left: 4px;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 
 .dialog-footer {
@@ -418,14 +654,29 @@ onMounted(() => {
 .key-value-dialog-content {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
 }
 
 .key-value-tip {
-  font-size: 15px;
-  color: #555;
-  margin-bottom: 6px;
+  font-size: 16px;
+  color: #303133;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
+:deep(.el-table) {
+  border-radius: 8px;
+}
+
+:deep(.el-dialog__header) {
+  border-bottom: 1px solid #EBEEF5;
+  padding-bottom: 16px;
+}
+
+:deep(.el-dialog__footer) {
+  border-top: 1px solid #EBEEF5;
+  padding-top: 16px;
 }
 </style>

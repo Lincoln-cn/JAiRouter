@@ -9,19 +9,26 @@ import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.security.audit.ExtendedSecurityAuditService;
 import org.unreal.modelrouter.security.config.properties.ApiKey;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.security.dto.*;
 import org.unreal.modelrouter.security.model.UsageStatistics;
+import org.unreal.modelrouter.security.util.ApiKeyHashUtil;
 import org.unreal.modelrouter.store.StoreManager;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * API Key管理服务实现类 提供API Key的CRUD操作、验证功能和缓存机制
+ * API Key 管理服务实现类
+ * 提供 API Key 的 CRUD 操作、验证功能和缓存机制
+ * 
+ * 安全改进：
+ * 1. keyValue 使用 SHA-256 + 盐值哈希存储
+ * 2. 仅在创建时返回原始 keyValue
+ * 3. 支持 IP 白名单限制
+ * 4. 支持每日请求限制
  */
 @Slf4j
 @Primary
@@ -35,12 +42,12 @@ public class ApiKeyService {
     private final ObjectMapper objectMapper;
     private final SecurityProperties securityProperties;
 
-    // API Key缓存：keyValue -> ApiKey
+    // API Key 缓存：keyHash -> ApiKey（使用哈希值作为 key）
     private final Map<String, ApiKey> apiKeyCache = new ConcurrentHashMap<>();
-    // API Key ID索引：keyId -> keyValue
+    // API Key ID 索引：keyId -> keyHash
     private final Map<String, String> keyIdIndex = new ConcurrentHashMap<>();
 
-    // 审计服务（用于记录API Key操作）
+    // 审计服务（用于记录 API Key 操作）
     @Autowired(required = false)
     private ExtendedSecurityAuditService extendedAuditService;
 
@@ -53,86 +60,85 @@ public class ApiKeyService {
         this.securityProperties = securityProperties;
     }
 
-
+    /**
+     * 验证 API Key（使用哈希验证）
+     *
+     * @param keyValue 用户提供的原始 API Key 值
+     * @return 验证成功返回 ApiKey 信息
+     */
     public Mono<ApiKey> validateApiKey(String keyValue) {
         return validateApiKey(keyValue, null, null);
     }
-    
+
+    /**
+     * 验证 API Key（使用哈希验证，包含审计记录）
+     *
+     * @param keyValue  用户提供的原始 API Key 值
+     * @param endpoint  请求的端点
+     * @param ipAddress 客户端 IP 地址
+     * @return 验证成功返回 ApiKey 信息
+     */
     public Mono<ApiKey> validateApiKey(String keyValue, String endpoint, String ipAddress) {
         return Mono.defer(() -> {
             try {
                 if (keyValue == null || keyValue.trim().isEmpty()) {
-                    // 记录缺少API Key的审计
-                    if (extendedAuditService != null) {
-                        extendedAuditService.auditSecurityEvent("API_KEY_MISSING", 
-                            "请求缺少API Key", null, ipAddress)
-                            .onErrorResume(ex -> {
-                                log.warn("记录API Key缺失审计失败: {}", ex.getMessage());
-                                return Mono.empty();
-                            })
-                            .subscribe();
-                    }
+                    auditSecurityEvent("API_KEY_MISSING", "请求缺少API Key", null, ipAddress);
                     return Mono.error(AuthenticationException.missingApiKey());
                 }
 
-                ApiKey apiKey = apiKeyCache.get(keyValue);
-                if (apiKey == null) {
-                    // 记录无效API Key的审计
-                    if (extendedAuditService != null) {
-                        extendedAuditService.auditSecurityEvent("API_KEY_INVALID", 
-                            "使用了无效的API Key", null, ipAddress)
-                            .onErrorResume(ex -> {
-                                log.warn("记录无效API Key审计失败: {}", ex.getMessage());
-                                return Mono.empty();
-                            })
-                            .subscribe();
+                // 遍历所有 API Key，使用哈希验证
+                ApiKey matchedApiKey = null;
+                for (ApiKey apiKey : apiKeyCache.values()) {
+                    if (apiKey.verifyKey(keyValue)) {
+                        matchedApiKey = apiKey;
+                        break;
                     }
+                }
+
+                if (matchedApiKey == null) {
+                    auditSecurityEvent("API_KEY_INVALID", "使用了无效的API Key", null, ipAddress);
                     return Mono.error(AuthenticationException.invalidApiKey());
                 }
 
-                if (!apiKey.isEnabled()) {
-                    updateUsageStatistics(apiKey.getKeyId(), false); // 统计失败
-                    // 记录禁用API Key使用审计
-                    if (extendedAuditService != null) {
-                        extendedAuditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, false)
-                            .onErrorResume(ex -> {
-                                log.warn("记录禁用API Key使用审计失败: {}", ex.getMessage());
-                                return Mono.empty();
-                            })
-                            .subscribe();
-                    }
-                    return Mono.error(new AuthenticationException("API Key已被禁用", AuthenticationException.INVALID_API_KEY));
+                // 检查是否启用
+                if (!matchedApiKey.isEnabled()) {
+                    updateUsageStatistics(matchedApiKey.getKeyId(), false);
+                    auditApiKeyUsed(matchedApiKey.getKeyId(), endpoint, ipAddress, false);
+                    return Mono.error(new AuthenticationException("API Key已被禁用", 
+                            AuthenticationException.INVALID_API_KEY));
                 }
 
-                if (apiKey.getExpiresAt() != null && apiKey.getExpiresAt().isBefore(LocalDateTime.now())) {
-                    updateUsageStatistics(apiKey.getKeyId(), false); // 统计失败
-                    // 记录过期API Key使用审计
-                    if (extendedAuditService != null) {
-                        extendedAuditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, false)
-                            .onErrorResume(ex -> {
-                                log.warn("记录过期API Key使用审计失败: {}", ex.getMessage());
-                                return Mono.empty();
-                            })
-                            .subscribe();
-                    }
+                // 检查是否过期
+                if (matchedApiKey.isExpired()) {
+                    updateUsageStatistics(matchedApiKey.getKeyId(), false);
+                    auditApiKeyUsed(matchedApiKey.getKeyId(), endpoint, ipAddress, false);
                     return Mono.error(AuthenticationException.expiredApiKey());
                 }
 
-                // 验证成功，统计一次成功请求
-                updateUsageStatistics(apiKey.getKeyId(), true);
-                
-                // 记录成功使用API Key的审计
-                if (extendedAuditService != null) {
-                    extendedAuditService.auditApiKeyUsed(apiKey.getKeyId(), endpoint, ipAddress, true)
-                        .onErrorResume(ex -> {
-                            log.warn("记录API Key使用审计失败: {}", ex.getMessage());
-                            return Mono.empty();
-                        })
-                        .subscribe();
+                // 检查 IP 白名单
+                if (!matchedApiKey.isIpAllowed(ipAddress)) {
+                    updateUsageStatistics(matchedApiKey.getKeyId(), false);
+                    auditSecurityEvent("API_KEY_IP_BLOCKED", 
+                            "IP地址不在白名单中: " + ipAddress, matchedApiKey.getKeyId(), ipAddress);
+                    return Mono.error(new AuthenticationException("IP地址不允许访问", 
+                            AuthenticationException.INVALID_API_KEY));
                 }
 
-                log.debug("API Key验证成功: {}", apiKey.getKeyId());
-                return Mono.just(apiKey.createSecureCopy()); // 返回安全副本，不包含keyValue
+                // 检查每日请求限制
+                if (matchedApiKey.isDailyLimitExceeded()) {
+                    updateUsageStatistics(matchedApiKey.getKeyId(), false);
+                    auditSecurityEvent("API_KEY_DAILY_LIMIT", 
+                            "超过每日请求限制", matchedApiKey.getKeyId(), ipAddress);
+                    return Mono.error(new AuthenticationException("超过每日请求限制", 
+                            AuthenticationException.INVALID_API_KEY));
+                }
+
+                // 验证成功，更新统计
+                updateUsageStatistics(matchedApiKey.getKeyId(), true);
+                auditApiKeyUsed(matchedApiKey.getKeyId(), endpoint, ipAddress, true);
+
+                log.debug("API Key验证成功: {}", matchedApiKey.getKeyId());
+                return Mono.just(matchedApiKey.createSecureCopy());
             } catch (Exception e) {
                 log.error("API Key验证过程中发生错误: {}", e.getMessage(), e);
                 return Mono.error(e);
@@ -140,168 +146,352 @@ public class ApiKeyService {
         });
     }
 
-    public Mono<ApiKey> createApiKey(ApiKey apiKey) {
-        return createApiKey(apiKey, "system", null);
+    /**
+     * 创建新的 API Key
+     *
+     * @param request 创建请求 DTO
+     * @return 创建响应 VO（包含原始 keyValue，仅此一次显示）
+     */
+    public Mono<ApiKeyCreationVO> createApiKey(ApiKeyCreateRequest request) {
+        return createApiKey(request, "system", null);
     }
-    
-    public Mono<ApiKey> createApiKey(ApiKey apiKey, String createdBy, String ipAddress) {
+
+    /**
+     * 创建新的 API Key（带审计信息）
+     *
+     * @param request   创建请求 DTO
+     * @param createdBy 创建者
+     * @param ipAddress 创建者 IP
+     * @return 创建响应 VO
+     */
+    public Mono<ApiKeyCreationVO> createApiKey(ApiKeyCreateRequest request, String createdBy, String ipAddress) {
         return Mono.fromCallable(() -> {
-            if (apiKey.getKeyId() == null || apiKey.getKeyId().trim().isEmpty()) {
-                throw new IllegalArgumentException("API Key ID不能为空");
+            // 生成 keyId
+            String keyId = request.getKeyId() != null && !request.getKeyId().trim().isEmpty()
+                    ? request.getKeyId()
+                    : "key-" + UUID.randomUUID().toString().substring(0, 8);
+
+            // 检查 keyId 是否已存在
+            if (keyIdIndex.containsKey(keyId)) {
+                throw new IllegalArgumentException("API Key ID已存在: " + keyId);
             }
 
-            if (apiKey.getKeyValue() == null || apiKey.getKeyValue().trim().isEmpty()) {
-                throw new IllegalArgumentException("API Key值不能为空");
-            }
+            // 生成原始 keyValue
+            String originalKeyValue = ApiKey.generateApiKey("sk-", 32);
+            
+            // 计算 keyValue 的哈希值
+            String keyHash = ApiKeyHashUtil.hashApiKey(originalKeyValue);
 
-            if (keyIdIndex.containsKey(apiKey.getKeyId())) {
-                throw new IllegalArgumentException("API Key ID已存在: " + apiKey.getKeyId());
-            }
+            // 构建 ApiKey 实体（存储哈希值）
+            ApiKey apiKey = ApiKey.builder()
+                    .keyId(keyId)
+                    .keyHash(keyHash)  // 存储哈希值
+                    .keyValue(null)    // 不存储原始值
+                    .keyPrefix("sk-")
+                    .description(request.getDescription())
+                    .permissions(request.getPermissions())
+                    .enabled(request.getEnabled() != null ? request.getEnabled() : true)
+                    .expiresAt(request.getExpiresAt())
+                    .createdAt(LocalDateTime.now())
+                    .allowedIpAddresses(request.getAllowedIpAddresses())
+                    .dailyRequestLimit(request.getDailyRequestLimit() != null ? request.getDailyRequestLimit() : 0L)
+                    .usage(UsageStatistics.builder()
+                            .totalRequests(0L)
+                            .successfulRequests(0L)
+                            .failedRequests(0L)
+                            .dailyUsage(new HashMap<>())
+                            .build())
+                    .build();
 
-            if (apiKeyCache.containsKey(apiKey.getKeyValue())) {
-                throw new IllegalArgumentException("API Key值已存在");
-            }
-
-            // 设置创建时间
-            if (apiKey.getCreatedAt() == null) {
-                apiKey.setCreatedAt(LocalDateTime.now());
-            }
-
-            // 初始化使用统计
-            if (apiKey.getUsage() == null) {
-                apiKey.setUsage(UsageStatistics.builder()
-                        .totalRequests(0L)
-                        .successfulRequests(0L)
-                        .failedRequests(0L)
-                        .dailyUsage(new HashMap<>())
-                        .build());
-            }
-
-            // 更新缓存
-            apiKeyCache.put(apiKey.getKeyValue(), apiKey);
-            keyIdIndex.put(apiKey.getKeyId(), apiKey.getKeyValue());
+            // 更新缓存（使用哈希值作为 key）
+            apiKeyCache.put(keyHash, apiKey);
+            keyIdIndex.put(keyId, keyHash);
 
             // 持久化到存储
             saveApiKeysToStore();
-            
-            // 记录API Key创建审计
-            if (extendedAuditService != null) {
-                extendedAuditService.auditApiKeyCreated(apiKey.getKeyId(), createdBy, ipAddress)
-                    .onErrorResume(ex -> {
-                        log.warn("记录API Key创建审计失败: {}", ex.getMessage());
-                        return Mono.empty();
-                    })
-                    .subscribe();
-            }
 
-            log.info("创建API Key成功: {}", apiKey.getKeyId());
-            return apiKey; // 返回完整的ApiKey，包含keyValue用于创建响应
+            // 记录审计
+            auditApiKeyCreated(keyId, createdBy, ipAddress);
+
+            log.info("创建API Key成功: {}, 哈希存储已完成", keyId);
+            
+            // 构建创建响应 VO（返回原始 keyValue）
+            return ApiKeyCreationVO.builder()
+                    .keyId(keyId)
+                    .keyValue(originalKeyValue)  // 仅此一次返回原始值
+                    .description(apiKey.getDescription())
+                    .permissions(apiKey.getPermissions())
+                    .enabled(apiKey.isEnabled())
+                    .createdAt(apiKey.getCreatedAt())
+                    .expiresAt(apiKey.getExpiresAt())
+                    .warning("密钥值只会显示一次，请妥善保存！")
+                    .build();
         });
     }
 
-    public Mono<ApiKey> updateApiKey(String keyId, ApiKey updateInfo) {
+    /**
+     * 更新 API Key
+     *
+     * @param keyId   API Key ID
+     * @param request 更新请求 DTO
+     * @return 更新后的 API Key VO
+     */
+    public Mono<ApiKeyVO> updateApiKey(String keyId, ApiKeyUpdateRequest request) {
         return Mono.fromCallable(() -> {
-            String keyValue = keyIdIndex.get(keyId);
-            if (keyValue == null) {
+            String keyHash = keyIdIndex.get(keyId);
+            if (keyHash == null) {
                 throw new IllegalArgumentException("API Key不存在: " + keyId);
             }
 
-            ApiKey existingKey = apiKeyCache.get(keyValue);
+            ApiKey existingKey = apiKeyCache.get(keyHash);
             if (existingKey == null) {
                 throw new IllegalArgumentException("API Key缓存不一致: " + keyId);
             }
 
-            // 更新字段（保持keyId和keyValue不变）
-            existingKey.setDescription(updateInfo.getDescription());
-            existingKey.setEnabled(updateInfo.isEnabled());
-            existingKey.setExpiresAt(updateInfo.getExpiresAt());
-            existingKey.setPermissions(updateInfo.getPermissions());
-            existingKey.setMetadata(updateInfo.getMetadata());
+            // 更新可修改的字段
+            if (request.getDescription() != null) {
+                existingKey.setDescription(request.getDescription());
+            }
+            if (request.getEnabled() != null) {
+                existingKey.setEnabled(request.getEnabled());
+            }
+            if (request.getExpiresAt() != null) {
+                existingKey.setExpiresAt(request.getExpiresAt());
+            }
+            if (request.getPermissions() != null) {
+                existingKey.setPermissions(request.getPermissions());
+            }
+            if (request.getAllowedIpAddresses() != null) {
+                existingKey.setAllowedIpAddresses(request.getAllowedIpAddresses());
+            }
+            if (request.getDailyRequestLimit() != null) {
+                existingKey.setDailyRequestLimit(request.getDailyRequestLimit());
+            }
 
             // 持久化到存储
             saveApiKeysToStore();
 
             log.info("更新API Key成功: {}", keyId);
-            return existingKey.createSecureCopy(); // 返回安全副本，不包含keyValue
+            return convertToVO(existingKey);
         });
     }
 
+    /**
+     * 删除 API Key
+     *
+     * @param keyId API Key ID
+     * @return Mono<Void>
+     */
     public Mono<Void> deleteApiKey(String keyId) {
         return deleteApiKey(keyId, "system");
     }
-    
+
+    /**
+     * 删除 API Key（带审计信息）
+     *
+     * @param keyId     API Key ID
+     * @param revokedBy 删除者
+     * @return Mono<Void>
+     */
     public Mono<Void> deleteApiKey(String keyId, String revokedBy) {
         return Mono.fromRunnable(() -> {
-            String keyValue = keyIdIndex.get(keyId);
-            if (keyValue == null) {
+            String keyHash = keyIdIndex.get(keyId);
+            if (keyHash == null) {
                 throw new IllegalArgumentException("API Key不存在: " + keyId);
             }
 
             // 从缓存中移除
-            apiKeyCache.remove(keyValue);
+            apiKeyCache.remove(keyHash);
             keyIdIndex.remove(keyId);
 
             // 持久化到存储
             saveApiKeysToStore();
-            
-            // 记录API Key撤销审计
-            if (extendedAuditService != null) {
-                extendedAuditService.auditApiKeyRevoked(keyId, "手动删除", revokedBy)
-                    .onErrorResume(ex -> {
-                        log.warn("记录API Key撤销审计失败: {}", ex.getMessage());
-                        return Mono.empty();
-                    })
-                    .subscribe();
-            }
+
+            // 记录审计
+            auditApiKeyRevoked(keyId, "手动删除", revokedBy);
 
             log.info("删除API Key成功: {}", keyId);
         });
     }
 
-    public Mono<List<ApiKey>> getAllApiKeys() {
-        return Mono.fromCallable(() -> apiKeyCache.values().stream()
-                .map(ApiKey::createSecureCopy) // 返回安全副本，不包含keyValue
-                .toList());
+    /**
+     * 获取所有 API Key 列表
+     *
+     * @return API Key 列表 VO
+     */
+    public Mono<ApiKeyListVO> getAllApiKeysVO() {
+        return Mono.fromCallable(() -> {
+            List<ApiKeyVO> items = apiKeyCache.values().stream()
+                    .map(this::convertToVO)
+                    .sorted(Comparator.comparing(ApiKeyVO::getCreatedAt).reversed())
+                    .toList();
+
+            // 统计状态
+            int enabledCount = 0;
+            int disabledCount = 0;
+            int expiredCount = 0;
+            long todayTotalRequests = 0L;
+            long todaySuccessfulRequests = 0L;
+            long todayFailedRequests = 0L;
+            String today = LocalDateTime.now().toLocalDate().toString();
+
+            for (ApiKey apiKey : apiKeyCache.values()) {
+                if (apiKey.isEnabled()) {
+                    enabledCount++;
+                } else {
+                    disabledCount++;
+                }
+                if (apiKey.isExpired()) {
+                    expiredCount++;
+                }
+                UsageStatistics usage = apiKey.getUsage();
+                if (usage != null) {
+                    Map<String, Long> dailyUsage = usage.getDailyUsage();
+                    if (dailyUsage != null) {
+                        Long todayCount = dailyUsage.get(today);
+                        if (todayCount != null) {
+                            todayTotalRequests += todayCount;
+                        }
+                    }
+                    todaySuccessfulRequests += usage.getSuccessfulRequests();
+                    todayFailedRequests += usage.getFailedRequests();
+                }
+            }
+
+            return ApiKeyListVO.builder()
+                    .items(items)
+                    .total(items.size())
+                    .enabledCount(enabledCount)
+                    .disabledCount(disabledCount)
+                    .expiredCount(expiredCount)
+                    .summary(ApiKeyListVO.Summary.builder()
+                            .todayTotalRequests(todayTotalRequests)
+                            .todaySuccessfulRequests(todaySuccessfulRequests)
+                            .todayFailedRequests(todayFailedRequests)
+                            .build())
+                    .build();
+        });
     }
 
-    public Mono<ApiKey> getApiKeyById(String keyId) {
+    /**
+     * 获取单个 API Key 详情
+     *
+     * @param keyId API Key ID
+     * @return API Key VO
+     */
+    public Mono<ApiKeyVO> getApiKeyByIdVO(String keyId) {
         return Mono.fromCallable(() -> {
-            String keyValue = keyIdIndex.get(keyId);
-            if (keyValue == null) {
+            String keyHash = keyIdIndex.get(keyId);
+            if (keyHash == null) {
                 throw new IllegalArgumentException("API Key不存在: " + keyId);
             }
 
-            ApiKey apiKey = apiKeyCache.get(keyValue);
+            ApiKey apiKey = apiKeyCache.get(keyHash);
             if (apiKey == null) {
                 throw new IllegalArgumentException("API Key缓存不一致: " + keyId);
             }
 
-            return apiKey.createSecureCopy(); // 返回安全副本，不包含keyValue
+            return convertToVO(apiKey);
         });
     }
 
+    /**
+     * 启用 API Key
+     *
+     * @param keyId API Key ID
+     * @return API Key VO
+     */
+    public Mono<ApiKeyVO> enableApiKey(String keyId) {
+        return Mono.fromCallable(() -> {
+            String keyHash = keyIdIndex.get(keyId);
+            if (keyHash == null) {
+                throw new IllegalArgumentException("API Key不存在: " + keyId);
+            }
+
+            ApiKey apiKey = apiKeyCache.get(keyHash);
+            if (apiKey == null) {
+                throw new IllegalArgumentException("API Key缓存不一致: " + keyId);
+            }
+
+            apiKey.setEnabled(true);
+            saveApiKeysToStore();
+
+            log.info("启用API Key成功: {}", keyId);
+            return convertToVO(apiKey);
+        });
+    }
+
+    /**
+     * 禁用 API Key
+     *
+     * @param keyId API Key ID
+     * @return API Key VO
+     */
+    public Mono<ApiKeyVO> disableApiKey(String keyId) {
+        return Mono.fromCallable(() -> {
+            String keyHash = keyIdIndex.get(keyId);
+            if (keyHash == null) {
+                throw new IllegalArgumentException("API Key不存在: " + keyId);
+            }
+
+            ApiKey apiKey = apiKeyCache.get(keyHash);
+            if (apiKey == null) {
+                throw new IllegalArgumentException("API Key缓存不一致: " + keyId);
+            }
+
+            apiKey.setEnabled(false);
+            saveApiKeysToStore();
+
+            log.info("禁用API Key成功: {}", keyId);
+            return convertToVO(apiKey);
+        });
+    }
+
+    /**
+     * 将 ApiKey 实体转换为 VO
+     */
+    private ApiKeyVO convertToVO(ApiKey apiKey) {
+        ApiKeyVO vo = ApiKeyVO.builder()
+                .keyId(apiKey.getKeyId())
+                .description(apiKey.getDescription())
+                .permissions(apiKey.getPermissions())
+                .enabled(apiKey.isEnabled())
+                .expired(apiKey.isExpired())
+                .createdAt(apiKey.getCreatedAt())
+                .expiresAt(apiKey.getExpiresAt())
+                .build();
+
+        // 添加使用统计信息
+        if (apiKey.getUsage() != null) {
+            vo.setTotalRequests(apiKey.getUsage().getTotalRequests());
+            vo.setSuccessfulRequests(apiKey.getUsage().getSuccessfulRequests());
+            vo.setFailedRequests(apiKey.getUsage().getFailedRequests());
+            vo.setLastUsedAt(apiKey.getUsage().getLastUsedAt());
+        }
+
+        // 计算剩余天数
+        vo.calculateRemainingDays();
+
+        return vo;
+    }
+
+    /**
+     * 更新使用统计
+     */
     public void updateUsageStatistics(String keyId, boolean success) {
-        String keyValue = keyIdIndex.get(keyId);
-        if (keyValue == null) {
+        String keyHash = keyIdIndex.get(keyId);
+        if (keyHash == null) {
             log.warn("API Key不存在: {}", keyId);
             return;
         }
-        ApiKey apiKey = apiKeyCache.get(keyValue);
+        ApiKey apiKey = apiKeyCache.get(keyHash);
         if (apiKey == null || apiKey.getUsage() == null) {
             log.warn("API Key或usage不存在: {}", keyId);
             return;
         }
 
         UsageStatistics stats = apiKey.getUsage();
-
-        // 更新统计数据
-        stats.setTotalRequests(stats.getTotalRequests() + 1);
-        if (success) {
-            stats.setSuccessfulRequests(stats.getSuccessfulRequests() + 1);
-        } else {
-            stats.setFailedRequests(stats.getFailedRequests() + 1);
-        }
-        stats.setLastUsedAt(LocalDateTime.now());
+        stats.incrementRequest(success);
 
         String today = LocalDateTime.now().toLocalDate().toString();
         Map<String, Long> dailyUsage = stats.getDailyUsage();
@@ -311,27 +501,12 @@ public class ApiKeyService {
         }
         dailyUsage.put(today, dailyUsage.getOrDefault(today, 0L) + 1);
 
-        // 持久化到存储
-        saveApiKeysToStore(); // 只保存 API Key 相关数据
+        saveApiKeysToStore();
         log.debug("更新API Key使用统计: {} (成功: {})", keyId, success);
     }
 
-    public Mono<UsageStatistics> getUsageStatistics(String keyId) {
-        return Mono.fromCallable(() -> {
-            String keyValue = keyIdIndex.get(keyId);
-            if (keyValue == null) {
-                throw new IllegalArgumentException("API Key不存在: " + keyId);
-            }
-            ApiKey apiKey = apiKeyCache.get(keyValue);
-            if (apiKey == null || apiKey.getUsage() == null) {
-                throw new IllegalArgumentException("API Key或usage不存在: " + keyId);
-            }
-            return apiKey.getUsage();
-        });
-    }
-
     /**
-     * 保存API Key数据到存储
+     * 保存 API Key 数据到存储
      */
     private void saveApiKeysToStore() {
         try {
@@ -345,11 +520,54 @@ public class ApiKeyService {
         }
     }
 
+    // ============ 审计辅助方法 ============
 
-    /**
-     * 检查是否存在持久化ApiKey配置
-     * @return true如果存在持久化配置
-     */
+    private void auditSecurityEvent(String eventType, String message, String keyId, String ipAddress) {
+        if (extendedAuditService != null) {
+            extendedAuditService.auditSecurityEvent(eventType, message, keyId, ipAddress)
+                    .onErrorResume(ex -> {
+                        log.warn("记录安全审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
+    }
+
+    private void auditApiKeyCreated(String keyId, String createdBy, String ipAddress) {
+        if (extendedAuditService != null) {
+            extendedAuditService.auditApiKeyCreated(keyId, createdBy, ipAddress)
+                    .onErrorResume(ex -> {
+                        log.warn("记录API Key创建审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
+    }
+
+    private void auditApiKeyUsed(String keyId, String endpoint, String ipAddress, boolean success) {
+        if (extendedAuditService != null) {
+            extendedAuditService.auditApiKeyUsed(keyId, endpoint, ipAddress, success)
+                    .onErrorResume(ex -> {
+                        log.warn("记录API Key使用审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
+    }
+
+    private void auditApiKeyRevoked(String keyId, String reason, String revokedBy) {
+        if (extendedAuditService != null) {
+            extendedAuditService.auditApiKeyRevoked(keyId, reason, revokedBy)
+                    .onErrorResume(ex -> {
+                        log.warn("记录API Key撤销审计失败: {}", ex.getMessage());
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
+    }
+
+    // ============ 配置加载和持久化方法 ============
+
     public boolean hasPersistedAccountConfig() {
         try {
             List<Integer> versions = storeManager.getConfigVersions(API_KEYS_STORE_KEY);
@@ -363,98 +581,108 @@ public class ApiKeyService {
         }
     }
 
-    /**
-     * 从YAML配置初始化ApiKey配置持久化存储
-     */
     public void initializeApiKeyFromYaml() {
-        log.info("首次启动，将YAML ApkKey配置保存为版本1");
+        log.info("首次启动，将YAML API Key配置保存为版本1");
 
         try {
-            // 获取YAML默认ApkKey配置
-            Map<String, Object> defaultAccountConfig = getVersionConfig(0);
+            Map<String, Object> defaultConfig = getVersionConfig(0);
+            saveNewVersion(defaultConfig);
 
-            // 保存为第一个版本
-            saveNewVersion(defaultAccountConfig);
-
-            List<ApiKey> keys = (List<ApiKey>) defaultAccountConfig.get(STORE_API_KEYS);
-
+            List<ApiKey> keys = (List<ApiKey>) defaultConfig.get(STORE_API_KEYS);
             keys.forEach(item -> {
-                        // 只有当密钥不在配置中时才添加（避免重复）
-                        if (!apiKeyCache.containsKey(item.getKeyValue())) {
-                            apiKeyCache.put(item.getKeyValue(), item);
-                            keyIdIndex.put(item.getKeyId(), item.getKeyValue());
-                        }
-                    }
-            );
-            log.info("YAML ApkKey配置已保存为版本1");
+                // 对旧的明文 keyValue 进行哈希迁移
+                if (item.getKeyValue() != null && !ApiKeyHashUtil.isHashedFormat(item.getKeyValue())) {
+                    String keyHash = ApiKeyHashUtil.hashApiKey(item.getKeyValue());
+                    item.setKeyHash(keyHash);
+                    item.setKeyValue(null);  // 清除明文
+                    item.setKeyPrefix("sk-");
+                    log.info("迁移API Key {} 从明文存储到哈希存储", item.getKeyId());
+                }
+                
+                if (item.getKeyHash() != null && !apiKeyCache.containsKey(item.getKeyHash())) {
+                    apiKeyCache.put(item.getKeyHash(), item);
+                    keyIdIndex.put(item.getKeyId(), item.getKeyHash());
+                }
+            });
 
+            // 保存迁移后的配置
+            saveApiKeysToStore();
+            log.info("YAML API Key配置已保存为版本1，并完成哈希迁移");
         } catch (Exception e) {
-            log.error("从YAML配置初始化ApkKey配置失败", e);
-            throw new RuntimeException("Failed to initialize JWT accounts from YAML config", e);
+            log.error("从YAML配置初始化API Key配置失败", e);
+            throw new RuntimeException("Failed to initialize API keys from YAML config", e);
         }
     }
 
-    /**
-     * 保存当前Apikey配置为新版本
-     * @param config 配置内容
-     * @return 新版本号
-     */
-    public int saveNewVersion(Map<String, Object> config) {
-        int version = getNextAccountVersion();
-        storeManager.saveConfigVersion(API_KEYS_STORE_KEY, config, version);
-        log.info("已保存JWT账户配置为新版本：{}", version);
-        return version;
-    }
-
-    /**
-     * 加载最新的持久化ApiKey配置
-     */
     public void loadLatestApiKeyConfig() {
-        log.info("发现持久化ApkKey配置，加载最新版本");
+        log.info("发现持久化API Key配置，加载最新版本");
 
         try {
             int currentVersion = getCurrentVersion();
             Map<String, Object> versionConfig = getVersionConfig(currentVersion);
 
             List<Map<String, Object>> keys = (List<Map<String, Object>>) versionConfig.get(STORE_API_KEYS);
-            keys.stream().map(item -> objectMapper.convertValue(item, ApiKey.class))
+            log.debug("从版本 {} 加载了 {} 个API Key配置", currentVersion, keys != null ? keys.size() : 0);
+            
+            // 如果持久化数据为空或无效，从 YAML 重新初始化
+            if (keys == null || keys.isEmpty()) {
+                log.warn("持久化API Key配置为空，从YAML重新初始化");
+                initializeApiKeyFromYaml();
+                return;
+            }
+            
+            keys.stream()
+                    .map(item -> objectMapper.convertValue(item, ApiKey.class))
                     .forEach(item -> {
-                                // 只有当密钥不在配置中时才添加（避免重复）
-                                if (!apiKeyCache.containsKey(item.getKeyValue())) {
-                                    apiKeyCache.put(item.getKeyValue(), item);
-                                    keyIdIndex.put(item.getKeyId(), item.getKeyValue());
-                                }
-                            }
-                    );
-            log.info("已加载ApkKey配置版本 {}", currentVersion);
+                        // 对旧的明文 keyValue 进行哈希迁移
+                        if (item.getKeyValue() != null && !ApiKeyHashUtil.isHashedFormat(item.getKeyValue())) {
+                            String keyHash = ApiKeyHashUtil.hashApiKey(item.getKeyValue());
+                            item.setKeyHash(keyHash);
+                            item.setKeyValue(null);
+                            item.setKeyPrefix("sk-");
+                            log.info("迁移API Key {} 从明文存储到哈希存储", item.getKeyId());
+                        }
+                        
+                        if (item.getKeyHash() != null && !apiKeyCache.containsKey(item.getKeyHash())) {
+                            apiKeyCache.put(item.getKeyHash(), item);
+                            keyIdIndex.put(item.getKeyId(), item.getKeyHash());
+                        } else if (item.getKeyHash() == null && item.getKeyValue() == null) {
+                            log.warn("API Key {} 没有有效的keyHash或keyValue，跳过", item.getKeyId());
+                        }
+                    });
 
+            // 如果缓存仍然为空，说明数据无效，从YAML重新初始化
+            if (apiKeyCache.isEmpty()) {
+                log.warn("加载后的API Key缓存为空，从YAML重新初始化");
+                initializeApiKeyFromYaml();
+                return;
+            }
+
+            // 保存迁移后的配置
+            saveApiKeysToStore();
+            log.info("已加载API Key配置版本 {}，共 {} 个密钥", currentVersion, apiKeyCache.size());
         } catch (Exception e) {
-            log.error("加载持久化ApkKey配置失败", e);
-            throw new RuntimeException("Failed to load persisted JWT account config", e);
+            log.error("加载持久化API Key配置失败", e);
+            throw new RuntimeException("Failed to load persisted API key config", e);
         }
     }
 
-    /**
-     * 获取所有ApkKey配置版本号
-     * @return 版本号列表
-     */
+    public int saveNewVersion(Map<String, Object> config) {
+        int version = getNextAccountVersion();
+        storeManager.saveConfigVersion(API_KEYS_STORE_KEY, config, version);
+        log.info("已保存API Key配置为新版本：{}", version);
+        return version;
+    }
+
     public List<Integer> getAllVersions() {
         return storeManager.getConfigVersions(API_KEYS_STORE_KEY);
     }
 
-    /**
-     * 获取当前最新ApkKey配置版本号
-     * @return 当前版本号
-     */
     public int getCurrentVersion() {
         List<Integer> versions = getAllVersions();
         return versions.isEmpty() ? 0 : versions.stream().mapToInt(Integer::intValue).max().orElse(0);
     }
 
-    /**
-     * 获取下一个版本号
-     * @return 下一个版本号
-     */
     private int getNextAccountVersion() {
         return getAllVersions().stream().max(Integer::compareTo).orElse(0) + 1;
     }
@@ -463,30 +691,31 @@ public class ApiKeyService {
         if (version == 0) {
             Map<String, Object> config = new HashMap<>();
             config.put(STORE_API_KEYS, loadApiKeysFromConfig());
-            return config; // YAML 原始配置
+            return config;
         }
         return storeManager.getConfigByVersion(API_KEYS_STORE_KEY, version);
     }
 
-    /**
-     * 从配置文件加载API Key
-     */
     private List<ApiKey> loadApiKeysFromConfig() {
         return securityProperties.getApiKey().getKeys().stream().peek(item -> {
             if (item.getCreatedAt() == null) {
                 item.setCreatedAt(LocalDateTime.now());
             }
-
             if (item.getUsage() == null) {
                 item.setUsage(UsageStatistics.builder()
                         .dailyUsage(new HashMap<>())
-                        .failedRequests(0)
+                        .failedRequests(0L)
                         .lastUsedAt(LocalDateTime.now())
-                        .successfulRequests(0)
-                        .totalRequests(0)
+                        .successfulRequests(0L)
+                        .totalRequests(0L)
                         .build());
+            }
+            if (item.getKeyPrefix() == null) {
+                item.setKeyPrefix("sk-");
+            }
+            if (item.getDailyRequestLimit() == 0) {
+                item.setDailyRequestLimit(0L);
             }
         }).toList();
     }
-
 }
