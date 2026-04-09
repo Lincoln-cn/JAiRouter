@@ -1,33 +1,51 @@
 package org.unreal.modelrouter.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.unreal.modelrouter.config.ConfigurationService;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.jpa.entity.InstanceCircuitBreakerEntity;
 import org.unreal.modelrouter.jpa.entity.InstanceRateLimitEntity;
+import org.unreal.modelrouter.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.jpa.repository.InstanceCircuitBreakerRepository;
 import org.unreal.modelrouter.jpa.repository.InstanceRateLimitRepository;
+import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
+import org.unreal.modelrouter.util.SecurityUtils;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * 服务实例管理器
  * v1.5.2: 使用 JPA 实现服务实例管理，使用 DTO 替代 Map
+ * v1.5.3: 添加版本管理支持，同步更新配置表
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ServiceInstanceManager {
 
     private final ServiceInstanceRepository serviceInstanceRepository;
     private final InstanceRateLimitRepository rateLimitRepository;
     private final InstanceCircuitBreakerRepository circuitBreakerRepository;
+    private final ServiceConfigRepository serviceConfigRepository;
+    private final ConfigurationService configurationService;
+
+    public ServiceInstanceManager(
+            ServiceInstanceRepository serviceInstanceRepository,
+            InstanceRateLimitRepository rateLimitRepository,
+            InstanceCircuitBreakerRepository circuitBreakerRepository,
+            ServiceConfigRepository serviceConfigRepository,
+            @Lazy ConfigurationService configurationService) {
+        this.serviceInstanceRepository = serviceInstanceRepository;
+        this.rateLimitRepository = rateLimitRepository;
+        this.circuitBreakerRepository = circuitBreakerRepository;
+        this.serviceConfigRepository = serviceConfigRepository;
+        this.configurationService = configurationService;
+    }
 
     /**
      * 获取服务下的所有实例
@@ -74,6 +92,10 @@ public class ServiceInstanceManager {
 
         ServiceInstanceEntity saved = serviceInstanceRepository.save(entity);
         log.info("Created service instance: {} for config: {}", saved.getId(), serviceConfigId);
+        
+        // 保存版本
+        saveVersion("添加服务实例: " + request.getName());
+        
         return convertToDTO(saved);
     }
 
@@ -84,6 +106,8 @@ public class ServiceInstanceManager {
     public ServiceInstanceDTO updateInstance(Long id, CreateServiceInstanceRequest request) {
         ServiceInstanceEntity entity = serviceInstanceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Instance not found: " + id));
+
+        String instanceName = entity.getInstanceName();
 
         if (request.getName() != null) {
             entity.setInstanceName(request.getName());
@@ -100,6 +124,10 @@ public class ServiceInstanceManager {
 
         ServiceInstanceEntity saved = serviceInstanceRepository.save(entity);
         log.info("Updated service instance: {}", id);
+        
+        // 保存版本
+        saveVersion("更新服务实例: " + instanceName);
+        
         return convertToDTO(saved);
     }
 
@@ -108,11 +136,19 @@ public class ServiceInstanceManager {
      */
     @Transactional
     public void deleteInstance(Long id) {
+        // 获取实例名称用于版本描述
+        ServiceInstanceEntity entity = serviceInstanceRepository.findById(id)
+                .orElse(null);
+        String instanceName = entity != null ? entity.getInstanceName() : String.valueOf(id);
+        
         // 同时删除关联的限流器和熔断器配置
         rateLimitRepository.deleteByInstanceId(id);
         circuitBreakerRepository.deleteByInstanceId(id);
         serviceInstanceRepository.deleteById(id);
         log.info("Deleted service instance: {}", id);
+        
+        // 保存版本
+        saveVersion("删除服务实例: " + instanceName);
     }
 
     /**
@@ -305,5 +341,108 @@ public class ServiceInstanceManager {
                 .timeout(entity.getTimeoutMs())
                 .successThreshold(entity.getSuccessThreshold())
                 .build();
+    }
+
+    /**
+     * 保存版本
+     * v1.5.3: 在实例变更后保存版本
+     * v1.5.4: 添加元数据字段用于版本列表显示
+     * 从数据库构建完整配置（包含实例数据），然后保存到 config_data 表
+     */
+    private void saveVersion(String description) {
+        try {
+            // 从数据库构建完整配置
+            Map<String, Object> fullConfig = buildFullConfigFromDatabase();
+            
+            // 添加元数据（用于版本列表显示操作类型和操作详情）
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("operation", "instanceChange");
+            metadata.put("operationDetail", description);
+            metadata.put("timestamp", System.currentTimeMillis());
+            fullConfig.put("_metadata", metadata);
+            
+            // 保存为新版本
+            String userId = SecurityUtils.getCurrentUserId();
+            configurationService.saveAsNewVersion(fullConfig, description, userId);
+            log.info("版本已保存: {}", description);
+        } catch (Exception e) {
+            log.warn("保存版本失败: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * 从数据库构建完整配置
+     * 包含所有服务配置和实例数据
+     */
+    private Map<String, Object> buildFullConfigFromDatabase() {
+        // 获取基础配置
+        Map<String, Object> baseConfig = configurationService.getAllConfigurations();
+        Map<String, Object> result = new HashMap<>(baseConfig);
+        
+        // 获取所有服务配置
+        List<ServiceConfigEntity> serviceConfigs = serviceConfigRepository.findAllByIsLatestTrue();
+        
+        // 构建服务配置 Map
+        Map<String, Object> servicesMap = new HashMap<>();
+        
+        for (ServiceConfigEntity serviceConfig : serviceConfigs) {
+            Map<String, Object> serviceMap = new HashMap<>();
+            serviceMap.put("adapter", serviceConfig.getAdapter());
+            
+            // 负载均衡配置
+            Map<String, Object> loadBalanceMap = new HashMap<>();
+            loadBalanceMap.put("type", serviceConfig.getLoadBalanceType() != null ? 
+                    serviceConfig.getLoadBalanceType() : "round-robin");
+            loadBalanceMap.put("hashAlgorithm", "md5");
+            serviceMap.put("loadBalance", loadBalanceMap);
+            
+            // 获取该服务的所有实例
+            List<ServiceInstanceEntity> instances = serviceInstanceRepository
+                    .findByServiceConfigId(serviceConfig.getId());
+            
+            List<Map<String, Object>> instancesList = new ArrayList<>();
+            for (ServiceInstanceEntity instance : instances) {
+                Map<String, Object> instanceMap = new HashMap<>();
+                instanceMap.put("name", instance.getInstanceName());
+                instanceMap.put("baseUrl", instance.getBaseUrl());
+                instanceMap.put("path", instance.getPath());
+                instanceMap.put("weight", instance.getWeight());
+                instanceMap.put("status", instance.getStatus());
+                instanceMap.put("instanceId", String.valueOf(instance.getId()));
+                
+                // 添加限流器配置
+                rateLimitRepository.findByInstanceId(instance.getId())
+                        .ifPresent(rateLimit -> {
+                            Map<String, Object> rateLimitMap = new HashMap<>();
+                            rateLimitMap.put("enabled", rateLimit.getEnabled());
+                            rateLimitMap.put("algorithm", rateLimit.getAlgorithm());
+                            rateLimitMap.put("capacity", rateLimit.getCapacity());
+                            rateLimitMap.put("rate", rateLimit.getRate());
+                            rateLimitMap.put("scope", rateLimit.getScope());
+                            rateLimitMap.put("key", rateLimit.getRateLimitKey());
+                            rateLimitMap.put("clientIpEnable", rateLimit.getClientIpEnable());
+                            instanceMap.put("rateLimit", rateLimitMap);
+                        });
+                
+                // 添加熔断器配置
+                circuitBreakerRepository.findByInstanceId(instance.getId())
+                        .ifPresent(cb -> {
+                            Map<String, Object> cbMap = new HashMap<>();
+                            cbMap.put("enabled", cb.getEnabled());
+                            cbMap.put("failureThreshold", cb.getFailureThreshold());
+                            cbMap.put("timeout", cb.getTimeoutMs());
+                            cbMap.put("successThreshold", cb.getSuccessThreshold());
+                            instanceMap.put("circuitBreaker", cbMap);
+                        });
+                
+                instancesList.add(instanceMap);
+            }
+            
+            serviceMap.put("instances", instancesList);
+            servicesMap.put(serviceConfig.getServiceType(), serviceMap);
+        }
+        
+        result.put("services", servicesMap);
+        return result;
     }
 }

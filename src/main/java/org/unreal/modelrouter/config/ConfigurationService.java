@@ -1,8 +1,10 @@
 package org.unreal.modelrouter.config;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.checker.ServerChecker;
 import org.unreal.modelrouter.checker.ServiceStateManager;
@@ -22,7 +24,6 @@ import org.unreal.modelrouter.util.InstanceIdUtils;
 import org.unreal.modelrouter.util.JacksonHelper;
 import org.unreal.modelrouter.util.SecurityUtils;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
  * 配置管理服务 - 重构版 提供完整的服务配置增删改查功能 支持服务、实例的动态管理 支持配置版本管理
  */
 @Service
+@DependsOn("jpaDatabaseInitializer")
 public class ConfigurationService {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationService.class);
@@ -45,6 +47,8 @@ public class ConfigurationService {
     private final SamplingConfigurationValidator samplingValidator;
     // v1.5.1: 移除 DatabaseConfigService 依赖
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
+    // v1.5.6: 配置同步服务，用于版本回滚时同步实例到数据库
+    private ConfigSyncService configSyncService;
 
     private static final long REQUEST_DEDUP_WINDOW_MS = 1000; // 1秒内的重复请求将被忽略
     // 版本控制相关字段
@@ -74,6 +78,15 @@ public class ConfigurationService {
         this.configMergeService = configMergeService;
         this.serviceStateManager = serviceStateManager;
         this.samplingValidator = samplingValidator;
+        // 版本控制初始化移到 @PostConstruct 中，确保 JpaDatabaseInitializer 先执行
+    }
+
+    /**
+     * 初始化版本控制（在 JpaDatabaseInitializer 之后执行）
+     * v1.5.5: 移到 @PostConstruct 确保初始化顺序正确
+     */
+    @PostConstruct
+    public void postConstructInit() {
         initializeVersionControl();
     }
 
@@ -87,150 +100,117 @@ public class ConfigurationService {
     }
 
     /**
+     * 设置ConfigSyncService引用 用于避免循环依赖问题
+     * v1.5.6: 用于版本回滚时同步实例到数据库
+     *
+     * @param configSyncService ConfigSyncService实例
+     */
+    @Autowired
+    public void setConfigSyncService(ConfigSyncService configSyncService) {
+        this.configSyncService = configSyncService;
+    }
+
+    /**
      * 初始化版本控制
+     * v1.5.2: 从数据库同步版本信息，不再依赖文件存储
      */
     private void initializeVersionControl() {
         try {
-            // 检查是否已经存在版本文件，如果存在则直接使用，不进行初始化
-            if (storeManager.exists(CURRENT_KEY + ".metadata") || storeManager.exists(CURRENT_KEY + ".history")) {
-                logger.info("检测到已存在的版本文件，跳过初始化过程，直接加载历史数据");
-
-                // 优先读取历史文件
-                if (storeManager.exists(CURRENT_KEY + ".history")) {
-                    Map<String, Object> historyWrapper = storeManager.getConfig(CURRENT_KEY + ".history");
-                    if (historyWrapper != null && historyWrapper.containsKey("history")) {
+            logger.info("初始化版本控制，从数据库同步版本信息...");
+            
+            // 从数据库获取已存在的版本列表
+            List<Integer> dbVersions = storeManager.getConfigVersions(CURRENT_KEY);
+            logger.info("从数据库获取到 {} 个版本: {}", dbVersions.size(), dbVersions);
+            
+            // 创建或更新元数据
+            ConfigMetadata metadata = configMetadataMap.computeIfAbsent(CURRENT_KEY, k -> {
+                ConfigMetadata newMetadata = new ConfigMetadata();
+                newMetadata.setConfigKey(CURRENT_KEY);
+                newMetadata.setCreatedAt(LocalDateTime.now());
+                return newMetadata;
+            });
+            
+            // 从数据库版本列表同步元数据
+            if (!dbVersions.isEmpty()) {
+                // 当前版本为数据库中的最大版本号
+                int maxVersion = dbVersions.stream().max(Integer::compareTo).orElse(0);
+                metadata.setCurrentVersion(maxVersion);
+                metadata.setInitialVersion(dbVersions.stream().min(Integer::compareTo).orElse(1));
+                metadata.setTotalVersions(dbVersions.size());
+                metadata.setExistingVersions(new HashSet<>(dbVersions));
+                metadata.setLastModified(LocalDateTime.now());
+                metadata.setLastModifiedBy("system-sync");
+                
+                logger.info("已从数据库同步版本元数据: 当前版本={}, 总版本数={}, 版本列表={}",
+                        maxVersion, dbVersions.size(), dbVersions);
+                
+                // 构建版本历史记录（从数据库实体获取创建时间等信息）
+                List<VersionInfo> versionHistory = new ArrayList<>();
+                for (Integer version : dbVersions) {
+                    VersionInfo versionInfo = new VersionInfo();
+                    versionInfo.setVersion(version);
+                    versionInfo.setCreatedAt(storeManager.getVersionCreatedTime(CURRENT_KEY, version));
+                    versionInfo.setCreatedBy("system");
+                    versionInfo.setDescription("配置版本 " + version);
+                    versionInfo.setChangeType(version == 1 ? VersionInfo.ChangeType.INITIAL : VersionInfo.ChangeType.UPDATE);
+                    
+                    // 尝试从配置中获取 metadata 信息
+                    Map<String, Object> config = storeManager.getConfigByVersion(CURRENT_KEY, version);
+                    if (config != null && config.containsKey("_metadata")) {
                         @SuppressWarnings("unchecked")
-                        List<Map<String, Object>> historyList = (List<Map<String, Object>>) historyWrapper.get("history");
-                        if (historyList != null) {
-                            List<VersionInfo> versionHistory = new ArrayList<>();
-                            for (Map<String, Object> historyItem : historyList) {
-                                VersionInfo versionInfo = new VersionInfo();
-                                if (historyItem.containsKey("version")) {
-                                    versionInfo.setVersion(((Number) historyItem.get("version")).intValue());
-                                }
-                                if (historyItem.containsKey("createdAt")) {
-                                    versionInfo.setCreatedAt(JacksonHelper.covertStringToLocalDateTime((String) historyItem.get("createdAt")));
-                                }
-                                if (historyItem.containsKey("createdBy")) {
-                                    versionInfo.setCreatedBy((String) historyItem.get("createdBy"));
-                                }
-                                if (historyItem.containsKey("description")) {
-                                    versionInfo.setDescription((String) historyItem.get("description"));
-                                }
-                                if (historyItem.containsKey("changeType")) {
-                                    versionInfo.setChangeType(VersionInfo.ChangeType.valueOf((String) historyItem.get("changeType")));
-                                }
-                                versionHistory.add(versionInfo);
-                            }
-                            versionHistoryMap.put(CURRENT_KEY, versionHistory);
-                            logger.info("成功加载版本历史，共 {} 个版本", versionHistory.size());
-                        }
-                    }
-                }
-
-                // 然后读取元数据文件
-                if (storeManager.exists(CURRENT_KEY + ".metadata")) {
-                    Map<String, Object> metadataMap = storeManager.getConfig(CURRENT_KEY + ".metadata");
-                    if (metadataMap != null) {
-                        ConfigMetadata metadata = new ConfigMetadata();
-                        metadata.setConfigKey(CURRENT_KEY);
-                        if (metadataMap.containsKey("currentVersion")) {
-                            metadata.setCurrentVersion(((Number) metadataMap.get("currentVersion")).intValue());
-                        }
-                        if (metadataMap.containsKey("initialVersion")) {
-                            metadata.setInitialVersion(((Number) metadataMap.get("initialVersion")).intValue());
-                        }
-                        if (metadataMap.containsKey("createdAt")) {
-                            metadata.setCreatedAt(JacksonHelper.covertStringToLocalDateTime((String) metadataMap.get("createdAt")));
-                        }
-                        if (metadataMap.containsKey("lastModified")) {
-                            metadata.setLastModified(JacksonHelper.covertStringToLocalDateTime((String) metadataMap.get("lastModified")));
-                        }
-                        if (metadataMap.containsKey("lastModifiedBy")) {
-                            metadata.setLastModifiedBy((String) metadataMap.get("lastModifiedBy"));
-                        }
-                        if (metadataMap.containsKey("totalVersions")) {
-                            metadata.setTotalVersions(((Number) metadataMap.get("totalVersions")).intValue());
-                        }
-                        if (metadataMap.containsKey("existingVersions")) {
-                            @SuppressWarnings("unchecked")
-                            List<Integer> versionList = (List<Integer>) metadataMap.get("existingVersions");
-                            if (versionList != null) {
-                                metadata.setExistingVersions(new HashSet<>(versionList));
-                                logger.info("加载了 {} 个版本: {}", versionList.size(), versionList);
+                        Map<String, Object> configMetadata = (Map<String, Object>) config.get("_metadata");
+                        if (configMetadata != null) {
+                            if (configMetadata.containsKey("operation")) {
+                                versionInfo.setDescription((String) configMetadata.get("operationDetail"));
                             }
                         }
-                        configMetadataMap.put(CURRENT_KEY, metadata);
-                        logger.info("成功加载配置元数据，当前版本: {}", metadata.getCurrentVersion());
                     }
+                    versionHistory.add(versionInfo);
                 }
+                versionHistoryMap.put(CURRENT_KEY, versionHistory);
             } else {
-
-                // 只有在完全没有版本文件时才进行初始化
-                logger.info("未检测到任何版本文件，执行初始化过程");
-
-                // 创建初始元数据
-                ConfigMetadata metadata = new ConfigMetadata();
-                metadata.setConfigKey(CURRENT_KEY);
+                // 数据库中没有版本，创建初始元数据
                 metadata.setInitialVersion(1);
                 metadata.setCurrentVersion(0);
-                metadata.setCreatedAt(LocalDateTime.now());
-                metadata.setLastModified(LocalDateTime.now());
-                metadata.setLastModifiedBy("system");
                 metadata.setTotalVersions(0);
                 metadata.setExistingVersions(new HashSet<>());
-
-                configMetadataMap.put(CURRENT_KEY, metadata);
-                saveMetadata(CURRENT_KEY, metadata);
-
-                // 创建空的历史记录
-                List<VersionInfo> versionHistory = new ArrayList<>();
-                versionHistoryMap.put(CURRENT_KEY, versionHistory);
-                saveVersionHistory(CURRENT_KEY, versionHistory);
-
-                logger.info("版本控制初始化完成");
+                metadata.setLastModified(LocalDateTime.now());
+                metadata.setLastModifiedBy("system-init");
+                
+                versionHistoryMap.put(CURRENT_KEY, new ArrayList<>());
+                logger.info("数据库中没有版本记录，创建初始元数据");
             }
+            
+            configMetadataMap.put(CURRENT_KEY, metadata);
+            
+            // 保存元数据到文件（作为备份）
+            saveMetadata(CURRENT_KEY, metadata);
+            saveVersionHistory(CURRENT_KEY, versionHistoryMap.get(CURRENT_KEY));
+            
+            logger.info("版本控制初始化完成，当前版本: {}", metadata.getCurrentVersion());
         } catch (Exception e) {
-            logger.warn("初始化版本控制数据时发生错误: {}", e.getMessage());
+            logger.warn("初始化版本控制数据时发生错误: {}", e.getMessage(), e);
         }
     }
 
     /**
      * 生成下一个可用的版本号
-     * 使用时间戳+随机数确保唯一性，不要求连续
+     * v1.5.2: 使用简单的递增策略，直接从数据库获取最大版本号+1
      */
     private int generateNextVersionNumber() {
-        // 使用时间戳的后6位 + 3位随机数生成版本号
-        long timestamp = System.currentTimeMillis();
-        int timestampPart = (int) (timestamp % 1000000); // 取后6位
-        int randomPart = (int) (new SecureRandom().nextDouble() * 1000); // 3位随机数
-
-        int candidateVersion = timestampPart * 1000 + randomPart;
-
-        // 确保版本号不小于当前最大版本号
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-        if (metadata != null && candidateVersion <= metadata.getCurrentVersion()) {
-            candidateVersion = metadata.getCurrentVersion() + 1 + randomPart;
-        }
-
-        // 检查版本号是否已存在，如果存在则递增直到找到可用的
-        int maxAttempts = 100;
-        int attempts = 0;
-        while (storeManager.versionExists(CURRENT_KEY, candidateVersion) && attempts < maxAttempts) {
-            candidateVersion++;
-            attempts++;
-        }
-
-        if (attempts >= maxAttempts) {
-            // 如果尝试100次都找不到可用版本号，使用简单递增策略
-            candidateVersion = metadata != null ? metadata.getCurrentVersion() + 1 : 1;
-            while (storeManager.versionExists(CURRENT_KEY, candidateVersion)) {
-                candidateVersion++;
-            }
-        }
-
-        logger.debug("生成的版本号: {}", candidateVersion);
-        return candidateVersion;
+        // 从数据库获取当前所有版本
+        List<Integer> existingVersions = storeManager.getConfigVersions(CURRENT_KEY);
+        
+        // 找到最大版本号
+        int maxVersion = existingVersions.stream()
+                .max(Integer::compareTo)
+                .orElse(0);
+        
+        // 新版本号 = 最大版本号 + 1
+        int newVersion = maxVersion + 1;
+        
+        logger.debug("生成新版本号: {} (当前最大版本: {})", newVersion, maxVersion);
+        return newVersion;
     }
 
     /**
@@ -308,32 +288,30 @@ public class ConfigurationService {
 
     /**
      * 获取所有配置版本号
+     * v1.5.2: 直接从数据库获取版本列表
      *
      * @return 版本号列表
      */
     public List<Integer> getAllVersions() {
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-        if (metadata == null) {
+        // 直接从数据库获取版本列表
+        List<Integer> dbVersions = storeManager.getConfigVersions(CURRENT_KEY);
+        
+        if (dbVersions == null || dbVersions.isEmpty()) {
+            logger.debug("数据库中没有版本记录");
             return new ArrayList<>();
         }
-
-        // 从元数据中获取版本列表
-        Set<Integer> existingVersions = metadata.getExistingVersions();
-        if (existingVersions.isEmpty()) {
-            // 如果元数据中没有版本列表，进行一次扫描并更新元数据
-            logger.info("元数据中版本列表为空，进行文件扫描");
-            List<Integer> scannedVersions = scanExistingVersions();
-            metadata.setExistingVersions(new HashSet<>(scannedVersions));
-            saveMetadata(CURRENT_KEY, metadata);
-            return scannedVersions;
+        
+        // 排序返回
+        dbVersions.sort(Integer::compareTo);
+        logger.debug("从数据库获取到 {} 个版本: {}", dbVersions.size(), dbVersions);
+        
+        // 同步更新内存元数据（可选，用于缓存）
+        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
+        if (metadata != null) {
+            metadata.setExistingVersions(new HashSet<>(dbVersions));
         }
-
-        // 返回排序后的版本列表
-        List<Integer> sortedVersions = new ArrayList<>(existingVersions);
-        sortedVersions.sort(Integer::compareTo);
-
-        logger.debug("从元数据获取到 {} 个版本: {}", sortedVersions.size(), sortedVersions);
-        return sortedVersions;
+        
+        return dbVersions;
     }
 
     /**
@@ -407,8 +385,12 @@ public class ConfigurationService {
      */
     private int saveAsNewVersionInternal(Map<String, Object> config, String description, String userId) {
         try {
-            logger.debug("开始保存新版本，描述: {}, 用户: {}", description, userId);
+            // 调用链追踪：记录调用来源（用于调试重复版本问题）
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+            String callerInfo = stackTrace.length > 3 ? stackTrace[3].toString() : "unknown";
+            logger.info("【版本创建调用链】描述='{}', 调用来源={}", description, callerInfo);
 
+            logger.debug("开始保存新版本，描述: {}, 用户: {}", description, userId);
 
             // 记录版本创建的时间间隔，帮助识别短时间内的重复创建
             recordVersionCreationTiming(description);
@@ -505,6 +487,17 @@ public class ConfigurationService {
                 // 应用配置到存储
                 storeManager.saveConfig(CURRENT_KEY, config);
                 logger.debug("配置已成功应用到存储管理器");
+
+                // v1.5.6: 同步实例数据到数据库（用于版本回滚）
+                if (configSyncService != null) {
+                    try {
+                        configSyncService.syncInstancesToDatabase(config);
+                        logger.debug("实例数据已同步到数据库");
+                    } catch (Exception syncException) {
+                        logger.warn("同步实例到数据库失败: {}", syncException.getMessage());
+                        // 不阻止配置应用，只记录警告
+                    }
+                }
 
                 // 刷新运行时配置
                 refreshRuntimeConfig();
@@ -625,32 +618,30 @@ public class ConfigurationService {
 
     /**
      * 获取实际当前配置版本号
+     * v1.5.2: 从数据库获取最大版本号作为当前版本
      *
      * @return 当前配置版本号，如果不存在则返回0
      */
     public int getActualCurrentVersion() {
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-        if (metadata != null) {
-            return metadata.getCurrentVersion();
-        }
-
-        // 如果没有元数据信息，则返回通过版本列表计算的版本号
-        int fallbackVersion = getCurrentVersion();
-        logger.info("未找到元数据版本信息，使用回退版本: {}", fallbackVersion);
-        return fallbackVersion;
+        // 直接从数据库获取最大版本号
+        List<Integer> versions = storeManager.getConfigVersions(CURRENT_KEY);
+        int currentVersion = versions.stream()
+                .max(Integer::compareTo)
+                .orElse(0);
+        
+        logger.debug("当前实际版本: {}", currentVersion);
+        return currentVersion;
     }
 
     /**
      * 获取当前最新版本号（基于版本列表）
+     * v1.5.2: 从数据库获取最大版本号
      *
      * @return 当前版本号
      */
     public int getCurrentVersion() {
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-        if (metadata != null) {
-            return metadata.getCurrentVersion();
-        }
-        return 0;
+        // 使用 getActualCurrentVersion 方法，确保一致性
+        return getActualCurrentVersion();
     }
 
     /**

@@ -1,1 +1,0 @@
-import{r as e}from"./index-BP8YDDLe.js";const t=()=>e.get("/models/stats"),s=()=>e.get("/config/type/services"),o=t=>e.get(`/config/instance/type/${t}`),g=()=>e.get("/monitoring/overview"),i=()=>e.get("/config/type");export{i as a,g as b,s as c,o as d,t as g};

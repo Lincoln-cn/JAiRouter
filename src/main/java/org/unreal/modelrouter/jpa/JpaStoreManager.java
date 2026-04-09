@@ -14,6 +14,7 @@ import org.unreal.modelrouter.util.JacksonHelper;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -35,24 +36,28 @@ public class JpaStoreManager implements StoreManager {
         }
         try {
             String configValue = JacksonHelper.getObjectMapper().writeValueAsString(config);
+
+            // 检查是否已存在配置（不自动创建新版本，只更新当前活跃配置）
+            Optional<ConfigEntity> existingEntity = configRepository.findFirstByConfigKeyAndIsLatestTrue(key);
             
-            // 获取当前最大版本号
-            List<Integer> versions = configRepository.findAllVersionsByConfigKey(key);
-            int newVersion = versions.isEmpty() ? 1 : versions.stream().max(Integer::compareTo).orElse(0) + 1;
-            
-            // 标记所有现有版本为非最新
-            configRepository.markAllAsNotLatest(key);
-            
-            // 保存新版本
-            ConfigEntity entity = ConfigEntity.builder()
-                    .configKey(key)
-                    .configValue(configValue)
-                    .version(newVersion)
-                    .isLatest(true)
-                    .build();
-            
-            configRepository.save(entity);
-            log.info("Saved config for key: {} with version: {}", key, newVersion);
+            if (existingEntity.isPresent()) {
+                // 更新现有配置（不创建新版本）
+                ConfigEntity entity = existingEntity.get();
+                entity.setConfigValue(configValue);
+                entity.setUpdatedAt(LocalDateTime.now());
+                configRepository.save(entity);
+                log.info("Updated config for key: {} with version: {}", key, entity.getVersion());
+            } else {
+                // 创建新配置
+                ConfigEntity entity = ConfigEntity.builder()
+                        .configKey(key)
+                        .configValue(configValue)
+                        .version(1)
+                        .isLatest(true)
+                        .build();
+                configRepository.save(entity);
+                log.info("Created new config for key: {} with version: 1", key);
+            }
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize config for key: {}", key, e);
             throw new RuntimeException("Failed to save config", e);
@@ -98,15 +103,19 @@ public class JpaStoreManager implements StoreManager {
         try {
             String configValue = JacksonHelper.getObjectMapper().writeValueAsString(config);
             
+            // v1.5.4: 标记所有现有版本为非最新，新版本标记为最新
+            // 这样 saveConfig 调用时能找到这个版本进行更新，而不是创建新版本
+            configRepository.markAllAsNotLatest(key);
+            
             ConfigEntity entity = ConfigEntity.builder()
                     .configKey(key)
                     .configValue(configValue)
                     .version(version)
-                    .isLatest(false)
+                    .isLatest(true)
                     .build();
             
             configRepository.save(entity);
-            log.info("Saved config version for key: {} with version: {}", key, version);
+            log.info("Saved config version for key: {} with version: {} (marked as latest)", key, version);
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize config for key: {} version: {}", key, version, e);
             throw new RuntimeException("Failed to save config version", e);

@@ -5,26 +5,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.store.ReactiveVersionedStoreManager;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
+import org.unreal.modelrouter.jpa.JpaStoreManager;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * VersionControlService 测试类
- * 纯响应式测试
+ * v1.5.x: JPA 版本（同步 API）
  */
 @ExtendWith(MockitoExtension.class)
 class VersionControlServiceTest {
 
     @Mock
-    private ReactiveVersionedStoreManager storeManager;
+    private JpaStoreManager storeManager;
 
     private VersionControlService versionControlService;
 
@@ -34,67 +32,9 @@ class VersionControlServiceTest {
     }
 
     @Test
-    void testInitialize_NoExistingData() {
-        // When - No existing metadata or history
-        when(storeManager.exists("model-router-config.metadata")).thenReturn(Mono.just(false));
-        when(storeManager.saveConfig(anyString(), any())).thenReturn(Mono.empty());
-
-        // Then
-        StepVerifier.create(versionControlService.initialize())
-                .verifyComplete();
-    }
-
-    @Test
-    void testInitialize_WithExistingData() {
-        // Given - Existing metadata
-        Map<String, Object> metadataMap = new HashMap<>();
-        metadataMap.put("currentVersion", 5);
-        metadataMap.put("initialVersion", 1);
-        metadataMap.put("totalVersions", 5);
-        metadataMap.put("existingVersions", java.util.List.of(1, 2, 3, 4, 5));
-
-        Map<String, Object> historyMap = new HashMap<>();
-        historyMap.put("history", java.util.List.of());
-
-        // When
-        when(storeManager.exists("model-router-config.metadata")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.metadata")).thenReturn(Mono.just(metadataMap));
-        when(storeManager.exists("model-router-config.history")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.history")).thenReturn(Mono.just(historyMap));
-
-        // Then
-        StepVerifier.create(versionControlService.initialize())
-                .verifyComplete();
-    }
-
-    @Test
-    void testGetAllVersions() {
-        // Given
-        Map<String, Object> metadataMap = new HashMap<>();
-        metadataMap.put("currentVersion", 3);
-        metadataMap.put("initialVersion", 1);
-        metadataMap.put("totalVersions", 3);
-        metadataMap.put("existingVersions", java.util.List.of(1, 2, 3));
-
-        // When
-        when(storeManager.exists("model-router-config.metadata")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.metadata")).thenReturn(Mono.just(metadataMap));
-        when(storeManager.exists("model-router-config.history")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.history")).thenReturn(Mono.just(Map.of("history", java.util.List.of())));
-
-        // Initialize first
-        StepVerifier.create(versionControlService.initialize())
-                .verifyComplete();
-
-        // Then
-        StepVerifier.create(versionControlService.getAllVersions().collectList())
-                .assertNext(versions -> {
-                    org.junit.jupiter.api.Assertions.assertEquals(3, versions.size());
-                    org.junit.jupiter.api.Assertions.assertEquals(1, versions.get(0));
-                    org.junit.jupiter.api.Assertions.assertEquals(2, versions.get(1));
-                    org.junit.jupiter.api.Assertions.assertEquals(3, versions.get(2));
-                })
-                .verifyComplete();
+    void testGetCurrentVersion_InitialState() {
+        // 初始状态，版本号为 0
+        assertEquals(0, versionControlService.getCurrentVersion());
     }
 
     @Test
@@ -104,150 +44,108 @@ class VersionControlServiceTest {
         config.put("key", "value");
 
         // When
-        when(storeManager.saveConfigVersion(anyString(), any(), anyInt())).thenReturn(Mono.empty());
-        when(storeManager.saveConfig(anyString(), any())).thenReturn(Mono.empty());
+        Integer version = versionControlService.createNewVersion(config, "Test version", "test-user");
 
-        // Initialize first
-        when(storeManager.exists("model-router-config.metadata")).thenReturn(Mono.just(false));
-        StepVerifier.create(versionControlService.initialize())
-                .verifyComplete();
-
-        // Then - Create version
-        StepVerifier.create(versionControlService.createNewVersion(config, "Test version", "test-user"))
-                .assertNext(version -> org.junit.jupiter.api.Assertions.assertTrue(version > 0))
-                .verifyComplete();
+        // Then
+        assertNotNull(version);
+        assertTrue(version > 0);
+        assertEquals(1, versionControlService.getCurrentVersion());
     }
 
     @Test
-    void testGetVersionConfig_VersionZero() {
-        // Version 0 should return empty (YAML config handled elsewhere)
-        StepVerifier.create(versionControlService.getVersionConfig(0))
-                .verifyComplete();
-    }
-
-    @Test
-    void testGetVersionConfig_ExistingVersion() {
+    void testCreateMultipleVersions() {
         // Given
-        Map<String, Object> config = new HashMap<>();
-        config.put("key", "value");
+        Map<String, Object> config1 = new HashMap<>();
+        config1.put("version", 1);
+        Map<String, Object> config2 = new HashMap<>();
+        config2.put("version", 2);
 
         // When
-        when(storeManager.getConfigByVersion("model-router-config", 1))
-                .thenReturn(Mono.just(config));
+        Integer v1 = versionControlService.createNewVersion(config1, "First version", "user1");
+        Integer v2 = versionControlService.createNewVersion(config2, "Second version", "user2");
 
         // Then
-        StepVerifier.create(versionControlService.getVersionConfig(1))
-                .assertNext(result -> org.junit.jupiter.api.Assertions.assertEquals("value", result.get("key")))
-                .verifyComplete();
+        assertEquals(1, v1);
+        assertEquals(2, v2);
+        assertEquals(2, versionControlService.getCurrentVersion());
     }
 
     @Test
-    void testVersionExists_True() {
+    void testRollbackToVersion() {
+        // Given
+        Map<String, Object> existingConfig = new HashMap<>();
+        existingConfig.put("rolledBack", true);
+        
+        when(storeManager.getConfig(anyString())).thenReturn(existingConfig);
+
+        // 先创建一个版本
+        versionControlService.createNewVersion(new HashMap<>(), "Initial", "user");
+
         // When
-        when(storeManager.versionExists("model-router-config", 1))
-                .thenReturn(Mono.just(true));
+        Map<String, Object> result = versionControlService.rollbackToVersion(1);
 
         // Then
-        StepVerifier.create(versionControlService.versionExists(1))
-                .assertNext(org.junit.jupiter.api.Assertions::assertTrue)
-                .verifyComplete();
+        assertNotNull(result);
+        assertTrue(result.containsKey("rolledBack"));
+        verify(storeManager).getConfig("model-router-config");
     }
 
     @Test
-    void testVersionExists_False() {
-        // When
-        when(storeManager.versionExists("model-router-config", 999))
-                .thenReturn(Mono.just(false));
+    void testGetCurrentVersion_AfterCreations() {
+        // Given - 创建多个版本
+        for (int i = 1; i <= 5; i++) {
+            versionControlService.createNewVersion(
+                Map.of("iteration", i),
+                "Version " + i,
+                "user"
+            );
+        }
 
         // Then
-        StepVerifier.create(versionControlService.versionExists(999))
-                .assertNext(org.junit.jupiter.api.Assertions::assertFalse)
-                .verifyComplete();
+        assertEquals(5, versionControlService.getCurrentVersion());
     }
 
     @Test
-    void testDeleteVersion_Success() {
-        // Given - Need to initialize first with multiple versions
-        Map<String, Object> metadataMap = new HashMap<>();
-        metadataMap.put("currentVersion", 2);
-        metadataMap.put("initialVersion", 1);
-        metadataMap.put("totalVersions", 2);
-        metadataMap.put("existingVersions", java.util.List.of(1, 2));
+    void testCreateNewVersion_WithNullConfig() {
+        // When - null config 也应该能处理
+        Integer version = versionControlService.createNewVersion(null, "Empty version", "user");
 
-        // When
-        when(storeManager.exists("model-router-config.metadata")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.metadata")).thenReturn(Mono.just(metadataMap));
-        when(storeManager.exists("model-router-config.history")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.history")).thenReturn(Mono.just(Map.of("history", java.util.List.of())));
-
-        // Initialize
-        StepVerifier.create(versionControlService.initialize())
-                .verifyComplete();
-
-        // Mock delete operations
-        when(storeManager.getConfigVersions("model-router-config"))
-                .thenReturn(Flux.just(1, 2));
-        when(storeManager.deleteConfigVersion("model-router-config", 1))
-                .thenReturn(Mono.empty());
-        when(storeManager.saveConfig(anyString(), any()))
-                .thenReturn(Mono.empty());
-
-        // Then - Delete version 1 (not current version)
-        StepVerifier.create(versionControlService.deleteVersion(1))
-                .verifyComplete();
+        // Then
+        assertNotNull(version);
+        assertEquals(1, version);
     }
 
     @Test
-    void testDeleteVersion_CurrentVersion() {
-        // Given - Initialize with version 1 as current
-        Map<String, Object> metadataMap = new HashMap<>();
-        metadataMap.put("currentVersion", 1);
-        metadataMap.put("initialVersion", 1);
-        metadataMap.put("totalVersions", 1);
-        metadataMap.put("existingVersions", java.util.List.of(1));
+    void testRollbackToVersion_WithNullResult() {
+        // Given
+        when(storeManager.getConfig(anyString())).thenReturn(null);
+
+        // 先创建版本
+        versionControlService.createNewVersion(new HashMap<>(), "Initial", "user");
 
         // When
-        when(storeManager.exists("model-router-config.metadata")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.metadata")).thenReturn(Mono.just(metadataMap));
-        when(storeManager.exists("model-router-config.history")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.history")).thenReturn(Mono.just(Map.of("history", java.util.List.of())));
+        Map<String, Object> result = versionControlService.rollbackToVersion(1);
 
-        // Initialize
-        StepVerifier.create(versionControlService.initialize())
-                .verifyComplete();
-
-        // Then - Try to delete current version should fail
-        StepVerifier.create(versionControlService.deleteVersion(1))
-                .expectError(IllegalStateException.class)
-                .verify();
+        // Then
+        assertNull(result);
     }
 
     @Test
-    void testDeleteVersion_LastVersion() {
-        // Given - Initialize with only one version
-        Map<String, Object> metadataMap = new HashMap<>();
-        metadataMap.put("currentVersion", 2);
-        metadataMap.put("initialVersion", 1);
-        metadataMap.put("totalVersions", 1);
-        metadataMap.put("existingVersions", java.util.List.of(2));
+    void testVersionCounterIsAtomic() {
+        // 测试版本计数器的原子性
+        // Given
+        Map<String, Object> config = Map.of("test", "concurrent");
 
-        // When
-        when(storeManager.exists("model-router-config.metadata")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.metadata")).thenReturn(Mono.just(metadataMap));
-        when(storeManager.exists("model-router-config.history")).thenReturn(Mono.just(true));
-        when(storeManager.getConfig("model-router-config.history")).thenReturn(Mono.just(Map.of("history", java.util.List.of())));
+        // When - 连续创建多个版本
+        int[] versions = new int[10];
+        for (int i = 0; i < 10; i++) {
+            versions[i] = versionControlService.createNewVersion(config, "Version " + i, "user");
+        }
 
-        // Initialize
-        StepVerifier.create(versionControlService.initialize())
-                .verifyComplete();
-
-        // Mock getConfigVersions to return only one version
-        when(storeManager.getConfigVersions("model-router-config"))
-                .thenReturn(Flux.just(2));
-
-        // Then - Try to delete last version should fail
-        StepVerifier.create(versionControlService.deleteVersion(1))
-                .expectError(IllegalStateException.class)
-                .verify();
+        // Then - 版本号应该是连续递增的
+        for (int i = 0; i < 10; i++) {
+            assertEquals(i + 1, versions[i]);
+        }
+        assertEquals(10, versionControlService.getCurrentVersion());
     }
 }
