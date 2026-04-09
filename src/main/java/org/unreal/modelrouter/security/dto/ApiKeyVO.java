@@ -59,6 +59,34 @@ public class ApiKeyVO {
     private LocalDateTime createdAt;
 
     /**
+     * 创建者用户名
+     */
+    private String createdBy;
+
+    /**
+     * 创建者 IP 地址
+     */
+    private String creatorIpAddress;
+
+    /**
+     * 密钥轮换周期（天数），0 表示不自动轮换
+     */
+    private int rotationPeriodDays;
+
+    /**
+     * 上次轮换时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    private LocalDateTime lastRotatedAt;
+
+    /**
+     * 是否需要轮换
+     */
+    private boolean needsRotation;
+
+    /**
      * 过期时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

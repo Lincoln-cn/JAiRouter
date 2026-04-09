@@ -64,7 +64,11 @@
             <el-icon><Key /></el-icon>
             API密钥管理
           </span>
-          <el-button icon="Plus" type="primary" @click="handleCreateApiKey">创建API密钥</el-button>
+          <div class="header-buttons">
+            <el-button icon="Download" type="success" @click="handleExport">导出配置</el-button>
+            <el-button icon="Upload" type="warning" @click="showImportDialog">导入配置</el-button>
+            <el-button icon="Plus" type="primary" @click="handleCreateApiKey">创建API密钥</el-button>
+          </div>
         </div>
       </template>
 
@@ -75,7 +79,7 @@
             <el-tag effect="plain" type="info">{{ scope.row.keyId }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="描述" width="200" show-overflow-tooltip>
+        <el-table-column label="描述" min-width="150" show-overflow-tooltip>
           <template #default="scope">
             <span>{{ scope.row.description || '-' }}</span>
           </template>
@@ -96,6 +100,12 @@
           </template>
         </el-table-column>
         <el-table-column label="创建时间" prop="createdAt" width="160"/>
+        <el-table-column label="创建者" width="150" show-overflow-tooltip>
+          <template #default="scope">
+            <span v-if="scope.row.createdBy">{{ scope.row.createdBy }}</span>
+            <span v-else class="text-muted">-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="过期时间" prop="expiresAt" width="160">
           <template #default="scope">
             <span :class="{ 'expired-text': scope.row.expired }">
@@ -131,11 +141,15 @@
             />
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="260">
+        <el-table-column fixed="right" label="操作" width="160">
           <template #default="scope">
-            <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button icon="Refresh" size="small" type="warning" @click="handleReset(scope.row)">重置</el-button>
-            <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            <div class="action-buttons">
+              <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+              <el-button icon="RefreshRight" size="small" type="warning" @click="handleRotate(scope.row)"
+                         :disabled="scope.row.expired">轮换</el-button>
+              <el-button icon="Refresh" size="small" type="info" @click="handleReset(scope.row)">重置</el-button>
+              <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -189,6 +203,10 @@
           <el-input-number v-model="form.dailyRequestLimit" :min="0" :step="100" placeholder="0表示不限制"/>
           <div class="form-hint">0 表示不限制</div>
         </el-form-item>
+        <el-form-item label="轮换周期">
+          <el-input-number v-model="form.rotationPeriodDays" :min="0" :step="30" placeholder="0表示不自动轮换"/>
+          <div class="form-hint">设置密钥自动轮换周期（天数），0 表示不自动轮换</div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -223,28 +241,153 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 导入配置对话框 -->
+    <el-dialog v-model="showImportDialogVisible" :close-on-click-modal="false" center title="导入API密钥配置" width="600px">
+      <div class="import-dialog-content">
+        <el-alert :closable="false" show-icon style="margin-bottom: 20px;" type="info">
+          <template #title>
+            <strong>导入说明</strong>
+          </template>
+          导入时会为每个密钥生成新的密钥值，原配置中的密钥值不会被导入。
+          <br/>
+          MERGE模式：保留现有密钥，仅添加新密钥。
+          <br/>
+          REPLACE模式：删除所有现有密钥后导入新密钥。
+        </el-alert>
+        <el-form label-width="100px">
+          <el-form-item label="导入模式">
+            <el-radio-group v-model="importMode">
+              <el-radio label="MERGE">合并（保留现有）</el-radio>
+              <el-radio label="REPLACE">替换（删除现有）</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="配置文件">
+            <el-upload
+              ref="uploadRef"
+              :auto-upload="false"
+              :limit="1"
+              accept=".json"
+              :on-change="handleImportFileChange"
+              drag
+            >
+              <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+              <div class="el-upload__text">
+                拖拽JSON文件到此处，或<em>点击选择</em>
+              </div>
+              <template #tip>
+                <div class="el-upload__tip">仅支持 .json 格式的配置文件</div>
+              </template>
+            </el-upload>
+          </el-form-item>
+        </el-form>
+        <div v-if="importPreviewKeys.length > 0" class="import-preview">
+          <h4>预览导入的密钥 ({{ importPreviewKeys.length }} 个)</h4>
+          <el-table :data="importPreviewKeys" max-height="300" border stripe>
+            <el-table-column prop="keyId" label="密钥ID" width="150"/>
+            <el-table-column prop="description" label="描述" show-overflow-tooltip/>
+            <el-table-column prop="permissions" label="权限" width="150">
+              <template #default="scope">
+                <el-tag v-for="p in scope.row.permissions" :key="p" size="small" style="margin-right: 4px;">
+                  {{ p }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="enabled" label="启用" width="80">
+              <template #default="scope">
+                <el-tag :type="scope.row.enabled ? 'success' : 'danger'" size="small">
+                  {{ scope.row.enabled ? '是' : '否' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showImportDialogVisible = false">取消</el-button>
+          <el-button
+            type="primary"
+            @click="handleImport"
+            :loading="importLoading"
+            :disabled="importPreviewKeys.length === 0"
+          >
+            确认导入
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 导入结果对话框 -->
+    <el-dialog v-model="showImportResultDialog" :close-on-click-modal="false" center title="导入结果" width="700px">
+      <div class="import-result-content">
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="尝试导入">{{ importResult?.totalAttempted }}</el-descriptions-item>
+          <el-descriptions-item label="成功">{{ importResult?.successCount }}</el-descriptions-item>
+          <el-descriptions-item label="失败">{{ importResult?.failureCount }}</el-descriptions-item>
+        </el-descriptions>
+        <div v-if="importResult?.importedKeys && importResult.importedKeys.length > 0" class="imported-keys-section">
+          <el-alert :closable="false" show-icon style="margin-top: 20px; margin-bottom: 16px;" type="warning">
+            <template #title>
+              <strong>新密钥值（仅此一次显示，请保存）</strong>
+            </template>
+          </el-alert>
+          <el-table :data="importResult?.importedKeys" max-height="300" border stripe>
+            <el-table-column prop="keyId" label="密钥ID" width="150"/>
+            <el-table-column prop="keyValue" label="密钥值" width="300">
+              <template #default="scope">
+                <el-input v-model="scope.row.keyValue" readonly size="small">
+                  <template #append>
+                    <el-button icon="CopyDocument" @click="copyImportedKey(scope.row.keyValue)" size="small"/>
+                  </template>
+                </el-input>
+              </template>
+            </el-table-column>
+            <el-table-column prop="description" label="描述" show-overflow-tooltip/>
+          </el-table>
+        </div>
+        <div v-if="importResult?.errors && importResult.errors.length > 0" class="import-errors-section">
+          <h4 style="margin-top: 20px; color: #F56C6C;">导入失败</h4>
+          <el-table :data="importResult?.errors" border stripe>
+            <el-table-column prop="keyId" label="密钥ID" width="150"/>
+            <el-table-column prop="reason" label="失败原因"/>
+          </el-table>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="closeImportResultDialog" size="large">我已保存，关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Key, CircleCheck, CircleClose, Warning } from '@element-plus/icons-vue'
-import { 
-  createApiKey, 
-  deleteApiKey, 
-  disableApiKey, 
-  enableApiKey, 
-  getApiKeys, 
+import { Key, CircleCheck, CircleClose, Warning, RefreshRight, Download, Upload, UploadFilled } from '@element-plus/icons-vue'
+import {
+  createApiKey,
+  deleteApiKey,
+  disableApiKey,
+  enableApiKey,
+  getApiKeys,
   updateApiKey,
-  resetApiKey 
+  resetApiKey,
+  rotateApiKey,
+  exportApiKeys,
+  importApiKeys
 } from '@/api/apiKey'
-import type { 
-  ApiKeyVO, 
-  ApiKeyListVO, 
-  ApiKeyCreationVO, 
-  ApiKeyCreateRequest, 
-  ApiKeyUpdateRequest 
+import type {
+  ApiKeyVO,
+  ApiKeyListVO,
+  ApiKeyCreationVO,
+  ApiKeyCreateRequest,
+  ApiKeyUpdateRequest,
+  ApiKeyBatchImportRequest,
+  ApiKeyBatchImportResult,
+  ApiKeyImportItem
 } from '@/types'
 
 // 列表数据
@@ -277,7 +420,8 @@ const form = ref({
   enabled: true,
   permissions: [] as string[],
   allowedIpAddresses: [] as string[],
-  dailyRequestLimit: 0
+  dailyRequestLimit: 0,
+  rotationPeriodDays: 0
 })
 
 // 密钥ID验证规则
@@ -383,7 +527,8 @@ const handleCreateApiKey = () => {
     enabled: true,
     permissions: [],
     allowedIpAddresses: [],
-    dailyRequestLimit: 0
+    dailyRequestLimit: 0,
+    rotationPeriodDays: 0
   }
   dialogVisible.value = true
 }
@@ -399,7 +544,8 @@ const handleEdit = (row: ApiKeyVO) => {
     enabled: row.enabled,
     permissions: row.permissions || [],
     allowedIpAddresses: [],
-    dailyRequestLimit: 0
+    dailyRequestLimit: row.dailyRequestLimit || 0,
+    rotationPeriodDays: row.rotationPeriodDays || 0
   }
   dialogVisible.value = true
 }
@@ -444,6 +590,29 @@ const handleReset = (row: ApiKeyVO) => {
   })
 }
 
+// 强制轮换API密钥
+const handleRotate = (row: ApiKeyVO) => {
+  ElMessageBox.confirm(
+    `确定要轮换API密钥 ${row.keyId} 吗？旧的密钥值将立即失效，新的密钥值仅显示一次。轮换后会更新 lastRotatedAt 时间戳。`,
+    '轮换确认',
+    {
+      confirmButtonText: '确定轮换',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      const response: ApiKeyCreationVO = await rotateApiKey(row.keyId)
+      createdKeyValue.value = response.keyValue
+      showKeyValueDialog.value = true
+      await fetchApiKeys()
+      ElMessage.success('密钥轮换成功，请保存新的密钥值！')
+    } catch (error: any) {
+      ElMessage.error('轮换失败: ' + (error.message || ''))
+    }
+  })
+}
+
 // 创建成功后弹窗及密钥值处理
 const showKeyValueDialog = ref(false)
 const createdKeyValue = ref('')
@@ -464,7 +633,8 @@ const handleSave = async () => {
         enabled: form.value.enabled,
         permissions: form.value.permissions,
         allowedIpAddresses: form.value.allowedIpAddresses,
-        dailyRequestLimit: form.value.dailyRequestLimit
+        dailyRequestLimit: form.value.dailyRequestLimit,
+        rotationPeriodDays: form.value.rotationPeriodDays
       }
       await updateApiKey(form.value.keyId, updateData)
       ElMessage.success('编辑成功')
@@ -477,7 +647,8 @@ const handleSave = async () => {
         enabled: form.value.enabled,
         permissions: form.value.permissions,
         allowedIpAddresses: form.value.allowedIpAddresses,
-        dailyRequestLimit: form.value.dailyRequestLimit
+        dailyRequestLimit: form.value.dailyRequestLimit,
+        rotationPeriodDays: form.value.rotationPeriodDays
       }
       const response: ApiKeyCreationVO = await createApiKey(createData)
       createdKeyValue.value = response.keyValue
@@ -503,6 +674,103 @@ const copyKeyValue = () => {
 const closeKeyValueDialog = () => {
   showKeyValueDialog.value = false
   createdKeyValue.value = ''
+}
+
+// ============ 批量导入/导出功能 ============
+
+const showImportDialogVisible = ref(false)
+const showImportResultDialog = ref(false)
+const importMode = ref<'MERGE' | 'REPLACE'>('MERGE')
+const importPreviewKeys = ref<ApiKeyImportItem[]>([])
+const importLoading = ref(false)
+const importResult = ref<ApiKeyBatchImportResult | null>(null)
+const uploadRef = ref()
+
+// 显示导入对话框
+const showImportDialog = () => {
+  importMode.value = 'MERGE'
+  importPreviewKeys.value = []
+  showImportDialogVisible.value = true
+}
+
+// 处理导入文件选择
+const handleImportFileChange = (file: any) => {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const content = JSON.parse(e.target?.result as string)
+      // 支持两种格式：直接数组或包含 keys 字段的导出格式
+      if (Array.isArray(content)) {
+        importPreviewKeys.value = content
+      } else if (content.keys && Array.isArray(content.keys)) {
+        importPreviewKeys.value = content.keys
+      } else {
+        ElMessage.error('文件格式不正确')
+        importPreviewKeys.value = []
+      }
+    } catch (error) {
+      ElMessage.error('解析JSON文件失败')
+      importPreviewKeys.value = []
+    }
+  }
+  reader.readAsText(file.raw)
+}
+
+// 执行导入
+const handleImport = async () => {
+  if (importPreviewKeys.value.length === 0) {
+    ElMessage.warning('请先选择要导入的配置文件')
+    return
+  }
+
+  importLoading.value = true
+  try {
+    const request: ApiKeyBatchImportRequest = {
+      keys: importPreviewKeys.value,
+      mode: importMode.value
+    }
+    const result = await importApiKeys(request)
+    importResult.value = result
+    showImportDialogVisible.value = false
+    showImportResultDialog.value = true
+    await fetchApiKeys()
+    ElMessage.success(`导入完成：成功 ${result.successCount}，失败 ${result.failureCount}`)
+  } catch (error: any) {
+    ElMessage.error('导入失败: ' + (error.message || ''))
+  } finally {
+    importLoading.value = false
+  }
+}
+
+// 复制导入的密钥值
+const copyImportedKey = (keyValue: string) => {
+  navigator.clipboard.writeText(keyValue)
+    .then(() => ElMessage.success('密钥值已复制到剪贴板'))
+    .catch(() => ElMessage.error('复制失败，请手动复制'))
+}
+
+// 关闭导入结果对话框
+const closeImportResultDialog = () => {
+  showImportResultDialog.value = false
+  importResult.value = null
+}
+
+// 执行导出
+const handleExport = async () => {
+  try {
+    const exportData = await exportApiKeys()
+    // 创建 JSON 文件并下载
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `api-keys-export-${new Date().toISOString().slice(0, 10)}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${exportData.total} 个密钥配置`)
+  } catch (error: any) {
+    ElMessage.error('导出失败: ' + (error.message || ''))
+  }
 }
 
 // 状态切换
@@ -598,6 +866,11 @@ onMounted(() => {
   align-items: center;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
 .main-title {
   font-size: 18px;
   font-weight: 600;
@@ -645,6 +918,18 @@ onMounted(() => {
   margin-top: 4px;
 }
 
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 140px;
+}
+
+.action-buttons .el-button {
+  width: calc(50% - 2px);
+  margin: 0;
+}
+
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
@@ -678,5 +963,25 @@ onMounted(() => {
 :deep(.el-dialog__footer) {
   border-top: 1px solid #EBEEF5;
   padding-top: 16px;
+}
+
+.import-dialog-content,
+.import-result-content {
+  padding: 10px 0;
+}
+
+.import-preview {
+  margin-top: 20px;
+  padding-top: 10px;
+}
+
+.import-preview h4 {
+  margin-bottom: 10px;
+  color: #303133;
+}
+
+.imported-keys-section,
+.import-errors-section {
+  margin-top: 20px;
 }
 </style>

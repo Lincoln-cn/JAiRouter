@@ -66,6 +66,14 @@ public class ApiKeyCreationVO {
     private LocalDateTime expiresAt;
 
     /**
+     * 上次轮换时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    private LocalDateTime lastRotatedAt;
+
+    /**
      * 警告信息：密钥值只会显示一次
      */
     @Builder.Default

@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.controller.JwtAccountController;
+import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.CreateJwtAccountRequest;
 import org.unreal.modelrouter.dto.JwtAccountDTO;
 import org.unreal.modelrouter.security.service.JwtAccountService;
@@ -24,7 +25,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * JwtAccountController API 测试
- * v1.5.3: 验证 JWT 账户 API 可用性
+ * v1.5.3: 验证 JWT 账户 API 可用性（使用 RouterResponse 包装）
  */
 @ExtendWith(MockitoExtension.class)
 class JwtAccountApiTest {
@@ -45,11 +46,13 @@ class JwtAccountApiTest {
         when(jwtAccountService.getAllAccounts()).thenReturn(accounts);
 
         // When
-        ResponseEntity<List<JwtAccountDTO>> response = jwtAccountController.getAllAccounts();
+        ResponseEntity<RouterResponse<List<JwtAccountDTO>>> response = jwtAccountController.getAllAccounts();
 
         // Then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
-        assertThat(response.getBody()).hasSize(2);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData()).hasSize(2);
     }
 
     @Test
@@ -59,12 +62,14 @@ class JwtAccountApiTest {
         when(jwtAccountService.getAccount("admin")).thenReturn(account);
 
         // When
-        ResponseEntity<JwtAccountDTO> response = jwtAccountController.getAccount("admin");
+        ResponseEntity<RouterResponse<JwtAccountDTO>> response = jwtAccountController.getAccount("admin");
 
         // Then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getUsername()).isEqualTo("admin");
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData()).isNotNull();
+        assertThat(response.getBody().getData().getUsername()).isEqualTo("admin");
     }
 
     @Test
@@ -79,11 +84,13 @@ class JwtAccountApiTest {
         when(jwtAccountService.createAccount(any(CreateJwtAccountRequest.class))).thenReturn(created);
 
         // When
-        ResponseEntity<JwtAccountDTO> response = jwtAccountController.createAccount(request);
+        ResponseEntity<RouterResponse<JwtAccountDTO>> response = jwtAccountController.createAccount(request);
 
         // Then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData()).isNotNull();
     }
 
     @Test
@@ -99,11 +106,13 @@ class JwtAccountApiTest {
                 .thenReturn(updated);
 
         // When
-        ResponseEntity<JwtAccountDTO> response = jwtAccountController.updateAccount("admin", request);
+        ResponseEntity<RouterResponse<JwtAccountDTO>> response = jwtAccountController.updateAccount("admin", request);
 
         // Then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData()).isNotNull();
     }
 
     @Test
@@ -112,10 +121,12 @@ class JwtAccountApiTest {
         doNothing().when(jwtAccountService).deleteAccount("user");
 
         // When
-        ResponseEntity<Void> response = jwtAccountController.deleteAccount("user");
+        ResponseEntity<RouterResponse<Void>> response = jwtAccountController.deleteAccount("user");
 
         // Then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
         verify(jwtAccountService).deleteAccount("user");
     }
 
@@ -127,11 +138,13 @@ class JwtAccountApiTest {
         when(jwtAccountService.verifyPassword("admin", "password123")).thenReturn(true);
 
         // When
-        ResponseEntity<Boolean> response = jwtAccountController.verifyPassword("admin", credentials);
+        ResponseEntity<RouterResponse<Boolean>> response = jwtAccountController.verifyPassword("admin", credentials);
 
         // Then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
-        assertThat(response.getBody()).isTrue();
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData()).isTrue();
     }
 
     @Test
@@ -142,11 +155,13 @@ class JwtAccountApiTest {
         when(jwtAccountService.verifyPassword("admin", "wrongpassword")).thenReturn(false);
 
         // When
-        ResponseEntity<Boolean> response = jwtAccountController.verifyPassword("admin", credentials);
+        ResponseEntity<RouterResponse<Boolean>> response = jwtAccountController.verifyPassword("admin", credentials);
 
         // Then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
-        assertThat(response.getBody()).isFalse();
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+        assertThat(response.getBody().getData()).isFalse();
     }
 
     private JwtAccountDTO createJwtAccountDTO(Long id, String username, List<String> roles) {
