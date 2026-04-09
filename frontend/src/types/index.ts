@@ -42,38 +42,70 @@ export interface DashboardOverview {
 }
 
 // API Key Management Types
-export interface ApiKeyInfo {
+export interface ApiKeyVO {
   keyId: string
   description: string
+  permissions: string[]
+  enabled: boolean
+  expired: boolean
   createdAt: string
   expiresAt: string
-  enabled: boolean
-  permissions: string[]
-  expired?: boolean
+  lastUsedAt?: string
+  totalRequests: number
+  successfulRequests: number
+  failedRequests: number
+  remainingDays?: number  // -1 表示已过期，null 表示永不过期
 }
 
-export interface ApiKeyCreationResponse {
+export interface ApiKeyCreationVO {
   keyId: string
-  keyValue: string
+  keyValue: string  // 仅在创建时返回，请妥善保存
   description: string
+  permissions: string[]
+  enabled: boolean
   createdAt: string
+  expiresAt?: string
+  warning: string  // 警告信息
+}
+
+export interface ApiKeyListVO {
+  items: ApiKeyVO[]
+  total: number
+  enabledCount: number
+  disabledCount: number
+  expiredCount: number
+  summary: {
+    todayTotalRequests: number
+    todaySuccessfulRequests: number
+    todayFailedRequests: number
+  }
 }
 
 // API Key Management Request Types
-export interface CreateApiKeyRequest {
+export interface ApiKeyCreateRequest {
   keyId?: string
-  description: string
-  permissions: string[]
-  enabled?: boolean
-  expiresAt?: string
-}
-
-export interface UpdateApiKeyRequest {
   description?: string
   permissions?: string[]
   enabled?: boolean
   expiresAt?: string
+  allowedIpAddresses?: string[]
+  dailyRequestLimit?: number
 }
+
+export interface ApiKeyUpdateRequest {
+  description?: string
+  permissions?: string[]
+  enabled?: boolean
+  expiresAt?: string
+  allowedIpAddresses?: string[]
+  dailyRequestLimit?: number
+}
+
+// 兼容旧类型
+export type ApiKeyInfo = ApiKeyVO
+export type ApiKeyCreationResponse = ApiKeyCreationVO
+export type CreateApiKeyRequest = ApiKeyCreateRequest
+export type UpdateApiKeyRequest = ApiKeyUpdateRequest
 
 // Tracing Management Types
 export interface TracingOverview {
