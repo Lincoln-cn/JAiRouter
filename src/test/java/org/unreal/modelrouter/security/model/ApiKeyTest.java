@@ -184,8 +184,13 @@ public class ApiKeyTest {
         metadata.put("test", "value");
 
         ApiKey originalKey = baseBuilder
-                .keyValue("sk-secret-key-123")
+                .keyValue(null)  // 不存储原始 keyValue
+                .keyHash("hashed-value")  // 存储哈希值
                 .metadata(metadata)
+                .createdBy("admin")
+                .creatorIpAddress("192.168.1.1")
+                .rotationPeriodDays(30)
+                .lastRotatedAt(LocalDateTime.now().minusDays(10))
                 .build();
 
         // When
@@ -194,10 +199,15 @@ public class ApiKeyTest {
         // Then
         assertEquals(originalKey.getKeyId(), secureCopy.getKeyId());
         assertNull(secureCopy.getKeyValue()); // 安全副本不包含keyValue
+        assertNull(secureCopy.getKeyHash());  // 安全副本不包含keyHash
         assertEquals(originalKey.getDescription(), secureCopy.getDescription());
         assertEquals(originalKey.getPermissions(), secureCopy.getPermissions());
         assertEquals(originalKey.getExpiresAt(), secureCopy.getExpiresAt());
         assertEquals(originalKey.getCreatedAt(), secureCopy.getCreatedAt());
+        assertEquals(originalKey.getCreatedBy(), secureCopy.getCreatedBy());
+        assertEquals(originalKey.getCreatorIpAddress(), secureCopy.getCreatorIpAddress());
+        assertEquals(originalKey.getRotationPeriodDays(), secureCopy.getRotationPeriodDays());
+        assertEquals(originalKey.getLastRotatedAt(), secureCopy.getLastRotatedAt());
         assertEquals(originalKey.isEnabled(), secureCopy.isEnabled());
         assertEquals(originalKey.getMetadata(), secureCopy.getMetadata());
     }
@@ -205,16 +215,18 @@ public class ApiKeyTest {
     @Test
     void testCreateCreationResponse() {
         // Given
+        String originalKeyValue = "sk-secret-key-123";
         ApiKey originalKey = baseBuilder
-                .keyValue("sk-secret-key-123")
+                .keyValue(null)  // 不存储原始 keyValue
+                .keyHash("hashed-value")  // 存储哈希值
                 .build();
 
         // When
-        ApiKey creationResponse = originalKey.createCreationResponse();
+        ApiKey creationResponse = originalKey.createCreationResponse(originalKeyValue);
 
         // Then
         assertEquals(originalKey.getKeyId(), creationResponse.getKeyId());
-        assertEquals(originalKey.getKeyValue(), creationResponse.getKeyValue()); // 创建响应包含keyValue
+        assertEquals(originalKeyValue, creationResponse.getKeyValue()); // 创建响应包含传入的原始 keyValue
         assertEquals(originalKey.getDescription(), creationResponse.getDescription());
         assertEquals(originalKey.getPermissions(), creationResponse.getPermissions());
         assertEquals(originalKey.isEnabled(), creationResponse.isEnabled());

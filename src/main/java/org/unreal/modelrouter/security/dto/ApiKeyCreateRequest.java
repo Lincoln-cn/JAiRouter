@@ -68,4 +68,10 @@ public class ApiKeyCreateRequest {
      */
     @Builder.Default
     private Long dailyRequestLimit = 0L;
+
+    /**
+     * 密钥轮换周期（天数），0 表示不自动轮换
+     */
+    @Builder.Default
+    private Integer rotationPeriodDays = 0;
 }

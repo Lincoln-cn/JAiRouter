@@ -49,12 +49,19 @@ export interface ApiKeyVO {
   enabled: boolean
   expired: boolean
   createdAt: string
+  createdBy?: string          // 创建者用户名
+  creatorIpAddress?: string   // 创建者 IP 地址
   expiresAt: string
   lastUsedAt?: string
   totalRequests: number
   successfulRequests: number
   failedRequests: number
-  remainingDays?: number  // -1 表示已过期，null 表示永不过期
+  remainingDays?: number      // -1 表示已过期，null 表示永不过期
+  allowedIpAddresses?: string[]  // IP 白名单
+  dailyRequestLimit?: number     // 每日请求限制
+  rotationPeriodDays?: number    // 密钥轮换周期（天数）
+  lastRotatedAt?: string         // 上次轮换时间
+  needsRotation?: boolean        // 是否需要轮换
 }
 
 export interface ApiKeyCreationVO {
@@ -65,6 +72,7 @@ export interface ApiKeyCreationVO {
   enabled: boolean
   createdAt: string
   expiresAt?: string
+  lastRotatedAt?: string    // 上次轮换时间
   warning: string  // 警告信息
 }
 
@@ -90,6 +98,7 @@ export interface ApiKeyCreateRequest {
   expiresAt?: string
   allowedIpAddresses?: string[]
   dailyRequestLimit?: number
+  rotationPeriodDays?: number   // 密钥轮换周期（天数）
 }
 
 export interface ApiKeyUpdateRequest {
@@ -99,6 +108,57 @@ export interface ApiKeyUpdateRequest {
   expiresAt?: string
   allowedIpAddresses?: string[]
   dailyRequestLimit?: number
+  rotationPeriodDays?: number   // 密钥轮换周期（天数）
+}
+
+// 批量导入/导出类型
+export interface ApiKeyBatchExportVO {
+  exportTime: string
+  total: number
+  keys: ApiKeyExportedKey[]
+}
+
+export interface ApiKeyExportedKey {
+  keyId: string
+  description: string
+  permissions: string[]
+  enabled: boolean
+  createdAt: string
+  createdBy?: string
+  expiresAt?: string
+  allowedIpAddresses?: string[]
+  dailyRequestLimit?: number
+  rotationPeriodDays?: number
+  lastRotatedAt?: string
+}
+
+export interface ApiKeyBatchImportRequest {
+  keys: ApiKeyImportItem[]
+  mode?: 'MERGE' | 'REPLACE'  // MERGE: 合并保留现有, REPLACE: 替换删除现有
+}
+
+export interface ApiKeyImportItem {
+  keyId?: string
+  description?: string
+  permissions?: string[]
+  enabled?: boolean
+  expiresAt?: string
+  allowedIpAddresses?: string[]
+  dailyRequestLimit?: number
+  rotationPeriodDays?: number
+}
+
+export interface ApiKeyBatchImportResult {
+  totalAttempted: number
+  successCount: number
+  failureCount: number
+  importedKeys: ApiKeyCreationVO[]
+  errors: ImportError[]
+}
+
+export interface ImportError {
+  keyId?: string
+  reason: string
 }
 
 // 兼容旧类型

@@ -1,11 +1,14 @@
 import request from '@/utils/request'
 import type { RouterResponse } from '@/types'
-import type { 
-  ApiKeyVO, 
-  ApiKeyListVO, 
-  ApiKeyCreationVO, 
-  ApiKeyCreateRequest, 
-  ApiKeyUpdateRequest 
+import type {
+  ApiKeyVO,
+  ApiKeyListVO,
+  ApiKeyCreationVO,
+  ApiKeyCreateRequest,
+  ApiKeyUpdateRequest,
+  ApiKeyBatchExportVO,
+  ApiKeyBatchImportRequest,
+  ApiKeyBatchImportResult
 } from '@/types'
 
 /**
@@ -86,5 +89,38 @@ export const enableApiKey = async (keyId: string): Promise<ApiKeyVO> => {
  */
 export const resetApiKey = async (keyId: string): Promise<ApiKeyCreationVO> => {
   const response = await request.post<RouterResponse<ApiKeyCreationVO>>(`/auth/api-keys/${keyId}/reset`)
+  return response.data.data!
+}
+
+/**
+ * 强制轮换 API 密钥
+ * 生成新的 keyValue 并更新 lastRotatedAt 时间戳
+ * 旧的密钥值将失效，新的密钥值仅显示一次
+ * @param keyId API 密钥 ID
+ * @returns 创建响应 VO（包含新的 keyValue）
+ */
+export const rotateApiKey = async (keyId: string): Promise<ApiKeyCreationVO> => {
+  const response = await request.post<RouterResponse<ApiKeyCreationVO>>(`/auth/api-keys/${keyId}/rotate`)
+  return response.data.data!
+}
+
+/**
+ * 批量导出 API 密钥配置
+ * 导出的数据不包含 keyValue 和 keyHash，仅包含可恢复的配置信息
+ * @returns 批量导出响应 VO
+ */
+export const exportApiKeys = async (): Promise<ApiKeyBatchExportVO> => {
+  const response = await request.get<RouterResponse<ApiKeyBatchExportVO>>('/auth/api-keys/export')
+  return response.data.data!
+}
+
+/**
+ * 批量导入 API 密钥
+ * 导入时会为每个密钥生成新的 keyValue
+ * @param importRequest 批量导入请求
+ * @returns 批量导入结果 VO
+ */
+export const importApiKeys = async (importRequest: ApiKeyBatchImportRequest): Promise<ApiKeyBatchImportResult> => {
+  const response = await request.post<RouterResponse<ApiKeyBatchImportResult>>('/auth/api-keys/import', importRequest)
   return response.data.data!
 }
