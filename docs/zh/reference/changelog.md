@@ -1,9 +1,9 @@
-﻿﻿# 更新日志
+﻿# 更新日志
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**: c1aa5b0f  
+> **文档版本**: 1.7.0
+> **最后更新**: 2026-04-10
+> **Git 提交**: 2cba097
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -20,6 +20,156 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 - **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [1.7.0] - 2026-04-10
+
+#### 新增功能
+- **安全黑名单管理**：新增安全黑名单管理功能，支持 IP/用户/令牌黑名单
+- **审计日志增强**：增强审计日志查询和展示功能，支持高级搜索和统计分析
+- **JWT账户状态切换**：实现账户启用/禁用状态切换功能
+
+#### 改进优化
+- **JWT账户管理**：修复编辑密码验证问题，优化账户管理界面
+- **前端表格优化**：表格列使用自适应宽度（min-width），添加统计卡片和搜索功能
+- **配置管理简化**：移除未实现的版本管理功能，简化界面
+
+#### 问题修复
+- 修复 JWT 账户编辑时的密码验证问题
+- 修复账户管理页面数据展示问题
+
+#### 技术改进
+- `CreateJwtAccountRequest` 添加 `enabled` 字段
+- `JwtAccountService` 实现 `toggleAccountStatus` 方法
+- 新增 `SecurityBlacklistController` 和相关实体类
+- 清理未使用的前端代码和类型定义
+
+---
+
+### [1.6.2] - 2026-04-08
+
+#### 新增功能
+- **API Key 批量导入/导出**：支持批量导入导出 API Key
+  - 新增导出端点 `GET /api/auth/api-keys/export`
+  - 新增导入端点 `POST /api/auth/api-keys/import`
+  - 支持 MERGE/REPLACE 两种导入模式
+- **API Key 密钥轮换**：支持密钥自动轮换机制
+  - 配置 `rotationPeriodDays` 设置轮换周期
+  - 新增 `ApiKeyRotationScheduler` 自动执行轮换
+- **过期密钥自动清理**：新增 `ApiKeyExpirationScheduler` 自动禁用过期密钥
+
+#### 改进优化
+- **创建者信息记录**：API Key 创建时记录 `createdBy` 和 `creatorIpAddress`
+- **密钥使用统计持久化**：使用统计数据通过 `saveApiKeysToStore()` 持久化
+
+#### 新增文件
+- `ApiKeyBatchExportVO.java`
+- `ApiKeyBatchImportRequest.java`
+- `ApiKeyBatchImportResult.java`
+- `ApiKeyRotationScheduler.java`
+- `ApiKeyExpirationScheduler.java`
+
+---
+
+### [1.6.1] - 2026-04-06
+
+#### 安全修复 (P0)
+- **API Key 哈希存储**：API Key 使用 SHA-256 + 盐值哈希存储，替代明文存储
+- **管理接口速率限制**：添加速率限制 (30/min, 100/hour, 10 create/hour)
+
+#### 新增功能
+- **IP 白名单**：支持 IP 白名单功能 (`allowedIpAddresses`)
+- **每日请求限制**：支持每日请求限制功能 (`dailyRequestLimit`)
+- **密钥重置接口**：新增密钥重置接口 `/api/auth/api-keys/{keyId}/reset`
+
+#### 改进优化
+- **前端强类型**：使用强类型 DTO/VO 替代 Map 数据传递
+- **表格布局优化**：优化表格布局和横向滚动支持
+
+#### 新增文件
+- `ApiKeyHashUtil.java` - SHA-256 哈希工具类
+- `AdminApiRateLimiter.java` - 管理接口速率限制过滤器
+- `ApiKeyVO/ApiKeyCreationVO/ApiKeyListVO/ApiKeyCreateRequest/ApiKeyUpdateRequest` - 强类型 DTO
+
+---
+
+### [1.6.0] - 2026-04-04
+
+#### 破坏性变更
+- **移除配置合并功能**：移除 AutoMergeService 和 AutoMergeController
+- **移除相关实体类**：移除 MergeResult 等 5 个相关实体类
+- **移除前端页面**：移除 ConfigMergeManagement.vue 页面和相关 API
+
+#### 改进优化
+- **配置版本管理优化**：简化版本管理界面，保留核心版本切换功能
+- **日志配置优化**：优化 logback-spring.xml 配置
+- **文档更新**：移除配置合并相关内容
+
+#### 保留功能
+- `ConfigMergeService`：配置获取和合并核心功能
+- `SecurityConfigMergeService`：安全配置合并服务
+
+---
+
+### [1.5.7] - 2026-04-02
+
+#### 新增功能
+- **JWT 账户初始化**：JWT 账户从 YAML 配置自动初始化到数据库
+- **账户管理 API 优化**：使用标准 RouterResponse 响应格式
+
+#### 问题修复
+- 修复系统启动时 JWT 账户未初始化到数据库的问题
+- 修复账户管理页面无法显示数据的问题
+- 修复 API 路径与前端不匹配的问题（`/api/admin/accounts` -> `/api/security/jwt/accounts`）
+
+#### 新增文件
+- `JwtAccountProperties.java` - 映射 YAML 账户配置
+- `JwtConfig.accounts` 字段 - 支持账户列表配置
+
+---
+
+### [1.5.6] - 2026-03-30
+
+#### 新增功能
+- **实例级别限流器独立存储**：新增 `instance_rate_limit` 表存储实例限流器配置
+- **实例级别熔断器独立存储**：新增 `instance_circuit_breaker` 表存储实例熔断器配置
+- **独立配置 API**：新增独立的限流器/熔断器配置 API 接口
+- **强类型 DTO**：使用强类型 DTO 替代 Map 数据传递
+
+#### API 变更
+- `GET/PUT /api/config/instance/{type}/{id}/rate-limit`
+- `GET/PUT /api/config/instance/{type}/{id}/circuit-breaker`
+
+#### 新增文件
+- `InstanceRateLimitEntity/InstanceCircuitBreakerEntity` - 实体类
+- `InstanceRateLimitRepository/InstanceCircuitBreakerRepository` - 仓库
+- `InstanceRateLimitDTO/InstanceCircuitBreakerDTO` - DTO 类
+
+#### 改进优化
+- `build-and-deploy.sh` 脚本自动清理旧编译文件
+
+---
+
+### [1.5.2] - 2026-03-20
+
+#### 新增功能
+- **JPA 迁移完成**：完成 R2DBC 到 JPA 的激进迁移
+- **DTO 结构优化**：所有核心功能恢复并优化为 DTO 结构
+
+#### 问题修复
+- 修复 JPA 迁移过程中的编译错误
+- 修复服务配置功能恢复
+
+---
+
+### [1.4.6] - 2026-03-10
+
+#### 问题修复
+- 修复前端独立配置功能
+- 修复前端独立限流器和熔断器配置功能
+- 修复数据返回完整性问题
+- 修复 `buildInstanceMap` 和 `convertToVO` 方法
+
+---
 
 ### [未发布] - 开发中
 

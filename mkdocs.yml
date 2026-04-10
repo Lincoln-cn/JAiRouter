@@ -85,6 +85,8 @@ plugins:
             安全功能: Security Features
             API Key管理: API Key Management
             JWT认证: JWT Authentication
+            安全黑名单: Security Blacklist
+            审计日志管理: Audit Log Management
             数据脱敏: Data Sanitization
             API参考: API Reference
             统一API: Universal API
@@ -175,6 +177,8 @@ nav:
     - zh/security/index.md
     - API Key管理: zh/security/api-key-management.md
     - JWT认证: zh/security/jwt-authentication.md
+    - 安全黑名单: zh/security/blacklist-management.md
+    - 审计日志管理: zh/security/audit-log-management.md
     - 数据脱敏: zh/security/data-sanitization.md
     - 故障排除: zh/security/troubleshooting.md
   - API参考:
