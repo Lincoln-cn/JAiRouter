@@ -19,6 +19,14 @@ public class SecurityAlert {
     public SecurityAlert() {
     }
 
+    public SecurityAlert(String alertType, String message, String userId, String ipAddress, LocalDateTime timestamp) {
+        this.alertType = alertType;
+        this.message = message;
+        this.userId = userId;
+        this.ipAddress = ipAddress;
+        this.timestamp = timestamp;
+    }
+
     public SecurityAlert(String id, String alertType, String severity, String message, 
                         String userId, String ipAddress, LocalDateTime timestamp, boolean resolved) {
         this.id = id;

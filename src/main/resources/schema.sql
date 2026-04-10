@@ -149,22 +149,29 @@ CREATE INDEX IF NOT EXISTS idx_config_archive_key ON config_archive(config_key);
 CREATE INDEX IF NOT EXISTS idx_config_archive_status ON config_archive(status);
 CREATE INDEX IF NOT EXISTS idx_config_archive_expiry ON config_archive(expiry_date);
 
--- 安全审计表
+-- 安全审计表（扩展版）
 CREATE TABLE IF NOT EXISTS "security_audit" (
     "id" BIGINT AUTO_INCREMENT PRIMARY KEY,
     "event_id" VARCHAR(255) NOT NULL UNIQUE,
     "event_type" VARCHAR(100) NOT NULL,
+    "event_category" VARCHAR(50),              -- JWT_TOKEN, API_KEY, SECURITY, AUTH, SYSTEM
     "user_id" VARCHAR(255),
+    "resource_id" VARCHAR(255),                -- 令牌ID或API Key ID
     "client_ip" VARCHAR(50),
     "user_agent" VARCHAR(500),
     "timestamp" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "resource" VARCHAR(500),
     "action" VARCHAR(100),
+    "details" VARCHAR(1000),                   -- 详细描述
     "success" BOOLEAN NOT NULL DEFAULT TRUE,
     "failure_reason" VARCHAR(1000),
-    "additional_data" TEXT,
+    "metadata" TEXT,                           -- JSON格式的额外元数据
     "request_id" VARCHAR(255),
-    "session_id" VARCHAR(255)
+    "session_id" VARCHAR(255),
+    "geo_location" VARCHAR(100),               -- IP地理位置
+    "device_info" VARCHAR(500),                -- 设备信息
+    "risk_level" VARCHAR(20) DEFAULT 'LOW',    -- LOW, MEDIUM, HIGH, CRITICAL
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 安全审计索引
@@ -174,6 +181,9 @@ CREATE INDEX IF NOT EXISTS "idx_audit_user_id" ON "security_audit"("user_id");
 CREATE INDEX IF NOT EXISTS "idx_audit_event_type" ON "security_audit"("event_type");
 CREATE INDEX IF NOT EXISTS "idx_audit_client_ip" ON "security_audit"("client_ip");
 CREATE INDEX IF NOT EXISTS "idx_audit_success" ON "security_audit"("success");
+CREATE INDEX IF NOT EXISTS "idx_audit_category" ON "security_audit"("event_category");
+CREATE INDEX IF NOT EXISTS "idx_audit_resource_id" ON "security_audit"("resource_id");
+CREATE INDEX IF NOT EXISTS "idx_audit_risk_level" ON "security_audit"("risk_level");
 
 -- API Key 表
 CREATE TABLE IF NOT EXISTS "api_keys" (
@@ -210,7 +220,7 @@ CREATE TABLE IF NOT EXISTS "jwt_accounts" (
 CREATE INDEX IF NOT EXISTS "idx_jwt_username" ON "jwt_accounts"("username");
 CREATE INDEX IF NOT EXISTS "idx_jwt_enabled" ON "jwt_accounts"("enabled");
 
--- JWT 黑名单表
+-- JWT 黑名单表 (旧表，保持兼容)
 CREATE TABLE IF NOT EXISTS "jwt_blacklist" (
     "id" BIGINT AUTO_INCREMENT PRIMARY KEY,
     "token_hash" VARCHAR(255) NOT NULL UNIQUE,
@@ -227,3 +237,6 @@ CREATE INDEX IF NOT EXISTS "idx_blacklist_token_hash" ON "jwt_blacklist"("token_
 CREATE INDEX IF NOT EXISTS "idx_blacklist_user_id" ON "jwt_blacklist"("user_id");
 CREATE INDEX IF NOT EXISTS "idx_blacklist_expires_at" ON "jwt_blacklist"("expires_at");
 CREATE INDEX IF NOT EXISTS "idx_blacklist_revoked_at" ON "jwt_blacklist"("revoked_at");
+
+-- 注: security_blacklist表由JPA Hibernate自动管理 (ddl-auto: update)
+-- Entity: org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity

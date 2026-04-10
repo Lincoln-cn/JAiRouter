@@ -26,7 +26,10 @@ public class ExtendedAuditQueryResponse {
     private int size;
     
     @Schema(description = "总元素数量")
-    private int totalElements;
+    private long totalElements;
+
+    @Schema(description = "总页数")
+    private int totalPages;
     
     @Schema(description = "查询开始时间")
     private LocalDateTime startTime;

@@ -142,7 +142,17 @@ jairouter:
       expiration-minutes: 60
       refresh-expiration-days: 7
       issuer: "jairouter"
-      
+      # 开发环境用户账户
+      accounts:
+        - username: "admin"
+          password: "{noop}UqfpTm2Zw7ff2BNnZb8AQo8t"
+          roles: [ "ADMIN", "USER" ]
+          enabled: true
+        - username: "user"
+          password: "{noop}userpassword123"
+          roles: [ "USER" ]
+          enabled: true
+
       # 开发环境JWT持久化配置
       persistence:
         enabled: true

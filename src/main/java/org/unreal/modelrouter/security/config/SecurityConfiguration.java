@@ -34,7 +34,6 @@ import java.util.List;
  */
 @Slf4j
 @Configuration
-@EnableWebFluxSecurity
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true")
 public class SecurityConfiguration {
@@ -151,6 +150,8 @@ public class SecurityConfiguration {
     public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
         // 动态获取UserDetailsService以避免循环依赖
         UserDetailsService userDetailsService = applicationContext.getBean(UserDetailsService.class);
+        log.info("=== AuthenticationManager created with UserDetailsService: {} ===", 
+            userDetailsService.getClass().getName());
 
         return new org.springframework.security.authentication.ProviderManager(
                 List.of(

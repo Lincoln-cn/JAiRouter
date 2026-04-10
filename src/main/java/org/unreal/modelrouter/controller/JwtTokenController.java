@@ -82,7 +82,11 @@ public class JwtTokenController {
             @Parameter(description = "登录请求") @RequestBody LoginRequest request,
             org.springframework.web.server.ServerWebExchange exchange) {
 
-        log.debug("收到用户登录请求: username={}", request.getUsername());
+        log.info("收到用户登录请求: username={}", request.getUsername());
+        log.info("accountManager class: {}", accountManager.getClass().getName());
+        log.info("securityProperties JWT enabled: {}", securityProperties.getJwt().isEnabled());
+        log.info("securityProperties JWT accounts count: {}", 
+            securityProperties.getJwt().getAccounts() != null ? securityProperties.getJwt().getAccounts().size() : "null");
 
         // 收集请求上下文信息
         String clientIp = getClientIpAddress(exchange);
