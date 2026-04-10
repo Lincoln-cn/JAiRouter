@@ -1,11 +1,11 @@
 ﻿# Changelog
 
-<!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**: c1aa5b0f  
-> **作者**: Lincoln
-<!-- /版本信息 -->
+<!-- Version Info -->
+> **Document Version**: 1.7.0
+> **Last Updated**: 2026-04-10
+> **Git Commit**: 2cba097
+> **Author**: Lincoln
+<!-- /Version Info -->
 
 
 
@@ -20,6 +20,156 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [1.7.0] - 2026-04-10
+
+#### New Features
+- **Security Blacklist Management**: New security blacklist management feature, supporting IP/user/token blacklists
+- **Enhanced Audit Logs**: Enhanced audit log query and display functionality with advanced search and statistics
+- **JWT Account Status Toggle**: Implement account enable/disable status toggle functionality
+
+#### Improvements & Optimizations
+- **JWT Account Management**: Fixed password validation issue during editing, optimized account management interface
+- **Frontend Table Optimization**: Table columns use adaptive width (min-width), added statistics cards and search functionality
+- **Configuration Management Simplification**: Removed unimplemented version management features, simplified interface
+
+#### Bug Fixes
+- Fixed password validation issue when editing JWT accounts
+- Fixed data display issue on account management page
+
+#### Technical Improvements
+- Added `enabled` field to `CreateJwtAccountRequest`
+- Implemented `toggleAccountStatus` method in `JwtAccountService`
+- Added `SecurityBlacklistController` and related entity classes
+- Cleaned up unused frontend code and type definitions
+
+---
+
+### [1.6.2] - 2026-04-08
+
+#### New Features
+- **API Key Batch Import/Export**: Support batch import/export of API Keys
+  - Added export endpoint `GET /api/auth/api-keys/export`
+  - Added import endpoint `POST /api/auth/api-keys/import`
+  - Support MERGE/REPLACE import modes
+- **API Key Rotation**: Support automatic key rotation mechanism
+  - Configure `rotationPeriodDays` to set rotation period
+  - Added `ApiKeyRotationScheduler` for automatic rotation execution
+- **Expired Key Auto Cleanup**: Added `ApiKeyExpirationScheduler` to automatically disable expired keys
+
+#### Improvements & Optimizations
+- **Creator Information Recording**: Record `createdBy` and `creatorIpAddress` when creating API Keys
+- **Key Usage Statistics Persistence**: Usage statistics persisted via `saveApiKeysToStore()`
+
+#### New Files
+- `ApiKeyBatchExportVO.java`
+- `ApiKeyBatchImportRequest.java`
+- `ApiKeyBatchImportResult.java`
+- `ApiKeyRotationScheduler.java`
+- `ApiKeyExpirationScheduler.java`
+
+---
+
+### [1.6.1] - 2026-04-06
+
+#### Security Fixes (P0)
+- **API Key Hashed Storage**: API Keys stored using SHA-256 + salt hashing, replacing plaintext storage
+- **Admin API Rate Limiting**: Added rate limiting (30/min, 100/hour, 10 create/hour)
+
+#### New Features
+- **IP Whitelist**: Support IP whitelist functionality (`allowedIpAddresses`)
+- **Daily Request Limit**: Support daily request limit functionality (`dailyRequestLimit`)
+- **Key Reset Interface**: Added key reset interface `/api/auth/api-keys/{keyId}/reset`
+
+#### Improvements & Optimizations
+- **Frontend Strong Typing**: Use strongly typed DTO/VO instead of Map data passing
+- **Table Layout Optimization**: Optimized table layout and horizontal scroll support
+
+#### New Files
+- `ApiKeyHashUtil.java` - SHA-256 hash utility class
+- `AdminApiRateLimiter.java` - Admin API rate limiting filter
+- `ApiKeyVO/ApiKeyCreationVO/ApiKeyListVO/ApiKeyCreateRequest/ApiKeyUpdateRequest` - Strongly typed DTOs
+
+---
+
+### [1.6.0] - 2026-04-04
+
+#### Breaking Changes
+- **Removed Configuration Merge Feature**: Removed AutoMergeService and AutoMergeController
+- **Removed Related Entity Classes**: Removed MergeResult and 5 related entity classes
+- **Removed Frontend Page**: Removed ConfigMergeManagement.vue page and related API
+
+#### Improvements & Optimizations
+- **Configuration Version Management Optimization**: Simplified version management interface, retained core version switching functionality
+- **Log Configuration Optimization**: Optimized logback-spring.xml configuration
+- **Documentation Update**: Removed configuration merge related content
+
+#### Retained Features
+- `ConfigMergeService`: Core configuration retrieval and merge functionality
+- `SecurityConfigMergeService`: Security configuration merge service
+
+---
+
+### [1.5.7] - 2026-04-02
+
+#### New Features
+- **JWT Account Initialization**: JWT accounts auto-initialized from YAML configuration to database
+- **Account Management API Optimization**: Use standard RouterResponse response format
+
+#### Bug Fixes
+- Fixed JWT accounts not being initialized to database on system startup
+- Fixed account management page unable to display data
+- Fixed API path mismatch with frontend (`/api/admin/accounts` -> `/api/security/jwt/accounts`)
+
+#### New Files
+- `JwtAccountProperties.java` - Maps YAML account configuration
+- `JwtConfig.accounts` field - Supports account list configuration
+
+---
+
+### [1.5.6] - 2026-03-30
+
+#### New Features
+- **Instance-level Rate Limiter Independent Storage**: Added `instance_rate_limit` table for instance rate limiter configuration
+- **Instance-level Circuit Breaker Independent Storage**: Added `instance_circuit_breaker` table for instance circuit breaker configuration
+- **Independent Configuration API**: Added independent rate limiter/circuit breaker configuration API endpoints
+- **Strongly Typed DTO**: Use strongly typed DTO instead of Map data passing
+
+#### API Changes
+- `GET/PUT /api/config/instance/{type}/{id}/rate-limit`
+- `GET/PUT /api/config/instance/{type}/{id}/circuit-breaker`
+
+#### New Files
+- `InstanceRateLimitEntity/InstanceCircuitBreakerEntity` - Entity classes
+- `InstanceRateLimitRepository/InstanceCircuitBreakerRepository` - Repositories
+- `InstanceRateLimitDTO/InstanceCircuitBreakerDTO` - DTO classes
+
+#### Improvements & Optimizations
+- `build-and-deploy.sh` script automatically cleans old compiled files
+
+---
+
+### [1.5.2] - 2026-03-20
+
+#### New Features
+- **JPA Migration Complete**: Completed aggressive migration from R2DBC to JPA
+- **DTO Structure Optimization**: All core functions restored and optimized to DTO structure
+
+#### Bug Fixes
+- Fixed compilation errors during JPA migration
+- Fixed service configuration function restoration
+
+---
+
+### [1.4.6] - 2026-03-10
+
+#### Bug Fixes
+- Fixed frontend independent configuration functionality
+- Fixed frontend independent rate limiter and circuit breaker configuration functionality
+- Fixed data return completeness issue
+- Fixed `buildInstanceMap` and `convertToVO` methods
+
+---
 
 ### [Unreleased] - In Development
 
