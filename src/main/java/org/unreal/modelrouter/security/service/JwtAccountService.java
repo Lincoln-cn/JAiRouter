@@ -61,11 +61,11 @@ public class JwtAccountService {
                     .username(request.getUsername())
                     .password(passwordEncoder.encode(request.getPassword()))
                     .roles(objectMapper.writeValueAsString(request.getRoles()))
-                    .enabled(true)
+                    .enabled(request.getEnabled() != null ? request.getEnabled() : true)
                     .build();
 
             JwtAccountEntity saved = jwtAccountRepository.save(entity);
-            log.info("Created JWT account: {}", request.getUsername());
+            log.info("Created JWT account: {} with enabled={}", request.getUsername(), entity.getEnabled());
             return convertToDTO(saved);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize roles", e);
@@ -114,6 +114,19 @@ public class JwtAccountService {
         return jwtAccountRepository.findByUsername(username)
                 .map(entity -> passwordEncoder.matches(password, entity.getPassword()))
                 .orElse(false);
+    }
+
+    /**
+     * 切换账户状态
+     */
+    @Transactional
+    public JwtAccountDTO toggleAccountStatus(String username, boolean enabled) {
+        JwtAccountEntity entity = jwtAccountRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Account not found: " + username));
+        entity.setEnabled(enabled);
+        JwtAccountEntity saved = jwtAccountRepository.save(entity);
+        log.info("Toggled JWT account status: {} -> {}", username, enabled);
+        return convertToDTO(saved);
     }
 
     private JwtAccountDTO convertToDTO(JwtAccountEntity entity) {

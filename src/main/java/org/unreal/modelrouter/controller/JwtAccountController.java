@@ -93,70 +93,12 @@ public class JwtAccountController {
      * 切换账户状态
      */
     @PatchMapping("/{username}/status")
-    public ResponseEntity<RouterResponse<Void>> toggleAccountStatus(
+    public ResponseEntity<RouterResponse<JwtAccountDTO>> toggleAccountStatus(
             @PathVariable String username,
             @RequestParam boolean enabled) {
         log.info("Toggling JWT account status: {} -> {}", username, enabled);
-        // TODO: 实现状态切换逻辑
-        return ResponseEntity.ok(RouterResponse.success(null, "账户状态更新成功"));
-    }
-
-    /**
-     * 获取账户配置版本列表
-     */
-    @GetMapping("/versions")
-    public ResponseEntity<RouterResponse<List<Integer>>> getAccountVersions() {
-        // TODO: 实现版本管理
-        return ResponseEntity.ok(RouterResponse.success(List.of(1), "获取版本列表成功"));
-    }
-
-    /**
-     * 获取指定版本配置
-     */
-    @GetMapping("/versions/{version}")
-    public ResponseEntity<RouterResponse<Map<String, Object>>> getAccountVersionConfig(
-            @PathVariable int version) {
-        // TODO: 实现版本配置获取
-        return ResponseEntity.ok(RouterResponse.success(Map.of("version", version), "获取版本配置成功"));
-    }
-
-    /**
-     * 应用指定版本配置
-     */
-    @PostMapping("/versions/{version}/apply")
-    public ResponseEntity<RouterResponse<Void>> applyAccountVersion(@PathVariable int version) {
-        // TODO: 实现版本应用
-        return ResponseEntity.ok(RouterResponse.success(null, "版本应用成功"));
-    }
-
-    /**
-     * 获取当前版本号
-     */
-    @GetMapping("/versions/current")
-    public ResponseEntity<RouterResponse<Integer>> getCurrentAccountVersion() {
-        // TODO: 实现当前版本获取
-        return ResponseEntity.ok(RouterResponse.success(1, "获取当前版本成功"));
-    }
-
-    /**
-     * 重置账户配置为默认值
-     */
-    @PostMapping("/reset")
-    public ResponseEntity<RouterResponse<Void>> resetAccountsToDefault() {
-        // TODO: 实现重置逻辑
-        return ResponseEntity.ok(RouterResponse.success(null, "账户配置已重置"));
-    }
-
-    /**
-     * 获取账户配置状态
-     */
-    @GetMapping("/config/status")
-    public ResponseEntity<RouterResponse<Map<String, Object>>> getAccountConfigStatus() {
-        Map<String, Object> status = Map.of(
-            "hasPersistedConfig", true,
-            "currentVersion", 1,
-            "totalVersions", 1
-        );
-        return ResponseEntity.ok(RouterResponse.success(status, "获取配置状态成功"));
+        JwtAccountDTO updated = jwtAccountService.toggleAccountStatus(username, enabled);
+        String message = enabled ? "账户已启用" : "账户已禁用";
+        return ResponseEntity.ok(RouterResponse.success(updated, message));
     }
 }
