@@ -3,10 +3,14 @@ import type { RouterResponse } from '@/types'
 
 // 定义账户类型
 export interface JwtAccount {
+  id?: number
   username: string
   password?: string
   roles: string[]
   enabled: boolean
+  createdAt?: string
+  updatedAt?: string
+  statusLoading?: boolean // 用于前端状态切换 loading
 }
 
 // 创建账户请求类型
@@ -15,13 +19,6 @@ export interface CreateJwtAccountRequest {
   password: string
   roles: string[]
   enabled: boolean
-}
-
-// JWT账户配置状态类型
-export interface JwtAccountConfigStatus {
-  hasPersistedConfig: boolean
-  currentVersion: number
-  totalVersions: number
 }
 
 // 获取账户列表
@@ -73,74 +70,6 @@ export const toggleJwtAccountStatus = async (username: string, enabled: boolean)
     })
   } catch (error) {
     console.error('切换账户状态失败:', error)
-    throw error
-  }
-}
-
-// ==================== 版本管理接口 ====================
-
-// 获取所有账户配置版本列表
-export const getJwtAccountVersions = async (): Promise<number[]> => {
-  try {
-    const response = await request.get<RouterResponse<number[]>>('/security/jwt/accounts/versions')
-    return response.data.data || []
-  } catch (error) {
-    console.error('获取账户配置版本列表失败:', error)
-    throw error
-  }
-}
-
-// 获取指定版本的账户配置
-export const getJwtAccountVersionConfig = async (version: number): Promise<Record<string, any> | null> => {
-  try {
-    const response = await request.get<RouterResponse<Record<string, any>>>(`/security/jwt/accounts/versions/${version}`)
-    return response.data.data || null
-  } catch (error) {
-    console.error(`获取账户配置版本 ${version} 失败:`, error)
-    throw error
-  }
-}
-
-// 应用指定版本的账户配置
-export const applyJwtAccountVersion = async (version: number): Promise<void> => {
-  try {
-    await request.post<RouterResponse<void>>(`/security/jwt/accounts/versions/${version}/apply`)
-  } catch (error) {
-    console.error(`应用账户配置版本 ${version} 失败:`, error)
-    throw error
-  }
-}
-
-// 获取当前账户配置版本号
-export const getCurrentJwtAccountVersion = async (): Promise<number> => {
-  try {
-    const response = await request.get<RouterResponse<number>>('/security/jwt/accounts/versions/current')
-    return response.data.data || 0
-  } catch (error) {
-    console.error('获取当前账户配置版本号失败:', error)
-    throw error
-  }
-}
-
-// ==================== 配置管理接口 ====================
-
-// 重置账户配置为默认值
-export const resetJwtAccountsToDefault = async (): Promise<void> => {
-  try {
-    await request.post<RouterResponse<void>>('/security/jwt/accounts/reset')
-  } catch (error) {
-    console.error('重置账户配置为默认值失败:', error)
-    throw error
-  }
-}
-
-// 获取账户配置状态
-export const getJwtAccountConfigStatus = async (): Promise<JwtAccountConfigStatus> => {
-  try {
-    const response = await request.get<RouterResponse<JwtAccountConfigStatus>>('/security/jwt/accounts/config/status')
-    return response.data.data || { hasPersistedConfig: false, currentVersion: 0, totalVersions: 0 }
-  } catch (error) {
-    console.error('获取账户配置状态失败:', error)
     throw error
   }
 }

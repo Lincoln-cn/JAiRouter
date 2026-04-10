@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.security.service;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,17 +13,17 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.security.config.properties.JwtUserProperties;
+import org.unreal.modelrouter.security.config.properties.JwtAccountProperties;
 import org.unreal.modelrouter.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.security.audit.ExtendedSecurityAuditService;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -31,58 +31,86 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true")
 public class AccountManager implements UserDetailsService {
-    
-    private final JwtUserProperties jwtUserProperties;
+
+    private final SecurityProperties securityProperties;
     private final PasswordEncoder passwordEncoder;
-    
+
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("=== AccountManager initialized ===");
+        log.info("JWT enabled: {}", securityProperties.getJwt().isEnabled());
+        log.info("JWT accounts count: {}", 
+            securityProperties.getJwt().getAccounts() != null ? securityProperties.getJwt().getAccounts().size() : 0);
+    }
+
     // 审计服务（用于记录认证操作）
     @Autowired(required = false)
     private ExtendedSecurityAuditService auditService;
-    
+
     /**
      * 验证用户凭据
-     * 
+     *
      * @param username 用户名
      * @param password 密码
      * @return 如果凭据有效返回true，否则返回false
      */
     public boolean validateCredentials(String username, String password) {
-        if (!jwtUserProperties.isEnabled()) {
+        if (!securityProperties.getJwt().isEnabled()) {
             log.warn("JWT认证功能未启用");
             return false;
         }
-        
-        return jwtUserProperties.getAccounts().stream()
-                .filter(account -> account.isEnabled())
+
+        List<JwtAccountProperties> accounts = securityProperties.getJwt().getAccounts();
+        if (accounts == null || accounts.isEmpty()) {
+            log.warn("未配置JWT账户");
+            return false;
+        }
+
+        log.info("验证用户凭据: username={}, accountsCount={}", username, accounts.size());
+
+        return accounts.stream()
+                .filter(JwtAccountProperties::isEnabled)
                 .filter(account -> account.getUsername().equals(username))
-                .anyMatch(account -> passwordEncoder.matches(password, account.getPassword()));
+                .peek(account -> log.info("找到账户: username={}, passwordPrefix={}", 
+                        account.getUsername(), 
+                        account.getPassword() != null ? account.getPassword().substring(0, Math.min(10, account.getPassword().length())) : "null"))
+                .anyMatch(account -> {
+                    boolean matches = passwordEncoder.matches(password, account.getPassword());
+                    log.info("密码匹配结果: username={}, matches={}", username, matches);
+                    return matches;
+                });
     }
-    
+
     /**
      * 根据用户名查找账户信息
-     * 
+     *
      * @param username 用户名
      * @return 账户信息Optional
      */
-    public Optional<JwtUserProperties.UserAccount> findAccountByUsername(String username) {
-        if (!jwtUserProperties.isEnabled()) {
+    public Optional<JwtAccountProperties> findAccountByUsername(String username) {
+        if (!securityProperties.getJwt().isEnabled()) {
             log.warn("JWT认证功能未启用");
             return Optional.empty();
         }
-        
-        return jwtUserProperties.getAccounts().stream()
-                .filter(account -> account.isEnabled())
+
+        List<JwtAccountProperties> accounts = securityProperties.getJwt().getAccounts();
+        if (accounts == null || accounts.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return accounts.stream()
+                .filter(JwtAccountProperties::isEnabled)
                 .filter(account -> account.getUsername().equals(username))
                 .findFirst();
     }
-    
+
     /**
      * 验证用户名和密码并生成JWT令牌
      */
     public Mono<String> authenticateAndGenerateToken(String username, String password, SecurityProperties securityProperties) {
         return authenticateAndGenerateToken(username, password, securityProperties, null, null);
     }
-    
+
     /**
      * 验证用户名和密码并生成JWT令牌（带上下文信息用于审计）
      */
@@ -93,7 +121,7 @@ public class AccountManager implements UserDetailsService {
                 .switchIfEmpty(Mono.defer(() -> {
                     // 记录认证失败审计
                     if (auditService != null) {
-                        auditService.auditSecurityEvent("AUTHENTICATION_FAILED", 
+                        auditService.auditSecurityEvent("AUTHENTICATION_FAILED",
                             "用户名或密码错误: " + username, username, ipAddress)
                             .onErrorResume(ex -> {
                                 log.warn("记录认证失败审计失败: {}", ex.getMessage());
@@ -105,47 +133,52 @@ public class AccountManager implements UserDetailsService {
                 }))
                 .map(valid -> generateJwtToken(username, securityProperties));
     }
-    
+
     /**
      * 生成JWT令牌
      */
     private String generateJwtToken(String username, SecurityProperties securityProperties) {
         // 获取用户详情
         UserDetails userDetails = loadUserByUsername(username);
-        
+
         // 获取用户角色
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(org.springframework.security.core.GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        
+
         // 设置过期时间
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + 
+        Date expiration = new Date(now.getTime() +
             securityProperties.getJwt().getExpirationMinutes() * 60 * 1000L);
-        
-        // 创建签名密钥
-        SecretKey signingKey = new SecretKeySpec(
-                securityProperties.getJwt().getSecret().getBytes(StandardCharsets.UTF_8),
-                SignatureAlgorithm.HS256.getJcaName());
-        
-        // 构建JWT令牌
+
+        // 创建签名密钥（使用JJWT 0.12.x API）
+        SecretKey signingKey = Keys.hmacShaKeyFor(
+                securityProperties.getJwt().getSecret().getBytes(StandardCharsets.UTF_8));
+
+        // 构建JWT令牌（使用JJWT 0.12.x API）
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
+                .subject(userDetails.getUsername())
                 .claim("roles", roles)
-                .setIssuer(securityProperties.getJwt().getIssuer())
-                .setIssuedAt(now)
-                .setExpiration(expiration)
-                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .issuer(securityProperties.getJwt().getIssuer())
+                .issuedAt(now)
+                .expiration(expiration)
+                .id(UUID.randomUUID().toString()) // 设置JTI用于黑名单管理
+                .signWith(signingKey)
                 .compact();
     }
-    
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        if (!jwtUserProperties.isEnabled()) {
+        if (!securityProperties.getJwt().isEnabled()) {
             throw new UsernameNotFoundException("JWT认证功能未启用");
         }
-        
-        return jwtUserProperties.getAccounts().stream()
+
+        List<JwtAccountProperties> accounts = securityProperties.getJwt().getAccounts();
+        if (accounts == null || accounts.isEmpty()) {
+            throw new UsernameNotFoundException("未配置JWT账户");
+        }
+
+        return accounts.stream()
                 .filter(account -> account.getUsername().equals(username) && account.isEnabled())
                 .findFirst()
                 .map(account -> User.builder()

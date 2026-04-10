@@ -98,6 +98,12 @@ const router = createRouter({
           meta: { title: 'JWT令牌管理', icon: 'lock' }
         },
         {
+          path: 'blacklist',
+          name: 'blacklist-management',
+          component: () => import('../views/security/BlacklistManagement.vue'),
+          meta: { title: '安全黑名单', icon: 'warning' }
+        },
+        {
           path: 'audit-logs',
           name: 'audit-log-management',
           component: () => import('../views/security/AuditLogManagement.vue'),

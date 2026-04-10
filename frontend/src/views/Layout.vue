@@ -46,6 +46,7 @@
           </template>
           <el-menu-item index="/security/api-keys">API密钥管理</el-menu-item>
           <el-menu-item index="/security/jwt-tokens">JWT令牌管理</el-menu-item>
+          <el-menu-item index="/security/blacklist">黑名单管理</el-menu-item>
           <el-menu-item index="/security/audit-logs">审计日志</el-menu-item>
         </el-sub-menu>
 
