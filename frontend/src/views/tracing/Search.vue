@@ -67,40 +67,40 @@
         @row-click="handleRowClick"
         row-class-name="trace-row"
       >
-        <el-table-column prop="traceId" label="追踪ID" width="180" show-overflow-tooltip>
+        <el-table-column prop="traceId" label="追踪ID" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <el-link type="primary" @click.stop="handleViewTrace(row)">
               {{ row.traceId.substring(0, 16) }}...
             </el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="serviceName" label="主服务" width="120" />
-        <el-table-column prop="operationName" label="主要操作" width="200" show-overflow-tooltip />
-        <el-table-column prop="spanCount" label="Span数量" width="100">
+        <el-table-column prop="serviceName" label="主服务" min-width="70" />
+        <el-table-column prop="operationName" label="主要操作" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="spanCount" label="Span数量" min-width="70">
           <template #default="{ row }">
             <el-tag size="small" :type="row.spanCount > 1 ? 'success' : 'info'">
               {{ row.spanCount }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="duration" label="总耗时(ms)" width="120" sortable>
+        <el-table-column prop="duration" label="总耗时(ms)" min-width="70" sortable>
           <template #default="{ row }">
             <span :class="{ 'high-latency': row.duration > 1000 }">{{ Math.round(row.duration) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="startTime" label="开始时间" width="160">
+        <el-table-column prop="startTime" label="开始时间" min-width="140">
           <template #default="{ row }">
             {{ formatTime(row.startTime) }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="status" label="状态" min-width="70">
           <template #default="{ row }">
             <el-tag :type="row.hasError ? 'danger' : 'success'" size="small">
               {{ row.hasError ? '错误' : '成功' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" min-width="70" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="text" @click.stop="handleViewTrace(row)">
               查看链路
@@ -175,8 +175,8 @@
               <h4 style="margin: 0;">Span详情列表</h4>
             </template>
             <el-table :data="sortedSpans" style="width: 100%" size="small" default-sort="{prop: 'startTime', order: 'ascending'}">
-              <el-table-column type="index" label="#" width="50" />
-              <el-table-column prop="spanId" label="Span ID" width="120" show-overflow-tooltip>
+              <el-table-column type="index" label="#" min-width="50" />
+              <el-table-column prop="spanId" label="Span ID" min-width="70" show-overflow-tooltip>
                 <template #default="{ row }">
                   <el-text style="font-family: monospace; font-size: 12px;">
                     {{ row.spanId.substring(0, 12) }}...
@@ -193,26 +193,26 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="duration" label="耗时(ms)" width="100" sortable>
+              <el-table-column prop="duration" label="耗时(ms)" min-width="70" sortable>
                 <template #default="{ row }">
                   <span :class="{ 'high-latency': row.duration > 500 }">
                     {{ Math.round(row.duration) }}
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column prop="startTime" label="开始时间" width="140" sortable>
+              <el-table-column prop="startTime" label="开始时间" min-width="140" sortable>
                 <template #default="{ row }">
                   {{ formatTime(row.startTime) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="error" label="状态" width="80">
+              <el-table-column prop="error" label="状态" min-width="70">
                 <template #default="{ row }">
                   <el-tag :type="row.error ? 'danger' : 'success'" size="small">
                     {{ row.error ? '错误' : '成功' }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="statusCode" label="状态码" width="80">
+              <el-table-column prop="statusCode" label="状态码" min-width="70">
                 <template #default="{ row }">
                   <el-tag 
                     size="small" 
@@ -222,7 +222,7 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="100" fixed="right">
+              <el-table-column label="操作" min-width="70" fixed="right">
                 <template #default="{ row }">
                   <el-button size="small" type="text" @click="showSpanDetails(row)">
                     详情
@@ -856,6 +856,7 @@ onMounted(() => {
 <style scoped>
 .tracing-search {
   padding: 0;
+  width: 100%;
 }
 
 .card-header {
@@ -875,6 +876,33 @@ onMounted(() => {
 
 .results-card {
   margin-top: 20px;
+}
+
+/* 表格充满全屏样式 */
+.results-card :deep(.el-card__body) {
+  padding: 20px;
+}
+
+.results-card :deep(.el-table) {
+  width: 100% !important;
+}
+
+.results-card :deep(.el-table__body-wrapper) {
+  width: 100% !important;
+}
+
+.results-card :deep(.el-table colgroup) {
+  width: 100% !important;
+}
+
+/* 确保列充满可用空间 */
+.results-card :deep(.el-table__body) {
+  width: 100% !important;
+}
+
+/* 让最后一列（操作列）不自动扩展，其他列自动填充 */
+.results-card :deep(.el-table__body tr td:not(:last-child)) {
+  flex-grow: 1;
 }
 
 .high-latency {

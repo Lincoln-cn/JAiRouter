@@ -5,7 +5,7 @@ services:
     image: sodlinken/jairouter:dev
     container_name: jairouter-dev
     ports:
-      - "8080:8080"
+      - "9900:9900"
       - "5005:5005"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
@@ -26,7 +26,7 @@ services:
     depends_on:
       - redis-dev
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:9900/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3

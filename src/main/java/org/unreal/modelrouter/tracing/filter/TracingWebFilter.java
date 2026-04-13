@@ -61,6 +61,19 @@ public class TracingWebFilter implements WebFilter, Ordered {
             return chain.filter(exchange);
         }
         
+        // 检查是否已存在追踪上下文（避免重复创建 traceId）
+        TracingContext existingContext = exchange.getAttribute(TracingConstants.ContextKeys.TRACING_CONTEXT);
+        if (existingContext != null && existingContext.isActive()) {
+            log.debug("已存在追踪上下文，跳过重复创建: traceId={}", existingContext.getTraceId());
+            // 使用已存在的上下文继续处理
+            return chain.filter(exchange)
+                .contextWrite(Context.of(
+                    TracingConstants.ContextKeys.TRACING_CONTEXT, existingContext,
+                    TracingConstants.ContextKeys.TRACE_ID, existingContext.getTraceId(),
+                    TracingConstants.ContextKeys.SPAN_ID, existingContext.getSpanId()
+                ));
+        }
+        
         long startTime = System.currentTimeMillis();
         
         return tracingService.createRootSpan(exchange)

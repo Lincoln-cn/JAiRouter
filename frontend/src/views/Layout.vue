@@ -67,12 +67,11 @@
             <el-icon>
               <Connection />
             </el-icon>
-            <span>追踪管理</span>
+            <span>链路追踪</span>
           </template>
-          <el-menu-item index="/tracing/overview">追踪概览</el-menu-item>
+          <el-menu-item index="/tracing/dashboard">追踪仪表盘</el-menu-item>
           <el-menu-item index="/tracing/search">追踪搜索</el-menu-item>
-          <el-menu-item index="/tracing/performance">性能分析</el-menu-item>
-          <el-menu-item index="/tracing/management">追踪管理</el-menu-item>
+          <el-menu-item index="/tracing/management">追踪配置</el-menu-item>
         </el-sub-menu>
 
         <!-- API测试试验场 -->
