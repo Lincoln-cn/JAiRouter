@@ -301,8 +301,12 @@ public class TraceQueryService {
             // 存储到内存
             traceStore.put(traceId, trace);
             
-            // 只有新记录才添加到 recentTraces
+            // 更新 recentTraces：如果是新记录则添加，如果是合并记录则替换
             if (existingTrace == null) {
+                recentTraces.offer(trace);
+            } else {
+                // 合并记录时，需要更新 recentTraces 队列中的引用
+                recentTraces.remove(existingTrace);
                 recentTraces.offer(trace);
             }
             
@@ -329,6 +333,79 @@ public class TraceQueryService {
     }
 
     /**
+     * 同步记录追踪数据（用于子Span记录，避免异步执行问题）
+     */
+    public void recordTraceSync(String traceId, String serviceName,
+                                 List<SpanRecord> spans, double duration) {
+        // 检查是否已存在该 traceId 的记录
+        TraceRecord existingTrace = traceStore.get(traceId);
+
+        TraceRecord trace;
+        if (existingTrace != null) {
+            // 合并 Span 列表
+            List<SpanRecord> mergedSpans = new ArrayList<>(existingTrace.getSpans());
+
+            // 避免重复添加相同的 Span（基于 spanId）
+            Set<String> existingSpanIds = mergedSpans.stream()
+                .map(SpanRecord::getSpanId)
+                .collect(Collectors.toSet());
+
+            for (SpanRecord newSpan : spans) {
+                if (!existingSpanIds.contains(newSpan.getSpanId())) {
+                    mergedSpans.add(newSpan);
+                }
+            }
+
+            // 计算总持续时间（取最大值）
+            double totalDuration = Math.max(existingTrace.getDuration(), duration);
+
+            // 创建合并后的追踪记录
+            trace = new TraceRecord(
+                traceId, serviceName, mergedSpans, totalDuration, existingTrace.getCreatedAt()
+            );
+
+            log.debug("同步合并追踪数据: traceId={}, 原有spans={}, 新增spans={}, 总spans={}",
+                     traceId, existingTrace.getSpans().size(), spans.size(), mergedSpans.size());
+        } else {
+            // 创建新的追踪记录
+            trace = new TraceRecord(
+                traceId, serviceName, spans, duration, Instant.now()
+            );
+
+            log.debug("同步创建新追踪数据: traceId={}, spans={}", traceId, spans.size());
+        }
+
+        // 存储到内存
+        traceStore.put(traceId, trace);
+
+        // 更新 recentTraces：如果是新记录则添加，如果是合并记录则替换
+        if (existingTrace == null) {
+            recentTraces.offer(trace);
+            traceCounter.incrementAndGet();
+        } else {
+            // 合并记录时，需要更新 recentTraces 队列中的引用
+            // 移除旧记录并添加新的合并记录
+            recentTraces.remove(existingTrace);
+            recentTraces.offer(trace);
+        }
+
+        // 限制存储数量
+        if (traceStore.size() > MAX_STORED_TRACES) {
+            String oldestTraceId = traceStore.values().stream()
+                .min(Comparator.comparing(TraceRecord::getCreatedAt))
+                .map(TraceRecord::getTraceId)
+                .orElse(null);
+            if (oldestTraceId != null) {
+                traceStore.remove(oldestTraceId);
+            }
+        }
+
+        if (recentTraces.size() > MAX_RECENT_TRACES) {
+            recentTraces.poll();
+        }
+    }
+
+    /**
      * 获取服务统计信息
      */
     public Mono<List<Map<String, Object>>> getServiceStatistics() {
@@ -350,6 +427,7 @@ public class TraceQueryService {
                     Map<String, Object> serviceData = new HashMap<>();
                     serviceData.put("name", stats.getServiceName());
                     serviceData.put("traces", stats.getTraceCount());
+                    serviceData.put("requestCount", stats.getRequestCount());
                     serviceData.put("errors", stats.getErrorCount());
                     serviceData.put("avgDuration", Math.round(stats.getAvgDuration()));
                     serviceData.put("p95Duration", Math.round(stats.getP95Duration()));
@@ -1026,6 +1104,7 @@ public class TraceQueryService {
         private final List<Double> durations = new ArrayList<>();
         private int traceCount = 0;
         private int errorCount = 0;
+        private int requestCount = 0;  // 请求数量（等同于追踪数）
 
         public ServiceStatistics(String serviceName) {
             this.serviceName = serviceName;
@@ -1033,6 +1112,7 @@ public class TraceQueryService {
 
         public void addTrace(TraceRecord trace) {
             traceCount++;
+            requestCount++;  // 每个追踪对应一个请求
             durations.add(trace.getDuration());
             
             boolean hasError = trace.getSpans().stream().anyMatch(SpanRecord::isError);
@@ -1047,6 +1127,10 @@ public class TraceQueryService {
 
         public int getTraceCount() {
             return traceCount;
+        }
+
+        public int getRequestCount() {
+            return requestCount;
         }
 
         public int getErrorCount() {

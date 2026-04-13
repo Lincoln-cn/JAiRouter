@@ -200,7 +200,7 @@ public class TracingService {
             );
             
             // 记录追踪数据到查询服务
-            String serviceName = tracingConfiguration.getServiceName();
+            String serviceName = determineServiceName(exchange.getRequest());
             List<TraceQueryService.SpanRecord> spanRecords = new ArrayList<>();
             Instant startTimeInstant = Instant.ofEpochMilli(startTime);
             Instant endTimeInstant = Instant.ofEpochMilli(startTime + duration);
@@ -282,7 +282,8 @@ public class TracingService {
             ).subscribe();
             
             // 记录错误追踪数据到查询服务
-            String serviceName = tracingConfiguration.getServiceName();
+            // 错误记录通常发生在API请求处理过程中，使用 "server" 作为服务标识
+            String serviceName = "server";
             List<TraceQueryService.SpanRecord> errorSpanRecords = new ArrayList<>();
             Map<String, Object> errorAttributes = new HashMap<>();
             errorAttributes.put("error.type", error.getClass().getSimpleName());
@@ -382,6 +383,52 @@ public class TracingService {
         return method + " " + path;
     }
     
+    /**
+     * 根据请求路径判断服务名称
+     * - 前端静态资源请求返回 "front"
+     * - 后端 API 请求返回 "server"
+     * - 其他请求返回默认值
+     */
+    private String determineServiceName(ServerHttpRequest request) {
+        String path = request.getPath().value();
+        
+        // 前端静态资源路径判断
+        if (path.startsWith("/admin/assets/") ||
+            (path.startsWith("/admin/") && isStaticResource(path)) ||
+            path.endsWith(".js") || path.endsWith(".css") ||
+            path.endsWith(".html") || path.endsWith(".ico") ||
+            path.endsWith(".png") || path.endsWith(".jpg") ||
+            path.endsWith(".svg") || path.endsWith(".woff") ||
+            path.endsWith(".woff2") || path.endsWith(".ttf")) {
+            return "front";
+        }
+        
+        // 前端页面路由请求（SPA路由，如 /admin/tracing/search）
+        // 这些请求实际上返回 index.html，属于前端页面
+        if (path.startsWith("/admin/") && !path.startsWith("/admin/api/")) {
+            return "front";
+        }
+        
+        // 后端 API 请求判断
+        if (path.startsWith("/api/") || path.startsWith("/actuator/")) {
+            return "server";
+        }
+        
+        // 其他请求使用默认服务名称
+        return tracingConfiguration.getServiceName();
+    }
+    
+    /**
+     * 判断是否为静态资源
+     */
+    private boolean isStaticResource(String path) {
+        return path.endsWith(".js") || path.endsWith(".css") ||
+               path.endsWith(".html") || path.endsWith(".ico") ||
+               path.endsWith(".png") || path.endsWith(".jpg") ||
+               path.endsWith(".svg") || path.endsWith(".map") ||
+               path.contains("/assets/");
+    }
+
     /**
      * 设置HTTP请求相关属性
      */

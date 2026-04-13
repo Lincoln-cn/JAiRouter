@@ -126,38 +126,47 @@ const router = createRouter({
         }
       ]
     },
-    // 追踪管理
+    // 追踪管理 - 重构后的结构
     {
       path: '/tracing',
       name: 'tracing',
       component: () => import('../views/Layout.vue'),
+      redirect: '/tracing/dashboard',
       meta: { requiresAuth: true },
       children: [
         {
-          path: 'overview',
-          name: 'tracing-overview',
-          component: () => import('../views/tracing/Overview.vue'),
-          meta: { title: '追踪概览', icon: 'connection' }
+          path: 'dashboard',
+          name: 'tracing-dashboard',
+          component: () => import('../views/tracing/Dashboard.vue'),
+          meta: { title: '追踪仪表盘', icon: 'connection' }
         },
         {
           path: 'search',
           name: 'tracing-search',
           component: () => import('../views/tracing/Search.vue'),
-          meta: { title: '追踪搜索', icon: 'search' }
-        },
-        {
-          path: 'performance',
-          name: 'tracing-performance',
-          component: () => import('../views/tracing/Performance.vue'),
-          meta: { title: '性能分析', icon: 'odometer' }
+          meta: { title: '链路追踪', icon: 'search' }
         },
         {
           path: 'management',
           name: 'tracing-management',
           component: () => import('../views/tracing/Management.vue'),
-          meta: { title: '追踪管理', icon: 'setting' }
+          meta: { title: '追踪配置', icon: 'setting' }
         }
       ]
+    },
+    // 兼容旧路由
+    {
+      path: '/tracing/overview',
+      redirect: '/tracing/dashboard'
+    },
+    {
+      path: '/tracing/performance',
+      redirect: '/tracing/dashboard'
+    },
+    // 兼容 /admin/admin/tracing 的错误路径
+    {
+      path: '/admin/tracing/:pathMatch(.*)*',
+      redirect: to => `/tracing/${to.params.pathMatch || 'dashboard'}`
     },
     // API测试试验场
     {
