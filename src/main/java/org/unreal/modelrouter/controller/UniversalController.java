@@ -11,6 +11,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.adapter.AdapterRegistry;
 import org.unreal.modelrouter.adapter.ServiceCapability;
@@ -19,6 +20,8 @@ import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.tracing.TracingConstants;
+import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
 
@@ -47,14 +50,28 @@ public class UniversalController {
         this.tracingInterceptor = tracingInterceptor;
     }
 
+    /**
+     * 从 ServerWebExchange 获取追踪上下文
+     */
+    private TracingContext getTracingContext(ServerWebExchange exchange) {
+        if (exchange != null) {
+            return exchange.getAttribute(TracingConstants.ContextKeys.TRACING_CONTEXT);
+        }
+        return null;
+    }
+
     @PostMapping("/chat/completions")
     public Mono<ResponseEntity<?>> chatCompletions(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody(required = false) ChatDTO.Request request,
-            ServerHttpRequest httpRequest) {
+            ServerWebExchange exchange) {
 
-        if (tracingInterceptor != null) {
+        ServerHttpRequest httpRequest = exchange.getRequest();
+        TracingContext tracingContext = getTracingContext(exchange);
+
+        if (tracingInterceptor != null && tracingContext != null && tracingContext.isActive()) {
             return tracingInterceptor.traceControllerCall(
+                exchange,
                 ModelServiceRegistry.ServiceType.chat,
                 request.model(),
                 httpRequest,
@@ -62,17 +79,19 @@ public class UniversalController {
                 () -> handleServiceRequestWithInstanceAdapter(
                     ModelServiceRegistry.ServiceType.chat,
                     request.model(),
-                    httpRequest,
+                    exchange,
+                    tracingContext,
                     (adapter) -> adapter.chat(request, authorization, httpRequest)
                             .map(resp -> (ResponseEntity<?>) resp)
                 )
             );
         }
-        
+
         return handleServiceRequestWithInstanceAdapter(
                 ModelServiceRegistry.ServiceType.chat,
                 request.model(),
-                httpRequest,
+                exchange,
+                tracingContext,
                 (adapter) -> adapter.chat(request, authorization, httpRequest)
                         .map(resp -> (ResponseEntity<?>) resp)
         );
@@ -431,6 +450,86 @@ public class UniversalController {
         Mono<ResponseEntity<?>> get(ServiceCapability adapter) throws Exception;
     }
 
+
+    /**
+     * 支持实例级适配器选择的服务请求处理器（带追踪上下文）
+     */
+    private Mono<ResponseEntity<?>> handleServiceRequestWithInstanceAdapter(
+            ModelServiceRegistry.ServiceType serviceType,
+            String modelName,
+            ServerWebExchange exchange,
+            TracingContext tracingContext,
+            InstanceAdapterRequestSupplier requestSupplier) {
+
+        ServerHttpRequest httpRequest = exchange.getRequest();
+        String clientIp = IpUtils.getClientIp(httpRequest);
+
+        // 1. 首先选择实例
+        ModelRouterProperties.ModelInstance selectedInstance;
+        try {
+            selectedInstance = registry.selectInstance(serviceType, modelName, clientIp);
+
+            // 追踪实例选择（使用传入的 TracingContext）
+            if (tracingInterceptor != null && tracingContext != null && tracingContext.isActive()) {
+                tracingInterceptor.traceInstanceSelection(tracingContext, serviceType, modelName, clientIp, selectedInstance);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to select instance for service: {}, model: {}", serviceType, modelName, e);
+
+            // 追踪实例选择失败（使用传入的 TracingContext）
+            if (tracingInterceptor != null && tracingContext != null && tracingContext.isActive()) {
+                tracingInterceptor.traceInstanceSelectionFailure(tracingContext, serviceType, modelName, clientIp, e);
+            }
+
+            return Mono.error(e);
+        }
+
+        // 2. 根据选中的实例获取适配器
+        ServiceCapability adapter;
+        String adapterName;
+        try {
+            adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
+            adapterName = selectedInstance.getAdapter() != null ? selectedInstance.getAdapter() : "default";
+            logger.info("Selected adapter '{}' for instance '{}' in service '{}'",
+                       adapterName, selectedInstance.getName(), serviceType);
+        } catch (Exception e) {
+            logger.error("Failed to get adapter for instance: {}", selectedInstance.getName(), e);
+            return Mono.error(e);
+        }
+
+        // 3. 使用选中的适配器处理请求，并追踪适配器调用
+        final String finalAdapterName = adapterName;
+        final TracingContext finalTracingContext = tracingContext;
+        return handleServiceRequest(
+                serviceType,
+                () -> {
+                    try {
+                        if (tracingInterceptor != null && finalTracingContext != null && finalTracingContext.isActive()) {
+                            return tracingInterceptor.traceAdapterCall(
+                                finalTracingContext,
+                                finalAdapterName,
+                                serviceType,
+                                selectedInstance,
+                                () -> {
+                                    try {
+                                        return requestSupplier.get(adapter);
+                                    } catch (Exception e) {
+                                        return Mono.error(e);
+                                    }
+                                }
+                            );
+                        } else {
+                            return requestSupplier.get(adapter);
+                        }
+                    } catch (Exception e) {
+                        return Mono.error(e);
+                    }
+                },
+                httpRequest,
+                modelName
+        );
+    }
+
     /**
      * 支持实例级适配器选择的服务请求处理器
      */
@@ -453,6 +552,12 @@ public class UniversalController {
             }
         } catch (Exception e) {
             logger.error("Failed to select instance for service: {}, model: {}", serviceType, modelName, e);
+            
+            // 追踪实例选择失败
+            if (tracingInterceptor != null) {
+                tracingInterceptor.traceInstanceSelectionFailure(serviceType, modelName, clientIp, e);
+            }
+            
             return Mono.error(e);
         }
 
