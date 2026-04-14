@@ -6,7 +6,7 @@
 
 # 服务器配置
 server:
-  port: 9900
+  port: 8080
   forward-headers-strategy: framework
   # 启用代理头支持，获取真实客户端IP
   use-forward-headers: true

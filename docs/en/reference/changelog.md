@@ -1,9 +1,9 @@
 ﻿# Changelog
 
 <!-- Version Info -->
-> **Document Version**: 1.7.0
-> **Last Updated**: 2026-04-10
-> **Git Commit**: 2cba097
+> **Document Version**: 1.7.3
+> **Last Updated**: 2026-04-14
+> **Git Commit**: 6b0e96e
 > **Author**: Lincoln
 <!-- /Version Info -->
 
@@ -20,6 +20,74 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [1.7.3] - 2026-04-14
+
+#### Bug Fixes
+- **Playground Chat Streaming Response Fix**: Fixed duplicate AI response messages during streaming
+  - Issue: AI responses appeared twice during streaming
+  - Cause: Incorrect `displayMessages` filtering logic in `MessageList.vue`
+  - Fix: Always filter the last assistant message during streaming, displayed by additional `MessageBubble` component
+
+#### Improvements
+- **Port Configuration Restoration**: Server port restored to default `8080`, consistent with documentation
+
+#### Technical Improvements
+- Updated frontend static resource build artifacts
+
+---
+
+### [1.7.2] - 2026-04-14
+
+#### New Features
+- **Playground Component Refactoring**: Major refactoring of Playground module with component-based architecture
+  - Chat Module: `ChatContainer`, `ChatConfigPanel`, `MessageInput`, `MessageList`
+  - Audio Module: `AudioContainer`, `TtsPanel`, `SttPanel`
+  - Image Module: `ImageContainer`, `ImageGeneratePanel`, `ImageEditPanel`
+  - Embedding Module: `EmbeddingContainer`
+  - Rerank Module: `RerankContainer`
+  - Common Components: `MessageBubble`, `MarkdownRenderer`, `CodeBlock`, `ModelSelector`, `ServiceLayout`, `LoadingIndicator`
+- **New Composables**:
+  - `useChatSession`: Chat session management (localStorage persistence)
+  - `useMarkdown`: Markdown rendering handling
+  - `useStreaming`: SSE streaming response processing
+
+#### Improvements & Optimizations
+- **Health Check SSE Controller Optimization**: Optimized `HealthStatusSseController` implementation
+- **Instance Management Extension**: Added field support, extended `ServiceInstanceDTO` and entity classes
+- **Adapter Base Class Adjustment**: Unified adapter base class handling logic
+- **Frontend Routing and Layout Optimization**: Optimized routing configuration and Layout component
+
+#### New Files
+- `frontend/src/views/playground/components/` - 18 component files
+- `frontend/src/views/playground/composables/` - 4 composable files
+- `src/main/resources/db/migration/V3__add_adapter_headers_fields.sql`
+
+---
+
+### [1.7.1] - 2026-04-13
+
+#### Bug Fixes
+- **Tracing Fixes**:
+  - Fixed `TracingWebFilter` duplicate `traceId` creation issue
+  - Fixed `TraceQueryService` `spanCount` display error in `recentTraces` merge
+  - Fixed `TracingService` `serviceName` classification, frontend route correctly identified as 'front'
+- **Frontend Routing Fix**: Fixed frontend routing path error (`/admin/admin/tracing` -> `/admin/tracing`)
+
+#### Improvements & Optimizations
+- **ControllerTracingInterceptor Optimization**: Optimized child Span synchronous recording logic
+- **Table Layout Optimization**: Table column width using `min-width` for adaptive filling
+
+#### New Features
+- **TraceDetail Component**: Added trace detail display component
+- **Tracing Dashboard Page**: Added tracing dashboard page
+
+#### New Files
+- `frontend/src/views/tracing/Dashboard.vue`
+- `frontend/src/views/tracing/components/TraceDetail.vue`
+- `docs/zh/development/tracing-full-chain-design.md`
+
+---
 
 ### [1.7.0] - 2026-04-10
 

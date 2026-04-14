@@ -1,9 +1,9 @@
 ﻿# 更新日志
 
 <!-- 版本信息 -->
-> **文档版本**: 1.7.0
-> **最后更新**: 2026-04-10
-> **Git 提交**: 2cba097
+> **文档版本**: 1.7.3
+> **最后更新**: 2026-04-14
+> **Git 提交**: 6b0e96e
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -20,6 +20,74 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 - **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [1.7.3] - 2026-04-14
+
+#### 问题修复
+- **Playground Chat 流式响应修复**：修复流式响应时 AI 回复消息重复显示问题
+  - 问题：流式响应时，AI 回复出现两个一模一样的对话
+  - 原因：`MessageList.vue` 中 `displayMessages` 过滤逻辑不正确
+  - 修复：流式响应期间，始终过滤最后一条助手消息，由额外的 `MessageBubble` 组件显示流式内容
+
+#### 改进优化
+- **端口配置恢复**：服务器端口恢复为默认 `8080`，与文档保持一致
+
+#### 技术改进
+- 更新前端静态资源构建产物
+
+---
+
+### [1.7.2] - 2026-04-14
+
+#### 新增功能
+- **Playground 组件化重构**：大幅重构 Playground 模块，实现组件化拆分
+  - Chat 模块：`ChatContainer`、`ChatConfigPanel`、`MessageInput`、`MessageList`
+  - Audio 模块：`AudioContainer`、`TtsPanel`、`SttPanel`
+  - Image 模块：`ImageContainer`、`ImageGeneratePanel`、`ImageEditPanel`
+  - Embedding 模块：`EmbeddingContainer`
+  - Rerank 模块：`RerankContainer`
+  - Common 组件：`MessageBubble`、`MarkdownRenderer`、`CodeBlock`、`ModelSelector`、`ServiceLayout`、`LoadingIndicator`
+- **新增 Composables**：
+  - `useChatSession`：聊天会话管理（localStorage 持久化）
+  - `useMarkdown`：Markdown 渲染处理
+  - `useStreaming`：SSE 流式响应处理
+
+#### 改进优化
+- **健康检查 SSE 控制器优化**：优化 `HealthStatusSseController` 实现逻辑
+- **实例管理功能扩展**：新增字段支持，扩展 `ServiceInstanceDTO` 和实体类
+- **Adapter 基类调整**：统一各适配器基类处理逻辑
+- **前端路由和布局优化**：优化路由配置和 Layout 组件
+
+#### 新增文件
+- `frontend/src/views/playground/components/` - 18 个组件文件
+- `frontend/src/views/playground/composables/` - 4 个 composable 文件
+- `src/main/resources/db/migration/V3__add_adapter_headers_fields.sql`
+
+---
+
+### [1.7.1] - 2026-04-13
+
+#### 问题修复
+- **链路追踪修复**：
+  - 修复 `TracingWebFilter` 重复创建 `traceId` 问题
+  - 修复 `TraceQueryService` 的 `recentTraces` 合并时 `spanCount` 显示错误
+  - 修复 `TracingService` 的 `serviceName` 分类，前端页面路由正确识别为 'front'
+- **前端路由修复**：修复前端路由路径错误 (`/admin/admin/tracing` -> `/admin/tracing`)
+
+#### 改进优化
+- **ControllerTracingInterceptor 优化**：优化子 Span 同步记录逻辑
+- **表格布局优化**：表格列宽度使用 `min-width` 实现自适应填充
+
+#### 新增功能
+- **TraceDetail 组件**：新增链路追踪详情展示组件
+- **Tracing Dashboard 页面**：新增链路追踪仪表板页面
+
+#### 新增文件
+- `frontend/src/views/tracing/Dashboard.vue`
+- `frontend/src/views/tracing/components/TraceDetail.vue`
+- `docs/zh/development/tracing-full-chain-design.md`
+
+---
 
 ### [1.7.0] - 2026-04-10
 
