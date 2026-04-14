@@ -1,15 +1,29 @@
 ﻿# Development Guide
 
-<!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**: c1aa5b0f  
-> **作者**: Lincoln
-<!-- /版本信息 -->
+<!-- Version Info -->
+> **Document Version**: 1.7.3
+> **Last Updated**: 2026-04-14
+> **Git Commit**: c64fb15
+> **Author**: JAiRouter Team
+<!-- /Version Info -->
 
 
 
 Welcome to the JAiRouter Development Guide! This guide provides developers with comprehensive information on setting up the development environment, coding standards, testing strategies, and contribution processes.
+
+## 📢 Latest Updates
+
+- **V1.7.3** (2026-04-14) - Playground Chat streaming response fix, port configuration restoration
+- **V1.7.2** (2026-04-14) - Playground component refactoring: 18 new components + 4 composables
+- **V1.7.1** (2026-04-13) - Tracing fixes, TraceDetail component, Tracing Dashboard
+- **V1.7.0** (2026-04-10) - Security blacklist management, audit log enhancement, JWT account status toggle
+- **V1.6.2** (2026-04-08) - API Key batch import/export, key rotation, expiration cleanup
+- **V1.6.1** (2026-04-06) - API Key hashed storage, IP whitelist, rate limiting
+- **V1.6.0** (2026-04-04) - Removed configuration merge feature, simplified version management
+- **V1.5.7** (2026-04-02) - JWT account initialization, account management API optimization
+- **V1.5.6** (2026-03-30) - Instance-level rate limiter/circuit breaker independent storage
+
+For complete changelog, please refer to [Changelog](../reference/changelog.md)
 
 ## Quick Start
 
