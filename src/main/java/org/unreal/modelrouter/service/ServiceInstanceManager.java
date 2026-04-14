@@ -14,6 +14,7 @@ import org.unreal.modelrouter.jpa.repository.InstanceCircuitBreakerRepository;
 import org.unreal.modelrouter.jpa.repository.InstanceRateLimitRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
+import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.util.SecurityUtils;
 
 import java.util.*;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
  * 服务实例管理器
  * v1.5.2: 使用 JPA 实现服务实例管理，使用 DTO 替代 Map
  * v1.5.3: 添加版本管理支持，同步更新配置表
+ * v1.7.1: 添加运行时配置刷新，确保实例变更后立即生效
  */
 @Slf4j
 @Service
@@ -33,18 +35,21 @@ public class ServiceInstanceManager {
     private final InstanceCircuitBreakerRepository circuitBreakerRepository;
     private final ServiceConfigRepository serviceConfigRepository;
     private final ConfigurationService configurationService;
+    private final ModelServiceRegistry modelServiceRegistry;
 
     public ServiceInstanceManager(
             ServiceInstanceRepository serviceInstanceRepository,
             InstanceRateLimitRepository rateLimitRepository,
             InstanceCircuitBreakerRepository circuitBreakerRepository,
             ServiceConfigRepository serviceConfigRepository,
-            @Lazy ConfigurationService configurationService) {
+            @Lazy ConfigurationService configurationService,
+            ModelServiceRegistry modelServiceRegistry) {
         this.serviceInstanceRepository = serviceInstanceRepository;
         this.rateLimitRepository = rateLimitRepository;
         this.circuitBreakerRepository = circuitBreakerRepository;
         this.serviceConfigRepository = serviceConfigRepository;
         this.configurationService = configurationService;
+        this.modelServiceRegistry = modelServiceRegistry;
     }
 
     /**
@@ -86,8 +91,10 @@ public class ServiceInstanceManager {
                 .baseUrl(request.getBaseUrl())
                 .path(request.getPath())
                 .weight(request.getWeight() != null ? request.getWeight() : 1)
-                .status("ACTIVE")
+                .status(request.getStatus() != null ? request.getStatus().toUpperCase() : "ACTIVE")
                 .healthStatus("UNKNOWN")
+                .adapter(request.getAdapter())
+                .headers(request.getHeaders())
                 .build();
 
         ServiceInstanceEntity saved = serviceInstanceRepository.save(entity);
@@ -120,6 +127,15 @@ public class ServiceInstanceManager {
         }
         if (request.getWeight() != null) {
             entity.setWeight(request.getWeight());
+        }
+        if (request.getStatus() != null) {
+            entity.setStatus(request.getStatus().toUpperCase());
+        }
+        if (request.getAdapter() != null) {
+            entity.setAdapter(request.getAdapter());
+        }
+        if (request.getHeaders() != null) {
+            entity.setHeaders(request.getHeaders());
         }
 
         ServiceInstanceEntity saved = serviceInstanceRepository.save(entity);
@@ -303,6 +319,8 @@ public class ServiceInstanceManager {
                 .status(entity.getStatus())
                 .healthStatus(entity.getHealthStatus())
                 .errorMessage(entity.getErrorMessage())
+                .adapter(entity.getAdapter())
+                .headers(entity.getHeaders())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -365,6 +383,10 @@ public class ServiceInstanceManager {
             String userId = SecurityUtils.getCurrentUserId();
             configurationService.saveAsNewVersion(fullConfig, description, userId);
             log.info("版本已保存: {}", description);
+
+            // 刷新运行时配置，确保实例变更立即生效
+            modelServiceRegistry.refreshFromMergedConfig();
+            log.info("运行时配置已刷新");
         } catch (Exception e) {
             log.warn("保存版本失败: {}", e.getMessage(), e);
         }

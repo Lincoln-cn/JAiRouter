@@ -562,8 +562,9 @@ public class OllamaAdapter extends BaseAdapter {
             // 检查是否是标准的SSE格式
             if (chunk.startsWith("data: ")) {
                 String jsonPart = chunk.substring(6);
+                // 对于 [DONE] 标记，直接返回纯文本（Spring WebFlux 会自动处理 SSE 格式）
                 if ("[DONE]".equals(jsonPart.trim())) {
-                    return chunk;
+                    return "[DONE]";
                 }
 
                 JsonNode chunkJson = objectMapper.readTree(jsonPart);
@@ -612,7 +613,8 @@ public class OllamaAdapter extends BaseAdapter {
                     standardChunk.set("usage", chunkJson.get("usage"));
                 }
 
-                return "data: " + standardChunk.toString();
+                // 返回纯 JSON 字符串，Spring WebFlux 会自动添加 SSE 格式的 data: 前缀
+                return standardChunk.toString();
             }
             return chunk;
         } catch (Exception e) {

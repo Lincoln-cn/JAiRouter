@@ -7,10 +7,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * 服务实例 DTO
  * v1.5.2: 用于替代 Map 传递数据
+ * v1.7.1: 添加 adapter 和 headers 字段
  */
 @Data
 @Builder
@@ -43,13 +45,23 @@ public class ServiceInstanceDTO {
 
     private String healthStatus;
     private String errorMessage;
-    
+
+    /**
+     * 实例级别适配器配置（可选，覆盖服务级别配置）
+     */
+    private String adapter;
+
+    /**
+     * 自定义请求头配置
+     */
+    private Map<String, String> headers;
+
     // 限流器配置
     private InstanceRateLimitDTO rateLimit;
-    
+
     // 熔断器配置
     private InstanceCircuitBreakerDTO circuitBreaker;
-    
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

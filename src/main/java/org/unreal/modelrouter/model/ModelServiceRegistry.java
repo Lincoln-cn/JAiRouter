@@ -174,8 +174,9 @@ public class ModelServiceRegistry {
         // 获取指定模型的所有实例
         List<ModelRouterProperties.ModelInstance> modelInstances = runtimeConfig.getInstances().stream()
                 .filter(instance -> modelName.equals(instance.getName()))
-                // 只选择status为空或者值等于"active"的实例
-                .filter(instance -> "active".equals(instance.getStatus()))
+                // 只选择status为空或者值等于"active"的实例（忽略大小写）
+                .filter(instance -> instance.getStatus() != null &&
+                        "active".equalsIgnoreCase(instance.getStatus()))
                 .collect(Collectors.toList());
 
         if (modelInstances.isEmpty()) {

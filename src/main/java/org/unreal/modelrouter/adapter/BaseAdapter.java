@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -626,7 +627,8 @@ public abstract class BaseAdapter implements ServiceCapability {
         // 记录请求大小
         long requestSize = calculateRequestSize(transformedRequest);
 
-        Flux streamResponse = requestSpec
+        // 使用 ServerSentEvent 包装每个数据块，确保 SSE 格式正确
+        Flux<ServerSentEvent<String>> streamResponse = requestSpec
                 .bodyValue(transformedRequest)
                 .retrieve()
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
@@ -634,7 +636,13 @@ public abstract class BaseAdapter implements ServiceCapability {
                     return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
                 })
                 .bodyToFlux(String.class)
-                .map(this::transformStreamChunk)
+                .map(chunk -> {
+                    String transformed = transformStreamChunk(chunk);
+                    // 使用 ServerSentEvent.builder() 包装数据，Spring WebFlux 会自动添加正确的 SSE 格式
+                    return ServerSentEvent.<String>builder()
+                            .data(transformed)
+                            .build();
+                })
                 .doOnComplete(() -> {
                     // 流式响应完成时记录请求大小指标（响应大小难以准确计算）
                     if (metricsCollector != null) {

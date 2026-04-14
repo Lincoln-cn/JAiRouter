@@ -17,7 +17,7 @@ export interface ModelInstance {
 // 获取指定服务类型的模型列表（从实例管理中获取）
 export const getModelsByServiceType = async (serviceType: string): Promise<string[]> => {
   try {
-    const response = await request.get<RouterResponse<ModelInstance[]>>(`/config/instance/type/${serviceType}`)
+    const response = await request.get<RouterResponse<ModelInstance[]>>(`/config/instance/${serviceType}`)
     if (response.data?.success && response.data.data) {
       // 只返回启用状态的实例名称
       return response.data.data
