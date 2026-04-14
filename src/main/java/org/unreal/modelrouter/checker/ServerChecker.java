@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
@@ -28,10 +29,13 @@ public class ServerChecker {
 
     private final ModelServiceRegistry modelServiceRegistry;
     private final ServiceStateManager serviceStateManager;
-    
+
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
-    
+
+    @Autowired(required = false)
+    private ServiceInstanceRepository serviceInstanceRepository;
+
     // 缓存实例之前的状态，用于检测状态变化
     private final Map<String, Boolean> previousInstanceStates = new ConcurrentHashMap<>();
 
@@ -203,6 +207,7 @@ public class ServerChecker {
                 if (result.isConnect()) {
                     hasHealthyInstance = true;
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, true);
+                    updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(), "HEALTHY", null);
                     log.debug("实例 {} 连接成功: {}", instance.getName(), result.getMsg());
                     recordHealthCheckMetrics(getAdapterType(instance), instance.getName(), true, responseTime);
                     
@@ -212,6 +217,7 @@ public class ServerChecker {
                     }
                 } else {
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, false);
+                    updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(), "UNHEALTHY", result.getMsg());
                     log.warn("实例 {} 连接失败: {}", instance.getName(), result.getMsg());
                     recordHealthCheckMetrics(getAdapterType(instance), instance.getName(), false, responseTime);
                     
@@ -350,6 +356,32 @@ public class ServerChecker {
             tracingEnhancer.logServiceInstanceDiscovered(serviceType, instance);
         } catch (Exception e) {
             log.debug("无法记录服务实例发现事件: {}", e.getMessage());
+        }
+    }
+    /**
+     * 更新数据库中实例的健康状态
+     *
+     * @param instanceName 实例名称
+     * @param instanceId 实例唯一ID (UUID)
+     * @param healthStatus 健康状态 (HEALTHY, UNHEALTHY, UNKNOWN)
+     * @param errorMessage 错误信息
+     */
+    private void updateDatabaseHealthStatus(String instanceName, String instanceId, String healthStatus, String errorMessage) {
+        if (serviceInstanceRepository == null) {
+            return;
+        }
+        try {
+            serviceInstanceRepository.findByInstanceName(instanceName).ifPresent(entity -> {
+                entity.setHealthStatus(healthStatus);
+                entity.setErrorMessage(errorMessage);
+                if (instanceId != null && entity.getInstanceId() == null) {
+                    entity.setInstanceId(instanceId);
+                }
+                serviceInstanceRepository.save(entity);
+                log.debug("更新数据库实例 {} 健康状态: {}", instanceName, healthStatus);
+            });
+        } catch (Exception e) {
+            log.error("更新数据库实例健康状态失败: {}", e.getMessage());
         }
     }
 }

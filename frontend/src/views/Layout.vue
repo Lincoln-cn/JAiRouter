@@ -74,15 +74,34 @@
           <el-menu-item index="/tracing/management">追踪配置</el-menu-item>
         </el-sub-menu>
 
-        <!-- API测试试验场 -->
+        <!-- AI 试验场 -->
         <el-sub-menu index="playground">
           <template #title>
             <el-icon>
               <Monitor />
             </el-icon>
-            <span>API测试试验场</span>
+            <span>AI 试验场</span>
           </template>
-          <el-menu-item index="/playground/main">API测试试验场</el-menu-item>
+          <el-menu-item index="/playground/chat">
+            <el-icon><ChatDotRound /></el-icon>
+            对话测试
+          </el-menu-item>
+          <el-menu-item index="/playground/embedding">
+            <el-icon><DataLine /></el-icon>
+            向量生成
+          </el-menu-item>
+          <el-menu-item index="/playground/rerank">
+            <el-icon><Sort /></el-icon>
+            重排序
+          </el-menu-item>
+          <el-menu-item index="/playground/audio">
+            <el-icon><Headset /></el-icon>
+            语音服务
+          </el-menu-item>
+          <el-menu-item index="/playground/image">
+            <el-icon><Picture /></el-icon>
+            图像服务
+          </el-menu-item>
         </el-sub-menu>
       </el-menu>
     </el-aside>
@@ -129,7 +148,12 @@ import {
   Lock,
   User,
   Connection,
-  Monitor
+  Monitor,
+  ChatDotRound,
+  DataLine,
+  Sort,
+  Headset,
+  Picture
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

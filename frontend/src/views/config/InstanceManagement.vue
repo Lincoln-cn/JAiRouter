@@ -328,6 +328,7 @@ import {
 } from '@/api/instance'
 import { getServiceTypes } from '@/api/dashboard'
 import { getAdapters, getAllConfigurations } from '@/api/service'
+import { clearCache } from '@/stores/playgroundCache'
 import { Plus, Delete, Close, Key, Timer, WarningFilled, Edit } from '@element-plus/icons-vue'
 import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
@@ -612,7 +613,7 @@ const fetchServiceTypes = async () => {
 let fetchTimer: ReturnType<typeof setTimeout> | null = null
 const fetchServiceInstances = (serviceType: string) => {
   console.log('获取实例列表，使用服务类型:', serviceType);
-  console.log(`发送获取请求到: /api/config/instance/type/${serviceType}`)
+  console.log(`发送获取请求到: /api/config/instance/${serviceType}`)
   if (fetchTimer) clearTimeout(fetchTimer)
   fetchTimer = setTimeout(async () => {
     loading.value = true
@@ -709,6 +710,22 @@ const handleEdit = (row: ServiceInstance) => {
     serviceType: activeServiceType.value,
     // 确保headers字段存在
     headers: row.headers || {},
+    // 确保 rateLimit 和 circuitBreaker 不为 null
+    rateLimit: row.rateLimit || {
+      enabled: false,
+      algorithm: 'token-bucket',
+      capacity: 100,
+      rate: 10,
+      scope: 'instance',
+      key: '',
+      clientIpEnable: false
+    },
+    circuitBreaker: row.circuitBreaker || {
+      enabled: false,
+      failureThreshold: 5,
+      timeout: 60000,
+      successThreshold: 2
+    },
     // 使用数据库ID
     instanceId: String(dbId)
   })
@@ -735,6 +752,8 @@ const handleDelete = (row: ServiceInstance) => {
       if (response.data?.success) {
         instances.value[serviceType] = (instances.value[serviceType] || []).filter(i => i.id !== dbId)
         instancesCache.value[serviceType] = [...(instances.value[serviceType] || [])]
+        // 同时清除试验场的缓存，让试验场下拉列表刷新
+        clearCache(serviceType)
         ElMessage.success('删除成功')
       } else {
         ElMessage.error(response.data?.message || '删除失败')
@@ -754,7 +773,7 @@ const handleDialogClose = () => {
   if (formRef.value) formRef.value.resetFields()
 }
 
-// 保存实例（新增/编辑）
+// 保存实例（新增/编辑）- 仅保存基础属性，限流器和熔断器通过独立接口配置
 const handleSave = async () => {
   if (!formRef.value) return
   saveLoading.value = true
@@ -763,31 +782,18 @@ const handleSave = async () => {
     const serviceType = activeServiceType.value;
     console.log('保存实例，使用服务类型:', serviceType);
 
-    // 构造实例数据，包含限流和熔断配置（扁平格式，适配后端 DTO）
-    const instanceData = {
+    // 构造实例数据（仅基础属性）
+    const instanceData: InstanceConfig = {
       name: form.name,
       baseUrl: form.baseUrl,
-      path: form.path,
+      path: form.path || '',
       weight: form.weight,
       status: form.status,
-      adapter: form.adapter || null,
-      headers: form.headers || {},
-      rateLimitEnabled: form.rateLimit.enabled,
-      rateLimitAlgorithm: form.rateLimit.algorithm || "token-bucket",
-      rateLimitCapacity: form.rateLimit.capacity || 100,
-      rateLimitRate: form.rateLimit.rate || 10,
-      rateLimitScope: form.rateLimit.scope || "instance",
-      rateLimitClientIpEnable: form.rateLimit.clientIpEnable || false,
-      circuitBreakerEnabled: form.circuitBreaker.enabled,
-      circuitBreakerFailureThreshold: form.circuitBreaker.failureThreshold || 5,
-      circuitBreakerTimeout: form.circuitBreaker.timeout || 60000,
-      circuitBreakerSuccessThreshold: form.circuitBreaker.successThreshold || 2
+      adapter: form.adapter || undefined,
+      headers: form.headers || {}
     }
 
     console.log('构造的实例数据:', instanceData)
-    console.log('form.headers:', form.headers)
-    console.log('headers条件判断:', form.headers && Object.keys(form.headers).length > 0)
-    console.log('最终headers值:', instanceData.headers)
 
     if (isEdit.value) {
       // 使用后端返回的实例ID
@@ -795,6 +801,8 @@ const handleSave = async () => {
       if (response.data?.success) {
         // 编辑成功后，清除缓存并重新获取实例列表以确保数据同步
         delete instancesCache.value[serviceType]
+        // 同时清除试验场的缓存，让试验场下拉列表刷新
+        clearCache(serviceType)
         fetchServiceInstances(serviceType)
         ElMessage.success('编辑成功')
       } else {
@@ -803,12 +811,13 @@ const handleSave = async () => {
         return
       }
     } else {
-      // 使用正确的服务类型发送请求
-      console.log(`发送添加请求到: /api/config/instance/add/${serviceType}?createNewVersion=true`)
+      // 添加新实例
       const response = await addServiceInstance(serviceType, instanceData)
       if (response.data?.success) {
         // 添加成功后，清除缓存并重新获取实例列表以确保数据同步
         delete instancesCache.value[serviceType]
+        // 同时清除试验场的缓存，让试验场下拉列表刷新
+        clearCache(serviceType)
         fetchServiceInstances(serviceType)
         ElMessage.success('添加成功')
       } else {

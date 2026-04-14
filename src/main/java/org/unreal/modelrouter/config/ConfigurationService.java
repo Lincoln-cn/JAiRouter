@@ -14,6 +14,7 @@ import org.unreal.modelrouter.dto.RateLimitConfig;
 import org.unreal.modelrouter.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.entity.ConfigMetadata;
 import org.unreal.modelrouter.entity.VersionInfo;
+import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.StoreManager;
@@ -49,6 +50,9 @@ public class ConfigurationService {
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
     // v1.5.6: 配置同步服务，用于版本回滚时同步实例到数据库
     private ConfigSyncService configSyncService;
+    // v1.7.1: 实例仓库，用于从数据库获取健康状态
+    @Autowired(required = false)
+    private ServiceInstanceRepository serviceInstanceRepository;
 
     private static final long REQUEST_DEDUP_WINDOW_MS = 1000; // 1秒内的重复请求将被忽略
     // 版本控制相关字段
@@ -1002,15 +1006,43 @@ public class ConfigurationService {
                                 instance.put("instanceId", instanceId);
                             }
 
-                            // 添加健康状态信息，使用ServiceStateManager
-                            boolean isHealthy = serviceStateManager.isInstanceHealthy(serviceType, name, baseUrl);
-                            instance.put("health", isHealthy);
+                            // v1.7.1: 从数据库获取健康状态，而非内存缓存
+                            // 优先使用数据库中的 healthStatus 字段
+                            String healthStatus = getHealthStatusFromDatabase(name);
+                            if (healthStatus != null) {
+                                instance.put("health", "HEALTHY".equals(healthStatus));
+                                instance.put("healthStatus", healthStatus);
+                            } else {
+                                // 如果数据库中没有记录，默认为未知状态
+                                instance.put("health", true); // 默认健康
+                                instance.put("healthStatus", "UNKNOWN");
+                            }
                         }
                     }
                 }
             }
         }
         return configs;
+    }
+
+    /**
+     * 从数据库获取实例的健康状态
+     *
+     * @param instanceName 实例名称
+     * @return 健康状态字符串 (HEALTHY, UNHEALTHY, UNKNOWN)，如果找不到返回 null
+     */
+    private String getHealthStatusFromDatabase(String instanceName) {
+        if (serviceInstanceRepository == null) {
+            return null;
+        }
+        try {
+            return serviceInstanceRepository.findByInstanceName(instanceName)
+                    .map(entity -> entity.getHealthStatus())
+                    .orElse(null);
+        } catch (Exception e) {
+            logger.warn("从数据库获取实例健康状态失败: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**

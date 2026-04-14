@@ -9,6 +9,8 @@ export interface ServiceInstance {
   name: string
   headers?: Record<string, string>
   status?: 'active' | 'inactive'
+  healthStatus?: 'HEALTHY' | 'UNHEALTHY' | 'UNKNOWN'
+  baseUrl?: string
   [key: string]: any
 }
 

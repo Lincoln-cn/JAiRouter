@@ -10,6 +10,7 @@ export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
   name?: string
+  timestamp?: string
 }
 
 // 对话请求配置
