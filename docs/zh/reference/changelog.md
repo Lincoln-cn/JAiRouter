@@ -1,13 +1,13 @@
-﻿# 更新日志
+# 更新日志
 
 <!-- 版本信息 -->
+
 > **文档版本**: 1.7.3
 > **最后更新**: 2026-04-14
 > **Git 提交**: 6b0e96e
 > **作者**: Lincoln
+
 <!-- /版本信息 -->
-
-
 
 本文档记录了 JAiRouter 项目的版本更新历史和重要变更。
 
@@ -15,601 +15,854 @@
 
 JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
-- **主版本号 (MAJOR)**: 不兼容的 API 变更
-- **次版本号 (MINOR)**: 向后兼容的功能新增
-- **修订号 (PATCH)**: 向后兼容的问题修正
+* **主版本号 (MAJOR)**: 不兼容的 API 变更
+
+* **次版本号 (MINOR)**: 向后兼容的功能新增
+
+* **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
 
-### [1.7.3] - 2026-04-14
+### \[1.7.3] - 2026-04-14
 
 #### 问题修复
-- **Playground Chat 流式响应修复**：修复流式响应时 AI 回复消息重复显示问题
-  - 问题：流式响应时，AI 回复出现两个一模一样的对话
-  - 原因：`MessageList.vue` 中 `displayMessages` 过滤逻辑不正确
-  - 修复：流式响应期间，始终过滤最后一条助手消息，由额外的 `MessageBubble` 组件显示流式内容
+
+* **Playground Chat 流式响应修复**：修复流式响应时 AI 回复消息重复显示问题
+
+  * 问题：流式响应时，AI 回复出现两个一模一样的对话
+
+  * 原因：`MessageList.vue` 中 `displayMessages` 过滤逻辑不正确
+
+  * 修复：流式响应期间，始终过滤最后一条助手消息，由额外的 `MessageBubble` 组件显示流式内容
 
 #### 改进优化
-- **端口配置恢复**：服务器端口恢复为默认 `8080`，与文档保持一致
+
+* **端口配置恢复**：服务器端口恢复为默认 `8080`，与文档保持一致
 
 #### 技术改进
-- 更新前端静态资源构建产物
 
----
+* 更新前端静态资源构建产物
 
-### [1.7.2] - 2026-04-14
+***
+
+### \[1.7.2] - 2026-04-14
 
 #### 新增功能
-- **Playground 组件化重构**：大幅重构 Playground 模块，实现组件化拆分
-  - Chat 模块：`ChatContainer`、`ChatConfigPanel`、`MessageInput`、`MessageList`
-  - Audio 模块：`AudioContainer`、`TtsPanel`、`SttPanel`
-  - Image 模块：`ImageContainer`、`ImageGeneratePanel`、`ImageEditPanel`
-  - Embedding 模块：`EmbeddingContainer`
-  - Rerank 模块：`RerankContainer`
-  - Common 组件：`MessageBubble`、`MarkdownRenderer`、`CodeBlock`、`ModelSelector`、`ServiceLayout`、`LoadingIndicator`
-- **新增 Composables**：
-  - `useChatSession`：聊天会话管理（localStorage 持久化）
-  - `useMarkdown`：Markdown 渲染处理
-  - `useStreaming`：SSE 流式响应处理
+
+* **Playground 组件化重构**：大幅重构 Playground 模块，实现组件化拆分
+
+  * Chat 模块：`ChatContainer`、`ChatConfigPanel`、`MessageInput`、`MessageList`
+
+  * Audio 模块：`AudioContainer`、`TtsPanel`、`SttPanel`
+
+  * Image 模块：`ImageContainer`、`ImageGeneratePanel`、`ImageEditPanel`
+
+  * Embedding 模块：`EmbeddingContainer`
+
+  * Rerank 模块：`RerankContainer`
+
+  * Common 组件：`MessageBubble`、`MarkdownRenderer`、`CodeBlock`、`ModelSelector`、`ServiceLayout`、`LoadingIndicator`
+
+* **新增 Composables**：
+
+  * `useChatSession`：聊天会话管理（localStorage 持久化）
+
+  * `useMarkdown`：Markdown 渲染处理
+
+  * `useStreaming`：SSE 流式响应处理
 
 #### 改进优化
-- **健康检查 SSE 控制器优化**：优化 `HealthStatusSseController` 实现逻辑
-- **实例管理功能扩展**：新增字段支持，扩展 `ServiceInstanceDTO` 和实体类
-- **Adapter 基类调整**：统一各适配器基类处理逻辑
-- **前端路由和布局优化**：优化路由配置和 Layout 组件
+
+* **健康检查 SSE 控制器优化**：优化 `HealthStatusSseController` 实现逻辑
+
+* **实例管理功能扩展**：新增字段支持，扩展 `ServiceInstanceDTO` 和实体类
+
+* **Adapter 基类调整**：统一各适配器基类处理逻辑
+
+* **前端路由和布局优化**：优化路由配置和 Layout 组件
 
 #### 新增文件
-- `frontend/src/views/playground/components/` - 18 个组件文件
-- `frontend/src/views/playground/composables/` - 4 个 composable 文件
-- `src/main/resources/db/migration/V3__add_adapter_headers_fields.sql`
 
----
+* `frontend/src/views/playground/components/` - 18 个组件文件
 
-### [1.7.1] - 2026-04-13
+* `frontend/src/views/playground/composables/` - 4 个 composable 文件
+
+* `src/main/resources/db/migration/V3__add_adapter_headers_fields.sql`
+
+***
+
+### \[1.7.1] - 2026-04-13
 
 #### 问题修复
-- **链路追踪修复**：
-  - 修复 `TracingWebFilter` 重复创建 `traceId` 问题
-  - 修复 `TraceQueryService` 的 `recentTraces` 合并时 `spanCount` 显示错误
-  - 修复 `TracingService` 的 `serviceName` 分类，前端页面路由正确识别为 'front'
-- **前端路由修复**：修复前端路由路径错误 (`/admin/admin/tracing` -> `/admin/tracing`)
+
+* **链路追踪修复**：
+
+  * 修复 `TracingWebFilter` 重复创建 `traceId` 问题
+
+  * 修复 `TraceQueryService` 的 `recentTraces` 合并时 `spanCount` 显示错误
+
+  * 修复 `TracingService` 的 `serviceName` 分类，前端页面路由正确识别为 'front'
+
+* **前端路由修复**：修复前端路由路径错误 (`/admin/admin/tracing` -> `/admin/tracing`)
 
 #### 改进优化
-- **ControllerTracingInterceptor 优化**：优化子 Span 同步记录逻辑
-- **表格布局优化**：表格列宽度使用 `min-width` 实现自适应填充
+
+* **ControllerTracingInterceptor 优化**：优化子 Span 同步记录逻辑
+
+* **表格布局优化**：表格列宽度使用 `min-width` 实现自适应填充
 
 #### 新增功能
-- **TraceDetail 组件**：新增链路追踪详情展示组件
-- **Tracing Dashboard 页面**：新增链路追踪仪表板页面
+
+* **TraceDetail 组件**：新增链路追踪详情展示组件
+
+* **Tracing Dashboard 页面**：新增链路追踪仪表板页面
 
 #### 新增文件
-- `frontend/src/views/tracing/Dashboard.vue`
-- `frontend/src/views/tracing/components/TraceDetail.vue`
-- `docs/zh/development/tracing-full-chain-design.md`
 
----
+* `frontend/src/views/tracing/Dashboard.vue`
 
-### [1.7.0] - 2026-04-10
+* `frontend/src/views/tracing/components/TraceDetail.vue`
+
+* `docs/zh/development/tracing-full-chain-design.md`
+
+***
+
+### \[1.7.0] - 2026-04-10
 
 #### 新增功能
-- **安全黑名单管理**：新增安全黑名单管理功能，支持 IP/用户/令牌黑名单
-- **审计日志增强**：增强审计日志查询和展示功能，支持高级搜索和统计分析
-- **JWT账户状态切换**：实现账户启用/禁用状态切换功能
+
+* **安全黑名单管理**：新增安全黑名单管理功能，支持 IP/用户/令牌黑名单
+
+* **审计日志增强**：增强审计日志查询和展示功能，支持高级搜索和统计分析
+
+* **JWT账户状态切换**：实现账户启用/禁用状态切换功能
 
 #### 改进优化
-- **JWT账户管理**：修复编辑密码验证问题，优化账户管理界面
-- **前端表格优化**：表格列使用自适应宽度（min-width），添加统计卡片和搜索功能
-- **配置管理简化**：移除未实现的版本管理功能，简化界面
+
+* **JWT账户管理**：修复编辑密码验证问题，优化账户管理界面
+
+* **前端表格优化**：表格列使用自适应宽度（min-width），添加统计卡片和搜索功能
+
+* **配置管理简化**：移除未实现的版本管理功能，简化界面
 
 #### 问题修复
-- 修复 JWT 账户编辑时的密码验证问题
-- 修复账户管理页面数据展示问题
+
+* 修复 JWT 账户编辑时的密码验证问题
+
+* 修复账户管理页面数据展示问题
 
 #### 技术改进
-- `CreateJwtAccountRequest` 添加 `enabled` 字段
-- `JwtAccountService` 实现 `toggleAccountStatus` 方法
-- 新增 `SecurityBlacklistController` 和相关实体类
-- 清理未使用的前端代码和类型定义
 
----
+* `CreateJwtAccountRequest` 添加 `enabled` 字段
 
-### [1.6.2] - 2026-04-08
+* `JwtAccountService` 实现 `toggleAccountStatus` 方法
+
+* 新增 `SecurityBlacklistController` 和相关实体类
+
+* 清理未使用的前端代码和类型定义
+
+***
+
+### \[1.6.2] - 2026-04-08
 
 #### 新增功能
-- **API Key 批量导入/导出**：支持批量导入导出 API Key
-  - 新增导出端点 `GET /api/auth/api-keys/export`
-  - 新增导入端点 `POST /api/auth/api-keys/import`
-  - 支持 MERGE/REPLACE 两种导入模式
-- **API Key 密钥轮换**：支持密钥自动轮换机制
-  - 配置 `rotationPeriodDays` 设置轮换周期
-  - 新增 `ApiKeyRotationScheduler` 自动执行轮换
-- **过期密钥自动清理**：新增 `ApiKeyExpirationScheduler` 自动禁用过期密钥
+
+* **API Key 批量导入/导出**：支持批量导入导出 API Key
+
+  * 新增导出端点 `GET /api/auth/api-keys/export`
+
+  * 新增导入端点 `POST /api/auth/api-keys/import`
+
+  * 支持 MERGE/REPLACE 两种导入模式
+
+* **API Key 密钥轮换**：支持密钥自动轮换机制
+
+  * 配置 `rotationPeriodDays` 设置轮换周期
+
+  * 新增 `ApiKeyRotationScheduler` 自动执行轮换
+
+* **过期密钥自动清理**：新增 `ApiKeyExpirationScheduler` 自动禁用过期密钥
 
 #### 改进优化
-- **创建者信息记录**：API Key 创建时记录 `createdBy` 和 `creatorIpAddress`
-- **密钥使用统计持久化**：使用统计数据通过 `saveApiKeysToStore()` 持久化
+
+* **创建者信息记录**：API Key 创建时记录 `createdBy` 和 `creatorIpAddress`
+
+* **密钥使用统计持久化**：使用统计数据通过 `saveApiKeysToStore()` 持久化
 
 #### 新增文件
-- `ApiKeyBatchExportVO.java`
-- `ApiKeyBatchImportRequest.java`
-- `ApiKeyBatchImportResult.java`
-- `ApiKeyRotationScheduler.java`
-- `ApiKeyExpirationScheduler.java`
 
----
+* `ApiKeyBatchExportVO.java`
 
-### [1.6.1] - 2026-04-06
+* `ApiKeyBatchImportRequest.java`
+
+* `ApiKeyBatchImportResult.java`
+
+* `ApiKeyRotationScheduler.java`
+
+* `ApiKeyExpirationScheduler.java`
+
+***
+
+### \[1.6.1] - 2026-04-06
 
 #### 安全修复 (P0)
-- **API Key 哈希存储**：API Key 使用 SHA-256 + 盐值哈希存储，替代明文存储
-- **管理接口速率限制**：添加速率限制 (30/min, 100/hour, 10 create/hour)
+
+* **API Key 哈希存储**：API Key 使用 SHA-256 + 盐值哈希存储，替代明文存储
+
+* **管理接口速率限制**：添加速率限制 (30/min, 100/hour, 10 create/hour)
 
 #### 新增功能
-- **IP 白名单**：支持 IP 白名单功能 (`allowedIpAddresses`)
-- **每日请求限制**：支持每日请求限制功能 (`dailyRequestLimit`)
-- **密钥重置接口**：新增密钥重置接口 `/api/auth/api-keys/{keyId}/reset`
+
+* **IP 白名单**：支持 IP 白名单功能 (`allowedIpAddresses`)
+
+* **每日请求限制**：支持每日请求限制功能 (`dailyRequestLimit`)
+
+* **密钥重置接口**：新增密钥重置接口 `/api/auth/api-keys/{keyId}/reset`
 
 #### 改进优化
-- **前端强类型**：使用强类型 DTO/VO 替代 Map 数据传递
-- **表格布局优化**：优化表格布局和横向滚动支持
+
+* **前端强类型**：使用强类型 DTO/VO 替代 Map 数据传递
+
+* **表格布局优化**：优化表格布局和横向滚动支持
 
 #### 新增文件
-- `ApiKeyHashUtil.java` - SHA-256 哈希工具类
-- `AdminApiRateLimiter.java` - 管理接口速率限制过滤器
-- `ApiKeyVO/ApiKeyCreationVO/ApiKeyListVO/ApiKeyCreateRequest/ApiKeyUpdateRequest` - 强类型 DTO
 
----
+* `ApiKeyHashUtil.java` - SHA-256 哈希工具类
 
-### [1.6.0] - 2026-04-04
+* `AdminApiRateLimiter.java` - 管理接口速率限制过滤器
+
+* `ApiKeyVO/ApiKeyCreationVO/ApiKeyListVO/ApiKeyCreateRequest/ApiKeyUpdateRequest` - 强类型 DTO
+
+***
+
+### \[1.6.0] - 2026-04-04
 
 #### 破坏性变更
-- **移除配置合并功能**：移除 AutoMergeService 和 AutoMergeController
-- **移除相关实体类**：移除 MergeResult 等 5 个相关实体类
-- **移除前端页面**：移除 ConfigMergeManagement.vue 页面和相关 API
+
+* **移除配置合并功能**：移除 AutoMergeService 和 AutoMergeController
+
+* **移除相关实体类**：移除 MergeResult 等 5 个相关实体类
+
+* **移除前端页面**：移除 ConfigMergeManagement.vue 页面和相关 API
 
 #### 改进优化
-- **配置版本管理优化**：简化版本管理界面，保留核心版本切换功能
-- **日志配置优化**：优化 logback-spring.xml 配置
-- **文档更新**：移除配置合并相关内容
+
+* **配置版本管理优化**：简化版本管理界面，保留核心版本切换功能
+
+* **日志配置优化**：优化 logback-spring.xml 配置
+
+* **文档更新**：移除配置合并相关内容
 
 #### 保留功能
-- `ConfigMergeService`：配置获取和合并核心功能
-- `SecurityConfigMergeService`：安全配置合并服务
 
----
+* `ConfigMergeService`：配置获取和合并核心功能
 
-### [1.5.7] - 2026-04-02
+* `SecurityConfigMergeService`：安全配置合并服务
+
+***
+
+### \[1.5.7] - 2026-04-02
 
 #### 新增功能
-- **JWT 账户初始化**：JWT 账户从 YAML 配置自动初始化到数据库
-- **账户管理 API 优化**：使用标准 RouterResponse 响应格式
+
+* **JWT 账户初始化**：JWT 账户从 YAML 配置自动初始化到数据库
+
+* **账户管理 API 优化**：使用标准 RouterResponse 响应格式
 
 #### 问题修复
-- 修复系统启动时 JWT 账户未初始化到数据库的问题
-- 修复账户管理页面无法显示数据的问题
-- 修复 API 路径与前端不匹配的问题（`/api/admin/accounts` -> `/api/security/jwt/accounts`）
+
+* 修复系统启动时 JWT 账户未初始化到数据库的问题
+
+* 修复账户管理页面无法显示数据的问题
+
+* 修复 API 路径与前端不匹配的问题（`/api/admin/accounts` -> `/api/security/jwt/accounts`）
 
 #### 新增文件
-- `JwtAccountProperties.java` - 映射 YAML 账户配置
-- `JwtConfig.accounts` 字段 - 支持账户列表配置
 
----
+* `JwtAccountProperties.java` - 映射 YAML 账户配置
 
-### [1.5.6] - 2026-03-30
+* `JwtConfig.accounts` 字段 - 支持账户列表配置
+
+***
+
+### \[1.5.6] - 2026-03-30
 
 #### 新增功能
-- **实例级别限流器独立存储**：新增 `instance_rate_limit` 表存储实例限流器配置
-- **实例级别熔断器独立存储**：新增 `instance_circuit_breaker` 表存储实例熔断器配置
-- **独立配置 API**：新增独立的限流器/熔断器配置 API 接口
-- **强类型 DTO**：使用强类型 DTO 替代 Map 数据传递
+
+* **实例级别限流器独立存储**：新增 `instance_rate_limit` 表存储实例限流器配置
+
+* **实例级别熔断器独立存储**：新增 `instance_circuit_breaker` 表存储实例熔断器配置
+
+* **独立配置 API**：新增独立的限流器/熔断器配置 API 接口
+
+* **强类型 DTO**：使用强类型 DTO 替代 Map 数据传递
 
 #### API 变更
-- `GET/PUT /api/config/instance/{type}/{id}/rate-limit`
-- `GET/PUT /api/config/instance/{type}/{id}/circuit-breaker`
+
+* `GET/PUT /api/config/instance/{type}/{id}/rate-limit`
+
+* `GET/PUT /api/config/instance/{type}/{id}/circuit-breaker`
 
 #### 新增文件
-- `InstanceRateLimitEntity/InstanceCircuitBreakerEntity` - 实体类
-- `InstanceRateLimitRepository/InstanceCircuitBreakerRepository` - 仓库
-- `InstanceRateLimitDTO/InstanceCircuitBreakerDTO` - DTO 类
+
+* `InstanceRateLimitEntity/InstanceCircuitBreakerEntity` - 实体类
+
+* `InstanceRateLimitRepository/InstanceCircuitBreakerRepository` - 仓库
+
+* `InstanceRateLimitDTO/InstanceCircuitBreakerDTO` - DTO 类
 
 #### 改进优化
-- `build-and-deploy.sh` 脚本自动清理旧编译文件
 
----
+* `build-and-deploy.sh` 脚本自动清理旧编译文件
 
-### [1.5.2] - 2026-03-20
+***
+
+### \[1.5.2] - 2026-03-20
 
 #### 新增功能
-- **JPA 迁移完成**：完成 R2DBC 到 JPA 的激进迁移
-- **DTO 结构优化**：所有核心功能恢复并优化为 DTO 结构
+
+* **JPA 迁移完成**：完成 R2DBC 到 JPA 的激进迁移
+
+* **DTO 结构优化**：所有核心功能恢复并优化为 DTO 结构
 
 #### 问题修复
-- 修复 JPA 迁移过程中的编译错误
-- 修复服务配置功能恢复
 
----
+* 修复 JPA 迁移过程中的编译错误
 
-### [1.4.6] - 2026-03-10
+* 修复服务配置功能恢复
 
-#### 问题修复
-- 修复前端独立配置功能
-- 修复前端独立限流器和熔断器配置功能
-- 修复数据返回完整性问题
-- 修复 `buildInstanceMap` 和 `convertToVO` 方法
+***
 
----
-
-### [1.4.4] - 2026-03-31
+### \[1.4.6] - 2026-03-10
 
 #### 问题修复
-- 修复前端实例管理页面数据格式问题
-- 优化数据展示逻辑
 
----
+* 修复前端独立配置功能
 
-### [1.4.3] - 2026-03-25
+* 修复前端独立限流器和熔断器配置功能
 
-#### 问题修复
-- 修复服务类型验证和异常处理逻辑
-- 改进错误提示信息
+* 修复数据返回完整性问题
 
----
+* 修复 `buildInstanceMap` 和 `convertToVO` 方法
 
-### [1.4.2] - 2026-03-25
+***
 
-#### 新增功能
-- **Adapter 重构计划**：创建适配器重构计划文档，为后续架构优化做准备
-
----
-
-### [1.4.1] - 2026-03-24
-
-#### 新增功能
-- **值对象模式**：引入 InstanceId 值对象，提升代码类型安全性
-
----
-
-### [1.4.0] - 2026-03-24
+### \[1.4.4] - 2026-03-31
 
 #### 问题修复
-- 优雅修复 ConfigMergeService 阻塞调用警告
-- 优化响应式编程模型
 
----
+* 修复前端实例管理页面数据格式问题
 
-### [1.2.5] - 2025-11-26
+* 优化数据展示逻辑
 
-#### 改进优化
-- 合并远程分支更新
-- 代码同步和稳定性改进
+***
 
----
-
-### [1.1.2] - 2025-10-30
-
-#### 改进优化
-- 合并远程分支更新
-- 代码稳定性改进
-
----
-
-### [1.1.1] - 2025-10-28
-
-#### 改进优化
-- **前端路由优化**：改进路由和认证流程
-- 代码重构和清理
-
----
-
-### [1.1.0] - 2025-10-28
-
-#### 改进优化
-- 合并远程分支更新
-- 功能稳定性改进
-
----
-
-### [1.0.0] - 2025-10-16
-
-#### 新增功能
-- **首个正式版本**：JAiRouter 项目首个正式发布版本
-- 基础网关功能实现
-- 核心适配器支持
-
----
-
-### [0.9.2] - 2025-09-30
-
-#### 新增功能
-- **ApiKey 模型统一**：合并 ApiKeyInfo 与 ApiKeyProperties 为统一 ApiKey 模型
-
----
-
-### [0.9.1] - 2025-09-12
+### \[1.4.3] - 2026-03-25
 
 #### 问题修复
-- 修复合并错误
-- 代码稳定性改进
 
----
+* 修复服务类型验证和异常处理逻辑
 
-### [0.9.0] - 2025-09-10
+* 改进错误提示信息
+
+***
+
+### \[1.4.2] - 2026-03-25
 
 #### 新增功能
-- **Web Console 架构**：添加 Web Console 架构设计文档
-- 前端管理控制台规划
 
----
+* **Adapter 重构计划**：创建适配器重构计划文档，为后续架构优化做准备
 
-### [0.8.2] - 2025-09-05
+***
+
+### \[1.4.1] - 2026-03-24
+
+#### 新增功能
+
+* **值对象模式**：引入 InstanceId 值对象，提升代码类型安全性
+
+***
+
+### \[1.4.0] - 2026-03-24
+
+#### 问题修复
+
+* 优雅修复 ConfigMergeService 阻塞调用警告
+
+* 优化响应式编程模型
+
+***
+
+### \[1.2.5] - 2025-11-26
 
 #### 改进优化
-- 合并远程分支更新
-- 代码同步
 
----
+* 合并远程分支更新
 
-### [0.8.1] - 2025-09-03
+* 代码同步和稳定性改进
+
+***
+
+### \[1.1.2] - 2025-10-30
 
 #### 改进优化
-- 更新项目版本号
-- 版本管理规范化
 
----
+* 合并远程分支更新
 
-### [0.7.3] - 2025-08-27
+* 代码稳定性改进
 
-#### 新增功能
-- **JWT 认证**：实现 JWT 认证和用户管理功能
-- 安全模块基础功能
+***
 
----
+### \[1.1.1] - 2025-10-28
 
-### [0.7.2] - 2025-08-27
+#### 改进优化
 
-#### 新增功能
-- **分布式追踪文档**：添加分布式追踪系统文档
+* **前端路由优化**：改进路由和认证流程
 
----
+* 代码重构和清理
 
-### [0.7.1] - 2025-08-27
+***
 
-#### 新增功能
-- **文档优化**：集成谷歌广告并优化文档样式
+### \[1.1.0] - 2025-10-28
 
----
+#### 改进优化
 
-### [0.7.0] - 2025-08-22
+* 合并远程分支更新
 
-#### 新增功能
-- **慢查询告警**：添加慢查询告警功能
-- 监控模块增强
+* 功能稳定性改进
 
----
+***
 
-### [0.6.1] - 2025-08-19
+### \[1.0.0] - 2025-10-16
 
 #### 新增功能
-- **国际化支持**：添加国际化和代码压缩支持
-- 文档系统增强
 
----
+* **首个正式版本**：JAiRouter 项目首个正式发布版本
 
-### [0.6.0] - 2025-08-18
+* 基础网关功能实现
 
-#### 新增功能
-- **安全认证**：实现 API Key 和 JWT 认证功能
-- 安全模块核心功能
+* 核心适配器支持
 
----
+***
 
-### [0.5.0] - 2025-08-18
+### \[0.9.2] - 2025-09-30
 
 #### 新增功能
-- **文档管理**：重构文档管理流程并提供统一管理脚本
-- 文档系统重构
 
----
+* **ApiKey 模型统一**：合并 ApiKeyInfo 与 ApiKeyProperties 为统一 ApiKey 模型
 
-### [0.4.0] - 2025-08-15
+***
+
+### \[0.9.1] - 2025-09-12
+
+#### 问题修复
+
+* 修复合并错误
+
+* 代码稳定性改进
+
+***
+
+### \[0.9.0] - 2025-09-10
 
 #### 新增功能
-- **Prometheus 告警规则**：添加 Prometheus 告警规则指南和配置
-- 新增 ALERT_RULES_GUIDE.md 文件
-- 添加 alertmanager.yml 配置
-- 创建 docker-compose-monitoring.yml 监控栈配置
 
----
+* **Web Console 架构**：添加 Web Console 架构设计文档
 
-### [未发布] - 开发中
+* 前端管理控制台规划
+
+***
+
+### \[0.8.2] - 2025-09-05
+
+#### 改进优化
+
+* 合并远程分支更新
+
+* 代码同步
+
+***
+
+### \[0.8.1] - 2025-09-03
+
+#### 改进优化
+
+* 更新项目版本号
+
+* 版本管理规范化
+
+***
+
+### \[0.7.3] - 2025-08-27
 
 #### 新增功能
+
+* **JWT 认证**：实现 JWT 认证和用户管理功能
+
+* 安全模块基础功能
+
+***
+
+### \[0.7.2] - 2025-08-27
+
+#### 新增功能
+
+* **分布式追踪文档**：添加分布式追踪系统文档
+
+***
+
+### \[0.7.1] - 2025-08-27
+
+#### 新增功能
+
+* **文档优化**：集成谷歌广告并优化文档样式
+
+***
+
+### \[0.7.0] - 2025-08-22
+
+#### 新增功能
+
+* **慢查询告警**：添加慢查询告警功能
+
+* 监控模块增强
+
+***
+
+### \[0.6.1] - 2025-08-19
+
+#### 新增功能
+
+* **国际化支持**：添加国际化和代码压缩支持
+
+* 文档系统增强
+
+***
+
+### \[0.6.0] - 2025-08-18
+
+#### 新增功能
+
+* **安全认证**：实现 API Key 和 JWT 认证功能
+
+* 安全模块核心功能
+
+***
+
+### \[0.5.0] - 2025-08-18
+
+#### 新增功能
+
+* **文档管理**：重构文档管理流程并提供统一管理脚本
+
+* 文档系统重构
+
+***
+
+### \[0.4.0] - 2025-08-15
+
+#### 新增功能
+
+* **Prometheus 告警规则**：添加 Prometheus 告警规则指南和配置
+
+* 新增 ALERT\_RULES\_GUIDE.md 文件
+
+* 添加 alertmanager.yml 配置
+
+* 创建 docker-compose-monitoring.yml 监控栈配置
+
 - **安全模块**：完整的企业级安全功能，包括API Key认证、JWT令牌支持和双向数据脱敏
+
 - **多租户支持**：租户隔离、资源配额和基于租户的配置管理
+
 - **认证鉴权**：API Key认证机制、JWT Token支持、OAuth 2.0集成和基于角色的访问控制(RBAC)
+
 - **数据保护**：请求/响应数据脱敏、敏感信息加密存储和安全审计日志
+
 - **H2数据库支持**：H2嵌入式数据库作为默认存储，支持配置数据、安全审计、API密钥和JWT账户的自动迁移
+
 - **监控集成**：完整的Prometheus + Grafana监控栈，支持业务指标和基础设施指标收集
+
 - **分布式追踪**：端到端分布式追踪，集成Jaeger/Zipkin实现完整的请求生命周期追踪
+
 - 完善的文档体系和用户指南
+
 - 多语言文档支持（中文/英文）
+
 - 增强的监控和告警功能
+
 - 更多的适配器支持
 
 #### 改进优化
-- **Spring Security集成**：与Spring Security框架完全集成，实现强大的认证和授权功能
-- **缓存层优化**：Redis缓存优化以提升性能
-- **数据库支持**：新增对PostgreSQL和MySQL数据库的支持
-- **H2存储性能**：相比文件存储，配置和安全数据操作性能提升5-20倍
-- **Docker构建优化**：为中国用户优化的Docker构建，使用阿里云Maven镜像，依赖下载速度提升5-10倍
-- 性能优化和内存管理改进
-- 更好的错误处理和日志记录
-- 配置验证和用户体验提升
+
+* **Spring Security集成**：与Spring Security框架完全集成，实现强大的认证和授权功能
+
+* **缓存层优化**：Redis缓存优化以提升性能
+
+* **数据库支持**：新增对PostgreSQL和MySQL数据库的支持
+
+* **H2存储性能**：相比文件存储，配置和安全数据操作性能提升5-20倍
+
+* **Docker构建优化**：为中国用户优化的Docker构建，使用阿里云Maven镜像，依赖下载速度提升5-10倍
+
+* 性能优化和内存管理改进
+
+* 更好的错误处理和日志记录
+
+* 配置验证和用户体验提升
 
 #### 问题修复
-- 修复已知的内存泄漏问题
-- 解决并发场景下的竞态条件
-- 改进配置热更新的稳定性
-- 安全扫描和漏洞修复
-- 修复容器环境下的配置文件路径问题
-- 解决Docker容器中的DNS解析问题
 
----
+* 修复已知的内存泄漏问题
 
-### [0.3.2] - 2025-08-20
+* 解决并发场景下的竞态条件
+
+* 改进配置热更新的稳定性
+
+* 安全扫描和漏洞修复
+
+* 修复容器环境下的配置文件路径问题
+
+* 解决Docker容器中的DNS解析问题
+
+***
+
+### \[0.3.2] - 2025-08-20
 
 #### 新增功能
-- **监控集成**: 完整的 Prometheus + Grafana 监控栈
-- **性能指标**: 新增业务指标和基础设施指标收集
-- **告警规则**: 预配置的告警规则和通知机制
-- **监控仪表板**: 专业的 Grafana 仪表板模板
+
+* **监控集成**: 完整的 Prometheus + Grafana 监控栈
+
+* **性能指标**: 新增业务指标和基础设施指标收集
+
+* **告警规则**: 预配置的告警规则和通知机制
+
+* **监控仪表板**: 专业的 Grafana 仪表板模板
 
 #### 改进优化
-- **指标优化**: 优化指标收集性能，减少对主业务的影响
-- **内存管理**: 改进指标数据的内存使用和清理机制
-- **配置简化**: 简化监控相关的配置参数
+
+* **指标优化**: 优化指标收集性能，减少对主业务的影响
+
+* **内存管理**: 改进指标数据的内存使用和清理机制
+
+* **配置简化**: 简化监控相关的配置参数
 
 #### 问题修复
-- 修复监控指标在高并发下的数据不准确问题
-- 解决长时间运行后的内存泄漏问题
-- 修复 Prometheus 指标格式兼容性问题
+
+* 修复监控指标在高并发下的数据不准确问题
+
+* 解决长时间运行后的内存泄漏问题
+
+* 修复 Prometheus 指标格式兼容性问题
 
 #### 技术债务
-- 重构监控模块的代码结构
-- 改进单元测试覆盖率
-- 优化构建和部署流程
 
----
+* 重构监控模块的代码结构
 
-### [0.3.1] - 2025-08-15
+* 改进单元测试覆盖率
 
-#### 新增功能
-- **中国加速构建**: 专门为中国用户优化的 Docker 构建
-- **阿里云镜像**: 使用阿里云 Maven 镜像加速依赖下载
-- **构建脚本**: 新增 `docker-build-china.sh` 构建脚本
-- **Maven Profile**: 新增 `china` profile 支持
+* 优化构建和部署流程
 
-#### 改进优化
-- **构建速度**: 中国用户构建速度提升 5-10 倍
-- **网络优化**: 优化网络连接和超时配置
-- **文档完善**: 添加中国用户专用的构建指南
+***
 
-#### 问题修复
-- 修复在中国网络环境下的依赖下载超时问题
-- 解决 Maven 仓库连接不稳定的问题
-- 修复 Docker 构建过程中的网络错误
-
----
-
-### [0.3.0] - 2025-08-14
+### \[0.3.1] - 2025-08-15
 
 #### 新增功能
-- **Docker 容器化**: 完整的 Docker 部署支持
-- **多环境部署**: 支持开发、测试、生产环境配置
-- **Docker Compose**: 提供完整的容器编排配置
-- **健康检查**: 容器级别的健康检查机制
-- **监控集成**: 基础的监控指标暴露
+
+* **中国加速构建**: 专门为中国用户优化的 Docker 构建
+
+* **阿里云镜像**: 使用阿里云 Maven 镜像加速依赖下载
+
+* **构建脚本**: 新增 `docker-build-china.sh` 构建脚本
+
+* **Maven Profile**: 新增 `china` profile 支持
 
 #### 改进优化
-- **镜像优化**: 多阶段构建，生产镜像约 200MB
-- **安全加固**: 非 root 用户运行，最小权限原则
-- **性能调优**: 容器环境下的 JVM 参数优化
-- **日志管理**: 容器化环境的日志收集和轮转
+
+* **构建速度**: 中国用户构建速度提升 5-10 倍
+
+* **网络优化**: 优化网络连接和超时配置
+
+* **文档完善**: 添加中国用户专用的构建指南
 
 #### 问题修复
-- 修复容器环境下的配置文件路径问题
-- 解决容器重启后配置丢失的问题
-- 修复网络连接在容器间的通信问题
+
+* 修复在中国网络环境下的依赖下载超时问题
+
+* 解决 Maven 仓库连接不稳定的问题
+
+* 修复 Docker 构建过程中的网络错误
+
+***
+
+### \[0.3.0] - 2025-08-14
+
+#### 新增功能
+
+* **Docker 容器化**: 完整的 Docker 部署支持
+
+* **多环境部署**: 支持开发、测试、生产环境配置
+
+* **Docker Compose**: 提供完整的容器编排配置
+
+* **健康检查**: 容器级别的健康检查机制
+
+* **监控集成**: 基础的监控指标暴露
+
+#### 改进优化
+
+* **镜像优化**: 多阶段构建，生产镜像约 200MB
+
+* **安全加固**: 非 root 用户运行，最小权限原则
+
+* **性能调优**: 容器环境下的 JVM 参数优化
+
+* **日志管理**: 容器化环境的日志收集和轮转
+
+#### 问题修复
+
+* 修复容器环境下的配置文件路径问题
+
+* 解决容器重启后配置丢失的问题
+
+* 修复网络连接在容器间的通信问题
 
 #### 破坏性变更
-- 默认配置文件路径从 `./config` 改为 `/app/config`
-- 环境变量命名规范调整
 
----
+* 默认配置文件路径从 `./config` 改为 `/app/config`
 
-### [0.2.1] - 2025-08--12
+* 环境变量命名规范调整
+
+***
+
+### \[0.2.1] - 2025-08--12
 
 #### 新增功能
-- **定时清理任务**: 自动清理不活跃的限流器，防止内存泄漏
-- **内存优化**: 改进内存使用模式，减少 GC 压力
-- **客户端 IP 限流增强**: 更精确的客户端 IP 识别和限流
-- **配置文件自动合并**: 支持多版本配置文件的智能合并
+
+* **定时清理任务**: 自动清理不活跃的限流器，防止内存泄漏
+
+* **内存优化**: 改进内存使用模式，减少 GC 压力
+
+* **客户端 IP 限流增强**: 更精确的客户端 IP 识别和限流
+
+* **配置文件自动合并**: 支持多版本配置文件的智能合并
 
 #### 改进优化
-- **性能提升**: 限流器性能优化，减少锁竞争
-- **监控增强**: 新增内存使用和清理任务的监控指标
-- **日志优化**: 改进日志格式和性能
-- **错误处理**: 更好的异常处理和错误恢复机制
+
+* **性能提升**: 限流器性能优化，减少锁竞争
+
+* **监控增强**: 新增内存使用和清理任务的监控指标
+
+* **日志优化**: 改进日志格式和性能
+
+* **错误处理**: 更好的异常处理和错误恢复机制
 
 #### 问题修复
-- 修复长时间运行后的内存泄漏问题
-- 解决高并发场景下的限流器竞态条件
-- 修复配置热更新时的线程安全问题
-- 解决客户端 IP 获取在代理环境下的问题
+
+* 修复长时间运行后的内存泄漏问题
+
+* 解决高并发场景下的限流器竞态条件
+
+* 修复配置热更新时的线程安全问题
+
+* 解决客户端 IP 获取在代理环境下的问题
 
 #### 技术改进
-- 重构限流器清理机制
-- 改进单元测试覆盖率到 85%
-- 优化代码质量检查规则
 
----
+* 重构限流器清理机制
 
-### [0.2.0] - 2025-08-11
+* 改进单元测试覆盖率到 85%
+
+* 优化代码质量检查规则
+
+***
+
+### \[0.2.0] - 2025-08-11
 
 #### 新增功能
-- **限流机制**: 支持 Token Bucket、Leaky Bucket、Sliding Window、Warm Up 四种限流算法
-- **熔断器**: 实现熔断器模式，支持失败阈值、恢复检测、降级策略
-- **降级策略**: 支持默认响应和缓存降级
-- **配置持久化**: 支持内存存储和文件存储两种后端
-- **动态配置更新**: 运行时更新服务实例、权重、限流、熔断等配置
+
+* **限流机制**: 支持 Token Bucket、Leaky Bucket、Sliding Window、Warm Up 四种限流算法
+
+* **熔断器**: 实现熔断器模式，支持失败阈值、恢复检测、降级策略
+
+* **降级策略**: 支持默认响应和缓存降级
+
+* **配置持久化**: 支持内存存储和文件存储两种后端
+
+* **动态配置更新**: 运行时更新服务实例、权重、限流、熔断等配置
 
 #### 改进优化
-- **性能优化**: 响应式编程模型，支持高并发处理
-- **配置管理**: 配置文件自动合并和版本管理
-- **错误处理**: 完善的异常处理和错误恢复机制
-- **监控指标**: 新增限流、熔断相关的监控指标
+
+* **性能优化**: 响应式编程模型，支持高并发处理
+
+* **配置管理**: 配置文件自动合并和版本管理
+
+* **错误处理**: 完善的异常处理和错误恢复机制
+
+* **监控指标**: 新增限流、熔断相关的监控指标
 
 #### 问题修复
-- 修复负载均衡器在实例变更时的线程安全问题
-- 解决配置更新时的数据一致性问题
-- 修复高并发场景下的内存泄漏问题
+
+* 修复负载均衡器在实例变更时的线程安全问题
+
+* 解决配置更新时的数据一致性问题
+
+* 修复高并发场景下的内存泄漏问题
 
 #### API 变更
-- 新增动态配置管理 API (`/api/config/instance/*`)
-- 新增配置版本管理 API (`/api/config/versions/*`)
-- 扩展健康检查 API，包含更多状态信息
 
----
+* 新增动态配置管理 API (`/api/config/instance/*`)
 
-### [0.1.0] - 2025-08-04
+* 新增配置版本管理 API (`/api/config/versions/*`)
+
+* 扩展健康检查 API，包含更多状态信息
+
+***
+
+### \[0.1.0] - 2025-08-04
 
 #### 新增功能
-- **基础网关**: 统一 `/v1/*` API 网关，支持 OpenAI 兼容格式
-- **服务类型支持**: Chat、Embedding、Rerank、TTS、STT、Image Generation、Image Editing
-- **适配器模式**: 支持 GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI 适配器
-- **负载均衡**: 实现 Random、Round Robin、Least Connections、IP Hash 四种策略
-- **健康检查**: 每服务独立状态接口，自动剔除不可用实例
-- **配置管理**: 基于 YAML 的静态配置支持
+
+* **基础网关**: 统一 `/v1/*` API 网关，支持 OpenAI 兼容格式
+
+* **服务类型支持**: Chat、Embedding、Rerank、TTS、STT、Image Generation、Image Editing
+
+* **适配器模式**: 支持 GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI 适配器
+
+* **负载均衡**: 实现 Random、Round Robin、Least Connections、IP Hash 四种策略
+
+* **健康检查**: 每服务独立状态接口，自动剔除不可用实例
+
+* **配置管理**: 基于 YAML 的静态配置支持
 
 #### 技术特性
-- **Spring Boot 3.5.x**: 基于最新的 Spring Boot 框架
-- **响应式编程**: 使用 Spring WebFlux 和 Reactor Core
-- **代码质量**: 集成 Checkstyle、SpotBugs、JaCoCo 代码质量工具
-- **API 文档**: 使用 SpringDoc OpenAPI 自动生成 API 文档
-- **单元测试**: 包含负载均衡、健康检查等核心功能的单元测试
+
+* **Spring Boot 3.5.x**: 基于最新的 Spring Boot 框架
+
+* **响应式编程**: 使用 Spring WebFlux 和 Reactor Core
+
+* **代码质量**: 集成 Checkstyle、SpotBugs、JaCoCo 代码质量工具
+
+* **API 文档**: 使用 SpringDoc OpenAPI 自动生成 API 文档
+
+* **单元测试**: 包含负载均衡、健康检查等核心功能的单元测试
 
 #### 项目结构
-- 建立清晰的模块化架构
-- 定义统一的编码规范和最佳实践
-- 建立完整的构建和测试流程
 
----
+* 建立清晰的模块化架构
+
+* 定义统一的编码规范和最佳实践
+
+* 建立完整的构建和测试流程
+
+***
 
 ## 升级指南
 
 ### 从 0.3.1 升级到 0.3.2
 
 #### 配置变更
+
 ```yaml
 # 新增监控配置
 monitoring:
@@ -622,21 +875,29 @@ monitoring:
 ```
 
 #### 部署变更
-- 新增 Prometheus 和 Grafana 容器
-- 更新 `docker-compose.yml` 配置
-- 导入新的 Grafana 仪表板
+
+* 新增 Prometheus 和 Grafana 容器
+
+* 更新 `docker-compose.yml` 配置
+
+* 导入新的 Grafana 仪表板
 
 #### 注意事项
-- 监控功能默认启用，可能会增加少量性能开销
-- 新增的监控端点需要相应的网络配置
+
+* 监控功能默认启用，可能会增加少量性能开销
+
+* 新增的监控端点需要相应的网络配置
 
 ### 从 0.2.1 升级到 0.3.0
 
 #### 破坏性变更
-- 配置文件路径变更：`./config` → `/app/config`
-- 环境变量命名调整
+
+* 配置文件路径变更：`./config` → `/app/config`
+
+* 环境变量命名调整
 
 #### 迁移步骤
+
 1. 更新配置文件路径
 2. 调整环境变量名称
 3. 更新部署脚本和容器配置
@@ -644,9 +905,11 @@ monitoring:
 ### 从 0.1.0 升级到 0.2.0
 
 #### 新增依赖
-- 无需额外依赖，所有功能已内置
+
+* 无需额外依赖，所有功能已内置
 
 #### 配置扩展
+
 ```yaml
 # 新增限流配置
 model:
@@ -667,29 +930,39 @@ model:
 ## 已知问题
 
 ### 当前版本 (0.3.2)
-- 在极高并发场景下（>10k RPS），监控指标可能出现轻微延迟
-- Docker 容器在某些网络环境下可能出现 DNS 解析缓慢
+
+* 在极高并发场景下（>10k RPS），监控指标可能出现轻微延迟
+
+* Docker 容器在某些网络环境下可能出现 DNS 解析缓慢
 
 ### 历史问题
-- ~~0.3.1: 中国网络环境下构建超时~~ (已修复)
-- ~~0.2.1: 长时间运行后内存泄漏~~ (已修复)
-- ~~0.2.0: 高并发下配置更新竞态条件~~ (已修复)
+
+* ~~0.3.1: 中国网络环境下构建超时~~ (已修复)
+
+* ~~0.2.1: 长时间运行后内存泄漏~~ (已修复)
+
+* ~~0.2.0: 高并发下配置更新竞态条件~~ (已修复)
 
 ## 贡献者
 
 感谢所有为 JAiRouter 项目做出贡献的开发者：
 
-- **核心团队**: 负责架构设计和核心功能开发
-- **社区贡献者**: 提供功能建议、问题报告和代码贡献
-- **文档团队**: 完善项目文档和用户指南
-- **测试团队**: 进行功能测试和性能验证
+* **核心团队**: 负责架构设计和核心功能开发
+
+* **社区贡献者**: 提供功能建议、问题报告和代码贡献
+
+* **文档团队**: 完善项目文档和用户指南
+
+* **测试团队**: 进行功能测试和性能验证
 
 ## 反馈和建议
 
 如果您在使用过程中遇到问题或有改进建议，欢迎通过以下方式反馈：
 
-- **GitHub Issues**: [提交问题报告](https://github.com/Lincoln-cn/JAiRouter/issues)
-- **GitHub Discussions**: [参与讨论](https://github.com/Lincoln-cn/JAiRouter/discussions)
-- **邮件联系**: jairouter@example.com
+* **GitHub Issues**: [提交问题报告](https://github.com/Lincoln-cn/JAiRouter/issues)
+
+* **GitHub Discussions**: [参与讨论](https://github.com/Lincoln-cn/JAiRouter/discussions)
+
+* **邮件联系**: <jairouter@example.com>
 
 我们重视每一个反馈，并会及时响应和处理。
