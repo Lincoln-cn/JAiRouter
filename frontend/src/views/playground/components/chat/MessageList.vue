@@ -44,20 +44,14 @@ const emit = defineEmits<{
   regenerate: []
 }>()
 
-// 显示的消息列表（过滤掉正在流式更新的空助手消息）
+// 显示的消息列表（流式响应时过滤掉最后一条助手消息，避免重复显示）
 const displayMessages = computed(() => {
   if (props.loading && props.streamingContent) {
-    // 流式响应时，过滤掉最后一个空的助手消息
-    return props.messages.filter((msg, index) => {
-      if (
-        index === props.messages.length - 1 &&
-        msg.role === 'assistant' &&
-        !msg.content
-      ) {
-        return false
-      }
-      return true
-    })
+    // 流式响应时，过滤掉最后一个助手消息（由额外的 MessageBubble 显示流式内容）
+    const lastIndex = props.messages.length - 1
+    if (lastIndex >= 0 && props.messages[lastIndex].role === 'assistant') {
+      return props.messages.slice(0, lastIndex)
+    }
   }
   return props.messages
 })
