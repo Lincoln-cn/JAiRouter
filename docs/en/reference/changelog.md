@@ -239,6 +239,188 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ---
 
+### [1.4.4] - 2026-03-31
+
+#### Bug Fixes
+- Fixed frontend instance management page data format issue
+- Optimized data display logic
+
+---
+
+### [1.4.3] - 2026-03-25
+
+#### Bug Fixes
+- Fixed service type validation and exception handling logic
+- Improved error messages
+
+---
+
+### [1.4.2] - 2026-03-25
+
+#### New Features
+- **Adapter Refactoring Plan**: Created adapter refactoring plan documentation for future architecture optimization
+
+---
+
+### [1.4.1] - 2026-03-24
+
+#### New Features
+- **Value Object Pattern**: Introduced InstanceId value object for improved code type safety
+
+---
+
+### [1.4.0] - 2026-03-24
+
+#### Bug Fixes
+- Gracefully fixed ConfigMergeService blocking call warning
+- Optimized reactive programming model
+
+---
+
+### [1.2.5] - 2025-11-26
+
+#### Improvements
+- Merged remote branch updates
+- Code synchronization and stability improvements
+
+---
+
+### [1.1.2] - 2025-10-30
+
+#### Improvements
+- Merged remote branch updates
+- Code stability improvements
+
+---
+
+### [1.1.1] - 2025-10-28
+
+#### Improvements
+- **Frontend Routing Optimization**: Improved routing and authentication flow
+- Code refactoring and cleanup
+
+---
+
+### [1.1.0] - 2025-10-28
+
+#### Improvements
+- Merged remote branch updates
+- Feature stability improvements
+
+---
+
+### [1.0.0] - 2025-10-16
+
+#### New Features
+- **First Official Release**: JAiRouter project first official release version
+- Basic gateway functionality
+- Core adapter support
+
+---
+
+### [0.9.2] - 2025-09-30
+
+#### New Features
+- **ApiKey Model Unification**: Merged ApiKeyInfo and ApiKeyProperties into unified ApiKey model
+
+---
+
+### [0.9.1] - 2025-09-12
+
+#### Bug Fixes
+- Fixed merge errors
+- Code stability improvements
+
+---
+
+### [0.9.0] - 2025-09-10
+
+#### New Features
+- **Web Console Architecture**: Added Web Console architecture design documentation
+- Frontend management console planning
+
+---
+
+### [0.8.2] - 2025-09-05
+
+#### Improvements
+- Merged remote branch updates
+- Code synchronization
+
+---
+
+### [0.8.1] - 2025-09-03
+
+#### Improvements
+- Updated project version number
+- Version management standardization
+
+---
+
+### [0.7.3] - 2025-08-27
+
+#### New Features
+- **JWT Authentication**: Implemented JWT authentication and user management functionality
+- Security module basic functionality
+
+---
+
+### [0.7.2] - 2025-08-27
+
+#### New Features
+- **Distributed Tracing Documentation**: Added distributed tracing system documentation
+
+---
+
+### [0.7.1] - 2025-08-27
+
+#### New Features
+- **Documentation Optimization**: Integrated Google Ads and optimized documentation styling
+
+---
+
+### [0.7.0] - 2025-08-22
+
+#### New Features
+- **Slow Query Alerts**: Added slow query alert functionality
+- Monitoring module enhancement
+
+---
+
+### [0.6.1] - 2025-08-19
+
+#### New Features
+- **Internationalization Support**: Added internationalization and code compression support
+- Documentation system enhancement
+
+---
+
+### [0.6.0] - 2025-08-18
+
+#### New Features
+- **Security Authentication**: Implemented API Key and JWT authentication functionality
+- Security module core functionality
+
+---
+
+### [0.5.0] - 2025-08-18
+
+#### New Features
+- **Documentation Management**: Refactored documentation management workflow with unified management script
+- Documentation system refactoring
+
+---
+
+### [0.4.0] - 2025-08-15
+
+#### New Features
+- **Prometheus Alert Rules**: Added Prometheus alert rules guide and configuration
+- Added ALERT_RULES_GUIDE.md file
+- Added alertmanager.yml configuration
+- Created docker-compose-monitoring.yml monitoring stack configuration
+
+---
+
 ### [Unreleased] - In Development
 
 #### New Features
