@@ -174,6 +174,7 @@ public class JpaDatabaseInitializer {
                     ServiceInstanceEntity instanceEntity = ServiceInstanceEntity.builder()
                             .serviceConfigId(savedConfig.getId())
                             .instanceName(instance.getName())
+                            .instanceId(instance.getInstanceId()) // v1.7.1: 存储 instanceId (UUID)
                             .baseUrl(instance.getBaseUrl())
                             .path(instance.getPath())
                             .weight(instance.getWeight())

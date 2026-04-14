@@ -74,6 +74,7 @@ CREATE TABLE IF NOT EXISTS service_instance (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     service_config_id BIGINT NOT NULL,
     instance_name VARCHAR(255) NOT NULL,
+    instance_id VARCHAR(255), -- UUID格式的唯一标识符 (v1.7.1)
     base_url VARCHAR(500) NOT NULL,
     path VARCHAR(500),
     weight INT NOT NULL DEFAULT 1,
@@ -98,7 +99,7 @@ CREATE TABLE IF NOT EXISTS service_instance (
     error_message TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_service_config FOREIGN KEY (service_config_id) 
+    CONSTRAINT fk_service_config FOREIGN KEY (service_config_id)
         REFERENCES service_config(id) ON DELETE CASCADE
 );
 
@@ -106,6 +107,7 @@ CREATE TABLE IF NOT EXISTS service_instance (
 CREATE INDEX IF NOT EXISTS idx_service_config_id ON service_instance(service_config_id);
 CREATE INDEX IF NOT EXISTS idx_instance_status ON service_instance(status);
 CREATE INDEX IF NOT EXISTS idx_instance_health ON service_instance(health_status);
+CREATE INDEX IF NOT EXISTS idx_instance_instance_id ON service_instance(instance_id); -- v1.7.1
 
 -- 配置变更历史表 - 记录所有配置变更操作（审计日志）
 CREATE TABLE IF NOT EXISTS config_change_history (

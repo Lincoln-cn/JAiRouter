@@ -168,20 +168,55 @@ const router = createRouter({
       path: '/admin/tracing/:pathMatch(.*)*',
       redirect: to => `/tracing/${to.params.pathMatch || 'dashboard'}`
     },
-    // API测试试验场
+    // AI 试验场 - 各服务作为独立子路由
     {
       path: '/playground',
       name: 'playground',
       component: () => import('../views/Layout.vue'),
+      redirect: '/playground/chat',
       meta: { requiresAuth: true },
       children: [
         {
-          path: 'main',
-          name: 'playground-main',
-          component: () => import('../views/playground/PlaygroundMain.vue'),
-          meta: { title: 'API测试试验场', icon: 'monitor' }
+          path: 'chat',
+          name: 'playground-chat',
+          component: () => import('../views/playground/components/chat/ChatContainer.vue'),
+          meta: { title: '对话测试', icon: 'chat-dot-round' }
+        },
+        {
+          path: 'embedding',
+          name: 'playground-embedding',
+          component: () => import('../views/playground/components/embedding/EmbeddingContainer.vue'),
+          meta: { title: '向量生成', icon: 'data-line' }
+        },
+        {
+          path: 'rerank',
+          name: 'playground-rerank',
+          component: () => import('../views/playground/components/rerank/RerankContainer.vue'),
+          meta: { title: '重排序', icon: 'sort' }
+        },
+        {
+          path: 'audio',
+          name: 'playground-audio',
+          component: () => import('../views/playground/components/audio/AudioContainer.vue'),
+          meta: { title: '语音服务', icon: 'headset' }
+        },
+        {
+          path: 'image',
+          name: 'playground-image',
+          component: () => import('../views/playground/components/image/ImageContainer.vue'),
+          meta: { title: '图像服务', icon: 'picture' }
         }
       ]
+    },
+    // 兼容旧路径
+    {
+      path: '/playground/main',
+      redirect: '/playground/chat'
+    },
+    // 兼容 /admin/playground 路径
+    {
+      path: '/admin/playground/:pathMatch(.*)*',
+      redirect: '/playground/chat'
     }
   ]
 })

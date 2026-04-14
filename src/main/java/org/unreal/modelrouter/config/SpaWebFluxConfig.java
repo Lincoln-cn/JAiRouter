@@ -8,6 +8,9 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 /**
@@ -22,6 +25,43 @@ import reactor.core.publisher.Mono;
 public class SpaWebFluxConfig {
 
     /**
+     * API 路径转发过滤器
+     *
+     * 将 /v1/** 请求转发到 /api/v1/**，兼容 OpenAI API 标准路径格式
+     * 例如：/v1/chat/completions -> /api/v1/chat/completions
+     *
+     * 使用高优先级 Order(-2) 确保在所有其他过滤器之前执行
+     */
+    @Bean
+    @Order(-2)
+    public WebFilter apiPathForwardFilter() {
+        return new WebFilter() {
+            @Override
+            public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+                String path = exchange.getRequest().getPath().value();
+
+                // 检查是否是 /v1/ 开头的路径（不包括 /v1/debug）
+                if (path.startsWith("/v1/") && !path.startsWith("/v1/debug")) {
+                    // 修改请求路径，添加 /api 前缀
+                    String newPath = "/api" + path;
+                    org.springframework.http.server.reactive.ServerHttpRequest newRequest =
+                        exchange.getRequest().mutate()
+                            .path(newPath)
+                            .build();
+
+                    ServerWebExchange newExchange = exchange.mutate()
+                        .request(newRequest)
+                        .build();
+
+                    return chain.filter(newExchange);
+                }
+
+                return chain.filter(exchange);
+            }
+        };
+    }
+
+    /**
      * 配置 SPA 资源路由
      *
      * 处理 /admin 路径的请求：
@@ -34,16 +74,16 @@ public class SpaWebFluxConfig {
     @Order(-1)
     public RouterFunction<ServerResponse> spaRouterFunction() {
         ClassPathResource adminRoot = new ClassPathResource("static/admin/");
-        
+
         return RouterFunctions.route()
-                .GET("/admin", request -> 
+                .GET("/admin", request ->
                     ServerResponse.ok()
                         .contentType(MediaType.TEXT_HTML)
                         .body(Mono.just(new ClassPathResource("static/admin/index.html")), ClassPathResource.class)
                 )
                 .GET("/admin/**", request -> {
                     String path = request.path();
-                    
+
                     // 尝试加载对应的静态资源
                     ClassPathResource resource = new ClassPathResource("static" + path);
                     if (resource.exists() && resource.isReadable()) {
@@ -53,7 +93,7 @@ public class SpaWebFluxConfig {
                                 .contentType(contentType)
                                 .body(Mono.just(resource), ClassPathResource.class);
                     }
-                    
+
                     // 静态资源不存在，返回 index.html（SPA fallback）
                     ClassPathResource indexHtml = new ClassPathResource("static/admin/index.html");
                     if (!indexHtml.exists()) {

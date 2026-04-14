@@ -9,6 +9,7 @@ export interface InstanceConfig {
   path?: string
   weight?: number
   status?: 'active' | 'inactive'
+  adapter?: string
   headers?: Record<string, string>
 }
 

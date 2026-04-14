@@ -1,111 +1,113 @@
-# Project Summary
+The user wants me to generate a comprehensive project summary in markdown format based on the conversation history provided in the scratchpad and state_snapshot sections. I should extract the most important context, decisions, and progress without using any tools.
+
+Let me analyze the provided information:
+
+1. **Overall Goal**: Fix playground Chat service frontend display issues - duplicate messages and SSE streaming response parsing problems.
+
+2. **Key Knowledge**:
+   - Backend startup command
+   - JWT header name (Jairouter_Token)
+   - Login endpoint
+   - SSE format specifics
+   - Frontend SSE parsing requirements
+   - Ollama backend URL
+   - Build commands
+   - Root cause of duplicate messages
+
+3. **File System State**: Multiple modified files including adapters and frontend components
+
+4. **Recent Actions**: Fixed duplicate messages issue by modifying handleRegenerateMessage
+
+5. **Current Plan**: Steps 1-6 done, step 7 in progress (user testing)
+
+Let me create a comprehensive markdown summary.# Project Summary
 
 ## Overall Goal
-增强JAiRouter的安全黑名单功能，支持Token/IP/Device三种类型的黑名单，实现持久化存储和前端管理界面。
+修复试验场（Playground）Chat 服务的前端显示问题，包括 SSE 流式响应解析问题和重复消息问题。
 
 ## Key Knowledge
 
 ### 技术栈
-- **后端**: Java 17, Spring Boot 3.5.5 (WebFlux), JPA with Hibernate (ddl-auto: update)
+- **后端**: Spring Boot 3.5.5 WebFlux (Reactive), Java 17, R2DBC, H2/Redis
 - **前端**: Vue 3 + TypeScript + Element Plus + Vite
-- **数据库**: H2 (embedded), JPA访问
-- **JWT库**: JJWT 0.12.3 (注意：API与旧版本不兼容)
+- **构建工具**: Maven 3.x
 
-### JJWT 0.12.x API变更
-```java
-// 旧API (0.11.x)
-Jwts.builder().setSubject(username).setIssuer(issuer).signWith(key, SignatureAlgorithm.HS256)
+### 关键配置
+| 配置项 | 值 |
+|--------|-----|
+| JWT Header 名称 | `Jairouter_Token`（非标准 Authorization） |
+| 登录接口 | `/api/auth/jwt/login`（POST） |
+| Ollama 后端 | `http://172.16.30.6:12434` |
+| 默认端口 | 8080 |
 
-// 新API (0.12.x)
-Jwts.builder().subject(username).issuer(issuer).signWith(key)  // 无需指定算法
-Keys.hmacShaKeyFor(bytes)  // 新的密钥生成方式
+### 构建命令
+```bash
+# 前端构建
+cd frontend && npm run build
+
+# 后端构建（含前端，跳过检查）
+mvn package -Pprod -DskipTests -Dcheckstyle.skip=true -Dspotbugs.skip=true
+
+# 启动命令
+java -Xmx1024m -jar target/model-router-1.7.0.jar \
+  --server.port=8080 \
+  --spring.profiles.active=dev \
+  --jwt.secret="jairouter-development-secret-key-32chars" \
+  --store.type=h2
 ```
 
-### 配置关键点
-- JWT accounts配置路径: `jairouter.security.jwt.accounts`
-- 密码格式: `{noop}password` 使用DelegatingPasswordEncoder
-- 登录端点: `POST /api/auth/jwt/login`
-- Token头: `Jairouter_Token`
+### SSE 流式响应关键点
+- **Spring WebFlux ServerSentEvent** 会自动添加 `data:` 前缀
+- **适配器不应手动添加 `data:` 前缀**，否则导致双重前缀 `data:data:`
+- **前端解析需兼容** `data:` 和 `data: ` 两种格式
 
-### 常见问题
-1. **旧进程问题**: 多次遇到旧进程运行导致新代码不生效，必须先`pkill -f model-router`确认进程已停止
-2. **数据库表结构**: JPA的`ddl-auto: update`不会修改已存在表的结构，需要使用数据库迁移服务
-3. **浏览器缓存**: 测试前端时需要清除浏览器缓存
+### 前端架构
+- 使用 Vue 3 Composition API
+- `useStreaming.ts` - SSE 流式请求处理
+- `ChatContainer.vue` - 聊天容器组件，包含消息发送和重新生成逻辑
 
 ## Recent Actions
 
-### ✅ 已完成任务 (2026-04-10)
+### 已完成修复
+1. **SSE 双重 `data:` 前缀问题** - 修改所有适配器（Ollama, GpuStack, LocalAI, vLLM, Xinference, NormalOpenAI）的 `transformStreamChunk` 方法，移除手动添加的 `data:` 前缀
+2. **BaseAdapter 流式处理** - 使用 `ServerSentEvent` 包装器正确处理流式响应
+3. **前端 SSE 解析兼容性** - 修改 `useStreaming.ts` 兼容带空格和不带空格的 `data:` 格式
+4. **复制和重新生成按钮** - 在 `ChatContainer.vue` 添加事件处理
+5. **重新生成时的重复消息问题** - 修改 `handleRegenerateMessage` 不再调用 `handleSendMessage`，改为直接处理请求逻辑
 
-1. **创建数据库迁移服务 `DatabaseMigrationService`**
-   - 使用 `ApplicationRunner` 在应用启动后执行迁移
-   - 尝试多种 SQL 语法确保兼容 H2 和 MySQL 模式
-   - 成功语法: `ALTER TABLE security_blacklist ALTER COLUMN expires_at DROP NOT NULL`
+### 根本原因分析
+- **重复消息原因**: `handleRegenerateMessage` 调用 `handleSendMessage`，而 `handleSendMessage` 每次调用都会添加用户消息和助手消息，导致重新生成时出现重复
 
-2. **修复永久黑名单功能**
-   - 问题: `expires_at` 列定义为 `NOT NULL`，导致永久黑名单（expires_at=null）添加失败
-   - 解决: 通过迁移服务修改列定义，允许 NULL 值
-   - 验证: API 测试成功添加永久黑名单
+### 当前状态
+- 服务已重启，PID: 3280125
+- 前后端代码已重新构建部署
+- 等待用户验证试验场功能
 
-3. **API 测试结果**
-   ```json
-   {
-     "success": true,
-     "message": "黑名单添加成功",
-     "data": {
-       "id": 4,
-       "blacklistType": "IP",
-       "targetValue": "10.0.0.100",
-       "expiresAt": null,
-       "permanent": true,
-       "status": "ACTIVE"
-     }
-   }
-   ```
+## Current Plan
 
-### 黑名单功能文件列表
+1. [DONE] 修复 SSE 双重 `data:` 前缀问题 - 修改所有适配器
+2. [DONE] 修复 BaseAdapter 使用 ServerSentEvent 包装
+3. [DONE] 修复前端 SSE 解析兼容性
+4. [DONE] 修复复制和重新生成按钮 - 添加事件处理
+5. [DONE] 修复重新生成时的重复消息问题
+6. [DONE] 重新构建并部署
+7. [IN PROGRESS] 用户测试试验场功能
 
-| 文件 | 描述 |
-|------|------|
-| `DatabaseMigrationService.java` | 数据库迁移服务（新建） |
-| `SecurityBlacklistEntity.java` | 实体类，支持TOKEN/IP/DEVICE三种类型 |
-| `SecurityBlacklistRepository.java` | JPA Repository |
-| `SecurityBlacklistService.java` | 服务接口 |
-| `SecurityBlacklistServiceImpl.java` | 服务实现 |
-| `SecurityBlacklistController.java` | REST API控制器 |
-| `BlacklistEntryDTO.java` | 数据传输对象 |
-| `AddBlacklistRequest.java` | 添加请求DTO |
-| `BlacklistStatsDTO.java` | 统计DTO |
-| `frontend/src/api/blacklist.ts` | 前端API |
-| `frontend/src/views/security/BlacklistManagement.vue` | 前端管理页面 |
-| `frontend/src/router/index.ts` | 路由配置（/security/blacklist） |
+## Modified Files
 
-## 黑名单API端点
-
-| 端点 | 方法 | 描述 |
-|------|------|------|
-| `/api/security/blacklist/list` | GET | 分页查询 |
-| `/api/security/blacklist/stats` | GET | 统计信息 |
-| `/api/security/blacklist/add` | POST | 添加黑名单 |
-| `/api/security/blacklist/{id}` | DELETE | 移除条目 |
-| `/api/security/blacklist/check` | GET | 检查是否在黑名单 |
-| `/api/security/blacklist/cleanup` | POST | 清理过期条目 |
-
-## 启动命令
-```bash
-# 编译（包含前端）
-mvn clean package -Pprod -DskipTests -Dcheckstyle.skip=true -Dspotbugs.skip=true -q
-
-# 启动（确保先杀掉旧进程）
-pkill -f model-router
-java -jar target/model-router-1.6.1.jar --spring.profiles.active=dev
-```
-
-## 前端访问
-- 管理界面: http://localhost:8080/admin/index.html
-- 黑名单管理: http://localhost:8080/admin/index.html#/security/blacklist
+| 文件 | 修改内容 |
+|------|----------|
+| `src/main/java/.../adapter/impl/OllamaAdapter.java` | `transformStreamChunk` 移除 `data:` 前缀 |
+| `src/main/java/.../adapter/impl/GpuStackAdapter.java` | 同上 |
+| `src/main/java/.../adapter/impl/LocalAiAdapter.java` | 同上 |
+| `src/main/java/.../adapter/impl/NormalOpenAiAdapter.java` | 同上 |
+| `src/main/java/.../adapter/impl/VllmAdapter.java` | 同上 |
+| `src/main/java/.../adapter/impl/XinferenceAdapter.java` | 同上 |
+| `src/main/java/.../adapter/BaseAdapter.java` | `processStreamingRequest` 使用 ServerSentEvent wrapper |
+| `frontend/src/views/playground/composables/useStreaming.ts` | SSE 解析兼容两种格式 |
+| `frontend/src/views/playground/components/chat/ChatContainer.vue` | 修复重复消息问题，`handleRegenerateMessage` 直接处理请求 |
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-04-10T10:30:00.000Z
-**Status**: 所有任务已完成 ✅
+**Update time**: 2026-04-14T09:09:51.615Z 

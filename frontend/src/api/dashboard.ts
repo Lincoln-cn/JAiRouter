@@ -13,22 +13,22 @@ export const getServiceTypes = () => {
 
 // 获取指定服务的实例列表
 export const getServiceInstances = (serviceType: string) => {
-  return request.get<RouterResponse<any[]>>(`/config/instance/type/${serviceType}`)
+  return request.get<RouterResponse<any[]>>(`/config/instance/${serviceType}`)
 }
 
-// 添加服务实例（支持控制是否创建新版本）
-export const addServiceInstance = (serviceType: string, instanceConfig: any, createNewVersion: boolean = true) => {
-  return request.post<RouterResponse<void>>(`/config/instance/add/${serviceType}?createNewVersion=${createNewVersion}`, instanceConfig)
+// 添加服务实例
+export const addServiceInstance = (serviceType: string, instanceConfig: any) => {
+  return request.post<RouterResponse<void>>(`/config/instance/${serviceType}`, instanceConfig)
 }
 
-// 更新服务实例（支持控制是否创建新版本）
-export const updateServiceInstance = (serviceType: string, instanceConfig: any, createNewVersion: boolean = true) => {
-  return request.put<RouterResponse<void>>(`/config/instance/update/${serviceType}?createNewVersion=${createNewVersion}`, instanceConfig)
+// 更新服务实例
+export const updateServiceInstance = (serviceType: string, instanceId: string, instanceConfig: any) => {
+  return request.put<RouterResponse<void>>(`/config/instance/${serviceType}/${instanceId}`, instanceConfig)
 }
 
-// 删除服务实例（支持控制是否创建新版本）
-export const deleteServiceInstance = (serviceType: string, instanceId: string, createNewVersion: boolean = true) => {
-    return request.delete<RouterResponse<void>>(`/config/instance/del/${serviceType}?instanceId=${instanceId}&createNewVersion=${createNewVersion}`)
+// 删除服务实例
+export const deleteServiceInstance = (serviceType: string, instanceId: string) => {
+    return request.delete<RouterResponse<void>>(`/config/instance/${serviceType}/${instanceId}`)
 }
 
 // 获取监控概览
