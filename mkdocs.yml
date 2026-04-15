@@ -49,11 +49,6 @@ plugins:
       htmlmin_opts:
         remove_comments: true
         remove_empty_space: true
-        remove_redundant_attributes: true
-        remove_script_type_attributes: true
-        remove_style_link_type_attributes: true
-        minify_css: true
-        minify_js: true
   - i18n:
       docs_structure: folder
       fallback_to_default: true

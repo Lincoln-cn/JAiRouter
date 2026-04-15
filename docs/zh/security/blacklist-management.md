@@ -448,3 +448,4 @@ jairouter:
 - [JWT 认证配置说明](jwt-authentication.md)
 - [安全功能故障排除指南](troubleshooting.md)
 - [审计日志管理](audit-log-management.md)
+- [数据脱敏配置](data-sanitization.md)
