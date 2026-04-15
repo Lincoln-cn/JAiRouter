@@ -63,7 +63,7 @@ public class CircuitBreakerManager {
      */
     public CircuitBreaker getCircuitBreaker(String instanceId, String instanceUrl) {
         // 使用实例URL作为唯一标识符，如果URL为空则使用ID
-        String key = instanceUrl != null && !instanceUrl.trim().isEmpty() ? instanceUrl : instanceId;
+        String key = instanceId != null && !instanceId.trim().isEmpty() ? instanceId : instanceUrl;
         if (key == null || key.trim().isEmpty()) {
             throw new IllegalArgumentException("Both instanceId and instanceUrl cannot be null or empty");
         }

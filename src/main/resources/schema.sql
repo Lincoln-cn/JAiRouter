@@ -78,7 +78,8 @@ CREATE TABLE IF NOT EXISTS service_instance (
     base_url VARCHAR(500) NOT NULL,
     path VARCHAR(500),
     weight INT NOT NULL DEFAULT 1,
-    headers TEXT,
+    adapter VARCHAR(255), -- v1.7.1: 实例级别适配器配置
+    headers JSON, -- v1.7.1: 自定义请求头配置（JSON 格式）
     -- 限流器配置字段
     rate_limit_enabled BOOLEAN DEFAULT TRUE,
     rate_limit_algorithm VARCHAR(50) DEFAULT 'token-bucket',
