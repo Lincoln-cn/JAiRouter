@@ -448,6 +448,80 @@ docker build --no-cache -t sodlinken/jairouter:latest .
 2. 搜索 [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
 3. 提交新的 [Issue](https://github.com/Lincoln-cn/JAiRouter/issues/new)
 
+## 故障排查 {#故障排查}
+
+### 常见问题
+
+#### 1. 端口被占用
+
+**问题**: `Port 8080 was already in use`
+
+**解决方案**:
+```bash
+# 查找占用进程
+netstat -tulpn | grep 8080
+lsof -i :8080
+
+# 更改端口
+java -jar model-router.jar --server.port=8081
+```
+
+#### 2. Java 版本不兼容
+
+**问题**: `Unsupported class file major version`
+
+**解决方案**:
+```bash
+# 检查 Java 版本
+java -version
+
+# 安装 JDK 17+
+# Ubuntu/Debian
+apt-get install openjdk-17-jdk
+
+# CentOS/RHEL
+yum install java-17-openjdk
+```
+
+#### 3. 内存不足
+
+**问题**: `OutOfMemoryError`
+
+**解决方案**:
+```bash
+# 增加 JVM 内存
+java -Xmx2g -Xms1g -jar model-router.jar
+```
+
+#### 4. 依赖下载失败
+
+**问题**: Maven 依赖下载超时或失败
+
+**解决方案**:
+```bash
+# 中国用户使用阿里云镜像
+./mvnw clean package -Pchina
+
+# 或配置代理
+./mvnw clean package -Dhttp.proxyHost=proxy.example.com -Dhttp.proxyPort=8080
+```
+
+#### 5. Docker 构建失败
+
+**问题**: Docker 镜像构建失败
+
+**解决方案**:
+```bash
+# 检查 Docker 版本
+docker --version
+
+# 清理 Docker 缓存
+docker system prune -a
+
+# 重新构建
+docker build --no-cache -t sodlinken/jairouter:latest .
+```
+
 ## 下一步
 
 安装完成后，您可以：

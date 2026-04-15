@@ -1424,6 +1424,82 @@ docker logs --since="1h" jairouter-1 2>&1 | grep -i error | tail -5
 
 ## 故障排查
 
+### Redis 设置 {#redis-setup}
+
+在生产环境中使用 Redis 作为缓存和会话存储：
+
+#### 1. 安装 Redis
+
+```bash
+# Ubuntu/Debian
+apt-get update && apt-get install -y redis-server
+
+# CentOS/RHEL
+yum install -y redis
+```
+
+#### 2. 配置 Redis
+
+编辑 `/etc/redis/redis.conf`：
+
+```conf
+# 绑定地址
+bind 127.0.0.1
+
+# 端口
+port 6379
+
+# 密码认证
+requirepass your-redis-password
+
+# 持久化
+save 900 1
+save 300 10
+save 60 10000
+
+# 内存限制
+maxmemory 1gb
+maxmemory-policy allkeys-lru
+
+# 日志
+loglevel notice
+logfile /var/log/redis/redis-server.log
+```
+
+#### 3. 启动 Redis
+
+```bash
+systemctl start redis
+systemctl enable redis
+```
+
+#### 4. 验证连接
+
+```bash
+redis-cli -a your-redis-password ping
+# 应返回：PONG
+```
+
+#### 5. 应用配置
+
+在 `application-prod.yml` 中配置 Redis：
+
+```yaml
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: your-redis-password
+      database: 0
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+```
+
 ### 1. 常见问题诊断
 
 ```bash

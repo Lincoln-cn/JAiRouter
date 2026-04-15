@@ -1419,6 +1419,82 @@ docker logs --since="1h" jairouter-1 2>&1 | grep -i error | tail -5
 
 ## Troubleshooting
 
+### Redis Setup {#redis-setup}
+
+Using Redis as cache and session storage in production:
+
+#### 1. Install Redis
+
+```bash
+# Ubuntu/Debian
+apt-get update && apt-get install -y redis-server
+
+# CentOS/RHEL
+yum install -y redis
+```
+
+#### 2. Configure Redis
+
+Edit `/etc/redis/redis.conf`:
+
+```conf
+# Bind address
+bind 127.0.0.1
+
+# Port
+port 6379
+
+# Password authentication
+requirepass your-redis-password
+
+# Persistence
+save 900 1
+save 300 10
+save 60 10000
+
+# Memory limit
+maxmemory 1gb
+maxmemory-policy allkeys-lru
+
+# Logging
+loglevel notice
+logfile /var/log/redis/redis-server.log
+```
+
+#### 3. Start Redis
+
+```bash
+systemctl start redis
+systemctl enable redis
+```
+
+#### 4. Verify Connection
+
+```bash
+redis-cli -a your-redis-password ping
+# Should return: PONG
+```
+
+#### 5. Application Configuration
+
+Configure Redis in `application-prod.yml`:
+
+```yaml
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: your-redis-password
+      database: 0
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+```
+
 ### 1. Common Issue Diagnosis
 
 ```bash
