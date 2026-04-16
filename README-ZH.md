@@ -86,22 +86,33 @@ docker pull sodlinken/jairouter:latest
 
 **v1.8.0+ 新增密钥生成工具**，支持自动生成安全的 JWT 密钥和管理员密码：
 
+**方式一：使用 Docker 运行（推荐）**
+
 ```bash
 # 生成 JWT 密钥（Base64 编码，至少 32 字符）
-java -jar jairouter.jar --generate-key
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
 
 # 示例输出：
 # Base64 编码（推荐，适用于 JWT HS256）:
 #   cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg==
-# 使用建议：
-#   export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
+# 密钥强度：非常强
 
-# 生成随机密码（至少 12 字符，包含大小写、数字、特殊字符）
-java -jar jairouter.jar --generate-password
+# 生成随机密码
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
 
 # 示例输出：
 # 16 字符密码：aB3dEfGhIjKlMnOp
 # 密码强度：强
+```
+
+**方式二：使用 OpenSSL（无需 jar 包）**
+
+```bash
+# 生成 JWT 密钥
+openssl rand -base64 32
+
+# 生成随机密码
+openssl rand -base64 24 | tr -dc 'A-Za-z0-9!@#$%^&*' | head -c 16
 ```
 
 ### 3. 运行容器

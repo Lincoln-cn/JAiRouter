@@ -82,24 +82,35 @@ docker pull sodlinken/jairouter:latest
 
 ### 2. Generate Secure Keys (Recommended)
 
-**New in v1.8.0**: Key generation tool for automatic generation of secure JWT secrets and admin passwords:
+**New in v1.8.0**: Key generation tool for automatic generation of secure JWT secrets and admin passwords.
+
+**Option 1: Using Docker (Recommended)**
 
 ```bash
 # Generate JWT secret (Base64 encoded, at least 32 characters)
-java -jar jairouter.jar --generate-key
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
 
 # Example output:
 # Base64 Encoded (recommended for JWT HS256):
 #   cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg==
-# Usage:
-#   export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
+# Key Strength: Very Strong
 
-# Generate random password (at least 12 characters, with uppercase, lowercase, numbers, special characters)
-java -jar jairouter.jar --generate-password
+# Generate random password
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
 
 # Example output:
 # 16 character password: aB3dEfGhIjKlMnOp
 # Password Strength: Strong
+```
+
+**Option 2: Using OpenSSL (No jar needed)**
+
+```bash
+# Generate JWT secret
+openssl rand -base64 32
+
+# Generate random password
+openssl rand -base64 24 | tr -dc 'A-Za-z0-9!@#$%^&*' | head -c 16
 ```
 
 ### 3. Run Container

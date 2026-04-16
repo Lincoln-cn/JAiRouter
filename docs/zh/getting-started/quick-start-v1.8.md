@@ -1,6 +1,6 @@
 # JAiRouter v1.8.1 快速开始指南
 
-> **文档版本**: 1.0.0  
+> **文档版本**: 1.0.1  
 > **最后更新**: 2026-04-16  
 > **适用版本**: v1.8.0+
 
@@ -8,7 +8,7 @@
 
 ## 📋 概述
 
-本指南介绍如何快速部署和启动 JAiRouter v1.8.0+ 版本，重点介绍如何使用新增的密钥生成工具来生成安全的 JWT 密钥和管理员密码。
+本指南介绍如何快速部署和启动 JAiRouter v1.8.0+ 版本，重点介绍如何使用密钥生成工具来生成安全的 JWT 密钥和管理员密码。
 
 ### v1.8.0 新特性
 
@@ -31,77 +31,72 @@ docker pull sodlinken/jairouter:latest
 docker pull sodlinken/jairouter:v1.8.1
 ```
 
-### 步骤 2: 生成安全密钥（推荐）
+### 步骤 2: 生成安全密钥（v1.8.0+ 推荐）
 
-**v1.8.0+ 新增密钥生成工具**，支持自动生成安全的 JWT 密钥和管理员密码：
+**v1.8.0+ 新增密钥生成工具**，支持自动生成安全的 JWT 密钥和管理员密码。
 
-#### 生成 JWT 密钥
-
-```bash
-# 生成 JWT 密钥（Base64 编码，至少 32 字符）
-java -jar jairouter.jar --generate-key
-```
-
-**示例输出**:
-```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                         JAiRouter 密钥生成工具                               ║
-╚══════════════════════════════════════════════════════════════════════════════╝
-
-【JWT 密钥生成】
-Base64 编码（推荐，适用于 JWT HS256）:
-  cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg==
-
-十六进制编码：
-  6347567a636e5277646d3274646b35706331397561325635
-
-使用建议：
-  export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
-  密钥强度：非常强
-```
-
-#### 生成管理员密码
+#### 方式一：使用 Docker 运行密钥生成工具（推荐）
 
 ```bash
-# 生成随机密码（至少 12 字符，包含大小写、数字、特殊字符）
-java -jar jairouter.jar --generate-password
+# 生成 JWT 密钥（Base64 编码）
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
+
+# 示例输出：
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                         JAiRouter 密钥生成工具                               ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+#
+# 【JWT 密钥生成】
+# Base64 编码（推荐，适用于 JWT HS256）:
+#   cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg==
+# 密钥强度：非常强
+# 使用建议：
+#   export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
+
+# 生成管理员密码
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
+
+# 示例输出：
+# 【随机密码生成】
+# 16 字符密码：aB3dEfGhIjKlMnOp
+#   密码强度：强
+#
+# 20 字符密码：xYz123AbC456DeF789Gh
+#   密码强度：非常强
 ```
 
-**示例输出**:
-```
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                         JAiRouter 密钥生成工具                               ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+#### 方式二：使用在线工具生成（无需 jar 包）
 
-【随机密码生成】
-16 字符密码：aB3dEfGhIjKlMnOp
-  密码强度：强
-
-20 字符密码：xYz123AbC456DeF789Gh
-  密码强度：非常强
-
-24 字符密码：pQrStUvWxYz123456789AbCd
-  密码强度：非常强
-
-使用建议：
-  export INITIAL_ADMIN_PASSWORD="<选择的密码>"
-```
-
-#### 生成 API Token（可选）
+如果没有本地 Java 环境，可以使用在线工具或系统命令生成：
 
 ```bash
-# 生成 API Token（用于 API 调用）
-java -jar jairouter.jar --generate-api-token
+# 生成 Base64 编码的 JWT 密钥（至少 32 字节）
+# 使用 OpenSSL
+openssl rand -base64 32
+
+# 或使用 Python
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# 生成随机密码（16 字符，包含字母数字）
+openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 16
+
+# 生成随机密码（包含特殊字符）
+openssl rand -base64 24 | tr -dc 'A-Za-z0-9!@#$%^&*' | head -c 16
 ```
 
-**示例输出**:
-```
-【API Token 生成】
-gpustack_a1b2c3d4e5f6g7h8_i1j2k3l4m5n6o7p8
+#### 方式三：使用本地 Java 环境运行
 
-使用示例：
-  curl -H "X-API-Key: gpustack_a1b2c3d4e5f6g7h8_i1j2k3l4m5n6o7p8" \
-    http://localhost:8080/api/...
+如果你有本地 Java 环境，可以下载 jar 包运行：
+
+```bash
+# 从 GitHub Release 下载 jar 包
+wget https://github.com/Lincoln-cn/JAiRouter/releases/download/v1.8.1/model-router-1.8.1.jar
+
+# 生成 JWT 密钥
+java -jar model-router-1.8.1.jar --generate-key
+
+# 生成管理员密码
+java -jar model-router-1.8.1.jar --generate-password
 ```
 
 ### 步骤 3: 设置环境变量
@@ -237,7 +232,7 @@ v1.8.0+ 版本在启动时会自动检查密钥强度：
 ║  在生产环境使用之前，请务必：                                                ║
 ║  1. 设置强密钥：export JWT_SECRET="<随机生成的 32+ 字节密钥>"                    ║
 ║  2. 设置强密码：export INITIAL_ADMIN_PASSWORD="<复杂密码>"                     ║
-║  3. 使用密钥生成工具：java -jar jairouter.jar --generate-key                 ║
+║  3. 使用密钥生成工具：docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -301,7 +296,11 @@ sudo ufw status
 
 **重新生成密钥**:
 ```bash
-java -jar jairouter.jar --generate-key
+# 使用 Docker 生成
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
+
+# 或使用 OpenSSL
+openssl rand -base64 32
 ```
 
 **设置环境变量**:
@@ -320,5 +319,5 @@ export JWT_SECRET="生成的密钥"
 
 ---
 
-**文档版本**: 1.0.0  
+**文档版本**: 1.0.1  
 **最后更新**: 2026-04-16
