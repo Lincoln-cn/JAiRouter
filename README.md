@@ -73,10 +73,57 @@ Documentation includes:
 
 ## 🚀 Quick Start
 
+### 1. Pull Image
+
+```bash
 # Pull the latest image
 docker pull sodlinken/jairouter:latest
+```
+
+### 2. Generate Secure Keys (Recommended)
+
+**New in v1.8.0**: Key generation tool for automatic generation of secure JWT secrets and admin passwords:
+
+```bash
+# Generate JWT secret (Base64 encoded, at least 32 characters)
+java -jar jairouter.jar --generate-key
+
+# Example output:
+# Base64 Encoded (recommended for JWT HS256):
+#   cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg==
+# Usage:
+#   export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
+
+# Generate random password (at least 12 characters, with uppercase, lowercase, numbers, special characters)
+java -jar jairouter.jar --generate-password
+
+# Example output:
+# 16 character password: aB3dEfGhIjKlMnOp
+# Password Strength: Strong
+```
+
+### 3. Run Container
+
+**Option 1: Using generated keys (Recommended)**
+
+```bash
+# Set environment variables
+export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
+export INITIAL_ADMIN_PASSWORD="MyStr0ng!Pass#2026"
 
 # Run container
+docker run -d \
+  --name jairouter \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e JWT_SECRET="$JWT_SECRET" \
+  -e INITIAL_ADMIN_PASSWORD="$INITIAL_ADMIN_PASSWORD" \
+  sodlinken/jairouter:latest
+```
+
+**Option 2: Using default password (Development only)**
+
+```bash
 docker run -d \
   --name jairouter-dev \
   -p 8080:8080 \
@@ -84,14 +131,21 @@ docker run -d \
   -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
   -e JAVA_OPTS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n" \
   sodlinken/jairouter:dev
+```
 
-3. Access Service
+### 4. Access Service
 
+```bash
 curl http://localhost:8080/admin/login
+```
+
 ![](./docs/capture/login.png)
 
-Username: admin  
-Password: UqfpTm2Zw7ff2BNnZb8AQo8t  
+**Default Login Credentials**:
+- Username: `admin`
+- Password: The value of `INITIAL_ADMIN_PASSWORD` environment variable set at startup
+  - If not set, development environment uses default password (see startup logs)
+  - Production environment must be set, otherwise security warnings will be issued during startup
 
 After successful login, you can enter the web interface to perform service configuration, management, tracing, and performance analysis operations.
 

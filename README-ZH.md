@@ -75,11 +75,57 @@ Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流
 
 ## 🚀 快速开始
 
-```
+### 1. 拉取镜像
+
+```bash
 # 拉取最新镜像
 docker pull sodlinken/jairouter:latest
+```
+
+### 2. 生成安全密钥（推荐）
+
+**v1.8.0+ 新增密钥生成工具**，支持自动生成安全的 JWT 密钥和管理员密码：
+
+```bash
+# 生成 JWT 密钥（Base64 编码，至少 32 字符）
+java -jar jairouter.jar --generate-key
+
+# 示例输出：
+# Base64 编码（推荐，适用于 JWT HS256）:
+#   cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg==
+# 使用建议：
+#   export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
+
+# 生成随机密码（至少 12 字符，包含大小写、数字、特殊字符）
+java -jar jairouter.jar --generate-password
+
+# 示例输出：
+# 16 字符密码：aB3dEfGhIjKlMnOp
+# 密码强度：强
+```
+
+### 3. 运行容器
+
+**方式一：使用生成的密钥（推荐）**
+
+```bash
+# 设置环境变量
+export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
+export INITIAL_ADMIN_PASSWORD="MyStr0ng!Pass#2026"
 
 # 运行容器
+docker run -d \
+  --name jairouter \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e JWT_SECRET="$JWT_SECRET" \
+  -e INITIAL_ADMIN_PASSWORD="$INITIAL_ADMIN_PASSWORD" \
+  sodlinken/jairouter:latest
+```
+
+**方式二：使用默认密码（仅限开发环境）**
+
+```bash
 docker run -d \
   --name jairouter-dev \
   -p 8080:8080 \
@@ -89,15 +135,19 @@ docker run -d \
   sodlinken/jairouter:dev
 ```
 
-3. 访问服务
+### 4. 访问服务
 
 ```bash
 curl http://localhost:8080/admin/login
 ```
+
 ![](./docs/capture/login.png)
 
-用户名:admin
-密码：UqfpTm2Zw7ff2BNnZb8AQo8t
+**默认登录凭证**：
+- 用户名：`admin`
+- 密码：启动时设置的 `INITIAL_ADMIN_PASSWORD` 环境变量值
+  - 如果未设置，开发环境使用默认密码（见启动日志）
+  - 生产环境必须设置，否则启动时会发出安全警告
 
 登录成功后，即可进入 Web 界面进行服务配置、管理、追踪与性能分析等操作。
 
