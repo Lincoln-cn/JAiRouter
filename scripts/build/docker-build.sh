@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # JAiRouter Docker Build Script
-# 用法：./scripts/build/docker-build.sh [镜像类型]
-# 镜像类型：standard（标准版）, optimized（优化版，推荐）
+# Usage: ./scripts/build/docker-build.sh [Image type]
+# Image type：standard（standard）, optimized（optimized，推荐）
 
 set -e
 
@@ -18,26 +18,26 @@ PROJECT_NAME="model-router"
 IMAGE_NAME="sodlinken/jairouter"
 
 # 参数解析
-IMAGE_TYPE=${1:-optimized}  # 默认使用优化版
+IMAGE_TYPE=${1:-optimized}  # 默认使用optimized
 
-# 显示使用说明
+# Show usage
 show_usage() {
-    echo "用法：$0 [镜像类型]"
+    echo "Usage: $0 [Image type]"
     echo ""
-    echo "镜像类型:"
-    echo "  optimized   优化版镜像（推荐，281MB）"
-    echo "  standard    标准版镜像（440MB）"
+    echo "Image type:"
+    echo "  optimized   optimized镜像（推荐，281MB）"
+    echo "  standard    standard镜像（440MB）"
     echo ""
     echo "示例:"
-    echo "  $0 optimized    # 构建优化版镜像"
-    echo "  $0 standard     # 构建标准版镜像"
-    echo "  $0              # 默认构建优化版镜像"
+    echo "  $0 optimized    # 构建optimized镜像"
+    echo "  $0 standard     # 构建standard镜像"
+    echo "  $0              # 默认构建optimized镜像"
     exit 1
 }
 
-# 验证镜像类型参数
+# 验证Image type参数
 if [[ ! "$IMAGE_TYPE" =~ ^(optimized|standard)$ ]]; then
-    echo -e "${RED}无效的镜像类型：$IMAGE_TYPE${NC}"
+    echo -e "${RED}无效的Image type：$IMAGE_TYPE${NC}"
     show_usage
 fi
 
@@ -63,7 +63,7 @@ echo -e "${GREEN}JAR file built successfully${NC}"
 echo -e "${YELLOW}Step 2: Building Docker image...${NC}"
 
 if [[ "$IMAGE_TYPE" == "optimized" ]]; then
-    # 构建优化版镜像（使用 Dockerfile.optimized）
+    # 构建optimized镜像（使用 Dockerfile.optimized）
     echo -e "${BLUE}Building optimized image (281MB, recommended) ⭐${NC}"
     docker build -f Dockerfile.optimized \
         -t "${IMAGE_NAME}:${VERSION}-optimized" \
@@ -79,7 +79,7 @@ if [[ "$IMAGE_TYPE" == "optimized" ]]; then
         exit 1
     fi
 else
-    # 构建标准版镜像（使用 Dockerfile）
+    # 构建standard镜像（使用 Dockerfile）
     echo -e "${BLUE}Building standard image (440MB)${NC}"
     docker build \
         -t "${IMAGE_NAME}:${VERSION}" \
@@ -108,5 +108,5 @@ if [[ "$IMAGE_TYPE" == "optimized" ]]; then
     echo -e "${YELLOW}=== 镜像对比 ===${NC}"
     docker images "${IMAGE_NAME}" --format "table {{.Tag}}\t{{.Size}}" | grep -E "optimized|latest"
     echo ""
-    echo -e "${GREEN}优化版镜像比标准版小约 36%（159MB）⭐${NC}"
+    echo -e "${GREEN}optimized镜像比standard小约 36%（159MB）⭐${NC}"
 fi

@@ -25,22 +25,33 @@ JAiRouter provides a complete Dockerized deployment solution, supporting multi-e
 
 ### Image Information
 
-| Image Type | Tags | Size | Purpose |
-|------------|------|------|---------|
-| **Production Image** | `latest`, `v1.0.0` | ~200MB | Production environment |
-| **Development Image** | [dev](file://d:\IdeaProjects\model-router\Dockerfile.dev), `v1.0.0-dev` | ~220MB | Development and debugging |
-| **China Optimized Image** | [china](file://d:\IdeaProjects\model-router\Dockerfile.china), `v1.0.0-china` | ~200MB | Optimized for Chinese users |
+| Image Type | Tags | Size | Purpose | Dockerfile |
+|------------|------|------|----------|------------|
+| **Production (Optimized)** | `latest-optimized`, `v1.7.0-optimized` | **~281MB** | Production (Recommended) | `Dockerfile.optimized` |
+| **Production (Standard)** | `latest`, `v1.7.0` | ~440MB | Production | `Dockerfile` |
+| **Development** | `dev`, `v1.7.0-dev` | ~220MB | Development | `Dockerfile.dev` |
+| **China Optimized** | `china`, `v1.7.0-china` | ~440MB | China Users | `Dockerfile.china` |
+
+**Optimized Image Features**:
+- ✅ Uses `eclipse-temurin:17-jre-alpine` base image (~40% smaller than standard JRE)
+- ✅ Multi-stage build + Spring Boot layertools layered extraction
+- ✅ Image size reduced from 440MB to **281MB** (36% reduction)
+- ✅ Maintains full functionality and non-root user security practices
 
 ## Quick Start
 
 ### 1. Pull Images
 
 ```bash
-# Pull the latest production image
+# Pull the latest production image (Standard)
 docker pull sodlinken/jairouter:latest
 
+# Pull the latest production image (Optimized, Recommended) ⭐
+docker pull sodlinken/jairouter:latest-optimized
+
 # Pull a specific version
-docker pull sodlinken/jairouter:v1.0.0
+docker pull sodlinken/jairouter:v1.7.0
+docker pull sodlinken/jairouter:v1.7.0-optimized
 
 # For Chinese users (using Alibaba Cloud mirror)
 docker pull registry.cn-hangzhou.aliyuncs.com/sodlinken/jairouter:latest
@@ -52,9 +63,30 @@ docker images | grep sodlinken/jairouter
 ### 2. Basic Run
 
 ```bash
-# Simplest way to run
+# [Recommended] Optimized image - Production configuration
 docker run -d \
   --name jairouter \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e JAIROUTER_SECURITY_ENABLED=true \
+  -e JAIROUTER_SECURITY_JWT_ENABLED=true \
+  -e JAIROUTER_SECURITY_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -e JAIROUTER_SECURITY_API_KEY_ENABLED=true \
+  -p 8080:8080 \
+  sodlinken/jairouter:latest-optimized
+
+# Standard image - Development configuration
+docker run -d \
+  --name jairouter \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
+  -p 8080:8080 \
+  sodlinken/jairouter:latest
+
+# Development environment - JWT disabled
+docker run -d \
+  --name jairouter \
+  -e SPRING_PROFILES_ACTIVE=dev \
+  -e JAIROUTER_SECURITY_JWT_ENABLED=false \
   -p 8080:8080 \
   sodlinken/jairouter:latest
 
@@ -68,10 +100,14 @@ curl http://localhost:8080/actuator/health
 # Run with configuration file mounted
 docker run -d \
   --name jairouter \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e JAIROUTER_SECURITY_ENABLED=true \
+  -e JAIROUTER_SECURITY_JWT_ENABLED=true \
+  -e JAIROUTER_SECURITY_JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
   -p 8080:8080 \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/logs:/app/logs \
-  sodlinken/jairouter:latest
+  sodlinken/jairouter:latest-optimized
 ```
 
 ## Image Building

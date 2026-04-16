@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # JAiRouter Docker 运行脚本
-# 用法：./scripts/build/docker-run.sh [环境] [版本] [镜像类型]
-# 镜像类型：standard（标准版）, optimized（优化版，推荐）
+# Usage: ./scripts/build/docker-run.sh [Environment] [Version] [Image type]
+# Image type：standard（standard）, optimized（optimized，推荐）
 
 set -e
 
@@ -33,47 +33,47 @@ log_error() {
 # 参数解析
 ENVIRONMENT=${1:-prod}
 VERSION=${2:-latest}
-IMAGE_TYPE=${3:-optimized}  # 默认使用优化版
+IMAGE_TYPE=${3:-optimized}  # 默认使用optimized
 
-# 显示使用说明
+# Show usage
 show_usage() {
-    echo "用法：$0 [环境] [版本] [镜像类型]"
+    echo "Usage: $0 [Environment] [Version] [Image type]"
     echo ""
-    echo "环境:"
-    echo "  prod  生产环境（默认）"
-    echo "  dev   开发环境"
+    echo "Environment:"
+    echo "  prod  生产Environment（默认）"
+    echo "  dev   开发Environment"
     echo ""
-    echo "版本:"
-    echo "  latest      最新版本（默认）"
-    echo "  v1.7.0      指定版本"
+    echo "Version:"
+    echo "  latest      最新Version（默认）"
+    echo "  v1.7.0      指定Version"
     echo ""
-    echo "镜像类型:"
-    echo "  optimized   优化版镜像（推荐，281MB）"
-    echo "  standard    标准版镜像（440MB）"
+    echo "Image type:"
+    echo "  optimized   optimized镜像（推荐，281MB）"
+    echo "  standard    standard镜像（440MB）"
     echo ""
     echo "示例:"
-    echo "  $0 prod latest optimized    # 使用优化版生产镜像"
-    echo "  $0 dev latest standard      # 使用标准版开发镜像"
-    echo "  $0 prod v1.7.0 optimized    # 使用优化版 v1.7.0 生产镜像"
+    echo "  $0 prod latest optimized    # 使用optimized生产镜像"
+    echo "  $0 dev latest standard      # 使用standard开发镜像"
+    echo "  $0 prod v1.7.0 optimized    # 使用optimized v1.7.0 生产镜像"
     exit 1
 }
 
-# 验证环境参数
+# 验证Environment参数
 if [[ ! "$ENVIRONMENT" =~ ^(prod|dev)$ ]]; then
-    log_error "无效的环境参数：$ENVIRONMENT. 支持的环境：prod, dev"
+    log_error "无效的Environment参数：$ENVIRONMENT. 支持的Environment：prod, dev"
     show_usage
 fi
 
-# 验证镜像类型参数
+# 验证Image type参数
 if [[ ! "$IMAGE_TYPE" =~ ^(optimized|standard)$ ]]; then
-    log_error "无效的镜像类型：$IMAGE_TYPE. 支持的类型：optimized, standard"
+    log_error "无效的Image type：$IMAGE_TYPE. Supported types：optimized, standard"
     show_usage
 fi
 
-log_info "启动 JAiRouter Docker 容器"
-log_info "环境：$ENVIRONMENT"
-log_info "版本：$VERSION"
-log_info "镜像类型：$IMAGE_TYPE"
+log_info "Starting JAiRouter Docker container"
+log_info "Environment：$ENVIRONMENT"
+log_info "Version：$VERSION"
+log_info "Image type：$IMAGE_TYPE"
 
 # 检查 Docker 是否安装
 if ! command -v docker &> /dev/null; then
@@ -81,28 +81,28 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# 停止现有容器（如果存在）
+# Stopping existing container（如果存在）
 CONTAINER_NAME="jairouter-${ENVIRONMENT}"
 if docker ps -a --format 'table {{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    log_info "停止现有容器：$CONTAINER_NAME"
+    log_info "Stopping existing container：$CONTAINER_NAME"
     docker stop $CONTAINER_NAME 2>/dev/null || true
     docker rm $CONTAINER_NAME 2>/dev/null || true
 fi
 
-# 创建必要的目录
+# Creating necessary directories
 mkdir -p logs config config-store data
 
-# 设置镜像标签和配置
+# Setting image tag and configuration
 if [[ "$IMAGE_TYPE" == "optimized" ]]; then
     IMAGE_TAG="sodlinken/jairouter:${VERSION}-optimized"
-    log_info "使用优化版镜像（281MB，推荐）⭐"
+    log_info "使用optimized镜像（281MB，推荐）⭐"
 else
     if [[ "$ENVIRONMENT" == "dev" ]]; then
         IMAGE_TAG="sodlinken/jairouter:${VERSION}-dev"
     else
         IMAGE_TAG="sodlinken/jairouter:${VERSION}"
     fi
-    log_info "使用标准版镜像（440MB）"
+    log_info "使用standard镜像（440MB）"
 fi
 
 # 设置端口和 JVM 参数
@@ -113,22 +113,22 @@ if [[ "$ENVIRONMENT" == "dev" ]]; then
 else
     PORTS="-p 8080:8080"
     JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
-    # 生产环境需要配置 JWT 密钥
-    log_warning "生产环境请确保设置 JAIROUTER_SECURITY_JWT_SECRET 环境变量"
+    # 生产Environment需要配置 JWT 密钥
+    log_warning "生产Environment请确保设置 JAIROUTER_SECURITY_JWT_SECRET Environment变量"
     SECURITY_CONFIG="-e JAIROUTER_SECURITY_ENABLED=true -e JAIROUTER_SECURITY_JWT_ENABLED=true"
 fi
 
-# 检查镜像是否存在
+# Checking if image exists
 if ! docker images --format 'table {{.Repository}}:{{.Tag}}' | grep -q "^${IMAGE_TAG}$"; then
     log_error "Docker 镜像不存在：$IMAGE_TAG"
     log_info "请先运行构建脚本：./scripts/build/docker-build.sh"
-    log_info "或使用优化版构建脚本：./scripts/build/docker-build.sh optimized"
+    log_info "或使用optimized构建脚本：./scripts/build/docker-build.sh optimized"
     exit 1
 fi
 
 # 运行容器
-log_info "启动容器：$CONTAINER_NAME"
-log_info "使用镜像：$IMAGE_TAG"
+log_info "Starting container：$CONTAINER_NAME"
+log_info "Using image：$IMAGE_TAG"
 
 docker run -d \
     --name $CONTAINER_NAME \
@@ -148,52 +148,52 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-log_success "容器启动成功：$CONTAINER_NAME"
+log_success "Container started successfully：$CONTAINER_NAME"
 
-# 等待应用启动
-log_info "等待应用启动..."
+# Waiting for application to start
+log_info "Waiting for application to start..."
 sleep 10
 
-# 显示容器状态
+# Showing container status
 log_info "容器状态:"
 docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # 显示日志
-log_info "应用日志 (最近 20 行):"
+log_info "Application logs (最近 20 行):"
 docker logs --tail 20 $CONTAINER_NAME
 
-# 健康检查
-log_info "执行健康检查..."
+# Health check
+log_info "Performing health check..."
 sleep 20
 
 for i in {1..6}; do
     if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
-        log_success "应用启动成功，健康检查通过"
-        log_info "访问地址:"
+        log_success "Application started successfully, health check passed"
+        log_info "Access URLs:"
         log_info "  - 应用主页：http://localhost:8080"
-        log_info "  - 管理后台：http://localhost:8080/admin"
-        log_info "  - API 文档：http://localhost:8080/swagger-ui/index.html"
-        log_info "  - 健康检查：http://localhost:8080/actuator/health"
+        log_info "  - Admin console：http://localhost:8080/admin"
+        log_info "  - API documentation：http://localhost:8080/swagger-ui/index.html"
+        log_info "  - Health check：http://localhost:8080/actuator/health"
         if [[ "$ENVIRONMENT" == "dev" ]]; then
-            log_info "  - 调试端口：5005"
+            log_info "  - Debug port：5005"
         fi
         break
     else
         if [ $i -eq 6 ]; then
-            log_warning "健康检查失败，应用可能仍在启动中"
-            log_info "请检查容器日志：docker logs $CONTAINER_NAME"
+            log_warning "Health check失败，应用可能仍在启动中"
+            log_info "Please check container logs：docker logs $CONTAINER_NAME"
         else
-            log_info "健康检查失败，等待重试... ($i/6)"
+            log_info "Health check失败，等待重试... ($i/6)"
             sleep 10
         fi
     fi
 done
 
-log_info "容器管理命令:"
-log_info "  - 查看日志：docker logs -f $CONTAINER_NAME"
-log_info "  - 停止容器：docker stop $CONTAINER_NAME"
-log_info "  - 重启容器：docker restart $CONTAINER_NAME"
-log_info "  - 进入容器：docker exec -it $CONTAINER_NAME sh"
-log_info "  - 查看镜像大小：docker images $IMAGE_TAG"
+log_info "Container management commands:"
+log_info "  - View logs：docker logs -f $CONTAINER_NAME"
+log_info "  - Stop container：docker stop $CONTAINER_NAME"
+log_info "  - Restart container：docker restart $CONTAINER_NAME"
+log_info "  - Enter container：docker exec -it $CONTAINER_NAME sh"
+log_info "  - Check image size：docker images $IMAGE_TAG"
 
-log_success "Docker 运行脚本执行完成"
+log_success "Docker Run script completed"
