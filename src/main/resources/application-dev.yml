@@ -137,7 +137,7 @@ jairouter:
     jwt:
       enabled: true
       jwt-header: "Jairouter_Token"
-      secret: "your-secret-key-with-at-least-32-characters-for-development"
+      secret: "${DEV_JWT_SECRET:your-dev-secret-key-with-at-least-32-characters}"
       algorithm: "HS256"
       expiration-minutes: 60
       refresh-expiration-days: 7
@@ -145,11 +145,11 @@ jairouter:
       # 开发环境用户账户
       accounts:
         - username: "admin"
-          password: "{noop}UqfpTm2Zw7ff2BNnZb8AQo8t"
+          password: "{noop}${DEV_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}"
           roles: [ "ADMIN", "USER" ]
           enabled: true
         - username: "user"
-          password: "{noop}userpassword123"
+          password: "{noop}${DEV_USER_PASSWORD:userpassword123}"
           roles: [ "USER" ]
           enabled: true
 
