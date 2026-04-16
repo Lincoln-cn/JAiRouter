@@ -315,6 +315,6 @@ All updates maintain backward compatibility:
 
 ## Next Steps
 
-- [API Reference](../api-reference/) - Detailed API documentation
-- [Configuration Guide](../configuration/) - Complete configuration guide
-- [Troubleshooting](../troubleshooting/) - Common issues and solutions
+- [API Reference](../api-reference/index.md) - Detailed API documentation
+- [Configuration Guide](../configuration/index.md) - Complete configuration guide
+- [Troubleshooting](../troubleshooting/index.md) - Common issues and solutions

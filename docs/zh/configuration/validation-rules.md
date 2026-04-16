@@ -385,9 +385,7 @@ export SERVER_TOMCAT_THREADS_MAX=400
 
 ## 相关文件
 
-- [ConfigurationValidator.java](../src/main/java/org/unreal/modelrouter/config/validation/ConfigurationValidator.java) - 验证器实现
-- [v1.8.0-release-notes.md](./v1.8.0-release-notes.md) - v1.8.0 发布说明
-- [application.yml](../src/main/resources/application.yml) - 应用配置文件
+- [应用配置](application-config.md) - 应用配置文件说明
 
 ---
 

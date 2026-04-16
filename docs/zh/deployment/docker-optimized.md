@@ -351,10 +351,4 @@ docker exec jairouter java -XX:+PrintFlagsFinal -version
 - **[生产环境部署](production.md)** - 生产环境配置最佳实践
 - **[监控指南](../monitoring/index.md)** - 设置监控和告警
 
-## 相关文档
-
-- [JLink 技术说明](#5-jlink-定制-jre实验性) - JLink 优化方案详细解释
-- [构建脚本使用](../../scripts/build/README.md) - 构建脚本完整说明
-
-<!-- 版本信息 -->
 > **文档版本**: 1.0.0

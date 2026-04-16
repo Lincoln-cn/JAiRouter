@@ -312,10 +312,8 @@ export JWT_SECRET="生成的密钥"
 
 ## 📚 相关文档
 
-- [Docker 部署完整指南](./docker.md)
+- [Docker 部署完整指南](../deployment/docker.md)
 - [配置验证规则](../configuration/validation-rules.md)
-- [v1.8.0 发布说明](../reference/v1.8.0-release-notes.md)
-- [v1.8.1 发布说明](../reference/v1.8.1-release-notes.md)
 
 ---
 

@@ -351,10 +351,3 @@ docker exec jairouter java -XX:+PrintFlagsFinal -version
 - **[Production Deployment](production.md)** - Production environment best practices
 - **[Monitoring Guide](../monitoring/index.md)** - Setup monitoring and alerts
 
-## Related Documentation
-
-- [JLink Technical Notes](#5-jlink-custom-jre-experimental) - JLink optimization details
-- [Build Script Usage](../../scripts/build/README.md) - Build script complete guide
-
-<!-- Version Info -->
-> **Doc Version**: 1.0.0
