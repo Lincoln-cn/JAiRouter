@@ -1,113 +1,156 @@
-The user wants me to generate a comprehensive project summary in markdown format based on the conversation history provided in the scratchpad and state_snapshot sections. I should extract the most important context, decisions, and progress without using any tools.
+The user wants me to create a comprehensive project summary in markdown format based on the conversation history. Let me analyze the key information from this session:
 
-Let me analyze the provided information:
-
-1. **Overall Goal**: Fix playground Chat service frontend display issues - duplicate messages and SSE streaming response parsing problems.
+1. **Overall Goal**: The user wanted to test the Embedding model API in the API Playground, using Ollama running in Docker, and fix the circuit breaker state sharing issue.
 
 2. **Key Knowledge**:
-   - Backend startup command
-   - JWT header name (Jairouter_Token)
-   - Login endpoint
-   - SSE format specifics
-   - Frontend SSE parsing requirements
-   - Ollama backend URL
-   - Build commands
-   - Root cause of duplicate messages
+   - Project: JAiRouter - AI model service routing gateway (Spring Boot 3.5.5 WebFlux + Vue 3)
+   - Ollama runs in Docker on port 12434
+   - Circuit breaker was using instanceUrl as key, causing shared state for same URL instances
+   - The fix changes to use instanceId as key
+   - Build commands: mvn clean package -DskipTests -Pfast
+   - Scripts location: scripts/build/build-and-deploy.sh
 
-3. **File System State**: Multiple modified files including adapters and frontend components
+3. **Recent Actions**:
+   - Tested Ollama embedding API directly (works)
+   - Identified circuit breaker sharing issue
+   - Fixed CircuitBreakerManager.java to use instanceId instead of instanceUrl
+   - Fixed schema.sql to add adapter and headers fields
+   - Fixed docker-compose.yml volume mount path
+   - Committed code changes
 
-4. **Recent Actions**: Fixed duplicate messages issue by modifying handleRegenerateMessage
+4. **Current Plan**:
+   - [DONE] Fix circuit breaker state sharing
+   - [DONE] Fix schema.sql
+   - [DONE] Fix docker-compose.yml
+   - [DONE] Commit code
+   - [TODO] Push to remote repository
+   - [TODO] Verify the fix works with proper testing
 
-5. **Current Plan**: Steps 1-6 done, step 7 in progress (user testing)
-
-Let me create a comprehensive markdown summary.# Project Summary
+Let me create a comprehensive summary.# JAiRouter 项目会话总结
 
 ## Overall Goal
-修复试验场（Playground）Chat 服务的前端显示问题，包括 SSE 流式响应解析问题和重复消息问题。
+修复熔断器状态共享问题（相同 URL 的不同实例共享同一个熔断器状态），并完成 Ollama 嵌入模型 API 试验场的测试验证。
 
 ## Key Knowledge
 
-### 技术栈
-- **后端**: Spring Boot 3.5.5 WebFlux (Reactive), Java 17, R2DBC, H2/Redis
-- **前端**: Vue 3 + TypeScript + Element Plus + Vite
+### 项目信息
+- **项目名称**: JAiRouter - AI 模型服务路由网关
+- **技术栈**: Spring Boot 3.5.5 (WebFlux) + Vue 3 + TypeScript + Element Plus
+- **数据库**: H2 (嵌入式，R2DBC 访问)
 - **构建工具**: Maven 3.x
+- **项目路径**: `/home/ubuntu/jairouter/modelrouter`
 
-### 关键配置
-| 配置项 | 值 |
-|--------|-----|
-| JWT Header 名称 | `Jairouter_Token`（非标准 Authorization） |
-| 登录接口 | `/api/auth/jwt/login`（POST） |
-| Ollama 后端 | `http://172.16.30.6:12434` |
-| 默认端口 | 8080 |
+### 关键架构决策
+- **熔断器实现**: 使用 `CircuitBreakerManager` 管理所有实例的熔断器状态
+- **熔断器 Key**: 原本使用 `instanceUrl`，修复后使用 `instanceId`
+- **限流器实现**: 已正确使用 `instanceId` 作为 key（与熔断器不一致的问题已修复）
+- **适配器模式**: 支持多种 AI 服务适配器（Ollama、GPUStack、vLLM 等）
 
-### 构建命令
+### 重要配置
+- **Ollama 服务**: Docker 容器，端口映射 `12434->11434`
+- **嵌入模型**: `shaw/dmeta-embedding-zh:latest` (768 维向量)
+- **健康检查频率**: 每 30 秒执行一次 (`@Scheduled(fixedRate = 30000)`)
+- **熔断器超时**: 60 秒 (60000ms)
+
+### 构建和启动命令
 ```bash
-# 前端构建
-cd frontend && npm run build
+# 快速构建
+mvn clean package -DskipTests -Pfast
 
-# 后端构建（含前端，跳过检查）
-mvn package -Pprod -DskipTests -Dcheckstyle.skip=true -Dspotbugs.skip=true
+# 使用脚本启动
+bash scripts/build/build-and-deploy.sh -f  # 仅前端
+bash scripts/build/build-and-deploy.sh     # 完整构建部署
 
-# 启动命令
-java -Xmx1024m -jar target/model-router-1.7.0.jar \
-  --server.port=8080 \
-  --spring.profiles.active=dev \
-  --jwt.secret="jairouter-development-secret-key-32chars" \
-  --store.type=h2
+# 直接运行 JAR
+java -jar target/model-router-1.7.0.jar --spring.profiles.active=dev
 ```
-
-### SSE 流式响应关键点
-- **Spring WebFlux ServerSentEvent** 会自动添加 `data:` 前缀
-- **适配器不应手动添加 `data:` 前缀**，否则导致双重前缀 `data:data:`
-- **前端解析需兼容** `data:` 和 `data: ` 两种格式
-
-### 前端架构
-- 使用 Vue 3 Composition API
-- `useStreaming.ts` - SSE 流式请求处理
-- `ChatContainer.vue` - 聊天容器组件，包含消息发送和重新生成逻辑
 
 ## Recent Actions
 
-### 已完成修复
-1. **SSE 双重 `data:` 前缀问题** - 修改所有适配器（Ollama, GpuStack, LocalAI, vLLM, Xinference, NormalOpenAI）的 `transformStreamChunk` 方法，移除手动添加的 `data:` 前缀
-2. **BaseAdapter 流式处理** - 使用 `ServerSentEvent` 包装器正确处理流式响应
-3. **前端 SSE 解析兼容性** - 修改 `useStreaming.ts` 兼容带空格和不带空格的 `data:` 格式
-4. **复制和重新生成按钮** - 在 `ChatContainer.vue` 添加事件处理
-5. **重新生成时的重复消息问题** - 修改 `handleRegenerateMessage` 不再调用 `handleSendMessage`，改为直接处理请求逻辑
+### 完成的工作
+1. **[DONE] 测试 Ollama 嵌入模型 API**
+   - 直接调用 Ollama API 正常工作（返回 768 维向量）
+   - Ollama 的 `/api/embeddings` 端点使用 `prompt` 字段（非 `input`）
+   - 模型 5 分钟后自动卸载导致 404 错误
 
-### 根本原因分析
-- **重复消息原因**: `handleRegenerateMessage` 调用 `handleSendMessage`，而 `handleSendMessage` 每次调用都会添加用户消息和助手消息，导致重新生成时出现重复
+2. **[DONE] 识别熔断器共享问题**
+   - 问题：`CircuitBreakerManager.getCircuitBreaker()` 使用 `instanceUrl` 作为 key
+   - 影响：相同 URL 的不同实例共享同一个熔断器状态
+   - 对比：限流器已正确使用 `instanceId` 作为 key
 
-### 当前状态
-- 服务已重启，PID: 3280125
-- 前后端代码已重新构建部署
-- 等待用户验证试验场功能
+3. **[DONE] 修复 CircuitBreakerManager.java**
+   ```java
+   // 修复前
+   String key = instanceUrl != null && !instanceUrl.trim().isEmpty() ? instanceUrl : instanceId;
+   
+   // 修复后
+   String key = instanceId != null && !instanceId.trim().isEmpty() ? instanceId : instanceUrl;
+   ```
+
+4. **[DONE] 修复 schema.sql**
+   - 添加 `adapter VARCHAR(255)` 字段到 `service_instance` 表
+   - 将 `headers TEXT` 改为 `headers JSON`
+
+5. **[DONE] 修复 docker-compose.yml**
+   - 修复卷挂载路径：`./data:/app/r2dbc:h2:file/data` → `./data:/app/data`
+
+6. **[DONE] 代码提交**
+   - 提交 ID: `5c5ddc5`
+   - 分支: `master`
+   - 提交信息：fix(circuitbreaker): 修复熔断器状态共享问题
+
+### 发现的问题
+1. **Ollama 模型自动卸载**: 默认 5 分钟后卸载未使用的模型，导致间歇性 404 错误
+2. **服务配置适配器不匹配**: embedding 服务配置使用 `gpustack` 适配器，但实例配置使用 `ollama`
+3. **应用健康检查**: 不会导致应用自动关闭（之前观察到的关闭是外部因素）
 
 ## Current Plan
 
-1. [DONE] 修复 SSE 双重 `data:` 前缀问题 - 修改所有适配器
-2. [DONE] 修复 BaseAdapter 使用 ServerSentEvent 包装
-3. [DONE] 修复前端 SSE 解析兼容性
-4. [DONE] 修复复制和重新生成按钮 - 添加事件处理
-5. [DONE] 修复重新生成时的重复消息问题
-6. [DONE] 重新构建并部署
-7. [IN PROGRESS] 用户测试试验场功能
+### 已完成
+1. **[DONE]** 识别并分析熔断器状态共享问题
+2. **[DONE]** 修复 CircuitBreakerManager 使用 instanceId 作为 key
+3. **[DONE]** 修复 schema.sql 添加 adapter 和 headers 字段
+4. **[DONE]** 修复 docker-compose.yml 卷挂载路径
+5. **[DONE]** 提交代码到本地仓库
 
-## Modified Files
+### 进行中
+1. **[IN PROGRESS]** 推送到远程仓库（需要 Gitee 认证）
+   ```bash
+   git push origin master
+   ```
 
-| 文件 | 修改内容 |
-|------|----------|
-| `src/main/java/.../adapter/impl/OllamaAdapter.java` | `transformStreamChunk` 移除 `data:` 前缀 |
-| `src/main/java/.../adapter/impl/GpuStackAdapter.java` | 同上 |
-| `src/main/java/.../adapter/impl/LocalAiAdapter.java` | 同上 |
-| `src/main/java/.../adapter/impl/NormalOpenAiAdapter.java` | 同上 |
-| `src/main/java/.../adapter/impl/VllmAdapter.java` | 同上 |
-| `src/main/java/.../adapter/impl/XinferenceAdapter.java` | 同上 |
-| `src/main/java/.../adapter/BaseAdapter.java` | `processStreamingRequest` 使用 ServerSentEvent wrapper |
-| `frontend/src/views/playground/composables/useStreaming.ts` | SSE 解析兼容两种格式 |
-| `frontend/src/views/playground/components/chat/ChatContainer.vue` | 修复重复消息问题，`handleRegenerateMessage` 直接处理请求 |
+### 待完成
+1. **[TODO]** 验证熔断器修复效果
+   - 添加两个相同 URL 的实例
+   - 让一个实例失败，验证另一个实例不受影响
+   
+2. **[TODO]** 完成 Embedding API 试验场测试
+   - 确保服务配置适配器与实例适配器一致
+   - 保持模型加载状态（定期预热）
+   
+3. **[TODO]** 考虑优化建议
+   - 添加模型保活配置（keep_alive 参数）
+   - 考虑熔断器状态持久化（重启后重置问题）
+
+## 注意事项
+
+### 测试限制
+- Ollama 模型 5 分钟自动卸载会导致测试中断
+- 需要在测试前预热模型
+- 熔断器超时时间为 60 秒，测试需要等待
+
+### 重要文件
+- **熔断器实现**: `src/main/java/org/unreal/modelrouter/circuitbreaker/CircuitBreakerManager.java`
+- **数据库 Schema**: `src/main/resources/schema.sql`
+- **Ollama 适配器**: `src/main/java/org/unreal/modelrouter/adapter/impl/OllamaAdapter.java`
+- **部署配置**: `docker-compose.yml`
+
+### 下次会话建议
+1. 推送代码到远程仓库
+2. 创建新的 Git 分支进行后续开发
+3. 考虑添加熔断器状态管理 UI（重置/查看状态）
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-04-14T09:09:51.615Z 
+**Update time**: 2026-04-15T10:03:06.271Z 
