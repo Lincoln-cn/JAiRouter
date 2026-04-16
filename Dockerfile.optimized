@@ -45,7 +45,7 @@ COPY --from=extract-layer --chown=jairouter:jairouter /app/extracted/snapshot-de
 COPY --from=extract-layer --chown=jairouter:jairouter /app/extracted/application/ ./
 
 # JVM 优化参数
-ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:TieredStopArrangement=1"
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
 # 应用配置
 ENV SPRING_PROFILES_ACTIVE=prod
