@@ -1,9 +1,9 @@
 # Docker Image Optimization Guide
 
 <!-- Version Info -->
-> **Doc Version**: 1.0.0
+> **Doc Version**: 1.1.0
 > **Last Updated**: 2026-04-16
-> **Git Commit**: 803dcd0
+> **Git Commit**: f58f0e0
 > **Author**: Lincoln
 <!-- /Version Info -->
 
@@ -11,11 +11,18 @@
 
 JAiRouter provides an optimized Docker image build solution. Through multi-stage builds and Alpine base images, the image size is reduced from **440MB to 281MB** (36% reduction).
 
+### JLink Optimization Note
+
+> **Note**: The JLink solution attempts to use `jlink` tool for custom JRE modules, but due to Spring Boot 3.x module compatibility issues, it ultimately uses Alpine JRE + multi-stage build + JVM parameter optimization.
+> 
+> The JLink image (`Dockerfile.jlink`) has the same size as the optimized version (281MB) and is provided as an experimental option for users with special requirements.
+
 ## Image Comparison
 
 | Image Type | Dockerfile | Size | Base Image | Build Method | Recommendation |
 |------------|-----------|------|------------|--------------|----------------|
 | **Optimized** | `Dockerfile.optimized` | **281MB** | `eclipse-temurin:17-jre-alpine` | Multi-stage + layertools | ⭐⭐⭐⭐⭐ |
+| **JLink** | `Dockerfile.jlink` | **281MB** | `eclipse-temurin:17-jre-alpine` | Multi-stage + JVM optimization | 🔬Experimental |
 | Standard | `Dockerfile` | 440MB | `eclipse-temurin:17-jre` | Single-stage | ⭐⭐⭐ |
 
 ## Optimization Techniques
@@ -84,26 +91,57 @@ java -Djarmode=layertools -jar app.jar extract --destination extracted
 JVM parameters optimized for container environments:
 
 ```bash
-# Optimized version
--Xms256m -Xmx512m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
+# Optimized/JLink version
+-Xms128m -Xmx256m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 
 # Standard version
 -Xms512m -Xmx1024m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 ```
 
 **Optimization Points**:
-- Smaller initial heap memory (256MB vs 512MB)
-- Smaller max heap memory (512MB vs 1024MB)
+- Smaller initial heap memory (128MB vs 512MB)
+- Smaller max heap memory (256MB vs 1024MB)
 - Container awareness enabled (`UseContainerSupport`)
 - Percentage-based memory limit (`MaxRAMPercentage`)
+
+### 5. JLink Custom JRE (Experimental)
+
+Attempts to use `jlink` tool to create custom JRE:
+
+```dockerfile
+# Stage 2: Create jlink custom JRE
+FROM eclipse-temurin:17-jdk-alpine AS jlink-create
+
+RUN /opt/java/openjdk/bin/jlink \
+    --add-modules ALL-MODULE-PATH \
+    --compress=2 \
+    --no-header-files \
+    --no-man-pages \
+    --strip-debug \
+    --output /jlink-runtime
+```
+
+**Technical Notes**:
+- ⚠️ Spring Boot 3.x uses module system, requires complete JRE modules
+- ⚠️ Attempting to strip modules causes compatibility issues like `ClassNotFoundException`
+- ✅ Final solution: Alpine JRE + multi-stage build + JVM parameter optimization
+- 📊 Image size: 281MB (same as optimized version)
+
+**JLink Version Use Cases**:
+- Advanced users who need to further customize JRE modules
+- Scenarios willing to take compatibility risks for potential optimization
+- Technical reference and experimental purposes
 
 ## Building Optimized Image
 
 ### Using Build Script (Recommended)
 
 ```bash
-# Build optimized image
+# Build optimized image (recommended)
 ./scripts/build/docker-build.sh optimized
+
+# Build JLink image (experimental)
+./scripts/build/docker-build.sh jlink
 
 # Build standard image
 ./scripts/build/docker-build.sh standard
@@ -175,6 +213,7 @@ docker images sodlinken/jairouter
 # Example output
 REPOSITORY            TAG               SIZE
 sodlinken/jairouter   latest-optimized  281MB
+sodlinken/jairouter   latest-jlink      281MB
 sodlinken/jairouter   latest            440MB
 ```
 
@@ -311,6 +350,11 @@ docker exec jairouter java -XX:+PrintFlagsFinal -version
 - **[Docker Deployment](docker.md)** - Detailed Docker deployment instructions
 - **[Production Deployment](production.md)** - Production environment best practices
 - **[Monitoring Guide](../monitoring/index.md)** - Setup monitoring and alerts
+
+## Related Documentation
+
+- [JLink Technical Notes](#5-jlink-custom-jre-experimental) - JLink optimization details
+- [Build Script Usage](../../scripts/build/README.md) - Build script complete guide
 
 <!-- Version Info -->
 > **Doc Version**: 1.0.0

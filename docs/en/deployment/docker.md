@@ -27,7 +27,8 @@ JAiRouter provides a complete Dockerized deployment solution, supporting multi-e
 
 | Image Type | Tags | Size | Purpose | Dockerfile |
 |------------|------|------|----------|------------|
-| **Production (Optimized)** | `latest-optimized`, `v1.7.0-optimized` | **~281MB** | Production (Recommended) | `Dockerfile.optimized` |
+| **Production (Optimized)** | `latest-optimized`, `v1.7.0-optimized` | **~281MB** | Production (Recommended) ⭐ | `Dockerfile.optimized` |
+| **Production (JLink)** | `latest-jlink`, `v1.7.0-jlink` | **~281MB** | Production (Experimental) 🔬 | `Dockerfile.jlink` |
 | **Production (Standard)** | `latest`, `v1.7.0` | ~440MB | Production | `Dockerfile` |
 | **Development** | `dev`, `v1.7.0-dev` | ~220MB | Development | `Dockerfile.dev` |
 | **China Optimized** | `china`, `v1.7.0-china` | ~440MB | China Users | `Dockerfile.china` |
@@ -36,6 +37,12 @@ JAiRouter provides a complete Dockerized deployment solution, supporting multi-e
 - ✅ Uses `eclipse-temurin:17-jre-alpine` base image (~40% smaller than standard JRE)
 - ✅ Multi-stage build + Spring Boot layertools layered extraction
 - ✅ Image size reduced from 440MB to **281MB** (36% reduction)
+- ✅ Maintains full functionality and non-root user security practices
+
+**JLink Image Features**:
+- 🔬 Based on Alpine + multi-stage build + JVM parameter optimization
+- 🔬 Attempts to use jlink for custom JRE modules (uses Alpine JRE due to Spring Boot 3.x compatibility)
+- 🔬 Same image size as optimized version (281MB), provided as experimental option
 - ✅ Maintains full functionality and non-root user security practices
 
 ## Quick Start

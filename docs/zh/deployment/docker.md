@@ -1,9 +1,9 @@
 ﻿# Docker 部署指南
 
 <!-- 版本信息 -->
-> **文档版本**: 1.1.0
+> **文档版本**: 1.2.0
 > **最后更新**: 2026-04-16
-> **Git 提交**: 803dcd0
+> **Git 提交**: f58f0e0
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -29,8 +29,9 @@
 
 | 镜像类型 | 标签 | 大小 | 用途 | Dockerfile |
 |----------|------|------|------|------------|
-| **生产镜像（优化版）** | `latest-optimized`, `v1.7.0-optimized` | **~281MB** | 生产环境（推荐） | `Dockerfile.optimized` |
-| **生产镜像** | `latest`, `v1.7.0` | ~440MB | 生产环境 | `Dockerfile` |
+| **生产镜像（优化版）** | `latest-optimized`, `v1.7.0-optimized` | **~281MB** | 生产环境（推荐）⭐ | `Dockerfile.optimized` |
+| **生产镜像（JLink 版）** | `latest-jlink`, `v1.7.0-jlink` | **~281MB** | 生产环境（实验性）🔬 | `Dockerfile.jlink` |
+| **生产镜像（标准版）** | `latest`, `v1.7.0` | ~440MB | 生产环境 | `Dockerfile` |
 | **开发镜像** | `dev`, `v1.7.0-dev` | ~220MB | 开发调试 | `Dockerfile.dev` |
 | **中国镜像** | `china`, `v1.7.0-china` | ~440MB | 中国用户优化 | `Dockerfile.china` |
 
@@ -38,6 +39,12 @@
 - ✅ 使用 `eclipse-temurin:17-jre-alpine` 基础镜像（比标准 JRE 小约 40%）
 - ✅ 多阶段构建 + Spring Boot layertools 分层提取
 - ✅ 镜像体积从 440MB 降至 **281MB**（减少 36%）
+- ✅ 保持完整功能和非 root 用户安全实践
+
+**JLink 版镜像特点**：
+- 🔬 基于 Alpine + 多阶段构建 + JVM 参数优化
+- 🔬 尝试使用 jlink 定制 JRE 模块（因 Spring Boot 3.x 兼容性问题采用 Alpine JRE）
+- 🔬 镜像大小与优化版相同（281MB），作为实验性方案提供
 - ✅ 保持完整功能和非 root 用户安全实践
 
 ## 快速开始
