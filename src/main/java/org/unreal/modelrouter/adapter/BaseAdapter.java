@@ -1,5 +1,3 @@
-// [!code focus:9]
-// [!code focus:386-419]
 package org.unreal.modelrouter.adapter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,13 +41,17 @@ public abstract class BaseAdapter implements ServiceCapability {
     private final ModelServiceRegistry registry;
     private final MetricsCollector metricsCollector;
 
-    private final ObjectMapper objectMapper = new ObjectMapper(); // <-- 新增 ObjectMapper 用于解析JSON
+    protected final ObjectMapper objectMapper;
 
     private Logger logger = LoggerFactory.getLogger(BaseAdapter.class);
 
-    public BaseAdapter(final ModelServiceRegistry registry, final MetricsCollector metricsCollector) {
+    @Autowired
+    public BaseAdapter(final ModelServiceRegistry registry, 
+                       final MetricsCollector metricsCollector,
+                       final ObjectMapper objectMapper) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
+        this.objectMapper = objectMapper;
     }
 
     public ModelServiceRegistry getRegistry() {

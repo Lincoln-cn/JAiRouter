@@ -18,10 +18,8 @@ import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
  */
 public class GpuStackAdapter extends BaseAdapter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public GpuStackAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
-        super(registry, metricsCollector);
+    public GpuStackAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
+        super(registry, metricsCollector, objectMapper);
     }
 
     @Override

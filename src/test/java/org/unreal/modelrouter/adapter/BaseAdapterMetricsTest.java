@@ -9,6 +9,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,7 +34,7 @@ class BaseAdapterMetricsTest {
     @Test
     void shouldHaveMetricsCollectorInjected() {
         // Given & When
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector);
+        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
         
         // Then
         assertNotNull(adapter.getMetricsCollector());
@@ -43,7 +44,7 @@ class BaseAdapterMetricsTest {
     @Test
     void shouldCalculateRequestSize() {
         // Given
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector);
+        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
         String testRequest = "test request content";
         
         // When
@@ -57,7 +58,7 @@ class BaseAdapterMetricsTest {
     @Test
     void shouldHandleNullRequestInSizeCalculation() {
         // Given
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector);
+        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
         
         // When
         long size = adapter.calculateRequestSize(null);
@@ -69,7 +70,7 @@ class BaseAdapterMetricsTest {
     @Test
     void shouldRecordMetricsOnSuccessfulResponse() {
         // Given
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector);
+        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
         ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
         instance.setName("test-instance");
         
@@ -92,7 +93,7 @@ class BaseAdapterMetricsTest {
     @Test
     void shouldRecordMetricsOnFailedResponse() {
         // Given
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector);
+        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
         
         // When - simulate error scenario
         long startTime = System.currentTimeMillis();
@@ -110,8 +111,8 @@ class BaseAdapterMetricsTest {
      */
     private static class TestAdapter extends BaseAdapter {
 
-        public TestAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
-            super(registry, metricsCollector);
+        public TestAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
+            super(registry, metricsCollector, objectMapper);
         }
 
         @Override
