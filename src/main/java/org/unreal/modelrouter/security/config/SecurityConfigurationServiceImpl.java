@@ -155,24 +155,11 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
             log.info("开始重新加载配置");
             
             try {
-                // 从存储重新加载配置
-                // 注意：这里需要从Map格式转换为对象
-                Map<String, Object> apiKeysMap = storeManager.getConfig(API_KEYS_KEY);
-                if (apiKeysMap != null) {
-                    // TODO 这里需要实现Map到List<ApiKeyInfo>的转换逻辑
-                }
-                
-                Map<String, Object> jwtConfigMap = storeManager.getConfig(JWT_CONFIG_KEY);
-                if (jwtConfigMap != null) {
-                    // TODO这里需要实现Map到JwtConfig的转换逻辑
-                }
-                
-                Map<String, Object> rulesMap = storeManager.getConfig(SANITIZATION_RULES_KEY);
-                if (rulesMap != null) {
-                    // TODO这里需要实现Map到List<SanitizationRule>的转换逻辑
-                }
-                // 注意：脱敏规则的应用需要在脱敏服务中处理
-                
+                // v1.9.2 TODO: 使用强类型约束，避免 Map 转换的维护成本
+                // 实现方案：直接从 SecurityProperties 读取配置，无需 Map 转换
+                // 1. ApiKey 列表：securityProperties.getApiKey().getKeys()
+                // 2. JwtConfig: securityProperties.getJwt()
+                // 3. SanitizationRule 列表：securityProperties.getSanitization().getRules()
                 // 发布配置重新加载事件
                 publishConfigurationChangeEvent("config-reload", null, securityProperties);
                 

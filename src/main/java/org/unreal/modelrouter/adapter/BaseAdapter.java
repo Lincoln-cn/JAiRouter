@@ -173,8 +173,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                         if (metricsCollector != null) {
                             metricsCollector.recordBackendCall(adapterType, instanceName, duration, true);
                         }
-                        // 缓存成功响应 - TODO: 实现缓存逻辑
-                        // cacheSuccessfulResponse(serviceType, modelName, response, httpRequest);
+                        // 缓存功能由降级策略处理 (CacheFallbackStrategy)
                     } else {
                         // 非2xx响应视为失败
                         getRegistry().recordCallFailure(serviceType, selectedInstance);
