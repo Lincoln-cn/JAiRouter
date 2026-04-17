@@ -16,10 +16,8 @@ import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 
 public class NormalOpenAiAdapter extends BaseAdapter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public NormalOpenAiAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
-        super(registry, metricsCollector);
+    public NormalOpenAiAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
+        super(registry, metricsCollector, objectMapper);
     }
 
     @Override

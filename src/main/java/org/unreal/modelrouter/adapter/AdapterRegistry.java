@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.adapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.adapter.impl.*;
 import org.unreal.modelrouter.model.ModelRouterProperties;
@@ -17,23 +18,28 @@ public class AdapterRegistry {
     private final ModelRouterProperties properties;
     private final ModelServiceRegistry registry;
     private final MetricsCollector metricsCollector;
+    private final ObjectMapper objectMapper;
 
-    public AdapterRegistry(final ModelRouterProperties properties, final ModelServiceRegistry registry, final MetricsCollector metricsCollector) {
+    public AdapterRegistry(final ModelRouterProperties properties, 
+                           final ModelServiceRegistry registry, 
+                           final MetricsCollector metricsCollector,
+                           final ObjectMapper objectMapper) {
         this.properties = properties;
         this.registry = registry;
         this.metricsCollector = metricsCollector;
+        this.objectMapper = objectMapper;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
 
     private void initializeAdapters() {
         // 注册各种adapter实现，传入MetricsCollector
-        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector));
-        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector));
-        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector));
-        adapters.put("vllm", new VllmAdapter(registry, metricsCollector));
-        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector));
-        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector));
+        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper));
+        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper));
+        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper));
+        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper));
+        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper));
+        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper));
     }
 
     /**

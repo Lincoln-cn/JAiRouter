@@ -69,7 +69,7 @@ public class CircuitBreakerManager {
         }
 
         return circuitBreakers.computeIfAbsent(key,
-                k -> new DefaultCircuitBreaker(k, failureThreshold, timeout, successThreshold));
+                k -> new LockFreeCircuitBreaker(k, failureThreshold, timeout, successThreshold));
     }
 
     /**

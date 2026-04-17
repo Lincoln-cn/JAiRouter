@@ -19,10 +19,8 @@ import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
  */
 public class XinferenceAdapter extends BaseAdapter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public XinferenceAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector) {
-        super(registry, metricsCollector);
+    public XinferenceAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
+        super(registry, metricsCollector, objectMapper);
     }
 
     @Override
