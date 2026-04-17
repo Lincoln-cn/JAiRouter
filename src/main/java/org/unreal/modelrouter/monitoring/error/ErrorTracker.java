@@ -35,9 +35,15 @@ public class ErrorTracker {
     // 可选依赖
     @Autowired(required = false)
     private StackTraceSanitizer stackTraceSanitizer;
-    
+
     @Autowired(required = false)
     private ErrorMetricsCollector errorMetricsCollector;
+
+    @Autowired(required = false)
+    private ExceptionPersistenceService exceptionPersistenceService;
+
+    @Autowired(required = false)
+    private ErrorCodeResolver errorCodeResolver;
     
     // 异常统计
     private final ConcurrentHashMap<String, AtomicLong> errorTypeCounters = new ConcurrentHashMap<>();
@@ -107,7 +113,21 @@ public class ErrorTracker {
                     duration
                 );
             }
-            
+
+            // 持久化到数据库
+            if (exceptionPersistenceService != null) {
+                String sanitizedMessage = sanitizedThrowable != null ? sanitizedThrowable.getMessage() : null;
+                String sanitizedStackTrace = sanitizedThrowable != null ? sanitizedThrowable.toSimpleString() : null;
+                exceptionPersistenceService.persistException(
+                    throwable,
+                    operation,
+                    context,
+                    additionalInfo,
+                    sanitizedMessage,
+                    sanitizedStackTrace
+                );
+            }
+
         } catch (Exception e) {
             log.warn("记录错误信息时发生异常", e);
         }

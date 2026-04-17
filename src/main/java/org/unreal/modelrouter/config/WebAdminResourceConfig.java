@@ -26,7 +26,7 @@ public class WebAdminResourceConfig implements WebFluxConfigurer {
         // 配置管理界面静态资源 - 包含 index.html 和 assets
         registry.addResourceHandler("/admin/**")
                 .addResourceLocations("classpath:/static/admin/")
-                .setCacheControl(org.springframework.http.CacheControl.maxAge(Duration.ofHours(1)))
+                .setCacheControl(org.springframework.http.CacheControl.noCache())
                 .resourceChain(true)
                 .addResolver(new SpaPathResourceResolver());
 
@@ -45,19 +45,20 @@ public class WebAdminResourceConfig implements WebFluxConfigurer {
             try {
                 Resource requestedResource = location.createRelative(resourcePath);
                 if (requestedResource.exists() && requestedResource.isReadable()) {
+                    log.debug("Found resource: {}", resourcePath);
                     return Mono.just(requestedResource);
                 }
+                log.debug("Resource not found: {}, falling back to index.html", resourcePath);
             } catch (Exception e) {
-                log.debug("无法创建资源路径：{}", resourcePath, e);
+                log.debug("Cannot create resource path: {}, falling back to index.html", resourcePath, e);
             }
-            
+
             // 如果资源不存在，返回 index.html（用于 SPA 路由）
             ClassPathResource indexHtml = new ClassPathResource("static/admin/index.html");
             if (indexHtml.exists()) {
-                log.debug("SPA fallback to index.html for path: {}", resourcePath);
                 return Mono.just(indexHtml);
             }
-            
+
             return Mono.empty();
         }
     }
