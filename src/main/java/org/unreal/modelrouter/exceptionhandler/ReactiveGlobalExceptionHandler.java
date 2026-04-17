@@ -117,6 +117,12 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
      */
     private void recordError(Throwable ex) {
         try {
+            // 不记录认证相关的 401 错误（这是正常的安全机制）
+            if (isAuthenticationError(ex)) {
+                logger.debug("跳过认证错误的记录：{}", ex.getClass().getSimpleName());
+                return;
+            }
+
             Map<String, Object> additionalInfo = new HashMap<>();
             additionalInfo.put("handler", "ReactiveGlobalExceptionHandler");
             
@@ -271,6 +277,28 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 设置最简单的错误响应
      */
+    /**
+     * 判断是否为认证相关的错误（不记录到数据库）
+     */
+    private boolean isAuthenticationError(Throwable ex) {
+        String className = ex.getClass().getSimpleName();
+        // Spring Security 的认证异常
+        if ("AuthenticationCredentialsNotFoundException".equals(className)) {
+            return true;
+        }
+        if ("AccessDeniedException".equals(className)) {
+            return true;
+        }
+        if ("InsufficientAuthenticationException".equals(className)) {
+            return true;
+        }
+        // 自定义认证异常
+        if (ex instanceof org.springframework.security.core.AuthenticationException) {
+            return true;
+        }
+        return false;
+    }
+
     private Mono<Void> setSimpleErrorResponse(ServerHttpResponse response) {
         // 检查响应是否已提交，避免递归
         if (response.isCommitted()) {
@@ -302,5 +330,4 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
             return Mono.empty();
         }
     }
-
 }

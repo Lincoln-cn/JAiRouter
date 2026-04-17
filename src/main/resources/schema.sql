@@ -243,3 +243,78 @@ CREATE INDEX IF NOT EXISTS "idx_blacklist_revoked_at" ON "jwt_blacklist"("revoke
 
 -- 注: security_blacklist表由JPA Hibernate自动管理 (ddl-auto: update)
 -- Entity: org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity
+
+-- ========================================
+-- 异常管理表结构（v1.9.1 新增）
+-- ========================================
+
+-- 异常事件表 - 记录所有异常事件的详细信息
+CREATE TABLE IF NOT EXISTS "exception_events" (
+    "id" BIGINT AUTO_INCREMENT PRIMARY KEY,
+    "event_id" VARCHAR(255) NOT NULL UNIQUE,
+    "exception_type" VARCHAR(500) NOT NULL,
+    "exception_message" VARCHAR(1000),
+    "sanitized_message" VARCHAR(1000),
+    "sanitized_stack_trace" TEXT,
+    "operation" VARCHAR(255) NOT NULL,
+    "error_code" VARCHAR(100),
+    "error_category" VARCHAR(50),
+    "http_status" VARCHAR(10),
+    "trace_id" VARCHAR(100),
+    "span_id" VARCHAR(100),
+    "request_id" VARCHAR(255),
+    "client_ip" VARCHAR(50),
+    "user_agent" VARCHAR(500),
+    "service_name" VARCHAR(100),
+    "method_name" VARCHAR(255),
+    "class_name" VARCHAR(500),
+    "line_number" INT,
+    -- 统计字段
+    "occurrence_count" BIGINT NOT NULL DEFAULT 1,
+    "first_occurrence" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "last_occurrence" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- 元数据（JSON 格式）
+    "metadata" TEXT,
+    -- 时间字段
+    "occurred_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "is_aggregated" BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- 异常事件表索引
+CREATE INDEX IF NOT EXISTS "idx_exception_event_id" ON "exception_events"("event_id");
+CREATE INDEX IF NOT EXISTS "idx_exception_type" ON "exception_events"("exception_type");
+CREATE INDEX IF NOT EXISTS "idx_exception_occurred_at" ON "exception_events"("occurred_at");
+CREATE INDEX IF NOT EXISTS "idx_exception_operation" ON "exception_events"("operation");
+CREATE INDEX IF NOT EXISTS "idx_exception_error_code" ON "exception_events"("error_code");
+CREATE INDEX IF NOT EXISTS "idx_exception_error_category" ON "exception_events"("error_category");
+CREATE INDEX IF NOT EXISTS "idx_exception_trace_id" ON "exception_events"("trace_id");
+CREATE INDEX IF NOT EXISTS "idx_exception_aggregated" ON "exception_events"("is_aggregated");
+CREATE INDEX IF NOT EXISTS "idx_exception_last_occurrence" ON "exception_events"("last_occurrence");
+
+-- 异常统计小时表 - 按小时聚合异常统计信息
+CREATE TABLE IF NOT EXISTS "exception_stats_hourly" (
+    "id" BIGINT AUTO_INCREMENT PRIMARY KEY,
+    "hour_timestamp" TIMESTAMP NOT NULL,
+    "exception_type" VARCHAR(500) NOT NULL,
+    "error_code" VARCHAR(100),
+    "error_category" VARCHAR(50),
+    "operation" VARCHAR(255),
+    "service_name" VARCHAR(100),
+    -- 统计字段
+    "total_count" BIGINT NOT NULL DEFAULT 0,
+    "success_count" BIGINT NOT NULL DEFAULT 0,
+    "failure_count" BIGINT NOT NULL DEFAULT 0,
+    "unique_trace_ids" BIGINT NOT NULL DEFAULT 0,
+    "unique_client_ips" BIGINT NOT NULL DEFAULT 0,
+    -- 时间字段
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY "uk_exception_stats_hour" ("hour_timestamp", "exception_type", "error_code", "operation")
+);
+
+-- 异常统计小时表索引
+CREATE INDEX IF NOT EXISTS "idx_exception_stats_hour_ts" ON "exception_stats_hourly"("hour_timestamp");
+CREATE INDEX IF NOT EXISTS "idx_exception_stats_hour_type" ON "exception_stats_hourly"("exception_type");
+CREATE INDEX IF NOT EXISTS "idx_exception_stats_hour_category" ON "exception_stats_hourly"("error_category");
+CREATE INDEX IF NOT EXISTS "idx_exception_stats_hour_operation" ON "exception_stats_hourly"("operation");

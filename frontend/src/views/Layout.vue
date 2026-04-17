@@ -61,6 +61,18 @@
           <el-menu-item index="/system/accounts">账户管理</el-menu-item>
         </el-sub-menu>
 
+        <!-- 异常管理 -->
+        <el-sub-menu index="exceptions">
+          <template #title>
+            <el-icon>
+              <Warning />
+            </el-icon>
+            <span>异常管理</span>
+          </template>
+          <el-menu-item index="/exceptions/list">异常事件管理</el-menu-item>
+          <el-menu-item index="/exceptions/statistics">异常统计分析</el-menu-item>
+        </el-sub-menu>
+
         <!-- 追踪管理 -->
         <el-sub-menu index="tracing">
           <template #title>
@@ -153,7 +165,8 @@ import {
   DataLine,
   Sort,
   Headset,
-  Picture
+  Picture,
+  Warning
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -190,6 +203,8 @@ const defaultOpeneds = computed(() => {
     openeds.push('security')
   } else if (path.startsWith('/system')) {
     openeds.push('system')
+  } else if (path.startsWith('/exceptions')) {
+    openeds.push('exceptions')
   } else if (path.startsWith('/tracing')) {
     openeds.push('tracing')
   } else if (path.startsWith('/playground')) {

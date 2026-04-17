@@ -217,6 +217,34 @@ const router = createRouter({
     {
       path: '/admin/playground/:pathMatch(.*)*',
       redirect: '/playground/chat'
+    },
+    // 异常管理
+    {
+      path: '/exceptions',
+      name: 'exceptions',
+      component: () => import('../views/Layout.vue'),
+      redirect: '/exceptions/list',
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'list',
+          name: 'exception-list',
+          component: () => import('../views/exception/ExceptionManagement.vue'),
+          meta: { title: '异常事件管理', icon: 'warning' }
+        },
+        {
+          path: 'detail/:id',
+          name: 'exception-detail',
+          component: () => import('../views/exception/ExceptionDetail.vue'),
+          meta: { title: '异常事件详情', icon: 'document-checked' }
+        },
+        {
+          path: 'statistics',
+          name: 'exception-statistics',
+          component: () => import('../views/exception/ExceptionStatistics.vue'),
+          meta: { title: '异常统计分析', icon: 'data-analysis' }
+        }
+      ]
     }
   ]
 })

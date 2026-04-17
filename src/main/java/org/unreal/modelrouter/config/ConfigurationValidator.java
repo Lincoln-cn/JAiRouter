@@ -15,10 +15,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * 配置验证器
+ * 配置验证器（旧版）
  * 提供各种配置参数的合法性检查功能
+ * @deprecated 使用 {@link org.unreal.modelrouter.config.validation.ConfigurationValidator} 代替
  */
-@Component
+@Component("legacyConfigurationValidator")
 public class ConfigurationValidator {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationValidator.class);
