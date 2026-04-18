@@ -2065,17 +2065,31 @@
         "docs/zh/troubleshooting/debugging.md",
         "docs/zh/troubleshooting/index.md"
       ]
+    },
+    "RELEASE-NOTES-1.9.3.md": {
+      "FilePath": "RELEASE-NOTES-1.9.3.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-04-18T04:32:30.701607",
+      "ContentHash": "f735020965c5c702",
+      "GitCommit": "79589443",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "innerdoc/v1.8.1-release-notes.md"
+      ]
+    },
+    "docs-version-report.md": {
+      "FilePath": "docs-version-report.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-04-18T04:32:30.703785",
+      "ContentHash": "3e477d314b5ff61a",
+      "GitCommit": "34356030",
+      "Author": "GitHub Action",
+      "ChangeSummary": "",
+      "Dependencies": []
     }
   },
   "changes": [
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.152",
-      "NewVersion": "1.0.153",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-01-18T03:46:50.673703",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.153",
@@ -2883,7 +2897,23 @@
       "ChangeType": "DELETED",
       "Timestamp": "2026-04-17T04:49:13.798968",
       "Description": "文档已删除"
+    },
+    {
+      "FilePath": "RELEASE-NOTES-1.9.3.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-04-18T04:32:30.701617",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-04-18T04:32:30.703791",
+      "Description": "文档created"
     }
   ],
-  "last_updated": "2026-04-17T04:49:13.897372"
+  "last_updated": "2026-04-18T04:32:31.718748"
 }
