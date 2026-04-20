@@ -318,3 +318,55 @@ CREATE INDEX IF NOT EXISTS "idx_exception_stats_hour_ts" ON "exception_stats_hou
 CREATE INDEX IF NOT EXISTS "idx_exception_stats_hour_type" ON "exception_stats_hourly"("exception_type");
 CREATE INDEX IF NOT EXISTS "idx_exception_stats_hour_category" ON "exception_stats_hourly"("error_category");
 CREATE INDEX IF NOT EXISTS "idx_exception_stats_hour_operation" ON "exception_stats_hourly"("operation");
+
+-- ========================================
+-- Token 使用量统计表
+-- ========================================
+CREATE TABLE IF NOT EXISTS token_usage (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    -- 追踪信息
+    trace_id VARCHAR(100),
+    -- 服务信息
+    service_type VARCHAR(50) NOT NULL,
+    model_name VARCHAR(255) NOT NULL,
+    provider VARCHAR(100),
+    instance_name VARCHAR(255),
+    instance_url VARCHAR(500),
+    -- Token 使用量
+    prompt_tokens BIGINT DEFAULT 0,
+    completion_tokens BIGINT DEFAULT 0,
+    total_tokens BIGINT NOT NULL DEFAULT 0,
+    -- 认证信息
+    api_key_id VARCHAR(255),
+    user_id VARCHAR(255),
+    -- 请求信息
+    client_ip VARCHAR(50),
+    is_success BOOLEAN,
+    error_code VARCHAR(100),
+    error_message VARCHAR(1000),
+    response_time_ms BIGINT,
+    -- 时间信息
+    occurred_at TIMESTAMP NOT NULL,
+    day_of_week INT, -- 0-6, 0=周日
+    week_of_year INT, -- ISO-8601 周数
+    month_num INT, -- 1-12 (避免与 H2 保留字冲突)
+    year_num INT, -- 年份 (避免与 H2 保留字冲突)
+    usage_date VARCHAR(10), -- YYYY-MM-DD
+    hour_num INT, -- 0-23 (避免与 H2 保留字冲突)
+    -- 元数据
+    metadata TEXT,
+    -- 审计字段
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Token 使用量表索引
+CREATE INDEX IF NOT EXISTS idx_token_usage_model ON token_usage(model_name);
+CREATE INDEX IF NOT EXISTS idx_token_usage_service_type ON token_usage(service_type);
+CREATE INDEX IF NOT EXISTS idx_token_usage_occurred_at ON token_usage(occurred_at);
+CREATE INDEX IF NOT EXISTS idx_token_usage_api_key ON token_usage(api_key_id);
+CREATE INDEX IF NOT EXISTS idx_token_usage_trace_id ON token_usage(trace_id);
+CREATE INDEX IF NOT EXISTS idx_token_usage_user ON token_usage(user_id);
+CREATE INDEX IF NOT EXISTS idx_token_usage_date ON token_usage(usage_date);
+CREATE INDEX IF NOT EXISTS idx_token_usage_week ON token_usage(week_of_year, year_num);
+CREATE INDEX IF NOT EXISTS idx_token_usage_month ON token_usage(month_num, year_num);
+CREATE INDEX IF NOT EXISTS idx_token_usage_hour ON token_usage(hour_num);

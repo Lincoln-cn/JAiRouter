@@ -77,7 +77,7 @@ export function getBlacklistPage(params: {
     size?: number
 }): Promise<RouterResponse<PagedResult<BlacklistEntry>>> {
     return request({
-        url: '/api/security/blacklist/list',
+        url: '/security/blacklist/list',
         method: 'get',
         params
     })
@@ -88,7 +88,7 @@ export function getBlacklistPage(params: {
  */
 export function getBlacklistStats(): Promise<RouterResponse<BlacklistStats>> {
     return request({
-        url: '/api/security/blacklist/stats',
+        url: '/security/blacklist/stats',
         method: 'get'
     })
 }
@@ -98,7 +98,7 @@ export function getBlacklistStats(): Promise<RouterResponse<BlacklistStats>> {
  */
 export function getBlacklistEntry(id: number): Promise<RouterResponse<BlacklistEntry>> {
     return request({
-        url: `/api/security/blacklist/${id}`,
+        url: `/security/blacklist/${id}`,
         method: 'get'
     })
 }
@@ -108,7 +108,7 @@ export function getBlacklistEntry(id: number): Promise<RouterResponse<BlacklistE
  */
 export function addToBlacklist(data: AddBlacklistRequest): Promise<RouterResponse<BlacklistEntry>> {
     return request({
-        url: '/api/security/blacklist/add',
+        url: '/security/blacklist/add',
         method: 'post',
         data
     })
@@ -119,7 +119,7 @@ export function addToBlacklist(data: AddBlacklistRequest): Promise<RouterRespons
  */
 export function batchAddToBlacklist(dataList: AddBlacklistRequest[]): Promise<RouterResponse<number>> {
     return request({
-        url: '/api/security/blacklist/batch-add',
+        url: '/security/blacklist/batch-add',
         method: 'post',
         data: dataList
     })
@@ -130,7 +130,7 @@ export function batchAddToBlacklist(dataList: AddBlacklistRequest[]): Promise<Ro
  */
 export function removeFromBlacklist(id: number): Promise<RouterResponse<boolean>> {
     return request({
-        url: `/api/security/blacklist/${id}`,
+        url: `/security/blacklist/${id}`,
         method: 'delete'
     })
 }
@@ -140,7 +140,7 @@ export function removeFromBlacklist(id: number): Promise<RouterResponse<boolean>
  */
 export function checkBlacklist(type: BlacklistType, value: string): Promise<RouterResponse<boolean>> {
     return request({
-        url: '/api/security/blacklist/check',
+        url: '/security/blacklist/check',
         method: 'get',
         params: { type, value }
     })
@@ -151,7 +151,7 @@ export function checkBlacklist(type: BlacklistType, value: string): Promise<Rout
  */
 export function cleanupExpiredBlacklist(): Promise<RouterResponse<number>> {
     return request({
-        url: '/api/security/blacklist/cleanup',
+        url: '/security/blacklist/cleanup',
         method: 'post'
     })
 }

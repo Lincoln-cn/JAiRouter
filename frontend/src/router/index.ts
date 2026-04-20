@@ -245,6 +245,22 @@ const router = createRouter({
           meta: { title: '异常统计分析', icon: 'data-analysis' }
         }
       ]
+    },
+    // Token 使用量统计路由
+    {
+      path: '/token-usage',
+      name: 'token-usage',
+      component: () => import('../views/Layout.vue'),
+      redirect: '/token-usage/statistics',
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'statistics',
+          name: 'token-usage-statistics',
+          component: () => import('../views/tokenUsage/TokenUsageStatistics.vue'),
+          meta: { title: 'Token 使用统计', icon: 'data-analysis' }
+        }
+      ]
     }
   ]
 })

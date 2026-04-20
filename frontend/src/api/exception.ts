@@ -20,7 +20,7 @@ import type {
  */
 export const queryExceptionEvents = async (params: ExceptionQueryParams): Promise<ExceptionQueryResponse> => {
   try {
-    const response = await request.get<RouterResponse<ExceptionQueryResponse>>('/api/exceptions', { params })
+    const response = await request.get<RouterResponse<ExceptionQueryResponse>>('/exceptions', { params })
     return response.data.data || {
       content: [],
       page: params.page || 0,
@@ -44,7 +44,7 @@ export const queryExceptionEvents = async (params: ExceptionQueryParams): Promis
  */
 export const getExceptionEventById = async (eventId: string): Promise<ExceptionEvent | null> => {
   try {
-    const response = await request.get<RouterResponse<ExceptionEvent>>(`/api/exceptions/${eventId}`)
+    const response = await request.get<RouterResponse<ExceptionEvent>>(`/exceptions/${eventId}`)
     if (!response.data.success || response.data.errorCode === '404') {
       return null
     }
@@ -69,7 +69,7 @@ export const getExceptionStatistics = async (
     if (startTime) params.startTime = startTime
     if (endTime) params.endTime = endTime
 
-    const response = await request.get<RouterResponse<ExceptionStatistics>>('/api/exceptions/statistics', { params })
+    const response = await request.get<RouterResponse<ExceptionStatistics>>('/exceptions/statistics', { params })
     return response.data.data || {
       startTime: startTime || '',
       endTime: endTime || '',
@@ -94,7 +94,7 @@ export const getExceptionStatistics = async (
  */
 export const getRecentExceptionEvents = async (limit: number = 10): Promise<ExceptionEvent[]> => {
   try {
-    const response = await request.get<RouterResponse<ExceptionEvent[]>>('/api/exceptions/recent', {
+    const response = await request.get<RouterResponse<ExceptionEvent[]>>('/exceptions/recent', {
       params: { limit }
     })
     return response.data.data || []

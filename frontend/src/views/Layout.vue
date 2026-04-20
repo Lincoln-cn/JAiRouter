@@ -73,6 +73,17 @@
           <el-menu-item index="/exceptions/statistics">异常统计分析</el-menu-item>
         </el-sub-menu>
 
+        <!-- Token 使用统计 -->
+        <el-sub-menu index="tokenUsage">
+          <template #title>
+            <el-icon>
+              <DataAnalysis />
+            </el-icon>
+            <span>Token 统计</span>
+          </template>
+          <el-menu-item index="/token-usage/statistics">Token 使用统计</el-menu-item>
+        </el-sub-menu>
+
         <!-- 追踪管理 -->
         <el-sub-menu index="tracing">
           <template #title>
