@@ -28,6 +28,7 @@ import org.unreal.modelrouter.exception.DownstreamServiceException;
 import org.unreal.modelrouter.util.IpUtils;
 import org.unreal.modelrouter.fallback.FallbackStrategy;
 import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
+import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
 import org.slf4j.Logger;
@@ -40,18 +41,39 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     private final ModelServiceRegistry registry;
     private final MetricsCollector metricsCollector;
+    private final ModelCallStatsRepository statsRepository;
 
     protected final ObjectMapper objectMapper;
 
     private Logger logger = LoggerFactory.getLogger(BaseAdapter.class);
 
     @Autowired
-    public BaseAdapter(final ModelServiceRegistry registry, 
+    public BaseAdapter(final ModelServiceRegistry registry,
                        final MetricsCollector metricsCollector,
-                       final ObjectMapper objectMapper) {
+                       final ObjectMapper objectMapper,
+                       final ModelCallStatsRepository statsRepository) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
+        this.statsRepository = statsRepository;
+    }
+
+    /**
+     * v2.0.0: 错误分类
+     *
+     * @param throwable 异常
+     * @return 错误码分类
+     */
+    private String classifyError(Throwable throwable) {
+        if (throwable instanceof org.springframework.web.server.ResponseStatusException) {
+            return String.valueOf(((org.springframework.web.server.ResponseStatusException) throwable).getStatusCode().value());
+        } else if (throwable instanceof org.unreal.modelrouter.exception.DownstreamServiceException) {
+            return "503";
+        } else if (throwable instanceof java.util.concurrent.TimeoutException) {
+            return "504";
+        } else {
+            return "500";
+        }
     }
 
     public ModelServiceRegistry getRegistry() {
@@ -137,8 +159,9 @@ public abstract class BaseAdapter implements ServiceCapability {
             }
         }
 
+        String modelNameFromRequest = getModelNameFromRequest(request);
         return processRequestWithRetry(request, authorization, client, path, selectedInstance,
-                serviceType, processor, tracingContext, startTime, 0);
+                serviceType, modelNameFromRequest, processor, tracingContext, startTime, 0);
     }
 
     /**
@@ -152,6 +175,7 @@ public abstract class BaseAdapter implements ServiceCapability {
             final String path,
             final ModelRouterProperties.ModelInstance selectedInstance,
             final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
             final RequestProcessor<T> processor,
             final org.unreal.modelrouter.tracing.TracingContext tracingContext,
             final long startTime,
@@ -206,6 +230,14 @@ public abstract class BaseAdapter implements ServiceCapability {
                         metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
                     }
 
+                    // v2.0.0: 记录模型调用统计
+                    if (statsRepository != null) {
+                        statsRepository.updateStats(serviceType.name(), modelName, false, duration);
+                        // 记录错误类型
+                        String errorCode = classifyError(throwable);
+                        statsRepository.recordErrorCode(serviceType.name(), modelName, errorCode);
+                    }
+
                     // 检查是否应该重试
                     if (shouldRetry(throwable, retryCount, maxRetries)) {
                         // 记录重试追踪
@@ -231,7 +263,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                         long retryDelay = calculateRetryDelay(retryCount);
                         return Mono.delay(java.time.Duration.ofMillis(retryDelay))
                                 .then(processRequestWithRetry(request, authorization, client, path,
-                                        selectedInstance, serviceType, processor, tracingContext,
+                                        selectedInstance, serviceType, modelName, processor, tracingContext,
                                         System.currentTimeMillis(), retryCount + 1));
                     } else {
                         // 记录适配器调用失败追踪

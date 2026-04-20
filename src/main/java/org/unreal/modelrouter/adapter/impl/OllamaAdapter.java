@@ -12,6 +12,7 @@ import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 
 /**
  * Ollama Adapter - 适配Ollama API格式的示例
@@ -19,8 +20,8 @@ import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
  */
 public class OllamaAdapter extends BaseAdapter {
 
-    public OllamaAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
-        super(registry, metricsCollector, objectMapper);
+    public OllamaAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper, ModelCallStatsRepository statsRepository) {
+        super(registry, metricsCollector, objectMapper, statsRepository);
     }
 
     @Override

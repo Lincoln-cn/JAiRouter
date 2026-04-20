@@ -112,7 +112,7 @@ class BaseAdapterMetricsTest {
     private static class TestAdapter extends BaseAdapter {
 
         public TestAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
-            super(registry, metricsCollector, objectMapper);
+            super(registry, metricsCollector, objectMapper, null); // 测试时传入 null
         }
 
         @Override

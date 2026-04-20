@@ -6,6 +6,7 @@ import org.unreal.modelrouter.adapter.impl.*;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,27 +20,30 @@ public class AdapterRegistry {
     private final ModelServiceRegistry registry;
     private final MetricsCollector metricsCollector;
     private final ObjectMapper objectMapper;
+    private final ModelCallStatsRepository statsRepository;
 
     public AdapterRegistry(final ModelRouterProperties properties, 
                            final ModelServiceRegistry registry, 
                            final MetricsCollector metricsCollector,
-                           final ObjectMapper objectMapper) {
+                           final ObjectMapper objectMapper,
+                           final ModelCallStatsRepository statsRepository) {
         this.properties = properties;
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
+        this.statsRepository = statsRepository;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
 
     private void initializeAdapters() {
         // 注册各种adapter实现，传入MetricsCollector
-        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper));
-        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper));
-        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper));
-        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper));
-        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper));
-        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper));
+        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper, statsRepository));
+        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper, statsRepository));
+        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper, statsRepository));
+        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper, statsRepository));
+        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper, statsRepository));
+        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper, statsRepository));
     }
 
     /**

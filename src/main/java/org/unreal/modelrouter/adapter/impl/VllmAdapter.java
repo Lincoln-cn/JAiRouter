@@ -11,6 +11,7 @@ import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 
 /**
  * VLLM Adapter - 适配VLLM API格式
@@ -19,8 +20,8 @@ import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
  */
 public class VllmAdapter extends BaseAdapter {
 
-    public VllmAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
-        super(registry, metricsCollector, objectMapper);
+    public VllmAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper, ModelCallStatsRepository statsRepository) {
+        super(registry, metricsCollector, objectMapper, statsRepository);
     }
 
     @Override
