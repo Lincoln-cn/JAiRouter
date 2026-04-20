@@ -284,7 +284,7 @@ groups:
           service: jairouter
         annotations:
           summary: "JAiRouter请求大小异常"
-          description: "服务 {{ $labels.service }} 的95%分位请求大小为 {{ $value | humanizeBytes }}，超过1MB阈值"
+          description: "服务 {{ $labels.service }} 的95%分位请求大小为 {{ $value | humanize }}，超过1MB阈值"
 
       # 响应大小异常告警
       - alert: JAiRouterLargeResponseSize
@@ -298,7 +298,7 @@ groups:
           service: jairouter
         annotations:
           summary: "JAiRouter响应大小异常"
-          description: "服务 {{ $labels.service }} 的95%分位响应大小为 {{ $value | humanizeBytes }}，超过5MB阈值"
+          description: "服务 {{ $labels.service }} 的95%分位响应大小为 {{ $value | humanize }}，超过5MB阈值"
 
       # 并发连接数告警
       - alert: JAiRouterHighConcurrentConnections
@@ -460,3 +460,126 @@ groups:
         annotations:
           summary: "JAiRouter外部API调用超时频繁"
           description: "外部API调用超时频率为 {{ $value | humanize }} 次/秒，可能存在网络或服务问题"
+  # JAiRouter 异常管理告警（v1.9.4 新增）
+  - name: jairouter.exception
+    interval: 30s
+    rules:
+      # 高频错误代码告警
+      - alert: JAiRouterFrequentErrorCode
+        expr: |
+          sum(rate(jairouter_errors_by_error_code[5m])) by (error_code) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 错误代码 {{ $labels.error_code }} 频繁出现"
+          description: "错误代码 {{ $labels.error_code }} 在过去 5 分钟内的出现频率为 {{ $value | humanize }} 次/秒"
+
+      # 致命错误告警
+      - alert: JAiRouterFatalException
+        expr: |
+          jairouter_errors_by_severity{severity="FATAL"} > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 检测到致命错误"
+          description: "检测到致命错误，严重级别为 FATAL，需要立即处理"
+
+      # 严重错误率告警
+      - alert: JAiRouterHighSeverityErrorRate
+        expr: |
+          sum(rate(jairouter_errors_by_severity{severity="ERROR"}[5m])) > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 严重错误率过高"
+          description: "严重错误（ERROR 级别）出现频率为 {{ $value | humanize }} 次/秒"
+
+      # 模块错误率告警
+      - alert: JAiRouterModuleHighErrorRate
+        expr: |
+          sum(rate(jairouter_errors_by_module{module="adapter"}[5m])) > 20
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 适配器模块错误率高"
+          description: "适配器模块错误频率为 {{ $value | humanize }} 次/秒，可能存在下游服务问题"
+
+      # 模型调用错误告警
+      - alert: JAiRouterModelErrorRate
+        expr: |
+          sum(rate(jairouter_errors_by_model[5m])) by (model) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 模型 {{ $labels.model }} 调用错误率高"
+          description: "模型 {{ $labels.model }} 的错误频率为 {{ $value | humanize }} 次/秒"
+
+      # 认证错误突增告警
+      - alert: JAiRouterAuthErrorSpike
+        expr: |
+          sum(rate(jairouter_errors_by_error_code{error_code=~"AUTH_.*"}[5m])) > 50
+        for: 1m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 认证错误突增"
+          description: "认证类错误频率突增至 {{ $value | humanize }} 次/秒，可能存在安全攻击"
+
+      # 下游服务错误告警
+      - alert: JAiRouterDownstreamErrorSpike
+        expr: |
+          sum(rate(jairouter_errors_by_error_code{error_code=~"DOWN_.*"}[5m])) > 30
+        for: 2m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 下游服务错误突增"
+          description: "下游服务类错误频率为 {{ $value | humanize }} 次/秒，下游服务可能存在问题"
+
+      # 超时错误告警
+      - alert: JAiRouterTimeoutErrorRate
+        expr: |
+          sum(rate(jairouter_errors_by_error_code{error_code=~"TIME_.*"}[5m])) > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 超时错误率高"
+          description: "超时类错误频率为 {{ $value | humanize }} 次/秒，网络或下游服务响应慢"
+
+      # 验证错误率高（客户端问题）
+      - alert: JAiRouterValidationErrorRate
+        expr: |
+          sum(rate(jairouter_errors_by_error_code{error_code=~"VAL_.*"}[5m])) > 100
+        for: 5m
+        labels:
+          severity: info
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 验证错误率高"
+          description: "验证类错误频率为 {{ $value | humanize }} 次/秒，可能是客户端请求格式问题"
+
+      # 系统错误告警
+      - alert: JAiRouterSystemErrorDetected
+        expr: |
+          sum(rate(jairouter_errors_by_error_code{error_code=~"SYS_.*"}[5m])) > 5
+        for: 1m
+        labels:
+          severity: critical
+          service: jairouter
+        annotations:
+          summary: "JAiRouter 系统错误"
+          description: "系统类错误频率为 {{ $value | humanize }} 次/秒，需要检查系统稳定性"

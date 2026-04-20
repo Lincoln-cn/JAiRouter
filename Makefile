@@ -196,3 +196,77 @@ docker-clean: ## 清理 Docker 资源
 	-docker rm $(PROJECT_NAME)-prod $(PROJECT_NAME)-dev
 	-docker rmi $(DOCKER_IMAGE):$(VERSION) $(DOCKER_IMAGE):latest $(DOCKER_IMAGE):$(VERSION)-dev
 	docker system prune -f
+
+# ========================================
+# 监控栈相关命令 (v1.9.5)
+# ========================================
+
+# 启动监控栈
+.PHONY: monitoring-start
+monitoring-start: ## 启动完整监控栈（Prometheus + Grafana + Loki + Tempo）
+	@echo "启动 JAiRouter 监控栈..."
+	@bash scripts/monitoring-stack.sh start
+
+# 停止监控栈
+.PHONY: monitoring-stop
+monitoring-stop: ## 停止监控栈
+	@echo "停止 JAiRouter 监控栈..."
+	@bash scripts/monitoring-stack.sh stop
+
+# 重启监控栈
+.PHONY: monitoring-restart
+monitoring-restart: ## 重启监控栈
+	@echo "重启 JAiRouter 监控栈..."
+	@bash scripts/monitoring-stack.sh restart
+
+# 查看监控栈日志
+.PHONY: monitoring-logs
+monitoring-logs: ## 查看监控栈日志
+	@bash scripts/monitoring-stack.sh logs
+
+# 查看监控栈指定服务日志
+.PHONY: monitoring-logs-service
+monitoring-logs-service: ## 查看监控栈指定服务日志 (make monitoring-logs-service SERVICE=prometheus)
+	@bash scripts/monitoring-stack.sh logs $(SERVICE)
+
+# 监控栈状态
+.PHONY: monitoring-status
+monitoring-status: ## 查看监控栈服务状态
+	@bash scripts/monitoring-stack.sh status
+
+# 清理监控数据
+.PHONY: monitoring-clean
+monitoring-clean: ## 清理监控数据（危险操作）
+	@echo "清理监控数据..."
+	@bash scripts/monitoring-stack.sh clean
+
+# 仅启动 Prometheus 和 Grafana
+.PHONY: monitoring-lite
+monitoring-lite: ## 仅启动基础监控（Prometheus + Grafana）
+	@echo "启动基础监控..."
+	docker-compose -f docker-compose-monitoring.yml up -d prometheus grafana
+
+# 显示监控访问信息
+.PHONY: monitoring-info
+monitoring-info: ## 显示监控访问信息
+	@echo ""
+	@echo "=========================================="
+	@echo "   JAiRouter 监控栈访问信息"
+	@echo "=========================================="
+	@echo ""
+	@echo "  Prometheus:     http://localhost:9090"
+	@echo "  Grafana:        http://localhost:3000 (admin/admin)"
+	@echo "  AlertManager:   http://localhost:9093"
+	@echo "  Loki:           http://localhost:3100"
+	@echo "  Tempo:          http://localhost:3200"
+	@echo "  Node Exporter:  http://localhost:9100"
+	@echo "  cAdvisor:       http://localhost:8080"
+	@echo ""
+	@echo "Grafana 仪表盘:"
+	@echo "  - 系统概览：system-overview.json"
+	@echo "  - 基础设施：infrastructure.json"
+	@echo "  - 性能分析：performance-analysis.json"
+	@echo "  - 业务指标：business-metrics.json"
+	@echo "  - 告警概览：alerts-overview.json"
+	@echo "  - 异常管理：exception-management.json (v1.9.4)"
+	@echo ""

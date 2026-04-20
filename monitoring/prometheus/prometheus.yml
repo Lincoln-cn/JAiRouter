@@ -150,14 +150,3 @@ scrape_configs:
 # 远程读取配置（可选）
 # remote_read:
 #   - url: "http://remote-storage:9201/read"
-
-# 存储配置
-storage:
-  tsdb:
-    # 数据保留时间
-    retention.time: 30d
-    # 数据保留大小
-    retention.size: 10GB
-    # 压缩配置
-    min-block-duration: 2h
-    max-block-duration: 25h

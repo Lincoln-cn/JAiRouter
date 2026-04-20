@@ -8,36 +8,36 @@ jairouter:
     # 错误追踪配置
     error-tracking:
       # 是否启用错误追踪
-      enabled: false  # 默认关闭，各环境按需启用
-      
+      enabled: true  # v1.9.4 启用，支持异常管理功能
+
       # 错误聚合窗口大小（分钟）
       aggregation-window-minutes: 5
-      
+
       # 最大错误聚合数量
       max-aggregations: 1000
-      
+
       # 堆栈脱敏配置
       sanitization:
         # 是否启用堆栈脱敏
         enabled: true
-        
+
         # 最大堆栈深度
         max-stack-depth: 20
-        
+
         # 需要脱敏的包前缀
         sensitive-packages:
           - "org.unreal.modelrouter.security"
           - "org.unreal.modelrouter.auth"
           - "java.security"
           - "javax.crypto"
-        
+
         # 需要完全过滤的包前缀
         excluded-packages:
           - "sun."
           - "java.lang.reflect"
           - "org.springframework.cglib"
           - "net.sf.cglib"
-        
+
         # 需要脱敏的字段名
         sensitive-fields:
           - "password"
@@ -48,24 +48,24 @@ jairouter:
           - "apiKey"
           - "accessToken"
           - "refreshToken"
-      
+
       # 指标配置
       metrics:
         # 是否启用错误指标
         enabled: true
-        
+
         # 错误计数器前缀
         counter-prefix: "jairouter.errors"
-        
+
         # 是否按错误类型分组
         group-by-error-type: true
-        
+
         # 是否按操作分组
         group-by-operation: true
-        
+
         # 是否记录错误持续时间
         record-duration: true
-        
+
         # 错误持续时间直方图桶配置（秒）
         histogram-buckets:
           - 0.1   # 100ms
@@ -76,7 +76,18 @@ jairouter:
           - 10.0  # 10s
           - 30.0  # 30s
           - 60.0  # 60s
-          
+
+        # v1.9.4 新增：多维度标签配置
+        tags:
+          # 是否启用错误代码标签
+          error-code: true
+          # 是否启用严重级别标签
+          severity: true
+          # 是否启用模块标签
+          module: true
+          # 是否启用模型标签
+          model: true
+
       # 错误追踪日志配置
       logging:
         # 是否记录错误追踪日志
@@ -87,3 +98,12 @@ jairouter:
         include-stack-trace: true
         # 是否记录错误上下文
         include-context: true
+
+      # 持久化配置
+      persistence:
+        # 是否启用数据库持久化
+        enabled: true
+        # 保留天数
+        retention-days: 30
+        # 清理过期数据的 cron 表达式
+        cleanup-cron: "0 0 2 * * ?"  # 每天凌晨 2 点执行

@@ -1,12 +1,15 @@
+# Grafana 仪表盘配置文件
 apiVersion: 1
 
 providers:
   - name: 'JAiRouter Dashboards'
     orgId: 1
     folder: 'JAiRouter'
+    folderUid: 'jairouter'
     type: file
     disableDeletion: false
-    updateIntervalSeconds: 10
+    updateIntervalSeconds: 30
     allowUiUpdates: true
     options:
-      path: /etc/grafana/provisioning/dashboards
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

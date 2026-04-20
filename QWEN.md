@@ -349,3 +349,15 @@ mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 - `docker-compose.yml` - Multi-service orchestration
 - `checkstyle.xml` - Code style rules
 - `REFACTORING_SUMMARY.md` - Recent refactoring notes
+
+## Qwen Added Memories
+- innerdoc 目录结构规范：根目录只保留《开发计划 -2026.md》和《任务跟踪表.md》两个核心文档。所有其他文档必须按内容归档到对应的子目录中：
+- 01-项目概述：需求文档、开发路线图、子版本计划
+- 03-重构记录：重构方案、设计文档
+- 05-测试报告：测试文档、检查报告
+- 16-版本发布：所有版本的开发总结（v1.x.x-开发总结.md）和 release notes
+后续新生成的开发总结文档也必须放置到 16-版本发布 目录下。
+- 每次启动新对话时，需要读取 README-INNERDOC.md 文件作为内部文档索引，了解项目内部文档结构
+- 每次启动新对话时，需要读取 innerdoc/README-INNERDOC.md 文件作为内部文档索引，了解项目内部文档结构
+- 每次启动新对话时，需要读取 innerdoc/README-INNERDOC.md 文件作为内部文档索引，该文档包含完整的 145 个文档分类清单，用于 AI 助手快速定位项目内部文档
+- 项目开发计划和任务跟踪信息存储在 innerdoc/01-项目概述/开发计划 -2026.md 中。当前版本路线：v1.9.0 已完成（2026-04-17），正在进行 v1.9.1-v1.9.4 异常管理功能开发（2026-04-19~04-25），后续规划 v2.0.0 核心重构（2026-06-01）和 v2.1.0 测试与质量（2026-07-16）。共 17 个任务：P0 高优先级 4 个（安全与核心质量）、P1 中优先级 7 个（性能与可维护性）、P2 低优先级 6 个（用户体验与质量），总工作量约 35 天

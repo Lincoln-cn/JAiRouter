@@ -1,0 +1,324 @@
+# JAiRouter 完整监控体系 Docker Compose 配置 (v1.9.5)
+# 包含：Prometheus + Grafana + AlertManager + Loki + Tempo + Redis + Node Exporter + cAdvisor
+#
+# 使用说明:
+#   docker-compose -f docker-compose.monitoring.yml up -d
+#
+# 访问地址:
+#   - Prometheus:    http://localhost:9090
+#   - Grafana:       http://localhost:3000 (admin/admin)
+#   - AlertManager:  http://localhost:9093
+#   - Loki:          http://localhost:3100
+#   - Tempo:         http://localhost:3200
+#   - Node Exporter: http://localhost:9100
+#   - cAdvisor:      http://localhost:8080
+#   - Redis Commander: http://localhost:8081
+
+services:
+  # ========================================
+  # Prometheus - 指标收集与告警
+  # ========================================
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: jairouter-prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=10GB'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+      - '--enable-feature=exemplar-storage'
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================
+  # Grafana - 可视化仪表盘
+  # ========================================
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: jairouter-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      # 启用日志
+      - GF_LOG_LEVEL=info
+      - GF_LOG_MODE=console file
+      # 启用功能
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+      # 预配置
+      - GF_SERVER_ENABLE_GZIP=true
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "sleep 5 && wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
+
+  # ========================================
+  # AlertManager - 告警管理
+  # ========================================
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: jairouter-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+      - '--cluster.listen-address='
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================
+  # Loki - 日志聚合系统
+  # ========================================
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: jairouter-loki
+    ports:
+      - "3100:3100"
+    command:
+      - '-config.file=/etc/loki/loki.yml'
+      - '-target=all'
+    volumes:
+      - ./monitoring/loki:/etc/loki
+      - loki-data:/loki
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3100/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================
+  # Promtail - Loki 日志收集器
+  # ========================================
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: jairouter-promtail
+    volumes:
+      - ./monitoring/promtail:/etc/promtail
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - '-config.file=/etc/promtail/promtail.yml'
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    depends_on:
+      - loki
+
+  # ========================================
+  # Tempo - 分布式追踪后端
+  # ========================================
+  tempo:
+    image: grafana/tempo:2.2.2
+    container_name: jairouter-tempo
+    ports:
+      - "3200:3200"  # Tempo API
+      - "9411:9411"  # Zipkin 兼容端点
+    command:
+      - '-config.file=/etc/tempo/tempo.yml'
+    volumes:
+      - ./monitoring/tempo:/etc/tempo
+      - tempo-data:/tmp/tempo
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3200/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================
+  # Node Exporter - 系统指标收集
+  # ========================================
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: jairouter-node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      - '--collector.netclass.ignored-devices=^(veth.*|docker.*|br-.*|cni.*|lo|virbr.*)$$'
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    pid: host
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================
+  # cAdvisor - 容器指标监控
+  # ========================================
+  # 注意：cAdvisor 需要 root 权限，且在某些系统上可能无法正常运行
+  # 如需启用，请确保 Docker 有足够权限访问 /var/lib/docker
+  # cadvisor:
+  #   image: gcr.io/cadvisor/cadvisor:v0.47.0
+  #   container_name: jairouter-cadvisor
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:ro
+  #     - /sys:/sys:ro
+  #     - /var/lib/docker/:/var/lib/docker:ro
+  #     - /dev/disk/:/dev/disk:ro
+  #   networks:
+  #     - jairouter-network
+  #   restart: unless-stopped
+  #   privileged: true
+  #   healthcheck:
+  #     test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/metrics"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+
+  # ========================================
+  # Redis - 缓存和 JWT 持久化
+  # ========================================
+  redis:
+    image: redis:7.2-alpine
+    container_name: jairouter-redis
+    ports:
+      - "6379:6379"
+    command:
+      - '--requirepass ${REDIS_PASSWORD:-}'
+      - '--appendonly yes'
+      - '--maxmemory 256mb'
+      - '--maxmemory-policy allkeys-lru'
+    volumes:
+      - redis-data:/data
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================
+  # Redis Commander - Redis Web 管理界面
+  # ========================================
+  # 注意：Redis Commander 是可选的 Web 管理工具
+  # redis-commander:
+  #   image: rediscommander/redis-commander:latest
+  #   container_name: jairouter-redis-commander
+  #   ports:
+  #     - "8081:8081"
+  #   environment:
+  #     - REDIS_HOSTS=local:redis:6379:${REDIS_PASSWORD:-}
+  #     - HTTP_PORT=8081
+  #   networks:
+  #     - jairouter-network
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - redis
+
+  # ========================================
+  # Prometheus MySQL Exporter (可选)
+  # ========================================
+  mysqld-exporter:
+    image: prom/mysqld-exporter:v0.15.1
+    container_name: jairouter-mysqld-exporter
+    ports:
+      - "9104:9104"
+    environment:
+      - DATA_SOURCE_NAME=${MYSQL_EXPORTER_USER:-exporter}:${MYSQL_EXPORTER_PASSWORD:-exporter}@(mysql:3306)/
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    profiles:
+      - mysql
+
+  # ========================================
+  # Blackbox Exporter - 外部探测 (可选)
+  # ========================================
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.24.0
+    container_name: jairouter-blackbox-exporter
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./monitoring/blackbox:/etc/blackbox
+    command:
+      - '--config.file=/etc/blackbox/blackbox.yml'
+    networks:
+      - jairouter-network
+    restart: unless-stopped
+    profiles:
+      - blackbox
+
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  alertmanager-data:
+    driver: local
+  loki-data:
+    driver: local
+  tempo-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  jairouter-network:
+    external: true
