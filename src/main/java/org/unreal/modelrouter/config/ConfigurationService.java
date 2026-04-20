@@ -28,6 +28,8 @@ import org.unreal.modelrouter.util.SecurityUtils;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -59,8 +61,8 @@ public class ConfigurationService {
     private final Map<String, ConfigMetadata> configMetadataMap = new HashMap<>();
     private final Map<String, List<VersionInfo>> versionHistoryMap = new HashMap<String, List<VersionInfo>>();
 
-    // 版本创建同步锁
-    private final Object versionCreationLock = new Object();
+    // 版本创建锁 - v2.0.0: 使用 ReentrantLock 替代 synchronized 提升并发性能
+    private final ReentrantLock versionCreationLock = new ReentrantLock();
 
     // 实例更新锁，防止同一实例的并发更新
     private final ConcurrentHashMap<String, Object> instanceUpdateLocks = new ConcurrentHashMap<>();
@@ -378,9 +380,12 @@ public class ConfigurationService {
      * @return 新版本号
      */
     public int saveAsNewVersion(Map<String, Object> config, String description, String userId) {
-        // 使用同步锁确保版本创建的原子性
-        synchronized (versionCreationLock) {
+        // v2.0.0: 使用 ReentrantLock 替代 synchronized 提升并发性能
+        versionCreationLock.lock();
+        try {
             return saveAsNewVersionInternal(config, description, userId);
+        } finally {
+            versionCreationLock.unlock();
         }
     }
 
