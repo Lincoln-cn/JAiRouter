@@ -8,6 +8,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
+import org.unreal.modelrouter.adapter.builder.RequestBuilder;
+import org.unreal.modelrouter.adapter.handler.ResponseHandler;
+
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
@@ -19,8 +22,13 @@ import org.unreal.modelrouter.repository.ModelCallStatsRepository;
  */
 public class LocalAiAdapter extends BaseAdapter {
 
-    public LocalAiAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper, ModelCallStatsRepository statsRepository) {
-        super(registry, metricsCollector, objectMapper, statsRepository);
+    public LocalAiAdapter(ModelServiceRegistry registry,
+                         MetricsCollector metricsCollector,
+                         ObjectMapper objectMapper,
+                         ModelCallStatsRepository statsRepository,
+                         RequestBuilder requestBuilder,
+                         ResponseHandler responseHandler) {
+        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler);
     }
 
     @Override

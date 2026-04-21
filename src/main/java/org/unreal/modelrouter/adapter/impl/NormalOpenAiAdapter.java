@@ -10,6 +10,9 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
+import org.unreal.modelrouter.adapter.builder.RequestBuilder;
+import org.unreal.modelrouter.adapter.handler.ResponseHandler;
+
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
@@ -17,8 +20,13 @@ import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 
 public class NormalOpenAiAdapter extends BaseAdapter {
 
-    public NormalOpenAiAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper, ModelCallStatsRepository statsRepository) {
-        super(registry, metricsCollector, objectMapper, statsRepository);
+    public NormalOpenAiAdapter(ModelServiceRegistry registry,
+                         MetricsCollector metricsCollector,
+                         ObjectMapper objectMapper,
+                         ModelCallStatsRepository statsRepository,
+                         RequestBuilder requestBuilder,
+                         ResponseHandler responseHandler) {
+        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler);
     }
 
     @Override

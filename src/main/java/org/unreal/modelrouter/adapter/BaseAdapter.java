@@ -19,6 +19,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.LinkedMultiValueMap;
+import org.unreal.modelrouter.adapter.builder.RequestBuilder;
+import org.unreal.modelrouter.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
@@ -43,6 +45,8 @@ public abstract class BaseAdapter implements ServiceCapability {
     private final ModelServiceRegistry registry;
     private final MetricsCollector metricsCollector;
     private final ModelCallStatsRepository statsRepository;
+    private final RequestBuilder requestBuilder;
+    private final ResponseHandler responseHandler;
 
     protected final ObjectMapper objectMapper;
 
@@ -52,11 +56,15 @@ public abstract class BaseAdapter implements ServiceCapability {
     public BaseAdapter(final ModelServiceRegistry registry,
                        final MetricsCollector metricsCollector,
                        final ObjectMapper objectMapper,
-                       final ModelCallStatsRepository statsRepository) {
+                       final ModelCallStatsRepository statsRepository,
+                       final RequestBuilder requestBuilder,
+                       final ResponseHandler responseHandler) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
         this.statsRepository = statsRepository;
+        this.requestBuilder = requestBuilder;
+        this.responseHandler = responseHandler;
     }
 
     /**
