@@ -194,6 +194,12 @@ curl http://localhost:8080/actuator/health
 **登录凭证**:
 - 用户名：`admin`
 - 密码：`$INITIAL_ADMIN_PASSWORD` 环境变量的值
+  - **开发环境默认值**：`ChangeMeOnFirstStartup123456`（未设置环境变量时）
+  - **生产环境**：必须通过环境变量设置，否则启动时会发出安全警告
+  - **推荐做法**：使用密钥生成工具生成强密码：
+    ```bash
+    docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
+    ```
 
 ![](../capture/login.png)
 

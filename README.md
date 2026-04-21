@@ -155,8 +155,12 @@ curl http://localhost:8080/admin/login
 **Default Login Credentials**:
 - Username: `admin`
 - Password: The value of `INITIAL_ADMIN_PASSWORD` environment variable set at startup
-  - If not set, development environment uses default password (see startup logs)
-  - Production environment must be set, otherwise security warnings will be issued during startup
+  - **Development environment default**: `ChangeMeOnFirstStartup123456` (when not set)
+  - **Production environment**: Must be set via environment variable, otherwise security warnings will be issued during startup
+  - **Recommended**: Generate a strong password using the key generation tool:
+    ```bash
+    docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
+    ```
 
 After successful login, you can enter the web interface to perform service configuration, management, tracing, and performance analysis operations.
 
