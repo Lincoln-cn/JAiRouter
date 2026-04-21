@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
@@ -65,7 +66,7 @@ class AdapterTracingEnhancerTest {
         verify(span).setAttribute("instance.name", instance.getName());
         verify(span).setAttribute("instance.base_url", instance.getBaseUrl());
         verify(span).setAttribute("instance.path", instance.getPath());
-        verify(span).setAttribute("model.type", "llm");
+        verify(span).setAttribute("model.type", ServiceTypeConstants.CHAT);
         verify(span).setAttribute("adapter.version", "v1");
         verify(span).setAttribute("adapter.capabilities", "chat,embedding,tts,stt,image");
         verify(span).setAttribute("api.provider", "openai");
@@ -109,7 +110,7 @@ class AdapterTracingEnhancerTest {
 
         // Then
         verify(span).setAttribute("adapter.type", adapterType);
-        verify(span).setAttribute("model.type", "llm");
+        verify(span).setAttribute("model.type", ServiceTypeConstants.CHAT);
         verify(span).setAttribute("adapter.version", "v1");
         verify(span).setAttribute("adapter.capabilities", "chat");
         verify(span).setAttribute("api.provider", "vllm");
@@ -235,12 +236,12 @@ class AdapterTracingEnhancerTest {
     @Test
     void testModelTypeInference() {
         // Test different model types
-        testModelTypeInference("gpt-3.5-turbo", "llm");
+        testModelTypeInference("gpt-3.5-turbo", ServiceTypeConstants.CHAT);
         testModelTypeInference("text-embedding-ada-002", "embedding");
         testModelTypeInference("bge-reranker-large", "rerank");
         testModelTypeInference("tts-1", "tts");
         testModelTypeInference("whisper-1", "stt");
-        testModelTypeInference("dall-e-3", "image");
+        testModelTypeInference("dall-e-3", ServiceTypeConstants.IMG_GEN);
         testModelTypeInference("unknown-model", "unknown");
     }
 

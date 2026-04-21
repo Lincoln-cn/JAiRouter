@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
@@ -117,26 +118,34 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
             String[] pathParts = path.split("/");
             if (pathParts.length >= 3) {
                 String endpoint = pathParts[2];
-                switch (endpoint) {
-                    case "chat":
-                        return "chat";
-                    case "embeddings":
-                        return "embedding";
-                    case "rerank":
-                        return "rerank";
-                    case "audio":
-                        if (pathParts.length >= 4) {
-                            return "speech".equals(pathParts[3]) ? "tts" : "stt";
-                        }
-                        return "audio";
-                    case "images":
-                        if (pathParts.length >= 4) {
-                            return "generations".equals(pathParts[3]) ? "imgGen" : "imgEdit";
-                        }
-                        return "image";
-                    default:
-                        return endpoint;
+                
+                // 使用常量类判断服务类型
+                if ("chat".equals(endpoint)) {
+                    return ServiceTypeConstants.CHAT;
                 }
+                if ("embeddings".equals(endpoint)) {
+                    return ServiceTypeConstants.EMBEDDING;
+                }
+                if ("rerank".equals(endpoint)) {
+                    return ServiceTypeConstants.RERANK;
+                }
+                if ("audio".equals(endpoint)) {
+                    if (pathParts.length >= 4) {
+                        return "speech".equals(pathParts[3]) 
+                            ? ServiceTypeConstants.TTS 
+                            : ServiceTypeConstants.STT;
+                    }
+                    return "audio";
+                }
+                if ("images".equals(endpoint)) {
+                    if (pathParts.length >= 4) {
+                        return "generations".equals(pathParts[3]) 
+                            ? ServiceTypeConstants.IMG_GEN 
+                            : ServiceTypeConstants.IMG_EDIT;
+                    }
+                    return "image";
+                }
+                return endpoint;
             }
         }
         

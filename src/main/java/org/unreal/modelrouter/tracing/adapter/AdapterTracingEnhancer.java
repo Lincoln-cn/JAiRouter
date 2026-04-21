@@ -2,6 +2,7 @@ package org.unreal.modelrouter.tracing.adapter;
 
 import io.opentelemetry.api.trace.Span;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
@@ -288,36 +289,36 @@ public class AdapterTracingEnhancer {
         
         // 重排序模型 - 优先检查，避免与其他模型类型冲突
         if (lowerName.contains("rerank") || lowerName.contains("reranker")) {
-            return "rerank";
+            return ServiceTypeConstants.RERANK;
         }
         
         // TTS模型
         if (lowerName.contains("tts") || lowerName.contains("speech")) {
-            return "tts";
+            return ServiceTypeConstants.TTS;
         }
         
         // STT模型
         if (lowerName.contains("stt") || lowerName.contains("whisper")) {
-            return "stt";
+            return ServiceTypeConstants.STT;
         }
         
         // 图像模型
         if (lowerName.contains("dall") || lowerName.contains("stable") ||
             lowerName.contains("midjourney") || lowerName.contains("image")) {
-            return "image";
+            return ServiceTypeConstants.IMG_GEN;
         }
         
         // 嵌入模型
         if (lowerName.contains("embedding") || lowerName.contains("embed") ||
             lowerName.contains("bge") || lowerName.contains("sentence")) {
-            return "embedding";
+            return ServiceTypeConstants.EMBEDDING;
         }
         
         // 大语言模型
         if (lowerName.contains("gpt") || lowerName.contains("llama") || 
             lowerName.contains("qwen") || lowerName.contains("chatglm") ||
             lowerName.contains("baichuan") || lowerName.contains("claude")) {
-            return "llm";
+            return ServiceTypeConstants.CHAT;
         }
         
         return "unknown";
