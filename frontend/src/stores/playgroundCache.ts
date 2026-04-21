@@ -3,6 +3,7 @@ import { ref, reactive } from 'vue'
 import { getServiceInstances } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 
+import { COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 // 缓存接口定义
 interface CacheItem<T> {
   data: T
@@ -215,7 +216,7 @@ export const clearCache = (serviceType?: string) => {
 
 // 预加载常用服务类型的数据
 export const preloadCommonData = async () => {
-  const commonServiceTypes = ['chat', 'embedding', 'rerank', 'tts', 'stt', 'imgGen', 'imgEdit']
+  const commonServiceTypes = COMMON_SERVICE_TYPES
   
   // 并行预加载，但不等待结果，避免阻塞
   commonServiceTypes.forEach(serviceType => {

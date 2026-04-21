@@ -1,8 +1,10 @@
 package org.unreal.modelrouter.adapter.support;
 
-import lombok.extern.slf4j.Slf4j;
+import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
 
@@ -61,13 +63,27 @@ public class MetricsSupport {
             return "unknown";
         }
 
-        if (request instanceof ChatDTO.Request) return "chat";
-        if (request instanceof EmbeddingDTO.Request) return "embedding";
-        if (request instanceof RerankDTO.Request) return "rerank";
-        if (request instanceof TtsDTO.Request) return "tts";
-        if (request instanceof SttDTO.Request) return "stt";
-        if (request instanceof ImageGenerateDTO.Request) return "imgGen";
-        if (request instanceof ImageEditDTO.Request) return "imgEdit";
+        if (request instanceof ChatDTO.Request) {
+            return ServiceTypeConstants.CHAT;
+        }
+        if (request instanceof EmbeddingDTO.Request) {
+            return ServiceTypeConstants.EMBEDDING;
+        }
+        if (request instanceof RerankDTO.Request) {
+            return ServiceTypeConstants.RERANK;
+        }
+        if (request instanceof TtsDTO.Request) {
+            return ServiceTypeConstants.TTS;
+        }
+        if (request instanceof SttDTO.Request) {
+            return ServiceTypeConstants.STT;
+        }
+        if (request instanceof ImageGenerateDTO.Request) {
+            return ServiceTypeConstants.IMG_GEN;
+        }
+        if (request instanceof ImageEditDTO.Request) {
+            return ServiceTypeConstants.IMG_EDIT;
+        }
         return "unknown";
     }
 

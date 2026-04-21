@@ -312,6 +312,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import type { FormInstance } from 'element-plus'
+import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   addServiceInstance,
@@ -333,19 +334,10 @@ import { Plus, Delete, Close, Key, Timer, WarningFilled, Edit } from '@element-p
 import RateLimitConfig from '@/components/RateLimitConfig.vue'
 import CircuitBreakerConfig from '@/components/CircuitBreakerConfig.vue'
 
-// 服务类型映射（保持原有）
-const serviceTypeMap: Record<string, string> = {
-  chat: '聊天服务',
-  embedding: '嵌入服务',
-  rerank: '重排序服务',
-  tts: '文本转语音',
-  stt: '语音转文本',
-  imgGen: '图像生成',
-  imgEdit: '图像编辑服务'
-}
+const serviceTypeMap: Record<string, string> = SERVICE_TYPE_LABELS as Record<string, string>
 
 // 指定显示顺序（会按此顺序排列卡片/标签）
-const serviceOrder = ['chat', 'embedding', 'rerank', 'tts', 'stt', 'imgGen', 'imgEdit']
+const serviceOrder: string[] = COMMON_SERVICE_TYPES as string[]
 
 // 服务类型（按指定顺序显示）
 const serviceTypes = ref<string[]>([])

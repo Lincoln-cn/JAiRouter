@@ -1,9 +1,11 @@
 package org.unreal.modelrouter.adapter.support;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * 适配器重试支持工具类
@@ -24,16 +26,33 @@ public class RetrySupport {
      * 获取最大重试次数
      */
     public int getMaxRetries(String serviceType) {
-        return switch (serviceType) {
-            case "chat" -> 2;
-            case "embedding" -> 2;
-            case "rerank" -> 1;
-            case "tts" -> 1;
-            case "stt" -> 1;
-            case "imgGen" -> 1;
-            case "imgEdit" -> 1;
-            default -> 1;
-        };
+        if (serviceType == null) {
+            return 1;
+        }
+        
+        // 使用常量类判断
+        if (ServiceTypeConstants.CHAT.equals(serviceType)) {
+            return 2;
+        }
+        if (ServiceTypeConstants.EMBEDDING.equals(serviceType)) {
+            return 2;
+        }
+        if (ServiceTypeConstants.RERANK.equals(serviceType)) {
+            return 1;
+        }
+        if (ServiceTypeConstants.TTS.equals(serviceType)) {
+            return 1;
+        }
+        if (ServiceTypeConstants.STT.equals(serviceType)) {
+            return 1;
+        }
+        if (ServiceTypeConstants.IMG_GEN.equals(serviceType)) {
+            return 1;
+        }
+        if (ServiceTypeConstants.IMG_EDIT.equals(serviceType)) {
+            return 1;
+        }
+        return 1;
     }
 
     /**

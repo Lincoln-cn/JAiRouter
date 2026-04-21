@@ -8,6 +8,8 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.checker.ServerChecker;
 import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.config.manager.InstanceManager;
+import org.unreal.modelrouter.config.manager.ServiceConfigManager;
 import org.unreal.modelrouter.dto.CircuitBreakerConfig;
 import org.unreal.modelrouter.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.dto.RateLimitConfig;
@@ -48,6 +50,8 @@ public class ConfigurationService {
     private final ConfigMergeService configMergeService;
     private final ServiceStateManager serviceStateManager;
     private final SamplingConfigurationValidator samplingValidator;
+    private final ServiceConfigManager serviceConfigManager;
+    private final InstanceManager instanceManager;
     // v1.5.1: 移除 DatabaseConfigService 依赖
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
     // v1.5.6: 配置同步服务，用于版本回滚时同步实例到数据库
@@ -78,12 +82,16 @@ public class ConfigurationService {
                                 ConfigurationHelper configurationHelper,
                                 ConfigMergeService configMergeService,
                                 ServiceStateManager serviceStateManager,
-                                SamplingConfigurationValidator samplingValidator) {
+                                SamplingConfigurationValidator samplingValidator,
+                                ServiceConfigManager serviceConfigManager,
+                                InstanceManager instanceManager) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
         this.serviceStateManager = serviceStateManager;
         this.samplingValidator = samplingValidator;
+        this.serviceConfigManager = serviceConfigManager;
+        this.instanceManager = instanceManager;
         // 版本控制初始化移到 @PostConstruct 中，确保 JpaDatabaseInitializer 先执行
     }
 
@@ -1934,25 +1942,57 @@ public class ConfigurationService {
             return true;
         } catch (Exception e) {
             // 处理常见的别名映射
-            String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
-            return lowerServiceType.equals("chat")
-                || lowerServiceType.equals("chat-completion")
-                || lowerServiceType.equals("chat-completions")
-                || lowerServiceType.equals("embedding")
-                || lowerServiceType.equals("embeddings")
-                || lowerServiceType.equals("rerank")
-                || lowerServiceType.equals("re-rank")
-                || lowerServiceType.equals("tts")
-                || lowerServiceType.equals("text-to-speech")
-                || lowerServiceType.equals("stt")
-                || lowerServiceType.equals("speech-to-text")
-                || lowerServiceType.equals("imggen")
-                || lowerServiceType.equals("image-generation")
-                || lowerServiceType.equals("image-generate")
-                || lowerServiceType.equals("imgedit")
-                || lowerServiceType.equals("image-edit")
-                || lowerServiceType.equals("image-editing");
+            return isValidServiceTypeAlias(serviceType);
         }
+    }
+
+    /**
+     * 检查是否是有效的服务类型别名
+     */
+    private boolean isValidServiceTypeAlias(String serviceType) {
+        String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
+        
+        // 使用常量类进行匹配
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.CHAT)
+            || lowerServiceType.equals("chat-completion")
+            || lowerServiceType.equals("chat-completions")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.EMBEDDING)
+            || lowerServiceType.equals("embeddings")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.RERANK)
+            || lowerServiceType.equals("re-rank")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.TTS)
+            || lowerServiceType.equals("text-to-speech")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.STT)
+            || lowerServiceType.equals("speech-to-text")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.IMG_GEN)
+            || lowerServiceType.equals("imggen")
+            || lowerServiceType.equals("image-generation")
+            || lowerServiceType.equals("image-generate")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.IMG_EDIT)
+            || lowerServiceType.equals("image-edit")
+            || lowerServiceType.equals("image-editing")) {
+            return true;
+        }
+        
+        return false;
     }
 
     /**

@@ -340,6 +340,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
+import { SERVICE_TYPE_LABELS, COMMON_SERVICE_TYPES } from '@/constants/serviceTypes'
 import type { FormInstance, FormRules } from 'element-plus'
 import { 
   getServiceTypes, 
@@ -352,8 +353,8 @@ import {
 } from '@/api/service'
 
 // 支持的服务类型列表（保持原有）
-const supportedTypes = [
-  'chat', 'embedding', 'rerank', 'tts', 'stt', 'imgGen', 'imgEdit'
+const supportedTypes: string[] = [
+  ...COMMON_SERVICE_TYPES
 ]
 
 // 服务定义
@@ -405,16 +406,7 @@ const filterAdapter = ref<string | undefined>(undefined)
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// 服务类型映射（保持原有）
-const serviceTypeMap: Record<string, string> = {
-  chat: '聊天服务',
-  embedding: '嵌入服务',
-  rerank: '重排序服务',
-  tts: '文本转语音',
-  stt: '语音转文本',
-  imgGen: '图像生成',
-  imgEdit: '图像编辑服务'
-}
+const serviceTypeMap: Record<string, string> = SERVICE_TYPE_LABELS as Record<string, string>
 
 // 服务数据缓存
 const serviceCache = ref<Record<string, any>>({})

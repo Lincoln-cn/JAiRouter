@@ -224,25 +224,12 @@ public final class TracingConstants {
         public static final String SECURITY_FILTER = "security-filter";
         public static final String CONFIG_MANAGER = "config-manager";
         public static final String SANITIZER = "sanitizer";
-        
+
         private Components() {}
     }
-    
-    /**
-     * 服务类型
-     */
-    public static final class ServiceTypes {
-        public static final String CHAT = "chat";
-        public static final String EMBEDDING = "embedding";
-        public static final String RERANK = "rerank";
-        public static final String TTS = "tts";
-        public static final String STT = "stt";
-        public static final String IMAGE_GENERATION = "imgGen";
-        public static final String IMAGE_EDIT = "imgEdit";
-        
-        private ServiceTypes() {}
-    }
-    
+
+    // 服务类型常量已移至 org.unreal.modelrouter.constants.ServiceTypeConstants
+
     /**
      * 负载均衡策略
      */

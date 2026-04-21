@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.ratelimit.RateLimitConfig;
@@ -67,36 +68,56 @@ public class ConfigurationHelper {
             return ModelServiceRegistry.ServiceType.valueOf(normalizedKey);
         } catch (IllegalArgumentException e) {
             // 处理常见的别名映射
-            switch (serviceKey.toLowerCase(java.util.Locale.ROOT)) {
-                case "chat":
-                case "chat-completion":
-                case "chat-completions":
-                    return ModelServiceRegistry.ServiceType.chat;
-                case "embedding":
-                case "embeddings":
-                    return ModelServiceRegistry.ServiceType.embedding;
-                case "rerank":
-                case "re-rank":
-                    return ModelServiceRegistry.ServiceType.rerank;
-                case "tts":
-                case "text-to-speech":
-                    return ModelServiceRegistry.ServiceType.tts;
-                case "stt":
-                case "speech-to-text":
-                    return ModelServiceRegistry.ServiceType.stt;
-                case "imggen":
-                case "image-generation":
-                case "image-generate":
-                    return ModelServiceRegistry.ServiceType.imgGen;
-                case "imgedit":
-                case "image-edit":
-                case "image-editing":
-                    return ModelServiceRegistry.ServiceType.imgEdit;
-                default:
-                    LOGGER.warn("无法解析服务类型: {}", serviceKey);
-                    return null;
-            }
+            return mapServiceTypeAlias(serviceKey);
         }
+    }
+
+    /**
+     * 映射服务类型别名到枚举
+     */
+    private ModelServiceRegistry.ServiceType mapServiceTypeAlias(String serviceKey) {
+        String lower = serviceKey.toLowerCase(java.util.Locale.ROOT);
+        
+        if (lower.equals(ServiceTypeConstants.CHAT)
+            || lower.equals("chat-completion")
+            || lower.equals("chat-completions")) {
+            return ModelServiceRegistry.ServiceType.chat;
+        }
+        
+        if (lower.equals(ServiceTypeConstants.EMBEDDING)
+            || lower.equals("embeddings")) {
+            return ModelServiceRegistry.ServiceType.embedding;
+        }
+        
+        if (lower.equals(ServiceTypeConstants.RERANK)
+            || lower.equals("re-rank")) {
+            return ModelServiceRegistry.ServiceType.rerank;
+        }
+        
+        if (lower.equals(ServiceTypeConstants.TTS)
+            || lower.equals("text-to-speech")) {
+            return ModelServiceRegistry.ServiceType.tts;
+        }
+        
+        if (lower.equals(ServiceTypeConstants.STT)
+            || lower.equals("speech-to-text")) {
+            return ModelServiceRegistry.ServiceType.stt;
+        }
+        
+        if (lower.equals(ServiceTypeConstants.IMG_GEN)
+            || lower.equals("imggen")
+            || lower.equals("image-generation")
+            || lower.equals("image-generate")) {
+            return ModelServiceRegistry.ServiceType.imgGen;
+        }
+        
+        if (lower.equals(ServiceTypeConstants.IMG_EDIT)
+            || lower.equals("image-edit")
+            || lower.equals("image-editing")) {
+            return ModelServiceRegistry.ServiceType.imgEdit;
+        }
+        
+        return null;
     }
 
     /**

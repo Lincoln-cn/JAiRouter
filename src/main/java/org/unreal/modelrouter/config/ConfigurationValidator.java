@@ -517,25 +517,57 @@ public class ConfigurationValidator {
             return true;
         } catch (Exception e) {
             // 处理常见的别名映射
-            String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
-            return lowerServiceType.equals("chat")
-                || lowerServiceType.equals("chat-completion")
-                || lowerServiceType.equals("chat-completions")
-                || lowerServiceType.equals("embedding")
-                || lowerServiceType.equals("embeddings")
-                || lowerServiceType.equals("rerank")
-                || lowerServiceType.equals("re-rank")
-                || lowerServiceType.equals("tts")
-                || lowerServiceType.equals("text-to-speech")
-                || lowerServiceType.equals("stt")
-                || lowerServiceType.equals("speech-to-text")
-                || lowerServiceType.equals("imggen")
-                || lowerServiceType.equals("image-generation")
-                || lowerServiceType.equals("image-generate")
-                || lowerServiceType.equals("imgedit")
-                || lowerServiceType.equals("image-edit")
-                || lowerServiceType.equals("image-editing");
+            return isValidServiceTypeAlias(serviceType);
         }
+    }
+
+    /**
+     * 检查是否是有效的服务类型别名
+     */
+    private boolean isValidServiceTypeAlias(String serviceType) {
+        String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
+        
+        // 使用常量类进行匹配
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.CHAT)
+            || lowerServiceType.equals("chat-completion")
+            || lowerServiceType.equals("chat-completions")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.EMBEDDING)
+            || lowerServiceType.equals("embeddings")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.RERANK)
+            || lowerServiceType.equals("re-rank")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.TTS)
+            || lowerServiceType.equals("text-to-speech")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.STT)
+            || lowerServiceType.equals("speech-to-text")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.IMG_GEN)
+            || lowerServiceType.equals("imggen")
+            || lowerServiceType.equals("image-generation")
+            || lowerServiceType.equals("image-generate")) {
+            return true;
+        }
+        
+        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.IMG_EDIT)
+            || lowerServiceType.equals("image-edit")
+            || lowerServiceType.equals("image-editing")) {
+            return true;
+        }
+        
+        return false;
     }
     public void validateServiceConfig(String serviceType, Map<String, Object> serviceConfig, List<String> errors, List<String> warnings) {
         if (serviceType == null || serviceType.trim().isEmpty()) {

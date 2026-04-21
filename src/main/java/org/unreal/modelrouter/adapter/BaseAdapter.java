@@ -19,6 +19,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.LinkedMultiValueMap;
+import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
@@ -1088,19 +1089,19 @@ public abstract class BaseAdapter implements ServiceCapability {
 
         // 根据请求类型判断服务类型
         if (request instanceof org.unreal.modelrouter.dto.ChatDTO.Request) {
-            return "chat";
+            return ServiceTypeConstants.CHAT;
         } else if (request instanceof org.unreal.modelrouter.dto.EmbeddingDTO.Request) {
-            return "embedding";
+            return ServiceTypeConstants.EMBEDDING;
         } else if (request instanceof org.unreal.modelrouter.dto.RerankDTO.Request) {
-            return "rerank";
+            return ServiceTypeConstants.RERANK;
         } else if (request instanceof org.unreal.modelrouter.dto.TtsDTO.Request) {
-            return "tts";
+            return ServiceTypeConstants.TTS;
         } else if (request instanceof org.unreal.modelrouter.dto.SttDTO.Request) {
-            return "stt";
+            return ServiceTypeConstants.STT;
         } else if (request instanceof org.unreal.modelrouter.dto.ImageGenerateDTO.Request) {
-            return "imgGen";
+            return ServiceTypeConstants.IMG_GEN;
         } else if (request instanceof org.unreal.modelrouter.dto.ImageEditDTO.Request) {
-            return "imgEdit";
+            return ServiceTypeConstants.IMG_EDIT;
         } else {
             return "unknown";
         }
