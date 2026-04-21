@@ -11,6 +11,9 @@ import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
+import org.unreal.modelrouter.adapter.selector.InstanceSelector;
+import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
+
 
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
@@ -28,8 +31,10 @@ public class XinferenceAdapter extends BaseAdapter {
                          ObjectMapper objectMapper,
                          ModelCallStatsRepository statsRepository,
                          RequestBuilder requestBuilder,
-                         ResponseHandler responseHandler) {
-        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler);
+                         ResponseHandler responseHandler,
+                         InstanceSelector instanceSelector,
+                         ResponseTransformer responseTransformer) {
+        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer);
     }
 
     @Override

@@ -21,6 +21,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.LinkedMultiValueMap;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
+import org.unreal.modelrouter.adapter.selector.InstanceSelector;
+import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
@@ -47,6 +49,8 @@ public abstract class BaseAdapter implements ServiceCapability {
     private final ModelCallStatsRepository statsRepository;
     private final RequestBuilder requestBuilder;
     private final ResponseHandler responseHandler;
+    private final InstanceSelector instanceSelector;
+    private final ResponseTransformer responseTransformer;
 
     protected final ObjectMapper objectMapper;
 
@@ -58,13 +62,17 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final ObjectMapper objectMapper,
                        final ModelCallStatsRepository statsRepository,
                        final RequestBuilder requestBuilder,
-                       final ResponseHandler responseHandler) {
+                       final ResponseHandler responseHandler,
+                       final InstanceSelector instanceSelector,
+                       final ResponseTransformer responseTransformer) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
         this.statsRepository = statsRepository;
         this.requestBuilder = requestBuilder;
         this.responseHandler = responseHandler;
+        this.instanceSelector = instanceSelector;
+        this.responseTransformer = responseTransformer;
     }
 
     /**
@@ -831,7 +839,7 @@ public abstract class BaseAdapter implements ServiceCapability {
      * 转换流式响应块 - 子类可以重写
      */
     protected String transformStreamChunk(final String chunk) {
-        return adaptModelName(chunk);
+        return responseTransformer.transformStreamChunk(chunk);
     }
 
     public abstract AdapterCapabilities supportCapability();
@@ -993,28 +1001,28 @@ public abstract class BaseAdapter implements ServiceCapability {
             final ModelServiceRegistry.ServiceType serviceType,
             final String modelName,
             final String clientIp) {
-        return getRegistry().selectInstance(serviceType, modelName, clientIp);
+        return instanceSelector.selectInstance(serviceType, modelName, clientIp);
     }
 
     /**
      * 获取模型路径
      */
     protected String getModelPath(final ModelServiceRegistry.ServiceType serviceType, final String modelName) {
-        return getRegistry().getModelPath(serviceType, modelName);
+        return instanceSelector.getModelPath(serviceType, modelName);
     }
 
     /**
      * 转换请求体 - 子类可以重写此方法来适配不同的API格式
      */
     protected Object transformRequest(final Object request, final String adapterType) {
-        return request;
+        return responseTransformer.transformRequest(request, adapterType);
     }
 
     /**
      * 适配模型名称格式
      */
     protected String adaptModelName(final String originalModelName) {
-        return originalModelName;
+        return responseTransformer.adaptModelName(originalModelName);
     }
 
     /**
@@ -1022,7 +1030,7 @@ public abstract class BaseAdapter implements ServiceCapability {
      * 注意：此方法现在处理的是已解析为Object的下游响应体，而不是原始的ResponseEntity。
      */
     protected Object transformResponse(final Object responseData, final String adapterType) {
-        return responseData;
+        return responseTransformer.transformResponse(responseData, adapterType);
     }
 
     /**
