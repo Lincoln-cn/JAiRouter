@@ -8,6 +8,8 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.checker.ServerChecker;
 import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.config.manager.ConfigValidator;
+import org.unreal.modelrouter.config.manager.ConfigVersionManager;
 import org.unreal.modelrouter.config.manager.InstanceManager;
 import org.unreal.modelrouter.config.manager.ServiceConfigManager;
 import org.unreal.modelrouter.dto.CircuitBreakerConfig;
@@ -53,6 +55,8 @@ public class ConfigurationService {
     private final ServiceConfigManager serviceConfigManager;
     private final InstanceManager instanceManager;
     // v1.5.1: 移除 DatabaseConfigService 依赖
+    private final ConfigVersionManager configVersionManager;
+    private final ConfigValidator configValidator;
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
     // v1.5.6: 配置同步服务，用于版本回滚时同步实例到数据库
     private ConfigSyncService configSyncService;
@@ -84,7 +88,9 @@ public class ConfigurationService {
                                 ServiceStateManager serviceStateManager,
                                 SamplingConfigurationValidator samplingValidator,
                                 ServiceConfigManager serviceConfigManager,
-                                InstanceManager instanceManager) {
+                                InstanceManager instanceManager,
+                                ConfigVersionManager configVersionManager,
+                                ConfigValidator configValidator) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
@@ -92,6 +98,8 @@ public class ConfigurationService {
         this.samplingValidator = samplingValidator;
         this.serviceConfigManager = serviceConfigManager;
         this.instanceManager = instanceManager;
+        this.configVersionManager = configVersionManager;
+        this.configValidator = configValidator;
         // 版本控制初始化移到 @PostConstruct 中，确保 JpaDatabaseInitializer 先执行
     }
 
@@ -101,7 +109,7 @@ public class ConfigurationService {
      */
     @PostConstruct
     public void postConstructInit() {
-        initializeVersionControl();
+        configVersionManager.initializeVersionControl();
     }
 
     /**
