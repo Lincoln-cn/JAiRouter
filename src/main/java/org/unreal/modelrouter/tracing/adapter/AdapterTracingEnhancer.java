@@ -224,7 +224,7 @@ public class AdapterTracingEnhancer {
      */
     private void enhanceOllamaAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
-        span.setAttribute(ADAPTER_CAPABILITIES, "chat,embedding");
+        span.setAttribute(ADAPTER_CAPABILITIES, ServiceTypeConstants.CHAT + "," + ServiceTypeConstants.EMBEDDING);
         span.setAttribute("api.provider", "ollama");
         span.setAttribute("deployment.type", "local");
     }
@@ -234,7 +234,7 @@ public class AdapterTracingEnhancer {
      */
     private void enhanceVLLMAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
-        span.setAttribute(ADAPTER_CAPABILITIES, "chat");
+        span.setAttribute(ADAPTER_CAPABILITIES, ServiceTypeConstants.CHAT);
         span.setAttribute("api.provider", "vllm");
         span.setAttribute("deployment.type", "distributed");
     }
@@ -244,7 +244,7 @@ public class AdapterTracingEnhancer {
      */
     private void enhanceGPUStackAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
-        span.setAttribute(ADAPTER_CAPABILITIES, "chat,embedding");
+        span.setAttribute(ADAPTER_CAPABILITIES, ServiceTypeConstants.CHAT + "," + ServiceTypeConstants.EMBEDDING);
         span.setAttribute("api.provider", "gpustack");
         span.setAttribute("deployment.type", "gpu_cluster");
     }
