@@ -57,7 +57,24 @@ public class ServiceStateManager {
      * @return 实例是否健康
      */
     public boolean isInstanceHealthyByKey(String instanceKey) {
-        return instanceHealthStatus.getOrDefault(instanceKey, true);
+        Boolean status = instanceHealthStatus.get(instanceKey);
+        // v2.3.3 修复：如果状态不存在，返回 false 表示未知，而不是默认 true
+        return status != null ? status : false;
+    }
+
+    /**
+     * 获取特定实例的健康状态（三态返回）
+     * 
+     * @param instanceKey 实例键值 (格式：serviceType:instanceId)
+     * @return "HEALTHY" - 健康，"UNHEALTHY" - 不健康，"UNKNOWN" - 未知（未检查）
+     * @since v2.3.3
+     */
+    public String getInstanceHealthStatus(String instanceKey) {
+        Boolean status = instanceHealthStatus.get(instanceKey);
+        if (status == null) {
+            return "UNKNOWN"; // 状态未知，健康检查还未运行
+        }
+        return status ? "HEALTHY" : "UNHEALTHY";
     }
 
     /**
