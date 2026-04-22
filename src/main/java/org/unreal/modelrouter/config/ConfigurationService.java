@@ -1141,13 +1141,10 @@ public class ConfigurationService {
         return instances.stream()
                 .filter(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)))
                 .map(instance -> {
-                    // 添加健康状态信息
-                    String baseUrl = (String) instance.get("baseUrl");
-                    String name = (String) instance.get("name");
-                    if (baseUrl != null && name != null) {
-                        boolean isHealthy = serviceStateManager.isInstanceHealthy(serviceType, name, baseUrl);
-                        instance.put("health", isHealthy);
-                    }
+                    // v2.3.3 修复：使用 instanceId 查询健康状态
+                    String healthKey = serviceType + ":" + instanceId;
+                    boolean isHealthy = serviceStateManager.isInstanceHealthyByKey(healthKey);
+                    instance.put("health", isHealthy);
                     // 确保status字段存在
                     if (!instance.containsKey("status")) {
                         instance.put("status", "active"); // 默认为active
