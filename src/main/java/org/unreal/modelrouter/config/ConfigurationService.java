@@ -11,7 +11,7 @@ import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.config.manager.ConfigValidator;
 import org.unreal.modelrouter.config.manager.ConfigVersionManager;
 import org.unreal.modelrouter.config.manager.InstanceManager;
-import org.unreal.modelrouter.config.manager.ServiceConfigManager;
+import org.unreal.modelrouter.service.ServiceConfigManager;
 import org.unreal.modelrouter.dto.CircuitBreakerConfig;
 import org.unreal.modelrouter.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.dto.RateLimitConfig;
