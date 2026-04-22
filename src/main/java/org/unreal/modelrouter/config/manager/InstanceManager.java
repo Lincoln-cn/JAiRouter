@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author JAiRouter Team
  * @since v2.1.0
  */
-@Component
+@Component("configInstanceManager")
 public class InstanceManager {
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceManager.class);

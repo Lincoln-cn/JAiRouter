@@ -2,6 +2,7 @@ package org.unreal.modelrouter.adapter.builder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.util.LinkedMultiValueMap;
@@ -20,6 +21,7 @@ import org.unreal.modelrouter.dto.SttDTO;
  * @author AI Assistant
  * @since v2.2.1
  */
+@Component
 public class RequestBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestBuilder.class);

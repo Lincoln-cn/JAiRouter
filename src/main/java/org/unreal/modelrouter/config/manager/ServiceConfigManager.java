@@ -20,7 +20,7 @@ import java.util.*;
  * @author JAiRouter Team
  * @since v2.1.0
  */
-@Component
+@Component("configServiceConfigManager")
 public class ServiceConfigManager {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceConfigManager.class);
