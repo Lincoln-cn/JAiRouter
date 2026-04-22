@@ -10,6 +10,8 @@ import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.adapter.checker.CapabilityChecker;
+import org.unreal.modelrouter.adapter.mapper.ResponseMapper;
+import org.unreal.modelrouter.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.adapter.error.AdapterErrorHandler;
 import org.unreal.modelrouter.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
@@ -37,8 +39,12 @@ public class VllmAdapter extends BaseAdapter {
                          ResponseHandler responseHandler,
                          InstanceSelector instanceSelector,
                          ResponseTransformer responseTransformer,
-                         CapabilityChecker capabilityChecker) {
-        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, new AdapterErrorHandler(), new RetryPolicy());
+                         CapabilityChecker capabilityChecker,
+                         AdapterErrorHandler errorHandler,
+                         RetryPolicy retryPolicy,
+                         HttpRequestProcessor httpRequestProcessor,
+                         ResponseMapper responseMapper) {
+        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper);
     }
 
     @Override

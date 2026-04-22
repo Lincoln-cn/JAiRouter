@@ -23,9 +23,9 @@ import static org.mockito.Mockito.*;
  * @author JAiRouter Team
  * @since v2.3.1.1
  */
-class RequestProcessorTest {
+class HttpRequestProcessorTest {
 
-    private RequestProcessor requestProcessor;
+    private HttpRequestProcessor requestProcessor;
 
     @Mock
     private WebClient webClient;
@@ -39,7 +39,7 @@ class RequestProcessorTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        requestProcessor = new RequestProcessor();
+        requestProcessor = new HttpRequestProcessor();
     }
 
     @Test

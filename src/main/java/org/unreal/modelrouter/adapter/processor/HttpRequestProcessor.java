@@ -24,9 +24,9 @@ import java.util.Map;
  * @since v2.3.1.1
  */
 @Component
-public class RequestProcessor {
+public class HttpRequestProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(RequestProcessor.class);
+    private static final Logger logger = LoggerFactory.getLogger(HttpRequestProcessor.class);
 
     /**
      * 发送非流式请求

@@ -9,6 +9,8 @@ import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.adapter.checker.CapabilityChecker;
+import org.unreal.modelrouter.adapter.mapper.ResponseMapper;
+import org.unreal.modelrouter.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.adapter.error.AdapterErrorHandler;
 import org.unreal.modelrouter.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
@@ -35,6 +37,10 @@ public class AdapterRegistry {
     private final InstanceSelector instanceSelector;
     private final ResponseTransformer responseTransformer;
     private final CapabilityChecker capabilityChecker;
+    private final AdapterErrorHandler errorHandler;
+    private final RetryPolicy retryPolicy;
+    private final HttpRequestProcessor httpRequestProcessor;
+    private final ResponseMapper responseMapper;
 
 
 
@@ -48,6 +54,8 @@ public class AdapterRegistry {
                            final InstanceSelector instanceSelector,
                            final ResponseTransformer responseTransformer,
                            final CapabilityChecker capabilityChecker,
+                           final HttpRequestProcessor httpRequestProcessor,
+                           final ResponseMapper responseMapper,
                            final AdapterErrorHandler errorHandler,
                            final RetryPolicy retryPolicy) {
         this.properties = properties;
@@ -60,18 +68,22 @@ public class AdapterRegistry {
         this.instanceSelector = instanceSelector;
         this.responseTransformer = responseTransformer;
         this.capabilityChecker = capabilityChecker;
+        this.errorHandler = errorHandler;
+        this.retryPolicy = retryPolicy;
+        this.httpRequestProcessor = httpRequestProcessor;
+        this.responseMapper = responseMapper;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
 
     private void initializeAdapters() {
         // 注册各种adapter实现，传入MetricsCollector
-        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
-        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
-        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
-        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
-        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
-        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
+        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper));
+        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper));
+        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper));
+        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper));
+        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper));
+        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper));
     }
 
     /**
