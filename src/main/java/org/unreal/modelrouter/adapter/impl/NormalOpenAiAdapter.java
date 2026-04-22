@@ -12,6 +12,8 @@ import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.adapter.checker.CapabilityChecker;
+import org.unreal.modelrouter.adapter.error.AdapterErrorHandler;
+import org.unreal.modelrouter.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
@@ -33,7 +35,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
                          InstanceSelector instanceSelector,
                          ResponseTransformer responseTransformer,
                          CapabilityChecker capabilityChecker) {
-        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker);
+        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, new AdapterErrorHandler(), new RetryPolicy());
     }
 
     @Override

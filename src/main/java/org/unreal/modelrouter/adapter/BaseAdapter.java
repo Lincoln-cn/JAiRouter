@@ -21,7 +21,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.LinkedMultiValueMap;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.adapter.checker.CapabilityChecker;
+import org.unreal.modelrouter.adapter.error.AdapterErrorHandler;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
+import org.unreal.modelrouter.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.constants.ServiceTypeConstants;
@@ -53,6 +55,8 @@ public abstract class BaseAdapter implements ServiceCapability {
     private final InstanceSelector instanceSelector;
     private final ResponseTransformer responseTransformer;
     private final CapabilityChecker capabilityChecker;
+    private final AdapterErrorHandler errorHandler;
+    private final RetryPolicy retryPolicy;
 
     protected final ObjectMapper objectMapper;
 
@@ -67,7 +71,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final ResponseHandler responseHandler,
                        final InstanceSelector instanceSelector,
                        final ResponseTransformer responseTransformer,
-                       final CapabilityChecker capabilityChecker) {
+                       final CapabilityChecker capabilityChecker,
+                       final AdapterErrorHandler errorHandler,
+                       final RetryPolicy retryPolicy) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
@@ -77,24 +83,19 @@ public abstract class BaseAdapter implements ServiceCapability {
         this.instanceSelector = instanceSelector;
         this.responseTransformer = responseTransformer;
         this.capabilityChecker = capabilityChecker;
+        this.errorHandler = errorHandler;
+        this.retryPolicy = retryPolicy;
     }
 
     /**
      * v2.0.0: 错误分类
+     * v2.3.0: 委托给 AdapterErrorHandler
      *
      * @param throwable 异常
      * @return 错误码分类
      */
     private String classifyError(Throwable throwable) {
-        if (throwable instanceof org.springframework.web.server.ResponseStatusException) {
-            return String.valueOf(((org.springframework.web.server.ResponseStatusException) throwable).getStatusCode().value());
-        } else if (throwable instanceof org.unreal.modelrouter.exception.DownstreamServiceException) {
-            return "503";
-        } else if (throwable instanceof java.util.concurrent.TimeoutException) {
-            return "504";
-        } else {
-            return "500";
-        }
+        return errorHandler.classifyError(throwable);
     }
 
     public ModelServiceRegistry getRegistry() {

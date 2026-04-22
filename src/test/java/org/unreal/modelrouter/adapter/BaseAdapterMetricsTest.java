@@ -7,6 +7,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.unreal.modelrouter.adapter.BaseAdapter;
+import org.unreal.modelrouter.adapter.error.AdapterErrorHandler;
+import org.unreal.modelrouter.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -112,7 +114,7 @@ class BaseAdapterMetricsTest {
     private static class TestAdapter extends BaseAdapter {
 
         public TestAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
-            super(registry, metricsCollector, objectMapper, null, null, null, null, null, null); // 测试时传入 null
+            super(registry, metricsCollector, objectMapper, null, null, null, null, null, null, new AdapterErrorHandler(), new RetryPolicy()); // 测试时传入 null
         }
 
         @Override
