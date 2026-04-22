@@ -21,7 +21,7 @@ import org.unreal.modelrouter.dto.SttDTO;
  * @author AI Assistant
  * @since v2.2.1
  */
-@Component
+@Component("adapterRequestBuilder")
 public class RequestBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestBuilder.class);

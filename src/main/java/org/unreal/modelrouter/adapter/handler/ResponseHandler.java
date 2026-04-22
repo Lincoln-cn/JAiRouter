@@ -25,7 +25,7 @@ import java.util.Map;
  * @author AI Assistant
  * @since v2.2.1
  */
-@Component
+@Component("adapterResponseHandler")
 public class ResponseHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ResponseHandler.class);

@@ -11,6 +11,7 @@ import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.service.converter.ServiceConfigConverter;
 import org.unreal.modelrouter.service.merger.ConfigMerger;
+import org.unreal.modelrouter.service.repository.StoreConfigRepository;
 import org.unreal.modelrouter.service.validator.ServiceConfigValidator;
 
 import java.util.List;
@@ -41,7 +42,7 @@ public class ServiceConfigManager {
     private final ServiceConfigValidator validator;
     private final ConfigMerger merger;
     private final ServiceConfigConverter converter;
-    private final org.unreal.modelrouter.service.repository.ServiceConfigRepository configRepository;
+    private final StoreConfigRepository configRepository;
 
     // JPA Repository (保留现有数据库操作)
     private final ServiceConfigRepository jpaRepository;

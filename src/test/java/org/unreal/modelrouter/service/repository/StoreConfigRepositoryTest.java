@@ -20,15 +20,15 @@ import static org.mockito.Mockito.*;
  * @author JAiRouter Team
  * @since v2.2.6
  */
-class ServiceConfigRepositoryTest {
+class StoreConfigRepositoryTest {
 
-    private ServiceConfigRepository repository;
+    private StoreConfigRepository repository;
     private StoreManager storeManager;
 
     @BeforeEach
     void setUp() {
         storeManager = mock(StoreManager.class);
-        repository = new ServiceConfigRepository(storeManager);
+        repository = new StoreConfigRepository(storeManager);
     }
 
     @Test

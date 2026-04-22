@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * 服务配置仓库
+ * 服务配置仓库（基于 StoreManager）
  *
  * 负责服务配置的数据访问，封装 StoreManager 的底层操作。
  * 提供强类型的 ServiceConfiguration 访问接口。
@@ -19,15 +19,15 @@ import java.util.Optional;
  * @author JAiRouter Team
  * @since v2.2.6
  */
-@Component
-public class ServiceConfigRepository {
+@Component("storeConfigRepository")
+public class StoreConfigRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(ServiceConfigRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(StoreConfigRepository.class);
     private static final String CONFIG_KEY = "model-router-config";
 
     private final StoreManager storeManager;
 
-    public ServiceConfigRepository(StoreManager storeManager) {
+    public StoreConfigRepository(StoreManager storeManager) {
         this.storeManager = storeManager;
     }
 
