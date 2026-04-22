@@ -17,6 +17,8 @@ import org.unreal.modelrouter.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
+import org.unreal.modelrouter.adapter.metrics.AdapterMetricsRecorder;
+import org.unreal.modelrouter.adapter.tracing.AdapterTracingManager;
 
 
 import org.unreal.modelrouter.dto.*;
@@ -42,8 +44,10 @@ public class LocalAiAdapter extends BaseAdapter {
                          AdapterErrorHandler errorHandler,
                          RetryPolicy retryPolicy,
                          HttpRequestProcessor httpRequestProcessor,
-                         ResponseMapper responseMapper) {
-        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper);
+                         ResponseMapper responseMapper,
+                         AdapterMetricsRecorder metricsRecorder,
+                         AdapterTracingManager tracingManager) {
+        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager);
     }
 
     @Override

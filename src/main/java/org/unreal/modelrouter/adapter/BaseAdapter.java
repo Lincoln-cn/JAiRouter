@@ -24,10 +24,12 @@ import org.unreal.modelrouter.adapter.checker.CapabilityChecker;
 import org.unreal.modelrouter.adapter.error.AdapterErrorHandler;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.adapter.mapper.ResponseMapper;
+import org.unreal.modelrouter.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
+import org.unreal.modelrouter.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
@@ -61,6 +63,8 @@ public abstract class BaseAdapter implements ServiceCapability {
     private final RetryPolicy retryPolicy;
     private final HttpRequestProcessor httpRequestProcessor;
     private final ResponseMapper responseMapper;
+    private final AdapterMetricsRecorder metricsRecorder;
+    private final AdapterTracingManager tracingManager;
 
     protected final ObjectMapper objectMapper;
 
@@ -79,7 +83,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final AdapterErrorHandler errorHandler,
                        final RetryPolicy retryPolicy,
                        final HttpRequestProcessor httpRequestProcessor,
-                       final ResponseMapper responseMapper) {
+                       final ResponseMapper responseMapper,
+                       final AdapterMetricsRecorder metricsRecorder,
+                       final AdapterTracingManager tracingManager) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
@@ -93,6 +99,8 @@ public abstract class BaseAdapter implements ServiceCapability {
         this.retryPolicy = retryPolicy;
         this.httpRequestProcessor = httpRequestProcessor;
         this.responseMapper = responseMapper;
+        this.metricsRecorder = metricsRecorder;
+        this.tracingManager = tracingManager;
     }
 
     /**
@@ -1353,6 +1361,91 @@ public abstract class BaseAdapter implements ServiceCapability {
         long baseDelay = 1000; // 1秒基础延迟
         long delay = baseDelay * (1L << retryCount); // 2^retryCount
         return Math.min(delay, 10000); // 最大10秒
+    }
+
+    /**
+     * v2.3.2: 使用新监控和追踪组件的简化请求处理方法
+     * 委托给 AdapterMetricsRecorder 和 AdapterTracingManager
+     */
+    @SuppressWarnings("all")
+    protected <T> Mono processRequestWithMetricsAndTracing(
+            final T request,
+            final String authorization,
+            final WebClient client,
+            final String path,
+            final ModelRouterProperties.ModelInstance selectedInstance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final RequestProcessor<T> processor,
+            final long startTime,
+            final int retryCount) {
+
+        String adapterType = getAdapterType();
+        String instanceName = selectedInstance.getName();
+        String modelName = getModelNameFromRequest(request);
+        int maxRetries = getMaxRetries(serviceType);
+
+        return processor.process(request, authorization, client, path, selectedInstance, serviceType)
+                .doOnSuccess(response -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    boolean success = response != null && response.getStatusCode().is2xxSuccessful();
+
+                    // v2.3.2: 使用新组件记录
+                    if (metricsRecorder != null) {
+                        metricsRecorder.recordRequestComplete(
+                                adapterType, instanceName, duration, success, null, modelName, serviceType);
+                    }
+
+                    // v2.3.2: 使用新组件结束追踪
+                    if (tracingManager != null && success) {
+                        tracingManager.endAdapterCall(null, true, null);
+                    }
+                })
+                .onErrorResume(throwable -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    String errorCode = classifyError(throwable);
+
+                    // v2.3.2: 使用新组件记录错误
+                    if (metricsRecorder != null) {
+                        if (shouldRetry(throwable, retryCount, maxRetries)) {
+                            metricsRecorder.recordRetry(adapterType, instanceName, retryCount + 1, throwable);
+                        } else {
+                            metricsRecorder.recordError(
+                                    adapterType, instanceName, errorCode, throwable, duration, serviceType);
+                        }
+                    }
+
+                    // v2.3.2: 使用新组件结束追踪（失败）
+                    if (tracingManager != null) {
+                        tracingManager.endAdapterCall(null, false, throwable);
+                    }
+
+                    // 重试逻辑
+                    if (shouldRetry(throwable, retryCount, maxRetries)) {
+                        long retryDelay = calculateRetryDelay(retryCount);
+                        return Mono.delay(java.time.Duration.ofMillis(retryDelay))
+                                .then(processRequestWithMetricsAndTracing(request, authorization, client, path,
+                                        selectedInstance, serviceType, processor,
+                                        System.currentTimeMillis(), retryCount + 1));
+                    }
+
+                    // 最终失败处理 - 直接返回错误
+                    if (throwable instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
+                        org.springframework.web.reactive.function.client.WebClientResponseException webEx =
+                                (org.springframework.web.reactive.function.client.WebClientResponseException) throwable;
+                        ResponseStatusException responseEx = new ResponseStatusException(webEx.getStatusCode(), webEx.getMessage(), webEx);
+                        logger.error("WebClientResponseException: {}", responseEx.getMessage(), responseEx);
+                        return Mono.error(responseEx);
+                    } else if (throwable instanceof DownstreamServiceException) {
+                        DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
+                        ResponseStatusException responseEx = new ResponseStatusException(
+                                downStreamEx.getStatusCode(), downStreamEx.getMessage(), downStreamEx);
+                        logger.error("DownstreamServiceException: {}", responseEx.getMessage(), responseEx);
+                        return Mono.error(responseEx);
+                    } else {
+                        logger.error("Unexpected error: {}", throwable.getMessage(), throwable);
+                        return Mono.error(throwable);
+                    }
+                });
     }
 
     /**
