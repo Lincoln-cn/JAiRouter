@@ -144,6 +144,65 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     /**
+     * 通用请求处理模板方法 - v2.3.1.4 简化版本
+     * 使用 HttpRequestProcessor 和 ResponseMapper 组件
+     */
+    @SuppressWarnings("all")
+    protected <T, R> Mono<ResponseEntity<R>> processRequestNew(
+            final T request,
+            final String authorization,
+            final ServerHttpRequest httpRequest,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            Class<R> responseType) {
+
+        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, IpUtils.getClientIp(httpRequest));
+        WebClient client = getWebClient(serviceType, modelName, httpRequest);
+        String path = getModelPath(serviceType, modelName);
+
+        long startTime = System.currentTimeMillis();
+        String adapterType = getAdapterType();
+        String instanceName = selectedInstance.getName();
+
+        // 使用新组件发送请求
+        return httpRequestProcessor.sendNonStreaming(client, path, authorization, request)
+                .flatMap(clientResponse -> 
+                    responseMapper.mapResponse(clientResponse, responseType)
+                        .onErrorResume(error -> 
+                            responseMapper.handleResponseError(clientResponse, instanceName, path)
+                                .flatMap(Mono::error)
+                        )
+                )
+                .doOnSuccess(response -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    boolean success = response != null && response.getStatusCode().is2xxSuccessful();
+                    
+                    if (success) {
+                        getRegistry().recordCallComplete(serviceType, selectedInstance);
+                        if (metricsCollector != null) {
+                            metricsCollector.recordBackendCall(adapterType, instanceName, duration, true);
+                        }
+                    } else {
+                        getRegistry().recordCallFailure(serviceType, selectedInstance);
+                        if (metricsCollector != null) {
+                            metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
+                        }
+                    }
+                })
+                .doOnError(error -> {
+                    long duration = System.currentTimeMillis() - startTime;
+                    getRegistry().recordCallFailure(serviceType, selectedInstance);
+                    if (metricsCollector != null) {
+                        metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
+                    }
+                    if (statsRepository != null) {
+                        statsRepository.updateStats(serviceType.name(), modelName, false, duration);
+                        statsRepository.recordErrorCode(serviceType.name(), modelName, classifyError(error));
+                    }
+                });
+    }
+
+    /**
      * 通用请求处理模板方法
      */
     @SuppressWarnings("all")
