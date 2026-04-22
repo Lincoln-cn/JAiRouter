@@ -11,6 +11,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.adapter.BaseAdapter;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
+import org.unreal.modelrouter.adapter.checker.CapabilityChecker;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
@@ -30,8 +31,9 @@ public class NormalOpenAiAdapter extends BaseAdapter {
                          RequestBuilder requestBuilder,
                          ResponseHandler responseHandler,
                          InstanceSelector instanceSelector,
-                         ResponseTransformer responseTransformer) {
-        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer);
+                         ResponseTransformer responseTransformer,
+                         CapabilityChecker capabilityChecker) {
+        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker);
     }
 
     @Override

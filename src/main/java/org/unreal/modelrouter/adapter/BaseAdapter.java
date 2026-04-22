@@ -20,6 +20,7 @@ import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.LinkedMultiValueMap;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
+import org.unreal.modelrouter.adapter.checker.CapabilityChecker;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
@@ -51,6 +52,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     private final ResponseHandler responseHandler;
     private final InstanceSelector instanceSelector;
     private final ResponseTransformer responseTransformer;
+    private final CapabilityChecker capabilityChecker;
 
     protected final ObjectMapper objectMapper;
 
@@ -64,7 +66,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final RequestBuilder requestBuilder,
                        final ResponseHandler responseHandler,
                        final InstanceSelector instanceSelector,
-                       final ResponseTransformer responseTransformer) {
+                       final ResponseTransformer responseTransformer,
+                       final CapabilityChecker capabilityChecker) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
@@ -73,6 +76,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         this.responseHandler = responseHandler;
         this.instanceSelector = instanceSelector;
         this.responseTransformer = responseTransformer;
+        this.capabilityChecker = capabilityChecker;
     }
 
     /**
@@ -124,13 +128,10 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     /**
      * 检查适配器是否支持指定的服务能力
+     * v2.2.7: 委托给 CapabilityChecker
      */
     protected Mono<ResponseEntity<String>> checkCapability(final ModelServiceRegistry.ServiceType serviceType) {
-        if (!supportCapability().contains(serviceType)) {
-            return Mono.just(ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                    .body("This adapter does not support " + serviceType.name() + " capability."));
-        }
-        return null;
+        return capabilityChecker.checkCapability(supportCapability(), serviceType);
     }
 
     /**

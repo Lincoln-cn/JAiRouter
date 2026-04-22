@@ -8,6 +8,7 @@ import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.adapter.builder.RequestBuilder;
+import org.unreal.modelrouter.adapter.checker.CapabilityChecker;
 import org.unreal.modelrouter.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.adapter.transformer.ResponseTransformer;
@@ -31,18 +32,20 @@ public class AdapterRegistry {
     private final ResponseHandler responseHandler;
     private final InstanceSelector instanceSelector;
     private final ResponseTransformer responseTransformer;
+    private final CapabilityChecker capabilityChecker;
 
 
 
-    public AdapterRegistry(final ModelRouterProperties properties, 
-                           final ModelServiceRegistry registry, 
+    public AdapterRegistry(final ModelRouterProperties properties,
+                           final ModelServiceRegistry registry,
                            final MetricsCollector metricsCollector,
                            final ObjectMapper objectMapper,
                            final ModelCallStatsRepository statsRepository,
                            final RequestBuilder requestBuilder,
                            final ResponseHandler responseHandler,
                            final InstanceSelector instanceSelector,
-                           final ResponseTransformer responseTransformer) {
+                           final ResponseTransformer responseTransformer,
+                           final CapabilityChecker capabilityChecker) {
         this.properties = properties;
         this.registry = registry;
         this.metricsCollector = metricsCollector;
@@ -52,18 +55,19 @@ public class AdapterRegistry {
         this.responseHandler = responseHandler;
         this.instanceSelector = instanceSelector;
         this.responseTransformer = responseTransformer;
+        this.capabilityChecker = capabilityChecker;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
 
     private void initializeAdapters() {
         // 注册各种adapter实现，传入MetricsCollector
-        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer));
-        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer));
-        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer));
-        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer));
-        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer));
-        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer));
+        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
+        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
+        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
+        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
+        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
+        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker));
     }
 
     /**
