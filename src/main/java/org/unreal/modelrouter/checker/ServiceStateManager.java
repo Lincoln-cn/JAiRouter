@@ -56,10 +56,18 @@ public class ServiceStateManager {
      * @param instance    模型实例
      * @return 实例是否健康
      */
+    public boolean isInstanceHealthyByKey(String instanceKey) {
+        return instanceHealthStatus.getOrDefault(instanceKey, true);
+    }
+
+    /**
+     * @deprecated 已废弃，请使用 isInstanceHealthyByKey
+     */
+    @Deprecated
     public boolean isInstanceHealthy(String serviceType, String instanceName , String baseUrl) {
-        // 为了向后兼容，仍然支持通过name和baseUrl查询
-        String instanceKey = serviceType + ":" + instanceName + "@" + baseUrl;
-        return instanceHealthStatus.getOrDefault(instanceKey, true); // 默认认为是健康的
+        // v2.3.3 修复：不再使用 name@baseUrl 作为键
+        log.warn("isInstanceHealthy(String, String, String) 已废弃，请使用 isInstanceHealthyByKey(String)");
+        return true;
     }
 
     /**
