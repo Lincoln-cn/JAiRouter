@@ -30,9 +30,11 @@ public class WeightCalculator {
                 .sum();
     }
     
+    private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+
     /**
      * 安全计算加权随机值
-     * 
+     *
      * @param totalWeight 总权重
      * @return 随机权重值
      */
@@ -40,9 +42,9 @@ public class WeightCalculator {
         if (totalWeight <= 0) {
             return 0L;
         }
-        
-        // 使用更安全的 SecureRandom 生成 0 到 totalWeight-1 之间的随机数
-        return (long) (java.security.SecureRandom.getInstanceStrong().nextDouble() * totalWeight);
+
+        // 使用预初始化的安全随机数生成器
+        return (long) (SECURE_RANDOM.nextDouble() * totalWeight);
     }
     
     /**
@@ -72,12 +74,13 @@ public class WeightCalculator {
     
     /**
      * 检查权重是否有效
-     * 
+     *
      * @param weight 权重值
      * @return 是否有效
      */
     public static boolean isValidWeight(int weight) {
-        return weight >= 0 && weight <= Integer.MAX_VALUE / 2; // 防止溢出的安全上限
+        // 负权重在范围内也被认为是"有效"，但会在计算中当作0处理
+        return weight <= Integer.MAX_VALUE / 2; // 防止溢出的安全上限，允许负值
     }
     
     /**
