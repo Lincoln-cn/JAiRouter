@@ -87,10 +87,10 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
 
         // 计算客户端IP的哈希值
         long hash = hash(clientIp);
-        
+
         // 在哈希环上找到大于等于该哈希值的第一个节点
         Map.Entry<Long, ModelRouterProperties.ModelInstance> entry = hashCircle.higherEntry(hash);
-        
+
         // 如果没有找到，则使用环上的第一个节点（形成环状结构）
         if (entry == null) {
             entry = hashCircle.firstEntry();
@@ -98,17 +98,18 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
 
         // 从哈希环中选择健康实例，如果当前选中的是不健康的，则查找下一个健康的
         ModelRouterProperties.ModelInstance selected = findHealthyInstance(entry, serviceType, instances);
-        
+
         if (selected == null) {
             logger.warn("No healthy instance found, selecting any instance");
+            // 如果找不到健康实例，尝试使用原始哈希值找到的实例
             selected = entry.getValue(); // 如果没有健康实例，返回任意实例
         }
-        
+
         logger.debug("Selected instance {} using consistent hash for service {}, client IP: {}", 
                 selected.getName(), serviceType, clientIp);
-        
+
         recordLoadBalancerSelection(serviceType, "consistent_hash", selected.getName());
-        
+
         return selected;
     }
     
@@ -164,7 +165,7 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     
     /**
      * 检查实例是否健康
-     * 
+     *
      * @param serviceType 服务类型
      * @param instance 实例
      * @return 是否健康
@@ -173,8 +174,8 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
         if (serviceStateManager != null) {
             return serviceStateManager.isInstanceHealthy(serviceType, instance);
         }
-        // 如果没有服务状态管理器，则默认认为是健康的
-        return true;
+        // 如果没有服务状态管理器，则使用实例的健康状态字段
+        return instance.isHealthy() != null ? instance.isHealthy() : true;
     }
 
     /**
