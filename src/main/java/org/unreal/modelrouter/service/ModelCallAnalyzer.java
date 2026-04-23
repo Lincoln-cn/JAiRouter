@@ -288,4 +288,12 @@ public class ModelCallAnalyzer {
             logger.info("清理了 {} 个非活跃模型统计", toRemove.size());
         }
     }
+    
+    /**
+     * 清空所有模型统计
+     */
+    public void clearAllStats() {
+        statsRepository.clearAll();
+        logger.info("已清空所有模型统计");
+    }
 }

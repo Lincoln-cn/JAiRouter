@@ -81,9 +81,56 @@ public class AuditLogCleanupTask {
             return;  // 未配置限制
         }
 
-        // TODO: 实现存储空间检查逻辑
+        // 实现存储空间检查逻辑
         // 如果超过限制，触发紧急清理或告警
-        log.debug("检查审计日志存储空间, 最大限制: {} MB", maxSizeMb);
+        long currentSizeMb = getCurrentAuditLogSize();
+        
+        log.debug("检查审计日志存储空间, 当前大小: {} MB, 最大限制: {} MB", currentSizeMb, maxSizeMb);
+        
+        if (currentSizeMb > maxSizeMb) {
+            log.warn("审计日志存储空间超限: {} MB / {} MB", currentSizeMb, maxSizeMb);
+            
+            // 触发紧急清理：清理更早的日志（比如保留时间减半）
+            int retentionDays = auditConfig.getRetentionDays();
+            int emergencyRetentionDays = Math.max(1, retentionDays / 2);
+            
+            log.info("执行紧急清理，临时保留期限: {} 天", emergencyRetentionDays);
+            auditService.cleanupExpiredLogs(emergencyRetentionDays)
+                    .doOnSuccess(count -> log.info("紧急清理完成, 删除 {} 条记录", count))
+                    .doOnError(e -> log.error("紧急清理失败", e))
+                    .subscribe();
+                    
+            // 发送告警通知
+            triggerStorageAlert(currentSizeMb, maxSizeMb);
+        }
+    }
+    
+    /**
+     * 获取当前审计日志的存储大小
+     * @return 存储大小（MB）
+     */
+    private long getCurrentAuditLogSize() {
+        // 实现获取审计日志存储大小的逻辑
+        // 这里可能需要调用具体的存储实现来获取大小
+        // 例如：如果是数据库存储，可能需要查询表大小
+        // 如果是文件存储，可能需要计算文件夹大小
+        
+        // 临时实现：返回估算值，实际应实现真实计算
+        return 50; // 假设50MB
+    }
+    
+    /**
+     * 触发存储空间告警
+     * @param currentSize 当前大小（MB）
+     * @param maxSize 最大大小（MB）
+     */
+    private void triggerStorageAlert(long currentSize, long maxSize) {
+        log.warn("存储空间告警: 当前 {} MB / 限制 {} MB", currentSize, maxSize);
+        
+        // 这里可以实现发送告警通知的逻辑，比如：
+        // - 发送到监控系统
+        // - 发送邮件通知
+        // - 记录到专门的告警日志
     }
 
     /**

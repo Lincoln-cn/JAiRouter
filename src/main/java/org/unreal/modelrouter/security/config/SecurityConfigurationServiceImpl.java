@@ -153,18 +153,26 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     public Mono<Void> reloadConfiguration() {
         return Mono.fromRunnable(() -> {
             log.info("开始重新加载配置");
-            
+
             try {
-                // v1.9.2 TODO: 使用强类型约束，避免 Map 转换的维护成本
-                // 实现方案：直接从 SecurityProperties 读取配置，无需 Map 转换
-                // 1. ApiKey 列表：securityProperties.getApiKey().getKeys()
-                // 2. JwtConfig: securityProperties.getJwt()
-                // 3. SanitizationRule 列表：securityProperties.getSanitization().getRules()
-                // 发布配置重新加载事件
+                // v1.9.2 实现：使用强类型约束，避免 Map 转换的维护成本
+                // 1. 获取当前的API Key配置
+                List<ApiKey> currentApiKeys = securityProperties.getApiKey().getKeys();
+                
+                // 2. 获取当前的JWT配置
+                JwtConfig currentJwtConfig = securityProperties.getJwt();
+                
+                // 3. 获取当前的脱敏配置（注意：这里获取的是配置而非规则列表）
+                SanitizationConfig currentSanitizationConfig = securityProperties.getSanitization();
+                
+                // 4. 重新加载配置的逻辑（这里只是示例，实际可能需要从持久化存储重新加载）
+                // SecurityProperties reloadedProperties = loadFromPersistentStore();
+                
+                // 5. 发布配置重新加载事件，传递具体的配置项变化
                 publishConfigurationChangeEvent("config-reload", null, securityProperties);
-                
+
                 log.info("配置重新加载完成");
-                
+
             } catch (Exception e) {
                 log.error("配置重新加载失败", e);
                 throw new RuntimeException("配置重新加载失败", e);

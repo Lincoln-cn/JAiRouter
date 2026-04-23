@@ -321,6 +321,13 @@ public class ModelCallStatsRepository {
         totalFailureCounter.set(0);
         logger.info("清空所有模型统计");
     }
+    
+    /**
+     * 清空所有统计（同义方法）
+     */
+    public void clearAll() {
+        clear();
+    }
 
     /**
      * 持久化统计到存储

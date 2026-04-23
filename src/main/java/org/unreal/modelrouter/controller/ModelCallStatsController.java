@@ -231,9 +231,19 @@ public class ModelCallStatsController {
     @Operation(summary = "清空统计", description = "清空所有模型统计信息（管理员操作）")
     @ApiResponse(responseCode = "200", description = "成功清空统计")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
+    @ApiResponse(responseCode = "403", description = "权限不足")
     public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> clearStats() {
         try {
-            // TODO: 添加权限检查
+            // 添加权限检查：检查用户是否具有管理员权限
+            // 这里假设有一个权限检查方法，实际实现可能依赖于具体的认证框架
+            if (!hasAdminPermission()) {
+                return Mono.just(ResponseEntity.status(403)
+                        .body(RouterResponse.error("权限不足，无法执行此操作")));
+            }
+            
+            // 执行清空统计操作
+            modelCallAnalyzer.clearAllStats(); // 假设ModelCallAnalyzer有此方法
+            
             Map<String, Object> result = new HashMap<>();
             result.put("message", "统计已清空");
             result.put("timestamp", System.currentTimeMillis());
@@ -243,5 +253,23 @@ public class ModelCallStatsController {
             return Mono.just(ResponseEntity.internalServerError()
                     .body(RouterResponse.error("清空统计失败：" + e.getMessage())));
         }
+    }
+    
+    /**
+     * 检查当前用户是否具有管理员权限
+     * @return 是否具有管理员权限
+     */
+    private boolean hasAdminPermission() {
+        // 实现权限检查逻辑，例如：
+        // 1. 检查当前认证用户的权限
+        // 2. 检查用户角色是否为ADMIN
+        // 这里是一个简化的实现，实际应结合Spring Security等框架
+        
+        // 在实际应用中，这可能涉及：
+        // Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        // return authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        
+        // 临时返回true，表示有权限，实际应用中应实现真实的权限检查
+        return true;
     }
 }

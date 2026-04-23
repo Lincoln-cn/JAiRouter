@@ -8,6 +8,7 @@ import org.unreal.modelrouter.circuitbreaker.DefaultCircuitBreaker;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.loadbalancer.utils.WeightCalculator;
 
 import java.util.List;
 import java.util.Map;
@@ -60,9 +61,8 @@ public class RandomLoadBalancer implements LoadBalancer {
             throw new RuntimeException("All instances are unavailable");
         }
 
-        // 考虑权重的随机选择
-        int totalWeight = availableInstances.stream()
-                .mapToInt(ModelRouterProperties.ModelInstance::getWeight).sum();
+        // 考虑权重的随机选择 - 使用安全的权重计算
+        long totalWeight = WeightCalculator.calculateTotalWeight(availableInstances);
 
         if (totalWeight <= 0) {
             // 如果没有权重，使用简单随机
@@ -73,11 +73,11 @@ public class RandomLoadBalancer implements LoadBalancer {
             return selected;
         }
 
-        int randomWeight = random.nextInt(totalWeight);
-        int currentWeight = 0;
+        long randomWeight = (long) (java.security.SecureRandom.getInstanceStrong().nextDouble() * totalWeight);
+        long currentWeight = 0;
 
         for (ModelRouterProperties.ModelInstance instance : availableInstances) {
-            currentWeight += instance.getWeight();
+            currentWeight += Math.max(0, instance.getWeight());
             if (randomWeight < currentWeight) {
                 logger.debug("Selected instance {} using weighted random strategy for service {}", instance.getName(), serviceType);
                 recordLoadBalancerSelection(serviceType, "random", instance.getName());

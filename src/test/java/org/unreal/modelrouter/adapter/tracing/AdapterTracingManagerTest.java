@@ -65,8 +65,10 @@ class AdapterTracingManagerTest {
         // Arrange
         when(tracingContext.isActive()).thenReturn(true);
         when(tracingContext.createSpan(anyString(), eq(SpanKind.CLIENT))).thenReturn(span);
+        when(span.getSpanContext()).thenReturn(mock(io.opentelemetry.api.trace.SpanContext.class)); // 修复：模拟 getSpanContext()
+        when(span.getSpanContext().getSpanId()).thenReturn("mock-span-id"); // 修复：模拟 getSpanId()
         TracingContextHolder.setCurrentContext(tracingContext);
-        
+
         String adapterType = "gpustack";
         ModelRouterProperties.ModelInstance instance = createMockInstance("instance-1");
         ModelServiceRegistry.ServiceType serviceType = ModelServiceRegistry.ServiceType.chat;
@@ -80,7 +82,7 @@ class AdapterTracingManagerTest {
         verify(tracingContext, times(1)).createSpan(anyString(), eq(SpanKind.CLIENT));
         verify(span, atLeastOnce()).setAttribute(anyString(), anyString());
         verify(tracingContext, times(1)).setCurrentSpan(span);
-        
+
         // 清理
         TracingContextHolder.clearCurrentContext();
     }
@@ -165,10 +167,12 @@ class AdapterTracingManagerTest {
         // Arrange
         when(tracingContext.isActive()).thenReturn(true);
         when(tracingContext.createSpan(anyString(), eq(SpanKind.CLIENT))).thenReturn(span);
+        when(span.getSpanContext()).thenReturn(mock(io.opentelemetry.api.trace.SpanContext.class)); // 修复：模拟 getSpanContext()
+        when(span.getSpanContext().getSpanId()).thenReturn("mock-span-id"); // 修复：模拟 getSpanId()
         TracingContextHolder.setCurrentContext(tracingContext);
-        
-        Span span = tracingManager.startAdapterCall("gpustack", 
-                createMockInstance("instance-1"), 
+
+        Span span = tracingManager.startAdapterCall("gpustack",
+                createMockInstance("instance-1"),
                 ModelServiceRegistry.ServiceType.chat, "llama-3");
 
         // Act
@@ -179,7 +183,7 @@ class AdapterTracingManagerTest {
         verify(span, times(1)).end();
         verify(tracingContext, times(1)).finishSpan(span);
         verify(span, never()).recordException(any());
-        
+
         // 清理
         TracingContextHolder.clearCurrentContext();
     }
@@ -190,12 +194,14 @@ class AdapterTracingManagerTest {
         // Arrange
         when(tracingContext.isActive()).thenReturn(true);
         when(tracingContext.createSpan(anyString(), eq(SpanKind.CLIENT))).thenReturn(span);
+        when(span.getSpanContext()).thenReturn(mock(io.opentelemetry.api.trace.SpanContext.class)); // 修复：模拟 getSpanContext()
+        when(span.getSpanContext().getSpanId()).thenReturn("mock-span-id"); // 修复：模拟 getSpanId()
         TracingContextHolder.setCurrentContext(tracingContext);
-        
-        Span span = tracingManager.startAdapterCall("gpustack", 
-                createMockInstance("instance-1"), 
+
+        Span span = tracingManager.startAdapterCall("gpustack",
+                createMockInstance("instance-1"),
                 ModelServiceRegistry.ServiceType.chat, "llama-3");
-        
+
         Throwable error = new RuntimeException("Connection timeout");
 
         // Act
@@ -208,7 +214,7 @@ class AdapterTracingManagerTest {
         verify(span, atLeastOnce()).setAttribute(eq("error.type"), anyString());
         verify(span, times(1)).end();
         verify(tracingContext, times(1)).finishSpan(span);
-        
+
         // 清理
         TracingContextHolder.clearCurrentContext();
     }
@@ -228,20 +234,22 @@ class AdapterTracingManagerTest {
         // Arrange
         when(tracingContext.isActive()).thenReturn(true);
         when(tracingContext.createSpan(anyString(), eq(SpanKind.CLIENT))).thenReturn(span);
+        when(span.getSpanContext()).thenReturn(mock(io.opentelemetry.api.trace.SpanContext.class)); // 修复：模拟 getSpanContext()
+        when(span.getSpanContext().getSpanId()).thenReturn("mock-span-id"); // 修复：模拟 getSpanId()
         TracingContextHolder.setCurrentContext(tracingContext);
-        
-        Span span = tracingManager.startAdapterCall("gpustack", 
-                createMockInstance("instance-1"), 
+
+        Span span = tracingManager.startAdapterCall("gpustack",
+                createMockInstance("instance-1"),
                 ModelServiceRegistry.ServiceType.chat, "llama-3");
 
         // Act & Assert
-        assertDoesNotThrow(() -> 
+        assertDoesNotThrow(() ->
             tracingManager.endAdapterCall(span, false, null)
         );
-        
+
         verify(span, times(1)).setStatus(StatusCode.ERROR);
         verify(span, never()).recordException(any());
-        
+
         // 清理
         TracingContextHolder.clearCurrentContext();
     }
@@ -258,7 +266,7 @@ class AdapterTracingManagerTest {
         instance.setBaseUrl("http://localhost:8080");
         instance.setStatus("active");
         instance.setWeight(10);
-        
+
         ModelServiceRegistry.ServiceType serviceType = ModelServiceRegistry.ServiceType.chat;
 
         // Act
@@ -268,7 +276,7 @@ class AdapterTracingManagerTest {
         verify(span, atLeastOnce()).setAttribute("adapter.type", "gpustack");
         verify(span, atLeastOnce()).setAttribute("adapter.instance.name", "instance-1");
         verify(span, atLeastOnce()).setAttribute("adapter.instance.url", "http://localhost:8080");
-        verify(span, atLeastOnce()).setAttribute("adapter.service.type", "CHAT");
+        verify(span, atLeastOnce()).setAttribute("adapter.service.type", "chat"); // 修复：应该是小写的服务类型
         verify(span, atLeastOnce()).setAttribute("adapter.model.name", "llama-3");
         verify(span, atLeastOnce()).setAttribute("adapter.instance.healthy", true);
         verify(span, atLeastOnce()).setAttribute("adapter.instance.weight", 10L);
@@ -412,6 +420,8 @@ class AdapterTracingManagerTest {
         // Arrange
         when(tracingContext.isActive()).thenReturn(true);
         when(tracingContext.createSpan(anyString(), eq(SpanKind.CLIENT))).thenReturn(span);
+        when(span.getSpanContext()).thenReturn(mock(io.opentelemetry.api.trace.SpanContext.class)); // 修复：模拟 getSpanContext()
+        when(span.getSpanContext().getSpanId()).thenReturn("mock-span-id"); // 修复：模拟 getSpanId()
         TracingContextHolder.setCurrentContext(tracingContext);
 
         String adapterType = "gpustack";
@@ -430,7 +440,7 @@ class AdapterTracingManagerTest {
         verify(span, atLeastOnce()).setAttribute(anyString(), anyString());
         verify(span, times(1)).setStatus(StatusCode.OK);
         verify(span, times(1)).end();
-        
+
         // 清理
         TracingContextHolder.clearCurrentContext();
     }
@@ -441,8 +451,10 @@ class AdapterTracingManagerTest {
         // Arrange
         when(tracingContext.isActive()).thenReturn(true);
         when(tracingContext.createSpan(anyString(), eq(SpanKind.CLIENT))).thenReturn(span);
+        when(span.getSpanContext()).thenReturn(mock(io.opentelemetry.api.trace.SpanContext.class)); // 修复：模拟 getSpanContext()
+        when(span.getSpanContext().getSpanId()).thenReturn("mock-span-id"); // 修复：模拟 getSpanId()
         TracingContextHolder.setCurrentContext(tracingContext);
-        
+
         Throwable error = new RuntimeException("Downstream service error");
 
         String adapterType = "vllm";
@@ -460,7 +472,7 @@ class AdapterTracingManagerTest {
         verify(span, times(1)).setStatus(StatusCode.ERROR);
         verify(span, times(1)).recordException(error);
         verify(span, times(1)).end();
-        
+
         // 清理
         TracingContextHolder.clearCurrentContext();
     }

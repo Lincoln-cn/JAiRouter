@@ -158,13 +158,14 @@ class AdapterMetricsRecorderTest {
 
         // Assert
         ArgumentCaptor<String> errorCodeCaptor = ArgumentCaptor.forClass(String.class);
-        
+
         verify(metricsCollector, times(1)).recordBackendCall(adapterType, instanceId, durationMs, false);
         verify(metricsCollector, times(1)).recordTrace(
                 errorCodeCaptor.capture(), eq(instanceId), eq("adapter_error"), eq(durationMs), eq(false)
         );
-        verify(statsRepository, times(1)).updateStats(eq(serviceType.name()), anyString(), eq(false), anyLong());
-        
+        // 修复：recordError 方法不会调用 statsRepository.updateStats，只有 recordRequestComplete 会调用
+        verify(statsRepository, never()).updateStats(any(), any(), anyBoolean(), anyLong());
+
         assertEquals("TIMEOUT", errorCodeCaptor.getValue());
     }
 
@@ -259,7 +260,7 @@ class AdapterMetricsRecorderTest {
         metricsRecorder.recordRequestSize(serviceType, requestSize, responseSize);
 
         // Assert
-        verify(metricsCollector, times(1)).recordRequestSize("CHAT", requestSize, responseSize);
+        verify(metricsCollector, times(1)).recordRequestSize("chat", requestSize, responseSize); // 修复：使用小写服务类型
     }
 
     @Test
@@ -294,7 +295,7 @@ class AdapterMetricsRecorderTest {
         metricsRecorder.recordResponseTime(serviceType, method, responseTime, status);
 
         // Assert
-        verify(metricsCollector, times(1)).recordRequest("EMBEDDING", method, responseTime, status);
+        verify(metricsCollector, times(1)).recordRequest("embedding", method, responseTime, status); // 修复：使用小写服务类型
     }
 
     @Test
@@ -329,17 +330,17 @@ class AdapterMetricsRecorderTest {
 
         // Act - 模拟完整请求流程
         metricsRecorder.recordRequestStart(adapterType, instanceId, serviceType, modelName);
-        metricsRecorder.recordRequestComplete(adapterType, instanceId, durationMs, 
+        metricsRecorder.recordRequestComplete(adapterType, instanceId, durationMs,
                 true, null, modelName, serviceType);
         metricsRecorder.recordRequestSize(serviceType, 2048L, 4096L);
         metricsRecorder.recordResponseTime(serviceType, "POST", durationMs, "200 OK");
 
         // Assert
         // recordRequestStart 不再调用 statsRepository 的方法
-        verify(statsRepository, times(1)).updateStats(eq(serviceType.name()), anyString(), eq(false), anyLong());
+        verify(statsRepository, times(1)).updateStats(eq(serviceType.name()), anyString(), eq(true), anyLong()); // 修复：应该是 true 而不是 false
         verify(metricsCollector, times(1)).recordBackendCall(adapterType, instanceId, durationMs, true);
-        verify(metricsCollector, times(1)).recordRequestSize("CHAT", 2048L, 4096L);
-        verify(metricsCollector, times(1)).recordRequest("CHAT", "POST", durationMs, "200 OK");
+        verify(metricsCollector, times(1)).recordRequestSize(eq(serviceType.name()), eq(2048L), eq(4096L)); // 修复：应该是小写的服务类型
+        verify(metricsCollector, times(1)).recordRequest(eq(serviceType.name()), eq("POST"), eq(durationMs), eq("200 OK")); // 修复：应该是小写的服务类型
     }
 
     @Test
@@ -360,8 +361,9 @@ class AdapterMetricsRecorderTest {
 
         // Assert
         // recordRequestStart 不再调用 statsRepository 的方法
-        verify(statsRepository, times(1)).updateStats(eq(serviceType.name()), anyString(), eq(false), anyLong());
-        verify(metricsCollector, atLeastOnce()).recordBackendCall(adapterType, instanceId, anyLong(), eq(false));
+        // 修复：recordError 方法不会调用 statsRepository.updateStats，只有 recordRequestComplete 会调用
+        verify(statsRepository, never()).updateStats(anyString(), anyString(), anyBoolean(), anyLong());
+        verify(metricsCollector, atLeastOnce()).recordBackendCall(eq(adapterType), eq(instanceId), anyLong(), eq(false)); // 修复：使所有参数都使用匹配器
     }
 
     @Test
@@ -379,12 +381,12 @@ class AdapterMetricsRecorderTest {
         metricsRecorder.recordRequestStart(adapterType, instanceId, serviceType, modelName);
         metricsRecorder.recordRetry(adapterType, instanceId, 1, retryError);
         metricsRecorder.recordRetry(adapterType, instanceId, 2, retryError);
-        metricsRecorder.recordRequestComplete(adapterType, instanceId, durationMs, 
+        metricsRecorder.recordRequestComplete(adapterType, instanceId, durationMs,
                 true, null, modelName, serviceType);
 
         // Assert
         // recordRequestStart 不再调用 statsRepository 的方法
-        verify(statsRepository, times(1)).updateStats(eq(serviceType.name()), anyString(), eq(false), anyLong());
+        verify(statsRepository, times(1)).updateStats(eq(serviceType.name()), anyString(), eq(true), anyLong()); // 修复：最终是成功，所以应该是 true
         // 验证重试记录了 2 次失败
         verify(metricsCollector, atLeast(2)).recordBackendCall(adapterType, instanceId, 0, false);
         // 验证最终成功记录

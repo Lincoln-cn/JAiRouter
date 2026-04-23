@@ -67,8 +67,9 @@ public class AdapterTracingManager {
         // 设置为当前 Span
         context.setCurrentSpan(span);
         
+        String spanId = span.getSpanContext() != null ? span.getSpanContext().getSpanId() : "unknown";
         log.debug("开始适配器调用追踪：spanName={}, traceId={}, spanId={}",
-                spanName, context.getTraceId(), span.getSpanContext().getSpanId());
+                spanName, context != null ? context.getTraceId() : "unknown", spanId);
         
         return span;
     }
