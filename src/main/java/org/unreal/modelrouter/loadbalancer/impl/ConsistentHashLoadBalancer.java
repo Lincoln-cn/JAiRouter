@@ -42,6 +42,15 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     @Autowired(required = false)
     private ServiceStateManager serviceStateManager;
 
+    // 为测试添加 getter 方法
+    public MetricsCollector getMetricsCollector() {
+        return metricsCollector;
+    }
+    
+    public ServiceStateManager getServiceStateManager() {
+        return serviceStateManager;
+    }
+
     public ConsistentHashLoadBalancer() {
         this(DEFAULT_VIRTUAL_NODES);
     }
@@ -68,18 +77,8 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
             throw new IllegalArgumentException("No instances available");
         }
 
-        // 过滤健康实例
-        List<ModelRouterProperties.ModelInstance> healthyInstances = instances.stream()
-                .filter(instance -> isInstanceHealthy(serviceType, instance))
-                .collect(Collectors.toList());
-
-        if (healthyInstances.isEmpty()) {
-            logger.warn("No healthy instances available, falling back to all instances");
-            healthyInstances = instances; // 如果没有健康实例，使用所有实例
-        }
-
-        // 确保哈希环是最新的
-        updateHashRing(healthyInstances);
+        // 确保哈希环是最新的（使用所有实例构建哈希环）
+        updateHashRing(instances);
 
         if (hashCircle.isEmpty()) {
             logger.error("Hash circle is empty, unable to select instance");
@@ -97,7 +96,13 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
             entry = hashCircle.firstEntry();
         }
 
-        ModelRouterProperties.ModelInstance selected = entry.getValue();
+        // 从哈希环中选择健康实例，如果当前选中的是不健康的，则查找下一个健康的
+        ModelRouterProperties.ModelInstance selected = findHealthyInstance(entry, serviceType, instances);
+        
+        if (selected == null) {
+            logger.warn("No healthy instance found, selecting any instance");
+            selected = entry.getValue(); // 如果没有健康实例，返回任意实例
+        }
         
         logger.debug("Selected instance {} using consistent hash for service {}, client IP: {}", 
                 selected.getName(), serviceType, clientIp);
@@ -105,6 +110,56 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
         recordLoadBalancerSelection(serviceType, "consistent_hash", selected.getName());
         
         return selected;
+    }
+    
+    /**
+     * 从哈希环中查找健康实例
+     * 如果当前实例不健康，则继续查找下一个实例，直到找到健康实例或遍历完整个环
+     * 
+     * @param startEntry 起始条目
+     * @param serviceType 服务类型
+     * @param allInstances 所有实例列表
+     * @return 健康实例或 null（如果没有健康实例）
+     */
+    private ModelRouterProperties.ModelInstance findHealthyInstance(
+            Map.Entry<Long, ModelRouterProperties.ModelInstance> startEntry,
+            String serviceType,
+            List<ModelRouterProperties.ModelInstance> allInstances) {
+        
+        if (startEntry == null) {
+            return null;
+        }
+        
+        // 如果起始实例是健康的，直接返回
+        if (isInstanceHealthy(serviceType, startEntry.getValue())) {
+            return startEntry.getValue();
+        }
+        
+        // 从哈希环中查找下一个健康实例
+        Map.Entry<Long, ModelRouterProperties.ModelInstance> currentEntry = startEntry;
+        int iterationCount = 0; // 防止无限循环
+        int maxIterations = hashCircle.size(); // 最大迭代次数为哈希环大小
+        
+        do {
+            // 找到下一个条目
+            currentEntry = hashCircle.higherEntry(currentEntry.getKey());
+            
+            // 如果到达末尾，回到开头（形成环状）
+            if (currentEntry == null) {
+                currentEntry = hashCircle.firstEntry();
+            }
+            
+            // 检查当前实例是否健康
+            if (isInstanceHealthy(serviceType, currentEntry.getValue())) {
+                return currentEntry.getValue();
+            }
+            
+            iterationCount++;
+            
+        } while (iterationCount < maxIterations && currentEntry != null && 
+                !currentEntry.getKey().equals(startEntry.getKey()));
+        
+        return null; // 没有找到健康实例
     }
     
     /**
@@ -214,6 +269,8 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     /**
      * 计算字符串的哈希值
      * 
+     * 使用 MurmurHash 算法以获得更好的分布特性
+     * 
      * @param key 输入字符串
      * @return 哈希值
      */
@@ -222,15 +279,72 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
             key = "";
         }
         
-        // 使用改进的哈希算法，避免冲突
-        long hash = 0;
-        byte[] keyBytes = key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        // 使用 MurmurHash 算法以获得更好的哈希分布
+        // 这种算法具有很好的雪崩效应，能够均匀分布键值
+        return murmurHash3(key);
+    }
+    
+    /**
+     * MurmurHash3 算法实现
+     * 
+     * @param input 输入字符串
+     * @return 哈希值
+     */
+    private long murmurHash3(String input) {
+        byte[] data = input.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        int len = data.length;
+        int seed = 0xcc9e2d51;
+        int hash = seed;
         
-        for (byte b : keyBytes) {
-            hash = (hash * 31) + b;
+        final int c1 = 0xcc9e2d51;
+        final int c2 = 0x1b873593;
+        final int r1 = 15;
+        final int r2 = 13;
+        final int m = 5;
+        final int n = 0xe6546b64;
+        
+        int i = 0;
+        while (i <= len - 4) {
+            int k = (data[i] & 0xff) | ((data[i + 1] & 0xff) << 8) | 
+                    ((data[i + 2] & 0xff) << 16) | (data[i + 3] << 24);
+            k *= c1;
+            k = (k << r1) | (k >>> (32 - r1));
+            k *= c2;
+            
+            hash ^= k;
+            hash = (hash << r2) | (hash >>> (32 - r2));
+            hash = hash * m + n;
+            
+            i += 4;
         }
         
-        return Math.abs(hash);
+        // 处理剩余字节
+        int remaining = len - i;
+        if (remaining > 0) {
+            int k = 0;
+            if (remaining == 3) {
+                k ^= data[i + 2] << 16;
+            }
+            if (remaining >= 2) {
+                k ^= data[i + 1] << 8;
+            }
+            if (remaining >= 1) {
+                k ^= data[i];
+            }
+            k *= c1;
+            k = (k << r1) | (k >>> (32 - r1));
+            k *= c2;
+            hash ^= k;
+        }
+        
+        hash ^= len;
+        hash ^= (hash >>> 16);
+        hash *= 0x85ebca6b;
+        hash ^= (hash >>> 13);
+        hash *= 0xc2b2ae35;
+        hash ^= (hash >>> 16);
+        
+        return Math.abs((long) hash);
     }
 
     @Override

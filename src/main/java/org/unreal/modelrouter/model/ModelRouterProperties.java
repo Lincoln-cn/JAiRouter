@@ -143,6 +143,7 @@ public class ModelRouterProperties {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ModelInstance {
+        private String id; // 实例唯一标识
         private String name;
         private String baseUrl; // 注意驼峰命名
         private String path;
@@ -153,6 +154,7 @@ public class ModelRouterProperties {
         private Map<String, String> headers; // 添加请求头配置
         private RateLimitConfig rateLimit; // 实例级别限流配置
         private CircuitBreakerConfig circuitBreaker; // 实例级别熔断器配置
+        private Boolean healthy = true; // 实例健康状态
 
         public String getName() {
             return name;
@@ -204,6 +206,22 @@ public class ModelRouterProperties {
         
         public void setInstanceId(String instanceId) {
             this.instanceId = instanceId;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public Boolean isHealthy() {
+            return healthy;
+        }
+
+        public void setHealthy(Boolean healthy) {
+            this.healthy = healthy;
         }
 
         public String getAdapter() {
