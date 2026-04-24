@@ -56,30 +56,32 @@
         <el-button @click="resetAllCircuitBreakers">重置所有熔断器</el-button>
       </div>
 
-      <el-table :data="circuitBreakerStatus" stripe style="width: 100%" v-loading="loadingStatus">
-        <el-table-column prop="instanceId" label="实例ID" width="200" />
-        <el-table-column prop="state" label="状态" width="120">
+      <el-table :data="circuitBreakerStatus" stripe v-loading="loadingStatus" class="flex-table">
+        <el-table-column prop="instanceId" label="实例ID" min-width="150" />
+        <el-table-column prop="state" label="状态" min-width="100">
           <template #default="{ row }">
             <el-tag :type="getStateTagType(row.state)">
               {{ row.state }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="failureCount" label="失败次数" width="100" />
-        <el-table-column prop="successCount" label="成功次数" width="100" />
-        <el-table-column prop="lastFailureTime" label="最后失败时间" width="180">
+        <el-table-column prop="failureCount" label="失败次数" min-width="80" />
+        <el-table-column prop="successCount" label="成功次数" min-width="80" />
+        <el-table-column prop="lastFailureTime" label="最后失败时间" min-width="150">
           <template #default="{ row }">
             {{ formatTime(row.lastFailureTime) }}
           </template>
         </el-table-column>
-        <el-table-column prop="failureThreshold" label="失败阈值" width="100" />
-        <el-table-column prop="successThreshold" label="成功阈值" width="100" />
-        <el-table-column prop="timeout" label="超时(ms)" width="100" />
-        <el-table-column label="操作" width="200">
+        <el-table-column prop="failureThreshold" label="失败阈值" min-width="80" />
+        <el-table-column prop="successThreshold" label="成功阈值" min-width="80" />
+        <el-table-column prop="timeout" label="超时(ms)" min-width="80" />
+        <el-table-column label="操作" min-width="120">
           <template #default="{ row }">
-            <el-button size="small" @click="resetCircuitBreaker(row.instanceId)">重置</el-button>
-            <el-button size="small" type="warning" @click="forceOpenCircuitBreaker(row.instanceId)">强制打开</el-button>
-            <el-button size="small" type="success" @click="forceCloseCircuitBreaker(row.instanceId)">强制关闭</el-button>
+            <div class="action-buttons">
+              <el-button size="small" @click="resetCircuitBreaker(row.instanceId)">重置</el-button>
+              <el-button size="small" type="warning" @click="forceOpenCircuitBreaker(row.instanceId)">强制打开</el-button>
+              <el-button size="small" type="success" @click="forceCloseCircuitBreaker(row.instanceId)">强制关闭</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -92,15 +94,15 @@
         </div>
       </template>
 
-      <el-table :data="circuitBreakerHistory" stripe style="width: 100%" v-loading="loadingHistory">
-        <el-table-column prop="instanceId" label="实例ID" width="200" />
-        <el-table-column prop="event" label="事件" width="120" />
-        <el-table-column prop="timestamp" label="时间" width="180">
+      <el-table :data="circuitBreakerHistory" stripe v-loading="loadingHistory" class="flex-table">
+        <el-table-column prop="instanceId" label="实例ID" min-width="150" />
+        <el-table-column prop="event" label="事件" min-width="100" />
+        <el-table-column prop="timestamp" label="时间" min-width="150">
           <template #default="{ row }">
             {{ formatTime(row.timestamp) }}
           </template>
         </el-table-column>
-        <el-table-column prop="details" label="详情" />
+        <el-table-column prop="details" label="详情" min-width="200" />
       </el-table>
     </el-card>
   </div>
@@ -366,5 +368,24 @@ onMounted(() => {
   margin-bottom: 16px;
   display: flex;
   gap: 12px;
+}
+
+/* 弹性表格样式 */
+.flex-table {
+  width: 100%;
+  table-layout: auto;
+}
+
+/* 操作按钮垂直排列 */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.action-buttons .el-button {
+  width: 100%;
+  margin: 0;
 }
 </style>
