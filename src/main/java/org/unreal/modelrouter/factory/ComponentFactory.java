@@ -10,6 +10,7 @@ import org.unreal.modelrouter.fallback.FallbackStrategy;
 import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
 import org.unreal.modelrouter.fallback.impl.DefaultFallbackStrategy;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.loadbalancer.impl.ConsistentHashLoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.IpHashLoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.LeastConnectionsLoadBalancer;
 import org.unreal.modelrouter.loadbalancer.impl.RandomLoadBalancer;
@@ -57,6 +58,7 @@ public class ComponentFactory {
             case "round-robin" -> new RoundRobinLoadBalancer();
             case "least-connections" -> new LeastConnectionsLoadBalancer();
             case "ip-hash" -> new IpHashLoadBalancer(config.getHashAlgorithm());
+            case "consistent-hash" -> new ConsistentHashLoadBalancer(config.getVirtualNodes() != null ? config.getVirtualNodes() : 150);
             default -> {
                 logger.warn("Unsupported load balancer: {}, fallback to random", config.getType());
                 yield new RandomLoadBalancer();

@@ -123,6 +123,7 @@ public class ModelRouterProperties {
     public static class LoadBalanceConfig {
         private String type = "random";
         private String hashAlgorithm = "md5"; // 注意这里要用驼峰命名
+        private Integer virtualNodes = 150; // 一致性哈希虚拟节点数
 
         public String getType() {
             return type;
@@ -138,6 +139,14 @@ public class ModelRouterProperties {
 
         public void setHashAlgorithm(String hashAlgorithm) {
             this.hashAlgorithm = hashAlgorithm;
+        }
+
+        public Integer getVirtualNodes() {
+            return virtualNodes;
+        }
+
+        public void setVirtualNodes(Integer virtualNodes) {
+            this.virtualNodes = virtualNodes;
         }
     }
 
