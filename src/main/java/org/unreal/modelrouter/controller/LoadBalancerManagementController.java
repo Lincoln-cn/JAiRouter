@@ -252,10 +252,12 @@ public class LoadBalancerManagementController {
             response.totalLoadBalancers = loadBalancerManager.getLoadBalancerCount();
             response.validationStatus = loadBalancerManager.validateConfiguration();
 
-            Map<ModelServiceRegistry.ServiceType, String> status = loadBalancerManager.getLoadBalancerStatus();
+            // 获取所有服务类型的负载均衡器，解包后统计策略分布
             response.strategyDistribution = new HashMap<>();
-            for (Map.Entry<ModelServiceRegistry.ServiceType, String> entry : status.entrySet()) {
-                String strategy = parseStrategyName(entry.getValue());
+            for (ModelServiceRegistry.ServiceType type : ModelServiceRegistry.ServiceType.values()) {
+                LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(type);
+                String realClassName = unwrapLoadBalancer(loadBalancer);
+                String strategy = parseStrategyName(realClassName);
                 response.strategyDistribution.merge(strategy, 1, Integer::sum);
             }
 
