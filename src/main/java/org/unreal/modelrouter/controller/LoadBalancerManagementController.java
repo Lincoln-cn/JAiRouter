@@ -40,10 +40,32 @@ public class LoadBalancerManagementController {
             Map<ModelServiceRegistry.ServiceType, String> status = loadBalancerManager.getLoadBalancerStatus();
             List<LoadBalancerStatusResponse> responseList = status.entrySet().stream()
                     .map(entry -> {
+                        ModelServiceRegistry.ServiceType type = entry.getKey();
+                        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(type);
+                        
                         LoadBalancerStatusResponse response = new LoadBalancerStatusResponse();
-                        response.serviceType = entry.getKey().name().toLowerCase();
-                        response.strategy = parseStrategyName(entry.getValue());
-                        response.loadBalancerClass = entry.getValue();
+                        response.serviceType = type.name().toLowerCase();
+                        
+                        // 解包追踪包装器获取真实负载均衡器类
+                        String realClassName = unwrapLoadBalancer(loadBalancer);
+                        response.strategy = parseStrategyName(realClassName);
+                        response.loadBalancerClass = realClassName;
+                        
+                        // 获取配置信息
+                        try {
+                            Map<String, Object> serviceConfig = configurationService.getServiceConfig(type.name().toLowerCase());
+                            if (serviceConfig != null && serviceConfig.containsKey("loadBalance")) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> lbConfig = (Map<String, Object>) serviceConfig.get("loadBalance");
+                                response.configType = (String) lbConfig.getOrDefault("type", "random");
+                                response.hashAlgorithm = (String) lbConfig.getOrDefault("hashAlgorithm", "md5");
+                                response.virtualNodes = lbConfig.get("virtualNodes") != null ?
+                                        (Integer) lbConfig.get("virtualNodes") : 150;
+                            }
+                        } catch (Exception e) {
+                            log.debug("获取服务 {} 配置信息失败: {}", type.name(), e.getMessage());
+                        }
+                        
                         return response;
                     })
                     .collect(Collectors.toList());
@@ -53,6 +75,32 @@ public class LoadBalancerManagementController {
             log.error("获取负载均衡器状态失败: {}", e.getMessage());
             return ResponseEntity.ok(RouterResponse.error("获取负载均衡器状态失败: " + e.getMessage()));
         }
+    }
+
+    /**
+     * 解包负载均衡器获取真实的类名
+     */
+    private String unwrapLoadBalancer(LoadBalancer loadBalancer) {
+        if (loadBalancer == null) {
+            return "Unknown";
+        }
+        
+        // 检查是否是追踪包装器
+        if (loadBalancer.getClass().getSimpleName().contains("TracingWrapper")) {
+            try {
+                // 使用反射获取 delegate 字段
+                java.lang.reflect.Field delegateField = loadBalancer.getClass().getDeclaredField("delegate");
+                delegateField.setAccessible(true);
+                LoadBalancer delegate = (LoadBalancer) delegateField.get(loadBalancer);
+                if (delegate != null) {
+                    return delegate.getClass().getSimpleName();
+                }
+            } catch (Exception e) {
+                log.debug("解包负载均衡器失败: {}", e.getMessage());
+            }
+        }
+        
+        return loadBalancer.getClass().getSimpleName();
     }
 
     /**
