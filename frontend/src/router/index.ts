@@ -81,6 +81,12 @@ const router = createRouter({
           name: 'circuit-breaker-config',
           component: () => import('../views/config/CircuitBreakerManagement.vue'),
           meta: { title: '熔断器配置', icon: 'bolt' }
+        },
+        {
+          path: 'load-balancers',
+          name: 'load-balancer-config',
+          component: () => import('../views/config/LoadBalancerManagement.vue'),
+          meta: { title: '负载均衡器配置', icon: 'connection' }
         }
       ]
     },
