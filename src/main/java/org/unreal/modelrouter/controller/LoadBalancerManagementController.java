@@ -62,7 +62,7 @@ public class LoadBalancerManagementController {
     public ResponseEntity<RouterResponse<LoadBalancerStatusResponse>> getStatusByServiceType(
             @PathVariable String serviceType) {
         try {
-            ModelServiceRegistry.ServiceType type = ModelServiceRegistry.ServiceType.valueOf(serviceType.toUpperCase());
+            ModelServiceRegistry.ServiceType type = ModelServiceRegistry.ServiceType.valueOf(serviceType.toLowerCase());
             LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(type);
 
             LoadBalancerStatusResponse response = new LoadBalancerStatusResponse();
@@ -156,7 +156,7 @@ public class LoadBalancerManagementController {
             @PathVariable String serviceType,
             @RequestBody LoadBalanceConfigRequest request) {
         try {
-            ModelServiceRegistry.ServiceType type = ModelServiceRegistry.ServiceType.valueOf(serviceType.toUpperCase());
+            ModelServiceRegistry.ServiceType type = ModelServiceRegistry.ServiceType.valueOf(serviceType.toLowerCase());
 
             ModelRouterProperties.LoadBalanceConfig config = new ModelRouterProperties.LoadBalanceConfig();
             config.setType(request.type);
