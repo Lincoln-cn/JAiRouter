@@ -1,0 +1,1 @@
+var t=(t=>(t.CHAT="chat",t.EMBEDDING="embedding",t.RERANK="rerank",t.TTS="tts",t.STT="stt",t.IMG_GEN="imgGen",t.IMG_EDIT="imgEdit",t))(t||{});const e={chat:"聊天模型",embedding:"嵌入模型",rerank:"重排序模型",tts:"语音合成",stt:"语音识别",imgGen:"图像生成",imgEdit:"图像编辑"};Object.values(t);const i=["chat","embedding","rerank","tts","stt","imgGen","imgEdit"];export{i as C,e as S};

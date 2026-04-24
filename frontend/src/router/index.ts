@@ -75,6 +75,12 @@ const router = createRouter({
           name: 'version-management',
           component: () => import('../views/config/VersionManagement.vue'),
           meta: { title: '版本管理', icon: 'document' }
+        },
+        {
+          path: 'circuit-breakers',
+          name: 'circuit-breaker-config',
+          component: () => import('../views/config/CircuitBreakerManagement.vue'),
+          meta: { title: '熔断器配置', icon: 'bolt' }
         }
       ]
     },

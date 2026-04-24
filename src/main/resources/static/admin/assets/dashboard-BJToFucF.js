@@ -1,0 +1,1 @@
+import{r as e}from"./index-C5vu1KHh.js";const s=()=>e.get("/models/stats"),t=()=>e.get("/config/type/services"),o=s=>e.get(`/config/instance/${s}`),g=()=>e.get("/monitoring/overview"),i=()=>e.get("/config/type");export{i as a,g as b,t as c,o as d,s as g};
