@@ -16,16 +16,19 @@ spring:
 
       # 追踪配置模块
       - classpath:config/tracing/tracing-base.yml
-      
+
       # 安全配置模块
       - classpath:config/security/security-base.yml
       - classpath:config/security/persistence-base.yml
       - classpath:config/security/audit-base.yml
-      
+
       # 监控配置模块
       - classpath:config/monitoring/slow-query-alerts.yml
       - classpath:config/monitoring/error-tracking.yml
       - classpath:config/monitoring/persistence-monitoring-base.yml
+
+      # 状态持久化配置模块 (v2.4.4)
+      - classpath:config/persistence/state-persistence-base.yml
       
   profiles:
     active: dev  # 默认使用开发环境
@@ -68,7 +71,7 @@ store:
 #
 # 基础配置模块:
 # - config/base/server-base.yml         # 服务器基础配置
-# - config/base/model-services-base.yml # 模型服务配置  
+# - config/base/model-services-base.yml # 模型服务配置
 # - config/base/monitoring-base.yml     # 监控基础配置
 #
 # 功能配置模块:
@@ -76,6 +79,7 @@ store:
 # - config/tracing/tracing-base.yml     # 追踪功能配置
 # - config/monitoring/slow-query-alerts.yml # 慢查询告警配置
 # - config/monitoring/error-tracking.yml    # 错误追踪配置
+# - config/persistence/state-persistence-base.yml # 状态持久化配置 (v2.4.4)
 #
 # 环境配置文件:
 # - application-dev.yml                 # 开发环境覆盖配置

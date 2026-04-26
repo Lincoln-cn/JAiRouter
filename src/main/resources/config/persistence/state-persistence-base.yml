@@ -1,0 +1,76 @@
+# ========================================
+# 状态持久化配置（v2.4.4 三层退坡策略）
+# ========================================
+# 实现 Redis → H2 → File 三层退坡策略
+# 用于熔断器和负载均衡器状态的持久化存储
+
+jairouter:
+  persistence:
+    # ====== Tier 1: Redis 存储（可选） ======
+    # 最高优先级，用于分布式共享状态
+    redis:
+      enabled: false                    # 默认不启用，集群部署时开启
+      host: localhost
+      port: 6379
+      database: 0
+      password: ""                      # 如有密码则填写
+      timeout: 3000                     # 连接超时 (ms)
+      ttl-days: 7                       # 状态数据 TTL (天)
+
+    # ====== Tier 2: H2 数据库（默认） ======
+    # 默认退坡层，复用现有 StoreManager 框架
+    h2:
+      enabled: true                     # 默认启用
+      data-dir: ./data                  # 数据目录
+      database: jairouter_state         # 数据库名称
+
+    # ====== Tier 3: 文件存储（兜底） ======
+    # 极端情况下使用文件存储
+    file:
+      enabled: true                     # 默认启用作为兜底
+      path: ./data/state                # 文件存储路径
+      compress: false                   # 是否压缩存储
+
+    # ====== 状态恢复配置 ======
+    recovery:
+      enabled: true                     # 是否启用状态恢复
+      auto-on-startup: true             # 启动时自动恢复
+      timeout: 10000                    # 恢复超时 (ms)
+      parallel: false                   # 是否并行恢复
+
+    # ====== 退坡策略配置 ======
+    fallback:
+      auto-detect: true                 # 自动检测存储层可用性
+      health-check-interval: 30         # 健康检查间隔 (秒)
+      retry-interval: 10                # 重试间隔 (秒)
+      max-retries: 3                    # 最大重试次数
+      sync-on-recovery: true            # Redis 恢复后同步数据
+
+# ========================================
+# 配置说明
+# ========================================
+#
+# 三层退坡架构:
+# 1. Redis (Tier 1): 分布式共享状态，集群部署时使用
+# 2. H2 (Tier 2): 默认退坡层，单机部署时使用
+# 3. File (Tier 3): 极端情况兜底，确保数据不丢失
+#
+# 持久化内容:
+# - 熔断器状态: CLOSED/OPEN/HALF_OPEN、失败计数、时间戳
+# - 负载均衡器状态: 连接计数、策略配置
+#
+# 恢复机制:
+# - 启动时自动恢复: 应用启动时自动从持久化存储恢复状态
+# - 手动 API: 提供 REST API 手动触发恢复
+#
+# 使用场景:
+# 1. 单机部署: 使用默认 H2 配置即可
+# 2. 集群部署: 启用 Redis，实现跨节点状态共享
+# 3. 高可用部署: 启用全部三层，确保极端情况数据安全
+#
+# 管理 API:
+# - GET  /api/state-persistence/status       # 查看持久化状态
+# - GET  /api/state-persistence/tiers        # 查看各层健康状态
+# - POST /api/state-persistence/tiers/refresh # 刷新健康状态
+# - POST /api/state-persistence/tiers/switch/{tier} # 手动切换存储层
+# - POST /api/state-persistence/recovery/all # 手动触发全部恢复

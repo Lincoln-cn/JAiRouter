@@ -87,6 +87,12 @@ const router = createRouter({
           name: 'load-balancer-config',
           component: () => import('../views/config/LoadBalancerManagement.vue'),
           meta: { title: '负载均衡器配置', icon: 'connection' }
+        },
+        {
+          path: 'state-persistence',
+          name: 'state-persistence-config',
+          component: () => import('../views/config/StatePersistenceManagement.vue'),
+          meta: { title: '状态持久化', icon: 'folder-opened' }
         }
       ]
     },
