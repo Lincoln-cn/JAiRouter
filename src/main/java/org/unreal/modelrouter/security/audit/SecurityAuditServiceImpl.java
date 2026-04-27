@@ -17,9 +17,28 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 安全审计服务实现类
- * 提供安全事件的记录、查询和分析功能
+ * 安全审计服务实现类（内存存储版本）
+ *
+ * @deprecated 此实现使用内存存储，仅适用于开发和测试环境。
+ *             <p>迁移说明：</p>
+ *             <ul>
+ *               <li>生产环境建议使用 {@link ExtendedSecurityAuditServiceImpl}（JPA数据库存储）</li>
+ *               <li>或使用 {@link EnhancedSecurityAuditService}（增强版，带错误处理和备用通道）</li>
+ *               <li>内存存储版本不支持持久化，重启后数据丢失</li>
+ *             </ul>
+ *             <p>配置迁移：</p>
+ *             <pre>{@code
+ *             # 旧配置（内存存储）
+ *             jairouter.security.audit.storage=memory
+ *             
+ *             # 新配置（数据库存储）
+ *             jairouter.security.audit.storage=database
+ *             }</pre>
+ *             此类将在 v3.0 版本中移除。
+ * @see ExtendedSecurityAuditServiceImpl
+ * @see EnhancedSecurityAuditService
  */
+@Deprecated(since = "2.5.9", forRemoval = true)
 @Slf4j
 @Service("memorySecurityAuditService")
 @RequiredArgsConstructor

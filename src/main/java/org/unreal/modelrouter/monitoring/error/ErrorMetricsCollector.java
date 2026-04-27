@@ -168,10 +168,20 @@ public class ErrorMetricsCollector {
     /**
      * 记录错误指标（带时长）
      *
+     * @deprecated 建议使用完整版本 {@link #recordError(String, String, String, String, String, String, Duration)}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>此版本虽然包含时长，但缺少模块和模型信息</li>
+     *               <li>完整版本提供更丰富的上下文追踪</li>
+     *             </ul>
+     *             此方法将在 v3.0 版本中移除。
      * @param errorType 错误类型
      * @param operation 操作名称
      * @param duration 错误处理耗时
+     * @see #recordError(String, String, String, String, String, String, Duration)
+     * @since v2.5.8 标注废弃
      */
+    @Deprecated(since = "2.5.8", forRemoval = true)
     public void recordError(String errorType, String operation, Duration duration) {
         recordError(errorType, operation, null, "ERROR", null, null, duration);
     }
@@ -179,11 +189,21 @@ public class ErrorMetricsCollector {
     /**
      * 记录错误指标（带错误代码和严重级别）
      *
+     * @deprecated 建议使用完整版本 {@link #recordErrorWithContext(String, String, String, String, String, String)}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>此版本缺少模块和模型信息</li>
+     *               <li>recordErrorWithContext 提供更完整的上下文</li>
+     *             </ul>
+     *             此方法将在 v3.0 版本中移除。
      * @param errorType 错误类型
      * @param operation 操作名称
      * @param errorCode 错误代码
      * @param severity 严重级别
+     * @see #recordErrorWithContext(String, String, String, String, String, String)
+     * @since v2.5.8 标注废弃
      */
+    @Deprecated(since = "2.5.8", forRemoval = true)
     public void recordError(String errorType, String operation, String errorCode, String severity) {
         recordError(errorType, operation, errorCode, severity, null, null, null);
     }
