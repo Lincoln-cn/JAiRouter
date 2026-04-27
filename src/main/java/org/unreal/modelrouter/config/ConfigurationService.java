@@ -310,30 +310,17 @@ public class ConfigurationService {
 
     /**
      * 获取所有配置版本号
-     * v1.5.2: 直接从数据库获取版本列表
      *
+     * @deprecated 此方法已委托给 {@link ConfigVersionManager#getAllVersions()}。
+     *             请直接使用 ConfigVersionManager 进行版本管理。
+     *             此方法将在 v3.0 版本中移除。
+     * @see ConfigVersionManager#getAllVersions()
+     * @since v2.5.3.1 标注废弃，委托实现
      * @return 版本号列表
      */
+    @Deprecated(since = "2.5.3.1", forRemoval = true)
     public List<Integer> getAllVersions() {
-        // 直接从数据库获取版本列表
-        List<Integer> dbVersions = storeManager.getConfigVersions(CURRENT_KEY);
-        
-        if (dbVersions == null || dbVersions.isEmpty()) {
-            logger.debug("数据库中没有版本记录");
-            return new ArrayList<>();
-        }
-        
-        // 排序返回
-        dbVersions.sort(Integer::compareTo);
-        logger.debug("从数据库获取到 {} 个版本: {}", dbVersions.size(), dbVersions);
-        
-        // 同步更新内存元数据（可选，用于缓存）
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-        if (metadata != null) {
-            metadata.setExistingVersions(new HashSet<>(dbVersions));
-        }
-        
-        return dbVersions;
+        return configVersionManager.getAllVersions();
     }
 
     /**
@@ -367,42 +354,51 @@ public class ConfigurationService {
     /**
      * 获取指定版本的配置
      *
+     * @deprecated 此方法已委托给 {@link ConfigVersionManager#getVersionConfig(int)}。
+     *             请直接使用 ConfigVersionManager 进行版本配置获取。
+     *             此方法将在 v3.0 版本中移除。
+     * @see ConfigVersionManager#getVersionConfig(int)
+     * @since v2.5.3.1 标注废弃，委托实现
      * @param version 版本号，0表示YAML原始配置
      * @return 配置内容
      */
+    @Deprecated(since = "2.5.3.1", forRemoval = true)
     public Map<String, Object> getVersionConfig(int version) {
-        if (version == 0) {
-            return configMergeService.getDefaultConfig(); // YAML 原始配置
-        }
-        return storeManager.getConfigByVersion(CURRENT_KEY, version);
+        return configVersionManager.getVersionConfig(version);
     }
 
     /**
      * 保存当前配置为新版本
      *
+     * @deprecated 此方法已委托给 {@link ConfigVersionManager#saveAsNewVersion(Map)}。
+     *             请直接使用 ConfigVersionManager 进行版本保存。
+     *             此方法将在 v3.0 版本中移除。
+     * @see ConfigVersionManager#saveAsNewVersion(Map)
+     * @since v2.5.3.1 标注废弃，委托实现
      * @param config 配置内容
      * @return 新版本号
      */
+    @Deprecated(since = "2.5.3.1", forRemoval = true)
     public int saveAsNewVersion(Map<String, Object> config) {
-        return saveAsNewVersion(config, "系统自动保存", "system");
+        return configVersionManager.saveAsNewVersion(config);
     }
 
     /**
      * 保存当前配置为新版本（带描述和用户信息）
      *
+     * @deprecated 此方法已委托给 {@link ConfigVersionManager#saveAsNewVersion(Map, String, String)}。
+     *             请直接使用 ConfigVersionManager 进行版本保存。
+     *             此方法将在 v3.0 版本中移除。
+     * @see ConfigVersionManager#saveAsNewVersion(Map, String, String)
+     * @since v2.5.3.1 标注废弃，委托实现
      * @param config      配置内容
      * @param description 描述信息
      * @param userId      用户ID
      * @return 新版本号
      */
+    @Deprecated(since = "2.5.3.1", forRemoval = true)
     public int saveAsNewVersion(Map<String, Object> config, String description, String userId) {
-        // v2.0.0: 使用 ReentrantLock 替代 synchronized 提升并发性能
-        versionCreationLock.lock();
-        try {
-            return saveAsNewVersionInternal(config, description, userId);
-        } finally {
-            versionCreationLock.unlock();
-        }
+        return configVersionManager.saveAsNewVersion(config, description, userId);
     }
 
     /**
