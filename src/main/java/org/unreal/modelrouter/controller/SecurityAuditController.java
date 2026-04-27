@@ -44,36 +44,36 @@ public class SecurityAuditController {
             @Parameter(description = "开始时间") 
             @RequestParam(required = false) 
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) 
-            LocalDateTime startTime,
+            final LocalDateTime startTime,
             
             @Parameter(description = "结束时间") 
             @RequestParam(required = false) 
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) 
-            LocalDateTime endTime,
+            final LocalDateTime endTime,
             
             @Parameter(description = "事件类型") 
             @RequestParam(required = false) 
-            String eventType,
+            final String eventType,
             
             @Parameter(description = "用户ID") 
             @RequestParam(required = false) 
-            String userId,
+            final String userId,
             
             @Parameter(description = "客户端IP") 
             @RequestParam(required = false) 
-            String clientIp,
+            final String clientIp,
             
             @Parameter(description = "操作是否成功") 
             @RequestParam(required = false) 
-            Boolean success,
+            final Boolean success,
             
             @Parameter(description = "页码，从0开始") 
             @RequestParam(defaultValue = "0") 
-            int page,
+            final int page,
             
             @Parameter(description = "每页大小") 
             @RequestParam(defaultValue = "20") 
-            int size) {
+            final int size) {
         
         // 设置默认时间范围（如果未提供）
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
@@ -164,12 +164,12 @@ public class SecurityAuditController {
             @Parameter(description = "开始时间") 
             @RequestParam(required = false) 
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) 
-            LocalDateTime startTime,
+            final LocalDateTime startTime,
             
             @Parameter(description = "结束时间") 
             @RequestParam(required = false) 
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) 
-            LocalDateTime endTime) {
+            final LocalDateTime endTime) {
         
         // 设置默认时间范围
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(1);
@@ -202,7 +202,7 @@ public class SecurityAuditController {
     public Mono<ResponseEntity<Map<String, Object>>> cleanupExpiredLogs(
             @Parameter(description = "保留天数") 
             @RequestParam(defaultValue = "90") 
-            int retentionDays) {
+            final int retentionDays) {
         
         // 限制保留天数范围
         final int finalRetentionDays = Math.max(1, Math.min(retentionDays, 365));
@@ -229,15 +229,15 @@ public class SecurityAuditController {
     @Operation(summary = "检查告警状态", description = "检查指定事件类型是否需要触发告警")
     public Mono<ResponseEntity<Map<String, Object>>> checkAlertStatus(
             @Parameter(description = "事件类型") 
-            @RequestParam String eventType,
+            @RequestParam final String eventType,
             
             @Parameter(description = "时间窗口（分钟）") 
             @RequestParam(defaultValue = "5") 
-            int timeWindowMinutes,
+            final int timeWindowMinutes,
             
             @Parameter(description = "告警阈值") 
             @RequestParam(defaultValue = "10") 
-            int threshold) {
+            final int threshold) {
         
         return auditService.shouldTriggerAlert(eventType, timeWindowMinutes, threshold)
                 .map(shouldAlert -> {

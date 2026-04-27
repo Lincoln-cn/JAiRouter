@@ -81,7 +81,7 @@ public class ServiceInstanceController {
      * 删除实例
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteInstance(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteInstance(@PathVariable final Long id) {
         log.info("Deleting instance: {}", id);
         serviceInstanceManager.deleteInstance(id);
         return ResponseEntity.ok().build();

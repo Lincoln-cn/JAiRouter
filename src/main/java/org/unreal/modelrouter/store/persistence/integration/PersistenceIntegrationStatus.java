@@ -87,27 +87,27 @@ public class PersistenceIntegrationStatus {
     public static class Builder {
         private final PersistenceIntegrationStatus status = new PersistenceIntegrationStatus();
 
-        public Builder initialized(boolean initialized) {
+        public Builder initialized(final boolean initialized) {
             status.setInitialized(initialized);
             return this;
         }
 
-        public Builder syncIntervalMs(long syncIntervalMs) {
+        public Builder syncIntervalMs(final long syncIntervalMs) {
             status.setSyncIntervalMs(syncIntervalMs);
             return this;
         }
 
-        public Builder recoveryTimeoutMs(long recoveryTimeoutMs) {
+        public Builder recoveryTimeoutMs(final long recoveryTimeoutMs) {
             status.setRecoveryTimeoutMs(recoveryTimeoutMs);
             return this;
         }
 
-        public Builder registeredCount(int registeredCount) {
+        public Builder registeredCount(final int registeredCount) {
             status.setRegisteredCount(registeredCount);
             return this;
         }
 
-        public Builder pendingSyncCount(int pendingSyncCount) {
+        public Builder pendingSyncCount(final int pendingSyncCount) {
             status.setPendingSyncCount(pendingSyncCount);
             return this;
         }

@@ -82,7 +82,7 @@ public class ConfigurationVersionController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<Map<String, Object>>> getConfigByVersion(
             @Parameter(description = "版本号", example = "1")
-            @PathVariable("version") int version) {
+            @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
             Map<String, Object> config = configurationService.getVersionConfig(version);
             if (config == null) {
@@ -108,7 +108,7 @@ public class ConfigurationVersionController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<Void>> deleteConfigVersion(
             @Parameter(description = "版本号", example = "1")
-            @PathVariable("version") int version) {
+            @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
             int currentVersion = configurationService.getCurrentVersion();
             if (version == currentVersion) {
@@ -153,7 +153,7 @@ public class ConfigurationVersionController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<String>> applyVersion(
             @Parameter(description = "版本号", example = "1")
-            @PathVariable("version") int version) {
+            @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
             configurationService.applyVersion(version);
             return RouterResponse.<String>success("配置应用成功");
@@ -235,9 +235,9 @@ public class ConfigurationVersionController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<ConfigDiff>> compareVersions(
             @Parameter(description = "源版本号（较旧版本）", example = "1")
-            @PathVariable("sourceVersion") int sourceVersion,
+            @PathVariable("sourceVersion") final int sourceVersion,
             @Parameter(description = "目标版本号（较新版本）", example = "2")
-            @PathVariable("targetVersion") int targetVersion) {
+            @PathVariable("targetVersion") final int targetVersion) {
         return Mono.fromSupplier(() -> {
             // 验证版本号
             if (sourceVersion < 0 || targetVersion < 0) {
@@ -275,7 +275,7 @@ public class ConfigurationVersionController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<ConfigDiff>> getVersionChanges(
             @Parameter(description = "版本号", example = "2")
-            @PathVariable("version") int version) {
+            @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
             if (version <= 0) {
                 return RouterResponse.<ConfigDiff>error("版本号必须为正整数");

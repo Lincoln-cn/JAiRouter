@@ -214,7 +214,7 @@ public class ComponentFactory {
      * @return 包装后的CircuitBreaker
      */
     private org.unreal.modelrouter.circuitbreaker.CircuitBreaker wrapWithTracing(
-            org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker,final String instanceId) {
+            final org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker,final String instanceId) {
         if (tracingWrapperFactory != null && circuitBreaker != null) {
             try {
                 return tracingWrapperFactory.wrapCircuitBreaker(circuitBreaker, instanceId);

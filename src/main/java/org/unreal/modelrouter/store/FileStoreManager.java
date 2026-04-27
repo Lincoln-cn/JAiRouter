@@ -274,7 +274,7 @@ public class FileStoreManager extends BaseStoreManager {
      * @return 版本是否存在
      */
     @Override
-    public boolean versionExists(final String key, int version) {
+    public boolean versionExists(final String key, final int version) {
         try {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
             File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");

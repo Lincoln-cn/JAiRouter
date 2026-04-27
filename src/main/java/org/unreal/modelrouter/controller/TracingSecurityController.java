@@ -116,7 +116,7 @@ public class TracingSecurityController {
     @Operation(summary = "获取用户追踪访问历史", description = "获取指定用户的追踪访问历史记录")
     @ApiResponse(responseCode = "200", description = "成功获取访问历史")
     public ResponseEntity<RouterResponse<List<TracingSecurityManager.TraceAccessRecord>>> getUserTraceAccessHistory(
-            @PathVariable("username") String username) {
+            @PathVariable("username") final String username) {
         try {
             List<TracingSecurityManager.TraceAccessRecord> history = 
                     tracingSecurityManager.getUserTraceAccessHistory(username);
@@ -136,7 +136,7 @@ public class TracingSecurityController {
     @Operation(summary = "清理用户权限缓存", description = "清理指定用户的权限缓存")
     @ApiResponse(responseCode = "200", description = "成功清理权限缓存")
     public ResponseEntity<RouterResponse<Void>> clearUserPermissionCache(
-            @PathVariable("username") String username) {
+            @PathVariable("username") final String username) {
         try {
             tracingSecurityManager.clearUserPermissionCache(username);
             log.info("成功清理用户权限缓存: {}", username);
@@ -177,7 +177,7 @@ public class TracingSecurityController {
     @Operation(summary = "轮换加密密钥", description = "轮换指定追踪的加密密钥")
     @ApiResponse(responseCode = "200", description = "成功轮换密钥")
     public ResponseEntity<RouterResponse<Boolean>> rotateEncryptionKey(
-            @PathVariable("traceId") String traceId) {
+            @PathVariable("traceId") final String traceId) {
         try {
             Boolean result = tracingEncryptionService.rotateEncryptionKey(traceId).block();
             if (Boolean.TRUE.equals(result)) {
@@ -219,7 +219,7 @@ public class TracingSecurityController {
     @Operation(summary = "安全清理追踪数据", description = "安全清理指定追踪的所有数据")
     @ApiResponse(responseCode = "200", description = "成功清理追踪数据")
     public ResponseEntity<RouterResponse<Void>> secureCleanupTraceData(
-            @PathVariable("traceId") String traceId) {
+            @PathVariable("traceId") final String traceId) {
         try {
             tracingEncryptionService.secureCleanupTraceData(traceId).block();
             log.info("成功安全清理追踪数据: {}", traceId);

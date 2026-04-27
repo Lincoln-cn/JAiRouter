@@ -42,7 +42,7 @@ public class UniversalController {
                                final ModelServiceRegistry registry,
                                final ServiceStateManager serviceStateManager,
                                @Autowired(required = false) final MetricsCollector metricsCollector,
-                               @Autowired(required = false) org.unreal.modelrouter.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor) {
+                               @Autowired(required = false) final org.unreal.modelrouter.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor) {
         this.adapterRegistry = adapterRegistry;
         this.registry = registry;
         this.serviceStateManager = serviceStateManager;
@@ -205,12 +205,12 @@ public class UniversalController {
 
     @PostMapping(value = "/audio/transcriptions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<?>> speechToText(
-            @RequestPart("model") String model,
-            @RequestPart("file") FilePart file,
-            @RequestPart(value = "language", required = false) String language,
-            @RequestPart(value = "prompt", required = false) String prompt,
-            @RequestPart(value = "responseFormat", required = false) String responseFormat,
-            @RequestPart(value = "temperature", required = false) Double temperature,
+            @RequestPart("model") final String model,
+            @RequestPart("file") final FilePart file,
+            @RequestPart(value = "language", required = false) final String language,
+            @RequestPart(value = "prompt", required = false) final String prompt,
+            @RequestPart(value = "responseFormat", required = false) final String responseFormat,
+            @RequestPart(value = "temperature", required = false) final Double temperature,
             @RequestHeader(value = "Authorization", required = false) final String authorization,
             final ServerHttpRequest httpRequest) {
 

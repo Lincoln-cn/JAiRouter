@@ -45,56 +45,56 @@ public class ExceptionManagementController {
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime startTime,
+            final LocalDateTime startTime,
 
             @Parameter(description = "结束时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime endTime,
+            final LocalDateTime endTime,
 
             @Parameter(description = "异常类型（支持模糊匹配）")
             @RequestParam(required = false)
-            String exceptionType,
+            final String exceptionType,
 
             @Parameter(description = "操作名称（支持模糊匹配）")
             @RequestParam(required = false)
-            String operation,
+            final String operation,
 
             @Parameter(description = "错误代码")
             @RequestParam(required = false)
-            String errorCode,
+            final String errorCode,
 
             @Parameter(description = "错误分类")
             @RequestParam(required = false)
-            String errorCategory,
+            final String errorCategory,
 
             @Parameter(description = "追踪 ID")
             @RequestParam(required = false)
-            String traceId,
+            final String traceId,
 
             @Parameter(description = "客户端 IP")
             @RequestParam(required = false)
-            String clientIp,
+            final String clientIp,
 
             @Parameter(description = "是否仅查询聚合事件")
             @RequestParam(required = false)
-            Boolean aggregatedOnly,
+            final Boolean aggregatedOnly,
 
             @Parameter(description = "页码，从 0 开始")
             @RequestParam(defaultValue = "0")
-            int page,
+            final int page,
 
             @Parameter(description = "每页大小")
             @RequestParam(defaultValue = "20")
-            int size,
+            final int size,
 
             @Parameter(description = "排序字段")
             @RequestParam(defaultValue = "occurredAt")
-            String sortBy,
+            final String sortBy,
 
             @Parameter(description = "排序方向 (asc 或 desc)")
             @RequestParam(defaultValue = "desc")
-            String sortDirection) {
+            final String sortDirection) {
 
         // 构建查询请求
         ExceptionQueryRequest request = ExceptionQueryRequest.builder()
@@ -126,7 +126,7 @@ public class ExceptionManagementController {
     @Operation(summary = "查询异常事件详情", description = "根据事件 ID 查询异常事件的完整信息")
     public ResponseEntity<RouterResponse<ExceptionEventDTO>> getExceptionEvent(
             @Parameter(description = "事件 ID")
-            @PathVariable String eventId) {
+            @PathVariable final String eventId) {
 
         ExceptionEventDTO event = exceptionManagementService.getExceptionEventById(eventId);
         
@@ -146,12 +146,12 @@ public class ExceptionManagementController {
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime startTime,
+            final LocalDateTime startTime,
 
             @Parameter(description = "结束时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime endTime) {
+            final LocalDateTime endTime) {
 
         ExceptionStatisticsDTO statistics = exceptionManagementService.getExceptionStatistics(startTime, endTime);
         return ResponseEntity.ok(RouterResponse.success(statistics));
@@ -165,7 +165,7 @@ public class ExceptionManagementController {
     public ResponseEntity<RouterResponse<List<ExceptionEventDTO>>> getRecentExceptionEvents(
             @Parameter(description = "最大数量")
             @RequestParam(defaultValue = "10")
-            int limit) {
+            final int limit) {
 
         List<ExceptionEventDTO> events = exceptionManagementService.getRecentExceptionEvents(limit);
         return ResponseEntity.ok(RouterResponse.success(events));
@@ -178,11 +178,11 @@ public class ExceptionManagementController {
     @Operation(summary = "获取指定类型的最近异常事件", description = "获取指定异常类型的最近事件列表")
     public ResponseEntity<RouterResponse<List<ExceptionEventDTO>>> getRecentExceptionEventsByType(
             @Parameter(description = "异常类型")
-            @PathVariable String exceptionType,
+            @PathVariable final String exceptionType,
 
             @Parameter(description = "最大数量")
             @RequestParam(defaultValue = "10")
-            int limit) {
+            final int limit) {
 
         List<ExceptionEventDTO> events = exceptionManagementService.getRecentExceptionEventsByType(exceptionType, limit);
         return ResponseEntity.ok(RouterResponse.success(events));
@@ -197,11 +197,11 @@ public class ExceptionManagementController {
             @Parameter(description = "截止时间 (ISO-8601)")
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime cutoffTime,
+            final LocalDateTime cutoffTime,
 
             @Parameter(description = "是否仅删除已聚合的事件")
             @RequestParam(defaultValue = "false")
-            boolean aggregatedOnly) {
+            final boolean aggregatedOnly) {
 
         int deletedCount;
         if (aggregatedOnly) {
@@ -227,12 +227,12 @@ public class ExceptionManagementController {
             @Parameter(description = "开始时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime startTime,
+            final LocalDateTime startTime,
 
             @Parameter(description = "结束时间 (ISO-8601)")
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime endTime) {
+            final LocalDateTime endTime) {
 
         // 获取统计信息
         ExceptionStatisticsDTO statistics = exceptionManagementService.getExceptionStatistics(startTime, endTime);

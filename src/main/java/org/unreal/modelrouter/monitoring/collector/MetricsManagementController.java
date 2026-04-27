@@ -253,7 +253,7 @@ public class MetricsManagementController {
      */
     @PostMapping("/circuit-breaker/{action}")
     public ResponseEntity<String> controlCircuitBreaker(
-            @PathVariable("action") String action) {
+            @PathVariable("action") final String action) {
         try {
             switch (action.toLowerCase()) {
                 case "open":

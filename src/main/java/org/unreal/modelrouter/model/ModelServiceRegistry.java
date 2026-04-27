@@ -70,7 +70,7 @@ public class ModelServiceRegistry {
                                 final CircuitBreakerManager circuitBreakerManager,
                                 final FallbackManager fallbackManager,
                                 final ConfigMergeService configMergeService,
-                                org.unreal.modelrouter.config.ConfigurationHelper configurationHelper) {
+                                final org.unreal.modelrouter.config.ConfigurationHelper configurationHelper) {
         this.originalProperties = properties;
         this.serviceStateManager = serviceStateManager;
         this.rateLimitManager = rateLimitManager;

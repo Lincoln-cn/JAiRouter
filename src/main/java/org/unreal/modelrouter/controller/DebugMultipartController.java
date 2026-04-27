@@ -126,7 +126,7 @@ public class DebugMultipartController {
      */
     @PostMapping(value = "/simple-multipart", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<Map<String, Object>>> handleSimpleMultipart(
-            @RequestPart(value = "text", required = false) String text,
+            @RequestPart(value = "text", required = false) final String text,
             @RequestPart(value = "file", required = false) final FilePart filePart,
             final ServerWebExchange exchange) {
 

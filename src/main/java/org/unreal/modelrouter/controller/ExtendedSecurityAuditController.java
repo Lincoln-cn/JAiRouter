@@ -131,7 +131,7 @@ public class ExtendedSecurityAuditController {
      */
     @PostMapping("/query")
     @Operation(summary = "复杂条件查询审计事件")
-    public Mono<RouterResponse<ExtendedAuditQueryResponse>> queryAuditEventsAdvanced(@RequestBody AuditEventQuery query) {
+    public Mono<RouterResponse<ExtendedAuditQueryResponse>> queryAuditEventsAdvanced(@RequestBody final AuditEventQuery query) {
         if (query.getStartTime() == null) query.setStartTime(LocalDateTime.now().minusDays(7));
         if (query.getEndTime() == null) query.setEndTime(LocalDateTime.now());
         if (query.getSize() <= 0 || query.getSize() > 100) query.setSize(20);

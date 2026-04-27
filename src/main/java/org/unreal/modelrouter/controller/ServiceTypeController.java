@@ -77,7 +77,7 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Set<String>>> getAvailableModels(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable("serviceType") String serviceType) {
+            @PathVariable("serviceType") final String serviceType) {
         // 验证服务类型参数
         if (!configurationValidator.isValidServiceType(serviceType)) {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);
@@ -182,7 +182,7 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Map<String, Object>>> getServiceConfig(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable("serviceType") String serviceType) {
+            @PathVariable("serviceType") final String serviceType) {
         // 验证服务类型参数
         if (!configurationValidator.isValidServiceType(serviceType)) {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);
@@ -208,7 +208,7 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> createService(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable("serviceType") String serviceType,
+            @PathVariable("serviceType") final String serviceType,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "服务配置信息")
             @RequestBody Map<String, Object> serviceConfig) {
         // 验证参数
@@ -237,9 +237,9 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<UpdateServiceConfigRequest>> updateServiceConfig(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable("serviceType") String serviceType,
+            @PathVariable("serviceType") final String serviceType,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "服务配置信息")
-            @RequestBody UpdateServiceConfigRequest request) {
+            @RequestBody final UpdateServiceConfigRequest request) {
 
         logger.info("更新服务配置: serviceType={}, adapter={}", serviceType, request.getAdapter());
 
@@ -267,7 +267,7 @@ public class ServiceTypeController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<Void>> deleteService(
             @Parameter(description = "服务类型", example = "chat")
-            @PathVariable("serviceType") String serviceType) {
+            @PathVariable("serviceType") final String serviceType) {
         // 验证服务类型参数
         if (!configurationValidator.isValidServiceType(serviceType)) {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);

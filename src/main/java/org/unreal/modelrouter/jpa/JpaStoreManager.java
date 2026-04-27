@@ -142,7 +142,7 @@ public class JpaStoreManager implements StoreManager {
     }
 
     @Override
-    public boolean versionExists(final String key, int version) {
+    public boolean versionExists(final String key, final int version) {
         return configRepository.existsByConfigKeyAndVersion(key, version);
     }
 

@@ -176,37 +176,37 @@ public class SecurityErrorResponse {
         }
 
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-        public SecurityErrorResponseBuilder timestamp(LocalDateTime timestamp) {
+        public SecurityErrorResponseBuilder timestamp(final LocalDateTime timestamp) {
             this.timestamp = timestamp;
             return this;
         }
 
-        public SecurityErrorResponseBuilder status(int status) {
+        public SecurityErrorResponseBuilder status(final int status) {
             this.status = status;
             return this;
         }
 
-        public SecurityErrorResponseBuilder error(String error) {
+        public SecurityErrorResponseBuilder error(final String error) {
             this.error = error;
             return this;
         }
 
-        public SecurityErrorResponseBuilder message(String message) {
+        public SecurityErrorResponseBuilder message(final String message) {
             this.message = message;
             return this;
         }
 
-        public SecurityErrorResponseBuilder errorCode(String errorCode) {
+        public SecurityErrorResponseBuilder errorCode(final String errorCode) {
             this.errorCode = errorCode;
             return this;
         }
 
-        public SecurityErrorResponseBuilder path(String path) {
+        public SecurityErrorResponseBuilder path(final String path) {
             this.path = path;
             return this;
         }
 
-        public SecurityErrorResponseBuilder requestId(String requestId) {
+        public SecurityErrorResponseBuilder requestId(final String requestId) {
             this.requestId = requestId;
             return this;
         }

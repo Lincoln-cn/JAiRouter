@@ -64,7 +64,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "获取指定API密钥信息", description = "根据API密钥ID获取详细信息（不包含实际的密钥值）")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyVO>> getApiKeyById(
-            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
         return apiKeyService.getApiKeyByIdVO(keyId)
                 .map(vo -> RouterResponse.success(vo, "获取API密钥信息成功"))
                 .onErrorResume(e -> {
@@ -83,7 +83,7 @@ public class ApiKeyManagementController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyCreationVO>> createApiKey(
             @Parameter(description = "API密钥创建请求")
-            @Valid @RequestBody ApiKeyCreateRequest request) {
+            @Valid @RequestBody final ApiKeyCreateRequest request) {
         return apiKeyService.createApiKey(request)
                 .map(vo -> RouterResponse.success(vo,
                         "创建API密钥成功，请妥善保存密钥值，此密钥值仅此一次显示"))
@@ -103,9 +103,9 @@ public class ApiKeyManagementController {
                description = "更新指定API密钥的信息（不包含密钥值，密钥值不可更新）")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyVO>> updateApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId,
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId,
             @Parameter(description = "API密钥更新请求")
-            @Valid @RequestBody ApiKeyUpdateRequest request) {
+            @Valid @RequestBody final ApiKeyUpdateRequest request) {
         return apiKeyService.updateApiKey(keyId, request)
                 .map(vo -> RouterResponse.success(vo, "更新API密钥成功"))
                 .onErrorResume(e -> {
@@ -121,7 +121,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "删除API密钥", description = "删除指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<Void>> deleteApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
         return apiKeyService.deleteApiKey(keyId)
                 .then(Mono.just(RouterResponse.<Void>success(null, "删除API密钥成功")))
                 .onErrorResume(e -> {
@@ -137,7 +137,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "禁用API密钥", description = "禁用指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyVO>> disableApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
         return apiKeyService.disableApiKey(keyId)
                 .map(vo -> RouterResponse.success(vo, "禁用API密钥成功"))
                 .onErrorResume(e -> {
@@ -153,7 +153,7 @@ public class ApiKeyManagementController {
     @Operation(summary = "启用API密钥", description = "启用指定的API密钥")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyVO>> enableApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
         return apiKeyService.enableApiKey(keyId)
                 .map(vo -> RouterResponse.success(vo, "启用API密钥成功"))
                 .onErrorResume(e -> {
@@ -171,7 +171,7 @@ public class ApiKeyManagementController {
                description = "重置API密钥值，旧的密钥值将失效，新的密钥值仅此一次显示")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyCreationVO>> resetApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
         // 先删除旧的密钥，然后创建新的
         return apiKeyService.getApiKeyByIdVO(keyId)
                 .flatMap(oldKey -> {
@@ -209,7 +209,7 @@ public class ApiKeyManagementController {
                description = "强制轮换API密钥值，旧的密钥值将失效，新的密钥值仅此一次显示")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyCreationVO>> forceRotateApiKey(
-            @Parameter(description = "API密钥ID") @PathVariable("keyId") String keyId) {
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
         return apiKeyService.forceRotateKey(keyId, "admin")
                 .map(vo -> RouterResponse.success(vo,
                         "密钥轮换成功，请妥善保存新的密钥值，此密钥值仅此一次显示"))
@@ -251,7 +251,7 @@ public class ApiKeyManagementController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<ApiKeyBatchImportResult>> importApiKeys(
             @Parameter(description = "API密钥批量导入请求")
-            @Valid @RequestBody ApiKeyBatchImportRequest request) {
+            @Valid @RequestBody final ApiKeyBatchImportRequest request) {
         return apiKeyService.importApiKeys(request, "admin", null)
                 .map(result -> {
                     String message = String.format("批量导入完成：成功 %d，失败 %d",

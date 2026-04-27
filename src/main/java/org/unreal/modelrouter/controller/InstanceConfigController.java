@@ -60,7 +60,7 @@ public class InstanceConfigController {
      * 删除实例配置
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteInstanceConfig(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteInstanceConfig(@PathVariable final Long id) {
         log.info("Deleting instance config: {}", id);
         serviceInstanceManager.deleteInstance(id);
         return ResponseEntity.ok().build();

@@ -95,7 +95,7 @@ public interface StoreManager {
      * @param version 版本号
      * @return 版本是否存在
      */
-    default boolean versionExists(final String key, int version) {
+    default boolean versionExists(final String key, final int version) {
         return false;
     }
 
