@@ -1415,57 +1415,17 @@ public class ConfigurationService {
     /**
      * 删除服务实例（优化版本，可选择是否保存为新版本）
      *
+     * @deprecated 此方法已委托给 {@link InstanceManager#deleteServiceInstance(String, String)}。
+     *             请直接使用 InstanceManager 进行实例删除。
+     *             此方法将在 v3.0 版本中移除。
+     * @see InstanceManager#deleteServiceInstance(String, String)
+     * @since v2.5.3.5 标注废弃，委托实现
      * @param serviceType 服务类型
      * @param instanceId 实例ID
      */
-    @SuppressWarnings("unchecked")
+    @Deprecated(since = "2.5.3.5", forRemoval = true)
     public void deleteServiceInstance(String serviceType, String instanceId) {
-        logger.info("删除服务 {} 的实例 {}", serviceType, instanceId);
-
-        // 验证服务类型
-        if (!isValidServiceType(serviceType)) {
-            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
-        }
-
-        Map<String, Object> currentConfig = getCurrentPersistedConfig();
-        Map<String, Object> services = getServicesFromConfig(currentConfig);
-
-        if (!services.containsKey(serviceType)) {
-            throw new IllegalArgumentException("服务类型不存在: " + serviceType);
-        }
-
-        Map<String, Object> serviceConfig = (Map<String, Object>) services.get(serviceType);
-        List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
-
-        // 删除匹配的实例
-        boolean removed = instances.removeIf(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)));
-
-        if (!removed) {
-            throw new IllegalArgumentException("实例不存在: " + instanceId);
-        }
-
-        // 更新服务配置
-        serviceConfig.put("instances", instances);
-        services.put(serviceType, serviceConfig);
-        currentConfig.put("services", services);
-
-        // 添加版本元数据
-        Map<String, Object> metadata = new HashMap<>();
-        metadata.put("operation", "deleteInstance");
-        metadata.put("operationDetail", "删除服务实例: " + instanceId);
-        metadata.put("serviceType", serviceType);
-        metadata.put("instanceId", instanceId);
-        metadata.put("timestamp", System.currentTimeMillis());
-        currentConfig.put("_metadata", metadata);
-
-        // 使用智能版本控制 - 只有在配置真正变化时才创建新版本
-        String userId = SecurityUtils.getCurrentUserId();
-        String description = "删除服务实例: " + instanceId;
-        saveAsNewVersionIfChanged(currentConfig, description, userId);
-
-        refreshRuntimeConfig();
-
-        logger.info("实例 {} 删除成功", instanceId);
+        instanceManager.deleteServiceInstance(serviceType, instanceId);
     }
 
 
