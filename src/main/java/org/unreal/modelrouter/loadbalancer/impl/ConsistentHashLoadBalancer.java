@@ -62,7 +62,7 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
             final List<ModelRouterProperties.ModelInstance> instances, 
-            String clientIp) {
+            final String clientIp) {
         return selectInstance(instances, clientIp, "unknown");
     }
 
@@ -70,7 +70,7 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
     public ModelRouterProperties.ModelInstance selectInstance(
             final List<ModelRouterProperties.ModelInstance> instances, 
             final String clientIp, 
-            String serviceType) {
+            final String serviceType) {
         
         if (instances == null || instances.isEmpty()) {
             logger.warn("No instances available for consistent hash selection");
