@@ -46,7 +46,7 @@ public class SecurityErrorResponse {
      */
     private String requestId;
 
-    public SecurityErrorResponse(LocalDateTime timestamp, int status, String error, String message, String errorCode, String path, String requestId) {
+    public SecurityErrorResponse(final LocalDateTime timestamp,final int status,final String error,final String message,final String errorCode,final String path,final String requestId) {
         this.timestamp = timestamp;
         this.status = status;
         this.error = error;
@@ -62,7 +62,7 @@ public class SecurityErrorResponse {
     /**
      * 创建认证错误响应
      */
-    public static SecurityErrorResponse authenticationError(String message, String errorCode) {
+    public static SecurityErrorResponse authenticationError(final String message,final String errorCode) {
         return SecurityErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(401)
@@ -75,7 +75,7 @@ public class SecurityErrorResponse {
     /**
      * 创建授权错误响应
      */
-    public static SecurityErrorResponse authorizationError(String message, String errorCode) {
+    public static SecurityErrorResponse authorizationError(final String message,final String errorCode) {
         return SecurityErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(403)
@@ -88,7 +88,7 @@ public class SecurityErrorResponse {
     /**
      * 创建数据脱敏错误响应
      */
-    public static SecurityErrorResponse sanitizationError(String message, String errorCode) {
+    public static SecurityErrorResponse sanitizationError(final String message,final String errorCode) {
         return SecurityErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(500)
@@ -107,7 +107,7 @@ public class SecurityErrorResponse {
     }
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(final LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -115,7 +115,7 @@ public class SecurityErrorResponse {
         return this.status;
     }
 
-    public void setStatus(int status) {
+    public void setStatus(final int status) {
         this.status = status;
     }
 
@@ -123,7 +123,7 @@ public class SecurityErrorResponse {
         return this.error;
     }
 
-    public void setError(String error) {
+    public void setError(final String error) {
         this.error = error;
     }
 
@@ -131,7 +131,7 @@ public class SecurityErrorResponse {
         return this.message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -139,7 +139,7 @@ public class SecurityErrorResponse {
         return this.errorCode;
     }
 
-    public void setErrorCode(String errorCode) {
+    public void setErrorCode(final String errorCode) {
         this.errorCode = errorCode;
     }
 
@@ -147,7 +147,7 @@ public class SecurityErrorResponse {
         return this.path;
     }
 
-    public void setPath(String path) {
+    public void setPath(final String path) {
         this.path = path;
     }
 
@@ -155,7 +155,7 @@ public class SecurityErrorResponse {
         return this.requestId;
     }
 
-    public void setRequestId(String requestId) {
+    public void setRequestId(final String requestId) {
         this.requestId = requestId;
     }
 

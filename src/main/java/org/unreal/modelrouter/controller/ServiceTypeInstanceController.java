@@ -32,7 +32,7 @@ public class ServiceTypeInstanceController {
      */
     @GetMapping("/{serviceType}")
     public ResponseEntity<RouterResponse<List<ServiceInstanceDTO>>> getInstancesByServiceType(
-            @PathVariable String serviceType) {
+            @PathVariable final String serviceType) {
         log.debug("Getting instances for service type: {}", serviceType);
 
         // 根据 serviceType 查找 serviceConfig
@@ -62,9 +62,9 @@ public class ServiceTypeInstanceController {
      */
     @PutMapping("/{serviceType}/{instanceId}")
     public ResponseEntity<RouterResponse<ServiceInstanceDTO>> updateInstanceByServiceType(
-            @PathVariable String serviceType,
-            @PathVariable Long instanceId,
-            @RequestBody CreateServiceInstanceRequest request) {
+            @PathVariable final String serviceType,
+            @PathVariable final Long instanceId,
+            @RequestBody final CreateServiceInstanceRequest request) {
         log.info("Updating instance: serviceType={}, instanceId={}", serviceType, instanceId);
 
         // 直接通过数据库ID更新实例
@@ -81,8 +81,8 @@ public class ServiceTypeInstanceController {
      */
     @PostMapping("/{serviceType}")
     public ResponseEntity<RouterResponse<ServiceInstanceDTO>> addInstanceByServiceType(
-            @PathVariable String serviceType,
-            @RequestBody CreateServiceInstanceRequest request) {
+            @PathVariable final String serviceType,
+            @RequestBody final CreateServiceInstanceRequest request) {
         log.info("Adding instance for service type: {}", serviceType);
 
         // 根据 serviceType 查找 serviceConfig
@@ -106,8 +106,8 @@ public class ServiceTypeInstanceController {
      */
     @DeleteMapping("/{serviceType}/{instanceId}")
     public ResponseEntity<RouterResponse<Void>> deleteInstanceByServiceType(
-            @PathVariable String serviceType,
-            @PathVariable Long instanceId) {
+            @PathVariable final String serviceType,
+            @PathVariable final Long instanceId) {
         log.info("Deleting instance: serviceType={}, instanceId={}", serviceType, instanceId);
 
         // 直接通过数据库ID删除实例
@@ -123,8 +123,8 @@ public class ServiceTypeInstanceController {
      */
     @GetMapping("/{serviceType}/{instanceId}/rate-limit")
     public ResponseEntity<RouterResponse<InstanceRateLimitDTO>> getRateLimitConfig(
-            @PathVariable String serviceType,
-            @PathVariable Long instanceId) {
+            @PathVariable final String serviceType,
+            @PathVariable final Long instanceId) {
         log.info("Getting rate limit config: instanceId={}", instanceId);
 
         InstanceRateLimitDTO config = serviceInstanceManager.getRateLimitConfig(instanceId)
@@ -146,9 +146,9 @@ public class ServiceTypeInstanceController {
      */
     @PutMapping("/{serviceType}/{instanceId}/rate-limit")
     public ResponseEntity<RouterResponse<InstanceRateLimitDTO>> saveRateLimitConfig(
-            @PathVariable String serviceType,
-            @PathVariable Long instanceId,
-            @RequestBody InstanceRateLimitDTO config) {
+            @PathVariable final String serviceType,
+            @PathVariable final Long instanceId,
+            @RequestBody final InstanceRateLimitDTO config) {
         log.info("Saving rate limit config: instanceId={}, enabled={}", instanceId, config.getEnabled());
 
         InstanceRateLimitDTO saved = serviceInstanceManager.saveRateLimitConfig(instanceId, config);
@@ -162,8 +162,8 @@ public class ServiceTypeInstanceController {
      */
     @GetMapping("/{serviceType}/{instanceId}/circuit-breaker")
     public ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> getCircuitBreakerConfig(
-            @PathVariable String serviceType,
-            @PathVariable Long instanceId) {
+            @PathVariable final String serviceType,
+            @PathVariable final Long instanceId) {
         log.info("Getting circuit breaker config: instanceId={}", instanceId);
 
         InstanceCircuitBreakerDTO config = serviceInstanceManager.getCircuitBreakerConfig(instanceId)
@@ -183,9 +183,9 @@ public class ServiceTypeInstanceController {
      */
     @PutMapping("/{serviceType}/{instanceId}/circuit-breaker")
     public ResponseEntity<RouterResponse<InstanceCircuitBreakerDTO>> saveCircuitBreakerConfig(
-            @PathVariable String serviceType,
-            @PathVariable Long instanceId,
-            @RequestBody InstanceCircuitBreakerDTO config) {
+            @PathVariable final String serviceType,
+            @PathVariable final Long instanceId,
+            @RequestBody final InstanceCircuitBreakerDTO config) {
         log.info("Saving circuit breaker config: instanceId={}, enabled={}", instanceId, config.getEnabled());
 
         InstanceCircuitBreakerDTO saved = serviceInstanceManager.saveCircuitBreakerConfig(instanceId, config);

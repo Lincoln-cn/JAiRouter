@@ -25,7 +25,7 @@ public class DatabaseMigrationService implements ApplicationRunner {
      * 应用启动完成后执行数据库迁移
      */
     @Override
-    public void run(ApplicationArguments args) {
+    public void run(final ApplicationArguments args) {
         log.info("Starting database migration check...");
 
         try {

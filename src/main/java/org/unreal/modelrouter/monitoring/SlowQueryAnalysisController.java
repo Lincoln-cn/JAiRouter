@@ -67,7 +67,7 @@ public class SlowQueryAnalysisController {
      */
     @GetMapping("/hotspots")
     public List<PerformanceTracker.PerformanceHotspot> getPerformanceHotspots(
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "10") final int limit) {
         return performanceTracker.getPerformanceHotspots(limit);
     }
     

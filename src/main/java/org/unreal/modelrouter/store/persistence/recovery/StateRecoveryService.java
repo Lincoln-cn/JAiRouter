@@ -98,7 +98,7 @@ public class StateRecoveryService {
     /**
      * 恢复熔断器状态
      */
-    private Mono<Void> recoverCircuitBreakerStates(RecoveryStatistics stats) {
+    private Mono<Void> recoverCircuitBreakerStates(final RecoveryStatistics stats) {
         logger.info("Recovering circuit breaker states...");
         
         return cbPersistenceAdapter.getAllCircuitBreakerInstanceIds()
@@ -174,7 +174,7 @@ public class StateRecoveryService {
     /**
      * 恢复负载均衡器状态
      */
-    private Mono<Void> recoverLoadBalancerStates(RecoveryStatistics stats) {
+    private Mono<Void> recoverLoadBalancerStates(final RecoveryStatistics stats) {
         logger.info("Recovering load balancer states...");
         
         return lbPersistenceAdapter.getAllLoadBalancerStates()
@@ -234,7 +234,7 @@ public class StateRecoveryService {
     /**
      * 手动触发指定熔断器恢复
      */
-    public Mono<Boolean> recoverSingleCircuitBreaker(String instanceId) {
+    public Mono<Boolean> recoverSingleCircuitBreaker(final String instanceId) {
         logger.info("Manual recovery for single circuit breaker: {}", instanceId);
         
         Map<String, String> instanceUrls = buildInstanceUrlMap();
@@ -259,7 +259,7 @@ public class StateRecoveryService {
     /**
      * 手动触发指定负载均衡器恢复
      */
-    public Mono<Boolean> recoverSingleLoadBalancer(ModelServiceRegistry.ServiceType serviceType) {
+    public Mono<Boolean> recoverSingleLoadBalancer(final ModelServiceRegistry.ServiceType serviceType) {
         logger.info("Manual recovery for single load balancer: {}", serviceType);
         
         LoadBalancer lb = loadBalancerManager.getLoadBalancer(serviceType);
@@ -281,7 +281,7 @@ public class StateRecoveryService {
         return true;
     }
 
-    private int countIterable(Iterable<?> iterable) {
+    private int countIterable(final Iterable<?> iterable) {
         int count = 0;
         for (Object ignored : iterable) {
             count++;

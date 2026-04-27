@@ -42,7 +42,7 @@ public class TokenUsageController {
     @PostMapping("/record")
     @Operation(summary = "记录 Token 使用量", description = "记录单次 AI 模型调用的 Token 使用量")
     public ResponseEntity<RouterResponse<Void>> recordTokenUsage(
-            @RequestBody TokenUsageRecordDTO record) {
+            @RequestBody final TokenUsageRecordDTO record) {
 
         tokenUsageService.recordTokenUsage(record);
         return ResponseEntity.ok(RouterResponse.success(null, "Token 使用量记录成功"));
@@ -54,7 +54,7 @@ public class TokenUsageController {
     @PostMapping("/record/batch")
     @Operation(summary = "批量记录 Token 使用量", description = "批量记录 AI 模型调用的 Token 使用量")
     public ResponseEntity<RouterResponse<Void>> recordTokenUsageBatch(
-            @RequestBody List<TokenUsageRecordDTO> records) {
+            @RequestBody final List<TokenUsageRecordDTO> records) {
 
         tokenUsageService.recordTokenUsageBatch(records);
         return ResponseEntity.ok(RouterResponse.success(null, "批量记录成功"));

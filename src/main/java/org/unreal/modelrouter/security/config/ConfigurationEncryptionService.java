@@ -30,7 +30,7 @@ public class ConfigurationEncryptionService {
     private final SecretKey encryptionKey;
     private final SecureRandom secureRandom;
 
-    public ConfigurationEncryptionService(@Value("${jairouter.security.encryption.key:}") String encryptionKeyString) {
+    public ConfigurationEncryptionService(@Value("${jairouter.security.encryption.key:}") final String encryptionKeyString) {
         this.secureRandom = new SecureRandom();
         
         if (encryptionKeyString != null && !encryptionKeyString.trim().isEmpty()) {

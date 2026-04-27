@@ -183,7 +183,7 @@ public class SecurityAuditEventEntity {
     /**
      * 根据事件类型确定事件分类
      */
-    private String determineEventCategory(AuditEventType type) {
+    private String determineEventCategory(final AuditEventType type) {
         if (type == null) return "SYSTEM";
         
         String typeName = type.name();
@@ -199,7 +199,7 @@ public class SecurityAuditEventEntity {
     /**
      * 根据事件类型和成功状态确定风险等级
      */
-    private RiskLevel determineRiskLevel(AuditEventType type, Boolean success) {
+    private RiskLevel determineRiskLevel(final AuditEventType type,final Boolean success) {
         if (type == null) return RiskLevel.LOW;
         
         // 失败事件风险较高

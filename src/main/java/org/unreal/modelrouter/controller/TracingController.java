@@ -116,7 +116,7 @@ public class TracingController {
     @ApiResponse(responseCode = "200", description = "成功更新配置")
     @ApiResponse(responseCode = "400", description = "配置无效")
     public Mono<ResponseEntity<Map<String, Object>>> updateTracingConfiguration(
-            @RequestBody TracingConfiguration newConfig) {
+            @RequestBody final TracingConfiguration newConfig) {
         return Mono.fromCallable(() -> {
             try {
                 // 仅更新支持运行时修改的配置项
@@ -227,9 +227,9 @@ public class TracingController {
     @Operation(summary = "导出追踪数据", description = "导出指定时间范围内的追踪数据")
     @ApiResponse(responseCode = "200", description = "成功导出数据")
     public Mono<ResponseEntity<Map<String, Object>>> exportTracingData(
-            @Parameter(description = "开始时间戳（毫秒）") @RequestParam(required = false) Long startTime,
-            @Parameter(description = "结束时间戳（毫秒）") @RequestParam(required = false) Long endTime,
-            @Parameter(description = "导出格式") @RequestParam(defaultValue = "json") String format) {
+            @Parameter(description = "开始时间戳（毫秒）") @RequestParam(required = false) final Long startTime,
+            @Parameter(description = "结束时间戳（毫秒）") @RequestParam(required = false) final Long endTime,
+            @Parameter(description = "导出格式") @RequestParam(defaultValue = "json") final String format) {
         
         return Mono.fromCallable(() -> {
             Map<String, Object> exportData = new HashMap<>();

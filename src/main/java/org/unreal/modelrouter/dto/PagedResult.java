@@ -20,7 +20,7 @@ public class PagedResult<T> {
     public PagedResult() {
     }
 
-    public PagedResult(List<T> content, int page, int size, long totalElements) {
+    public PagedResult(final List<T> content,final int page,final int size,final long totalElements) {
         this.content = content;
         this.page = page;
         this.size = size;
@@ -37,7 +37,7 @@ public class PagedResult<T> {
         return content;
     }
 
-    public void setContent(List<T> content) {
+    public void setContent(final List<T> content) {
         this.content = content;
     }
 
@@ -45,7 +45,7 @@ public class PagedResult<T> {
         return page;
     }
 
-    public void setPage(int page) {
+    public void setPage(final int page) {
         this.page = page;
     }
 
@@ -53,7 +53,7 @@ public class PagedResult<T> {
         return size;
     }
 
-    public void setSize(int size) {
+    public void setSize(final int size) {
         this.size = size;
     }
 
@@ -61,7 +61,7 @@ public class PagedResult<T> {
         return totalElements;
     }
 
-    public void setTotalElements(long totalElements) {
+    public void setTotalElements(final long totalElements) {
         this.totalElements = totalElements;
     }
 
@@ -69,7 +69,7 @@ public class PagedResult<T> {
         return totalPages;
     }
 
-    public void setTotalPages(int totalPages) {
+    public void setTotalPages(final int totalPages) {
         this.totalPages = totalPages;
     }
 
@@ -77,7 +77,7 @@ public class PagedResult<T> {
         return first;
     }
 
-    public void setFirst(boolean first) {
+    public void setFirst(final boolean first) {
         this.first = first;
     }
 
@@ -85,7 +85,7 @@ public class PagedResult<T> {
         return last;
     }
 
-    public void setLast(boolean last) {
+    public void setLast(final boolean last) {
         this.last = last;
     }
 
@@ -93,7 +93,7 @@ public class PagedResult<T> {
         return hasNext;
     }
 
-    public void setHasNext(boolean hasNext) {
+    public void setHasNext(final boolean hasNext) {
         this.hasNext = hasNext;
     }
 
@@ -101,7 +101,7 @@ public class PagedResult<T> {
         return hasPrevious;
     }
 
-    public void setHasPrevious(boolean hasPrevious) {
+    public void setHasPrevious(final boolean hasPrevious) {
         this.hasPrevious = hasPrevious;
     }
 

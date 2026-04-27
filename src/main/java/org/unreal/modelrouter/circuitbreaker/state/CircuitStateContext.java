@@ -49,7 +49,7 @@ public class CircuitStateContext {
     /**
      * 设置当前状态
      */
-    public void setCurrentState(CircuitState newState) {
+    public void setCurrentState(final CircuitState newState) {
         CircuitState oldState = this.currentState;
         this.currentState = newState;
         
@@ -120,7 +120,7 @@ public class CircuitStateContext {
     /**
      * 记录熔断器事件
      */
-    public void recordEvent(String eventType, String state) {
+    public void recordEvent(final String eventType,final String state) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordCircuitBreaker(instanceId, state, eventType);

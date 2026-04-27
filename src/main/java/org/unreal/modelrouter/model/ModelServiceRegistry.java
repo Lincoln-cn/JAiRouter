@@ -63,13 +63,13 @@ public class ModelServiceRegistry {
     // 运行时服务配置缓存
     private volatile Map<String, ServiceRuntimeConfig> serviceConfigCache;
 
-    public ModelServiceRegistry(ModelRouterProperties properties,
-                                ServiceStateManager serviceStateManager,
-                                RateLimitManager rateLimitManager,
-                                LoadBalancerManager loadBalancerManager,
-                                CircuitBreakerManager circuitBreakerManager,
-                                FallbackManager fallbackManager,
-                                ConfigMergeService configMergeService,
+    public ModelServiceRegistry(final ModelRouterProperties properties,
+                                final ServiceStateManager serviceStateManager,
+                                final RateLimitManager rateLimitManager,
+                                final LoadBalancerManager loadBalancerManager,
+                                final CircuitBreakerManager circuitBreakerManager,
+                                final FallbackManager fallbackManager,
+                                final ConfigMergeService configMergeService,
                                 org.unreal.modelrouter.config.ConfigurationHelper configurationHelper) {
         this.originalProperties = properties;
         this.serviceStateManager = serviceStateManager;
@@ -152,9 +152,9 @@ public class ModelServiceRegistry {
     /**
      * 选择服务实例
      */
-    public ModelRouterProperties.ModelInstance selectInstance(ServiceType serviceType,
-                                                              String modelName,
-                                                              String clientIp) {
+    public ModelRouterProperties.ModelInstance selectInstance(final ServiceType serviceType,
+                                                              final String modelName,
+                                                              final String clientIp) {
         if (serviceType == null) {
             throw new IllegalArgumentException("ServiceType cannot be null");
         }
@@ -234,11 +234,11 @@ public class ModelServiceRegistry {
      * 选择实例并进行实例级限流检查
      */
     private ModelRouterProperties.ModelInstance selectInstanceWithRateLimit(
-            List<ModelRouterProperties.ModelInstance> availableInstances,
-            LoadBalancer loadBalancer,
-            String clientIp,
-            ServiceType serviceType,
-            String modelName) {
+            final List<ModelRouterProperties.ModelInstance> availableInstances,
+            final LoadBalancer loadBalancer,
+            final String clientIp,
+            final ServiceType serviceType,
+            final String modelName) {
 
         List<ModelRouterProperties.ModelInstance> candidateInstances = new ArrayList<>(availableInstances);
         int maxAttempts = Math.min(candidateInstances.size(), 3);
@@ -271,19 +271,19 @@ public class ModelServiceRegistry {
     /**
      * 获取WebClient
      */
-    public WebClient getClient(ServiceType serviceType, String modelName, String clientIp) {
+    public WebClient getClient(final ServiceType serviceType,final String modelName,final String clientIp) {
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
         return getWebClient(selectedInstance);
     }
 
-    public WebClient getClient(ServiceType serviceType, String modelName) {
+    public WebClient getClient(final ServiceType serviceType,final String modelName) {
         return getClient(serviceType, modelName, null);
     }
 
     /**
      * 获取模型路径
      */
-    public String getModelPath(ServiceType serviceType, String modelName) {
+    public String getModelPath(final ServiceType serviceType,final String modelName) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -306,7 +306,7 @@ public class ModelServiceRegistry {
     /**
      * 获取服务适配器
      */
-    public String getServiceAdapter(ServiceType serviceType) {
+    public String getServiceAdapter(final ServiceType serviceType) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -321,7 +321,7 @@ public class ModelServiceRegistry {
     /**
      * 记录调用完成
      */
-    public void recordCallComplete(ServiceType serviceType, ModelRouterProperties.ModelInstance instance) {
+    public void recordCallComplete(final ServiceType serviceType,final ModelRouterProperties.ModelInstance instance) {
         LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
         if (loadBalancer != null) {
             loadBalancer.recordCallComplete(instance);
@@ -332,7 +332,7 @@ public class ModelServiceRegistry {
     /**
      * 记录调用失败
      */
-    public void recordCallFailure(ServiceType serviceType, ModelRouterProperties.ModelInstance instance) {
+    public void recordCallFailure(final ServiceType serviceType,final ModelRouterProperties.ModelInstance instance) {
         LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
         if (loadBalancer != null) {
             loadBalancer.recordCallFailure(instance);
@@ -343,7 +343,7 @@ public class ModelServiceRegistry {
     /**
      * 获取实例的熔断器状态
      */
-    public CircuitBreaker.State getInstanceCircuitBreakerState(ModelRouterProperties.ModelInstance instance) {
+    public CircuitBreaker.State getInstanceCircuitBreakerState(final ModelRouterProperties.ModelInstance instance) {
         return circuitBreakerManager.getState(instance.getInstanceId(), instance.getBaseUrl());
     }
 
@@ -363,7 +363,7 @@ public class ModelServiceRegistry {
     /**
      * 获取指定服务类型的所有可用模型
      */
-    public Set<String> getAvailableModels(ServiceType serviceType) {
+    public Set<String> getAvailableModels(final ServiceType serviceType) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -395,7 +395,7 @@ public class ModelServiceRegistry {
     /**
      * 获取服务配置
      */
-    public ModelRouterProperties.ServiceConfig getServiceConfig(ServiceType serviceType) {
+    public ModelRouterProperties.ServiceConfig getServiceConfig(final ServiceType serviceType) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -418,7 +418,7 @@ public class ModelServiceRegistry {
     /**
      * 获取负载均衡策略
      */
-    public String getLoadBalanceStrategy(ServiceType serviceType) {
+    public String getLoadBalanceStrategy(final ServiceType serviceType) {
         LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
         return loadBalancer != null ? loadBalancer.getClass().getSimpleName() : "Unknown";
     }
@@ -432,7 +432,7 @@ public class ModelServiceRegistry {
     /**
      * 更新服务实例
      */
-    public void updateServiceInstances(ServiceType serviceType, List<ModelRouterProperties.ModelInstance> instances) {
+    public void updateServiceInstances(final ServiceType serviceType,final List<ModelRouterProperties.ModelInstance> instances) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -445,7 +445,7 @@ public class ModelServiceRegistry {
     /**
      * 更新服务适配器
      */
-    public void updateServiceAdapter(ServiceType serviceType, String adapter) {
+    public void updateServiceAdapter(final ServiceType serviceType,final String adapter) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -491,7 +491,7 @@ public class ModelServiceRegistry {
      * 从合并配置更新原始Properties对象
      */
     @SuppressWarnings("unchecked")
-    private void updateOriginalPropertiesFromConfig(Map<String, Object> mergedConfig) {
+    private void updateOriginalPropertiesFromConfig(final Map<String, Object> mergedConfig) {
         try {
             // 更新全局配置
             if (mergedConfig.containsKey("adapter")) {
@@ -525,7 +525,7 @@ public class ModelServiceRegistry {
      * 重建服务配置缓存
      */
     @SuppressWarnings("unchecked")
-    private void rebuildServiceConfigCache(Map<String, Object> mergedConfig) {
+    private void rebuildServiceConfigCache(final Map<String, Object> mergedConfig) {
         Map<String, ServiceRuntimeConfig> newCache = new ConcurrentHashMap<>();
 
         if (mergedConfig.containsKey("services")) {
@@ -555,7 +555,7 @@ public class ModelServiceRegistry {
      * 构建服务运行时配置
      */
     @SuppressWarnings("unchecked")
-    private ServiceRuntimeConfig buildServiceRuntimeConfig(Map<String, Object> serviceConfigMap) {
+    private ServiceRuntimeConfig buildServiceRuntimeConfig(final Map<String, Object> serviceConfigMap) {
         ServiceRuntimeConfig runtimeConfig = new ServiceRuntimeConfig();
 
         // 解析实例列表

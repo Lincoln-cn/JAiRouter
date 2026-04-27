@@ -56,7 +56,7 @@ public final class ServiceTypeConstants {
         private final String value;
         private final String description;
 
-        ServiceType(String value, String description) {
+        ServiceType(final String value,final String description) {
             this.value = value;
             this.description = description;
         }
@@ -72,7 +72,7 @@ public final class ServiceTypeConstants {
         /**
          * 从字符串值转换为枚举
          */
-        public static ServiceType fromString(String value) {
+        public static ServiceType fromString(final String value) {
             if (value == null) {
                 return null;
             }
@@ -87,7 +87,7 @@ public final class ServiceTypeConstants {
         /**
          * 检查是否是有效的服务类型
          */
-        public static boolean isValid(String value) {
+        public static boolean isValid(final String value) {
             if (value == null) {
                 return false;
             }
@@ -117,21 +117,21 @@ public final class ServiceTypeConstants {
     /**
      * 检查是否是有效的服务类型
      */
-    public static boolean isValidServiceType(String serviceType) {
+    public static boolean isValidServiceType(final String serviceType) {
         return ServiceType.isValid(serviceType);
     }
 
     /**
      * 从字符串转换为服务类型
      */
-    public static ServiceType toServiceType(String serviceType) {
+    public static ServiceType toServiceType(final String serviceType) {
         return ServiceType.fromString(serviceType);
     }
 
     /**
      * 获取服务类型描述
      */
-    public static String getDescription(String serviceType) {
+    public static String getDescription(final String serviceType) {
         ServiceType type = ServiceType.fromString(serviceType);
         return type != null ? type.getDescription() : "未知";
     }

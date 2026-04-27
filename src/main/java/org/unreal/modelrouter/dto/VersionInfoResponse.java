@@ -22,7 +22,7 @@ public class VersionInfoResponse {
         return version;
     }
 
-    public void setVersion(Integer version) {
+    public void setVersion(final Integer version) {
         this.version = version;
     }
 
@@ -30,7 +30,7 @@ public class VersionInfoResponse {
         return config;
     }
 
-    public void setConfig(RouterConfiguration config) {
+    public void setConfig(final RouterConfiguration config) {
         this.config = config;
     }
 
@@ -44,7 +44,7 @@ public class VersionInfoResponse {
     /**
      * 兼容旧代码：设置 Map 格式的配置
      */
-    public void setConfigFromMap(Map<String, Object> configMap) {
+    public void setConfigFromMap(final Map<String, Object> configMap) {
         this.config = RouterConfiguration.fromMap(configMap);
     }
 
@@ -52,7 +52,7 @@ public class VersionInfoResponse {
         return current;
     }
 
-    public void setCurrent(Boolean current) {
+    public void setCurrent(final Boolean current) {
         this.current = current;
     }
 
@@ -60,7 +60,7 @@ public class VersionInfoResponse {
         return operation;
     }
 
-    public void setOperation(String operation) {
+    public void setOperation(final String operation) {
         this.operation = operation;
     }
 
@@ -68,7 +68,7 @@ public class VersionInfoResponse {
         return operationDetail;
     }
 
-    public void setOperationDetail(String operationDetail) {
+    public void setOperationDetail(final String operationDetail) {
         this.operationDetail = operationDetail;
     }
 
@@ -76,7 +76,7 @@ public class VersionInfoResponse {
         return timestamp;
     }
 
-    public void setTimestamp(Long timestamp) {
+    public void setTimestamp(final Long timestamp) {
         this.timestamp = timestamp;
     }
 }

@@ -21,7 +21,7 @@ public class ConfigMetadata {
         return configKey;
     }
 
-    public void setConfigKey(String configKey) {
+    public void setConfigKey(final String configKey) {
         this.configKey = configKey;
     }
 
@@ -29,7 +29,7 @@ public class ConfigMetadata {
         return currentVersion;
     }
 
-    public void setCurrentVersion(int currentVersion) {
+    public void setCurrentVersion(final int currentVersion) {
         this.currentVersion = currentVersion;
     }
 
@@ -37,7 +37,7 @@ public class ConfigMetadata {
         return initialVersion;
     }
 
-    public void setInitialVersion(int initialVersion) {
+    public void setInitialVersion(final int initialVersion) {
         this.initialVersion = initialVersion;
     }
 
@@ -45,7 +45,7 @@ public class ConfigMetadata {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(final LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -53,7 +53,7 @@ public class ConfigMetadata {
         return lastModified;
     }
 
-    public void setLastModified(LocalDateTime lastModified) {
+    public void setLastModified(final LocalDateTime lastModified) {
         this.lastModified = lastModified;
     }
 
@@ -61,7 +61,7 @@ public class ConfigMetadata {
         return lastModifiedBy;
     }
 
-    public void setLastModifiedBy(String lastModifiedBy) {
+    public void setLastModifiedBy(final String lastModifiedBy) {
         this.lastModifiedBy = lastModifiedBy;
     }
 
@@ -69,7 +69,7 @@ public class ConfigMetadata {
         return totalVersions;
     }
 
-    public void setTotalVersions(int totalVersions) {
+    public void setTotalVersions(final int totalVersions) {
         this.totalVersions = totalVersions;
     }
 
@@ -77,14 +77,14 @@ public class ConfigMetadata {
         return existingVersions != null ? existingVersions : new HashSet<>();
     }
 
-    public void setExistingVersions(Set<Integer> existingVersions) {
+    public void setExistingVersions(final Set<Integer> existingVersions) {
         this.existingVersions = existingVersions;
     }
 
     /**
      * 添加版本到存在列表
      */
-    public void addVersion(int version) {
+    public void addVersion(final int version) {
         if (existingVersions == null) {
             existingVersions = new HashSet<>();
         }
@@ -94,7 +94,7 @@ public class ConfigMetadata {
     /**
      * 从存在列表中移除版本
      */
-    public void removeVersion(int version) {
+    public void removeVersion(final int version) {
         if (existingVersions != null) {
             existingVersions.remove(version);
         }
@@ -103,7 +103,7 @@ public class ConfigMetadata {
     /**
      * 检查版本是否存在
      */
-    public boolean hasVersion(int version) {
+    public boolean hasVersion(final int version) {
         return existingVersions != null && existingVersions.contains(version);
     }
 

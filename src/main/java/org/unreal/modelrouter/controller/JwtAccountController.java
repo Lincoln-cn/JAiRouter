@@ -39,7 +39,7 @@ public class JwtAccountController {
      * 获取单个账户
      */
     @GetMapping("/{username}")
-    public ResponseEntity<RouterResponse<JwtAccountDTO>> getAccount(@PathVariable String username) {
+    public ResponseEntity<RouterResponse<JwtAccountDTO>> getAccount(@PathVariable final String username) {
         log.debug("Getting JWT account: {}", username);
         JwtAccountDTO account = jwtAccountService.getAccount(username);
         return ResponseEntity.ok(RouterResponse.success(account, "获取账户信息成功"));
@@ -49,7 +49,7 @@ public class JwtAccountController {
      * 创建账户
      */
     @PostMapping
-    public ResponseEntity<RouterResponse<JwtAccountDTO>> createAccount(@RequestBody CreateJwtAccountRequest request) {
+    public ResponseEntity<RouterResponse<JwtAccountDTO>> createAccount(@RequestBody final CreateJwtAccountRequest request) {
         log.info("Creating JWT account: {}", request.getUsername());
         JwtAccountDTO created = jwtAccountService.createAccount(request);
         return ResponseEntity.ok(RouterResponse.success(created, "账户创建成功"));
@@ -60,8 +60,8 @@ public class JwtAccountController {
      */
     @PutMapping("/{username}")
     public ResponseEntity<RouterResponse<JwtAccountDTO>> updateAccount(
-            @PathVariable String username,
-            @RequestBody CreateJwtAccountRequest request) {
+            @PathVariable final String username,
+            @RequestBody final CreateJwtAccountRequest request) {
         log.info("Updating JWT account: {}", username);
         JwtAccountDTO updated = jwtAccountService.updateAccount(username, request);
         return ResponseEntity.ok(RouterResponse.success(updated, "账户更新成功"));
@@ -71,7 +71,7 @@ public class JwtAccountController {
      * 删除账户
      */
     @DeleteMapping("/{username}")
-    public ResponseEntity<RouterResponse<Void>> deleteAccount(@PathVariable String username) {
+    public ResponseEntity<RouterResponse<Void>> deleteAccount(@PathVariable final String username) {
         log.info("Deleting JWT account: {}", username);
         jwtAccountService.deleteAccount(username);
         return ResponseEntity.ok(RouterResponse.success(null, "账户删除成功"));
@@ -82,8 +82,8 @@ public class JwtAccountController {
      */
     @PostMapping("/{username}/verify")
     public ResponseEntity<RouterResponse<Boolean>> verifyPassword(
-            @PathVariable String username,
-            @RequestBody Map<String, String> credentials) {
+            @PathVariable final String username,
+            @RequestBody final Map<String, String> credentials) {
         String password = credentials.get("password");
         boolean valid = jwtAccountService.verifyPassword(username, password);
         return ResponseEntity.ok(RouterResponse.success(valid, "密码验证完成"));
@@ -94,8 +94,8 @@ public class JwtAccountController {
      */
     @PatchMapping("/{username}/status")
     public ResponseEntity<RouterResponse<JwtAccountDTO>> toggleAccountStatus(
-            @PathVariable String username,
-            @RequestParam boolean enabled) {
+            @PathVariable final String username,
+            @RequestParam final boolean enabled) {
         log.info("Toggling JWT account status: {} -> {}", username, enabled);
         JwtAccountDTO updated = jwtAccountService.toggleAccountStatus(username, enabled);
         String message = enabled ? "账户已启用" : "账户已禁用";

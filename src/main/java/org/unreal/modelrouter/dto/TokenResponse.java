@@ -40,7 +40,7 @@ public class TokenResponse {
     public TokenResponse() {
     }
 
-    public TokenResponse(String token, String tokenType, String message, LocalDateTime timestamp) {
+    public TokenResponse(final String token,final String tokenType,final String message,final LocalDateTime timestamp) {
         this.token = token;
         this.tokenType = tokenType;
         this.message = message;
@@ -51,7 +51,7 @@ public class TokenResponse {
         return this.token;
     }
 
-    public void setToken(String token) {
+    public void setToken(final String token) {
         this.token = token;
     }
 
@@ -59,7 +59,7 @@ public class TokenResponse {
         return this.tokenType;
     }
 
-    public void setTokenType(String tokenType) {
+    public void setTokenType(final String tokenType) {
         this.tokenType = tokenType;
     }
 
@@ -67,7 +67,7 @@ public class TokenResponse {
         return this.message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -75,7 +75,7 @@ public class TokenResponse {
         return this.timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(final LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 

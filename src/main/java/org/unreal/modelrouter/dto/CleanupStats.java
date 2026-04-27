@@ -18,10 +18,10 @@ public class CleanupStats {
     public CleanupStats() {
     }
 
-    public CleanupStats(LocalDateTime lastCleanupTime, long totalCleanupRuns, 
-                       long totalTokensCleaned, long totalBlacklistEntriesCleaned,
-                       double averageCleanupDurationSeconds, LocalDateTime nextScheduledCleanup,
-                       boolean cleanupEnabled) {
+    public CleanupStats(final LocalDateTime lastCleanupTime,final long totalCleanupRuns, 
+                       final long totalTokensCleaned,final long totalBlacklistEntriesCleaned,
+                       final double averageCleanupDurationSeconds,final LocalDateTime nextScheduledCleanup,
+                       final boolean cleanupEnabled) {
         this.lastCleanupTime = lastCleanupTime;
         this.totalCleanupRuns = totalCleanupRuns;
         this.totalTokensCleaned = totalTokensCleaned;
@@ -36,7 +36,7 @@ public class CleanupStats {
         return lastCleanupTime;
     }
 
-    public void setLastCleanupTime(LocalDateTime lastCleanupTime) {
+    public void setLastCleanupTime(final LocalDateTime lastCleanupTime) {
         this.lastCleanupTime = lastCleanupTime;
     }
 
@@ -44,7 +44,7 @@ public class CleanupStats {
         return totalCleanupRuns;
     }
 
-    public void setTotalCleanupRuns(long totalCleanupRuns) {
+    public void setTotalCleanupRuns(final long totalCleanupRuns) {
         this.totalCleanupRuns = totalCleanupRuns;
     }
 
@@ -52,7 +52,7 @@ public class CleanupStats {
         return totalTokensCleaned;
     }
 
-    public void setTotalTokensCleaned(long totalTokensCleaned) {
+    public void setTotalTokensCleaned(final long totalTokensCleaned) {
         this.totalTokensCleaned = totalTokensCleaned;
     }
 
@@ -60,7 +60,7 @@ public class CleanupStats {
         return totalBlacklistEntriesCleaned;
     }
 
-    public void setTotalBlacklistEntriesCleaned(long totalBlacklistEntriesCleaned) {
+    public void setTotalBlacklistEntriesCleaned(final long totalBlacklistEntriesCleaned) {
         this.totalBlacklistEntriesCleaned = totalBlacklistEntriesCleaned;
     }
 
@@ -68,7 +68,7 @@ public class CleanupStats {
         return averageCleanupDurationSeconds;
     }
 
-    public void setAverageCleanupDurationSeconds(double averageCleanupDurationSeconds) {
+    public void setAverageCleanupDurationSeconds(final double averageCleanupDurationSeconds) {
         this.averageCleanupDurationSeconds = averageCleanupDurationSeconds;
     }
 
@@ -76,7 +76,7 @@ public class CleanupStats {
         return nextScheduledCleanup;
     }
 
-    public void setNextScheduledCleanup(LocalDateTime nextScheduledCleanup) {
+    public void setNextScheduledCleanup(final LocalDateTime nextScheduledCleanup) {
         this.nextScheduledCleanup = nextScheduledCleanup;
     }
 
@@ -84,7 +84,7 @@ public class CleanupStats {
         return cleanupEnabled;
     }
 
-    public void setCleanupEnabled(boolean cleanupEnabled) {
+    public void setCleanupEnabled(final boolean cleanupEnabled) {
         this.cleanupEnabled = cleanupEnabled;
     }
 

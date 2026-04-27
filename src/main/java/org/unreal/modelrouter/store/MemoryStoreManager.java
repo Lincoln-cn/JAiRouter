@@ -81,7 +81,7 @@ public class MemoryStoreManager extends BaseStoreManager {
     }
 
     @Override
-    public Map<String, Object> getLatestConfig(String configKey) {
+    public Map<String, Object> getLatestConfig(final String configKey) {
         return storage.get(configKey);
     }
 

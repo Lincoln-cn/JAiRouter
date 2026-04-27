@@ -24,9 +24,9 @@ public class AuditEvent {
     public AuditEvent() {
     }
 
-    public AuditEvent(String id, AuditEventType type, String userId, String resourceId, 
-                     String action, String details, String ipAddress, String userAgent, 
-                     boolean success, LocalDateTime timestamp, Map<String, Object> metadata) {
+    public AuditEvent(final String id,final AuditEventType type,final String userId,final String resourceId, 
+                     final String action,final String details,final String ipAddress,final String userAgent, 
+                     final boolean success,final LocalDateTime timestamp,final Map<String, Object> metadata) {
         this.id = id;
         this.type = type;
         this.userId = userId;
@@ -53,7 +53,7 @@ public class AuditEvent {
         return type;
     }
 
-    public void setType(AuditEventType type) {
+    public void setType(final AuditEventType type) {
         this.type = type;
     }
 
@@ -61,7 +61,7 @@ public class AuditEvent {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(final String userId) {
         this.userId = userId;
     }
 
@@ -69,7 +69,7 @@ public class AuditEvent {
         return resourceId;
     }
 
-    public void setResourceId(String resourceId) {
+    public void setResourceId(final String resourceId) {
         this.resourceId = resourceId;
     }
 
@@ -77,7 +77,7 @@ public class AuditEvent {
         return action;
     }
 
-    public void setAction(String action) {
+    public void setAction(final String action) {
         this.action = action;
     }
 
@@ -85,7 +85,7 @@ public class AuditEvent {
         return details;
     }
 
-    public void setDetails(String details) {
+    public void setDetails(final String details) {
         this.details = details;
     }
 
@@ -93,7 +93,7 @@ public class AuditEvent {
         return ipAddress;
     }
 
-    public void setIpAddress(String ipAddress) {
+    public void setIpAddress(final String ipAddress) {
         this.ipAddress = ipAddress;
     }
 
@@ -101,7 +101,7 @@ public class AuditEvent {
         return userAgent;
     }
 
-    public void setUserAgent(String userAgent) {
+    public void setUserAgent(final String userAgent) {
         this.userAgent = userAgent;
     }
 
@@ -109,7 +109,7 @@ public class AuditEvent {
         return success;
     }
 
-    public void setSuccess(boolean success) {
+    public void setSuccess(final boolean success) {
         this.success = success;
     }
 
@@ -117,7 +117,7 @@ public class AuditEvent {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(final LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -125,7 +125,7 @@ public class AuditEvent {
         return metadata;
     }
 
-    public void setMetadata(Map<String, Object> metadata) {
+    public void setMetadata(final Map<String, Object> metadata) {
         this.metadata = metadata;
     }
 

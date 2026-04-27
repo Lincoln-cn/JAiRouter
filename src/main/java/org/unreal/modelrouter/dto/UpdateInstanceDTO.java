@@ -37,7 +37,7 @@ public class UpdateInstanceDTO {
             return name;
         }
 
-        public void setName(String name) {
+        public void setName(final String name) {
             this.name = name;
         }
 
@@ -45,7 +45,7 @@ public class UpdateInstanceDTO {
             return baseUrl;
         }
 
-        public void setBaseUrl(String baseUrl) {
+        public void setBaseUrl(final String baseUrl) {
             this.baseUrl = baseUrl;
         }
 
@@ -53,7 +53,7 @@ public class UpdateInstanceDTO {
             return path;
         }
 
-        public void setPath(String path) {
+        public void setPath(final String path) {
             this.path = path;
         }
 
@@ -61,7 +61,7 @@ public class UpdateInstanceDTO {
             return weight;
         }
 
-        public void setWeight(Integer weight) {
+        public void setWeight(final Integer weight) {
             this.weight = weight;
         }
 
@@ -69,7 +69,7 @@ public class UpdateInstanceDTO {
             return status;
         }
 
-        public void setStatus(String status) {
+        public void setStatus(final String status) {
             this.status = status;
         }
 
@@ -77,7 +77,7 @@ public class UpdateInstanceDTO {
             return adapter;
         }
 
-        public void setAdapter(String adapter) {
+        public void setAdapter(final String adapter) {
             this.adapter = adapter;
         }
 
@@ -85,7 +85,7 @@ public class UpdateInstanceDTO {
             return headers;
         }
 
-        public void setHeaders(Map<String, String> headers) {
+        public void setHeaders(final Map<String, String> headers) {
             this.headers = headers;
         }
 
@@ -93,7 +93,7 @@ public class UpdateInstanceDTO {
             return rateLimit;
         }
 
-        public void setRateLimit(ModelRouterProperties.RateLimitConfig rateLimit) {
+        public void setRateLimit(final ModelRouterProperties.RateLimitConfig rateLimit) {
             this.rateLimit = rateLimit;
         }
 
@@ -101,7 +101,7 @@ public class UpdateInstanceDTO {
             return circuitBreaker;
         }
 
-        public void setCircuitBreaker(ModelRouterProperties.CircuitBreakerConfig circuitBreaker) {
+        public void setCircuitBreaker(final ModelRouterProperties.CircuitBreakerConfig circuitBreaker) {
             this.circuitBreaker = circuitBreaker;
         }
 
@@ -181,7 +181,7 @@ public class UpdateInstanceDTO {
         return instanceId;
     }
 
-    public void setInstanceId(String instanceId) {
+    public void setInstanceId(final String instanceId) {
         this.instanceId = instanceId;
     }
 
@@ -189,7 +189,7 @@ public class UpdateInstanceDTO {
         return instance;
     }
 
-    public void setInstance(Data instance) {
+    public void setInstance(final Data instance) {
         this.instance = instance;
     }
 }

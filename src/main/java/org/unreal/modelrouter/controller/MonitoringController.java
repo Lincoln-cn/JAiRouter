@@ -81,7 +81,7 @@ public class MonitoringController {
      * NOTE: changed return generic to Object to avoid generic inference issues with RouterResponse.success(...) implementations
      */
     @PutMapping("/config/enabled")
-    public Mono<RouterResponse<Object>> updateEnabled(@RequestBody Map<String, Boolean> request) {
+    public Mono<RouterResponse<Object>> updateEnabled(@RequestBody final Map<String, Boolean> request) {
         return Mono.fromCallable(() -> {
             Boolean enabled = request.get("enabled");
             if (enabled == null) {
@@ -105,7 +105,7 @@ public class MonitoringController {
      * 更新指标前缀
      */
     @PutMapping("/config/prefix")
-    public Mono<RouterResponse<Object>> updatePrefix(@RequestBody Map<String, String> request) {
+    public Mono<RouterResponse<Object>> updatePrefix(@RequestBody final Map<String, String> request) {
         return Mono.fromCallable(() -> {
             String prefix = request.get("prefix");
             if (prefix == null || prefix.trim().isEmpty()) {
@@ -133,7 +133,7 @@ public class MonitoringController {
      * 更新收集间隔
      */
     @PutMapping("/config/collection-interval")
-    public Mono<RouterResponse<Object>> updateCollectionInterval(@RequestBody Map<String, String> request) {
+    public Mono<RouterResponse<Object>> updateCollectionInterval(@RequestBody final Map<String, String> request) {
         return Mono.fromCallable(() -> {
             String intervalStr = request.get("interval");
             if (intervalStr == null || intervalStr.trim().isEmpty()) {
@@ -162,7 +162,7 @@ public class MonitoringController {
      * 更新启用的类别
      */
     @PutMapping("/config/categories")
-    public Mono<RouterResponse<Object>> updateEnabledCategories(@RequestBody Map<String, Set<String>> request) {
+    public Mono<RouterResponse<Object>> updateEnabledCategories(@RequestBody final Map<String, Set<String>> request) {
         return Mono.fromCallable(() -> {
             Set<String> categories = request.get("categories");
             if (categories == null) {
@@ -190,7 +190,7 @@ public class MonitoringController {
      * 更新自定义标签
      */
     @PutMapping("/config/custom-tags")
-    public Mono<RouterResponse<Object>> updateCustomTags(@RequestBody Map<String, Map<String, String>> request) {
+    public Mono<RouterResponse<Object>> updateCustomTags(@RequestBody final Map<String, Map<String, String>> request) {
         return Mono.fromCallable(() -> {
             Map<String, String> customTags = request.get("customTags");
             if (customTags == null) {
@@ -273,7 +273,7 @@ public class MonitoringController {
      * 重置指定组件的错误状态
      */
     @PostMapping("/errors/reset")
-    public Mono<RouterResponse<Object>> resetErrorState(@RequestBody Map<String, String> request) {
+    public Mono<RouterResponse<Object>> resetErrorState(@RequestBody final Map<String, String> request) {
         return Mono.fromCallable(() -> {
             String component = request.get("component");
             String operation = request.get("operation");
@@ -317,7 +317,7 @@ public class MonitoringController {
      * 设置降级级别
      */
     @PostMapping("/degradation/level")
-    public Mono<RouterResponse<Object>> setDegradationLevel(@RequestBody Map<String, String> request) {
+    public Mono<RouterResponse<Object>> setDegradationLevel(@RequestBody final Map<String, String> request) {
         return Mono.fromCallable(() -> {
             String levelStr = request.get("level");
             if (levelStr == null) {
@@ -341,7 +341,7 @@ public class MonitoringController {
      * 启用/禁用降级策略自动模式
      */
     @PostMapping("/degradation/auto-mode")
-    public Mono<RouterResponse<Object>> setAutoMode(@RequestBody Map<String, Boolean> request) {
+    public Mono<RouterResponse<Object>> setAutoMode(@RequestBody final Map<String, Boolean> request) {
         return Mono.fromCallable(() -> {
             Boolean enabled = request.get("enabled");
             if (enabled == null) {

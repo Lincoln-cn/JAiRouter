@@ -18,9 +18,9 @@ public class CleanupResult {
     public CleanupResult() {
     }
 
-    public CleanupResult(long cleanedTokens, long cleanedBlacklistEntries, 
-                        LocalDateTime cleanupStartTime, LocalDateTime cleanupEndTime, 
-                        long durationMillis, boolean success, String errorMessage) {
+    public CleanupResult(final long cleanedTokens,final long cleanedBlacklistEntries, 
+                        final LocalDateTime cleanupStartTime,final LocalDateTime cleanupEndTime, 
+                        final long durationMillis,final boolean success,final String errorMessage) {
         this.cleanedTokens = cleanedTokens;
         this.cleanedBlacklistEntries = cleanedBlacklistEntries;
         this.cleanupStartTime = cleanupStartTime;
@@ -35,7 +35,7 @@ public class CleanupResult {
         return cleanedTokens;
     }
 
-    public void setCleanedTokens(long cleanedTokens) {
+    public void setCleanedTokens(final long cleanedTokens) {
         this.cleanedTokens = cleanedTokens;
     }
 
@@ -43,7 +43,7 @@ public class CleanupResult {
         return cleanedBlacklistEntries;
     }
 
-    public void setCleanedBlacklistEntries(long cleanedBlacklistEntries) {
+    public void setCleanedBlacklistEntries(final long cleanedBlacklistEntries) {
         this.cleanedBlacklistEntries = cleanedBlacklistEntries;
     }
 
@@ -51,7 +51,7 @@ public class CleanupResult {
         return cleanupStartTime;
     }
 
-    public void setCleanupStartTime(LocalDateTime cleanupStartTime) {
+    public void setCleanupStartTime(final LocalDateTime cleanupStartTime) {
         this.cleanupStartTime = cleanupStartTime;
     }
 
@@ -59,7 +59,7 @@ public class CleanupResult {
         return cleanupEndTime;
     }
 
-    public void setCleanupEndTime(LocalDateTime cleanupEndTime) {
+    public void setCleanupEndTime(final LocalDateTime cleanupEndTime) {
         this.cleanupEndTime = cleanupEndTime;
     }
 
@@ -67,7 +67,7 @@ public class CleanupResult {
         return durationMillis;
     }
 
-    public void setDurationMillis(long durationMillis) {
+    public void setDurationMillis(final long durationMillis) {
         this.durationMillis = durationMillis;
     }
 
@@ -75,7 +75,7 @@ public class CleanupResult {
         return success;
     }
 
-    public void setSuccess(boolean success) {
+    public void setSuccess(final boolean success) {
         this.success = success;
     }
 
@@ -83,7 +83,7 @@ public class CleanupResult {
         return errorMessage;
     }
 
-    public void setErrorMessage(String errorMessage) {
+    public void setErrorMessage(final String errorMessage) {
         this.errorMessage = errorMessage;
     }
 

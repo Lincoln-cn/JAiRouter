@@ -49,7 +49,7 @@ public class TracingQueryController {
     @ApiResponse(responseCode = "200", description = "成功返回追踪链路")
     @ApiResponse(responseCode = "404", description = "追踪链路不存在")
     public Mono<ResponseEntity<Map<String, Object>>> getTraceChain(
-            @Parameter(description = "追踪ID") @PathVariable String traceId) {
+            @Parameter(description = "追踪ID") @PathVariable final String traceId) {
         
         return traceQueryService.getTraceChain(traceId)
             .map(traceChain -> {
@@ -69,16 +69,16 @@ public class TracingQueryController {
     @Operation(summary = "搜索追踪数据", description = "根据条件搜索追踪数据")
     @ApiResponse(responseCode = "200", description = "成功返回搜索结果")
     public Mono<ResponseEntity<Map<String, Object>>> searchTraces(
-            @Parameter(description = "开始时间戳（毫秒）") @RequestParam(required = false) Long startTime,
-            @Parameter(description = "结束时间戳（毫秒）") @RequestParam(required = false) Long endTime,
-            @Parameter(description = "服务名") @RequestParam(required = false) String serviceName,
-            @Parameter(description = "操作名") @RequestParam(required = false) String operationName,
-            @Parameter(description = "追踪ID") @RequestParam(required = false) String traceId,
-            @Parameter(description = "最小持续时间（毫秒）") @RequestParam(defaultValue = "0") double minDuration,
-            @Parameter(description = "最大持续时间（毫秒）") @RequestParam(defaultValue = "0") double maxDuration,
-            @Parameter(description = "是否有错误") @RequestParam(required = false) Boolean hasError,
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
-            @Parameter(description = "页大小") @RequestParam(defaultValue = "20") int size) {
+            @Parameter(description = "开始时间戳（毫秒）") @RequestParam(required = false) final Long startTime,
+            @Parameter(description = "结束时间戳（毫秒）") @RequestParam(required = false) final Long endTime,
+            @Parameter(description = "服务名") @RequestParam(required = false) final String serviceName,
+            @Parameter(description = "操作名") @RequestParam(required = false) final String operationName,
+            @Parameter(description = "追踪ID") @RequestParam(required = false) final String traceId,
+            @Parameter(description = "最小持续时间（毫秒）") @RequestParam(defaultValue = "0") final double minDuration,
+            @Parameter(description = "最大持续时间（毫秒）") @RequestParam(defaultValue = "0") final double maxDuration,
+            @Parameter(description = "是否有错误") @RequestParam(required = false) final Boolean hasError,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") final int page,
+            @Parameter(description = "页大小") @RequestParam(defaultValue = "20") final int size) {
         
         TraceQueryService.TraceSearchCriteria criteria = new TraceQueryService.TraceSearchCriteria();
         if (startTime != null) criteria.setStartTime(Instant.ofEpochMilli(startTime));
@@ -106,7 +106,7 @@ public class TracingQueryController {
     @Operation(summary = "获取最近的追踪", description = "获取最近的追踪记录")
     @ApiResponse(responseCode = "200", description = "成功返回最近追踪")
     public Mono<ResponseEntity<Map<String, Object>>> getRecentTraces(
-            @Parameter(description = "限制数量") @RequestParam(defaultValue = "50") int limit) {
+            @Parameter(description = "限制数量") @RequestParam(defaultValue = "50") final int limit) {
         
         return traceQueryService.getRecentTraces(limit)
             .collectList()
@@ -137,8 +137,8 @@ public class TracingQueryController {
     @Operation(summary = "获取追踪统计", description = "获取指定时间范围内的追踪统计信息")
     @ApiResponse(responseCode = "200", description = "成功返回统计信息")
     public Mono<ResponseEntity<Map<String, Object>>> getTraceStatistics(
-            @Parameter(description = "开始时间戳（毫秒）") @RequestParam(required = false) Long startTime,
-            @Parameter(description = "结束时间戳（毫秒）") @RequestParam(required = false) Long endTime) {
+            @Parameter(description = "开始时间戳（毫秒）") @RequestParam(required = false) final Long startTime,
+            @Parameter(description = "结束时间戳（毫秒）") @RequestParam(required = false) final Long endTime) {
         
         // 设置默认时间范围（最近1小时）
         long now = System.currentTimeMillis();
@@ -159,7 +159,7 @@ public class TracingQueryController {
     @Operation(summary = "导出追踪数据", description = "导出指定条件的追踪数据")
     @ApiResponse(responseCode = "200", description = "成功导出数据")
     public Mono<ResponseEntity<Map<String, Object>>> exportTraces(
-            @RequestBody TraceQueryService.TraceExportRequest exportRequest) {
+            @RequestBody final TraceQueryService.TraceExportRequest exportRequest) {
         
         return traceQueryService.exportTraces(exportRequest)
             .map(result -> {
@@ -175,7 +175,7 @@ public class TracingQueryController {
     @Operation(summary = "清理过期追踪", description = "清理指定时间之前的追踪数据")
     @ApiResponse(responseCode = "200", description = "成功清理数据")
     public Mono<ResponseEntity<Map<String, Object>>> cleanupExpiredTraces(
-            @Parameter(description = "保留小时数") @RequestParam(defaultValue = "24") int retentionHours) {
+            @Parameter(description = "保留小时数") @RequestParam(defaultValue = "24") final int retentionHours) {
         
         long maxAgeMillis = retentionHours * 60 * 60 * 1000L;
         
@@ -196,7 +196,7 @@ public class TracingQueryController {
     @Operation(summary = "获取操作列表", description = "获取指定服务的操作列表")
     @ApiResponse(responseCode = "200", description = "成功返回操作列表")
     public Mono<ResponseEntity<Map<String, Object>>> getOperations(
-            @Parameter(description = "服务名") @RequestParam(required = false) String serviceName) {
+            @Parameter(description = "服务名") @RequestParam(required = false) final String serviceName) {
         
         return Mono.fromCallable(() -> {
             // 这里应该从TraceQueryService获取操作列表，暂时返回模拟数据
@@ -247,8 +247,8 @@ public class TracingQueryController {
     @Operation(summary = "获取性能统计", description = "获取指定时间范围内的性能统计数据")
     @ApiResponse(responseCode = "200", description = "成功返回性能统计")
     public Mono<ResponseEntity<Map<String, Object>>> getPerformanceStats(
-            @Parameter(description = "开始时间") @RequestParam(required = false) String startTime,
-            @Parameter(description = "结束时间") @RequestParam(required = false) String endTime) {
+            @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime) {
         
         return Mono.fromCallable(() -> {
             // 基于现有的追踪统计数据生成性能统计
@@ -284,8 +284,8 @@ public class TracingQueryController {
     @Operation(summary = "获取延迟分析", description = "获取延迟分析数据")
     @ApiResponse(responseCode = "200", description = "成功返回延迟分析")
     public Mono<ResponseEntity<Map<String, Object>>> getLatencyAnalysis(
-            @Parameter(description = "开始时间") @RequestParam(required = false) String startTime,
-            @Parameter(description = "结束时间") @RequestParam(required = false) String endTime) {
+            @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime) {
         
         return traceQueryService.getServiceStatistics()
             .map(services -> {
@@ -321,8 +321,8 @@ public class TracingQueryController {
     @Operation(summary = "获取错误分析", description = "获取错误分析数据")
     @ApiResponse(responseCode = "200", description = "成功返回错误分析")
     public Mono<ResponseEntity<Map<String, Object>>> getErrorAnalysis(
-            @Parameter(description = "开始时间") @RequestParam(required = false) String startTime,
-            @Parameter(description = "结束时间") @RequestParam(required = false) String endTime) {
+            @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime) {
         
         return traceQueryService.getServiceStatistics()
             .map(services -> {
@@ -362,8 +362,8 @@ public class TracingQueryController {
     @Operation(summary = "获取吞吐量分析", description = "获取吞吐量分析数据")
     @ApiResponse(responseCode = "200", description = "成功返回吞吐量分析")
     public Mono<ResponseEntity<Map<String, Object>>> getThroughputAnalysis(
-            @Parameter(description = "开始时间") @RequestParam(required = false) String startTime,
-            @Parameter(description = "结束时间") @RequestParam(required = false) String endTime) {
+            @Parameter(description = "开始时间") @RequestParam(required = false) final String startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false) final String endTime) {
         
         return traceQueryService.getServiceStatistics()
             .map(services -> {

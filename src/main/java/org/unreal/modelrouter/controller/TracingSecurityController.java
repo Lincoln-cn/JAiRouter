@@ -75,7 +75,7 @@ public class TracingSecurityController {
     @PostMapping("/sanitization/sensitive-fields")
     @Operation(summary = "添加追踪敏感字段", description = "添加新的追踪敏感字段")
     @ApiResponse(responseCode = "200", description = "成功添加敏感字段")
-    public ResponseEntity<RouterResponse<Void>> addTracingSensitiveField(@RequestParam String field) {
+    public ResponseEntity<RouterResponse<Void>> addTracingSensitiveField(@RequestParam final String field) {
         try {
             tracingSanitizationService.addTracingSensitiveField(field);
             log.info("成功添加追踪敏感字段: {}", field);
@@ -93,7 +93,7 @@ public class TracingSecurityController {
     @DeleteMapping("/sanitization/sensitive-fields")
     @Operation(summary = "移除追踪敏感字段", description = "移除指定的追踪敏感字段")
     @ApiResponse(responseCode = "200", description = "成功移除敏感字段")
-    public ResponseEntity<RouterResponse<Void>> removeTracingSensitiveField(@RequestParam String field) {
+    public ResponseEntity<RouterResponse<Void>> removeTracingSensitiveField(@RequestParam final String field) {
         try {
             tracingSanitizationService.removeTracingSensitiveField(field);
             log.info("成功移除追踪敏感字段: {}", field);

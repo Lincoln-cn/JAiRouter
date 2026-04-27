@@ -127,7 +127,7 @@ public class DebugMultipartController {
     @PostMapping(value = "/simple-multipart", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<Map<String, Object>>> handleSimpleMultipart(
             @RequestPart(value = "text", required = false) String text,
-            @RequestPart(value = "file", required = false) FilePart filePart,
+            @RequestPart(value = "file", required = false) final FilePart filePart,
             final ServerWebExchange exchange) {
 
         log.info("收到简单multipart请求");
@@ -196,7 +196,7 @@ public class DebugMultipartController {
      */
     @PostMapping("/flexible-multipart")
     public Mono<ResponseEntity<Map<String, Object>>> handleFlexibleMultipart(
-            @RequestBody(required = false) Flux<Part> parts) {
+            @RequestBody(required = false) final Flux<Part> parts) {
 
         log.info("收到灵活multipart请求");
 

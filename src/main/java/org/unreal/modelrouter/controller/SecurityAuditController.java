@@ -112,7 +112,7 @@ public class SecurityAuditController {
     @PostMapping("/logs/query")
     @Operation(summary = "复杂条件查询安全审计日志", description = "支持更复杂的查询条件和过滤器")
     public Mono<ResponseEntity<SecurityAuditQueryResponse>> queryAuditLogsAdvanced(
-            @RequestBody SecurityAuditQueryRequest request) {
+            @RequestBody final SecurityAuditQueryRequest request) {
         
         // 验证请求参数
         if (request.getStartTime() == null) {

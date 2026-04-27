@@ -19,7 +19,7 @@ public class SecurityAlert {
     public SecurityAlert() {
     }
 
-    public SecurityAlert(String alertType, String message, String userId, String ipAddress, LocalDateTime timestamp) {
+    public SecurityAlert(final String alertType,final String message,final String userId,final String ipAddress,final LocalDateTime timestamp) {
         this.alertType = alertType;
         this.message = message;
         this.userId = userId;
@@ -27,8 +27,8 @@ public class SecurityAlert {
         this.timestamp = timestamp;
     }
 
-    public SecurityAlert(String id, String alertType, String severity, String message, 
-                        String userId, String ipAddress, LocalDateTime timestamp, boolean resolved) {
+    public SecurityAlert(final String id,final String alertType,final String severity,final String message, 
+                        final String userId,final String ipAddress,final LocalDateTime timestamp,final boolean resolved) {
         this.id = id;
         this.alertType = alertType;
         this.severity = severity;
@@ -52,7 +52,7 @@ public class SecurityAlert {
         return alertType;
     }
 
-    public void setAlertType(String alertType) {
+    public void setAlertType(final String alertType) {
         this.alertType = alertType;
     }
 
@@ -60,7 +60,7 @@ public class SecurityAlert {
         return severity;
     }
 
-    public void setSeverity(String severity) {
+    public void setSeverity(final String severity) {
         this.severity = severity;
     }
 
@@ -68,7 +68,7 @@ public class SecurityAlert {
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -76,7 +76,7 @@ public class SecurityAlert {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(final String userId) {
         this.userId = userId;
     }
 
@@ -84,7 +84,7 @@ public class SecurityAlert {
         return ipAddress;
     }
 
-    public void setIpAddress(String ipAddress) {
+    public void setIpAddress(final String ipAddress) {
         this.ipAddress = ipAddress;
     }
 
@@ -92,7 +92,7 @@ public class SecurityAlert {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(final LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -100,7 +100,7 @@ public class SecurityAlert {
         return resolved;
     }
 
-    public void setResolved(boolean resolved) {
+    public void setResolved(final boolean resolved) {
         this.resolved = resolved;
     }
 

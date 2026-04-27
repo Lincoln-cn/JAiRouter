@@ -12,7 +12,7 @@ public class LoginResponse {
         return this.token;
     }
 
-    public void setToken(String token) {
+    public void setToken(final String token) {
         this.token = token;
     }
 
@@ -20,7 +20,7 @@ public class LoginResponse {
         return this.tokenType;
     }
 
-    public void setTokenType(String tokenType) {
+    public void setTokenType(final String tokenType) {
         this.tokenType = tokenType;
     }
 
@@ -28,7 +28,7 @@ public class LoginResponse {
         return this.expiresIn;
     }
 
-    public void setExpiresIn(long expiresIn) {
+    public void setExpiresIn(final long expiresIn) {
         this.expiresIn = expiresIn;
     }
 

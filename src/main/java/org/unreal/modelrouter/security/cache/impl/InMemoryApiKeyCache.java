@@ -31,7 +31,7 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final CacheMetrics cacheMetrics;
     
-    public InMemoryApiKeyCache(@Autowired(required = false) CacheMetrics cacheMetrics) {
+    public InMemoryApiKeyCache(@Autowired(required = false) final CacheMetrics cacheMetrics) {
         this.cacheMetrics = cacheMetrics;
         // 启动定期清理过期缓存的任务
         scheduler.scheduleAtFixedRate(this::cleanupExpiredEntries, 5, 5, TimeUnit.MINUTES);

@@ -148,7 +148,7 @@ public class MetricsManagementController {
      * 更新采样率配置
      */
     @PostMapping("/sampling")
-    public ResponseEntity<String> updateSamplingConfig(@RequestBody SamplingUpdateRequest request) {
+    public ResponseEntity<String> updateSamplingConfig(@RequestBody final SamplingUpdateRequest request) {
         try {
             MonitoringProperties.Sampling sampling = monitoringProperties.getSampling();
             
@@ -194,7 +194,7 @@ public class MetricsManagementController {
      * 更新性能配置
      */
     @PostMapping("/performance-config")
-    public ResponseEntity<String> updatePerformanceConfig(@RequestBody PerformanceUpdateRequest request) {
+    public ResponseEntity<String> updatePerformanceConfig(@RequestBody final PerformanceUpdateRequest request) {
         try {
             MonitoringProperties.Performance performance = monitoringProperties.getPerformance();
             
@@ -293,7 +293,7 @@ public class MetricsManagementController {
      * 重置错误状态
      */
     @PostMapping("/error-handler/reset")
-    public ResponseEntity<String> resetErrorState(@RequestParam String component, @RequestParam String operation) {
+    public ResponseEntity<String> resetErrorState(@RequestParam String component, @RequestParam final String operation) {
         try {
             errorHandler.resetErrorState(component, operation);
             logger.info("Reset error state for component: {}, operation: {}", component, operation);
@@ -322,7 +322,7 @@ public class MetricsManagementController {
      * 设置降级级别
      */
     @PostMapping("/degradation/level")
-    public ResponseEntity<String> setDegradationLevel(@RequestParam String level) {
+    public ResponseEntity<String> setDegradationLevel(@RequestParam final String level) {
         try {
             MetricsDegradationStrategy.DegradationLevel degradationLevel = 
                 MetricsDegradationStrategy.DegradationLevel.valueOf(level.toUpperCase());
@@ -341,7 +341,7 @@ public class MetricsManagementController {
      * 启用/禁用自动降级模式
      */
     @PostMapping("/degradation/auto-mode")
-    public ResponseEntity<String> setAutoMode(@RequestParam boolean enabled) {
+    public ResponseEntity<String> setAutoMode(@RequestParam final boolean enabled) {
         try {
             degradationStrategy.setAutoModeEnabled(enabled);
             logger.info("Auto degradation mode: {}", enabled ? "enabled" : "disabled");

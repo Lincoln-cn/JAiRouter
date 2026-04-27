@@ -23,7 +23,7 @@ public class KeyGeneratorCommandLine implements CommandLineRunner {
     private static final String ANSI_CYAN = "\u001B[36m";
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(final String... args) throws Exception {
         // 检查是否有生成密钥的参数
         if (args == null || args.length == 0) {
             return;
@@ -126,7 +126,7 @@ public class KeyGeneratorCommandLine implements CommandLineRunner {
     /**
      * 打印键值对
      */
-    private void printKeyValue(String value) {
+    private void printKeyValue(final String value) {
         System.out.println(ANSI_GREEN + "  " + value + ANSI_RESET);
     }
 

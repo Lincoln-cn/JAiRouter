@@ -24,7 +24,7 @@ public class ServiceCircuitBreakerController {
      * 获取熔断配置
      */
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getCircuitBreakerConfig(@PathVariable String serviceType) {
+    public ResponseEntity<Map<String, Object>> getCircuitBreakerConfig(@PathVariable final String serviceType) {
         log.debug("Getting circuit breaker config for service: {}", serviceType);
         Map<String, Object> config = configurationService.getServiceConfig(serviceType);
         @SuppressWarnings("unchecked")
@@ -37,8 +37,8 @@ public class ServiceCircuitBreakerController {
      */
     @PutMapping
     public ResponseEntity<Map<String, Object>> updateCircuitBreakerConfig(
-            @PathVariable String serviceType,
-            @RequestBody Map<String, Object> circuitBreakerConfig) {
+            @PathVariable final String serviceType,
+            @RequestBody final Map<String, Object> circuitBreakerConfig) {
         log.info("Updating circuit breaker config for service: {}", serviceType);
         // 简化实现：直接返回传入的配置
         return ResponseEntity.ok(circuitBreakerConfig);

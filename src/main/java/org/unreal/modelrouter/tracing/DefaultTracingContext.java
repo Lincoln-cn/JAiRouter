@@ -321,7 +321,7 @@ public class DefaultTracingContext implements TracingContext {
     private static final TextMapSetter<Map<String, String>> MAP_SETTER = 
             new TextMapSetter<Map<String, String>>() {
                 @Override
-                public void set(@Nullable Map<String, String> carrier,final String key,final String value) {
+                public void set(@Nullable final Map<String, String> carrier,final String key,final String value) {
                     if (carrier != null) {
                         carrier.put(key, value);
                     }
@@ -334,13 +334,13 @@ public class DefaultTracingContext implements TracingContext {
     private static final TextMapGetter<Map<String, String>> MAP_GETTER = 
             new TextMapGetter<Map<String, String>>() {
                 @Override
-                public Iterable<String> keys(@Nullable Map<String, String> carrier) {
+                public Iterable<String> keys(@Nullable final Map<String, String> carrier) {
                     return carrier != null ? carrier.keySet() : java.util.Collections.emptyList();
                 }
                 
                 @Override
                 @Nullable
-                public String get(@Nullable Map<String, String> carrier,final String key) {
+                public String get(@Nullable final Map<String, String> carrier,final String key) {
                     return carrier != null ? carrier.get(key) : null;
                 }
             };

@@ -22,7 +22,7 @@ public class PersistenceIntegrationStatus {
     public PersistenceIntegrationStatus() {
     }
 
-    public PersistenceIntegrationStatus(boolean initialized, long syncIntervalMs, long recoveryTimeoutMs) {
+    public PersistenceIntegrationStatus(final boolean initialized,final long syncIntervalMs,final long recoveryTimeoutMs) {
         this.initialized = initialized;
         this.syncIntervalMs = syncIntervalMs;
         this.recoveryTimeoutMs = recoveryTimeoutMs;
@@ -34,7 +34,7 @@ public class PersistenceIntegrationStatus {
         return initialized;
     }
 
-    public void setInitialized(boolean initialized) {
+    public void setInitialized(final boolean initialized) {
         this.initialized = initialized;
     }
 
@@ -42,7 +42,7 @@ public class PersistenceIntegrationStatus {
         return syncIntervalMs;
     }
 
-    public void setSyncIntervalMs(long syncIntervalMs) {
+    public void setSyncIntervalMs(final long syncIntervalMs) {
         this.syncIntervalMs = syncIntervalMs;
     }
 
@@ -50,7 +50,7 @@ public class PersistenceIntegrationStatus {
         return recoveryTimeoutMs;
     }
 
-    public void setRecoveryTimeoutMs(long recoveryTimeoutMs) {
+    public void setRecoveryTimeoutMs(final long recoveryTimeoutMs) {
         this.recoveryTimeoutMs = recoveryTimeoutMs;
     }
 
@@ -58,7 +58,7 @@ public class PersistenceIntegrationStatus {
         return registeredCount;
     }
 
-    public void setRegisteredCount(int registeredCount) {
+    public void setRegisteredCount(final int registeredCount) {
         this.registeredCount = registeredCount;
     }
 
@@ -66,7 +66,7 @@ public class PersistenceIntegrationStatus {
         return pendingSyncCount;
     }
 
-    public void setPendingSyncCount(int pendingSyncCount) {
+    public void setPendingSyncCount(final int pendingSyncCount) {
         this.pendingSyncCount = pendingSyncCount;
     }
 
@@ -74,7 +74,7 @@ public class PersistenceIntegrationStatus {
         return lastRecoveryResults;
     }
 
-    public void setLastRecoveryResults(Map<String, Boolean> lastRecoveryResults) {
+    public void setLastRecoveryResults(final Map<String, Boolean> lastRecoveryResults) {
         this.lastRecoveryResults = lastRecoveryResults;
     }
 
@@ -112,7 +112,7 @@ public class PersistenceIntegrationStatus {
             return this;
         }
 
-        public Builder lastRecoveryResults(Map<String, Boolean> results) {
+        public Builder lastRecoveryResults(final Map<String, Boolean> results) {
             status.setLastRecoveryResults(results);
             return this;
         }

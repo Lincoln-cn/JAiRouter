@@ -48,7 +48,7 @@ public class AsyncMetricsProcessor {
 
 
     public AsyncMetricsProcessor(final MonitoringProperties monitoringProperties, 
-                               @Lazy MetricsCollector metricsCollector,
+                               @Lazy final MetricsCollector metricsCollector,
                                final MetricsCircuitBreaker circuitBreaker) {
         this.monitoringProperties = monitoringProperties;
         this.metricsCollector = metricsCollector;

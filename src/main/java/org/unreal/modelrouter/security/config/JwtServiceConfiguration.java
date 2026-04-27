@@ -31,7 +31,7 @@ public class JwtServiceConfiguration {
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
     public JwtPersistenceService redisJwtPersistenceService(
-            @Qualifier("jwtReactiveRedisTemplate") ReactiveRedisTemplate<String, String> redisTemplate,
+            @Qualifier("jwtReactiveRedisTemplate") final ReactiveRedisTemplate<String, String> redisTemplate,
             final StoreManager storeManager) {
         
         log.info("Initializing Redis-based JWT persistence service");
@@ -59,7 +59,7 @@ public class JwtServiceConfiguration {
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
     public JwtBlacklistService redisJwtBlacklistService(
-            @Qualifier("jwtReactiveRedisTemplate") ReactiveRedisTemplate<String, String> redisTemplate,
+            @Qualifier("jwtReactiveRedisTemplate") final ReactiveRedisTemplate<String, String> redisTemplate,
             final StoreManager storeManager) {
         
         log.info("Initializing Redis-based JWT blacklist service");

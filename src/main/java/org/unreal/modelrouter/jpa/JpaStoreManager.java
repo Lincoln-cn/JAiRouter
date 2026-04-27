@@ -30,7 +30,7 @@ public class JpaStoreManager implements StoreManager {
 
     @Override
     @Transactional
-    public void saveConfig(String key, Map<String, Object> config) {
+    public void saveConfig(final String key,final Map<String, Object> config) {
         if (config == null || config.isEmpty()) {
             return;
         }
@@ -65,7 +65,7 @@ public class JpaStoreManager implements StoreManager {
     }
 
     @Override
-    public Map<String, Object> getConfig(String key) {
+    public Map<String, Object> getConfig(final String key) {
         return configRepository.findFirstByConfigKeyAndIsLatestTrue(key)
                 .map(this::deserializeConfig)
                 .orElse(null);
@@ -73,7 +73,7 @@ public class JpaStoreManager implements StoreManager {
 
     @Override
     @Transactional
-    public void deleteConfig(String key) {
+    public void deleteConfig(final String key) {
         configRepository.deleteAllByConfigKey(key);
         log.info("Deleted all versions of config for key: {}", key);
     }
@@ -84,19 +84,19 @@ public class JpaStoreManager implements StoreManager {
     }
 
     @Override
-    public boolean exists(String key) {
+    public boolean exists(final String key) {
         return configRepository.existsByConfigKeyAndIsLatestTrue(key);
     }
 
     @Override
-    public void updateConfig(String key, Map<String, Object> config) {
+    public void updateConfig(final String key,final Map<String, Object> config) {
         // 更新操作与保存相同
         saveConfig(key, config);
     }
 
     @Override
     @Transactional
-    public void saveConfigVersion(String key, Map<String, Object> config, int version) {
+    public void saveConfigVersion(final String key,final Map<String, Object> config,final int version) {
         if (config == null || config.isEmpty()) {
             return;
         }
@@ -123,12 +123,12 @@ public class JpaStoreManager implements StoreManager {
     }
 
     @Override
-    public List<Integer> getConfigVersions(String key) {
+    public List<Integer> getConfigVersions(final String key) {
         return configRepository.findAllVersionsByConfigKey(key);
     }
 
     @Override
-    public Map<String, Object> getConfigByVersion(String key, int version) {
+    public Map<String, Object> getConfigByVersion(final String key,final int version) {
         return configRepository.findByConfigKeyAndVersion(key, version)
                 .map(this::deserializeConfig)
                 .orElse(null);
@@ -136,35 +136,35 @@ public class JpaStoreManager implements StoreManager {
 
     @Override
     @Transactional
-    public void deleteConfigVersion(String key, int version) {
+    public void deleteConfigVersion(final String key,final int version) {
         configRepository.deleteByConfigKeyAndVersion(key, version);
         log.info("Deleted config version for key: {}, version: {}", key, version);
     }
 
     @Override
-    public boolean versionExists(String key, int version) {
+    public boolean versionExists(final String key, int version) {
         return configRepository.existsByConfigKeyAndVersion(key, version);
     }
 
     @Override
-    public String getVersionFilePath(String key, int version) {
+    public String getVersionFilePath(final String key,final int version) {
         // JPA 存储不基于文件，返回标识信息
         return "jpa://" + key + "/v" + version;
     }
 
     @Override
-    public LocalDateTime getVersionCreatedTime(String key, int version) {
+    public LocalDateTime getVersionCreatedTime(final String key,final int version) {
         return configRepository.findByConfigKeyAndVersion(key, version)
                 .map(ConfigEntity::getCreatedAt)
                 .orElse(null);
     }
 
     @Override
-    public Map<String, Object> getLatestConfig(String configKey) {
+    public Map<String, Object> getLatestConfig(final String configKey) {
         return getConfig(configKey);
     }
 
-    private Map<String, Object> deserializeConfig(ConfigEntity entity) {
+    private Map<String, Object> deserializeConfig(final ConfigEntity entity) {
         try {
             return JacksonHelper.getObjectMapper().readValue(
                     entity.getConfigValue(),

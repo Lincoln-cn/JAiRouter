@@ -133,7 +133,7 @@ public abstract class BaseStoreManager implements StoreManager {
      * @param version 版本号
      */
     @Override
-    public void saveConfigVersion(String key, Map<String, Object> config, int version) {
+    public void saveConfigVersion(final String key,final Map<String, Object> config,final int version) {
         // 基础实现，具体实现在子类中
     }
 
@@ -144,7 +144,7 @@ public abstract class BaseStoreManager implements StoreManager {
      * @return 版本号列表
      */
     @Override
-    public List<Integer> getConfigVersions(String key) {
+    public List<Integer> getConfigVersions(final String key) {
         return new ArrayList<>();
     }
 
@@ -156,7 +156,7 @@ public abstract class BaseStoreManager implements StoreManager {
      * @return 配置内容
      */
     @Override
-    public Map<String, Object> getConfigByVersion(String key, int version) {
+    public Map<String, Object> getConfigByVersion(final String key,final int version) {
         return null;
     }
 
@@ -167,7 +167,7 @@ public abstract class BaseStoreManager implements StoreManager {
      * @param version 版本号
      */
     @Override
-    public void deleteConfigVersion(String key, int version) {
+    public void deleteConfigVersion(final String key,final int version) {
         // 基础实现为空
     }
 

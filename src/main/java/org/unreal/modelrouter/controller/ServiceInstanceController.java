@@ -37,7 +37,7 @@ public class ServiceInstanceController {
      */
     @GetMapping("/service/{serviceConfigId}")
     public ResponseEntity<List<ServiceInstanceDTO>> getInstancesByService(
-            @PathVariable Long serviceConfigId) {
+            @PathVariable final Long serviceConfigId) {
         log.debug("Getting instances for service config: {}", serviceConfigId);
         return ResponseEntity.ok(serviceInstanceManager.getInstancesByServiceConfigId(serviceConfigId));
     }
@@ -46,7 +46,7 @@ public class ServiceInstanceController {
      * 获取单个实例
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ServiceInstanceDTO> getInstance(@PathVariable Long id) {
+    public ResponseEntity<ServiceInstanceDTO> getInstance(@PathVariable final Long id) {
         log.debug("Getting instance: {}", id);
         return serviceInstanceManager.getInstance(id)
                 .map(ResponseEntity::ok)
@@ -58,8 +58,8 @@ public class ServiceInstanceController {
      */
     @PostMapping("/service/{serviceConfigId}")
     public ResponseEntity<ServiceInstanceDTO> createInstance(
-            @PathVariable Long serviceConfigId,
-            @RequestBody CreateServiceInstanceRequest request) {
+            @PathVariable final Long serviceConfigId,
+            @RequestBody final CreateServiceInstanceRequest request) {
         log.info("Creating instance for service config: {}", serviceConfigId);
         ServiceInstanceDTO created = serviceInstanceManager.createInstance(serviceConfigId, request);
         return ResponseEntity.ok(created);
@@ -70,8 +70,8 @@ public class ServiceInstanceController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<ServiceInstanceDTO> updateInstance(
-            @PathVariable Long id,
-            @RequestBody CreateServiceInstanceRequest request) {
+            @PathVariable final Long id,
+            @RequestBody final CreateServiceInstanceRequest request) {
         log.info("Updating instance: {}", id);
         ServiceInstanceDTO updated = serviceInstanceManager.updateInstance(id, request);
         return ResponseEntity.ok(updated);
@@ -92,8 +92,8 @@ public class ServiceInstanceController {
      */
     @PostMapping("/{id}/health")
     public ResponseEntity<Void> updateHealthStatus(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> healthData) {
+            @PathVariable final Long id,
+            @RequestBody final Map<String, String> healthData) {
         log.info("Updating health status for instance: {}", id);
         serviceInstanceManager.updateHealthStatus(
                 id,

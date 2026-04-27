@@ -35,7 +35,7 @@ public class MetricRegistrationController {
     @PostMapping("/register")
     @Operation(summary = "注册新指标", description = "动态注册一个新的业务指标")
     public ResponseEntity<MetricRegistrationService.MetricRegistrationResult> registerMetric(
-            @RequestBody MetricRegistrationRequest request) {
+            @RequestBody final MetricRegistrationRequest request) {
         
         MetricRegistrationService.MetricRegistrationResult result = 
                 metricRegistrationService.registerBusinessMetric(request);
@@ -50,7 +50,7 @@ public class MetricRegistrationController {
     @PostMapping("/register/batch")
     @Operation(summary = "批量注册指标", description = "批量注册多个业务指标")
     public ResponseEntity<MetricRegistrationService.BatchRegistrationResult> batchRegisterMetrics(
-            @RequestBody List<MetricRegistrationRequest> requests) {
+            @RequestBody final List<MetricRegistrationRequest> requests) {
         
         MetricRegistrationService.BatchRegistrationResult result = 
                 metricRegistrationService.batchRegisterMetrics(requests);
@@ -62,7 +62,7 @@ public class MetricRegistrationController {
     @Operation(summary = "注销指标", description = "注销指定的指标")
     public ResponseEntity<Map<String, Object>> unregisterMetric(
             @PathVariable("metricName") String metricName,
-            @RequestParam(required = false) Map<String, String> tags) {
+            @RequestParam(required = false) final Map<String, String> tags) {
         
         boolean result = metricRegistrationService.unregisterMetric(metricName, tags != null ? tags : Map.of());
         
@@ -78,7 +78,7 @@ public class MetricRegistrationController {
     @DeleteMapping("/batch")
     @Operation(summary = "批量注销指标", description = "批量注销多个指标")
     public ResponseEntity<MetricRegistrationService.BatchUnregistrationResult> batchUnregisterMetrics(
-            @RequestBody List<String> metricNames) {
+            @RequestBody final List<String> metricNames) {
         
         MetricRegistrationService.BatchUnregistrationResult result = 
                 metricRegistrationService.batchUnregisterMetrics(metricNames);
@@ -106,7 +106,7 @@ public class MetricRegistrationController {
     @Operation(summary = "更新指标元数据", description = "更新指定指标的元数据信息")
     public ResponseEntity<Map<String, Object>> updateMetricMetadata(
             @PathVariable("metricName") String metricName,
-            @RequestBody MetricMetadata metadata) {
+            @RequestBody final MetricMetadata metadata) {
         
         boolean result = customMeterRegistry.updateMetricMetadata(metricName, metadata);
         
@@ -123,8 +123,8 @@ public class MetricRegistrationController {
     @Operation(summary = "更新指标配置", description = "更新指标的启用状态和采样率")
     public ResponseEntity<Map<String, Object>> updateMetricConfiguration(
             @PathVariable("metricName") String metricName,
-            @RequestParam boolean enabled,
-            @RequestParam(defaultValue = "1.0") double samplingRate) {
+            @RequestParam final boolean enabled,
+            @RequestParam(defaultValue = "1.0") final double samplingRate) {
         
         boolean result = metricRegistrationService.updateMetricConfiguration(metricName, enabled, samplingRate);
         
@@ -157,8 +157,8 @@ public class MetricRegistrationController {
     @GetMapping("/search")
     @Operation(summary = "搜索指标", description = "根据名称模式和类别搜索指标")
     public ResponseEntity<List<MetricMetadata>> searchMetrics(
-            @Parameter(description = "指标名称模式（支持正则表达式）") @RequestParam String namePattern,
-            @Parameter(description = "指标类别（可选）") @RequestParam(required = false) String category) {
+            @Parameter(description = "指标名称模式（支持正则表达式）") @RequestParam final String namePattern,
+            @Parameter(description = "指标类别（可选）") @RequestParam(required = false) final String category) {
         
         List<MetricMetadata> metrics = metricRegistrationService.searchMetrics(namePattern, category);
         return ResponseEntity.ok(metrics);
@@ -167,7 +167,7 @@ public class MetricRegistrationController {
     @PostMapping("/validate")
     @Operation(summary = "验证指标请求", description = "验证指标注册请求的有效性")
     public ResponseEntity<MetricRegistrationService.ValidationResult> validateMetricRequest(
-            @RequestBody MetricRegistrationRequest request) {
+            @RequestBody final MetricRegistrationRequest request) {
         
         MetricRegistrationService.ValidationResult result = 
                 metricRegistrationService.validateMetricRequest(request);
@@ -185,8 +185,8 @@ public class MetricRegistrationController {
     @GetMapping("/exists/{metricName}")
     @Operation(summary = "检查指标是否存在", description = "检查指定指标是否已注册")
     public ResponseEntity<Map<String, Object>> checkMetricExists(
-            @PathVariable String metricName,
-            @RequestParam(required = false) Map<String, String> tags) {
+            @PathVariable final String metricName,
+            @RequestParam(required = false) final Map<String, String> tags) {
         
         boolean exists = customMeterRegistry.meterExists(metricName, tags != null ? tags : Map.of());
         

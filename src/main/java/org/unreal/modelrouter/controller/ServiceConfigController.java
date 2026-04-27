@@ -35,7 +35,7 @@ public class ServiceConfigController {
      * 获取指定类型的服务配置
      */
     @GetMapping("/{serviceType}")
-    public ResponseEntity<ServiceConfigDTO> getService(@PathVariable String serviceType) {
+    public ResponseEntity<ServiceConfigDTO> getService(@PathVariable final String serviceType) {
         log.debug("Getting service config for type: {}", serviceType);
         return serviceConfigManager.getServiceConfig(serviceType)
                 .map(ResponseEntity::ok)
@@ -47,8 +47,8 @@ public class ServiceConfigController {
      */
     @PostMapping("/{serviceType}")
     public ResponseEntity<ServiceConfigDTO> saveService(
-            @PathVariable String serviceType,
-            @RequestBody CreateServiceConfigRequest request) {
+            @PathVariable final String serviceType,
+            @RequestBody final CreateServiceConfigRequest request) {
         log.info("Saving service config for type: {}", serviceType);
         ServiceConfigDTO saved = serviceConfigManager.saveServiceConfig(serviceType, request);
         return ResponseEntity.ok(saved);
@@ -58,7 +58,7 @@ public class ServiceConfigController {
      * 删除服务配置
      */
     @DeleteMapping("/{serviceType}")
-    public ResponseEntity<Void> deleteService(@PathVariable String serviceType) {
+    public ResponseEntity<Void> deleteService(@PathVariable final String serviceType) {
         log.info("Deleting service config for type: {}", serviceType);
         serviceConfigManager.deleteServiceConfig(serviceType);
         return ResponseEntity.ok().build();

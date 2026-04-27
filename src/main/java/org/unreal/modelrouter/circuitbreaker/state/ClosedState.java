@@ -15,12 +15,12 @@ public class ClosedState implements CircuitState {
     private static final Logger logger = LoggerFactory.getLogger(ClosedState.class);
 
     @Override
-    public boolean canExecute(CircuitStateContext context) {
+    public boolean canExecute(final CircuitStateContext context) {
         return true;
     }
 
     @Override
-    public void onSuccess(CircuitStateContext context) {
+    public void onSuccess(final CircuitStateContext context) {
         // 成功后重置失败计数
         context.resetFailureCount();
         context.recordEvent("success", getStateName());
@@ -28,7 +28,7 @@ public class ClosedState implements CircuitState {
     }
 
     @Override
-    public void onFailure(CircuitStateContext context) {
+    public void onFailure(final CircuitStateContext context) {
         context.incrementFailureCount();
         
         if (context.isFailureThresholdReached()) {

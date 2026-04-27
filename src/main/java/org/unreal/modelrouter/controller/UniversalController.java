@@ -41,7 +41,7 @@ public class UniversalController {
     public UniversalController(final AdapterRegistry adapterRegistry,
                                final ModelServiceRegistry registry,
                                final ServiceStateManager serviceStateManager,
-                               @Autowired(required = false) MetricsCollector metricsCollector,
+                               @Autowired(required = false) final MetricsCollector metricsCollector,
                                @Autowired(required = false) org.unreal.modelrouter.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor) {
         this.adapterRegistry = adapterRegistry;
         this.registry = registry;
@@ -62,8 +62,8 @@ public class UniversalController {
 
     @PostMapping("/chat/completions")
     public Mono<ResponseEntity<?>> chatCompletions(
-            @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody(required = false) ChatDTO.Request request,
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestBody(required = false) final ChatDTO.Request request,
             final ServerWebExchange exchange) {
 
         ServerHttpRequest httpRequest = exchange.getRequest();
@@ -99,8 +99,8 @@ public class UniversalController {
 
     @PostMapping("/embeddings")
     public Mono<ResponseEntity<?>> embeddings(
-            @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody(required = false) EmbeddingDTO.Request request,
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestBody(required = false) final EmbeddingDTO.Request request,
             final ServerHttpRequest httpRequest) {
 
         if (request == null) {
@@ -134,8 +134,8 @@ public class UniversalController {
 
     @PostMapping("/rerank")
     public Mono<ResponseEntity<?>> rerank(
-            @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody(required = false) RerankDTO.Request request,
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestBody(required = false) final RerankDTO.Request request,
             final ServerHttpRequest httpRequest) {
 
         if (request == null) {
@@ -170,8 +170,8 @@ public class UniversalController {
 
     @PostMapping("/audio/speech")
     public Mono<ResponseEntity<?>> textToSpeech(
-            @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody(required = false) TtsDTO.Request request,
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestBody(required = false) final TtsDTO.Request request,
             final ServerHttpRequest httpRequest) {
 
         if (request == null) {
@@ -211,7 +211,7 @@ public class UniversalController {
             @RequestPart(value = "prompt", required = false) String prompt,
             @RequestPart(value = "responseFormat", required = false) String responseFormat,
             @RequestPart(value = "temperature", required = false) Double temperature,
-            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
             final ServerHttpRequest httpRequest) {
 
         SttDTO.Request request = new SttDTO.Request(model, file, language, prompt, responseFormat, temperature);
@@ -243,8 +243,8 @@ public class UniversalController {
 
     @PostMapping("/images/generations")
     public Mono<ResponseEntity<?>> imageGenerate(
-            @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody(required = false) ImageGenerateDTO.Request request,
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestBody(required = false) final ImageGenerateDTO.Request request,
             final ServerHttpRequest httpRequest) {
 
         if (request == null) {
@@ -278,8 +278,8 @@ public class UniversalController {
 
     @PostMapping("/images/edits")
     public Mono<ResponseEntity<?>> imageEdits(
-            @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody(required = false) ImageEditDTO.Request request,
+            @RequestHeader(value = "Authorization", required = false) final String authorization,
+            @RequestBody(required = false) final ImageEditDTO.Request request,
             final ServerHttpRequest httpRequest) {
 
         if (request == null) {

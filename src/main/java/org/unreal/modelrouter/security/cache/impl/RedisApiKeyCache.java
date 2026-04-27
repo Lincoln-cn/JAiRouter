@@ -32,7 +32,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     
     public RedisApiKeyCache(final ReactiveRedisTemplate<String, String> redisTemplate, 
                            final ObjectMapper objectMapper,
-                           @Autowired(required = false) CacheMetrics cacheMetrics) {
+                           @Autowired(required = false) final CacheMetrics cacheMetrics) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.cacheMetrics = cacheMetrics;

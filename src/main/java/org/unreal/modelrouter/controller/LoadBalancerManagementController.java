@@ -108,7 +108,7 @@ public class LoadBalancerManagementController {
      */
     @GetMapping("/status/{serviceType}")
     public ResponseEntity<RouterResponse<LoadBalancerStatusResponse>> getStatusByServiceType(
-            @PathVariable String serviceType) {
+            @PathVariable final String serviceType) {
         try {
             ModelServiceRegistry.ServiceType type = ModelServiceRegistry.ServiceType.valueOf(serviceType.toLowerCase());
             LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(type);
@@ -165,7 +165,7 @@ public class LoadBalancerManagementController {
      */
     @GetMapping("/config/{serviceType}")
     public ResponseEntity<RouterResponse<LoadBalanceConfigResponse>> getServiceConfig(
-            @PathVariable String serviceType) {
+            @PathVariable final String serviceType) {
         try {
             Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
 
@@ -201,8 +201,8 @@ public class LoadBalancerManagementController {
      */
     @PutMapping("/config/{serviceType}")
     public ResponseEntity<RouterResponse<String>> updateServiceConfig(
-            @PathVariable String serviceType,
-            @RequestBody LoadBalanceConfigRequest request) {
+            @PathVariable final String serviceType,
+            @RequestBody final LoadBalanceConfigRequest request) {
         try {
             ModelServiceRegistry.ServiceType type = ModelServiceRegistry.ServiceType.valueOf(serviceType.toLowerCase());
 

@@ -42,7 +42,7 @@ public class ServiceInstanceManager {
             final InstanceRateLimitRepository rateLimitRepository,
             final InstanceCircuitBreakerRepository circuitBreakerRepository,
             final ServiceConfigRepository serviceConfigRepository,
-            @Lazy ConfigurationService configurationService,
+            @Lazy final ConfigurationService configurationService,
             final ModelServiceRegistry modelServiceRegistry) {
         this.serviceInstanceRepository = serviceInstanceRepository;
         this.rateLimitRepository = rateLimitRepository;

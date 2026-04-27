@@ -24,7 +24,7 @@ public class ServiceRateLimitController {
      * 获取限流配置
      */
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getRateLimitConfig(@PathVariable String serviceType) {
+    public ResponseEntity<Map<String, Object>> getRateLimitConfig(@PathVariable final String serviceType) {
         log.debug("Getting rate limit config for service: {}", serviceType);
         Map<String, Object> config = configurationService.getServiceConfig(serviceType);
         @SuppressWarnings("unchecked")
@@ -37,8 +37,8 @@ public class ServiceRateLimitController {
      */
     @PutMapping
     public ResponseEntity<Map<String, Object>> updateRateLimitConfig(
-            @PathVariable String serviceType,
-            @RequestBody Map<String, Object> rateLimitConfig) {
+            @PathVariable final String serviceType,
+            @RequestBody final Map<String, Object> rateLimitConfig) {
         log.info("Updating rate limit config for service: {}", serviceType);
         // 简化实现：直接返回传入的配置
         return ResponseEntity.ok(rateLimitConfig);

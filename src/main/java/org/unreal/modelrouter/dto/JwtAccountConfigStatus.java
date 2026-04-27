@@ -13,7 +13,7 @@ public class JwtAccountConfigStatus {
         return hasPersistedConfig;
     }
 
-    public void setHasPersistedConfig(boolean hasPersistedConfig) {
+    public void setHasPersistedConfig(final boolean hasPersistedConfig) {
         this.hasPersistedConfig = hasPersistedConfig;
     }
 
@@ -21,7 +21,7 @@ public class JwtAccountConfigStatus {
         return currentVersion;
     }
 
-    public void setCurrentVersion(int currentVersion) {
+    public void setCurrentVersion(final int currentVersion) {
         this.currentVersion = currentVersion;
     }
 
@@ -29,7 +29,7 @@ public class JwtAccountConfigStatus {
         return totalVersions;
     }
 
-    public void setTotalVersions(int totalVersions) {
+    public void setTotalVersions(final int totalVersions) {
         this.totalVersions = totalVersions;
     }
 }

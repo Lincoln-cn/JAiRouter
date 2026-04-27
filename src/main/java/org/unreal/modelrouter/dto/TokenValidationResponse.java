@@ -15,7 +15,7 @@ public class TokenValidationResponse {
         return this.valid;
     }
 
-    public void setValid(boolean valid) {
+    public void setValid(final boolean valid) {
         this.valid = valid;
     }
 
@@ -23,7 +23,7 @@ public class TokenValidationResponse {
         return this.userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(final String userId) {
         this.userId = userId;
     }
 
@@ -31,7 +31,7 @@ public class TokenValidationResponse {
         return this.message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -39,7 +39,7 @@ public class TokenValidationResponse {
         return this.timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(final LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 

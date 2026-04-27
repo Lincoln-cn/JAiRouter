@@ -98,7 +98,7 @@ public class StatePersistenceManagementController {
      */
     @PostMapping("/recovery/circuit-breaker/{instanceId}")
     public Mono<ResponseEntity<Map<String, Object>>> recoverSingleCircuitBreaker(
-            @PathVariable String instanceId) {
+            @PathVariable final String instanceId) {
 
         logger.info("Manual recovery for circuit breaker: {}", instanceId);
 
@@ -119,7 +119,7 @@ public class StatePersistenceManagementController {
      */
     @PostMapping("/recovery/load-balancer/{serviceType}")
     public Mono<ResponseEntity<Map<String, Object>>> recoverSingleLoadBalancer(
-            @PathVariable String serviceType) {
+            @PathVariable final String serviceType) {
 
         logger.info("Manual recovery for load balancer: {}", serviceType);
 
@@ -148,7 +148,7 @@ public class StatePersistenceManagementController {
      */
     @PostMapping("/recovery/rate-limiter/{limiterId}")
     public Mono<ResponseEntity<Map<String, Object>>> recoverSingleRateLimiter(
-            @PathVariable String limiterId) {
+            @PathVariable final String limiterId) {
 
         logger.info("Manual recovery for rate limiter: {}", limiterId);
 
@@ -250,7 +250,7 @@ public class StatePersistenceManagementController {
      * 手动切换存储层
      */
     @PostMapping("/tiers/switch/{tierName}")
-    public Mono<ResponseEntity<Map<String, Object>>> switchTier(@PathVariable String tierName) {
+    public Mono<ResponseEntity<Map<String, Object>>> switchTier(@PathVariable final String tierName) {
         logger.info("Manual tier switch requested: {}", tierName);
 
         boolean switched = compositePersistenceService.switchTier(tierName);

@@ -72,11 +72,11 @@ public class ModelCallStatsController {
     @ApiResponse(responseCode = "200", description = "成功获取模型统计")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<ResponseEntity<RouterResponse<Map<String, Object>>>> getAllModelStats(
-            @RequestParam(required = false) String serviceType,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "totalCalls") String sortBy,
-            @RequestParam(defaultValue = "false") boolean ascending) {
+            @RequestParam(required = false) final String serviceType,
+            @RequestParam(defaultValue = "1") final int page,
+            @RequestParam(defaultValue = "20") final int size,
+            @RequestParam(defaultValue = "totalCalls") final String sortBy,
+            @RequestParam(defaultValue = "false") final boolean ascending) {
         try {
             Map<String, Object> result = modelCallAnalyzer.getAllModelStats(serviceType, page, size, sortBy, ascending);
             return Mono.just(ResponseEntity.ok(RouterResponse.success(result, "获取模型统计成功")));
@@ -95,7 +95,7 @@ public class ModelCallStatsController {
     @ApiResponse(responseCode = "200", description = "成功获取统计")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<ResponseEntity<RouterResponse<List<ModelCallStats>>>> getStatsByServiceType(
-            @PathVariable String serviceType) {
+            @PathVariable final String serviceType) {
         try {
             List<ModelCallStats> stats = modelCallAnalyzer.getStatsByServiceType(serviceType);
             return Mono.just(ResponseEntity.ok(RouterResponse.success(stats, "获取服务类型统计成功")));
@@ -115,8 +115,8 @@ public class ModelCallStatsController {
     @ApiResponse(responseCode = "404", description = "模型不存在")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<ResponseEntity<RouterResponse<ModelCallStats>>> getModelStats(
-            @PathVariable String serviceType,
-            @PathVariable String modelName) {
+            @PathVariable final String serviceType,
+            @PathVariable final String modelName) {
         try {
             ModelCallStats stats = modelCallAnalyzer.getModelStats(serviceType, modelName);
             if (stats == null) {
@@ -192,7 +192,7 @@ public class ModelCallStatsController {
     @ApiResponse(responseCode = "200", description = "成功获取趋势")
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<ResponseEntity<RouterResponse<List<Map<String, Object>>>>> getCallTrend(
-            @RequestParam(defaultValue = "60") int minutes) {
+            @RequestParam(defaultValue = "60") final int minutes) {
         try {
             List<Map<String, Object>> trend = modelCallAnalyzer.getCallTrend(minutes);
             return Mono.just(ResponseEntity.ok(RouterResponse.success(trend, "获取调用趋势成功")));

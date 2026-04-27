@@ -45,7 +45,7 @@ public class UserTokenInfo {
     public UserTokenInfo() {
     }
 
-    public UserTokenInfo(String userId, String token, LocalDateTime issuedAt, LocalDateTime expiresAt, String status) {
+    public UserTokenInfo(final String userId,final String token,final LocalDateTime issuedAt,final LocalDateTime expiresAt,final String status) {
         this.userId = userId;
         this.token = token;
         this.issuedAt = issuedAt;
@@ -57,7 +57,7 @@ public class UserTokenInfo {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(final String userId) {
         this.userId = userId;
     }
 
@@ -65,7 +65,7 @@ public class UserTokenInfo {
         return token;
     }
 
-    public void setToken(String token) {
+    public void setToken(final String token) {
         this.token = token;
     }
 
@@ -73,7 +73,7 @@ public class UserTokenInfo {
         return issuedAt;
     }
 
-    public void setIssuedAt(LocalDateTime issuedAt) {
+    public void setIssuedAt(final LocalDateTime issuedAt) {
         this.issuedAt = issuedAt;
     }
 
@@ -81,7 +81,7 @@ public class UserTokenInfo {
         return expiresAt;
     }
 
-    public void setExpiresAt(LocalDateTime expiresAt) {
+    public void setExpiresAt(final LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
     }
 
@@ -109,7 +109,7 @@ public class UserTokenInfo {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public void setStatus(String status) {
+    public void setStatus(final String status) {
         this.status = status;
     }
 

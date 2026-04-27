@@ -56,7 +56,7 @@ public class SecurityAuditQueryRequest {
         return this.startTime;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
+    public void setStartTime(final LocalDateTime startTime) {
         this.startTime = startTime;
     }
 
@@ -64,7 +64,7 @@ public class SecurityAuditQueryRequest {
         return this.endTime;
     }
 
-    public void setEndTime(LocalDateTime endTime) {
+    public void setEndTime(final LocalDateTime endTime) {
         this.endTime = endTime;
     }
 
@@ -72,7 +72,7 @@ public class SecurityAuditQueryRequest {
         return this.eventType;
     }
 
-    public void setEventType(String eventType) {
+    public void setEventType(final String eventType) {
         this.eventType = eventType;
     }
 
@@ -80,7 +80,7 @@ public class SecurityAuditQueryRequest {
         return this.userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(final String userId) {
         this.userId = userId;
     }
 
@@ -88,7 +88,7 @@ public class SecurityAuditQueryRequest {
         return this.clientIp;
     }
 
-    public void setClientIp(String clientIp) {
+    public void setClientIp(final String clientIp) {
         this.clientIp = clientIp;
     }
 
@@ -96,7 +96,7 @@ public class SecurityAuditQueryRequest {
         return this.success;
     }
 
-    public void setSuccess(Boolean success) {
+    public void setSuccess(final Boolean success) {
         this.success = success;
     }
 
@@ -104,7 +104,7 @@ public class SecurityAuditQueryRequest {
         return this.action;
     }
 
-    public void setAction(String action) {
+    public void setAction(final String action) {
         this.action = action;
     }
 
@@ -112,7 +112,7 @@ public class SecurityAuditQueryRequest {
         return this.resource;
     }
 
-    public void setResource(String resource) {
+    public void setResource(final String resource) {
         this.resource = resource;
     }
 
@@ -120,7 +120,7 @@ public class SecurityAuditQueryRequest {
         return this.failureReason;
     }
 
-    public void setFailureReason(String failureReason) {
+    public void setFailureReason(final String failureReason) {
         this.failureReason = failureReason;
     }
 
@@ -128,7 +128,7 @@ public class SecurityAuditQueryRequest {
         return this.page;
     }
 
-    public void setPage(int page) {
+    public void setPage(final int page) {
         this.page = page;
     }
 
@@ -136,7 +136,7 @@ public class SecurityAuditQueryRequest {
         return this.size;
     }
 
-    public void setSize(int size) {
+    public void setSize(final int size) {
         this.size = size;
     }
 
@@ -144,7 +144,7 @@ public class SecurityAuditQueryRequest {
         return this.sortBy;
     }
 
-    public void setSortBy(String sortBy) {
+    public void setSortBy(final String sortBy) {
         this.sortBy = sortBy;
     }
 
@@ -152,7 +152,7 @@ public class SecurityAuditQueryRequest {
         return this.sortDirection;
     }
 
-    public void setSortDirection(String sortDirection) {
+    public void setSortDirection(final String sortDirection) {
         this.sortDirection = sortDirection;
     }
 

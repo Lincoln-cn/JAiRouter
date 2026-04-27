@@ -19,7 +19,7 @@ public class ModelRouterProperties {
         return loadBalance;
     }
 
-    public void setLoadBalance(LoadBalanceConfig loadBalance) {
+    public void setLoadBalance(final LoadBalanceConfig loadBalance) {
         this.loadBalance = loadBalance;
     }
 
@@ -27,7 +27,7 @@ public class ModelRouterProperties {
         return adapter;
     }
 
-    public void setAdapter(String adapter) {
+    public void setAdapter(final String adapter) {
         this.adapter = adapter;
     }
 
@@ -35,7 +35,7 @@ public class ModelRouterProperties {
         return services;
     }
 
-    public void setServices(Map<String, ServiceConfig> services) {
+    public void setServices(final Map<String, ServiceConfig> services) {
         this.services = services;
     }
 
@@ -43,7 +43,7 @@ public class ModelRouterProperties {
         return rateLimit;
     }
 
-    public void setRateLimit(RateLimitConfig rateLimit) {
+    public void setRateLimit(final RateLimitConfig rateLimit) {
         this.rateLimit = rateLimit;
     }
 
@@ -51,7 +51,7 @@ public class ModelRouterProperties {
         return circuitBreaker;
     }
 
-    public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+    public void setCircuitBreaker(final CircuitBreakerConfig circuitBreaker) {
         this.circuitBreaker = circuitBreaker;
     }
     
@@ -59,7 +59,7 @@ public class ModelRouterProperties {
         return fallback;
     }
     
-    public void setFallback(FallbackConfig fallback) {
+    public void setFallback(final FallbackConfig fallback) {
         this.fallback = fallback;
     }
     public static class ServiceConfig {
@@ -74,7 +74,7 @@ public class ModelRouterProperties {
             return loadBalance;
         }
 
-        public void setLoadBalance(LoadBalanceConfig loadBalance) {
+        public void setLoadBalance(final LoadBalanceConfig loadBalance) {
             this.loadBalance = loadBalance;
         }
 
@@ -82,7 +82,7 @@ public class ModelRouterProperties {
             return instances;
         }
 
-        public void setInstances(List<ModelInstance> instances) {
+        public void setInstances(final List<ModelInstance> instances) {
             this.instances = instances;
         }
 
@@ -90,7 +90,7 @@ public class ModelRouterProperties {
             return adapter;
         }
 
-        public void setAdapter(String adapter) {
+        public void setAdapter(final String adapter) {
             this.adapter = adapter;
         }
 
@@ -98,7 +98,7 @@ public class ModelRouterProperties {
             return rateLimit;
         }
 
-        public void setRateLimit(RateLimitConfig rateLimit) {
+        public void setRateLimit(final RateLimitConfig rateLimit) {
             this.rateLimit = rateLimit;
         }
 
@@ -106,7 +106,7 @@ public class ModelRouterProperties {
             return circuitBreaker;
         }
 
-        public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+        public void setCircuitBreaker(final CircuitBreakerConfig circuitBreaker) {
             this.circuitBreaker = circuitBreaker;
         }
         
@@ -114,7 +114,7 @@ public class ModelRouterProperties {
             return fallback;
         }
         
-        public void setFallback(FallbackConfig fallback) {
+        public void setFallback(final FallbackConfig fallback) {
             this.fallback = fallback;
         }
     }
@@ -129,7 +129,7 @@ public class ModelRouterProperties {
             return type;
         }
 
-        public void setType(String type) {
+        public void setType(final String type) {
             this.type = type;
         }
 
@@ -137,7 +137,7 @@ public class ModelRouterProperties {
             return hashAlgorithm;
         }
 
-        public void setHashAlgorithm(String hashAlgorithm) {
+        public void setHashAlgorithm(final String hashAlgorithm) {
             this.hashAlgorithm = hashAlgorithm;
         }
 
@@ -145,7 +145,7 @@ public class ModelRouterProperties {
             return virtualNodes;
         }
 
-        public void setVirtualNodes(Integer virtualNodes) {
+        public void setVirtualNodes(final Integer virtualNodes) {
             this.virtualNodes = virtualNodes;
         }
     }
@@ -169,7 +169,7 @@ public class ModelRouterProperties {
             return name;
         }
 
-        public void setName(String name) {
+        public void setName(final String name) {
             this.name = name;
         }
 
@@ -177,7 +177,7 @@ public class ModelRouterProperties {
             return baseUrl;
         }
 
-        public void setBaseUrl(String baseUrl) {
+        public void setBaseUrl(final String baseUrl) {
             this.baseUrl = baseUrl;
         }
 
@@ -185,7 +185,7 @@ public class ModelRouterProperties {
             return path;
         }
 
-        public void setPath(String path) {
+        public void setPath(final String path) {
             this.path = path;
         }
 
@@ -193,7 +193,7 @@ public class ModelRouterProperties {
             return weight;
         }
 
-        public void setWeight(int weight) {
+        public void setWeight(final int weight) {
             this.weight = weight;
         }
 
@@ -201,7 +201,7 @@ public class ModelRouterProperties {
             return status;
         }
 
-        public void setStatus(String status) {
+        public void setStatus(final String status) {
             this.status = status;
         }
         
@@ -213,7 +213,7 @@ public class ModelRouterProperties {
             return instanceId;
         }
         
-        public void setInstanceId(String instanceId) {
+        public void setInstanceId(final String instanceId) {
             this.instanceId = instanceId;
         }
 
@@ -229,7 +229,7 @@ public class ModelRouterProperties {
             return healthy;
         }
 
-        public void setHealthy(Boolean healthy) {
+        public void setHealthy(final Boolean healthy) {
             this.healthy = healthy;
         }
 
@@ -237,7 +237,7 @@ public class ModelRouterProperties {
             return adapter;
         }
 
-        public void setAdapter(String adapter) {
+        public void setAdapter(final String adapter) {
             this.adapter = adapter;
         }
 
@@ -245,7 +245,7 @@ public class ModelRouterProperties {
             return rateLimit;
         }
 
-        public void setRateLimit(RateLimitConfig rateLimit) {
+        public void setRateLimit(final RateLimitConfig rateLimit) {
             this.rateLimit = rateLimit;
         }
 
@@ -253,7 +253,7 @@ public class ModelRouterProperties {
             return circuitBreaker;
         }
 
-        public void setCircuitBreaker(CircuitBreakerConfig circuitBreaker) {
+        public void setCircuitBreaker(final CircuitBreakerConfig circuitBreaker) {
             this.circuitBreaker = circuitBreaker;
         }
 
@@ -261,7 +261,7 @@ public class ModelRouterProperties {
             return headers;
         }
 
-        public void setHeaders(Map<String, String> headers) {
+        public void setHeaders(final Map<String, String> headers) {
             this.headers = headers;
         }
     }
@@ -281,7 +281,7 @@ public class ModelRouterProperties {
             return enabled;
         }
 
-        public void setEnabled(Boolean enabled) {
+        public void setEnabled(final Boolean enabled) {
             this.enabled = enabled;
         }
 
@@ -289,7 +289,7 @@ public class ModelRouterProperties {
             return algorithm;
         }
 
-        public void setAlgorithm(String algorithm) {
+        public void setAlgorithm(final String algorithm) {
             this.algorithm = algorithm;
         }
 
@@ -297,7 +297,7 @@ public class ModelRouterProperties {
             return capacity;
         }
 
-        public void setCapacity(Long capacity) {
+        public void setCapacity(final Long capacity) {
             this.capacity = capacity;
         }
 
@@ -305,7 +305,7 @@ public class ModelRouterProperties {
             return rate;
         }
 
-        public void setRate(Long rate) {
+        public void setRate(final Long rate) {
             this.rate = rate;
         }
 
@@ -313,7 +313,7 @@ public class ModelRouterProperties {
             return scope;
         }
 
-        public void setScope(String scope) {
+        public void setScope(final String scope) {
             this.scope = scope;
         }
 
@@ -321,7 +321,7 @@ public class ModelRouterProperties {
             return key;
         }
 
-        public void setKey(String key) {
+        public void setKey(final String key) {
             this.key = key;
         }
 
@@ -329,7 +329,7 @@ public class ModelRouterProperties {
             return clientIpEnable;
         }
 
-        public void setClientIpEnable(Boolean clientIpEnable) {
+        public void setClientIpEnable(final Boolean clientIpEnable) {
             this.clientIpEnable = clientIpEnable;
         }
 
@@ -359,7 +359,7 @@ public class ModelRouterProperties {
             return enabled;
         }
 
-        public void setEnabled(Boolean enabled) {
+        public void setEnabled(final Boolean enabled) {
             this.enabled = enabled;
         }
 
@@ -367,7 +367,7 @@ public class ModelRouterProperties {
             return failureThreshold;
         }
 
-        public void setFailureThreshold(Integer failureThreshold) {
+        public void setFailureThreshold(final Integer failureThreshold) {
             this.failureThreshold = failureThreshold;
         }
 
@@ -375,7 +375,7 @@ public class ModelRouterProperties {
             return timeout;
         }
 
-        public void setTimeout(Long timeout) {
+        public void setTimeout(final Long timeout) {
             this.timeout = timeout;
         }
 
@@ -383,7 +383,7 @@ public class ModelRouterProperties {
             return successThreshold;
         }
 
-        public void setSuccessThreshold(Integer successThreshold) {
+        public void setSuccessThreshold(final Integer successThreshold) {
             this.successThreshold = successThreshold;
         }
     }
@@ -400,7 +400,7 @@ public class ModelRouterProperties {
             return enabled;
         }
 
-        public void setEnabled(Boolean enabled) {
+        public void setEnabled(final Boolean enabled) {
             this.enabled = enabled;
         }
 
@@ -408,7 +408,7 @@ public class ModelRouterProperties {
             return strategy;
         }
 
-        public void setStrategy(String strategy) {
+        public void setStrategy(final String strategy) {
             this.strategy = strategy;
         }
 
@@ -416,7 +416,7 @@ public class ModelRouterProperties {
             return cacheSize;
         }
 
-        public void setCacheSize(Integer cacheSize) {
+        public void setCacheSize(final Integer cacheSize) {
             this.cacheSize = cacheSize;
         }
 
@@ -424,7 +424,7 @@ public class ModelRouterProperties {
             return cacheTtl;
         }
 
-        public void setCacheTtl(Long cacheTtl) {
+        public void setCacheTtl(final Long cacheTtl) {
             this.cacheTtl = cacheTtl;
         }
     }

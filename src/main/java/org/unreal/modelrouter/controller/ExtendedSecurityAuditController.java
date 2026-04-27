@@ -38,14 +38,14 @@ public class ExtendedSecurityAuditController {
     @GetMapping("/jwt-tokens")
     @Operation(summary = "查询JWT令牌审计事件")
     public Mono<RouterResponse<ExtendedAuditQueryResponse>> queryJwtTokenAuditEvents(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
-            @RequestParam(required = false) String userId,
-            @RequestParam(required = false) String tokenId,
-            @RequestParam(required = false) String ipAddress,
-            @RequestParam(required = false) Boolean success,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endTime,
+            @RequestParam(required = false) final String userId,
+            @RequestParam(required = false) final String tokenId,
+            @RequestParam(required = false) final String ipAddress,
+            @RequestParam(required = false) final Boolean success,
+            @RequestParam(defaultValue = "0") final int page,
+            @RequestParam(defaultValue = "20") final int size) {
 
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         final LocalDateTime finalEndTime = endTime != null ? endTime : LocalDateTime.now();
@@ -70,14 +70,14 @@ public class ExtendedSecurityAuditController {
     @GetMapping("/api-keys")
     @Operation(summary = "查询API Key审计事件")
     public Mono<RouterResponse<ExtendedAuditQueryResponse>> queryApiKeyAuditEvents(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
-            @RequestParam(required = false) String keyId,
-            @RequestParam(required = false) String operatorId,
-            @RequestParam(required = false) String ipAddress,
-            @RequestParam(required = false) Boolean success,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endTime,
+            @RequestParam(required = false) final String keyId,
+            @RequestParam(required = false) final String operatorId,
+            @RequestParam(required = false) final String ipAddress,
+            @RequestParam(required = false) final Boolean success,
+            @RequestParam(defaultValue = "0") final int page,
+            @RequestParam(defaultValue = "20") final int size) {
 
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         final LocalDateTime finalEndTime = endTime != null ? endTime : LocalDateTime.now();
@@ -102,12 +102,12 @@ public class ExtendedSecurityAuditController {
     @GetMapping("/security-events")
     @Operation(summary = "查询安全事件")
     public Mono<RouterResponse<ExtendedAuditQueryResponse>> querySecurityEvents(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
-            @RequestParam(required = false) String userId,
-            @RequestParam(required = false) String ipAddress,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endTime,
+            @RequestParam(required = false) final String userId,
+            @RequestParam(required = false) final String ipAddress,
+            @RequestParam(defaultValue = "0") final int page,
+            @RequestParam(defaultValue = "20") final int size) {
 
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         final LocalDateTime finalEndTime = endTime != null ? endTime : LocalDateTime.now();
@@ -151,8 +151,8 @@ public class ExtendedSecurityAuditController {
     @GetMapping("/reports/security")
     @Operation(summary = "生成安全报告")
     public Mono<RouterResponse<SecurityReport>> generateSecurityReport(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endTime) {
 
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(1);
         final LocalDateTime finalEndTime = endTime != null ? endTime : LocalDateTime.now();
@@ -167,10 +167,10 @@ public class ExtendedSecurityAuditController {
     @GetMapping("/users/{userId}/events")
     @Operation(summary = "获取用户审计事件")
     public Mono<RouterResponse<ExtendedAuditQueryResponse>> getUserAuditEvents(
-            @PathVariable String userId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
-            @RequestParam(defaultValue = "50") int limit) {
+            @PathVariable final String userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endTime,
+            @RequestParam(defaultValue = "50") final int limit) {
 
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(30);
         final LocalDateTime finalEndTime = endTime != null ? endTime : LocalDateTime.now();
@@ -199,10 +199,10 @@ public class ExtendedSecurityAuditController {
     @GetMapping("/ip-addresses/{ipAddress}/events")
     @Operation(summary = "获取IP地址审计事件")
     public Mono<RouterResponse<ExtendedAuditQueryResponse>> getIpAuditEvents(
-            @PathVariable String ipAddress,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
-            @RequestParam(defaultValue = "50") int limit) {
+            @PathVariable final String ipAddress,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endTime,
+            @RequestParam(defaultValue = "50") final int limit) {
 
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         final LocalDateTime finalEndTime = endTime != null ? endTime : LocalDateTime.now();
@@ -230,7 +230,7 @@ public class ExtendedSecurityAuditController {
      */
     @PostMapping("/events/batch")
     @Operation(summary = "批量记录审计事件")
-    public Mono<RouterResponse<Map<String, Object>>> batchRecordAuditEvents(@RequestBody List<AuditEvent> auditEvents) {
+    public Mono<RouterResponse<Map<String, Object>>> batchRecordAuditEvents(@RequestBody final List<AuditEvent> auditEvents) {
         if (auditEvents == null || auditEvents.isEmpty()) {
             return Mono.just(RouterResponse.error("审计事件列表不能为空"));
         }
@@ -277,8 +277,8 @@ public class ExtendedSecurityAuditController {
     @GetMapping("/statistics/extended")
     @Operation(summary = "获取扩展审计统计信息")
     public Mono<RouterResponse<Map<String, Object>>> getExtendedAuditStatistics(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endTime) {
 
         final LocalDateTime finalStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(1);
         final LocalDateTime finalEndTime = endTime != null ? endTime : LocalDateTime.now();

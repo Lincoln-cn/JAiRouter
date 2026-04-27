@@ -70,7 +70,7 @@ public class SecurityProperties {
         return this.apiKey;
     }
 
-    public void setApiKey(@Valid @NotNull ApiKeyConfig apiKey) {
+    public void setApiKey(@Valid @NotNull final ApiKeyConfig apiKey) {
         this.apiKey = apiKey;
     }
 
@@ -78,7 +78,7 @@ public class SecurityProperties {
         return this.jwt;
     }
 
-    public void setJwt(@Valid @NotNull JwtConfig jwt) {
+    public void setJwt(@Valid @NotNull final JwtConfig jwt) {
         this.jwt = jwt;
     }
 
@@ -86,7 +86,7 @@ public class SecurityProperties {
         return this.sanitization;
     }
 
-    public void setSanitization(@Valid @NotNull SanitizationConfig sanitization) {
+    public void setSanitization(@Valid @NotNull final SanitizationConfig sanitization) {
         this.sanitization = sanitization;
     }
 
@@ -94,7 +94,7 @@ public class SecurityProperties {
         return this.audit;
     }
 
-    public void setAudit(@Valid @NotNull AuditConfig audit) {
+    public void setAudit(@Valid @NotNull final AuditConfig audit) {
         this.audit = audit;
     }
 
@@ -102,7 +102,7 @@ public class SecurityProperties {
         return this.cache;
     }
 
-    public void setCache(@Valid @NotNull CacheConfig cache) {
+    public void setCache(@Valid @NotNull final CacheConfig cache) {
         this.cache = cache;
     }
 

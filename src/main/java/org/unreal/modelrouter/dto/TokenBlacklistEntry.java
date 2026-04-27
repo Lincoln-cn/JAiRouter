@@ -17,7 +17,7 @@ public class TokenBlacklistEntry {
     public TokenBlacklistEntry() {
     }
 
-    public TokenBlacklistEntry(String tokenHash, LocalDateTime expiresAt, String reason, String addedBy, LocalDateTime addedAt) {
+    public TokenBlacklistEntry(final String tokenHash,final LocalDateTime expiresAt,final String reason,final String addedBy,final LocalDateTime addedAt) {
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
         this.reason = reason;
@@ -30,7 +30,7 @@ public class TokenBlacklistEntry {
         return tokenHash;
     }
 
-    public void setTokenHash(String tokenHash) {
+    public void setTokenHash(final String tokenHash) {
         this.tokenHash = tokenHash;
     }
 
@@ -38,7 +38,7 @@ public class TokenBlacklistEntry {
         return expiresAt;
     }
 
-    public void setExpiresAt(LocalDateTime expiresAt) {
+    public void setExpiresAt(final LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
     }
 
@@ -46,7 +46,7 @@ public class TokenBlacklistEntry {
         return reason;
     }
 
-    public void setReason(String reason) {
+    public void setReason(final String reason) {
         this.reason = reason;
     }
 
@@ -54,7 +54,7 @@ public class TokenBlacklistEntry {
         return addedBy;
     }
 
-    public void setAddedBy(String addedBy) {
+    public void setAddedBy(final String addedBy) {
         this.addedBy = addedBy;
     }
 
@@ -62,7 +62,7 @@ public class TokenBlacklistEntry {
         return addedAt;
     }
 
-    public void setAddedAt(LocalDateTime addedAt) {
+    public void setAddedAt(final LocalDateTime addedAt) {
         this.addedAt = addedAt;
     }
 

@@ -37,10 +37,10 @@ public class SecurityBlacklistController {
     @GetMapping("/list")
     @Operation(summary = "获取黑名单列表", description = "分页查询黑名单条目，支持按类型和状态过滤")
     public ResponseEntity<RouterResponse<Page<BlacklistEntryDTO>>> getBlacklistPage(
-            @Parameter(description = "黑名单类型: TOKEN, IP, DEVICE") @RequestParam(required = false) String type,
-            @Parameter(description = "状态: ACTIVE, EXPIRED, REMOVED") @RequestParam(required = false) String status,
-            @Parameter(description = "页码") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "每页大小") @RequestParam(defaultValue = "20") int size) {
+            @Parameter(description = "黑名单类型: TOKEN, IP, DEVICE") @RequestParam(required = false) final String type,
+            @Parameter(description = "状态: ACTIVE, EXPIRED, REMOVED") @RequestParam(required = false) final String status,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "0") final int page,
+            @Parameter(description = "每页大小") @RequestParam(defaultValue = "20") final int size) {
 
         log.info("获取黑名单列表: type={}, status={}, page={}, size={}", type, status, page, size);
 
@@ -75,7 +75,7 @@ public class SecurityBlacklistController {
     @GetMapping("/{id}")
     @Operation(summary = "获取黑名单详情", description = "根据ID获取黑名单条目详情")
     public ResponseEntity<RouterResponse<BlacklistEntryDTO>> getBlacklistEntry(
-            @Parameter(description = "黑名单条目ID") @PathVariable Long id) {
+            @Parameter(description = "黑名单条目ID") @PathVariable final Long id) {
 
         log.info("获取黑名单详情: id={}", id);
 
@@ -92,7 +92,7 @@ public class SecurityBlacklistController {
     @PostMapping("/add")
     @Operation(summary = "添加黑名单", description = "手动添加条目到黑名单，支持Token/IP/Device类型")
     public ResponseEntity<RouterResponse<BlacklistEntryDTO>> addToBlacklist(
-            @Valid @RequestBody AddBlacklistRequest request,
+            @Valid @RequestBody final AddBlacklistRequest request,
             final Principal principal) {
 
         String addedBy = principal != null ? principal.getName() : "system";
@@ -116,7 +116,7 @@ public class SecurityBlacklistController {
     @PostMapping("/batch-add")
     @Operation(summary = "批量添加黑名单", description = "批量添加多个条目到黑名单")
     public ResponseEntity<RouterResponse<Integer>> batchAddToBlacklist(
-            @RequestBody List<AddBlacklistRequest> requests,
+            @RequestBody final List<AddBlacklistRequest> requests,
             final Principal principal) {
 
         String addedBy = principal != null ? principal.getName() : "system";
@@ -132,7 +132,7 @@ public class SecurityBlacklistController {
     @DeleteMapping("/{id}")
     @Operation(summary = "移除黑名单", description = "根据ID从黑名单移除条目")
     public ResponseEntity<RouterResponse<Boolean>> removeFromBlacklist(
-            @Parameter(description = "黑名单条目ID") @PathVariable Long id) {
+            @Parameter(description = "黑名单条目ID") @PathVariable final Long id) {
 
         log.info("移除黑名单: id={}", id);
 
@@ -150,8 +150,8 @@ public class SecurityBlacklistController {
     @GetMapping("/check")
     @Operation(summary = "检查黑名单", description = "检查指定目标是否在黑名单中")
     public ResponseEntity<RouterResponse<Boolean>> checkBlacklist(
-            @Parameter(description = "黑名单类型") @RequestParam String type,
-            @Parameter(description = "目标值") @RequestParam String value) {
+            @Parameter(description = "黑名单类型") @RequestParam final String type,
+            @Parameter(description = "目标值") @RequestParam final String value) {
 
         log.info("检查黑名单: type={}, value={}", type, maskValue(type, value));
 

@@ -19,7 +19,7 @@ public final class ServiceRuntimeConfig {
         return instances;
     }
 
-    public void setInstances(List<ModelRouterProperties.ModelInstance> instances) {
+    public void setInstances(final List<ModelRouterProperties.ModelInstance> instances) {
         this.instances = instances;
     }
 
@@ -27,7 +27,7 @@ public final class ServiceRuntimeConfig {
         return adapter;
     }
 
-    public void setAdapter(String adapter) {
+    public void setAdapter(final String adapter) {
         this.adapter = adapter;
     }
 
@@ -35,7 +35,7 @@ public final class ServiceRuntimeConfig {
         return loadBalanceConfig;
     }
 
-    public void setLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig loadBalanceConfig) {
+    public void setLoadBalanceConfig(final ModelRouterProperties.LoadBalanceConfig loadBalanceConfig) {
         this.loadBalanceConfig = loadBalanceConfig;
     }
 
@@ -43,7 +43,7 @@ public final class ServiceRuntimeConfig {
         return rateLimitConfig;
     }
 
-    public void setRateLimitConfig(ModelRouterProperties.RateLimitConfig rateLimitConfig) {
+    public void setRateLimitConfig(final ModelRouterProperties.RateLimitConfig rateLimitConfig) {
         this.rateLimitConfig = rateLimitConfig;
     }
 
@@ -51,7 +51,7 @@ public final class ServiceRuntimeConfig {
         return circuitBreakerConfig;
     }
 
-    public void setCircuitBreakerConfig(ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig) {
+    public void setCircuitBreakerConfig(final ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig) {
         this.circuitBreakerConfig = circuitBreakerConfig;
     }
 
@@ -59,7 +59,7 @@ public final class ServiceRuntimeConfig {
         return fallbackConfig;
     }
 
-    public void setFallbackConfig(ModelRouterProperties.FallbackConfig fallbackConfig) {
+    public void setFallbackConfig(final ModelRouterProperties.FallbackConfig fallbackConfig) {
         this.fallbackConfig = fallbackConfig;
     }
 }

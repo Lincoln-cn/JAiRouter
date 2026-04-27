@@ -35,7 +35,7 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
     private StoreManager storeManager;
 
     @Override
-    public Mono<Boolean> save(StateType stateType, String key, Map<String, Object> stateData) {
+    public Mono<Boolean> save(final StateType stateType,final String key,final Map<String, Object> stateData) {
         String storeKey = buildStoreKey(stateType, key);
         return Mono.fromCallable(() -> {
             try {
@@ -50,7 +50,7 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
     }
 
     @Override
-    public Mono<Map<String, Object>> load(StateType stateType, String key) {
+    public Mono<Map<String, Object>> load(final StateType stateType,final String key) {
         String storeKey = buildStoreKey(stateType, key);
         return Mono.fromCallable(() -> {
             Map<String, Object> stateData = storeManager.getConfig(storeKey);
@@ -64,7 +64,7 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
     }
 
     @Override
-    public Mono<Boolean> delete(StateType stateType, String key) {
+    public Mono<Boolean> delete(final StateType stateType,final String key) {
         String storeKey = buildStoreKey(stateType, key);
         return Mono.fromCallable(() -> {
             try {
@@ -79,13 +79,13 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
     }
 
     @Override
-    public Mono<Boolean> exists(StateType stateType, String key) {
+    public Mono<Boolean> exists(final StateType stateType,final String key) {
         String storeKey = buildStoreKey(stateType, key);
         return Mono.fromCallable(() -> storeManager.exists(storeKey));
     }
 
     @Override
-    public Mono<Iterable<String>> getAllKeys(StateType stateType) {
+    public Mono<Iterable<String>> getAllKeys(final StateType stateType) {
         String prefix = KEY_PREFIX + stateType.name().toLowerCase() + ".";
         return Mono.fromCallable(() -> {
             Iterable<String> allKeys = storeManager.getAllKeys();
@@ -98,7 +98,7 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
     }
 
     @Override
-    public Mono<Integer> saveBatch(StateType stateType, Map<String, Map<String, Object>> states) {
+    public Mono<Integer> saveBatch(final StateType stateType,final Map<String, Map<String, Object>> states) {
         if (states.isEmpty()) {
             return Mono.just(0);
         }
@@ -111,7 +111,7 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
     }
 
     @Override
-    public Mono<Map<String, Map<String, Object>>> loadBatch(StateType stateType, Iterable<String> keys) {
+    public Mono<Map<String, Map<String, Object>>> loadBatch(final StateType stateType,final Iterable<String> keys) {
         return Flux.fromIterable(keys)
                 .flatMap(key -> load(stateType, key)
                         .filter(data -> !data.isEmpty())
@@ -120,7 +120,7 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
     }
 
     @Override
-    public Mono<Boolean> clearAll(StateType stateType) {
+    public Mono<Boolean> clearAll(final StateType stateType) {
         String prefix = KEY_PREFIX + stateType.name().toLowerCase() + ".";
         return Mono.fromCallable(() -> {
             Iterable<String> allKeys = storeManager.getAllKeys();
@@ -159,11 +159,11 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
         return TIER_PRIORITY;
     }
 
-    private String buildStoreKey(StateType stateType, String key) {
+    private String buildStoreKey(final StateType stateType,final String key) {
         return KEY_PREFIX + stateType.name().toLowerCase() + "." + key;
     }
 
-    private String extractKeyFromStoreKey(String storeKey) {
+    private String extractKeyFromStoreKey(final String storeKey) {
         String prefix = KEY_PREFIX;
         if (storeKey.startsWith(prefix)) {
             String remaining = storeKey.substring(prefix.length());

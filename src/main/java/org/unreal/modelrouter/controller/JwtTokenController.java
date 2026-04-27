@@ -79,7 +79,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "用户名或密码错误")
     })
     public Mono<RouterResponse<LoginResponse>> login(
-            @Parameter(description = "登录请求") @RequestBody LoginRequest request,
+            @Parameter(description = "登录请求") @RequestBody final LoginRequest request,
             final org.springframework.web.server.ServerWebExchange exchange) {
 
         log.info("收到用户登录请求: username={}", request.getUsername());
@@ -133,7 +133,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误")
     })
     public Mono<RouterResponse<JwtTokenInfo>> refreshToken(
-            @Parameter(description = "令牌刷新请求") @RequestBody TokenRefreshRequest request,
+            @Parameter(description = "令牌刷新请求") @RequestBody final TokenRefreshRequest request,
             final Authentication authentication,
             final org.springframework.web.server.ServerWebExchange exchange) {
 
@@ -186,7 +186,7 @@ public class JwtTokenController {
     })
     @PreAuthorize("hasRole('ADMIN') or authentication.name == #request.userId")
     public Mono<RouterResponse<JwtApiResponse>> revokeToken(
-            @Parameter(description = "令牌撤销请求") @RequestBody TokenRevokeRequest request,
+            @Parameter(description = "令牌撤销请求") @RequestBody final TokenRevokeRequest request,
             final Authentication authentication) {
 
         log.debug("收到JWT令牌撤销请求: user={}, targetToken={}",
@@ -243,7 +243,7 @@ public class JwtTokenController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<JwtApiResponse>> revokeTokensBatch(
-            @Parameter(description = "批量令牌撤销请求") @RequestBody BatchTokenRevokeRequest request,
+            @Parameter(description = "批量令牌撤销请求") @RequestBody final BatchTokenRevokeRequest request,
             final Authentication authentication) {
 
         log.debug("收到批量JWT令牌撤销请求: user={}, tokenCount={}",
@@ -298,7 +298,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误")
     })
     public Mono<RouterResponse<TokenValidationResponse>> validateToken(
-            @Parameter(description = "令牌验证请求") @RequestBody TokenValidationRequest request) {
+            @Parameter(description = "令牌验证请求") @RequestBody final TokenValidationRequest request) {
 
         log.debug("收到JWT令牌验证请求");
 
@@ -399,10 +399,10 @@ public class JwtTokenController {
     })
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)")
     public Mono<RouterResponse<PagedResult<JwtTokenInfo>>> getTokens(
-            @Parameter(description = "页码，从0开始") @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "页大小") @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "用户ID过滤") @RequestParam(required = false) String userId,
-            @Parameter(description = "令牌状态过滤") @RequestParam(required = false) TokenStatus status,
+            @Parameter(description = "页码，从0开始") @RequestParam(defaultValue = "0") final int page,
+            @Parameter(description = "页大小") @RequestParam(defaultValue = "20") final int size,
+            @Parameter(description = "用户ID过滤") @RequestParam(required = false) final String userId,
+            @Parameter(description = "令牌状态过滤") @RequestParam(required = false) final TokenStatus status,
             final Authentication authentication) {
 
         log.debug("收到获取令牌列表请求: user={}, page={}, size={}, userId={}, status={}",
@@ -479,7 +479,7 @@ public class JwtTokenController {
     })
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<JwtTokenInfo>> getTokenDetails(
-            @Parameter(description = "令牌ID") @PathVariable String tokenId,
+            @Parameter(description = "令牌ID") @PathVariable final String tokenId,
             final Authentication authentication) {
 
         log.debug("收到获取令牌详情请求: user={}, tokenId={}",

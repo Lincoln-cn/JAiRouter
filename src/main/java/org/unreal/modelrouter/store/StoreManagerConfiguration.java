@@ -24,7 +24,7 @@ public class StoreManagerConfiguration {
      * @return StoreManager实例
      */
     @Bean
-    public StoreManager storeManager(JpaStoreManager jpaStoreManager) {
+    public StoreManager storeManager(final JpaStoreManager jpaStoreManager) {
         log.info("Initializing StoreManager with JPA (v1.5.1)");
         return jpaStoreManager;
     }
@@ -34,7 +34,7 @@ public class StoreManagerConfiguration {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(final String type) {
         this.type = type;
     }
 
@@ -42,7 +42,7 @@ public class StoreManagerConfiguration {
         return path;
     }
 
-    public void setPath(String path) {
+    public void setPath(final String path) {
         this.path = path;
     }
 }

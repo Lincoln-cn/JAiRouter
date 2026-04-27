@@ -27,7 +27,7 @@ public class InstanceConfigController {
      */
     @GetMapping("/service/{serviceConfigId}")
     public ResponseEntity<List<ServiceInstanceDTO>> getInstanceConfigs(
-            @PathVariable Long serviceConfigId) {
+            @PathVariable final Long serviceConfigId) {
         log.debug("Getting instance configs for service: {}", serviceConfigId);
         return ResponseEntity.ok(serviceInstanceManager.getInstancesByServiceConfigId(serviceConfigId));
     }
@@ -37,8 +37,8 @@ public class InstanceConfigController {
      */
     @PostMapping("/service/{serviceConfigId}")
     public ResponseEntity<ServiceInstanceDTO> createInstanceConfig(
-            @PathVariable Long serviceConfigId,
-            @RequestBody CreateServiceInstanceRequest request) {
+            @PathVariable final Long serviceConfigId,
+            @RequestBody final CreateServiceInstanceRequest request) {
         log.info("Creating instance config for service: {}", serviceConfigId);
         ServiceInstanceDTO created = serviceInstanceManager.createInstance(serviceConfigId, request);
         return ResponseEntity.ok(created);
@@ -49,8 +49,8 @@ public class InstanceConfigController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<ServiceInstanceDTO> updateInstanceConfig(
-            @PathVariable Long id,
-            @RequestBody CreateServiceInstanceRequest request) {
+            @PathVariable final Long id,
+            @RequestBody final CreateServiceInstanceRequest request) {
         log.info("Updating instance config: {}", id);
         ServiceInstanceDTO updated = serviceInstanceManager.updateInstance(id, request);
         return ResponseEntity.ok(updated);

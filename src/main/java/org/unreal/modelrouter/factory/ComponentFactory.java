@@ -32,8 +32,8 @@ public class ComponentFactory {
     private final TracingWrapperFactory tracingWrapperFactory;
 
     @Autowired
-    public ComponentFactory(ConfigurationValidator configurationValidator,
-                           @Autowired(required = false) TracingWrapperFactory tracingWrapperFactory) {
+    public ComponentFactory(final ConfigurationValidator configurationValidator,
+                           @Autowired(required = false) final TracingWrapperFactory tracingWrapperFactory) {
         this.configurationValidator = configurationValidator;
         this.tracingWrapperFactory = tracingWrapperFactory;
         
@@ -46,7 +46,7 @@ public class ComponentFactory {
 
     /* ---------------- LoadBalancer ---------------- */
 
-    public LoadBalancer createLoadBalancer(ModelRouterProperties.LoadBalanceConfig config) {
+    public LoadBalancer createLoadBalancer(final ModelRouterProperties.LoadBalanceConfig config) {
         if (config == null) {
             logger.warn("Load balance config null, fallback to random");
             LoadBalancer loadBalancer = new RandomLoadBalancer();
@@ -70,7 +70,7 @@ public class ComponentFactory {
 
     /* ---------------- RateLimiter Core ---------------- */
 
-    public RateLimiter createRateLimiter(RateLimitConfig cfg) {
+    public RateLimiter createRateLimiter(final RateLimitConfig cfg) {
         if (cfg == null || !cfg.isEnabled()) return null;
         
         RateLimiter rateLimiter = switch (cfg.getAlgorithm().toLowerCase()) {
@@ -89,18 +89,18 @@ public class ComponentFactory {
 
     /* ---------------- Scoped RateLimiter ---------------- */
 
-    public RateLimiter createScopedRateLimiter(RateLimitConfig cfg) {
+    public RateLimiter createScopedRateLimiter(final RateLimitConfig cfg) {
         RateLimiter scopedRateLimiter = new ScopedRateLimiterWrapper(cfg, this::createRateLimiter);
         return wrapWithTracing(scopedRateLimiter);
     }
 
     /* ---------------- Validation ---------------- */
 
-    public boolean validateRateLimitConfig(RateLimitConfig cfg) {
+    public boolean validateRateLimitConfig(final RateLimitConfig cfg) {
         return configurationValidator.validateRateLimitConfig(cfg);
     }
 
-    public boolean validateCircuitBreakerConfig(ModelRouterProperties.CircuitBreakerConfig cfg) {
+    public boolean validateCircuitBreakerConfig(final ModelRouterProperties.CircuitBreakerConfig cfg) {
         if (cfg == null) {
             return false;
         }
@@ -124,11 +124,11 @@ public class ComponentFactory {
         return true;
     }
 
-    public boolean validateLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig cfg) {
+    public boolean validateLoadBalanceConfig(final ModelRouterProperties.LoadBalanceConfig cfg) {
         return configurationValidator.validateLoadBalanceConfig(cfg);
     }
     
-    public boolean validateFallbackConfig(ModelRouterProperties.FallbackConfig cfg) {
+    public boolean validateFallbackConfig(final ModelRouterProperties.FallbackConfig cfg) {
         return cfg != null && cfg.getEnabled() != null;
     }
     
@@ -139,8 +139,8 @@ public class ComponentFactory {
      * @return 降级策略实现
      */
     public FallbackStrategy<ResponseEntity<?>> createFallbackStrategy(
-            ModelRouterProperties.FallbackConfig config, 
-            String serviceType) {
+            final ModelRouterProperties.FallbackConfig config, 
+            final String serviceType) {
         if (config == null || !Boolean.TRUE.equals(config.getEnabled())) {
             return null;
         }
@@ -163,7 +163,7 @@ public class ComponentFactory {
      * @return 熔断器实例
      */
     public org.unreal.modelrouter.circuitbreaker.CircuitBreaker createCircuitBreaker(
-            String instanceId, int failureThreshold, long timeout, int successThreshold) {
+            final String instanceId,final int failureThreshold,final long timeout,final int successThreshold) {
         org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker = 
                 new org.unreal.modelrouter.circuitbreaker.DefaultCircuitBreaker(
                         instanceId, failureThreshold, timeout, successThreshold);
@@ -178,7 +178,7 @@ public class ComponentFactory {
      * @param loadBalancer 原始LoadBalancer
      * @return 包装后的LoadBalancer
      */
-    private LoadBalancer wrapWithTracing(LoadBalancer loadBalancer) {
+    private LoadBalancer wrapWithTracing(final LoadBalancer loadBalancer) {
         if (tracingWrapperFactory != null && loadBalancer != null) {
             try {
                 return tracingWrapperFactory.wrapLoadBalancer(loadBalancer);
@@ -195,7 +195,7 @@ public class ComponentFactory {
      * @param rateLimiter 原始RateLimiter
      * @return 包装后的RateLimiter
      */
-    private RateLimiter wrapWithTracing(RateLimiter rateLimiter) {
+    private RateLimiter wrapWithTracing(final RateLimiter rateLimiter) {
         if (tracingWrapperFactory != null && rateLimiter != null) {
             try {
                 return tracingWrapperFactory.wrapRateLimiter(rateLimiter);
@@ -214,7 +214,7 @@ public class ComponentFactory {
      * @return 包装后的CircuitBreaker
      */
     private org.unreal.modelrouter.circuitbreaker.CircuitBreaker wrapWithTracing(
-            org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker, String instanceId) {
+            org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker,final String instanceId) {
         if (tracingWrapperFactory != null && circuitBreaker != null) {
             try {
                 return tracingWrapperFactory.wrapCircuitBreaker(circuitBreaker, instanceId);

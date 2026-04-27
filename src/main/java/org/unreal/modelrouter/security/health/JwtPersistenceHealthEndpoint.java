@@ -92,7 +92,7 @@ public class JwtPersistenceHealthEndpoint {
      */
     @GetMapping("/{component}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> healthByComponent(@PathVariable String component) {
+    public ResponseEntity<Map<String, Object>> healthByComponent(@PathVariable final String component) {
         Map<String, Object> componentHealth = new HashMap<>();
         
         try {

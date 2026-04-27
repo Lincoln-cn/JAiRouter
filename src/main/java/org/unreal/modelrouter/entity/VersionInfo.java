@@ -18,7 +18,7 @@ public class VersionInfo {
         return version;
     }
 
-    public void setVersion(int version) {
+    public void setVersion(final int version) {
         this.version = version;
     }
 
@@ -26,7 +26,7 @@ public class VersionInfo {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(final LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -34,7 +34,7 @@ public class VersionInfo {
         return createdBy;
     }
 
-    public void setCreatedBy(String createdBy) {
+    public void setCreatedBy(final String createdBy) {
         this.createdBy = createdBy;
     }
 
@@ -42,7 +42,7 @@ public class VersionInfo {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(final String description) {
         this.description = description;
     }
 
@@ -50,7 +50,7 @@ public class VersionInfo {
         return changeType;
     }
 
-    public void setChangeType(ChangeType changeType) {
+    public void setChangeType(final ChangeType changeType) {
         this.changeType = changeType;
     }
 
@@ -58,7 +58,7 @@ public class VersionInfo {
         return configSnapshot;
     }
 
-    public void setConfigSnapshot(Map<String, Object> configSnapshot) {
+    public void setConfigSnapshot(final Map<String, Object> configSnapshot) {
         this.configSnapshot = configSnapshot;
     }
 

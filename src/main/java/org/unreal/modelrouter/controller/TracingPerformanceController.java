@@ -124,7 +124,7 @@ public class TracingPerformanceController {
     @Operation(summary = "执行性能调优", description = "执行指定的性能调优操作")
     @ApiResponse(responseCode = "200", description = "成功执行性能调优")
     public Mono<ResponseEntity<TracingPerformanceMonitor.TuningResult>> performTuning(
-            @RequestBody List<String> tuningActions) {
+            @RequestBody final List<String> tuningActions) {
         return performanceMonitor.performPerformanceTuning(tuningActions)
             .map(ResponseEntity::ok)
             .onErrorReturn(ResponseEntity.internalServerError().build());

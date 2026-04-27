@@ -15,7 +15,7 @@ public class BatchTokenRevokeRequest {
         return this.tokens;
     }
 
-    public void setTokens(List<String> tokens) {
+    public void setTokens(final List<String> tokens) {
         this.tokens = tokens;
     }
 
@@ -23,7 +23,7 @@ public class BatchTokenRevokeRequest {
         return this.reason;
     }
 
-    public void setReason(String reason) {
+    public void setReason(final String reason) {
         this.reason = reason;
     }
 
