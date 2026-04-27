@@ -95,7 +95,7 @@ public class ExcludedPathsConfig {
      * @param path 要检查的路径
      * @return 如果路径应排除认证则返回true，否则返回false
      */
-    public static boolean isAuthExcluded(String path) {
+    public static boolean isAuthExcluded(final String path) {
         // 检查精确匹配和前缀匹配
         if (AUTH_EXCLUDED_PATHS.stream().anyMatch(excludedPath ->
             path.equals(excludedPath) || path.startsWith(excludedPath))) {
@@ -113,7 +113,7 @@ public class ExcludedPathsConfig {
      * @param path 要检查的路径
      * @return 如果路径应排除数据脱敏则返回true，否则返回false
      */
-    public static boolean isDataMaskExcluded(String path) {
+    public static boolean isDataMaskExcluded(final String path) {
         // 检查精确匹配和前缀匹配
         if (DATA_MASKING_EXCLUDED_PATHS.stream().anyMatch(excludedPath ->
             path.equals(excludedPath) || path.startsWith(excludedPath))) {

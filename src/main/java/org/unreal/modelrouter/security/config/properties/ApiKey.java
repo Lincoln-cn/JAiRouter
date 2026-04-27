@@ -335,16 +335,13 @@ public class ApiKey {
      * @param length API Key长度（不包括前缀）
      * @return 生成的API Key
      */
-    public static String generateApiKey(String prefix, int length) {
-        if (prefix == null) {
-            prefix = "sk-";
-        }
-        if (length <= 0) {
-            length = 32;
-        }
+    public static String generateApiKey(final String prefix, final int length) {
+        // 使用局部变量避免修改 final 参数
+        final String actualPrefix = prefix != null ? prefix : "sk-";
+        final int actualLength = length > 0 ? length : 32;
 
         SecureRandom random = new SecureRandom();
-        StringBuilder sb = new StringBuilder(prefix);
+        StringBuilder sb = new StringBuilder(actualPrefix);
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
         for (int i = 0; i < length; i++) {

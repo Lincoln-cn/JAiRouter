@@ -26,7 +26,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
     private final SecurityProperties securityProperties;
     
     @Override
-    public Mono<Authentication> authenticate(Authentication authentication) throws AuthenticationException {
+    public Mono<Authentication> authenticate(final Authentication authentication) throws AuthenticationException {
         log.debug("开始认证，认证类型: {}", authentication.getClass().getSimpleName());
         
         // 如果是API Key认证
@@ -49,7 +49,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
     /**
      * 认证API Key
      */
-    private Mono<Authentication> authenticateApiKey(ApiKeyAuthentication authentication) {
+    private Mono<Authentication> authenticateApiKey(final ApiKeyAuthentication authentication) {
         // 检查API Key功能是否启用
         if (!securityProperties.getApiKey().isEnabled()) {
             log.debug("API Key认证未启用");
@@ -97,7 +97,7 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
     /**
      * 认证JWT令牌
      */
-    private Mono<Authentication> authenticateJwt(JwtAuthentication authentication) {
+    private Mono<Authentication> authenticateJwt(final JwtAuthentication authentication) {
         // 检查JWT功能是否启用
         if (!securityProperties.getJwt().isEnabled()) {
             log.debug("JWT认证未启用");

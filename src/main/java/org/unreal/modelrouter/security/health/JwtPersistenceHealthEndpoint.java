@@ -171,7 +171,7 @@ public class JwtPersistenceHealthEndpoint {
     /**
      * 计算整体健康状态
      */
-    private boolean calculateOverallHealth(Map<String, Object> coreHealth) {
+    private boolean calculateOverallHealth(final Map<String, Object> coreHealth) {
         try {
             // 检查核心状态
             String coreStatus = (String) coreHealth.get("status");

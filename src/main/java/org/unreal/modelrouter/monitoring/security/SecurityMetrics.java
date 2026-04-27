@@ -48,7 +48,7 @@ public class SecurityMetrics {
     private final AtomicLong totalApiKeysInUse = new AtomicLong(0);
     private final ConcurrentHashMap<String, AtomicLong> failureReasonCounts = new ConcurrentHashMap<>();
     
-    public SecurityMetrics(MeterRegistry meterRegistry) {
+    public SecurityMetrics(final MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         
         // 初始化认证指标
@@ -131,7 +131,7 @@ public class SecurityMetrics {
     /**
      * 记录认证成功
      */
-    public void recordAuthenticationSuccess(String authType) {
+    public void recordAuthenticationSuccess(final String authType) {
         Counter.builder("jairouter.security.authentication.successes")
                 .tag("auth_type", authType != null ? authType : "unknown")
                 .register(meterRegistry)
@@ -141,7 +141,7 @@ public class SecurityMetrics {
     /**
      * 记录认证失败
      */
-    public void recordAuthenticationFailure(String authType, String failureReason) {
+    public void recordAuthenticationFailure(final String authType,final String failureReason) {
         Counter.builder("jairouter.security.authentication.failures")
                 .tag("auth_type", authType != null ? authType : "unknown")
                 .tag("failure_reason", categorizeFailureReason(failureReason))
@@ -163,7 +163,7 @@ public class SecurityMetrics {
     /**
      * 完成认证计时
      */
-    public void recordAuthenticationDuration(Timer.Sample sample) {
+    public void recordAuthenticationDuration(final Timer.Sample sample) {
         sample.stop(authenticationDuration);
     }
     
@@ -172,7 +172,7 @@ public class SecurityMetrics {
     /**
      * 记录JWT令牌验证
      */
-    public void recordJwtValidation(boolean success) {
+    public void recordJwtValidation(final boolean success) {
         Counter.builder("jairouter.security.jwt.validations")
                 .tag("result", success ? "success" : "failure")
                 .register(meterRegistry)
@@ -203,7 +203,7 @@ public class SecurityMetrics {
     /**
      * 完成JWT验证计时
      */
-    public void recordJwtValidationDuration(Timer.Sample sample) {
+    public void recordJwtValidationDuration(final Timer.Sample sample) {
         sample.stop(jwtValidationDuration);
     }
     
@@ -212,7 +212,7 @@ public class SecurityMetrics {
     /**
      * 记录脱敏操作
      */
-    public void recordSanitizationOperation(String contentType, String direction) {
+    public void recordSanitizationOperation(final String contentType,final String direction) {
         Counter.builder("jairouter.security.sanitization.operations")
                 .tag("content_type", contentType != null ? contentType : "unknown")
                 .tag("direction", direction != null ? direction : "unknown")
@@ -223,7 +223,7 @@ public class SecurityMetrics {
     /**
      * 记录脱敏规则匹配
      */
-    public void recordSanitizationRuleMatch(String ruleId, String ruleType, int matchCount) {
+    public void recordSanitizationRuleMatch(final String ruleId,final String ruleType,final int matchCount) {
         Counter ruleMatchCounter = Counter.builder("jairouter.security.sanitization.rule.matches")
                 .tag("rule_id", ruleId != null ? ruleId : "unknown")
                 .tag("rule_type", ruleType != null ? ruleType : "unknown")
@@ -243,7 +243,7 @@ public class SecurityMetrics {
     /**
      * 完成脱敏计时
      */
-    public void recordSanitizationDuration(Timer.Sample sample, String operation) {
+    public void recordSanitizationDuration(final Timer.Sample sample,final String operation) {
         sample.stop(Timer.builder("jairouter.security.sanitization.duration")
                 .tag("operation", operation != null ? operation : "unknown")
                 .register(meterRegistry));
@@ -254,7 +254,7 @@ public class SecurityMetrics {
     /**
      * 记录安全违规事件
      */
-    public void recordSecurityViolation(String violationType, String severity) {
+    public void recordSecurityViolation(final String violationType,final String severity) {
         Counter.builder("jairouter.security.violations")
                 .tag("violation_type", violationType != null ? violationType : "unknown")
                 .tag("severity", severity != null ? severity : "medium")
@@ -265,7 +265,7 @@ public class SecurityMetrics {
     /**
      * 记录可疑活动
      */
-    public void recordSuspiciousActivity(String activityType, String clientIp) {
+    public void recordSuspiciousActivity(final String activityType,final String clientIp) {
         Counter.builder("jairouter.security.suspicious.activities")
                 .tag("activity_type", activityType != null ? activityType : "unknown")
                 .tag("client_ip_hash", hashClientIp(clientIp))
@@ -278,7 +278,7 @@ public class SecurityMetrics {
     /**
      * 更新活跃用户数
      */
-    public void updateActiveUsers(long count) {
+    public void updateActiveUsers(final long count) {
         activeAuthenticatedUsers.set(count);
     }
     
@@ -302,7 +302,7 @@ public class SecurityMetrics {
     /**
      * 更新使用中的API Key数量
      */
-    public void updateActiveApiKeys(long count) {
+    public void updateActiveApiKeys(final long count) {
         totalApiKeysInUse.set(count);
     }
     
@@ -311,7 +311,7 @@ public class SecurityMetrics {
     /**
      * 对失败原因进行分类
      */
-    private String categorizeFailureReason(String failureReason) {
+    private String categorizeFailureReason(final String failureReason) {
         if (failureReason == null) {
             return "unknown";
         }
@@ -335,7 +335,7 @@ public class SecurityMetrics {
     /**
      * 对客户端IP进行哈希处理（保护隐私）
      */
-    private String hashClientIp(String clientIp) {
+    private String hashClientIp(final String clientIp) {
         if (clientIp == null) {
             return "unknown";
         }

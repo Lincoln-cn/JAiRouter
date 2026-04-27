@@ -27,12 +27,12 @@ public class WebFluxMetricsConfiguration {
      * 使用OrderedWebFilter确保过滤器在正确的顺序执行
      */
     @Bean
-    public OrderedWebFilter webFluxMetricsFilter(WebFluxMetricsInterceptor interceptor) {
+    public OrderedWebFilter webFluxMetricsFilter(final WebFluxMetricsInterceptor interceptor) {
         logger.info("Registering WebFlux metrics filter");
         
         return new OrderedWebFilter() {
             @Override
-            public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+            public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
                 return interceptor.filter(exchange, chain);
             }
 

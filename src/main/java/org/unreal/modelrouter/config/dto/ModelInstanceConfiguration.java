@@ -26,7 +26,7 @@ public record ModelInstanceConfiguration(
     /**
      * 创建默认实例配置
      */
-    public static ModelInstanceConfiguration defaultConfig(String name, String baseUrl) {
+    public static ModelInstanceConfiguration defaultConfig(final String name,final String baseUrl) {
         return new ModelInstanceConfiguration(
                 name,
                 baseUrl,
@@ -53,7 +53,7 @@ public record ModelInstanceConfiguration(
      * 从 Map 转换为 DTO
      */
     @SuppressWarnings("unchecked")
-    public static ModelInstanceConfiguration fromMap(Map<String, Object> map) {
+    public static ModelInstanceConfiguration fromMap(final Map<String, Object> map) {
         if (map == null) {
             return null;
         }
@@ -95,7 +95,7 @@ public record ModelInstanceConfiguration(
      * 从 Map 列表转换为 DTO 列表
      */
     @SuppressWarnings("unchecked")
-    public static List<ModelInstanceConfiguration> fromMapList(List<Map<String, Object>> maps) {
+    public static List<ModelInstanceConfiguration> fromMapList(final List<Map<String, Object>> maps) {
         if (maps == null) {
             return new ArrayList<>();
         }
@@ -107,7 +107,7 @@ public record ModelInstanceConfiguration(
     /**
      * 转换为 Map 列表
      */
-    public static List<Map<String, Object>> toMapList(List<ModelInstanceConfiguration> instances) {
+    public static List<Map<String, Object>> toMapList(final List<ModelInstanceConfiguration> instances) {
         if (instances == null) {
             return new ArrayList<>();
         }
@@ -116,24 +116,24 @@ public record ModelInstanceConfiguration(
                 .collect(Collectors.toList());
     }
 
-    private static String getString(Map<String, Object> map, String key) {
+    private static String getString(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         return value instanceof String ? (String) value : null;
     }
 
-    private static Integer getInteger(Map<String, Object> map, String key) {
+    private static Integer getInteger(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         return value instanceof Number ? ((Number) value).intValue() : null;
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> getMap(Map<String, Object> map, String key) {
+    private static Map<String, Object> getMap(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, String> getStringMap(Map<String, Object> map, String key) {
+    private static Map<String, String> getStringMap(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         if (value instanceof Map) {
             Map<String, Object> rawMap = (Map<String, Object>) value;

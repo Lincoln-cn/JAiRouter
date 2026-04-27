@@ -62,7 +62,7 @@ public class MemoryUsageHealthService {
     /**
      * 执行实际的内存检查
      */
-    private boolean performMemoryCheck(long currentTime) {
+    private boolean performMemoryCheck(final long currentTime) {
         try {
             lastCheckTime.set(currentTime);
             
@@ -103,7 +103,7 @@ public class MemoryUsageHealthService {
     /**
      * 计算内存使用百分比
      */
-    private double calculateUsagePercent(MemoryUsage usage) {
+    private double calculateUsagePercent(final MemoryUsage usage) {
         if (usage.getMax() <= 0) {
             return 0.0;
         }
@@ -153,7 +153,7 @@ public class MemoryUsageHealthService {
     /**
      * 评估内存健康状态
      */
-    private boolean evaluateMemoryHealth(double heapUsagePercent, double nonHeapUsagePercent, double gcPressure) {
+    private boolean evaluateMemoryHealth(final double heapUsagePercent,final double nonHeapUsagePercent,final double gcPressure) {
         boolean healthy = true;
         
         // 检查堆内存使用情况

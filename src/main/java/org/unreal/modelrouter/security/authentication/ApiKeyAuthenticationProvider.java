@@ -30,7 +30,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     private final SecurityAuditService auditService;
     
     @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+    public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
         log.debug("开始API Key认证处理");
         
         if (!supports(authentication.getClass())) {
@@ -89,14 +89,14 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     }
     
     @Override
-    public boolean supports(Class<?> authentication) {
+    public boolean supports(final Class<?> authentication) {
         return ApiKeyAuthentication.class.isAssignableFrom(authentication);
     }
     
     /**
      * 发布认证成功事件
      */
-    private void publishAuthenticationSuccessEvent(ApiKey apiKey) {
+    private void publishAuthenticationSuccessEvent(final ApiKey apiKey) {
         try {
             // 创建审计事件
             SecurityAuditEvent auditEvent = SecurityAuditEvent.builder()
@@ -124,7 +124,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     /**
      * 发布认证失败事件
      */
-    private void publishAuthenticationFailureEvent(String apiKey, String reason) {
+    private void publishAuthenticationFailureEvent(final String apiKey,final String reason) {
         try {
             // 创建审计事件（不记录完整的API Key）
             SecurityAuditEvent auditEvent = SecurityAuditEvent.builder()

@@ -46,48 +46,48 @@ public class RedisJwtCacheConfiguration {
             
             // Getters and Setters
             public int getMaxActive() { return maxActive; }
-            public void setMaxActive(int maxActive) { this.maxActive = maxActive; }
+            public void setMaxActive(final int maxActive) { this.maxActive = maxActive; }
             
             public int getMaxIdle() { return maxIdle; }
-            public void setMaxIdle(int maxIdle) { this.maxIdle = maxIdle; }
+            public void setMaxIdle(final int maxIdle) { this.maxIdle = maxIdle; }
             
             public int getMinIdle() { return minIdle; }
-            public void setMinIdle(int minIdle) { this.minIdle = minIdle; }
+            public void setMinIdle(final int minIdle) { this.minIdle = minIdle; }
             
             public long getMaxWait() { return maxWait; }
-            public void setMaxWait(long maxWait) { this.maxWait = maxWait; }
+            public void setMaxWait(final long maxWait) { this.maxWait = maxWait; }
         }
         
         // Getters and Setters
         public String getHost() { return host; }
-        public void setHost(String host) { this.host = host; }
+        public void setHost(final String host) { this.host = host; }
         
         public int getPort() { return port; }
-        public void setPort(int port) { this.port = port; }
+        public void setPort(final int port) { this.port = port; }
         
         public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
+        public void setPassword(final String password) { this.password = password; }
         
         public int getDatabase() { return database; }
-        public void setDatabase(int database) { this.database = database; }
+        public void setDatabase(final int database) { this.database = database; }
         
         public int getConnectionTimeout() { return connectionTimeout; }
-        public void setConnectionTimeout(int connectionTimeout) { this.connectionTimeout = connectionTimeout; }
+        public void setConnectionTimeout(final int connectionTimeout) { this.connectionTimeout = connectionTimeout; }
         
         public int getRetryAttempts() { return retryAttempts; }
-        public void setRetryAttempts(int retryAttempts) { this.retryAttempts = retryAttempts; }
+        public void setRetryAttempts(final int retryAttempts) { this.retryAttempts = retryAttempts; }
         
         public String getKeyPrefix() { return keyPrefix; }
-        public void setKeyPrefix(String keyPrefix) { this.keyPrefix = keyPrefix; }
+        public void setKeyPrefix(final String keyPrefix) { this.keyPrefix = keyPrefix; }
         
         public int getDefaultTtl() { return defaultTtl; }
-        public void setDefaultTtl(int defaultTtl) { this.defaultTtl = defaultTtl; }
+        public void setDefaultTtl(final int defaultTtl) { this.defaultTtl = defaultTtl; }
         
         public String getSerializationFormat() { return serializationFormat; }
-        public void setSerializationFormat(String serializationFormat) { this.serializationFormat = serializationFormat; }
+        public void setSerializationFormat(final String serializationFormat) { this.serializationFormat = serializationFormat; }
         
         public Pool getPool() { return pool; }
-        public void setPool(Pool pool) { this.pool = pool; }
+        public void setPool(final Pool pool) { this.pool = pool; }
     }
     
     /**
@@ -137,7 +137,7 @@ public class RedisJwtCacheConfiguration {
      */
     @Bean("jwtReactiveRedisTemplate")
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-    public ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate(ReactiveRedisConnectionFactory connectionFactory) {
+    public ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate(final ReactiveRedisConnectionFactory connectionFactory) {
         try {
             // 使用String序列化器
             StringRedisSerializer stringSerializer = new StringRedisSerializer();
@@ -167,7 +167,7 @@ public class RedisJwtCacheConfiguration {
      */
     @Bean("redisJwtHealthChecker")
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-    public RedisJwtHealthChecker redisJwtHealthChecker(ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate) {
+    public RedisJwtHealthChecker redisJwtHealthChecker(final ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate) {
         return new RedisJwtHealthChecker(jwtReactiveRedisTemplate);
     }
     
@@ -178,7 +178,7 @@ public class RedisJwtCacheConfiguration {
         private final ReactiveRedisTemplate<String, String> redisTemplate;
         private static final String HEALTH_CHECK_KEY = "jwt:health_check";
         
-        public RedisJwtHealthChecker(ReactiveRedisTemplate<String, String> redisTemplate) {
+        public RedisJwtHealthChecker(final ReactiveRedisTemplate<String, String> redisTemplate) {
             this.redisTemplate = redisTemplate;
         }
         

@@ -35,12 +35,12 @@ public class MonitoringHealthChecker {
     private static final int MAX_DEGRADED_COMPONENTS = 5;
     private static final Duration MAX_PROCESSING_DELAY = Duration.ofSeconds(30);
     
-    public MonitoringHealthChecker(MeterRegistry meterRegistry,
-                                 MetricsErrorHandler errorHandler,
-                                 MetricsDegradationStrategy degradationStrategy,
-                                 MetricsCacheAndRetry cacheAndRetry,
-                                 AsyncMetricsProcessor asyncProcessor,
-                                 MetricsMemoryManager memoryManager) {
+    public MonitoringHealthChecker(final MeterRegistry meterRegistry,
+                                 final MetricsErrorHandler errorHandler,
+                                 final MetricsDegradationStrategy degradationStrategy,
+                                 final MetricsCacheAndRetry cacheAndRetry,
+                                 final AsyncMetricsProcessor asyncProcessor,
+                                 final MetricsMemoryManager memoryManager) {
         this.meterRegistry = meterRegistry;
         this.errorHandler = errorHandler;
         this.degradationStrategy = degradationStrategy;
@@ -324,7 +324,7 @@ public class MonitoringHealthChecker {
         private final boolean healthy;
         private final Map<String, Object> details;
         
-        public HealthStatus(boolean healthy, Map<String, Object> details) {
+        public HealthStatus(final boolean healthy,final Map<String, Object> details) {
             this.healthy = healthy;
             this.details = details;
         }
@@ -341,7 +341,7 @@ public class MonitoringHealthChecker {
         private final Map<String, Object> details;
         private final String issues;
         
-        public HealthCheckResult(boolean healthy, Map<String, Object> details, String issues) {
+        public HealthCheckResult(final boolean healthy,final Map<String, Object> details,final String issues) {
             this.healthy = healthy;
             this.details = details;
             this.issues = issues;

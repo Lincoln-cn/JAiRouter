@@ -44,7 +44,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<Void> saveToken(JwtTokenInfo tokenInfo) {
+    public Mono<Void> saveToken(final JwtTokenInfo tokenInfo) {
         return Mono.defer(() -> {
             try {
                 if (tokenInfo == null || tokenInfo.getTokenHash() == null) {
@@ -95,7 +95,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<JwtTokenInfo> findByTokenHash(String tokenHash) {
+    public Mono<JwtTokenInfo> findByTokenHash(final String tokenHash) {
         return Mono.fromCallable(() -> {
             try {
                 if (tokenHash == null || tokenHash.trim().isEmpty()) {
@@ -120,7 +120,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findActiveTokensByUserId(String userId) {
+    public Mono<List<JwtTokenInfo>> findActiveTokensByUserId(final String userId) {
         return Mono.fromCallable(() -> {
             try {
                 if (userId == null || userId.trim().isEmpty()) {
@@ -155,7 +155,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findAllTokens(int page, int size) {
+    public Mono<List<JwtTokenInfo>> findAllTokens(final int page,final int size) {
         return Mono.<List<JwtTokenInfo>>fromCallable(() -> {
             try {
                 List<JwtTokenInfo> allTokens = new ArrayList<>();
@@ -210,7 +210,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<Void> updateTokenStatus(String tokenHash, TokenStatus status) {
+    public Mono<Void> updateTokenStatus(final String tokenHash,final TokenStatus status) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHash == null || status == null) {
@@ -292,7 +292,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<Long> countTokensByStatus(TokenStatus status) {
+    public Mono<Long> countTokensByStatus(final TokenStatus status) {
         return Mono.fromCallable(() -> {
             try {
                 List<String> tokenHashes = getStatusTokenHashes(status);
@@ -350,7 +350,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<JwtTokenInfo> findByTokenId(String tokenId) {
+    public Mono<JwtTokenInfo> findByTokenId(final String tokenId) {
         return Mono.fromCallable(() -> {
             try {
                 if (tokenId == null || tokenId.trim().isEmpty()) {
@@ -384,7 +384,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findTokensByUserId(String userId, int page, int size) {
+    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId,final int page,final int size) {
         return Mono.<List<JwtTokenInfo>>fromCallable(() -> {
             try {
                 if (userId == null || userId.trim().isEmpty()) {
@@ -432,7 +432,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<Void> batchUpdateTokenStatus(List<String> tokenHashes, TokenStatus status, String reason, String updatedBy) {
+    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes,final TokenStatus status,final String reason,final String updatedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHashes == null || tokenHashes.isEmpty() || status == null) {
@@ -499,7 +499,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 将JwtTokenInfo转换为Map用于存储
      */
-    private Map<String, Object> convertToMap(JwtTokenInfo tokenInfo) {
+    private Map<String, Object> convertToMap(final JwtTokenInfo tokenInfo) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(tokenInfo, new TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
@@ -511,7 +511,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 将Map转换为JwtTokenInfo
      */
-    private JwtTokenInfo convertFromMap(Map<String, Object> tokenData) {
+    private JwtTokenInfo convertFromMap(final Map<String, Object> tokenData) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(tokenData, JwtTokenInfo.class);
         } catch (Exception e) {
@@ -523,7 +523,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 检查令牌是否已过期
      */
-    private boolean isTokenExpired(JwtTokenInfo token) {
+    private boolean isTokenExpired(final JwtTokenInfo token) {
         if (token.getExpiresAt() == null) {
             return false;
         }
@@ -533,7 +533,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 更新用户索引
      */
-    private void updateUserIndex(String userId, String tokenHash, boolean add) {
+    private void updateUserIndex(final String userId,final String tokenHash,final boolean add) {
         if (userId == null || tokenHash == null) {
             return;
         }
@@ -574,7 +574,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 更新状态索引
      */
-    private void updateStatusIndex(TokenStatus status, String tokenHash, boolean add) {
+    private void updateStatusIndex(final TokenStatus status,final String tokenHash,final boolean add) {
         if (status == null || tokenHash == null) {
             return;
         }
@@ -615,7 +615,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 获取用户的令牌哈希列表
      */
-    private List<String> getUserTokenHashes(String userId) {
+    private List<String> getUserTokenHashes(final String userId) {
         try {
             String indexKey = USER_INDEX_PREFIX + userId;
             Map<String, Object> indexData = storeManager.getConfig(indexKey);
@@ -637,7 +637,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 获取指定状态的令牌哈希列表
      */
-    private List<String> getStatusTokenHashes(TokenStatus status) {
+    private List<String> getStatusTokenHashes(final TokenStatus status) {
         try {
             String indexKey = STATUS_INDEX_PREFIX + status.name();
             Map<String, Object> indexData = storeManager.getConfig(indexKey);

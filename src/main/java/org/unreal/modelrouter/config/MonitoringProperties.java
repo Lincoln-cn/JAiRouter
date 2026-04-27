@@ -39,7 +39,7 @@ public class MonitoringProperties {
             return requestMetrics;
         }
 
-        public void setRequestMetrics(double requestMetrics) {
+        public void setRequestMetrics(final double requestMetrics) {
             this.requestMetrics = requestMetrics;
         }
 
@@ -47,7 +47,7 @@ public class MonitoringProperties {
             return backendMetrics;
         }
 
-        public void setBackendMetrics(double backendMetrics) {
+        public void setBackendMetrics(final double backendMetrics) {
             this.backendMetrics = backendMetrics;
         }
 
@@ -55,7 +55,7 @@ public class MonitoringProperties {
             return infrastructureMetrics;
         }
 
-        public void setInfrastructureMetrics(double infrastructureMetrics) {
+        public void setInfrastructureMetrics(final double infrastructureMetrics) {
             this.infrastructureMetrics = infrastructureMetrics;
         }
 
@@ -63,7 +63,7 @@ public class MonitoringProperties {
             return traceMetrics;
         }
 
-        public void setTraceMetrics(double traceMetrics) {
+        public void setTraceMetrics(final double traceMetrics) {
             this.traceMetrics = traceMetrics;
         }
         
@@ -71,7 +71,7 @@ public class MonitoringProperties {
             return traceProcessingMetrics;
         }
 
-        public void setTraceProcessingMetrics(double traceProcessingMetrics) {
+        public void setTraceProcessingMetrics(final double traceProcessingMetrics) {
             this.traceProcessingMetrics = traceProcessingMetrics;
         }
 
@@ -79,7 +79,7 @@ public class MonitoringProperties {
             return traceAnalysisMetrics;
         }
 
-        public void setTraceAnalysisMetrics(double traceAnalysisMetrics) {
+        public void setTraceAnalysisMetrics(final double traceAnalysisMetrics) {
             this.traceAnalysisMetrics = traceAnalysisMetrics;
         }
     }
@@ -94,7 +94,7 @@ public class MonitoringProperties {
             return asyncProcessing;
         }
 
-        public void setAsyncProcessing(boolean asyncProcessing) {
+        public void setAsyncProcessing(final boolean asyncProcessing) {
             this.asyncProcessing = asyncProcessing;
         }
 
@@ -102,7 +102,7 @@ public class MonitoringProperties {
             return batchSize;
         }
 
-        public void setBatchSize(int batchSize) {
+        public void setBatchSize(final int batchSize) {
             this.batchSize = batchSize;
         }
 
@@ -110,7 +110,7 @@ public class MonitoringProperties {
             return bufferSize;
         }
 
-        public void setBufferSize(int bufferSize) {
+        public void setBufferSize(final int bufferSize) {
             this.bufferSize = bufferSize;
         }
     }
@@ -126,7 +126,7 @@ public class MonitoringProperties {
             return defaultThreshold;
         }
 
-        public void setDefaultThreshold(long defaultThreshold) {
+        public void setDefaultThreshold(final long defaultThreshold) {
             this.defaultThreshold = defaultThreshold;
         }
 
@@ -134,7 +134,7 @@ public class MonitoringProperties {
             return slowQueryThreshold;
         }
 
-        public void setSlowQueryThreshold(long slowQueryThreshold) {
+        public void setSlowQueryThreshold(final long slowQueryThreshold) {
             this.slowQueryThreshold = slowQueryThreshold;
         }
 
@@ -142,7 +142,7 @@ public class MonitoringProperties {
             return operationThresholds;
         }
 
-        public void setOperationThresholds(Map<String, Long> operationThresholds) {
+        public void setOperationThresholds(final Map<String, Long> operationThresholds) {
             this.operationThresholds = operationThresholds;
         }
 
@@ -150,7 +150,7 @@ public class MonitoringProperties {
             return slowQueryThresholds;
         }
 
-        public void setSlowQueryThresholds(Map<String, Long> slowQueryThresholds) {
+        public void setSlowQueryThresholds(final Map<String, Long> slowQueryThresholds) {
             this.slowQueryThresholds = slowQueryThresholds;
         }
     }
@@ -160,7 +160,7 @@ public class MonitoringProperties {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
     }
 
@@ -168,7 +168,7 @@ public class MonitoringProperties {
         return prefix;
     }
 
-    public void setPrefix(String prefix) {
+    public void setPrefix(final String prefix) {
         this.prefix = prefix;
     }
 
@@ -176,7 +176,7 @@ public class MonitoringProperties {
         return collectionInterval;
     }
 
-    public void setCollectionInterval(Duration collectionInterval) {
+    public void setCollectionInterval(final Duration collectionInterval) {
         this.collectionInterval = collectionInterval;
     }
 
@@ -184,7 +184,7 @@ public class MonitoringProperties {
         return enabledCategories;
     }
 
-    public void setEnabledCategories(Set<String> enabledCategories) {
+    public void setEnabledCategories(final Set<String> enabledCategories) {
         this.enabledCategories = enabledCategories;
     }
 
@@ -192,7 +192,7 @@ public class MonitoringProperties {
         return customTags;
     }
 
-    public void setCustomTags(Map<String, String> customTags) {
+    public void setCustomTags(final Map<String, String> customTags) {
         this.customTags = customTags;
     }
 
@@ -200,7 +200,7 @@ public class MonitoringProperties {
         return sampling;
     }
 
-    public void setSampling(Sampling sampling) {
+    public void setSampling(final Sampling sampling) {
         this.sampling = sampling;
     }
 
@@ -208,7 +208,7 @@ public class MonitoringProperties {
         return performance;
     }
 
-    public void setPerformance(Performance performance) {
+    public void setPerformance(final Performance performance) {
         this.performance = performance;
     }
 
@@ -216,7 +216,7 @@ public class MonitoringProperties {
         return thresholds;
     }
 
-    public void setThresholds(Thresholds thresholds) {
+    public void setThresholds(final Thresholds thresholds) {
         this.thresholds = thresholds;
     }
 }

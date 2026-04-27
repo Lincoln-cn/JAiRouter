@@ -52,7 +52,7 @@ public class ConfigurationEncryptionService {
      * @param plainText 明文
      * @return 加密后的数据（Base64编码）
      */
-    public String encrypt(String plainText) {
+    public String encrypt(final String plainText) {
         if (plainText == null || plainText.isEmpty()) {
             return plainText;
         }
@@ -89,7 +89,7 @@ public class ConfigurationEncryptionService {
      * @param encryptedText 加密的数据（Base64编码）
      * @return 解密后的明文
      */
-    public String decrypt(String encryptedText) {
+    public String decrypt(final String encryptedText) {
         if (encryptedText == null || encryptedText.isEmpty()) {
             return encryptedText;
         }
@@ -125,7 +125,7 @@ public class ConfigurationEncryptionService {
      * @param jwtSecret JWT密钥
      * @return 加密后的JWT密钥
      */
-    public String encryptJwtSecret(String jwtSecret) {
+    public String encryptJwtSecret(final String jwtSecret) {
         log.debug("加密JWT密钥");
         return encrypt(jwtSecret);
     }
@@ -135,7 +135,7 @@ public class ConfigurationEncryptionService {
      * @param encryptedJwtSecret 加密的JWT密钥
      * @return 解密后的JWT密钥
      */
-    public String decryptJwtSecret(String encryptedJwtSecret) {
+    public String decryptJwtSecret(final String encryptedJwtSecret) {
         log.debug("解密JWT密钥");
         return decrypt(encryptedJwtSecret);
     }
@@ -145,7 +145,7 @@ public class ConfigurationEncryptionService {
      * @param apiKeyValue API Key值
      * @return 加密后的API Key值
      */
-    public String encryptApiKeyValue(String apiKeyValue) {
+    public String encryptApiKeyValue(final String apiKeyValue) {
         log.debug("加密API Key值");
         return encrypt(apiKeyValue);
     }
@@ -155,7 +155,7 @@ public class ConfigurationEncryptionService {
      * @param encryptedApiKeyValue 加密的API Key值
      * @return 解密后的API Key值
      */
-    public String decryptApiKeyValue(String encryptedApiKeyValue) {
+    public String decryptApiKeyValue(final String encryptedApiKeyValue) {
         log.debug("解密API Key值");
         return decrypt(encryptedApiKeyValue);
     }
@@ -165,7 +165,7 @@ public class ConfigurationEncryptionService {
      * @param data 数据
      * @return 是否已加密
      */
-    public boolean isEncrypted(String data) {
+    public boolean isEncrypted(final String data) {
         if (data == null || data.isEmpty()) {
             return false;
         }
@@ -207,11 +207,11 @@ public class ConfigurationEncryptionService {
      * 配置加密异常
      */
     public static class ConfigurationEncryptionException extends RuntimeException {
-        public ConfigurationEncryptionException(String message) {
+        public ConfigurationEncryptionException(final String message) {
             super(message);
         }
 
-        public ConfigurationEncryptionException(String message, Throwable cause) {
+        public ConfigurationEncryptionException(final String message,final Throwable cause) {
             super(message, cause);
         }
     }

@@ -50,7 +50,7 @@ public class SecretKeyGenerator {
      * @param length 密钥字节长度
      * @return Base64 编码的密钥字符串
      */
-    public static String generateBase64Key(int length) {
+    public static String generateBase64Key(final int length) {
         if (length < MIN_KEY_LENGTH) {
             throw new IllegalArgumentException("密钥长度不能小于 " + MIN_KEY_LENGTH + " 字节");
         }
@@ -66,7 +66,7 @@ public class SecretKeyGenerator {
      * @param length 密钥字节长度
      * @return 十六进制编码的密钥字符串
      */
-    public static String generateHexKey(int length) {
+    public static String generateHexKey(final int length) {
         if (length < MIN_KEY_LENGTH) {
             throw new IllegalArgumentException("密钥长度不能小于 " + MIN_KEY_LENGTH + " 字节");
         }
@@ -83,7 +83,7 @@ public class SecretKeyGenerator {
      * @param length 密钥长度
      * @return 字母数字密钥字符串
      */
-    public static String generateAlphanumericKey(int length) {
+    public static String generateAlphanumericKey(final int length) {
         if (length < 16) {
             throw new IllegalArgumentException("密钥长度不能小于 16 个字符");
         }
@@ -104,7 +104,7 @@ public class SecretKeyGenerator {
      * @param segmentCount 分段数量
      * @return 带分隔符的可读密钥
      */
-    public static String generateFormattedKey(String prefix, int segmentLength, int segmentCount) {
+    public static String generateFormattedKey(final String prefix,final int segmentLength,final int segmentCount) {
         StringBuilder key = new StringBuilder();
         
         if (prefix != null && !prefix.isEmpty()) {
@@ -137,7 +137,7 @@ public class SecretKeyGenerator {
      * @param prefix 前缀标识
      * @return API Token
      */
-    public static String generateApiToken(String prefix) {
+    public static String generateApiToken(final String prefix) {
         return generateFormattedKey(prefix, 16, 2);
     }
 
@@ -148,7 +148,7 @@ public class SecretKeyGenerator {
      * @param minLength 最小长度要求
      * @return 是否满足要求
      */
-    public static boolean validateKeyLength(String key, int minLength) {
+    public static boolean validateKeyLength(final String key,final int minLength) {
         if (key == null || key.isEmpty()) {
             return false;
         }
@@ -161,7 +161,7 @@ public class SecretKeyGenerator {
      * @param base64Key Base64 编码的密钥
      * @return 是否有效
      */
-    public static boolean isValidBase64Key(String base64Key) {
+    public static boolean isValidBase64Key(final String base64Key) {
         if (base64Key == null || base64Key.isEmpty()) {
             return false;
         }
@@ -177,7 +177,7 @@ public class SecretKeyGenerator {
     /**
      * 将字节数组转换为十六进制字符串
      */
-    private static String bytesToHex(byte[] bytes) {
+    private static String bytesToHex(final byte[] bytes) {
         StringBuilder hex = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) {
             hex.append(String.format("%02x", b));

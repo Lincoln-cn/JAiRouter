@@ -54,7 +54,7 @@ public class AccountManager implements UserDetailsService {
      * @param password 密码
      * @return 如果凭据有效返回true，否则返回false
      */
-    public boolean validateCredentials(String username, String password) {
+    public boolean validateCredentials(final String username,final String password) {
         if (!securityProperties.getJwt().isEnabled()) {
             log.warn("JWT认证功能未启用");
             return false;
@@ -87,7 +87,7 @@ public class AccountManager implements UserDetailsService {
      * @param username 用户名
      * @return 账户信息Optional
      */
-    public Optional<JwtAccountProperties> findAccountByUsername(String username) {
+    public Optional<JwtAccountProperties> findAccountByUsername(final String username) {
         if (!securityProperties.getJwt().isEnabled()) {
             log.warn("JWT认证功能未启用");
             return Optional.empty();
@@ -107,14 +107,14 @@ public class AccountManager implements UserDetailsService {
     /**
      * 验证用户名和密码并生成JWT令牌
      */
-    public Mono<String> authenticateAndGenerateToken(String username, String password, SecurityProperties securityProperties) {
+    public Mono<String> authenticateAndGenerateToken(final String username,final String password,final SecurityProperties securityProperties) {
         return authenticateAndGenerateToken(username, password, securityProperties, null, null);
     }
 
     /**
      * 验证用户名和密码并生成JWT令牌（带上下文信息用于审计）
      */
-    public Mono<String> authenticateAndGenerateToken(String username, String password, SecurityProperties securityProperties, String ipAddress, String userAgent) {
+    public Mono<String> authenticateAndGenerateToken(final String username,final String password,final SecurityProperties securityProperties,final String ipAddress,final String userAgent) {
         // 验证配置中的用户凭据
         return Mono.just(validateCredentials(username, password))
                 .filter(valid -> valid)
@@ -137,7 +137,7 @@ public class AccountManager implements UserDetailsService {
     /**
      * 生成JWT令牌
      */
-    private String generateJwtToken(String username, SecurityProperties securityProperties) {
+    private String generateJwtToken(final String username,final SecurityProperties securityProperties) {
         // 获取用户详情
         UserDetails userDetails = loadUserByUsername(username);
 
@@ -168,7 +168,7 @@ public class AccountManager implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(final String username) throws UsernameNotFoundException {
         if (!securityProperties.getJwt().isEnabled()) {
             throw new UsernameNotFoundException("JWT认证功能未启用");
         }

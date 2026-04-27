@@ -37,7 +37,7 @@ public class CircuitBreakerManager {
      * 根据配置初始化熔断器参数
      * @param properties 配置属性
      */
-    public void initialize(ModelRouterProperties properties) {
+    public void initialize(final ModelRouterProperties properties) {
         if (properties.getCircuitBreaker() != null) {
             ModelRouterProperties.CircuitBreakerConfig config = properties.getCircuitBreaker();
             if (config.getFailureThreshold() != null) {
@@ -61,7 +61,7 @@ public class CircuitBreakerManager {
      * @param instanceUrl 实例URL
      * @return 熔断器实例
      */
-    public CircuitBreaker getCircuitBreaker(String instanceId, String instanceUrl) {
+    public CircuitBreaker getCircuitBreaker(final String instanceId,final String instanceUrl) {
         // 使用实例URL作为唯一标识符，如果URL为空则使用ID
         String key = instanceId != null && !instanceId.trim().isEmpty() ? instanceId : instanceUrl;
         if (key == null || key.trim().isEmpty()) {
@@ -77,7 +77,7 @@ public class CircuitBreakerManager {
      * @param instanceId 实例ID
      * @param instanceUrl 实例URL
      */
-    public void recordSuccess(String instanceId, String instanceUrl) {
+    public void recordSuccess(final String instanceId,final String instanceUrl) {
         try {
             CircuitBreaker cb = getCircuitBreaker(instanceId, instanceUrl);
             cb.onSuccess();
@@ -93,7 +93,7 @@ public class CircuitBreakerManager {
      * @param instanceId 实例ID
      * @param instanceUrl 实例URL
      */
-    public void recordFailure(String instanceId, String instanceUrl) {
+    public void recordFailure(final String instanceId,final String instanceUrl) {
         try {
             CircuitBreaker cb = getCircuitBreaker(instanceId, instanceUrl);
             CircuitBreaker.State previousState = cb.getState();
@@ -119,7 +119,7 @@ public class CircuitBreakerManager {
      * @param instanceUrl 实例URL
      * @return 是否可以执行
      */
-    public boolean canExecute(String instanceId, String instanceUrl) {
+    public boolean canExecute(final String instanceId,final String instanceUrl) {
         try {
             CircuitBreaker cb = getCircuitBreaker(instanceId, instanceUrl);
             boolean canExecute = cb.canExecute();
@@ -145,7 +145,7 @@ public class CircuitBreakerManager {
      * @param instanceUrl 实例URL
      * @return 熔断器状态
      */
-    public CircuitBreaker.State getState(String instanceId, String instanceUrl) {
+    public CircuitBreaker.State getState(final String instanceId,final String instanceUrl) {
         try {
             CircuitBreaker cb = getCircuitBreaker(instanceId, instanceUrl);
             return cb.getState();
@@ -173,7 +173,7 @@ public class CircuitBreakerManager {
      * @param instanceId 实例ID
      * @param instanceUrl 实例URL
      */
-    public void resetCircuitBreaker(String instanceId, String instanceUrl) {
+    public void resetCircuitBreaker(final String instanceId,final String instanceUrl) {
         String key = instanceUrl != null ? instanceUrl : instanceId;
         if (key != null) {
             circuitBreakers.remove(key);

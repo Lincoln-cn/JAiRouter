@@ -27,7 +27,7 @@ public class JwtAuthentication implements Authentication {
     /**
      * 构造函数 - 用于未认证的请求
      */
-    public JwtAuthentication(String token) {
+    public JwtAuthentication(final String token) {
         this.principal = null;
         this.credentials = token;
         this.authorities = List.of();
@@ -36,7 +36,7 @@ public class JwtAuthentication implements Authentication {
     /**
      * 构造函数 - 用于已认证的请求
      */
-    public JwtAuthentication(String subject, String token, List<String> roles) {
+    public JwtAuthentication(final String subject,final String token,final List<String> roles) {
         this.principal = subject;
         this.credentials = token;
         this.authorities = roles.stream()
@@ -75,7 +75,7 @@ public class JwtAuthentication implements Authentication {
     }
     
     @Override
-    public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+    public void setAuthenticated(final boolean isAuthenticated) throws IllegalArgumentException {
         this.authenticated = isAuthenticated;
     }
     

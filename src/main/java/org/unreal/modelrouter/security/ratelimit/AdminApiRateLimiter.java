@@ -44,7 +44,7 @@ public class AdminApiRateLimiter implements WebFilter {
     private volatile long lastCleanupTime = System.currentTimeMillis();
     
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
         
         // 只对管理 API 进行速率限制
@@ -101,7 +101,7 @@ public class AdminApiRateLimiter implements WebFilter {
     /**
      * 获取客户端真实 IP
      */
-    private String getClientIp(ServerWebExchange exchange) {
+    private String getClientIp(final ServerWebExchange exchange) {
         String ip = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
         if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
             // 多个代理时取第一个

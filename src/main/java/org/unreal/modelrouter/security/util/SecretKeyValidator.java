@@ -53,7 +53,7 @@ public class SecretKeyValidator {
         private final String displayName;
         private final String description;
 
-        StrengthLevel(String displayName, String description) {
+        StrengthLevel(final String displayName,final String description) {
             this.displayName = displayName;
             this.description = description;
         }
@@ -75,7 +75,7 @@ public class SecretKeyValidator {
         private final boolean passed;
         private final String message;
 
-        public ValidationResult(StrengthLevel strengthLevel, boolean passed, String message) {
+        public ValidationResult(final StrengthLevel strengthLevel,final boolean passed,final String message) {
             this.strengthLevel = strengthLevel;
             this.passed = passed;
             this.message = message;
@@ -93,11 +93,11 @@ public class SecretKeyValidator {
             return message;
         }
 
-        public static ValidationResult success(StrengthLevel level) {
+        public static ValidationResult success(final StrengthLevel level) {
             return new ValidationResult(level, true, "密钥强度：" + level.getDisplayName());
         }
 
-        public static ValidationResult failure(StrengthLevel level, String reason) {
+        public static ValidationResult failure(final StrengthLevel level,final String reason) {
             return new ValidationResult(level, false, reason);
         }
     }
@@ -108,7 +108,7 @@ public class SecretKeyValidator {
      * @param secret JWT 密钥
      * @return 验证结果
      */
-    public static ValidationResult validateJwtSecret(String secret) {
+    public static ValidationResult validateJwtSecret(final String secret) {
         if (secret == null || secret.isEmpty()) {
             return ValidationResult.failure(StrengthLevel.VERY_WEAK, "密钥不能为空");
         }
@@ -155,7 +155,7 @@ public class SecretKeyValidator {
      * @param password 密码
      * @return 验证结果
      */
-    public static ValidationResult validatePassword(String password) {
+    public static ValidationResult validatePassword(final String password) {
         if (password == null || password.isEmpty()) {
             return ValidationResult.failure(StrengthLevel.VERY_WEAK, "密码不能为空");
         }
@@ -209,7 +209,7 @@ public class SecretKeyValidator {
     /**
      * 检查是否为常见弱密钥
      */
-    private static boolean isCommonWeakSecret(String secret) {
+    private static boolean isCommonWeakSecret(final String secret) {
         String lower = secret.toLowerCase();
         
         // 常见弱密钥模式
@@ -243,7 +243,7 @@ public class SecretKeyValidator {
     /**
      * 检查是否为常见弱密码
      */
-    private static boolean isCommonWeakPassword(String password) {
+    private static boolean isCommonWeakPassword(final String password) {
         String lower = password.toLowerCase();
         
         String[] weakPasswords = {
@@ -269,7 +269,7 @@ public class SecretKeyValidator {
     /**
      * 检查字符串是否为 Base64 编码
      */
-    private static boolean isBase64Encoded(String str) {
+    private static boolean isBase64Encoded(final String str) {
         if (str == null || str.length() < 20) {
             return false;
         }

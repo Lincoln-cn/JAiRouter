@@ -46,7 +46,7 @@ public class AuditMetricsService {
     // 按事件类型统计
     private final ConcurrentHashMap<String, AtomicLong> eventTypeCounts = new ConcurrentHashMap<>();
 
-    public AuditMetricsService(MeterRegistry meterRegistry) {
+    public AuditMetricsService(final MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
 
@@ -115,7 +115,7 @@ public class AuditMetricsService {
     /**
      * 记录事件
      */
-    public void recordEvent(String eventType, boolean success) {
+    public void recordEvent(final String eventType,final boolean success) {
         totalEventsCount.incrementAndGet();
         auditEventsTotal.increment();
         
@@ -149,14 +149,14 @@ public class AuditMetricsService {
     /**
      * 更新缓冲区大小
      */
-    public void updateBufferSize(int size) {
+    public void updateBufferSize(final int size) {
         currentBufferSize.set(size);
     }
 
     /**
      * 记录写入耗时
      */
-    public void recordWriteDuration(long durationMs) {
+    public void recordWriteDuration(final long durationMs) {
         auditEventWriteTimer.record(durationMs, TimeUnit.MILLISECONDS);
     }
 

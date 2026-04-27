@@ -32,7 +32,7 @@ public record RouterConfiguration(
     /**
      * 获取指定服务类型的配置
      */
-    public ServiceConfiguration getServiceConfig(String serviceType) {
+    public ServiceConfiguration getServiceConfig(final String serviceType) {
         return services != null ? services.get(serviceType) : null;
     }
 
@@ -40,7 +40,7 @@ public record RouterConfiguration(
      * 从 Map 转换为 DTO
      */
     @SuppressWarnings("unchecked")
-    public static RouterConfiguration fromMap(Map<String, Object> map) {
+    public static RouterConfiguration fromMap(final Map<String, Object> map) {
         if (map == null) {
             return defaultConfig();
         }
@@ -68,13 +68,13 @@ public record RouterConfiguration(
         return map;
     }
 
-    private static String getString(Map<String, Object> map, String key) {
+    private static String getString(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         return value instanceof String ? (String) value : null;
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> getMap(Map<String, Object> map, String key) {
+    private static Map<String, Object> getMap(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         return value instanceof Map ? (Map<String, Object>) value : null;
     }

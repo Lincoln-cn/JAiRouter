@@ -24,7 +24,7 @@ public class AuthenticationEventListener {
      * 处理API Key认证成功事件
      */
     @EventListener
-    public void handleApiKeyAuthenticationSuccess(ApiKeyAuthenticationSuccessEvent event) {
+    public void handleApiKeyAuthenticationSuccess(final ApiKeyAuthenticationSuccessEvent event) {
         log.info("API Key认证成功: keyId={}, description={}", 
                 event.apiKeyInfo().getKeyId(),
                 event.apiKeyInfo().getDescription());
@@ -38,7 +38,7 @@ public class AuthenticationEventListener {
      * 处理API Key认证失败事件
      */
     @EventListener
-    public void handleApiKeyAuthenticationFailure(ApiKeyAuthenticationFailureEvent event) {
+    public void handleApiKeyAuthenticationFailure(final ApiKeyAuthenticationFailureEvent event) {
         log.warn("API Key认证失败: reason={}", event.reason());
         
         // 可以在这里添加认证失败后的业务逻辑
@@ -49,7 +49,7 @@ public class AuthenticationEventListener {
     /**
      * 更新API Key使用统计
      */
-    private void updateApiKeyUsageStatistics(ApiKey apiKey) {
+    private void updateApiKeyUsageStatistics(final ApiKey apiKey) {
         try {
             // 这里可以实现使用统计的更新逻辑
             // 例如：增加请求计数、更新最后使用时间等
@@ -68,7 +68,7 @@ public class AuthenticationEventListener {
     /**
      * 处理认证失败
      */
-    private void handleAuthenticationFailure(String apiKey, String reason) {
+    private void handleAuthenticationFailure(final String apiKey,final String reason) {
         try {
             // 这里可以实现认证失败的处理逻辑
             // 例如：记录失败次数、检查是否需要触发告警等
@@ -87,7 +87,7 @@ public class AuthenticationEventListener {
     /**
      * 检查认证失败阈值
      */
-    private void checkAuthenticationFailureThreshold(String reason) {
+    private void checkAuthenticationFailureThreshold(final String reason) {
         // 这里可以实现阈值检查逻辑
         // 例如：统计最近一分钟的失败次数，如果超过阈值则发送告警
         int threshold = securityProperties.getAudit().getAlertThresholds().getAuthFailuresPerMinute();

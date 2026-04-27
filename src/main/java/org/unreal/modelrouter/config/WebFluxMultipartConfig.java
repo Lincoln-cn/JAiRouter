@@ -13,7 +13,7 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 public class WebFluxMultipartConfig implements WebFluxConfigurer {
 
     @Override
-    public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
+    public void configureHttpMessageCodecs(final ServerCodecConfigurer configurer) {
         // 配置内存缓冲区大小 - 这是最重要的配置
         configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024); // 10MB
 

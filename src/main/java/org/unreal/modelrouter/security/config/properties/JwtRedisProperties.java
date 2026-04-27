@@ -345,7 +345,7 @@ public class JwtRedisProperties {
         }
     }
     
-    private void validateRedisConfig(Object redisConfig, String configName) {
+    private void validateRedisConfig(final Object redisConfig,final String configName) {
         if (redisConfig instanceof Persistence.Redis) {
             Persistence.Redis config = (Persistence.Redis) redisConfig;
             if (config.getHost() == null || config.getHost().trim().isEmpty()) {

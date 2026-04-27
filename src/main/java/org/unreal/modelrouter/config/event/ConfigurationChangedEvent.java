@@ -18,8 +18,8 @@ public class ConfigurationChangedEvent extends ApplicationEvent {
     private final String changedBy;
     private final LocalDateTime changeTime;
 
-    public ConfigurationChangedEvent(Object source, String configKey, Map<String, Object> newConfig,
-                                     Integer version, ChangeType changeType, String changedBy) {
+    public ConfigurationChangedEvent(final Object source,final String configKey,final Map<String, Object> newConfig,
+                                     final Integer version,final ChangeType changeType,final String changedBy) {
         super(source);
         this.configKey = configKey;
         this.newConfig = newConfig;

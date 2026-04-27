@@ -66,7 +66,7 @@ public class StatePersistenceProperties {
         return redis;
     }
 
-    public void setRedis(RedisConfig redis) {
+    public void setRedis(final RedisConfig redis) {
         this.redis = redis;
     }
 
@@ -74,7 +74,7 @@ public class StatePersistenceProperties {
         return h2;
     }
 
-    public void setH2(H2Config h2) {
+    public void setH2(final H2Config h2) {
         this.h2 = h2;
     }
 
@@ -82,7 +82,7 @@ public class StatePersistenceProperties {
         return file;
     }
 
-    public void setFile(FileConfig file) {
+    public void setFile(final FileConfig file) {
         this.file = file;
     }
 
@@ -90,7 +90,7 @@ public class StatePersistenceProperties {
         return recovery;
     }
 
-    public void setRecovery(RecoveryConfig recovery) {
+    public void setRecovery(final RecoveryConfig recovery) {
         this.recovery = recovery;
     }
 
@@ -98,7 +98,7 @@ public class StatePersistenceProperties {
         return fallback;
     }
 
-    public void setFallback(FallbackConfig fallback) {
+    public void setFallback(final FallbackConfig fallback) {
         this.fallback = fallback;
     }
 
@@ -147,7 +147,7 @@ public class StatePersistenceProperties {
             return enabled;
         }
 
-        public void setEnabled(boolean enabled) {
+        public void setEnabled(final boolean enabled) {
             this.enabled = enabled;
         }
 
@@ -155,7 +155,7 @@ public class StatePersistenceProperties {
             return host;
         }
 
-        public void setHost(String host) {
+        public void setHost(final String host) {
             this.host = host;
         }
 
@@ -163,7 +163,7 @@ public class StatePersistenceProperties {
             return port;
         }
 
-        public void setPort(int port) {
+        public void setPort(final int port) {
             this.port = port;
         }
 
@@ -171,7 +171,7 @@ public class StatePersistenceProperties {
             return database;
         }
 
-        public void setDatabase(int database) {
+        public void setDatabase(final int database) {
             this.database = database;
         }
 
@@ -179,7 +179,7 @@ public class StatePersistenceProperties {
             return password;
         }
 
-        public void setPassword(String password) {
+        public void setPassword(final String password) {
             this.password = password;
         }
 
@@ -187,7 +187,7 @@ public class StatePersistenceProperties {
             return timeout;
         }
 
-        public void setTimeout(int timeout) {
+        public void setTimeout(final int timeout) {
             this.timeout = timeout;
         }
 
@@ -195,7 +195,7 @@ public class StatePersistenceProperties {
             return ttlDays;
         }
 
-        public void setTtlDays(int ttlDays) {
+        public void setTtlDays(final int ttlDays) {
             this.ttlDays = ttlDays;
         }
     }
@@ -225,7 +225,7 @@ public class StatePersistenceProperties {
             return enabled;
         }
 
-        public void setEnabled(boolean enabled) {
+        public void setEnabled(final boolean enabled) {
             this.enabled = enabled;
         }
 
@@ -233,7 +233,7 @@ public class StatePersistenceProperties {
             return dataDir;
         }
 
-        public void setDataDir(String dataDir) {
+        public void setDataDir(final String dataDir) {
             this.dataDir = dataDir;
         }
 
@@ -241,7 +241,7 @@ public class StatePersistenceProperties {
             return database;
         }
 
-        public void setDatabase(String database) {
+        public void setDatabase(final String database) {
             this.database = database;
         }
     }
@@ -271,7 +271,7 @@ public class StatePersistenceProperties {
             return enabled;
         }
 
-        public void setEnabled(boolean enabled) {
+        public void setEnabled(final boolean enabled) {
             this.enabled = enabled;
         }
 
@@ -279,7 +279,7 @@ public class StatePersistenceProperties {
             return path;
         }
 
-        public void setPath(String path) {
+        public void setPath(final String path) {
             this.path = path;
         }
 
@@ -287,7 +287,7 @@ public class StatePersistenceProperties {
             return compress;
         }
 
-        public void setCompress(boolean compress) {
+        public void setCompress(final boolean compress) {
             this.compress = compress;
         }
     }
@@ -322,7 +322,7 @@ public class StatePersistenceProperties {
             return enabled;
         }
 
-        public void setEnabled(boolean enabled) {
+        public void setEnabled(final boolean enabled) {
             this.enabled = enabled;
         }
 
@@ -330,7 +330,7 @@ public class StatePersistenceProperties {
             return autoOnStartup;
         }
 
-        public void setAutoOnStartup(boolean autoOnStartup) {
+        public void setAutoOnStartup(final boolean autoOnStartup) {
             this.autoOnStartup = autoOnStartup;
         }
 
@@ -338,7 +338,7 @@ public class StatePersistenceProperties {
             return timeout;
         }
 
-        public void setTimeout(int timeout) {
+        public void setTimeout(final int timeout) {
             this.timeout = timeout;
         }
 
@@ -346,7 +346,7 @@ public class StatePersistenceProperties {
             return parallel;
         }
 
-        public void setParallel(boolean parallel) {
+        public void setParallel(final boolean parallel) {
             this.parallel = parallel;
         }
     }
@@ -386,7 +386,7 @@ public class StatePersistenceProperties {
             return autoDetect;
         }
 
-        public void setAutoDetect(boolean autoDetect) {
+        public void setAutoDetect(final boolean autoDetect) {
             this.autoDetect = autoDetect;
         }
 
@@ -394,7 +394,7 @@ public class StatePersistenceProperties {
             return healthCheckInterval;
         }
 
-        public void setHealthCheckInterval(int healthCheckInterval) {
+        public void setHealthCheckInterval(final int healthCheckInterval) {
             this.healthCheckInterval = healthCheckInterval;
         }
 
@@ -402,7 +402,7 @@ public class StatePersistenceProperties {
             return retryInterval;
         }
 
-        public void setRetryInterval(int retryInterval) {
+        public void setRetryInterval(final int retryInterval) {
             this.retryInterval = retryInterval;
         }
 
@@ -410,7 +410,7 @@ public class StatePersistenceProperties {
             return maxRetries;
         }
 
-        public void setMaxRetries(int maxRetries) {
+        public void setMaxRetries(final int maxRetries) {
             this.maxRetries = maxRetries;
         }
 
@@ -418,7 +418,7 @@ public class StatePersistenceProperties {
             return syncOnRecovery;
         }
 
-        public void setSyncOnRecovery(boolean syncOnRecovery) {
+        public void setSyncOnRecovery(final boolean syncOnRecovery) {
             this.syncOnRecovery = syncOnRecovery;
         }
     }

@@ -75,7 +75,7 @@ public class ConfigurationHelper {
     /**
      * 映射服务类型别名到枚举
      */
-    private ModelServiceRegistry.ServiceType mapServiceTypeAlias(String serviceKey) {
+    private ModelServiceRegistry.ServiceType mapServiceTypeAlias(final String serviceKey) {
         String lower = serviceKey.toLowerCase(java.util.Locale.ROOT);
         
         if (lower.equals(ServiceTypeConstants.CHAT)
@@ -125,7 +125,7 @@ public class ConfigurationHelper {
      * @param serviceType 服务类型
      * @return 服务配置键
      */
-    public String getServiceConfigKey(ModelServiceRegistry.ServiceType serviceType) {
+    public String getServiceConfigKey(final ModelServiceRegistry.ServiceType serviceType) {
         if (serviceType == null) {
             return null;
         }
@@ -217,7 +217,7 @@ public class ConfigurationHelper {
      * @param config 负载均衡配置
      * @return 配置是否合法
      */
-    public boolean validateLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig config) {
+    public boolean validateLoadBalanceConfig(final ModelRouterProperties.LoadBalanceConfig config) {
         if (config == null) {
             logger.warn("Load balance config is null");
             return false;
@@ -247,7 +247,7 @@ public class ConfigurationHelper {
      * @param address 服务实例地址
      * @return 地址是否合法
      */
-    public boolean validateServiceAddress(String address) {
+    public boolean validateServiceAddress(final String address) {
         if (address == null || address.trim().isEmpty()) {
             logger.warn("Invalid service address: null or empty");
             return false;
@@ -303,7 +303,7 @@ public class ConfigurationHelper {
      * @param algorithm 算法名称
      * @return 算法是否合法
      */
-    private boolean isValidRateLimitAlgorithm(String algorithm) {
+    private boolean isValidRateLimitAlgorithm(final String algorithm) {
         if (algorithm == null) {
             return false;
         }
@@ -320,7 +320,7 @@ public class ConfigurationHelper {
      * @param scope 作用域
      * @return 作用域是否合法
      */
-    private boolean isValidRateLimitScope(String scope) {
+    private boolean isValidRateLimitScope(final String scope) {
         if (scope == null) {
             return false;
         }
@@ -337,7 +337,7 @@ public class ConfigurationHelper {
      * @param type 负载均衡类型
      * @return 类型是否合法
      */
-    private boolean isValidLoadBalanceType(String type) {
+    private boolean isValidLoadBalanceType(final String type) {
         if (type == null) {
             return false;
         }
@@ -354,7 +354,7 @@ public class ConfigurationHelper {
      * @param algorithm 哈希算法
      * @return 算法是否合法
      */
-    private boolean isValidHashAlgorithm(String algorithm) {
+    private boolean isValidHashAlgorithm(final String algorithm) {
         if (algorithm == null) {
             return false;
         }
@@ -368,10 +368,10 @@ public class ConfigurationHelper {
      * 验证负载均衡配置
      */
     @SuppressWarnings("unchecked")
-    private void validateLoadBalanceConfig(Object loadBalanceObj,
-                                           String context,
-                                           List<String> errors,
-                                           List<String> warnings) {
+    private void validateLoadBalanceConfig(final Object loadBalanceObj,
+                                           final String context,
+                                           final List<String> errors,
+                                           final List<String> warnings) {
         if (!(loadBalanceObj instanceof Map)) {
             errors.add(context + " 负载均衡配置格式错误");
             return;
@@ -391,10 +391,10 @@ public class ConfigurationHelper {
      * 验证限流配置
      */
     @SuppressWarnings("unchecked")
-    private void validateRateLimitConfig(Object rateLimitObj,
-                                         String context,
-                                         List<String> errors,
-                                         List<String> warnings) {
+    private void validateRateLimitConfig(final Object rateLimitObj,
+                                         final String context,
+                                         final List<String> errors,
+                                         final List<String> warnings) {
         if (!(rateLimitObj instanceof Map)) {
             errors.add(context + " 限流配置格式错误");
             return;
@@ -449,10 +449,10 @@ public class ConfigurationHelper {
      * 验证熔断器配置
      */
     @SuppressWarnings("unchecked")
-    private void validateCircuitBreakerConfig(Object circuitBreakerObj,
-                                              String context,
-                                              List<String> errors,
-                                              List<String> warnings) {
+    private void validateCircuitBreakerConfig(final Object circuitBreakerObj,
+                                              final String context,
+                                              final List<String> errors,
+                                              final List<String> warnings) {
         if (!(circuitBreakerObj instanceof Map)) {
             errors.add(context + " 熔断器配置格式错误");
             return;
@@ -503,10 +503,10 @@ public class ConfigurationHelper {
     /**
      * 验证服务配置
      */
-    public void validateServiceConfig(String serviceType,
-                                      Map<String, Object> serviceConfig,
-                                      List<String> errors,
-                                      List<String> warnings) {
+    public void validateServiceConfig(final String serviceType,
+                                      final Map<String, Object> serviceConfig,
+                                      final List<String> errors,
+                                      final List<String> warnings) {
         if (serviceConfig == null) {
             errors.add("服务配置不能为空");
             return;
@@ -540,10 +540,10 @@ public class ConfigurationHelper {
      * 验证实例配置
      */
     @SuppressWarnings("unchecked")
-    private void validateInstancesConfig(Object instancesObj,
-                                         String serviceType,
-                                         List<String> errors,
-                                         List<String> warnings) {
+    private void validateInstancesConfig(final Object instancesObj,
+                                         final String serviceType,
+                                         final List<String> errors,
+                                         final List<String> warnings) {
         if (!(instancesObj instanceof List)) {
             errors.add(serviceType + " 实例配置格式错误");
             return;
@@ -608,9 +608,9 @@ public class ConfigurationHelper {
      * 验证基础配置
      */
     @SuppressWarnings("unchecked")
-    private void validateBasicConfiguration(Map<String, Object> config,
-                                            List<String> errors,
-                                            List<String> warnings) {
+    private void validateBasicConfiguration(final Map<String, Object> config,
+                                            final List<String> errors,
+                                            final List<String> warnings) {
         // 验证全局适配器
         if (config.containsKey("adapter")) {
             String adapter = (String) config.get("adapter");
@@ -630,7 +630,7 @@ public class ConfigurationHelper {
         }
     }
 
-    public boolean isValidServiceType(String serviceType) {
+    public boolean isValidServiceType(final String serviceType) {
         if (serviceType == null) {
             return false;
         }
@@ -738,7 +738,7 @@ public class ConfigurationHelper {
     /**
      * 检查字段是否可以访问
      */
-    private boolean isAccessibleField(Field field) {
+    private boolean isAccessibleField(final Field field) {
         // 检查是否是静态字段
         if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
             return false;
@@ -749,7 +749,7 @@ public class ConfigurationHelper {
     /**
      * 检查类是否是JDK内部类
      */
-    private boolean isJdkInternalClass(Class<?> clazz) {
+    private boolean isJdkInternalClass(final Class<?> clazz) {
         Package pkg = clazz.getPackage();
         if (pkg == null) {
             return false;
@@ -764,7 +764,7 @@ public class ConfigurationHelper {
     /**
      * 检查是否是基本类型或其包装类
      */
-    private boolean isPrimitiveOrWrapper(Class<?> clazz) {
+    private boolean isPrimitiveOrWrapper(final Class<?> clazz) {
         return clazz.isPrimitive() ||
                clazz == Boolean.class ||
                clazz == Character.class ||
@@ -779,7 +779,7 @@ public class ConfigurationHelper {
     /**
      * 创建单值Map
      */
-    private Map<String, Object> createSingleValueMap(String key, Object value) {
+    private Map<String, Object> createSingleValueMap(final String key,final Object value) {
         Map<String, Object> map = new HashMap<>();
         map.put(key, value);
         return map;
@@ -788,7 +788,7 @@ public class ConfigurationHelper {
     /**
      * 转换Map为结果Map
      */
-    private Map<String, Object> convertMapToResultMap(Map<?, ?> originalMap) {
+    private Map<String, Object> convertMapToResultMap(final Map<?, ?> originalMap) {
         Map<String, Object> resultMap = new HashMap<>();
         for (Map.Entry<?, ?> entry : originalMap.entrySet()) {
             String key = entry.getKey() != null ? entry.getKey().toString() : "null";
@@ -807,7 +807,7 @@ public class ConfigurationHelper {
     /**
      * 转换List为结果List
      */
-    private List<Object> convertListToResultList(List<?> originalList) {
+    private List<Object> convertListToResultList(final List<?> originalList) {
         List<Object> resultList = new ArrayList<>();
         for (Object item : originalList) {
             if (item == null) {
@@ -827,7 +827,7 @@ public class ConfigurationHelper {
      * @param instance ModelInstance对象
      * @return 转换后的Map
      */
-    public Map<String, Object> convertInstanceToMap(ModelRouterProperties.ModelInstance instance) {
+    public Map<String, Object> convertInstanceToMap(final ModelRouterProperties.ModelInstance instance) {
         if (instance == null) {
             return null;
         }
@@ -840,7 +840,7 @@ public class ConfigurationHelper {
      * @param serviceConfigMap 服务配置Map
      * @return ServiceConfig对象
      */
-    public ModelRouterProperties.ServiceConfig convertMapToServiceConfig(Map<String, Object> serviceConfigMap) {
+    public ModelRouterProperties.ServiceConfig convertMapToServiceConfig(final Map<String, Object> serviceConfigMap) {
         if (serviceConfigMap == null) {
             return null;
         }
@@ -887,7 +887,7 @@ public class ConfigurationHelper {
      * @param instanceMap 实例配置Map
      * @return ModelInstance对象
      */
-    public ModelRouterProperties.ModelInstance convertMapToInstance(Map<String, Object> instanceMap) {
+    public ModelRouterProperties.ModelInstance convertMapToInstance(final Map<String, Object> instanceMap) {
         if (instanceMap == null) {
             return null;
         }
@@ -958,7 +958,7 @@ public class ConfigurationHelper {
      * @param rateLimitConfig 限流配置对象
      * @param rateLimitMap 限流配置Map
      */
-    public void updateRateLimitConfig(ModelRouterProperties.RateLimitConfig rateLimitConfig, Map<String, Object> rateLimitMap) {
+    public void updateRateLimitConfig(final ModelRouterProperties.RateLimitConfig rateLimitConfig,final Map<String, Object> rateLimitMap) {
         if (rateLimitConfig == null || rateLimitMap == null) {
             return;
         }
@@ -1004,7 +1004,7 @@ public class ConfigurationHelper {
      * @param circuitBreakerConfig 熔断器配置对象
      * @param circuitBreakerMap 熔断器配置Map
      */
-    public void updateCircuitBreakerConfig(ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig, Map<String, Object> circuitBreakerMap) {
+    public void updateCircuitBreakerConfig(final ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig,final Map<String, Object> circuitBreakerMap) {
         if (circuitBreakerConfig == null || circuitBreakerMap == null) {
             return;
         }
@@ -1041,7 +1041,7 @@ public class ConfigurationHelper {
      * @param fallbackConfig 降级配置对象
      * @param fallbackMap 降级配置Map
      */
-    public void updateFallbackConfig(ModelRouterProperties.FallbackConfig fallbackConfig, Map<String, Object> fallbackMap) {
+    public void updateFallbackConfig(final ModelRouterProperties.FallbackConfig fallbackConfig,final Map<String, Object> fallbackMap) {
         if (fallbackConfig == null || fallbackMap == null) {
             return;
         }
@@ -1077,8 +1077,8 @@ public class ConfigurationHelper {
      * @return 有效的负载均衡配置
      */
     public ModelRouterProperties.LoadBalanceConfig getEffectiveLoadBalanceConfig(
-            ModelRouterProperties.LoadBalanceConfig serviceConfig,
-            ModelRouterProperties.LoadBalanceConfig globalConfig) {
+            final ModelRouterProperties.LoadBalanceConfig serviceConfig,
+            final ModelRouterProperties.LoadBalanceConfig globalConfig) {
         if (serviceConfig != null) {
             return serviceConfig;
         }

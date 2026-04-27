@@ -31,7 +31,7 @@ public class DefaultSecurityConfiguration {
      * - API 端点保持开放（因为没有认证机制）
      */
     @Bean
-    public SecurityWebFilterChain defaultSecurityWebFilterChain(ServerHttpSecurity http) {
+    public SecurityWebFilterChain defaultSecurityWebFilterChain(final ServerHttpSecurity http) {
         log.info("配置默认安全过滤器链（安全功能已禁用）");
         
         return http

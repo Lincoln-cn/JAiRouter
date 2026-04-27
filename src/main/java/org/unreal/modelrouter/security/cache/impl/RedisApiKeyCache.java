@@ -30,8 +30,8 @@ public class RedisApiKeyCache implements ApiKeyCache {
     private final ObjectMapper objectMapper;
     private final CacheMetrics cacheMetrics;
     
-    public RedisApiKeyCache(ReactiveRedisTemplate<String, String> redisTemplate, 
-                           ObjectMapper objectMapper,
+    public RedisApiKeyCache(final ReactiveRedisTemplate<String, String> redisTemplate, 
+                           final ObjectMapper objectMapper,
                            @Autowired(required = false) CacheMetrics cacheMetrics) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
@@ -39,7 +39,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<ApiKey> get(String keyValue) {
+    public Mono<ApiKey> get(final String keyValue) {
         long startTime = System.nanoTime();
         String cacheKey = buildCacheKey(keyValue);
         
@@ -72,7 +72,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(String keyValue, ApiKey apiKey, Duration ttl) {
+    public Mono<Void> put(final String keyValue,final ApiKey apiKey,final Duration ttl) {
         long startTime = System.nanoTime();
         String cacheKey = buildCacheKey(keyValue);
 
@@ -100,12 +100,12 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(String keyValue, ApiKey apiKey) {
+    public Mono<Void> put(final String keyValue,final ApiKey apiKey) {
         return put(keyValue, apiKey, DEFAULT_TTL);
     }
     
     @Override
-    public Mono<Void> evict(String keyValue) {
+    public Mono<Void> evict(final String keyValue) {
         String cacheKey = buildCacheKey(keyValue);
         return redisTemplate.opsForValue()
                 .delete(cacheKey)
@@ -135,7 +135,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Boolean> exists(String keyValue) {
+    public Mono<Boolean> exists(final String keyValue) {
         String cacheKey = buildCacheKey(keyValue);
         return redisTemplate.hasKey(cacheKey)
                 .doOnNext(exists -> log.debug("检查Redis缓存中API Key是否存在: {} -> {}", keyValue, exists))
@@ -143,7 +143,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> expire(String keyValue, Duration ttl) {
+    public Mono<Void> expire(final String keyValue,final Duration ttl) {
         String cacheKey = buildCacheKey(keyValue);
         return redisTemplate.expire(cacheKey, ttl)
                 .then()
@@ -154,14 +154,14 @@ public class RedisApiKeyCache implements ApiKeyCache {
     /**
      * 构建缓存键
      */
-    private String buildCacheKey(String keyValue) {
+    private String buildCacheKey(final String keyValue) {
         return CACHE_KEY_PREFIX + keyValue;
     }
     
     /**
      * 序列化API Key信息
      */
-    private Mono<String> serializeApiKey(ApiKey apiKey) {
+    private Mono<String> serializeApiKey(final ApiKey apiKey) {
         return Mono.fromCallable(() -> {
             try {
                 return objectMapper.writeValueAsString(apiKey);
@@ -174,7 +174,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     /**
      * 反序列化API Key信息
      */
-    private Mono<ApiKey> deserializeApiKey(String serialized) {
+    private Mono<ApiKey> deserializeApiKey(final String serialized) {
         return Mono.fromCallable(() -> {
             try {
                 return objectMapper.readValue(serialized, ApiKey.class);

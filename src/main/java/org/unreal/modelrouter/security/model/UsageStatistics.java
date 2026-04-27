@@ -65,7 +65,7 @@ public class UsageStatistics {
      * 增加请求统计
      * @param success 请求是否成功
      */
-    public void incrementRequest(boolean success) {
+    public void incrementRequest(final boolean success) {
         totalRequests++;
         if (success) {
             successfulRequests++;

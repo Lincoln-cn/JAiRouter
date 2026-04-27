@@ -39,9 +39,9 @@ public class InstanceManager {
     private final ConcurrentHashMap<String, Long> recentUpdateRequests = new ConcurrentHashMap<>();
     private static final long REQUEST_DEDUP_WINDOW_MS = 1000;
 
-    public InstanceManager(StoreManager storeManager,
-                           ConfigurationHelper configurationHelper,
-                           ConfigMergeService configMergeService) {
+    public InstanceManager(final StoreManager storeManager,
+                           final ConfigurationHelper configurationHelper,
+                           final ConfigMergeService configMergeService) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
@@ -53,7 +53,7 @@ public class InstanceManager {
      * @param serviceType 服务类型
      * @return 实例列表
      */
-    public List<ModelInstanceConfiguration> getServiceInstances(String serviceType) {
+    public List<ModelInstanceConfiguration> getServiceInstances(final String serviceType) {
         try {
             Map<String, Object> config = getCurrentConfig();
             if (config == null) {
@@ -84,7 +84,7 @@ public class InstanceManager {
      * 获取服务的所有实例（原始 Map 形式，保持向后兼容）
      */
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> getServiceInstancesAsMap(String serviceType) {
+    public List<Map<String, Object>> getServiceInstancesAsMap(final String serviceType) {
         try {
             Map<String, Object> config = getCurrentConfig();
             if (config == null) {
@@ -112,7 +112,7 @@ public class InstanceManager {
      * @param instanceId 实例 ID
      * @return 实例配置，不存在返回 null
      */
-    public ModelInstanceConfiguration getServiceInstance(String serviceType, String instanceId) {
+    public ModelInstanceConfiguration getServiceInstance(final String serviceType,final String instanceId) {
         try {
             List<ModelInstanceConfiguration> instances = getServiceInstances(serviceType);
             
@@ -138,8 +138,8 @@ public class InstanceManager {
      * @param instanceId 实例 ID
      * @param instanceConfig 实例配置（强类型）
      */
-    public void updateServiceInstance(String serviceType, String instanceId, 
-                                      ModelInstanceConfiguration instanceConfig) {
+    public void updateServiceInstance(final String serviceType,final String instanceId, 
+                                      final ModelInstanceConfiguration instanceConfig) {
         if (instanceConfig == null) {
             throw new IllegalArgumentException("实例配置不能为空");
         }
@@ -177,8 +177,8 @@ public class InstanceManager {
     /**
      * 更新服务实例（从 ModelRouterProperties.ModelInstance 转换）
      */
-    public void updateServiceInstance(String serviceType, String instanceId,
-                                      ModelRouterProperties.ModelInstance instanceConfig) {
+    public void updateServiceInstance(final String serviceType,final String instanceId,
+                                      final ModelRouterProperties.ModelInstance instanceConfig) {
         if (instanceConfig == null) {
             throw new IllegalArgumentException("实例配置不能为空");
         }
@@ -207,7 +207,7 @@ public class InstanceManager {
      * @param serviceType 服务类型
      * @param instanceId 实例 ID
      */
-    public void deleteServiceInstance(String serviceType, String instanceId) {
+    public void deleteServiceInstance(final String serviceType,final String instanceId) {
         logger.info("删除服务 {} 的实例 {}", serviceType, instanceId);
 
         if (serviceType == null || serviceType.trim().isEmpty()) {
@@ -264,7 +264,7 @@ public class InstanceManager {
      * @param serviceType 服务类型
      * @param operations 批量操作
      */
-    public void batchUpdateServiceInstances(String serviceType, List<InstanceOperation> operations) {
+    public void batchUpdateServiceInstances(final String serviceType,final List<InstanceOperation> operations) {
         logger.info("批量更新服务 {} 的实例，共 {} 个操作", serviceType, operations.size());
 
         if (serviceType == null || serviceType.trim().isEmpty()) {
@@ -332,8 +332,8 @@ public class InstanceManager {
      * 内部实例更新方法
      */
     @SuppressWarnings("unchecked")
-    private void updateServiceInstanceInternal(String serviceType, String instanceId, 
-                                                ModelInstanceConfiguration instanceConfig) {
+    private void updateServiceInstanceInternal(final String serviceType,final String instanceId, 
+                                                final ModelInstanceConfiguration instanceConfig) {
 
         if (serviceType == null || serviceType.trim().isEmpty()) {
             throw new IllegalArgumentException("无效的服务类型：" + serviceType);
@@ -399,7 +399,7 @@ public class InstanceManager {
     /**
      * 清理过期的请求记录
      */
-    private void cleanupExpiredRequests(long currentTime) {
+    private void cleanupExpiredRequests(final long currentTime) {
         recentUpdateRequests.entrySet().removeIf(entry ->
                 (currentTime - entry.getValue()) > REQUEST_DEDUP_WINDOW_MS * 2);
     }
@@ -414,7 +414,7 @@ public class InstanceManager {
     /**
      * 保存配置
      */
-    private void saveConfig(Map<String, Object> config) {
+    private void saveConfig(final Map<String, Object> config) {
         storeManager.saveConfig(CURRENT_KEY, config);
     }
 
@@ -422,8 +422,8 @@ public class InstanceManager {
      * 合并实例配置
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> mergeInstanceConfig(Map<String, Object> existing, 
-                                                     Map<String, Object> updates) {
+    private Map<String, Object> mergeInstanceConfig(final Map<String, Object> existing, 
+                                                     final Map<String, Object> updates) {
         Map<String, Object> merged = new LinkedHashMap<>(existing);
 
         if (updates != null) {
@@ -453,9 +453,9 @@ public class InstanceManager {
      * 在列表中更新实例
      */
     @SuppressWarnings("unchecked")
-    private void updateInstanceInList(List<Map<String, Object>> instances, String instanceId,
-                                       ModelInstanceConfiguration instanceConfig,
-                                       List<String> operationDetails) {
+    private void updateInstanceInList(final List<Map<String, Object>> instances,final String instanceId,
+                                       final ModelInstanceConfiguration instanceConfig,
+                                       final List<String> operationDetails) {
         for (int i = 0; i < instances.size(); i++) {
             Map<String, Object> instance = instances.get(i);
             String currentInstanceId = instance.containsKey("instanceId") ? 
@@ -473,8 +473,8 @@ public class InstanceManager {
     /**
      * 从列表中删除实例
      */
-    private void deleteInstanceFromList(List<Map<String, Object>> instances, String instanceId,
-                                         List<String> operationDetails) {
+    private void deleteInstanceFromList(final List<Map<String, Object>> instances,final String instanceId,
+                                         final List<String> operationDetails) {
         boolean removed = instances.removeIf(instance -> {
             String currentInstanceId = instance.containsKey("instanceId") ? 
                 (String) instance.get("instanceId") : (String) instance.get("name");
@@ -491,9 +491,9 @@ public class InstanceManager {
      * 添加实例到列表
      */
     @SuppressWarnings("unchecked")
-    private void addInstanceToList(List<Map<String, Object>> instances,
-                                    ModelInstanceConfiguration instanceConfig,
-                                    List<String> operationDetails) {
+    private void addInstanceToList(final List<Map<String, Object>> instances,
+                                    final ModelInstanceConfiguration instanceConfig,
+                                    final List<String> operationDetails) {
         instances.add(instanceConfig.toMap());
         operationDetails.add("ADD:" + instanceConfig.name());
     }
@@ -517,13 +517,13 @@ public class InstanceManager {
         private final String instanceId;
         private ModelInstanceConfiguration instanceConfig;
 
-        public InstanceOperation(OperationType type, String instanceId) {
+        public InstanceOperation(final OperationType type,final String instanceId) {
             this.type = type;
             this.instanceId = instanceId;
         }
 
-        public InstanceOperation(OperationType type, String instanceId, 
-                                  ModelInstanceConfiguration instanceConfig) {
+        public InstanceOperation(final OperationType type,final String instanceId, 
+                                  final ModelInstanceConfiguration instanceConfig) {
             this.type = type;
             this.instanceId = instanceId;
             this.instanceConfig = instanceConfig;
@@ -541,7 +541,7 @@ public class InstanceManager {
             return instanceConfig;
         }
 
-        public void setInstanceConfig(ModelInstanceConfiguration instanceConfig) {
+        public void setInstanceConfig(final ModelInstanceConfiguration instanceConfig) {
             this.instanceConfig = instanceConfig;
         }
     }

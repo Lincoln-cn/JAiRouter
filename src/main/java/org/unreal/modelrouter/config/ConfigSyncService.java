@@ -37,7 +37,7 @@ public class ConfigSyncService {
      * @param config 配置Map
      */
     @Transactional
-    public void syncInstancesToDatabase(Map<String, Object> config) {
+    public void syncInstancesToDatabase(final Map<String, Object> config) {
         log.info("开始同步配置实例到数据库...");
 
         if (config == null || !config.containsKey("services")) {
@@ -113,7 +113,7 @@ public class ConfigSyncService {
     /**
      * 同步单个服务的实例
      */
-    private int[] syncServiceInstances(Long serviceConfigId, List<Map<String, Object>> instancesConfig) {
+    private int[] syncServiceInstances(final Long serviceConfigId,final List<Map<String, Object>> instancesConfig) {
         int addedCount = 0;
         int updatedCount = 0;
         int deletedCount = 0;
@@ -173,7 +173,7 @@ public class ConfigSyncService {
     /**
      * 创建服务配置实体
      */
-    private ServiceConfigEntity createServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
+    private ServiceConfigEntity createServiceConfig(final String serviceType,final Map<String, Object> serviceConfig) {
         ServiceConfigEntity entity = ServiceConfigEntity.builder()
                 .configKey("model-router-config")
                 .serviceType(serviceType)
@@ -194,7 +194,7 @@ public class ConfigSyncService {
     /**
      * 更新服务配置实体
      */
-    private void updateServiceConfigFromMap(ServiceConfigEntity entity, Map<String, Object> serviceConfig) {
+    private void updateServiceConfigFromMap(final ServiceConfigEntity entity,final Map<String, Object> serviceConfig) {
         if (serviceConfig.get("adapter") != null) {
             entity.setAdapter((String) serviceConfig.get("adapter"));
         }
@@ -209,7 +209,7 @@ public class ConfigSyncService {
     /**
      * 从配置创建实例实体
      */
-    private ServiceInstanceEntity createInstanceFromConfig(Long serviceConfigId, Map<String, Object> instanceConfig) {
+    private ServiceInstanceEntity createInstanceFromConfig(final Long serviceConfigId,final Map<String, Object> instanceConfig) {
         return ServiceInstanceEntity.builder()
                 .serviceConfigId(serviceConfigId)
                 .instanceName((String) instanceConfig.get("name"))
@@ -224,7 +224,7 @@ public class ConfigSyncService {
     /**
      * 从配置更新实例实体
      */
-    private void updateInstanceFromConfig(ServiceInstanceEntity entity, Map<String, Object> instanceConfig) {
+    private void updateInstanceFromConfig(final ServiceInstanceEntity entity,final Map<String, Object> instanceConfig) {
         if (instanceConfig.get("baseUrl") != null) {
             entity.setBaseUrl((String) instanceConfig.get("baseUrl"));
         }

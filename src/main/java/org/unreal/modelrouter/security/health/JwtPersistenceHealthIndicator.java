@@ -66,7 +66,7 @@ public class JwtPersistenceHealthIndicator {
     /**
      * 检查Redis连接健康状态
      */
-    private boolean checkRedisHealth(Map<String, Object> details) {
+    private boolean checkRedisHealth(final Map<String, Object> details) {
         Map<String, Object> redisDetails = new HashMap<>();
         
         if (redisTemplate == null) {
@@ -118,7 +118,7 @@ public class JwtPersistenceHealthIndicator {
     /**
      * 检查Redis连接池状态
      */
-    private void checkRedisConnectionPool(Map<String, Object> redisDetails) {
+    private void checkRedisConnectionPool(final Map<String, Object> redisDetails) {
         try {
             // 这里可以添加连接池状态检查
             // 由于不同的Redis连接池实现方式不同，这里提供基础框架
@@ -131,7 +131,7 @@ public class JwtPersistenceHealthIndicator {
     /**
      * 检查Redis内存使用情况
      */
-    private void checkRedisMemoryUsage(Map<String, Object> redisDetails) {
+    private void checkRedisMemoryUsage(final Map<String, Object> redisDetails) {
         try {
             // 简化实现，实际项目中可以通过INFO命令获取详细信息
             redisDetails.put("memoryCheck", "Available");
@@ -143,7 +143,7 @@ public class JwtPersistenceHealthIndicator {
     /**
      * 检查内存健康状态
      */
-    private boolean checkMemoryHealth(Map<String, Object> details) {
+    private boolean checkMemoryHealth(final Map<String, Object> details) {
         Map<String, Object> memoryDetails = new HashMap<>();
         
         try {
@@ -192,7 +192,7 @@ public class JwtPersistenceHealthIndicator {
     /**
      * 检查存储同步健康状态
      */
-    private boolean checkStorageSyncHealth(Map<String, Object> details) {
+    private boolean checkStorageSyncHealth(final Map<String, Object> details) {
         Map<String, Object> syncDetails = new HashMap<>();
         
         try {

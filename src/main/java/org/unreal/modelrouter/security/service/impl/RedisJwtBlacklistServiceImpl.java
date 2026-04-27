@@ -49,7 +49,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     private static final Duration STATS_TTL = Duration.ofMinutes(5);
     
     @Override
-    public Mono<Void> addToBlacklist(String tokenHash, String reason, String addedBy) {
+    public Mono<Void> addToBlacklist(final String tokenHash,final String reason,final String addedBy) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.error(new IllegalArgumentException("Token hash cannot be null or empty"));
         }
@@ -78,7 +78,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Boolean> isBlacklisted(String tokenHash) {
+    public Mono<Boolean> isBlacklisted(final String tokenHash) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.just(false);
         }
@@ -117,7 +117,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> removeFromBlacklist(String tokenHash) {
+    public Mono<Void> removeFromBlacklist(final String tokenHash) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.empty();
         }
@@ -188,7 +188,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<TokenBlacklistEntry> getBlacklistEntry(String tokenHash) {
+    public Mono<TokenBlacklistEntry> getBlacklistEntry(final String tokenHash) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.empty();
         }
@@ -214,7 +214,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> batchAddToBlacklist(List<String> tokenHashes, String reason, String addedBy) {
+    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes,final String reason,final String addedBy) {
         if (tokenHashes == null || tokenHashes.isEmpty()) {
             return Mono.empty();
         }
@@ -237,7 +237,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Long> getExpiringEntriesCount(int hoursUntilExpiry) {
+    public Mono<Long> getExpiringEntriesCount(final int hoursUntilExpiry) {
         return getExpiringEntriesCountFromRedis(hoursUntilExpiry)
             .onErrorResume(error -> {
                 log.warn("Failed to get expiring entries count from Redis, falling back to StoreManager: {}", error.getMessage());
@@ -249,7 +249,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     
     // Redis操作方法
     
-    private Mono<Void> addToBlacklistInRedis(TokenBlacklistEntry entry) {
+    private Mono<Void> addToBlacklistInRedis(final TokenBlacklistEntry entry) {
         return Mono.fromCallable(() -> {
             try {
                 return JacksonHelper.getObjectMapper().writeValueAsString(entry);
@@ -268,7 +268,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         });
     }
     
-    private Mono<Boolean> isBlacklistedInRedis(String tokenHash) {
+    private Mono<Boolean> isBlacklistedInRedis(final String tokenHash) {
         String blacklistKey = BLACKLIST_PREFIX + tokenHash;
         
         return redisTemplate.hasKey(blacklistKey)
@@ -302,7 +302,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
             });
     }
     
-    private Mono<Void> removeFromBlacklistInRedis(String tokenHash) {
+    private Mono<Void> removeFromBlacklistInRedis(final String tokenHash) {
         String blacklistKey = BLACKLIST_PREFIX + tokenHash;
         
         return redisTemplate.hasKey(blacklistKey)
@@ -373,7 +373,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
             });
     }
     
-    private Mono<TokenBlacklistEntry> getBlacklistEntryFromRedis(String tokenHash) {
+    private Mono<TokenBlacklistEntry> getBlacklistEntryFromRedis(final String tokenHash) {
         String blacklistKey = BLACKLIST_PREFIX + tokenHash;
         
         return redisTemplate.opsForValue().get(blacklistKey)
@@ -386,7 +386,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
             });
     }
     
-    private Mono<Void> batchAddToBlacklistInRedis(List<String> tokenHashes, String reason, String addedBy) {
+    private Mono<Void> batchAddToBlacklistInRedis(final List<String> tokenHashes,final String reason,final String addedBy) {
         LocalDateTime now = LocalDateTime.now();
         
         return Flux.fromIterable(tokenHashes)
@@ -407,7 +407,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
             .then(updateBlacklistStatsInRedis(tokenHashes.size(), 0));
     }
     
-    private Mono<Long> getExpiringEntriesCountFromRedis(int hoursUntilExpiry) {
+    private Mono<Long> getExpiringEntriesCountFromRedis(final int hoursUntilExpiry) {
         LocalDateTime threshold = LocalDateTime.now().plusHours(hoursUntilExpiry);
         
         return redisTemplate.opsForSet().members(BLACKLIST_INDEX_KEY)
@@ -435,7 +435,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     
     // Redis索引和统计操作方法
     
-    private Mono<Void> updateBlacklistIndexInRedis(String tokenHash, boolean add) {
+    private Mono<Void> updateBlacklistIndexInRedis(final String tokenHash,final boolean add) {
         if (tokenHash == null) {
             return Mono.empty();
         }
@@ -450,7 +450,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         }
     }
     
-    private Mono<Void> updateBlacklistStatsInRedis(int sizeChange, int cleanedCount) {
+    private Mono<Void> updateBlacklistStatsInRedis(final int sizeChange,final int cleanedCount) {
         return redisTemplate.opsForValue().get(BLACKLIST_STATS_KEY)
             .map(statsJson -> {
                 try {
@@ -496,7 +496,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     
     // Fallback操作方法（委托给现有的StoreManager实现）
     
-    private Mono<Void> addToBlacklistInFallback(TokenBlacklistEntry entry) {
+    private Mono<Void> addToBlacklistInFallback(final TokenBlacklistEntry entry) {
         return Mono.fromRunnable(() -> {
             try {
                 Map<String, Object> entryData = convertToMap(entry);
@@ -508,7 +508,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         });
     }
     
-    private Mono<Boolean> isBlacklistedInFallback(String tokenHash) {
+    private Mono<Boolean> isBlacklistedInFallback(final String tokenHash) {
         return Mono.fromCallable(() -> {
             try {
                 String blacklistKey = "jwt_blacklist_" + tokenHash;
@@ -536,7 +536,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         });
     }
     
-    private Mono<Void> removeFromBlacklistInFallback(String tokenHash) {
+    private Mono<Void> removeFromBlacklistInFallback(final String tokenHash) {
         return Mono.fromRunnable(() -> {
             try {
                 String blacklistKey = "jwt_blacklist_" + tokenHash;
@@ -564,7 +564,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         return Mono.just(stats);
     }
     
-    private Mono<TokenBlacklistEntry> getBlacklistEntryFromFallback(String tokenHash) {
+    private Mono<TokenBlacklistEntry> getBlacklistEntryFromFallback(final String tokenHash) {
         return Mono.fromCallable(() -> {
             try {
                 String blacklistKey = "jwt_blacklist_" + tokenHash;
@@ -577,17 +577,17 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         });
     }
     
-    private Mono<Void> batchAddToBlacklistInFallback(List<String> tokenHashes, String reason, String addedBy) {
+    private Mono<Void> batchAddToBlacklistInFallback(final List<String> tokenHashes,final String reason,final String addedBy) {
         return Mono.empty();
     }
     
-    private Mono<Long> getExpiringEntriesCountFromFallback(int hoursUntilExpiry) {
+    private Mono<Long> getExpiringEntriesCountFromFallback(final int hoursUntilExpiry) {
         return Mono.just(0L);
     }
     
     // 辅助方法
     
-    private Duration calculateBlacklistTTL(TokenBlacklistEntry entry) {
+    private Duration calculateBlacklistTTL(final TokenBlacklistEntry entry) {
         if (entry.getExpiresAt() != null) {
             Duration ttl = Duration.between(LocalDateTime.now(), entry.getExpiresAt());
             return ttl.isNegative() ? Duration.ofMinutes(1) : ttl;
@@ -617,7 +617,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         }
     }
     
-    private Map<String, Object> convertToMap(TokenBlacklistEntry entry) {
+    private Map<String, Object> convertToMap(final TokenBlacklistEntry entry) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(entry, new TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
@@ -625,7 +625,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         }
     }
     
-    private TokenBlacklistEntry convertFromMap(Map<String, Object> entryData) {
+    private TokenBlacklistEntry convertFromMap(final Map<String, Object> entryData) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(entryData, TokenBlacklistEntry.class);
         } catch (Exception e) {

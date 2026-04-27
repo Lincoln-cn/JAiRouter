@@ -201,14 +201,14 @@ public class AuditConfig {
     /**
      * 根据风险等级获取保留天数
      */
-    public int getRetentionDaysByRiskLevel(String riskLevel) {
+    public int getRetentionDaysByRiskLevel(final String riskLevel) {
         return retentionByRiskLevel.getOrDefault(riskLevel, retentionDays);
     }
 
     /**
      * 根据事件类型获取保留天数
      */
-    public int getRetentionDaysByEventType(String eventType) {
+    public int getRetentionDaysByEventType(final String eventType) {
         return retentionByEventType.getOrDefault(eventType, retentionDays);
     }
 }

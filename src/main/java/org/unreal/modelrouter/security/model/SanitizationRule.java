@@ -72,7 +72,7 @@ public class SanitizationRule {
      * @param contentType 内容类型
      * @return 是否适用
      */
-    public boolean isApplicableToContentType(String contentType) {
+    public boolean isApplicableToContentType(final String contentType) {
         return applicableContentTypes == null || 
                applicableContentTypes.isEmpty() || 
                applicableContentTypes.contains(contentType);

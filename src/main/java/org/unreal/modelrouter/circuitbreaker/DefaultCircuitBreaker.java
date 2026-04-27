@@ -20,8 +20,8 @@ public class DefaultCircuitBreaker implements CircuitBreaker {
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
-    public DefaultCircuitBreaker(String instanceId, int failureThreshold,
-                                 long timeout, int successThreshold) {
+    public DefaultCircuitBreaker(final String instanceId,final int failureThreshold,
+                                 final long timeout,final int successThreshold) {
         this.instanceId = instanceId;
         this.failureThreshold = failureThreshold;
         this.timeout = timeout;
@@ -111,7 +111,7 @@ public class DefaultCircuitBreaker implements CircuitBreaker {
     /**
      * 记录熔断器指标
      */
-    private void recordCircuitBreakerEvent(String event, String currentState) {
+    private void recordCircuitBreakerEvent(final String event,final String currentState) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordCircuitBreaker(instanceId, currentState, event);

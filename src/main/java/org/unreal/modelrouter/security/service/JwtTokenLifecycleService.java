@@ -77,31 +77,31 @@ public interface JwtTokenLifecycleService {
         
         // Getters and Setters
         public String getTokenHash() { return tokenHash; }
-        public void setTokenHash(String tokenHash) { this.tokenHash = tokenHash; }
+        public void setTokenHash(final String tokenHash) { this.tokenHash = tokenHash; }
         
         public String getUserId() { return userId; }
-        public void setUserId(String userId) { this.userId = userId; }
+        public void setUserId(final String userId) { this.userId = userId; }
         
         public TokenStatus getCurrentStatus() { return currentStatus; }
-        public void setCurrentStatus(TokenStatus currentStatus) { this.currentStatus = currentStatus; }
+        public void setCurrentStatus(final TokenStatus currentStatus) { this.currentStatus = currentStatus; }
         
         public LocalDateTime getIssuedAt() { return issuedAt; }
-        public void setIssuedAt(LocalDateTime issuedAt) { this.issuedAt = issuedAt; }
+        public void setIssuedAt(final LocalDateTime issuedAt) { this.issuedAt = issuedAt; }
         
         public LocalDateTime getExpiresAt() { return expiresAt; }
-        public void setExpiresAt(LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
+        public void setExpiresAt(final LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
         
         public LocalDateTime getLastStatusChange() { return lastStatusChange; }
-        public void setLastStatusChange(LocalDateTime lastStatusChange) { this.lastStatusChange = lastStatusChange; }
+        public void setLastStatusChange(final LocalDateTime lastStatusChange) { this.lastStatusChange = lastStatusChange; }
         
         public String getLastChangeReason() { return lastChangeReason; }
-        public void setLastChangeReason(String lastChangeReason) { this.lastChangeReason = lastChangeReason; }
+        public void setLastChangeReason(final String lastChangeReason) { this.lastChangeReason = lastChangeReason; }
         
         public String getLastChangedBy() { return lastChangedBy; }
-        public void setLastChangedBy(String lastChangedBy) { this.lastChangedBy = lastChangedBy; }
+        public void setLastChangedBy(final String lastChangedBy) { this.lastChangedBy = lastChangedBy; }
         
         public Map<String, Object> getMetadata() { return metadata; }
-        public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
+        public void setMetadata(final Map<String, Object> metadata) { this.metadata = metadata; }
     }
     
     /**
@@ -117,21 +117,21 @@ public interface JwtTokenLifecycleService {
         
         // Getters and Setters
         public long getTotalTokens() { return totalTokens; }
-        public void setTotalTokens(long totalTokens) { this.totalTokens = totalTokens; }
+        public void setTotalTokens(final long totalTokens) { this.totalTokens = totalTokens; }
         
         public long getActiveTokens() { return activeTokens; }
-        public void setActiveTokens(long activeTokens) { this.activeTokens = activeTokens; }
+        public void setActiveTokens(final long activeTokens) { this.activeTokens = activeTokens; }
         
         public long getRevokedTokens() { return revokedTokens; }
-        public void setRevokedTokens(long revokedTokens) { this.revokedTokens = revokedTokens; }
+        public void setRevokedTokens(final long revokedTokens) { this.revokedTokens = revokedTokens; }
         
         public long getExpiredTokens() { return expiredTokens; }
-        public void setExpiredTokens(long expiredTokens) { this.expiredTokens = expiredTokens; }
+        public void setExpiredTokens(final long expiredTokens) { this.expiredTokens = expiredTokens; }
         
         public LocalDateTime getLastUpdateTime() { return lastUpdateTime; }
-        public void setLastUpdateTime(LocalDateTime lastUpdateTime) { this.lastUpdateTime = lastUpdateTime; }
+        public void setLastUpdateTime(final LocalDateTime lastUpdateTime) { this.lastUpdateTime = lastUpdateTime; }
         
         public Map<String, Long> getStatusDistribution() { return statusDistribution; }
-        public void setStatusDistribution(Map<String, Long> statusDistribution) { this.statusDistribution = statusDistribution; }
+        public void setStatusDistribution(final Map<String, Long> statusDistribution) { this.statusDistribution = statusDistribution; }
     }
 }

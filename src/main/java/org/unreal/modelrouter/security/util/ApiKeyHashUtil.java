@@ -30,7 +30,7 @@ public final class ApiKeyHashUtil {
      * @param apiKey 原始 API Key 值
      * @return 哈希后的字符串
      */
-    public static String hashApiKey(String apiKey) {
+    public static String hashApiKey(final String apiKey) {
         if (apiKey == null || apiKey.isEmpty()) {
             throw new IllegalArgumentException("API Key 不能为空");
         }
@@ -63,7 +63,7 @@ public final class ApiKeyHashUtil {
      * @param storedHash  存储的哈希值（格式：salt:hash）
      * @return 是否匹配
      */
-    public static boolean verifyApiKey(String apiKey, String storedHash) {
+    public static boolean verifyApiKey(final String apiKey,final String storedHash) {
         if (apiKey == null || apiKey.isEmpty() || storedHash == null || storedHash.isEmpty()) {
             return false;
         }
@@ -100,7 +100,7 @@ public final class ApiKeyHashUtil {
      * @param b 数组 b
      * @return 是否相等
      */
-    private static boolean constantTimeEquals(byte[] a, byte[] b) {
+    private static boolean constantTimeEquals(final byte[] a,final byte[] b) {
         if (a.length != b.length) {
             return false;
         }
@@ -118,7 +118,7 @@ public final class ApiKeyHashUtil {
      * @param value 待检查的字符串
      * @return 是否是哈希格式
      */
-    public static boolean isHashedFormat(String value) {
+    public static boolean isHashedFormat(final String value) {
         if (value == null || value.isEmpty()) {
             return false;
         }
@@ -142,7 +142,7 @@ public final class ApiKeyHashUtil {
      * @param storedHash 存储的哈希值
      * @return 盐值的 Base64 编码
      */
-    public static String extractSalt(String storedHash) {
+    public static String extractSalt(final String storedHash) {
         if (storedHash == null || !storedHash.contains(":")) {
             return null;
         }

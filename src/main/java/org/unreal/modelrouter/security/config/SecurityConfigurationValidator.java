@@ -40,7 +40,7 @@ public class SecurityConfigurationValidator {
      * @param properties 安全配置
      * @return 验证结果
      */
-    public ValidationResult validateConfiguration(SecurityProperties properties) {
+    public ValidationResult validateConfiguration(final SecurityProperties properties) {
         log.debug("开始验证安全配置");
         
         ValidationResult result = new ValidationResult();
@@ -79,7 +79,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证API Key配置
      */
-    private void validateApiKeyConfig(ApiKeyConfig config, ValidationResult result) {
+    private void validateApiKeyConfig(final ApiKeyConfig config,final ValidationResult result) {
         if (config.isEnabled()) {
             // 验证请求头名称
             if (config.getHeaderName() == null || config.getHeaderName().trim().isEmpty()) {
@@ -105,7 +105,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证API Key列表
      */
-    private void validateApiKeyList(List<ApiKey> apiKeys, ValidationResult result) {
+    private void validateApiKeyList(final List<ApiKey> apiKeys,final ValidationResult result) {
         if (apiKeys.isEmpty()) {
             result.addWarning("API Key列表为空，系统将无法进行API Key认证");
             return;
@@ -152,7 +152,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证JWT配置
      */
-    private void validateJwtConfig(JwtConfig config, ValidationResult result) {
+    private void validateJwtConfig(final JwtConfig config,final ValidationResult result) {
         // 验证密钥
         if (config.getSecret() == null || config.getSecret().length() < 32) {
             result.addError("JWT密钥长度至少32个字符");
@@ -191,7 +191,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证脱敏配置
      */
-    private void validateSanitizationConfig(SanitizationConfig config, ValidationResult result) {
+    private void validateSanitizationConfig(final SanitizationConfig config,final ValidationResult result) {
         // 验证请求脱敏配置
         if (config.getRequest() != null) {
             validateRequestSanitizationConfig(config.getRequest(), result);
@@ -207,7 +207,7 @@ public class SecurityConfigurationValidator {
      * 验证请求脱敏配置
      */
     private void validateRequestSanitizationConfig(
-            SanitizationConfig.RequestSanitization config, ValidationResult result) {
+            final SanitizationConfig.RequestSanitization config,final ValidationResult result) {
         
         // 验证掩码字符
         if (config.getMaskingChar() == null || config.getMaskingChar().trim().isEmpty()) {
@@ -236,7 +236,7 @@ public class SecurityConfigurationValidator {
      * 验证响应脱敏配置
      */
     private void validateResponseSanitizationConfig(
-            SanitizationConfig.ResponseSanitization config, ValidationResult result) {
+            final SanitizationConfig.ResponseSanitization config,final ValidationResult result) {
         
         // 验证掩码字符
         if (config.getMaskingChar() == null || config.getMaskingChar().trim().isEmpty()) {
@@ -259,7 +259,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证敏感词列表
      */
-    private void validateSensitiveWords(List<String> sensitiveWords, String context, ValidationResult result) {
+    private void validateSensitiveWords(final List<String> sensitiveWords,final String context,final ValidationResult result) {
         if (sensitiveWords.isEmpty()) {
             result.addWarning(context + "敏感词列表为空，脱敏功能可能无效");
             return;
@@ -278,7 +278,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证PII模式列表
      */
-    private void validatePiiPatterns(List<String> piiPatterns, String context, ValidationResult result) {
+    private void validatePiiPatterns(final List<String> piiPatterns,final String context,final ValidationResult result) {
         if (piiPatterns.isEmpty()) {
             result.addWarning(context + "PII模式列表为空，PII数据脱敏功能可能无效");
             return;
@@ -302,7 +302,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证白名单用户列表
      */
-    private void validateWhitelistUsers(List<String> whitelistUsers, ValidationResult result) {
+    private void validateWhitelistUsers(final List<String> whitelistUsers,final ValidationResult result) {
         for (int i = 0; i < whitelistUsers.size(); i++) {
             String user = whitelistUsers.get(i);
             if (user == null || user.trim().isEmpty()) {
@@ -316,7 +316,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证审计配置
      */
-    private void validateAuditConfig(AuditConfig config, ValidationResult result) {
+    private void validateAuditConfig(final AuditConfig config,final ValidationResult result) {
         // 验证日志级别
         if (config.getLogLevel() == null || !SUPPORTED_LOG_LEVELS.contains(config.getLogLevel())) {
             result.addError("不支持的日志级别: " + config.getLogLevel() + 
@@ -339,7 +339,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证告警阈值配置
      */
-    private void validateAlertThresholds(AuditConfig.AlertThresholds thresholds, ValidationResult result) {
+    private void validateAlertThresholds(final AuditConfig.AlertThresholds thresholds,final ValidationResult result) {
         if (thresholds.getAuthFailuresPerMinute() <= 0) {
             result.addError("认证失败告警阈值必须大于0");
         } else if (thresholds.getAuthFailuresPerMinute() > 1000) {

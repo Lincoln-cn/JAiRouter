@@ -46,7 +46,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     private static final Duration STATS_TTL = Duration.ofMinutes(5);
     
     @Override
-    public Mono<Void> saveToken(JwtTokenInfo tokenInfo) {
+    public Mono<Void> saveToken(final JwtTokenInfo tokenInfo) {
         return Mono.fromRunnable(() -> {
             if (tokenInfo == null || tokenInfo.getTokenHash() == null) {
                 throw new IllegalArgumentException("Token info and token hash cannot be null");
@@ -74,7 +74,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     }
     
     @Override
-    public Mono<JwtTokenInfo> findByTokenHash(String tokenHash) {
+    public Mono<JwtTokenInfo> findByTokenHash(final String tokenHash) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.empty();
         }
@@ -89,7 +89,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findActiveTokensByUserId(String userId) {
+    public Mono<List<JwtTokenInfo>> findActiveTokensByUserId(final String userId) {
         if (userId == null || userId.trim().isEmpty()) {
             return Mono.just(new ArrayList<>());
         }
@@ -104,7 +104,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findAllTokens(int page, int size) {
+    public Mono<List<JwtTokenInfo>> findAllTokens(final int page,final int size) {
         return findAllTokensInRedis(page, size)
             .onErrorResume(error -> {
                 log.warn("Failed to find all tokens in Redis, falling back to StoreManager: {}", error.getMessage());
@@ -115,7 +115,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     }
     
     @Override
-    public Mono<Void> updateTokenStatus(String tokenHash, TokenStatus status) {
+    public Mono<Void> updateTokenStatus(final String tokenHash,final TokenStatus status) {
         if (tokenHash == null || status == null) {
             return Mono.error(new IllegalArgumentException("Token hash and status cannot be null"));
         }
@@ -141,7 +141,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     }
     
     @Override
-    public Mono<Long> countTokensByStatus(TokenStatus status) {
+    public Mono<Long> countTokensByStatus(final TokenStatus status) {
         return countTokensByStatusInRedis(status)
             .onErrorResume(error -> {
                 log.warn("Failed to count tokens by status in Redis, falling back to StoreManager: {}", error.getMessage());
@@ -163,7 +163,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     }
     
     @Override
-    public Mono<JwtTokenInfo> findByTokenId(String tokenId) {
+    public Mono<JwtTokenInfo> findByTokenId(final String tokenId) {
         if (tokenId == null || tokenId.trim().isEmpty()) {
             return Mono.empty();
         }
@@ -178,7 +178,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findTokensByUserId(String userId, int page, int size) {
+    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId,final int page,final int size) {
         if (userId == null || userId.trim().isEmpty()) {
             return Mono.just(new ArrayList<>());
         }
@@ -193,7 +193,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     }
     
     @Override
-    public Mono<Void> batchUpdateTokenStatus(List<String> tokenHashes, TokenStatus status, String reason, String updatedBy) {
+    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes,final TokenStatus status,final String reason,final String updatedBy) {
         if (tokenHashes == null || tokenHashes.isEmpty() || status == null) {
             return Mono.empty();
         }
@@ -209,7 +209,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     
     // Redis操作方法
     
-    private Mono<Void> saveTokenToRedis(JwtTokenInfo tokenInfo) {
+    private Mono<Void> saveTokenToRedis(final JwtTokenInfo tokenInfo) {
         return Mono.fromCallable(() -> {
             try {
                 String tokenKey = TOKEN_PREFIX + tokenInfo.getTokenHash();
@@ -235,7 +235,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         });
     }
     
-    private Mono<JwtTokenInfo> findTokenInRedis(String tokenHash) {
+    private Mono<JwtTokenInfo> findTokenInRedis(final String tokenHash) {
         String tokenKey = TOKEN_PREFIX + tokenHash;
         
         return redisTemplate.opsForValue().get(tokenKey)
@@ -248,7 +248,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             });
     }
     
-    private Mono<List<JwtTokenInfo>> findActiveTokensInRedis(String userId) {
+    private Mono<List<JwtTokenInfo>> findActiveTokensInRedis(final String userId) {
         String userIndexKey = USER_INDEX_PREFIX + userId;
         
         return redisTemplate.opsForSet().members(userIndexKey)
@@ -258,7 +258,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             .collectList();
     }
     
-    private Mono<List<JwtTokenInfo>> findAllTokensInRedis(int page, int size) {
+    private Mono<List<JwtTokenInfo>> findAllTokensInRedis(final int page,final int size) {
         String pattern = TOKEN_PREFIX + "*";
         
         return redisTemplate.scan()
@@ -283,7 +283,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             .collectList();
     }
     
-    private Mono<Void> updateTokenStatusInRedis(String tokenHash, TokenStatus status) {
+    private Mono<Void> updateTokenStatusInRedis(final String tokenHash,final TokenStatus status) {
         return findTokenInRedis(tokenHash)
             .flatMap(token -> {
                 TokenStatus oldStatus = token.getStatus();
@@ -309,7 +309,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             .defaultIfEmpty(0L);
     }
     
-    private Mono<Long> countTokensByStatusInRedis(TokenStatus status) {
+    private Mono<Long> countTokensByStatusInRedis(final TokenStatus status) {
         String statusIndexKey = STATUS_INDEX_PREFIX + status.name();
         
         return redisTemplate.opsForSet().size(statusIndexKey)
@@ -337,7 +337,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             .then();
     }
     
-    private Mono<JwtTokenInfo> findTokenByIdInRedis(String tokenId) {
+    private Mono<JwtTokenInfo> findTokenByIdInRedis(final String tokenId) {
         String pattern = TOKEN_PREFIX + "*";
         
         return redisTemplate.scan()
@@ -355,7 +355,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             .next();
     }
     
-    private Mono<List<JwtTokenInfo>> findTokensByUserIdInRedis(String userId, int page, int size) {
+    private Mono<List<JwtTokenInfo>> findTokensByUserIdInRedis(final String userId,final int page,final int size) {
         String userIndexKey = USER_INDEX_PREFIX + userId;
         
         return redisTemplate.opsForSet().members(userIndexKey)
@@ -370,7 +370,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             .collectList();
     }
     
-    private Mono<Void> batchUpdateTokenStatusInRedis(List<String> tokenHashes, TokenStatus status, String reason, String updatedBy) {
+    private Mono<Void> batchUpdateTokenStatusInRedis(final List<String> tokenHashes,final TokenStatus status,final String reason,final String updatedBy) {
         return Flux.fromIterable(tokenHashes)
             .flatMap(tokenHash -> findTokenInRedis(tokenHash)
                 .flatMap(token -> {
@@ -404,7 +404,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     
     // Redis索引操作方法
     
-    private Mono<Void> updateUserIndexInRedis(String userId, String tokenHash, boolean add) {
+    private Mono<Void> updateUserIndexInRedis(final String userId,final String tokenHash,final boolean add) {
         if (userId == null || tokenHash == null) {
             return Mono.empty();
         }
@@ -421,7 +421,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         }
     }
     
-    private Mono<Void> updateStatusIndexInRedis(TokenStatus status, String tokenHash, boolean add) {
+    private Mono<Void> updateStatusIndexInRedis(final TokenStatus status,final String tokenHash,final boolean add) {
         if (status == null || tokenHash == null) {
             return Mono.empty();
         }
@@ -446,7 +446,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     
     // Fallback操作方法（委托给现有的StoreManager实现）
     
-    private Mono<Void> saveTokenToFallback(JwtTokenInfo tokenInfo) {
+    private Mono<Void> saveTokenToFallback(final JwtTokenInfo tokenInfo) {
         return Mono.fromRunnable(() -> {
             try {
                 Map<String, Object> tokenData = convertToMap(tokenInfo);
@@ -458,7 +458,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         });
     }
     
-    private Mono<JwtTokenInfo> findTokenInFallback(String tokenHash) {
+    private Mono<JwtTokenInfo> findTokenInFallback(final String tokenHash) {
         return Mono.fromCallable(() -> {
             try {
                 String tokenKey = "jwt_token_" + tokenHash;
@@ -471,17 +471,17 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         });
     }
     
-    private Mono<List<JwtTokenInfo>> findActiveTokensInFallback(String userId) {
+    private Mono<List<JwtTokenInfo>> findActiveTokensInFallback(final String userId) {
         // 委托给现有的JwtTokenPersistenceServiceImpl
         return Mono.just(new ArrayList<>());
     }
     
-    private Mono<List<JwtTokenInfo>> findAllTokensInFallback(int page, int size) {
+    private Mono<List<JwtTokenInfo>> findAllTokensInFallback(final int page,final int size) {
         // 委托给现有的JwtTokenPersistenceServiceImpl
         return Mono.just(new ArrayList<>());
     }
     
-    private Mono<Void> updateTokenStatusInFallback(String tokenHash, TokenStatus status) {
+    private Mono<Void> updateTokenStatusInFallback(final String tokenHash,final TokenStatus status) {
         return Mono.fromRunnable(() -> {
             try {
                 String tokenKey = "jwt_token_" + tokenHash;
@@ -507,7 +507,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         return Mono.just(0L);
     }
     
-    private Mono<Long> countTokensByStatusInFallback(TokenStatus status) {
+    private Mono<Long> countTokensByStatusInFallback(final TokenStatus status) {
         return Mono.just(0L);
     }
     
@@ -515,21 +515,21 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         return Mono.empty();
     }
     
-    private Mono<JwtTokenInfo> findTokenByIdInFallback(String tokenId) {
+    private Mono<JwtTokenInfo> findTokenByIdInFallback(final String tokenId) {
         return Mono.empty();
     }
     
-    private Mono<List<JwtTokenInfo>> findTokensByUserIdInFallback(String userId, int page, int size) {
+    private Mono<List<JwtTokenInfo>> findTokensByUserIdInFallback(final String userId,final int page,final int size) {
         return Mono.just(new ArrayList<>());
     }
     
-    private Mono<Void> batchUpdateTokenStatusInFallback(List<String> tokenHashes, TokenStatus status, String reason, String updatedBy) {
+    private Mono<Void> batchUpdateTokenStatusInFallback(final List<String> tokenHashes,final TokenStatus status,final String reason,final String updatedBy) {
         return Mono.empty();
     }
     
     // 辅助方法
     
-    private Duration calculateTokenTTL(JwtTokenInfo tokenInfo) {
+    private Duration calculateTokenTTL(final JwtTokenInfo tokenInfo) {
         if (tokenInfo.getExpiresAt() != null) {
             Duration ttl = Duration.between(LocalDateTime.now(), tokenInfo.getExpiresAt());
             return ttl.isNegative() ? Duration.ofMinutes(1) : ttl;
@@ -537,14 +537,14 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         return DEFAULT_TOKEN_TTL;
     }
     
-    private boolean isTokenExpired(JwtTokenInfo token) {
+    private boolean isTokenExpired(final JwtTokenInfo token) {
         if (token.getExpiresAt() == null) {
             return false;
         }
         return token.getExpiresAt().isBefore(LocalDateTime.now());
     }
     
-    private Map<String, Object> convertToMap(JwtTokenInfo tokenInfo) {
+    private Map<String, Object> convertToMap(final JwtTokenInfo tokenInfo) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(tokenInfo, new TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
@@ -552,7 +552,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         }
     }
     
-    private JwtTokenInfo convertFromMap(Map<String, Object> tokenData) {
+    private JwtTokenInfo convertFromMap(final Map<String, Object> tokenData) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(tokenData, JwtTokenInfo.class);
         } catch (Exception e) {

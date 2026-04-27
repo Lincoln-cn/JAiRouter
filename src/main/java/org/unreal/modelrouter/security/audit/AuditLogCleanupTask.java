@@ -56,7 +56,7 @@ public class AuditLogCleanupTask {
     /**
      * 按风险等级清理
      */
-    private void cleanupByRiskLevel(String riskLevel, int retentionDays) {
+    private void cleanupByRiskLevel(final String riskLevel,final int retentionDays) {
         if (retentionDays <= 0) {
             log.debug("风险等级 {} 的日志永久保留", riskLevel);
             return;
@@ -124,7 +124,7 @@ public class AuditLogCleanupTask {
      * @param currentSize 当前大小（MB）
      * @param maxSize 最大大小（MB）
      */
-    private void triggerStorageAlert(long currentSize, long maxSize) {
+    private void triggerStorageAlert(final long currentSize,final long maxSize) {
         log.warn("存储空间告警: 当前 {} MB / 限制 {} MB", currentSize, maxSize);
         
         // 这里可以实现发送告警通知的逻辑，比如：

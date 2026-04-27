@@ -40,7 +40,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     @Override
     @Transactional
-    public BlacklistEntryDTO addToBlacklist(AddBlacklistRequest request, String addedBy) {
+    public BlacklistEntryDTO addToBlacklist(final AddBlacklistRequest request,final String addedBy) {
         log.info("添加到黑名单: type={}, value={}, addedBy={}",
                 request.getBlacklistType(), maskTargetValue(request.getBlacklistType(), request.getTargetValue()), addedBy);
 
@@ -89,7 +89,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     @Override
     @Transactional
-    public boolean removeFromBlacklist(Long id) {
+    public boolean removeFromBlacklist(final Long id) {
         log.info("从黑名单移除: id={}", id);
 
         Optional<SecurityBlacklistEntity> entity = repository.findById(id);
@@ -109,7 +109,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     @Override
     @Transactional
-    public boolean removeFromBlacklist(BlacklistType type, String targetValue) {
+    public boolean removeFromBlacklist(final BlacklistType type,final String targetValue) {
         log.info("从黑名单移除: type={}, value={}", type, maskTargetValue(type.name(), targetValue));
 
         Optional<SecurityBlacklistEntity> entity = repository.findByBlacklistTypeAndTargetValue(type, targetValue);
@@ -122,12 +122,12 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     }
 
     @Override
-    public boolean isInBlacklist(BlacklistType type, String targetValue) {
+    public boolean isInBlacklist(final BlacklistType type,final String targetValue) {
         return repository.isActiveInBlacklist(type, targetValue, BlacklistStatus.ACTIVE, LocalDateTime.now());
     }
 
     @Override
-    public boolean isTokenHashInBlacklist(String tokenHash) {
+    public boolean isTokenHashInBlacklist(final String tokenHash) {
         if (tokenHash == null) {
             return false;
         }
@@ -135,7 +135,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     }
 
     @Override
-    public boolean isIpInBlacklist(String ipAddress) {
+    public boolean isIpInBlacklist(final String ipAddress) {
         if (ipAddress == null) {
             return false;
         }
@@ -143,7 +143,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     }
 
     @Override
-    public boolean isDeviceInBlacklist(String deviceIdentifier) {
+    public boolean isDeviceInBlacklist(final String deviceIdentifier) {
         if (deviceIdentifier == null) {
             return false;
         }
@@ -151,14 +151,14 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     }
 
     @Override
-    public BlacklistEntryDTO getBlacklistEntry(Long id) {
+    public BlacklistEntryDTO getBlacklistEntry(final Long id) {
         return repository.findById(id)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
     @Override
-    public Page<BlacklistEntryDTO> getBlacklistPage(BlacklistType type, String status, int page, int size) {
+    public Page<BlacklistEntryDTO> getBlacklistPage(final BlacklistType type,final String status,final int page,final int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "addedAt"));
 
         Page<SecurityBlacklistEntity> entityPage;
@@ -223,7 +223,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     @Override
     @Transactional
-    public int batchAddToBlacklist(Iterable<AddBlacklistRequest> requests, String addedBy) {
+    public int batchAddToBlacklist(final Iterable<AddBlacklistRequest> requests,final String addedBy) {
         int count = 0;
         for (AddBlacklistRequest request : requests) {
             try {
@@ -238,7 +238,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
         return count;
     }
 
-    private String generateHash(String value) {
+    private String generateHash(final String value) {
         if (value == null) {
             return null;
         }
@@ -256,7 +256,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
         }
     }
 
-    private String maskTargetValue(String type, String value) {
+    private String maskTargetValue(final String type,final String value) {
         if (value == null || value.length() < 8) {
             return value == null ? "null" : value;
         }
@@ -277,7 +277,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
         }
     }
 
-    private RiskLevel parseRiskLevel(String riskLevel) {
+    private RiskLevel parseRiskLevel(final String riskLevel) {
         if (riskLevel == null || riskLevel.isEmpty()) {
             return RiskLevel.MEDIUM;
         }
@@ -288,7 +288,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
         }
     }
 
-    private BlacklistSource parseSource(String source) {
+    private BlacklistSource parseSource(final String source) {
         if (source == null || source.isEmpty()) {
             return BlacklistSource.MANUAL;
         }
@@ -299,7 +299,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
         }
     }
 
-    private BlacklistEntryDTO convertToDTO(SecurityBlacklistEntity entity) {
+    private BlacklistEntryDTO convertToDTO(final SecurityBlacklistEntity entity) {
         LocalDateTime now = LocalDateTime.now();
         boolean expired = entity.isExpired();
         boolean active = entity.isActive();

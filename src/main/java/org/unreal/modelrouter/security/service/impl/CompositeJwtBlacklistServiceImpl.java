@@ -32,7 +32,7 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     private final StorageHealthService storageHealthService;
     
     @Override
-    public Mono<Void> addToBlacklist(String tokenHash, String reason, String addedBy) {
+    public Mono<Void> addToBlacklist(final String tokenHash,final String reason,final String addedBy) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {
@@ -54,7 +54,7 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Boolean> isBlacklisted(String tokenHash) {
+    public Mono<Boolean> isBlacklisted(final String tokenHash) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {
@@ -78,7 +78,7 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> removeFromBlacklist(String tokenHash) {
+    public Mono<Void> removeFromBlacklist(final String tokenHash) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {
@@ -171,7 +171,7 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<TokenBlacklistEntry> getBlacklistEntry(String tokenHash) {
+    public Mono<TokenBlacklistEntry> getBlacklistEntry(final String tokenHash) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {
@@ -189,7 +189,7 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> batchAddToBlacklist(List<String> tokenHashes, String reason, String addedBy) {
+    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes,final String reason,final String addedBy) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {
@@ -221,7 +221,7 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Long> getExpiringEntriesCount(int hoursUntilExpiry) {
+    public Mono<Long> getExpiringEntriesCount(final int hoursUntilExpiry) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {

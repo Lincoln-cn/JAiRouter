@@ -37,8 +37,8 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
-    public LockFreeCircuitBreaker(String instanceId, int failureThreshold,
-                                   long timeout, int successThreshold) {
+    public LockFreeCircuitBreaker(final String instanceId,final int failureThreshold,
+                                   final long timeout,final int successThreshold) {
         this.instanceId = instanceId;
         this.failureThreshold = failureThreshold;
         this.timeout = timeout;
@@ -196,7 +196,7 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
     /**
      * 记录熔断器指标
      */
-    private void recordCircuitBreakerEvent(String event, String currentState) {
+    private void recordCircuitBreakerEvent(final String event,final String currentState) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordCircuitBreaker(instanceId, currentState, event);
@@ -279,7 +279,7 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
      *
      * @param stateData 包含状态信息的 Map
      */
-    public void restoreState(Map<String, Object> stateData) {
+    public void restoreState(final Map<String, Object> stateData) {
         if (stateData == null || !stateData.containsKey("instanceId")) {
             logger.warn("无效的状态数据，无法恢复熔断器状态");
             return;

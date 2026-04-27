@@ -28,7 +28,7 @@ public class CacheMetrics {
     
     private final AtomicLong cacheSize = new AtomicLong(0);
     
-    public CacheMetrics(MeterRegistry meterRegistry) {
+    public CacheMetrics(final MeterRegistry meterRegistry) {
         // 缓存命中率指标
         this.cacheHits = Counter.builder("jairouter.security.cache.hits")
                 .description("API Key缓存命中次数")
@@ -110,7 +110,7 @@ public class CacheMetrics {
     /**
      * 记录缓存读取耗时
      */
-    public void recordReadDuration(Duration duration) {
+    public void recordReadDuration(final Duration duration) {
         cacheReadTimer.record(duration);
         log.debug("记录缓存读取耗时: {} ms", duration.toMillis());
     }
@@ -118,7 +118,7 @@ public class CacheMetrics {
     /**
      * 记录缓存写入耗时
      */
-    public void recordWriteDuration(Duration duration) {
+    public void recordWriteDuration(final Duration duration) {
         cacheWriteTimer.record(duration);
         log.debug("记录缓存写入耗时: {} ms", duration.toMillis());
     }
@@ -126,7 +126,7 @@ public class CacheMetrics {
     /**
      * 更新缓存大小
      */
-    public void updateCacheSize(long size) {
+    public void updateCacheSize(final long size) {
         cacheSize.set(size);
         log.debug("更新缓存大小: {}", size);
     }
@@ -187,7 +187,7 @@ public class CacheMetrics {
         private final double hitRate;
         private final long size;
         
-        private CacheStatistics(Builder builder) {
+        private CacheStatistics(final Builder builder) {
             this.hits = builder.hits;
             this.misses = builder.misses;
             this.writes = builder.writes;
@@ -226,13 +226,13 @@ public class CacheMetrics {
             private double hitRate;
             private long size;
             
-            public Builder hits(double hits) { this.hits = hits; return this; }
-            public Builder misses(double misses) { this.misses = misses; return this; }
-            public Builder writes(double writes) { this.writes = writes; return this; }
-            public Builder evictions(double evictions) { this.evictions = evictions; return this; }
-            public Builder errors(double errors) { this.errors = errors; return this; }
-            public Builder hitRate(double hitRate) { this.hitRate = hitRate; return this; }
-            public Builder size(long size) { this.size = size; return this; }
+            public Builder hits(final double hits) { this.hits = hits; return this; }
+            public Builder misses(final double misses) { this.misses = misses; return this; }
+            public Builder writes(final double writes) { this.writes = writes; return this; }
+            public Builder evictions(final double evictions) { this.evictions = evictions; return this; }
+            public Builder errors(final double errors) { this.errors = errors; return this; }
+            public Builder hitRate(final double hitRate) { this.hitRate = hitRate; return this; }
+            public Builder size(final long size) { this.size = size; return this; }
             
             public CacheStatistics build() {
                 return new CacheStatistics(this);

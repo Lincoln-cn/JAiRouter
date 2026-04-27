@@ -27,7 +27,7 @@ public class ApiKeyAuthentication implements Authentication {
     /**
      * 构造函数 - 用于未认证的请求
      */
-    public ApiKeyAuthentication(String apiKey) {
+    public ApiKeyAuthentication(final String apiKey) {
         this.principal = null;
         this.credentials = apiKey;
         this.authorities = List.of();
@@ -36,7 +36,7 @@ public class ApiKeyAuthentication implements Authentication {
     /**
      * 构造函数 - 用于已认证的请求
      */
-    public ApiKeyAuthentication(String keyId, String apiKey, List<String> permissions) {
+    public ApiKeyAuthentication(final String keyId,final String apiKey,final List<String> permissions) {
         this.principal = keyId;
         this.credentials = apiKey;
         this.authorities = permissions.stream()
@@ -75,7 +75,7 @@ public class ApiKeyAuthentication implements Authentication {
     }
     
     @Override
-    public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+    public void setAuthenticated(final boolean isAuthenticated) throws IllegalArgumentException {
         this.authenticated = isAuthenticated;
     }
     

@@ -50,7 +50,7 @@ public class ClientIpUtils {
      * @param exchange ServerWebExchange对象
      * @return 客户端IP地址，如果无法获取则返回"unknown"
      */
-    public static String getClientIpAddress(ServerWebExchange exchange) {
+    public static String getClientIpAddress(final ServerWebExchange exchange) {
         if (exchange == null || exchange.getRequest() == null) {
             log.warn("ServerWebExchange或Request为null，无法获取客户端IP");
             return "unknown";
@@ -77,7 +77,7 @@ public class ClientIpUtils {
     /**
      * 从代理头中获取IP地址
      */
-    private static String getIpFromProxyHeaders(ServerWebExchange exchange) {
+    private static String getIpFromProxyHeaders(final ServerWebExchange exchange) {
         for (String header : PROXY_HEADERS) {
             String headerValue = exchange.getRequest().getHeaders().getFirst(header);
             if (headerValue != null && !headerValue.trim().isEmpty() && !"unknown".equalsIgnoreCase(headerValue.trim())) {
@@ -107,7 +107,7 @@ public class ClientIpUtils {
     /**
      * 从远程地址获取IP
      */
-    private static String getIpFromRemoteAddress(ServerWebExchange exchange) {
+    private static String getIpFromRemoteAddress(final ServerWebExchange exchange) {
         try {
             InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
             if (remoteAddress != null && remoteAddress.getAddress() != null) {
@@ -129,7 +129,7 @@ public class ClientIpUtils {
     /**
      * 验证IP地址是否有效
      */
-    private static boolean isValidIp(String ip) {
+    private static boolean isValidIp(final String ip) {
         if (ip == null || ip.trim().isEmpty() || "unknown".equalsIgnoreCase(ip.trim())) {
             return false;
         }
@@ -154,7 +154,7 @@ public class ClientIpUtils {
     /**
      * 判断是否为私有IP地址
      */
-    private static boolean isPrivateIp(String ip) {
+    private static boolean isPrivateIp(final String ip) {
         if (ip == null || ip.trim().isEmpty()) {
             return true;
         }
@@ -167,7 +167,7 @@ public class ClientIpUtils {
     /**
      * 获取客户端IP地址的详细信息（用于调试）
      */
-    public static String getClientIpDetails(ServerWebExchange exchange) {
+    public static String getClientIpDetails(final ServerWebExchange exchange) {
         if (exchange == null || exchange.getRequest() == null) {
             return "ServerWebExchange或Request为null";
         }

@@ -41,7 +41,7 @@ public class JwtAccountService {
     /**
      * 获取单个账户
      */
-    public JwtAccountDTO getAccount(String username) {
+    public JwtAccountDTO getAccount(final String username) {
         return jwtAccountRepository.findByUsername(username)
                 .map(this::convertToDTO)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + username));
@@ -51,7 +51,7 @@ public class JwtAccountService {
      * 创建账户
      */
     @Transactional
-    public JwtAccountDTO createAccount(CreateJwtAccountRequest request) {
+    public JwtAccountDTO createAccount(final CreateJwtAccountRequest request) {
         if (jwtAccountRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username already exists: " + request.getUsername());
         }
@@ -76,7 +76,7 @@ public class JwtAccountService {
      * 更新账户
      */
     @Transactional
-    public JwtAccountDTO updateAccount(String username, CreateJwtAccountRequest request) {
+    public JwtAccountDTO updateAccount(final String username,final CreateJwtAccountRequest request) {
         JwtAccountEntity entity = jwtAccountRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + username));
 
@@ -100,7 +100,7 @@ public class JwtAccountService {
      * 删除账户
      */
     @Transactional
-    public void deleteAccount(String username) {
+    public void deleteAccount(final String username) {
         jwtAccountRepository.findByUsername(username).ifPresent(entity -> {
             jwtAccountRepository.delete(entity);
             log.info("Deleted JWT account: {}", username);
@@ -110,7 +110,7 @@ public class JwtAccountService {
     /**
      * 验证密码
      */
-    public boolean verifyPassword(String username, String password) {
+    public boolean verifyPassword(final String username,final String password) {
         return jwtAccountRepository.findByUsername(username)
                 .map(entity -> passwordEncoder.matches(password, entity.getPassword()))
                 .orElse(false);
@@ -120,7 +120,7 @@ public class JwtAccountService {
      * 切换账户状态
      */
     @Transactional
-    public JwtAccountDTO toggleAccountStatus(String username, boolean enabled) {
+    public JwtAccountDTO toggleAccountStatus(final String username,final boolean enabled) {
         JwtAccountEntity entity = jwtAccountRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + username));
         entity.setEnabled(enabled);
@@ -129,7 +129,7 @@ public class JwtAccountService {
         return convertToDTO(saved);
     }
 
-    private JwtAccountDTO convertToDTO(JwtAccountEntity entity) {
+    private JwtAccountDTO convertToDTO(final JwtAccountEntity entity) {
         List<String> roles = List.of();
         try {
             if (entity.getRoles() != null) {

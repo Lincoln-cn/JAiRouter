@@ -32,7 +32,7 @@ public class JwtServiceConfiguration {
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
     public JwtPersistenceService redisJwtPersistenceService(
             @Qualifier("jwtReactiveRedisTemplate") ReactiveRedisTemplate<String, String> redisTemplate,
-            StoreManager storeManager) {
+            final StoreManager storeManager) {
         
         log.info("Initializing Redis-based JWT persistence service");
         return new RedisJwtTokenPersistenceServiceImpl(redisTemplate, storeManager);
@@ -45,7 +45,7 @@ public class JwtServiceConfiguration {
     @Bean
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "false", matchIfMissing = true)
-    public JwtPersistenceService storeManagerJwtPersistenceService(StoreManager storeManager) {
+    public JwtPersistenceService storeManagerJwtPersistenceService(final StoreManager storeManager) {
         
         log.info("Initializing StoreManager-based JWT persistence service");
         return new JwtTokenPersistenceServiceImpl(storeManager);
@@ -60,7 +60,7 @@ public class JwtServiceConfiguration {
     @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
     public JwtBlacklistService redisJwtBlacklistService(
             @Qualifier("jwtReactiveRedisTemplate") ReactiveRedisTemplate<String, String> redisTemplate,
-            StoreManager storeManager) {
+            final StoreManager storeManager) {
         
         log.info("Initializing Redis-based JWT blacklist service");
         return new RedisJwtBlacklistServiceImpl(redisTemplate, storeManager);
@@ -73,7 +73,7 @@ public class JwtServiceConfiguration {
     @Bean
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "false", matchIfMissing = true)
-    public JwtBlacklistService storeManagerJwtBlacklistService(StoreManager storeManager) {
+    public JwtBlacklistService storeManagerJwtBlacklistService(final StoreManager storeManager) {
         
         log.info("Initializing StoreManager-based JWT blacklist service");
         return new JwtBlacklistServiceImpl(storeManager);
@@ -85,8 +85,8 @@ public class JwtServiceConfiguration {
     @Bean
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.enabled", havingValue = "true")
     public JwtServiceHealthChecker jwtServiceHealthChecker(
-            JwtPersistenceService persistenceService,
-            JwtBlacklistService blacklistService) {
+            final JwtPersistenceService persistenceService,
+            final JwtBlacklistService blacklistService) {
         
         return new JwtServiceHealthChecker(persistenceService, blacklistService);
     }
@@ -98,7 +98,7 @@ public class JwtServiceConfiguration {
         private final JwtPersistenceService persistenceService;
         private final JwtBlacklistService blacklistService;
         
-        public JwtServiceHealthChecker(JwtPersistenceService persistenceService, JwtBlacklistService blacklistService) {
+        public JwtServiceHealthChecker(final JwtPersistenceService persistenceService,final JwtBlacklistService blacklistService) {
             this.persistenceService = persistenceService;
             this.blacklistService = blacklistService;
         }

@@ -26,14 +26,14 @@ public class ApiKeyConfigManager {
     private final String apiKeysStoreKey = "security.api-keys";
     private final String storeApiKeys = "apiKeys";
 
-    public ApiKeyConfigManager(StoreManager storeManager) {
+    public ApiKeyConfigManager(final StoreManager storeManager) {
         this.storeManager = storeManager;
     }
 
     /**
      * 保存 API Key 数据到存储
      */
-    public void saveApiKeysToStore(List<ApiKey> apiKeys) {
+    public void saveApiKeysToStore(final List<ApiKey> apiKeys) {
         try {
             Map<String, Object> config = new HashMap<>();
             config.put(storeApiKeys, apiKeys);
@@ -63,7 +63,7 @@ public class ApiKeyConfigManager {
     /**
      * 从 YAML 配置初始化 API Key
      */
-    public Map<String, Object> loadFromYaml(List<ApiKey> yamlKeys) {
+    public Map<String, Object> loadFromYaml(final List<ApiKey> yamlKeys) {
         Map<String, Object> config = new HashMap<>();
         config.put(storeApiKeys, yamlKeys);
         return config;
@@ -72,7 +72,7 @@ public class ApiKeyConfigManager {
     /**
      * 获取版本配置
      */
-    public Map<String, Object> getVersionConfig(int version) {
+    public Map<String, Object> getVersionConfig(final int version) {
         if (version == 0) {
             Map<String, Object> config = new HashMap<>();
             config.put(storeApiKeys, new java.util.ArrayList<>());
@@ -84,7 +84,7 @@ public class ApiKeyConfigManager {
     /**
      * 保存新版本配置
      */
-    public int saveNewVersion(Map<String, Object> config) {
+    public int saveNewVersion(final Map<String, Object> config) {
         int version = getCurrentVersion() + 1;
         storeManager.saveConfigVersion(apiKeysStoreKey, config, version);
         log.info("已保存 API Key 配置为新版本：{}", version);
@@ -110,7 +110,7 @@ public class ApiKeyConfigManager {
      * 从版本配置中加载 API Keys
      */
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> loadApiKeysFromVersionConfig(Map<String, Object> versionConfig) {
+    public List<Map<String, Object>> loadApiKeysFromVersionConfig(final Map<String, Object> versionConfig) {
         List<Map<String, Object>> keys = (List<Map<String, Object>>) versionConfig.get(storeApiKeys);
         return keys != null ? keys : new java.util.ArrayList<>();
     }

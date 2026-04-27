@@ -27,9 +27,9 @@ public class ConfigMergeService {
     private final ConfigurationHelper configurationHelper;
 
     @Autowired
-    public ConfigMergeService(StoreManager storeManager,
-                              ModelRouterProperties modelRouterProperties,
-                              ConfigurationHelper configurationHelper) {
+    public ConfigMergeService(final StoreManager storeManager,
+                              final ModelRouterProperties modelRouterProperties,
+                              final ConfigurationHelper configurationHelper) {
         this.storeManager = storeManager;
         this.modelRouterProperties = modelRouterProperties;
         this.configurationHelper = configurationHelper;
@@ -79,7 +79,7 @@ public class ConfigMergeService {
      * @return 合并后的配置
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> deepMergeConfigs(Map<String, Object> baseConfig, Map<String, Object> overrideConfig) {
+    public Map<String, Object> deepMergeConfigs(final Map<String, Object> baseConfig,final Map<String, Object> overrideConfig) {
         if (overrideConfig.isEmpty()) {
             return new HashMap<>(baseConfig);
         }
@@ -129,7 +129,7 @@ public class ConfigMergeService {
      * @return 合并后的实例列表
      */
     @SuppressWarnings("unchecked")
-    private List<Object> mergeInstanceLists(List<?> baseInstances, List<?> overrideInstances) {
+    private List<Object> mergeInstanceLists(final List<?> baseInstances,final List<?> overrideInstances) {
         Map<String, Object> instanceMap = new HashMap<>();
 
         // 先添加基础实例

@@ -27,7 +27,7 @@ public class VersionControlService {
     /**
      * 创建新版本
      */
-    public Integer createNewVersion(Map<String, Object> config, String description, String userId) {
+    public Integer createNewVersion(final Map<String, Object> config,final String description,final String userId) {
         int newVersion = versionCounter.incrementAndGet();
         log.info("创建新版本: {}, 描述: {}, 用户: {}", newVersion, description, userId);
         return newVersion;
@@ -43,7 +43,7 @@ public class VersionControlService {
     /**
      * 回滚到指定版本
      */
-    public Map<String, Object> rollbackToVersion(Integer version) {
+    public Map<String, Object> rollbackToVersion(final Integer version) {
         log.info("回滚到版本: {}", version);
         // JPA 版本简化实现
         return storeManager.getConfig(CURRENT_KEY);

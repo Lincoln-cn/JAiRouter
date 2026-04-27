@@ -38,9 +38,9 @@ public class StatefulCircuitBreaker implements CircuitBreaker {
      * @param successThreshold 成功阈值
      * @param metricsCollector 指标收集器（可选）
      */
-    public StatefulCircuitBreaker(String instanceId, int failureThreshold, 
-                                   long timeout, int successThreshold,
-                                   MetricsCollector metricsCollector) {
+    public StatefulCircuitBreaker(final String instanceId,final int failureThreshold, 
+                                   final long timeout,final int successThreshold,
+                                   final MetricsCollector metricsCollector) {
         this.instanceId = instanceId;
         this.context = new CircuitStateContext(
             instanceId,
@@ -55,8 +55,8 @@ public class StatefulCircuitBreaker implements CircuitBreaker {
     /**
      * 创建熔断器（无指标收集器）
      */
-    public StatefulCircuitBreaker(String instanceId, int failureThreshold, 
-                                   long timeout, int successThreshold) {
+    public StatefulCircuitBreaker(final String instanceId,final int failureThreshold, 
+                                   final long timeout,final int successThreshold) {
         this(instanceId, failureThreshold, timeout, successThreshold, null);
     }
 

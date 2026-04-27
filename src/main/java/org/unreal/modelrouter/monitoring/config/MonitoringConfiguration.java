@@ -29,7 +29,7 @@ public class MonitoringConfiguration {
     
     private final MonitoringProperties monitoringProperties;
 
-    public MonitoringConfiguration(MonitoringProperties monitoringProperties) {
+    public MonitoringConfiguration(final MonitoringProperties monitoringProperties) {
         this.monitoringProperties = monitoringProperties;
     }
 
@@ -108,7 +108,7 @@ public class MonitoringConfiguration {
     /**
      * 判断是否为系统指标
      */
-    private boolean isSystemMetric(String metricName) {
+    private boolean isSystemMetric(final String metricName) {
         return metricName.startsWith("jvm.") || 
                metricName.startsWith("system.") || 
                metricName.startsWith("process.") ||

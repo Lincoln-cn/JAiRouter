@@ -30,21 +30,21 @@ public class JwtPersistenceConfiguration {
             
             // Getters and Setters
             public int getMaxTokens() { return maxTokens; }
-            public void setMaxTokens(int maxTokens) { this.maxTokens = maxTokens; }
+            public void setMaxTokens(final int maxTokens) { this.maxTokens = maxTokens; }
             
             public double getCleanupThreshold() { return cleanupThreshold; }
-            public void setCleanupThreshold(double cleanupThreshold) { this.cleanupThreshold = cleanupThreshold; }
+            public void setCleanupThreshold(final double cleanupThreshold) { this.cleanupThreshold = cleanupThreshold; }
             
             public boolean isLruEnabled() { return lruEnabled; }
-            public void setLruEnabled(boolean lruEnabled) { this.lruEnabled = lruEnabled; }
+            public void setLruEnabled(final boolean lruEnabled) { this.lruEnabled = lruEnabled; }
         }
         
         // Getters and Setters
         public String getStoragePath() { return storagePath; }
-        public void setStoragePath(String storagePath) { this.storagePath = storagePath; }
+        public void setStoragePath(final String storagePath) { this.storagePath = storagePath; }
         
         public Memory getMemory() { return memory; }
-        public void setMemory(Memory memory) { this.memory = memory; }
+        public void setMemory(final Memory memory) { this.memory = memory; }
     }
     
     /**
@@ -58,13 +58,13 @@ public class JwtPersistenceConfiguration {
         
         // Getters and Setters
         public String getStoragePath() { return storagePath; }
-        public void setStoragePath(String storagePath) { this.storagePath = storagePath; }
+        public void setStoragePath(final String storagePath) { this.storagePath = storagePath; }
         
         public int getMaxMemorySize() { return maxMemorySize; }
-        public void setMaxMemorySize(int maxMemorySize) { this.maxMemorySize = maxMemorySize; }
+        public void setMaxMemorySize(final int maxMemorySize) { this.maxMemorySize = maxMemorySize; }
         
         public int getCleanupInterval() { return cleanupInterval; }
-        public void setCleanupInterval(int cleanupInterval) { this.cleanupInterval = cleanupInterval; }
+        public void setCleanupInterval(final int cleanupInterval) { this.cleanupInterval = cleanupInterval; }
     }
     
     /**

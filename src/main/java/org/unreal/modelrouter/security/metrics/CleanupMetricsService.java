@@ -50,7 +50,7 @@ public class CleanupMetricsService {
     // 清理频率统计
     private final Map<String, AtomicLong> cleanupFrequency = new ConcurrentHashMap<>();
     
-    public CleanupMetricsService(MeterRegistry meterRegistry) {
+    public CleanupMetricsService(final MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         
         // 初始化计时器
@@ -96,7 +96,7 @@ public class CleanupMetricsService {
     /**
      * 完成令牌清理操作
      */
-    public void finishTokenCleanup(Timer.Sample sample, long itemsRemoved, boolean success) {
+    public void finishTokenCleanup(final Timer.Sample sample,final long itemsRemoved,final boolean success) {
         if (sample != null) {
             sample.stop(tokenCleanupTimer);
         }
@@ -138,7 +138,7 @@ public class CleanupMetricsService {
     /**
      * 完成黑名单清理操作
      */
-    public void finishBlacklistCleanup(Timer.Sample sample, long itemsRemoved, boolean success) {
+    public void finishBlacklistCleanup(final Timer.Sample sample,final long itemsRemoved,final boolean success) {
         if (sample != null) {
             sample.stop(blacklistCleanupTimer);
         }
@@ -173,7 +173,7 @@ public class CleanupMetricsService {
     /**
      * 记录手动清理操作
      */
-    public void recordManualCleanup(String type, long itemsRemoved, Duration duration) {
+    public void recordManualCleanup(final String type,final long itemsRemoved,final Duration duration) {
         Timer.builder("jwt.cleanup.manual.duration")
             .description("手动清理操作耗时")
             .tag("cleanup_type", type)
@@ -202,7 +202,7 @@ public class CleanupMetricsService {
     /**
      * 更新清理频率统计
      */
-    private void updateCleanupFrequency(String type) {
+    private void updateCleanupFrequency(final String type) {
         String key = type + "_frequency";
         cleanupFrequency.computeIfAbsent(key, k -> new AtomicLong(0)).incrementAndGet();
     }

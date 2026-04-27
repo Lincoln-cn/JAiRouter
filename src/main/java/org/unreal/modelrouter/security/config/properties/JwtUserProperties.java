@@ -27,7 +27,7 @@ public class JwtUserProperties {
     /**
      * 将请求对象转换为账户对象
      */
-    public JwtUserProperties.UserAccount convertToAccount(JwtAccountRequest request) {
+    public JwtUserProperties.UserAccount convertToAccount(final JwtAccountRequest request) {
         JwtUserProperties.UserAccount account = new JwtUserProperties.UserAccount();
         account.setUsername(request.getUsername());
         account.setPassword(request.getPassword());
@@ -39,7 +39,7 @@ public class JwtUserProperties {
     /**
      * 将账户对象转换为响应对象
      */
-    public JwtAccountResponse convertToResponse(JwtUserProperties.UserAccount account) {
+    public JwtAccountResponse convertToResponse(final JwtUserProperties.UserAccount account) {
         JwtAccountResponse response = new JwtAccountResponse();
         response.setUsername(account.getUsername());
         response.setRoles(account.getRoles());

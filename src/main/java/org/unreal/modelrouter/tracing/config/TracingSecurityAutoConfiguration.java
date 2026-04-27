@@ -38,8 +38,8 @@ public class TracingSecurityAutoConfiguration {
     @Bean
     @ConditionalOnProperty(name = "jairouter.tracing.security.sanitization.enabled", havingValue = "true", matchIfMissing = true)
     public TracingSanitizationService tracingSanitizationService(
-            SanitizationService sanitizationService,
-            TracingConfiguration tracingConfiguration,
+            final SanitizationService sanitizationService,
+            final TracingConfiguration tracingConfiguration,
             @Lazy StructuredLogger structuredLogger) {
 
         TracingSanitizationService service = new TracingSanitizationService(
@@ -55,7 +55,7 @@ public class TracingSecurityAutoConfiguration {
     @Bean
     @ConditionalOnProperty(name = "jairouter.tracing.security.access-control.enabled", havingValue = "true", matchIfMissing = true)
     public TracingSecurityManager tracingSecurityManager(
-            TracingConfiguration tracingConfiguration,
+            final TracingConfiguration tracingConfiguration,
             @Lazy StructuredLogger structuredLogger) {
 
         TracingSecurityManager manager = new TracingSecurityManager(tracingConfiguration, structuredLogger);
@@ -70,7 +70,7 @@ public class TracingSecurityAutoConfiguration {
     @Bean
     @ConditionalOnProperty(name = "jairouter.tracing.security.encryption.enabled", havingValue = "true", matchIfMissing = true)
     public TracingEncryptionService tracingEncryptionService(
-            TracingConfiguration tracingConfiguration,
+            final TracingConfiguration tracingConfiguration,
             @Lazy StructuredLogger structuredLogger) {
 
         TracingEncryptionService service = new TracingEncryptionService(tracingConfiguration, structuredLogger);

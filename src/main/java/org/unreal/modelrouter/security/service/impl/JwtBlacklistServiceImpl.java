@@ -40,7 +40,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> addToBlacklist(String tokenHash, String reason, String addedBy) {
+    public Mono<Void> addToBlacklist(final String tokenHash,final String reason,final String addedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHash == null || tokenHash.trim().isEmpty()) {
@@ -75,7 +75,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Boolean> isBlacklisted(String tokenHash) {
+    public Mono<Boolean> isBlacklisted(final String tokenHash) {
         return Mono.fromCallable(() -> {
             try {
                 if (tokenHash == null || tokenHash.trim().isEmpty()) {
@@ -107,7 +107,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> removeFromBlacklist(String tokenHash) {
+    public Mono<Void> removeFromBlacklist(final String tokenHash) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHash == null || tokenHash.trim().isEmpty()) {
@@ -236,7 +236,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     /**
      * 将TokenBlacklistEntry转换为Map用于存储
      */
-    private Map<String, Object> convertToMap(TokenBlacklistEntry entry) {
+    private Map<String, Object> convertToMap(final TokenBlacklistEntry entry) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(entry, new TypeReference<Map<String, Object>>() {});
         } catch (Exception e) {
@@ -248,7 +248,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     /**
      * 将Map转换为TokenBlacklistEntry
      */
-    private TokenBlacklistEntry convertFromMap(Map<String, Object> entryData) {
+    private TokenBlacklistEntry convertFromMap(final Map<String, Object> entryData) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(entryData, TokenBlacklistEntry.class);
         } catch (Exception e) {
@@ -260,7 +260,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     /**
      * 更新黑名单索引
      */
-    private void updateBlacklistIndex(String tokenHash, boolean add) {
+    private void updateBlacklistIndex(final String tokenHash,final boolean add) {
         try {
             Map<String, Object> indexData = storeManager.getConfig(BLACKLIST_INDEX_KEY);
             
@@ -317,7 +317,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     /**
      * 更新黑名单统计信息
      */
-    private void updateBlacklistStats(long sizeChange, long cleanedCount) {
+    private void updateBlacklistStats(final long sizeChange,final long cleanedCount) {
         try {
             Map<String, Object> statsData = storeManager.getConfig(BLACKLIST_STATS_KEY);
             
@@ -352,7 +352,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<TokenBlacklistEntry> getBlacklistEntry(String tokenHash) {
+    public Mono<TokenBlacklistEntry> getBlacklistEntry(final String tokenHash) {
         return Mono.fromCallable(() -> {
             try {
                 if (tokenHash == null || tokenHash.trim().isEmpty()) {
@@ -376,7 +376,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> batchAddToBlacklist(List<String> tokenHashes, String reason, String addedBy) {
+    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes,final String reason,final String addedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHashes == null || tokenHashes.isEmpty()) {
@@ -438,7 +438,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Long> getExpiringEntriesCount(int hoursUntilExpiry) {
+    public Mono<Long> getExpiringEntriesCount(final int hoursUntilExpiry) {
         return Mono.fromCallable(() -> {
             try {
                 long expiringCount = 0;
@@ -549,7 +549,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     /**
      * 检查黑名单条目是否过期
      */
-    private boolean isEntryExpired(TokenBlacklistEntry entry) {
+    private boolean isEntryExpired(final TokenBlacklistEntry entry) {
         return entry.getExpiresAt() != null && entry.getExpiresAt().isBefore(LocalDateTime.now());
     }
 }

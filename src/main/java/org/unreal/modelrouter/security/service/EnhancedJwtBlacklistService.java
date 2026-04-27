@@ -39,7 +39,7 @@ public class EnhancedJwtBlacklistService {
      * @param ttlSeconds 过期时间（秒）
      * @return 操作结果
      */
-    public Mono<Boolean> addToBlacklist(String tokenId, long ttlSeconds) {
+    public Mono<Boolean> addToBlacklist(final String tokenId,final long ttlSeconds) {
         if (tokenId == null || tokenId.trim().isEmpty()) {
             log.warn("尝试将空的tokenId加入黑名单");
             return Mono.just(false);
@@ -91,7 +91,7 @@ public class EnhancedJwtBlacklistService {
      * @param tokenId 令牌ID或令牌哈希
      * @return 是否在黑名单中
      */
-    public Mono<Boolean> isBlacklisted(String tokenId) {
+    public Mono<Boolean> isBlacklisted(final String tokenId) {
         if (tokenId == null || tokenId.trim().isEmpty()) {
             return Mono.just(false);
         }
@@ -155,7 +155,7 @@ public class EnhancedJwtBlacklistService {
      * @param tokenId 令牌ID或令牌哈希
      * @return 操作结果
      */
-    public Mono<Boolean> removeFromBlacklist(String tokenId) {
+    public Mono<Boolean> removeFromBlacklist(final String tokenId) {
         if (tokenId == null || tokenId.trim().isEmpty()) {
             return Mono.just(false);
         }
@@ -268,19 +268,19 @@ public class EnhancedJwtBlacklistService {
         
         // Getters and Setters
         public int getLocalCacheSize() { return localCacheSize; }
-        public void setLocalCacheSize(int localCacheSize) { this.localCacheSize = localCacheSize; }
+        public void setLocalCacheSize(final int localCacheSize) { this.localCacheSize = localCacheSize; }
         
         public int getLocalCacheMaxSize() { return localCacheMaxSize; }
-        public void setLocalCacheMaxSize(int localCacheMaxSize) { this.localCacheMaxSize = localCacheMaxSize; }
+        public void setLocalCacheMaxSize(final int localCacheMaxSize) { this.localCacheMaxSize = localCacheMaxSize; }
         
         public int getRedisSize() { return redisSize; }
-        public void setRedisSize(int redisSize) { this.redisSize = redisSize; }
+        public void setRedisSize(final int redisSize) { this.redisSize = redisSize; }
         
         public int getRedisBackupSize() { return redisBackupSize; }
-        public void setRedisBackupSize(int redisBackupSize) { this.redisBackupSize = redisBackupSize; }
+        public void setRedisBackupSize(final int redisBackupSize) { this.redisBackupSize = redisBackupSize; }
         
         public boolean isRedisAvailable() { return redisAvailable; }
-        public void setRedisAvailable(boolean redisAvailable) { this.redisAvailable = redisAvailable; }
+        public void setRedisAvailable(final boolean redisAvailable) { this.redisAvailable = redisAvailable; }
     }
     
     /**
@@ -291,9 +291,9 @@ public class EnhancedJwtBlacklistService {
         private int redisBackupSize;
         
         public int getRedisSize() { return redisSize; }
-        public void setRedisSize(int redisSize) { this.redisSize = redisSize; }
+        public void setRedisSize(final int redisSize) { this.redisSize = redisSize; }
         
         public int getRedisBackupSize() { return redisBackupSize; }
-        public void setRedisBackupSize(int redisBackupSize) { this.redisBackupSize = redisBackupSize; }
+        public void setRedisBackupSize(final int redisBackupSize) { this.redisBackupSize = redisBackupSize; }
     }
 }

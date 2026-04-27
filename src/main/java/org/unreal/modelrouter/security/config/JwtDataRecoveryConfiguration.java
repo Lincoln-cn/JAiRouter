@@ -21,7 +21,7 @@ public class JwtDataRecoveryConfiguration implements ApplicationRunner {
     private final DataSyncService dataSyncService;
     
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(final ApplicationArguments args) throws Exception {
         log.info("Starting JWT data recovery process...");
         
         try {

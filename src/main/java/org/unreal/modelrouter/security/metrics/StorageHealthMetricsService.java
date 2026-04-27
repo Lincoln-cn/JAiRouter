@@ -50,7 +50,7 @@ public class StorageHealthMetricsService {
     private final Map<String, AtomicLong> errorCounts = new ConcurrentHashMap<>();
     private final Map<String, AtomicLong> lastErrorTimes = new ConcurrentHashMap<>();
     
-    public StorageHealthMetricsService(MeterRegistry meterRegistry) {
+    public StorageHealthMetricsService(final MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
     
@@ -188,7 +188,7 @@ public class StorageHealthMetricsService {
     /**
      * 记录成功操作
      */
-    private void recordSuccess(String operation) {
+    private void recordSuccess(final String operation) {
         // 重置错误计数
         errorCounts.computeIfAbsent(operation, k -> new AtomicLong(0)).set(0);
     }
@@ -196,7 +196,7 @@ public class StorageHealthMetricsService {
     /**
      * 记录错误操作
      */
-    private void recordError(String operation, String error) {
+    private void recordError(final String operation,final String error) {
         errorCounts.computeIfAbsent(operation, k -> new AtomicLong(0)).incrementAndGet();
         lastErrorTimes.computeIfAbsent(operation, k -> new AtomicLong(0)).set(System.currentTimeMillis());
         

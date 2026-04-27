@@ -43,7 +43,7 @@ public class ConfigPersistenceService {
      * 保存配置（不创建新版本）
      */
     @Transactional
-    public void saveConfig(Map<String, Object> config) {
+    public void saveConfig(final Map<String, Object> config) {
         storeManager.saveConfig(CURRENT_KEY, config);
         log.debug("配置保存成功");
     }
@@ -52,7 +52,7 @@ public class ConfigPersistenceService {
      * 保存配置并创建新版本
      */
     @Transactional
-    public Integer saveConfigWithVersion(Map<String, Object> config, String description, String userId) {
+    public Integer saveConfigWithVersion(final Map<String, Object> config,final String description,final String userId) {
         Integer version = versionControlService.createNewVersion(config, description, userId);
         storeManager.saveConfig(CURRENT_KEY, config);
         publishConfigChangedEvent(config, version, description, userId);
@@ -62,8 +62,8 @@ public class ConfigPersistenceService {
     /**
      * 发布配置变更事件
      */
-    private void publishConfigChangedEvent(Map<String, Object> config, Integer version,
-                                          String description, String userId) {
+    private void publishConfigChangedEvent(final Map<String, Object> config,final Integer version,
+                                          final String description,final String userId) {
         try {
             eventPublisher.publishEvent(new ConfigurationChangedEvent(
                     this, CURRENT_KEY, config, version,

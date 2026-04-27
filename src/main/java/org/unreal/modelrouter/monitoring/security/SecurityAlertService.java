@@ -50,7 +50,7 @@ public class SecurityAlertService {
     /**
      * 检查认证失败告警
      */
-    public Mono<Void> checkAuthenticationFailureAlert(String clientIp, String failureReason) {
+    public Mono<Void> checkAuthenticationFailureAlert(final String clientIp,final String failureReason) {
         return auditService.shouldTriggerAlert("AUTHENTICATION_FAILURE", AUTH_FAILURE_WINDOW_MINUTES, AUTH_FAILURE_THRESHOLD)
                 .flatMap(shouldAlert -> {
                     if (shouldAlert) {
@@ -71,7 +71,7 @@ public class SecurityAlertService {
     /**
      * 检查可疑IP活动告警
      */
-    public Mono<Void> checkSuspiciousIpAlert(String clientIp) {
+    public Mono<Void> checkSuspiciousIpAlert(final String clientIp) {
         String alertKey = "SUSPICIOUS_IP_" + clientIp;
         
         return auditService.queryEvents(
@@ -158,8 +158,8 @@ public class SecurityAlertService {
     /**
      * 触发安全告警
      */
-    private Mono<Void> triggerAlert(String alertType, String title, String description, 
-                                   String severity, Map<String, Object> alertData) {
+    private Mono<Void> triggerAlert(final String alertType,final String title,final String description, 
+                                   final String severity,final Map<String, Object> alertData) {
         String alertKey = alertType;
         LocalDateTime now = LocalDateTime.now();
         
@@ -203,7 +203,7 @@ public class SecurityAlertService {
     /**
      * 创建认证失败告警数据
      */
-    private Map<String, Object> createAuthFailureAlertData(String clientIp, String failureReason) {
+    private Map<String, Object> createAuthFailureAlertData(final String clientIp,final String failureReason) {
         Map<String, Object> data = new HashMap<>();
         data.put("clientIp", maskIp(clientIp));
         data.put("failureReason", failureReason);
@@ -215,7 +215,7 @@ public class SecurityAlertService {
     /**
      * 创建可疑IP告警数据
      */
-    private Map<String, Object> createSuspiciousIpAlertData(String clientIp, long failureCount) {
+    private Map<String, Object> createSuspiciousIpAlertData(final String clientIp,final long failureCount) {
         Map<String, Object> data = new HashMap<>();
         data.put("clientIp", maskIp(clientIp));
         data.put("failureCount", failureCount);
@@ -227,7 +227,7 @@ public class SecurityAlertService {
     /**
      * 创建脱敏异常告警数据
      */
-    private Map<String, Object> createSanitizationAnomalyAlertData(long sanitizationCount) {
+    private Map<String, Object> createSanitizationAnomalyAlertData(final long sanitizationCount) {
         Map<String, Object> data = new HashMap<>();
         data.put("sanitizationCount", sanitizationCount);
         data.put("timeWindow", SANITIZATION_ANOMALY_WINDOW_MINUTES + " minutes");
@@ -238,7 +238,7 @@ public class SecurityAlertService {
     /**
      * 创建JWT异常告警数据
      */
-    private Map<String, Object> createJwtAnomalyAlertData(long jwtFailureCount) {
+    private Map<String, Object> createJwtAnomalyAlertData(final long jwtFailureCount) {
         Map<String, Object> data = new HashMap<>();
         data.put("jwtFailureCount", jwtFailureCount);
         data.put("timeWindow", "10 minutes");
@@ -249,7 +249,7 @@ public class SecurityAlertService {
     /**
      * 掩码IP地址（保护隐私）
      */
-    private String maskIp(String ip) {
+    private String maskIp(final String ip) {
         if (ip == null) {
             return "unknown";
         }

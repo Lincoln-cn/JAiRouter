@@ -139,7 +139,7 @@ public class SecurityConfigMergeService {
     /**
      * 将SecurityProperties转换为Map格式
      */
-    private Map<String, Object> convertSecurityPropertiesToMap(SecurityProperties properties) {
+    private Map<String, Object> convertSecurityPropertiesToMap(final SecurityProperties properties) {
         try {
             return objectMapper.convertValue(properties, Map.class);
         } catch (Exception e) {
@@ -155,7 +155,7 @@ public class SecurityConfigMergeService {
      * @return 合并后的配置
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> deepMergeConfigs(Map<String, Object> baseConfig, Map<String, Object> overrideConfig) {
+    private Map<String, Object> deepMergeConfigs(final Map<String, Object> baseConfig,final Map<String, Object> overrideConfig) {
         if (overrideConfig.isEmpty()) {
             return new HashMap<>(baseConfig);
         }

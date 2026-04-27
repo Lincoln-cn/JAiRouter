@@ -39,7 +39,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
      */
 
     @Override
-    public Mono<Void> updateApiKeys(List<ApiKey> apiKeys) {
+    public Mono<Void> updateApiKeys(final List<ApiKey> apiKeys) {
         return Mono.fromRunnable(() -> {
             log.info("Updating API Keys configuration, count: {}", apiKeys.size());
 
@@ -67,7 +67,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     @Override
-    public Mono<Void> updateSanitizationRules(List<SanitizationRule> rules) {
+    public Mono<Void> updateSanitizationRules(final List<SanitizationRule> rules) {
         return Mono.fromRunnable(() -> {
             log.info("Updating sanitization rules configuration, count: {}", rules.size());
 
@@ -91,7 +91,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     @Override
-    public Mono<Void> updateJwtConfig(JwtConfig jwtConfig) {
+    public Mono<Void> updateJwtConfig(final JwtConfig jwtConfig) {
         return Mono.fromRunnable(() -> {
             log.info("Updating JWT configuration");
 
@@ -129,7 +129,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     @Override
-    public Mono<Boolean> validateConfiguration(SecurityProperties properties) {
+    public Mono<Boolean> validateConfiguration(final SecurityProperties properties) {
         return Mono.fromCallable(() -> {
             log.debug("Validating security configuration");
 
@@ -168,7 +168,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     @Override
-    public Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(int limit) {
+    public Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(final int limit) {
         return Mono.fromCallable(() -> {
             log.debug("Getting configuration history, limit: {}", limit);
 
@@ -231,18 +231,18 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
     }
 
     // 转换方法（需要根据实际的数据结构实现）
-    private Map<String, Object> convertApiKeysToMap(List<ApiKey> apiKeys) {
+    private Map<String, Object> convertApiKeysToMap(final List<ApiKey> apiKeys) {
         Map<String, Object> map = new HashMap<>();
         map.put("keys", apiKeys);
         return map;
     }
 
     @SuppressWarnings("unchecked")
-    private List<ApiKey> convertMapToApiKeys(Map<String, Object> configMap) {
+    private List<ApiKey> convertMapToApiKeys(final Map<String, Object> configMap) {
         return (List<ApiKey>) configMap.get("keys");
     }
 
-    private Map<String, Object> convertJwtConfigToMap(JwtConfig jwtConfig) {
+    private Map<String, Object> convertJwtConfigToMap(final JwtConfig jwtConfig) {
         Map<String, Object> map = new HashMap<>();
         map.put("enabled", jwtConfig.isEnabled());
         map.put("secret", jwtConfig.getSecret());
@@ -254,7 +254,7 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         return map;
     }
 
-    private JwtConfig convertMapToJwtConfig(Map<String, Object> configMap) {
+    private JwtConfig convertMapToJwtConfig(final Map<String, Object> configMap) {
         JwtConfig jwtConfig = new JwtConfig();
         jwtConfig.setEnabled((Boolean) configMap.get("enabled"));
         jwtConfig.setSecret((String) configMap.get("secret"));
@@ -266,30 +266,30 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         return jwtConfig;
     }
 
-    private Map<String, Object> convertSanitizationRulesToMap(List<SanitizationRule> rules) {
+    private Map<String, Object> convertSanitizationRulesToMap(final List<SanitizationRule> rules) {
         Map<String, Object> map = new HashMap<>();
         map.put("rules", rules);
         return map;
     }
 
     @SuppressWarnings("unchecked")
-    private List<SanitizationRule> convertMapToSanitizationRules(Map<String, Object> configMap) {
+    private List<SanitizationRule> convertMapToSanitizationRules(final Map<String, Object> configMap) {
         return (List<SanitizationRule>) configMap.get("rules");
     }
 
-    private void validateApiKeysList(List<ApiKey> apiKeys) {
+    private void validateApiKeysList(final List<ApiKey> apiKeys) {
         // 实现API Keys验证逻辑
     }
 
-    private void validateSanitizationRules(List<SanitizationRule> rules) {
+    private void validateSanitizationRules(final List<SanitizationRule> rules) {
         // 实现脱敏规则验证逻辑
     }
 
-    private void validateJwtConfig(JwtConfig jwtConfig) {
+    private void validateJwtConfig(final JwtConfig jwtConfig) {
         // 实现JWT配置验证逻辑
     }
 
-    private JwtConfig copyJwtConfig(JwtConfig source) {
+    private JwtConfig copyJwtConfig(final JwtConfig source) {
         JwtConfig copy = new JwtConfig();
         copy.setEnabled(source.isEnabled());
         copy.setSecret(source.getSecret());
@@ -301,12 +301,12 @@ public class ImprovedSecurityConfigurationService implements SecurityConfigurati
         return copy;
     }
 
-    private SecurityProperties copySecurityProperties(SecurityProperties source) {
+    private SecurityProperties copySecurityProperties(final SecurityProperties source) {
         // 实现深拷贝逻辑
         return source; // 临时返回
     }
 
-    private void updateJwtConfigProperties(JwtConfig newConfig) {
+    private void updateJwtConfigProperties(final JwtConfig newConfig) {
         JwtConfig current = securityProperties.getJwt();
         current.setEnabled(newConfig.isEnabled());
         current.setSecret(newConfig.getSecret());

@@ -20,7 +20,7 @@ import java.time.Duration;
 public class WebAdminResourceConfig implements WebFluxConfigurer {
 
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    public void addResourceHandlers(final ResourceHandlerRegistry registry) {
         log.info("配置 Web 管理界面静态资源处理器");
 
         // 配置管理界面静态资源 - 包含 index.html 和 assets
@@ -40,7 +40,7 @@ public class WebAdminResourceConfig implements WebFluxConfigurer {
     private static class SpaPathResourceResolver extends PathResourceResolver {
 
         @Override
-        protected Mono<Resource> getResource(String resourcePath, Resource location) {
+        protected Mono<Resource> getResource(final String resourcePath,final Resource location) {
             // 首先尝试直接获取资源
             try {
                 Resource requestedResource = location.createRelative(resourcePath);

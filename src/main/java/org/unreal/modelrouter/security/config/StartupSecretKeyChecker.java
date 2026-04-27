@@ -29,7 +29,7 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
             "╚══════════════════════════════════════════════════════════════════════════════╝\n";
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(final String... args) throws Exception {
         log.info(ASCII_ART_BORDER);
         
         boolean allPassed = true;

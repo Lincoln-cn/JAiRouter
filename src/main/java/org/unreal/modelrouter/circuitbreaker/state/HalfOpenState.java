@@ -16,12 +16,12 @@ public class HalfOpenState implements CircuitState {
     private static final Logger logger = LoggerFactory.getLogger(HalfOpenState.class);
 
     @Override
-    public boolean canExecute(CircuitStateContext context) {
+    public boolean canExecute(final CircuitStateContext context) {
         return true;
     }
 
     @Override
-    public void onSuccess(CircuitStateContext context) {
+    public void onSuccess(final CircuitStateContext context) {
         context.incrementSuccessCount();
         
         if (context.isSuccessThresholdReached()) {
@@ -38,7 +38,7 @@ public class HalfOpenState implements CircuitState {
     }
 
     @Override
-    public void onFailure(CircuitStateContext context) {
+    public void onFailure(final CircuitStateContext context) {
         context.incrementFailureCount();
         logger.info("熔断器重新打开：instanceId={}, failure in HALF_OPEN state", context.getInstanceId());
         context.setCurrentState(new OpenState());

@@ -51,7 +51,7 @@ public class JwtPersistenceMetricsService {
     private final AtomicLong totalOperations = new AtomicLong(0);
     private final AtomicLong errorOperations = new AtomicLong(0);
     
-    public JwtPersistenceMetricsService(MeterRegistry meterRegistry) {
+    public JwtPersistenceMetricsService(final MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         
         // 初始化计数器
@@ -94,7 +94,7 @@ public class JwtPersistenceMetricsService {
     /**
      * 记录令牌操作时间
      */
-    public Timer.Sample startTokenOperation(String operation, String storageType) {
+    public Timer.Sample startTokenOperation(final String operation,final String storageType) {
         String key = operation + "." + storageType;
         Timer timer = tokenOperationTimers.computeIfAbsent(key, k -> 
             Timer.builder("jwt.token.operation.duration")
@@ -111,7 +111,7 @@ public class JwtPersistenceMetricsService {
     /**
      * 完成令牌操作计时
      */
-    public void finishTokenOperation(Timer.Sample sample, String operation, String storageType, boolean success) {
+    public void finishTokenOperation(final Timer.Sample sample,final String operation,final String storageType,final boolean success) {
         String key = operation + "." + storageType;
         Timer timer = tokenOperationTimers.get(key);
         if (timer != null && sample != null) {
@@ -146,7 +146,7 @@ public class JwtPersistenceMetricsService {
     /**
      * 记录黑名单操作时间
      */
-    public Timer.Sample startBlacklistOperation(String operation, String storageType) {
+    public Timer.Sample startBlacklistOperation(final String operation,final String storageType) {
         String key = operation + "." + storageType;
         Timer timer = blacklistOperationTimers.computeIfAbsent(key, k -> 
             Timer.builder("jwt.blacklist.operation.duration")
@@ -162,7 +162,7 @@ public class JwtPersistenceMetricsService {
     /**
      * 完成黑名单操作计时
      */
-    public void finishBlacklistOperation(Timer.Sample sample, String operation, String storageType, boolean success) {
+    public void finishBlacklistOperation(final Timer.Sample sample,final String operation,final String storageType,final boolean success) {
         String key = operation + "." + storageType;
         Timer timer = blacklistOperationTimers.get(key);
         if (timer != null && sample != null) {
@@ -193,7 +193,7 @@ public class JwtPersistenceMetricsService {
     /**
      * 更新存储健康状态
      */
-    public void updateStorageHealth(String storageType, boolean healthy) {
+    public void updateStorageHealth(final String storageType,final boolean healthy) {
         // 这里我们使用简单的方式，通过AtomicLong来存储健康状态
         // 在实际使用中，可以通过其他方式来动态更新Gauge值
     }
@@ -201,35 +201,35 @@ public class JwtPersistenceMetricsService {
     /**
      * 更新活跃令牌数量
      */
-    public void updateActiveTokenCount(long count) {
+    public void updateActiveTokenCount(final long count) {
         activeTokenCount.set(count);
     }
     
     /**
      * 更新黑名单大小
      */
-    public void updateBlacklistSize(long size) {
+    public void updateBlacklistSize(final long size) {
         blacklistSize.set(size);
     }
     
     /**
      * 更新内存使用量
      */
-    public void updateMemoryUsage(long bytes) {
+    public void updateMemoryUsage(final long bytes) {
         memoryUsageBytes.set(bytes);
     }
     
     /**
      * 更新Redis使用量
      */
-    public void updateRedisUsage(long bytes) {
+    public void updateRedisUsage(final long bytes) {
         redisUsageBytes.set(bytes);
     }
     
     /**
      * 记录清理操作统计
      */
-    public void recordCleanupOperation(String type, long itemsRemoved, Duration duration) {
+    public void recordCleanupOperation(final String type,final long itemsRemoved,final Duration duration) {
         Timer.builder("jwt.cleanup.duration")
             .description("清理操作耗时")
             .tag("cleanup_type", type)

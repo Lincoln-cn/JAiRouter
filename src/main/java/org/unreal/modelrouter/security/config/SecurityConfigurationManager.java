@@ -48,7 +48,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
      * @param version 版本号，0表示YAML原始配置
      * @return 配置内容
      */
-    public Map<String, Object> getSecurityVersionConfig(int version) {
+    public Map<String, Object> getSecurityVersionConfig(final int version) {
         if (version == 0) {
             return configMergeService.getDefaultSecurityConfig(); // YAML 原始配置
         }
@@ -60,7 +60,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
      * @param config 配置内容
      * @return 新版本号
      */
-    public int saveSecurityAsNewVersion(Map<String, Object> config) {
+    public int saveSecurityAsNewVersion(final Map<String, Object> config) {
         int version = getNextSecurityVersion();
         storeManager.saveConfigVersion(SECURITY_CONFIG_KEY, config, version);
         log.info("已保存安全配置为新版本：{}", version);
@@ -71,7 +71,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
      * 应用指定版本的安全配置
      * @param version 版本号
      */
-    public void applySecurityVersion(int version) {
+    public void applySecurityVersion(final int version) {
         Map<String, Object> config = getSecurityVersionConfig(version);
         if (config == null) {
             throw new IllegalArgumentException("安全配置版本不存在: " + version);
@@ -108,7 +108,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     // ==================== SecurityConfigurationService 实现 ====================
 
     @Override
-    public Mono<Void> updateApiKeys(List<ApiKey> apiKeys) {
+    public Mono<Void> updateApiKeys(final List<ApiKey> apiKeys) {
         return Mono.fromRunnable(() -> {
             log.info("更新API Keys配置，数量: {}", apiKeys.size());
             
@@ -139,7 +139,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     }
 
     @Override
-    public Mono<Void> updateSanitizationRules(List<SanitizationRule> rules) {
+    public Mono<Void> updateSanitizationRules(final List<SanitizationRule> rules) {
         return Mono.fromRunnable(() -> {
             log.info("更新脱敏规则配置，数量: {}", rules.size());
             
@@ -167,7 +167,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     }
 
     @Override
-    public Mono<Void> updateJwtConfig(JwtConfig jwtConfig) {
+    public Mono<Void> updateJwtConfig(final JwtConfig jwtConfig) {
         return Mono.fromRunnable(() -> {
             log.info("更新JWT配置");
             
@@ -212,7 +212,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     }
 
     @Override
-    public Mono<Boolean> validateConfiguration(SecurityProperties properties) {
+    public Mono<Boolean> validateConfiguration(final SecurityProperties properties) {
         return Mono.fromCallable(() -> {
             log.debug("验证安全配置");
             
@@ -255,7 +255,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     }
 
     @Override
-    public Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(int limit) {
+    public Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(final int limit) {
         return Mono.fromCallable(() -> {
             log.debug("获取安全配置变更历史，限制数量: {}", limit);
             
@@ -283,7 +283,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
      * 获取或创建API Key配置
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getOrCreateApiKeyConfig(Map<String, Object> config) {
+    private Map<String, Object> getOrCreateApiKeyConfig(final Map<String, Object> config) {
         return (Map<String, Object>) config.computeIfAbsent("apiKey", k -> new HashMap<>());
     }
 
@@ -291,14 +291,14 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
      * 获取或创建脱敏配置
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> getOrCreateSanitizationConfig(Map<String, Object> config) {
+    private Map<String, Object> getOrCreateSanitizationConfig(final Map<String, Object> config) {
         return (Map<String, Object>) config.computeIfAbsent("sanitization", k -> new HashMap<>());
     }
 
     /**
      * 验证安全配置
      */
-    private boolean validateSecurityConfig(Map<String, Object> config) {
+    private boolean validateSecurityConfig(final Map<String, Object> config) {
         try {
             // 这里可以添加具体的验证逻辑
             return config != null && !config.isEmpty();
@@ -311,7 +311,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 刷新运行时安全配置
      */
-    private void refreshSecurityRuntimeConfig(Map<String, Object> config) {
+    private void refreshSecurityRuntimeConfig(final Map<String, Object> config) {
         try {
             // 更新SecurityProperties中的配置
             updateSecurityPropertiesFromMap(config);
@@ -326,7 +326,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
      * 从Map更新SecurityProperties
      */
     @SuppressWarnings("unchecked")
-    private void updateSecurityPropertiesFromMap(Map<String, Object> config) {
+    private void updateSecurityPropertiesFromMap(final Map<String, Object> config) {
         // 更新API Key配置
         if (config.containsKey("apiKey")) {
             Map<String, Object> apiKeyConfig = (Map<String, Object>) config.get("apiKey");
@@ -348,7 +348,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 从Map更新JWT配置
      */
-    private void updateJwtConfigFromMap(Map<String, Object> jwtConfigMap) {
+    private void updateJwtConfigFromMap(final Map<String, Object> jwtConfigMap) {
         JwtConfig jwtConfig = securityProperties.getJwt();
         
         if (jwtConfigMap.containsKey("enabled")) {
@@ -366,7 +366,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 将JWT配置转换为Map
      */
-    private Map<String, Object> convertJwtConfigToMap(JwtConfig jwtConfig) {
+    private Map<String, Object> convertJwtConfigToMap(final JwtConfig jwtConfig) {
         Map<String, Object> map = new HashMap<>();
         map.put("enabled", jwtConfig.isEnabled());
         map.put("secret", jwtConfig.getSecret());
@@ -381,7 +381,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 验证JWT配置
      */
-    private void validateJwtConfig(JwtConfig jwtConfig) {
+    private void validateJwtConfig(final JwtConfig jwtConfig) {
         if (jwtConfig.isEnabled()) {
             if (jwtConfig.getSecret() == null || jwtConfig.getSecret().length() < 32) {
                 throw new IllegalArgumentException("JWT密钥长度至少32个字符");
@@ -395,7 +395,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 复制JWT配置
      */
-    private JwtConfig copyJwtConfig(JwtConfig source) {
+    private JwtConfig copyJwtConfig(final JwtConfig source) {
         JwtConfig copy = new JwtConfig();
         copy.setEnabled(source.isEnabled());
         copy.setSecret(source.getSecret());
@@ -410,7 +410,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 更新JWT配置属性
      */
-    private void updateJwtConfigProperties(JwtConfig newConfig) {
+    private void updateJwtConfigProperties(final JwtConfig newConfig) {
         JwtConfig current = securityProperties.getJwt();
         current.setEnabled(newConfig.isEnabled());
         current.setSecret(newConfig.getSecret());
@@ -424,7 +424,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 复制SecurityProperties
      */
-    private SecurityProperties copySecurityProperties(SecurityProperties source) {
+    private SecurityProperties copySecurityProperties(final SecurityProperties source) {
         // 这里可以实现深拷贝逻辑
         // 暂时返回原对象
         return source;
@@ -433,7 +433,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 发布配置变更事件
      */
-    private void publishConfigurationChangeEvent(String configType, Object oldValue, Object newValue) {
+    private void publishConfigurationChangeEvent(final String configType,final Object oldValue,final Object newValue) {
         try {
             SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
                 this, 

@@ -59,7 +59,7 @@ public class RedisConnectionHealthService {
     /**
      * 执行实际的健康检查
      */
-    private boolean performHealthCheck(long currentTime) {
+    private boolean performHealthCheck(final long currentTime) {
         if (redisTemplate == null) {
             log.debug("Redis template not configured, skipping health check");
             isHealthy.set(true); // Redis未配置时认为健康
@@ -106,7 +106,7 @@ public class RedisConnectionHealthService {
     /**
      * 处理健康检查失败
      */
-    private void handleHealthCheckFailure(String reason) {
+    private void handleHealthCheckFailure(final String reason) {
         long failures = consecutiveFailures.incrementAndGet();
         
         if (failures >= MAX_CONSECUTIVE_FAILURES) {

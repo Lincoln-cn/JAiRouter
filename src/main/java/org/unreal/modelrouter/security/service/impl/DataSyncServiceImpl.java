@@ -165,7 +165,7 @@ public class DataSyncServiceImpl implements DataSyncService {
     }
     
     @Override
-    public Mono<SyncResult> repairDataInconsistency(ConsistencyCheckResult checkResult) {
+    public Mono<SyncResult> repairDataInconsistency(final ConsistencyCheckResult checkResult) {
         if (checkResult.isConsistent()) {
             return Mono.just(new SyncResult(true, 0, 0, 0, 
                 "Data is already consistent, no repair needed", 0));
@@ -259,7 +259,7 @@ public class DataSyncServiceImpl implements DataSyncService {
     
     // 私有方法
     
-    private Mono<Boolean> acquireSyncLock(String operation) {
+    private Mono<Boolean> acquireSyncLock(final String operation) {
         String lockValue = operation + "_" + System.currentTimeMillis();
         return redisTemplate.opsForValue()
             .setIfAbsent(SYNC_LOCK_KEY, lockValue, SYNC_LOCK_TTL)
@@ -273,13 +273,13 @@ public class DataSyncServiceImpl implements DataSyncService {
             });
     }
     
-    private Mono<Void> releaseSyncLock(String operation) {
+    private Mono<Void> releaseSyncLock(final String operation) {
         return redisTemplate.delete(SYNC_LOCK_KEY)
             .then(Mono.fromRunnable(() -> 
                 log.debug("Released sync lock for operation: {}", operation)));
     }
     
-    private Mono<SyncResult> performRecoveryOperation(long startTime) {
+    private Mono<SyncResult> performRecoveryOperation(final long startTime) {
         AtomicLong processedCount = new AtomicLong(0);
         AtomicLong successCount = new AtomicLong(0);
         AtomicLong failureCount = new AtomicLong(0);
@@ -334,8 +334,8 @@ public class DataSyncServiceImpl implements DataSyncService {
         .doOnError(error -> log.error("Recovery operation failed: {}", error.getMessage(), error));
     }
     
-    private Mono<Void> recoverTokenBatch(List<String> tokenKeys, AtomicLong processedCount, 
-                                        AtomicLong successCount, AtomicLong failureCount) {
+    private Mono<Void> recoverTokenBatch(final List<String> tokenKeys,final AtomicLong processedCount, 
+                                        final AtomicLong successCount,final AtomicLong failureCount) {
         return Flux.fromIterable(tokenKeys)
             .flatMap(key -> {
                 processedCount.incrementAndGet();
@@ -381,8 +381,8 @@ public class DataSyncServiceImpl implements DataSyncService {
             .then();
     }
     
-    private Mono<Void> recoverBlacklistBatch(List<String> blacklistKeys, AtomicLong processedCount, 
-                                           AtomicLong successCount, AtomicLong failureCount) {
+    private Mono<Void> recoverBlacklistBatch(final List<String> blacklistKeys,final AtomicLong processedCount, 
+                                           final AtomicLong successCount,final AtomicLong failureCount) {
         return Flux.fromIterable(blacklistKeys)
             .flatMap(key -> {
                 processedCount.incrementAndGet();
@@ -428,14 +428,14 @@ public class DataSyncServiceImpl implements DataSyncService {
             .then();
     }
     
-    private Mono<SyncResult> performSyncToStoreOperation(long startTime) {
+    private Mono<SyncResult> performSyncToStoreOperation(final long startTime) {
         // 实现从Redis同步到StoreManager的逻辑
         // 这里简化实现，实际应该扫描Redis中的所有数据并同步到StoreManager
         return Mono.just(new SyncResult(true, 0, 0, 0, 
             "Sync to StoreManager not implemented yet", System.currentTimeMillis() - startTime));
     }
     
-    private Mono<SyncResult> performBidirectionalSyncOperation(long startTime) {
+    private Mono<SyncResult> performBidirectionalSyncOperation(final long startTime) {
         // 实现双向同步逻辑
         return checkDataConsistency()
             .flatMap(checkResult -> {
@@ -448,7 +448,7 @@ public class DataSyncServiceImpl implements DataSyncService {
             });
     }
     
-    private Mono<SyncResult> performRepairOperation(ConsistencyCheckResult checkResult, long startTime) {
+    private Mono<SyncResult> performRepairOperation(final ConsistencyCheckResult checkResult,final long startTime) {
         // 实现数据修复逻辑
         // 这里简化实现，实际应该根据一致性检查结果进行具体的修复操作
         return Mono.just(new SyncResult(true, 0, 0, 0, 
@@ -488,7 +488,7 @@ public class DataSyncServiceImpl implements DataSyncService {
         return Mono.just(0L);
     }
     
-    private Duration calculateTokenTTL(JwtTokenInfo tokenInfo) {
+    private Duration calculateTokenTTL(final JwtTokenInfo tokenInfo) {
         if (tokenInfo.getExpiresAt() != null) {
             Duration ttl = Duration.between(LocalDateTime.now(), tokenInfo.getExpiresAt());
             return ttl.isNegative() ? Duration.ofMinutes(1) : ttl;
@@ -496,7 +496,7 @@ public class DataSyncServiceImpl implements DataSyncService {
         return DEFAULT_TTL;
     }
     
-    private Duration calculateBlacklistTTL(TokenBlacklistEntry entry) {
+    private Duration calculateBlacklistTTL(final TokenBlacklistEntry entry) {
         if (entry.getExpiresAt() != null) {
             Duration ttl = Duration.between(LocalDateTime.now(), entry.getExpiresAt());
             return ttl.isNegative() ? Duration.ofMinutes(1) : ttl;
@@ -504,7 +504,7 @@ public class DataSyncServiceImpl implements DataSyncService {
         return DEFAULT_TTL;
     }
     
-    private JwtTokenInfo convertToTokenInfo(Map<String, Object> tokenData) {
+    private JwtTokenInfo convertToTokenInfo(final Map<String, Object> tokenData) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(tokenData, JwtTokenInfo.class);
         } catch (Exception e) {
@@ -512,7 +512,7 @@ public class DataSyncServiceImpl implements DataSyncService {
         }
     }
     
-    private TokenBlacklistEntry convertToBlacklistEntry(Map<String, Object> blacklistData) {
+    private TokenBlacklistEntry convertToBlacklistEntry(final Map<String, Object> blacklistData) {
         try {
             return JacksonHelper.getObjectMapper().convertValue(blacklistData, TokenBlacklistEntry.class);
         } catch (Exception e) {

@@ -63,7 +63,7 @@ public class SecurityLogArchiveService {
     /**
      * 归档指定时间范围的安全日志
      */
-    public Mono<Long> archiveSecurityLogs(LocalDateTime startTime, LocalDateTime endTime) {
+    public Mono<Long> archiveSecurityLogs(final LocalDateTime startTime,final LocalDateTime endTime) {
         return Mono.fromCallable(() -> {
             log.info("开始归档安全日志: {} 到 {}", startTime, endTime);
             
@@ -114,7 +114,7 @@ public class SecurityLogArchiveService {
     /**
      * 将审计事件写入归档文件
      */
-    private void writeEventToArchive(Path archiveFile, SecurityAuditEvent event) throws IOException {
+    private void writeEventToArchive(final Path archiveFile,final SecurityAuditEvent event) throws IOException {
         String logLine = formatEventForArchive(event);
         
         try (BufferedWriter writer = Files.newBufferedWriter(archiveFile, 
@@ -127,7 +127,7 @@ public class SecurityLogArchiveService {
     /**
      * 格式化审计事件为归档格式
      */
-    private String formatEventForArchive(SecurityAuditEvent event) {
+    private String formatEventForArchive(final SecurityAuditEvent event) {
         StringBuilder sb = new StringBuilder();
         
         // 基本信息
@@ -169,7 +169,7 @@ public class SecurityLogArchiveService {
     /**
      * 压缩归档文件
      */
-    private void compressArchiveFile(Path archiveFile) {
+    private void compressArchiveFile(final Path archiveFile) {
         try {
             // 这里可以实现文件压缩逻辑，例如使用gzip
             // 为了简化，这里只是记录日志
@@ -239,7 +239,7 @@ public class SecurityLogArchiveService {
     /**
      * 手动触发归档
      */
-    public Mono<Long> manualArchive(LocalDateTime startTime, LocalDateTime endTime) {
+    public Mono<Long> manualArchive(final LocalDateTime startTime,final LocalDateTime endTime) {
         log.info("手动触发安全日志归档: {} 到 {}", startTime, endTime);
         return archiveSecurityLogs(startTime, endTime);
     }

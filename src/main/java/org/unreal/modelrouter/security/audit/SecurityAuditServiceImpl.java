@@ -55,7 +55,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     private final Map<String, ConcurrentLinkedQueue<LocalDateTime>> timeWindowEvents = new ConcurrentHashMap<>();
     
     @Override
-    public Mono<Void> recordEvent(SecurityAuditEvent event) {
+    public Mono<Void> recordEvent(final SecurityAuditEvent event) {
         return Mono.fromRunnable(() -> {
             try {
                 // 设置事件ID和时间戳
@@ -90,8 +90,8 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Mono<Void> recordAuthenticationEvent(String userId, String clientIp, String userAgent, 
-                                              boolean success, String failureReason) {
+    public Mono<Void> recordAuthenticationEvent(final String userId,final String clientIp,final String userAgent, 
+                                              final boolean success,final String failureReason) {
         SecurityAuditEvent event = SecurityAuditEvent.builder()
                 .eventType(success ? "AUTHENTICATION_SUCCESS" : "AUTHENTICATION_FAILURE")
                 .userId(userId)
@@ -107,7 +107,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Mono<Void> recordSanitizationEvent(String userId, String contentType, String ruleId, int matchCount) {
+    public Mono<Void> recordSanitizationEvent(final String userId,final String contentType,final String ruleId,final int matchCount) {
         Map<String, Object> additionalData = new HashMap<>();
         additionalData.put("contentType", contentType);
         additionalData.put("ruleId", ruleId);
@@ -125,8 +125,8 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Flux<SecurityAuditEvent> queryEvents(LocalDateTime startTime, LocalDateTime endTime, 
-                                               String eventType, String userId, int limit) {
+    public Flux<SecurityAuditEvent> queryEvents(final LocalDateTime startTime,final LocalDateTime endTime, 
+                                               final String eventType,final String userId,final int limit) {
         return Flux.fromIterable(auditEvents)
                 .filter(event -> event.getTimestamp().isAfter(startTime) && event.getTimestamp().isBefore(endTime))
                 .filter(event -> eventType == null || eventType.equals(event.getEventType()))
@@ -136,7 +136,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Mono<Map<String, Object>> getSecurityStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+    public Mono<Map<String, Object>> getSecurityStatistics(final LocalDateTime startTime,final LocalDateTime endTime) {
         return Flux.fromIterable(auditEvents)
                 .filter(event -> event.getTimestamp().isAfter(startTime) && event.getTimestamp().isBefore(endTime))
                 .collectList()
@@ -252,7 +252,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Mono<Long> cleanupExpiredLogs(int retentionDays) {
+    public Mono<Long> cleanupExpiredLogs(final int retentionDays) {
         LocalDateTime cutoffTime = LocalDateTime.now().minusDays(retentionDays);
         
         return Mono.fromCallable(() -> {
@@ -287,7 +287,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Mono<Boolean> shouldTriggerAlert(String eventType, int timeWindowMinutes, int threshold) {
+    public Mono<Boolean> shouldTriggerAlert(final String eventType,final int timeWindowMinutes,final int threshold) {
         LocalDateTime windowStart = LocalDateTime.now().minusMinutes(timeWindowMinutes);
         
         return Mono.fromCallable(() -> {
@@ -321,7 +321,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     /**
      * 将审计事件记录到日志系统
      */
-    private void logAuditEvent(SecurityAuditEvent event) {
+    private void logAuditEvent(final SecurityAuditEvent event) {
         String logMessage = String.format(
                 "SECURITY_AUDIT: eventType=%s, userId=%s, clientIp=%s, action=%s, success=%s, timestamp=%s",
                 event.getEventType(),
@@ -342,7 +342,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     /**
      * 创建认证事件的附加元数据
      */
-    private Map<String, Object> createAuthenticationMetadata(boolean success, String failureReason) {
+    private Map<String, Object> createAuthenticationMetadata(final boolean success,final String failureReason) {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("authenticationResult", success ? "SUCCESS" : "FAILURE");
         
@@ -356,7 +356,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     /**
      * 对失败原因进行分类
      */
-    private String categorizeFailureReason(String failureReason) {
+    private String categorizeFailureReason(final String failureReason) {
         if (failureReason == null) {
             return "UNKNOWN";
         }

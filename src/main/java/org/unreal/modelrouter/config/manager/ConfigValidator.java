@@ -29,7 +29,7 @@ public class ConfigValidator {
 
     private final ConfigurationHelper configurationHelper;
 
-    public ConfigValidator(ConfigurationHelper configurationHelper) {
+    public ConfigValidator(final ConfigurationHelper configurationHelper) {
         this.configurationHelper = configurationHelper;
     }
 
@@ -39,7 +39,7 @@ public class ConfigValidator {
      * @param serviceConfig 服务配置
      * @return 标准化后的服务配置
      */
-    public Map<String, Object> validateAndNormalizeServiceConfig(Map<String, Object> serviceConfig) {
+    public Map<String, Object> validateAndNormalizeServiceConfig(final Map<String, Object> serviceConfig) {
         Map<String, Object> normalized = new HashMap<>(serviceConfig);
 
         // 确保 instances 字段存在
@@ -64,7 +64,7 @@ public class ConfigValidator {
      * @param instanceConfig 实例配置
      * @return 标准化后的实例配置
      */
-    public Map<String, Object> validateAndNormalizeInstanceConfig(Map<String, Object> instanceConfig) {
+    public Map<String, Object> validateAndNormalizeInstanceConfig(final Map<String, Object> instanceConfig) {
         Map<String, Object> normalized = new HashMap<>(instanceConfig);
 
         // 必需字段验证
@@ -108,7 +108,7 @@ public class ConfigValidator {
      * @param serviceType 服务类型
      * @return true 如果服务类型有效
      */
-    public boolean isValidServiceType(String serviceType) {
+    public boolean isValidServiceType(final String serviceType) {
         if (serviceType == null) {
             return false;
         }
@@ -133,7 +133,7 @@ public class ConfigValidator {
      * @param updates  更新内容
      * @return 合并后的配置
      */
-    public Map<String, Object> mergeInstanceConfig(Map<String, Object> existing, Map<String, Object> updates) {
+    public Map<String, Object> mergeInstanceConfig(final Map<String, Object> existing,final Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
         merged.putAll(updates);
 
@@ -157,7 +157,7 @@ public class ConfigValidator {
      * @return 合并后的配置
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> mergeServiceConfig(Map<String, Object> existing, Map<String, Object> updates) {
+    public Map<String, Object> mergeServiceConfig(final Map<String, Object> existing,final Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
 
         for (Map.Entry<String, Object> entry : updates.entrySet()) {
@@ -205,7 +205,7 @@ public class ConfigValidator {
     /**
      * 检查是否是有效的服务类型别名
      */
-    private boolean isValidServiceTypeAlias(String serviceType) {
+    private boolean isValidServiceTypeAlias(final String serviceType) {
         String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
 
         // 使用常量类进行匹配

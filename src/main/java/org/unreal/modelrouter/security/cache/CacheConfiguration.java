@@ -24,7 +24,7 @@ public class CacheConfiguration {
     @Bean
     @ConditionalOnProperty(name = "jairouter.security.cache.redis.enabled", havingValue = "true")
     public ReactiveRedisTemplate<String, String> reactiveRedisTemplate(
-            ReactiveRedisConnectionFactory connectionFactory) {
+            final ReactiveRedisConnectionFactory connectionFactory) {
         
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         RedisSerializationContext<String, String> serializationContext = RedisSerializationContext

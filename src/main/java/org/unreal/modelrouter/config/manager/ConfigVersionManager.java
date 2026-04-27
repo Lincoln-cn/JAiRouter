@@ -47,8 +47,8 @@ public class ConfigVersionManager {
     private volatile long lastVersionCreationTime = 0;
     private volatile String lastVersionDescription = "";
 
-    public ConfigVersionManager(StoreManager storeManager,
-                                 ConfigMergeService configMergeService) {
+    public ConfigVersionManager(final StoreManager storeManager,
+                                 final ConfigMergeService configMergeService) {
         this.storeManager = storeManager;
         this.configMergeService = configMergeService;
     }
@@ -175,7 +175,7 @@ public class ConfigVersionManager {
      * @param version 版本号，0 表示 YAML 原始配置
      * @return 配置内容
      */
-    public Map<String, Object> getVersionConfig(int version) {
+    public Map<String, Object> getVersionConfig(final int version) {
         if (version == 0) {
             return configMergeService.getDefaultConfig(); // YAML 原始配置
         }
@@ -188,7 +188,7 @@ public class ConfigVersionManager {
      * @param config 配置内容
      * @return 新版本号
      */
-    public int saveAsNewVersion(Map<String, Object> config) {
+    public int saveAsNewVersion(final Map<String, Object> config) {
         return saveAsNewVersion(config, "系统自动保存", "system");
     }
 
@@ -200,7 +200,7 @@ public class ConfigVersionManager {
      * @param userId      用户 ID
      * @return 新版本号
      */
-    public int saveAsNewVersion(Map<String, Object> config, String description, String userId) {
+    public int saveAsNewVersion(final Map<String, Object> config,final String description,final String userId) {
         versionCreationLock.lock();
         try {
             return saveAsNewVersionInternal(config, description, userId);
@@ -212,7 +212,7 @@ public class ConfigVersionManager {
     /**
      * 内部版本保存方法
      */
-    private int saveAsNewVersionInternal(Map<String, Object> config, String description, String userId) {
+    private int saveAsNewVersionInternal(final Map<String, Object> config,final String description,final String userId) {
         try {
             // 调用链追踪：记录调用来源
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -283,7 +283,7 @@ public class ConfigVersionManager {
      *
      * @param version 版本号
      */
-    public void applyVersion(int version) {
+    public void applyVersion(final int version) {
         logger.info("开始应用配置版本：{}", version);
 
         try {
@@ -361,7 +361,7 @@ public class ConfigVersionManager {
      *
      * @param version 版本号
      */
-    public void deleteConfigVersion(int version) {
+    public void deleteConfigVersion(final int version) {
         logger.info("开始删除配置版本：{}", version);
 
         try {
@@ -472,7 +472,7 @@ public class ConfigVersionManager {
      * @param version 版本号
      * @return 版本详情
      */
-    public VersionInfo getVersionDetail(int version) {
+    public VersionInfo getVersionDetail(final int version) {
         List<VersionInfo> history = versionHistoryMap.get(CURRENT_KEY);
         if (history != null) {
             return history.stream()
@@ -490,7 +490,7 @@ public class ConfigVersionManager {
      * @param version2 版本 2
      * @return 比较结果
      */
-    public Map<String, Object> compareVersions(int version1, int version2) {
+    public Map<String, Object> compareVersions(final int version1,final int version2) {
         Map<String, Object> config1 = getVersionConfig(version1);
         Map<String, Object> config2 = getVersionConfig(version2);
 
@@ -509,7 +509,7 @@ public class ConfigVersionManager {
     /**
      * 记录版本创建的时间，用于检测短时间内的重复创建
      */
-    private void recordVersionCreationTiming(String description) {
+    private void recordVersionCreationTiming(final String description) {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastVersionCreationTime < 1000 && description.equals(lastVersionDescription)) {
             logger.warn("检测到 1 秒内重复的版本创建请求，描述相同：{}", description);
@@ -528,7 +528,7 @@ public class ConfigVersionManager {
     /**
      * 验证指定版本是否存在
      */
-    private boolean versionExists(int version) {
+    private boolean versionExists(final int version) {
         if (version <= 0) {
             return false;
         }
@@ -545,7 +545,7 @@ public class ConfigVersionManager {
     /**
      * 智能配置比较，检查配置是否真正发生变化
      */
-    private boolean isConfigurationChanged(Map<String, Object> currentConfig, Map<String, Object> newConfig) {
+    private boolean isConfigurationChanged(final Map<String, Object> currentConfig,final Map<String, Object> newConfig) {
         if (currentConfig == null && newConfig == null) {
             return false;
         }
@@ -562,7 +562,7 @@ public class ConfigVersionManager {
     /**
      * 标准化配置，移除比较时不相关的字段
      */
-    private Map<String, Object> normalizeConfigForComparison(Map<String, Object> config) {
+    private Map<String, Object> normalizeConfigForComparison(final Map<String, Object> config) {
         if (config == null) {
             return new HashMap<>();
         }
@@ -592,7 +592,7 @@ public class ConfigVersionManager {
      * 递归移除嵌套对象中的时间戳字段
      */
     @SuppressWarnings("unchecked")
-    private void removeTimestampFieldsRecursively(Map<String, Object> config) {
+    private void removeTimestampFieldsRecursively(final Map<String, Object> config) {
         for (Map.Entry<String, Object> entry : config.entrySet()) {
             Object value = entry.getValue();
             if (value instanceof Map) {
@@ -616,7 +616,7 @@ public class ConfigVersionManager {
     /**
      * 深度比较两个配置对象
      */
-    private boolean deepEquals(Map<String, Object> config1, Map<String, Object> config2) {
+    private boolean deepEquals(final Map<String, Object> config1,final Map<String, Object> config2) {
         if (config1.size() != config2.size()) {
             return false;
         }
@@ -655,7 +655,7 @@ public class ConfigVersionManager {
      * 深度比较两个列表
      */
     @SuppressWarnings("unchecked")
-    private boolean deepEquals(List<Object> list1, List<Object> list2) {
+    private boolean deepEquals(final List<Object> list1,final List<Object> list2) {
         if (list1.size() != list2.size()) {
             return false;
         }
@@ -701,7 +701,7 @@ public class ConfigVersionManager {
     /**
      * 应用版本后更新当前版本状态
      */
-    private void updateCurrentVersionAfterApply(int version) {
+    private void updateCurrentVersionAfterApply(final int version) {
         ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
         if (metadata != null) {
             metadata.setCurrentVersion(version);
@@ -714,21 +714,21 @@ public class ConfigVersionManager {
     /**
      * 记录配置回滚的审计日志
      */
-    private void logConfigurationRollback(int version, Map<String, Object> config) {
+    private void logConfigurationRollback(final int version,final Map<String, Object> config) {
         logger.info("配置回滚到版本 {}: 操作类型=ROLLBACK, 目标版本={}", version, version);
     }
 
     /**
      * 记录版本删除的审计日志
      */
-    private void logVersionDeletion(int version) {
+    private void logVersionDeletion(final int version) {
         logger.info("配置版本删除：删除版本={}, 操作时间={}", version, LocalDateTime.now());
     }
 
     /**
      * 保存元数据
      */
-    private void saveMetadata(String key, ConfigMetadata metadata) {
+    private void saveMetadata(final String key,final ConfigMetadata metadata) {
         // 元数据保存到内存和文件备份
         configMetadataMap.put(key, metadata);
         logger.debug("元数据已保存：{}", key);
@@ -737,7 +737,7 @@ public class ConfigVersionManager {
     /**
      * 保存版本历史
      */
-    private void saveVersionHistory(String key, List<VersionInfo> versionHistory) {
+    private void saveVersionHistory(final String key,final List<VersionInfo> versionHistory) {
         versionHistoryMap.put(key, versionHistory);
         logger.debug("版本历史已保存：{}", key);
     }

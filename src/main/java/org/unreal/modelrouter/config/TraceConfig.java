@@ -42,7 +42,7 @@ public class TraceConfig {
         return enabled;
     }
     
-    public void setEnabled(boolean enabled) {
+    public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
     }
     
@@ -50,7 +50,7 @@ public class TraceConfig {
         return samplingRate;
     }
     
-    public void setSamplingRate(double samplingRate) {
+    public void setSamplingRate(final double samplingRate) {
         if (samplingRate < 0.0 || samplingRate > 1.0) {
             throw new IllegalArgumentException("采样率必须在0.0到1.0之间");
         }
@@ -61,7 +61,7 @@ public class TraceConfig {
         return serviceName;
     }
     
-    public void setServiceName(String serviceName) {
+    public void setServiceName(final String serviceName) {
         this.serviceName = serviceName;
     }
     
@@ -69,7 +69,7 @@ public class TraceConfig {
         return exporterType;
     }
     
-    public void setExporterType(String exporterType) {
+    public void setExporterType(final String exporterType) {
         this.exporterType = exporterType;
     }
     
@@ -77,7 +77,7 @@ public class TraceConfig {
         return exporterConfig;
     }
     
-    public void setExporterConfig(Map<String, String> exporterConfig) {
+    public void setExporterConfig(final Map<String, String> exporterConfig) {
         this.exporterConfig = exporterConfig != null ? new HashMap<>(exporterConfig) : new HashMap<>();
     }
     
@@ -85,7 +85,7 @@ public class TraceConfig {
         return version;
     }
     
-    public void setVersion(int version) {
+    public void setVersion(final int version) {
         this.version = version;
     }
     
@@ -107,7 +107,7 @@ public class TraceConfig {
      * 从Map创建配置
      */
     @SuppressWarnings("unchecked")
-    public static TraceConfig fromMap(Map<String, Object> configMap) {
+    public static TraceConfig fromMap(final Map<String, Object> configMap) {
         TraceConfig config = new TraceConfig();
         
         if (configMap.containsKey("enabled")) {

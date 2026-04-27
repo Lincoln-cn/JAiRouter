@@ -30,7 +30,7 @@ public class PerformanceThresholdConfig {
         return defaultThreshold;
     }
 
-    public void setDefaultThreshold(long defaultThreshold) {
+    public void setDefaultThreshold(final long defaultThreshold) {
         this.defaultThreshold = defaultThreshold;
     }
 
@@ -38,7 +38,7 @@ public class PerformanceThresholdConfig {
         return operationThresholds;
     }
 
-    public void setOperationThresholds(Map<String, Long> operationThresholds) {
+    public void setOperationThresholds(final Map<String, Long> operationThresholds) {
         this.operationThresholds = operationThresholds;
     }
 }

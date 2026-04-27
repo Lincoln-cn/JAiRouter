@@ -37,7 +37,7 @@ public class SpaWebFluxConfig {
     public WebFilter apiPathForwardFilter() {
         return new WebFilter() {
             @Override
-            public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+            public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
                 String path = exchange.getRequest().getPath().value();
 
                 // 检查是否是 /v1/ 开头的路径（不包括 /v1/debug）
@@ -109,7 +109,7 @@ public class SpaWebFluxConfig {
     /**
      * 根据文件扩展名获取 Content-Type
      */
-    private MediaType getContentType(String path) {
+    private MediaType getContentType(final String path) {
         String lowerPath = path.toLowerCase();
         
         if (lowerPath.endsWith(".js") || lowerPath.endsWith(".mjs")) {

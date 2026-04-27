@@ -39,7 +39,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     private static final String JWT_CONFIG_KEY = CONFIG_KEY_PREFIX + "jwt";
 
     @Override
-    public Mono<Void> updateApiKeys(List<ApiKey> apiKeys) {
+    public Mono<Void> updateApiKeys(final List<ApiKey> apiKeys) {
         return Mono.fromRunnable(() -> {
             log.info("开始更新API Key配置，数量: {}", apiKeys.size());
             
@@ -64,7 +64,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     }
 
     @Override
-    public Mono<Void> updateSanitizationRules(List<SanitizationRule> rules) {
+    public Mono<Void> updateSanitizationRules(final List<SanitizationRule> rules) {
         return Mono.fromRunnable(() -> {
             log.info("开始更新脱敏规则配置，数量: {}", rules.size());
             
@@ -82,7 +82,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     }
 
     @Override
-    public Mono<Void> updateJwtConfig(JwtConfig jwtConfig) {
+    public Mono<Void> updateJwtConfig(final JwtConfig jwtConfig) {
         return Mono.fromRunnable(() -> {
             log.info("开始更新JWT配置");
             
@@ -114,7 +114,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     }
 
     @Override
-    public Mono<Boolean> validateConfiguration(SecurityProperties properties) {
+    public Mono<Boolean> validateConfiguration(final SecurityProperties properties) {
         return Mono.fromCallable(() -> {
             log.debug("验证安全配置");
             
@@ -180,7 +180,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
         }).then();
     }
     @Override
-    public Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(int limit) {
+    public Mono<List<SecurityConfigurationChangeEvent>> getConfigurationHistory(final int limit) {
         return Mono.fromCallable(() -> {
             log.debug("获取配置变更历史，限制数量: {}", limit);
             
@@ -201,7 +201,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 记录配置变更事件
      */
-    private void recordConfigurationChange(String changeType, String userId, String description, Object oldValue, Object newValue) {
+    private void recordConfigurationChange(final String changeType,final String userId,final String description,final Object oldValue,final Object newValue) {
         String changeId = UUID.randomUUID().toString();
         SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
                 this, changeId, changeType, oldValue, newValue);
@@ -220,7 +220,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 发布配置变更事件
      */
-    private void publishConfigurationChangeEvent(String configType, Object oldValue, Object newValue) {
+    private void publishConfigurationChangeEvent(final String configType,final Object oldValue,final Object newValue) {
         try {
             String changeId = UUID.randomUUID().toString();
             SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
@@ -234,7 +234,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证API Key配置
      */
-    private void validateApiKeyConfig(ApiKeyConfig config) {
+    private void validateApiKeyConfig(final ApiKeyConfig config) {
         if (config.isEnabled()) {
             if (config.getHeaderName() == null || config.getHeaderName().trim().isEmpty()) {
                 throw new IllegalArgumentException("API Key请求头名称不能为空");
@@ -249,7 +249,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证JWT配置
      */
-    private void validateJwtConfig(JwtConfig config) {
+    private void validateJwtConfig(final JwtConfig config) {
         if (config.getSecret() == null || config.getSecret().length() < 32) {
             throw new IllegalArgumentException("JWT密钥长度至少32个字符");
         }
@@ -270,7 +270,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证脱敏配置
      */
-    private void validateSanitizationConfig(SanitizationConfig config) {
+    private void validateSanitizationConfig(final SanitizationConfig config) {
         if (config.getRequest() != null) {
             validateSanitizationSubConfig(config.getRequest().getMaskingChar(), "请求脱敏掩码字符");
         }
@@ -283,7 +283,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证脱敏子配置
      */
-    private void validateSanitizationSubConfig(String maskingChar, String fieldName) {
+    private void validateSanitizationSubConfig(final String maskingChar,final String fieldName) {
         if (maskingChar == null || maskingChar.trim().isEmpty()) {
             throw new IllegalArgumentException(fieldName + "不能为空");
         }
@@ -296,7 +296,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证审计配置
      */
-    private void validateAuditConfig(AuditConfig config) {
+    private void validateAuditConfig(final AuditConfig config) {
         if (config.getRetentionDays() <= 0) {
             throw new IllegalArgumentException("审计日志保留天数必须大于0");
         }
@@ -315,7 +315,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 复制SecurityProperties对象
      */
-    private SecurityProperties copySecurityProperties(SecurityProperties source) {
+    private SecurityProperties copySecurityProperties(final SecurityProperties source) {
         SecurityProperties copy = new SecurityProperties();
         copy.setEnabled(source.isEnabled());
         
@@ -352,7 +352,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 复制JWT配置
      */
-    private JwtConfig copyJwtConfig(JwtConfig source) {
+    private JwtConfig copyJwtConfig(final JwtConfig source) {
         JwtConfig copy = new JwtConfig();
         copy.setEnabled(source.isEnabled());
         copy.setSecret(source.getSecret());
@@ -367,7 +367,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 更新JWT配置属性
      */
-    private void updateJwtConfigProperties(JwtConfig newConfig) {
+    private void updateJwtConfigProperties(final JwtConfig newConfig) {
         JwtConfig current = securityProperties.getJwt();
         current.setEnabled(newConfig.isEnabled());
         current.setSecret(newConfig.getSecret());
@@ -381,7 +381,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 恢复安全配置属性
      */
-    private void restoreSecurityProperties(SecurityProperties backup) {
+    private void restoreSecurityProperties(final SecurityProperties backup) {
         securityProperties.setEnabled(backup.isEnabled());
         
         // 恢复API Key配置

@@ -60,7 +60,7 @@ public class TracingSecurityManager {
      * @param spanId Span ID（可选）
      * @return 是否有权限
      */
-    public Mono<Boolean> hasTracePermission(String operation, String traceId, String spanId) {
+    public Mono<Boolean> hasTracePermission(final String operation,final String traceId,final String spanId) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> securityContext.getAuthentication())
                 .flatMap(authentication -> {
@@ -97,7 +97,7 @@ public class TracingSecurityManager {
      * @param context 追踪上下文
      * @return 是否有权限
      */
-    public Mono<Boolean> canAccessTraceContext(TracingContext context) {
+    public Mono<Boolean> canAccessTraceContext(final TracingContext context) {
         if (context == null) {
             return Mono.just(false);
         }
@@ -111,7 +111,7 @@ public class TracingSecurityManager {
      * @param context 追踪上下文
      * @return 是否有权限
      */
-    public Mono<Boolean> canModifyTraceData(TracingContext context) {
+    public Mono<Boolean> canModifyTraceData(final TracingContext context) {
         if (context == null) {
             return Mono.just(false);
         }
@@ -125,7 +125,7 @@ public class TracingSecurityManager {
      * @param traceIds 追踪ID列表
      * @return 是否有权限
      */
-    public Mono<Boolean> canExportTraceData(List<String> traceIds) {
+    public Mono<Boolean> canExportTraceData(final List<String> traceIds) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> securityContext.getAuthentication())
                 .flatMap(authentication -> {
@@ -149,7 +149,7 @@ public class TracingSecurityManager {
      * @param traceData 原始追踪数据
      * @return 过滤后的追踪数据
      */
-    public Mono<Map<String, Object>> filterAccessibleTraceData(Map<String, Object> traceData) {
+    public Mono<Map<String, Object>> filterAccessibleTraceData(final Map<String, Object> traceData) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> securityContext.getAuthentication())
                 .flatMap(authentication -> {
@@ -180,7 +180,7 @@ public class TracingSecurityManager {
     /**
      * 获取用户的追踪权限
      */
-    private Set<String> getUserTracePermissions(Authentication authentication) {
+    private Set<String> getUserTracePermissions(final Authentication authentication) {
         String username = authentication.getName();
         
         // 先检查缓存
@@ -223,7 +223,7 @@ public class TracingSecurityManager {
     /**
      * 检查是否可以访问指定的追踪字段
      */
-    private boolean canAccessTraceField(String fieldName, Set<String> userPermissions) {
+    private boolean canAccessTraceField(final String fieldName,final Set<String> userPermissions) {
         // 敏感字段需要管理员权限
         if (isSensitiveTraceField(fieldName)) {
             return userPermissions.contains("trace:manage");
@@ -236,7 +236,7 @@ public class TracingSecurityManager {
     /**
      * 检查是否为敏感追踪字段
      */
-    private boolean isSensitiveTraceField(String fieldName) {
+    private boolean isSensitiveTraceField(final String fieldName) {
         String lowerField = fieldName.toLowerCase();
         return lowerField.contains("user") ||
                lowerField.contains("auth") ||
@@ -249,8 +249,8 @@ public class TracingSecurityManager {
     /**
      * 记录访问尝试
      */
-    private void recordAccessAttempt(String username, String operation, String traceId, 
-                                   boolean success, String reason) {
+    private void recordAccessAttempt(final String username,final String operation,final String traceId, 
+                                   final boolean success,final String reason) {
         TraceAccessRecord record = new TraceAccessRecord(
                 username, operation, traceId, success, reason, Instant.now()
         );
@@ -267,8 +267,8 @@ public class TracingSecurityManager {
     /**
      * 记录追踪访问审计日志
      */
-    private void recordTraceAccessAudit(String username, String operation, String traceId, 
-                                      String spanId, String result, String reason) {
+    private void recordTraceAccessAudit(final String username,final String operation,final String traceId, 
+                                      final String spanId,final String result,final String reason) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("username", username);
@@ -289,7 +289,7 @@ public class TracingSecurityManager {
     /**
      * 记录追踪导出审计日志
      */
-    private void recordTraceExportAudit(String username, List<String> traceIds, boolean success) {
+    private void recordTraceExportAudit(final String username,final List<String> traceIds,final boolean success) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("username", username);
@@ -312,7 +312,7 @@ public class TracingSecurityManager {
      * @param username 用户名
      * @return 访问历史记录
      */
-    public List<TraceAccessRecord> getUserTraceAccessHistory(String username) {
+    public List<TraceAccessRecord> getUserTraceAccessHistory(final String username) {
         return traceAccessHistory.getOrDefault(username, Collections.emptyList());
     }
     
@@ -321,7 +321,7 @@ public class TracingSecurityManager {
      * 
      * @param username 用户名
      */
-    public void clearUserPermissionCache(String username) {
+    public void clearUserPermissionCache(final String username) {
         userTracePermissions.remove(username);
         log.debug("清理用户权限缓存: {}", username);
     }
@@ -345,8 +345,8 @@ public class TracingSecurityManager {
         private final String reason;
         private final Instant timestamp;
         
-        public TraceAccessRecord(String username, String operation, String traceId, 
-                               boolean success, String reason, Instant timestamp) {
+        public TraceAccessRecord(final String username,final String operation,final String traceId, 
+                               final boolean success,final String reason,final Instant timestamp) {
             this.username = username;
             this.operation = operation;
             this.traceId = traceId;

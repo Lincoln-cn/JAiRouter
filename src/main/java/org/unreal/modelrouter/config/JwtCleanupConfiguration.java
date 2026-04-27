@@ -55,21 +55,21 @@ public class JwtCleanupConfiguration {
         
         // Getters and Setters
         public boolean isEnabled() { return enabled; }
-        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public void setEnabled(final boolean enabled) { this.enabled = enabled; }
         
         public String getSchedule() { return schedule; }
-        public void setSchedule(String schedule) { this.schedule = schedule; }
+        public void setSchedule(final String schedule) { this.schedule = schedule; }
         
         public int getRetentionDays() { return retentionDays; }
-        public void setRetentionDays(int retentionDays) { this.retentionDays = retentionDays; }
+        public void setRetentionDays(final int retentionDays) { this.retentionDays = retentionDays; }
         
         public int getBatchSize() { return batchSize; }
-        public void setBatchSize(int batchSize) { this.batchSize = batchSize; }
+        public void setBatchSize(final int batchSize) { this.batchSize = batchSize; }
         
         public int getMaxRetries() { return maxRetries; }
-        public void setMaxRetries(int maxRetries) { this.maxRetries = maxRetries; }
+        public void setMaxRetries(final int maxRetries) { this.maxRetries = maxRetries; }
         
         public long getRetryDelayMs() { return retryDelayMs; }
-        public void setRetryDelayMs(long retryDelayMs) { this.retryDelayMs = retryDelayMs; }
+        public void setRetryDelayMs(final long retryDelayMs) { this.retryDelayMs = retryDelayMs; }
     }
 }

@@ -35,7 +35,7 @@ public record CircuitBreakerConfiguration(
     /**
      * 从 Map 转换为 DTO
      */
-    public static CircuitBreakerConfiguration fromMap(Map<String, Object> map) {
+    public static CircuitBreakerConfiguration fromMap(final Map<String, Object> map) {
         if (map == null) {
             return defaultConfig();
         }
@@ -59,7 +59,7 @@ public record CircuitBreakerConfiguration(
         return map;
     }
 
-    private static Integer getInteger(Map<String, Object> map, String key) {
+    private static Integer getInteger(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         if (value instanceof Number) {
             return ((Number) value).intValue();
@@ -67,7 +67,7 @@ public record CircuitBreakerConfiguration(
         return null;
     }
 
-    private static Long getLong(Map<String, Object> map, String key) {
+    private static Long getLong(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         if (value instanceof Number) {
             return ((Number) value).longValue();
@@ -75,7 +75,7 @@ public record CircuitBreakerConfiguration(
         return null;
     }
 
-    private static Boolean getBoolean(Map<String, Object> map, String key) {
+    private static Boolean getBoolean(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         if (value instanceof Boolean) {
             return (Boolean) value;

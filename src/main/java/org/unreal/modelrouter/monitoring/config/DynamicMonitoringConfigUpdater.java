@@ -25,8 +25,8 @@ public class DynamicMonitoringConfigUpdater {
     private final ApplicationEventPublisher eventPublisher;
     private final Map<String, Object> currentConfig = new ConcurrentHashMap<>();
 
-    public DynamicMonitoringConfigUpdater(MonitoringProperties monitoringProperties,
-                                       ApplicationEventPublisher eventPublisher) {
+    public DynamicMonitoringConfigUpdater(final MonitoringProperties monitoringProperties,
+                                       final ApplicationEventPublisher eventPublisher) {
         this.monitoringProperties = monitoringProperties;
         this.eventPublisher = eventPublisher;
         initializeCurrentConfig();
@@ -48,7 +48,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 更新基础配置
      */
-    public boolean updateBasicConfig(boolean enabled, String prefix, Duration collectionInterval, Set<String> enabledCategories) {
+    public boolean updateBasicConfig(final boolean enabled,final String prefix,final Duration collectionInterval,final Set<String> enabledCategories) {
         try {
             boolean changed = false;
             
@@ -97,7 +97,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 更新采样配置
      */
-    public boolean updateSamplingConfig(MonitoringProperties.Sampling samplingConfig) {
+    public boolean updateSamplingConfig(final MonitoringProperties.Sampling samplingConfig) {
         try {
             MonitoringProperties.Sampling oldValue = monitoringProperties.getSampling();
             
@@ -143,7 +143,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 验证配置变更
      */
-    public boolean validateConfigurationChange(String key, Object newValue) {
+    public boolean validateConfigurationChange(final String key,final Object newValue) {
         try {
             switch (key) {
                 case "enabled":
@@ -172,7 +172,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 回滚配置变更
      */
-    public void rollbackConfiguration(String key, Object oldValue) {
+    public void rollbackConfiguration(final String key,final Object oldValue) {
         try {
             switch (key) {
                 case "enabled":
@@ -223,7 +223,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 发布配置变更事件
      */
-    private void publishConfigurationChangeEvent(String configType, Object oldValue, Object newValue) {
+    private void publishConfigurationChangeEvent(final String configType,final Object oldValue,final Object newValue) {
         String changeId = UUID.randomUUID().toString();
         MonitorConfigurationChangeEvent event = new MonitorConfigurationChangeEvent(this, changeId , configType, oldValue, newValue);
         eventPublisher.publishEvent(event);

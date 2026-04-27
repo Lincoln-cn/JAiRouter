@@ -49,7 +49,7 @@ public class SecurityConfiguration {
 
     // 使用setter注入JwtTokenValidator，使其成为可选依赖
     @Autowired(required = false)
-    public void setJwtTokenValidator(JwtTokenValidator jwtTokenValidator) {
+    public void setJwtTokenValidator(final JwtTokenValidator jwtTokenValidator) {
         this.jwtTokenValidator = jwtTokenValidator;
     }
 
@@ -59,20 +59,21 @@ public class SecurityConfiguration {
      */
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
-            ServerHttpSecurity http,
-            ReactiveAuthenticationManager authenticationManager,
-            SpringSecurityAuthenticationFilter securityFilter) {
+            final ServerHttpSecurity http,
+            final ReactiveAuthenticationManager authenticationManager,
+            final SpringSecurityAuthenticationFilter securityFilter) {
 
         log.info("配置Spring Security WebFlux过滤器链");
 
         // 如果启用了追踪功能，则添加追踪过滤器
+        ServerHttpSecurity customizedHttp = http;
         if (tracingCustomizer != null) {
-            http = tracingCustomizer.customize(http);
+            customizedHttp = tracingCustomizer.customize(http);
             log.info("已集成追踪过滤器到安全过滤器链");
         }
 
         // 配置授权规则 - 实现基于角色的访问控制（RBAC）
-        ServerHttpSecurity.AuthorizeExchangeSpec authorizeExchangeSpec = http
+        ServerHttpSecurity.AuthorizeExchangeSpec authorizeExchangeSpec = customizedHttp
                 // 禁用CSRF，因为这是一个API网关
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 // 启用CORS支持，允许Web管理界面跨域访问
@@ -147,7 +148,7 @@ public class SecurityConfiguration {
      * 配置认证管理器
      */
     @Bean
-    public AuthenticationManager authenticationManager(PasswordEncoder passwordEncoder) {
+    public AuthenticationManager authenticationManager(final PasswordEncoder passwordEncoder) {
         // 动态获取UserDetailsService以避免循环依赖
         UserDetailsService userDetailsService = applicationContext.getBean(UserDetailsService.class);
         log.info("=== AuthenticationManager created with UserDetailsService: {} ===", 
@@ -175,8 +176,8 @@ public class SecurityConfiguration {
      */
     @Bean
     public SpringSecurityAuthenticationFilter springSecurityApiKeyAuthenticationFilter(
-            ServerAuthenticationConverter serverAuthenticationConverter,
-            ReactiveAuthenticationManager reactiveAuthenticationManager) {
+            final ServerAuthenticationConverter serverAuthenticationConverter,
+            final ReactiveAuthenticationManager reactiveAuthenticationManager) {
         return new SpringSecurityAuthenticationFilter(
                 securityProperties,
                 serverAuthenticationConverter,

@@ -99,7 +99,7 @@ public class TracingExporterConfiguration {
     /**
      * 将 Jaeger 端点转换为 OTLP 端点
      */
-    private String convertJaegerToOtlpEndpoint(String jaegerEndpoint) {
+    private String convertJaegerToOtlpEndpoint(final String jaegerEndpoint) {
         if (jaegerEndpoint == null || jaegerEndpoint.isEmpty()) {
             return "http://localhost:4317";
         }

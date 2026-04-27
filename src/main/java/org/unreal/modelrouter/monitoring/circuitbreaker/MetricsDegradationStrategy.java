@@ -42,7 +42,7 @@ public class MetricsDegradationStrategy {
         private final double samplingRate;
         private final String description;
         
-        DegradationLevel(int level, double samplingRate, String description) {
+        DegradationLevel(final int level,final double samplingRate,final String description) {
             this.level = level;
             this.samplingRate = samplingRate;
             this.description = description;
@@ -52,7 +52,7 @@ public class MetricsDegradationStrategy {
         public double getSamplingRate() { return samplingRate; }
         public String getDescription() { return description; }
         
-        public static DegradationLevel fromLevel(int level) {
+        public static DegradationLevel fromLevel(final int level) {
             for (DegradationLevel dl : values()) {
                 if (dl.level == level) return dl;
             }
@@ -76,7 +76,7 @@ public class MetricsDegradationStrategy {
     private final ConcurrentHashMap<String, Integer> componentErrorCounts = new ConcurrentHashMap<>();
     private Instant lastDegradationChange = Instant.now();
     
-    public MetricsDegradationStrategy(MeterRegistry meterRegistry) {
+    public MetricsDegradationStrategy(final MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         this.degradationActivations = Counter.builder("jairouter.metrics.degradation.activations")
             .description("降级策略激活次数")
@@ -94,7 +94,7 @@ public class MetricsDegradationStrategy {
     /**
      * 根据系统状态自动调整降级级别
      */
-    public void evaluateAndAdjustDegradation(double memoryUsageRatio, int totalErrors) {
+    public void evaluateAndAdjustDegradation(final double memoryUsageRatio,final int totalErrors) {
         if (!autoModeEnabled.get()) {
             return;
         }
@@ -113,7 +113,7 @@ public class MetricsDegradationStrategy {
     /**
      * 计算最优降级级别
      */
-    private DegradationLevel calculateOptimalDegradationLevel(double memoryUsageRatio, int totalErrors) {
+    private DegradationLevel calculateOptimalDegradationLevel(final double memoryUsageRatio,final int totalErrors) {
         // 基于内存使用率的降级
         DegradationLevel memoryBasedLevel = DegradationLevel.NONE;
         if (memoryUsageRatio >= MEMORY_THRESHOLD_EMERGENCY) {
@@ -146,7 +146,7 @@ public class MetricsDegradationStrategy {
     /**
      * 设置降级级别
      */
-    public void setDegradationLevel(DegradationLevel level) {
+    public void setDegradationLevel(final DegradationLevel level) {
         DegradationLevel oldLevel = getCurrentDegradationLevel();
         currentDegradationLevel.set(level.getLevel());
         lastDegradationChange = Instant.now();
@@ -194,7 +194,7 @@ public class MetricsDegradationStrategy {
     /**
      * 检查特定组件是否应该收集指标
      */
-    public boolean shouldCollectMetrics(String component) {
+    public boolean shouldCollectMetrics(final String component) {
         if (!shouldCollectMetrics()) {
             return false;
         }
@@ -212,14 +212,14 @@ public class MetricsDegradationStrategy {
     /**
      * 记录组件错误
      */
-    public void recordComponentError(String component) {
+    public void recordComponentError(final String component) {
         componentErrorCounts.merge(component, 1, Integer::sum);
     }
     
     /**
      * 重置组件错误计数
      */
-    public void resetComponentErrors(String component) {
+    public void resetComponentErrors(final String component) {
         componentErrorCounts.remove(component);
         logger.debug("重置组件 {} 的错误计数", component);
     }
@@ -227,7 +227,7 @@ public class MetricsDegradationStrategy {
     /**
      * 启用/禁用自动模式
      */
-    public void setAutoModeEnabled(boolean enabled) {
+    public void setAutoModeEnabled(final boolean enabled) {
         autoModeEnabled.set(enabled);
         logger.info("降级策略自动模式: {}", enabled ? "启用" : "禁用");
     }
@@ -274,9 +274,9 @@ public class MetricsDegradationStrategy {
         private final Duration timeSinceLastChange;
         private final int errorComponentCount;
         
-        public DegradationStatus(DegradationLevel level, double samplingRate, 
-                               boolean autoModeEnabled, Duration timeSinceLastChange, 
-                               int errorComponentCount) {
+        public DegradationStatus(final DegradationLevel level,final double samplingRate, 
+                               final boolean autoModeEnabled,final Duration timeSinceLastChange, 
+                               final int errorComponentCount) {
             this.level = level;
             this.samplingRate = samplingRate;
             this.autoModeEnabled = autoModeEnabled;

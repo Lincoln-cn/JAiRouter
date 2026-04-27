@@ -64,7 +64,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditTokenIssued(String userId, String tokenId, String ipAddress, String userAgent) {
+    public Mono<Void> auditTokenIssued(final String userId,final String tokenId,final String ipAddress,final String userAgent) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
                     .eventId(UUID.randomUUID().toString())
@@ -85,7 +85,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditTokenRefreshed(String userId, String oldTokenId, String newTokenId, String ipAddress) {
+    public Mono<Void> auditTokenRefreshed(final String userId,final String oldTokenId,final String newTokenId,final String ipAddress) {
         return Mono.fromRunnable(() -> {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("oldTokenId", oldTokenId);
@@ -110,7 +110,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditTokenRevoked(String userId, String tokenId, String reason, String revokedBy) {
+    public Mono<Void> auditTokenRevoked(final String userId,final String tokenId,final String reason,final String revokedBy) {
         return Mono.fromRunnable(() -> {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("revokedBy", revokedBy);
@@ -135,7 +135,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditTokenValidated(String userId, String tokenId, boolean isValid, String ipAddress) {
+    public Mono<Void> auditTokenValidated(final String userId,final String tokenId,final boolean isValid,final String ipAddress) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
                     .eventId(UUID.randomUUID().toString())
@@ -158,7 +158,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditApiKeyCreated(String keyId, String createdBy, String ipAddress) {
+    public Mono<Void> auditApiKeyCreated(final String keyId,final String createdBy,final String ipAddress) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
                     .eventId(UUID.randomUUID().toString())
@@ -178,7 +178,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditApiKeyUsed(String keyId, String endpoint, String ipAddress, boolean success) {
+    public Mono<Void> auditApiKeyUsed(final String keyId,final String endpoint,final String ipAddress,final boolean success) {
         return Mono.fromRunnable(() -> {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("endpoint", endpoint);
@@ -203,7 +203,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditApiKeyRevoked(String keyId, String reason, String revokedBy) {
+    public Mono<Void> auditApiKeyRevoked(final String keyId,final String reason,final String revokedBy) {
         return Mono.fromRunnable(() -> {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("revokedBy", revokedBy);
@@ -228,7 +228,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditApiKeyExpired(String keyId) {
+    public Mono<Void> auditApiKeyExpired(final String keyId) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
                     .eventId(UUID.randomUUID().toString())
@@ -248,7 +248,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditSecurityEvent(String eventType, String details, String userId, String ipAddress) {
+    public Mono<Void> auditSecurityEvent(final String eventType,final String details,final String userId,final String ipAddress) {
         return Mono.fromRunnable(() -> {
             AuditEventType type = parseEventType(eventType);
             RiskLevel riskLevel = determineRiskLevel(type, false);
@@ -271,7 +271,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> auditSuspiciousActivity(String activity, String userId, String ipAddress, String details) {
+    public Mono<Void> auditSuspiciousActivity(final String activity,final String userId,final String ipAddress,final String details) {
         return Mono.fromRunnable(() -> {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("activity", activity);
@@ -297,7 +297,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     // ========== 查询方法 ==========
 
     @Override
-    public Flux<AuditEvent> findAuditEvents(AuditEventQuery query) {
+    public Flux<AuditEvent> findAuditEvents(final AuditEventQuery query) {
         return Mono.fromCallable(() -> {
             PageRequest pageRequest = PageRequest.of(
                     query.getPage(),
@@ -327,7 +327,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    public Mono<Long> countAuditEvents(AuditEventQuery query) {
+    public Mono<Long> countAuditEvents(final AuditEventQuery query) {
         return Mono.fromCallable(() -> {
             return auditRepository.countByConditions(
                     query.getStartTime(),
@@ -345,7 +345,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    public Mono<SecurityReport> generateSecurityReport(LocalDateTime from, LocalDateTime to) {
+    public Mono<SecurityReport> generateSecurityReport(final LocalDateTime from,final LocalDateTime to) {
         return Mono.fromCallable(() -> {
             // 按事件类型统计
             List<Object[]> eventTypeStats = auditRepository.countByEventType(from, to);
@@ -417,7 +417,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> recordAuditEvent(AuditEvent auditEvent) {
+    public Mono<Void> recordAuditEvent(final AuditEvent auditEvent) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = dtoToEntity(auditEvent);
             auditRepository.save(entity);
@@ -427,7 +427,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> batchRecordAuditEvents(List<AuditEvent> auditEvents) {
+    public Mono<Void> batchRecordAuditEvents(final List<AuditEvent> auditEvents) {
         return Mono.fromRunnable(() -> {
             List<SecurityAuditEventEntity> entities = auditEvents.stream()
                     .map(this::dtoToEntity)
@@ -438,7 +438,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    public Flux<AuditEvent> getUserAuditEvents(String userId, LocalDateTime startTime, LocalDateTime endTime, int limit) {
+    public Flux<AuditEvent> getUserAuditEvents(final String userId,final LocalDateTime startTime,final LocalDateTime endTime,final int limit) {
         return Mono.fromCallable(() -> {
             List<SecurityAuditEventEntity> entities = auditRepository.findByTimeRange(startTime, endTime);
             return entities.stream()
@@ -452,7 +452,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    public Flux<AuditEvent> getIpAuditEvents(String ipAddress, LocalDateTime startTime, LocalDateTime endTime, int limit) {
+    public Flux<AuditEvent> getIpAuditEvents(final String ipAddress,final LocalDateTime startTime,final LocalDateTime endTime,final int limit) {
         return Mono.fromCallable(() -> {
             List<SecurityAuditEventEntity> entities = auditRepository.findByTimeRange(startTime, endTime);
             return entities.stream()
@@ -469,7 +469,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> recordEvent(SecurityAuditEvent event) {
+    public Mono<Void> recordEvent(final SecurityAuditEvent event) {
         return Mono.fromRunnable(() -> {
             SecurityAuditEventEntity entity = securityEventToEntity(event);
             auditRepository.save(entity);
@@ -479,8 +479,8 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> recordAuthenticationEvent(String userId, String clientIp, String userAgent,
-                                               boolean success, String failureReason) {
+    public Mono<Void> recordAuthenticationEvent(final String userId,final String clientIp,final String userAgent,
+                                               final boolean success,final String failureReason) {
         return Mono.fromRunnable(() -> {
             AuditEventType eventType = success ? 
                     AuditEventType.JWT_TOKEN_ISSUED : AuditEventType.AUTHENTICATION_FAILED;
@@ -504,7 +504,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Void> recordSanitizationEvent(String userId, String contentType, String ruleId, int matchCount) {
+    public Mono<Void> recordSanitizationEvent(final String userId,final String contentType,final String ruleId,final int matchCount) {
         return Mono.fromRunnable(() -> {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("contentType", contentType);
@@ -526,8 +526,8 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    public Flux<SecurityAuditEvent> queryEvents(LocalDateTime startTime, LocalDateTime endTime,
-                                               String eventType, String userId, int limit) {
+    public Flux<SecurityAuditEvent> queryEvents(final LocalDateTime startTime,final LocalDateTime endTime,
+                                               final String eventType,final String userId,final int limit) {
         return Mono.fromCallable(() -> {
             List<SecurityAuditEventEntity> entities = auditRepository.findByTimeRange(startTime, endTime);
             return entities.stream()
@@ -542,7 +542,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    public Mono<Map<String, Object>> getSecurityStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+    public Mono<Map<String, Object>> getSecurityStatistics(final LocalDateTime startTime,final LocalDateTime endTime) {
         return Mono.fromCallable(() -> {
             Map<String, Object> statistics = new HashMap<>();
 
@@ -579,7 +579,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     @Override
     @Transactional
-    public Mono<Long> cleanupExpiredLogs(int retentionDays) {
+    public Mono<Long> cleanupExpiredLogs(final int retentionDays) {
         return Mono.fromCallable(() -> {
             LocalDateTime cutoffTime = LocalDateTime.now().minusDays(retentionDays);
             // 只删除低风险和中风险的过期日志，保留高风险和严重风险的日志
@@ -594,7 +594,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     }
 
     @Override
-    public Mono<Boolean> shouldTriggerAlert(String eventType, int timeWindowMinutes, int threshold) {
+    public Mono<Boolean> shouldTriggerAlert(final String eventType,final int timeWindowMinutes,final int threshold) {
         return Mono.fromCallable(() -> {
             LocalDateTime windowEnd = LocalDateTime.now();
             LocalDateTime windowStart = windowEnd.minusMinutes(timeWindowMinutes);
@@ -612,7 +612,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
 
     // ========== 辅助方法 ==========
 
-    private AuditEvent entityToDto(SecurityAuditEventEntity entity) {
+    private AuditEvent entityToDto(final SecurityAuditEventEntity entity) {
         AuditEvent dto = new AuditEvent();
         dto.setId(entity.getEventId());
         dto.setType(entity.getEventType());
@@ -628,7 +628,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
         return dto;
     }
 
-    private SecurityAuditEventEntity dtoToEntity(AuditEvent dto) {
+    private SecurityAuditEventEntity dtoToEntity(final AuditEvent dto) {
         return SecurityAuditEventEntity.builder()
                 .eventId(dto.getId() != null ? dto.getId() : UUID.randomUUID().toString())
                 .eventType(dto.getType())
@@ -644,7 +644,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                 .build();
     }
 
-    private SecurityAuditEvent entityToSecurityEvent(SecurityAuditEventEntity entity) {
+    private SecurityAuditEvent entityToSecurityEvent(final SecurityAuditEventEntity entity) {
         return SecurityAuditEvent.builder()
                 .eventId(entity.getEventId())
                 .eventType(entity.getEventType().name())
@@ -662,7 +662,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                 .build();
     }
 
-    private SecurityAuditEventEntity securityEventToEntity(SecurityAuditEvent event) {
+    private SecurityAuditEventEntity securityEventToEntity(final SecurityAuditEvent event) {
         return SecurityAuditEventEntity.builder()
                 .eventId(event.getEventId() != null ? event.getEventId() : UUID.randomUUID().toString())
                 .eventType(parseEventType(event.getEventType()))
@@ -680,7 +680,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                 .build();
     }
 
-    private AuditEventType parseEventType(String eventType) {
+    private AuditEventType parseEventType(final String eventType) {
         try {
             return AuditEventType.valueOf(eventType);
         } catch (IllegalArgumentException e) {
@@ -689,7 +689,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
         }
     }
 
-    private RiskLevel determineRiskLevel(AuditEventType type, Boolean success) {
+    private RiskLevel determineRiskLevel(final AuditEventType type,final Boolean success) {
         if (type == null) return RiskLevel.LOW;
         if (success != null && !success) {
             if (type == AuditEventType.SECURITY_ALERT) return RiskLevel.CRITICAL;
@@ -703,7 +703,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
         return RiskLevel.LOW;
     }
 
-    private String toJson(Map<String, Object> map) {
+    private String toJson(final Map<String, Object> map) {
         if (map == null || map.isEmpty()) return null;
         try {
             return objectMapper.writeValueAsString(map);
@@ -713,7 +713,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
         }
     }
 
-    private Map<String, Object> parseJson(String json) {
+    private Map<String, Object> parseJson(final String json) {
         if (json == null || json.isEmpty()) return new HashMap<>();
         try {
             return objectMapper.readValue(json, Map.class);

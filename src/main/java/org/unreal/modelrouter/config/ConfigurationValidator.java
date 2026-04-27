@@ -75,7 +75,7 @@ public class ConfigurationValidator {
      * @param config 限流配置
      * @return 配置是否合法
      */
-    public boolean validateRateLimitConfig(RateLimitConfig config) {
+    public boolean validateRateLimitConfig(final RateLimitConfig config) {
         if (config == null) {
             logger.warn("Rate limit config is null");
             return false;
@@ -129,7 +129,7 @@ public class ConfigurationValidator {
      * @param config 负载均衡配置
      * @return 配置是否合法
      */
-    public boolean validateLoadBalanceConfig(ModelRouterProperties.LoadBalanceConfig config) {
+    public boolean validateLoadBalanceConfig(final ModelRouterProperties.LoadBalanceConfig config) {
         if (config == null) {
             logger.warn("Load balance config is null");
             return false;
@@ -159,7 +159,7 @@ public class ConfigurationValidator {
      * @param address 服务实例地址
      * @return 地址是否合法
      */
-    public boolean validateServiceAddress(String address) {
+    public boolean validateServiceAddress(final String address) {
         if (address == null || address.trim().isEmpty()) {
             logger.warn("Invalid service address: null or empty");
             return false;
@@ -215,7 +215,7 @@ public class ConfigurationValidator {
      * @param algorithm 算法名称
      * @return 算法是否合法
      */
-    private boolean isValidRateLimitAlgorithm(String algorithm) {
+    private boolean isValidRateLimitAlgorithm(final String algorithm) {
         if (algorithm == null) {
             return false;
         }
@@ -232,7 +232,7 @@ public class ConfigurationValidator {
      * @param scope 作用域
      * @return 作用域是否合法
      */
-    private boolean isValidRateLimitScope(String scope) {
+    private boolean isValidRateLimitScope(final String scope) {
         if (scope == null) {
             return false;
         }
@@ -249,7 +249,7 @@ public class ConfigurationValidator {
      * @param type 负载均衡类型
      * @return 类型是否合法
      */
-    private boolean isValidLoadBalanceType(String type) {
+    private boolean isValidLoadBalanceType(final String type) {
         if (type == null) {
             return false;
         }
@@ -266,7 +266,7 @@ public class ConfigurationValidator {
      * @param algorithm 哈希算法
      * @return 算法是否合法
      */
-    private boolean isValidHashAlgorithm(String algorithm) {
+    private boolean isValidHashAlgorithm(final String algorithm) {
         if (algorithm == null) {
             return false;
         }
@@ -280,10 +280,10 @@ public class ConfigurationValidator {
      * 验证负载均衡配置
      */
     @SuppressWarnings("unchecked")
-    private void validateLoadBalanceConfig(Object loadBalanceObj,
-                                           String context,
-                                           List<String> errors,
-                                           List<String> warnings) {
+    private void validateLoadBalanceConfig(final Object loadBalanceObj,
+                                           final String context,
+                                           final List<String> errors,
+                                           final List<String> warnings) {
         if (!(loadBalanceObj instanceof Map)) {
             errors.add(context + " 负载均衡配置格式错误");
             return;
@@ -303,10 +303,10 @@ public class ConfigurationValidator {
      * 验证限流配置
      */
     @SuppressWarnings("unchecked")
-    private void validateRateLimitConfig(Object rateLimitObj,
-                                         String context,
-                                         List<String> errors,
-                                         List<String> warnings) {
+    private void validateRateLimitConfig(final Object rateLimitObj,
+                                         final String context,
+                                         final List<String> errors,
+                                         final List<String> warnings) {
         if (!(rateLimitObj instanceof Map)) {
             errors.add(context + " 限流配置格式错误");
             return;
@@ -387,7 +387,7 @@ public class ConfigurationValidator {
     /**
      * 验证URL格式
      */
-    private boolean isValidUrl(String url) {
+    private boolean isValidUrl(final String url) {
         if (url == null || url.trim().isEmpty()) {
             return false;
         }
@@ -397,12 +397,12 @@ public class ConfigurationValidator {
     /**
      * 验证实例配置
      */
-    private void validateInstanceConfig(String serviceType,
-                                        int instanceIndex,
-                                        Map<String, Object> instance,
-                                        Set<String> instanceIds,
-                                        List<String> errors,
-                                        List<String> warnings) {
+    private void validateInstanceConfig(final String serviceType,
+                                        final int instanceIndex,
+                                        final Map<String, Object> instance,
+                                        final Set<String> instanceIds,
+                                        final List<String> errors,
+                                        final List<String> warnings) {
         String prefix = "服务 " + serviceType + " 第 " + instanceIndex + " 个实例";
 
         // 验证必需字段
@@ -455,10 +455,10 @@ public class ConfigurationValidator {
         }
     }
 
-    private void validateSingleServiceConfig(String serviceType,
-                                             Map<String, Object> serviceConfig,
-                                             List<String> errors,
-                                             List<String> warnings) {
+    private void validateSingleServiceConfig(final String serviceType,
+                                             final Map<String, Object> serviceConfig,
+                                             final List<String> errors,
+                                             final List<String> warnings) {
         // 验证实例配置
         if (!serviceConfig.containsKey("instances")) {
             warnings.add("服务 " + serviceType + " 未配置实例");
@@ -503,9 +503,9 @@ public class ConfigurationValidator {
     /**
      * 验证基本配置
      */
-    private void validateBasicConfiguration(Map<String, Object> config,
-                                            List<String> errors,
-                                            List<String> warnings) {
+    private void validateBasicConfiguration(final Map<String, Object> config,
+                                            final List<String> errors,
+                                            final List<String> warnings) {
         // 验证全局适配器
         if (config.containsKey("adapter")) {
             String adapter = (String) config.get("adapter");
@@ -526,7 +526,7 @@ public class ConfigurationValidator {
     }
 
 
-    public boolean isValidServiceType(String serviceType) {
+    public boolean isValidServiceType(final String serviceType) {
         if (serviceType == null) {
             return false;
         }
@@ -547,7 +547,7 @@ public class ConfigurationValidator {
     /**
      * 检查是否是有效的服务类型别名
      */
-    private boolean isValidServiceTypeAlias(String serviceType) {
+    private boolean isValidServiceTypeAlias(final String serviceType) {
         String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
         
         // 使用常量类进行匹配
@@ -592,7 +592,7 @@ public class ConfigurationValidator {
         
         return false;
     }
-    public void validateServiceConfig(String serviceType, Map<String, Object> serviceConfig, List<String> errors, List<String> warnings) {
+    public void validateServiceConfig(final String serviceType,final Map<String, Object> serviceConfig,final List<String> errors,final List<String> warnings) {
         if (serviceType == null || serviceType.trim().isEmpty()) {
             errors.add("服务类型不能为空");
             return;

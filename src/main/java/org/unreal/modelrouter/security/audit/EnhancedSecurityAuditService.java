@@ -73,7 +73,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
      */
     private final int bufferThreshold;
 
-    public EnhancedSecurityAuditService(AuditMetricsService auditMetricsService) {
+    public EnhancedSecurityAuditService(final AuditMetricsService auditMetricsService) {
         this.auditMetricsService = auditMetricsService;
         this.fallbackEnabled = true;  // 默认启用备用日志
         this.bufferThreshold = 100;   // 缓冲区达到 100 条时刷新
@@ -105,7 +105,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Void> recordEvent(SecurityAuditEvent event) {
+    public Mono<Void> recordEvent(final SecurityAuditEvent event) {
         return Mono.fromRunnable(() -> {
             long startTime = System.currentTimeMillis();
             boolean success = true;
@@ -165,8 +165,8 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Void> recordAuthenticationEvent(String userId, String clientIp, String userAgent,
-                                               boolean success, String failureReason) {
+    public Mono<Void> recordAuthenticationEvent(final String userId,final String clientIp,final String userAgent,
+                                               final boolean success,final String failureReason) {
         SecurityAuditEvent event = SecurityAuditEvent.builder()
                 .eventType(success ? "AUTHENTICATION_SUCCESS" : "AUTHENTICATION_FAILURE")
                 .userId(userId)
@@ -181,7 +181,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Void> recordSanitizationEvent(String userId, String contentType, String ruleId, int matchCount) {
+    public Mono<Void> recordSanitizationEvent(final String userId,final String contentType,final String ruleId,final int matchCount) {
         SecurityAuditEvent event = SecurityAuditEvent.builder()
                 .eventType("DATA_SANITIZATION")
                 .userId(userId)
@@ -193,8 +193,8 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Flux<SecurityAuditEvent> queryEvents(LocalDateTime startTime, LocalDateTime endTime,
-                                               String eventType, String userId, int limit) {
+    public Flux<SecurityAuditEvent> queryEvents(final LocalDateTime startTime,final LocalDateTime endTime,
+                                               final String eventType,final String userId,final int limit) {
         return Flux.fromIterable(eventBuffer)
                 .filter(event -> event.getTimestamp() != null && 
                                event.getTimestamp().isAfter(startTime) && 
@@ -206,7 +206,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Map<String, Object>> getSecurityStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+    public Mono<Map<String, Object>> getSecurityStatistics(final LocalDateTime startTime,final LocalDateTime endTime) {
         return Mono.fromSupplier(() -> {
             Map<String, Object> stats = new HashMap<>();
             stats.put("totalEvents", totalEventCount.get());
@@ -219,7 +219,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Long> cleanupExpiredLogs(int retentionDays) {
+    public Mono<Long> cleanupExpiredLogs(final int retentionDays) {
         return Mono.fromSupplier(() -> {
             // 简化实现
             return 0L;
@@ -227,14 +227,14 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Boolean> shouldTriggerAlert(String eventType, int timeWindowMinutes, int threshold) {
+    public Mono<Boolean> shouldTriggerAlert(final String eventType,final int timeWindowMinutes,final int threshold) {
         return Mono.just(false);
     }
 
     /**
      * 写入主存储
      */
-    private boolean writeToPrimaryStorage(SecurityAuditEvent event) {
+    private boolean writeToPrimaryStorage(final SecurityAuditEvent event) {
         try {
             // 这里可以调用数据库存储、Redis 存储等
             // 如果配置了 H2 存储，在这里调用
@@ -249,7 +249,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     /**
      * 写入备用存储（文件日志）
      */
-    private void writeToFallbackStorage(SecurityAuditEvent event) {
+    private void writeToFallbackStorage(final SecurityAuditEvent event) {
         try {
             String timestamp = event.getTimestamp() != null ? 
                 event.getTimestamp().format(TIMESTAMP_FORMATTER) : 

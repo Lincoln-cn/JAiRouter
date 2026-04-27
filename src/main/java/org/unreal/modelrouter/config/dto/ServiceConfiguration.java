@@ -37,7 +37,7 @@ public record ServiceConfiguration(
      * 从 Map 转换为 DTO
      */
     @SuppressWarnings("unchecked")
-    public static ServiceConfiguration fromMap(Map<String, Object> map) {
+    public static ServiceConfiguration fromMap(final Map<String, Object> map) {
         if (map == null) {
             return defaultConfig();
         }
@@ -69,7 +69,7 @@ public record ServiceConfiguration(
      * 从 services Map 转换为 ServiceConfiguration Map
      */
     @SuppressWarnings("unchecked")
-    public static Map<String, ServiceConfiguration> fromServicesMap(Map<String, Object> servicesMap) {
+    public static Map<String, ServiceConfiguration> fromServicesMap(final Map<String, Object> servicesMap) {
         if (servicesMap == null) {
             return Map.of();
         }
@@ -85,7 +85,7 @@ public record ServiceConfiguration(
     /**
      * 转换为 services Map
      */
-    public static Map<String, Object> toServicesMap(Map<String, ServiceConfiguration> services) {
+    public static Map<String, Object> toServicesMap(final Map<String, ServiceConfiguration> services) {
         if (services == null) {
             return Map.of();
         }
@@ -96,19 +96,19 @@ public record ServiceConfiguration(
         return result;
     }
 
-    private static String getString(Map<String, Object> map, String key) {
+    private static String getString(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         return value instanceof String ? (String) value : null;
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> getMap(Map<String, Object> map, String key) {
+    private static Map<String, Object> getMap(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
     @SuppressWarnings("unchecked")
-    private static List<Map<String, Object>> getList(Map<String, Object> map, String key) {
+    private static List<Map<String, Object>> getList(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         return value instanceof List ? (List<Map<String, Object>>) value : List.of();
     }

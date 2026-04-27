@@ -62,8 +62,8 @@ public class TracingSecurityConfiguration {
         private final TracingWebFilter tracingWebFilter;
         private final TracingSecurityFilter tracingSecurityFilter;
         
-        public TracingSecurityFilterChainCustomizer(TracingWebFilter tracingWebFilter, 
-                                                   TracingSecurityFilter tracingSecurityFilter) {
+        public TracingSecurityFilterChainCustomizer(final TracingWebFilter tracingWebFilter, 
+                                                   final TracingSecurityFilter tracingSecurityFilter) {
             this.tracingWebFilter = tracingWebFilter;
             this.tracingSecurityFilter = tracingSecurityFilter;
         }
@@ -74,7 +74,7 @@ public class TracingSecurityConfiguration {
          * @param http ServerHttpSecurity配置对象
          * @return 配置后的ServerHttpSecurity
          */
-        public ServerHttpSecurity customize(ServerHttpSecurity http) {
+        public ServerHttpSecurity customize(final ServerHttpSecurity http) {
             log.info("添加追踪过滤器到安全过滤器链");
             
             return http

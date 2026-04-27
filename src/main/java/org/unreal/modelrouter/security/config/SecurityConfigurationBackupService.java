@@ -41,7 +41,7 @@ public class SecurityConfigurationBackupService {
      * @param description 备份描述
      * @return 备份ID
      */
-    public String createBackup(SecurityProperties properties, String description) {
+    public String createBackup(final SecurityProperties properties,final String description) {
         return createBackup(properties, description, "system");
     }
 
@@ -52,7 +52,7 @@ public class SecurityConfigurationBackupService {
      * @param userId 用户ID
      * @return 备份ID
      */
-    public String createBackup(SecurityProperties properties, String description, String userId) {
+    public String createBackup(final SecurityProperties properties,final String description,final String userId) {
         log.info("开始创建配置备份，用户: {}, 描述: {}", userId, description);
 
         try {
@@ -100,7 +100,7 @@ public class SecurityConfigurationBackupService {
      * @param backupId 备份ID
      * @return 恢复的配置
      */
-    public SecurityProperties restoreBackup(String backupId) {
+    public SecurityProperties restoreBackup(final String backupId) {
         log.info("开始恢复配置备份，备份ID: {}", backupId);
 
         try {
@@ -135,7 +135,7 @@ public class SecurityConfigurationBackupService {
      * @param limit 限制数量
      * @return 备份列表
      */
-    public List<BackupInfo> getBackupList(int limit) {
+    public List<BackupInfo> getBackupList(final int limit) {
         log.debug("获取备份列表，限制数量: {}", limit);
 
         try {
@@ -161,7 +161,7 @@ public class SecurityConfigurationBackupService {
      * 删除备份
      * @param backupId 备份ID
      */
-    public void deleteBackup(String backupId) {
+    public void deleteBackup(final String backupId) {
         log.info("开始删除配置备份，备份ID: {}", backupId);
 
         try {
@@ -187,7 +187,7 @@ public class SecurityConfigurationBackupService {
      * @param retentionDays 保留天数
      * @return 清理的备份数量
      */
-    public int cleanupExpiredBackups(int retentionDays) {
+    public int cleanupExpiredBackups(final int retentionDays) {
         log.info("开始清理过期备份，保留天数: {}", retentionDays);
 
         try {
@@ -216,7 +216,7 @@ public class SecurityConfigurationBackupService {
      * @param backupId 备份ID
      * @return 验证结果
      */
-    public BackupValidationResult validateBackup(String backupId) {
+    public BackupValidationResult validateBackup(final String backupId) {
         log.debug("验证备份完整性，备份ID: {}", backupId);
 
         try {
@@ -256,7 +256,7 @@ public class SecurityConfigurationBackupService {
     /**
      * 加密敏感配置数据
      */
-    private SecurityProperties encryptSensitiveData(SecurityProperties properties) {
+    private SecurityProperties encryptSensitiveData(final SecurityProperties properties) {
         SecurityProperties encrypted = copySecurityProperties(properties);
 
         // 加密JWT密钥
@@ -279,7 +279,7 @@ public class SecurityConfigurationBackupService {
     /**
      * 解密敏感配置数据
      */
-    private SecurityProperties decryptSensitiveData(SecurityProperties properties) {
+    private SecurityProperties decryptSensitiveData(final SecurityProperties properties) {
         SecurityProperties decrypted = copySecurityProperties(properties);
 
         // 解密JWT密钥
@@ -302,7 +302,7 @@ public class SecurityConfigurationBackupService {
     /**
      * 复制SecurityProperties对象
      */
-    private SecurityProperties copySecurityProperties(SecurityProperties source) {
+    private SecurityProperties copySecurityProperties(final SecurityProperties source) {
         try {
             // 使用JSON序列化/反序列化进行深拷贝
             String json = objectMapper.writeValueAsString(source);
@@ -315,7 +315,7 @@ public class SecurityConfigurationBackupService {
     /**
      * 存储备份
      */
-    private void storeBackup(ConfigurationBackup backup) {
+    private void storeBackup(final ConfigurationBackup backup) {
         try {
             String json = objectMapper.writeValueAsString(backup);
             Map<String, Object> backupMap = new HashMap<>();
@@ -331,7 +331,7 @@ public class SecurityConfigurationBackupService {
     /**
      * 获取备份
      */
-    private ConfigurationBackup getBackup(String backupId) {
+    private ConfigurationBackup getBackup(final String backupId) {
         // 先从缓存获取
         ConfigurationBackup cached = backupCache.get(backupId);
         if (cached != null) {
@@ -361,7 +361,7 @@ public class SecurityConfigurationBackupService {
     /**
      * 更新备份索引
      */
-    private void updateBackupIndex(ConfigurationBackup backup) {
+    private void updateBackupIndex(final ConfigurationBackup backup) {
         try {
             List<BackupInfo> backupInfos = loadBackupIndex();
             
@@ -383,7 +383,7 @@ public class SecurityConfigurationBackupService {
     /**
      * 从备份索引中删除
      */
-    private void removeFromBackupIndex(String backupId) {
+    private void removeFromBackupIndex(final String backupId) {
         try {
             List<BackupInfo> backupInfos = loadBackupIndex();
             backupInfos.removeIf(info -> info.getBackupId().equals(backupId));
@@ -415,7 +415,7 @@ public class SecurityConfigurationBackupService {
     /**
      * 保存备份索引
      */
-    private void saveBackupIndex(List<BackupInfo> backupInfos) {
+    private void saveBackupIndex(final List<BackupInfo> backupInfos) {
         try {
             String json = objectMapper.writeValueAsString(backupInfos);
             Map<String, Object> indexMap = new HashMap<>();
@@ -441,22 +441,22 @@ public class SecurityConfigurationBackupService {
 
         // Getters and setters
         public String getBackupId() { return backupId; }
-        public void setBackupId(String backupId) { this.backupId = backupId; }
+        public void setBackupId(final String backupId) { this.backupId = backupId; }
 
         public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
+        public void setDescription(final String description) { this.description = description; }
 
         public String getUserId() { return userId; }
-        public void setUserId(String userId) { this.userId = userId; }
+        public void setUserId(final String userId) { this.userId = userId; }
 
         public LocalDateTime getCreatedAt() { return createdAt; }
-        public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+        public void setCreatedAt(final LocalDateTime createdAt) { this.createdAt = createdAt; }
 
         public SecurityProperties getConfiguration() { return configuration; }
-        public void setConfiguration(SecurityProperties configuration) { this.configuration = configuration; }
+        public void setConfiguration(final SecurityProperties configuration) { this.configuration = configuration; }
 
         public SecurityConfigurationValidator.ValidationResult getValidationResult() { return validationResult; }
-        public void setValidationResult(SecurityConfigurationValidator.ValidationResult validationResult) { 
+        public void setValidationResult(final SecurityConfigurationValidator.ValidationResult validationResult) { 
             this.validationResult = validationResult; 
         }
     }
@@ -473,19 +473,19 @@ public class SecurityConfigurationBackupService {
 
         // Getters and setters
         public String getBackupId() { return backupId; }
-        public void setBackupId(String backupId) { this.backupId = backupId; }
+        public void setBackupId(final String backupId) { this.backupId = backupId; }
 
         public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
+        public void setDescription(final String description) { this.description = description; }
 
         public String getUserId() { return userId; }
-        public void setUserId(String userId) { this.userId = userId; }
+        public void setUserId(final String userId) { this.userId = userId; }
 
         public LocalDateTime getCreatedAt() { return createdAt; }
-        public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+        public void setCreatedAt(final LocalDateTime createdAt) { this.createdAt = createdAt; }
 
         public boolean isValid() { return valid; }
-        public void setValid(boolean valid) { this.valid = valid; }
+        public void setValid(final boolean valid) { this.valid = valid; }
     }
 
     /**
@@ -493,7 +493,7 @@ public class SecurityConfigurationBackupService {
          */
         public record BackupValidationResult(boolean valid, String message,
                                              SecurityConfigurationValidator.ValidationResult configValidationResult) {
-            public BackupValidationResult(boolean valid, String message) {
+            public BackupValidationResult(final boolean valid,final String message) {
                 this(valid, message, null);
             }
 
@@ -503,11 +503,11 @@ public class SecurityConfigurationBackupService {
      * 配置备份异常
      */
     public static class ConfigurationBackupException extends RuntimeException {
-        public ConfigurationBackupException(String message) {
+        public ConfigurationBackupException(final String message) {
             super(message);
         }
 
-        public ConfigurationBackupException(String message, Throwable cause) {
+        public ConfigurationBackupException(final String message,final Throwable cause) {
             super(message, cause);
         }
     }

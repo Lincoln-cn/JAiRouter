@@ -47,7 +47,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     private EnhancedJwtBlacklistService enhancedBlacklistService;
 
     @Override
-    public Mono<Authentication> validateToken(String token) {
+    public Mono<Authentication> validateToken(final String token) {
         // 检查令牌是否在黑名单中
         return isTokenBlacklisted(token)
             .flatMap(isBlacklisted -> {
@@ -101,7 +101,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     }
 
     @Override
-    public Mono<String> refreshToken(String token) {
+    public Mono<String> refreshToken(final String token) {
         try {
             // 解析当前令牌
             Claims claims = parseToken(token);
@@ -145,7 +145,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     }
 
     @Override
-    public Mono<Boolean> isTokenBlacklisted(String token) {
+    public Mono<Boolean> isTokenBlacklisted(final String token) {
         if (!securityProperties.getJwt().isBlacklistEnabled()) {
             return Mono.just(false);
         }
@@ -194,7 +194,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     }
 
     @Override
-    public Mono<Void> blacklistToken(String token) {
+    public Mono<Void> blacklistToken(final String token) {
         if (!securityProperties.getJwt().isBlacklistEnabled()) {
             return Mono.empty();
         }
@@ -254,7 +254,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     }
 
     @Override
-    public Mono<String> extractUserId(String token) {
+    public Mono<String> extractUserId(final String token) {
         return Mono.fromCallable(() -> {
             try {
                 Claims claims = parseToken(token);
@@ -275,7 +275,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     /**
      * 生成新的JWT令牌（使用JJWT 0.12.x API）
      */
-    public String generateToken(String subject, List<String> roles, Map<String, Object> additionalClaims) {
+    public String generateToken(final String subject,final List<String> roles,final Map<String, Object> additionalClaims) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() +
             Duration.ofMinutes(securityProperties.getJwt().getExpirationMinutes()).toMillis());
@@ -300,7 +300,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     /**
      * 解析JWT令牌
      */
-    private Claims parseToken(String token) {
+    private Claims parseToken(final String token) {
         return Jwts.parser()
             .verifyWith(getSigningKey())
             .build()
@@ -325,7 +325,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
      * 从Claims中提取角色列表
      */
     @SuppressWarnings("unchecked")
-    private List<String> extractRoles(Claims claims) {
+    private List<String> extractRoles(final Claims claims) {
         Object rolesObj = claims.get(ROLES_CLAIM);
 
         if (rolesObj instanceof List) {
@@ -340,7 +340,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     /**
      * 将Date转换为LocalDateTime
      */
-    private LocalDateTime convertToLocalDateTime(Date date) {
+    private LocalDateTime convertToLocalDateTime(final Date date) {
         if (date == null) {
             return null;
         }
@@ -350,7 +350,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     /**
      * 提取令牌ID（用于黑名单）
      */
-    private String extractTokenId(String token) {
+    private String extractTokenId(final String token) {
         try {
             Claims claims = parseToken(token);
             String jti = claims.getId();
@@ -371,7 +371,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     /**
      * 计算令牌哈希值
      */
-    private String calculateTokenHash(String token) {
+    private String calculateTokenHash(final String token) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));

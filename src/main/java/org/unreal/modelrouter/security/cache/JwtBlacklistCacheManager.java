@@ -42,7 +42,7 @@ public class JwtBlacklistCacheManager {
     /**
      * 添加令牌到黑名单缓存，带TTL管理
      */
-    public Mono<Void> addToBlacklistCache(String tokenHash, String reason, String addedBy, Duration ttl) {
+    public Mono<Void> addToBlacklistCache(final String tokenHash,final String reason,final String addedBy,final Duration ttl) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.error(new IllegalArgumentException("Token hash cannot be null or empty"));
         }
@@ -69,7 +69,7 @@ public class JwtBlacklistCacheManager {
     /**
      * 检查令牌是否在黑名单缓存中
      */
-    public Mono<Boolean> isInBlacklistCache(String tokenHash) {
+    public Mono<Boolean> isInBlacklistCache(final String tokenHash) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.just(false);
         }
@@ -102,7 +102,7 @@ public class JwtBlacklistCacheManager {
     /**
      * 从黑名单缓存中移除令牌
      */
-    public Mono<Void> removeFromBlacklistCache(String tokenHash) {
+    public Mono<Void> removeFromBlacklistCache(final String tokenHash) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.empty();
         }
@@ -216,7 +216,7 @@ public class JwtBlacklistCacheManager {
     /**
      * 获取即将过期的缓存条目数量
      */
-    public Mono<Long> getExpiringCacheEntriesCount(Duration timeUntilExpiry) {
+    public Mono<Long> getExpiringCacheEntriesCount(final Duration timeUntilExpiry) {
         LocalDateTime threshold = LocalDateTime.now().plus(timeUntilExpiry);
         
         // 统计本地缓存中即将过期的条目
@@ -233,7 +233,7 @@ public class JwtBlacklistCacheManager {
     
     // 私有辅助方法
     
-    private Mono<Void> addEntryToCache(TokenBlacklistEntry entry) {
+    private Mono<Void> addEntryToCache(final TokenBlacklistEntry entry) {
         try {
             String entryJson = JacksonHelper.getObjectMapper().writeValueAsString(entry);
             String cacheKey = BLACKLIST_PREFIX + entry.getTokenHash();
@@ -247,7 +247,7 @@ public class JwtBlacklistCacheManager {
         }
     }
     
-    private Mono<Boolean> checkRedisCache(String tokenHash) {
+    private Mono<Boolean> checkRedisCache(final String tokenHash) {
         String cacheKey = BLACKLIST_PREFIX + tokenHash;
         
         return redisTemplate.hasKey(cacheKey)
@@ -279,7 +279,7 @@ public class JwtBlacklistCacheManager {
             });
     }
     
-    private Mono<TokenBlacklistEntry> getBlacklistEntryFromRedis(String tokenHash) {
+    private Mono<TokenBlacklistEntry> getBlacklistEntryFromRedis(final String tokenHash) {
         String cacheKey = BLACKLIST_PREFIX + tokenHash;
         
         return redisTemplate.opsForValue().get(cacheKey)
@@ -292,7 +292,7 @@ public class JwtBlacklistCacheManager {
             });
     }
     
-    private Mono<Void> removeEntryFromCache(String tokenHash) {
+    private Mono<Void> removeEntryFromCache(final String tokenHash) {
         String cacheKey = BLACKLIST_PREFIX + tokenHash;
         
         return redisTemplate.delete(cacheKey)
@@ -300,7 +300,7 @@ public class JwtBlacklistCacheManager {
             .then();
     }
     
-    private Mono<Void> addToExpiryIndex(TokenBlacklistEntry entry) {
+    private Mono<Void> addToExpiryIndex(final TokenBlacklistEntry entry) {
         if (entry.getExpiresAt() == null) {
             return Mono.empty();
         }
@@ -312,7 +312,7 @@ public class JwtBlacklistCacheManager {
             .then();
     }
     
-    private Mono<Void> removeFromExpiryIndex(String tokenHash) {
+    private Mono<Void> removeFromExpiryIndex(final String tokenHash) {
         // 由于不知道确切的过期日期，需要从多个可能的索引中移除
         LocalDateTime now = LocalDateTime.now();
         
@@ -370,7 +370,7 @@ public class JwtBlacklistCacheManager {
             .reduce(0, Integer::sum);
     }
     
-    private Mono<Long> getExpiringRedisEntriesCount(LocalDateTime threshold) {
+    private Mono<Long> getExpiringRedisEntriesCount(final LocalDateTime threshold) {
         String todayKey = EXPIRY_INDEX_PREFIX + LocalDateTime.now().toLocalDate();
         String tomorrowKey = EXPIRY_INDEX_PREFIX + LocalDateTime.now().plusDays(1).toLocalDate();
         
@@ -400,7 +400,7 @@ public class JwtBlacklistCacheManager {
             .reduce(0L, Long::sum);
     }
     
-    private Mono<Void> updateCacheStats(int addedCount, int cleanedCount) {
+    private Mono<Void> updateCacheStats(final int addedCount,final int cleanedCount) {
         return redisTemplate.opsForValue().get(STATS_KEY)
             .map(statsJson -> {
                 try {
@@ -442,7 +442,7 @@ public class JwtBlacklistCacheManager {
             .then();
     }
     
-    private boolean isEntryExpired(TokenBlacklistEntry entry) {
+    private boolean isEntryExpired(final TokenBlacklistEntry entry) {
         if (entry.getExpiresAt() == null) {
             return false;
         }

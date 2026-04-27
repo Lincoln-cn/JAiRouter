@@ -15,7 +15,7 @@ public class OpenState implements CircuitState {
     private static final Logger logger = LoggerFactory.getLogger(OpenState.class);
 
     @Override
-    public boolean canExecute(CircuitStateContext context) {
+    public boolean canExecute(final CircuitStateContext context) {
         // 检查是否可以转为半开状态
         if (context.isTimeoutElapsed()) {
             logger.debug("熔断器转为半开状态：instanceId={}, elapsed={}ms, timeout={}ms",
@@ -35,12 +35,12 @@ public class OpenState implements CircuitState {
     }
 
     @Override
-    public void onSuccess(CircuitStateContext context) {
+    public void onSuccess(final CircuitStateContext context) {
         // OPEN 状态下不记录成功（因为请求被拒绝了）
     }
 
     @Override
-    public void onFailure(CircuitStateContext context) {
+    public void onFailure(final CircuitStateContext context) {
         // OPEN 状态下失败不改变状态
         logger.debug("熔断器记录失败 (OPEN 状态): instanceId={}", context.getInstanceId());
         context.recordEvent("failure", getStateName());

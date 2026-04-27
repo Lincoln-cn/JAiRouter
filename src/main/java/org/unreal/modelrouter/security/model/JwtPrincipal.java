@@ -33,7 +33,7 @@ public class JwtPrincipal implements Principal {
     /**
      * 检查是否具有指定角色
      */
-    public boolean hasRole(String role) {
+    public boolean hasRole(final String role) {
         return roles != null && roles.contains(role);
     }
     
@@ -61,20 +61,20 @@ public class JwtPrincipal implements Principal {
     /**
      * 获取指定的声明值
      */
-    public Object getClaim(String claimName) {
+    public Object getClaim(final String claimName) {
         return claims != null ? claims.get(claimName) : null;
     }
     
     /**
      * 获取字符串类型的声明值
      */
-    public String getStringClaim(String claimName) {
+    public String getStringClaim(final String claimName) {
         Object claim = getClaim(claimName);
         return claim != null ? claim.toString() : null;
     }
     
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         JwtPrincipal that = (JwtPrincipal) o;

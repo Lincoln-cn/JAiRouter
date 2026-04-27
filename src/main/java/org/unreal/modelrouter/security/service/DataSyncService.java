@@ -70,8 +70,8 @@ public interface DataSyncService {
         private final String message;
         private final long durationMs;
         
-        public SyncResult(boolean success, long processedCount, long successCount, 
-                         long failureCount, String message, long durationMs) {
+        public SyncResult(final boolean success,final long processedCount,final long successCount, 
+                         final long failureCount,final String message,final long durationMs) {
             this.success = success;
             this.processedCount = processedCount;
             this.successCount = successCount;
@@ -107,9 +107,9 @@ public interface DataSyncService {
         private final long conflictCount;
         private final String details;
         
-        public ConsistencyCheckResult(boolean consistent, long redisCount, long storeManagerCount,
-                                    long missingInRedis, long missingInStoreManager, 
-                                    long conflictCount, String details) {
+        public ConsistencyCheckResult(final boolean consistent,final long redisCount,final long storeManagerCount,
+                                    final long missingInRedis,final long missingInStoreManager, 
+                                    final long conflictCount,final String details) {
             this.consistent = consistent;
             this.redisCount = redisCount;
             this.storeManagerCount = storeManagerCount;

@@ -30,7 +30,7 @@ public record LoadBalanceConfiguration(
 
         private final String value;
 
-        Type(String value) {
+        Type(final String value) {
             this.value = value;
         }
 
@@ -38,7 +38,7 @@ public record LoadBalanceConfiguration(
             return value;
         }
 
-        public static Type fromString(String type) {
+        public static Type fromString(final String type) {
             for (Type t : values()) {
                 if (t.value.equalsIgnoreCase(type)) {
                     return t;
@@ -51,7 +51,7 @@ public record LoadBalanceConfiguration(
     /**
      * 从 Map 转换为 DTO
      */
-    public static LoadBalanceConfiguration fromMap(Map<String, Object> map) {
+    public static LoadBalanceConfiguration fromMap(final Map<String, Object> map) {
         if (map == null) {
             return defaultConfig();
         }
@@ -71,7 +71,7 @@ public record LoadBalanceConfiguration(
         return map;
     }
 
-    private static String getString(Map<String, Object> map, String key) {
+    private static String getString(final Map<String, Object> map,final String key) {
         Object value = map.get(key);
         if (value instanceof String) {
             return (String) value;

@@ -56,8 +56,8 @@ public interface JwtCleanupService {
         public CleanupResult() {
         }
         
-        public CleanupResult(long removedTokens, long removedBlacklistEntries, 
-                           LocalDateTime startTime, LocalDateTime endTime, boolean success) {
+        public CleanupResult(final long removedTokens,final long removedBlacklistEntries, 
+                           final LocalDateTime startTime,final LocalDateTime endTime,final boolean success) {
             this.removedTokens = removedTokens;
             this.removedBlacklistEntries = removedBlacklistEntries;
             this.startTime = startTime;
@@ -70,28 +70,28 @@ public interface JwtCleanupService {
         
         // Getters and Setters
         public long getRemovedTokens() { return removedTokens; }
-        public void setRemovedTokens(long removedTokens) { this.removedTokens = removedTokens; }
+        public void setRemovedTokens(final long removedTokens) { this.removedTokens = removedTokens; }
         
         public long getRemovedBlacklistEntries() { return removedBlacklistEntries; }
-        public void setRemovedBlacklistEntries(long removedBlacklistEntries) { this.removedBlacklistEntries = removedBlacklistEntries; }
+        public void setRemovedBlacklistEntries(final long removedBlacklistEntries) { this.removedBlacklistEntries = removedBlacklistEntries; }
         
         public LocalDateTime getStartTime() { return startTime; }
-        public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+        public void setStartTime(final LocalDateTime startTime) { this.startTime = startTime; }
         
         public LocalDateTime getEndTime() { return endTime; }
-        public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
+        public void setEndTime(final LocalDateTime endTime) { this.endTime = endTime; }
         
         public long getDurationMs() { return durationMs; }
-        public void setDurationMs(long durationMs) { this.durationMs = durationMs; }
+        public void setDurationMs(final long durationMs) { this.durationMs = durationMs; }
         
         public boolean isSuccess() { return success; }
-        public void setSuccess(boolean success) { this.success = success; }
+        public void setSuccess(final boolean success) { this.success = success; }
         
         public String getErrorMessage() { return errorMessage; }
-        public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+        public void setErrorMessage(final String errorMessage) { this.errorMessage = errorMessage; }
         
         public Map<String, Object> getDetails() { return details; }
-        public void setDetails(Map<String, Object> details) { this.details = details; }
+        public void setDetails(final Map<String, Object> details) { this.details = details; }
         
         public long getTotalRemoved() {
             return removedTokens + removedBlacklistEntries;
@@ -115,33 +115,33 @@ public interface JwtCleanupService {
         
         // Getters and Setters
         public LocalDateTime getLastCleanupTime() { return lastCleanupTime; }
-        public void setLastCleanupTime(LocalDateTime lastCleanupTime) { this.lastCleanupTime = lastCleanupTime; }
+        public void setLastCleanupTime(final LocalDateTime lastCleanupTime) { this.lastCleanupTime = lastCleanupTime; }
         
         public long getTotalCleanupsPerformed() { return totalCleanupsPerformed; }
-        public void setTotalCleanupsPerformed(long totalCleanupsPerformed) { this.totalCleanupsPerformed = totalCleanupsPerformed; }
+        public void setTotalCleanupsPerformed(final long totalCleanupsPerformed) { this.totalCleanupsPerformed = totalCleanupsPerformed; }
         
         public long getTotalTokensRemoved() { return totalTokensRemoved; }
-        public void setTotalTokensRemoved(long totalTokensRemoved) { this.totalTokensRemoved = totalTokensRemoved; }
+        public void setTotalTokensRemoved(final long totalTokensRemoved) { this.totalTokensRemoved = totalTokensRemoved; }
         
         public long getTotalBlacklistEntriesRemoved() { return totalBlacklistEntriesRemoved; }
-        public void setTotalBlacklistEntriesRemoved(long totalBlacklistEntriesRemoved) { this.totalBlacklistEntriesRemoved = totalBlacklistEntriesRemoved; }
+        public void setTotalBlacklistEntriesRemoved(final long totalBlacklistEntriesRemoved) { this.totalBlacklistEntriesRemoved = totalBlacklistEntriesRemoved; }
         
         public double getAverageCleanupDurationMs() { return averageCleanupDurationMs; }
-        public void setAverageCleanupDurationMs(double averageCleanupDurationMs) { this.averageCleanupDurationMs = averageCleanupDurationMs; }
+        public void setAverageCleanupDurationMs(final double averageCleanupDurationMs) { this.averageCleanupDurationMs = averageCleanupDurationMs; }
         
         public long getFailedCleanups() { return failedCleanups; }
-        public void setFailedCleanups(long failedCleanups) { this.failedCleanups = failedCleanups; }
+        public void setFailedCleanups(final long failedCleanups) { this.failedCleanups = failedCleanups; }
         
         public LocalDateTime getNextScheduledCleanup() { return nextScheduledCleanup; }
-        public void setNextScheduledCleanup(LocalDateTime nextScheduledCleanup) { this.nextScheduledCleanup = nextScheduledCleanup; }
+        public void setNextScheduledCleanup(final LocalDateTime nextScheduledCleanup) { this.nextScheduledCleanup = nextScheduledCleanup; }
         
         public boolean isCleanupEnabled() { return cleanupEnabled; }
-        public void setCleanupEnabled(boolean cleanupEnabled) { this.cleanupEnabled = cleanupEnabled; }
+        public void setCleanupEnabled(final boolean cleanupEnabled) { this.cleanupEnabled = cleanupEnabled; }
         
         public String getCleanupSchedule() { return cleanupSchedule; }
-        public void setCleanupSchedule(String cleanupSchedule) { this.cleanupSchedule = cleanupSchedule; }
+        public void setCleanupSchedule(final String cleanupSchedule) { this.cleanupSchedule = cleanupSchedule; }
         
         public Map<String, Object> getPerformanceMetrics() { return performanceMetrics; }
-        public void setPerformanceMetrics(Map<String, Object> performanceMetrics) { this.performanceMetrics = performanceMetrics; }
+        public void setPerformanceMetrics(final Map<String, Object> performanceMetrics) { this.performanceMetrics = performanceMetrics; }
     }
 }

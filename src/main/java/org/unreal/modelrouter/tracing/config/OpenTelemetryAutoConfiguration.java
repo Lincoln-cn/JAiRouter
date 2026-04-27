@@ -65,7 +65,7 @@ public class OpenTelemetryAutoConfiguration {
      * @return OpenTelemetry实例
      */
     @Bean
-    public OpenTelemetry openTelemetry(SdkTracerProvider tracerProvider) {
+    public OpenTelemetry openTelemetry(final SdkTracerProvider tracerProvider) {
         return OpenTelemetrySdk.builder()
                 .setTracerProvider(tracerProvider)
                 .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
@@ -79,7 +79,7 @@ public class OpenTelemetryAutoConfiguration {
      * @return Tracer实例
      */
     @Bean
-    public Tracer tracer(OpenTelemetry openTelemetry) {
+    public Tracer tracer(final OpenTelemetry openTelemetry) {
         return openTelemetry.getTracer("jairouter");
     }
     
@@ -102,7 +102,7 @@ public class OpenTelemetryAutoConfiguration {
      * @return 追踪器提供者
      */
     @Bean
-    public SdkTracerProvider tracerProvider(Resource resource, Sampler sampler, SpanExporter spanExporter) {
+    public SdkTracerProvider tracerProvider(final Resource resource,final Sampler sampler,final SpanExporter spanExporter) {
         TracingConfiguration.PerformanceConfig performanceConfig = tracingConfig.getPerformance();
         
         // 获取批处理配置

@@ -40,7 +40,7 @@ public class CircuitBreakerStateRepository {
     private final Map<String, Map<String, Object>> stateCache = new ConcurrentHashMap<>();
 
     @Autowired
-    public CircuitBreakerStateRepository(StoreManager storeManager, ObjectMapper objectMapper) {
+    public CircuitBreakerStateRepository(final StoreManager storeManager,final ObjectMapper objectMapper) {
         this.storeManager = storeManager;
         this.objectMapper = objectMapper;
     }
@@ -51,7 +51,7 @@ public class CircuitBreakerStateRepository {
      * @param circuitBreaker 熔断器实例
      * @return 是否保存成功
      */
-    public boolean save(CircuitBreaker circuitBreaker) {
+    public boolean save(final CircuitBreaker circuitBreaker) {
         if (!(circuitBreaker instanceof LockFreeCircuitBreaker)) {
             logger.warn("只支持 LockFreeCircuitBreaker 的状态持久化");
             return false;
@@ -82,7 +82,7 @@ public class CircuitBreakerStateRepository {
      * @param instanceId 实例 ID
      * @return 状态数据 Map
      */
-    public Map<String, Object> load(String instanceId) {
+    public Map<String, Object> load(final String instanceId) {
         // 先从缓存加载
         Map<String, Object> cachedState = stateCache.get(instanceId);
         if (cachedState != null) {
@@ -110,7 +110,7 @@ public class CircuitBreakerStateRepository {
      * @param circuitBreaker 熔断器实例
      * @return 是否恢复成功
      */
-    public boolean restore(CircuitBreaker circuitBreaker) {
+    public boolean restore(final CircuitBreaker circuitBreaker) {
         if (!(circuitBreaker instanceof LockFreeCircuitBreaker)) {
             logger.warn("只支持 LockFreeCircuitBreaker 的状态恢复");
             return false;
@@ -141,7 +141,7 @@ public class CircuitBreakerStateRepository {
      * @param instanceId 实例 ID
      * @return 是否删除成功
      */
-    public boolean delete(String instanceId) {
+    public boolean delete(final String instanceId) {
         try {
             // 删除缓存
             stateCache.remove(instanceId);
@@ -171,7 +171,7 @@ public class CircuitBreakerStateRepository {
      * @param stateData 状态数据
      * @return JSON 字符串
      */
-    private String toJson(Map<String, Object> stateData) {
+    private String toJson(final Map<String, Object> stateData) {
         try {
             return objectMapper.writeValueAsString(stateData);
         } catch (JsonProcessingException e) {
@@ -187,7 +187,7 @@ public class CircuitBreakerStateRepository {
      * @return 状态数据 Map
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> fromJson(String json) {
+    private Map<String, Object> fromJson(final String json) {
         try {
             return objectMapper.readValue(json, Map.class);
         } catch (JsonProcessingException e) {
@@ -211,7 +211,7 @@ public class CircuitBreakerStateRepository {
      * @param instanceId 实例 ID
      * @return 是否存在
      */
-    public boolean exists(String instanceId) {
+    public boolean exists(final String instanceId) {
         return stateCache.containsKey(instanceId) || 
                storeManager.exists(STORE_KEY_PREFIX + instanceId);
     }
