@@ -941,9 +941,34 @@ public class ConfigurationService {
     /**
      * 获取指定服务的配置
      *
+     * @deprecated 建议使用 {@link ServiceConfigManager#getServiceConfig(String)} 或
+     *             {@link ServiceConfigManager#getServiceConfiguration(String)} 获取服务配置。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>ServiceConfigManager 返回强类型 DTO/领域对象，比 Map 更安全</li>
+     *               <li>getServiceConfig 返回 Optional&lt;ServiceConfigDTO&gt;</li>
+     *               <li>getServiceConfiguration 返回 ServiceConfiguration 领域对象</li>
+     *             </ul>
+     *             <p>迁移示例：</p>
+     *             <pre>{@code
+     *             // 旧代码 - 返回 Map
+     *             Map<String, Object> config = configurationService.getServiceConfig(serviceType);
+     *             
+     *             // 新代码 - 返回 DTO
+     *             Optional<ServiceConfigDTO> config = serviceConfigManager.getServiceConfig(serviceType);
+     *             ServiceConfigDTO dto = config.orElseThrow(() -> new IllegalArgumentException("服务不存在"));
+     *             
+     *             // 新代码 - 返回领域对象
+     *             ServiceConfiguration domain = serviceConfigManager.getServiceConfiguration(serviceType);
+     *             }</pre>
+     *             此方法将在 v3.0 版本中移除。
+     * @see ServiceConfigManager#getServiceConfig(String)
+     * @see ServiceConfigManager#getServiceConfiguration(String)
+     * @since v2.5.3.6 标注废弃
      * @param serviceType 服务类型
      * @return 服务配置
      */
+    @Deprecated(since = "2.5.3.6", forRemoval = true)
     @SuppressWarnings("unchecked")
     public Map<String, Object> getServiceConfig(String serviceType) {
         // v1.5.1: 从 StoreManager 读取配置
