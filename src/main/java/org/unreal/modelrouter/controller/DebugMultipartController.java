@@ -26,7 +26,7 @@ public class DebugMultipartController {
      * 返回请求元信息（header/content-type/boundary等，全部用字符串，避免CodecException）
      */
     @PostMapping("/multipart-info")
-    public Mono<ResponseEntity<Map<String, Object>>> debugMultipartInfo(ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Map<String, Object>>> debugMultipartInfo(final ServerWebExchange exchange) {
         log.info("收到multipart调试请求");
 
         Map<String, Object> debugInfo = new HashMap<>();
@@ -69,7 +69,7 @@ public class DebugMultipartController {
      * 直接读取并解析multipart请求的所有part
      */
     @PostMapping("/raw-multipart")
-    public Mono<ResponseEntity<Map<String, Object>>> handleRawMultipart(ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Map<String, Object>>> handleRawMultipart(final ServerWebExchange exchange) {
         log.info("收到原始multipart请求");
 
         String contentType = exchange.getRequest().getHeaders().getFirst("Content-Type");
@@ -128,7 +128,7 @@ public class DebugMultipartController {
     public Mono<ResponseEntity<Map<String, Object>>> handleSimpleMultipart(
             @RequestPart(value = "text", required = false) String text,
             @RequestPart(value = "file", required = false) FilePart filePart,
-            ServerWebExchange exchange) {
+            final ServerWebExchange exchange) {
 
         log.info("收到简单multipart请求");
 
@@ -154,7 +154,7 @@ public class DebugMultipartController {
      * 读取原始body前500字节，便于分析请求体格式
      */
     @PostMapping("/raw-body")
-    public Mono<ResponseEntity<Map<String, Object>>> handleRawBody(ServerWebExchange exchange) {
+    public Mono<ResponseEntity<Map<String, Object>>> handleRawBody(final ServerWebExchange exchange) {
         log.info("收到原始请求体调试请求");
 
         Map<String, Object> debugInfo = new HashMap<>();

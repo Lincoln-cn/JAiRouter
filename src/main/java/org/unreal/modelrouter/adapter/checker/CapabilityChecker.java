@@ -30,8 +30,8 @@ public class CapabilityChecker {
      * @return 如果不支持返回错误响应，否则返回 null
      */
     public Mono<ResponseEntity<String>> checkCapability(
-            AdapterCapabilities capabilities,
-            ModelServiceRegistry.ServiceType serviceType) {
+            final AdapterCapabilities capabilities,
+            final ModelServiceRegistry.ServiceType serviceType) {
 
         if (capabilities == null) {
             logger.warn("适配器能力配置为空，无法检查服务类型：{}", serviceType);
@@ -56,7 +56,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 如果支持返回 true
      */
-    public boolean supportsChat(AdapterCapabilities capabilities) {
+    public boolean supportsChat(final AdapterCapabilities capabilities) {
         return capabilities != null && capabilities.isSupportChat();
     }
 
@@ -66,7 +66,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 如果支持返回 true
      */
-    public boolean supportsEmbedding(AdapterCapabilities capabilities) {
+    public boolean supportsEmbedding(final AdapterCapabilities capabilities) {
         return capabilities != null && capabilities.isSupportEmbedding();
     }
 
@@ -76,7 +76,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 如果支持返回 true
      */
-    public boolean supportsRerank(AdapterCapabilities capabilities) {
+    public boolean supportsRerank(final AdapterCapabilities capabilities) {
         return capabilities != null && capabilities.isSupportRerank();
     }
 
@@ -86,7 +86,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 如果支持返回 true
      */
-    public boolean supportsTts(AdapterCapabilities capabilities) {
+    public boolean supportsTts(final AdapterCapabilities capabilities) {
         return capabilities != null && capabilities.isSupportTts();
     }
 
@@ -96,7 +96,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 如果支持返回 true
      */
-    public boolean supportsStt(AdapterCapabilities capabilities) {
+    public boolean supportsStt(final AdapterCapabilities capabilities) {
         return capabilities != null && capabilities.isSupportStt();
     }
 
@@ -106,7 +106,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 如果支持返回 true
      */
-    public boolean supportsImageGenerate(AdapterCapabilities capabilities) {
+    public boolean supportsImageGenerate(final AdapterCapabilities capabilities) {
         return capabilities != null && capabilities.isSupportImageGenerate();
     }
 
@@ -116,7 +116,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 如果支持返回 true
      */
-    public boolean supportsImageEdit(AdapterCapabilities capabilities) {
+    public boolean supportsImageEdit(final AdapterCapabilities capabilities) {
         return capabilities != null && capabilities.isSupportImageEdit();
     }
 
@@ -126,7 +126,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 如果支持返回 true
      */
-    public boolean supportsStreaming(AdapterCapabilities capabilities) {
+    public boolean supportsStreaming(final AdapterCapabilities capabilities) {
         return capabilities != null && capabilities.isSupportStreaming();
     }
 
@@ -136,7 +136,7 @@ public class CapabilityChecker {
      * @param capabilities 适配器能力
      * @return 支持的服务类型列表
      */
-    public String[] getSupportedServices(AdapterCapabilities capabilities) {
+    public String[] getSupportedServices(final AdapterCapabilities capabilities) {
         if (capabilities == null) {
             return new String[0];
         }

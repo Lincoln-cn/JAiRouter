@@ -63,7 +63,7 @@ public class ServiceConfigManager {
     /**
      * 获取指定服务类型的配置 (API 用)
      */
-    public Optional<ServiceConfigDTO> getServiceConfig(String serviceType) {
+    public Optional<ServiceConfigDTO> getServiceConfig(final String serviceType) {
         return jpaRepository
                 .findFirstByServiceTypeAndIsLatestTrue(serviceType)
                 .map(converter::toDTO);
@@ -73,7 +73,7 @@ public class ServiceConfigManager {
      * 保存服务配置 (API 用)
      */
     @Transactional
-    public ServiceConfigDTO saveServiceConfig(String serviceType, CreateServiceConfigRequest request) {
+    public ServiceConfigDTO saveServiceConfig(final String serviceType,final CreateServiceConfigRequest request) {
         log.info("保存服务配置：serviceType={}", serviceType);
 
         // 1. 验证服务类型
@@ -112,7 +112,7 @@ public class ServiceConfigManager {
      * 删除服务配置 (API 用)
      */
     @Transactional
-    public void deleteServiceConfig(String serviceType) {
+    public void deleteServiceConfig(final String serviceType) {
         log.info("删除服务配置：serviceType={}", serviceType);
 
         // 1. 从 StoreManager 删除
@@ -130,7 +130,7 @@ public class ServiceConfigManager {
      * 更新服务配置（不含实例）(API 用)
      */
     @Transactional
-    public void updateServiceConfig(String serviceType, UpdateServiceConfigRequest request) {
+    public void updateServiceConfig(final String serviceType,final UpdateServiceConfigRequest request) {
         log.info("更新服务配置：serviceType={}, adapter={}", serviceType, request.getAdapter());
 
         // 1. 获取现有配置（从 StoreManager）
@@ -164,7 +164,7 @@ public class ServiceConfigManager {
     /**
      * 获取服务配置 (业务用)
      */
-    public ServiceConfiguration getServiceConfiguration(String serviceType) {
+    public ServiceConfiguration getServiceConfiguration(final String serviceType) {
         return configRepository.findById(serviceType)
                 .orElseThrow(() -> new NotFoundException("服务配置不存在：" + serviceType));
     }
@@ -180,7 +180,7 @@ public class ServiceConfigManager {
      * 创建服务配置 (业务用)
      */
     @Transactional
-    public void createService(String serviceType, ServiceConfiguration config) {
+    public void createService(final String serviceType,final ServiceConfiguration config) {
         log.info("创建服务配置：serviceType={}", serviceType);
 
         // 1. 验证服务类型
@@ -209,8 +209,8 @@ public class ServiceConfigManager {
      */
     @Transactional
     public ServiceConfiguration updateServiceConfig(
-            String serviceType,
-            ServiceConfiguration updates) {
+            final String serviceType,
+            final ServiceConfiguration updates) {
 
         log.info("更新服务配置：serviceType={}", serviceType);
 
@@ -240,7 +240,7 @@ public class ServiceConfigManager {
      * 删除服务 (业务用)
      */
     @Transactional
-    public void deleteService(String serviceType) {
+    public void deleteService(final String serviceType) {
         log.info("删除服务：serviceType={}", serviceType);
 
         // 1. 检查是否存在
@@ -258,7 +258,7 @@ public class ServiceConfigManager {
     /**
      * 更新数据库实体
      */
-    private void updateDatabaseEntity(String serviceType, UpdateServiceConfigRequest request) {
+    private void updateDatabaseEntity(final String serviceType,final UpdateServiceConfigRequest request) {
         ServiceConfigEntity entity = jpaRepository
                 .findFirstByServiceTypeAndIsLatestTrue(serviceType)
                 .orElseGet(() -> ServiceConfigEntity.builder()
@@ -286,7 +286,7 @@ public class ServiceConfigManager {
      * 未找到异常
      */
     public static class NotFoundException extends RuntimeException {
-        public NotFoundException(String message) {
+        public NotFoundException(final String message) {
             super(message);
         }
     }

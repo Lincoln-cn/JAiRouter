@@ -274,7 +274,7 @@ public class TracingController {
     /**
      * 更新运行时配置
      */
-       private void updateRuntimeConfiguration(TracingConfiguration newConfig) {
+       private void updateRuntimeConfiguration(final TracingConfiguration newConfig) {
         // 更新采样配置
         if (newConfig.getSampling() != null) {
             tracingConfiguration.setSampling(newConfig.getSampling());

@@ -41,9 +41,9 @@ public class ConfigurationVersionController {
     private final VersionDiffService versionDiffService;
 
     @Autowired
-    public ConfigurationVersionController(ConfigurationService configurationService,
-                                          StoreManager storeManager,
-                                          VersionDiffService versionDiffService) {
+    public ConfigurationVersionController(final ConfigurationService configurationService,
+                                          final StoreManager storeManager,
+                                          final VersionDiffService versionDiffService) {
         this.configurationService = configurationService;
         this.storeManager = storeManager;
         this.versionDiffService = versionDiffService;

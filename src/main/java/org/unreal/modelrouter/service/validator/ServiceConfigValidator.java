@@ -32,7 +32,7 @@ public class ServiceConfigValidator {
      * @param serviceType 服务类型
      * @throws IllegalArgumentException 服务类型无效
      */
-    public void validateServiceType(String serviceType) {
+    public void validateServiceType(final String serviceType) {
         if (serviceType == null || serviceType.isBlank()) {
             throw new IllegalArgumentException("服务类型不能为空");
         }
@@ -51,7 +51,7 @@ public class ServiceConfigValidator {
      * @param config 服务配置
      * @throws IllegalArgumentException 配置无效
      */
-    public void validateConfiguration(ServiceConfiguration config) {
+    public void validateConfiguration(final ServiceConfiguration config) {
         if (config == null) {
             throw new IllegalArgumentException("服务配置不能为空");
         }
@@ -90,7 +90,7 @@ public class ServiceConfigValidator {
      * @param instances 实例列表
      * @throws IllegalArgumentException 实例配置无效
      */
-    public void validateInstances(List<ModelInstanceConfiguration> instances) {
+    public void validateInstances(final List<ModelInstanceConfiguration> instances) {
         if (instances == null || instances.isEmpty()) {
             logger.debug("实例列表为空，跳过验证");
             return;
@@ -109,7 +109,7 @@ public class ServiceConfigValidator {
      * @param instance 实例配置
      * @throws IllegalArgumentException 实例配置无效
      */
-    private void validateInstance(ModelInstanceConfiguration instance) {
+    private void validateInstance(final ModelInstanceConfiguration instance) {
         if (instance == null) {
             throw new IllegalArgumentException("实例配置不能为空");
         }
@@ -136,7 +136,7 @@ public class ServiceConfigValidator {
      * @param config 负载均衡配置
      * @throws IllegalArgumentException 配置无效
      */
-    public void validateLoadBalanceConfig(LoadBalanceConfiguration config) {
+    public void validateLoadBalanceConfig(final LoadBalanceConfiguration config) {
         if (config == null) {
             return;
         }
@@ -161,7 +161,7 @@ public class ServiceConfigValidator {
      * @param config 限流配置
      * @throws IllegalArgumentException 配置无效
      */
-    public void validateRateLimitConfig(RateLimitConfiguration config) {
+    public void validateRateLimitConfig(final RateLimitConfiguration config) {
         if (config == null) {
             return;
         }
@@ -197,7 +197,7 @@ public class ServiceConfigValidator {
      * @param config 熔断器配置
      * @throws IllegalArgumentException 配置无效
      */
-    public void validateCircuitBreakerConfig(CircuitBreakerConfiguration config) {
+    public void validateCircuitBreakerConfig(final CircuitBreakerConfiguration config) {
         if (config == null) {
             return;
         }
@@ -226,7 +226,7 @@ public class ServiceConfigValidator {
      * @param config 降级配置
      * @throws IllegalArgumentException 配置无效
      */
-    public void validateFallbackConfig(FallbackConfiguration config) {
+    public void validateFallbackConfig(final FallbackConfiguration config) {
         if (config == null) {
             return;
         }

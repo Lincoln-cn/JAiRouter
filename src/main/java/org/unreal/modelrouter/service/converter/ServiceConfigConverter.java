@@ -39,7 +39,7 @@ public class ServiceConfigConverter {
     /**
      * ServiceConfiguration → ServiceConfigDTO
      */
-    public ServiceConfigDTO toDTO(ServiceConfiguration config, String serviceType) {
+    public ServiceConfigDTO toDTO(final ServiceConfiguration config,final String serviceType) {
         if (config == null) {
             return null;
         }
@@ -54,7 +54,7 @@ public class ServiceConfigConverter {
     /**
      * ServiceConfigEntity → ServiceConfigDTO
      */
-    public ServiceConfigDTO toDTO(ServiceConfigEntity entity) {
+    public ServiceConfigDTO toDTO(final ServiceConfigEntity entity) {
         if (entity == null) {
             return null;
         }
@@ -75,7 +75,7 @@ public class ServiceConfigConverter {
     /**
      * ServiceConfiguration → ServiceConfigDTO (带实体信息)
      */
-    public ServiceConfigDTO toDTO(ServiceConfiguration config, ServiceConfigEntity entity) {
+    public ServiceConfigDTO toDTO(final ServiceConfiguration config,final ServiceConfigEntity entity) {
         if (config == null) {
             return null;
         }
@@ -96,7 +96,7 @@ public class ServiceConfigConverter {
     /**
      * CreateServiceConfigRequest → ServiceConfiguration
      */
-    public ServiceConfiguration fromCreateRequest(CreateServiceConfigRequest request) {
+    public ServiceConfiguration fromCreateRequest(final CreateServiceConfigRequest request) {
         if (request == null) {
             return null;
         }
@@ -122,8 +122,8 @@ public class ServiceConfigConverter {
      * UpdateServiceConfigRequest → ServiceConfiguration (部分更新)
      */
     public ServiceConfiguration fromUpdateRequest(
-            ServiceConfiguration existing,
-            UpdateServiceConfigRequest request) {
+            final ServiceConfiguration existing,
+            final UpdateServiceConfigRequest request) {
 
         if (request == null || existing == null) {
             return existing;
@@ -146,7 +146,7 @@ public class ServiceConfigConverter {
     /**
      * 列表转换：ServiceConfiguration → ServiceConfigDTO
      */
-    public List<ServiceConfigDTO> toDTOList(Map<String, ServiceConfiguration> configurations) {
+    public List<ServiceConfigDTO> toDTOList(final Map<String, ServiceConfiguration> configurations) {
         if (configurations == null || configurations.isEmpty()) {
             return List.of();
         }
@@ -159,7 +159,7 @@ public class ServiceConfigConverter {
     /**
      * CreateServiceInstanceRequest → ModelInstanceConfiguration
      */
-    private ModelInstanceConfiguration toModelInstance(CreateServiceInstanceRequest request) {
+    private ModelInstanceConfiguration toModelInstance(final CreateServiceInstanceRequest request) {
         return new ModelInstanceConfiguration(
                 request.getName(),
                 request.getBaseUrl(),
@@ -178,7 +178,7 @@ public class ServiceConfigConverter {
     /**
      * String → LoadBalanceConfiguration
      */
-    private LoadBalanceConfiguration toLoadBalance(String type) {
+    private LoadBalanceConfiguration toLoadBalance(final String type) {
         if (type == null || type.isBlank()) {
             return null;
         }
@@ -189,8 +189,8 @@ public class ServiceConfigConverter {
      * LoadBalanceConfig → LoadBalanceConfiguration
      */
     private LoadBalanceConfiguration mergeLoadBalance(
-            LoadBalanceConfiguration existing,
-            LoadBalanceConfig update) {
+            final LoadBalanceConfiguration existing,
+            final LoadBalanceConfig update) {
 
         if (update == null) {
             return existing;
@@ -205,7 +205,7 @@ public class ServiceConfigConverter {
     /**
      * RateLimitConfig → RateLimitConfiguration
      */
-    private RateLimitConfiguration toRateLimit(RateLimitConfig config) {
+    private RateLimitConfiguration toRateLimit(final RateLimitConfig config) {
         if (config == null) {
             return null;
         }
@@ -223,7 +223,7 @@ public class ServiceConfigConverter {
     /**
      * CircuitBreakerConfig → CircuitBreakerConfiguration
      */
-    private CircuitBreakerConfiguration toCircuitBreaker(CircuitBreakerConfig config) {
+    private CircuitBreakerConfiguration toCircuitBreaker(final CircuitBreakerConfig config) {
         if (config == null) {
             return null;
         }
@@ -240,7 +240,7 @@ public class ServiceConfigConverter {
      * Object → FallbackConfiguration
      */
     @SuppressWarnings("unchecked")
-    private FallbackConfiguration toFallback(Object fallback) {
+    private FallbackConfiguration toFallback(final Object fallback) {
         if (fallback == null) {
             return null;
         }

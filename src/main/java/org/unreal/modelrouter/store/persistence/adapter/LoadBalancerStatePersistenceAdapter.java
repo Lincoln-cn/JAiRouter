@@ -60,8 +60,8 @@ public class LoadBalancerStatePersistenceAdapter {
      * @return 保存结果
      */
     public Mono<Boolean> saveLoadBalancerState(
-            ModelServiceRegistry.ServiceType serviceType, 
-            LoadBalancer loadBalancer) {
+            final ModelServiceRegistry.ServiceType serviceType, 
+            final LoadBalancer loadBalancer) {
         
         Map<String, Object> stateData = extractLoadBalancerState(loadBalancer);
         if (stateData.isEmpty()) {
@@ -95,7 +95,7 @@ public class LoadBalancerStatePersistenceAdapter {
      * @return 状态数据
      */
     public Mono<Map<String, Object>> loadLoadBalancerState(
-            ModelServiceRegistry.ServiceType serviceType) {
+            final ModelServiceRegistry.ServiceType serviceType) {
         
         String key = serviceType.name().toLowerCase();
         
@@ -116,8 +116,8 @@ public class LoadBalancerStatePersistenceAdapter {
      * @return 是否恢复成功
      */
     public Mono<Boolean> restoreLoadBalancerState(
-            ModelServiceRegistry.ServiceType serviceType,
-            LoadBalancer loadBalancer) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final LoadBalancer loadBalancer) {
         
         return loadLoadBalancerState(serviceType)
                 .flatMap(stateData -> {
@@ -144,7 +144,7 @@ public class LoadBalancerStatePersistenceAdapter {
      * @param serviceType 服务类型
      * @return 删除结果
      */
-    public Mono<Boolean> deleteLoadBalancerState(ModelServiceRegistry.ServiceType serviceType) {
+    public Mono<Boolean> deleteLoadBalancerState(final ModelServiceRegistry.ServiceType serviceType) {
         String key = serviceType.name().toLowerCase();
         
         logger.info("Deleting load balancer state for service: {}", serviceType);
@@ -163,7 +163,7 @@ public class LoadBalancerStatePersistenceAdapter {
      * @return 成功保存的数量
      */
     public Mono<Integer> saveLoadBalancerStatesBatch(
-            Map<ModelServiceRegistry.ServiceType, LoadBalancer> loadBalancers) {
+            final Map<ModelServiceRegistry.ServiceType, LoadBalancer> loadBalancers) {
         
         if (loadBalancers == null || loadBalancers.isEmpty()) {
             return Mono.just(0);
@@ -235,8 +235,8 @@ public class LoadBalancerStatePersistenceAdapter {
      * 事件驱动：实例选择时触发同步
      */
     public void onInstanceSelected(
-            ModelServiceRegistry.ServiceType serviceType, 
-            LoadBalancer loadBalancer) {
+            final ModelServiceRegistry.ServiceType serviceType, 
+            final LoadBalancer loadBalancer) {
         
         // 对于 LeastConnections，选择事件不触发同步（高频操作）
         // 仅在特定策略变更时同步
@@ -250,8 +250,8 @@ public class LoadBalancerStatePersistenceAdapter {
      * 事件驱动：调用开始时触发同步
      */
     public void onCallStarted(
-            ModelServiceRegistry.ServiceType serviceType, 
-            LoadBalancer loadBalancer) {
+            final ModelServiceRegistry.ServiceType serviceType, 
+            final LoadBalancer loadBalancer) {
         
         // 高频操作，不立即同步
         pendingSync.put(serviceType, true);
@@ -261,8 +261,8 @@ public class LoadBalancerStatePersistenceAdapter {
      * 事件驱动：调用完成时触发同步（可选）
      */
     public void onCallCompleted(
-            ModelServiceRegistry.ServiceType serviceType, 
-            LoadBalancer loadBalancer) {
+            final ModelServiceRegistry.ServiceType serviceType, 
+            final LoadBalancer loadBalancer) {
         
         // 高频操作，不立即同步
         pendingSync.put(serviceType, true);
@@ -272,8 +272,8 @@ public class LoadBalancerStatePersistenceAdapter {
      * 事件驱动：配置变更时触发同步
      */
     public void onConfigurationChanged(
-            ModelServiceRegistry.ServiceType serviceType, 
-            LoadBalancer loadBalancer) {
+            final ModelServiceRegistry.ServiceType serviceType, 
+            final LoadBalancer loadBalancer) {
         
         logger.info("Load balancer configuration changed for {}, triggering state sync", serviceType);
         saveLoadBalancerState(serviceType, loadBalancer).subscribe();
@@ -283,9 +283,9 @@ public class LoadBalancerStatePersistenceAdapter {
      * 事件驱动：策略切换时触发同步
      */
     public void onStrategySwitched(
-            ModelServiceRegistry.ServiceType serviceType, 
-            LoadBalancer loadBalancer,
-            String newStrategy) {
+            final ModelServiceRegistry.ServiceType serviceType, 
+            final LoadBalancer loadBalancer,
+            final String newStrategy) {
         
         logger.info("Load balancer strategy switched to {} for {}, triggering state sync", 
                 newStrategy, serviceType);
@@ -297,7 +297,7 @@ public class LoadBalancerStatePersistenceAdapter {
      * 
      * @param loadBalancers 服务类型 -> 负载均衡器映射
      */
-    public void syncPendingStates(Map<ModelServiceRegistry.ServiceType, LoadBalancer> loadBalancers) {
+    public void syncPendingStates(final Map<ModelServiceRegistry.ServiceType, LoadBalancer> loadBalancers) {
         if (pendingSync.isEmpty()) {
             logger.debug("No pending load balancer states to sync");
             return;
@@ -316,7 +316,7 @@ public class LoadBalancerStatePersistenceAdapter {
     /**
      * 提取负载均衡器状态数据
      */
-    private Map<String, Object> extractLoadBalancerState(LoadBalancer loadBalancer) {
+    private Map<String, Object> extractLoadBalancerState(final LoadBalancer loadBalancer) {
         Map<String, Object> stateData = new HashMap<>();
 
         // 记录策略类型
@@ -360,7 +360,7 @@ public class LoadBalancerStatePersistenceAdapter {
     /**
      * 应用负载均衡器状态数据
      */
-    private void applyLoadBalancerState(LoadBalancer loadBalancer, Map<String, Object> stateData) {
+    private void applyLoadBalancerState(final LoadBalancer loadBalancer,final Map<String, Object> stateData) {
         if (loadBalancer instanceof LeastConnectionsLoadBalancer) {
             LeastConnectionsLoadBalancer lclb = (LeastConnectionsLoadBalancer) loadBalancer;
             

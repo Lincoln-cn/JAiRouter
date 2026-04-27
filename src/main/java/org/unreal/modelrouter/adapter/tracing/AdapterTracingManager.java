@@ -41,10 +41,10 @@ public class AdapterTracingManager {
      * @return 创建的 Span
      */
     public Span startAdapterCall(
-            String adapterType,
-            ModelRouterProperties.ModelInstance instance,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName) {
+            final String adapterType,
+            final ModelRouterProperties.ModelInstance instance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName) {
         
         // 获取当前追踪上下文
         TracingContext context = TracingContextHolder.getCurrentContext();
@@ -81,7 +81,7 @@ public class AdapterTracingManager {
      * @param success 是否成功
      * @param error 错误信息（如果失败）
      */
-    public void endAdapterCall(Span span, boolean success, Throwable error) {
+    public void endAdapterCall(final Span span,final boolean success,final Throwable error) {
         if (span == null) {
             return;
         }
@@ -133,11 +133,11 @@ public class AdapterTracingManager {
      * @param modelName 模型名称
      */
     public void recordAdapterAttributes(
-            Span span,
-            String adapterType,
-            ModelRouterProperties.ModelInstance instance,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName) {
+            final Span span,
+            final String adapterType,
+            final ModelRouterProperties.ModelInstance instance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName) {
         
         if (span == null) {
             return;
@@ -181,7 +181,7 @@ public class AdapterTracingManager {
      * @param requestSize 请求大小（字节）
      * @param hasStream 是否流式请求
      */
-    public void recordRequestAttributes(Span span, long requestSize, boolean hasStream) {
+    public void recordRequestAttributes(final Span span,final long requestSize,final boolean hasStream) {
         if (span == null) {
             return;
         }
@@ -200,7 +200,7 @@ public class AdapterTracingManager {
      * @param durationMs 响应时间（毫秒）
      * @param statusCode HTTP 状态码
      */
-    public void recordResponseAttributes(Span span, long responseSize, long durationMs, int statusCode) {
+    public void recordResponseAttributes(final Span span,final long responseSize,final long durationMs,final int statusCode) {
         if (span == null) {
             return;
         }
@@ -221,9 +221,9 @@ public class AdapterTracingManager {
      * @return Span 名称
      */
     private String buildSpanName(
-            String adapterType,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName) {
+            final String adapterType,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName) {
         
         StringBuilder spanName = new StringBuilder("adapter.call.");
         

@@ -32,7 +32,7 @@ public class ModelCallAnalyzer {
     private final ModelCallStatsRepository statsRepository;
 
     @Autowired
-    public ModelCallAnalyzer(ModelCallStatsRepository statsRepository) {
+    public ModelCallAnalyzer(final ModelCallStatsRepository statsRepository) {
         this.statsRepository = statsRepository;
     }
 
@@ -58,7 +58,7 @@ public class ModelCallAnalyzer {
      * @param serviceType 服务类型
      * @return 统计列表
      */
-    public List<ModelCallStats> getStatsByServiceType(String serviceType) {
+    public List<ModelCallStats> getStatsByServiceType(final String serviceType) {
         return statsRepository.getStatsByServiceType(serviceType);
     }
 
@@ -69,7 +69,7 @@ public class ModelCallAnalyzer {
      * @param modelName 模型名称
      * @return 统计对象
      */
-    public ModelCallStats getModelStats(String serviceType, String modelName) {
+    public ModelCallStats getModelStats(final String serviceType,final String modelName) {
         ModelCallStats stats = statsRepository.get(serviceType, modelName);
         if (stats != null) {
             // 更新 QPS
@@ -85,7 +85,7 @@ public class ModelCallAnalyzer {
      * @param n 数量
      * @return Top N 统计列表
      */
-    public List<ModelCallStats> getTopActiveModels(int n) {
+    public List<ModelCallStats> getTopActiveModels(final int n) {
         return statsRepository.getTopActiveModels(n);
     }
 
@@ -117,7 +117,7 @@ public class ModelCallAnalyzer {
      * @param ascending 是否升序
      * @return 分页结果
      */
-    public Map<String, Object> getAllModelStats(String serviceType, int page, int size, String sortBy, boolean ascending) {
+    public Map<String, Object> getAllModelStats(final String serviceType,final int page,final int size,final String sortBy,final boolean ascending) {
         List<ModelCallStats> allStats = new ArrayList<>(statsRepository.getAllStats());
 
         // 过滤
@@ -161,7 +161,7 @@ public class ModelCallAnalyzer {
     /**
      * 获取比较器
      */
-    private Comparator<ModelCallStats> getComparator(String sortBy) {
+    private Comparator<ModelCallStats> getComparator(final String sortBy) {
         switch (sortBy != null ? sortBy : "totalCalls") {
             case "successRate":
                 return Comparator.comparingDouble(ModelCallStats::getSuccessRate);
@@ -227,7 +227,7 @@ public class ModelCallAnalyzer {
      * @param minutes 分钟数
      * @return 趋势数据
      */
-    public List<Map<String, Object>> getCallTrend(int minutes) {
+    public List<Map<String, Object>> getCallTrend(final int minutes) {
         List<Map<String, Object>> trend = new ArrayList<>();
         
         // 当前实现返回当前时刻的统计

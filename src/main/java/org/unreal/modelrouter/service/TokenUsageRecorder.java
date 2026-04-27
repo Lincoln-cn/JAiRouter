@@ -31,19 +31,19 @@ public class TokenUsageRecorder {
      * 异步记录 Token 使用量
      */
     public void recordTokenUsageAsync(
-            String serviceType,
-            String modelName,
-            String provider,
-            String instanceName,
-            String instanceUrl,
-            Long promptTokens,
-            Long completionTokens,
-            Long totalTokens,
-            String traceId,
-            Boolean isSuccess,
-            String errorCode,
-            String errorMessage,
-            Long responseTimeMs) {
+            final String serviceType,
+            final String modelName,
+            final String provider,
+            final String instanceName,
+            final String instanceUrl,
+            final Long promptTokens,
+            final Long completionTokens,
+            final Long totalTokens,
+            final String traceId,
+            final Boolean isSuccess,
+            final String errorCode,
+            final String errorMessage,
+            final Long responseTimeMs) {
 
         // 异步获取当前用户信息并记录
         ReactiveSecurityContextHolder.getContext()
@@ -68,20 +68,20 @@ public class TokenUsageRecorder {
      * 执行 Token 使用量记录（无用户认证）
      */
     public void recordTokenUsageNoAuth(
-            String serviceType,
-            String modelName,
-            String provider,
-            String instanceName,
-            String instanceUrl,
-            Long promptTokens,
-            Long completionTokens,
-            Long totalTokens,
-            String traceId,
-            String clientIp,
-            Boolean isSuccess,
-            String errorCode,
-            String errorMessage,
-            Long responseTimeMs) {
+            final String serviceType,
+            final String modelName,
+            final String provider,
+            final String instanceName,
+            final String instanceUrl,
+            final Long promptTokens,
+            final Long completionTokens,
+            final Long totalTokens,
+            final String traceId,
+            final String clientIp,
+            final Boolean isSuccess,
+            final String errorCode,
+            final String errorMessage,
+            final Long responseTimeMs) {
 
         doRecordTokenUsageWithClientIp(
             serviceType, modelName, provider, instanceName, instanceUrl,
@@ -94,20 +94,20 @@ public class TokenUsageRecorder {
      * 执行 Token 使用量记录
      */
     private void doRecordTokenUsage(
-            String serviceType,
-            String modelName,
-            String provider,
-            String instanceName,
-            String instanceUrl,
-            Long promptTokens,
-            Long completionTokens,
-            Long totalTokens,
-            String traceId,
-            String userId,
-            Boolean isSuccess,
-            String errorCode,
-            String errorMessage,
-            Long responseTimeMs) {
+            final String serviceType,
+            final String modelName,
+            final String provider,
+            final String instanceName,
+            final String instanceUrl,
+            final Long promptTokens,
+            final Long completionTokens,
+            final Long totalTokens,
+            final String traceId,
+            final String userId,
+            final Boolean isSuccess,
+            final String errorCode,
+            final String errorMessage,
+            final Long responseTimeMs) {
 
         try {
             TokenUsageRecordDTO record = TokenUsageRecordDTO.builder()
@@ -140,21 +140,21 @@ public class TokenUsageRecorder {
      * 执行 Token 使用量记录（带客户端 IP）
      */
     private void doRecordTokenUsageWithClientIp(
-            String serviceType,
-            String modelName,
-            String provider,
-            String instanceName,
-            String instanceUrl,
-            Long promptTokens,
-            Long completionTokens,
-            Long totalTokens,
-            String traceId,
-            String clientIp,
-            String userId,
-            Boolean isSuccess,
-            String errorCode,
-            String errorMessage,
-            Long responseTimeMs) {
+            final String serviceType,
+            final String modelName,
+            final String provider,
+            final String instanceName,
+            final String instanceUrl,
+            final Long promptTokens,
+            final Long completionTokens,
+            final Long totalTokens,
+            final String traceId,
+            final String clientIp,
+            final String userId,
+            final Boolean isSuccess,
+            final String errorCode,
+            final String errorMessage,
+            final Long responseTimeMs) {
 
         try {
             TokenUsageRecordDTO record = TokenUsageRecordDTO.builder()

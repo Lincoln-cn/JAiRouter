@@ -30,7 +30,7 @@ public class ResponseMapper {
 
     private final ObjectMapper objectMapper;
 
-    public ResponseMapper(ObjectMapper objectMapper) {
+    public ResponseMapper(final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -42,7 +42,7 @@ public class ResponseMapper {
      * @param <T> 类型
      * @return 映射后的响应实体
      */
-    public <T> Mono<ResponseEntity<T>> mapResponse(ClientResponse clientResponse, Class<T> targetType) {
+    public <T> Mono<ResponseEntity<T>> mapResponse(final ClientResponse clientResponse,final Class<T> targetType) {
         HttpStatus status = HttpStatus.valueOf(clientResponse.statusCode().value());
 
         logger.debug("映射响应：status={}, targetType={}", status, targetType.getSimpleName());
@@ -66,7 +66,7 @@ public class ResponseMapper {
      * @param dataBuffer 数据块
      * @return 映射后的字符串
      */
-    public String mapStreamChunk(DataBuffer dataBuffer) {
+    public String mapStreamChunk(final DataBuffer dataBuffer) {
         byte[] bytes = new byte[dataBuffer.readableByteCount()];
         dataBuffer.read(bytes);
         DataBufferUtils.release(dataBuffer);
@@ -86,9 +86,9 @@ public class ResponseMapper {
      * @return 错误 Mono
      */
     public Mono<Throwable> handleResponseError(
-            ClientResponse clientResponse,
-            String instanceName,
-            String path) {
+            final ClientResponse clientResponse,
+            final String instanceName,
+            final String path) {
 
         HttpStatus status = HttpStatus.valueOf(clientResponse.statusCode().value());
 
@@ -121,7 +121,7 @@ public class ResponseMapper {
      * @param <T> 类型
      * @return 转换后的对象
      */
-    public <T> T fromJson(String json, Class<T> targetType) {
+    public <T> T fromJson(final String json,final Class<T> targetType) {
         try {
             return objectMapper.readValue(json, targetType);
         } catch (JsonProcessingException e) {
@@ -136,7 +136,7 @@ public class ResponseMapper {
      * @param object 对象
      * @return JSON 字符串
      */
-    public String toJson(Object object) {
+    public String toJson(final Object object) {
         try {
             return objectMapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
@@ -151,7 +151,7 @@ public class ResponseMapper {
      * @param clientResponse 客户端响应
      * @return 是否成功
      */
-    public boolean isSuccess(ClientResponse clientResponse) {
+    public boolean isSuccess(final ClientResponse clientResponse) {
         return clientResponse.statusCode().is2xxSuccessful();
     }
 
@@ -161,7 +161,7 @@ public class ResponseMapper {
      * @param clientResponse 客户端响应
      * @return 是否是服务器错误
      */
-    public boolean isServerError(ClientResponse clientResponse) {
+    public boolean isServerError(final ClientResponse clientResponse) {
         return clientResponse.statusCode().is5xxServerError();
     }
 
@@ -171,7 +171,7 @@ public class ResponseMapper {
      * @param clientResponse 客户端响应
      * @return 是否是客户端错误
      */
-    public boolean isClientError(ClientResponse clientResponse) {
+    public boolean isClientError(final ClientResponse clientResponse) {
         return clientResponse.statusCode().is4xxClientError();
     }
 }

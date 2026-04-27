@@ -93,7 +93,7 @@ public class SecurityBlacklistController {
     @Operation(summary = "添加黑名单", description = "手动添加条目到黑名单，支持Token/IP/Device类型")
     public ResponseEntity<RouterResponse<BlacklistEntryDTO>> addToBlacklist(
             @Valid @RequestBody AddBlacklistRequest request,
-            Principal principal) {
+            final Principal principal) {
 
         String addedBy = principal != null ? principal.getName() : "system";
         log.info("添加黑名单: type={}, value={}, addedBy={}",
@@ -117,7 +117,7 @@ public class SecurityBlacklistController {
     @Operation(summary = "批量添加黑名单", description = "批量添加多个条目到黑名单")
     public ResponseEntity<RouterResponse<Integer>> batchAddToBlacklist(
             @RequestBody List<AddBlacklistRequest> requests,
-            Principal principal) {
+            final Principal principal) {
 
         String addedBy = principal != null ? principal.getName() : "system";
         log.info("批量添加黑名单: count={}, addedBy={}", requests.size(), addedBy);
@@ -180,7 +180,7 @@ public class SecurityBlacklistController {
     /**
      * 脱敏处理目标值
      */
-    private String maskValue(String type, String value) {
+    private String maskValue(final String type,final String value) {
         if (value == null || value.length() < 8) {
             return value == null ? "null" : value;
         }

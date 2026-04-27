@@ -51,7 +51,7 @@ public class InstanceSelector {
         final long timestamp;
         final int consecutiveFailures;
 
-        HealthStatus(boolean healthy, int consecutiveFailures) {
+        HealthStatus(final boolean healthy,final int consecutiveFailures) {
             this.healthy = healthy;
             this.timestamp = System.currentTimeMillis();
             this.consecutiveFailures = consecutiveFailures;
@@ -148,7 +148,7 @@ public class InstanceSelector {
      * @param baseUrl 实例基础 URL
      * @return true 如果 HTTP 连通性正常
      */
-    private boolean performHttpHealthCheck(String baseUrl) {
+    private boolean performHttpHealthCheck(final String baseUrl) {
         try {
             // 尝试访问健康检查端点或基础 URL
             String healthUrl = baseUrl.endsWith("/") ? baseUrl + "health" : baseUrl + "/health";
@@ -182,7 +182,7 @@ public class InstanceSelector {
      * @param baseUrl 实例基础 URL
      * @return true 如果 TCP 连通性正常
      */
-    private boolean performFallbackHealthCheck(String baseUrl) {
+    private boolean performFallbackHealthCheck(final String baseUrl) {
         try {
             // 解析 URL
             java.net.URI uri = java.net.URI.create(baseUrl);
@@ -212,7 +212,7 @@ public class InstanceSelector {
      *
      * @param instanceId 实例 ID
      */
-    public void clearHealthCache(String instanceId) {
+    public void clearHealthCache(final String instanceId) {
         healthCache.remove(instanceId);
         logger.debug("清除健康缓存：instanceId={}", instanceId);
     }

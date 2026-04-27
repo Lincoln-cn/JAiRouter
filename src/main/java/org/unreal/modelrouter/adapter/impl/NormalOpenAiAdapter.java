@@ -30,21 +30,21 @@ import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 
 public class NormalOpenAiAdapter extends BaseAdapter {
 
-    public NormalOpenAiAdapter(ModelServiceRegistry registry,
-                         MetricsCollector metricsCollector,
-                         ObjectMapper objectMapper,
-                         ModelCallStatsRepository statsRepository,
-                         RequestBuilder requestBuilder,
-                         ResponseHandler responseHandler,
-                         InstanceSelector instanceSelector,
-                         ResponseTransformer responseTransformer,
-                         CapabilityChecker capabilityChecker,
-                         AdapterErrorHandler errorHandler,
-                         RetryPolicy retryPolicy,
-                         HttpRequestProcessor httpRequestProcessor,
-                         ResponseMapper responseMapper,
-                         AdapterMetricsRecorder metricsRecorder,
-                         AdapterTracingManager tracingManager) {
+    public NormalOpenAiAdapter(final ModelServiceRegistry registry,
+                         final MetricsCollector metricsCollector,
+                         final ObjectMapper objectMapper,
+                         final ModelCallStatsRepository statsRepository,
+                         final RequestBuilder requestBuilder,
+                         final ResponseHandler responseHandler,
+                         final InstanceSelector instanceSelector,
+                         final ResponseTransformer responseTransformer,
+                         final CapabilityChecker capabilityChecker,
+                         final AdapterErrorHandler errorHandler,
+                         final RetryPolicy retryPolicy,
+                         final HttpRequestProcessor httpRequestProcessor,
+                         final ResponseMapper responseMapper,
+                         final AdapterMetricsRecorder metricsRecorder,
+                         final AdapterTracingManager tracingManager) {
         super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager);
     }
 
@@ -59,7 +59,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformRequest(Object request, String adapterType) {
+    protected Object transformRequest(final Object request,final String adapterType) {
         // 记录适配器特定的追踪信息
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
             org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
@@ -120,7 +120,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
      * 转换Chat请求格式以适配标准OpenAI API
      * 支持最新的OpenAI API参数
      */
-    private Object transformChatRequest(ChatDTO.Request request) {
+    private Object transformChatRequest(final ChatDTO.Request request) {
         try {
             ObjectNode openAiRequest = objectMapper.createObjectNode();
 
@@ -258,7 +258,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
      * 转换Embedding请求格式以适配标准OpenAI API
      * 支持最新的OpenAI API参数
      */
-    private Object transformEmbeddingRequest(EmbeddingDTO.Request request) {
+    private Object transformEmbeddingRequest(final EmbeddingDTO.Request request) {
         try {
             ObjectNode openAiRequest = objectMapper.createObjectNode();
 
@@ -345,7 +345,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
      * 转换Rerank请求格式以适配标准OpenAI API
      * 支持最新的OpenAI API参数
      */
-    private Object transformRerankRequest(RerankDTO.Request rerankRequest) {
+    private Object transformRerankRequest(final RerankDTO.Request rerankRequest) {
         try {
             ObjectNode openAiRequest = objectMapper.createObjectNode();
 
@@ -388,7 +388,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
      * 转换TTS请求格式以适配标准OpenAI API
      * 支持最新的OpenAI API参数
      */
-    private Object transformTtsRequest(TtsDTO.Request ttsRequest) {
+    private Object transformTtsRequest(final TtsDTO.Request ttsRequest) {
         try {
             ObjectNode openAiRequest = objectMapper.createObjectNode();
 
@@ -410,7 +410,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
         }
     }
 
-    private Object transformImageEditRequestRequest(ImageEditDTO.Request imageEditRequest) {
+    private Object transformImageEditRequestRequest(final ImageEditDTO.Request imageEditRequest) {
 
         try {
             if (imageEditRequest.model() == null || imageEditRequest.model().isEmpty()) {
@@ -515,7 +515,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
         }
     }
 
-    private MediaType determineImageContentType(String filename) {
+    private MediaType determineImageContentType(final String filename) {
         if (filename == null) return MediaType.IMAGE_PNG;
 
         String lowercaseFilename = filename.toLowerCase();
@@ -534,7 +534,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     /**
      * STT请求需要特殊的multipart处理
      */
-    private Object transformSttRequest(SttDTO.Request sttRequest) {
+    private Object transformSttRequest(final SttDTO.Request sttRequest) {
         try {
             MultipartBodyBuilder builder = new MultipartBodyBuilder();
             builder.part("model", sttRequest.model());
@@ -564,7 +564,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformResponse(Object response, String adapterType) {
+    protected Object transformResponse(final Object response,final String adapterType) {
         if (response instanceof String responseStr) {
             try {
                 JsonNode jsonResponse = objectMapper.readTree(responseStr);
@@ -579,7 +579,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     /**
      * 转换标准OpenAI响应格式
      */
-    private String transformStandardResponse(JsonNode openAiResponse) {
+    private String transformStandardResponse(final JsonNode openAiResponse) {
         try {
             ObjectNode standardResponse = objectMapper.createObjectNode();
 
@@ -655,7 +655,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String transformStreamChunk(String chunk) {
+    protected String transformStreamChunk(final String chunk) {
         try {
             if (chunk.startsWith("data: ")) {
                 String jsonPart = chunk.substring(6).trim();
@@ -720,7 +720,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected <T> WebClient.RequestBodySpec configureRequestHeaders(WebClient.RequestBodySpec requestSpec, T request) {
+    protected <T> WebClient.RequestBodySpec configureRequestHeaders(final WebClient.RequestBodySpec requestSpec,final T request) {
         // Normal adapter保持标准的OpenAI格式，不需要特殊的头部配置
         return super.configureRequestHeaders(requestSpec, request);
     }

@@ -80,7 +80,7 @@ public class JwtTokenController {
     })
     public Mono<RouterResponse<LoginResponse>> login(
             @Parameter(description = "登录请求") @RequestBody LoginRequest request,
-            org.springframework.web.server.ServerWebExchange exchange) {
+            final org.springframework.web.server.ServerWebExchange exchange) {
 
         log.info("收到用户登录请求: username={}", request.getUsername());
         log.info("accountManager class: {}", accountManager.getClass().getName());
@@ -134,8 +134,8 @@ public class JwtTokenController {
     })
     public Mono<RouterResponse<JwtTokenInfo>> refreshToken(
             @Parameter(description = "令牌刷新请求") @RequestBody TokenRefreshRequest request,
-            Authentication authentication,
-            org.springframework.web.server.ServerWebExchange exchange) {
+            final Authentication authentication,
+            final org.springframework.web.server.ServerWebExchange exchange) {
 
         log.debug("收到JWT令牌刷新请求: user={}", authentication != null ? authentication.getName() : "anonymous");
 
@@ -187,7 +187,7 @@ public class JwtTokenController {
     @PreAuthorize("hasRole('ADMIN') or authentication.name == #request.userId")
     public Mono<RouterResponse<JwtApiResponse>> revokeToken(
             @Parameter(description = "令牌撤销请求") @RequestBody TokenRevokeRequest request,
-            Authentication authentication) {
+            final Authentication authentication) {
 
         log.debug("收到JWT令牌撤销请求: user={}, targetToken={}",
                 authentication != null ? authentication.getName() : "anonymous",
@@ -244,7 +244,7 @@ public class JwtTokenController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<JwtApiResponse>> revokeTokensBatch(
             @Parameter(description = "批量令牌撤销请求") @RequestBody BatchTokenRevokeRequest request,
-            Authentication authentication) {
+            final Authentication authentication) {
 
         log.debug("收到批量JWT令牌撤销请求: user={}, tokenCount={}",
                 authentication != null ? authentication.getName() : "anonymous",
@@ -362,7 +362,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足")
     })
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<RouterResponse<Map<String, Object>>> getBlacklistStats(Authentication authentication) {
+    public Mono<RouterResponse<Map<String, Object>>> getBlacklistStats(final Authentication authentication) {
 
         log.debug("收到黑名单统计信息请求: user={}",
                 authentication != null ? authentication.getName() : "anonymous");
@@ -403,7 +403,7 @@ public class JwtTokenController {
             @Parameter(description = "页大小") @RequestParam(defaultValue = "20") int size,
             @Parameter(description = "用户ID过滤") @RequestParam(required = false) String userId,
             @Parameter(description = "令牌状态过滤") @RequestParam(required = false) TokenStatus status,
-            Authentication authentication) {
+            final Authentication authentication) {
 
         log.debug("收到获取令牌列表请求: user={}, page={}, size={}, userId={}, status={}",
                 authentication != null ? authentication.getName() : "anonymous", page, size, userId, status);
@@ -480,7 +480,7 @@ public class JwtTokenController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<RouterResponse<JwtTokenInfo>> getTokenDetails(
             @Parameter(description = "令牌ID") @PathVariable String tokenId,
-            Authentication authentication) {
+            final Authentication authentication) {
 
         log.debug("收到获取令牌详情请求: user={}, tokenId={}",
                 authentication != null ? authentication.getName() : "anonymous", tokenId);
@@ -515,7 +515,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "清理操作失败")
     })
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<RouterResponse<JwtCleanupService.CleanupResult>> cleanupExpiredTokens(Authentication authentication) {
+    public Mono<RouterResponse<JwtCleanupService.CleanupResult>> cleanupExpiredTokens(final Authentication authentication) {
 
         log.debug("收到手动清理过期令牌请求: user={}",
                 authentication != null ? authentication.getName() : "anonymous");
@@ -555,7 +555,7 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足")
     })
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<RouterResponse<JwtCleanupService.CleanupStats>> getCleanupStats(Authentication authentication) {
+    public Mono<RouterResponse<JwtCleanupService.CleanupStats>> getCleanupStats(final Authentication authentication) {
 
         log.debug("收到获取清理统计信息请求: user={}",
                 authentication != null ? authentication.getName() : "anonymous");
@@ -582,14 +582,14 @@ public class JwtTokenController {
     /**
      * 获取客户端IP地址
      */
-    private String getClientIpAddress(org.springframework.web.server.ServerWebExchange exchange) {
+    private String getClientIpAddress(final org.springframework.web.server.ServerWebExchange exchange) {
         return org.unreal.modelrouter.security.util.ClientIpUtils.getClientIpAddress(exchange);
     }
 
     /**
      * 计算令牌哈希值
      */
-    private String calculateTokenHash(String token) {
+    private String calculateTokenHash(final String token) {
         try {
             java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -603,7 +603,7 @@ public class JwtTokenController {
     /**
      * 更新令牌在持久化存储中的状态
      */
-    private Mono<Void> updateTokenStatusInPersistence(String token, TokenStatus status, String reason, String updatedBy) {
+    private Mono<Void> updateTokenStatusInPersistence(final String token,final TokenStatus status,final String reason,final String updatedBy) {
         if (jwtPersistenceService == null) {
             log.warn("!!! JwtPersistenceService不可用，无法更新令牌状态到H2 !!!");
             return Mono.empty(); // 服务不可用时直接返回
@@ -635,7 +635,7 @@ public class JwtTokenController {
     /**
      * 批量更新令牌在持久化存储中的状态
      */
-    private Mono<Void> batchUpdateTokenStatusInPersistence(java.util.List<String> tokens, TokenStatus status, String reason, String updatedBy) {
+    private Mono<Void> batchUpdateTokenStatusInPersistence(final java.util.List<String> tokens,final TokenStatus status,final String reason,final String updatedBy) {
         if (jwtPersistenceService == null || tokens == null || tokens.isEmpty()) {
             return Mono.empty();
         }
@@ -659,7 +659,7 @@ public class JwtTokenController {
     /**
      * 检查令牌的持久化状态
      */
-    private Mono<Boolean> checkTokenPersistenceStatus(String token) {
+    private Mono<Boolean> checkTokenPersistenceStatus(final String token) {
         if (jwtPersistenceService == null) {
             return Mono.just(true); // 服务不可用时默认有效
         }
@@ -679,7 +679,7 @@ public class JwtTokenController {
     /**
      * 为黑名单统计信息添加持久化数据
      */
-    private Mono<Map<String, Object>> addPersistenceStatsToBlacklistStats(Map<String, Object> originalStats) {
+    private Mono<Map<String, Object>> addPersistenceStatsToBlacklistStats(final Map<String, Object> originalStats) {
         return Mono.zip(
                 jwtPersistenceService.countActiveTokens().onErrorReturn(0L),
                 jwtPersistenceService.countTokensByStatus(TokenStatus.REVOKED).onErrorReturn(0L),
@@ -697,7 +697,7 @@ public class JwtTokenController {
     /**
      * 通过tokenHash撤销令牌
      */
-    private Mono<Void> revokeTokenByHash(String tokenHash, String reason, String revokedBy) {
+    private Mono<Void> revokeTokenByHash(final String tokenHash,final String reason,final String revokedBy) {
         if (jwtPersistenceService == null) {
             return Mono.error(new RuntimeException("令牌持久化服务未启用"));
         }
@@ -732,7 +732,7 @@ public class JwtTokenController {
     /**
      * 批量通过tokenHash撤销令牌
      */
-    private Mono<Void> batchRevokeTokensByHash(java.util.List<String> tokenHashes, String reason, String revokedBy) {
+    private Mono<Void> batchRevokeTokensByHash(final java.util.List<String> tokenHashes,final String reason,final String revokedBy) {
         if (jwtPersistenceService == null) {
             return Mono.error(new RuntimeException("令牌持久化服务未启用"));
         }

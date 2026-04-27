@@ -32,7 +32,7 @@ public class RequestBuilder {
      * @param request 请求对象
      * @return 请求体插入器
      */
-    public BodyInserter<?, ? super ClientHttpRequest> createRequestBody(Object request) {
+    public BodyInserter<?, ? super ClientHttpRequest> createRequestBody(final Object request) {
         logger.debug("创建请求体，请求类型：{}", request.getClass().getSimpleName());
 
         // 检查是否已经是转换后的 multipart 数据
@@ -58,7 +58,7 @@ public class RequestBuilder {
      * @param sttRequest STT 请求对象
      * @return multipart 请求体
      */
-    public BodyInserter<?, ? super ClientHttpRequest> createSttMultipartBody(SttDTO.Request sttRequest) {
+    public BodyInserter<?, ? super ClientHttpRequest> createSttMultipartBody(final SttDTO.Request sttRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
 
         logger.debug("创建 STT multipart 请求体：model={}, file={}, language={}",
@@ -89,7 +89,7 @@ public class RequestBuilder {
      * @param imageEditRequest 图像编辑请求对象
      * @return multipart 请求体
      */
-    public BodyInserter<?, ? super ClientHttpRequest> createImageEditMultipartBody(ImageEditDTO.Request imageEditRequest) {
+    public BodyInserter<?, ? super ClientHttpRequest> createImageEditMultipartBody(final ImageEditDTO.Request imageEditRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
 
         // 添加图像文件（支持单个或多个文件）
@@ -128,7 +128,7 @@ public class RequestBuilder {
      * @param parts multipart 数据
      * @return 请求体插入器
      */
-    public BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(MultiValueMap<String, Object> parts) {
+    public BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(final MultiValueMap<String, Object> parts) {
         return BodyInserters.fromMultipartData(parts);
     }
 
@@ -138,7 +138,7 @@ public class RequestBuilder {
      * @param request 请求对象
      * @return 请求体插入器
      */
-    public BodyInserter<?, ? super ClientHttpRequest> createJsonBody(Object request) {
+    public BodyInserter<?, ? super ClientHttpRequest> createJsonBody(final Object request) {
         logger.debug("创建 JSON 请求体，请求类型：{}", request.getClass().getSimpleName());
         return BodyInserters.fromValue(request);
     }
@@ -150,7 +150,7 @@ public class RequestBuilder {
      * @param value 值
      * @return 表单数据
      */
-    public MultiValueMap<String, Object> createFormData(String key, Object value) {
+    public MultiValueMap<String, Object> createFormData(final String key,final Object value) {
         MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
         formData.add(key, value);
         return formData;
@@ -163,7 +163,7 @@ public class RequestBuilder {
      * @param key 键
      * @param value 值
      */
-    public void addFormField(MultiValueMap<String, Object> parts, String key, Object value) {
+    public void addFormField(final MultiValueMap<String, Object> parts,final String key,final Object value) {
         if (value != null) {
             if (value instanceof Number) {
                 parts.add(key, value.toString());
@@ -181,7 +181,7 @@ public class RequestBuilder {
      * @param key 键
      * @param file 文件对象
      */
-    public void addFileField(MultiValueMap<String, Object> parts, String key, Object file) {
+    public void addFileField(final MultiValueMap<String, Object> parts,final String key,final Object file) {
         if (file != null) {
             parts.add(key, file);
             String filename = extractFilename(file);
@@ -195,7 +195,7 @@ public class RequestBuilder {
      * @param file 文件对象
      * @return 文件名
      */
-    private String extractFilename(Object file) {
+    private String extractFilename(final Object file) {
         if (file == null) {
             return "null";
         }

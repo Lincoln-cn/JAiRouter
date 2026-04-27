@@ -33,21 +33,21 @@ import org.unreal.modelrouter.repository.ModelCallStatsRepository;
  */
 public class XinferenceAdapter extends BaseAdapter {
 
-    public XinferenceAdapter(ModelServiceRegistry registry,
-                         MetricsCollector metricsCollector,
-                         ObjectMapper objectMapper,
-                         ModelCallStatsRepository statsRepository,
-                         RequestBuilder requestBuilder,
-                         ResponseHandler responseHandler,
-                         InstanceSelector instanceSelector,
-                         ResponseTransformer responseTransformer,
-                         CapabilityChecker capabilityChecker,
-                         AdapterErrorHandler errorHandler,
-                         RetryPolicy retryPolicy,
-                         HttpRequestProcessor httpRequestProcessor,
-                         ResponseMapper responseMapper,
-                         AdapterMetricsRecorder metricsRecorder,
-                         AdapterTracingManager tracingManager) {
+    public XinferenceAdapter(final ModelServiceRegistry registry,
+                         final MetricsCollector metricsCollector,
+                         final ObjectMapper objectMapper,
+                         final ModelCallStatsRepository statsRepository,
+                         final RequestBuilder requestBuilder,
+                         final ResponseHandler responseHandler,
+                         final InstanceSelector instanceSelector,
+                         final ResponseTransformer responseTransformer,
+                         final CapabilityChecker capabilityChecker,
+                         final AdapterErrorHandler errorHandler,
+                         final RetryPolicy retryPolicy,
+                         final HttpRequestProcessor httpRequestProcessor,
+                         final ResponseMapper responseMapper,
+                         final AdapterMetricsRecorder metricsRecorder,
+                         final AdapterTracingManager tracingManager) {
         super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager);
     }
 
@@ -66,7 +66,7 @@ public class XinferenceAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformRequest(Object request, String adapterType) {
+    protected Object transformRequest(final Object request,final String adapterType) {
         // 记录适配器特定的追踪信息
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
             org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
@@ -136,7 +136,7 @@ public class XinferenceAdapter extends BaseAdapter {
      * 转换Chat请求格式以适配Xinference
      * 支持最新的Xinference API参数
      */
-    private Object transformChatRequest(ChatDTO.Request request) {
+    private Object transformChatRequest(final ChatDTO.Request request) {
         try {
             ObjectNode xinferenceRequest = objectMapper.createObjectNode();
 
@@ -281,7 +281,7 @@ public class XinferenceAdapter extends BaseAdapter {
      * 转换Embedding请求格式
      * 支持最新的Xinference API参数
      */
-    private Object transformEmbeddingRequest(EmbeddingDTO.Request request) {
+    private Object transformEmbeddingRequest(final EmbeddingDTO.Request request) {
         try {
             ObjectNode xinferenceRequest = objectMapper.createObjectNode();
 
@@ -368,7 +368,7 @@ public class XinferenceAdapter extends BaseAdapter {
      * 转换Rerank请求格式
      * 支持最新的Xinference API参数
      */
-    private Object transformRerankRequest(RerankDTO.Request rerankRequest) {
+    private Object transformRerankRequest(final RerankDTO.Request rerankRequest) {
         try {
             ObjectNode xinferenceRequest = objectMapper.createObjectNode();
 
@@ -408,7 +408,7 @@ public class XinferenceAdapter extends BaseAdapter {
         }
     }
 
-    private Object transformTtsRequest(TtsDTO.Request ttsRequest) {
+    private Object transformTtsRequest(final TtsDTO.Request ttsRequest) {
         try {
             ObjectNode xinferenceRequest = objectMapper.createObjectNode();
 
@@ -431,7 +431,7 @@ public class XinferenceAdapter extends BaseAdapter {
         }
     }
 
-    private Object transformSttRequest(SttDTO.Request sttRequest) {
+    private Object transformSttRequest(final SttDTO.Request sttRequest) {
         try {
             MultipartBodyBuilder builder = new MultipartBodyBuilder();
             builder.part("model", sttRequest.model());
@@ -460,7 +460,7 @@ public class XinferenceAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformResponse(Object response, String adapterType) {
+    protected Object transformResponse(final Object response,final String adapterType) {
         if (response instanceof String responseStr) {
             try {
                 JsonNode jsonResponse = objectMapper.readTree(responseStr);
@@ -475,7 +475,7 @@ public class XinferenceAdapter extends BaseAdapter {
     /**
      * 转换响应格式以符合OpenAI标准
      */
-    private String transformResponseJson(JsonNode xinferenceResponse) {
+    private String transformResponseJson(final JsonNode xinferenceResponse) {
         try {
             ObjectNode standardResponse = objectMapper.createObjectNode();
 
@@ -551,7 +551,7 @@ public class XinferenceAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String getAuthorizationHeader(String authorization, String adapterType) {
+    protected String getAuthorizationHeader(final String authorization,final String adapterType) {
         if (adaptModelName(authorization) != null && adaptModelName(authorization).startsWith("Bearer ")) {
             return adaptModelName(authorization);
         } else if (adaptModelName(authorization) != null) {
@@ -561,7 +561,7 @@ public class XinferenceAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String transformStreamChunk(String chunk) {
+    protected String transformStreamChunk(final String chunk) {
         try {
             // 检查是否是标准的SSE格式
             if (chunk.startsWith("data: ")) {

@@ -32,21 +32,21 @@ import org.unreal.modelrouter.repository.ModelCallStatsRepository;
  */
 public class LocalAiAdapter extends BaseAdapter {
 
-    public LocalAiAdapter(ModelServiceRegistry registry,
-                         MetricsCollector metricsCollector,
-                         ObjectMapper objectMapper,
-                         ModelCallStatsRepository statsRepository,
-                         RequestBuilder requestBuilder,
-                         ResponseHandler responseHandler,
-                         InstanceSelector instanceSelector,
-                         ResponseTransformer responseTransformer,
-                         CapabilityChecker capabilityChecker,
-                         AdapterErrorHandler errorHandler,
-                         RetryPolicy retryPolicy,
-                         HttpRequestProcessor httpRequestProcessor,
-                         ResponseMapper responseMapper,
-                         AdapterMetricsRecorder metricsRecorder,
-                         AdapterTracingManager tracingManager) {
+    public LocalAiAdapter(final ModelServiceRegistry registry,
+                         final MetricsCollector metricsCollector,
+                         final ObjectMapper objectMapper,
+                         final ModelCallStatsRepository statsRepository,
+                         final RequestBuilder requestBuilder,
+                         final ResponseHandler responseHandler,
+                         final InstanceSelector instanceSelector,
+                         final ResponseTransformer responseTransformer,
+                         final CapabilityChecker capabilityChecker,
+                         final AdapterErrorHandler errorHandler,
+                         final RetryPolicy retryPolicy,
+                         final HttpRequestProcessor httpRequestProcessor,
+                         final ResponseMapper responseMapper,
+                         final AdapterMetricsRecorder metricsRecorder,
+                         final AdapterTracingManager tracingManager) {
         super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager);
     }
 
@@ -61,7 +61,7 @@ public class LocalAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformRequest(Object request, String adapterType) {
+    protected Object transformRequest(final Object request,final String adapterType) {
         // 记录适配器特定的追踪信息
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
             org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
@@ -131,7 +131,7 @@ public class LocalAiAdapter extends BaseAdapter {
      * 转换Chat请求格式以适配LocalAI
      * 支持最新的LocalAI OpenAI兼容API参数
      */
-    private Object transformChatRequest(ChatDTO.Request request) {
+    private Object transformChatRequest(final ChatDTO.Request request) {
         try {
             ObjectNode localAiRequest = objectMapper.createObjectNode();
 
@@ -269,7 +269,7 @@ public class LocalAiAdapter extends BaseAdapter {
      * 转换Embedding请求为LocalAI格式
      * 支持最新的LocalAI OpenAI兼容API参数
      */
-    private Object transformEmbeddingRequest(EmbeddingDTO.Request request) {
+    private Object transformEmbeddingRequest(final EmbeddingDTO.Request request) {
         try {
             ObjectNode localAiRequest = objectMapper.createObjectNode();
 
@@ -356,7 +356,7 @@ public class LocalAiAdapter extends BaseAdapter {
      * 转换Rerank请求为LocalAI格式
      * 支持最新的LocalAI OpenAI兼容API参数
      */
-    private Object transformRerankRequest(RerankDTO.Request rerankRequest) {
+    private Object transformRerankRequest(final RerankDTO.Request rerankRequest) {
         try {
             ObjectNode localAiRequest = objectMapper.createObjectNode();
 
@@ -399,7 +399,7 @@ public class LocalAiAdapter extends BaseAdapter {
      * 转换TTS请求为LocalAI格式
      * 支持最新的LocalAI OpenAI兼容API参数
      */
-    private Object transformTtsRequest(TtsDTO.Request request) {
+    private Object transformTtsRequest(final TtsDTO.Request request) {
         try {
             ObjectNode localAiRequest = objectMapper.createObjectNode();
 
@@ -426,7 +426,7 @@ public class LocalAiAdapter extends BaseAdapter {
     }
 
     // 确保 transformRequest 返回的是 MultiValueMap 用于 multipart 请求
-    private Object transformSttRequest(SttDTO.Request sttRequest) {
+    private Object transformSttRequest(final SttDTO.Request sttRequest) {
         try {
             // 直接构建 MultiValueMap 而不处理文件内容
             MultipartBodyBuilder builder = new MultipartBodyBuilder();
@@ -457,7 +457,7 @@ public class LocalAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformResponse(Object response, String adapterType) {
+    protected Object transformResponse(final Object response,final String adapterType) {
         if (response instanceof String responseStr) {
             try {
                 JsonNode jsonResponse = objectMapper.readTree(responseStr);
@@ -472,7 +472,7 @@ public class LocalAiAdapter extends BaseAdapter {
     /**
      * 增强LocalAI响应
      */
-    private String enhanceLocalAiResponse(JsonNode localAiResponse) {
+    private String enhanceLocalAiResponse(final JsonNode localAiResponse) {
         try {
             ObjectNode standardResponse = objectMapper.createObjectNode();
 
@@ -560,7 +560,7 @@ public class LocalAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String getAuthorizationHeader(String authorization, String adapterType) {
+    protected String getAuthorizationHeader(final String authorization,final String adapterType) {
         // LocalAI通常不需要严格的认证，但支持API key
         if (authorization != null && authorization.startsWith("Bearer ")) {
             return authorization;
@@ -571,7 +571,7 @@ public class LocalAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String transformStreamChunk(String chunk) {
+    protected String transformStreamChunk(final String chunk) {
         try {
             if (chunk.startsWith("data: ")) {
                 String jsonPart = chunk.substring(6).trim();

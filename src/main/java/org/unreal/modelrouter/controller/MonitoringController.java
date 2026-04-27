@@ -37,13 +37,13 @@ public class MonitoringController {
     private final MetricsDegradationStrategy degradationStrategy;
     private final MetricsCircuitBreaker circuitBreaker;
 
-    public MonitoringController(MonitoringProperties monitoringProperties,
-                              DynamicMonitoringConfigUpdater configUpdater,
-                              MetricsErrorHandler errorHandler,
-                              MonitoringHealthChecker healthChecker,
-                              MetricsCacheAndRetry cacheAndRetry,
-                              MetricsDegradationStrategy degradationStrategy,
-                              MetricsCircuitBreaker circuitBreaker) {
+    public MonitoringController(final MonitoringProperties monitoringProperties,
+                              final DynamicMonitoringConfigUpdater configUpdater,
+                              final MetricsErrorHandler errorHandler,
+                              final MonitoringHealthChecker healthChecker,
+                              final MetricsCacheAndRetry cacheAndRetry,
+                              final MetricsDegradationStrategy degradationStrategy,
+                              final MetricsCircuitBreaker circuitBreaker) {
         this.monitoringProperties = monitoringProperties;
         this.configUpdater = configUpdater;
         this.errorHandler = errorHandler;

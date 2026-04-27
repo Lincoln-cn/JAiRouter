@@ -36,10 +36,10 @@ public class AdapterMetricsRecorder {
      * @param modelName 模型名称
      */
     public void recordRequestStart(
-            String adapterType,
-            String instanceId,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName) {
+            final String adapterType,
+            final String instanceId,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName) {
         
         if (log.isDebugEnabled()) {
             log.debug("记录请求开始：adapter={}, instance={}, service={}, model={}",
@@ -62,13 +62,13 @@ public class AdapterMetricsRecorder {
      * @param serviceType 服务类型
      */
     public void recordRequestComplete(
-            String adapterType,
-            String instanceId,
-            long durationMs,
-            boolean success,
-            String errorCode,
-            String modelName,
-            ModelServiceRegistry.ServiceType serviceType) {
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final boolean success,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType) {
         
         // 记录后端调用指标
         if (metricsCollector != null) {
@@ -97,12 +97,12 @@ public class AdapterMetricsRecorder {
      * @param serviceType 服务类型
      */
     public void recordError(
-            String adapterType,
-            String instanceId,
-            String errorCode,
-            Throwable error,
-            long durationMs,
-            ModelServiceRegistry.ServiceType serviceType) {
+            final String adapterType,
+            final String instanceId,
+            final String errorCode,
+            final Throwable error,
+            final long durationMs,
+            final ModelServiceRegistry.ServiceType serviceType) {
         
         // 记录错误指标
         if (metricsCollector != null) {
@@ -136,10 +136,10 @@ public class AdapterMetricsRecorder {
      * @param error 导致重试的错误
      */
     public void recordRetry(
-            String adapterType,
-            String instanceId,
-            int retryCount,
-            Throwable error) {
+            final String adapterType,
+            final String instanceId,
+            final int retryCount,
+            final Throwable error) {
         
         if (log.isDebugEnabled()) {
             log.debug("记录重试：adapter={}, instance={}, retryCount={}, error={}",
@@ -161,9 +161,9 @@ public class AdapterMetricsRecorder {
      * @param responseSize 响应大小（字节）
      */
     public void recordRequestSize(
-            ModelServiceRegistry.ServiceType serviceType,
-            long requestSize,
-            long responseSize) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final long requestSize,
+            final long responseSize) {
         
         if (metricsCollector != null) {
             metricsCollector.recordRequestSize(
@@ -188,10 +188,10 @@ public class AdapterMetricsRecorder {
      * @param status 状态码
      */
     public void recordResponseTime(
-            ModelServiceRegistry.ServiceType serviceType,
-            String method,
-            long responseTime,
-            String status) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String method,
+            final long responseTime,
+            final String status) {
         
         if (metricsCollector != null) {
             metricsCollector.recordRequest(

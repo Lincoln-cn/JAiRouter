@@ -18,7 +18,7 @@ public interface ServiceCapability {
      * @param httpRequest   HTTP请求对象
      * @return 响应结果
      */
-    default Mono<ResponseEntity<?>> chat(ChatDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+    default Mono<ResponseEntity<?>> chat(final ChatDTO.Request request,final String authorization,final ServerHttpRequest httpRequest){
         throw new UnsupportedOperationException("does not support chat service");
     }
 
@@ -30,7 +30,7 @@ public interface ServiceCapability {
      * @param httpRequest   HTTP请求对象
      * @return 响应结果
      */
-    default Mono<ResponseEntity<?>> embedding(EmbeddingDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+    default Mono<ResponseEntity<?>> embedding(final EmbeddingDTO.Request request,final String authorization,final ServerHttpRequest httpRequest){
         throw new UnsupportedOperationException("does not support embedding service");
     }
 
@@ -42,7 +42,7 @@ public interface ServiceCapability {
      * @param httpRequest   HTTP请求对象
      * @return 响应结果
      */
-    default Mono<ResponseEntity<?>> rerank(RerankDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+    default Mono<ResponseEntity<?>> rerank(final RerankDTO.Request request,final String authorization,final ServerHttpRequest httpRequest){
         throw new UnsupportedOperationException("does not support rerank service");
     }
 
@@ -54,7 +54,7 @@ public interface ServiceCapability {
      * @param httpRequest   HTTP请求对象
      * @return 响应结果
      */
-    default Mono<ResponseEntity<?>> tts(TtsDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+    default Mono<ResponseEntity<?>> tts(final TtsDTO.Request request,final String authorization,final ServerHttpRequest httpRequest){
         throw new UnsupportedOperationException("does not support tts service");
     }
 
@@ -66,7 +66,7 @@ public interface ServiceCapability {
      * @param httpRequest   HTTP请求对象
      * @return 响应结果
      */
-    default Mono<ResponseEntity<?>> stt(SttDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+    default Mono<ResponseEntity<?>> stt(final SttDTO.Request request,final String authorization,final ServerHttpRequest httpRequest){
         throw new UnsupportedOperationException("does not support stt service");
     }
 
@@ -78,7 +78,7 @@ public interface ServiceCapability {
      * @param httpRequest   HTTP请求对象
      * @return 响应结果
      */
-    default Mono<ResponseEntity<?>> imageGenerate(ImageGenerateDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+    default Mono<ResponseEntity<?>> imageGenerate(final ImageGenerateDTO.Request request,final String authorization,final ServerHttpRequest httpRequest){
         throw new UnsupportedOperationException("does not support image generate service");
     }
 
@@ -89,7 +89,7 @@ public interface ServiceCapability {
      * @param httpRequest HTTP请求对象
      * @return 响应结果
      */
-    default Mono<? extends ResponseEntity<?>> imageEdit(ImageEditDTO.Request request, String authorization, ServerHttpRequest httpRequest){
+    default Mono<? extends ResponseEntity<?>> imageEdit(final ImageEditDTO.Request request,final String authorization,final ServerHttpRequest httpRequest){
         throw new UnsupportedOperationException("does not support image edit service");
     }
 }

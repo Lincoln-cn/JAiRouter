@@ -66,7 +66,7 @@ public class RetryPolicy {
      * @param maxDelay 最大延迟
      * @param multiplier 退避乘数
      */
-    public RetryPolicy(int maxRetries, Duration initialDelay, Duration maxDelay, double multiplier) {
+    public RetryPolicy(final int maxRetries,final Duration initialDelay,final Duration maxDelay,final double multiplier) {
         this.maxRetries = maxRetries;
         this.initialDelay = initialDelay;
         this.maxDelay = maxDelay;
@@ -79,7 +79,7 @@ public class RetryPolicy {
      * @param retryCount 当前重试次数（从 0 开始）
      * @return 下次重试延迟
      */
-    public Duration getNextDelay(int retryCount) {
+    public Duration getNextDelay(final int retryCount) {
         long delayMs = (long) (initialDelay.toMillis() * Math.pow(multiplier, retryCount));
         delayMs = Math.min(delayMs, maxDelay.toMillis());
         return Duration.ofMillis(delayMs);
@@ -92,7 +92,7 @@ public class RetryPolicy {
      * @param error 异常
      * @return 是否可以重试
      */
-    public boolean canRetry(int retryCount, Throwable error) {
+    public boolean canRetry(final int retryCount,final Throwable error) {
         if (retryCount >= maxRetries) {
             logger.debug("达到最大重试次数：{}/{}", retryCount, maxRetries);
             return false;
@@ -110,7 +110,7 @@ public class RetryPolicy {
      * @param <T> 结果类型
      * @return 带重试的 Mono
      */
-    public <T> Mono<T> withRetry(Supplier<Mono<T>> operation, Predicate<Throwable> retryCondition) {
+    public <T> Mono<T> withRetry(final Supplier<Mono<T>> operation,final Predicate<Throwable> retryCondition) {
         Retry retry = Retry.backoff(maxRetries, initialDelay)
                 .maxBackoff(maxDelay)
                 .filter(retryCondition);
@@ -130,7 +130,7 @@ public class RetryPolicy {
      * @param <T> 结果类型
      * @return 带重试的 Mono
      */
-    public <T> Mono<T> withRetry(Supplier<Mono<T>> operation) {
+    public <T> Mono<T> withRetry(final Supplier<Mono<T>> operation) {
         return withRetry(operation, this::isRetryable);
     }
 
@@ -140,7 +140,7 @@ public class RetryPolicy {
      * @param error 异常
      * @return 是否可重试
      */
-    public boolean isRetryable(Throwable error) {
+    public boolean isRetryable(final Throwable error) {
         // 不可重试的错误类型
         if (error instanceof org.springframework.web.client.HttpClientErrorException) {
             logger.debug("客户端错误，不重试：{}", error.getMessage());

@@ -68,7 +68,7 @@ public class HealthStatusSseController {
     /**
      * 创建健康状态更新事件
      */
-    private ServerSentEvent<String> createHealthUpdateEvent(long sequence, String eventType) {
+    private ServerSentEvent<String> createHealthUpdateEvent(final long sequence,final String eventType) {
         Map<String, Object> data = generateHealthStatusData();
         try {
             return ServerSentEvent.<String>builder()
@@ -132,7 +132,7 @@ public class HealthStatusSseController {
     /**
      * 根据 serviceConfigId 获取服务类型
      */
-    private String getServiceTypeFromConfigId(Long serviceConfigId) {
+    private String getServiceTypeFromConfigId(final Long serviceConfigId) {
         if (serviceConfigRepository == null || serviceConfigId == null) {
             return null;
         }

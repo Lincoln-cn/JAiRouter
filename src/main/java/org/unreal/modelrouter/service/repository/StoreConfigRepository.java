@@ -27,7 +27,7 @@ public class StoreConfigRepository {
 
     private final StoreManager storeManager;
 
-    public StoreConfigRepository(StoreManager storeManager) {
+    public StoreConfigRepository(final StoreManager storeManager) {
         this.storeManager = storeManager;
     }
 
@@ -59,7 +59,7 @@ public class StoreConfigRepository {
      * @param serviceType 服务类型
      * @return 服务配置，不存在返回 Optional.empty()
      */
-    public Optional<ServiceConfiguration> findById(String serviceType) {
+    public Optional<ServiceConfiguration> findById(final String serviceType) {
         try {
             Map<String, Object> config = storeManager.getConfig(CONFIG_KEY);
             if (config == null || !config.containsKey("services")) {
@@ -85,7 +85,7 @@ public class StoreConfigRepository {
      * @param serviceType 服务类型
      * @param config 服务配置
      */
-    public void save(String serviceType, ServiceConfiguration config) {
+    public void save(final String serviceType,final ServiceConfiguration config) {
         logger.info("保存服务配置：serviceType={}", serviceType);
 
         try {
@@ -113,7 +113,7 @@ public class StoreConfigRepository {
      *
      * @param serviceType 服务类型
      */
-    public void delete(String serviceType) {
+    public void delete(final String serviceType) {
         logger.info("删除服务配置：serviceType={}", serviceType);
 
         try {
@@ -146,7 +146,7 @@ public class StoreConfigRepository {
      * @param serviceType 服务类型
      * @return 是否存在
      */
-    public boolean exists(String serviceType) {
+    public boolean exists(final String serviceType) {
         return findById(serviceType).isPresent();
     }
 
@@ -164,7 +164,7 @@ public class StoreConfigRepository {
      *
      * @param config 配置 Map
      */
-    public void saveConfigMap(Map<String, Object> config) {
+    public void saveConfigMap(final Map<String, Object> config) {
         storeManager.saveConfig(CONFIG_KEY, config);
     }
 
@@ -188,8 +188,8 @@ public class StoreConfigRepository {
     /**
      * 添加版本元数据
      */
-    private void addMetadata(Map<String, Object> config, String operation,
-                             String operationDetail, String serviceType) {
+    private void addMetadata(final Map<String, Object> config,final String operation,
+                             final String operationDetail,final String serviceType) {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("operation", operation);
         metadata.put("operationDetail", operationDetail);

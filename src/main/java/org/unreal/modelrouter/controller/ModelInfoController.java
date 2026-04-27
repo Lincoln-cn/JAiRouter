@@ -35,8 +35,8 @@ public class ModelInfoController {
     private final ModelServiceRegistry registry;
     private final AdapterRegistry adapterRegistry;
 
-    public ModelInfoController(ModelServiceRegistry registry,
-                               AdapterRegistry adapterRegistry) {
+    public ModelInfoController(final ModelServiceRegistry registry,
+                               final AdapterRegistry adapterRegistry) {
         this.registry = registry;
         this.adapterRegistry = adapterRegistry;
     }

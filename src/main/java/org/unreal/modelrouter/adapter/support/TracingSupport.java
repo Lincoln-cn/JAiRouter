@@ -18,7 +18,7 @@ public class TracingSupport {
     private final MetricsCollector metricsCollector;
     private final String adapterType;
 
-    public TracingSupport(MetricsCollector metricsCollector, String adapterType) {
+    public TracingSupport(final MetricsCollector metricsCollector,final String adapterType) {
         this.metricsCollector = metricsCollector;
         this.adapterType = adapterType;
     }
@@ -26,8 +26,8 @@ public class TracingSupport {
     /**
      * 记录适配器调用开始
      */
-    public void logAdapterCallStart(ModelRouterProperties.ModelInstance instance, 
-                                     String serviceType, String modelName) {
+    public void logAdapterCallStart(final ModelRouterProperties.ModelInstance instance, 
+                                     final String serviceType,final String modelName) {
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
@@ -47,9 +47,9 @@ public class TracingSupport {
     /**
      * 记录适配器调用完成
      */
-    public void logAdapterCallComplete(ModelRouterProperties.ModelInstance instance, 
-                                        String serviceType, String modelName, 
-                                        long duration, boolean success) {
+    public void logAdapterCallComplete(final ModelRouterProperties.ModelInstance instance, 
+                                        final String serviceType,final String modelName, 
+                                        final long duration,final boolean success) {
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
@@ -64,8 +64,8 @@ public class TracingSupport {
     /**
      * 记录适配器重试
      */
-    public void logAdapterRetry(ModelRouterProperties.ModelInstance instance, 
-                                 int retryCount, int maxRetries, Throwable error) {
+    public void logAdapterRetry(final ModelRouterProperties.ModelInstance instance, 
+                                 final int retryCount,final int maxRetries,final Throwable error) {
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
@@ -84,7 +84,7 @@ public class TracingSupport {
     /**
      * 记录适配器转换错误
      */
-    public void logAdapterTransformError(Throwable error) {
+    public void logAdapterTransformError(final Throwable error) {
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {

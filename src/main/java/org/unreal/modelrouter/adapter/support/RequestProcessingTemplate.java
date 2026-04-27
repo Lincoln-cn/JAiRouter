@@ -27,7 +27,7 @@ public class RequestProcessingTemplate {
     private final ObjectMapper objectMapper;
     private final MetricsSupport metricsSupport;
 
-    public RequestProcessingTemplate(ObjectMapper objectMapper, MetricsSupport metricsSupport) {
+    public RequestProcessingTemplate(final ObjectMapper objectMapper,final MetricsSupport metricsSupport) {
         this.objectMapper = objectMapper;
         this.metricsSupport = metricsSupport;
     }
@@ -36,13 +36,13 @@ public class RequestProcessingTemplate {
      * 处理非流式请求
      */
     public <T> Mono<ResponseEntity<?>> processNonStreamingRequest(
-            T request,
-            String authorization,
-            WebClient client,
-            String path,
-            ModelRouterProperties.ModelInstance selectedInstance,
-            ModelServiceRegistry.ServiceType serviceType,
-            Class<?> responseType) {
+            final T request,
+            final String authorization,
+            final WebClient client,
+            final String path,
+            final ModelRouterProperties.ModelInstance selectedInstance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final Class<?> responseType) {
 
         String instanceName = selectedInstance.getName();
         long requestStartTime = System.currentTimeMillis();
@@ -67,8 +67,8 @@ public class RequestProcessingTemplate {
     }
 
     private Mono<ResponseStatusException> handleClientError(
-            String instanceName, String path,
-            org.springframework.web.reactive.function.client.ClientResponse clientResponse) {
+            final String instanceName,final String path,
+            final org.springframework.web.reactive.function.client.ClientResponse clientResponse) {
 
         int statusCode = clientResponse.statusCode().value();
 
@@ -99,7 +99,7 @@ public class RequestProcessingTemplate {
         };
     }
 
-    private Mono<ResponseEntity<?>> processSuccessfulResponse(ResponseEntity<String> responseEntity) {
+    private Mono<ResponseEntity<?>> processSuccessfulResponse(final ResponseEntity<String> responseEntity) {
         if (!responseEntity.getStatusCode().is2xxSuccessful()) {
             String bodyStr = responseEntity.getBody() != null ? responseEntity.getBody() : "";
             return Mono.error(new ResponseStatusException(

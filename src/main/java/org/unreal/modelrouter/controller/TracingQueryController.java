@@ -40,7 +40,7 @@ public class TracingQueryController {
     private final TraceQueryService traceQueryService;
     
     // 手动添加构造函数
-    public TracingQueryController(TraceQueryService traceQueryService) {
+    public TracingQueryController(final TraceQueryService traceQueryService) {
         this.traceQueryService = traceQueryService;
     }
     
@@ -396,7 +396,7 @@ public class TracingQueryController {
 
     // Helper methods for performance analysis
 
-    private long parseTimeString(String timeStr) {
+    private long parseTimeString(final String timeStr) {
         try {
             return Instant.parse(timeStr).toEpochMilli();
         } catch (Exception e) {

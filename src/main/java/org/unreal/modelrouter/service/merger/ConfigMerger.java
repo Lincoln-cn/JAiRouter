@@ -36,7 +36,7 @@ public class ConfigMerger {
      * @param updates 更新配置
      * @return 合并后的配置
      */
-    public ServiceConfiguration merge(ServiceConfiguration existing, ServiceConfiguration updates) {
+    public ServiceConfiguration merge(final ServiceConfiguration existing,final ServiceConfiguration updates) {
         if (existing == null) {
             logger.debug("现有配置为空，使用更新配置");
             return updates;
@@ -78,8 +78,8 @@ public class ConfigMerger {
      * @return 合并后的实例列表
      */
     public List<ModelInstanceConfiguration> mergeInstances(
-            List<ModelInstanceConfiguration> existing,
-            List<ModelInstanceConfiguration> updates) {
+            final List<ModelInstanceConfiguration> existing,
+            final List<ModelInstanceConfiguration> updates) {
 
         if (updates == null || updates.isEmpty()) {
             logger.debug("更新实例为空，保留现有实例：count={}",
@@ -128,8 +128,8 @@ public class ConfigMerger {
      * 合并单个实例配置
      */
     private ModelInstanceConfiguration mergeInstance(
-            ModelInstanceConfiguration existing,
-            ModelInstanceConfiguration update) {
+            final ModelInstanceConfiguration existing,
+            final ModelInstanceConfiguration update) {
 
         return new ModelInstanceConfiguration(
                 update.name() != null ? update.name() : existing.name(),
@@ -150,8 +150,8 @@ public class ConfigMerger {
      * 合并负载均衡配置
      */
     private LoadBalanceConfiguration mergeLoadBalance(
-            LoadBalanceConfiguration existing,
-            LoadBalanceConfiguration updates) {
+            final LoadBalanceConfiguration existing,
+            final LoadBalanceConfiguration updates) {
 
         if (updates == null) {
             return existing;
@@ -171,8 +171,8 @@ public class ConfigMerger {
      * 合并限流配置
      */
     private RateLimitConfiguration mergeRateLimit(
-            RateLimitConfiguration existing,
-            RateLimitConfiguration updates) {
+            final RateLimitConfiguration existing,
+            final RateLimitConfiguration updates) {
 
         if (updates == null) {
             return existing;
@@ -196,8 +196,8 @@ public class ConfigMerger {
      * 合并熔断器配置
      */
     private CircuitBreakerConfiguration mergeCircuitBreaker(
-            CircuitBreakerConfiguration existing,
-            CircuitBreakerConfiguration updates) {
+            final CircuitBreakerConfiguration existing,
+            final CircuitBreakerConfiguration updates) {
 
         if (updates == null) {
             return existing;
@@ -219,8 +219,8 @@ public class ConfigMerger {
      * 合并降级配置
      */
     private FallbackConfiguration mergeFallback(
-            FallbackConfiguration existing,
-            FallbackConfiguration updates) {
+            final FallbackConfiguration existing,
+            final FallbackConfiguration updates) {
 
         if (updates == null) {
             return existing;
@@ -247,7 +247,7 @@ public class ConfigMerger {
      * @return 合并后的 Map
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> mergeMaps(Map<String, Object> base, Map<String, Object> updates) {
+    public Map<String, Object> mergeMaps(final Map<String, Object> base,final Map<String, Object> updates) {
         if (base == null) {
             return updates != null ? new HashMap<>(updates) : new HashMap<>();
         }

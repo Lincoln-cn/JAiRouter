@@ -24,24 +24,24 @@ public class RouterResponse<T> {
         this.timestamp = LocalDateTime.now();
     }
 
-    public RouterResponse(boolean success, String message, T data) {
+    public RouterResponse(final boolean success,final String message,final T data) {
         this();
         this.success = success;
         this.message = message;
         this.data = data;
     }
 
-    public RouterResponse(boolean success, String message, T data, String errorCode) {
+    public RouterResponse(final boolean success,final String message,final T data,final String errorCode) {
         this(success, message, data);
         this.errorCode = errorCode;
     }
 
     // 成功响应
-    public static <T> RouterResponse<T> success(T data, String message) {
+    public static <T> RouterResponse<T> success(final T data,final String message) {
         return new RouterResponse<>(true, message, data);
     }
 
-    public static <T> RouterResponse<T> success(T data) {
+    public static <T> RouterResponse<T> success(final T data) {
         return success(data, "操作成功");
     }
 
@@ -50,16 +50,16 @@ public class RouterResponse<T> {
         return success(null, "操作成功");
     }
 
-    public static <T> RouterResponse<T> success(String message) {
+    public static <T> RouterResponse<T> success(final String message) {
         return success(null, message);
     }
 
     // 错误响应
-    public static <T> RouterResponse<T> error(String message, String errorCode) {
+    public static <T> RouterResponse<T> error(final String message,final String errorCode) {
         return new RouterResponse<>(false, message, null, errorCode);
     }
 
-    public static <T> RouterResponse<T> error(String message) {
+    public static <T> RouterResponse<T> error(final String message) {
         return error(message, null);
     }
 
@@ -68,7 +68,7 @@ public class RouterResponse<T> {
         return success;
     }
 
-    public void setSuccess(boolean success) {
+    public void setSuccess(final boolean success) {
         this.success = success;
     }
 
@@ -76,7 +76,7 @@ public class RouterResponse<T> {
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -84,7 +84,7 @@ public class RouterResponse<T> {
         return data;
     }
 
-    public void setData(T data) {
+    public void setData(final T data) {
         this.data = data;
     }
 
@@ -92,7 +92,7 @@ public class RouterResponse<T> {
         return errorCode;
     }
 
-    public void setErrorCode(String errorCode) {
+    public void setErrorCode(final String errorCode) {
         this.errorCode = errorCode;
     }
 
@@ -100,7 +100,7 @@ public class RouterResponse<T> {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(final LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 }

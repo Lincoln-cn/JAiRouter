@@ -17,7 +17,7 @@ public class RetrySupport {
     private final MetricsCollector metricsCollector;
     private final String adapterType;
 
-    public RetrySupport(MetricsCollector metricsCollector, String adapterType) {
+    public RetrySupport(final MetricsCollector metricsCollector,final String adapterType) {
         this.metricsCollector = metricsCollector;
         this.adapterType = adapterType;
     }
@@ -25,7 +25,7 @@ public class RetrySupport {
     /**
      * 获取最大重试次数
      */
-    public int getMaxRetries(String serviceType) {
+    public int getMaxRetries(final String serviceType) {
         if (serviceType == null) {
             return 1;
         }
@@ -58,7 +58,7 @@ public class RetrySupport {
     /**
      * 判断是否应该重试
      */
-    public boolean shouldRetry(Throwable throwable, int currentRetryCount, int maxRetries) {
+    public boolean shouldRetry(final Throwable throwable,final int currentRetryCount,final int maxRetries) {
         if (currentRetryCount >= maxRetries) {
             log.debug("达到最大重试次数，不再重试：currentRetryCount={}, maxRetries={}", currentRetryCount, maxRetries);
             return false;
@@ -115,7 +115,7 @@ public class RetrySupport {
     /**
      * 计算重试延迟（指数退避）
      */
-    public long calculateRetryDelay(int retryCount) {
+    public long calculateRetryDelay(final int retryCount) {
         long baseDelay = 1000;
         long delay = baseDelay * (1L << retryCount);
         return Math.min(delay, 10000);
@@ -124,7 +124,7 @@ public class RetrySupport {
     /**
      * 记录重试指标
      */
-    public void recordRetryMetrics(String instanceName) {
+    public void recordRetryMetrics(final String instanceName) {
         if (metricsCollector != null) {
             metricsCollector.recordBackendCall(adapterType, instanceName, 0, false);
         }

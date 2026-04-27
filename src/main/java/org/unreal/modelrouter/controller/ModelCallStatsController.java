@@ -42,7 +42,7 @@ public class ModelCallStatsController {
 
     private final ModelCallAnalyzer modelCallAnalyzer;
 
-    public ModelCallStatsController(ModelCallAnalyzer modelCallAnalyzer) {
+    public ModelCallStatsController(final ModelCallAnalyzer modelCallAnalyzer) {
         this.modelCallAnalyzer = modelCallAnalyzer;
     }
 

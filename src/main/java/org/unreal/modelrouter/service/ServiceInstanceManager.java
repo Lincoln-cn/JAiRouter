@@ -38,12 +38,12 @@ public class ServiceInstanceManager {
     private final ModelServiceRegistry modelServiceRegistry;
 
     public ServiceInstanceManager(
-            ServiceInstanceRepository serviceInstanceRepository,
-            InstanceRateLimitRepository rateLimitRepository,
-            InstanceCircuitBreakerRepository circuitBreakerRepository,
-            ServiceConfigRepository serviceConfigRepository,
+            final ServiceInstanceRepository serviceInstanceRepository,
+            final InstanceRateLimitRepository rateLimitRepository,
+            final InstanceCircuitBreakerRepository circuitBreakerRepository,
+            final ServiceConfigRepository serviceConfigRepository,
             @Lazy ConfigurationService configurationService,
-            ModelServiceRegistry modelServiceRegistry) {
+            final ModelServiceRegistry modelServiceRegistry) {
         this.serviceInstanceRepository = serviceInstanceRepository;
         this.rateLimitRepository = rateLimitRepository;
         this.circuitBreakerRepository = circuitBreakerRepository;
@@ -55,7 +55,7 @@ public class ServiceInstanceManager {
     /**
      * 获取服务下的所有实例
      */
-    public List<ServiceInstanceDTO> getInstancesByServiceConfigId(Long serviceConfigId) {
+    public List<ServiceInstanceDTO> getInstancesByServiceConfigId(final Long serviceConfigId) {
         return serviceInstanceRepository.findByServiceConfigId(serviceConfigId)
                 .stream()
                 .map(this::convertToDTO)
@@ -75,7 +75,7 @@ public class ServiceInstanceManager {
     /**
      * 获取单个实例
      */
-    public Optional<ServiceInstanceDTO> getInstance(Long id) {
+    public Optional<ServiceInstanceDTO> getInstance(final Long id) {
         return serviceInstanceRepository.findById(id)
                 .map(this::convertToDTO);
     }
@@ -84,7 +84,7 @@ public class ServiceInstanceManager {
      * 创建实例
      */
     @Transactional
-    public ServiceInstanceDTO createInstance(Long serviceConfigId, CreateServiceInstanceRequest request) {
+    public ServiceInstanceDTO createInstance(final Long serviceConfigId,final CreateServiceInstanceRequest request) {
         ServiceInstanceEntity entity = ServiceInstanceEntity.builder()
                 .serviceConfigId(serviceConfigId)
                 .instanceName(request.getName())
@@ -110,7 +110,7 @@ public class ServiceInstanceManager {
      * 更新实例
      */
     @Transactional
-    public ServiceInstanceDTO updateInstance(Long id, CreateServiceInstanceRequest request) {
+    public ServiceInstanceDTO updateInstance(final Long id,final CreateServiceInstanceRequest request) {
         ServiceInstanceEntity entity = serviceInstanceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Instance not found: " + id));
 
@@ -151,7 +151,7 @@ public class ServiceInstanceManager {
      * 删除实例
      */
     @Transactional
-    public void deleteInstance(Long id) {
+    public void deleteInstance(final Long id) {
         // 获取实例名称用于版本描述
         ServiceInstanceEntity entity = serviceInstanceRepository.findById(id)
                 .orElse(null);
@@ -171,7 +171,7 @@ public class ServiceInstanceManager {
      * 更新健康状态
      */
     @Transactional
-    public void updateHealthStatus(Long id, String healthStatus, String errorMessage) {
+    public void updateHealthStatus(final Long id,final String healthStatus,final String errorMessage) {
         serviceInstanceRepository.findById(id).ifPresent(entity -> {
             entity.setHealthStatus(healthStatus);
             entity.setErrorMessage(errorMessage);
@@ -184,7 +184,7 @@ public class ServiceInstanceManager {
     /**
      * 获取实例的限流器配置
      */
-    public Optional<InstanceRateLimitDTO> getRateLimitConfig(Long instanceId) {
+    public Optional<InstanceRateLimitDTO> getRateLimitConfig(final Long instanceId) {
         return rateLimitRepository.findByInstanceId(instanceId)
                 .map(this::convertRateLimitToDTO);
     }
@@ -193,7 +193,7 @@ public class ServiceInstanceManager {
      * 保存或更新限流器配置
      */
     @Transactional
-    public InstanceRateLimitDTO saveRateLimitConfig(Long instanceId, InstanceRateLimitDTO dto) {
+    public InstanceRateLimitDTO saveRateLimitConfig(final Long instanceId,final InstanceRateLimitDTO dto) {
         // 确保实例存在
         if (!serviceInstanceRepository.existsById(instanceId)) {
             throw new RuntimeException("Instance not found: " + instanceId);
@@ -243,7 +243,7 @@ public class ServiceInstanceManager {
      * 删除限流器配置
      */
     @Transactional
-    public void deleteRateLimitConfig(Long instanceId) {
+    public void deleteRateLimitConfig(final Long instanceId) {
         rateLimitRepository.deleteByInstanceId(instanceId);
         log.info("Deleted rate limit config for instance: {}", instanceId);
     }
@@ -253,7 +253,7 @@ public class ServiceInstanceManager {
     /**
      * 获取实例的熔断器配置
      */
-    public Optional<InstanceCircuitBreakerDTO> getCircuitBreakerConfig(Long instanceId) {
+    public Optional<InstanceCircuitBreakerDTO> getCircuitBreakerConfig(final Long instanceId) {
         return circuitBreakerRepository.findByInstanceId(instanceId)
                 .map(this::convertCircuitBreakerToDTO);
     }
@@ -262,7 +262,7 @@ public class ServiceInstanceManager {
      * 保存或更新熔断器配置
      */
     @Transactional
-    public InstanceCircuitBreakerDTO saveCircuitBreakerConfig(Long instanceId, InstanceCircuitBreakerDTO dto) {
+    public InstanceCircuitBreakerDTO saveCircuitBreakerConfig(final Long instanceId,final InstanceCircuitBreakerDTO dto) {
         // 确保实例存在
         if (!serviceInstanceRepository.existsById(instanceId)) {
             throw new RuntimeException("Instance not found: " + instanceId);
@@ -301,14 +301,14 @@ public class ServiceInstanceManager {
      * 删除熔断器配置
      */
     @Transactional
-    public void deleteCircuitBreakerConfig(Long instanceId) {
+    public void deleteCircuitBreakerConfig(final Long instanceId) {
         circuitBreakerRepository.deleteByInstanceId(instanceId);
         log.info("Deleted circuit breaker config for instance: {}", instanceId);
     }
 
     // ==================== 转换方法 ====================
 
-    private ServiceInstanceDTO convertToDTO(ServiceInstanceEntity entity) {
+    private ServiceInstanceDTO convertToDTO(final ServiceInstanceEntity entity) {
         ServiceInstanceDTO dto = ServiceInstanceDTO.builder()
                 .id(entity.getId())
                 .serviceConfigId(entity.getServiceConfigId())
@@ -336,7 +336,7 @@ public class ServiceInstanceManager {
         return dto;
     }
 
-    private InstanceRateLimitDTO convertRateLimitToDTO(InstanceRateLimitEntity entity) {
+    private InstanceRateLimitDTO convertRateLimitToDTO(final InstanceRateLimitEntity entity) {
         return InstanceRateLimitDTO.builder()
                 .id(entity.getId())
                 .instanceId(entity.getInstanceId())
@@ -350,7 +350,7 @@ public class ServiceInstanceManager {
                 .build();
     }
 
-    private InstanceCircuitBreakerDTO convertCircuitBreakerToDTO(InstanceCircuitBreakerEntity entity) {
+    private InstanceCircuitBreakerDTO convertCircuitBreakerToDTO(final InstanceCircuitBreakerEntity entity) {
         return InstanceCircuitBreakerDTO.builder()
                 .id(entity.getId())
                 .instanceId(entity.getInstanceId())
@@ -367,7 +367,7 @@ public class ServiceInstanceManager {
      * v1.5.4: 添加元数据字段用于版本列表显示
      * 从数据库构建完整配置（包含实例数据），然后保存到 config_data 表
      */
-    private void saveVersion(String description) {
+    private void saveVersion(final String description) {
         try {
             // 从数据库构建完整配置
             Map<String, Object> fullConfig = buildFullConfigFromDatabase();

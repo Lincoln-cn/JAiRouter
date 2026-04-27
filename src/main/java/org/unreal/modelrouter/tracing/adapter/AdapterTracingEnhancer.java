@@ -35,7 +35,7 @@ public class AdapterTracingEnhancer {
     private static final String MODEL_TYPE = "model.type";
     private static final String SERVICE_TYPE = "service.type";
     
-    public AdapterTracingEnhancer(StructuredLogger structuredLogger) {
+    public AdapterTracingEnhancer(final StructuredLogger structuredLogger) {
         this.structuredLogger = structuredLogger;
     }
     
@@ -48,9 +48,9 @@ public class AdapterTracingEnhancer {
      * @param serviceType 服务类型
      * @param modelName 模型名称
      */
-    public void enhanceAdapterSpan(Span span, String adapterType, 
-                                  ModelRouterProperties.ModelInstance instance,
-                                  String serviceType, String modelName) {
+    public void enhanceAdapterSpan(final Span span,final String adapterType, 
+                                  final ModelRouterProperties.ModelInstance instance,
+                                  final String serviceType,final String modelName) {
         if (span == null || !span.isRecording()) {
             return;
         }
@@ -87,8 +87,8 @@ public class AdapterTracingEnhancer {
      * @param modelName 模型名称
      * @param context 追踪上下文
      */
-    public void logAdapterCallStart(String adapterType, ModelRouterProperties.ModelInstance instance,
-                                   String serviceType, String modelName, TracingContext context) {
+    public void logAdapterCallStart(final String adapterType,final ModelRouterProperties.ModelInstance instance,
+                                   final String serviceType,final String modelName,final TracingContext context) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("adapter_type", adapterType);
         eventData.put("service_type", serviceType);
@@ -115,9 +115,9 @@ public class AdapterTracingEnhancer {
      * @param success 是否成功
      * @param context 追踪上下文
      */
-    public void logAdapterCallComplete(String adapterType, ModelRouterProperties.ModelInstance instance,
-                                      String serviceType, String modelName, long duration, 
-                                      boolean success, TracingContext context) {
+    public void logAdapterCallComplete(final String adapterType,final ModelRouterProperties.ModelInstance instance,
+                                      final String serviceType,final String modelName,final long duration, 
+                                      final boolean success,final TracingContext context) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("adapter_type", adapterType);
         eventData.put("service_type", serviceType);
@@ -159,8 +159,8 @@ public class AdapterTracingEnhancer {
      * @param lastError 上次错误
      * @param context 追踪上下文
      */
-    public void logAdapterRetry(String adapterType, ModelRouterProperties.ModelInstance instance,
-                               int retryCount, int maxRetries, Throwable lastError, TracingContext context) {
+    public void logAdapterRetry(final String adapterType,final ModelRouterProperties.ModelInstance instance,
+                               final int retryCount,final int maxRetries,final Throwable lastError,final TracingContext context) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("adapter_type", adapterType);
         eventData.put("retry_count", retryCount);
@@ -183,7 +183,7 @@ public class AdapterTracingEnhancer {
     /**
      * 根据适配器类型设置特定属性
      */
-    private void enhanceByAdapterType(Span span, String adapterType, ModelRouterProperties.ModelInstance instance) {
+    private void enhanceByAdapterType(final Span span,final String adapterType,final ModelRouterProperties.ModelInstance instance) {
         switch (adapterType.toLowerCase()) {
             case "openai":
                 enhanceOpenAIAdapter(span, instance);
@@ -212,7 +212,7 @@ public class AdapterTracingEnhancer {
     /**
      * 增强OpenAI适配器
      */
-    private void enhanceOpenAIAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
+    private void enhanceOpenAIAdapter(final Span span,final ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
         span.setAttribute(ADAPTER_CAPABILITIES, "chat,embedding,tts,stt,image");
         span.setAttribute("api.provider", "openai");
@@ -222,7 +222,7 @@ public class AdapterTracingEnhancer {
     /**
      * 增强Ollama适配器
      */
-    private void enhanceOllamaAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
+    private void enhanceOllamaAdapter(final Span span,final ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
         span.setAttribute(ADAPTER_CAPABILITIES, ServiceTypeConstants.CHAT + "," + ServiceTypeConstants.EMBEDDING);
         span.setAttribute("api.provider", "ollama");
@@ -232,7 +232,7 @@ public class AdapterTracingEnhancer {
     /**
      * 增强VLLM适配器
      */
-    private void enhanceVLLMAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
+    private void enhanceVLLMAdapter(final Span span,final ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
         span.setAttribute(ADAPTER_CAPABILITIES, ServiceTypeConstants.CHAT);
         span.setAttribute("api.provider", "vllm");
@@ -242,7 +242,7 @@ public class AdapterTracingEnhancer {
     /**
      * 增强GPUStack适配器
      */
-    private void enhanceGPUStackAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
+    private void enhanceGPUStackAdapter(final Span span,final ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
         span.setAttribute(ADAPTER_CAPABILITIES, ServiceTypeConstants.CHAT + "," + ServiceTypeConstants.EMBEDDING);
         span.setAttribute("api.provider", "gpustack");
@@ -252,7 +252,7 @@ public class AdapterTracingEnhancer {
     /**
      * 增强Xinference适配器
      */
-    private void enhanceXinferenceAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
+    private void enhanceXinferenceAdapter(final Span span,final ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
         span.setAttribute(ADAPTER_CAPABILITIES, "chat,embedding,rerank");
         span.setAttribute("api.provider", "xinference");
@@ -262,7 +262,7 @@ public class AdapterTracingEnhancer {
     /**
      * 增强LocalAI适配器
      */
-    private void enhanceLocalAIAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
+    private void enhanceLocalAIAdapter(final Span span,final ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "v1");
         span.setAttribute(ADAPTER_CAPABILITIES, "chat,embedding,tts,stt");
         span.setAttribute("api.provider", "localai");
@@ -272,7 +272,7 @@ public class AdapterTracingEnhancer {
     /**
      * 增强通用适配器
      */
-    private void enhanceGenericAdapter(Span span, ModelRouterProperties.ModelInstance instance) {
+    private void enhanceGenericAdapter(final Span span,final ModelRouterProperties.ModelInstance instance) {
         span.setAttribute(ADAPTER_VERSION, "unknown");
         span.setAttribute("api.provider", "generic");
     }
@@ -280,7 +280,7 @@ public class AdapterTracingEnhancer {
     /**
      * 推断模型类型
      */
-    private String inferModelType(String modelName) {
+    private String inferModelType(final String modelName) {
         if (modelName == null) {
             return null;
         }
@@ -327,7 +327,7 @@ public class AdapterTracingEnhancer {
     /**
      * 收集适配器性能指标
      */
-    private Map<String, Object> collectAdapterPerformanceMetrics(String adapterType, long duration, boolean success) {
+    private Map<String, Object> collectAdapterPerformanceMetrics(final String adapterType,final long duration,final boolean success) {
         Map<String, Object> metrics = new HashMap<>();
         
         // 基础性能指标
@@ -364,7 +364,7 @@ public class AdapterTracingEnhancer {
     /**
      * 获取慢调用阈值
      */
-    private long getSlowCallThreshold(String adapterType) {
+    private long getSlowCallThreshold(final String adapterType) {
         // 根据适配器类型返回不同的慢调用阈值
         switch (adapterType.toLowerCase()) {
             case "openai":

@@ -32,7 +32,7 @@ public class ResponseHandler {
 
     private final ObjectMapper objectMapper;
 
-    public ResponseHandler(ObjectMapper objectMapper) {
+    public ResponseHandler(final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -43,7 +43,7 @@ public class ResponseHandler {
      * @param adapterType 适配器类型
      * @return 处理后的响应
      */
-    public Mono<ResponseEntity<?>> handleResponse(ResponseEntity<String> responseEntity, String adapterType) {
+    public Mono<ResponseEntity<?>> handleResponse(final ResponseEntity<String> responseEntity,final String adapterType) {
         if (!responseEntity.getStatusCode().is2xxSuccessful()) {
             String bodyStr = responseEntity.getBody() != null ? responseEntity.getBody() : "";
             return Mono.error(new ResponseStatusException(
@@ -93,9 +93,9 @@ public class ResponseHandler {
      * @return 处理后的响应
      */
     public Mono<ResponseEntity<byte[]>> handleBinaryResponse(
-            ClientResponse clientResponse,
-            String instanceName,
-            String path) {
+            final ClientResponse clientResponse,
+            final String instanceName,
+            final String path) {
 
         // 处理 5xx 服务器错误
         if (clientResponse.statusCode().is5xxServerError()) {
@@ -181,9 +181,9 @@ public class ResponseHandler {
      * @return 错误 Mono
      */
     private Mono<ResponseEntity<byte[]>> handleClientError(
-            ClientResponse clientResponse,
-            String instanceName,
-            String path) {
+            final ClientResponse clientResponse,
+            final String instanceName,
+            final String path) {
 
         int statusCode = clientResponse.statusCode().value();
 
@@ -209,7 +209,7 @@ public class ResponseHandler {
      * @param path 请求路径
      * @return 错误 Mono
      */
-    public Mono<Void> handleServerError(ClientResponse clientResponse, String instanceName, String path) {
+    public Mono<Void> handleServerError(final ClientResponse clientResponse,final String instanceName,final String path) {
         logger.error("下游服务 5xx 错误：instance={}, path={}, status={}",
                 instanceName, path, clientResponse.statusCode());
         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));
@@ -222,7 +222,7 @@ public class ResponseHandler {
      * @param adapterType 适配器类型
      * @return 转换后的数据
      */
-    protected Object transformResponse(Object downstreamData, String adapterType) {
+    protected Object transformResponse(final Object downstreamData,final String adapterType) {
         // 默认不进行转换，子类可以重写此方法
         return downstreamData;
     }
@@ -233,7 +233,7 @@ public class ResponseHandler {
      * @param response 响应实体
      * @return true 如果成功
      */
-    public boolean isSuccess(ResponseEntity<?> response) {
+    public boolean isSuccess(final ResponseEntity<?> response) {
         return response != null && response.getStatusCode().is2xxSuccessful();
     }
 
@@ -243,7 +243,7 @@ public class ResponseHandler {
      * @param response 响应实体
      * @return 错误信息
      */
-    public String extractErrorMessage(ResponseEntity<String> response) {
+    public String extractErrorMessage(final ResponseEntity<String> response) {
         if (response == null || response.getBody() == null) {
             return "未知错误";
         }
@@ -274,7 +274,7 @@ public class ResponseHandler {
      * @param instanceName 实例名称
      * @param path 请求路径
      */
-    public void logResponse(ResponseEntity<?> responseEntity, String instanceName, String path) {
+    public void logResponse(final ResponseEntity<?> responseEntity,final String instanceName,final String path) {
         Object responseBody = responseEntity.getBody();
         String bodyStr = responseBody != null ? responseBody.toString() : "";
 
@@ -293,7 +293,7 @@ public class ResponseHandler {
      * @param contentType 内容类型
      * @return 空响应实体
      */
-    public ResponseEntity<Void> createEmptyResponse(HttpStatusCode statusCode, MediaType contentType) {
+    public ResponseEntity<Void> createEmptyResponse(final HttpStatusCode statusCode,final MediaType contentType) {
         return ResponseEntity.status(statusCode)
                 .contentType(contentType)
                 .build();

@@ -305,9 +305,9 @@ public class ExtendedSecurityAuditController {
 
     // ========== 辅助方法 ==========
 
-    private AuditEventQuery buildQuery(LocalDateTime startTime, LocalDateTime endTime,
-                                        String userId, String resourceId, String ipAddress,
-                                        Boolean success, int page, int size) {
+    private AuditEventQuery buildQuery(final LocalDateTime startTime,final LocalDateTime endTime,
+                                        final String userId,final String resourceId,final String ipAddress,
+                                        final Boolean success,final int page,final int size) {
         AuditEventQuery query = new AuditEventQuery();
         query.setStartTime(startTime);
         query.setEndTime(endTime);
@@ -320,9 +320,9 @@ public class ExtendedSecurityAuditController {
         return query;
     }
 
-    private ExtendedAuditQueryResponse buildResponse(List<AuditEvent> events, int page, int size,
-                                                      long total, LocalDateTime startTime,
-                                                      LocalDateTime endTime, String category) {
+    private ExtendedAuditQueryResponse buildResponse(final List<AuditEvent> events,final int page,final int size,
+                                                      final long total,final LocalDateTime startTime,
+                                                      final LocalDateTime endTime,final String category) {
         int totalPages = (int) Math.ceil((double) total / size);
         return ExtendedAuditQueryResponse.builder()
                 .events(events)

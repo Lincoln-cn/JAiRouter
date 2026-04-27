@@ -110,7 +110,7 @@ public abstract class BaseAdapter implements ServiceCapability {
      * @param throwable 异常
      * @return 错误码分类
      */
-    private String classifyError(Throwable throwable) {
+    private String classifyError(final Throwable throwable) {
         return errorHandler.classifyError(throwable);
     }
 
@@ -162,7 +162,7 @@ public abstract class BaseAdapter implements ServiceCapability {
             final ServerHttpRequest httpRequest,
             final ModelServiceRegistry.ServiceType serviceType,
             final String modelName,
-            Class<R> responseType) {
+            final Class<R> responseType) {
 
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, IpUtils.getClientIp(httpRequest));
         WebClient client = getWebClient(serviceType, modelName, httpRequest);
@@ -858,7 +858,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     /**
      * 创建请求体 - 处理不同类型的请求体格式
      */
-    protected BodyInserter<?, ? super ClientHttpRequest> createRequestBody(Object request) {
+    protected BodyInserter<?, ? super ClientHttpRequest> createRequestBody(final Object request) {
         logger.debug("创建请求体，请求类型: {}", request.getClass().getSimpleName());
 
         // 检查是否已经是转换后的multipart数据
@@ -881,7 +881,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     /**
      * 创建STT请求的multipart表单数据
      */
-    private BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(SttDTO.Request sttRequest) {
+    private BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(final SttDTO.Request sttRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
 
         logger.debug("创建STT multipart请求体: model={}, file={}, language={}",
@@ -924,7 +924,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     /**
      * 创建图像编辑请求的multipart表单数据
      */
-    private BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(ImageEditDTO.Request imageEditRequest) {
+    private BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(final ImageEditDTO.Request imageEditRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
 
         // 这里需要根据ImageEditDTO.Request的实际结构来实现
@@ -1230,11 +1230,11 @@ public abstract class BaseAdapter implements ServiceCapability {
      * @param maxRetries  最大重试次数
      * @param error       错误信息
      */
-    protected void logAdapterRetryEvent(String adapterType,
-                                        ModelRouterProperties.ModelInstance instance,
-                                        int retryCount,
-                                        int maxRetries,
-                                        Throwable error) {
+    protected void logAdapterRetryEvent(final String adapterType,
+                                        final ModelRouterProperties.ModelInstance instance,
+                                        final int retryCount,
+                                        final int maxRetries,
+                                        final Throwable error) {
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
                 org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
@@ -1260,7 +1260,7 @@ public abstract class BaseAdapter implements ServiceCapability {
      * @param adapterType 适配器类型
      * @param error       错误信息
      */
-    protected void logAdapterTransformError(String adapterType, Throwable error) {
+    protected void logAdapterTransformError(final String adapterType,final Throwable error) {
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
                 org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {

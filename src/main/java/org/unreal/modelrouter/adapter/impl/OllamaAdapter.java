@@ -33,21 +33,21 @@ import org.unreal.modelrouter.repository.ModelCallStatsRepository;
  */
 public class OllamaAdapter extends BaseAdapter {
 
-    public OllamaAdapter(ModelServiceRegistry registry,
-                         MetricsCollector metricsCollector,
-                         ObjectMapper objectMapper,
-                         ModelCallStatsRepository statsRepository,
-                         RequestBuilder requestBuilder,
-                         ResponseHandler responseHandler,
-                         InstanceSelector instanceSelector,
-                         ResponseTransformer responseTransformer,
-                         CapabilityChecker capabilityChecker,
-                         AdapterErrorHandler errorHandler,
-                         RetryPolicy retryPolicy,
-                         HttpRequestProcessor httpRequestProcessor,
-                         ResponseMapper responseMapper,
-                         AdapterMetricsRecorder metricsRecorder,
-                         AdapterTracingManager tracingManager) {
+    public OllamaAdapter(final ModelServiceRegistry registry,
+                         final MetricsCollector metricsCollector,
+                         final ObjectMapper objectMapper,
+                         final ModelCallStatsRepository statsRepository,
+                         final RequestBuilder requestBuilder,
+                         final ResponseHandler responseHandler,
+                         final InstanceSelector instanceSelector,
+                         final ResponseTransformer responseTransformer,
+                         final CapabilityChecker capabilityChecker,
+                         final AdapterErrorHandler errorHandler,
+                         final RetryPolicy retryPolicy,
+                         final HttpRequestProcessor httpRequestProcessor,
+                         final ResponseMapper responseMapper,
+                         final AdapterMetricsRecorder metricsRecorder,
+                         final AdapterTracingManager tracingManager) {
         super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager);
     }
 
@@ -65,7 +65,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformRequest(Object request, String adapterType) {
+    protected Object transformRequest(final Object request,final String adapterType) {
         // 记录Ollama适配器特定的追踪信息
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
                 org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
@@ -134,7 +134,7 @@ public class OllamaAdapter extends BaseAdapter {
     /**
      * 推断模型家族
      */
-    private String inferModelFamily(String modelName) {
+    private String inferModelFamily(final String modelName) {
         if (modelName == null) {
             return "unknown";
         }
@@ -159,7 +159,7 @@ public class OllamaAdapter extends BaseAdapter {
      * Ollama的Chat API格式转换
      * 支持最新的Ollama API参数
      */
-    private Object transformChatRequest(ChatDTO.Request request) {
+    private Object transformChatRequest(final ChatDTO.Request request) {
         try {
             ObjectNode ollamaRequest = objectMapper.createObjectNode();
 
@@ -314,7 +314,7 @@ public class OllamaAdapter extends BaseAdapter {
      * Ollama的Embedding API格式转换
      * 支持最新的Ollama API参数
      */
-    private Object transformEmbeddingRequest(EmbeddingDTO.Request request) {
+    private Object transformEmbeddingRequest(final EmbeddingDTO.Request request) {
         try {
             ObjectNode ollamaRequest = objectMapper.createObjectNode();
 
@@ -394,7 +394,7 @@ public class OllamaAdapter extends BaseAdapter {
      * Ollama的Rerank API格式转换
      * 支持最新的Ollama API参数
      */
-    private Object transformRerankRequest(RerankDTO.Request rerankRequest) {
+    private Object transformRerankRequest(final RerankDTO.Request rerankRequest) {
         try {
             ObjectNode ollamaRequest = objectMapper.createObjectNode();
 
@@ -437,7 +437,7 @@ public class OllamaAdapter extends BaseAdapter {
      * Ollama的TTS API格式转换
      * 支持最新的Ollama API参数
      */
-    private Object transformTtsRequest(TtsDTO.Request ttsRequest) {
+    private Object transformTtsRequest(final TtsDTO.Request ttsRequest) {
         try {
             ObjectNode ollamaRequest = objectMapper.createObjectNode();
 
@@ -463,7 +463,7 @@ public class OllamaAdapter extends BaseAdapter {
      * Ollama的STT API格式转换
      * 支持最新的Ollama API参数
      */
-    private Object transformSttRequest(SttDTO.Request sttRequest) {
+    private Object transformSttRequest(final SttDTO.Request sttRequest) {
         try {
             MultipartBodyBuilder builder = new MultipartBodyBuilder();
             builder.part("model", sttRequest.model());
@@ -492,7 +492,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformResponse(Object response, String adapterType) {
+    protected Object transformResponse(final Object response,final String adapterType) {
         if (response instanceof String responseStr) {
             try {
                 JsonNode jsonResponse = objectMapper.readTree(responseStr);
@@ -507,7 +507,7 @@ public class OllamaAdapter extends BaseAdapter {
     /**
      * 将Ollama响应转换为OpenAI格式
      */
-    private String transformResponseJson(JsonNode ollamaResponse) {
+    private String transformResponseJson(final JsonNode ollamaResponse) {
         try {
             ObjectNode standardResponse = objectMapper.createObjectNode();
 
@@ -583,7 +583,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String transformStreamChunk(String chunk) {
+    protected String transformStreamChunk(final String chunk) {
         try {
             // 检查是否是标准的SSE格式
             if (chunk.startsWith("data: ")) {
@@ -649,7 +649,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String getAuthorizationHeader(String authorization, String adapterType) {
+    protected String getAuthorizationHeader(final String authorization,final String adapterType) {
         // Ollama通常不需要认证，或使用简单的API Key
         if (authorization != null && !authorization.startsWith("Bearer ")) {
             return "Bearer " + authorization;
@@ -658,7 +658,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected <T> WebClient.RequestBodySpec configureRequestHeaders(WebClient.RequestBodySpec requestSpec, T request) {
+    protected <T> WebClient.RequestBodySpec configureRequestHeaders(final WebClient.RequestBodySpec requestSpec,final T request) {
         // Ollama特有的请求头配置
         return super.configureRequestHeaders(requestSpec, request)
                 .header("User-Agent", "ModelRouter-OllamaAdapter/1.0");

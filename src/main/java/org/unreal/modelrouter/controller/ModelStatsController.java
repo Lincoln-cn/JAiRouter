@@ -34,7 +34,7 @@ public class ModelStatsController {
 
     private final ModelServiceRegistry registry;
 
-    public ModelStatsController(ModelServiceRegistry registry) {
+    public ModelStatsController(final ModelServiceRegistry registry) {
         this.registry = registry;
     }
 

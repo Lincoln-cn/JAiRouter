@@ -324,7 +324,7 @@ public class StatePersistenceManagementController {
     /**
      * 创建成功响应
      */
-    private Map<String, Object> createSuccessResponse(Object data) {
+    private Map<String, Object> createSuccessResponse(final Object data) {
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", data);
@@ -334,7 +334,7 @@ public class StatePersistenceManagementController {
     /**
      * 创建错误响应
      */
-    private Map<String, Object> createErrorResponse(String message) {
+    private Map<String, Object> createErrorResponse(final String message) {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
         response.put("error", message);

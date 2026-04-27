@@ -38,10 +38,10 @@ public class HttpRequestProcessor {
      * @return 客户端响应
      */
     public Mono<ClientResponse> sendNonStreaming(
-            WebClient client,
-            String path,
-            String authorization,
-            Object requestBody) {
+            final WebClient client,
+            final String path,
+            final String authorization,
+            final Object requestBody) {
 
         logger.debug("发送非流式请求：path={}", path);
 
@@ -63,10 +63,10 @@ public class HttpRequestProcessor {
      * @return SSE 数据流
      */
     public Flux<DataBuffer> sendStreaming(
-            WebClient client,
-            String path,
-            String authorization,
-            Object requestBody) {
+            final WebClient client,
+            final String path,
+            final String authorization,
+            final Object requestBody) {
 
         logger.debug("发送流式请求：path={}", path);
 
@@ -88,18 +88,19 @@ public class HttpRequestProcessor {
      * @return 配置后的请求规范
      */
     public WebClient.RequestBodySpec configureHeaders(
-            WebClient.RequestBodySpec requestSpec,
-            Map<String, String> headers) {
+            final WebClient.RequestBodySpec requestSpec,
+            final Map<String, String> headers) {
 
         if (headers == null || headers.isEmpty()) {
             return requestSpec;
         }
 
+        WebClient.RequestBodySpec specWithHeaders = requestSpec;
         for (Map.Entry<String, String> entry : headers.entrySet()) {
-            requestSpec = requestSpec.header(entry.getKey(), entry.getValue());
+            specWithHeaders = specWithHeaders.header(entry.getKey(), entry.getValue());
         }
 
-        return requestSpec;
+        return specWithHeaders;
     }
 
     /**
@@ -111,9 +112,9 @@ public class HttpRequestProcessor {
      * @return 错误 Mono
      */
     public Mono<Throwable> handleResponseError(
-            ClientResponse clientResponse,
-            String instanceName,
-            String path) {
+            final ClientResponse clientResponse,
+            final String instanceName,
+            final String path) {
 
         HttpStatus status = HttpStatus.valueOf(clientResponse.statusCode().value());
 
@@ -144,7 +145,7 @@ public class HttpRequestProcessor {
      * @param clientResponse 客户端响应
      * @return 是否成功
      */
-    public boolean isSuccess(ClientResponse clientResponse) {
+    public boolean isSuccess(final ClientResponse clientResponse) {
         return clientResponse.statusCode().is2xxSuccessful();
     }
 
@@ -154,7 +155,7 @@ public class HttpRequestProcessor {
      * @param clientResponse 客户端响应
      * @return 是否是服务器错误
      */
-    public boolean isServerError(ClientResponse clientResponse) {
+    public boolean isServerError(final ClientResponse clientResponse) {
         return clientResponse.statusCode().is5xxServerError();
     }
 
@@ -164,7 +165,7 @@ public class HttpRequestProcessor {
      * @param clientResponse 客户端响应
      * @return 是否是客户端错误
      */
-    public boolean isClientError(ClientResponse clientResponse) {
+    public boolean isClientError(final ClientResponse clientResponse) {
         return clientResponse.statusCode().is4xxClientError();
     }
 }

@@ -38,9 +38,9 @@ public class UniversalController {
 
     private final Logger logger = LoggerFactory.getLogger(UniversalController.class);
 
-    public UniversalController(AdapterRegistry adapterRegistry,
-                               ModelServiceRegistry registry,
-                               ServiceStateManager serviceStateManager,
+    public UniversalController(final AdapterRegistry adapterRegistry,
+                               final ModelServiceRegistry registry,
+                               final ServiceStateManager serviceStateManager,
                                @Autowired(required = false) MetricsCollector metricsCollector,
                                @Autowired(required = false) org.unreal.modelrouter.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor) {
         this.adapterRegistry = adapterRegistry;
@@ -53,7 +53,7 @@ public class UniversalController {
     /**
      * 从 ServerWebExchange 获取追踪上下文
      */
-    private TracingContext getTracingContext(ServerWebExchange exchange) {
+    private TracingContext getTracingContext(final ServerWebExchange exchange) {
         if (exchange != null) {
             return exchange.getAttribute(TracingConstants.ContextKeys.TRACING_CONTEXT);
         }
@@ -64,7 +64,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> chatCompletions(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody(required = false) ChatDTO.Request request,
-            ServerWebExchange exchange) {
+            final ServerWebExchange exchange) {
 
         ServerHttpRequest httpRequest = exchange.getRequest();
         TracingContext tracingContext = getTracingContext(exchange);
@@ -101,7 +101,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> embeddings(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody(required = false) EmbeddingDTO.Request request,
-            ServerHttpRequest httpRequest) {
+            final ServerHttpRequest httpRequest) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -136,7 +136,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> rerank(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody(required = false) RerankDTO.Request request,
-            ServerHttpRequest httpRequest) {
+            final ServerHttpRequest httpRequest) {
 
         if (request == null) {
             logger.error("Rerank request body is null");
@@ -172,7 +172,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> textToSpeech(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody(required = false) TtsDTO.Request request,
-            ServerHttpRequest httpRequest) {
+            final ServerHttpRequest httpRequest) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -212,7 +212,7 @@ public class UniversalController {
             @RequestPart(value = "responseFormat", required = false) String responseFormat,
             @RequestPart(value = "temperature", required = false) Double temperature,
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            ServerHttpRequest httpRequest) {
+            final ServerHttpRequest httpRequest) {
 
         SttDTO.Request request = new SttDTO.Request(model, file, language, prompt, responseFormat, temperature);
 
@@ -245,7 +245,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> imageGenerate(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody(required = false) ImageGenerateDTO.Request request,
-            ServerHttpRequest httpRequest) {
+            final ServerHttpRequest httpRequest) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -280,7 +280,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> imageEdits(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody(required = false) ImageEditDTO.Request request,
-            ServerHttpRequest httpRequest) {
+            final ServerHttpRequest httpRequest) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -315,10 +315,10 @@ public class UniversalController {
      * 通用服务请求处理器
      */
     private Mono<ResponseEntity<?>> handleServiceRequest(
-            ModelServiceRegistry.ServiceType serviceType,
-            ServiceRequestSupplier requestSupplier,
-            ServerHttpRequest httpRequest,
-            String modelName) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ServiceRequestSupplier requestSupplier,
+            final ServerHttpRequest httpRequest,
+            final String modelName) {
 
         String serviceName = serviceType.name();
         long startTime = System.currentTimeMillis();
@@ -368,8 +368,8 @@ public class UniversalController {
 
 
 
-    private void recordRequestMetrics(String service, String method, long duration, String status, 
-                                    long requestSize, long responseSize) {
+    private void recordRequestMetrics(final String service,final String method,final long duration,final String status, 
+                                    final long requestSize,final long responseSize) {
         if (metricsCollector == null) {
             return;
         }
@@ -383,14 +383,14 @@ public class UniversalController {
         }
     }
 
-    private String getResponseStatus(ResponseEntity<?> response) {
+    private String getResponseStatus(final ResponseEntity<?> response) {
         if (response == null) {
             return "unknown";
         }
         return String.valueOf(response.getStatusCode().value());
     }
 
-    private String getErrorStatus(Throwable error) {
+    private String getErrorStatus(final Throwable error) {
         if (error instanceof ResponseStatusException) {
             return String.valueOf(((ResponseStatusException) error).getStatusCode().value());
         }
@@ -414,7 +414,7 @@ public class UniversalController {
         return "500";
     }
 
-    private long estimateRequestSize(ServerHttpRequest request) {
+    private long estimateRequestSize(final ServerHttpRequest request) {
         try {
             String contentLength = request.getHeaders().getFirst("Content-Length");
             if (contentLength != null) {
@@ -426,7 +426,7 @@ public class UniversalController {
         }
     }
 
-    private long estimateResponseSize(ResponseEntity<?> response) {
+    private long estimateResponseSize(final ResponseEntity<?> response) {
         try {
             if (response == null || response.getBody() == null) {
                 return 0;
@@ -455,11 +455,11 @@ public class UniversalController {
      * 支持实例级适配器选择的服务请求处理器（带追踪上下文）
      */
     private Mono<ResponseEntity<?>> handleServiceRequestWithInstanceAdapter(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerWebExchange exchange,
-            TracingContext tracingContext,
-            InstanceAdapterRequestSupplier requestSupplier) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerWebExchange exchange,
+            final TracingContext tracingContext,
+            final InstanceAdapterRequestSupplier requestSupplier) {
 
         ServerHttpRequest httpRequest = exchange.getRequest();
         String clientIp = IpUtils.getClientIp(httpRequest);
@@ -534,10 +534,10 @@ public class UniversalController {
      * 支持实例级适配器选择的服务请求处理器
      */
     private Mono<ResponseEntity<?>> handleServiceRequestWithInstanceAdapter(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest,
-            InstanceAdapterRequestSupplier requestSupplier) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest,
+            final InstanceAdapterRequestSupplier requestSupplier) {
 
         String clientIp = IpUtils.getClientIp(httpRequest);
         

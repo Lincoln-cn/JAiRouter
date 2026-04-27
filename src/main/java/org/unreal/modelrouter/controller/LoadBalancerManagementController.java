@@ -80,7 +80,7 @@ public class LoadBalancerManagementController {
     /**
      * 解包负载均衡器获取真实的类名
      */
-    private String unwrapLoadBalancer(LoadBalancer loadBalancer) {
+    private String unwrapLoadBalancer(final LoadBalancer loadBalancer) {
         if (loadBalancer == null) {
             return "Unknown";
         }
@@ -271,7 +271,7 @@ public class LoadBalancerManagementController {
     /**
      * 解析策略名称
      */
-    private String parseStrategyName(String className) {
+    private String parseStrategyName(final String className) {
         if (className == null) {
             return "unknown";
         }
@@ -344,7 +344,7 @@ public class LoadBalancerManagementController {
         public String displayName;
         public String description;
 
-        public StrategyInfo(String name, String displayName, String description) {
+        public StrategyInfo(final String name,final String displayName,final String description) {
             this.name = name;
             this.displayName = displayName;
             this.description = description;

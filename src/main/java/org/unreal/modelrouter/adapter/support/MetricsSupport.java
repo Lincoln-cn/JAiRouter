@@ -18,7 +18,7 @@ public class MetricsSupport {
     private final MetricsCollector metricsCollector;
     private final String adapterType;
 
-    public MetricsSupport(MetricsCollector metricsCollector, String adapterType) {
+    public MetricsSupport(final MetricsCollector metricsCollector,final String adapterType) {
         this.metricsCollector = metricsCollector;
         this.adapterType = adapterType;
     }
@@ -26,7 +26,7 @@ public class MetricsSupport {
     /**
      * 计算请求大小（字节）
      */
-    public long calculateRequestSize(Object request) {
+    public long calculateRequestSize(final Object request) {
         if (request == null) {
             return 0;
         }
@@ -41,7 +41,7 @@ public class MetricsSupport {
     /**
      * 从请求对象中提取模型名称
      */
-    public String getModelNameFromRequest(Object request) {
+    public String getModelNameFromRequest(final Object request) {
         if (request == null) {
             return "unknown";
         }
@@ -58,7 +58,7 @@ public class MetricsSupport {
     /**
      * 从请求对象中提取服务类型
      */
-    public String getServiceTypeFromRequest(Object request) {
+    public String getServiceTypeFromRequest(final Object request) {
         if (request == null) {
             return "unknown";
         }
@@ -90,7 +90,7 @@ public class MetricsSupport {
     /**
      * 记录请求指标
      */
-    public void recordRequestMetrics(String serviceType, long requestSize, long responseSize) {
+    public void recordRequestMetrics(final String serviceType,final long requestSize,final long responseSize) {
         if (metricsCollector != null) {
             metricsCollector.recordRequestSize(serviceType, requestSize, responseSize);
         }
@@ -99,7 +99,7 @@ public class MetricsSupport {
     /**
      * 记录响应时间指标
      */
-    public void recordResponseTimeMetrics(String serviceType, String method, long responseTime, String status) {
+    public void recordResponseTimeMetrics(final String serviceType,final String method,final long responseTime,final String status) {
         if (metricsCollector != null) {
             metricsCollector.recordRequest(serviceType, method, responseTime, status);
         }
@@ -108,7 +108,7 @@ public class MetricsSupport {
     /**
      * 记录后端调用指标
      */
-    public void recordBackendCall(String instanceName, long duration, boolean success) {
+    public void recordBackendCall(final String instanceName,final long duration,final boolean success) {
         if (metricsCollector != null) {
             metricsCollector.recordBackendCall(adapterType, instanceName, duration, success);
         }
@@ -117,7 +117,7 @@ public class MetricsSupport {
     /**
      * 记录错误指标
      */
-    public void recordErrorMetrics(String instanceName, long responseTime, String errorType) {
+    public void recordErrorMetrics(final String instanceName,final long responseTime,final String errorType) {
         if (metricsCollector != null) {
             metricsCollector.recordBackendCall(adapterType, instanceName, responseTime, false);
         }

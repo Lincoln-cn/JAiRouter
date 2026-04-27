@@ -32,7 +32,7 @@ public class AdapterController {
 
     private final AdapterRegistry adapterRegistry;
 
-    public AdapterController(AdapterRegistry adapterRegistry) {
+    public AdapterController(final AdapterRegistry adapterRegistry) {
         this.adapterRegistry = adapterRegistry;
     }
 

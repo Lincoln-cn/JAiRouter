@@ -45,7 +45,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param circuitBreaker 熔断器实例
      * @return 保存结果
      */
-    public Mono<Boolean> saveCircuitBreakerState(CircuitBreaker circuitBreaker) {
+    public Mono<Boolean> saveCircuitBreakerState(final CircuitBreaker circuitBreaker) {
         if (!(circuitBreaker instanceof LockFreeCircuitBreaker)) {
             logger.warn("Only LockFreeCircuitBreaker state persistence is supported");
             return Mono.just(false);
@@ -82,7 +82,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param instanceId 实例 ID
      * @return 状态数据
      */
-    public Mono<Map<String, Object>> loadCircuitBreakerState(String instanceId) {
+    public Mono<Map<String, Object>> loadCircuitBreakerState(final String instanceId) {
         if (instanceId == null || instanceId.isEmpty()) {
             return Mono.just(java.util.Collections.emptyMap());
         }
@@ -104,7 +104,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param circuitBreaker 熔断器实例
      * @return 是否恢复成功
      */
-    public Mono<Boolean> restoreCircuitBreakerState(CircuitBreaker circuitBreaker) {
+    public Mono<Boolean> restoreCircuitBreakerState(final CircuitBreaker circuitBreaker) {
         if (!(circuitBreaker instanceof LockFreeCircuitBreaker)) {
             logger.warn("Only LockFreeCircuitBreaker state restoration is supported");
             return Mono.just(false);
@@ -144,7 +144,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param instanceId 实例 ID
      * @return 删除结果
      */
-    public Mono<Boolean> deleteCircuitBreakerState(String instanceId) {
+    public Mono<Boolean> deleteCircuitBreakerState(final String instanceId) {
         if (instanceId == null || instanceId.isEmpty()) {
             return Mono.just(false);
         }
@@ -164,7 +164,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param instanceId 实例 ID
      * @return 是否存在
      */
-    public Mono<Boolean> existsCircuitBreakerState(String instanceId) {
+    public Mono<Boolean> existsCircuitBreakerState(final String instanceId) {
         if (instanceId == null || instanceId.isEmpty()) {
             return Mono.just(false);
         }
@@ -188,7 +188,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @return 成功保存的数量
      */
     public Mono<Integer> saveCircuitBreakerStatesBatch(
-            java.util.List<CircuitBreaker> circuitBreakers) {
+            final java.util.List<CircuitBreaker> circuitBreakers) {
         if (circuitBreakers == null || circuitBreakers.isEmpty()) {
             return Mono.just(0);
         }
@@ -226,7 +226,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param circuitBreaker 熔断器实例
      * @param newState 新状态
      */
-    public void onStateChange(CircuitBreaker circuitBreaker, String newState) {
+    public void onStateChange(final CircuitBreaker circuitBreaker,final String newState) {
         logger.debug("Circuit breaker state change event: {}", newState);
         saveCircuitBreakerState(circuitBreaker).subscribe();
     }
@@ -236,7 +236,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * 
      * @param circuitBreaker 熔断器实例
      */
-    public void onCircuitBreakerTripped(CircuitBreaker circuitBreaker) {
+    public void onCircuitBreakerTripped(final CircuitBreaker circuitBreaker) {
         logger.info("Circuit breaker tripped event, triggering state sync");
         saveCircuitBreakerState(circuitBreaker).subscribe();
     }
@@ -246,7 +246,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * 
      * @param circuitBreaker 熔断器实例
      */
-    public void onCircuitBreakerRecovered(CircuitBreaker circuitBreaker) {
+    public void onCircuitBreakerRecovered(final CircuitBreaker circuitBreaker) {
         logger.info("Circuit breaker recovered event, triggering state sync");
         saveCircuitBreakerState(circuitBreaker).subscribe();
     }
@@ -265,8 +265,8 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param instanceUrls 实例 URL 映射 (instanceId -> instanceUrl)
      */
     public void retryPendingSyncs(
-            org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager cbManager,
-            Map<String, String> instanceUrls) {
+            final org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager cbManager,
+            final Map<String, String> instanceUrls) {
         if (pendingSync.isEmpty()) {
             logger.debug("No pending syncs to retry");
             return;

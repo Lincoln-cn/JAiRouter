@@ -60,7 +60,7 @@ public class RateLimiterStatePersistenceAdapter {
      * @param limiterId 限流器ID
      * @param rateLimiter 限流器实例
      */
-    public void registerRateLimiter(String limiterId, RateLimiter rateLimiter) {
+    public void registerRateLimiter(final String limiterId,final RateLimiter rateLimiter) {
         rateLimiterCache.put(limiterId, rateLimiter);
         logger.debug("Rate limiter registered: {}", limiterId);
     }
@@ -70,7 +70,7 @@ public class RateLimiterStatePersistenceAdapter {
      *
      * @param limiterId 限流器ID
      */
-    public void unregisterRateLimiter(String limiterId) {
+    public void unregisterRateLimiter(final String limiterId) {
         rateLimiterCache.remove(limiterId);
         logger.debug("Rate limiter unregistered: {}", limiterId);
     }
@@ -82,7 +82,7 @@ public class RateLimiterStatePersistenceAdapter {
      * @param rateLimiter 限流器实例
      * @return 保存结果
      */
-    public Mono<Boolean> saveRateLimiterState(String limiterId, RateLimiter rateLimiter) {
+    public Mono<Boolean> saveRateLimiterState(final String limiterId,final RateLimiter rateLimiter) {
         Map<String, Object> stateData = extractState(limiterId, rateLimiter);
 
         if (stateData.isEmpty()) {
@@ -113,7 +113,7 @@ public class RateLimiterStatePersistenceAdapter {
      * @param limiterId 限流器ID
      * @return 状态数据
      */
-    public Mono<Map<String, Object>> loadRateLimiterState(String limiterId) {
+    public Mono<Map<String, Object>> loadRateLimiterState(final String limiterId) {
         return persistenceService.load(StateType.RATE_LIMITER, limiterId)
                 .doOnSuccess(data -> {
                     if (data != null && !data.isEmpty()) {
@@ -129,7 +129,7 @@ public class RateLimiterStatePersistenceAdapter {
      * @param limiterId 限流器ID
      * @return 恢复结果
      */
-    public Mono<Boolean> restoreRateLimiterState(String limiterId) {
+    public Mono<Boolean> restoreRateLimiterState(final String limiterId) {
         RateLimiter rateLimiter = rateLimiterCache.get(limiterId);
         if (rateLimiter == null) {
             logger.warn("Rate limimiter not found in cache: {}", limiterId);
@@ -171,7 +171,7 @@ public class RateLimiterStatePersistenceAdapter {
      * @param limiterId 限流器ID
      * @return 删除结果
      */
-    public Mono<Boolean> deleteRateLimiterState(String limiterId) {
+    public Mono<Boolean> deleteRateLimiterState(final String limiterId) {
         return persistenceService.delete(StateType.RATE_LIMITER, limiterId)
                 .doOnSuccess(deleted -> {
                     if (Boolean.TRUE.equals(deleted)) {
@@ -205,7 +205,7 @@ public class RateLimiterStatePersistenceAdapter {
      * @param rateLimiter 限流器实例
      * @return 状态数据 Map
      */
-    private Map<String, Object> extractState(String limiterId, RateLimiter rateLimiter) {
+    private Map<String, Object> extractState(final String limiterId,final RateLimiter rateLimiter) {
         Map<String, Object> stateData = new HashMap<>();
         stateData.put("limiterId", limiterId);
         stateData.put("timestamp", System.currentTimeMillis());
@@ -235,7 +235,7 @@ public class RateLimiterStatePersistenceAdapter {
     /**
      * 提取 TokenBucket 状态
      */
-    private void extractTokenBucketState(Map<String, Object> stateData, TokenBucketRateLimiter rateLimiter) {
+    private void extractTokenBucketState(final Map<String, Object> stateData,final TokenBucketRateLimiter rateLimiter) {
         // TokenBucketRateLimiter 的 tokens 和 lastRefillTimestamp 是私有字段
         // 我们需要通过反射或者其他方式获取，这里使用配置值作为基础
         stateData.put("algorithm", "token_bucket");
@@ -246,7 +246,7 @@ public class RateLimiterStatePersistenceAdapter {
     /**
      * 提取 SlidingWindow 状态
      */
-    private void extractSlidingWindowState(Map<String, Object> stateData, SlidingWindowRateLimiter rateLimiter) {
+    private void extractSlidingWindowState(final Map<String, Object> stateData,final SlidingWindowRateLimiter rateLimiter) {
         stateData.put("algorithm", "sliding_window");
         stateData.put("windowSize", rateLimiter.getConfig().getCapacity());
     }
@@ -254,7 +254,7 @@ public class RateLimiterStatePersistenceAdapter {
     /**
      * 提取 LeakyBucket 状态
      */
-    private void extractLeakyBucketState(Map<String, Object> stateData, LeakyBucketRateLimiter rateLimiter) {
+    private void extractLeakyBucketState(final Map<String, Object> stateData,final LeakyBucketRateLimiter rateLimiter) {
         stateData.put("algorithm", "leaky_bucket");
         stateData.put("waterLevel", 0); // 默认水位
         stateData.put("leakRate", rateLimiter.getConfig().getRate());
@@ -263,7 +263,7 @@ public class RateLimiterStatePersistenceAdapter {
     /**
      * 获取限流器算法名称
      */
-    private String getAlgorithmName(RateLimiter rateLimiter) {
+    private String getAlgorithmName(final RateLimiter rateLimiter) {
         if (rateLimiter instanceof TokenBucketRateLimiter) {
             return "token_bucket";
         } else if (rateLimiter instanceof SlidingWindowRateLimiter) {
@@ -282,7 +282,7 @@ public class RateLimiterStatePersistenceAdapter {
      * @param stateData 状态数据
      * @return 是否成功应用
      */
-    private boolean applyState(RateLimiter rateLimiter, Map<String, Object> stateData) {
+    private boolean applyState(final RateLimiter rateLimiter,final Map<String, Object> stateData) {
         try {
             String algorithm = (String) stateData.get("algorithm");
             if (algorithm == null) {

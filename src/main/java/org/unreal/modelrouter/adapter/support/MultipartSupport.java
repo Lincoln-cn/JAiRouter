@@ -19,7 +19,7 @@ public class MultipartSupport {
     /**
      * 创建请求体 - 处理不同类型的请求体格式
      */
-    public BodyInserter<?, ?> createRequestBody(Object request) {
+    public BodyInserter<?, ?> createRequestBody(final Object request) {
         log.debug("创建请求体，请求类型：{}", request.getClass().getSimpleName());
 
         if (request instanceof MultiValueMap) {
@@ -40,7 +40,7 @@ public class MultipartSupport {
     /**
      * 创建 STT 请求的 multipart 表单数据
      */
-    public BodyInserter<?, ?> createMultipartBody(SttDTO.Request sttRequest) {
+    public BodyInserter<?, ?> createMultipartBody(final SttDTO.Request sttRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
 
         log.debug("创建 STT multipart 请求体：model={}, file={}, language={}",
@@ -81,7 +81,7 @@ public class MultipartSupport {
     /**
      * 创建图像编辑请求的 multipart 表单数据
      */
-    public BodyInserter<?, ?> createMultipartBody(ImageEditDTO.Request imageEditRequest) {
+    public BodyInserter<?, ?> createMultipartBody(final ImageEditDTO.Request imageEditRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
 
         if (imageEditRequest.model() != null) {
