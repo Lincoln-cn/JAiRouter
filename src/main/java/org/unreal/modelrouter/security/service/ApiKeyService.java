@@ -41,6 +41,10 @@ public class ApiKeyService {
     private final StoreManager storeManager;
     private final ObjectMapper objectMapper;
     private final SecurityProperties securityProperties;
+    
+    // API Key 配置管理器（用于版本管理）
+    @Autowired(required = false)
+    private ApiKeyConfigManager apiKeyConfigManager;
 
     // API Key 缓存：keyHash -> ApiKey（使用哈希值作为 key）
     private final Map<String, ApiKey> apiKeyCache = new ConcurrentHashMap<>();
@@ -678,18 +682,76 @@ public class ApiKeyService {
         }
     }
 
+    /**
+     * 保存API Key配置为新版本
+     *
+     * @deprecated 建议使用 {@link ApiKeyConfigManager#saveNewVersion(Map)}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>ApiKeyConfigManager 专门负责 API Key 配置的版本管理</li>
+     *               <li>新方法提供更好的职责分离和代码组织</li>
+     *             </ul>
+     *             <p>迁移示例：</p>
+     *             <pre>{@code
+     *             // 旧代码
+     *             int version = apiKeyService.saveNewVersion(config);
+     *             
+     *             // 新代码
+     *             int version = apiKeyConfigManager.saveNewVersion(config);
+     *             }</pre>
+     *             此方法将在 v3.0 版本中移除。
+     * @see ApiKeyConfigManager#saveNewVersion(Map)
+     * @since v2.5.5 标注废弃
+     */
+    @Deprecated(since = "2.5.5", forRemoval = true)
     public int saveNewVersion(Map<String, Object> config) {
+        if (apiKeyConfigManager != null) {
+            return apiKeyConfigManager.saveNewVersion(config);
+        }
+        // 兼容旧实现
         int version = getNextAccountVersion();
         storeManager.saveConfigVersion(API_KEYS_STORE_KEY, config, version);
         log.info("已保存API Key配置为新版本：{}", version);
         return version;
     }
 
+    /**
+     * 获取所有版本列表
+     *
+     * @deprecated 建议使用 {@link ApiKeyConfigManager#getAllVersions()}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>ApiKeyConfigManager 专门负责 API Key 配置的版本管理</li>
+     *             </ul>
+     *             此方法将在 v3.0 版本中移除。
+     * @see ApiKeyConfigManager#getAllVersions()
+     * @since v2.5.5 标注废弃
+     */
+    @Deprecated(since = "2.5.5", forRemoval = true)
     public List<Integer> getAllVersions() {
+        if (apiKeyConfigManager != null) {
+            return apiKeyConfigManager.getAllVersions();
+        }
         return storeManager.getConfigVersions(API_KEYS_STORE_KEY);
     }
 
+    /**
+     * 获取当前版本号
+     *
+     * @deprecated 建议使用 {@link ApiKeyConfigManager#getCurrentVersion()}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>ApiKeyConfigManager 专门负责 API Key 配置的版本管理</li>
+     *             </ul>
+     *             此方法将在 v3.0 版本中移除。
+     * @see ApiKeyConfigManager#getCurrentVersion()
+     * @since v2.5.5 标注废弃
+     */
+    @Deprecated(since = "2.5.5", forRemoval = true)
     public int getCurrentVersion() {
+        if (apiKeyConfigManager != null) {
+            return apiKeyConfigManager.getCurrentVersion();
+        }
         List<Integer> versions = getAllVersions();
         return versions.isEmpty() ? 0 : versions.stream().mapToInt(Integer::intValue).max().orElse(0);
     }
@@ -698,7 +760,23 @@ public class ApiKeyService {
         return getAllVersions().stream().max(Integer::compareTo).orElse(0) + 1;
     }
 
+    /**
+     * 获取指定版本的配置
+     *
+     * @deprecated 建议使用 {@link ApiKeyConfigManager#getVersionConfig(int)}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>ApiKeyConfigManager 专门负责 API Key 配置的版本管理</li>
+     *             </ul>
+     *             此方法将在 v3.0 版本中移除。
+     * @see ApiKeyConfigManager#getVersionConfig(int)
+     * @since v2.5.5 标注废弃
+     */
+    @Deprecated(since = "2.5.5", forRemoval = true)
     public Map<String, Object> getVersionConfig(int version) {
+        if (apiKeyConfigManager != null) {
+            return apiKeyConfigManager.getVersionConfig(version);
+        }
         if (version == 0) {
             Map<String, Object> config = new HashMap<>();
             config.put(STORE_API_KEYS, loadApiKeysFromConfig());
