@@ -212,7 +212,28 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     /**
      * 通用请求处理模板方法
+     *
+     * @deprecated 建议使用 {@link #processRequestNew} 方法，该方法使用 HttpRequestProcessor 和 ResponseMapper 组件。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>processRequestNew 使用 HttpRequestProcessor 处理请求，代码更简洁</li>
+     *               <li>processRequestNew 使用 ResponseMapper 处理响应，逻辑更清晰</li>
+     *               <li>processRequestNew 返回强类型 ResponseEntity&lt;R&gt;，比 Mono 更安全</li>
+     *             </ul>
+     *             <p>迁移示例：</p>
+     *             <pre>{@code
+     *             // 旧代码 - 使用 processRequest
+     *             Mono response = processRequest(request, auth, httpRequest, serviceType, modelName, processor);
+     *             
+     *             // 新代码 - 使用 processRequestNew
+     *             Mono<ResponseEntity<ChatResponse>> response = processRequestNew(
+     *                 request, auth, httpRequest, serviceType, modelName, ChatResponse.class);
+     *             }</pre>
+     *             此方法将在 v3.0 版本中移除。
+     * @see #processRequestNew
+     * @since v2.5.4 标注废弃
      */
+    @Deprecated(since = "2.5.4", forRemoval = true)
     @SuppressWarnings("all")
     protected <T> Mono processRequest(
             final T request,
@@ -1286,7 +1307,29 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     /**
      * 判断是否应该重试
+     *
+     * @deprecated 建议使用 {@link RetryPolicy#canRetry(int, Throwable)} 和 {@link RetryPolicy#isRetryable(Throwable)}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>RetryPolicy.canRetry 检查是否达到最大重试次数</li>
+     *               <li>RetryPolicy.isRetryable 判断错误是否可重试</li>
+     *               <li>两者组合使用替代此方法的综合判断逻辑</li>
+     *             </ul>
+     *             <p>迁移示例：</p>
+     *             <pre>{@code
+     *             // 旧代码 - 使用 shouldRetry
+     *             boolean retry = shouldRetry(throwable, currentRetryCount, maxRetries);
+     *             
+     *             // 新代码 - 使用 RetryPolicy
+     *             boolean retry = retryPolicy.canRetry(currentRetryCount, throwable) 
+     *                          && retryPolicy.isRetryable(throwable);
+     *             }</pre>
+     *             此方法将在 v3.0 版本中移除。
+     * @see RetryPolicy#canRetry(int, Throwable)
+     * @see RetryPolicy#isRetryable(Throwable)
+     * @since v2.5.4 标注废弃
      */
+    @Deprecated(since = "2.5.4", forRemoval = true)
     protected boolean shouldRetry(final Throwable throwable, final int currentRetryCount, final int maxRetries) {
         // 如果已达到最大重试次数，不再重试
         if (currentRetryCount >= maxRetries) {
