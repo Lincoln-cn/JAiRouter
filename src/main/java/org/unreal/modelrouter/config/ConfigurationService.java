@@ -473,196 +473,61 @@ public class ConfigurationService {
     /**
      * 应用指定版本的配置
      *
+     * @deprecated 此方法已委托给 {@link ConfigVersionManager#applyVersion(int)}。
+     *             请直接使用 ConfigVersionManager 进行版本应用。
+     *             此方法将在 v3.0 版本中移除。
+     * @see ConfigVersionManager#applyVersion(int)
+     * @since v2.5.3.2 标注废弃，委托实现
      * @param version 版本号
      */
+    @Deprecated(since = "2.5.3.2", forRemoval = true)
     public void applyVersion(int version) {
-        logger.info("开始应用配置版本: {}", version);
-
-        try {
-            // 1. 验证版本存在性
-            if (!versionExists(version)) {
-                String availableVersions = getAllVersions().toString();
-                throw new IllegalArgumentException(
-                        String.format("版本 %d 不存在。可用版本: %s", version, availableVersions));
-            }
-
-            // 2. 获取版本配置
-            Map<String, Object> config = getVersionConfig(version);
-            if (config == null || config.isEmpty()) {
-                throw new IllegalStateException(
-                        String.format("无法读取版本 %d 的配置内容，配置文件可能已损坏", version));
-            }
-
-            logger.debug("获取到版本 {} 的配置，包含 {} 个顶级配置项", version, config.size());
-
-            // 3. 备份当前配置（用于错误恢复）
-            Map<String, Object> backupConfig = null;
-            try {
-                backupConfig = getCurrentPersistedConfig();
-            } catch (Exception e) {
-                logger.warn("无法备份当前配置: {}", e.getMessage());
-            }
-
-            // 4. 原子性应用配置
-            try {
-                // 应用配置到存储
-                storeManager.saveConfig(CURRENT_KEY, config);
-                logger.debug("配置已成功应用到存储管理器");
-
-                // v1.5.6: 同步实例数据到数据库（用于版本回滚）
-                if (configSyncService != null) {
-                    try {
-                        configSyncService.syncInstancesToDatabase(config);
-                        logger.debug("实例数据已同步到数据库");
-                    } catch (Exception syncException) {
-                        logger.warn("同步实例到数据库失败: {}", syncException.getMessage());
-                        // 不阻止配置应用，只记录警告
-                    }
-                }
-
-                // 刷新运行时配置
-                refreshRuntimeConfig();
-                logger.debug("运行时配置已成功刷新");
-
-                // 更新当前版本状态
-                updateCurrentVersionAfterApply(version);
-
-                // 记录配置应用审计日志
-                logConfigurationRollback(version, config);
-
-                logger.info("成功应用配置版本: {}", version);
-
-            } catch (Exception e) {
-                logger.error("应用配置版本 {} 时发生错误，尝试恢复", version, e);
-
-                // 尝试恢复到备份配置
-                if (backupConfig != null) {
-                    try {
-                        storeManager.saveConfig(CURRENT_KEY, backupConfig);
-                        refreshRuntimeConfig();
-                        logger.info("已恢复到应用前的配置状态");
-                    } catch (Exception recoveryException) {
-                        logger.error("恢复配置失败", recoveryException);
-                    }
-                }
-
-                throw new RuntimeException(
-                        String.format("应用配置版本 %d 失败: %s", version, e.getMessage()), e);
-            }
-
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            // 重新抛出验证错误
-            throw e;
-        } catch (Exception e) {
-            logger.error("应用配置版本 {} 时发生未预期的错误", version, e);
-            throw new RuntimeException(
-                    String.format("应用配置版本 %d 时发生系统错误: %s", version, e.getMessage()), e);
-        }
+        configVersionManager.applyVersion(version);
     }
 
     /**
      * 删除指定版本的配置
      *
+     * @deprecated 此方法已委托给 {@link ConfigVersionManager#deleteConfigVersion(int)}。
+     *             请直接使用 ConfigVersionManager 进行版本删除。
+     *             此方法将在 v3.0 版本中移除。
+     * @see ConfigVersionManager#deleteConfigVersion(int)
+     * @since v2.5.3.2 标注废弃，委托实现
      * @param version 版本号
      */
+    @Deprecated(since = "2.5.3.2", forRemoval = true)
     public void deleteConfigVersion(int version) {
-        logger.info("开始删除配置版本: {}", version);
-
-        try {
-            // 1. 验证版本存在性
-            if (!versionExists(version)) {
-                String availableVersions = getAllVersions().toString();
-                throw new IllegalArgumentException(
-                        String.format("版本 %d 不存在。可用版本: %s", version, availableVersions));
-            }
-
-            // 2. 检查是否为当前版本，禁止删除当前版本
-            ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-            if (metadata != null && version == metadata.getCurrentVersion()) {
-                throw new IllegalStateException(
-                        String.format("不能删除当前版本 %d。请先应用其他版本后再删除此版本", version));
-            }
-
-            // 3. 验证删除前的完整性检查
-            List<Integer> allVersions = getAllVersions();
-            if (allVersions.size() <= 1) {
-                throw new IllegalStateException("不能删除最后一个版本，系统至少需要保留一个配置版本");
-            }
-
-            // 4. 执行删除操作
-            try {
-                // 删除版本文件
-                storeManager.deleteConfigVersion(CURRENT_KEY, version);
-                logger.debug("已从存储中删除版本 {} 的配置文件", version);
-
-                // 5. 更新元数据和版本范围
-                if (metadata != null) {
-                    metadata.setTotalVersions(Math.max(0, metadata.getTotalVersions() - 1));
-                    metadata.setLastModified(LocalDateTime.now());
-                    metadata.setLastModifiedBy(SecurityUtils.getCurrentUserId());
-                    metadata.removeVersion(version); // 从版本列表中移除
-
-                    saveMetadata(CURRENT_KEY, metadata);
-                    logger.debug("已更新配置元数据和版本范围");
-                }
-
-                // 6. 更新版本历史记录
-                List<VersionInfo> versionHistory = versionHistoryMap.get(CURRENT_KEY);
-                if (versionHistory != null) {
-                    boolean removed = versionHistory.removeIf(info -> info.getVersion() == version);
-                    if (removed) {
-                        saveVersionHistory(CURRENT_KEY, versionHistory);
-                        logger.debug("已从版本历史中移除版本 {}", version);
-                    }
-                }
-
-                // 7. 记录删除操作的审计日志
-                logVersionDeletion(version);
-
-                logger.info("成功删除配置版本: {}", version);
-
-            } catch (Exception e) {
-                logger.error("删除配置版本 {} 时发生错误", version, e);
-                throw new RuntimeException(
-                        String.format("删除配置版本 %d 失败: %s", version, e.getMessage()), e);
-            }
-
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            // 重新抛出验证错误
-            throw e;
-        } catch (Exception e) {
-            logger.error("删除配置版本 {} 时发生未预期的错误", version, e);
-            throw new RuntimeException(
-                    String.format("删除配置版本 %d 时发生系统错误: %s", version, e.getMessage()), e);
-        }
+        configVersionManager.deleteConfigVersion(version);
     }
 
     /**
      * 获取实际当前配置版本号
-     * v1.5.2: 从数据库获取最大版本号作为当前版本
      *
+     * @deprecated 此方法已委托给 {@link ConfigVersionManager#getActualCurrentVersion()}。
+     *             请直接使用 ConfigVersionManager 进行版本查询。
+     *             此方法将在 v3.0 版本中移除。
+     * @see ConfigVersionManager#getActualCurrentVersion()
+     * @since v2.5.3.2 标注废弃，委托实现
      * @return 当前配置版本号，如果不存在则返回0
      */
+    @Deprecated(since = "2.5.3.2", forRemoval = true)
     public int getActualCurrentVersion() {
-        // 直接从数据库获取最大版本号
-        List<Integer> versions = storeManager.getConfigVersions(CURRENT_KEY);
-        int currentVersion = versions.stream()
-                .max(Integer::compareTo)
-                .orElse(0);
-        
-        logger.debug("当前实际版本: {}", currentVersion);
-        return currentVersion;
+        return configVersionManager.getActualCurrentVersion();
     }
 
     /**
      * 获取当前最新版本号（基于版本列表）
-     * v1.5.2: 从数据库获取最大版本号
      *
+     * @deprecated 此方法已委托给 {@link ConfigVersionManager#getCurrentVersion()}。
+     *             请直接使用 ConfigVersionManager 进行版本查询。
+     *             此方法将在 v3.0 版本中移除。
+     * @see ConfigVersionManager#getCurrentVersion()
+     * @since v2.5.3.2 标注废弃，委托实现
      * @return 当前版本号
      */
+    @Deprecated(since = "2.5.3.2", forRemoval = true)
     public int getCurrentVersion() {
-        // 使用 getActualCurrentVersion 方法，确保一致性
-        return getActualCurrentVersion();
+        return configVersionManager.getCurrentVersion();
     }
 
     /**
