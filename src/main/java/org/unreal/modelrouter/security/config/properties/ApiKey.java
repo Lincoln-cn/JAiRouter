@@ -41,10 +41,29 @@ public class ApiKey {
 
     /**
      * API Key值 - 仅在创建时返回，其他时候为null以确保安全
-     * 注意：此字段已废弃，请使用 keyHash 存储
-     * @deprecated 使用 keyHash 替代
+     *
+     * @deprecated 明文存储 API Key 不安全，此字段仅为创建时返回给用户而保留。
+     *             请使用 {@link #keyHash} 字段进行安全存储和验证。
+     *             <p>安全说明：</p>
+     *             <ul>
+     *               <li>keyValue 是明文存储，存在安全风险</li>
+     *               <li>keyHash 使用 SHA-256 + 盐值哈希存储，更安全</li>
+     *               <li>验证时应使用 ApiKeyHashUtil.verifyKey() 方法</li>
+     *             </ul>
+     *             <p>迁移示例：</p>
+     *             <pre>{@code
+     *             // 旧代码 - 不安全
+     *             if (apiKey.getKeyValue().equals(inputKey)) { ... }
+     *             
+     *             // 新代码 - 安全
+     *             if (ApiKeyHashUtil.verifyKey(inputKey, apiKey.getKeyHash())) { ... }
+     *             }</pre>
+     *             <p>此字段将在 v3.0 版本中移除。</p>
+     * @see #keyHash
+     * @see org.unreal.modelrouter.security.util.ApiKeyHashUtil
+     * @since v2.5.2 完善废弃标注
      */
-    @Deprecated
+    @Deprecated(since = "2.5.2", forRemoval = true)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String keyValue;
 

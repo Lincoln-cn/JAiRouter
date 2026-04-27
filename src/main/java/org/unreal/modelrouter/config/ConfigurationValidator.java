@@ -15,10 +15,33 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * 配置验证器（旧版）
- * 提供各种配置参数的合法性检查功能
- * @deprecated 使用 {@link org.unreal.modelrouter.config.validation.ConfigurationValidator} 代替
+ * 配置验证器（旧版本）
+ *
+ * @deprecated 此类已迁移到 {@link org.unreal.modelrouter.config.validation.ConfigurationValidator}。
+ *             <p>迁移说明：</p>
+ *             <ul>
+ *               <li>新版本提供更完善的验证规则和错误消息</li>
+ *               <li>新版本支持更详细的验证结果返回</li>
+ *               <li>新版本与 ServiceConfigManager 集成更紧密</li>
+ *             </ul>
+ *             <p>迁移示例：</p>
+ *             <pre>{@code
+ *             // 旧代码
+ *             ConfigurationValidator oldValidator = new ConfigurationValidator();
+ *             boolean valid = oldValidator.validateServiceConfig(config);
+ *             
+ *             // 新代码
+ *             org.unreal.modelrouter.config.validation.ConfigurationValidator newValidator = 
+ *                 new org.unreal.modelrouter.config.validation.ConfigurationValidator();
+ *             ValidationResult result = newValidator.validate(config);
+ *             boolean valid = result.isValid();
+ *             List<String> errors = result.getErrors();
+ *             }</pre>
+ *             <p>此类将在 v3.0 版本中移除。</p>
+ * @see org.unreal.modelrouter.config.validation.ConfigurationValidator
+ * @since v2.5.2 标注废弃，计划 v3.0 移除
  */
+@Deprecated(since = "2.5.2", forRemoval = true)
 @Component("legacyConfigurationValidator")
 public class ConfigurationValidator {
 
