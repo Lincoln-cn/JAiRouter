@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD Suppressions 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- FinalParameters 抑制 - 参数在方法内被重新赋值的文件 -->
+    <suppress files="TokenUsageService\.java" checks="FinalParameters"/>
+    <suppress files="TokenUsageController\.java" checks="FinalParameters"/>
+    <suppress files="ExceptionManagementService\.java" checks="FinalParameters"/>
+    <suppress files="ConsistentHashLoadBalancer\.java" checks="FinalParameters"/>
+    <suppress files="ReactiveMemoryStoreManager\.java" checks="FinalParameters"/>
+    <suppress files="ReactiveFileStoreManager\.java" checks="FinalParameters"/>
+    <suppress files="CompositeStatePersistenceServiceImpl\.java" checks="FinalParameters"/>
+    <suppress files="MetricsManagementController\.java" checks="FinalParameters"/>
+    <suppress files="ServiceTypeController\.java" checks="FinalParameters"/>
+</suppressions>

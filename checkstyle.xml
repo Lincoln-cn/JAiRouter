@@ -8,6 +8,11 @@
     <property name="severity" value="warning"/>
     <property name="fileExtensions" value="java, properties, xml"/>
 
+    <!-- 抑制特定文件的检查 -->
+    <module name="SuppressionFilter">
+        <property name="file" value="${config_loc}/suppressions.xml"/>
+    </module>
+
     <!-- 文件长度检查 -->
     <module name="FileLength">
         <property name="max" value="2000"/>
