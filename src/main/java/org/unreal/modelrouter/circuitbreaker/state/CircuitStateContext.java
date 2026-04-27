@@ -34,16 +34,16 @@ public class CircuitStateContext {
     /**
      * 创建上下文并设置初始状态
      */
-    public CircuitStateContext(String instanceId, int failureThreshold, 
-                                long timeout, int successThreshold,
-                                MetricsCollector metricsCollector,
-                                CircuitState initialState) {
-        this.instanceId = instanceId;
-        this.failureThreshold = failureThreshold;
-        this.timeout = timeout;
-        this.successThreshold = successThreshold;
-        this.metricsCollector = metricsCollector;
-        this.currentState = initialState;
+    public CircuitStateContext(final String aInstanceId, final int aFailureThreshold, 
+                                final long aTimeout, final int aSuccessThreshold,
+                                final MetricsCollector aMetricsCollector,
+                                final CircuitState aInitialState) {
+        this.instanceId = aInstanceId;
+        this.failureThreshold = aFailureThreshold;
+        this.timeout = aTimeout;
+        this.successThreshold = aSuccessThreshold;
+        this.metricsCollector = aMetricsCollector;
+        this.currentState = aInitialState;
     }
 
     /**
