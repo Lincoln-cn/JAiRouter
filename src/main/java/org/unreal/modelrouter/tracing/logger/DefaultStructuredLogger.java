@@ -62,7 +62,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     private final Map<String, Object> commonFields = new ConcurrentHashMap<>();
     
     @Override
-    public void logRequest(ServerHttpRequest request, TracingContext context) {
+    public void logRequest(final ServerHttpRequest request,final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -93,8 +93,8 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 处理请求日志记录
      */
-    private void processRequestLogging(ServerHttpRequest request, TracingContext context, 
-                                     Map<String, Object> logEntry, Map<String, Object> fields) {
+    private void processRequestLogging(final ServerHttpRequest request,final TracingContext context, 
+                                     final Map<String, Object> logEntry,final Map<String, Object> fields) {
         try {
             
             // HTTP请求信息（安全处理）
@@ -169,7 +169,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logResponse(ServerHttpResponse response, TracingContext context, long duration) {
+    public void logResponse(final ServerHttpResponse response,final TracingContext context,final long duration) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -219,13 +219,13 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logBackendCall(String adapter, String instance, long duration, boolean success, TracingContext context) {
+    public void logBackendCall(final String adapter,final String instance,final long duration,final boolean success,final TracingContext context) {
         logBackendCallDetails(adapter, instance, null, null, duration, success ? 200 : 500, success, context);
     }
     
     @Override
-    public void logBackendCallDetails(String adapter, String instance, String url, String method, 
-                                     long duration, int statusCode, boolean success, TracingContext context) {
+    public void logBackendCallDetails(final String adapter,final String instance,final String url,final String method, 
+                                     final long duration,final int statusCode,final boolean success,final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -264,12 +264,12 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logError(Throwable error, TracingContext context) {
+    public void logError(final Throwable error,final TracingContext context) {
         logError(error, context, null);
     }
     
     @Override
-    public void logError(Throwable error, TracingContext context, Map<String, Object> additionalInfo) {
+    public void logError(final Throwable error,final TracingContext context,final Map<String, Object> additionalInfo) {
         if (!isLoggingEnabled() || error == null) {
             return;
         }
@@ -311,7 +311,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logBusinessEvent(String event, Map<String, Object> data, TracingContext context) {
+    public void logBusinessEvent(final String event,final Map<String, Object> data,final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -341,7 +341,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logLoadBalancerDecision(String strategy, String selectedInstance, int availableInstances, TracingContext context) {
+    public void logLoadBalancerDecision(final String strategy,final String selectedInstance,final int availableInstances,final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("strategy", strategy);
         data.put("selectedInstance", selectedInstance);
@@ -351,7 +351,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logRateLimitCheck(String algorithm, boolean allowed, long remainingTokens, TracingContext context) {
+    public void logRateLimitCheck(final String algorithm,final boolean allowed,final long remainingTokens,final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("algorithm", algorithm);
         data.put("allowed", allowed);
@@ -361,7 +361,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logCircuitBreakerStateChange(String previousState, String currentState, String reason, TracingContext context) {
+    public void logCircuitBreakerStateChange(final String previousState,final String currentState,final String reason,final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("previousState", previousState);
         data.put("currentState", currentState);
@@ -371,7 +371,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logPerformance(String operation, long duration, Map<String, Object> metrics, TracingContext context) {
+    public void logPerformance(final String operation,final long duration,final Map<String, Object> metrics,final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -403,7 +403,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logSlowQuery(String operation, long duration, long threshold, TracingContext context) {
+    public void logSlowQuery(final String operation,final long duration,final long threshold,final TracingContext context) {
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("threshold", threshold);
         metrics.put("slowQueryDetected", true);
@@ -412,7 +412,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logSecurityEvent(String event, String user, String ip, TracingContext context) {
+    public void logSecurityEvent(final String event,final String user,final String ip,final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -442,7 +442,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logAuthenticationEvent(boolean success, String authMethod, String user, String ip, TracingContext context) {
+    public void logAuthenticationEvent(final boolean success,final String authMethod,final String user,final String ip,final TracingContext context) {
         String event = success ? "authentication_success" : "authentication_failure";
         Map<String, Object> data = new HashMap<>();
         data.put("authMethod", authMethod);
@@ -452,7 +452,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logSanitization(String field, String action, String ruleId, TracingContext context) {
+    public void logSanitization(final String field,final String action,final String ruleId,final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("field", field);
         data.put("action", action);
@@ -462,7 +462,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logConfigurationChange(String configType, String action, Map<String, Object> details, TracingContext context) {
+    public void logConfigurationChange(final String configType,final String action,final Map<String, Object> details,final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("configType", configType);
         data.put("action", action);
@@ -474,7 +474,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logSystemEvent(String event, String level, Map<String, Object> details, TracingContext context) {
+    public void logSystemEvent(final String event,final String level,final Map<String, Object> details,final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -511,7 +511,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 创建基础日志条目
      */
-    private Map<String, Object> createBaseLogEntry(String type, TracingContext context) {
+    private Map<String, Object> createBaseLogEntry(final String type,final TracingContext context) {
         Map<String, Object> logEntry = new HashMap<>();
         
         logEntry.put("timestamp", Instant.now().toString());
@@ -531,7 +531,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 设置MDC上下文
      */
-    private void setMDC(TracingContext context) {
+    private void setMDC(final TracingContext context) {
         if (context != null && tracingConfiguration.getLogging().isIncludeTraceId()) {
             tracingMDCManager.setMDC(context);
         }
@@ -547,7 +547,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 输出结构化日志条目
      */
-    private void logStructuredEntry(Map<String, Object> logEntry) {
+    private void logStructuredEntry(final Map<String, Object> logEntry) {
         try {
             String jsonLog = objectMapper.writeValueAsString(logEntry);
             
@@ -571,7 +571,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 脱敏处理字符串
      */
-    private String sanitizeIfNeeded(String value) {
+    private String sanitizeIfNeeded(final String value) {
         if (value == null || !tracingConfiguration.getLogging().isSanitizeEnabled()) {
             return value;
         }
@@ -583,7 +583,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 脱敏处理Map
      */
-    private Map<String, Object> sanitizeMap(Map<String, Object> map) {
+    private Map<String, Object> sanitizeMap(final Map<String, Object> map) {
         if (map == null || map.isEmpty() || !tracingConfiguration.getLogging().isSanitizeEnabled()) {
             return map;
         }
@@ -595,7 +595,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 脱敏处理HTTP头部
      */
-    private Map<String, String> sanitizeHeaders(Map<String, String> headers) {
+    private Map<String, String> sanitizeHeaders(final Map<String, String> headers) {
         if (headers == null || headers.isEmpty()) {
             return headers;
         }
@@ -619,7 +619,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 检查是否为敏感头部
      */
-    private boolean isSensitiveHeader(String headerName) {
+    private boolean isSensitiveHeader(final String headerName) {
         if (headerName == null) {
             return false;
         }
@@ -635,7 +635,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 获取异常堆栈信息（截断处理）
      */
-    private String getStackTrace(Throwable error) {
+    private String getStackTrace(final Throwable error) {
         if (error == null) {
             return null;
         }
@@ -661,7 +661,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 获取客户端IP地址
      */
-    private String getClientIp(ServerHttpRequest request) {
+    private String getClientIp(final ServerHttpRequest request) {
         // 检查X-Forwarded-For头部
         String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
@@ -717,7 +717,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 安全处理URL路径
      */
-    private String sanitizeUrlPath(String path) {
+    private String sanitizeUrlPath(final String path) {
         if (path == null) {
             return null;
         }
@@ -739,7 +739,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 安全处理完整URL
      */
-    private String sanitizeUrl(String url) {
+    private String sanitizeUrl(final String url) {
         if (url == null) {
             return null;
         }
@@ -751,7 +751,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 脱敏查询参数
      */
-    private String sanitizeQueryString(String queryString) {
+    private String sanitizeQueryString(final String queryString) {
         if (queryString == null || queryString.isEmpty()) {
             return queryString;
         }
@@ -786,7 +786,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 检查是否为敏感查询参数
      */
-    private boolean isSensitiveQueryParam(String key) {
+    private boolean isSensitiveQueryParam(final String key) {
         String lowerKey = key.toLowerCase();
         return lowerKey.contains("token") ||
                lowerKey.contains("key") ||
@@ -799,7 +799,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 脱敏User-Agent
      */
-    private String sanitizeUserAgent(String userAgent) {
+    private String sanitizeUserAgent(final String userAgent) {
         if (userAgent == null) {
             return null;
         }
@@ -811,7 +811,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 脱敏客户端IP
      */
-    private String sanitizeClientIp(String clientIp) {
+    private String sanitizeClientIp(final String clientIp) {
         if (clientIp == null) {
             return null;
         }
@@ -836,7 +836,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 脱敏请求头（非阻塞）
      */
-    private Mono<Map<String, String>> sanitizeRequestHeaders(Map<String, String> headers, TracingContext context) {
+    private Mono<Map<String, String>> sanitizeRequestHeaders(final Map<String, String> headers,final TracingContext context) {
         if (headers == null || headers.isEmpty()) {
             return Mono.just(headers);
         }
@@ -860,7 +860,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 检查是否需要加密日志数据
      */
-    private boolean shouldEncryptLogData(Map<String, Object> logEntry) {
+    private boolean shouldEncryptLogData(final Map<String, Object> logEntry) {
         // 检查是否包含敏感数据
         Object fields = logEntry.get("fields");
         if (fields instanceof Map) {
@@ -880,7 +880,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     /**
      * 加密并记录日志条目
      */
-    private void encryptAndLogEntry(Map<String, Object> logEntry, TracingContext context) {
+    private void encryptAndLogEntry(final Map<String, Object> logEntry,final TracingContext context) {
         try {
             String jsonLog = objectMapper.writeValueAsString(logEntry);
             

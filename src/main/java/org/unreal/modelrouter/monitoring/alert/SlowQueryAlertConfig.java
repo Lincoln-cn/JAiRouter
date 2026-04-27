@@ -59,7 +59,7 @@ public class SlowQueryAlertConfig {
      * @param severity 严重程度
      * @return true表示启用告警
      */
-    public boolean isEnabledForSeverity(String severity) {
+    public boolean isEnabledForSeverity(final String severity) {
         return enabled && enabledSeverities.contains(severity.toLowerCase());
     }
     

@@ -26,7 +26,7 @@ public class SecurityStatisticsResponse {
     @Schema(description = "统计生成时间")
     private LocalDateTime generatedAt;
 
-    SecurityStatisticsResponse(LocalDateTime startTime, LocalDateTime endTime, Map<String, Object> auditStatistics, Map<String, Object> alertStatistics, LocalDateTime generatedAt) {
+    SecurityStatisticsResponse(final LocalDateTime startTime,final LocalDateTime endTime,final Map<String, Object> auditStatistics,final Map<String, Object> alertStatistics,final LocalDateTime generatedAt) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.auditStatistics = auditStatistics;
@@ -42,7 +42,7 @@ public class SecurityStatisticsResponse {
         return this.startTime;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
+    public void setStartTime(final LocalDateTime startTime) {
         this.startTime = startTime;
     }
 
@@ -50,7 +50,7 @@ public class SecurityStatisticsResponse {
         return this.endTime;
     }
 
-    public void setEndTime(LocalDateTime endTime) {
+    public void setEndTime(final LocalDateTime endTime) {
         this.endTime = endTime;
     }
 
@@ -58,7 +58,7 @@ public class SecurityStatisticsResponse {
         return this.auditStatistics;
     }
 
-    public void setAuditStatistics(Map<String, Object> auditStatistics) {
+    public void setAuditStatistics(final Map<String, Object> auditStatistics) {
         this.auditStatistics = auditStatistics;
     }
 
@@ -66,7 +66,7 @@ public class SecurityStatisticsResponse {
         return this.alertStatistics;
     }
 
-    public void setAlertStatistics(Map<String, Object> alertStatistics) {
+    public void setAlertStatistics(final Map<String, Object> alertStatistics) {
         this.alertStatistics = alertStatistics;
     }
 
@@ -74,7 +74,7 @@ public class SecurityStatisticsResponse {
         return this.generatedAt;
     }
 
-    public void setGeneratedAt(LocalDateTime generatedAt) {
+    public void setGeneratedAt(final LocalDateTime generatedAt) {
         this.generatedAt = generatedAt;
     }
 
@@ -92,27 +92,27 @@ public class SecurityStatisticsResponse {
         SecurityStatisticsResponseBuilder() {
         }
 
-        public SecurityStatisticsResponseBuilder startTime(LocalDateTime startTime) {
+        public SecurityStatisticsResponseBuilder startTime(final LocalDateTime startTime) {
             this.startTime = startTime;
             return this;
         }
 
-        public SecurityStatisticsResponseBuilder endTime(LocalDateTime endTime) {
+        public SecurityStatisticsResponseBuilder endTime(final LocalDateTime endTime) {
             this.endTime = endTime;
             return this;
         }
 
-        public SecurityStatisticsResponseBuilder auditStatistics(Map<String, Object> auditStatistics) {
+        public SecurityStatisticsResponseBuilder auditStatistics(final Map<String, Object> auditStatistics) {
             this.auditStatistics = auditStatistics;
             return this;
         }
 
-        public SecurityStatisticsResponseBuilder alertStatistics(Map<String, Object> alertStatistics) {
+        public SecurityStatisticsResponseBuilder alertStatistics(final Map<String, Object> alertStatistics) {
             this.alertStatistics = alertStatistics;
             return this;
         }
 
-        public SecurityStatisticsResponseBuilder generatedAt(LocalDateTime generatedAt) {
+        public SecurityStatisticsResponseBuilder generatedAt(final LocalDateTime generatedAt) {
             this.generatedAt = generatedAt;
             return this;
         }

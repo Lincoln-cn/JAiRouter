@@ -22,7 +22,7 @@ public class TracingWebClientFactory {
     
     private final BackendCallTracingInterceptor tracingInterceptor;
     
-    public TracingWebClientFactory(BackendCallTracingInterceptor tracingInterceptor) {
+    public TracingWebClientFactory(final BackendCallTracingInterceptor tracingInterceptor) {
         this.tracingInterceptor = tracingInterceptor;
     }
     
@@ -32,7 +32,7 @@ public class TracingWebClientFactory {
      * @param baseUrl 基础URL
      * @return 配置了追踪拦截器的WebClient
      */
-    public WebClient createTracingWebClient(String baseUrl) {
+    public WebClient createTracingWebClient(final String baseUrl) {
         return WebClient.builder()
                 .baseUrl(baseUrl)
                 .filter(tracingInterceptor)
@@ -45,7 +45,7 @@ public class TracingWebClientFactory {
      * @param existingClient 现有的WebClient
      * @return 添加了追踪功能的WebClient
      */
-    public WebClient addTracingToWebClient(WebClient existingClient) {
+    public WebClient addTracingToWebClient(final WebClient existingClient) {
         return existingClient.mutate()
                 .filter(tracingInterceptor)
                 .build();

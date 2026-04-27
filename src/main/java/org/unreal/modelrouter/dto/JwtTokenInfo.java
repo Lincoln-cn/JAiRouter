@@ -75,7 +75,7 @@ public class JwtTokenInfo {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public JwtTokenInfo(String token, String tokenType, String message, LocalDateTime timestamp) {
+    public JwtTokenInfo(final String token,final String tokenType,final String message,final LocalDateTime timestamp) {
         this.token = token;
         this.tokenType = tokenType;
         this.message = message;
@@ -107,7 +107,7 @@ public class JwtTokenInfo {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public JwtTokenInfo(String userId, String token, LocalDateTime issuedAt, LocalDateTime expiresAt, TokenStatus status) {
+    public JwtTokenInfo(final String userId,final String token,final LocalDateTime issuedAt,final LocalDateTime expiresAt,final TokenStatus status) {
         this.userId = userId;
         this.token = token;
         this.issuedAt = issuedAt;
@@ -124,7 +124,7 @@ public class JwtTokenInfo {
         return token;
     }
 
-    public void setToken(String token) {
+    public void setToken(final String token) {
         this.token = token;
     }
 
@@ -132,7 +132,7 @@ public class JwtTokenInfo {
         return tokenType;
     }
 
-    public void setTokenType(String tokenType) {
+    public void setTokenType(final String tokenType) {
         this.tokenType = tokenType;
     }
 
@@ -140,7 +140,7 @@ public class JwtTokenInfo {
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -148,7 +148,7 @@ public class JwtTokenInfo {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
+    public void setTimestamp(final LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -157,7 +157,7 @@ public class JwtTokenInfo {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(final String id) {
         this.id = id;
     }
 
@@ -165,7 +165,7 @@ public class JwtTokenInfo {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(final String userId) {
         this.userId = userId;
     }
 
@@ -173,7 +173,7 @@ public class JwtTokenInfo {
         return tokenHash;
     }
 
-    public void setTokenHash(String tokenHash) {
+    public void setTokenHash(final String tokenHash) {
         this.tokenHash = tokenHash;
     }
 
@@ -182,7 +182,7 @@ public class JwtTokenInfo {
         return issuedAt;
     }
 
-    public void setIssuedAt(LocalDateTime issuedAt) {
+    public void setIssuedAt(final LocalDateTime issuedAt) {
         this.issuedAt = issuedAt;
     }
 
@@ -190,7 +190,7 @@ public class JwtTokenInfo {
         return expiresAt;
     }
 
-    public void setExpiresAt(LocalDateTime expiresAt) {
+    public void setExpiresAt(final LocalDateTime expiresAt) {
         this.expiresAt = expiresAt;
     }
 
@@ -198,7 +198,7 @@ public class JwtTokenInfo {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(final LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -206,7 +206,7 @@ public class JwtTokenInfo {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
+    public void setUpdatedAt(final LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
 
@@ -215,7 +215,7 @@ public class JwtTokenInfo {
         return status;
     }
 
-    public void setStatus(TokenStatus status) {
+    public void setStatus(final TokenStatus status) {
         this.status = status;
     }
 
@@ -224,7 +224,7 @@ public class JwtTokenInfo {
         return revokeReason;
     }
 
-    public void setRevokeReason(String revokeReason) {
+    public void setRevokeReason(final String revokeReason) {
         this.revokeReason = revokeReason;
     }
 
@@ -232,7 +232,7 @@ public class JwtTokenInfo {
         return revokedAt;
     }
 
-    public void setRevokedAt(LocalDateTime revokedAt) {
+    public void setRevokedAt(final LocalDateTime revokedAt) {
         this.revokedAt = revokedAt;
     }
 
@@ -240,7 +240,7 @@ public class JwtTokenInfo {
         return revokedBy;
     }
 
-    public void setRevokedBy(String revokedBy) {
+    public void setRevokedBy(final String revokedBy) {
         this.revokedBy = revokedBy;
     }
 
@@ -249,7 +249,7 @@ public class JwtTokenInfo {
         return deviceInfo;
     }
 
-    public void setDeviceInfo(String deviceInfo) {
+    public void setDeviceInfo(final String deviceInfo) {
         this.deviceInfo = deviceInfo;
     }
 
@@ -257,7 +257,7 @@ public class JwtTokenInfo {
         return ipAddress;
     }
 
-    public void setIpAddress(String ipAddress) {
+    public void setIpAddress(final String ipAddress) {
         this.ipAddress = ipAddress;
     }
 
@@ -265,7 +265,7 @@ public class JwtTokenInfo {
         return userAgent;
     }
 
-    public void setUserAgent(String userAgent) {
+    public void setUserAgent(final String userAgent) {
         this.userAgent = userAgent;
     }
 
@@ -274,7 +274,7 @@ public class JwtTokenInfo {
         return metadata;
     }
 
-    public void setMetadata(Map<String, Object> metadata) {
+    public void setMetadata(final Map<String, Object> metadata) {
         this.metadata = metadata;
     }
 
@@ -345,7 +345,7 @@ public class JwtTokenInfo {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public void setStatusString(String status) {
+    public void setStatusString(final String status) {
         if (status != null) {
             try {
                 this.status = TokenStatus.valueOf(status.toUpperCase());

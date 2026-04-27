@@ -42,8 +42,8 @@ public class VersionManagementService {
     private VersionGenerator defaultVersionGenerator;
 
     @Autowired
-    public VersionManagementService(StoreManager storeManager,
-                                    VersionGeneratorFactory versionGeneratorFactory) {
+    public VersionManagementService(final StoreManager storeManager,
+                                    final VersionGeneratorFactory versionGeneratorFactory) {
         this.storeManager = storeManager;
         this.versionGeneratorFactory = versionGeneratorFactory;
     }
@@ -68,7 +68,7 @@ public class VersionManagementService {
      * @param operatorId 操作者ID
      * @return 新版本号
      */
-    public int generateNewVersion(String operation, String operatorId) {
+    public int generateNewVersion(final String operation,final String operatorId) {
         ConfigMetadata metadata = getOrCreateMetadata();
         List<Integer> existingVersions = getAllVersions();
 
@@ -99,8 +99,8 @@ public class VersionManagementService {
      * @param userId 用户ID
      * @param changeType 变更类型
      */
-    public void recordVersion(int version, String description, String userId,
-                              VersionInfo.ChangeType changeType) {
+    public void recordVersion(final int version,final String description,final String userId,
+                              final VersionInfo.ChangeType changeType) {
         // 更新元数据
         ConfigMetadata metadata = getOrCreateMetadata();
         metadata.setCurrentVersion(version);
@@ -160,7 +160,7 @@ public class VersionManagementService {
      * @param version 要删除的版本号
      * @throws IllegalStateException 如果尝试删除当前版本或最后一个版本
      */
-    public void deleteVersion(int version) {
+    public void deleteVersion(final int version) {
         // 检查是否是当前版本
         int currentVersion = getCurrentVersion();
         if (version == currentVersion) {
@@ -217,7 +217,7 @@ public class VersionManagementService {
      * @param version 版本号
      * @return true 如果存在
      */
-    public boolean versionExists(int version) {
+    public boolean versionExists(final int version) {
         return storeManager.versionExists(CURRENT_KEY, version);
     }
 
@@ -236,7 +236,7 @@ public class VersionManagementService {
         });
     }
 
-    private void saveMetadata(ConfigMetadata metadata) {
+    private void saveMetadata(final ConfigMetadata metadata) {
         try {
             Map<String, Object> data = new HashMap<>();
             data.put("configKey", metadata.getConfigKey());
@@ -256,7 +256,7 @@ public class VersionManagementService {
         }
     }
 
-    private void saveVersionHistory(List<VersionInfo> history) {
+    private void saveVersionHistory(final List<VersionInfo> history) {
         try {
             List<Map<String, Object>> historyList = history.stream()
                     .map(this::convertVersionInfoToMap)
@@ -270,7 +270,7 @@ public class VersionManagementService {
         }
     }
 
-    private Map<String, Object> convertVersionInfoToMap(VersionInfo info) {
+    private Map<String, Object> convertVersionInfoToMap(final VersionInfo info) {
         Map<String, Object> map = new HashMap<>();
         map.put("version", info.getVersion());
         map.put("createdAt", info.getCreatedAt());
@@ -280,7 +280,7 @@ public class VersionManagementService {
         return map;
     }
 
-    private VersionInfo convertMapToVersionInfo(Map<String, Object> map) {
+    private VersionInfo convertMapToVersionInfo(final Map<String, Object> map) {
         VersionInfo info = new VersionInfo();
         info.setVersion(((Number) map.get("version")).intValue());
         info.setCreatedAt(JacksonHelper.covertStringToLocalDateTime((String) map.get("createdAt")));
@@ -333,7 +333,7 @@ public class VersionManagementService {
         }
     }
 
-    private LocalDateTime parseDateTime(Object value) {
+    private LocalDateTime parseDateTime(final Object value) {
         if (value instanceof String) {
             return JacksonHelper.covertStringToLocalDateTime((String) value);
         }

@@ -40,7 +40,7 @@ public class VersionGeneratorFactory {
      *
      * @param generator 策略实现
      */
-    public void registerStrategy(VersionGenerator generator) {
+    public void registerStrategy(final VersionGenerator generator) {
         strategies.put(generator.getStrategyName(), generator);
         logger.debug("注册版本号生成策略: {}", generator.getStrategyName());
     }
@@ -51,7 +51,7 @@ public class VersionGeneratorFactory {
      * @param strategyName 策略名称
      * @return 策略实现，如果不存在则返回 Optional.empty()
      */
-    public Optional<VersionGenerator> getStrategy(String strategyName) {
+    public Optional<VersionGenerator> getStrategy(final String strategyName) {
         return Optional.ofNullable(strategies.get(strategyName));
     }
 
@@ -82,7 +82,7 @@ public class VersionGeneratorFactory {
      * @param strategyName 策略名称
      * @return true 如果策略存在
      */
-    public boolean hasStrategy(String strategyName) {
+    public boolean hasStrategy(final String strategyName) {
         return strategies.containsKey(strategyName);
     }
 }

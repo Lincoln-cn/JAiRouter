@@ -30,7 +30,7 @@ public class SecurityExceptionHandler {
      * 处理认证异常
      */
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<SecurityErrorResponse> handleAuthenticationException(AuthenticationException ex) {
+    public ResponseEntity<SecurityErrorResponse> handleAuthenticationException(final AuthenticationException ex) {
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage());
         
         SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
@@ -49,7 +49,7 @@ public class SecurityExceptionHandler {
      * 处理授权异常
      */
     @ExceptionHandler(AuthorizationException.class)
-    public ResponseEntity<SecurityErrorResponse> handleAuthorizationException(AuthorizationException ex) {
+    public ResponseEntity<SecurityErrorResponse> handleAuthorizationException(final AuthorizationException ex) {
         logger.warn("授权失败: {} - {}", ex.getErrorCode(), ex.getMessage());
         
         SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
@@ -68,7 +68,7 @@ public class SecurityExceptionHandler {
      * 处理数据脱敏异常
      */
     @ExceptionHandler(SanitizationException.class)
-    public ResponseEntity<SecurityErrorResponse> handleSanitizationException(SanitizationException ex) {
+    public ResponseEntity<SecurityErrorResponse> handleSanitizationException(final SanitizationException ex) {
         logger.error("数据脱敏异常: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
@@ -87,7 +87,7 @@ public class SecurityExceptionHandler {
      * 处理通用安全异常
      */
     @ExceptionHandler(SecurityException.class)
-    public ResponseEntity<SecurityErrorResponse> handleSecurityException(SecurityException ex) {
+    public ResponseEntity<SecurityErrorResponse> handleSecurityException(final SecurityException ex) {
         logger.error("安全异常: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()
@@ -106,7 +106,7 @@ public class SecurityExceptionHandler {
      * 处理下游服务异常
      */
     @ExceptionHandler(DownstreamServiceException.class)
-    public ResponseEntity<SecurityErrorResponse> handleDownstreamServiceException(DownstreamServiceException ex) {
+    public ResponseEntity<SecurityErrorResponse> handleDownstreamServiceException(final DownstreamServiceException ex) {
         logger.warn("下游服务异常: {}", ex.getMessage(), ex);
         
         SecurityErrorResponse errorResponse = SecurityErrorResponse.builder()

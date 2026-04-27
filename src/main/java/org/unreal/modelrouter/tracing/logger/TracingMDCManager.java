@@ -31,7 +31,7 @@ public class TracingMDCManager {
      * 
      * @param context 追踪上下文
      */
-    public void setMDC(TracingContext context) {
+    public void setMDC(final TracingContext context) {
         if (context != null) {
             String traceId = context.getTraceId();
             String spanId = context.getSpanId();

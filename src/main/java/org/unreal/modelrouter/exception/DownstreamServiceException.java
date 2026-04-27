@@ -10,12 +10,12 @@ public class DownstreamServiceException extends RuntimeException {
     
     private final HttpStatus statusCode;
     
-    public DownstreamServiceException(String message, HttpStatus statusCode) {
+    public DownstreamServiceException(final String message,final HttpStatus statusCode) {
         super(message);
         this.statusCode = statusCode;
     }
     
-    public DownstreamServiceException(String message, HttpStatus statusCode, Throwable cause) {
+    public DownstreamServiceException(final String message,final HttpStatus statusCode,final Throwable cause) {
         super(message, cause);
         this.statusCode = statusCode;
     }

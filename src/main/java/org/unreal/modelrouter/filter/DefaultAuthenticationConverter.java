@@ -21,12 +21,12 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
 
     private static final Logger log = LoggerFactory.getLogger(DefaultAuthenticationConverter.class);
 
-    public DefaultAuthenticationConverter(SecurityProperties securityProperties) {
+    public DefaultAuthenticationConverter(final SecurityProperties securityProperties) {
         this.securityProperties = securityProperties;
     }
 
     @Override
-    public Mono<Authentication> convert(ServerWebExchange exchange) {
+    public Mono<Authentication> convert(final ServerWebExchange exchange) {
         String apiKey = null;
         String jwtToken = null;
 
@@ -56,7 +56,7 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
     /**
      * 提取API Key
      */
-    private String extractApiKey(ServerWebExchange exchange) {
+    private String extractApiKey(final ServerWebExchange exchange) {
         String headerName = securityProperties.getApiKey().getHeaderName();
         List<String> headerValues = exchange.getRequest().getHeaders().get(headerName);
 
@@ -70,7 +70,7 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
     /**
      * 提取JWT令牌
      */
-    private String extractJwtToken(ServerWebExchange exchange) {
+    private String extractJwtToken(final ServerWebExchange exchange) {
         // 首先尝试从配置的自定义头中提取（大小写不敏感）
         String jwtHeader = securityProperties.getJwt().getJwtHeader();
         String authHeader = getHeaderIgnoreCase(exchange, jwtHeader);
@@ -86,7 +86,7 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
     /**
      * 大小写不敏感地获取请求头
      */
-    private String getHeaderIgnoreCase(ServerWebExchange exchange, String headerName) {
+    private String getHeaderIgnoreCase(final ServerWebExchange exchange,final String headerName) {
         // 首先尝试直接获取
         List<String> values = exchange.getRequest().getHeaders().get(headerName);
         if (values != null && !values.isEmpty()) {

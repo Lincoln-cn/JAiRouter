@@ -40,7 +40,7 @@ public class SlowQueryDetector {
     @Autowired(required = false)
     private SlowQueryAlertService slowQueryAlertService;
     
-    public SlowQueryDetector(MonitoringProperties monitoringProperties) {
+    public SlowQueryDetector(final MonitoringProperties monitoringProperties) {
         this.monitoringProperties = monitoringProperties;
     }
     
@@ -51,7 +51,7 @@ public class SlowQueryDetector {
      * @param durationMillis 操作耗时（毫秒）
      * @param context 上下文信息
      */
-    public void detectSlowQuery(String operationName, long durationMillis, Map<String, String> context) {
+    public void detectSlowQuery(final String operationName,final long durationMillis,final Map<String, String> context) {
         detectSlowQuery(operationName, durationMillis, context, null);
     }
     
@@ -63,7 +63,7 @@ public class SlowQueryDetector {
      * @param context 上下文信息
      * @param tracingContext 追踪上下文
      */
-    public void detectSlowQuery(String operationName, long durationMillis, Map<String, String> context, TracingContext tracingContext) {
+    public void detectSlowQuery(final String operationName,final long durationMillis,final Map<String, String> context,final TracingContext tracingContext) {
         // 获取慢查询阈值，如果没有配置则使用默认值1000ms
         Map<String, Long> slowQueryThresholds = monitoringProperties.getThresholds().getSlowQueryThresholds();
         Long threshold = slowQueryThresholds != null ? 
@@ -90,8 +90,8 @@ public class SlowQueryDetector {
     /**
      * 触发慢查询告警
      */
-    private void triggerSlowQueryAlert(String operationName, long durationMillis, long threshold, 
-                                      Map<String, String> context, TracingContext tracingContext) {
+    private void triggerSlowQueryAlert(final String operationName,final long durationMillis,final long threshold, 
+                                      final Map<String, String> context,final TracingContext tracingContext) {
         if (slowQueryAlertService == null) {
             return; // 告警服务未配置
         }
@@ -122,7 +122,7 @@ public class SlowQueryDetector {
      * @param operationName 操作名称
      * @return 慢查询统计信息
      */
-    public SlowQueryStats getSlowQueryStats(String operationName) {
+    public SlowQueryStats getSlowQueryStats(final String operationName) {
         return slowQueryStatsMap.getOrDefault(operationName, new SlowQueryStats());
     }
     
@@ -166,7 +166,7 @@ public class SlowQueryDetector {
          * 
          * @param durationMillis 慢查询耗时（毫秒）
          */
-        public void recordSlowQuery(long durationMillis) {
+        public void recordSlowQuery(final long durationMillis) {
             count.incrementAndGet();
             totalDuration.addAndGet(durationMillis);
             

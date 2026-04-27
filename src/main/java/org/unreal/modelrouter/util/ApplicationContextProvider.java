@@ -19,7 +19,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
     private static ApplicationContext applicationContext;
     
     @Override
-    public void setApplicationContext(ApplicationContext context) throws BeansException {
+    public void setApplicationContext(final ApplicationContext context) throws BeansException {
         applicationContext = context;
     }
     
@@ -40,7 +40,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
      * @return Bean实例
      * @throws BeansException 如果Bean不存在或获取失败
      */
-    public static <T> T getBean(Class<T> clazz) throws BeansException {
+    public static <T> T getBean(final Class<T> clazz) throws BeansException {
         if (applicationContext == null) {
             throw new IllegalStateException("ApplicationContext has not been set");
         }
@@ -54,7 +54,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
      * @return Bean实例
      * @throws BeansException 如果Bean不存在或获取失败
      */
-    public static Object getBean(String name) throws BeansException {
+    public static Object getBean(final String name) throws BeansException {
         if (applicationContext == null) {
             throw new IllegalStateException("ApplicationContext has not been set");
         }
@@ -70,7 +70,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
      * @return Bean实例
      * @throws BeansException 如果Bean不存在或获取失败
      */
-    public static <T> T getBean(String name, Class<T> clazz) throws BeansException {
+    public static <T> T getBean(final String name,final Class<T> clazz) throws BeansException {
         if (applicationContext == null) {
             throw new IllegalStateException("ApplicationContext has not been set");
         }
@@ -83,7 +83,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
      * @param name Bean名称
      * @return 如果包含返回true
      */
-    public static boolean containsBean(String name) {
+    public static boolean containsBean(final String name) {
         if (applicationContext == null) {
             return false;
         }

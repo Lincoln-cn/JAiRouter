@@ -38,7 +38,7 @@ public class TracingWrapperFactory {
      * @param delegate 原始LoadBalancer实例
      * @return 包装后的LoadBalancer，如果追踪未启用则返回原始实例
      */
-    public LoadBalancer wrapLoadBalancer(LoadBalancer delegate) {
+    public LoadBalancer wrapLoadBalancer(final LoadBalancer delegate) {
         if (!isComponentTracingEnabled("loadbalancer") || delegate == null) {
             log.debug("LoadBalancer追踪功能未启用或实例为空，返回原始实例");
             return delegate;
@@ -66,7 +66,7 @@ public class TracingWrapperFactory {
      * @param delegate 原始RateLimiter实例
      * @return 包装后的RateLimiter，如果追踪未启用则返回原始实例
      */
-    public RateLimiter wrapRateLimiter(RateLimiter delegate) {
+    public RateLimiter wrapRateLimiter(final RateLimiter delegate) {
         if (!isComponentTracingEnabled("ratelimiter") || delegate == null) {
             log.debug("RateLimiter追踪功能未启用或实例为空，返回原始实例");
             return delegate;
@@ -97,7 +97,7 @@ public class TracingWrapperFactory {
      * @param instanceId 实例ID
      * @return 包装后的CircuitBreaker，如果追踪未启用则返回原始实例
      */
-    public CircuitBreaker wrapCircuitBreaker(CircuitBreaker delegate, String instanceId) {
+    public CircuitBreaker wrapCircuitBreaker(final CircuitBreaker delegate,final String instanceId) {
         if (!isComponentTracingEnabled("circuitbreaker") || delegate == null) {
             log.debug("CircuitBreaker追踪功能未启用或实例为空，返回原始实例");
             return delegate;
@@ -136,7 +136,7 @@ public class TracingWrapperFactory {
      * @param componentType 组件类型 (loadbalancer, ratelimiter, circuitbreaker)
      * @return 如果组件追踪启用返回true
      */
-    private boolean isComponentTracingEnabled(String componentType) {
+    private boolean isComponentTracingEnabled(final String componentType) {
         if (!isTracingEnabled()) {
             return false;
         }

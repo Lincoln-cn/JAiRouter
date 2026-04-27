@@ -46,7 +46,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     private static final String DEFAULT_HASH_ALGORITHM = "SHA-256";
     
     @Override
-    public Mono<String> applySanitizationRules(String content, List<SanitizationRule> rules, String contentType) {
+    public Mono<String> applySanitizationRules(final String content,final List<SanitizationRule> rules,final String contentType) {
         if (content == null) {
             return Mono.empty();
         }
@@ -87,7 +87,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用单个脱敏规则
      */
-    private String applyRule(String content, SanitizationRule rule) {
+    private String applyRule(final String content,final SanitizationRule rule) {
         Pattern pattern = getCompiledPattern(rule);
         if (pattern == null) {
             log.warn("无法获取规则的编译模式: ruleId={}", rule.getRuleId());
@@ -114,7 +114,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用掩码策略
      */
-    private String applyMaskStrategy(String content, java.util.regex.Matcher matcher, SanitizationRule rule) {
+    private String applyMaskStrategy(final String content,final java.util.regex.Matcher matcher,final SanitizationRule rule) {
         String maskChar = rule.getReplacementChar() != null ? rule.getReplacementChar() : DEFAULT_MASK_CHAR;
         
         StringBuffer result = new StringBuffer();
@@ -133,7 +133,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用替换策略
      */
-    private String applyReplaceStrategy(String content, java.util.regex.Matcher matcher, SanitizationRule rule) {
+    private String applyReplaceStrategy(final String content,final java.util.regex.Matcher matcher,final SanitizationRule rule) {
         String replacement = rule.getReplacementText() != null ? rule.getReplacementText() : "[REDACTED]";
         return matcher.replaceAll(java.util.regex.Matcher.quoteReplacement(replacement));
     }
@@ -141,14 +141,14 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用删除策略
      */
-    private String applyRemoveStrategy(String content, java.util.regex.Matcher matcher) {
+    private String applyRemoveStrategy(final String content,final java.util.regex.Matcher matcher) {
         return matcher.replaceAll("");
     }
     
     /**
      * 应用哈希策略
      */
-    private String applyHashStrategy(String content, java.util.regex.Matcher matcher) {
+    private String applyHashStrategy(final String content,final java.util.regex.Matcher matcher) {
         StringBuffer result = new StringBuffer();
         matcher.reset();
         
@@ -165,7 +165,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 生成哈希值
      */
-    private String generateHash(String input) {
+    private String generateHash(final String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance(DEFAULT_HASH_ALGORITHM);
             byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
@@ -187,7 +187,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 获取编译后的正则表达式模式
      */
-    private Pattern getCompiledPattern(SanitizationRule rule) {
+    private Pattern getCompiledPattern(final SanitizationRule rule) {
         return compiledPatterns.computeIfAbsent(rule.getRuleId(), k -> {
             try {
                 String pattern = buildPattern(rule);
@@ -203,7 +203,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 根据规则类型构建正则表达式模式
      */
-    private String buildPattern(SanitizationRule rule) {
+    private String buildPattern(final SanitizationRule rule) {
         return switch (rule.getType()) {
             case SENSITIVE_WORD -> "\\b" + Pattern.quote(rule.getPattern()) + "\\b";
             case PII_PATTERN, CUSTOM_REGEX -> rule.getPattern();
@@ -213,12 +213,12 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 增加匹配计数
      */
-    private void incrementMatchCount(String ruleId) {
+    private void incrementMatchCount(final String ruleId) {
         ruleMatchCounts.merge(ruleId, 1L, Long::sum);
     }
     
     @Override
-    public Mono<Boolean> validateRule(SanitizationRule rule) {
+    public Mono<Boolean> validateRule(final SanitizationRule rule) {
         return Mono.fromCallable(() -> {
             if (rule == null) {
                 return false;
@@ -250,7 +250,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     }
     
     @Override
-    public Mono<Void> compileRules(List<SanitizationRule> rules) {
+    public Mono<Void> compileRules(final List<SanitizationRule> rules) {
         return Mono.fromRunnable(() -> {
             if (rules == null || rules.isEmpty()) {
                 return;
@@ -278,7 +278,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     }
     
     @Override
-    public Mono<Long> getRuleMatchCount(String ruleId) {
+    public Mono<Long> getRuleMatchCount(final String ruleId) {
         return Mono.fromCallable(() -> ruleMatchCounts.getOrDefault(ruleId, 0L));
     }
     

@@ -20,7 +20,7 @@ public class TokenHashUtils {
      * @param token JWT令牌字符串
      * @return 哈希值的十六进制字符串
      */
-    public static String hashToken(String token) {
+    public static String hashToken(final String token) {
         if (token == null || token.trim().isEmpty()) {
             throw new IllegalArgumentException("Token cannot be null or empty");
         }
@@ -49,7 +49,7 @@ public class TokenHashUtils {
      * @param expectedHash 期望的哈希值
      * @return 是否匹配
      */
-    public static boolean verifyTokenHash(String token, String expectedHash) {
+    public static boolean verifyTokenHash(final String token,final String expectedHash) {
         if (token == null || expectedHash == null) {
             return false;
         }

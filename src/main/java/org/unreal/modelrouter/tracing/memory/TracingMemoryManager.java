@@ -60,7 +60,7 @@ public class TracingMemoryManager {
             new AtomicReference<>(MemoryPressureLevel.LOW);
     private final AtomicBoolean memoryWarningIssued = new AtomicBoolean(false);
 
-    public TracingMemoryManager(TracingConfiguration tracingConfiguration) {
+    public TracingMemoryManager(final TracingConfiguration tracingConfiguration) {
         this.tracingConfiguration = tracingConfiguration;
         this.memoryMXBean = ManagementFactory.getMemoryMXBean();
         this.memoryScheduler = Schedulers.newBoundedElastic(2, 100, "tracing-memory");
@@ -92,7 +92,7 @@ public class TracingMemoryManager {
     /**
      * 缓存追踪数据
      */
-    public Mono<Boolean> cacheTraceData(String traceId, String spanId, Object data, long estimatedSize) {
+    public Mono<Boolean> cacheTraceData(final String traceId,final String spanId,final Object data,final long estimatedSize) {
         return Mono.fromCallable(() -> {
             if (!isRunning.get()) {
                 return false;
@@ -124,7 +124,7 @@ public class TracingMemoryManager {
     /**
      * 获取缓存的追踪数据
      */
-    public Mono<CachedTraceData> getCachedTraceData(String traceId) {
+    public Mono<CachedTraceData> getCachedTraceData(final String traceId) {
         return Mono.fromCallable(() -> {
             CachedTraceData data = traceCache.get(traceId);
             if (data != null) {
@@ -142,7 +142,7 @@ public class TracingMemoryManager {
     /**
      * 创建Span缓存
      */
-    public Mono<SpanCache> createSpanCache(String traceId, int initialCapacity) {
+    public Mono<SpanCache> createSpanCache(final String traceId,final int initialCapacity) {
         return Mono.fromCallable(() -> {
             SpanCache spanCache = new SpanCache(traceId, initialCapacity);
             spanCaches.put(traceId, spanCache);
@@ -154,7 +154,7 @@ public class TracingMemoryManager {
     /**
      * 移除Span缓存
      */
-    public Mono<Void> removeSpanCache(String traceId) {
+    public Mono<Void> removeSpanCache(final String traceId) {
         return Mono.fromRunnable(() -> {
             SpanCache removed = spanCaches.remove(traceId);
             if (removed != null) {
@@ -258,7 +258,7 @@ public class TracingMemoryManager {
     /**
      * 处理内存检查结果
      */
-    private void handleMemoryCheckResult(MemoryCheckResult result) {
+    private void handleMemoryCheckResult(final MemoryCheckResult result) {
         if (result.getPressureLevel() == MemoryPressureLevel.HIGH) {
             performOptimization();
         } else if (result.getPressureLevel() == MemoryPressureLevel.CRITICAL) {
@@ -375,7 +375,7 @@ public class TracingMemoryManager {
     /**
      * 确定内存压力级别
      */
-    private MemoryPressureLevel determineMemoryPressureLevel(double usageRatio) {
+    private MemoryPressureLevel determineMemoryPressureLevel(final double usageRatio) {
         if (usageRatio > 0.9) {
             return MemoryPressureLevel.CRITICAL;
         } else if (usageRatio > 0.8) {
@@ -390,7 +390,7 @@ public class TracingMemoryManager {
     /**
      * 发出内存告警
      */
-    private void issueMemoryWarning(MemoryPressureLevel level, double usageRatio) {
+    private void issueMemoryWarning(final MemoryPressureLevel level,final double usageRatio) {
         if (memoryWarningIssued.compareAndSet(false, true)) {
             log.warn("内存使用告警: 级别={}, 使用率={:.2f}%, 缓存大小={}, Span缓存数={}", 
                     level, usageRatio * 100, traceCache.size(), spanCaches.size());
@@ -431,7 +431,7 @@ public class TracingMemoryManager {
         private final long estimatedSize;
         private final Instant timestamp;
 
-        public CachedTraceData(String traceId, String spanId, Object data, long estimatedSize, Instant timestamp) {
+        public CachedTraceData(final String traceId,final String spanId,final Object data,final long estimatedSize,final Instant timestamp) {
             this.traceId = traceId;
             this.spanId = spanId;
             this.data = data;
@@ -468,17 +468,17 @@ public class TracingMemoryManager {
         private volatile Instant lastAccess = Instant.now();
         private final AtomicLong estimatedSize = new AtomicLong(0);
 
-        public SpanCache(String traceId, int initialCapacity) {
+        public SpanCache(final String traceId,final int initialCapacity) {
             this.traceId = traceId;
         }
 
-        public void put(String spanId, Object spanData, long size) {
+        public void put(final String spanId,final Object spanData,final long size) {
             spans.put(spanId, spanData);
             estimatedSize.addAndGet(size);
             lastAccess = Instant.now();
         }
 
-        public Object get(String spanId) {
+        public Object get(final String spanId) {
             lastAccess = Instant.now();
             return spans.get(spanId);
         }
@@ -543,13 +543,13 @@ public class TracingMemoryManager {
         private final Node<K, V> head = new Node<>(null, null);
         private final Node<K, V> tail = new Node<>(null, null);
 
-        public LRUCache(int capacity) {
+        public LRUCache(final int capacity) {
             this.capacity = capacity;
             head.next = tail;
             tail.prev = head;
         }
 
-        public synchronized V get(K key) {
+        public synchronized V get(final K key) {
             Node<K, V> node = map.get(key);
             if (node != null) {
                 moveToHead(node);
@@ -558,7 +558,7 @@ public class TracingMemoryManager {
             return null;
         }
 
-        public synchronized void put(K key, V value) {
+        public synchronized void put(final K key,final V value) {
             Node<K, V> existing = map.get(key);
             if (existing != null) {
                 existing.value = value;
@@ -582,7 +582,7 @@ public class TracingMemoryManager {
             }
         }
 
-        public synchronized void removeIf(java.util.function.Predicate<Map.Entry<K, V>> predicate) {
+        public synchronized void removeIf(final java.util.function.Predicate<Map.Entry<K, V>> predicate) {
             map.entrySet().removeIf(entry -> {
                 // 创建一个包含实际键值对的Entry用于测试
                 Map.Entry<K, V> valueEntry = new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue().value);
@@ -606,26 +606,26 @@ public class TracingMemoryManager {
             return capacity;
         }
 
-        public void setCapacity(int capacity) {
+        public void setCapacity(final int capacity) {
             this.capacity = capacity;
             while (map.size() > capacity) {
                 removeEldest();
             }
         }
 
-        private void addToHead(Node<K, V> node) {
+        private void addToHead(final Node<K, V> node) {
             node.prev = head;
             node.next = head.next;
             head.next.prev = node;
             head.next = node;
         }
 
-        private void removeNode(Node<K, V> node) {
+        private void removeNode(final Node<K, V> node) {
             node.prev.next = node.next;
             node.next.prev = node.prev;
         }
 
-        private void moveToHead(Node<K, V> node) {
+        private void moveToHead(final Node<K, V> node) {
             removeNode(node);
             addToHead(node);
         }
@@ -642,7 +642,7 @@ public class TracingMemoryManager {
             Node<K, V> prev;
             Node<K, V> next;
 
-            Node(K key, V value) {
+            Node(final K key,final V value) {
                 this.key = key;
                 this.value = value;
             }

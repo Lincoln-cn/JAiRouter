@@ -25,7 +25,7 @@ public class SamplingStrategyManager {
     private final Map<String, Sampler> strategies = new ConcurrentHashMap<>();
     private volatile Sampler currentStrategy;
     
-    public SamplingStrategyManager(TracingConfiguration tracingConfig) {
+    public SamplingStrategyManager(final TracingConfiguration tracingConfig) {
         this.tracingConfig = tracingConfig;
     }
     
@@ -85,7 +85,7 @@ public class SamplingStrategyManager {
      * 
      * @param strategyName 策略名称
      */
-    public void updateStrategy(String strategyName) {
+    public void updateStrategy(final String strategyName) {
         Sampler strategy = strategies.get(strategyName);
         if (strategy != null) {
             this.currentStrategy = strategy;
@@ -100,7 +100,7 @@ public class SamplingStrategyManager {
      * 
      * @param newConfig 新的采样配置
      */
-    public void updateSamplingConfiguration(TracingConfiguration.SamplingConfig newConfig) {
+    public void updateSamplingConfiguration(final TracingConfiguration.SamplingConfig newConfig) {
         log.info("更新采样配置");
         refreshStrategies();
     }

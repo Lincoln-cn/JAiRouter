@@ -52,7 +52,7 @@ public class TracingService {
      * @param exchange Web交换对象
      * @return 包含追踪上下文的Mono
      */
-    public Mono<TracingContext> createRootSpan(ServerWebExchange exchange) {
+    public Mono<TracingContext> createRootSpan(final ServerWebExchange exchange) {
         return Mono.fromCallable(() -> {
             ServerHttpRequest request = exchange.getRequest();
             
@@ -113,7 +113,7 @@ public class TracingService {
      * @param kind Span类型
      * @return 追踪上下文
      */
-    public TracingContext createOperationSpan(String operationName, SpanKind kind) {
+    public TracingContext createOperationSpan(final String operationName,final SpanKind kind) {
         TracingContext parentContext = TracingContextHolder.getCurrentContext();
         
         long startTime = System.currentTimeMillis();
@@ -159,7 +159,7 @@ public class TracingService {
      * @param context 追踪上下文
      * @param duration 请求处理时长（毫秒）
      */
-    public void finishHttpSpan(ServerWebExchange exchange, TracingContext context, long duration) {
+    public void finishHttpSpan(final ServerWebExchange exchange,final TracingContext context,final long duration) {
         if (context == null || !context.isActive()) {
             return;
         }
@@ -262,7 +262,7 @@ public class TracingService {
      * @param context 追踪上下文
      * @param error 错误信息
      */
-    public void recordError(TracingContext context, Throwable error) {
+    public void recordError(final TracingContext context,final Throwable error) {
         if (context != null && context.isActive()) {
             long startTime = System.currentTimeMillis();
             Span currentSpan = context.getCurrentSpan();
@@ -337,7 +337,7 @@ public class TracingService {
     /**
      * 从请求中提取头部信息
      */
-    private Map<String, String> extractHeaders(ServerHttpRequest request) {
+    private Map<String, String> extractHeaders(final ServerHttpRequest request) {
         Map<String, String> headers = new HashMap<>();
         
         // 提取W3C Trace Context相关头部
@@ -363,7 +363,7 @@ public class TracingService {
     /**
      * 检查是否包含追踪头部
      */
-    private boolean hasTracingHeaders(Map<String, String> headers) {
+    private boolean hasTracingHeaders(final Map<String, String> headers) {
         return headers.containsKey("traceparent") || 
                headers.containsKey("X-Trace-Id");
     }
@@ -371,7 +371,7 @@ public class TracingService {
     /**
      * 构建操作名称
      */
-    private String buildOperationName(ServerHttpRequest request) {
+    private String buildOperationName(final ServerHttpRequest request) {
         String method = request.getMethod() != null ? request.getMethod().name() : "UNKNOWN";
         String path = request.getPath().value();
         
@@ -389,7 +389,7 @@ public class TracingService {
      * - 后端 API 请求返回 "server"
      * - 其他请求返回默认值
      */
-    private String determineServiceName(ServerHttpRequest request) {
+    private String determineServiceName(final ServerHttpRequest request) {
         String path = request.getPath().value();
         
         // 前端静态资源路径判断
@@ -421,7 +421,7 @@ public class TracingService {
     /**
      * 判断是否为静态资源
      */
-    private boolean isStaticResource(String path) {
+    private boolean isStaticResource(final String path) {
         return path.endsWith(".js") || path.endsWith(".css") ||
                path.endsWith(".html") || path.endsWith(".ico") ||
                path.endsWith(".png") || path.endsWith(".jpg") ||
@@ -432,7 +432,7 @@ public class TracingService {
     /**
      * 设置HTTP请求相关属性
      */
-    private void setHttpAttributes(Span span, ServerHttpRequest request) {
+    private void setHttpAttributes(final Span span,final ServerHttpRequest request) {
         try {
             // HTTP方法
             if (request.getMethod() != null) {
@@ -473,7 +473,7 @@ public class TracingService {
     /**
      * 设置HTTP响应相关属性
      */
-    private void setResponseAttributes(Span span, ServerWebExchange exchange, long duration) {
+    private void setResponseAttributes(final Span span,final ServerWebExchange exchange,final long duration) {
         try {
             // 响应状态码
             if (exchange.getResponse().getStatusCode() != null) {
@@ -500,7 +500,7 @@ public class TracingService {
     /**
      * 获取客户端IP地址
      */
-    private String getClientIp(ServerHttpRequest request) {
+    private String getClientIp(final ServerHttpRequest request) {
         // 检查X-Forwarded-For头部
         String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
@@ -525,7 +525,7 @@ public class TracingService {
     /**
      * 估算Span的内存大小
      */
-    private long estimateSpanSize(Span span) {
+    private long estimateSpanSize(final Span span) {
         if (span == null || !span.getSpanContext().isValid()) {
             return 0L;
         }
@@ -545,7 +545,7 @@ public class TracingService {
     /**
      * 创建操作元数据
      */
-    private Map<String, Object> createMetadata(ServerWebExchange exchange, TracingContext context) {
+    private Map<String, Object> createMetadata(final ServerWebExchange exchange,final TracingContext context) {
         Map<String, Object> metadata = new HashMap<>();
         
         if (exchange.getRequest().getMethod() != null) {
@@ -571,7 +571,7 @@ public class TracingService {
     /**
      * 创建错误元数据
      */
-    private Map<String, Object> createErrorMetadata(ServerWebExchange exchange, TracingContext context, Throwable error) {
+    private Map<String, Object> createErrorMetadata(final ServerWebExchange exchange,final TracingContext context,final Throwable error) {
         Map<String, Object> metadata = createMetadata(exchange, context);
         
         metadata.put("error.type", error.getClass().getSimpleName());
@@ -680,7 +680,7 @@ public class TracingService {
     /**
      * 获取指定时间范围内的追踪数量
      */
-    private int getTraceCountForTimeRange(long startTime, long endTime) {
+    private int getTraceCountForTimeRange(final long startTime,final long endTime) {
         try {
             TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block();
             return stats != null ? (int) stats.getTotalTraces() : 0;
@@ -693,7 +693,7 @@ public class TracingService {
     /**
      * 获取指定时间范围内的错误数量
      */
-    private int getErrorCountForTimeRange(long startTime, long endTime) {
+    private int getErrorCountForTimeRange(final long startTime,final long endTime) {
         try {
             TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block();
             return stats != null ? (int) stats.getErrorTraces() : 0;
@@ -706,7 +706,7 @@ public class TracingService {
     /**
      * 创建Span属性映射
      */
-    private Map<String, Object> createSpanAttributes(ServerWebExchange exchange, TracingContext context) {
+    private Map<String, Object> createSpanAttributes(final ServerWebExchange exchange,final TracingContext context) {
         Map<String, Object> attributes = new HashMap<>();
         
         ServerHttpRequest request = exchange.getRequest();

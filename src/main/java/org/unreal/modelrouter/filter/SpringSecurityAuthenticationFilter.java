@@ -31,16 +31,16 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public SpringSecurityAuthenticationFilter(
-            SecurityProperties securityProperties,
-            ServerAuthenticationConverter authenticationConverter,
-            ReactiveAuthenticationManager authenticationManager) {
+            final SecurityProperties securityProperties,
+            final ServerAuthenticationConverter authenticationConverter,
+            final ReactiveAuthenticationManager authenticationManager) {
         this.securityProperties = securityProperties;
         this.authenticationConverter = authenticationConverter;
         this.authenticationManager = authenticationManager;
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
         // 首先检查是否已经认证，如果已认证则直接继续执行过滤器链
         return requiresAuthentication(exchange)
                 .flatMap(authRequired -> {
@@ -67,7 +67,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 执行实际的认证逻辑
      */
-    private Mono<Void> performAuthentication(ServerWebExchange exchange, WebFilterChain chain) {
+    private Mono<Void> performAuthentication(final ServerWebExchange exchange,final WebFilterChain chain) {
         return authenticationConverter.convert(exchange)
                 .flatMap(authentication -> {
                     // 使用认证管理器进行实际认证
@@ -110,7 +110,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 检查是否应该进行认证
      */
-    private Mono<Boolean> requiresAuthentication(ServerWebExchange exchange) {
+    private Mono<Boolean> requiresAuthentication(final ServerWebExchange exchange) {
         String path = exchange.getRequest().getPath().value();
         // 使用ExcludedPathsConfig.AUTH_EXCLUDED_PATHS判断是否需要认证
         boolean isExcluded = ExcludedPathsConfig.isAuthExcluded(path);
@@ -122,7 +122,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 检查是否为multipart请求
      */
-    private boolean isMultipartRequest(ServerWebExchange exchange) {
+    private boolean isMultipartRequest(final ServerWebExchange exchange) {
         MediaType contentType = exchange.getRequest().getHeaders().getContentType();
         return contentType != null && contentType.isCompatibleWith(MediaType.MULTIPART_FORM_DATA);
     }
@@ -131,7 +131,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
      * 处理multipart请求的认证
      * 只捕获认证相关异常，其它异常放行
      */
-    private Mono<Void> handleMultipartAuthentication(ServerWebExchange exchange, WebFilterChain chain) {
+    private Mono<Void> handleMultipartAuthentication(final ServerWebExchange exchange,final WebFilterChain chain) {
         log.debug("开始处理multipart请求认证: {}", exchange.getRequest().getPath().value());
 
         // 对于multipart请求，直接从请求头中提取认证信息，避免读取请求体
@@ -166,7 +166,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 工具方法：判断是否为认证相关异常
      */
-    private boolean isAuthException(Throwable throwable) {
+    private boolean isAuthException(final Throwable throwable) {
         return throwable instanceof AuthenticationException
                 || throwable instanceof SecurityAuthenticationException;
     }
@@ -175,7 +175,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
      * 在安全上下文中继续执行过滤器链
      * 优化版本：设置上下文后直接继续，不会重复进入认证流程
      */
-    private Mono<Void> continueWithSecurityContext(Authentication authenticated, ServerWebExchange exchange, WebFilterChain chain) {
+    private Mono<Void> continueWithSecurityContext(final Authentication authenticated,final ServerWebExchange exchange,final WebFilterChain chain) {
         log.debug("设置认证上下文并继续执行过滤器链: {} - 用户: {}",
                 exchange.getRequest().getPath().value(),
                 authenticated.getName());
@@ -188,7 +188,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 处理缺少认证信息的情况
      */
-    private Mono<Void> handleMissingAuthentication(ServerWebExchange exchange) {
+    private Mono<Void> handleMissingAuthentication(final ServerWebExchange exchange) {
         log.warn("请求缺少认证信息: {}", exchange.getRequest().getPath().value());
         return createAuthenticationErrorResponse(exchange,
                 "请求缺少认证信息，请提供X-API-Key或Jairouter_token",
@@ -198,7 +198,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 处理认证错误
      */
-    private Mono<Void> handleAuthenticationError(ServerWebExchange exchange, Throwable throwable) {
+    private Mono<Void> handleAuthenticationError(final ServerWebExchange exchange,final Throwable throwable) {
         log.warn("认证失败: {}", exchange.getRequest().getPath().value(), throwable);
 
         String message = "认证失败";
@@ -222,7 +222,7 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 创建认证错误响应
      */
-    private Mono<Void> createAuthenticationErrorResponse(ServerWebExchange exchange, String message, String errorCode) {
+    private Mono<Void> createAuthenticationErrorResponse(final ServerWebExchange exchange,final String message,final String errorCode) {
         ServerHttpResponse response = exchange.getResponse();
 
         // 检查响应是否已经提交

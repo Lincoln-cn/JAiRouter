@@ -50,7 +50,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     }
 
     @Override
-    public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
+    public Mono<Void> handle(final ServerWebExchange exchange,final Throwable ex) {
         ServerHttpResponse response = exchange.getResponse();
         logger.debug("响应状态: committed={}, status={}", response.isCommitted(), response.getStatusCode());
 
@@ -115,7 +115,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 记录错误信息
      */
-    private void recordError(Throwable ex) {
+    private void recordError(final Throwable ex) {
         try {
             // 不记录认证相关的 401 错误（这是正常的安全机制）
             if (isAuthenticationError(ex)) {
@@ -160,7 +160,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 安全地设置响应
      */
-    private Mono<Void> setResponse(ServerHttpResponse response, RouterResponse<Void> errorResponse, HttpStatus status) {
+    private Mono<Void> setResponse(final ServerHttpResponse response,final RouterResponse<Void> errorResponse,final HttpStatus status) {
         try {
             // 检查响应是否已提交
             if (response.isCommitted()) {
@@ -198,7 +198,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理安全异常
      */
-    private Mono<Void> handleSecurityException(ServerWebExchange exchange, SecurityException ex) {
+    private Mono<Void> handleSecurityException(final ServerWebExchange exchange,final SecurityException ex) {
         // 根据异常类型进行不同的处理
         if (ex instanceof AuthenticationException) {
             return handleAuthenticationException(exchange, (AuthenticationException) ex);
@@ -214,7 +214,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理认证异常
      */
-    private Mono<Void> handleAuthenticationException(ServerWebExchange exchange, AuthenticationException ex) {
+    private Mono<Void> handleAuthenticationException(final ServerWebExchange exchange,final AuthenticationException ex) {
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
@@ -224,7 +224,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理授权异常
      */
-    private Mono<Void> handleAuthorizationException(ServerWebExchange exchange, AuthorizationException ex) {
+    private Mono<Void> handleAuthorizationException(final ServerWebExchange exchange,final AuthorizationException ex) {
         logger.warn("授权失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
@@ -234,7 +234,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理数据脱敏异常
      */
-    private Mono<Void> handleSanitizationException(ServerWebExchange exchange, SanitizationException ex) {
+    private Mono<Void> handleSanitizationException(final ServerWebExchange exchange,final SanitizationException ex) {
         // 记录完整的异常堆栈信息
         logger.error("数据脱敏异常: {} - {}\n{}", ex.getErrorCode(), ex.getMessage(), getStackTraceAsString(ex), ex);
         
@@ -245,7 +245,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理通用安全异常
      */
-    private Mono<Void> handleGenericSecurityException(ServerWebExchange exchange, SecurityException ex) {
+    private Mono<Void> handleGenericSecurityException(final ServerWebExchange exchange,final SecurityException ex) {
         // 记录完整的异常堆栈信息
         logger.error("安全异常: {} - {}\n{}", ex.getErrorCode(), ex.getMessage(), getStackTraceAsString(ex), ex);
         
@@ -256,7 +256,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 将异常堆栈转换为字符串
      */
-    private String getStackTraceAsString(Throwable throwable) {
+    private String getStackTraceAsString(final Throwable throwable) {
         StringBuilder sb = new StringBuilder();
         for (StackTraceElement element : throwable.getStackTrace()) {
             sb.append(element.toString()).append("\n");
@@ -267,7 +267,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理Spring Security认证异常
      */
-    private Mono<Void> handleSecurityAuthenticationException(ServerWebExchange exchange, SecurityAuthenticationException ex) {
+    private Mono<Void> handleSecurityAuthenticationException(final ServerWebExchange exchange,final SecurityAuthenticationException ex) {
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
@@ -280,7 +280,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 判断是否为认证相关的错误（不记录到数据库）
      */
-    private boolean isAuthenticationError(Throwable ex) {
+    private boolean isAuthenticationError(final Throwable ex) {
         String className = ex.getClass().getSimpleName();
         // Spring Security 的认证异常
         if ("AuthenticationCredentialsNotFoundException".equals(className)) {
@@ -299,7 +299,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
         return false;
     }
 
-    private Mono<Void> setSimpleErrorResponse(ServerHttpResponse response) {
+    private Mono<Void> setSimpleErrorResponse(final ServerHttpResponse response) {
         // 检查响应是否已提交，避免递归
         if (response.isCommitted()) {
             return Mono.empty();

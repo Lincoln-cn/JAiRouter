@@ -34,7 +34,7 @@ public class WebFluxTracingContextPropagator {
      * @param exchange Web交换对象
      * @return 追踪上下文，如果不存在则返回null
      */
-    public TracingContext extractFromExchange(ServerWebExchange exchange) {
+    public TracingContext extractFromExchange(final ServerWebExchange exchange) {
         try {
             Object contextObj = exchange.getAttribute(TracingConstants.ContextKeys.TRACING_CONTEXT);
             if (contextObj instanceof TracingContext) {
@@ -52,7 +52,7 @@ public class WebFluxTracingContextPropagator {
      * @param exchange Web交换对象
      * @param tracingContext 追踪上下文
      */
-    public void injectToExchange(ServerWebExchange exchange, TracingContext tracingContext) {
+    public void injectToExchange(final ServerWebExchange exchange,final TracingContext tracingContext) {
         if (tracingContext != null) {
             exchange.getAttributes().put(TracingConstants.ContextKeys.TRACING_CONTEXT, tracingContext);
             exchange.getAttributes().put(TracingConstants.ContextKeys.TRACE_ID, tracingContext.getTraceId());
@@ -66,7 +66,7 @@ public class WebFluxTracingContextPropagator {
      * @param exchange Web交换对象
      * @return 上下文写入器函数
      */
-    public Function<Context, Context> contextWriter(ServerWebExchange exchange) {
+    public Function<Context, Context> contextWriter(final ServerWebExchange exchange) {
         TracingContext tracingContext = extractFromExchange(exchange);
         if (tracingContext != null) {
             return ReactiveTracingContextHolder.contextWriter(tracingContext);
@@ -82,7 +82,7 @@ public class WebFluxTracingContextPropagator {
      * @param <T> 操作返回类型
      * @return 包含追踪上下文的操作结果
      */
-    public <T> Mono<T> withTracingContext(ServerWebExchange exchange, Mono<T> operation) {
+    public <T> Mono<T> withTracingContext(final ServerWebExchange exchange,final Mono<T> operation) {
         TracingContext tracingContext = extractFromExchange(exchange);
         if (tracingContext != null) {
             return ReactiveTracingContextHolder.withContext(tracingContext, operation);
@@ -98,8 +98,8 @@ public class WebFluxTracingContextPropagator {
      * @param <T> 操作返回类型
      * @return 包含追踪上下文的操作结果
      */
-    public <T> Mono<T> withTracingContext(ServerWebExchange exchange, 
-                                         java.util.function.Function<TracingContext, Mono<T>> operationFactory) {
+    public <T> Mono<T> withTracingContext(final ServerWebExchange exchange, 
+                                         final java.util.function.Function<TracingContext, Mono<T>> operationFactory) {
         TracingContext tracingContext = extractFromExchange(exchange);
         return operationFactory.apply(tracingContext)
                 .contextWrite(context -> {
@@ -116,7 +116,7 @@ public class WebFluxTracingContextPropagator {
      * @param exchange Web交换对象
      * @return 是否包含追踪上下文
      */
-    public boolean hasTracingContext(ServerWebExchange exchange) {
+    public boolean hasTracingContext(final ServerWebExchange exchange) {
         return exchange.getAttribute(TracingConstants.ContextKeys.TRACING_CONTEXT) != null;
     }
     
@@ -126,7 +126,7 @@ public class WebFluxTracingContextPropagator {
      * @param exchange Web交换对象
      * @return TraceID，如果不存在则返回空字符串
      */
-    public String getTraceId(ServerWebExchange exchange) {
+    public String getTraceId(final ServerWebExchange exchange) {
         TracingContext context = extractFromExchange(exchange);
         return context != null ? context.getTraceId() : "";
     }
@@ -137,7 +137,7 @@ public class WebFluxTracingContextPropagator {
      * @param exchange Web交换对象
      * @return SpanID，如果不存在则返回空字符串
      */
-    public String getSpanId(ServerWebExchange exchange) {
+    public String getSpanId(final ServerWebExchange exchange) {
         TracingContext context = extractFromExchange(exchange);
         return context != null ? context.getSpanId() : "";
     }
@@ -147,7 +147,7 @@ public class WebFluxTracingContextPropagator {
      * 
      * @param exchange Web交换对象
      */
-    public void clearTracingContext(ServerWebExchange exchange) {
+    public void clearTracingContext(final ServerWebExchange exchange) {
         exchange.getAttributes().remove(TracingConstants.ContextKeys.TRACING_CONTEXT);
         exchange.getAttributes().remove(TracingConstants.ContextKeys.TRACE_ID);
         exchange.getAttributes().remove(TracingConstants.ContextKeys.SPAN_ID);
@@ -159,7 +159,7 @@ public class WebFluxTracingContextPropagator {
      * @param sourceExchange 源交换对象
      * @param targetExchange 目标交换对象
      */
-    public void copyTracingContext(ServerWebExchange sourceExchange, ServerWebExchange targetExchange) {
+    public void copyTracingContext(final ServerWebExchange sourceExchange,final ServerWebExchange targetExchange) {
         TracingContext tracingContext = extractFromExchange(sourceExchange);
         if (tracingContext != null) {
             injectToExchange(targetExchange, tracingContext);
@@ -174,7 +174,7 @@ public class WebFluxTracingContextPropagator {
      * @param <R> 处理器输出类型
      * @return 追踪装饰器函数
      */
-    public <T, R> Function<Function<T, Mono<R>>, Function<T, Mono<R>>> tracingDecorator(String operationName) {
+    public <T, R> Function<Function<T, Mono<R>>, Function<T, Mono<R>>> tracingDecorator(final String operationName) {
         return handler -> input -> {
             return ReactiveTracingContextHolder.withCurrentContext(tracingContext -> {
                 if (tracingContext != null) {
@@ -210,7 +210,7 @@ public class WebFluxTracingContextPropagator {
      * @param <T> 返回类型
      * @return 包含追踪的处理结果
      */
-    public <T> Mono<T> traceRoute(ServerWebExchange exchange, String routeName, Mono<T> handler) {
+    public <T> Mono<T> traceRoute(final ServerWebExchange exchange,final String routeName,final Mono<T> handler) {
         return withTracingContext(exchange, tracingContext -> {
             if (tracingContext != null) {
                 // 添加路由信息到Span

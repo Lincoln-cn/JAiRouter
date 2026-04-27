@@ -52,11 +52,11 @@ public class AdaptiveSamplingStrategy implements SamplingStrategy {
      * @param adjustmentInterval 调整间隔（秒）
      */
     public AdaptiveSamplingStrategy(
-            double defaultRatio,
-            double maxRatio,
-            double minRatio,
-            long adjustmentThreshold,
-            long adjustmentInterval) {
+            final double defaultRatio,
+            final double maxRatio,
+            final double minRatio,
+            final long adjustmentThreshold,
+            final long adjustmentInterval) {
         this.defaultRatio = defaultRatio;
         this.maxRatio = maxRatio;
         this.minRatio = minRatio;
@@ -67,12 +67,12 @@ public class AdaptiveSamplingStrategy implements SamplingStrategy {
     
     @Override
     public SamplingResult shouldSample(
-            Context parentContext,
-            String traceId,
-            String spanName,
-            SpanKind spanKind,
-            Map<String, Object> attributes,
-            Map<String, String> parentLinks) {
+            final Context parentContext,
+            final String traceId,
+            final String spanName,
+            final SpanKind spanKind,
+            final Map<String, Object> attributes,
+            final Map<String, String> parentLinks) {
         
         // 获取或创建计数器
         AtomicLong counter = spanCounters.computeIfAbsent(spanName, k -> new AtomicLong(0));
@@ -93,7 +93,7 @@ public class AdaptiveSamplingStrategy implements SamplingStrategy {
      * @param count 当前计数
      * @return 当前采样率
      */
-    private double calculateCurrentRatio(String spanName, long count) {
+    private double calculateCurrentRatio(final String spanName,final long count) {
         long currentTime = System.currentTimeMillis();
         
         // 检查是否需要调整采样率

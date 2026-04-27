@@ -39,7 +39,7 @@ public class ServerChecker {
     // 缓存实例之前的状态，用于检测状态变化
     private final Map<String, Boolean> previousInstanceStates = new ConcurrentHashMap<>();
 
-    public ServerChecker(ModelServiceRegistry modelServiceRegistry, ServiceStateManager serviceStateManager) {
+    public ServerChecker(final ModelServiceRegistry modelServiceRegistry,final ServiceStateManager serviceStateManager) {
         this.modelServiceRegistry = modelServiceRegistry;
         this.serviceStateManager = serviceStateManager;
     }
@@ -145,7 +145,7 @@ public class ServerChecker {
             healthyServices, totalServices, healthyInstances, totalInstances, batchDuration);
     }
 
-    private List<Runnable> getRunnable(Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry) {
+    private List<Runnable> getRunnable(final Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry) {
         List<Runnable> tasks = new ArrayList<>();
 
         for (Map.Entry<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> entry : instanceRegistry.entrySet()) {
@@ -162,7 +162,7 @@ public class ServerChecker {
     /**
      * 检查特定服务类型的所有实例
      */
-    private void checkServiceInstances(String serviceType, List<ModelRouterProperties.ModelInstance> instances) {
+    private void checkServiceInstances(final String serviceType,final List<ModelRouterProperties.ModelInstance> instances) {
         boolean hasHealthyInstance = false;
 
         for (ModelRouterProperties.ModelInstance instance : instances) {
@@ -298,7 +298,7 @@ public class ServerChecker {
     /**
      * 记录健康检查指标
      */
-    private void recordHealthCheckMetrics(String adapter, String instance, boolean healthy, long responseTime) {
+    private void recordHealthCheckMetrics(final String adapter,final String instance,final boolean healthy,final long responseTime) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordHealthCheck(adapter, instance, healthy, responseTime);
@@ -311,7 +311,7 @@ public class ServerChecker {
     /**
      * 根据实例信息推断适配器类型
      */
-    private String getAdapterType(ModelRouterProperties.ModelInstance instance) {
+    private String getAdapterType(final ModelRouterProperties.ModelInstance instance) {
         // 根据实例的URL或其他特征推断适配器类型
         String baseUrl = instance.getBaseUrl().toLowerCase();
         if (baseUrl.contains("ollama")) {
@@ -335,7 +335,7 @@ public class ServerChecker {
      * @param serviceType 服务类型
      * @param instance 服务实例
      */
-    public void logServiceInstanceRegistered(String serviceType, ModelRouterProperties.ModelInstance instance) {
+    public void logServiceInstanceRegistered(final String serviceType,final ModelRouterProperties.ModelInstance instance) {
         try {
             HealthCheckTracingEnhancer tracingEnhancer = ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
             tracingEnhancer.logServiceInstanceRegistered(serviceType, instance);
@@ -350,7 +350,7 @@ public class ServerChecker {
      * @param serviceType 服务类型
      * @param instance 服务实例
      */
-    public void logServiceInstanceDiscovered(String serviceType, ModelRouterProperties.ModelInstance instance) {
+    public void logServiceInstanceDiscovered(final String serviceType,final ModelRouterProperties.ModelInstance instance) {
         try {
             HealthCheckTracingEnhancer tracingEnhancer = ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
             tracingEnhancer.logServiceInstanceDiscovered(serviceType, instance);
@@ -366,7 +366,7 @@ public class ServerChecker {
      * @param healthStatus 健康状态 (HEALTHY, UNHEALTHY, UNKNOWN)
      * @param errorMessage 错误信息
      */
-    private void updateDatabaseHealthStatus(String instanceName, String instanceId, String healthStatus, String errorMessage) {
+    private void updateDatabaseHealthStatus(final String instanceName,final String instanceId,final String healthStatus,final String errorMessage) {
         if (serviceInstanceRepository == null) {
             return;
         }

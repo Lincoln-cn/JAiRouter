@@ -164,7 +164,7 @@ public class ExporterHealthChecker implements HealthIndicator {
     /**
      * 更新健康状态
      */
-    private void updateHealthStatus(boolean healthy, String error) {
+    private void updateHealthStatus(final boolean healthy,final String error) {
         lastCheckTime.set(Instant.now());
         
         if (healthy) {
@@ -186,7 +186,7 @@ public class ExporterHealthChecker implements HealthIndicator {
     /**
      * 记录导出成功
      */
-    private void recordExportSuccess(long exportTime) {
+    private void recordExportSuccess(final long exportTime) {
         totalExports.incrementAndGet();
         successfulExports.incrementAndGet();
         totalExportTime.addAndGet(exportTime);
@@ -271,7 +271,7 @@ public class ExporterHealthChecker implements HealthIndicator {
         private final Instant lastSuccessTime;
         private final Instant lastCheckTime;
         
-        private ExporterStatistics(Builder builder) {
+        private ExporterStatistics(final Builder builder) {
             this.totalExports = builder.totalExports;
             this.successfulExports = builder.successfulExports;
             this.failedExports = builder.failedExports;
@@ -309,47 +309,47 @@ public class ExporterHealthChecker implements HealthIndicator {
             private Instant lastSuccessTime;
             private Instant lastCheckTime;
             
-            public Builder totalExports(long totalExports) {
+            public Builder totalExports(final long totalExports) {
                 this.totalExports = totalExports;
                 return this;
             }
             
-            public Builder successfulExports(long successfulExports) {
+            public Builder successfulExports(final long successfulExports) {
                 this.successfulExports = successfulExports;
                 return this;
             }
             
-            public Builder failedExports(long failedExports) {
+            public Builder failedExports(final long failedExports) {
                 this.failedExports = failedExports;
                 return this;
             }
             
-            public Builder successRate(double successRate) {
+            public Builder successRate(final double successRate) {
                 this.successRate = successRate;
                 return this;
             }
             
-            public Builder averageExportTime(double averageExportTime) {
+            public Builder averageExportTime(final double averageExportTime) {
                 this.averageExportTime = averageExportTime;
                 return this;
             }
             
-            public Builder isHealthy(boolean isHealthy) {
+            public Builder isHealthy(final boolean isHealthy) {
                 this.isHealthy = isHealthy;
                 return this;
             }
             
-            public Builder lastError(String lastError) {
+            public Builder lastError(final String lastError) {
                 this.lastError = lastError;
                 return this;
             }
             
-            public Builder lastSuccessTime(Instant lastSuccessTime) {
+            public Builder lastSuccessTime(final Instant lastSuccessTime) {
                 this.lastSuccessTime = lastSuccessTime;
                 return this;
             }
             
-            public Builder lastCheckTime(Instant lastCheckTime) {
+            public Builder lastCheckTime(final Instant lastCheckTime) {
                 this.lastCheckTime = lastCheckTime;
                 return this;
             }

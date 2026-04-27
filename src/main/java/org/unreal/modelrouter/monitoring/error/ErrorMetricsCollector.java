@@ -32,9 +32,9 @@ public class ErrorMetricsCollector {
     private final ConcurrentHashMap<String, Counter> errorCounters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Timer> errorTimers = new ConcurrentHashMap<>();
 
-    public ErrorMetricsCollector(MeterRegistry meterRegistry,
-                                ErrorTrackerProperties properties,
-                                ErrorCodeResolver errorCodeResolver) {
+    public ErrorMetricsCollector(final MeterRegistry meterRegistry,
+                                final ErrorTrackerProperties properties,
+                                final ErrorCodeResolver errorCodeResolver) {
         this.meterRegistry = meterRegistry;
         this.properties = properties;
         this.errorCodeResolver = errorCodeResolver;
@@ -85,13 +85,13 @@ public class ErrorMetricsCollector {
      * @param model 模型名称
      * @param duration 错误处理耗时
      */
-    public void recordError(String errorType,
-                           String operation,
-                           String errorCode,
-                           String severity,
-                           String module,
-                           String model,
-                           Duration duration) {
+    public void recordError(final String errorType,
+                           final String operation,
+                           final String errorCode,
+                           final String severity,
+                           final String module,
+                           final String model,
+                           final Duration duration) {
         if (!properties.getMetrics().isEnabled()) {
             return;
         }
@@ -161,7 +161,7 @@ public class ErrorMetricsCollector {
      * @param errorType 错误类型
      * @param operation 操作名称
      */
-    public void recordError(String errorType, String operation) {
+    public void recordError(final String errorType,final String operation) {
         recordError(errorType, operation, null);
     }
 
@@ -182,7 +182,7 @@ public class ErrorMetricsCollector {
      * @since v2.5.8 标注废弃
      */
     @Deprecated(since = "2.5.8", forRemoval = true)
-    public void recordError(String errorType, String operation, Duration duration) {
+    public void recordError(final String errorType,final String operation,final Duration duration) {
         recordError(errorType, operation, null, "ERROR", null, null, duration);
     }
 
@@ -204,7 +204,7 @@ public class ErrorMetricsCollector {
      * @since v2.5.8 标注废弃
      */
     @Deprecated(since = "2.5.8", forRemoval = true)
-    public void recordError(String errorType, String operation, String errorCode, String severity) {
+    public void recordError(final String errorType,final String operation,final String errorCode,final String severity) {
         recordError(errorType, operation, errorCode, severity, null, null, null);
     }
 
@@ -218,12 +218,12 @@ public class ErrorMetricsCollector {
      * @param module 模块名称
      * @param model 模型名称
      */
-    public void recordErrorWithContext(String errorType,
-                                       String operation,
-                                       String errorCode,
-                                       String severity,
-                                       String module,
-                                       String model) {
+    public void recordErrorWithContext(final String errorType,
+                                       final String operation,
+                                       final String errorCode,
+                                       final String severity,
+                                       final String module,
+                                       final String model) {
         recordError(errorType, operation, errorCode, severity, module, model, null);
     }
 
@@ -235,10 +235,10 @@ public class ErrorMetricsCollector {
      * @param module 模块名称
      * @param model 模型名称
      */
-    public void recordErrorFromThrowable(Throwable throwable,
-                                         String operation,
-                                         String module,
-                                         String model) {
+    public void recordErrorFromThrowable(final Throwable throwable,
+                                         final String operation,
+                                         final String module,
+                                         final String model) {
         String errorCode = errorCodeResolver != null ? errorCodeResolver.resolveErrorCode(throwable) : "UNK_000";
         ErrorCodeResolver.ErrorCategory category = errorCodeResolver != null ?
             errorCodeResolver.resolveErrorCategory(throwable) : ErrorCodeResolver.ErrorCategory.UNKNOWN;
@@ -258,7 +258,7 @@ public class ErrorMetricsCollector {
     /**
      * 将错误分类映射到严重级别
      */
-    private String mapCategoryToSeverity(ErrorCodeResolver.ErrorCategory category) {
+    private String mapCategoryToSeverity(final ErrorCodeResolver.ErrorCategory category) {
         return switch (category) {
             case AUTHENTICATION, AUTHORIZATION -> "WARN";
             case VALIDATION -> "INFO";
@@ -281,13 +281,13 @@ public class ErrorMetricsCollector {
      * @param errorType 错误类型
      * @return 错误计数器
      */
-    private Counter getOrCreateErrorCounter(String category,
-                                            String errorCode,
-                                            String severity,
-                                            String module,
-                                            String model,
-                                            String operation,
-                                            String errorType) {
+    private Counter getOrCreateErrorCounter(final String category,
+                                            final String errorCode,
+                                            final String severity,
+                                            final String module,
+                                            final String model,
+                                            final String operation,
+                                            final String errorType) {
         String key = String.format("%s:%s:%s:%s:%s:%s:%s",
             category, errorCode, severity, module, model, operation, errorType);
 
@@ -330,12 +330,12 @@ public class ErrorMetricsCollector {
      * @param model 模型
      * @return 错误计时器
      */
-    private Timer getOrCreateErrorTimer(String errorType,
-                                        String operation,
-                                        String errorCode,
-                                        String severity,
-                                        String module,
-                                        String model) {
+    private Timer getOrCreateErrorTimer(final String errorType,
+                                        final String operation,
+                                        final String errorCode,
+                                        final String severity,
+                                        final String module,
+                                        final String model) {
         String key = String.format("duration:%s:%s:%s:%s:%s:%s",
             errorType, operation, errorCode, severity, module, model);
 

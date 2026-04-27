@@ -77,7 +77,7 @@ public class TracingSanitizationService {
      * @param context 追踪上下文
      * @return 脱敏后的属性
      */
-    public Mono<Attributes> sanitizeSpanAttributes(Attributes attributes, TracingContext context) {
+    public Mono<Attributes> sanitizeSpanAttributes(final Attributes attributes,final TracingContext context) {
         if (!isTracingSanitizationEnabled() || attributes.isEmpty()) {
             return Mono.just(attributes);
         }
@@ -115,9 +115,9 @@ public class TracingSanitizationService {
      * @param context 追踪上下文
      * @return 脱敏后的事件属性
      */
-    public Mono<Map<String, Object>> sanitizeEventAttributes(String eventName, 
-                                                           Map<String, Object> eventAttributes, 
-                                                           TracingContext context) {
+    public Mono<Map<String, Object>> sanitizeEventAttributes(final String eventName, 
+                                                           final Map<String, Object> eventAttributes, 
+                                                           final TracingContext context) {
         if (!isTracingSanitizationEnabled() || eventAttributes.isEmpty()) {
             return Mono.just(eventAttributes);
         }
@@ -158,7 +158,7 @@ public class TracingSanitizationService {
      * @param context 追踪上下文
      * @return 脱敏后的日志数据
      */
-    public Mono<Map<String, Object>> sanitizeLogData(Map<String, Object> logData, TracingContext context) {
+    public Mono<Map<String, Object>> sanitizeLogData(final Map<String, Object> logData,final TracingContext context) {
         if (!isTracingSanitizationEnabled() || logData.isEmpty()) {
             return Mono.just(logData);
         }
@@ -170,7 +170,7 @@ public class TracingSanitizationService {
      * 递归脱敏Map数据
      */
     @SuppressWarnings("unchecked")
-    private Mono<Map<String, Object>> sanitizeMapRecursively(Map<String, Object> data, TracingContext context) {
+    private Mono<Map<String, Object>> sanitizeMapRecursively(final Map<String, Object> data,final TracingContext context) {
         Map<String, Object> sanitizedData = new HashMap<>();
         
         for (Map.Entry<String, Object> entry : data.entrySet()) {
@@ -200,7 +200,7 @@ public class TracingSanitizationService {
      * 安全地放置属性到AttributesBuilder中，处理泛型类型问题
      */
     @SuppressWarnings("unchecked")
-    private void putAttributeSafely(AttributesBuilder builder, AttributeKey<?> key, Object value) {
+    private void putAttributeSafely(final AttributesBuilder builder,final AttributeKey<?> key,final Object value) {
         try {
             // 根据值的类型创建对应的AttributeKey并放置值
             if (value instanceof String) {
@@ -229,7 +229,7 @@ public class TracingSanitizationService {
      * 脱敏属性值
      */
     @SuppressWarnings("unchecked")
-    private Mono<Object> sanitizeAttributeValue(AttributeKey<?> key, Object value, TracingContext context) {
+    private Mono<Object> sanitizeAttributeValue(final AttributeKey<?> key,final Object value,final TracingContext context) {
         if (value instanceof String) {
             return sanitizationService.sanitizeRequest((String) value, "text/plain", null)
                     .cast(Object.class);
@@ -240,7 +240,7 @@ public class TracingSanitizationService {
     /**
      * 检查是否为敏感属性
      */
-    private boolean isSensitiveAttribute(AttributeKey<?> attributeKey) {
+    private boolean isSensitiveAttribute(final AttributeKey<?> attributeKey) {
         String key = attributeKey.getKey().toLowerCase();
         
         // 检查是否匹配预定义的敏感属性模式
@@ -258,7 +258,7 @@ public class TracingSanitizationService {
     /**
      * 检查是否为敏感事件属性
      */
-    private boolean isSensitiveEventAttribute(String key) {
+    private boolean isSensitiveEventAttribute(final String key) {
         String lowerKey = key.toLowerCase();
         return lowerKey.contains("password") || 
                lowerKey.contains("token") || 
@@ -271,7 +271,7 @@ public class TracingSanitizationService {
     /**
      * 检查是否为敏感日志字段
      */
-    private boolean isSensitiveLogField(String key) {
+    private boolean isSensitiveLogField(final String key) {
         String lowerKey = key.toLowerCase();
         return lowerKey.contains("password") || 
                lowerKey.contains("token") || 
@@ -285,7 +285,7 @@ public class TracingSanitizationService {
     /**
      * 记录脱敏操作审计日志
      */
-    private void recordSanitizationAudit(String dataType, String fieldName, String action, TracingContext context) {
+    private void recordSanitizationAudit(final String dataType,final String fieldName,final String action,final TracingContext context) {
         try {
             structuredLogger.logSanitization(
                 String.format("%s.%s", dataType, fieldName),
@@ -336,7 +336,7 @@ public class TracingSanitizationService {
      * 
      * @param field 敏感字段名称
      */
-    public void addTracingSensitiveField(String field) {
+    public void addTracingSensitiveField(final String field) {
         tracingSensitiveFields.add(field.toLowerCase());
         log.debug("添加追踪敏感字段: {}", field);
     }
@@ -346,7 +346,7 @@ public class TracingSanitizationService {
      * 
      * @param field 敏感字段名称
      */
-    public void removeTracingSensitiveField(String field) {
+    public void removeTracingSensitiveField(final String field) {
         tracingSensitiveFields.remove(field.toLowerCase());
         log.debug("移除追踪敏感字段: {}", field);
     }

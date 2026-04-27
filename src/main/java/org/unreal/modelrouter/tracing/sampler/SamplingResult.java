@@ -35,7 +35,7 @@ public class SamplingResult {
         
         private final SpanKind spanKind;
         
-        Decision(SpanKind spanKind) {
+        Decision(final SpanKind spanKind) {
             this.spanKind = spanKind;
         }
         
@@ -48,7 +48,7 @@ public class SamplingResult {
     private final Map<String, Object> attributes;
     private final String traceState;
     
-    private SamplingResult(Decision decision, Map<String, Object> attributes, String traceState) {
+    private SamplingResult(final Decision decision,final Map<String, Object> attributes,final String traceState) {
         this.decision = decision;
         this.attributes = attributes;
         this.traceState = traceState;
@@ -62,7 +62,7 @@ public class SamplingResult {
      * @param traceState 追踪状态
      * @return 采样结果
      */
-    public static SamplingResult create(Decision decision, Map<String, Object> attributes, String traceState) {
+    public static SamplingResult create(final Decision decision,final Map<String, Object> attributes,final String traceState) {
         return new SamplingResult(decision, attributes, traceState);
     }
     
@@ -72,7 +72,7 @@ public class SamplingResult {
      * @param decision 采样决策
      * @return 采样结果
      */
-    public static SamplingResult create(Decision decision) {
+    public static SamplingResult create(final Decision decision) {
         return new SamplingResult(decision, Map.of(), null);
     }
     

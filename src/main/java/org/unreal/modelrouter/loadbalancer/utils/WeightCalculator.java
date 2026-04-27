@@ -20,7 +20,7 @@ public class WeightCalculator {
      * @param instances 实例列表
      * @return 总权重值
      */
-    public static long calculateTotalWeight(List<ModelRouterProperties.ModelInstance> instances) {
+    public static long calculateTotalWeight(final List<ModelRouterProperties.ModelInstance> instances) {
         if (instances == null || instances.isEmpty()) {
             return 0L;
         }
@@ -38,7 +38,7 @@ public class WeightCalculator {
      * @param totalWeight 总权重
      * @return 随机权重值
      */
-    public static long calculateRandomWeight(long totalWeight) {
+    public static long calculateRandomWeight(final long totalWeight) {
         if (totalWeight <= 0) {
             return 0L;
         }
@@ -54,7 +54,7 @@ public class WeightCalculator {
      * @param endIndex 结束索引（包含）
      * @return 累积权重值
      */
-    public static long calculateCumulativeWeight(List<ModelRouterProperties.ModelInstance> instances, int endIndex) {
+    public static long calculateCumulativeWeight(final List<ModelRouterProperties.ModelInstance> instances,final int endIndex) {
         if (instances == null || endIndex < 0) {
             return 0L;
         }
@@ -78,7 +78,7 @@ public class WeightCalculator {
      * @param weight 权重值
      * @return 是否有效
      */
-    public static boolean isValidWeight(int weight) {
+    public static boolean isValidWeight(final int weight) {
         // 负权重在范围内也被认为是"有效"，但会在计算中当作0处理
         return weight <= Integer.MAX_VALUE / 2; // 防止溢出的安全上限，允许负值
     }
@@ -89,7 +89,7 @@ public class WeightCalculator {
      * @param weight 权重值
      * @return 是否为正数
      */
-    public static boolean isPositiveWeight(int weight) {
+    public static boolean isPositiveWeight(final int weight) {
         return weight > 0;
     }
 }

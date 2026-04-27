@@ -113,18 +113,18 @@ public interface MetricRegistrationService {
         private final String metricName;
         private final Exception error;
         
-        public MetricRegistrationResult(boolean success, String message, String metricName, Exception error) {
+        public MetricRegistrationResult(final boolean success,final String message,final String metricName,final Exception error) {
             this.success = success;
             this.message = message;
             this.metricName = metricName;
             this.error = error;
         }
         
-        public static MetricRegistrationResult success(String metricName) {
+        public static MetricRegistrationResult success(final String metricName) {
             return new MetricRegistrationResult(true, "Metric registered successfully", metricName, null);
         }
         
-        public static MetricRegistrationResult failure(String metricName, String message, Exception error) {
+        public static MetricRegistrationResult failure(final String metricName,final String message,final Exception error) {
             return new MetricRegistrationResult(false, message, metricName, error);
         }
         
@@ -143,8 +143,8 @@ public interface MetricRegistrationService {
         private final int failureCount;
         private final List<MetricRegistrationResult> results;
         
-        public BatchRegistrationResult(int totalRequests, int successCount, int failureCount, 
-                                     List<MetricRegistrationResult> results) {
+        public BatchRegistrationResult(final int totalRequests,final int successCount,final int failureCount, 
+                                     final List<MetricRegistrationResult> results) {
             this.totalRequests = totalRequests;
             this.successCount = successCount;
             this.failureCount = failureCount;
@@ -167,8 +167,8 @@ public interface MetricRegistrationService {
         private final int failureCount;
         private final List<String> failedMetrics;
         
-        public BatchUnregistrationResult(int totalRequests, int successCount, int failureCount, 
-                                       List<String> failedMetrics) {
+        public BatchUnregistrationResult(final int totalRequests,final int successCount,final int failureCount, 
+                                       final List<String> failedMetrics) {
             this.totalRequests = totalRequests;
             this.successCount = successCount;
             this.failureCount = failureCount;
@@ -192,8 +192,8 @@ public interface MetricRegistrationService {
         private final Map<String, Integer> metricsByCategory;
         private final Map<String, Integer> metricsByType;
         
-        public MetricStatistics(int totalMetrics, int enabledMetrics, int disabledMetrics,
-                              Map<String, Integer> metricsByCategory, Map<String, Integer> metricsByType) {
+        public MetricStatistics(final int totalMetrics,final int enabledMetrics,final int disabledMetrics,
+                              final Map<String, Integer> metricsByCategory,final Map<String, Integer> metricsByType) {
             this.totalMetrics = totalMetrics;
             this.enabledMetrics = enabledMetrics;
             this.disabledMetrics = disabledMetrics;
@@ -281,7 +281,7 @@ public interface MetricRegistrationService {
         private final int totalMetrics;
         private final List<String> cleanedMetricNames;
         
-        public CleanupResult(int cleanedMetrics, int totalMetrics, List<String> cleanedMetricNames) {
+        public CleanupResult(final int cleanedMetrics,final int totalMetrics,final List<String> cleanedMetricNames) {
             this.cleanedMetrics = cleanedMetrics;
             this.totalMetrics = totalMetrics;
             this.cleanedMetricNames = cleanedMetricNames;

@@ -171,7 +171,7 @@ public class ApiKey {
      * 用于反序列化expired字段的setter方法（无实际作用，仅用于兼容旧数据）
      */
     @JsonProperty("expired")
-    public void setExpired(boolean expired) {
+    public void setExpired(final boolean expired) {
         // 仅用于反序列化，实际值由expiresAt字段计算得出
     }
 
@@ -191,7 +191,7 @@ public class ApiKey {
      * @param permission 权限名称
      * @return 是否具有权限
      */
-    public boolean hasPermission(String permission) {
+    public boolean hasPermission(final String permission) {
         if (permissions == null || permission == null) {
             return false;
         }
@@ -207,7 +207,7 @@ public class ApiKey {
      * @param ipAddress IP 地址
      * @return 是否允许
      */
-    public boolean isIpAllowed(String ipAddress) {
+    public boolean isIpAllowed(final String ipAddress) {
         if (allowedIpAddresses == null || allowedIpAddresses.isEmpty()) {
             return true;
         }
@@ -260,7 +260,7 @@ public class ApiKey {
      * @param providedKey 用户提供的原始 API Key
      * @return 是否匹配
      */
-    public boolean verifyKey(String providedKey) {
+    public boolean verifyKey(final String providedKey) {
         if (keyHash != null && !keyHash.isEmpty()) {
             return ApiKeyHashUtil.verifyApiKey(providedKey, keyHash);
         }
@@ -306,7 +306,7 @@ public class ApiKey {
      * @param originalKeyValue 原始的未哈希的 keyValue（仅在创建时可用）
      * @return 包含keyValue的ApiKey副本
      */
-    public ApiKey createCreationResponse(String originalKeyValue) {
+    public ApiKey createCreationResponse(final String originalKeyValue) {
         return ApiKey.builder()
                 .keyId(this.keyId)
                 .keyValue(originalKeyValue) // 仅在创建时包含原始keyValue

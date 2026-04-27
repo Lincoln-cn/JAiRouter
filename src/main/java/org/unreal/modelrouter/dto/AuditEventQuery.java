@@ -29,7 +29,7 @@ public class AuditEventQuery {
         return startTime;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
+    public void setStartTime(final LocalDateTime startTime) {
         this.startTime = startTime;
     }
 
@@ -37,7 +37,7 @@ public class AuditEventQuery {
         return endTime;
     }
 
-    public void setEndTime(LocalDateTime endTime) {
+    public void setEndTime(final LocalDateTime endTime) {
         this.endTime = endTime;
     }
 
@@ -45,7 +45,7 @@ public class AuditEventQuery {
         return eventTypes;
     }
 
-    public void setEventTypes(List<AuditEventType> eventTypes) {
+    public void setEventTypes(final List<AuditEventType> eventTypes) {
         this.eventTypes = eventTypes;
     }
 
@@ -53,7 +53,7 @@ public class AuditEventQuery {
         return userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(final String userId) {
         this.userId = userId;
     }
 
@@ -61,7 +61,7 @@ public class AuditEventQuery {
         return resourceId;
     }
 
-    public void setResourceId(String resourceId) {
+    public void setResourceId(final String resourceId) {
         this.resourceId = resourceId;
     }
 
@@ -69,7 +69,7 @@ public class AuditEventQuery {
         return action;
     }
 
-    public void setAction(String action) {
+    public void setAction(final String action) {
         this.action = action;
     }
 
@@ -77,7 +77,7 @@ public class AuditEventQuery {
         return ipAddress;
     }
 
-    public void setIpAddress(String ipAddress) {
+    public void setIpAddress(final String ipAddress) {
         this.ipAddress = ipAddress;
     }
 
@@ -85,7 +85,7 @@ public class AuditEventQuery {
         return success;
     }
 
-    public void setSuccess(Boolean success) {
+    public void setSuccess(final Boolean success) {
         this.success = success;
     }
 
@@ -93,7 +93,7 @@ public class AuditEventQuery {
         return page;
     }
 
-    public void setPage(int page) {
+    public void setPage(final int page) {
         this.page = page;
     }
 
@@ -101,7 +101,7 @@ public class AuditEventQuery {
         return size;
     }
 
-    public void setSize(int size) {
+    public void setSize(final int size) {
         this.size = size;
     }
 
@@ -109,7 +109,7 @@ public class AuditEventQuery {
         return sortBy;
     }
 
-    public void setSortBy(String sortBy) {
+    public void setSortBy(final String sortBy) {
         this.sortBy = sortBy;
     }
 
@@ -117,7 +117,7 @@ public class AuditEventQuery {
         return sortDirection;
     }
 
-    public void setSortDirection(String sortDirection) {
+    public void setSortDirection(final String sortDirection) {
         this.sortDirection = sortDirection;
     }
 

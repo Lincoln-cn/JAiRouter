@@ -31,14 +31,14 @@ public class DefaultMetricsCollector implements MetricsCollector {
     private final ConcurrentHashMap<String, DistributionSummary> summaries = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicLong> gaugeValues = new ConcurrentHashMap<>();
 
-    public DefaultMetricsCollector(MeterRegistry meterRegistry, MonitoringProperties monitoringProperties) {
+    public DefaultMetricsCollector(final MeterRegistry meterRegistry,final MonitoringProperties monitoringProperties) {
         this.meterRegistry = meterRegistry;
         this.monitoringProperties = monitoringProperties;
         logger.info("DefaultMetricsCollector initialized with prefix: {}", monitoringProperties.getPrefix());
     }
 
     @Override
-    public void recordRequest(String service, String method, long duration, String status) {
+    public void recordRequest(final String service,final String method,final long duration,final String status) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -74,7 +74,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordBackendCall(String adapter, String instance, long duration, boolean success) {
+    public void recordBackendCall(final String adapter,final String instance,final long duration,final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -111,7 +111,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordRateLimit(String service, String algorithm, boolean allowed) {
+    public void recordRateLimit(final String service,final String algorithm,final boolean allowed) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -136,7 +136,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordCircuitBreaker(String service, String state, String event) {
+    public void recordCircuitBreaker(final String service,final String state,final String event) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -172,7 +172,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordLoadBalancer(String service, String strategy, String selectedInstance) {
+    public void recordLoadBalancer(final String service,final String strategy,final String selectedInstance) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -196,7 +196,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordHealthCheck(String adapter, String instance, boolean healthy, long responseTime) {
+    public void recordHealthCheck(final String adapter,final String instance,final boolean healthy,final long responseTime) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -233,7 +233,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordRequestSize(String service, long requestSize, long responseSize) {
+    public void recordRequestSize(final String service,final long requestSize,final long responseSize) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -266,7 +266,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTrace(String traceId, String spanId, String operationName, long duration, boolean success) {
+    public void recordTrace(final String traceId,final String spanId,final String operationName,final long duration,final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -301,7 +301,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceExport(String exporterType, long duration, boolean success, int batchSize) {
+    public void recordTraceExport(final String exporterType,final long duration,final boolean success,final int batchSize) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -346,7 +346,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceSampling(double samplingRate, boolean sampled) {
+    public void recordTraceSampling(final double samplingRate,final boolean sampled) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -371,7 +371,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceDataQuality(String traceId, int spanCount, int attributeCount, int errorCount) {
+    public void recordTraceDataQuality(final String traceId,final int spanCount,final int attributeCount,final int errorCount) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -411,7 +411,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceProcessing(String processorName, long duration, boolean success) {
+    public void recordTraceProcessing(final String processorName,final long duration,final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -446,7 +446,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceAnalysis(String analyzerName, int spanCount, long duration, boolean success) {
+    public void recordTraceAnalysis(final String analyzerName,final int spanCount,final long duration,final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -493,7 +493,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     /**
      * 将熔断器状态转换为数值
      */
-    private long getStateValue(String state) {
+    private long getStateValue(final String state) {
         switch (state.toUpperCase()) {
             case "CLOSED":
                 return 0;

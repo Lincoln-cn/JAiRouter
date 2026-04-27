@@ -24,12 +24,12 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
     private MetricsCollector metricsCollector;
 
     @Override
-    public ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp) {
+    public ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances,final String clientIp) {
         return selectInstance(instances, clientIp, "unknown");
     }
 
     @Override
-    public ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp, String serviceType) {
+    public ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances,final String clientIp,final String serviceType) {
         if (instances == null || instances.isEmpty()) {
             logger.warn("No instances available for round robin selection");
             throw new IllegalArgumentException("No instances available");
@@ -48,14 +48,14 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
         return selected;
     }
 
-    private String generateInstancesKey(List<ModelRouterProperties.ModelInstance> instances) {
+    private String generateInstancesKey(final List<ModelRouterProperties.ModelInstance> instances) {
         return instances.stream()
                 .map(i -> i.getBaseUrl() + ":" + i.getPath())
                 .sorted()
                 .reduce("", (a, b) -> a + "," + b);
     }
 
-    private List<ModelRouterProperties.ModelInstance> createWeightedList(List<ModelRouterProperties.ModelInstance> instances) {
+    private List<ModelRouterProperties.ModelInstance> createWeightedList(final List<ModelRouterProperties.ModelInstance> instances) {
         List<ModelRouterProperties.ModelInstance> weightedList = new ArrayList<>();
         for (ModelRouterProperties.ModelInstance instance : instances) {
             int weight = Math.max(1, instance.getWeight());
@@ -69,7 +69,7 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
     /**
      * 记录负载均衡器选择指标
      */
-    private void recordLoadBalancerSelection(String service, String strategy, String selectedInstance) {
+    private void recordLoadBalancerSelection(final String service,final String strategy,final String selectedInstance) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordLoadBalancer(service, strategy, selectedInstance);

@@ -102,7 +102,7 @@ public class ErrorCodeResolver {
      * @param throwable 异常对象
      * @return 错误代码
      */
-    public String resolveErrorCode(Throwable throwable) {
+    public String resolveErrorCode(final Throwable throwable) {
         if (throwable == null) {
             return "UNK_000";
         }
@@ -129,7 +129,7 @@ public class ErrorCodeResolver {
      * @param throwable 异常对象
      * @return 错误分类
      */
-    public ErrorCategory resolveErrorCategory(Throwable throwable) {
+    public ErrorCategory resolveErrorCategory(final Throwable throwable) {
         if (throwable == null) {
             return ErrorCategory.UNKNOWN;
         }
@@ -182,7 +182,7 @@ public class ErrorCodeResolver {
      * @param throwable 异常对象
      * @return HTTP 状态码字符串
      */
-    public String resolveHttpStatus(Throwable throwable) {
+    public String resolveHttpStatus(final Throwable throwable) {
         if (throwable == null) {
             return "500";
         }
@@ -218,7 +218,7 @@ public class ErrorCodeResolver {
      * @param className 异常类全名
      * @return 错误代码后缀（6 位数字）
      */
-    private String generateCodeSuffix(String className) {
+    private String generateCodeSuffix(final String className) {
         // 使用类名的哈希值生成 6 位数字代码
         int hash = className.hashCode();
         // 确保为正数
@@ -233,7 +233,7 @@ public class ErrorCodeResolver {
      * @param category 错误分类
      * @return 显示名称
      */
-    public String getCategoryDisplayName(ErrorCategory category) {
+    public String getCategoryDisplayName(final ErrorCategory category) {
         return switch (category) {
             case AUTHENTICATION -> "认证错误";
             case AUTHORIZATION -> "授权错误";

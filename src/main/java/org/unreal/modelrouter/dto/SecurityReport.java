@@ -24,11 +24,11 @@ public class SecurityReport {
     public SecurityReport() {
     }
 
-    public SecurityReport(LocalDateTime reportPeriodStart, LocalDateTime reportPeriodEnd, 
-                         long totalJwtOperations, long totalApiKeyOperations, 
-                         long failedAuthentications, long suspiciousActivities,
-                         Map<String, Long> operationsByType, Map<String, Long> operationsByUser,
-                         List<String> topIpAddresses, List<SecurityAlert> alerts) {
+    public SecurityReport(final LocalDateTime reportPeriodStart,final LocalDateTime reportPeriodEnd, 
+                         final long totalJwtOperations,final long totalApiKeyOperations, 
+                         final long failedAuthentications,final long suspiciousActivities,
+                         final Map<String, Long> operationsByType,final Map<String, Long> operationsByUser,
+                         final List<String> topIpAddresses,final List<SecurityAlert> alerts) {
         this.reportPeriodStart = reportPeriodStart;
         this.reportPeriodEnd = reportPeriodEnd;
         this.totalJwtOperations = totalJwtOperations;
@@ -46,7 +46,7 @@ public class SecurityReport {
         return reportPeriodStart;
     }
 
-    public void setReportPeriodStart(LocalDateTime reportPeriodStart) {
+    public void setReportPeriodStart(final LocalDateTime reportPeriodStart) {
         this.reportPeriodStart = reportPeriodStart;
     }
 
@@ -54,7 +54,7 @@ public class SecurityReport {
         return reportPeriodEnd;
     }
 
-    public void setReportPeriodEnd(LocalDateTime reportPeriodEnd) {
+    public void setReportPeriodEnd(final LocalDateTime reportPeriodEnd) {
         this.reportPeriodEnd = reportPeriodEnd;
     }
 
@@ -62,7 +62,7 @@ public class SecurityReport {
         return totalJwtOperations;
     }
 
-    public void setTotalJwtOperations(long totalJwtOperations) {
+    public void setTotalJwtOperations(final long totalJwtOperations) {
         this.totalJwtOperations = totalJwtOperations;
     }
 
@@ -70,7 +70,7 @@ public class SecurityReport {
         return totalApiKeyOperations;
     }
 
-    public void setTotalApiKeyOperations(long totalApiKeyOperations) {
+    public void setTotalApiKeyOperations(final long totalApiKeyOperations) {
         this.totalApiKeyOperations = totalApiKeyOperations;
     }
 
@@ -78,7 +78,7 @@ public class SecurityReport {
         return failedAuthentications;
     }
 
-    public void setFailedAuthentications(long failedAuthentications) {
+    public void setFailedAuthentications(final long failedAuthentications) {
         this.failedAuthentications = failedAuthentications;
     }
 
@@ -86,7 +86,7 @@ public class SecurityReport {
         return suspiciousActivities;
     }
 
-    public void setSuspiciousActivities(long suspiciousActivities) {
+    public void setSuspiciousActivities(final long suspiciousActivities) {
         this.suspiciousActivities = suspiciousActivities;
     }
 
@@ -94,7 +94,7 @@ public class SecurityReport {
         return operationsByType;
     }
 
-    public void setOperationsByType(Map<String, Long> operationsByType) {
+    public void setOperationsByType(final Map<String, Long> operationsByType) {
         this.operationsByType = operationsByType;
     }
 
@@ -102,7 +102,7 @@ public class SecurityReport {
         return operationsByUser;
     }
 
-    public void setOperationsByUser(Map<String, Long> operationsByUser) {
+    public void setOperationsByUser(final Map<String, Long> operationsByUser) {
         this.operationsByUser = operationsByUser;
     }
 
@@ -110,7 +110,7 @@ public class SecurityReport {
         return topIpAddresses;
     }
 
-    public void setTopIpAddresses(List<String> topIpAddresses) {
+    public void setTopIpAddresses(final List<String> topIpAddresses) {
         this.topIpAddresses = topIpAddresses;
     }
 
@@ -118,7 +118,7 @@ public class SecurityReport {
         return alerts;
     }
 
-    public void setAlerts(List<SecurityAlert> alerts) {
+    public void setAlerts(final List<SecurityAlert> alerts) {
         this.alerts = alerts;
     }
 

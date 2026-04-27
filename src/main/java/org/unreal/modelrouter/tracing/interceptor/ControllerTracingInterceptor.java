@@ -48,7 +48,7 @@ public class ControllerTracingInterceptor {
     /**
      * 从 ServerWebExchange 获取追踪上下文
      */
-    private TracingContext getTracingContextFromExchange(ServerWebExchange exchange) {
+    private TracingContext getTracingContextFromExchange(final ServerWebExchange exchange) {
         if (exchange != null) {
             TracingContext context = exchange.getAttribute(TracingConstants.ContextKeys.TRACING_CONTEXT);
             if (context != null && context.isActive()) {
@@ -62,12 +62,12 @@ public class ControllerTracingInterceptor {
      * 追踪Controller方法调用（使用 ServerWebExchange 获取上下文）
      */
     public Mono<ResponseEntity<?>> traceControllerCall(
-            ServerWebExchange exchange,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest,
-            String methodName,
-            Supplier<Mono<ResponseEntity<?>>> operation) {
+            final ServerWebExchange exchange,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest,
+            final String methodName,
+            final Supplier<Mono<ResponseEntity<?>>> operation) {
 
         TracingContext tracingContext = getTracingContextFromExchange(exchange);
         if (tracingContext == null || !tracingContext.isActive()) {
@@ -81,11 +81,11 @@ public class ControllerTracingInterceptor {
      * 追踪Controller方法调用（从 ThreadLocal 获取上下文）
      */
     public Mono<ResponseEntity<?>> traceControllerCall(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest,
-            String methodName,
-            Supplier<Mono<ResponseEntity<?>>> operation) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest,
+            final String methodName,
+            final Supplier<Mono<ResponseEntity<?>>> operation) {
 
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext == null || !tracingContext.isActive()) {
@@ -99,12 +99,12 @@ public class ControllerTracingInterceptor {
      * 实际执行Controller追踪逻辑
      */
     private Mono<ResponseEntity<?>> doTraceControllerCall(
-            TracingContext tracingContext,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest,
-            String methodName,
-            Supplier<Mono<ResponseEntity<?>>> operation) {
+            final TracingContext tracingContext,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest,
+            final String methodName,
+            final Supplier<Mono<ResponseEntity<?>>> operation) {
 
         Instant startTime = Instant.now();
 
@@ -146,11 +146,11 @@ public class ControllerTracingInterceptor {
      * 追踪实例选择过程（使用传入的 TracingContext）
      */
     public void traceInstanceSelection(
-            TracingContext tracingContext,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            String clientIp,
-            ModelRouterProperties.ModelInstance selectedInstance) {
+            final TracingContext tracingContext,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final String clientIp,
+            final ModelRouterProperties.ModelInstance selectedInstance) {
 
         if (tracingContext == null || !tracingContext.isActive()) {
             return;
@@ -163,10 +163,10 @@ public class ControllerTracingInterceptor {
      * 追踪实例选择过程（从 ThreadLocal 获取上下文）
      */
     public void traceInstanceSelection(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            String clientIp,
-            ModelRouterProperties.ModelInstance selectedInstance) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final String clientIp,
+            final ModelRouterProperties.ModelInstance selectedInstance) {
 
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext == null || !tracingContext.isActive()) {
@@ -180,11 +180,11 @@ public class ControllerTracingInterceptor {
      * 追踪实例选择失败（使用传入的 TracingContext）
      */
     public void traceInstanceSelectionFailure(
-            TracingContext tracingContext,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            String clientIp,
-            Throwable error) {
+            final TracingContext tracingContext,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final String clientIp,
+            final Throwable error) {
 
         if (tracingContext == null || !tracingContext.isActive()) {
             return;
@@ -197,10 +197,10 @@ public class ControllerTracingInterceptor {
      * 追踪实例选择失败（从 ThreadLocal 获取上下文）- 兼容旧方法
      */
     public void traceInstanceSelectionFailure(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            String clientIp,
-            Throwable error) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final String clientIp,
+            final Throwable error) {
 
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         traceInstanceSelectionFailure(tracingContext, serviceType, modelName, clientIp, error);
@@ -210,12 +210,12 @@ public class ControllerTracingInterceptor {
      * 实际执行实例选择追踪
      */
     private void doTraceInstanceSelection(
-            TracingContext tracingContext,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            String clientIp,
-            ModelRouterProperties.ModelInstance selectedInstance,
-            Throwable error) {
+            final TracingContext tracingContext,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final String clientIp,
+            final ModelRouterProperties.ModelInstance selectedInstance,
+            final Throwable error) {
 
         Instant startTime = Instant.now();
 
@@ -298,11 +298,11 @@ public class ControllerTracingInterceptor {
      * 追踪适配器调用（使用传入的 TracingContext）
      */
     public <T> Mono<T> traceAdapterCall(
-            TracingContext tracingContext,
-            String adapterName,
-            ModelServiceRegistry.ServiceType serviceType,
-            ModelRouterProperties.ModelInstance instance,
-            Supplier<Mono<T>> operation) {
+            final TracingContext tracingContext,
+            final String adapterName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final Supplier<Mono<T>> operation) {
 
         if (tracingContext == null || !tracingContext.isActive()) {
             return operation.get();
@@ -315,10 +315,10 @@ public class ControllerTracingInterceptor {
      * 追踪适配器调用（从 ThreadLocal 获取上下文）
      */
     public <T> Mono<T> traceAdapterCall(
-            String adapterName,
-            ModelServiceRegistry.ServiceType serviceType,
-            ModelRouterProperties.ModelInstance instance,
-            Supplier<Mono<T>> operation) {
+            final String adapterName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final Supplier<Mono<T>> operation) {
 
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext == null || !tracingContext.isActive()) {
@@ -332,11 +332,11 @@ public class ControllerTracingInterceptor {
      * 实际执行适配器调用追踪
      */
     private <T> Mono<T> doTraceAdapterCall(
-            TracingContext tracingContext,
-            String adapterName,
-            ModelServiceRegistry.ServiceType serviceType,
-            ModelRouterProperties.ModelInstance instance,
-            Supplier<Mono<T>> operation) {
+            final TracingContext tracingContext,
+            final String adapterName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final Supplier<Mono<T>> operation) {
 
         Instant startTime = Instant.now();
 
@@ -414,7 +414,7 @@ public class ControllerTracingInterceptor {
     /**
      * 记录子Span到TraceQueryService
      */
-    private void recordChildSpan(Span span, TracingContext tracingContext, Instant startTime, String operationName) {
+    private void recordChildSpan(final Span span,final TracingContext tracingContext,final Instant startTime,final String operationName) {
         if (traceQueryService == null || tracingContext == null || span == null) {
             return;
         }
@@ -456,11 +456,11 @@ public class ControllerTracingInterceptor {
      * 设置Controller层属性
      */
     private void setControllerAttributes(
-            Span span,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest,
-            String methodName) {
+            final Span span,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest,
+            final String methodName) {
 
         try {
             span.setAttribute("controller.method", methodName);
@@ -492,11 +492,11 @@ public class ControllerTracingInterceptor {
      * 记录Controller调用开始
      */
     private void logControllerStart(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest,
-            String methodName,
-            TracingContext tracingContext) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest,
+            final String methodName,
+            final TracingContext tracingContext) {
 
         try {
             Map<String, Object> startData = new HashMap<>();
@@ -516,13 +516,13 @@ public class ControllerTracingInterceptor {
      * 处理Controller成功响应
      */
     private void handleControllerSuccess(
-            Span span,
-            ResponseEntity<?> response,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            String methodName,
-            long duration,
-            TracingContext tracingContext) {
+            final Span span,
+            final ResponseEntity<?> response,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final String methodName,
+            final long duration,
+            final TracingContext tracingContext) {
 
         try {
             span.setStatus(StatusCode.OK);
@@ -558,13 +558,13 @@ public class ControllerTracingInterceptor {
      * 处理Controller错误响应
      */
     private void handleControllerError(
-            Span span,
-            Throwable error,
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            String methodName,
-            long duration,
-            TracingContext tracingContext) {
+            final Span span,
+            final Throwable error,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final String methodName,
+            final long duration,
+            final TracingContext tracingContext) {
 
         try {
             span.setStatus(StatusCode.ERROR, error.getMessage());

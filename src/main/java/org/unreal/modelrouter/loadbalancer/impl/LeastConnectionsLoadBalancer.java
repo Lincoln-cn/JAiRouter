@@ -24,12 +24,12 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
     private MetricsCollector metricsCollector;
 
     @Override
-    public ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp) {
+    public ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances,final String clientIp) {
         return selectInstance(instances, clientIp, "unknown");
     }
 
     @Override
-    public ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp, String serviceType) {
+    public ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances,final String clientIp,final String serviceType) {
         if (instances == null || instances.isEmpty()) {
             logger.warn("No instances available for least connections selection");
             throw new IllegalArgumentException("No instances available");
@@ -62,14 +62,14 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
     }
 
     @Override
-    public void recordCall(ModelRouterProperties.ModelInstance instance) {
+    public void recordCall(final ModelRouterProperties.ModelInstance instance) {
         String key = getInstanceKey(instance);
         long currentCount = connectionCounts.computeIfAbsent(key, k -> new AtomicLong(0)).incrementAndGet();
         logger.info("Instance {} call recorded. Current connections: {}", key, currentCount);
     }
 
     @Override
-    public void recordCallComplete(ModelRouterProperties.ModelInstance instance) {
+    public void recordCallComplete(final ModelRouterProperties.ModelInstance instance) {
         String key = getInstanceKey(instance);
         AtomicLong count = connectionCounts.get(key);
         if (count != null) {
@@ -80,14 +80,14 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
         }
     }
 
-    private String getInstanceKey(ModelRouterProperties.ModelInstance instance) {
+    private String getInstanceKey(final ModelRouterProperties.ModelInstance instance) {
         return instance.getBaseUrl() + ":" + instance.getPath();
     }
 
     /**
      * 记录负载均衡器选择指标
      */
-    private void recordLoadBalancerSelection(String service, String strategy, String selectedInstance) {
+    private void recordLoadBalancerSelection(final String service,final String strategy,final String selectedInstance) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordLoadBalancer(service, strategy, selectedInstance);

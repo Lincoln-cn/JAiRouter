@@ -27,7 +27,7 @@ public class PerformanceTracker {
     // 存储操作统计信息
     private final Map<String, OperationStats> operationStats = new ConcurrentHashMap<>();
     
-    public PerformanceTracker(MeterRegistry meterRegistry, MonitoringProperties monitoringProperties, SlowQueryDetector slowQueryDetector) {
+    public PerformanceTracker(final MeterRegistry meterRegistry,final MonitoringProperties monitoringProperties,final SlowQueryDetector slowQueryDetector) {
         this.meterRegistry = meterRegistry;
         this.monitoringProperties = monitoringProperties;
         this.slowQueryDetector = slowQueryDetector;
@@ -39,7 +39,7 @@ public class PerformanceTracker {
      * @param operationName 操作名称
      * @return 跟踪上下文
      */
-    public TrackingContext startTracking(String operationName) {
+    public TrackingContext startTracking(final String operationName) {
         return new TrackingContext(operationName, System.nanoTime());
     }
     
@@ -47,7 +47,7 @@ public class PerformanceTracker {
      * 结束跟踪操作并记录指标
      * @param context 跟踪上下文
      */
-    public void endTracking(TrackingContext context) {
+    public void endTracking(final TrackingContext context) {
         endTracking(context, null);
     }
     
@@ -56,7 +56,7 @@ public class PerformanceTracker {
      * @param context 跟踪上下文
      * @param tags 额外的标签
      */
-    public void endTracking(TrackingContext context, Map<String, String> tags) {
+    public void endTracking(final TrackingContext context,final Map<String, String> tags) {
         long durationNanos = System.nanoTime() - context.getStartTimeNanos();
         long durationMillis = TimeUnit.NANOSECONDS.toMillis(durationNanos);
         
@@ -88,7 +88,7 @@ public class PerformanceTracker {
      * @param operationName 操作名称
      * @param durationMillis 耗时(毫秒)
      */
-    private void updateStats(String operationName, long durationMillis) {
+    private void updateStats(final String operationName,final long durationMillis) {
         operationStats.computeIfAbsent(operationName, k -> new OperationStats())
                 .update(durationMillis);
     }
@@ -99,7 +99,7 @@ public class PerformanceTracker {
      * @param durationMillis 耗时(毫秒)
      * @param tags 标签信息
      */
-    private void checkThreshold(String operationName, long durationMillis, Map<String, String> tags) {
+    private void checkThreshold(final String operationName,final long durationMillis,final Map<String, String> tags) {
         // 从配置中获取阈值
         Map<String, Long> thresholds = monitoringProperties.getThresholds().getOperationThresholds();
         Long threshold = thresholds.getOrDefault(operationName, 
@@ -120,7 +120,7 @@ public class PerformanceTracker {
      * @param operationName 操作名称
      * @param thresholdMillis 阈值(毫秒)
      */
-    public void setPerformanceThreshold(String operationName, long thresholdMillis) {
+    public void setPerformanceThreshold(final String operationName,final long thresholdMillis) {
         monitoringProperties.getThresholds().getOperationThresholds().put(operationName, thresholdMillis);
     }
     
@@ -129,7 +129,7 @@ public class PerformanceTracker {
      * @param operationName 操作名称
      * @return 操作统计信息
      */
-    public OperationStats getOperationStats(String operationName) {
+    public OperationStats getOperationStats(final String operationName) {
         return operationStats.getOrDefault(operationName, new OperationStats());
     }
     
@@ -146,7 +146,7 @@ public class PerformanceTracker {
      * @param limit 返回的结果数量限制
      * @return 性能热点列表
      */
-    public List<PerformanceHotspot> getPerformanceHotspots(int limit) {
+    public List<PerformanceHotspot> getPerformanceHotspots(final int limit) {
         List<PerformanceHotspot> hotspots = new ArrayList<>();
         
         for (Map.Entry<String, OperationStats> entry : operationStats.entrySet()) {
@@ -180,7 +180,7 @@ public class PerformanceTracker {
         private final String operationName;
         private final long startTimeNanos;
         
-        public TrackingContext(String operationName, long startTimeNanos) {
+        public TrackingContext(final String operationName,final long startTimeNanos) {
             this.operationName = operationName;
             this.startTimeNanos = startTimeNanos;
         }
@@ -203,7 +203,7 @@ public class PerformanceTracker {
         private long maxDuration = 0;
         private long minDuration = Long.MAX_VALUE;
         
-        public synchronized void update(long durationMillis) {
+        public synchronized void update(final long durationMillis) {
             callCount++;
             totalDuration += durationMillis;
             maxDuration = Math.max(maxDuration, durationMillis);
@@ -239,7 +239,7 @@ public class PerformanceTracker {
         private final OperationStats stats;
         private final long totalDuration;
         
-        public PerformanceHotspot(String operationName, OperationStats stats) {
+        public PerformanceHotspot(final String operationName,final OperationStats stats) {
             this.operationName = operationName;
             this.stats = stats;
             this.totalDuration = stats.getTotalDuration();

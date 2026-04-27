@@ -25,8 +25,8 @@ public class SlowQueryAnalysisController {
     @Autowired(required = false)
     private SlowQueryAlertService slowQueryAlertService;
     
-    public SlowQueryAnalysisController(SlowQueryDetector slowQueryDetector, 
-                                     PerformanceTracker performanceTracker) {
+    public SlowQueryAnalysisController(final SlowQueryDetector slowQueryDetector, 
+                                     final PerformanceTracker performanceTracker) {
         this.slowQueryDetector = slowQueryDetector;
         this.performanceTracker = performanceTracker;
     }

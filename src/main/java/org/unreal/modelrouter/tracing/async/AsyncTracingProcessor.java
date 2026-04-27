@@ -50,7 +50,7 @@ public class AsyncTracingProcessor {
     private final AtomicLong batchCount = new AtomicLong(0);
     private final AtomicLong failureCount = new AtomicLong(0);
     
-    public AsyncTracingProcessor(TracingConfiguration tracingConfiguration) {
+    public AsyncTracingProcessor(final TracingConfiguration tracingConfiguration) {
         this.tracingConfiguration = tracingConfiguration;
         
         // 创建专用的处理调度器
@@ -88,9 +88,9 @@ public class AsyncTracingProcessor {
     /**
      * 异步提交追踪数据
      */
-    public Mono<Boolean> submitTraceData(String traceId, String spanId, String operationName, 
-                                        long startTime, long duration, boolean success, 
-                                        SpanContext spanContext) {
+    public Mono<Boolean> submitTraceData(final String traceId,final String spanId,final String operationName, 
+                                        final long startTime,final long duration,final boolean success, 
+                                        final SpanContext spanContext) {
         return Mono.fromCallable(() -> {
             if (!isRunning.get()) {
                 log.warn("处理器未运行，丢弃追踪数据: traceId={}", traceId);
@@ -127,7 +127,7 @@ public class AsyncTracingProcessor {
     /**
      * 批量提交追踪数据
      */
-    public Mono<Integer> submitTraceDataBatch(List<TraceData> traceDataList) {
+    public Mono<Integer> submitTraceDataBatch(final List<TraceData> traceDataList) {
         return Flux.fromIterable(traceDataList)
                 .flatMap(traceData -> submitTraceData(
                         traceData.getTraceId(),
@@ -171,7 +171,7 @@ public class AsyncTracingProcessor {
     /**
      * 处理批次数据
      */
-    private Mono<BatchResult> processBatch(List<TraceData> batch) {
+    private Mono<BatchResult> processBatch(final List<TraceData> batch) {
         return Mono.fromCallable(() -> {
             try {
                 long startTime = System.currentTimeMillis();
@@ -209,7 +209,7 @@ public class AsyncTracingProcessor {
     /**
      * 处理单个追踪数据
      */
-    private void processTraceData(TraceData traceData) {
+    private void processTraceData(final TraceData traceData) {
         // 实际的处理逻辑，例如：
         // 1. 序列化数据
         // 2. 应用过滤规则
@@ -224,7 +224,7 @@ public class AsyncTracingProcessor {
     /**
      * 处理批次结果
      */
-    private void handleBatchResult(BatchResult result) {
+    private void handleBatchResult(final BatchResult result) {
         log.debug("批处理完成: 成功={}, 失败={}, 处理时间={}ms", 
                 result.getSuccessCount(), result.getFailureCount(), result.getProcessingTime());
         

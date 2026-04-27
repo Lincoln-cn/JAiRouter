@@ -44,11 +44,11 @@ public class JacksonHelper {
                 .findAndRegisterModules();
     }
 
-    public static LocalDateTime covertStringToLocalDateTime(String date) {
+    public static LocalDateTime covertStringToLocalDateTime(final String date) {
         return LocalDateTime.parse(date, DateTimeFormatter.ofPattern(NORM_DATETIME_PATTERN));
     }
 
-    public static LocalDateTime covertStringToLocalDateTime(String date, String pattern) {
+    public static LocalDateTime covertStringToLocalDateTime(final String date,final String pattern) {
         return LocalDateTime.parse(date, DateTimeFormatter.ofPattern(pattern));
     }
 
@@ -68,7 +68,7 @@ public class JacksonHelper {
      */
     private static class FlexibleLocalDateTimeDeserializer extends JsonDeserializer<LocalDateTime> {
         @Override
-        public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        public LocalDateTime deserialize(final JsonParser p,final DeserializationContext ctxt) throws IOException {
             String value = p.getValueAsString();
             if (value == null || value.trim().isEmpty()) {
                 return null;

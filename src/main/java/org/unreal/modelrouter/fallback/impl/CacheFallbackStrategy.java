@@ -27,13 +27,13 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
     private final ConcurrentMap<String, ResponseEntity<?>> cache = new ConcurrentHashMap<>();
     private final int maxCacheSize;
 
-    public CacheFallbackStrategy(String serviceType, int maxCacheSize) {
+    public CacheFallbackStrategy(final String serviceType,final int maxCacheSize) {
         this.serviceType = serviceType;
         this.maxCacheSize = maxCacheSize;
     }
 
     @Override
-    public ResponseEntity<?> fallback(Exception cause) {
+    public ResponseEntity<?> fallback(final Exception cause) {
         logger.warn("Service {} fallback triggered due to: {}", serviceType, cause.getMessage());
 
         // 返回缓存中的数据（如果有）
@@ -57,7 +57,7 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
      * @param httpRequest
      * @param response    响应结果
      */
-    public void cacheResponse(ModelServiceRegistry.ServiceType serviceType, String modelName, ServerHttpRequest httpRequest, ResponseEntity<?> response) {
+    public void cacheResponse(final ModelServiceRegistry.ServiceType serviceType,final String modelName,final ServerHttpRequest httpRequest,final ResponseEntity<?> response) {
         if (cache.size() >= maxCacheSize) {
             // 简单的LRU实现：移除第一个元素
             cache.remove(cache.keySet().iterator().next());
@@ -71,9 +71,9 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
      * 同步生成缓存键（用于缓存响应）
      */
     protected String generateCacheKeySync(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest) {
         String clientIp = IpUtils.getClientIp(httpRequest);
         String requestHash = calculateRequestHashSync(httpRequest);
         return serviceType.name() + ":" + clientIp + ":" + modelName + ":" + requestHash;
@@ -83,9 +83,9 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
      * 异步生成缓存键
      */
     protected Mono<String> generateCacheKey(
-            ModelServiceRegistry.ServiceType serviceType,
-            String modelName,
-            ServerHttpRequest httpRequest) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final ServerHttpRequest httpRequest) {
         return calculateRequestHash(httpRequest)
                 .map(hash -> {
                     String clientIp = IpUtils.getClientIp(httpRequest);
@@ -96,7 +96,7 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
     /**
      * 异步计算请求体的SHA256哈希值
      */
-    private Mono<String> calculateRequestHash(ServerHttpRequest httpRequest) {
+    private Mono<String> calculateRequestHash(final ServerHttpRequest httpRequest) {
         try {
             Flux<DataBuffer> body = httpRequest.getBody();
             return body
@@ -136,7 +136,7 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
      * 同步计算请求体的SHA256哈希值（用于缓存响应）
      * 注意：这种方法在响应式流中可能不适用，因为请求体可能已经被消费
      */
-    private String calculateRequestHashSync(ServerHttpRequest httpRequest) {
+    private String calculateRequestHashSync(final ServerHttpRequest httpRequest) {
         // 对于同步方法，我们返回一个简单的标识符，因为请求体可能已经被消费
         return "sync-request";
     }

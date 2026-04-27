@@ -49,7 +49,7 @@ public class VersionContext {
      * @param version 待检查的版本号
      * @return true 如果版本号已存在
      */
-    public boolean versionExists(int version) {
+    public boolean versionExists(final int version) {
         return existingVersions != null && existingVersions.contains(version);
     }
 

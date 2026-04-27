@@ -37,9 +37,9 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     private final MonitoringProperties monitoringProperties;
     private final SlowQueryDetector slowQueryDetector;
 
-    public WebFluxMetricsInterceptor(MetricsCollector metricsCollector, 
-                                   MonitoringProperties monitoringProperties,
-                                   SlowQueryDetector slowQueryDetector) {
+    public WebFluxMetricsInterceptor(final MetricsCollector metricsCollector, 
+                                   final MonitoringProperties monitoringProperties,
+                                   final SlowQueryDetector slowQueryDetector) {
         this.metricsCollector = metricsCollector;
         this.monitoringProperties = monitoringProperties;
         this.slowQueryDetector = slowQueryDetector;
@@ -47,7 +47,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
         // 跳过非业务请求（如actuator端点）
         String path = exchange.getRequest().getPath().value();
         if (shouldSkipMetrics(path)) {
@@ -89,7 +89,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     /**
      * 判断是否应该跳过指标收集
      */
-    private boolean shouldSkipMetrics(String path) {
+    private boolean shouldSkipMetrics(final String path) {
         // 跳过actuator端点
         if (path.startsWith("/actuator")) {
             return true;
@@ -112,7 +112,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     /**
      * 从请求路径提取服务名称
      */
-    private String extractServiceName(String path) {
+    private String extractServiceName(final String path) {
         // 解析OpenAI兼容的API路径
         if (path.startsWith("/v1/")) {
             String[] pathParts = path.split("/");
@@ -161,7 +161,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     /**
      * 计算请求大小
      */
-    private void calculateRequestSize(ServerHttpRequest request, AtomicLong requestSize) {
+    private void calculateRequestSize(final ServerHttpRequest request,final AtomicLong requestSize) {
         try {
             // 从Content-Length头获取请求大小
             String contentLength = request.getHeaders().getFirst("Content-Length");
@@ -190,8 +190,8 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     /**
      * 记录指标
      */
-    private void recordMetrics(long startTime, String method, String serviceName, 
-                             int statusCode, long requestSize, long responseSize, String path) {
+    private void recordMetrics(final long startTime,final String method,final String serviceName, 
+                             final int statusCode,final long requestSize,final long responseSize,final String path) {
         try {
             long duration = System.currentTimeMillis() - startTime;
             String status = String.valueOf(statusCode);
@@ -232,13 +232,13 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
         
         private final AtomicLong responseSize;
 
-        public MetricsServerHttpResponseDecorator(ServerHttpResponse delegate, AtomicLong responseSize) {
+        public MetricsServerHttpResponseDecorator(final ServerHttpResponse delegate,final AtomicLong responseSize) {
             super(delegate);
             this.responseSize = responseSize;
         }
 
         @Override
-        public Mono<Void> writeWith(org.reactivestreams.Publisher<? extends DataBuffer> body) {
+        public Mono<Void> writeWith(final org.reactivestreams.Publisher<? extends DataBuffer> body) {
             return super.writeWith(
                 Flux.from(body)
                     .doOnNext(dataBuffer -> {
@@ -249,7 +249,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
         }
 
         @Override
-        public Mono<Void> writeAndFlushWith(org.reactivestreams.Publisher<? extends org.reactivestreams.Publisher<? extends DataBuffer>> body) {
+        public Mono<Void> writeAndFlushWith(final org.reactivestreams.Publisher<? extends org.reactivestreams.Publisher<? extends DataBuffer>> body) {
             return super.writeAndFlushWith(
                 Flux.from(body)
                     .map(publisher -> 

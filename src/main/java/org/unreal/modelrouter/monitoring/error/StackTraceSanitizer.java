@@ -23,7 +23,7 @@ public class StackTraceSanitizer {
     private final ErrorTrackerProperties.SanitizationConfig config;
     private final List<Pattern> sensitivePatterns;
     
-    public StackTraceSanitizer(ErrorTrackerProperties.SanitizationConfig config) {
+    public StackTraceSanitizer(final ErrorTrackerProperties.SanitizationConfig config) {
         this.config = config;
         this.sensitivePatterns = compileSensitivePatterns();
     }
@@ -34,7 +34,7 @@ public class StackTraceSanitizer {
      * @param throwable 原始异常
      * @return 脱敏后的异常信息
      */
-    public SanitizedThrowable sanitize(Throwable throwable) {
+    public SanitizedThrowable sanitize(final Throwable throwable) {
         if (!config.isEnabled() || throwable == null) {
             return new SanitizedThrowable(throwable);
         }
@@ -58,7 +58,7 @@ public class StackTraceSanitizer {
      * @param message 原始消息
      * @return 脱敏后的消息
      */
-    private String sanitizeMessage(String message) {
+    private String sanitizeMessage(final String message) {
         if (message == null) {
             return null;
         }
@@ -79,7 +79,7 @@ public class StackTraceSanitizer {
      * @param stackTrace 原始堆栈跟踪
      * @return 脱敏后的堆栈跟踪
      */
-    private StackTraceElement[] sanitizeStackTrace(StackTraceElement[] stackTrace) {
+    private StackTraceElement[] sanitizeStackTrace(final StackTraceElement[] stackTrace) {
         if (stackTrace == null) {
             return null;
         }
@@ -124,7 +124,7 @@ public class StackTraceSanitizer {
      * @param className 类名
      * @return 是否排除
      */
-    private boolean shouldExcludePackage(String className) {
+    private boolean shouldExcludePackage(final String className) {
         return config.getExcludedPackages().stream()
             .anyMatch(className::startsWith);
     }
@@ -135,7 +135,7 @@ public class StackTraceSanitizer {
      * @param className 类名
      * @return 是否脱敏
      */
-    private boolean shouldSanitizePackage(String className) {
+    private boolean shouldSanitizePackage(final String className) {
         return config.getSensitivePackages().stream()
             .anyMatch(className::startsWith);
     }
@@ -181,7 +181,7 @@ public class StackTraceSanitizer {
          * 
          * @param throwable 原始异常
          */
-        public SanitizedThrowable(Throwable throwable) {
+        public SanitizedThrowable(final Throwable throwable) {
             if (throwable != null) {
                 this.className = throwable.getClass().getName();
                 this.message = throwable.getMessage();

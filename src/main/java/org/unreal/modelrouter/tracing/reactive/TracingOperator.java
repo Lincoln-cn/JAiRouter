@@ -38,7 +38,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 增强后的Mono
      */
-    public static <T> Mono<T> trace(Mono<T> source, String operationName, SpanKind spanKind, TracingService tracingService) {
+    public static <T> Mono<T> trace(final Mono<T> source,final String operationName,final SpanKind spanKind,final TracingService tracingService) {
         return new TracingMono<>(source, operationName, spanKind, tracingService);
     }
     
@@ -52,7 +52,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 增强后的Flux
      */
-    public static <T> Flux<T> trace(Flux<T> source, String operationName, SpanKind spanKind, TracingService tracingService) {
+    public static <T> Flux<T> trace(final Flux<T> source,final String operationName,final SpanKind spanKind,final TracingService tracingService) {
         return new TracingFlux<>(source, operationName, spanKind, tracingService);
     }
     
@@ -65,7 +65,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换函数
      */
-    public static <T> Function<Publisher<T>, Publisher<T>> trace(String operationName, SpanKind spanKind, TracingService tracingService) {
+    public static <T> Function<Publisher<T>, Publisher<T>> trace(final String operationName,final SpanKind spanKind,final TracingService tracingService) {
         return source -> {
             if (source instanceof Mono) {
                 return trace((Mono<T>) source, operationName, spanKind, tracingService);
@@ -86,7 +86,7 @@ public class TracingOperator {
         private final SpanKind spanKind;
         private final TracingService tracingService;
         
-        public TracingMono(Mono<T> source, String operationName, SpanKind spanKind, TracingService tracingService) {
+        public TracingMono(final Mono<T> source,final String operationName,final SpanKind spanKind,final TracingService tracingService) {
             this.source = source;
             this.operationName = operationName;
             this.spanKind = spanKind;
@@ -94,7 +94,7 @@ public class TracingOperator {
         }
         
         @Override
-        public void subscribe(CoreSubscriber<? super T> actual) {
+        public void subscribe(final CoreSubscriber<? super T> actual) {
             Context context = actual.currentContext();
             
             // 获取或创建追踪上下文
@@ -121,7 +121,7 @@ public class TracingOperator {
         private final SpanKind spanKind;
         private final TracingService tracingService;
         
-        public TracingFlux(Flux<T> source, String operationName, SpanKind spanKind, TracingService tracingService) {
+        public TracingFlux(final Flux<T> source,final String operationName,final SpanKind spanKind,final TracingService tracingService) {
             this.source = source;
             this.operationName = operationName;
             this.spanKind = spanKind;
@@ -129,7 +129,7 @@ public class TracingOperator {
         }
         
         @Override
-        public void subscribe(CoreSubscriber<? super T> actual) {
+        public void subscribe(final CoreSubscriber<? super T> actual) {
             Context context = actual.currentContext();
             
             // 获取或创建追踪上下文
@@ -157,8 +157,8 @@ public class TracingOperator {
         private final Span operationSpan;
         private final long startTime;
         
-        public TracingSubscriber(CoreSubscriber<? super T> actual, Context context, 
-                               TracingContext tracingContext, Span operationSpan, long startTime) {
+        public TracingSubscriber(final CoreSubscriber<? super T> actual,final Context context, 
+                               final TracingContext tracingContext,final Span operationSpan,final long startTime) {
             this.actual = actual;
             this.context = context;
             this.tracingContext = tracingContext;
@@ -172,12 +172,12 @@ public class TracingOperator {
         }
         
         @Override
-        public void onSubscribe(org.reactivestreams.Subscription s) {
+        public void onSubscribe(final org.reactivestreams.Subscription s) {
             actual.onSubscribe(s);
         }
         
         @Override
-        public void onNext(T t) {
+        public void onNext(final T t) {
             try {
                 actual.onNext(t);
             } catch (Throwable error) {
@@ -186,7 +186,7 @@ public class TracingOperator {
         }
         
         @Override
-        public void onError(Throwable t) {
+        public void onError(final Throwable t) {
             try {
                 // 记录错误到Span
                 recordError(t);
@@ -207,7 +207,7 @@ public class TracingOperator {
             }
         }
         
-        private void recordError(Throwable error) {
+        private void recordError(final Throwable error) {
             try {
                 if (tracingContext != null && operationSpan != null) {
                     tracingContext.finishSpan(operationSpan, error);
@@ -250,7 +250,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Mono<T>, Mono<T>> monoTracer(String operationName, TracingService tracingService) {
+    public static <T> Function<Mono<T>, Mono<T>> monoTracer(final String operationName,final TracingService tracingService) {
         return mono -> trace(mono, operationName, SpanKind.INTERNAL, tracingService);
     }
     
@@ -262,7 +262,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Flux<T>, Flux<T>> fluxTracer(String operationName, TracingService tracingService) {
+    public static <T> Function<Flux<T>, Flux<T>> fluxTracer(final String operationName,final TracingService tracingService) {
         return flux -> trace(flux, operationName, SpanKind.INTERNAL, tracingService);
     }
     
@@ -274,7 +274,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Mono<T>, Mono<T>> webClientTracer(String operationName, TracingService tracingService) {
+    public static <T> Function<Mono<T>, Mono<T>> webClientTracer(final String operationName,final TracingService tracingService) {
         return mono -> trace(mono, operationName, SpanKind.CLIENT, tracingService);
     }
     
@@ -286,7 +286,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Mono<T>, Mono<T>> databaseTracer(String operationName, TracingService tracingService) {
+    public static <T> Function<Mono<T>, Mono<T>> databaseTracer(final String operationName,final TracingService tracingService) {
         return mono -> trace(mono, operationName, SpanKind.CLIENT, tracingService);
     }
     
@@ -298,7 +298,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Mono<T>, Mono<T>> messageTracer(String operationName, TracingService tracingService) {
+    public static <T> Function<Mono<T>, Mono<T>> messageTracer(final String operationName,final TracingService tracingService) {
         return mono -> trace(mono, operationName, SpanKind.CONSUMER, tracingService);
     }
 }

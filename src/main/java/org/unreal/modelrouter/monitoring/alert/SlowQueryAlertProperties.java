@@ -45,7 +45,7 @@ public class SlowQueryAlertProperties {
      * @param operationName 操作名称
      * @return 告警配置
      */
-    public SlowQueryAlertConfig getAlertConfig(String operationName) {
+    public SlowQueryAlertConfig getAlertConfig(final String operationName) {
         OperationConfig operationConfig = operations.get(operationName);
         
         // 如果没有特定配置，使用全局配置

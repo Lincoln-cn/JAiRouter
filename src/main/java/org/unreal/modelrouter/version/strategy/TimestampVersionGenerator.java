@@ -26,7 +26,7 @@ public class TimestampVersionGenerator implements VersionGenerator {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     @Override
-    public int generateNextVersion(VersionContext context) {
+    public int generateNextVersion(final VersionContext context) {
         // 基于当前时间生成版本号
         LocalDateTime now = LocalDateTime.now();
         String timestampStr = now.format(FORMATTER);
@@ -67,7 +67,7 @@ public class TimestampVersionGenerator implements VersionGenerator {
     }
 
     @Override
-    public boolean isValidVersion(int version) {
+    public boolean isValidVersion(final int version) {
         // 时间戳版本号应该是 14 位数字（YYYYMMDDHHMMSS）
         // 范围：20000101000000 到 20991231235959
         return version >= 2000010100 && version <= 2100000000;
@@ -79,7 +79,7 @@ public class TimestampVersionGenerator implements VersionGenerator {
      * @param version 版本号
      * @return 格式化的时间字符串
      */
-    public static String versionToDateTime(int version) {
+    public static String versionToDateTime(final int version) {
         try {
             String str = String.valueOf(version);
             if (str.length() >= 12) {

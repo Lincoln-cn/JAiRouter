@@ -34,7 +34,7 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     private final LoadBalancer delegate;
     private final StructuredLogger structuredLogger;
     
-    public LoadBalancerTracingWrapper(LoadBalancer delegate, StructuredLogger structuredLogger) {
+    public LoadBalancerTracingWrapper(final LoadBalancer delegate,final StructuredLogger structuredLogger) {
         this.delegate = delegate;
         this.structuredLogger = structuredLogger;
     }
@@ -49,13 +49,13 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            List<ModelRouterProperties.ModelInstance> instances, String clientIp) {
+            final List<ModelRouterProperties.ModelInstance> instances,final String clientIp) {
         return selectInstance(instances, clientIp, "unknown");
     }
     
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            List<ModelRouterProperties.ModelInstance> instances, String clientIp, String serviceType) {
+            final List<ModelRouterProperties.ModelInstance> instances,final String clientIp,final String serviceType) {
         
         TracingContext context = TracingContextHolder.getCurrentContext();
         Span span = null;
@@ -120,7 +120,7 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     }
     
     @Override
-    public void recordCall(ModelRouterProperties.ModelInstance instance) {
+    public void recordCall(final ModelRouterProperties.ModelInstance instance) {
         delegate.recordCall(instance);
         
         // 记录调用开始事件
@@ -143,7 +143,7 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     }
     
     @Override
-    public void recordCallComplete(ModelRouterProperties.ModelInstance instance) {
+    public void recordCallComplete(final ModelRouterProperties.ModelInstance instance) {
         delegate.recordCallComplete(instance);
         
         // 更新成功统计
@@ -169,7 +169,7 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     }
     
     @Override
-    public void recordCallFailure(ModelRouterProperties.ModelInstance instance) {
+    public void recordCallFailure(final ModelRouterProperties.ModelInstance instance) {
         delegate.recordCallFailure(instance);
         
         // 更新失败统计
@@ -199,9 +199,9 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     /**
      * 记录候选实例信息
      */
-    private void recordCandidateInstances(TracingContext context, 
-                                        List<ModelRouterProperties.ModelInstance> instances, 
-                                        String serviceType) {
+    private void recordCandidateInstances(final TracingContext context, 
+                                        final List<ModelRouterProperties.ModelInstance> instances, 
+                                        final String serviceType) {
         if (context != null && context.isActive()) {
             // 记录候选实例详情
             for (int i = 0; i < instances.size(); i++) {
@@ -238,9 +238,9 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     /**
      * 记录成功选择
      */
-    private void recordSuccessfulSelection(TracingContext context, Span span, 
-                                         ModelRouterProperties.ModelInstance selectedInstance,
-                                         long decisionTimeMs, String serviceType) {
+    private void recordSuccessfulSelection(final TracingContext context,final Span span, 
+                                         final ModelRouterProperties.ModelInstance selectedInstance,
+                                         final long decisionTimeMs,final String serviceType) {
         if (span != null) {
             // 设置选中实例属性
             span.setAttribute("lb.selected.name", selectedInstance.getName());
@@ -282,8 +282,8 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     /**
      * 记录失败选择
      */
-    private void recordFailedSelection(TracingContext context, Span span, 
-                                     long decisionTimeMs, String serviceType, String errorMessage) {
+    private void recordFailedSelection(final TracingContext context,final Span span, 
+                                     final long decisionTimeMs,final String serviceType,final String errorMessage) {
         if (span != null) {
             span.setAttribute("lb.decision_time_ms", decisionTimeMs);
             span.setAttribute("lb.success", false);
@@ -325,7 +325,7 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     /**
      * 计算实例成功率
      */
-    private double calculateSuccessRate(String instanceName) {
+    private double calculateSuccessRate(final String instanceName) {
         AtomicLong success = instanceSuccessCount.get(instanceName);
         AtomicLong failure = instanceFailureCount.get(instanceName);
         

@@ -24,7 +24,7 @@ public class RatioBasedSamplingStrategy implements SamplingStrategy {
      * 
      * @param ratio 采样率 (0.0-1.0)
      */
-    public RatioBasedSamplingStrategy(double ratio) {
+    public RatioBasedSamplingStrategy(final double ratio) {
         if (ratio < 0.0 || ratio > 1.0) {
             throw new IllegalArgumentException("采样率必须在0.0-1.0之间");
         }
@@ -34,12 +34,12 @@ public class RatioBasedSamplingStrategy implements SamplingStrategy {
     
     @Override
     public SamplingResult shouldSample(
-            Context parentContext,
-            String traceId,
-            String spanName,
-            SpanKind spanKind,
-            Map<String, Object> attributes,
-            Map<String, String> parentLinks) {
+            final Context parentContext,
+            final String traceId,
+            final String spanName,
+            final SpanKind spanKind,
+            final Map<String, Object> attributes,
+            final Map<String, String> parentLinks) {
         
         // 如果采样率为1.0，则总是采样
         if (ratio >= 1.0) {
@@ -68,7 +68,7 @@ public class RatioBasedSamplingStrategy implements SamplingStrategy {
      * @param traceId 追踪ID
      * @return hash值
      */
-    private long hashTraceId(String traceId) {
+    private long hashTraceId(final String traceId) {
         // 简单的hash实现，实际项目中可能需要更复杂的hash算法
         return Math.abs(traceId.hashCode()) * ThreadLocalRandom.current().nextLong();
     }

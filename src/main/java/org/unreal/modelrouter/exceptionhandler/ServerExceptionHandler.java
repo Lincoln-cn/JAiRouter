@@ -24,7 +24,7 @@ public class ServerExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     @ResponseBody
-    public RouterResponse<Void> handleException(Exception e) {
+    public RouterResponse<Void> handleException(final Exception e) {
         try {
             // 记录异常到追踪系统
             Map<String, Object> additionalInfo = new HashMap<>();

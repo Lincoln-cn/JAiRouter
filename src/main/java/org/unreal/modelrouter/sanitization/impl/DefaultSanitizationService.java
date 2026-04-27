@@ -42,7 +42,7 @@ public class DefaultSanitizationService implements SanitizationService {
     private final AtomicInteger ruleIdGenerator = new AtomicInteger(1);
     
     @Autowired
-    public DefaultSanitizationService(SanitizationRuleEngine ruleEngine, SecurityProperties securityProperties) {
+    public DefaultSanitizationService(final SanitizationRuleEngine ruleEngine,final SecurityProperties securityProperties) {
         this.ruleEngine = ruleEngine;
         this.securityProperties = securityProperties;
     }
@@ -154,7 +154,7 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<String> sanitizeRequest(String content, String contentType, String userId) {
+    public Mono<String> sanitizeRequest(final String content,final String contentType,final String userId) {
         if (content == null || content.isEmpty()) {
             return Mono.justOrEmpty(content);
         }
@@ -175,7 +175,7 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<String> sanitizeResponse(String content, String contentType) {
+    public Mono<String> sanitizeResponse(final String content,final String contentType) {
         if (content == null || content.isEmpty()) {
             return Mono.justOrEmpty(content);
         }
@@ -186,7 +186,7 @@ public class DefaultSanitizationService implements SanitizationService {
     /**
      * 执行脱敏处理
      */
-    private Mono<String> performSanitization(String content, String contentType, String type) {
+    private Mono<String> performSanitization(final String content,final String contentType,final String type) {
         // 获取适用的规则
         List<SanitizationRule> applicableRules = rules.values().stream()
                 .filter(rule -> rule.getRuleId().startsWith(type))
@@ -206,7 +206,7 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<Boolean> isUserWhitelisted(String userId) {
+    public Mono<Boolean> isUserWhitelisted(final String userId) {
         if (userId == null || userId.trim().isEmpty()) {
             return Mono.just(false);
         }
@@ -224,7 +224,7 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<Void> updateRules(List<SanitizationRule> newRules) {
+    public Mono<Void> updateRules(final List<SanitizationRule> newRules) {
         return Mono.fromRunnable(() -> {
             log.info("更新脱敏规则，新规则数量: {}", newRules.size());
             
@@ -258,7 +258,7 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<Void> addRule(SanitizationRule rule) {
+    public Mono<Void> addRule(final SanitizationRule rule) {
         return Mono.fromRunnable(() -> {
             if (rule == null) {
                 throw new SanitizationException("规则不能为空", SanitizationException.INVALID_SANITIZATION_RULE);
@@ -293,7 +293,7 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<Void> removeRule(String ruleId) {
+    public Mono<Void> removeRule(final String ruleId) {
         return Mono.fromRunnable(() -> {
             if (ruleId == null || ruleId.trim().isEmpty()) {
                 throw new SanitizationException("规则ID不能为空", SanitizationException.INVALID_SANITIZATION_RULE);

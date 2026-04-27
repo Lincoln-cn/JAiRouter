@@ -40,7 +40,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
 
         // 只对有 body 的请求进行缓存处理
@@ -69,7 +69,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     /**
      * 处理multipart请求的缓存
      */
-    private Mono<Void> handleMultipartRequest(ServerWebExchange exchange, WebFilterChain chain, ServerHttpRequest request) {
+    private Mono<Void> handleMultipartRequest(final ServerWebExchange exchange,final WebFilterChain chain,final ServerHttpRequest request) {
         // 对于multipart请求，我们需要特别小心处理边界信息
         return DataBufferUtils.join(request.getBody())
                 .flatMap(dataBuffer -> {
@@ -108,7 +108,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     /**
      * 处理标准请求的缓存
      */
-    private Mono<Void> handleStandardRequest(ServerWebExchange exchange, WebFilterChain chain, ServerHttpRequest request) {
+    private Mono<Void> handleStandardRequest(final ServerWebExchange exchange,final WebFilterChain chain,final ServerHttpRequest request) {
         return DataBufferUtils.join(request.getBody())
                 .flatMap(dataBuffer -> {
                     try {
@@ -143,7 +143,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     /**
      * 检查是否为multipart请求
      */
-    private boolean isMultipartRequest(ServerHttpRequest request) {
+    private boolean isMultipartRequest(final ServerHttpRequest request) {
         MediaType contentType = request.getHeaders().getContentType();
         return contentType != null &&
                 (contentType.isCompatibleWith(MediaType.MULTIPART_FORM_DATA) ||
@@ -153,7 +153,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     /**
      * 检查请求是否有 body
      */
-    private boolean hasBody(ServerHttpRequest request) {
+    private boolean hasBody(final ServerHttpRequest request) {
         // 检查 Content-Length
         long contentLength = request.getHeaders().getContentLength();
         if (contentLength > 0) {
@@ -174,7 +174,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
         private final byte[] cachedBody;
         private final ServerWebExchange exchange;
 
-        public MultipartCachedRequestDecorator(ServerHttpRequest delegate, byte[] cachedBody, ServerWebExchange exchange) {
+        public MultipartCachedRequestDecorator(final ServerHttpRequest delegate,final byte[] cachedBody,final ServerWebExchange exchange) {
             super(delegate);
             this.cachedBody = cachedBody;
             this.exchange = exchange;

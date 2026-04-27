@@ -37,8 +37,8 @@ public class MetricLifecycleManager {
     private static final long HEALTH_CHECK_INTERVAL_MINUTES = 5;
     private static final long METRIC_INACTIVE_THRESHOLD_HOURS = 24;
     
-    public MetricLifecycleManager(MetricRegistrationService metricRegistrationService,
-                                 CustomMeterRegistry customMeterRegistry) {
+    public MetricLifecycleManager(final MetricRegistrationService metricRegistrationService,
+                                 final CustomMeterRegistry customMeterRegistry) {
         this.metricRegistrationService = metricRegistrationService;
         this.customMeterRegistry = customMeterRegistry;
     }
@@ -211,8 +211,8 @@ public class MetricLifecycleManager {
         private final int disabledMetrics;
         private final Instant lastCheckTime;
         
-        public LifecycleStatus(boolean running, int totalMetrics, int enabledMetrics, 
-                              int disabledMetrics, Instant lastCheckTime) {
+        public LifecycleStatus(final boolean running,final int totalMetrics,final int enabledMetrics, 
+                              final int disabledMetrics,final Instant lastCheckTime) {
             this.running = running;
             this.totalMetrics = totalMetrics;
             this.enabledMetrics = enabledMetrics;

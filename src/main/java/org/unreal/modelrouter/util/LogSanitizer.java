@@ -16,7 +16,7 @@ public final class LogSanitizer {
      * @param input 输入字符串
      * @return 清理后的字符串
      */
-    public static String sanitize(Object input) {
+    public static String sanitize(final Object input) {
         if (input == null) {
             return "null";
         }
@@ -37,7 +37,7 @@ public final class LogSanitizer {
      * @param inputs 输入参数数组
      * @return 清理后的参数数组
      */
-    public static Object[] sanitize(Object... inputs) {
+    public static Object[] sanitize(final Object... inputs) {
         if (inputs == null) {
             return new Object[0];
         }
@@ -56,7 +56,7 @@ public final class LogSanitizer {
      * @param args 参数
      * @return 格式化后的安全字符串
      */
-    public static String format(String format, Object... args) {
+    public static String format(final String format,final Object... args) {
         if (format == null) {
             return "null";
         }

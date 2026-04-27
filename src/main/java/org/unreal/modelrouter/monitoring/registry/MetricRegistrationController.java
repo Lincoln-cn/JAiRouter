@@ -26,8 +26,8 @@ public class MetricRegistrationController {
     private final MetricRegistrationService metricRegistrationService;
     private final CustomMeterRegistry customMeterRegistry;
     
-    public MetricRegistrationController(MetricRegistrationService metricRegistrationService,
-                                      CustomMeterRegistry customMeterRegistry) {
+    public MetricRegistrationController(final MetricRegistrationService metricRegistrationService,
+                                      final CustomMeterRegistry customMeterRegistry) {
         this.metricRegistrationService = metricRegistrationService;
         this.customMeterRegistry = customMeterRegistry;
     }

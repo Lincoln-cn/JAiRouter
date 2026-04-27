@@ -21,7 +21,7 @@ public class SequentialVersionGenerator implements VersionGenerator {
     private static final String STRATEGY_NAME = "SEQUENTIAL";
 
     @Override
-    public int generateNextVersion(VersionContext context) {
+    public int generateNextVersion(final VersionContext context) {
         // 获取当前最大版本号，如果没有则返回 0
         int maxVersion = context.getMaxVersion();
 
@@ -53,7 +53,7 @@ public class SequentialVersionGenerator implements VersionGenerator {
     }
 
     @Override
-    public boolean isValidVersion(int version) {
+    public boolean isValidVersion(final int version) {
         // 顺序递增版本号应该是正整数
         return version > 0 && version < 100_000_000;
     }

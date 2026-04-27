@@ -23,7 +23,7 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public ConfigChangeAuditServiceImpl(ConfigChangeAuditRepository auditRepository, ObjectMapper objectMapper) {
+    public ConfigChangeAuditServiceImpl(final ConfigChangeAuditRepository auditRepository,final ObjectMapper objectMapper) {
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
     }
@@ -31,12 +31,12 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
     @Override
     @Transactional
     public void recordConfigCreation(
-        String configKey,
-        String configType,
-        Map<String, Object> configValue,
-        String operator,
-        String operatorIp,
-        String reason
+        final String configKey,
+        final String configType,
+        final Map<String, Object> configValue,
+        final String operator,
+        final String operatorIp,
+        final String reason
     ) {
         recordChange("CREATE", configKey, configType, null, configValue, operator, operatorIp, reason);
     }
@@ -44,13 +44,13 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
     @Override
     @Transactional
     public void recordConfigUpdate(
-        String configKey,
-        String configType,
-        Map<String, Object> oldValue,
-        Map<String, Object> newValue,
-        String operator,
-        String operatorIp,
-        String reason
+        final String configKey,
+        final String configType,
+        final Map<String, Object> oldValue,
+        final Map<String, Object> newValue,
+        final String operator,
+        final String operatorIp,
+        final String reason
     ) {
         recordChange("UPDATE", configKey, configType, oldValue, newValue, operator, operatorIp, reason);
     }
@@ -58,25 +58,25 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
     @Override
     @Transactional
     public void recordConfigDeletion(
-        String configKey,
-        String configType,
-        Map<String, Object> oldValue,
-        String operator,
-        String operatorIp,
-        String reason
+        final String configKey,
+        final String configType,
+        final Map<String, Object> oldValue,
+        final String operator,
+        final String operatorIp,
+        final String reason
     ) {
         recordChange("DELETE", configKey, configType, oldValue, null, operator, operatorIp, reason);
     }
 
     private void recordChange(
-        String operation,
-        String configKey,
-        String configType,
-        Map<String, Object> oldValue,
-        Map<String, Object> newValue,
-        String operator,
-        String operatorIp,
-        String reason
+        final String operation,
+        final String configKey,
+        final String configType,
+        final Map<String, Object> oldValue,
+        final Map<String, Object> newValue,
+        final String operator,
+        final String operatorIp,
+        final String reason
     ) {
         try {
             ConfigChangeAuditEntity audit = ConfigChangeAuditEntity.builder()
@@ -100,7 +100,7 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
         }
     }
 
-    private String generateChangeSummary(Map<String, Object> oldValue, Map<String, Object> newValue) {
+    private String generateChangeSummary(final Map<String, Object> oldValue,final Map<String, Object> newValue) {
         if (oldValue == null && newValue != null) {
             return "Created new configuration";
         } else if (oldValue != null && newValue == null) {

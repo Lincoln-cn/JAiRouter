@@ -14,7 +14,7 @@ public class GlobalControllerExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalControllerExceptionHandler.class);
 
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<RouterResponse<Void>> handleResponseStatusException(ResponseStatusException ex) {
+    public ResponseEntity<RouterResponse<Void>> handleResponseStatusException(final ResponseStatusException ex) {
 
         // 在这里，您可以确定地捕获到异常
         logger.error("通过 @RestControllerAdvice 捕获到响应状态异常: status={}, reason={}", ex.getStatusCode(), ex.getReason(), ex);

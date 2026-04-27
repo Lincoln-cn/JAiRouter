@@ -50,7 +50,7 @@ public class MetricsMemoryManager {
     private final AtomicLong evictions = new AtomicLong(0);
     private final AtomicLong memoryCleanups = new AtomicLong(0);
 
-    public MetricsMemoryManager(MonitoringProperties monitoringProperties) {
+    public MetricsMemoryManager(final MonitoringProperties monitoringProperties) {
         this.monitoringProperties = monitoringProperties;
         this.memoryMXBean = ManagementFactory.getMemoryMXBean();
         this.cleanupExecutor = Executors.newScheduledThreadPool(1, r -> {
@@ -162,7 +162,7 @@ public class MetricsMemoryManager {
     /**
      * 淘汰缓存条目到指定大小
      */
-    private void evictToSize(int targetSize) {
+    private void evictToSize(final int targetSize) {
         while (metricsCache.size() > targetSize && !accessOrder.isEmpty()) {
             String oldestKey = accessOrder.poll();
             if (oldestKey != null && metricsCache.remove(oldestKey) != null) {
@@ -174,7 +174,7 @@ public class MetricsMemoryManager {
     /**
      * 获取缓存条目
      */
-    public CacheEntry getCacheEntry(String key) {
+    public CacheEntry getCacheEntry(final String key) {
         cacheLock.readLock().lock();
         try {
             CacheEntry entry = metricsCache.get(key);
@@ -195,7 +195,7 @@ public class MetricsMemoryManager {
     /**
      * 放入缓存条目
      */
-    public void putCacheEntry(String key, Object value) {
+    public void putCacheEntry(final String key,final Object value) {
         cacheLock.writeLock().lock();
         try {
             // 检查是否需要淘汰
@@ -215,7 +215,7 @@ public class MetricsMemoryManager {
     /**
      * 根据内存使用情况动态调整采样率
      */
-    public boolean shouldSample(double baseSamplingRate) {  // 改为public访问权限
+    public boolean shouldSample(final double baseSamplingRate) {  // 改为public访问权限
         double memoryUsage = getCurrentMemoryUsage();
         
         if (memoryUsage >= MEMORY_CRITICAL_THRESHOLD) {
@@ -287,7 +287,7 @@ public class MetricsMemoryManager {
         private volatile long lastAccessTime;
         private final long creationTime;
 
-        public CacheEntry(Object value) {
+        public CacheEntry(final Object value) {
             this.value = value;
             this.creationTime = System.currentTimeMillis();
             this.lastAccessTime = creationTime;
@@ -327,8 +327,8 @@ public class MetricsMemoryManager {
         private final long evictions;
         private final long memoryCleanups;
 
-        public MemoryStats(double memoryUsageRatio, long usedMemory, long maxMemory, int cacheSize,
-                          long cacheHits, long cacheMisses, long evictions, long memoryCleanups) {
+        public MemoryStats(final double memoryUsageRatio,final long usedMemory,final long maxMemory,final int cacheSize,
+                          final long cacheHits,final long cacheMisses,final long evictions,final long memoryCleanups) {
             this.memoryUsageRatio = memoryUsageRatio;
             this.usedMemory = usedMemory;
             this.maxMemory = maxMemory;

@@ -75,7 +75,7 @@ public class TokenBucketRateLimiter implements RateLimiter {
     /**
      * 记录限流指标
      */
-    private void recordRateLimitMetrics(RateLimitContext context, boolean allowed) {
+    private void recordRateLimitMetrics(final RateLimitContext context,final boolean allowed) {
         if (metricsCollector != null) {
             try {
                 String serviceName = context.getServiceType() != null ? 

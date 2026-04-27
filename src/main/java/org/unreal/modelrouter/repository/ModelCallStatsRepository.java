@@ -47,7 +47,7 @@ public class ModelCallStatsRepository {
     private final AtomicLong totalFailureCounter = new AtomicLong(0);
 
     @Autowired
-    public ModelCallStatsRepository(StoreManager storeManager, ObjectMapper objectMapper) {
+    public ModelCallStatsRepository(final StoreManager storeManager,final ObjectMapper objectMapper) {
         this.storeManager = storeManager;
         this.objectMapper = objectMapper;
     }
@@ -59,7 +59,7 @@ public class ModelCallStatsRepository {
      * @param modelName 模型名称
      * @return 统计对象
      */
-    public ModelCallStats getOrCreate(String serviceType, String modelName) {
+    public ModelCallStats getOrCreate(final String serviceType,final String modelName) {
         String key = buildKey(serviceType, modelName);
         return statsCache.computeIfAbsent(key, k -> {
             ModelCallStats stats = ModelCallStats.builder()
@@ -91,7 +91,7 @@ public class ModelCallStatsRepository {
      * @param modelName 模型名称
      * @return 统计对象，不存在返回 null
      */
-    public ModelCallStats get(String serviceType, String modelName) {
+    public ModelCallStats get(final String serviceType,final String modelName) {
         String key = buildKey(serviceType, modelName);
         return statsCache.get(key);
     }
@@ -104,7 +104,7 @@ public class ModelCallStatsRepository {
      * @param success 是否成功
      * @param responseTime 响应时间
      */
-    public void updateStats(String serviceType, String modelName, boolean success, long responseTime) {
+    public void updateStats(final String serviceType,final String modelName,final boolean success,final long responseTime) {
         ModelCallStats stats = getOrCreate(serviceType, modelName);
         synchronized (stats) {
             stats.updateStats(success, responseTime);
@@ -131,7 +131,7 @@ public class ModelCallStatsRepository {
      * @param serviceType 服务类型
      * @param modelName 模型名称
      */
-    public void recordCircuitBreaker(String serviceType, String modelName) {
+    public void recordCircuitBreaker(final String serviceType,final String modelName) {
         ModelCallStats stats = getOrCreate(serviceType, modelName);
         synchronized (stats) {
             stats.recordCircuitBreaker();
@@ -146,7 +146,7 @@ public class ModelCallStatsRepository {
      * @param serviceType 服务类型
      * @param modelName 模型名称
      */
-    public void recordRateLimit(String serviceType, String modelName) {
+    public void recordRateLimit(final String serviceType,final String modelName) {
         ModelCallStats stats = getOrCreate(serviceType, modelName);
         synchronized (stats) {
             stats.recordRateLimit();
@@ -162,7 +162,7 @@ public class ModelCallStatsRepository {
      * @param modelName 模型名称
      * @param errorCode 错误码
      */
-    public void recordErrorCode(String serviceType, String modelName, String errorCode) {
+    public void recordErrorCode(final String serviceType,final String modelName,final String errorCode) {
         ModelCallStats stats = getOrCreate(serviceType, modelName);
         synchronized (stats) {
             stats.recordErrorCode(errorCode);
@@ -172,7 +172,7 @@ public class ModelCallStatsRepository {
     /**
      * 更新 QPS 窗口
      */
-    private void updateQpsWindow(String serviceType, String modelName) {
+    private void updateQpsWindow(final String serviceType,final String modelName) {
         String key = buildKey(serviceType, modelName);
         long currentTime = System.currentTimeMillis();
 
@@ -193,7 +193,7 @@ public class ModelCallStatsRepository {
      * @param modelName 模型名称
      * @return QPS
      */
-    public double getCurrentQps(String serviceType, String modelName) {
+    public double getCurrentQps(final String serviceType,final String modelName) {
         String key = buildKey(serviceType, modelName);
         Queue<Long> window = qpsWindowCache.get(key);
         if (window == null || window.isEmpty()) {
@@ -225,7 +225,7 @@ public class ModelCallStatsRepository {
      * @param serviceType 服务类型
      * @return 统计列表
      */
-    public List<ModelCallStats> getStatsByServiceType(String serviceType) {
+    public List<ModelCallStats> getStatsByServiceType(final String serviceType) {
         List<ModelCallStats> result = new ArrayList<>();
         for (ModelCallStats stats : statsCache.values()) {
             if (stats.getServiceType().equals(serviceType)) {
@@ -303,7 +303,7 @@ public class ModelCallStatsRepository {
      * @param serviceType 服务类型
      * @param modelName 模型名称
      */
-    public void remove(String serviceType, String modelName) {
+    public void remove(final String serviceType,final String modelName) {
         String key = buildKey(serviceType, modelName);
         statsCache.remove(key);
         qpsWindowCache.remove(key);
@@ -415,7 +415,7 @@ public class ModelCallStatsRepository {
     /**
      * 构建缓存键
      */
-    private String buildKey(String serviceType, String modelName) {
+    private String buildKey(final String serviceType,final String modelName) {
         return serviceType + ":" + modelName;
     }
 
@@ -425,7 +425,7 @@ public class ModelCallStatsRepository {
      * @param n 数量
      * @return Top N 统计列表
      */
-    public List<ModelCallStats> getTopActiveModels(int n) {
+    public List<ModelCallStats> getTopActiveModels(final int n) {
         return statsCache.values().stream()
                 .filter(ModelCallStats::isActive)
                 .sorted((a, b) -> Long.compare(b.getTotalCalls(), a.getTotalCalls()))

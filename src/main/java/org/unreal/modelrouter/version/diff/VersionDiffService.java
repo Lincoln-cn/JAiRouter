@@ -20,7 +20,7 @@ public class VersionDiffService {
 
     private final StoreManager storeManager;
 
-    public VersionDiffService(StoreManager storeManager) {
+    public VersionDiffService(final StoreManager storeManager) {
         this.storeManager = storeManager;
     }
 
@@ -31,7 +31,7 @@ public class VersionDiffService {
      * @param targetVersion 目标版本号（较新版本）
      * @return 差异结果
      */
-    public ConfigDiff compareVersions(int sourceVersion, int targetVersion) {
+    public ConfigDiff compareVersions(final int sourceVersion,final int targetVersion) {
         logger.info("开始比较配置版本: {} vs {}", sourceVersion, targetVersion);
 
         // 读取两个版本的配置
@@ -61,7 +61,7 @@ public class VersionDiffService {
      * @param currentConfig 当前配置（可能未保存）
      * @return 差异结果
      */
-    public ConfigDiff compareWithCurrent(int baseVersion, Map<String, Object> currentConfig) {
+    public ConfigDiff compareWithCurrent(final int baseVersion,final Map<String, Object> currentConfig) {
         logger.info("比较版本 {} 与当前未保存配置", baseVersion);
 
         Map<String, Object> baseConfig = loadVersionConfig(baseVersion);
@@ -78,7 +78,7 @@ public class VersionDiffService {
      * @param version 版本号，0 表示获取当前活跃配置
      * @return 配置内容
      */
-    private Map<String, Object> loadVersionConfig(int version) {
+    private Map<String, Object> loadVersionConfig(final int version) {
         if (version == 0) {
             return storeManager.getConfig(CONFIG_KEY);
         }
@@ -94,10 +94,10 @@ public class VersionDiffService {
      * @param targetVersion 目标版本号
      * @return 差异结果
      */
-    private ConfigDiff deepCompare(Map<String, Object> source,
-                                   Map<String, Object> target,
-                                   int sourceVersion,
-                                   int targetVersion) {
+    private ConfigDiff deepCompare(final Map<String, Object> source,
+                                   final Map<String, Object> target,
+                                   final int sourceVersion,
+                                   final int targetVersion) {
 
         ConfigDiff.ConfigDiffBuilder diffBuilder = ConfigDiff.builder()
                 .sourceVersion(sourceVersion)
@@ -176,7 +176,7 @@ public class VersionDiffService {
      * @return 所有路径集合
      */
     @SuppressWarnings("unchecked")
-    private Set<String> collectPaths(Map<String, Object> config, String prefix) {
+    private Set<String> collectPaths(final Map<String, Object> config,final String prefix) {
         Set<String> paths = new HashSet<>();
 
         if (config == null) {
@@ -207,7 +207,7 @@ public class VersionDiffService {
      * @return 值
      */
     @SuppressWarnings("unchecked")
-    private Object getValueByPath(Map<String, Object> config, String path) {
+    private Object getValueByPath(final Map<String, Object> config,final String path) {
         if (config == null || path == null || path.isEmpty()) {
             return null;
         }
@@ -235,7 +235,7 @@ public class VersionDiffService {
      * @param value 值
      * @return 类型描述
      */
-    private String getValueType(Object value) {
+    private String getValueType(final Object value) {
         if (value == null) {
             return "null";
         }

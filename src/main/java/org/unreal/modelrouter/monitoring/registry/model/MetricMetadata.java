@@ -23,7 +23,7 @@ public class MetricMetadata {
     private final boolean enabled;
     private final double samplingRate;
     
-    private MetricMetadata(Builder builder) {
+    private MetricMetadata(final Builder builder) {
         this.name = builder.name;
         this.description = builder.description;
         this.type = builder.type;
@@ -76,7 +76,7 @@ public class MetricMetadata {
         return samplingRate;
     }
     
-    public static Builder builder(String name, Meter.Type type) {
+    public static Builder builder(final String name,final Meter.Type type) {
         return new Builder(name, type);
     }
     
@@ -85,7 +85,7 @@ public class MetricMetadata {
     }
     
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MetricMetadata that = (MetricMetadata) o;
@@ -124,12 +124,12 @@ public class MetricMetadata {
         private boolean enabled = true;
         private double samplingRate = 1.0;
         
-        public Builder(String name, Meter.Type type) {
+        public Builder(final String name,final Meter.Type type) {
             this.name = Objects.requireNonNull(name, "Metric name cannot be null");
             this.type = Objects.requireNonNull(type, "Metric type cannot be null");
         }
         
-        public Builder(MetricMetadata metadata) {
+        public Builder(final MetricMetadata metadata) {
             this.name = metadata.name;
             this.type = metadata.type;
             this.description = metadata.description;
@@ -142,32 +142,32 @@ public class MetricMetadata {
             this.samplingRate = metadata.samplingRate;
         }
         
-        public Builder description(String description) {
+        public Builder description(final String description) {
             this.description = description != null ? description : "";
             return this;
         }
         
-        public Builder unit(String unit) {
+        public Builder unit(final String unit) {
             this.unit = unit != null ? unit : "";
             return this;
         }
         
-        public Builder baseTags(Map<String, String> baseTags) {
+        public Builder baseTags(final Map<String, String> baseTags) {
             this.baseTags = baseTags != null ? baseTags : Map.of();
             return this;
         }
         
-        public Builder category(String category) {
+        public Builder category(final String category) {
             this.category = category != null ? category : "custom";
             return this;
         }
         
-        public Builder enabled(boolean enabled) {
+        public Builder enabled(final boolean enabled) {
             this.enabled = enabled;
             return this;
         }
         
-        public Builder samplingRate(double samplingRate) {
+        public Builder samplingRate(final double samplingRate) {
             if (samplingRate < 0.0 || samplingRate > 1.0) {
                 throw new IllegalArgumentException("Sampling rate must be between 0.0 and 1.0");
             }

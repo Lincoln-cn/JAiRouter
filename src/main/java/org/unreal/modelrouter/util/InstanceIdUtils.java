@@ -16,7 +16,7 @@ public class InstanceIdUtils {
      * @param instanceConfig 实例配置
      * @return 实例ID
      */
-    public static String getInstanceId(Map<String, Object> instanceConfig) {
+    public static String getInstanceId(final Map<String, Object> instanceConfig) {
         if (instanceConfig == null) {
             return null;
         }
@@ -56,7 +56,7 @@ public class InstanceIdUtils {
      * @param uuid UUID字符串
      * @return 是否有效
      */
-    private static boolean isValidUUID(String uuid) {
+    private static boolean isValidUUID(final String uuid) {
         try {
             UUID.fromString(uuid);
             return true;

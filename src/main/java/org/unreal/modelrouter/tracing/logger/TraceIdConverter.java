@@ -15,7 +15,7 @@ import org.unreal.modelrouter.tracing.TracingContextHolder;
 public class TraceIdConverter extends ClassicConverter {
     
     @Override
-    public String convert(ILoggingEvent event) {
+    public String convert(final ILoggingEvent event) {
         String traceId = TracingContextHolder.getCurrentTraceId();
         return traceId != null ? traceId : "";
     }

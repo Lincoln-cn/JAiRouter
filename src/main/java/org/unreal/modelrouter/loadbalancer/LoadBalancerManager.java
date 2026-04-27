@@ -26,9 +26,9 @@ public class LoadBalancerManager {
     private final ConfigurationHelper configHelper;
     private final ModelRouterProperties properties;
 
-    public LoadBalancerManager(ComponentFactory componentFactory,
-                               ConfigurationHelper configHelper,
-                               ModelRouterProperties properties) {
+    public LoadBalancerManager(final ComponentFactory componentFactory,
+                               final ConfigurationHelper configHelper,
+                               final ModelRouterProperties properties) {
         this.componentFactory = componentFactory;
         this.configHelper = configHelper;
         this.properties = properties;
@@ -73,7 +73,7 @@ public class LoadBalancerManager {
      * 获取服务特定的负载均衡配置
      */
     private ModelRouterProperties.LoadBalanceConfig getServiceLoadBalanceConfig(
-            ModelServiceRegistry.ServiceType serviceType) {
+            final ModelServiceRegistry.ServiceType serviceType) {
         if (properties.getServices() == null) {
             return null;
         }
@@ -87,7 +87,7 @@ public class LoadBalancerManager {
     /**
      * 获取指定服务类型的负载均衡器
      */
-    public LoadBalancer getLoadBalancer(ModelServiceRegistry.ServiceType serviceType) {
+    public LoadBalancer getLoadBalancer(final ModelServiceRegistry.ServiceType serviceType) {
         LoadBalancer loadBalancer = loadBalancers.get(serviceType);
         if (loadBalancer == null) {
             logger.warn("No load balancer found for service type: {}, creating default", serviceType);
@@ -102,7 +102,7 @@ public class LoadBalancerManager {
     /**
      * 为指定服务类型设置负载均衡器
      */
-    public void setLoadBalancer(ModelServiceRegistry.ServiceType serviceType, LoadBalancer loadBalancer) {
+    public void setLoadBalancer(final ModelServiceRegistry.ServiceType serviceType,final LoadBalancer loadBalancer) {
         if (loadBalancer == null) {
             throw new IllegalArgumentException("LoadBalancer cannot be null");
         }
@@ -113,8 +113,8 @@ public class LoadBalancerManager {
     /**
      * 动态更新单个服务的负载均衡配置
      */
-    public void updateServiceLoadBalancer(ModelServiceRegistry.ServiceType serviceType,
-                                          ModelRouterProperties.LoadBalanceConfig config) {
+    public void updateServiceLoadBalancer(final ModelServiceRegistry.ServiceType serviceType,
+                                          final ModelRouterProperties.LoadBalanceConfig config) {
         try {
             LoadBalancer newLoadBalancer = componentFactory.createLoadBalancer(config);
             LoadBalancer oldLoadBalancer = loadBalancers.put(serviceType, newLoadBalancer);
@@ -210,8 +210,8 @@ public class LoadBalancerManager {
      * @param serviceType 服务类型
      * @param loadBalanceConfig 新的负载均衡配置
      */
-    public void reinitializeLoadBalancer(ModelServiceRegistry.ServiceType serviceType,
-                                         ModelRouterProperties.LoadBalanceConfig loadBalanceConfig) {
+    public void reinitializeLoadBalancer(final ModelServiceRegistry.ServiceType serviceType,
+                                         final ModelRouterProperties.LoadBalanceConfig loadBalanceConfig) {
         try {
             // 移除旧的负载均衡器
             loadBalancers.remove(serviceType);
@@ -251,7 +251,7 @@ public class LoadBalancerManager {
     /**
      * 检查是否有指定服务类型的负载均衡器
      */
-    public boolean hasLoadBalancer(ModelServiceRegistry.ServiceType serviceType) {
+    public boolean hasLoadBalancer(final ModelServiceRegistry.ServiceType serviceType) {
         return loadBalancers.containsKey(serviceType);
     }
 }

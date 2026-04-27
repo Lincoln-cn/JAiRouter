@@ -121,7 +121,7 @@ public class ConfigDiff {
             }
         }
 
-        private String formatValue(Object value) {
+        private String formatValue(final Object value) {
             if (value == null) {
                 return "null";
             }

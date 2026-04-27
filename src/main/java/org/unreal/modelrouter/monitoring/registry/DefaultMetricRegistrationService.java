@@ -33,13 +33,13 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     // 指标名称验证模式 (允许字母、数字、下划线和点)
     private static final Pattern METRIC_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_.]*$");
     
-    public DefaultMetricRegistrationService(CustomMeterRegistry customMeterRegistry) {
+    public DefaultMetricRegistrationService(final CustomMeterRegistry customMeterRegistry) {
         this.customMeterRegistry = customMeterRegistry;
         logger.info("DefaultMetricRegistrationService initialized");
     }
     
     @Override
-    public MetricRegistrationResult registerBusinessMetric(MetricRegistrationRequest request) {
+    public MetricRegistrationResult registerBusinessMetric(final MetricRegistrationRequest request) {
         try {
             ValidationResult validation = validateMetricRequest(request);
             if (!validation.isValid()) {
@@ -69,7 +69,7 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public MetricRegistrationResult registerGaugeMetric(MetricRegistrationRequest request, Supplier<Number> valueSupplier) {
+    public MetricRegistrationResult registerGaugeMetric(final MetricRegistrationRequest request,final Supplier<Number> valueSupplier) {
         try {
             ValidationResult validation = validateMetricRequest(request);
             if (!validation.isValid()) {
@@ -99,7 +99,7 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public BatchRegistrationResult batchRegisterMetrics(List<MetricRegistrationRequest> requests) {
+    public BatchRegistrationResult batchRegisterMetrics(final List<MetricRegistrationRequest> requests) {
         if (requests == null || requests.isEmpty()) {
             return new BatchRegistrationResult(0, 0, 0, List.of());
         }
@@ -126,7 +126,7 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public boolean unregisterMetric(String metricName, Map<String, String> tags) {
+    public boolean unregisterMetric(final String metricName,final Map<String, String> tags) {
         try {
             boolean result = customMeterRegistry.unregisterMeter(metricName, tags);
             if (result) {
@@ -142,7 +142,7 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public BatchUnregistrationResult batchUnregisterMetrics(List<String> metricNames) {
+    public BatchUnregistrationResult batchUnregisterMetrics(final List<String> metricNames) {
         if (metricNames == null || metricNames.isEmpty()) {
             return new BatchUnregistrationResult(0, 0, 0, List.of());
         }
@@ -169,7 +169,7 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public boolean updateMetricConfiguration(String metricName, boolean enabled, double samplingRate) {
+    public boolean updateMetricConfiguration(final String metricName,final boolean enabled,final double samplingRate) {
         try {
             var metadataOpt = customMeterRegistry.getMetricMetadata(metricName);
             if (metadataOpt.isEmpty()) {
@@ -226,7 +226,7 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public List<MetricMetadata> getMetricsByCategory(String category) {
+    public List<MetricMetadata> getMetricsByCategory(final String category) {
         try {
             return customMeterRegistry.getAllMetricMetadata().stream()
                     .filter(metadata -> category.equals(metadata.getCategory()))
@@ -238,7 +238,7 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public List<MetricMetadata> searchMetrics(String namePattern, String category) {
+    public List<MetricMetadata> searchMetrics(final String namePattern,final String category) {
         try {
             Pattern pattern = Pattern.compile(namePattern, Pattern.CASE_INSENSITIVE);
             
@@ -253,7 +253,7 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public ValidationResult validateMetricRequest(MetricRegistrationRequest request) {
+    public ValidationResult validateMetricRequest(final MetricRegistrationRequest request) {
         List<String> errors = new ArrayList<>();
         List<String> warnings = new ArrayList<>();
         

@@ -39,15 +39,15 @@ public class MetricsManagementController {
     private final MetricsCacheAndRetry cacheAndRetry;
     private final MonitoringHealthChecker healthChecker;
 
-    public MetricsManagementController(MonitoringProperties monitoringProperties,
-                              AsyncMetricsCollector asyncMetricsCollector,
-                              MetricsCircuitBreaker circuitBreaker,
-                              MetricsMemoryManager memoryManager,
-                              DynamicMonitoringConfigUpdater configUpdater,
-                              MetricsErrorHandler errorHandler,
-                              MetricsDegradationStrategy degradationStrategy,
-                              MetricsCacheAndRetry cacheAndRetry,
-                              MonitoringHealthChecker healthChecker) {
+    public MetricsManagementController(final MonitoringProperties monitoringProperties,
+                              final AsyncMetricsCollector asyncMetricsCollector,
+                              final MetricsCircuitBreaker circuitBreaker,
+                              final MetricsMemoryManager memoryManager,
+                              final DynamicMonitoringConfigUpdater configUpdater,
+                              final MetricsErrorHandler errorHandler,
+                              final MetricsDegradationStrategy degradationStrategy,
+                              final MetricsCacheAndRetry cacheAndRetry,
+                              final MonitoringHealthChecker healthChecker) {
         this.monitoringProperties = monitoringProperties;
         this.asyncMetricsCollector = asyncMetricsCollector;
         this.circuitBreaker = circuitBreaker;
@@ -428,13 +428,13 @@ public class MetricsManagementController {
 
         // Getters and Setters
         public Double getRequestMetrics() { return requestMetrics; }
-        public void setRequestMetrics(Double requestMetrics) { this.requestMetrics = requestMetrics; }
+        public void setRequestMetrics(final Double requestMetrics) { this.requestMetrics = requestMetrics; }
         public Double getBackendMetrics() { return backendMetrics; }
-        public void setBackendMetrics(Double backendMetrics) { this.backendMetrics = backendMetrics; }
+        public void setBackendMetrics(final Double backendMetrics) { this.backendMetrics = backendMetrics; }
         public Double getInfrastructureMetrics() { return infrastructureMetrics; }
-        public void setInfrastructureMetrics(Double infrastructureMetrics) { this.infrastructureMetrics = infrastructureMetrics; }
+        public void setInfrastructureMetrics(final Double infrastructureMetrics) { this.infrastructureMetrics = infrastructureMetrics; }
         public Double getTraceMetrics() { return traceMetrics; }
-        public void setTraceMetrics(Double traceMetrics) { this.traceMetrics = traceMetrics; }
+        public void setTraceMetrics(final Double traceMetrics) { this.traceMetrics = traceMetrics; }
     }
 
     public static class PerformanceUpdateRequest {
@@ -444,10 +444,10 @@ public class MetricsManagementController {
 
         // Getters and Setters
         public Boolean getAsyncProcessing() { return asyncProcessing; }
-        public void setAsyncProcessing(Boolean asyncProcessing) { this.asyncProcessing = asyncProcessing; }
+        public void setAsyncProcessing(final Boolean asyncProcessing) { this.asyncProcessing = asyncProcessing; }
         public Integer getBatchSize() { return batchSize; }
-        public void setBatchSize(Integer batchSize) { this.batchSize = batchSize; }
+        public void setBatchSize(final Integer batchSize) { this.batchSize = batchSize; }
         public Integer getBufferSize() { return bufferSize; }
-        public void setBufferSize(Integer bufferSize) { this.bufferSize = bufferSize; }
+        public void setBufferSize(final Integer bufferSize) { this.bufferSize = bufferSize; }
     }
 }

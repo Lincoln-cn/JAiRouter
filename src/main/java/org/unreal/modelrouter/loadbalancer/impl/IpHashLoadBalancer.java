@@ -23,17 +23,17 @@ public class IpHashLoadBalancer implements LoadBalancer {
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
-    public IpHashLoadBalancer(String hashAlgorithm) {
+    public IpHashLoadBalancer(final String hashAlgorithm) {
         this.hashAlgorithm = hashAlgorithm != null ? hashAlgorithm : "md5";
     }
 
     @Override
-    public ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp) {
+    public ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances,final String clientIp) {
         return selectInstance(instances, clientIp, "unknown");
     }
 
     @Override
-    public ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp, String serviceType) {
+    public ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances,final String clientIp,final String serviceType) {
         if (instances == null || instances.isEmpty()) {
             logger.warn("No instances available for IP hash selection");
             throw new IllegalArgumentException("No instances available");
@@ -74,7 +74,7 @@ public class IpHashLoadBalancer implements LoadBalancer {
         return entry.getValue();
     }
 
-    private long calculateHash(String input) {
+    private long calculateHash(final String input) {
         try {
             MessageDigest md = MessageDigest.getInstance(hashAlgorithm.toUpperCase());
             byte[] digest = md.digest(input.getBytes());
@@ -96,7 +96,7 @@ public class IpHashLoadBalancer implements LoadBalancer {
     /**
      * 记录负载均衡器选择指标
      */
-    private void recordLoadBalancerSelection(String service, String strategy, String selectedInstance) {
+    private void recordLoadBalancerSelection(final String service,final String strategy,final String selectedInstance) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordLoadBalancer(service, strategy, selectedInstance);

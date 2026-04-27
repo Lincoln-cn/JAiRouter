@@ -13,12 +13,12 @@ public class DefaultFallbackStrategy implements FallbackStrategy<ResponseEntity<
 
     private final String serviceType;
 
-    public DefaultFallbackStrategy(String serviceType) {
+    public DefaultFallbackStrategy(final String serviceType) {
         this.serviceType = serviceType;
     }
 
     @Override
-    public ResponseEntity<?> fallback(Exception cause) {
+    public ResponseEntity<?> fallback(final Exception cause) {
         logger.warn("Service {} fallback triggered due to: {}", serviceType, cause.getMessage());
 
         // 返回降级响应

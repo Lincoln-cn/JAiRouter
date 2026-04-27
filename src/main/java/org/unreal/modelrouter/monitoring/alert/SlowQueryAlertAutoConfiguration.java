@@ -36,10 +36,10 @@ public class SlowQueryAlertAutoConfiguration {
     @Bean
     @ConditionalOnProperty(name = "jairouter.monitoring.enabled", havingValue = "true", matchIfMissing = true)
     public SlowQueryAlertService slowQueryAlertService(
-            MonitoringProperties monitoringProperties,
-            SlowQueryAlertProperties alertProperties,
-            StructuredLogger structuredLogger,
-            MeterRegistry meterRegistry
+            final MonitoringProperties monitoringProperties,
+            final SlowQueryAlertProperties alertProperties,
+            final StructuredLogger structuredLogger,
+            final MeterRegistry meterRegistry
             ) {
         
         return new SlowQueryAlertService(

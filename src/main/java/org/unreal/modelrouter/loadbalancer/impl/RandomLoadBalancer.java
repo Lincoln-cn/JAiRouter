@@ -32,13 +32,13 @@ public class RandomLoadBalancer implements LoadBalancer {
 
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            List<ModelRouterProperties.ModelInstance> instances, String clientIp) {
+            final List<ModelRouterProperties.ModelInstance> instances,final String clientIp) {
         return selectInstance(instances, clientIp, "unknown");
     }
 
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            List<ModelRouterProperties.ModelInstance> instances, String clientIp, String serviceType) {
+            final List<ModelRouterProperties.ModelInstance> instances,final String clientIp,final String serviceType) {
 
         if (instances == null || instances.isEmpty()) {
             logger.warn("No instances available for random selection");
@@ -101,7 +101,7 @@ public class RandomLoadBalancer implements LoadBalancer {
     }
 
     @Override
-    public void recordCallComplete(ModelRouterProperties.ModelInstance instance) {
+    public void recordCallComplete(final ModelRouterProperties.ModelInstance instance) {
         CircuitBreaker cb = circuitBreakers.get(instance.getBaseUrl());
         if (cb != null) {
             cb.onSuccess();
@@ -109,7 +109,7 @@ public class RandomLoadBalancer implements LoadBalancer {
     }
 
     @Override
-    public void recordCallFailure(ModelRouterProperties.ModelInstance instance) {
+    public void recordCallFailure(final ModelRouterProperties.ModelInstance instance) {
         CircuitBreaker cb = circuitBreakers.get(instance.getBaseUrl());
         if (cb != null) {
             cb.onFailure();
@@ -119,7 +119,7 @@ public class RandomLoadBalancer implements LoadBalancer {
     /**
      * 记录负载均衡器选择指标
      */
-    private void recordLoadBalancerSelection(String service, String strategy, String selectedInstance) {
+    private void recordLoadBalancerSelection(final String service,final String strategy,final String selectedInstance) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordLoadBalancer(service, strategy, selectedInstance);

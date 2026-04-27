@@ -13,7 +13,7 @@ public class TokenRevokeRequest {
         return this.token;
     }
 
-    public void setToken(String token) {
+    public void setToken(final String token) {
         this.token = token;
     }
 
@@ -21,7 +21,7 @@ public class TokenRevokeRequest {
         return this.userId;
     }
 
-    public void setUserId(String userId) {
+    public void setUserId(final String userId) {
         this.userId = userId;
     }
 
@@ -29,7 +29,7 @@ public class TokenRevokeRequest {
         return this.reason;
     }
 
-    public void setReason(String reason) {
+    public void setReason(final String reason) {
         this.reason = reason;
     }
 

@@ -55,7 +55,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     }
     
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
         // 检查是否需要跳过追踪
         if (shouldSkipTracing(exchange)) {
             return chain.filter(exchange);
@@ -111,7 +111,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 检查是否应该跳过追踪
      */
-    private boolean shouldSkipTracing(ServerWebExchange exchange) {
+    private boolean shouldSkipTracing(final ServerWebExchange exchange) {
         String path = exchange.getRequest().getPath().value();
         
         // 跳过健康检查和监控端点
@@ -134,7 +134,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 处理请求成功完成
      */
-    private void handleSuccess(ServerWebExchange exchange, TracingContext context, long startTime) {
+    private void handleSuccess(final ServerWebExchange exchange,final TracingContext context,final long startTime) {
         try {
             long duration = System.currentTimeMillis() - startTime;
             
@@ -167,7 +167,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 处理请求错误
      */
-    private void handleError(ServerWebExchange exchange, TracingContext context, Throwable error, long startTime) {
+    private void handleError(final ServerWebExchange exchange,final TracingContext context,final Throwable error,final long startTime) {
         try {
             long duration = System.currentTimeMillis() - startTime;
             
@@ -194,7 +194,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 完成Span
      */
-    private void finishSpan(TracingContext context, long startTime) {
+    private void finishSpan(final TracingContext context,final long startTime) {
         try {
             if (context != null && context.isActive()) {
                 Span currentSpan = context.getCurrentSpan();
@@ -215,7 +215,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 设置响应相关属性
      */
-    private void setResponseAttributes(TracingContext context, ServerWebExchange exchange, long duration) {
+    private void setResponseAttributes(final TracingContext context,final ServerWebExchange exchange,final long duration) {
         if (context == null || !context.isActive()) {
             return;
         }
@@ -258,7 +258,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 设置错误相关属性
      */
-    private void setErrorAttributes(TracingContext context, Throwable error) {
+    private void setErrorAttributes(final TracingContext context,final Throwable error) {
         if (context == null || !context.isActive() || error == null) {
             return;
         }
@@ -290,7 +290,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 构建操作名称
      */
-    private String buildOperationName(ServerHttpRequest request) {
+    private String buildOperationName(final ServerHttpRequest request) {
         String method = request.getMethod() != null ? request.getMethod().name() : "UNKNOWN";
         String path = request.getPath().value();
         
@@ -305,8 +305,8 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 记录性能指标
      */
-    private void recordPerformanceMetrics(ServerWebExchange exchange, TracingContext context, 
-                                         long startTime, long duration, boolean success) {
+    private void recordPerformanceMetrics(final ServerWebExchange exchange,final TracingContext context, 
+                                         final long startTime,final long duration,final boolean success) {
         try {
             String operationName = buildOperationName(exchange.getRequest());
             Map<String, Object> metadata = createPerformanceMetadata(exchange, context, success);
@@ -329,8 +329,8 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 记录错误性能指标
      */
-    private void recordErrorPerformanceMetrics(ServerWebExchange exchange, TracingContext context,
-                                              long startTime, long duration, Throwable error) {
+    private void recordErrorPerformanceMetrics(final ServerWebExchange exchange,final TracingContext context,
+                                              final long startTime,final long duration,final Throwable error) {
         try {
             String operationName = buildOperationName(exchange.getRequest());
             Map<String, Object> metadata = createErrorMetadata(exchange, context, error);
@@ -353,8 +353,8 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 创建性能元数据
      */
-    private Map<String, Object> createPerformanceMetadata(ServerWebExchange exchange, 
-                                                          TracingContext context, boolean success) {
+    private Map<String, Object> createPerformanceMetadata(final ServerWebExchange exchange, 
+                                                          final TracingContext context,final boolean success) {
         Map<String, Object> metadata = new java.util.HashMap<>();
         
         ServerHttpRequest request = exchange.getRequest();
@@ -383,8 +383,8 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 创建错误元数据
      */
-    private Map<String, Object> createErrorMetadata(ServerWebExchange exchange, 
-                                                    TracingContext context, Throwable error) {
+    private Map<String, Object> createErrorMetadata(final ServerWebExchange exchange, 
+                                                    final TracingContext context,final Throwable error) {
         Map<String, Object> metadata = createPerformanceMetadata(exchange, context, false);
         
         metadata.put("error.type", error.getClass().getSimpleName());
@@ -397,7 +397,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 获取客户端IP地址
      */
-    private String getClientIp(ServerHttpRequest request) {
+    private String getClientIp(final ServerHttpRequest request) {
         // 检查X-Forwarded-For头部
         String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
@@ -421,7 +421,7 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 触发慢请求优化
      */
-    private void triggerSlowRequestOptimization(String operationName, long duration, TracingContext context) {
+    private void triggerSlowRequestOptimization(final String operationName,final long duration,final TracingContext context) {
         // 异步触发性能优化，避免影响主请求流程
         tracingService.triggerPerformanceOptimization()
             .subscribe(

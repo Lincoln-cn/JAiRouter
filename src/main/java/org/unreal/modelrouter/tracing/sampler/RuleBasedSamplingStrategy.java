@@ -25,7 +25,7 @@ public class RuleBasedSamplingStrategy implements SamplingStrategy {
      * 
      * @param samplingConfig 采样配置
      */
-    public RuleBasedSamplingStrategy(TracingConfiguration.SamplingConfig samplingConfig) {
+    public RuleBasedSamplingStrategy(final TracingConfiguration.SamplingConfig samplingConfig) {
         this.samplingConfig = samplingConfig;
         this.defaultSampler = new RatioBasedSamplingStrategy(samplingConfig.getRatio());
         this.description = "RuleBasedSampling";
@@ -33,12 +33,12 @@ public class RuleBasedSamplingStrategy implements SamplingStrategy {
     
     @Override
     public SamplingResult shouldSample(
-            Context parentContext,
-            String traceId,
-            String spanName,
-            SpanKind spanKind,
-            Map<String, Object> attributes,
-            Map<String, String> parentLinks) {
+            final Context parentContext,
+            final String traceId,
+            final String spanName,
+            final SpanKind spanKind,
+            final Map<String, Object> attributes,
+            final Map<String, String> parentLinks) {
         
         // 检查是否在始终采样的操作列表中
         if (samplingConfig.getAlwaysSample().contains(spanName)) {
@@ -79,7 +79,7 @@ public class RuleBasedSamplingStrategy implements SamplingStrategy {
      * @param attributes 属性集合
      * @return 是否匹配
      */
-    private boolean matchesRule(TracingConfiguration.SamplingConfig.SamplingRule rule, Map<String, Object> attributes) {
+    private boolean matchesRule(final TracingConfiguration.SamplingConfig.SamplingRule rule,final Map<String, Object> attributes) {
         String condition = rule.getCondition();
         if (condition == null || condition.isEmpty()) {
             return false;

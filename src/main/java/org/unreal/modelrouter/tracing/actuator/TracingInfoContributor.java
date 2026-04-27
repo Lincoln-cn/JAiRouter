@@ -33,7 +33,7 @@ public class TracingInfoContributor implements InfoContributor {
     private final TracingMemoryManager memoryManager;
 
     @Override
-    public void contribute(Info.Builder builder) {
+    public void contribute(final Info.Builder builder) {
         try {
             Map<String, Object> tracingInfo = new HashMap<>();
             

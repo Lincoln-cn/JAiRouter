@@ -42,16 +42,16 @@ public class ResponseSanitizationFilter implements WebFilter {
     private final SecurityProperties securityProperties;
     
     @Autowired
-    public ResponseSanitizationFilter(SanitizationService sanitizationService,
-                                    SecurityAuditService auditService,
-                                    SecurityProperties securityProperties) {
+    public ResponseSanitizationFilter(final SanitizationService sanitizationService,
+                                    final SecurityAuditService auditService,
+                                    final SecurityProperties securityProperties) {
         this.sanitizationService = sanitizationService;
         this.auditService = auditService;
         this.securityProperties = securityProperties;
     }
     
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         
         // 跳过不需要脱敏的路径
@@ -68,7 +68,7 @@ public class ResponseSanitizationFilter implements WebFilter {
         ServerHttpResponse originalResponse = exchange.getResponse();
         ServerHttpResponseDecorator decoratedResponse = new ServerHttpResponseDecorator(originalResponse) {
             @Override
-            public Mono<Void> writeWith(org.reactivestreams.Publisher<? extends DataBuffer> body) {
+            public Mono<Void> writeWith(final org.reactivestreams.Publisher<? extends DataBuffer> body) {
                 // 检查响应是否已经提交
                 if (getDelegate().isCommitted()) {
                     log.warn("响应已提交，跳过脱敏处理");
@@ -195,7 +195,7 @@ public class ResponseSanitizationFilter implements WebFilter {
     /**
      * 检查是否为排除的路径
      */
-    private boolean isExcludedPath(String path) {
+    private boolean isExcludedPath(final String path) {
         // 使用统一的排除路径配置
         return ExcludedPathsConfig.isDataMaskExcluded(path);
     }
@@ -203,7 +203,7 @@ public class ResponseSanitizationFilter implements WebFilter {
     /**
      * 检查是否应该对该内容类型进行脱敏
      */
-    private boolean shouldSanitizeContentType(String contentType) {
+    private boolean shouldSanitizeContentType(final String contentType) {
         if (contentType == null) {
             return false;
         }
@@ -215,15 +215,15 @@ public class ResponseSanitizationFilter implements WebFilter {
     /**
      * 记录脱敏事件
      */
-    private void recordSanitizationEvent(ServerHttpRequest request, String contentType, boolean sanitized) {
+    private void recordSanitizationEvent(final ServerHttpRequest request,final String contentType,final boolean sanitized) {
         recordSanitizationEvent(request, contentType, sanitized, null);
     }
     
     /**
      * 记录脱敏事件（带错误信息）
      */
-    private void recordSanitizationEvent(ServerHttpRequest request, String contentType, 
-                                       boolean sanitized, String errorMessage) {
+    private void recordSanitizationEvent(final ServerHttpRequest request,final String contentType, 
+                                       final boolean sanitized,final String errorMessage) {
         if (!securityProperties.getSanitization().getResponse().isLogSanitization()) {
             return;
         }
@@ -264,7 +264,7 @@ public class ResponseSanitizationFilter implements WebFilter {
     /**
      * 获取客户端IP地址
      */
-    private String getClientIp(ServerHttpRequest request) {
+    private String getClientIp(final ServerHttpRequest request) {
         String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
             return xForwardedFor.split(",")[0].trim();
@@ -282,14 +282,14 @@ public class ResponseSanitizationFilter implements WebFilter {
     /**
      * 获取用户代理
      */
-    private String getUserAgent(ServerHttpRequest request) {
+    private String getUserAgent(final ServerHttpRequest request) {
         return request.getHeaders().getFirst("User-Agent");
     }
     
     /**
      * 处理脱敏失败
      */
-    private Mono<Void> handleSanitizationFailure(SanitizationException ex) {
+    private Mono<Void> handleSanitizationFailure(final SanitizationException ex) {
         // 创建错误响应内容
         String errorResponse = String.format(
                 "{\"error\":\"%s\",\"message\":\"%s\",\"timestamp\":\"%s\"}",

@@ -27,7 +27,7 @@ public class ErrorTrackerAutoConfiguration {
      * @return 堆栈脱敏配置
      */
     @Bean
-    public ErrorTrackerProperties.SanitizationConfig sanitizationConfig(ErrorTrackerProperties properties) {
+    public ErrorTrackerProperties.SanitizationConfig sanitizationConfig(final ErrorTrackerProperties properties) {
         return properties.getSanitization();
     }
 
@@ -39,7 +39,7 @@ public class ErrorTrackerAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(name = "jairouter.monitoring.enabled", havingValue = "true", matchIfMissing = true)
-    public ErrorTracker errorTracker(StructuredLogger structuredLogger) {
+    public ErrorTracker errorTracker(final StructuredLogger structuredLogger) {
         return new ErrorTracker(structuredLogger);
     }
 
@@ -55,9 +55,9 @@ public class ErrorTrackerAutoConfiguration {
     @ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.enabled", havingValue = "true")
     @ConditionalOnProperty(name = "jairouter.monitoring.metrics.enabled", havingValue = "true", matchIfMissing = true)
     public ErrorMetricsCollector errorMetricsCollector(
-            MeterRegistry meterRegistry,
-            ErrorTrackerProperties properties,
-            ErrorCodeResolver errorCodeResolver) {
+            final MeterRegistry meterRegistry,
+            final ErrorTrackerProperties properties,
+            final ErrorCodeResolver errorCodeResolver) {
 
         return new ErrorMetricsCollector(meterRegistry, properties, errorCodeResolver);
     }
@@ -71,7 +71,7 @@ public class ErrorTrackerAutoConfiguration {
     @Bean
     @ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.enabled", havingValue = "true")
     @ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.sanitization.enabled", havingValue = "true", matchIfMissing = true)
-    public StackTraceSanitizer stackTraceSanitizer(ErrorTrackerProperties.SanitizationConfig sanitizationConfig) {
+    public StackTraceSanitizer stackTraceSanitizer(final ErrorTrackerProperties.SanitizationConfig sanitizationConfig) {
         return new StackTraceSanitizer(sanitizationConfig);
     }
 }

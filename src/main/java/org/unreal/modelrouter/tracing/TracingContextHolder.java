@@ -35,7 +35,7 @@ public class TracingContextHolder {
      * 
      * @param context 要设置的追踪上下文
      */
-    public static void setCurrentContext(TracingContext context) {
+    public static void setCurrentContext(final TracingContext context) {
         if (context != null) {
             CONTEXT_HOLDER.set(context);
             log.debug("设置追踪上下文到当前线程，traceId: {}", context.getTraceId());
@@ -98,7 +98,7 @@ public class TracingContextHolder {
      * @return 操作结果
      * @throws Exception 操作异常
      */
-    public static <T> T executeWithContext(TracingContext context, ContextualOperation<T> operation) throws Exception {
+    public static <T> T executeWithContext(final TracingContext context,final ContextualOperation<T> operation) throws Exception {
         TracingContext previousContext = getCurrentContext();
         try {
             setCurrentContext(context);
@@ -115,7 +115,7 @@ public class TracingContextHolder {
      * @param operation 要执行的操作
      * @throws Exception 操作异常
      */
-    public static void executeWithContext(TracingContext context, ContextualVoidOperation operation) throws Exception {
+    public static void executeWithContext(final TracingContext context,final ContextualVoidOperation operation) throws Exception {
         TracingContext previousContext = getCurrentContext();
         try {
             setCurrentContext(context);

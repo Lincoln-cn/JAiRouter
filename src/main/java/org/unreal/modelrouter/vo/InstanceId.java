@@ -25,14 +25,14 @@ public class InstanceId {
     /**
      * 私有构造函数，强制使用工厂方法
      */
-    private InstanceId(String value) {
+    private InstanceId(final String value) {
         this.value = value;
     }
     
     /**
      * 从字符串创建实例 ID
      */
-    public static InstanceId of(String value) {
+    public static InstanceId of(final String value) {
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("实例 ID 不能为空");
         }

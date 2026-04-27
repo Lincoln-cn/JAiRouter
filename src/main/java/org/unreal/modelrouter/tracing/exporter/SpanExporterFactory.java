@@ -32,7 +32,7 @@ public class SpanExporterFactory {
     
     private final Environment environment;
     
-    public SpanExporterFactory(Environment environment) {
+    public SpanExporterFactory(final Environment environment) {
         this.environment = environment;
     }
     
@@ -42,7 +42,7 @@ public class SpanExporterFactory {
      * @param config 追踪配置
      * @return 创建的导出器
      */
-    public SpanExporter createExporter(TracingConfiguration config) {
+    public SpanExporter createExporter(final TracingConfiguration config) {
         String exporterType = config.getExporter().getType().toLowerCase();
         
         log.info("创建Span导出器，类型: {}", exporterType);
@@ -74,7 +74,7 @@ public class SpanExporterFactory {
     /**
      * 通过OTLP协议创建Jaeger导出器
      */
-    public SpanExporter createJaegerViaOtlpExporter(TracingConfiguration.ExporterConfig.JaegerConfig config) {
+    public SpanExporter createJaegerViaOtlpExporter(final TracingConfiguration.ExporterConfig.JaegerConfig config) {
         log.info("通过OTLP协议创建Jaeger导出器，端点: {}", config.getEndpoint());
         
         // 将 Jaeger 端点转换为 OTLP 端点
@@ -103,7 +103,7 @@ public class SpanExporterFactory {
     /**
      * 将 Jaeger 端点转换为 OTLP 端点
      */
-    private String convertJaegerToOtlpEndpoint(String jaegerEndpoint) {
+    private String convertJaegerToOtlpEndpoint(final String jaegerEndpoint) {
         if (jaegerEndpoint == null || jaegerEndpoint.isEmpty()) {
             return "http://localhost:4317";
         }
@@ -122,7 +122,7 @@ public class SpanExporterFactory {
     /**
      * 创建Zipkin导出器
      */
-    public SpanExporter createZipkinExporter(TracingConfiguration.ExporterConfig.ZipkinConfig config) {
+    public SpanExporter createZipkinExporter(final TracingConfiguration.ExporterConfig.ZipkinConfig config) {
         log.info("创建Zipkin导出器，端点: {}", config.getEndpoint());
         
         return ZipkinSpanExporter.builder()
@@ -133,7 +133,7 @@ public class SpanExporterFactory {
     /**
      * 创建OTLP导出器
      */
-    public SpanExporter createOtlpExporter(TracingConfiguration.ExporterConfig.OtlpConfig config) {
+    public SpanExporter createOtlpExporter(final TracingConfiguration.ExporterConfig.OtlpConfig config) {
         log.info("创建OTLP导出器，端点: {}", config.getEndpoint());
         
         var builder = OtlpGrpcSpanExporter.builder()
@@ -162,7 +162,7 @@ public class SpanExporterFactory {
     /**
      * 创建日志导出器
      */
-    public SpanExporter createLoggingExporter(TracingConfiguration.ExporterConfig.LoggingExporterConfig config) {
+    public SpanExporter createLoggingExporter(final TracingConfiguration.ExporterConfig.LoggingExporterConfig config) {
         log.info("创建日志导出器，启用状态: {}", config.isEnabled());
         
         if (!config.isEnabled()) {
@@ -175,7 +175,7 @@ public class SpanExporterFactory {
     /**
      * 创建复合导出器
      */
-    public SpanExporter createCompositeExporter(TracingConfiguration config) {
+    public SpanExporter createCompositeExporter(final TracingConfiguration config) {
         log.info("创建复合导出器");
         
         List<SpanExporter> exporters = new ArrayList<>();
@@ -227,7 +227,7 @@ public class SpanExporterFactory {
      * @param config 追踪配置
      * @return 验证结果
      */
-    public boolean validateExporterConfig(TracingConfiguration config) {
+    public boolean validateExporterConfig(final TracingConfiguration config) {
         String exporterType = config.getExporter().getType().toLowerCase();
         
         try {
@@ -257,7 +257,7 @@ public class SpanExporterFactory {
     /**
      * 验证Jaeger配置
      */
-    private boolean validateJaegerConfig(TracingConfiguration.ExporterConfig.JaegerConfig config) {
+    private boolean validateJaegerConfig(final TracingConfiguration.ExporterConfig.JaegerConfig config) {
         if (config.getEndpoint() == null || config.getEndpoint().trim().isEmpty()) {
             log.error("Jaeger导出器端点不能为空");
             return false;
@@ -274,7 +274,7 @@ public class SpanExporterFactory {
     /**
      * 验证Zipkin配置
      */
-    private boolean validateZipkinConfig(TracingConfiguration.ExporterConfig.ZipkinConfig config) {
+    private boolean validateZipkinConfig(final TracingConfiguration.ExporterConfig.ZipkinConfig config) {
         if (config.getEndpoint() == null || config.getEndpoint().trim().isEmpty()) {
             log.error("Zipkin导出器端点不能为空");
             return false;
@@ -291,7 +291,7 @@ public class SpanExporterFactory {
     /**
      * 验证OTLP配置
      */
-    private boolean validateOtlpConfig(TracingConfiguration.ExporterConfig.OtlpConfig config) {
+    private boolean validateOtlpConfig(final TracingConfiguration.ExporterConfig.OtlpConfig config) {
         if (config.getEndpoint() == null || config.getEndpoint().trim().isEmpty()) {
             log.error("OTLP导出器端点不能为空");
             return false;
@@ -319,7 +319,7 @@ public class SpanExporterFactory {
      * @param exporter 要测试的导出器
      * @return 连接是否成功
      */
-    public boolean testExporterConnection(SpanExporter exporter) {
+    public boolean testExporterConnection(final SpanExporter exporter) {
         try {
             // 这里可以实现具体的连接测试逻辑
             // 例如发送一个测试Span
@@ -334,7 +334,7 @@ public class SpanExporterFactory {
     /**
      * 解析配置值（支持环境变量占位符）
      */
-    private String resolveValue(String value) {
+    private String resolveValue(final String value) {
         if (value == null) {
             return null;
         }
@@ -344,7 +344,7 @@ public class SpanExporterFactory {
     /**
      * 掩码敏感值（用于日志输出）
      */
-    private String maskSensitiveValue(String key, String value) {
+    private String maskSensitiveValue(final String key,final String value) {
         if (key == null || value == null) {
             return value;
         }

@@ -33,7 +33,7 @@ public class SecurityUtils {
      * @param length 长度
      * @return 随机字符串
      */
-    public static String generateSecureRandomString(int length) {
+    public static String generateSecureRandomString(final int length) {
         byte[] bytes = new byte[length];
         SECURE_RANDOM.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
@@ -44,7 +44,7 @@ public class SecurityUtils {
      * @param input 输入字符串
      * @return 哈希值
      */
-    public static String sha256Hash(String input) {
+    public static String sha256Hash(final String input) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(input.getBytes());
@@ -59,7 +59,7 @@ public class SecurityUtils {
      * @param exchange ServerWebExchange
      * @return 客户端IP地址
      */
-    public static String extractClientIp(ServerWebExchange exchange) {
+    public static String extractClientIp(final ServerWebExchange exchange) {
         ServerHttpRequest request = exchange.getRequest();
         
         // 检查X-Forwarded-For头
@@ -87,7 +87,7 @@ public class SecurityUtils {
      * @param exchange ServerWebExchange
      * @return User-Agent字符串
      */
-    public static String extractUserAgent(ServerWebExchange exchange) {
+    public static String extractUserAgent(final ServerWebExchange exchange) {
         String userAgent = exchange.getRequest().getHeaders().getFirst("User-Agent");
         return userAgent != null ? userAgent : "unknown";
     }
@@ -97,7 +97,7 @@ public class SecurityUtils {
      * @param exchange ServerWebExchange
      * @return 请求ID
      */
-    public static String extractRequestId(ServerWebExchange exchange) {
+    public static String extractRequestId(final ServerWebExchange exchange) {
         String requestId = exchange.getRequest().getHeaders().getFirst("X-Request-ID");
         if (requestId == null || requestId.isEmpty()) {
             requestId = generateId();
@@ -113,7 +113,7 @@ public class SecurityUtils {
      * @param visibleChars 可见字符数（前后各保留的字符数）
      * @return 掩码后的字符串
      */
-    public static String maskSensitiveInfo(String input, char maskChar, int visibleChars) {
+    public static String maskSensitiveInfo(final String input,final char maskChar,final int visibleChars) {
         if (input == null || input.length() <= visibleChars * 2) {
             return input;
         }
@@ -142,7 +142,7 @@ public class SecurityUtils {
      * @param uuid UUID字符串
      * @return 是否有效
      */
-    public static boolean isValidUuid(String uuid) {
+    public static boolean isValidUuid(final String uuid) {
         try {
             UUID.fromString(uuid);
             return true;
@@ -157,7 +157,7 @@ public class SecurityUtils {
      * @param b 字符串b
      * @return 是否相等
      */
-    public static boolean secureEquals(String a, String b) {
+    public static boolean secureEquals(final String a,final String b) {
         if (a == null || b == null) {
             return a == b;
         }
@@ -206,7 +206,7 @@ public class SecurityUtils {
      * @param exchange ServerWebExchange（当前未使用，但保留用于未来扩展）
      * @return 包含当前用户ID的Mono
      */
-    public static reactor.core.publisher.Mono<String> getCurrentUserId(ServerWebExchange exchange) {
+    public static reactor.core.publisher.Mono<String> getCurrentUserId(final ServerWebExchange exchange) {
         return org.springframework.security.core.context.ReactiveSecurityContextHolder.getContext()
                 .cast(org.springframework.security.core.context.SecurityContext.class)
                 .map(securityContext -> extractUserIdFromAuthentication(securityContext.getAuthentication()))
@@ -246,7 +246,7 @@ public class SecurityUtils {
      * @param authentication 认证对象
      * @return 用户ID
      */
-    private static String extractUserIdFromAuthentication(org.springframework.security.core.Authentication authentication) {
+    private static String extractUserIdFromAuthentication(final org.springframework.security.core.Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return "system";
         }

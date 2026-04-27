@@ -15,7 +15,7 @@ import org.unreal.modelrouter.tracing.TracingContextHolder;
 public class SpanIdConverter extends ClassicConverter {
     
     @Override
-    public String convert(ILoggingEvent event) {
+    public String convert(final ILoggingEvent event) {
         String spanId = TracingContextHolder.getCurrentSpanId();
         return spanId != null ? spanId : "";
     }

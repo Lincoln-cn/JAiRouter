@@ -26,7 +26,7 @@ public class FallbackManager {
     // 全局降级配置
     private ModelRouterProperties.FallbackConfig globalFallbackConfig;
 
-    public FallbackManager(ComponentFactory componentFactory) {
+    public FallbackManager(final ComponentFactory componentFactory) {
         this.componentFactory = componentFactory;
     }
 
@@ -34,7 +34,7 @@ public class FallbackManager {
      * 根据配置初始化降级管理器
      * @param properties 配置属性
      */
-    public void initialize(ModelRouterProperties properties) {
+    public void initialize(final ModelRouterProperties properties) {
         if (properties.getFallback() != null) {
             this.globalFallbackConfig = properties.getFallback();
         }
@@ -49,8 +49,8 @@ public class FallbackManager {
      * @return 降级策略实例
      */
     public FallbackStrategy<ResponseEntity<?>> getFallbackStrategy(
-            String serviceType,
-            ModelRouterProperties.ServiceConfig serviceConfig) {
+            final String serviceType,
+            final ModelRouterProperties.ServiceConfig serviceConfig) {
 
         // 先从缓存中获取
         FallbackStrategy<ResponseEntity<?>> strategy = fallbackStrategies.get(serviceType);
@@ -87,9 +87,9 @@ public class FallbackManager {
      * @param cause 异常原因
      * @return 降级响应
      */
-    public ResponseEntity<?> fallback(String serviceType,
-                                      ModelRouterProperties.ServiceConfig serviceConfig,
-                                      Exception cause) {
+    public ResponseEntity<?> fallback(final String serviceType,
+                                      final ModelRouterProperties.ServiceConfig serviceConfig,
+                                      final Exception cause) {
         try {
             FallbackStrategy<ResponseEntity<?>> strategy = getFallbackStrategy(serviceType, serviceConfig);
             if (strategy != null) {
@@ -107,7 +107,7 @@ public class FallbackManager {
      * 清除指定服务的降级策略缓存
      * @param serviceType 服务类型
      */
-    public void clearFallbackStrategy(String serviceType) {
+    public void clearFallbackStrategy(final String serviceType) {
         fallbackStrategies.remove(serviceType);
         logger.info("Cleared fallback strategy for service: {}", serviceType);
     }

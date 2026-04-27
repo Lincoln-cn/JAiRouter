@@ -57,7 +57,7 @@ public class SanitizationMetrics {
     private final AtomicLong totalContentSize = new AtomicLong(0);
     private final AtomicLong totalSanitizedSize = new AtomicLong(0);
     
-    public SanitizationMetrics(MeterRegistry meterRegistry) {
+    public SanitizationMetrics(final MeterRegistry meterRegistry) {
         // 脱敏操作计数器
         this.requestSanitizations = Counter.builder("jairouter.security.sanitization.request.count")
                 .description("请求数据脱敏次数")
@@ -130,7 +130,7 @@ public class SanitizationMetrics {
     /**
      * 记录请求脱敏耗时
      */
-    public void recordRequestSanitizationDuration(Duration duration) {
+    public void recordRequestSanitizationDuration(final Duration duration) {
         requestSanitizationTimer.record(duration);
         log.debug("记录请求脱敏耗时: {} ms", duration.toMillis());
     }
@@ -138,7 +138,7 @@ public class SanitizationMetrics {
     /**
      * 记录响应脱敏耗时
      */
-    public void recordResponseSanitizationDuration(Duration duration) {
+    public void recordResponseSanitizationDuration(final Duration duration) {
         responseSanitizationTimer.record(duration);
         log.debug("记录响应脱敏耗时: {} ms", duration.toMillis());
     }
@@ -146,7 +146,7 @@ public class SanitizationMetrics {
     /**
      * 记录规则编译耗时
      */
-    public void recordRuleCompilationDuration(Duration duration) {
+    public void recordRuleCompilationDuration(final Duration duration) {
         ruleCompilationTimer.record(duration);
         log.debug("记录规则编译耗时: {} ms", duration.toMillis());
     }
@@ -154,7 +154,7 @@ public class SanitizationMetrics {
     /**
      * 记录内容大小
      */
-    public void recordContentSize(long originalSize, long sanitizedSize) {
+    public void recordContentSize(final long originalSize,final long sanitizedSize) {
         totalContentSize.addAndGet(originalSize);
         totalSanitizedSize.addAndGet(sanitizedSize);
         log.debug("记录内容大小: 原始={} bytes, 脱敏后={} bytes", originalSize, sanitizedSize);
@@ -191,7 +191,7 @@ public class SanitizationMetrics {
         private final double avgResponseDuration;
         private final double avgCompilationDuration;
         
-        private SanitizationStatistics(Builder builder) {
+        private SanitizationStatistics(final Builder builder) {
             this.requestSanitizations = builder.requestSanitizations;
             this.responseSanitizations = builder.responseSanitizations;
             this.ruleMatches = builder.ruleMatches;
@@ -250,47 +250,47 @@ public class SanitizationMetrics {
             private double avgResponseDuration;
             private double avgCompilationDuration;
             
-            public Builder requestSanitizations(double requestSanitizations) {
+            public Builder requestSanitizations(final double requestSanitizations) {
                 this.requestSanitizations = requestSanitizations;
                 return this;
             }
             
-            public Builder responseSanitizations(double responseSanitizations) {
+            public Builder responseSanitizations(final double responseSanitizations) {
                 this.responseSanitizations = responseSanitizations;
                 return this;
             }
             
-            public Builder ruleMatches(double ruleMatches) {
+            public Builder ruleMatches(final double ruleMatches) {
                 this.ruleMatches = ruleMatches;
                 return this;
             }
             
-            public Builder errors(double errors) {
+            public Builder errors(final double errors) {
                 this.errors = errors;
                 return this;
             }
             
-            public Builder totalContentSize(long totalContentSize) {
+            public Builder totalContentSize(final long totalContentSize) {
                 this.totalContentSize = totalContentSize;
                 return this;
             }
             
-            public Builder totalSanitizedSize(long totalSanitizedSize) {
+            public Builder totalSanitizedSize(final long totalSanitizedSize) {
                 this.totalSanitizedSize = totalSanitizedSize;
                 return this;
             }
             
-            public Builder avgRequestDuration(double avgRequestDuration) {
+            public Builder avgRequestDuration(final double avgRequestDuration) {
                 this.avgRequestDuration = avgRequestDuration;
                 return this;
             }
             
-            public Builder avgResponseDuration(double avgResponseDuration) {
+            public Builder avgResponseDuration(final double avgResponseDuration) {
                 this.avgResponseDuration = avgResponseDuration;
                 return this;
             }
             
-            public Builder avgCompilationDuration(double avgCompilationDuration) {
+            public Builder avgCompilationDuration(final double avgCompilationDuration) {
                 this.avgCompilationDuration = avgCompilationDuration;
                 return this;
             }

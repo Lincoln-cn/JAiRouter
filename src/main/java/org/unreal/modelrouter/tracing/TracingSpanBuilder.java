@@ -42,7 +42,7 @@ public class TracingSpanBuilder {
      * @param tracer OpenTelemetry Tracer
      * @param operationName 操作名称
      */
-    public TracingSpanBuilder(Tracer tracer, String operationName) {
+    public TracingSpanBuilder(final Tracer tracer,final String operationName) {
         this.tracer = tracer;
         this.operationName = operationName;
     }
@@ -53,7 +53,7 @@ public class TracingSpanBuilder {
      * @param kind Span类型
      * @return 当前构建器
      */
-    public TracingSpanBuilder setKind(SpanKind kind) {
+    public TracingSpanBuilder setKind(final SpanKind kind) {
         this.spanKind = kind;
         return this;
     }
@@ -109,7 +109,7 @@ public class TracingSpanBuilder {
      * @param context 父上下文
      * @return 当前构建器
      */
-    public TracingSpanBuilder setParent(Context context) {
+    public TracingSpanBuilder setParent(final Context context) {
         this.parentContext = context;
         return this;
     }
@@ -120,7 +120,7 @@ public class TracingSpanBuilder {
      * @param span 父Span
      * @return 当前构建器
      */
-    public TracingSpanBuilder setParent(Span span) {
+    public TracingSpanBuilder setParent(final Span span) {
         this.parentSpan = span;
         return this;
     }
@@ -131,7 +131,7 @@ public class TracingSpanBuilder {
      * @param startTime 开始时间
      * @return 当前构建器
      */
-    public TracingSpanBuilder setStartTime(Instant startTime) {
+    public TracingSpanBuilder setStartTime(final Instant startTime) {
         this.startTime = startTime;
         return this;
     }
@@ -143,7 +143,7 @@ public class TracingSpanBuilder {
      * @param value 属性值
      * @return 当前构建器
      */
-    public TracingSpanBuilder setAttribute(String key, String value) {
+    public TracingSpanBuilder setAttribute(final String key,final String value) {
         if (value != null) {
             attributes.put(key, value);
         }
@@ -157,7 +157,7 @@ public class TracingSpanBuilder {
      * @param value 属性值
      * @return 当前构建器
      */
-    public TracingSpanBuilder setAttribute(String key, Number value) {
+    public TracingSpanBuilder setAttribute(final String key,final Number value) {
         if (value != null) {
             attributes.put(key, value);
         }
@@ -171,7 +171,7 @@ public class TracingSpanBuilder {
      * @param value 属性值
      * @return 当前构建器
      */
-    public TracingSpanBuilder setAttribute(String key, Boolean value) {
+    public TracingSpanBuilder setAttribute(final String key,final Boolean value) {
         if (value != null) {
             attributes.put(key, value);
         }
@@ -184,7 +184,7 @@ public class TracingSpanBuilder {
      * @param attrs 属性Map
      * @return 当前构建器
      */
-    public TracingSpanBuilder setAttributes(Map<String, Object> attrs) {
+    public TracingSpanBuilder setAttributes(final Map<String, Object> attrs) {
         if (attrs != null) {
             attributes.putAll(attrs);
         }
@@ -199,7 +199,7 @@ public class TracingSpanBuilder {
      * @param statusCode 状态码（可选）
      * @return 当前构建器
      */
-    public TracingSpanBuilder setHttpAttributes(String method, String url, Integer statusCode) {
+    public TracingSpanBuilder setHttpAttributes(final String method,final String url,final Integer statusCode) {
         setAttribute("http.method", method);
         setAttribute("http.url", url);
         if (statusCode != null) {
@@ -216,7 +216,7 @@ public class TracingSpanBuilder {
      * @param statement SQL语句（可选）
      * @return 当前构建器
      */
-    public TracingSpanBuilder setDatabaseAttributes(String system, String name, String statement) {
+    public TracingSpanBuilder setDatabaseAttributes(final String system,final String name,final String statement) {
         setAttribute("db.system", system);
         setAttribute("db.name", name);
         if (statement != null) {
@@ -232,7 +232,7 @@ public class TracingSpanBuilder {
      * @param operation 操作类型（send/receive）
      * @return 当前构建器
      */
-    public TracingSpanBuilder setMessagingAttributes(String destination, String operation) {
+    public TracingSpanBuilder setMessagingAttributes(final String destination,final String operation) {
         setAttribute("messaging.destination", destination);
         setAttribute("messaging.operation", operation);
         return this;
@@ -244,7 +244,7 @@ public class TracingSpanBuilder {
      * @param component 组件名称
      * @return 当前构建器
      */
-    public TracingSpanBuilder setComponent(String component) {
+    public TracingSpanBuilder setComponent(final String component) {
         return setAttribute("component", component);
     }
     
@@ -254,7 +254,7 @@ public class TracingSpanBuilder {
      * @param service 服务名称
      * @return 当前构建器
      */
-    public TracingSpanBuilder setService(String service) {
+    public TracingSpanBuilder setService(final String service) {
         return setAttribute("service.name", service);
     }
     
@@ -265,7 +265,7 @@ public class TracingSpanBuilder {
      * @param userType 用户类型（可选）
      * @return 当前构建器
      */
-    public TracingSpanBuilder setUserInfo(String userId, String userType) {
+    public TracingSpanBuilder setUserInfo(final String userId,final String userType) {
         setAttribute("user.id", userId);
         if (userType != null) {
             setAttribute("user.type", userType);
@@ -279,7 +279,7 @@ public class TracingSpanBuilder {
      * @param autoStart 是否自动开始
      * @return 当前构建器
      */
-    public TracingSpanBuilder setAutoStart(boolean autoStart) {
+    public TracingSpanBuilder setAutoStart(final boolean autoStart) {
         this.autoStart = autoStart;
         return this;
     }
@@ -349,7 +349,7 @@ public class TracingSpanBuilder {
     /**
      * 设置Span属性
      */
-    private void setSpanAttributes(Span span) {
+    private void setSpanAttributes(final Span span) {
         // 设置基础属性
         span.setAttribute("span.kind", spanKind.name());
         span.setAttribute("created.timestamp", Instant.now().toString());
@@ -385,7 +385,7 @@ public class TracingSpanBuilder {
      * @param operationName 操作名称
      * @return 新的构建器实例
      */
-    public static TracingSpanBuilder create(Tracer tracer, String operationName) {
+    public static TracingSpanBuilder create(final Tracer tracer,final String operationName) {
         return new TracingSpanBuilder(tracer, operationName);
     }
 }

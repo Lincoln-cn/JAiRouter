@@ -39,7 +39,7 @@ public class MetricsErrorHandler {
     // 降级状态
     private final ConcurrentHashMap<String, Instant> degradationStartTimes = new ConcurrentHashMap<>();
     
-    public MetricsErrorHandler(MeterRegistry meterRegistry) {
+    public MetricsErrorHandler(final MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         this.errorCounter = Counter.builder("jairouter.metrics.errors")
             .description("指标收集错误计数")
@@ -58,7 +58,7 @@ public class MetricsErrorHandler {
     /**
      * 处理指标收集异常
      */
-    public void handleMetricsError(String component, String operation, Throwable error) {
+    public void handleMetricsError(final String component,final String operation,final Throwable error) {
         String errorKey = component + ":" + operation;
         
         // 记录错误
@@ -98,7 +98,7 @@ public class MetricsErrorHandler {
     /**
      * 检查组件是否处于降级状态
      */
-    public boolean isDegraded(String component, String operation) {
+    public boolean isDegraded(final String component,final String operation) {
         String errorKey = component + ":" + operation;
         Instant degradationStart = degradationStartTimes.get(errorKey);
         
@@ -118,7 +118,7 @@ public class MetricsErrorHandler {
     /**
      * 安全执行指标收集操作
      */
-    public void safeExecute(String component, String operation, Runnable metricsOperation) {
+    public void safeExecute(final String component,final String operation,final Runnable metricsOperation) {
         // 检查是否处于降级状态
         if (isDegraded(component, operation)) {
             logger.debug("组件 {} 操作 {} 处于降级状态，跳过指标收集", component, operation);
@@ -135,8 +135,8 @@ public class MetricsErrorHandler {
     /**
      * 安全执行指标收集操作（带返回值）
      */
-    public <T> T safeExecute(String component, String operation, 
-                           java.util.function.Supplier<T> metricsOperation, T defaultValue) {
+    public <T> T safeExecute(final String component,final String operation, 
+                           final java.util.function.Supplier<T> metricsOperation,final T defaultValue) {
         // 检查是否处于降级状态
         if (isDegraded(component, operation)) {
             logger.debug("组件 {} 操作 {} 处于降级状态，返回默认值", component, operation);
@@ -154,7 +154,7 @@ public class MetricsErrorHandler {
     /**
      * 激活降级模式
      */
-    private void activateDegradation(String errorKey) {
+    private void activateDegradation(final String errorKey) {
         degradationStartTimes.put(errorKey, Instant.now());
         degradationCounter.increment();
     }
@@ -162,7 +162,7 @@ public class MetricsErrorHandler {
     /**
      * 停用降级模式
      */
-    private void deactivateDegradation(String errorKey) {
+    private void deactivateDegradation(final String errorKey) {
         Instant startTime = degradationStartTimes.remove(errorKey);
         if (startTime != null) {
             Duration recoveryTime = Duration.between(startTime, Instant.now());
@@ -191,7 +191,7 @@ public class MetricsErrorHandler {
     /**
      * 手动重置错误状态
      */
-    public void resetErrorState(String component, String operation) {
+    public void resetErrorState(final String component,final String operation) {
         String errorKey = component + ":" + operation;
         errorCounts.remove(errorKey);
         lastErrorTimes.remove(errorKey);
@@ -234,7 +234,7 @@ public class MetricsErrorHandler {
         private final int degradedComponents;
         private final int totalErrors;
         
-        public MetricsErrorStats(int activeErrorComponents, int degradedComponents, int totalErrors) {
+        public MetricsErrorStats(final int activeErrorComponents,final int degradedComponents,final int totalErrors) {
             this.activeErrorComponents = activeErrorComponents;
             this.degradedComponents = degradedComponents;
             this.totalErrors = totalErrors;

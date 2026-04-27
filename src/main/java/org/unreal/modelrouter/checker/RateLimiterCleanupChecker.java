@@ -17,7 +17,7 @@ public class RateLimiterCleanupChecker {
 
     private final RateLimitManager rateLimitManager;
 
-    public RateLimiterCleanupChecker(RateLimitManager rateLimitManager) {
+    public RateLimiterCleanupChecker(final RateLimitManager rateLimitManager) {
         this.rateLimitManager = rateLimitManager;
     }
 

@@ -83,12 +83,12 @@ public class ExceptionPersistenceService {
      */
     @Transactional
     public ExceptionEventEntity persistException(
-            Throwable throwable,
-            String operation,
-            TracingContext context,
-            Map<String, Object> additionalInfo,
-            String sanitizedMessage,
-            String sanitizedStackTrace) {
+            final Throwable throwable,
+            final String operation,
+            final TracingContext context,
+            final Map<String, Object> additionalInfo,
+            final String sanitizedMessage,
+            final String sanitizedStackTrace) {
 
         try {
             // 创建异常事件实体
@@ -113,12 +113,12 @@ public class ExceptionPersistenceService {
      * 构建异常事件实体
      */
     private ExceptionEventEntity buildExceptionEventEntity(
-            Throwable throwable,
-            String operation,
-            TracingContext context,
-            Map<String, Object> additionalInfo,
-            String sanitizedMessage,
-            String sanitizedStackTrace) {
+            final Throwable throwable,
+            final String operation,
+            final TracingContext context,
+            final Map<String, Object> additionalInfo,
+            final String sanitizedMessage,
+            final String sanitizedStackTrace) {
 
         LocalDateTime now = LocalDateTime.now();
         
@@ -171,10 +171,10 @@ public class ExceptionPersistenceService {
      * 更新小时统计
      */
     private void updateHourlyStats(
-            Throwable throwable,
-            String operation,
-            TracingContext context,
-            Map<String, Object> additionalInfo) {
+            final Throwable throwable,
+            final String operation,
+            final TracingContext context,
+            final Map<String, Object> additionalInfo) {
 
         try {
             // 截断到小时
@@ -277,14 +277,14 @@ public class ExceptionPersistenceService {
     /**
      * 生成小时统计缓存键
      */
-    private String generateHourlyStatsKey(LocalDateTime hourTimestamp, String exceptionType, String errorCode, String operation) {
+    private String generateHourlyStatsKey(final LocalDateTime hourTimestamp,final String exceptionType,final String errorCode,final String operation) {
         return hourTimestamp.toString() + "|" + exceptionType + "|" + errorCode + "|" + operation;
     }
 
     /**
      * 从 Map 中安全获取字符串值
      */
-    private String getStringValue(Map<String, Object> map, String key) {
+    private String getStringValue(final Map<String, Object> map,final String key) {
         if (map == null || !map.containsKey(key)) {
             return null;
         }
@@ -295,7 +295,7 @@ public class ExceptionPersistenceService {
     /**
      * 截断字符串到指定长度
      */
-    private String truncate(String str, int maxLength) {
+    private String truncate(final String str,final int maxLength) {
         if (str == null) {
             return null;
         }
@@ -308,7 +308,7 @@ public class ExceptionPersistenceService {
     /**
      * 获取最近的异常事件
      */
-    public List<ExceptionEventEntity> findRecentEvents(int limit) {
+    public List<ExceptionEventEntity> findRecentEvents(final int limit) {
         return exceptionEventRepository.findRecentEvents(limit);
     }
 
@@ -316,16 +316,16 @@ public class ExceptionPersistenceService {
      * 根据条件查询异常事件
      */
     public org.springframework.data.domain.Page<ExceptionEventEntity> findByConditions(
-            LocalDateTime startTime,
-            LocalDateTime endTime,
-            String exceptionType,
-            String operation,
-            String errorCode,
-            String errorCategory,
-            String traceId,
-            String clientIp,
-            Boolean isAggregated,
-            org.springframework.data.domain.Pageable pageable) {
+            final LocalDateTime startTime,
+            final LocalDateTime endTime,
+            final String exceptionType,
+            final String operation,
+            final String errorCode,
+            final String errorCategory,
+            final String traceId,
+            final String clientIp,
+            final Boolean isAggregated,
+            final org.springframework.data.domain.Pageable pageable) {
         
         return exceptionEventRepository.findByConditions(
                 startTime, endTime, exceptionType, operation, errorCode, errorCategory,
@@ -335,7 +335,7 @@ public class ExceptionPersistenceService {
     /**
      * 获取异常统计信息
      */
-    public Map<String, Object> getExceptionStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+    public Map<String, Object> getExceptionStatistics(final LocalDateTime startTime,final LocalDateTime endTime) {
         Map<String, Object> result = new HashMap<>();
         
         // 按类型统计

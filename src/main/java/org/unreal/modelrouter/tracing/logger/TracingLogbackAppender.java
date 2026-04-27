@@ -32,7 +32,7 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
     private boolean includeTraceContext = true;
     
     @Override
-    protected void append(ILoggingEvent event) {
+    protected void append(final ILoggingEvent event) {
         try {
             if (jsonFormat) {
                 String jsonLog = formatAsJson(event);
@@ -54,7 +54,7 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
      * @param event 日志事件
      * @return JSON格式的日志字符串
      */
-    private String formatAsJson(ILoggingEvent event) throws JsonProcessingException {
+    private String formatAsJson(final ILoggingEvent event) throws JsonProcessingException {
         Map<String, Object> logData = new HashMap<>();
         
         // 基本日志信息
@@ -86,7 +86,7 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
      * @param event 日志事件
      * @return 文本格式的日志字符串
      */
-    private String formatAsText(ILoggingEvent event) {
+    private String formatAsText(final ILoggingEvent event) {
         StringBuilder sb = new StringBuilder();
         
         // 时间戳
@@ -132,7 +132,7 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
      * 
      * @param logData 日志数据Map
      */
-    private void addTraceContext(Map<String, Object> logData) {
+    private void addTraceContext(final Map<String, Object> logData) {
         String traceId = TracingContextHolder.getCurrentTraceId();
         String spanId = TracingContextHolder.getCurrentSpanId();
         
@@ -151,7 +151,7 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
         return jsonFormat;
     }
     
-    public void setJsonFormat(boolean jsonFormat) {
+    public void setJsonFormat(final boolean jsonFormat) {
         this.jsonFormat = jsonFormat;
     }
     
@@ -159,7 +159,7 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
         return includeTraceContext;
     }
     
-    public void setIncludeTraceContext(boolean includeTraceContext) {
+    public void setIncludeTraceContext(final boolean includeTraceContext) {
         this.includeTraceContext = includeTraceContext;
     }
 }

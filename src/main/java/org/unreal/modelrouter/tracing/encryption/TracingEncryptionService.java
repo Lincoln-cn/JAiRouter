@@ -96,7 +96,7 @@ public class TracingEncryptionService {
      * @param dataType 数据类型
      * @return 加密后的数据
      */
-    public Mono<String> encryptTraceData(String data, String traceId, String dataType) {
+    public Mono<String> encryptTraceData(final String data,final String traceId,final String dataType) {
         if (data == null || data.isEmpty()) {
             return Mono.empty();
         }
@@ -149,7 +149,7 @@ public class TracingEncryptionService {
      * @param dataType 数据类型
      * @return 解密后的数据
      */
-    public Mono<String> decryptTraceData(String encryptedData, String traceId, String dataType) {
+    public Mono<String> decryptTraceData(final String encryptedData,final String traceId,final String dataType) {
         if (encryptedData == null || encryptedData.isEmpty()) {
             return Mono.empty();
         }
@@ -198,7 +198,7 @@ public class TracingEncryptionService {
      * @param traceId 追踪ID
      * @return 清理结果
      */
-    public Mono<Boolean> applyRetentionPolicy(String traceId) {
+    public Mono<Boolean> applyRetentionPolicy(final String traceId) {
         return Mono.fromCallable(() -> {
             EncryptedTraceData traceData = encryptedTraceCache.get(traceId);
             if (traceData == null) {
@@ -222,7 +222,7 @@ public class TracingEncryptionService {
      * @param traceId 追踪ID
      * @return 清理结果
      */
-    public Mono<Void> secureCleanupTraceData(String traceId) {
+    public Mono<Void> secureCleanupTraceData(final String traceId) {
         return Mono.fromRunnable(() -> {
             try {
                 // 清理加密数据缓存
@@ -270,7 +270,7 @@ public class TracingEncryptionService {
      * @param traceId 追踪ID
      * @return 轮换结果
      */
-    public Mono<Boolean> rotateEncryptionKey(String traceId) {
+    public Mono<Boolean> rotateEncryptionKey(final String traceId) {
         return Mono.fromCallable(() -> {
             try {
                 // 生成新密钥
@@ -312,7 +312,7 @@ public class TracingEncryptionService {
     /**
      * 获取或创建加密密钥
      */
-    private SecretKey getOrCreateEncryptionKey(String traceId) throws Exception {
+    private SecretKey getOrCreateEncryptionKey(final String traceId) throws Exception {
         return encryptionKeys.computeIfAbsent(traceId, k -> {
             try {
                 return generateSecretKey();
@@ -325,7 +325,7 @@ public class TracingEncryptionService {
     /**
      * 获取加密密钥
      */
-    private SecretKey getEncryptionKey(String traceId) {
+    private SecretKey getEncryptionKey(final String traceId) {
         return encryptionKeys.get(traceId);
     }
     
@@ -349,7 +349,7 @@ public class TracingEncryptionService {
     /**
      * 缓存加密追踪数据
      */
-    private void cacheEncryptedTraceData(String traceId, String dataType, String encryptedData) {
+    private void cacheEncryptedTraceData(final String traceId,final String dataType,final String encryptedData) {
         EncryptedTraceData traceData = new EncryptedTraceData(
                 traceId, dataType, encryptedData, Instant.now(), Instant.now()
         );
@@ -376,7 +376,7 @@ public class TracingEncryptionService {
     /**
      * 获取保留策略
      */
-    private TraceRetentionPolicy getRetentionPolicy(String dataType) {
+    private TraceRetentionPolicy getRetentionPolicy(final String dataType) {
         return retentionPolicies.getOrDefault(dataType, retentionPolicies.get("default"));
     }
     
@@ -408,7 +408,7 @@ public class TracingEncryptionService {
     /**
      * 清理追踪数据
      */
-    private void cleanupTraceData(String traceId) {
+    private void cleanupTraceData(final String traceId) {
         encryptedTraceCache.remove(traceId);
         encryptionKeys.remove(traceId);
     }
@@ -416,8 +416,8 @@ public class TracingEncryptionService {
     /**
      * 记录加密操作审计日志
      */
-    private void recordEncryptionAudit(String traceId, String dataType, String operation, 
-                                     boolean success, String error) {
+    private void recordEncryptionAudit(final String traceId,final String dataType,final String operation, 
+                                     final boolean success,final String error) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("traceId", traceId);
@@ -437,7 +437,7 @@ public class TracingEncryptionService {
     /**
      * 记录清理操作审计日志
      */
-    private void recordCleanupAudit(String traceId, boolean success, String error) {
+    private void recordCleanupAudit(final String traceId,final boolean success,final String error) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("traceId", traceId);
@@ -456,7 +456,7 @@ public class TracingEncryptionService {
     /**
      * 记录密钥轮换审计日志
      */
-    private void recordKeyRotationAudit(String traceId, boolean success, String error) {
+    private void recordKeyRotationAudit(final String traceId,final boolean success,final String error) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("traceId", traceId);
@@ -482,8 +482,8 @@ public class TracingEncryptionService {
         private final Instant createdAt;
         private Instant updatedAt;
         
-        public EncryptedTraceData(String traceId, String dataType, String encryptedData, 
-                                Instant createdAt, Instant updatedAt) {
+        public EncryptedTraceData(final String traceId,final String dataType,final String encryptedData, 
+                                final Instant createdAt,final Instant updatedAt) {
             this.traceId = traceId;
             this.dataType = dataType;
             this.encryptedData = encryptedData;
@@ -495,10 +495,10 @@ public class TracingEncryptionService {
         public String getTraceId() { return traceId; }
         public String getDataType() { return dataType; }
         public String getEncryptedData() { return encryptedData; }
-        public void setEncryptedData(String encryptedData) { this.encryptedData = encryptedData; }
+        public void setEncryptedData(final String encryptedData) { this.encryptedData = encryptedData; }
         public Instant getCreatedAt() { return createdAt; }
         public Instant getUpdatedAt() { return updatedAt; }
-        public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+        public void setUpdatedAt(final Instant updatedAt) { this.updatedAt = updatedAt; }
     }
     
     /**
@@ -508,12 +508,12 @@ public class TracingEncryptionService {
         private final String policyName;
         private final Duration retentionDuration;
         
-        public TraceRetentionPolicy(String policyName, Duration retentionDuration) {
+        public TraceRetentionPolicy(final String policyName,final Duration retentionDuration) {
             this.policyName = policyName;
             this.retentionDuration = retentionDuration;
         }
         
-        public boolean shouldDelete(Instant createdAt) {
+        public boolean shouldDelete(final Instant createdAt) {
             return Duration.between(createdAt, Instant.now()).compareTo(retentionDuration) > 0;
         }
         

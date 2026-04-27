@@ -47,9 +47,9 @@ public class AsyncMetricsProcessor {
     private final SecureRandom secureRandom = new SecureRandom();
 
 
-    public AsyncMetricsProcessor(MonitoringProperties monitoringProperties, 
+    public AsyncMetricsProcessor(final MonitoringProperties monitoringProperties, 
                                @Lazy MetricsCollector metricsCollector,
-                               MetricsCircuitBreaker circuitBreaker) {
+                               final MetricsCircuitBreaker circuitBreaker) {
         this.monitoringProperties = monitoringProperties;
         this.metricsCollector = metricsCollector;
         this.circuitBreaker = circuitBreaker;
@@ -79,7 +79,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录请求指标
      */
-    public void recordRequestAsync(String service, String method, long duration, String status) {
+    public void recordRequestAsync(final String service,final String method,final long duration,final String status) {
         if (!shouldSample(MetricsType.REQUEST)) {
             return;
         }
@@ -91,7 +91,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录后端调用指标
      */
-    public void recordBackendCallAsync(String adapter, String instance, long duration, boolean success) {
+    public void recordBackendCallAsync(final String adapter,final String instance,final long duration,final boolean success) {
         if (!shouldSample(MetricsType.BACKEND)) {
             return;
         }
@@ -103,7 +103,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录限流器指标
      */
-    public void recordRateLimitAsync(String service, String algorithm, boolean allowed) {
+    public void recordRateLimitAsync(final String service,final String algorithm,final boolean allowed) {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
@@ -115,7 +115,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录熔断器指标
      */
-    public void recordCircuitBreakerAsync(String service, String state, String event) {
+    public void recordCircuitBreakerAsync(final String service,final String state,final String event) {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
@@ -127,7 +127,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录负载均衡器指标
      */
-    public void recordLoadBalancerAsync(String service, String strategy, String selectedInstance) {
+    public void recordLoadBalancerAsync(final String service,final String strategy,final String selectedInstance) {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
@@ -139,7 +139,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录健康检查指标
      */
-    public void recordHealthCheckAsync(String adapter, String instance, boolean healthy, long responseTime) {
+    public void recordHealthCheckAsync(final String adapter,final String instance,final boolean healthy,final long responseTime) {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
@@ -151,7 +151,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录请求大小指标
      */
-    public void recordRequestSizeAsync(String service, long requestSize, long responseSize) {
+    public void recordRequestSizeAsync(final String service,final long requestSize,final long responseSize) {
         if (!shouldSample(MetricsType.REQUEST)) {
             return;
         }
@@ -163,7 +163,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪指标
      */
-    public void recordTraceAsync(String traceId, String spanId, String operationName, long duration, boolean success) {
+    public void recordTraceAsync(final String traceId,final String spanId,final String operationName,final long duration,final boolean success) {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
@@ -175,7 +175,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪处理指标
      */
-    public void recordTraceProcessingAsync(String processorName, long duration, boolean success) {
+    public void recordTraceProcessingAsync(final String processorName,final long duration,final boolean success) {
         if (!shouldSample(MetricsType.TRACE_PROCESSING)) {
             return;
         }
@@ -187,7 +187,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪分析指标
      */
-    public void recordTraceAnalysisAsync(String analyzerName, int spanCount, long duration, boolean success) {
+    public void recordTraceAnalysisAsync(final String analyzerName,final int spanCount,final long duration,final boolean success) {
         if (!shouldSample(MetricsType.TRACE_ANALYSIS)) {
             return;
         }
@@ -199,7 +199,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪导出指标
      */
-    public void recordTraceExportAsync(String exporterType, long duration, boolean success, int batchSize) {
+    public void recordTraceExportAsync(final String exporterType,final long duration,final boolean success,final int batchSize) {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
@@ -211,7 +211,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪采样指标
      */
-    public void recordTraceSamplingAsync(double samplingRate, boolean sampled) {
+    public void recordTraceSamplingAsync(final double samplingRate,final boolean sampled) {
         // 采样指标本身不需要采样
         MetricsEvent event = new TraceSamplingMetricsEvent(samplingRate, sampled);
         submitEvent(event);
@@ -220,7 +220,7 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪数据质量指标
      */
-    public void recordTraceDataQualityAsync(String traceId, int spanCount, int attributeCount, int errorCount) {
+    public void recordTraceDataQualityAsync(final String traceId,final int spanCount,final int attributeCount,final int errorCount) {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
@@ -232,7 +232,7 @@ public class AsyncMetricsProcessor {
     /**
      * 提交指标事件到队列
      */
-    private void submitEvent(MetricsEvent event) {
+    private void submitEvent(final MetricsEvent event) {
         if (!circuitBreaker.allowRequest()) {
             droppedCount.incrementAndGet();
             logger.debug("Metrics event dropped due to circuit breaker: {}", event.getClass().getSimpleName());
@@ -251,7 +251,7 @@ public class AsyncMetricsProcessor {
     /**
      * 检查是否应该采样
      */
-    private boolean shouldSample(MetricsType type) {
+    private boolean shouldSample(final MetricsType type) {
         double samplingRate = getSamplingRate(type);
         return secureRandom.nextDouble() < samplingRate;
     }
@@ -259,7 +259,7 @@ public class AsyncMetricsProcessor {
     /**
      * 获取采样率
      */
-    private double getSamplingRate(MetricsType type) {
+    private double getSamplingRate(final MetricsType type) {
         MonitoringProperties.Sampling sampling = monitoringProperties.getSampling();
         switch (type) {
             case REQUEST:
@@ -336,7 +336,7 @@ public class AsyncMetricsProcessor {
     /**
      * 处理批量指标事件
      */
-    private void processBatchEvents(List<MetricsEvent> events) {
+    private void processBatchEvents(final List<MetricsEvent> events) {
         try {
             for (MetricsEvent event : events) {
                 processEvent(event);
@@ -353,7 +353,7 @@ public class AsyncMetricsProcessor {
     /**
      * 处理单个指标事件
      */
-    private void processEvent(MetricsEvent event) {
+    private void processEvent(final MetricsEvent event) {
         try {
             if (event instanceof RequestMetricsEvent) {
                 RequestMetricsEvent req = (RequestMetricsEvent) event;
@@ -461,7 +461,7 @@ public class AsyncMetricsProcessor {
         final long duration;
         final String status;
 
-        RequestMetricsEvent(String service, String method, long duration, String status) {
+        RequestMetricsEvent(final String service,final String method,final long duration,final String status) {
             this.service = service;
             this.method = method;
             this.duration = duration;
@@ -475,7 +475,7 @@ public class AsyncMetricsProcessor {
         final long duration;
         final boolean success;
 
-        BackendCallMetricsEvent(String adapter, String instance, long duration, boolean success) {
+        BackendCallMetricsEvent(final String adapter,final String instance,final long duration,final boolean success) {
             this.adapter = adapter;
             this.instance = instance;
             this.duration = duration;
@@ -488,7 +488,7 @@ public class AsyncMetricsProcessor {
         final String algorithm;
         final boolean allowed;
 
-        RateLimitMetricsEvent(String service, String algorithm, boolean allowed) {
+        RateLimitMetricsEvent(final String service,final String algorithm,final boolean allowed) {
             this.service = service;
             this.algorithm = algorithm;
             this.allowed = allowed;
@@ -500,7 +500,7 @@ public class AsyncMetricsProcessor {
         final String state;
         final String event;
 
-        CircuitBreakerMetricsEvent(String service, String state, String event) {
+        CircuitBreakerMetricsEvent(final String service,final String state,final String event) {
             this.service = service;
             this.state = state;
             this.event = event;
@@ -512,7 +512,7 @@ public class AsyncMetricsProcessor {
         final String strategy;
         final String selectedInstance;
 
-        LoadBalancerMetricsEvent(String service, String strategy, String selectedInstance) {
+        LoadBalancerMetricsEvent(final String service,final String strategy,final String selectedInstance) {
             this.service = service;
             this.strategy = strategy;
             this.selectedInstance = selectedInstance;
@@ -525,7 +525,7 @@ public class AsyncMetricsProcessor {
         final boolean healthy;
         final long responseTime;
 
-        HealthCheckMetricsEvent(String adapter, String instance, boolean healthy, long responseTime) {
+        HealthCheckMetricsEvent(final String adapter,final String instance,final boolean healthy,final long responseTime) {
             this.adapter = adapter;
             this.instance = instance;
             this.healthy = healthy;
@@ -538,7 +538,7 @@ public class AsyncMetricsProcessor {
         final long requestSize;
         final long responseSize;
 
-        RequestSizeMetricsEvent(String service, long requestSize, long responseSize) {
+        RequestSizeMetricsEvent(final String service,final long requestSize,final long responseSize) {
             this.service = service;
             this.requestSize = requestSize;
             this.responseSize = responseSize;
@@ -552,7 +552,7 @@ public class AsyncMetricsProcessor {
         final long duration;
         final boolean success;
 
-        TraceMetricsEvent(String traceId, String spanId, String operationName, long duration, boolean success) {
+        TraceMetricsEvent(final String traceId,final String spanId,final String operationName,final long duration,final boolean success) {
             this.traceId = traceId;
             this.spanId = spanId;
             this.operationName = operationName;
@@ -566,7 +566,7 @@ public class AsyncMetricsProcessor {
         final long duration;
         final boolean success;
 
-        TraceProcessingMetricsEvent(String processorName, long duration, boolean success) {
+        TraceProcessingMetricsEvent(final String processorName,final long duration,final boolean success) {
             this.processorName = processorName;
             this.duration = duration;
             this.success = success;
@@ -579,7 +579,7 @@ public class AsyncMetricsProcessor {
         final long duration;
         final boolean success;
 
-        TraceAnalysisMetricsEvent(String analyzerName, int spanCount, long duration, boolean success) {
+        TraceAnalysisMetricsEvent(final String analyzerName,final int spanCount,final long duration,final boolean success) {
             this.analyzerName = analyzerName;
             this.spanCount = spanCount;
             this.duration = duration;
@@ -593,7 +593,7 @@ public class AsyncMetricsProcessor {
         final boolean success;
         final int batchSize;
 
-        TraceExportMetricsEvent(String exporterType, long duration, boolean success, int batchSize) {
+        TraceExportMetricsEvent(final String exporterType,final long duration,final boolean success,final int batchSize) {
             this.exporterType = exporterType;
             this.duration = duration;
             this.success = success;
@@ -605,7 +605,7 @@ public class AsyncMetricsProcessor {
         final double samplingRate;
         final boolean sampled;
 
-        TraceSamplingMetricsEvent(double samplingRate, boolean sampled) {
+        TraceSamplingMetricsEvent(final double samplingRate,final boolean sampled) {
             this.samplingRate = samplingRate;
             this.sampled = sampled;
         }
@@ -617,7 +617,7 @@ public class AsyncMetricsProcessor {
         final int attributeCount;
         final int errorCount;
 
-        TraceDataQualityMetricsEvent(String traceId, int spanCount, int attributeCount, int errorCount) {
+        TraceDataQualityMetricsEvent(final String traceId,final int spanCount,final int attributeCount,final int errorCount) {
             this.traceId = traceId;
             this.spanCount = spanCount;
             this.attributeCount = attributeCount;
@@ -632,7 +632,7 @@ public class AsyncMetricsProcessor {
         private final long queueSize;
         private final String circuitBreakerState;
 
-        public ProcessingStats(long processedCount, long droppedCount, long queueSize, String circuitBreakerState) {
+        public ProcessingStats(final long processedCount,final long droppedCount,final long queueSize,final String circuitBreakerState) {
             this.processedCount = processedCount;
             this.droppedCount = droppedCount;
             this.queueSize = queueSize;

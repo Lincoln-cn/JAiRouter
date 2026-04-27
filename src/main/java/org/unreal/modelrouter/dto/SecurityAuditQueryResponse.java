@@ -33,7 +33,7 @@ public class SecurityAuditQueryResponse {
     @Schema(description = "响应生成时间")
     private LocalDateTime generatedAt = LocalDateTime.now();
 
-    SecurityAuditQueryResponse(List<SecurityAuditEvent> events, int page, int size, int totalElements, LocalDateTime startTime, LocalDateTime endTime, LocalDateTime generatedAt) {
+    SecurityAuditQueryResponse(final List<SecurityAuditEvent> events,final int page,final int size,final int totalElements,final LocalDateTime startTime,final LocalDateTime endTime,final LocalDateTime generatedAt) {
         this.events = events;
         this.page = page;
         this.size = size;
@@ -65,7 +65,7 @@ public class SecurityAuditQueryResponse {
         return this.events;
     }
 
-    public void setEvents(List<SecurityAuditEvent> events) {
+    public void setEvents(final List<SecurityAuditEvent> events) {
         this.events = events;
     }
 
@@ -73,7 +73,7 @@ public class SecurityAuditQueryResponse {
         return this.page;
     }
 
-    public void setPage(int page) {
+    public void setPage(final int page) {
         this.page = page;
     }
 
@@ -81,7 +81,7 @@ public class SecurityAuditQueryResponse {
         return this.size;
     }
 
-    public void setSize(int size) {
+    public void setSize(final int size) {
         this.size = size;
     }
 
@@ -89,7 +89,7 @@ public class SecurityAuditQueryResponse {
         return this.totalElements;
     }
 
-    public void setTotalElements(int totalElements) {
+    public void setTotalElements(final int totalElements) {
         this.totalElements = totalElements;
     }
 
@@ -97,7 +97,7 @@ public class SecurityAuditQueryResponse {
         return this.startTime;
     }
 
-    public void setStartTime(LocalDateTime startTime) {
+    public void setStartTime(final LocalDateTime startTime) {
         this.startTime = startTime;
     }
 
@@ -105,7 +105,7 @@ public class SecurityAuditQueryResponse {
         return this.endTime;
     }
 
-    public void setEndTime(LocalDateTime endTime) {
+    public void setEndTime(final LocalDateTime endTime) {
         this.endTime = endTime;
     }
 
@@ -113,7 +113,7 @@ public class SecurityAuditQueryResponse {
         return this.generatedAt;
     }
 
-    public void setGeneratedAt(LocalDateTime generatedAt) {
+    public void setGeneratedAt(final LocalDateTime generatedAt) {
         this.generatedAt = generatedAt;
     }
 
@@ -134,37 +134,37 @@ public class SecurityAuditQueryResponse {
         SecurityAuditQueryResponseBuilder() {
         }
 
-        public SecurityAuditQueryResponseBuilder events(List<SecurityAuditEvent> events) {
+        public SecurityAuditQueryResponseBuilder events(final List<SecurityAuditEvent> events) {
             this.events = events;
             return this;
         }
 
-        public SecurityAuditQueryResponseBuilder page(int page) {
+        public SecurityAuditQueryResponseBuilder page(final int page) {
             this.page = page;
             return this;
         }
 
-        public SecurityAuditQueryResponseBuilder size(int size) {
+        public SecurityAuditQueryResponseBuilder size(final int size) {
             this.size = size;
             return this;
         }
 
-        public SecurityAuditQueryResponseBuilder totalElements(int totalElements) {
+        public SecurityAuditQueryResponseBuilder totalElements(final int totalElements) {
             this.totalElements = totalElements;
             return this;
         }
 
-        public SecurityAuditQueryResponseBuilder startTime(LocalDateTime startTime) {
+        public SecurityAuditQueryResponseBuilder startTime(final LocalDateTime startTime) {
             this.startTime = startTime;
             return this;
         }
 
-        public SecurityAuditQueryResponseBuilder endTime(LocalDateTime endTime) {
+        public SecurityAuditQueryResponseBuilder endTime(final LocalDateTime endTime) {
             this.endTime = endTime;
             return this;
         }
 
-        public SecurityAuditQueryResponseBuilder generatedAt(LocalDateTime generatedAt) {
+        public SecurityAuditQueryResponseBuilder generatedAt(final LocalDateTime generatedAt) {
             this.generatedAt$value = generatedAt;
             this.generatedAt$set = true;
             return this;

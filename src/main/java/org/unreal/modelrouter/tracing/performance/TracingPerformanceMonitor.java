@@ -71,10 +71,10 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             new AtomicReference<>(SystemHealth.HEALTHY);
     private final List<PerformanceIssue> activeIssues = new ArrayList<>();
 
-    public TracingPerformanceMonitor(TracingConfiguration tracingConfiguration,
-                                   AsyncTracingProcessor asyncTracingProcessor,
-                                   TracingMemoryManager memoryManager,
-                                   MeterRegistry meterRegistry) {
+    public TracingPerformanceMonitor(final TracingConfiguration tracingConfiguration,
+                                   final AsyncTracingProcessor asyncTracingProcessor,
+                                   final TracingMemoryManager memoryManager,
+                                   final MeterRegistry meterRegistry) {
         this.tracingConfiguration = tracingConfiguration;
         this.asyncTracingProcessor = asyncTracingProcessor;
         this.memoryManager = memoryManager;
@@ -123,8 +123,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
     /**
      * 记录操作性能
      */
-    public Mono<Void> recordOperationPerformance(String operation, long startTime, long endTime, 
-                                                boolean success, Map<String, Object> metadata) {
+    public Mono<Void> recordOperationPerformance(final String operation,final long startTime,final long endTime, 
+                                                final boolean success,final Map<String, Object> metadata) {
         return Mono.fromRunnable(() -> {
             long duration = endTime - startTime;
             totalOperations.incrementAndGet();
@@ -250,7 +250,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
     /**
      * 执行性能调优
      */
-    public Mono<TuningResult> performPerformanceTuning(List<String> tuningActions) {
+    public Mono<TuningResult> performPerformanceTuning(final List<String> tuningActions) {
         return Mono.fromCallable(() -> {
             List<String> appliedActions = new ArrayList<>();
             List<String> failedActions = new ArrayList<>();
@@ -416,7 +416,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         thresholds.put("batch.process", new PerformanceThreshold(500, 2000));
     }
 
-    private void handleSlowOperation(String operation, long duration, Map<String, Object> metadata) {
+    private void handleSlowOperation(final String operation,final long duration,final Map<String, Object> metadata) {
         log.warn("检测到慢操作: operation={}, duration={}ms", operation, duration);
         performanceAnomalyCounter.increment();
     }
@@ -436,18 +436,18 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         return totalOperations.get() / 60.0; // 每分钟操作数
     }
 
-    private void analyzePerformanceTrends(PerformanceSnapshot snapshot) {
+    private void analyzePerformanceTrends(final PerformanceSnapshot snapshot) {
         // 分析性能趋势
         log.debug("性能快照: {}", snapshot);
     }
 
-    private void handleDetectedBottlenecks(List<PerformanceBottleneck> bottlenecks) {
+    private void handleDetectedBottlenecks(final List<PerformanceBottleneck> bottlenecks) {
         for (PerformanceBottleneck bottleneck : bottlenecks) {
             log.warn("检测到性能瓶颈: {}", bottleneck);
         }
     }
 
-    private List<OptimizationSuggestion> generateMemoryOptimizationSuggestions(TracingMemoryManager.MemoryStats stats) {
+    private List<OptimizationSuggestion> generateMemoryOptimizationSuggestions(final TracingMemoryManager.MemoryStats stats) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
         suggestions.add(new OptimizationSuggestion(
                 "增加堆内存大小",
@@ -462,7 +462,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         return suggestions;
     }
 
-    private List<OptimizationSuggestion> generateProcessingOptimizationSuggestions(AsyncTracingProcessor.ProcessingStats stats) {
+    private List<OptimizationSuggestion> generateProcessingOptimizationSuggestions(final AsyncTracingProcessor.ProcessingStats stats) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
         suggestions.add(new OptimizationSuggestion(
                 "增加处理线程",
@@ -477,7 +477,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         return suggestions;
     }
 
-    private List<OptimizationSuggestion> generateOperationOptimizationSuggestions(OperationMetrics metrics) {
+    private List<OptimizationSuggestion> generateOperationOptimizationSuggestions(final OperationMetrics metrics) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
         suggestions.add(new OptimizationSuggestion(
                 "优化操作实现",
@@ -497,7 +497,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         return suggestions;
     }
 
-    private boolean applyTuningAction(String action) {
+    private boolean applyTuningAction(final String action) {
         // 实现具体的调优操作
         log.info("应用调优操作: {}", action);
         return true;
@@ -541,11 +541,11 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         private final AtomicLong maxLatency = new AtomicLong(0);
         private final AtomicLong minLatency = new AtomicLong(Long.MAX_VALUE);
 
-        public OperationMetrics(String operation) {
+        public OperationMetrics(final String operation) {
             this.operation = operation;
         }
 
-        public void recordOperation(long latency, boolean success) {
+        public void recordOperation(final long latency,final boolean success) {
             totalCount.incrementAndGet();
             if (success) {
                 successCount.incrementAndGet();
