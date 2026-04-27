@@ -22,7 +22,22 @@ public class ServiceInstanceDTO {
 
     private Long id;
 
-    // 兼容前端，添加 instanceId 字段（与 id 相同）
+    /**
+     * 获取实例ID（兼容前端）
+     *
+     * @deprecated 此字段与 {@link #id} 字段功能重复，仅为兼容前端而保留。
+     *             前端应迁移使用 id 字段，通过 {@link #getId()} 获取实例ID。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>instanceId 返回 String 类型（id 的字符串形式）</li>
+     *               <li>id 返回 Long 类型，是数据库主键</li>
+     *               <li>前端应使用 id 字段，统一数据类型</li>
+     *             </ul>
+     *             <p>此字段将在 v3.0 版本中移除，前端需同步更新。</p>
+     * @return 实例ID字符串
+     * @since v2.5.1 标注废弃
+     */
+    @Deprecated(since = "2.5.1", forRemoval = true)
     @JsonProperty("instanceId")
     public String getInstanceId() {
         return id != null ? String.valueOf(id) : null;

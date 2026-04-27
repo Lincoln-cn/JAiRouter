@@ -3,11 +3,34 @@ package org.unreal.modelrouter.dto;
 import java.time.LocalDateTime;
 
 /**
- * @deprecated 此类已被合并到 {@link JwtTokenInfo} 中。
- * 请使用 JwtTokenInfo 替代此类。
- * 此类将在未来版本中移除。
+ * Token 响应 DTO（旧版本）
+ *
+ * @deprecated 此类已被合并到 {@link JwtTokenInfo} 中，不再推荐使用。
+ *             <p>迁移说明：</p>
+ *             <ul>
+ *               <li>TokenResponse 的所有字段已在 JwtTokenInfo 中提供</li>
+ *               <li>JwtTokenInfo 提供更完整的令牌生命周期管理</li>
+ *               <li>支持状态追踪、撤销记录、设备信息等扩展功能</li>
+ *             </ul>
+ *             <p>迁移示例：</p>
+ *             <pre>{@code
+ *             // 旧代码
+ *             TokenResponse response = new TokenResponse(token, "Bearer", "Success", LocalDateTime.now());
+ *             
+ *             // 新代码 - 使用 JwtTokenInfo
+ *             JwtTokenInfo info = new JwtTokenInfo();
+ *             info.setToken(token);
+ *             info.setTokenType("Bearer");
+ *             info.setMessage("Success");
+ *             info.setTimestamp(LocalDateTime.now());
+ *             info.setStatus(TokenStatus.ACTIVE);
+ *             }</pre>
+ *             <p>此类将在 v3.0 版本中移除。</p>
+ * @see JwtTokenInfo
+ * @see TokenStatus
+ * @since v2.5.1 标注废弃，计划 v3.0 移除
  */
-@Deprecated
+@Deprecated(since = "2.5.1", forRemoval = true)
 public class TokenResponse {
     private String token;
     private String tokenType;
@@ -56,7 +79,9 @@ public class TokenResponse {
         this.timestamp = timestamp;
     }
 
+    @Override
     public String toString() {
-        return "TokenResponse(token=" + this.getToken() + ", tokenType=" + this.getTokenType() + ", message=" + this.getMessage() + ", timestamp=" + this.getTimestamp() + ")";
+        return "TokenResponse(token=" + this.getToken() + ", tokenType=" + this.getTokenType() 
+                + ", message=" + this.getMessage() + ", timestamp=" + this.getTimestamp() + ")";
     }
 }
