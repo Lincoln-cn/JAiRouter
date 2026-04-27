@@ -955,25 +955,17 @@ public class ConfigurationService {
     /**
      * 获取指定服务的所有实例
      *
+     * @deprecated 此方法已委托给 {@link InstanceManager#getServiceInstancesAsMap(String)}。
+     *             请直接使用 InstanceManager 进行实例查询。
+     *             此方法将在 v3.0 版本中移除。
+     * @see InstanceManager#getServiceInstancesAsMap(String)
+     * @since v2.5.3.3 标注废弃，委托实现
      * @param serviceType 服务类型
      * @return 实例列表
      */
-    @SuppressWarnings("unchecked")
+    @Deprecated(since = "2.5.3.3", forRemoval = true)
     public List<Map<String, Object>> getServiceInstances(String serviceType) {
-        Map<String, Object> serviceConfig = getServiceConfig(serviceType);
-        if (serviceConfig == null) {
-            return new ArrayList<>();
-        }
-        List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
-
-        // 确保每个实例都有status字段
-        for (Map<String, Object> instance : instances) {
-            if (!instance.containsKey("status")) {
-                instance.put("status", "active"); // 默认为active
-            }
-        }
-
-        return instances;
+        return instanceManager.getServiceInstancesAsMap(serviceType);
     }
 
     /**
@@ -993,23 +985,37 @@ public class ConfigurationService {
     /**
      * 获取指定实例的详细信息
      *
+     * @deprecated 此方法已简化实现，建议直接使用 InstanceManager 和 ServiceStateManager。
+     *             <p>迁移说明：</p>
+     *             <pre>{@code
+     *             // 旧代码
+     *             Map<String, Object> instance = configurationService.getServiceInstance(serviceType, instanceId);
+     *             
+     *             // 新代码 - 获取实例配置
+     *             ModelInstanceConfiguration instance = instanceManager.getServiceInstance(serviceType, instanceId);
+     *             // 新代码 - 获取健康状态
+     *             String healthStatus = serviceStateManager.getInstanceHealthStatus(serviceType + ":" + instanceId);
+     *             }</pre>
+     *             此方法将在 v3.0 版本中移除。
+     * @see InstanceManager#getServiceInstance(String, String)
+     * @see ServiceStateManager#getInstanceHealthStatus(String)
+     * @since v2.5.3.3 标注废弃，简化实现
      * @param serviceType 服务类型
      * @param instanceId 实例ID
      * @return 实例配置
      */
+    @Deprecated(since = "2.5.3.3", forRemoval = true)
     public Map<String, Object> getServiceInstance(String serviceType, String instanceId) {
-        List<Map<String, Object>> instances = getServiceInstances(serviceType);
+        List<Map<String, Object>> instances = instanceManager.getServiceInstancesAsMap(serviceType);
         return instances.stream()
                 .filter(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)))
                 .map(instance -> {
-                    // v2.3.3 修复：使用 instanceId 查询健康状态（三态返回）
                     String healthKey = serviceType + ":" + instanceId;
                     String healthStatus = serviceStateManager.getInstanceHealthStatus(healthKey);
                     instance.put("health", "HEALTHY".equals(healthStatus));
-                    instance.put("healthStatus", healthStatus); // 新增：三态状态字段
-                    // 确保status字段存在
+                    instance.put("healthStatus", healthStatus);
                     if (!instance.containsKey("status")) {
-                        instance.put("status", "active"); // 默认为active
+                        instance.put("status", "active");
                     }
                     return instance;
                 })
