@@ -1053,9 +1053,35 @@ public class ConfigurationService {
     /**
      * 创建新服务（自动保存为新版本）
      *
+     * @deprecated 建议使用 {@link ServiceConfigManager#createService(String, ServiceConfiguration)}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>ServiceConfigManager 使用强类型 ServiceConfiguration 参数</li>
+     *               <li>ConfigurationService 使用弱类型 Map 参数</li>
+     *               <li>强类型参数更安全，避免运行时类型错误</li>
+     *             </ul>
+     *             <p>迁移示例：</p>
+     *             <pre>{@code
+     *             // 旧代码 - 使用 Map
+     *             Map<String, Object> config = new HashMap<>();
+     *             config.put("adapter", "ollama");
+     *             config.put("instances", instancesList);
+     *             configurationService.createService(serviceType, config);
+     *             
+     *             // 新代码 - 使用 ServiceConfiguration
+     *             ServiceConfiguration config = ServiceConfiguration.builder()
+     *                 .adapter(AdapterType.OLLAMA)
+     *                 .instances(instances)
+     *                 .build();
+     *             serviceConfigManager.createService(serviceType, config);
+     *             }</pre>
+     *             此方法将在 v3.0 版本中移除。
+     * @see ServiceConfigManager#createService(String, ServiceConfiguration)
+     * @since v2.5.3.7 标注废弃
      * @param serviceType 服务类型
      * @param serviceConfig 服务配置
      */
+    @Deprecated(since = "2.5.3.7", forRemoval = true)
     public void createService(String serviceType, Map<String, Object> serviceConfig) {
         logger.info("创建新服务: {}", serviceType);
 
