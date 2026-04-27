@@ -5,17 +5,17 @@
 - 总文档数: 157
 - 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-04-26 05:12:06
+- 最后扫描: 2026-04-27 05:24:22
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.8 → 1.0.9) - 2026-04-27
 - **MODIFIED**: docs-version-report.md (1.0.7 → 1.0.8) - 2026-04-26
 - **MODIFIED**: docs-version-report.md (1.0.6 → 1.0.7) - 2026-04-25
 - **MODIFIED**: docs-version-report.md (1.0.5 → 1.0.6) - 2026-04-24
 - **MODIFIED**: docs-version-report.md (1.0.4 → 1.0.5) - 2026-04-23
 - **MODIFIED**: docs-version-report.md (1.0.3 → 1.0.4) - 2026-04-22
 - **MODIFIED**: docs-version-report.md (1.0.2 → 1.0.3) - 2026-04-21
-- **MODIFIED**: docs-version-report.md (1.0.1 → 1.0.2) - 2026-04-20
 
 ## 过期文档 (30天未更新)
 
@@ -663,7 +663,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.8 - 2026-04-26 (b6beb434)
+- **docs-version-report.md**: v1.0.9 - 2026-04-27 (d892c90e)
 - **RELEASE-NOTES-1.9.3.md**: v1.0.0 - 2026-04-18 (79589443)
 - **docs/zh/troubleshooting/issue-fixes.md**: v1.0.0 - 2026-04-17 (9439a202)
 - **docs/zh/security/jwt-authentication.md**: v1.0.3 - 2026-04-17 (93d662fd)
