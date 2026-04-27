@@ -17,16 +17,16 @@ public class SecurityException extends RuntimeException {
      */
     private final HttpStatus httpStatus;
     
-    public SecurityException(String message, String errorCode, HttpStatus httpStatus) {
+    public SecurityException(final String message, final String aErrorCode, final HttpStatus aHttpStatus) {
         super(message);
-        this.errorCode = errorCode;
-        this.httpStatus = httpStatus;
+        this.errorCode = aErrorCode;
+        this.httpStatus = aHttpStatus;
     }
     
-    public SecurityException(String message, Throwable cause, String errorCode, HttpStatus httpStatus) {
+    public SecurityException(final String message, final Throwable cause, final String aErrorCode, final HttpStatus aHttpStatus) {
         super(message, cause);
-        this.errorCode = errorCode;
-        this.httpStatus = httpStatus;
+        this.errorCode = aErrorCode;
+        this.httpStatus = aHttpStatus;
     }
     
     public String getErrorCode() {

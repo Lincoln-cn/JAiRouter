@@ -8,14 +8,14 @@ public class SecurityAuthenticationException extends org.springframework.securit
     
     private final String errorCode;
     
-    public SecurityAuthenticationException(String errorCode, String message) {
+    public SecurityAuthenticationException(final String aErrorCode, final String message) {
         super(message);
-        this.errorCode = errorCode;
+        this.errorCode = aErrorCode;
     }
     
-    public SecurityAuthenticationException(String errorCode, String message, Throwable cause) {
+    public SecurityAuthenticationException(final String aErrorCode, final String message, final Throwable cause) {
         super(message, cause);
-        this.errorCode = errorCode;
+        this.errorCode = aErrorCode;
     }
     
     public String getErrorCode() {
