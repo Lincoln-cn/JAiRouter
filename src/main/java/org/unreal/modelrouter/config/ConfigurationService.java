@@ -1120,10 +1120,40 @@ public class ConfigurationService {
     /**
      * 更新服务配置（自动保存为新版本）
      *
+     * @deprecated 建议使用 {@link ServiceConfigManager#updateServiceConfig(String, UpdateServiceConfigRequest)}
+     *             或 {@link ServiceConfigManager#updateServiceConfig(String, ServiceConfiguration)}。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>ServiceConfigManager 使用强类型参数（DTO或领域对象）</li>
+     *               <li>ConfigurationService 使用弱类型 Map 参数</li>
+     *               <li>强类型参数更安全，避免运行时类型错误</li>
+     *             </ul>
+     *             <p>迁移示例：</p>
+     *             <pre>{@code
+     *             // 旧代码 - 使用 Map
+     *             Map<String, Object> config = new HashMap<>();
+     *             config.put("adapter", "ollama");
+     *             configurationService.updateServiceConfig(serviceType, config);
+     *             
+     *             // 新代码 - 使用 UpdateServiceConfigRequest
+     *             UpdateServiceConfigRequest request = new UpdateServiceConfigRequest(...);
+     *             serviceConfigManager.updateServiceConfig(serviceType, request);
+     *             
+     *             // 新代码 - 使用 ServiceConfiguration
+     *             ServiceConfiguration config = ServiceConfiguration.builder()
+     *                 .adapter(AdapterType.OLLAMA)
+     *                 .build();
+     *             serviceConfigManager.updateServiceConfig(serviceType, config);
+     *             }</pre>
+     *             此方法将在 v3.0 版本中移除。
+     * @see ServiceConfigManager#updateServiceConfig(String, UpdateServiceConfigRequest)
+     * @see ServiceConfigManager#updateServiceConfig(String, ServiceConfiguration)
+     * @since v2.5.3.8 标注废弃
      * @param serviceType 服务类型
      * @param serviceConfig 新的服务配置
      * @return 更新后的完整服务配置
      */
+    @Deprecated(since = "2.5.3.8", forRemoval = true)
     @SuppressWarnings("unchecked")
     public Map<String, Object> updateServiceConfig(String serviceType, Map<String, Object> serviceConfig) {
         logger.info("更新服务配置：{}", serviceType);
@@ -1242,8 +1272,27 @@ public class ConfigurationService {
     /**
      * 删除服务（自动保存为新版本）
      *
+     * @deprecated 建议使用 {@link ServiceConfigManager#deleteService(String)} 删除服务。
+     *             <p>迁移说明：</p>
+     *             <ul>
+     *               <li>ServiceConfigManager.deleteService 提供相同功能</li>
+     *               <li>ServiceConfigManager 使用事务管理，更可靠</li>
+     *               <li>直接调用 ServiceConfigManager 更简洁</li>
+     *             </ul>
+     *             <p>迁移示例：</p>
+     *             <pre>{@code
+     *             // 旧代码 - 通过 ConfigurationService
+     *             configurationService.deleteService(serviceType);
+     *             
+     *             // 新代码 - 直接使用 ServiceConfigManager
+     *             serviceConfigManager.deleteService(serviceType);
+     *             }</pre>
+     *             此方法将在 v3.0 版本中移除。
+     * @see ServiceConfigManager#deleteService(String)
+     * @since v2.5.3.8 标注废弃
      * @param serviceType 服务类型
      */
+    @Deprecated(since = "2.5.3.8", forRemoval = true)
     public void deleteService(String serviceType) {
         logger.info("删除服务: {}", serviceType);
 
