@@ -55,21 +55,21 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
         this(DEFAULT_VIRTUAL_NODES);
     }
 
-    public ConsistentHashLoadBalancer(int virtualNodeCount) {
+    public ConsistentHashLoadBalancer(final int virtualNodeCount) {
         this.virtualNodeCount = virtualNodeCount;
     }
 
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            List<ModelRouterProperties.ModelInstance> instances, 
+            final List<ModelRouterProperties.ModelInstance> instances, 
             String clientIp) {
         return selectInstance(instances, clientIp, "unknown");
     }
 
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            List<ModelRouterProperties.ModelInstance> instances, 
-            String clientIp, 
+            final List<ModelRouterProperties.ModelInstance> instances, 
+            final String clientIp, 
             String serviceType) {
         
         if (instances == null || instances.isEmpty()) {
@@ -124,8 +124,8 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
      */
     private ModelRouterProperties.ModelInstance findHealthyInstance(
             Map.Entry<Long, ModelRouterProperties.ModelInstance> startEntry,
-            String serviceType,
-            List<ModelRouterProperties.ModelInstance> allInstances) {
+            final String serviceType,
+            final List<ModelRouterProperties.ModelInstance> allInstances) {
         
         if (startEntry == null) {
             return null;
