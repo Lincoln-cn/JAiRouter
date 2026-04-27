@@ -1297,53 +1297,19 @@ public class ConfigurationService {
     /**
      * 更新服务实例（优化版本，可选择是否保存为新版本）
      *
+     * @deprecated 此方法已委托给 {@link InstanceManager#updateServiceInstance(String, String, ModelRouterProperties.ModelInstance)}。
+     *             请直接使用 InstanceManager 进行实例更新。
+     *             <p>InstanceManager 提供相同的去重和锁机制，确保并发安全。</p>
+     *             此方法将在 v3.0 版本中移除。
+     * @see InstanceManager#updateServiceInstance(String, String, ModelRouterProperties.ModelInstance)
+     * @since v2.5.3.4 标注废弃，委托实现
      * @param serviceType 服务类型
      * @param instanceId 实例ID
      * @param instanceConfig 新的实例配置
      */
-    @SuppressWarnings("unchecked")
+    @Deprecated(since = "2.5.3.4", forRemoval = true)
     public void updateServiceInstance(String serviceType, String instanceId, ModelRouterProperties.ModelInstance instanceConfig) {
-        // 创建请求唯一标识，用于去重
-        String requestKey = serviceType + ":" + instanceId + ":" +
-                (instanceConfig != null ? instanceConfig.getStatus() : "null");
-
-        // 检查是否为重复请求
-        long currentTime = System.currentTimeMillis();
-        Long lastRequestTime = recentUpdateRequests.get(requestKey);
-        if (lastRequestTime != null && (currentTime - lastRequestTime) < REQUEST_DEDUP_WINDOW_MS) {
-            logger.info("检测到重复的更新请求，忽略: serviceType={}, instanceId={}", serviceType, instanceId);
-            return;
-        }
-
-        // 记录当前请求时间
-        recentUpdateRequests.put(requestKey, currentTime);
-
-        // 清理过期的请求记录
-        cleanupExpiredRequests(currentTime);
-
-        // 获取实例级别的锁
-        Object instanceLock = instanceUpdateLocks.computeIfAbsent(instanceId, k -> new Object());
-
-        synchronized (instanceLock) {
-            try {
-                logger.info("更新服务 {} 的实例 {} - 线程: {}", serviceType, instanceId, Thread.currentThread().getName());
-
-                // 记录实例更新的详细信息，帮助分析多版本创建问题
-                if (logger.isDebugEnabled()) {
-                    logger.debug("实例更新详情 - 服务类型: {}, 实例ID: {}, 实例名称: {}, BaseURL: {}, 状态: {}",
-                            serviceType, instanceId,
-                            instanceConfig != null ? instanceConfig.getName() : "null",
-                            instanceConfig != null ? instanceConfig.getBaseUrl() : "null",
-                            instanceConfig != null ? instanceConfig.getStatus() : "null");
-                }
-
-                updateServiceInstanceInternal(serviceType, instanceId, instanceConfig);
-
-            } finally {
-                // 清理实例锁（如果没有其他线程在等待）
-                instanceUpdateLocks.remove(instanceId, instanceLock);
-            }
-        }
+        instanceManager.updateServiceInstance(serviceType, instanceId, instanceConfig);
     }
 
     /**
