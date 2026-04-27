@@ -58,7 +58,7 @@ public class MetricsErrorHandler {
     /**
      * 处理指标收集异常
      */
-    public void handleMetricsError(final String component,final String operation,final Throwable error) {
+    public void handleMetricsError(final String component, final String operation, final Throwable error) {
         String errorKey = component + ":" + operation;
         
         // 记录错误
@@ -98,7 +98,7 @@ public class MetricsErrorHandler {
     /**
      * 检查组件是否处于降级状态
      */
-    public boolean isDegraded(final String component,final String operation) {
+    public boolean isDegraded(final String component, final String operation) {
         String errorKey = component + ":" + operation;
         Instant degradationStart = degradationStartTimes.get(errorKey);
         
@@ -118,7 +118,7 @@ public class MetricsErrorHandler {
     /**
      * 安全执行指标收集操作
      */
-    public void safeExecute(final String component,final String operation,final Runnable metricsOperation) {
+    public void safeExecute(final String component, final String operation, final Runnable metricsOperation) {
         // 检查是否处于降级状态
         if (isDegraded(component, operation)) {
             logger.debug("组件 {} 操作 {} 处于降级状态，跳过指标收集", component, operation);
@@ -135,8 +135,8 @@ public class MetricsErrorHandler {
     /**
      * 安全执行指标收集操作（带返回值）
      */
-    public <T> T safeExecute(final String component,final String operation, 
-                           final java.util.function.Supplier<T> metricsOperation,final T defaultValue) {
+    public <T> T safeExecute(final String component, final String operation, 
+                           final java.util.function.Supplier<T> metricsOperation, final T defaultValue) {
         // 检查是否处于降级状态
         if (isDegraded(component, operation)) {
             logger.debug("组件 {} 操作 {} 处于降级状态，返回默认值", component, operation);
@@ -191,7 +191,7 @@ public class MetricsErrorHandler {
     /**
      * 手动重置错误状态
      */
-    public void resetErrorState(final String component,final String operation) {
+    public void resetErrorState(final String component, final String operation) {
         String errorKey = component + ":" + operation;
         errorCounts.remove(errorKey);
         lastErrorTimes.remove(errorKey);
@@ -234,7 +234,7 @@ public class MetricsErrorHandler {
         private final int degradedComponents;
         private final int totalErrors;
         
-        public MetricsErrorStats(final int activeErrorComponents,final int degradedComponents,final int totalErrors) {
+        public MetricsErrorStats(final int activeErrorComponents, final int degradedComponents, final int totalErrors) {
             this.activeErrorComponents = activeErrorComponents;
             this.degradedComponents = degradedComponents;
             this.totalErrors = totalErrors;

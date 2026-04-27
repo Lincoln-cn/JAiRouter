@@ -81,7 +81,7 @@ public class AdapterTracingManager {
      * @param success 是否成功
      * @param error 错误信息（如果失败）
      */
-    public void endAdapterCall(final Span span,final boolean success,final Throwable error) {
+    public void endAdapterCall(final Span span, final boolean success, final Throwable error) {
         if (span == null) {
             return;
         }
@@ -181,7 +181,7 @@ public class AdapterTracingManager {
      * @param requestSize 请求大小（字节）
      * @param hasStream 是否流式请求
      */
-    public void recordRequestAttributes(final Span span,final long requestSize,final boolean hasStream) {
+    public void recordRequestAttributes(final Span span, final long requestSize, final boolean hasStream) {
         if (span == null) {
             return;
         }
@@ -200,7 +200,7 @@ public class AdapterTracingManager {
      * @param durationMs 响应时间（毫秒）
      * @param statusCode HTTP 状态码
      */
-    public void recordResponseAttributes(final Span span,final long responseSize,final long durationMs,final int statusCode) {
+    public void recordResponseAttributes(final Span span, final long responseSize, final long durationMs,final int statusCode) {
         if (span == null) {
             return;
         }

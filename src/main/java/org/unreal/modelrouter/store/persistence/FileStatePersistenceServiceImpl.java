@@ -37,7 +37,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     private String storagePath;
 
     @Override
-    public Mono<Boolean> save(final StateType stateType,final String key,final Map<String, Object> stateData) {
+    public Mono<Boolean> save(final StateType stateType, final String key,final Map<String, Object> stateData) {
         return Mono.fromCallable(() -> {
             try {
                 Path filePath = resolveFilePath(stateType, key);
@@ -54,7 +54,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     }
 
     @Override
-    public Mono<Map<String, Object>> load(final StateType stateType,final String key) {
+    public Mono<Map<String, Object>> load(final StateType stateType, final String key) {
         return Mono.fromCallable(() -> {
             try {
                 Path filePath = resolveFilePath(stateType, key);
@@ -75,7 +75,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     }
 
     @Override
-    public Mono<Boolean> delete(final StateType stateType,final String key) {
+    public Mono<Boolean> delete(final StateType stateType, final String key) {
         return Mono.fromCallable(() -> {
             try {
                 Path filePath = resolveFilePath(stateType, key);
@@ -92,7 +92,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     }
 
     @Override
-    public Mono<Boolean> exists(final StateType stateType,final String key) {
+    public Mono<Boolean> exists(final StateType stateType, final String key) {
         return Mono.fromCallable(() -> {
             Path filePath = resolveFilePath(stateType, key);
             return Files.exists(filePath);
@@ -115,7 +115,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     }
 
     @Override
-    public Mono<Integer> saveBatch(final StateType stateType,final Map<String, Map<String, Object>> states) {
+    public Mono<Integer> saveBatch(final StateType stateType, final Map<String, Map<String, Object>> states) {
         if (states.isEmpty()) {
             return Mono.just(0);
         }
@@ -131,7 +131,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     }
 
     @Override
-    public Mono<Map<String, Map<String, Object>>> loadBatch(final StateType stateType,final Iterable<String> keys) {
+    public Mono<Map<String, Map<String, Object>>> loadBatch(final StateType stateType, final Iterable<String> keys) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         for (String key : keys) {
             Map<String, Object> stateData = load(stateType, key).block();
@@ -195,7 +195,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     /**
      * 解析文件存储路径
      */
-    private Path resolveFilePath(final StateType stateType,final String key) {
+    private Path resolveFilePath(final StateType stateType, final String key) {
         Path basePath = PathSanitizer.sanitizePath(storagePath);
         Path typePath = basePath.resolve(stateType.name().toLowerCase());
         String safeFileName = PathSanitizer.sanitizeFileName(key) + ".json";

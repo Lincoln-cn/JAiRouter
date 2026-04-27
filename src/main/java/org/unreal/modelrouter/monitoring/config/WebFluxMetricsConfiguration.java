@@ -32,7 +32,7 @@ public class WebFluxMetricsConfiguration {
         
         return new OrderedWebFilter() {
             @Override
-            public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
+            public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
                 return interceptor.filter(exchange, chain);
             }
 

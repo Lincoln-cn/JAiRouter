@@ -35,7 +35,7 @@ public class RateLimiterTracingWrapper implements RateLimiter {
     private final RateLimiter delegate;
     private final StructuredLogger structuredLogger;
     
-    public RateLimiterTracingWrapper(final RateLimiter delegate,final StructuredLogger structuredLogger) {
+    public RateLimiterTracingWrapper(final RateLimiter delegate, final StructuredLogger structuredLogger) {
         this.delegate = delegate;
         this.structuredLogger = structuredLogger;
     }
@@ -133,7 +133,7 @@ public class RateLimiterTracingWrapper implements RateLimiter {
     /**
      * 记录限流检查开始
      */
-    private void recordRateLimitCheckStart(final TracingContext context,final RateLimitContext rateLimitContext) {
+    private void recordRateLimitCheckStart(final TracingContext context, final RateLimitContext rateLimitContext) {
         if (context != null && context.isActive()) {
             Map<String, Object> eventAttributes = new HashMap<>();
             eventAttributes.put("service_type", rateLimitContext.getServiceType().toString());
@@ -169,8 +169,8 @@ public class RateLimiterTracingWrapper implements RateLimiter {
     /**
      * 记录允许通过的请求
      */
-    private void recordAllowedRequest(final TracingContext context,final Span span, 
-                                    final RateLimitContext rateLimitContext,final long checkTimeMs) {
+    private void recordAllowedRequest(final TracingContext context, final Span span, 
+                                    final RateLimitContext rateLimitContext, final long checkTimeMs) {
         if (span != null) {
             span.setAttribute("rl.allowed", true);
             span.setAttribute("rl.check_time_ms", checkTimeMs);
@@ -218,8 +218,8 @@ public class RateLimiterTracingWrapper implements RateLimiter {
     /**
      * 记录被拒绝的请求
      */
-    private void recordRejectedRequest(final TracingContext context,final Span span, 
-                                     final RateLimitContext rateLimitContext,final long checkTimeMs) {
+    private void recordRejectedRequest(final TracingContext context, final Span span, 
+                                     final RateLimitContext rateLimitContext, final long checkTimeMs) {
         if (span != null) {
             span.setAttribute("rl.allowed", false);
             span.setAttribute("rl.check_time_ms", checkTimeMs);
@@ -270,8 +270,8 @@ public class RateLimiterTracingWrapper implements RateLimiter {
     /**
      * 记录限流检查错误
      */
-    private void recordRateLimitError(final TracingContext context,final Span span, 
-                                    final RateLimitContext rateLimitContext,final long checkTimeMs,final Exception error) {
+    private void recordRateLimitError(final TracingContext context, final Span span, 
+                                    final RateLimitContext rateLimitContext, final long checkTimeMs, final Exception error) {
         if (span != null) {
             span.setAttribute("rl.check_time_ms", checkTimeMs);
             span.setAttribute("rl.error", error.getMessage());

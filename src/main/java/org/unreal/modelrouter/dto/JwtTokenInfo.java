@@ -75,7 +75,7 @@ public class JwtTokenInfo {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public JwtTokenInfo(final String token,final String tokenType,final String message,final LocalDateTime timestamp) {
+    public JwtTokenInfo(final String token, final String tokenType,final String message,final LocalDateTime timestamp) {
         this.token = token;
         this.tokenType = tokenType;
         this.message = message;
@@ -107,7 +107,7 @@ public class JwtTokenInfo {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public JwtTokenInfo(final String userId,final String token,final LocalDateTime issuedAt,final LocalDateTime expiresAt,final TokenStatus status) {
+    public JwtTokenInfo(final String userId, final String token,final LocalDateTime issuedAt,final LocalDateTime expiresAt,final TokenStatus status) {
         this.userId = userId;
         this.token = token;
         this.issuedAt = issuedAt;

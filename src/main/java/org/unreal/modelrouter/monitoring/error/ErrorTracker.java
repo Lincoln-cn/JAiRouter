@@ -63,7 +63,7 @@ public class ErrorTracker {
      * @param operation 操作名称
      * @param additionalInfo 额外信息
      */
-    public void trackError(final Throwable throwable,final String operation,final Map<String, Object> additionalInfo) {
+    public void trackError(final Throwable throwable, final String operation, final Map<String, Object> additionalInfo) {
         if (throwable == null) {
             return;
         }
@@ -139,7 +139,7 @@ public class ErrorTracker {
      * @param throwable 异常对象
      * @param operation 操作名称
      */
-    public void trackError(final Throwable throwable,final String operation) {
+    public void trackError(final Throwable throwable, final String operation) {
         trackError(throwable, operation, null);
     }
     
@@ -149,7 +149,7 @@ public class ErrorTracker {
      * @param throwable 异常对象
      * @param operation 操作名称
      */
-    private void updateErrorStatistics(final Throwable throwable,final String operation) {
+    private void updateErrorStatistics(final Throwable throwable, final String operation) {
         // 按异常类型统计
         String errorType = throwable.getClass().getName();
         errorTypeCounters.computeIfAbsent(errorType, k -> new AtomicLong(0)).incrementAndGet();
@@ -166,7 +166,7 @@ public class ErrorTracker {
      * @param operation 操作名称
      * @param context 追踪上下文
      */
-    private void aggregateError(final Throwable throwable,final String operation,final TracingContext context) {
+    private void aggregateError(final Throwable throwable, final String operation, final TracingContext context) {
         String errorKey = generateErrorKey(throwable, operation);
         ErrorAggregation aggregation = errorAggregations.computeIfAbsent(
             errorKey, 
@@ -197,7 +197,7 @@ public class ErrorTracker {
      * @param operation 操作名称
      * @return 错误键值
      */
-    private String generateErrorKey(final Throwable throwable,final String operation) {
+    private String generateErrorKey(final Throwable throwable, final String operation) {
         return throwable.getClass().getName() + ":" + (operation != null ? operation : "unknown");
     }
     
@@ -241,7 +241,7 @@ public class ErrorTracker {
         private final AtomicLong count = new AtomicLong(0);
         private final long firstOccurrence;
         
-        public ErrorAggregation(final String errorType,final String operation) {
+        public ErrorAggregation(final String errorType, final String operation) {
             this.errorType = errorType;
             this.operation = operation;
             this.firstOccurrence = System.currentTimeMillis();

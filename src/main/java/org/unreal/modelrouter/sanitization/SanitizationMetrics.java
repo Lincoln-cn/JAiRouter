@@ -154,7 +154,7 @@ public class SanitizationMetrics {
     /**
      * 记录内容大小
      */
-    public void recordContentSize(final long originalSize,final long sanitizedSize) {
+    public void recordContentSize(final long originalSize, final long sanitizedSize) {
         totalContentSize.addAndGet(originalSize);
         totalSanitizedSize.addAndGet(sanitizedSize);
         log.debug("记录内容大小: 原始={} bytes, 脱敏后={} bytes", originalSize, sanitizedSize);

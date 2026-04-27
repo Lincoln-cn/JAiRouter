@@ -79,7 +79,7 @@ public class RuleBasedSamplingStrategy implements SamplingStrategy {
      * @param attributes 属性集合
      * @return 是否匹配
      */
-    private boolean matchesRule(final TracingConfiguration.SamplingConfig.SamplingRule rule,final Map<String, Object> attributes) {
+    private boolean matchesRule(final TracingConfiguration.SamplingConfig.SamplingRule rule, final Map<String, Object> attributes) {
         String condition = rule.getCondition();
         if (condition == null || condition.isEmpty()) {
             return false;

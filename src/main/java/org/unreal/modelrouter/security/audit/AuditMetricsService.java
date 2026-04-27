@@ -115,7 +115,7 @@ public class AuditMetricsService {
     /**
      * 记录事件
      */
-    public void recordEvent(final String eventType,final boolean success) {
+    public void recordEvent(final String eventType, final boolean success) {
         totalEventsCount.incrementAndGet();
         auditEventsTotal.increment();
         

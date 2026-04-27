@@ -18,7 +18,7 @@ public class MetricsSupport {
     private final MetricsCollector metricsCollector;
     private final String adapterType;
 
-    public MetricsSupport(final MetricsCollector metricsCollector,final String adapterType) {
+    public MetricsSupport(final MetricsCollector metricsCollector, final String adapterType) {
         this.metricsCollector = metricsCollector;
         this.adapterType = adapterType;
     }
@@ -90,7 +90,7 @@ public class MetricsSupport {
     /**
      * 记录请求指标
      */
-    public void recordRequestMetrics(final String serviceType,final long requestSize,final long responseSize) {
+    public void recordRequestMetrics(final String serviceType, final long requestSize, final long responseSize) {
         if (metricsCollector != null) {
             metricsCollector.recordRequestSize(serviceType, requestSize, responseSize);
         }
@@ -99,7 +99,7 @@ public class MetricsSupport {
     /**
      * 记录响应时间指标
      */
-    public void recordResponseTimeMetrics(final String serviceType,final String method,final long responseTime,final String status) {
+    public void recordResponseTimeMetrics(final String serviceType, final String method, final long responseTime,final String status) {
         if (metricsCollector != null) {
             metricsCollector.recordRequest(serviceType, method, responseTime, status);
         }
@@ -108,7 +108,7 @@ public class MetricsSupport {
     /**
      * 记录后端调用指标
      */
-    public void recordBackendCall(final String instanceName,final long duration,final boolean success) {
+    public void recordBackendCall(final String instanceName, final long duration, final boolean success) {
         if (metricsCollector != null) {
             metricsCollector.recordBackendCall(adapterType, instanceName, duration, success);
         }
@@ -117,7 +117,7 @@ public class MetricsSupport {
     /**
      * 记录错误指标
      */
-    public void recordErrorMetrics(final String instanceName,final long responseTime,final String errorType) {
+    public void recordErrorMetrics(final String instanceName, final long responseTime, final String errorType) {
         if (metricsCollector != null) {
             metricsCollector.recordBackendCall(adapterType, instanceName, responseTime, false);
         }

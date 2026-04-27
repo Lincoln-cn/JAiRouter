@@ -47,7 +47,7 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     private volatile Instant lastSuccessTime;
     private volatile State previousState = State.CLOSED;
     
-    public CircuitBreakerTracingWrapper(final CircuitBreaker delegate,final StructuredLogger structuredLogger,final String instanceId) {
+    public CircuitBreakerTracingWrapper(final CircuitBreaker delegate, final StructuredLogger structuredLogger, final String instanceId) {
         this.delegate = delegate;
         this.structuredLogger = structuredLogger;
         this.instanceId = instanceId != null ? instanceId : "unknown";
@@ -250,7 +250,7 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     /**
      * 记录执行被允许
      */
-    private void recordExecutionAllowed(final TracingContext context,final Span span,final long checkTimeMs) {
+    private void recordExecutionAllowed(final TracingContext context, final Span span, final long checkTimeMs) {
         if (span != null) {
             span.setAttribute("cb.execution_allowed", true);
             span.setAttribute("cb.check_time_ms", checkTimeMs);
@@ -284,7 +284,7 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     /**
      * 记录执行被拒绝
      */
-    private void recordExecutionRejected(final TracingContext context,final Span span,final long checkTimeMs) {
+    private void recordExecutionRejected(final TracingContext context, final Span span, final long checkTimeMs) {
         if (span != null) {
             span.setAttribute("cb.execution_allowed", false);
             span.setAttribute("cb.check_time_ms", checkTimeMs);
@@ -338,7 +338,7 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     /**
      * 记录成功完成事件
      */
-    private void recordSuccessComplete(final TracingContext context,final Span span,final long operationTimeMs) {
+    private void recordSuccessComplete(final TracingContext context, final Span span, final long operationTimeMs) {
         if (span != null) {
             span.setAttribute("cb.operation_time_ms", operationTimeMs);
         }
@@ -377,7 +377,7 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     /**
      * 记录失败完成事件
      */
-    private void recordFailureComplete(final TracingContext context,final Span span,final long operationTimeMs) {
+    private void recordFailureComplete(final TracingContext context, final Span span, final long operationTimeMs) {
         if (span != null) {
             span.setAttribute("cb.operation_time_ms", operationTimeMs);
         }
@@ -404,7 +404,7 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     /**
      * 记录状态变化
      */
-    private void recordStateChange(final TracingContext context,final State fromState,final State toState) {
+    private void recordStateChange(final TracingContext context, final State fromState, final State toState) {
         // 记录状态变化事件
         if (context != null && context.isActive()) {
             Map<String, Object> eventAttributes = new HashMap<>();
@@ -461,7 +461,7 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     /**
      * 记录熔断器错误
      */
-    private void recordCircuitBreakerError(final TracingContext context,final Span span,final long operationTimeMs,final Exception error) {
+    private void recordCircuitBreakerError(final TracingContext context, final Span span, final long operationTimeMs,final Exception error) {
         if (span != null) {
             span.setAttribute("cb.operation_time_ms", operationTimeMs);
             span.setAttribute("cb.error", error.getMessage());

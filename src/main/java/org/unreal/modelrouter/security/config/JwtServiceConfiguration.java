@@ -98,7 +98,7 @@ public class JwtServiceConfiguration {
         private final JwtPersistenceService persistenceService;
         private final JwtBlacklistService blacklistService;
         
-        public JwtServiceHealthChecker(final JwtPersistenceService persistenceService,final JwtBlacklistService blacklistService) {
+        public JwtServiceHealthChecker(final JwtPersistenceService persistenceService, final JwtBlacklistService blacklistService) {
             this.persistenceService = persistenceService;
             this.blacklistService = blacklistService;
         }

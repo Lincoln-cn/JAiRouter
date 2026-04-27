@@ -271,19 +271,19 @@ public class ModelServiceRegistry {
     /**
      * 获取WebClient
      */
-    public WebClient getClient(final ServiceType serviceType,final String modelName,final String clientIp) {
+    public WebClient getClient(final ServiceType serviceType, final String modelName,final String clientIp) {
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
         return getWebClient(selectedInstance);
     }
 
-    public WebClient getClient(final ServiceType serviceType,final String modelName) {
+    public WebClient getClient(final ServiceType serviceType, final String modelName) {
         return getClient(serviceType, modelName, null);
     }
 
     /**
      * 获取模型路径
      */
-    public String getModelPath(final ServiceType serviceType,final String modelName) {
+    public String getModelPath(final ServiceType serviceType, final String modelName) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -321,7 +321,7 @@ public class ModelServiceRegistry {
     /**
      * 记录调用完成
      */
-    public void recordCallComplete(final ServiceType serviceType,final ModelRouterProperties.ModelInstance instance) {
+    public void recordCallComplete(final ServiceType serviceType, final ModelRouterProperties.ModelInstance instance) {
         LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
         if (loadBalancer != null) {
             loadBalancer.recordCallComplete(instance);
@@ -332,7 +332,7 @@ public class ModelServiceRegistry {
     /**
      * 记录调用失败
      */
-    public void recordCallFailure(final ServiceType serviceType,final ModelRouterProperties.ModelInstance instance) {
+    public void recordCallFailure(final ServiceType serviceType, final ModelRouterProperties.ModelInstance instance) {
         LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
         if (loadBalancer != null) {
             loadBalancer.recordCallFailure(instance);
@@ -432,7 +432,7 @@ public class ModelServiceRegistry {
     /**
      * 更新服务实例
      */
-    public void updateServiceInstances(final ServiceType serviceType,final List<ModelRouterProperties.ModelInstance> instances) {
+    public void updateServiceInstances(final ServiceType serviceType, final List<ModelRouterProperties.ModelInstance> instances) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -445,7 +445,7 @@ public class ModelServiceRegistry {
     /**
      * 更新服务适配器
      */
-    public void updateServiceAdapter(final ServiceType serviceType,final String adapter) {
+    public void updateServiceAdapter(final ServiceType serviceType, final String adapter) {
         String serviceKey = getServiceKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 

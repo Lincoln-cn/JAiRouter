@@ -1260,7 +1260,7 @@ public abstract class BaseAdapter implements ServiceCapability {
      * @param adapterType 适配器类型
      * @param error       错误信息
      */
-    protected void logAdapterTransformError(final String adapterType,final Throwable error) {
+    protected void logAdapterTransformError(final String adapterType, final Throwable error) {
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
                 org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {

@@ -779,7 +779,7 @@ public class ConfigurationHelper {
     /**
      * 创建单值Map
      */
-    private Map<String, Object> createSingleValueMap(final String key,final Object value) {
+    private Map<String, Object> createSingleValueMap(final String key, final Object value) {
         Map<String, Object> map = new HashMap<>();
         map.put(key, value);
         return map;
@@ -958,7 +958,7 @@ public class ConfigurationHelper {
      * @param rateLimitConfig 限流配置对象
      * @param rateLimitMap 限流配置Map
      */
-    public void updateRateLimitConfig(final ModelRouterProperties.RateLimitConfig rateLimitConfig,final Map<String, Object> rateLimitMap) {
+    public void updateRateLimitConfig(final ModelRouterProperties.RateLimitConfig rateLimitConfig, final Map<String, Object> rateLimitMap) {
         if (rateLimitConfig == null || rateLimitMap == null) {
             return;
         }
@@ -1004,7 +1004,7 @@ public class ConfigurationHelper {
      * @param circuitBreakerConfig 熔断器配置对象
      * @param circuitBreakerMap 熔断器配置Map
      */
-    public void updateCircuitBreakerConfig(final ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig,final Map<String, Object> circuitBreakerMap) {
+    public void updateCircuitBreakerConfig(final ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig, final Map<String, Object> circuitBreakerMap) {
         if (circuitBreakerConfig == null || circuitBreakerMap == null) {
             return;
         }
@@ -1041,7 +1041,7 @@ public class ConfigurationHelper {
      * @param fallbackConfig 降级配置对象
      * @param fallbackMap 降级配置Map
      */
-    public void updateFallbackConfig(final ModelRouterProperties.FallbackConfig fallbackConfig,final Map<String, Object> fallbackMap) {
+    public void updateFallbackConfig(final ModelRouterProperties.FallbackConfig fallbackConfig, final Map<String, Object> fallbackMap) {
         if (fallbackConfig == null || fallbackMap == null) {
             return;
         }

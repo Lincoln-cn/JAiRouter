@@ -56,7 +56,7 @@ public final class ServiceTypeConstants {
         private final String value;
         private final String description;
 
-        ServiceType(final String value,final String description) {
+        ServiceType(final String value, final String description) {
             this.value = value;
             this.description = description;
         }

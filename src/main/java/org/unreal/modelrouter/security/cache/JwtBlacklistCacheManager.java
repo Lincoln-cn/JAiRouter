@@ -42,7 +42,7 @@ public class JwtBlacklistCacheManager {
     /**
      * 添加令牌到黑名单缓存，带TTL管理
      */
-    public Mono<Void> addToBlacklistCache(final String tokenHash,final String reason,final String addedBy,final Duration ttl) {
+    public Mono<Void> addToBlacklistCache(final String tokenHash, final String reason,final String addedBy,final Duration ttl) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.error(new IllegalArgumentException("Token hash cannot be null or empty"));
         }
@@ -400,7 +400,7 @@ public class JwtBlacklistCacheManager {
             .reduce(0L, Long::sum);
     }
     
-    private Mono<Void> updateCacheStats(final int addedCount,final int cleanedCount) {
+    private Mono<Void> updateCacheStats(final int addedCount, final int cleanedCount) {
         return redisTemplate.opsForValue().get(STATS_KEY)
             .map(statsJson -> {
                 try {

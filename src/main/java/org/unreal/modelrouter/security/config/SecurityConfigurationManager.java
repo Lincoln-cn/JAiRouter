@@ -433,7 +433,7 @@ public class SecurityConfigurationManager implements SecurityConfigurationServic
     /**
      * 发布配置变更事件
      */
-    private void publishConfigurationChangeEvent(final String configType,final Object oldValue,final Object newValue) {
+    private void publishConfigurationChangeEvent(final String configType, final Object oldValue,final Object newValue) {
         try {
             SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
                 this, 

@@ -69,7 +69,7 @@ public class ModelCallAnalyzer {
      * @param modelName 模型名称
      * @return 统计对象
      */
-    public ModelCallStats getModelStats(final String serviceType,final String modelName) {
+    public ModelCallStats getModelStats(final String serviceType, final String modelName) {
         ModelCallStats stats = statsRepository.get(serviceType, modelName);
         if (stats != null) {
             // 更新 QPS
@@ -117,7 +117,7 @@ public class ModelCallAnalyzer {
      * @param ascending 是否升序
      * @return 分页结果
      */
-    public Map<String, Object> getAllModelStats(final String serviceType,final int page,final int size,final String sortBy,final boolean ascending) {
+    public Map<String, Object> getAllModelStats(final String serviceType, final int page, final int size,final String sortBy,final boolean ascending) {
         List<ModelCallStats> allStats = new ArrayList<>(statsRepository.getAllStats());
 
         // 过滤

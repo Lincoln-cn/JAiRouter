@@ -34,7 +34,7 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     private final LoadBalancer delegate;
     private final StructuredLogger structuredLogger;
     
-    public LoadBalancerTracingWrapper(final LoadBalancer delegate,final StructuredLogger structuredLogger) {
+    public LoadBalancerTracingWrapper(final LoadBalancer delegate, final StructuredLogger structuredLogger) {
         this.delegate = delegate;
         this.structuredLogger = structuredLogger;
     }
@@ -49,13 +49,13 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            final List<ModelRouterProperties.ModelInstance> instances,final String clientIp) {
+            final List<ModelRouterProperties.ModelInstance> instances, final String clientIp) {
         return selectInstance(instances, clientIp, "unknown");
     }
     
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            final List<ModelRouterProperties.ModelInstance> instances,final String clientIp,final String serviceType) {
+            final List<ModelRouterProperties.ModelInstance> instances, final String clientIp, final String serviceType) {
         
         TracingContext context = TracingContextHolder.getCurrentContext();
         Span span = null;
@@ -238,9 +238,9 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     /**
      * 记录成功选择
      */
-    private void recordSuccessfulSelection(final TracingContext context,final Span span, 
+    private void recordSuccessfulSelection(final TracingContext context, final Span span, 
                                          final ModelRouterProperties.ModelInstance selectedInstance,
-                                         final long decisionTimeMs,final String serviceType) {
+                                         final long decisionTimeMs, final String serviceType) {
         if (span != null) {
             // 设置选中实例属性
             span.setAttribute("lb.selected.name", selectedInstance.getName());
@@ -282,8 +282,8 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     /**
      * 记录失败选择
      */
-    private void recordFailedSelection(final TracingContext context,final Span span, 
-                                     final long decisionTimeMs,final String serviceType,final String errorMessage) {
+    private void recordFailedSelection(final TracingContext context, final Span span, 
+                                     final long decisionTimeMs, final String serviceType, final String errorMessage) {
         if (span != null) {
             span.setAttribute("lb.decision_time_ms", decisionTimeMs);
             span.setAttribute("lb.success", false);

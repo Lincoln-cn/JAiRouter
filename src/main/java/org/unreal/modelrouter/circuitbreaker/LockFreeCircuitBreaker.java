@@ -37,8 +37,8 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
 
-    public LockFreeCircuitBreaker(final String instanceId,final int failureThreshold,
-                                   final long timeout,final int successThreshold) {
+    public LockFreeCircuitBreaker(final String instanceId, final int failureThreshold,
+                                   final long timeout, final int successThreshold) {
         this.instanceId = instanceId;
         this.failureThreshold = failureThreshold;
         this.timeout = timeout;
@@ -196,7 +196,7 @@ public class LockFreeCircuitBreaker implements CircuitBreaker {
     /**
      * 记录熔断器指标
      */
-    private void recordCircuitBreakerEvent(final String event,final String currentState) {
+    private void recordCircuitBreakerEvent(final String event, final String currentState) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordCircuitBreaker(instanceId, currentState, event);

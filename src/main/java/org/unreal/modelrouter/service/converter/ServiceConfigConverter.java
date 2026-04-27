@@ -39,7 +39,7 @@ public class ServiceConfigConverter {
     /**
      * ServiceConfiguration → ServiceConfigDTO
      */
-    public ServiceConfigDTO toDTO(final ServiceConfiguration config,final String serviceType) {
+    public ServiceConfigDTO toDTO(final ServiceConfiguration config, final String serviceType) {
         if (config == null) {
             return null;
         }
@@ -75,7 +75,7 @@ public class ServiceConfigConverter {
     /**
      * ServiceConfiguration → ServiceConfigDTO (带实体信息)
      */
-    public ServiceConfigDTO toDTO(final ServiceConfiguration config,final ServiceConfigEntity entity) {
+    public ServiceConfigDTO toDTO(final ServiceConfiguration config, final ServiceConfigEntity entity) {
         if (config == null) {
             return null;
         }

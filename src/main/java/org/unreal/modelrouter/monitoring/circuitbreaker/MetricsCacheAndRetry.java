@@ -83,7 +83,7 @@ public class MetricsCacheAndRetry {
     /**
      * 缓存指标数据
      */
-    public void cacheMetric(final String key,final Object value,final Duration ttl) {
+    public void cacheMetric(final String key, final Object value, final Duration ttl) {
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
             // 检查缓存大小限制
@@ -107,7 +107,7 @@ public class MetricsCacheAndRetry {
      * 从缓存获取指标数据
      */
     @SuppressWarnings("unchecked")
-    public <T> T getCachedMetric(final String key,final Class<T> type) {
+    public <T> T getCachedMetric(final String key, final Class<T> type) {
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
             CachedMetric cached = metricsCache.get(key);
@@ -134,7 +134,7 @@ public class MetricsCacheAndRetry {
     /**
      * 带缓存的指标获取
      */
-    public <T> T getOrCompute(final String key,final Class<T> type,final Supplier<T> supplier,final Duration ttl) {
+    public <T> T getOrCompute(final String key, final Class<T> type, final Supplier<T> supplier,final Duration ttl) {
         T cached = getCachedMetric(key, type);
         if (cached != null) {
             return cached;
@@ -155,7 +155,7 @@ public class MetricsCacheAndRetry {
     /**
      * 异步执行指标操作，失败时加入重试队列
      */
-    public void executeWithRetry(final String operationId,final Runnable operation) {
+    public void executeWithRetry(final String operationId, final Runnable operation) {
         executeWithRetry(operationId, () -> {
             operation.run();
             return null;
@@ -165,7 +165,7 @@ public class MetricsCacheAndRetry {
     /**
      * 异步执行指标操作，失败时加入重试队列（带返回值）
      */
-    public <T> CompletableFuture<T> executeWithRetry(final String operationId,final Supplier<T> operation) {
+    public <T> CompletableFuture<T> executeWithRetry(final String operationId, final Supplier<T> operation) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return operation.get();
@@ -310,7 +310,7 @@ public class MetricsCacheAndRetry {
         private final Instant expiryTime;
         private final Instant createdAt;
         
-        public CachedMetric(final Object value,final Instant expiryTime) {
+        public CachedMetric(final Object value, final Instant expiryTime) {
             this.value = value;
             this.expiryTime = expiryTime;
             this.createdAt = Instant.now();
@@ -338,7 +338,7 @@ public class MetricsCacheAndRetry {
         private final int attempts;
         private final Exception lastError;
         
-        public RetryableMetric(final String operationId,final Supplier<?> operation,final int attempts,final Exception lastError) {
+        public RetryableMetric(final String operationId, final Supplier<?> operation, final int attempts,final Exception lastError) {
             this.operationId = operationId;
             this.operation = operation;
             this.attempts = attempts;
@@ -360,7 +360,7 @@ public class MetricsCacheAndRetry {
         private final int activeRetries;
         private final int queuedRetries;
         
-        public CacheStats(final int currentSize,final int maxSize,final int activeRetries,final int queuedRetries) {
+        public CacheStats(final int currentSize, final int maxSize, final int activeRetries,final int queuedRetries) {
             this.currentSize = currentSize;
             this.maxSize = maxSize;
             this.activeRetries = activeRetries;

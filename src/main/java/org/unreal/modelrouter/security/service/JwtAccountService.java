@@ -76,7 +76,7 @@ public class JwtAccountService {
      * 更新账户
      */
     @Transactional
-    public JwtAccountDTO updateAccount(final String username,final CreateJwtAccountRequest request) {
+    public JwtAccountDTO updateAccount(final String username, final CreateJwtAccountRequest request) {
         JwtAccountEntity entity = jwtAccountRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + username));
 
@@ -110,7 +110,7 @@ public class JwtAccountService {
     /**
      * 验证密码
      */
-    public boolean verifyPassword(final String username,final String password) {
+    public boolean verifyPassword(final String username, final String password) {
         return jwtAccountRepository.findByUsername(username)
                 .map(entity -> passwordEncoder.matches(password, entity.getPassword()))
                 .orElse(false);
@@ -120,7 +120,7 @@ public class JwtAccountService {
      * 切换账户状态
      */
     @Transactional
-    public JwtAccountDTO toggleAccountStatus(final String username,final boolean enabled) {
+    public JwtAccountDTO toggleAccountStatus(final String username, final boolean enabled) {
         JwtAccountEntity entity = jwtAccountRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Account not found: " + username));
         entity.setEnabled(enabled);

@@ -51,7 +51,7 @@ public class InstanceSelector {
         final long timestamp;
         final int consecutiveFailures;
 
-        HealthStatus(final boolean healthy,final int consecutiveFailures) {
+        HealthStatus(final boolean healthy, final int consecutiveFailures) {
             this.healthy = healthy;
             this.timestamp = System.currentTimeMillis();
             this.consecutiveFailures = consecutiveFailures;

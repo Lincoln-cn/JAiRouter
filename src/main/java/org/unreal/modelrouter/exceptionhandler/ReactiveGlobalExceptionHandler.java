@@ -50,7 +50,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     }
 
     @Override
-    public Mono<Void> handle(final ServerWebExchange exchange,final Throwable ex) {
+    public Mono<Void> handle(final ServerWebExchange exchange, final Throwable ex) {
         ServerHttpResponse response = exchange.getResponse();
         logger.debug("响应状态: committed={}, status={}", response.isCommitted(), response.getStatusCode());
 
@@ -160,7 +160,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 安全地设置响应
      */
-    private Mono<Void> setResponse(final ServerHttpResponse response,final RouterResponse<Void> errorResponse,final HttpStatus status) {
+    private Mono<Void> setResponse(final ServerHttpResponse response, final RouterResponse<Void> errorResponse, final HttpStatus status) {
         try {
             // 检查响应是否已提交
             if (response.isCommitted()) {
@@ -198,7 +198,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理安全异常
      */
-    private Mono<Void> handleSecurityException(final ServerWebExchange exchange,final SecurityException ex) {
+    private Mono<Void> handleSecurityException(final ServerWebExchange exchange, final SecurityException ex) {
         // 根据异常类型进行不同的处理
         if (ex instanceof AuthenticationException) {
             return handleAuthenticationException(exchange, (AuthenticationException) ex);
@@ -214,7 +214,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理认证异常
      */
-    private Mono<Void> handleAuthenticationException(final ServerWebExchange exchange,final AuthenticationException ex) {
+    private Mono<Void> handleAuthenticationException(final ServerWebExchange exchange, final AuthenticationException ex) {
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
@@ -224,7 +224,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理授权异常
      */
-    private Mono<Void> handleAuthorizationException(final ServerWebExchange exchange,final AuthorizationException ex) {
+    private Mono<Void> handleAuthorizationException(final ServerWebExchange exchange, final AuthorizationException ex) {
         logger.warn("授权失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());
@@ -234,7 +234,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理数据脱敏异常
      */
-    private Mono<Void> handleSanitizationException(final ServerWebExchange exchange,final SanitizationException ex) {
+    private Mono<Void> handleSanitizationException(final ServerWebExchange exchange, final SanitizationException ex) {
         // 记录完整的异常堆栈信息
         logger.error("数据脱敏异常: {} - {}\n{}", ex.getErrorCode(), ex.getMessage(), getStackTraceAsString(ex), ex);
         
@@ -245,7 +245,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理通用安全异常
      */
-    private Mono<Void> handleGenericSecurityException(final ServerWebExchange exchange,final SecurityException ex) {
+    private Mono<Void> handleGenericSecurityException(final ServerWebExchange exchange, final SecurityException ex) {
         // 记录完整的异常堆栈信息
         logger.error("安全异常: {} - {}\n{}", ex.getErrorCode(), ex.getMessage(), getStackTraceAsString(ex), ex);
         
@@ -267,7 +267,7 @@ public class ReactiveGlobalExceptionHandler implements ErrorWebExceptionHandler 
     /**
      * 处理Spring Security认证异常
      */
-    private Mono<Void> handleSecurityAuthenticationException(final ServerWebExchange exchange,final SecurityAuthenticationException ex) {
+    private Mono<Void> handleSecurityAuthenticationException(final ServerWebExchange exchange, final SecurityAuthenticationException ex) {
         logger.warn("认证失败: {} - {}", ex.getErrorCode(), ex.getMessage(), ex);
         
         RouterResponse<Void> errorResponse = RouterResponse.error(ex.getMessage(), ex.getErrorCode());

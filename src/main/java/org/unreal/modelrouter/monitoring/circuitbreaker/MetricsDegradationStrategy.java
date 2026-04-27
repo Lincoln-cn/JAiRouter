@@ -42,7 +42,7 @@ public class MetricsDegradationStrategy {
         private final double samplingRate;
         private final String description;
         
-        DegradationLevel(final int level,final double samplingRate,final String description) {
+        DegradationLevel(final int level, final double samplingRate, final String description) {
             this.level = level;
             this.samplingRate = samplingRate;
             this.description = description;
@@ -94,7 +94,7 @@ public class MetricsDegradationStrategy {
     /**
      * 根据系统状态自动调整降级级别
      */
-    public void evaluateAndAdjustDegradation(final double memoryUsageRatio,final int totalErrors) {
+    public void evaluateAndAdjustDegradation(final double memoryUsageRatio, final int totalErrors) {
         if (!autoModeEnabled.get()) {
             return;
         }
@@ -113,7 +113,7 @@ public class MetricsDegradationStrategy {
     /**
      * 计算最优降级级别
      */
-    private DegradationLevel calculateOptimalDegradationLevel(final double memoryUsageRatio,final int totalErrors) {
+    private DegradationLevel calculateOptimalDegradationLevel(final double memoryUsageRatio, final int totalErrors) {
         // 基于内存使用率的降级
         DegradationLevel memoryBasedLevel = DegradationLevel.NONE;
         if (memoryUsageRatio >= MEMORY_THRESHOLD_EMERGENCY) {
@@ -274,8 +274,8 @@ public class MetricsDegradationStrategy {
         private final Duration timeSinceLastChange;
         private final int errorComponentCount;
         
-        public DegradationStatus(final DegradationLevel level,final double samplingRate, 
-                               final boolean autoModeEnabled,final Duration timeSinceLastChange, 
+        public DegradationStatus(final DegradationLevel level, final double samplingRate, 
+                               final boolean autoModeEnabled, final Duration timeSinceLastChange, 
                                final int errorComponentCount) {
             this.level = level;
             this.samplingRate = samplingRate;

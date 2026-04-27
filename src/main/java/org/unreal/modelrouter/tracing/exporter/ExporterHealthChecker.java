@@ -164,7 +164,7 @@ public class ExporterHealthChecker implements HealthIndicator {
     /**
      * 更新健康状态
      */
-    private void updateHealthStatus(final boolean healthy,final String error) {
+    private void updateHealthStatus(final boolean healthy, final String error) {
         lastCheckTime.set(Instant.now());
         
         if (healthy) {

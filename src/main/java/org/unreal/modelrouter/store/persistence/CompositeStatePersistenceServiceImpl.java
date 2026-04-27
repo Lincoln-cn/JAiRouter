@@ -93,26 +93,26 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
     }
 
     @Override
-    public Mono<Boolean> save(final StateType stateType,final String key,final Map<String, Object> stateData) {
+    public Mono<Boolean> save(final StateType stateType, final String key,final Map<String, Object> stateData) {
         return executeWithFallback(
                 () -> activeService.save(stateType, key, stateData),
                 stateType, key);
     }
 
     @Override
-    public Mono<Map<String, Object>> load(final StateType stateType,final String key) {
+    public Mono<Map<String, Object>> load(final StateType stateType, final String key) {
         return executeWithFallbackRead(stateType, key);
     }
 
     @Override
-    public Mono<Boolean> delete(final StateType stateType,final String key) {
+    public Mono<Boolean> delete(final StateType stateType, final String key) {
         return executeWithFallback(
                 () -> activeService.delete(stateType, key),
                 stateType, key);
     }
 
     @Override
-    public Mono<Boolean> exists(final StateType stateType,final String key) {
+    public Mono<Boolean> exists(final StateType stateType, final String key) {
         return activeService.exists(stateType, key);
     }
 
@@ -122,14 +122,14 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
     }
 
     @Override
-    public Mono<Integer> saveBatch(final StateType stateType,final Map<String, Map<String, Object>> states) {
+    public Mono<Integer> saveBatch(final StateType stateType, final Map<String, Map<String, Object>> states) {
         return executeWithFallbackBatch(
                 () -> activeService.saveBatch(stateType, states),
                 stateType);
     }
 
     @Override
-    public Mono<Map<String, Map<String, Object>>> loadBatch(final StateType stateType,final Iterable<String> keys) {
+    public Mono<Map<String, Map<String, Object>>> loadBatch(final StateType stateType, final Iterable<String> keys) {
         return executeWithFallbackReadBatch(stateType, keys);
     }
 
@@ -206,7 +206,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
 
     private Mono<Boolean> executeWithFallback(
             java.util.function.Supplier<Mono<Boolean>> operation,
-            final StateType stateType,final String key) {
+            final StateType stateType, final String key) {
         return operation.get()
                 .onErrorResume(e -> {
                     logger.warn("Operation failed on tier {}, trying fallback: {}", 
@@ -217,7 +217,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
 
     private Mono<Boolean> tryFallbackOperation(
             java.util.function.Supplier<Mono<Boolean>> originalOperation,
-            final StateType stateType,final String key) {
+            final StateType stateType, final String key) {
         int currentPriority = getActiveTierPriority();
         
         List<StatePersistenceService> lowerTierServices = persistenceServices.stream()
@@ -237,7 +237,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
         return Mono.just(false);
     }
 
-    private Mono<Map<String, Object>> executeWithFallbackRead(final StateType stateType,final String key) {
+    private Mono<Map<String, Object>> executeWithFallbackRead(final StateType stateType, final String key) {
         return activeService.load(stateType, key)
                 .flatMap(data -> {
                     if (data.isEmpty()) {
@@ -254,7 +254,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
                 });
     }
 
-    private Mono<Map<String, Object>> tryFallbackRead(final StateType stateType,final String key) {
+    private Mono<Map<String, Object>> tryFallbackRead(final StateType stateType, final String key) {
         int currentPriority = getActiveTierPriority();
         
         List<StatePersistenceService> lowerTierServices = persistenceServices.stream()
@@ -304,7 +304,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
     }
 
     private Mono<Map<String, Map<String, Object>>> executeWithFallbackReadBatch(
-            final StateType stateType,final Iterable<String> keys) {
+            final StateType stateType, final Iterable<String> keys) {
         return activeService.loadBatch(stateType, keys)
                 .onErrorResume(e -> {
                     logger.warn("Batch load failed on tier {}, trying fallback: {}", 

@@ -113,7 +113,7 @@ public class SecurityUtils {
      * @param visibleChars 可见字符数（前后各保留的字符数）
      * @return 掩码后的字符串
      */
-    public static String maskSensitiveInfo(final String input,final char maskChar,final int visibleChars) {
+    public static String maskSensitiveInfo(final String input, final char maskChar, final int visibleChars) {
         if (input == null || input.length() <= visibleChars * 2) {
             return input;
         }
@@ -157,7 +157,7 @@ public class SecurityUtils {
      * @param b 字符串b
      * @return 是否相等
      */
-    public static boolean secureEquals(final String a,final String b) {
+    public static boolean secureEquals(final String a, final String b) {
         if (a == null || b == null) {
             return a == b;
         }

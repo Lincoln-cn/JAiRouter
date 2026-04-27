@@ -97,7 +97,7 @@ public class TracingWrapperFactory {
      * @param instanceId 实例ID
      * @return 包装后的CircuitBreaker，如果追踪未启用则返回原始实例
      */
-    public CircuitBreaker wrapCircuitBreaker(final CircuitBreaker delegate,final String instanceId) {
+    public CircuitBreaker wrapCircuitBreaker(final CircuitBreaker delegate, final String instanceId) {
         if (!isComponentTracingEnabled("circuitbreaker") || delegate == null) {
             log.debug("CircuitBreaker追踪功能未启用或实例为空，返回原始实例");
             return delegate;

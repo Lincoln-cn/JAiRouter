@@ -24,11 +24,11 @@ public class SecurityReport {
     public SecurityReport() {
     }
 
-    public SecurityReport(final LocalDateTime reportPeriodStart,final LocalDateTime reportPeriodEnd, 
-                         final long totalJwtOperations,final long totalApiKeyOperations, 
-                         final long failedAuthentications,final long suspiciousActivities,
-                         final Map<String, Long> operationsByType,final Map<String, Long> operationsByUser,
-                         final List<String> topIpAddresses,final List<SecurityAlert> alerts) {
+    public SecurityReport(final LocalDateTime reportPeriodStart, final LocalDateTime reportPeriodEnd, 
+                         final long totalJwtOperations, final long totalApiKeyOperations, 
+                         final long failedAuthentications, final long suspiciousActivities,
+                         final Map<String, Long> operationsByType, final Map<String, Long> operationsByUser,
+                         final List<String> topIpAddresses, final List<SecurityAlert> alerts) {
         this.reportPeriodStart = reportPeriodStart;
         this.reportPeriodEnd = reportPeriodEnd;
         this.totalJwtOperations = totalJwtOperations;

@@ -48,7 +48,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 更新基础配置
      */
-    public boolean updateBasicConfig(final boolean enabled,final String prefix,final Duration collectionInterval,final Set<String> enabledCategories) {
+    public boolean updateBasicConfig(final boolean enabled, final String prefix, final Duration collectionInterval,final Set<String> enabledCategories) {
         try {
             boolean changed = false;
             
@@ -143,7 +143,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 验证配置变更
      */
-    public boolean validateConfigurationChange(final String key,final Object newValue) {
+    public boolean validateConfigurationChange(final String key, final Object newValue) {
         try {
             switch (key) {
                 case "enabled":
@@ -172,7 +172,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 回滚配置变更
      */
-    public void rollbackConfiguration(final String key,final Object oldValue) {
+    public void rollbackConfiguration(final String key, final Object oldValue) {
         try {
             switch (key) {
                 case "enabled":
@@ -223,7 +223,7 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 发布配置变更事件
      */
-    private void publishConfigurationChangeEvent(final String configType,final Object oldValue,final Object newValue) {
+    private void publishConfigurationChangeEvent(final String configType, final Object oldValue, final Object newValue) {
         String changeId = UUID.randomUUID().toString();
         MonitorConfigurationChangeEvent event = new MonitorConfigurationChangeEvent(this, changeId , configType, oldValue, newValue);
         eventPublisher.publishEvent(event);

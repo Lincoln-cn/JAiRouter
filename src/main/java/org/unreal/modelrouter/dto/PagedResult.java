@@ -20,7 +20,7 @@ public class PagedResult<T> {
     public PagedResult() {
     }
 
-    public PagedResult(final List<T> content,final int page,final int size,final long totalElements) {
+    public PagedResult(final List<T> content, final int page,final int size,final long totalElements) {
         this.content = content;
         this.page = page;
         this.size = size;

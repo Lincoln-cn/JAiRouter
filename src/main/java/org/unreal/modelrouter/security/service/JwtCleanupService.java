@@ -56,8 +56,8 @@ public interface JwtCleanupService {
         public CleanupResult() {
         }
         
-        public CleanupResult(final long removedTokens,final long removedBlacklistEntries, 
-                           final LocalDateTime startTime,final LocalDateTime endTime,final boolean success) {
+        public CleanupResult(final long removedTokens, final long removedBlacklistEntries, 
+                           final LocalDateTime startTime, final LocalDateTime endTime,final boolean success) {
             this.removedTokens = removedTokens;
             this.removedBlacklistEntries = removedBlacklistEntries;
             this.startTime = startTime;

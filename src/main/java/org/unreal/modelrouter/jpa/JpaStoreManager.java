@@ -30,7 +30,7 @@ public class JpaStoreManager implements StoreManager {
 
     @Override
     @Transactional
-    public void saveConfig(final String key,final Map<String, Object> config) {
+    public void saveConfig(final String key, final Map<String, Object> config) {
         if (config == null || config.isEmpty()) {
             return;
         }
@@ -89,14 +89,14 @@ public class JpaStoreManager implements StoreManager {
     }
 
     @Override
-    public void updateConfig(final String key,final Map<String, Object> config) {
+    public void updateConfig(final String key, final Map<String, Object> config) {
         // 更新操作与保存相同
         saveConfig(key, config);
     }
 
     @Override
     @Transactional
-    public void saveConfigVersion(final String key,final Map<String, Object> config,final int version) {
+    public void saveConfigVersion(final String key, final Map<String, Object> config,final int version) {
         if (config == null || config.isEmpty()) {
             return;
         }
@@ -128,7 +128,7 @@ public class JpaStoreManager implements StoreManager {
     }
 
     @Override
-    public Map<String, Object> getConfigByVersion(final String key,final int version) {
+    public Map<String, Object> getConfigByVersion(final String key, final int version) {
         return configRepository.findByConfigKeyAndVersion(key, version)
                 .map(this::deserializeConfig)
                 .orElse(null);
@@ -136,7 +136,7 @@ public class JpaStoreManager implements StoreManager {
 
     @Override
     @Transactional
-    public void deleteConfigVersion(final String key,final int version) {
+    public void deleteConfigVersion(final String key, final int version) {
         configRepository.deleteByConfigKeyAndVersion(key, version);
         log.info("Deleted config version for key: {}, version: {}", key, version);
     }
@@ -147,13 +147,13 @@ public class JpaStoreManager implements StoreManager {
     }
 
     @Override
-    public String getVersionFilePath(final String key,final int version) {
+    public String getVersionFilePath(final String key, final int version) {
         // JPA 存储不基于文件，返回标识信息
         return "jpa://" + key + "/v" + version;
     }
 
     @Override
-    public LocalDateTime getVersionCreatedTime(final String key,final int version) {
+    public LocalDateTime getVersionCreatedTime(final String key, final int version) {
         return configRepository.findByConfigKeyAndVersion(key, version)
                 .map(ConfigEntity::getCreatedAt)
                 .orElse(null);

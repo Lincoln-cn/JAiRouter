@@ -592,7 +592,7 @@ public class ConfigurationValidator {
         
         return false;
     }
-    public void validateServiceConfig(final String serviceType,final Map<String, Object> serviceConfig,final List<String> errors,final List<String> warnings) {
+    public void validateServiceConfig(final String serviceType, final Map<String, Object> serviceConfig, final List<String> errors,final List<String> warnings) {
         if (serviceType == null || serviceType.trim().isEmpty()) {
             errors.add("服务类型不能为空");
             return;

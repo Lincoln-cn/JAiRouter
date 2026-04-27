@@ -200,7 +200,7 @@ public class ConfigVersionManager {
      * @param userId      用户 ID
      * @return 新版本号
      */
-    public int saveAsNewVersion(final Map<String, Object> config,final String description,final String userId) {
+    public int saveAsNewVersion(final Map<String, Object> config, final String description, final String userId) {
         versionCreationLock.lock();
         try {
             return saveAsNewVersionInternal(config, description, userId);
@@ -212,7 +212,7 @@ public class ConfigVersionManager {
     /**
      * 内部版本保存方法
      */
-    private int saveAsNewVersionInternal(final Map<String, Object> config,final String description,final String userId) {
+    private int saveAsNewVersionInternal(final Map<String, Object> config, final String description, final String userId) {
         try {
             // 调用链追踪：记录调用来源
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -490,7 +490,7 @@ public class ConfigVersionManager {
      * @param version2 版本 2
      * @return 比较结果
      */
-    public Map<String, Object> compareVersions(final int version1,final int version2) {
+    public Map<String, Object> compareVersions(final int version1, final int version2) {
         Map<String, Object> config1 = getVersionConfig(version1);
         Map<String, Object> config2 = getVersionConfig(version2);
 
@@ -545,7 +545,7 @@ public class ConfigVersionManager {
     /**
      * 智能配置比较，检查配置是否真正发生变化
      */
-    private boolean isConfigurationChanged(final Map<String, Object> currentConfig,final Map<String, Object> newConfig) {
+    private boolean isConfigurationChanged(final Map<String, Object> currentConfig, final Map<String, Object> newConfig) {
         if (currentConfig == null && newConfig == null) {
             return false;
         }
@@ -616,7 +616,7 @@ public class ConfigVersionManager {
     /**
      * 深度比较两个配置对象
      */
-    private boolean deepEquals(final Map<String, Object> config1,final Map<String, Object> config2) {
+    private boolean deepEquals(final Map<String, Object> config1, final Map<String, Object> config2) {
         if (config1.size() != config2.size()) {
             return false;
         }
@@ -655,7 +655,7 @@ public class ConfigVersionManager {
      * 深度比较两个列表
      */
     @SuppressWarnings("unchecked")
-    private boolean deepEquals(final List<Object> list1,final List<Object> list2) {
+    private boolean deepEquals(final List<Object> list1, final List<Object> list2) {
         if (list1.size() != list2.size()) {
             return false;
         }
@@ -714,7 +714,7 @@ public class ConfigVersionManager {
     /**
      * 记录配置回滚的审计日志
      */
-    private void logConfigurationRollback(final int version,final Map<String, Object> config) {
+    private void logConfigurationRollback(final int version, final Map<String, Object> config) {
         logger.info("配置回滚到版本 {}: 操作类型=ROLLBACK, 目标版本={}", version, version);
     }
 
@@ -728,7 +728,7 @@ public class ConfigVersionManager {
     /**
      * 保存元数据
      */
-    private void saveMetadata(final String key,final ConfigMetadata metadata) {
+    private void saveMetadata(final String key, final ConfigMetadata metadata) {
         // 元数据保存到内存和文件备份
         configMetadataMap.put(key, metadata);
         logger.debug("元数据已保存：{}", key);
@@ -737,7 +737,7 @@ public class ConfigVersionManager {
     /**
      * 保存版本历史
      */
-    private void saveVersionHistory(final String key,final List<VersionInfo> versionHistory) {
+    private void saveVersionHistory(final String key, final List<VersionInfo> versionHistory) {
         versionHistoryMap.put(key, versionHistory);
         logger.debug("版本历史已保存：{}", key);
     }

@@ -19,7 +19,7 @@ public class SecurityAlert {
     public SecurityAlert() {
     }
 
-    public SecurityAlert(final String alertType,final String message,final String userId,final String ipAddress,final LocalDateTime timestamp) {
+    public SecurityAlert(final String alertType, final String message,final String userId,final String ipAddress,final LocalDateTime timestamp) {
         this.alertType = alertType;
         this.message = message;
         this.userId = userId;
@@ -27,8 +27,8 @@ public class SecurityAlert {
         this.timestamp = timestamp;
     }
 
-    public SecurityAlert(final String id,final String alertType,final String severity,final String message, 
-                        final String userId,final String ipAddress,final LocalDateTime timestamp,final boolean resolved) {
+    public SecurityAlert(final String id, final String alertType,final String severity,final String message, 
+                        final String userId, final String ipAddress,final LocalDateTime timestamp,final boolean resolved) {
         this.id = id;
         this.alertType = alertType;
         this.severity = severity;

@@ -241,7 +241,7 @@ public class MetricsCircuitBreaker {
         private final int requestCount;
         private final double failureRate;
 
-        public CircuitBreakerStats(final String state,final int failureCount,final int successCount,final int requestCount,final double failureRate) {
+        public CircuitBreakerStats(final String state, final int failureCount, final int successCount,final int requestCount,final double failureRate) {
             this.state = state;
             this.failureCount = failureCount;
             this.successCount = successCount;

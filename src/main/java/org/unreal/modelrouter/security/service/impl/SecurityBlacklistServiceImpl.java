@@ -40,7 +40,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     @Override
     @Transactional
-    public BlacklistEntryDTO addToBlacklist(final AddBlacklistRequest request,final String addedBy) {
+    public BlacklistEntryDTO addToBlacklist(final AddBlacklistRequest request, final String addedBy) {
         log.info("添加到黑名单: type={}, value={}, addedBy={}",
                 request.getBlacklistType(), maskTargetValue(request.getBlacklistType(), request.getTargetValue()), addedBy);
 
@@ -109,7 +109,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     @Override
     @Transactional
-    public boolean removeFromBlacklist(final BlacklistType type,final String targetValue) {
+    public boolean removeFromBlacklist(final BlacklistType type, final String targetValue) {
         log.info("从黑名单移除: type={}, value={}", type, maskTargetValue(type.name(), targetValue));
 
         Optional<SecurityBlacklistEntity> entity = repository.findByBlacklistTypeAndTargetValue(type, targetValue);
@@ -122,7 +122,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     }
 
     @Override
-    public boolean isInBlacklist(final BlacklistType type,final String targetValue) {
+    public boolean isInBlacklist(final BlacklistType type, final String targetValue) {
         return repository.isActiveInBlacklist(type, targetValue, BlacklistStatus.ACTIVE, LocalDateTime.now());
     }
 
@@ -158,7 +158,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     }
 
     @Override
-    public Page<BlacklistEntryDTO> getBlacklistPage(final BlacklistType type,final String status,final int page,final int size) {
+    public Page<BlacklistEntryDTO> getBlacklistPage(final BlacklistType type, final String status,final int page,final int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "addedAt"));
 
         Page<SecurityBlacklistEntity> entityPage;
@@ -223,7 +223,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     @Override
     @Transactional
-    public int batchAddToBlacklist(final Iterable<AddBlacklistRequest> requests,final String addedBy) {
+    public int batchAddToBlacklist(final Iterable<AddBlacklistRequest> requests, final String addedBy) {
         int count = 0;
         for (AddBlacklistRequest request : requests) {
             try {
@@ -256,7 +256,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
         }
     }
 
-    private String maskTargetValue(final String type,final String value) {
+    private String maskTargetValue(final String type, final String value) {
         if (value == null || value.length() < 8) {
             return value == null ? "null" : value;
         }

@@ -54,7 +54,7 @@ public class HealthCheckTracingEnhancer {
      * @param instance    服务实例
      * @return 追踪上下文
      */
-    public TracingContext createHealthCheckContext(final String serviceType,final ModelRouterProperties.ModelInstance instance) {
+    public TracingContext createHealthCheckContext(final String serviceType, final ModelRouterProperties.ModelInstance instance) {
         // 创建独立的追踪上下文用于健康检查
         TracingContext context = new DefaultTracingContext(tracer);
 
@@ -79,7 +79,7 @@ public class HealthCheckTracingEnhancer {
      * @param instance    服务实例
      * @param context     追踪上下文
      */
-    public void logHealthCheckStart(final String serviceType,final ModelRouterProperties.ModelInstance instance,
+    public void logHealthCheckStart(final String serviceType, final ModelRouterProperties.ModelInstance instance,
                                     final TracingContext context) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("service_type", serviceType);
@@ -101,8 +101,8 @@ public class HealthCheckTracingEnhancer {
      * @param message      检查结果消息
      * @param context      追踪上下文
      */
-    public void logHealthCheckComplete(final String serviceType,final ModelRouterProperties.ModelInstance instance,
-                                       final boolean healthy,final long responseTime,final String message,final TracingContext context) {
+    public void logHealthCheckComplete(final String serviceType, final ModelRouterProperties.ModelInstance instance,
+                                       final boolean healthy, final long responseTime,final String message,final TracingContext context) {
         // 更新Span状态
         Span currentSpan = context.getCurrentSpan();
         if (currentSpan != null && currentSpan.isRecording()) {
@@ -162,8 +162,8 @@ public class HealthCheckTracingEnhancer {
      * @param currentState  当前状态
      * @param reason        状态变化原因
      */
-    public void logInstanceStateChange(final String serviceType,final ModelRouterProperties.ModelInstance instance,
-                                       final boolean previousState,final boolean currentState,final String reason) {
+    public void logInstanceStateChange(final String serviceType, final ModelRouterProperties.ModelInstance instance,
+                                       final boolean previousState, final boolean currentState,final String reason) {
         // 创建独立的追踪上下文用于状态变化事件
         TracingContext context = new DefaultTracingContext(tracer);
 
@@ -217,8 +217,8 @@ public class HealthCheckTracingEnhancer {
      * @param totalInstances     总实例数
      * @param healthyInstances   健康实例数
      */
-    public void logServiceStateChange(final String serviceType,final boolean hasHealthyInstance,
-                                      final int totalInstances,final int healthyInstances) {
+    public void logServiceStateChange(final String serviceType, final boolean hasHealthyInstance,
+                                      final int totalInstances, final int healthyInstances) {
         // 创建独立的追踪上下文用于服务状态变化
         TracingContext context = new DefaultTracingContext(tracer);
 
@@ -275,8 +275,8 @@ public class HealthCheckTracingEnhancer {
      * @param healthyInstances 健康实例数
      * @param checkDuration    检查总耗时
      */
-    public void logHealthCheckBatchComplete(final int totalServices,final int healthyServices,
-                                            final int totalInstances,final int healthyInstances,final long checkDuration) {
+    public void logHealthCheckBatchComplete(final int totalServices, final int healthyServices,
+                                            final int totalInstances, final int healthyInstances,final long checkDuration) {
         // 创建独立的追踪上下文用于批次完成事件
         TracingContext context = new DefaultTracingContext(tracer);
 
@@ -339,7 +339,7 @@ public class HealthCheckTracingEnhancer {
      * @param serviceType 服务类型
      * @param instance 服务实例
      */
-    public void logServiceInstanceRegistered(final String serviceType,final ModelRouterProperties.ModelInstance instance) {
+    public void logServiceInstanceRegistered(final String serviceType, final ModelRouterProperties.ModelInstance instance) {
         // 创建独立的追踪上下文用于服务注册事件
         TracingContext context = new DefaultTracingContext(tracer);
         
@@ -372,7 +372,7 @@ public class HealthCheckTracingEnhancer {
      * @param serviceType 服务类型
      * @param instance 服务实例
      */
-    public void logServiceInstanceDiscovered(final String serviceType,final ModelRouterProperties.ModelInstance instance) {
+    public void logServiceInstanceDiscovered(final String serviceType, final ModelRouterProperties.ModelInstance instance) {
         // 创建独立的追踪上下文用于服务发现事件
         TracingContext context = new DefaultTracingContext(tracer);
         

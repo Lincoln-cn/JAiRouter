@@ -43,7 +43,7 @@ public class ServiceStateManager {
      * @param instance    模型实例
      * @return 实例是否健康
      */
-    public boolean isInstanceHealthy(final String serviceType,final ModelRouterProperties.ModelInstance instance) {
+    public boolean isInstanceHealthy(final String serviceType, final ModelRouterProperties.ModelInstance instance) {
         // 使用实例的唯一ID作为键
         String instanceKey = serviceType + ":" + instance.getInstanceId();
         return instanceHealthStatus.getOrDefault(instanceKey, true); // 默认认为是健康的
@@ -100,7 +100,7 @@ public class ServiceStateManager {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public boolean isInstanceHealthy(final String serviceType,final String instanceName ,final String baseUrl) {
+    public boolean isInstanceHealthy(final String serviceType, final String instanceName , final String baseUrl) {
         // v2.3.3 修复：不再使用 name@baseUrl 作为键
         log.warn("isInstanceHealthy(String, String, String) 已废弃，请使用 isInstanceHealthyByKey(String)");
         return true;
@@ -112,7 +112,7 @@ public class ServiceStateManager {
      * @param serviceType 服务类型
      * @param isHealthy   是否健康
      */
-    public void updateServiceHealthStatus(final String serviceType,final boolean isHealthy) {
+    public void updateServiceHealthStatus(final String serviceType, final boolean isHealthy) {
         serviceHealthStatus.put(serviceType, isHealthy);
     }
 
@@ -123,7 +123,7 @@ public class ServiceStateManager {
      * @param instance    实例
      * @param isHealthy   是否健康
      */
-    public void updateInstanceHealthStatus(final String serviceType,final ModelRouterProperties.ModelInstance instance,final boolean isHealthy) {
+    public void updateInstanceHealthStatus(final String serviceType, final ModelRouterProperties.ModelInstance instance, final boolean isHealthy) {
         // 使用实例的唯一ID作为键
         String instanceKey = serviceType + ":" + instance.getInstanceId();
         Boolean previousStatus = instanceHealthStatus.get(instanceKey);

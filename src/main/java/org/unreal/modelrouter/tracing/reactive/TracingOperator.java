@@ -38,7 +38,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 增强后的Mono
      */
-    public static <T> Mono<T> trace(final Mono<T> source,final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+    public static <T> Mono<T> trace(final Mono<T> source, final String operationName,final SpanKind spanKind,final TracingService tracingService) {
         return new TracingMono<>(source, operationName, spanKind, tracingService);
     }
     
@@ -52,7 +52,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 增强后的Flux
      */
-    public static <T> Flux<T> trace(final Flux<T> source,final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+    public static <T> Flux<T> trace(final Flux<T> source, final String operationName,final SpanKind spanKind,final TracingService tracingService) {
         return new TracingFlux<>(source, operationName, spanKind, tracingService);
     }
     
@@ -65,7 +65,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换函数
      */
-    public static <T> Function<Publisher<T>, Publisher<T>> trace(final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+    public static <T> Function<Publisher<T>, Publisher<T>> trace(final String operationName, final SpanKind spanKind,final TracingService tracingService) {
         return source -> {
             if (source instanceof Mono) {
                 return trace((Mono<T>) source, operationName, spanKind, tracingService);
@@ -86,7 +86,7 @@ public class TracingOperator {
         private final SpanKind spanKind;
         private final TracingService tracingService;
         
-        public TracingMono(final Mono<T> source,final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+        public TracingMono(final Mono<T> source, final String operationName,final SpanKind spanKind,final TracingService tracingService) {
             this.source = source;
             this.operationName = operationName;
             this.spanKind = spanKind;
@@ -121,7 +121,7 @@ public class TracingOperator {
         private final SpanKind spanKind;
         private final TracingService tracingService;
         
-        public TracingFlux(final Flux<T> source,final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+        public TracingFlux(final Flux<T> source, final String operationName,final SpanKind spanKind,final TracingService tracingService) {
             this.source = source;
             this.operationName = operationName;
             this.spanKind = spanKind;
@@ -157,8 +157,8 @@ public class TracingOperator {
         private final Span operationSpan;
         private final long startTime;
         
-        public TracingSubscriber(final CoreSubscriber<? super T> actual,final Context context, 
-                               final TracingContext tracingContext,final Span operationSpan,final long startTime) {
+        public TracingSubscriber(final CoreSubscriber<? super T> actual, final Context context, 
+                               final TracingContext tracingContext, final Span operationSpan,final long startTime) {
             this.actual = actual;
             this.context = context;
             this.tracingContext = tracingContext;
@@ -250,7 +250,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Mono<T>, Mono<T>> monoTracer(final String operationName,final TracingService tracingService) {
+    public static <T> Function<Mono<T>, Mono<T>> monoTracer(final String operationName, final TracingService tracingService) {
         return mono -> trace(mono, operationName, SpanKind.INTERNAL, tracingService);
     }
     
@@ -262,7 +262,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Flux<T>, Flux<T>> fluxTracer(final String operationName,final TracingService tracingService) {
+    public static <T> Function<Flux<T>, Flux<T>> fluxTracer(final String operationName, final TracingService tracingService) {
         return flux -> trace(flux, operationName, SpanKind.INTERNAL, tracingService);
     }
     
@@ -274,7 +274,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Mono<T>, Mono<T>> webClientTracer(final String operationName,final TracingService tracingService) {
+    public static <T> Function<Mono<T>, Mono<T>> webClientTracer(final String operationName, final TracingService tracingService) {
         return mono -> trace(mono, operationName, SpanKind.CLIENT, tracingService);
     }
     
@@ -286,7 +286,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Mono<T>, Mono<T>> databaseTracer(final String operationName,final TracingService tracingService) {
+    public static <T> Function<Mono<T>, Mono<T>> databaseTracer(final String operationName, final TracingService tracingService) {
         return mono -> trace(mono, operationName, SpanKind.CLIENT, tracingService);
     }
     
@@ -298,7 +298,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换器
      */
-    public static <T> Function<Mono<T>, Mono<T>> messageTracer(final String operationName,final TracingService tracingService) {
+    public static <T> Function<Mono<T>, Mono<T>> messageTracer(final String operationName, final TracingService tracingService) {
         return mono -> trace(mono, operationName, SpanKind.CONSUMER, tracingService);
     }
 }

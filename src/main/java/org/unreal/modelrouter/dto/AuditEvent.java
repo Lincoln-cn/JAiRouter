@@ -24,9 +24,9 @@ public class AuditEvent {
     public AuditEvent() {
     }
 
-    public AuditEvent(final String id,final AuditEventType type,final String userId,final String resourceId, 
-                     final String action,final String details,final String ipAddress,final String userAgent, 
-                     final boolean success,final LocalDateTime timestamp,final Map<String, Object> metadata) {
+    public AuditEvent(final String id, final AuditEventType type,final String userId,final String resourceId, 
+                     final String action, final String details,final String ipAddress,final String userAgent, 
+                     final boolean success, final LocalDateTime timestamp,final Map<String, Object> metadata) {
         this.id = id;
         this.type = type;
         this.userId = userId;

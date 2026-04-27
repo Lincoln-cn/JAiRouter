@@ -68,7 +68,7 @@ public record RateLimitConfiguration(
         return map;
     }
 
-    private static Integer getInteger(final Map<String, Object> map,final String key) {
+    private static Integer getInteger(final Map<String, Object> map, final String key) {
         Object value = map.get(key);
         if (value instanceof Number) {
             return ((Number) value).intValue();
@@ -76,7 +76,7 @@ public record RateLimitConfiguration(
         return null;
     }
 
-    private static Boolean getBoolean(final Map<String, Object> map,final String key) {
+    private static Boolean getBoolean(final Map<String, Object> map, final String key) {
         Object value = map.get(key);
         if (value instanceof Boolean) {
             return (Boolean) value;

@@ -195,7 +195,7 @@ public class MetricsMemoryManager {
     /**
      * 放入缓存条目
      */
-    public void putCacheEntry(final String key,final Object value) {
+    public void putCacheEntry(final String key, final Object value) {
         cacheLock.writeLock().lock();
         try {
             // 检查是否需要淘汰
@@ -327,8 +327,8 @@ public class MetricsMemoryManager {
         private final long evictions;
         private final long memoryCleanups;
 
-        public MemoryStats(final double memoryUsageRatio,final long usedMemory,final long maxMemory,final int cacheSize,
-                          final long cacheHits,final long cacheMisses,final long evictions,final long memoryCleanups) {
+        public MemoryStats(final double memoryUsageRatio, final long usedMemory, final long maxMemory,final int cacheSize,
+                          final long cacheHits, final long cacheMisses, final long evictions,final long memoryCleanups) {
             this.memoryUsageRatio = memoryUsageRatio;
             this.usedMemory = usedMemory;
             this.maxMemory = maxMemory;

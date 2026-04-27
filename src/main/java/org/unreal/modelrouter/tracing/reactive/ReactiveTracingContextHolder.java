@@ -113,7 +113,7 @@ public class ReactiveTracingContextHolder {
      * @param tracingContext 追踪上下文
      * @return 合并后的Reactor上下文
      */
-    public static Context withTracingContext(final Context existingContext,final TracingContext tracingContext) {
+    public static Context withTracingContext(final Context existingContext, final TracingContext tracingContext) {
         if (tracingContext == null) {
             return existingContext;
         }
@@ -164,7 +164,7 @@ public class ReactiveTracingContextHolder {
      * @param targetContext 目标上下文
      * @return 包含追踪信息的目标上下文
      */
-    public static Context copyTracingContext(final Context sourceContext,final Context targetContext) {
+    public static Context copyTracingContext(final Context sourceContext, final Context targetContext) {
         Optional<TracingContext> tracingContext = getCurrentContext(sourceContext);
         if (tracingContext.isPresent()) {
             return withTracingContext(targetContext, tracingContext.get());
@@ -190,7 +190,7 @@ public class ReactiveTracingContextHolder {
      * @param <T> 操作返回类型
      * @return 包含操作结果的Mono
      */
-    public static <T> Mono<T> withContext(final TracingContext tracingContext,final Mono<T> operation) {
+    public static <T> Mono<T> withContext(final TracingContext tracingContext, final Mono<T> operation) {
         if (tracingContext == null) {
             return operation;
         }

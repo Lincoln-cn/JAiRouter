@@ -46,7 +46,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     private static final String DEFAULT_HASH_ALGORITHM = "SHA-256";
     
     @Override
-    public Mono<String> applySanitizationRules(final String content,final List<SanitizationRule> rules,final String contentType) {
+    public Mono<String> applySanitizationRules(final String content, final List<SanitizationRule> rules, final String contentType) {
         if (content == null) {
             return Mono.empty();
         }
@@ -87,7 +87,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用单个脱敏规则
      */
-    private String applyRule(final String content,final SanitizationRule rule) {
+    private String applyRule(final String content, final SanitizationRule rule) {
         Pattern pattern = getCompiledPattern(rule);
         if (pattern == null) {
             log.warn("无法获取规则的编译模式: ruleId={}", rule.getRuleId());
@@ -114,7 +114,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用掩码策略
      */
-    private String applyMaskStrategy(final String content,final java.util.regex.Matcher matcher,final SanitizationRule rule) {
+    private String applyMaskStrategy(final String content, final java.util.regex.Matcher matcher, final SanitizationRule rule) {
         String maskChar = rule.getReplacementChar() != null ? rule.getReplacementChar() : DEFAULT_MASK_CHAR;
         
         StringBuffer result = new StringBuffer();
@@ -133,7 +133,7 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用替换策略
      */
-    private String applyReplaceStrategy(final String content,final java.util.regex.Matcher matcher,final SanitizationRule rule) {
+    private String applyReplaceStrategy(final String content, final java.util.regex.Matcher matcher, final SanitizationRule rule) {
         String replacement = rule.getReplacementText() != null ? rule.getReplacementText() : "[REDACTED]";
         return matcher.replaceAll(java.util.regex.Matcher.quoteReplacement(replacement));
     }
@@ -141,14 +141,14 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用删除策略
      */
-    private String applyRemoveStrategy(final String content,final java.util.regex.Matcher matcher) {
+    private String applyRemoveStrategy(final String content, final java.util.regex.Matcher matcher) {
         return matcher.replaceAll("");
     }
     
     /**
      * 应用哈希策略
      */
-    private String applyHashStrategy(final String content,final java.util.regex.Matcher matcher) {
+    private String applyHashStrategy(final String content, final java.util.regex.Matcher matcher) {
         StringBuffer result = new StringBuffer();
         matcher.reset();
         

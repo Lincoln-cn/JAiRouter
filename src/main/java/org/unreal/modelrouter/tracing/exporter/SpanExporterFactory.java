@@ -344,7 +344,7 @@ public class SpanExporterFactory {
     /**
      * 掩码敏感值（用于日志输出）
      */
-    private String maskSensitiveValue(final String key,final String value) {
+    private String maskSensitiveValue(final String key, final String value) {
         if (key == null || value == null) {
             return value;
         }

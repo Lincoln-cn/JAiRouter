@@ -68,7 +68,7 @@ public class AuthenticationEventListener {
     /**
      * 处理认证失败
      */
-    private void handleAuthenticationFailure(final String apiKey,final String reason) {
+    private void handleAuthenticationFailure(final String apiKey, final String reason) {
         try {
             // 这里可以实现认证失败的处理逻辑
             // 例如：记录失败次数、检查是否需要触发告警等

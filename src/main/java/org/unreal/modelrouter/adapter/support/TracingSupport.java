@@ -18,7 +18,7 @@ public class TracingSupport {
     private final MetricsCollector metricsCollector;
     private final String adapterType;
 
-    public TracingSupport(final MetricsCollector metricsCollector,final String adapterType) {
+    public TracingSupport(final MetricsCollector metricsCollector, final String adapterType) {
         this.metricsCollector = metricsCollector;
         this.adapterType = adapterType;
     }
@@ -27,7 +27,7 @@ public class TracingSupport {
      * 记录适配器调用开始
      */
     public void logAdapterCallStart(final ModelRouterProperties.ModelInstance instance, 
-                                     final String serviceType,final String modelName) {
+                                     final String serviceType, final String modelName) {
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
@@ -48,8 +48,8 @@ public class TracingSupport {
      * 记录适配器调用完成
      */
     public void logAdapterCallComplete(final ModelRouterProperties.ModelInstance instance, 
-                                        final String serviceType,final String modelName, 
-                                        final long duration,final boolean success) {
+                                        final String serviceType, final String modelName, 
+                                        final long duration, final boolean success) {
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
@@ -65,7 +65,7 @@ public class TracingSupport {
      * 记录适配器重试
      */
     public void logAdapterRetry(final ModelRouterProperties.ModelInstance instance, 
-                                 final int retryCount,final int maxRetries,final Throwable error) {
+                                 final int retryCount, final int maxRetries, final Throwable error) {
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {

@@ -82,7 +82,7 @@ public class ApiKeyService {
      * @param ipAddress 客户端 IP 地址
      * @return 验证成功返回 ApiKey 信息
      */
-    public Mono<ApiKey> validateApiKey(final String keyValue,final String endpoint,final String ipAddress) {
+    public Mono<ApiKey> validateApiKey(final String keyValue, final String endpoint,final String ipAddress) {
         return Mono.defer(() -> {
             try {
                 if (keyValue == null || keyValue.trim().isEmpty()) {
@@ -168,7 +168,7 @@ public class ApiKeyService {
      * @param ipAddress 创建者 IP
      * @return 创建响应 VO
      */
-    public Mono<ApiKeyCreationVO> createApiKey(final ApiKeyCreateRequest request,final String createdBy,final String ipAddress) {
+    public Mono<ApiKeyCreationVO> createApiKey(final ApiKeyCreateRequest request, final String createdBy,final String ipAddress) {
         return Mono.fromCallable(() -> {
             // 生成 keyId
             String keyId = request.getKeyId() != null && !request.getKeyId().trim().isEmpty()
@@ -243,7 +243,7 @@ public class ApiKeyService {
      * @param request 更新请求 DTO
      * @return 更新后的 API Key VO
      */
-    public Mono<ApiKeyVO> updateApiKey(final String keyId,final ApiKeyUpdateRequest request) {
+    public Mono<ApiKeyVO> updateApiKey(final String keyId, final ApiKeyUpdateRequest request) {
         return Mono.fromCallable(() -> {
             String keyHash = keyIdIndex.get(keyId);
             if (keyHash == null) {
@@ -303,7 +303,7 @@ public class ApiKeyService {
      * @param revokedBy 删除者
      * @return Mono<Void>
      */
-    public Mono<Void> deleteApiKey(final String keyId,final String revokedBy) {
+    public Mono<Void> deleteApiKey(final String keyId, final String revokedBy) {
         return Mono.fromRunnable(() -> {
             String keyHash = keyIdIndex.get(keyId);
             if (keyHash == null) {
@@ -493,7 +493,7 @@ public class ApiKeyService {
     /**
      * 更新使用统计
      */
-    public void updateUsageStatistics(final String keyId,final boolean success) {
+    public void updateUsageStatistics(final String keyId, final boolean success) {
         String keyHash = keyIdIndex.get(keyId);
         if (keyHash == null) {
             log.warn("API Key不存在: {}", keyId);
@@ -537,7 +537,7 @@ public class ApiKeyService {
 
     // ============ 审计辅助方法 ============
 
-    private void auditSecurityEvent(final String eventType,final String message,final String keyId,final String ipAddress) {
+    private void auditSecurityEvent(final String eventType, final String message,final String keyId,final String ipAddress) {
         if (extendedAuditService != null) {
             extendedAuditService.auditSecurityEvent(eventType, message, keyId, ipAddress)
                     .onErrorResume(ex -> {
@@ -548,7 +548,7 @@ public class ApiKeyService {
         }
     }
 
-    private void auditApiKeyCreated(final String keyId,final String createdBy,final String ipAddress) {
+    private void auditApiKeyCreated(final String keyId, final String createdBy,final String ipAddress) {
         if (extendedAuditService != null) {
             extendedAuditService.auditApiKeyCreated(keyId, createdBy, ipAddress)
                     .onErrorResume(ex -> {
@@ -559,7 +559,7 @@ public class ApiKeyService {
         }
     }
 
-    private void auditApiKeyUsed(final String keyId,final String endpoint,final String ipAddress,final boolean success) {
+    private void auditApiKeyUsed(final String keyId, final String endpoint,final String ipAddress,final boolean success) {
         if (extendedAuditService != null) {
             extendedAuditService.auditApiKeyUsed(keyId, endpoint, ipAddress, success)
                     .onErrorResume(ex -> {
@@ -570,7 +570,7 @@ public class ApiKeyService {
         }
     }
 
-    private void auditApiKeyRevoked(final String keyId,final String reason,final String revokedBy) {
+    private void auditApiKeyRevoked(final String keyId, final String reason,final String revokedBy) {
         if (extendedAuditService != null) {
             extendedAuditService.auditApiKeyRevoked(keyId, reason, revokedBy)
                     .onErrorResume(ex -> {
@@ -847,7 +847,7 @@ public class ApiKeyService {
      * @param rotatedBy 轮换操作者
      * @return 创建响应 VO（包含新的 keyValue）
      */
-    public Mono<ApiKeyCreationVO> forceRotateKey(final String keyId,final String rotatedBy) {
+    public Mono<ApiKeyCreationVO> forceRotateKey(final String keyId, final String rotatedBy) {
         return Mono.fromCallable(() -> {
             String keyHash = keyIdIndex.get(keyId);
             if (keyHash == null) {
@@ -895,7 +895,7 @@ public class ApiKeyService {
     /**
      * 内部轮换密钥方法
      */
-    private void rotateKeyInternal(final ApiKey apiKey,final LocalDateTime now) {
+    private void rotateKeyInternal(final ApiKey apiKey, final LocalDateTime now) {
         String keyId = apiKey.getKeyId();
         String oldKeyHash = apiKey.getKeyHash();
 
@@ -950,7 +950,7 @@ public class ApiKeyService {
         private final int keysNeedingRotation;
         private final int rotatedToday;
 
-        public RotationStats(final int totalKeys,final int keysWithRotation,final int keysNeedingRotation,final int rotatedToday) {
+        public RotationStats(final int totalKeys, final int keysWithRotation,final int keysNeedingRotation,final int rotatedToday) {
             this.totalKeys = totalKeys;
             this.keysWithRotation = keysWithRotation;
             this.keysNeedingRotation = keysNeedingRotation;
@@ -963,7 +963,7 @@ public class ApiKeyService {
         public int getRotatedToday() { return rotatedToday; }
     }
 
-    private void auditApiKeyRotated(final String keyId,final String rotatedBy) {
+    private void auditApiKeyRotated(final String keyId, final String rotatedBy) {
         if (extendedAuditService != null) {
             extendedAuditService.auditSecurityEvent("API_KEY_ROTATED",
                     "密钥已轮换", keyId, null)
@@ -1048,7 +1048,7 @@ public class ApiKeyService {
         private final int expiringToday;
         private final int disabledKeys;
 
-        public ExpirationStats(final int totalKeys,final int expiredKeys,final int expiringToday,final int disabledKeys) {
+        public ExpirationStats(final int totalKeys, final int expiredKeys,final int expiringToday,final int disabledKeys) {
             this.totalKeys = totalKeys;
             this.expiredKeys = expiredKeys;
             this.expiringToday = expiringToday;
@@ -1117,7 +1117,7 @@ public class ApiKeyService {
      * @return 导入结果 VO
      */
     public Mono<ApiKeyBatchImportResult> importApiKeys(final ApiKeyBatchImportRequest request,
-                                                        final String importedBy,final String ipAddress) {
+                                                        final String importedBy, final String ipAddress) {
         return Mono.fromCallable(() -> {
             List<ApiKeyCreationVO> importedKeys = new ArrayList<>();
             List<ApiKeyBatchImportResult.ImportError> errors = new ArrayList<>();
@@ -1234,7 +1234,7 @@ public class ApiKeyService {
         });
     }
 
-    private void auditBatchImport(final String importedBy,final String ipAddress,final int successCount,final int failureCount) {
+    private void auditBatchImport(final String importedBy, final String ipAddress,final int successCount,final int failureCount) {
         if (extendedAuditService != null) {
             extendedAuditService.auditSecurityEvent("API_KEY_BATCH_IMPORT",
                     "批量导入完成: 成功 " + successCount + ", 失败 " + failureCount, null, ipAddress)

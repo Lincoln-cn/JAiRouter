@@ -47,7 +47,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
         // 跳过非业务请求（如actuator端点）
         String path = exchange.getRequest().getPath().value();
         if (shouldSkipMetrics(path)) {
@@ -161,7 +161,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     /**
      * 计算请求大小
      */
-    private void calculateRequestSize(final ServerHttpRequest request,final AtomicLong requestSize) {
+    private void calculateRequestSize(final ServerHttpRequest request, final AtomicLong requestSize) {
         try {
             // 从Content-Length头获取请求大小
             String contentLength = request.getHeaders().getFirst("Content-Length");
@@ -190,8 +190,8 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     /**
      * 记录指标
      */
-    private void recordMetrics(final long startTime,final String method,final String serviceName, 
-                             final int statusCode,final long requestSize,final long responseSize,final String path) {
+    private void recordMetrics(final long startTime, final String method, final String serviceName, 
+                             final int statusCode, final long requestSize, final long responseSize,final String path) {
         try {
             long duration = System.currentTimeMillis() - startTime;
             String status = String.valueOf(statusCode);
@@ -232,7 +232,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
         
         private final AtomicLong responseSize;
 
-        public MetricsServerHttpResponseDecorator(final ServerHttpResponse delegate,final AtomicLong responseSize) {
+        public MetricsServerHttpResponseDecorator(final ServerHttpResponse delegate, final AtomicLong responseSize) {
             super(delegate);
             this.responseSize = responseSize;
         }

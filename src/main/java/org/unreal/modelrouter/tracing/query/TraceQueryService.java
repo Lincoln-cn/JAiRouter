@@ -133,7 +133,7 @@ public class TraceQueryService {
     /**
      * 获取追踪统计信息
      */
-    public Mono<TraceStatistics> getTraceStatistics(final long startTime,final long endTime) {
+    public Mono<TraceStatistics> getTraceStatistics(final long startTime, final long endTime) {
         return Mono.fromCallable(() -> {
             Instant start = Instant.ofEpochMilli(startTime);
             Instant end = Instant.ofEpochMilli(endTime);
@@ -257,8 +257,8 @@ public class TraceQueryService {
     /**
      * 记录追踪数据（模拟存储）
      */
-    public Mono<Void> recordTrace(final String traceId,final String serviceName, 
-                                 final List<SpanRecord> spans,final double duration) {
+    public Mono<Void> recordTrace(final String traceId, final String serviceName, 
+                                 final List<SpanRecord> spans, final double duration) {
         return Mono.fromRunnable(() -> {
             // 检查是否已存在该 traceId 的记录
             TraceRecord existingTrace = traceStore.get(traceId);
@@ -335,8 +335,8 @@ public class TraceQueryService {
     /**
      * 同步记录追踪数据（用于子Span记录，避免异步执行问题）
      */
-    public void recordTraceSync(final String traceId,final String serviceName,
-                                 final List<SpanRecord> spans,final double duration) {
+    public void recordTraceSync(final String traceId, final String serviceName,
+                                 final List<SpanRecord> spans, final double duration) {
         // 检查是否已存在该 traceId 的记录
         TraceRecord existingTrace = traceStore.get(traceId);
 
@@ -464,7 +464,7 @@ public class TraceQueryService {
 
     // 私有辅助方法
 
-    private boolean matchesCriteria(final TraceRecord trace,final TraceSearchCriteria criteria) {
+    private boolean matchesCriteria(final TraceRecord trace, final TraceSearchCriteria criteria) {
         // 时间范围过滤
         if (criteria.getStartTime() != null && 
             trace.getCreatedAt().isBefore(criteria.getStartTime())) {
@@ -624,7 +624,7 @@ public class TraceQueryService {
         private final double duration;
         private final Instant createdAt;
 
-        public TraceRecord(final String traceId,final String serviceName,final List<SpanRecord> spans,final double duration,final Instant createdAt) {
+        public TraceRecord(final String traceId, final String serviceName,final List<SpanRecord> spans,final double duration,final Instant createdAt) {
             this.traceId = traceId;
             this.serviceName = serviceName;
             this.spans = spans;
@@ -664,8 +664,8 @@ public class TraceQueryService {
         private final String statusCode;
         private final Map<String, Object> attributes;
 
-        public SpanRecord(final String spanId,final String traceId,final String operationName,final Instant startTime,final Instant endTime,
-                         final double duration,final boolean error,final String statusCode,final Map<String, Object> attributes) {
+        public SpanRecord(final String spanId, final String traceId,final String operationName,final Instant startTime,final Instant endTime,
+                         final double duration, final boolean error,final String statusCode,final Map<String, Object> attributes) {
             this.spanId = spanId;
             this.traceId = traceId;
             this.operationName = operationName;
@@ -721,7 +721,7 @@ public class TraceQueryService {
         private final TraceChainStats stats;
         private final Instant startTime;
 
-        public TraceChain(final String traceId,final String serviceName,final List<SpanRecord> spans,final TraceChainStats stats,final Instant startTime) {
+        public TraceChain(final String traceId, final String serviceName,final List<SpanRecord> spans,final TraceChainStats stats,final Instant startTime) {
             this.traceId = traceId;
             this.serviceName = serviceName;
             this.spans = spans;
@@ -758,7 +758,7 @@ public class TraceQueryService {
         private final long errorCount;
         private final int depth;
 
-        public TraceChainStats(final int totalSpans,final double totalDuration,final double avgDuration,final double maxDuration,final long errorCount,final int depth) {
+        public TraceChainStats(final int totalSpans, final double totalDuration,final double avgDuration,final double maxDuration,final long errorCount,final int depth) {
             this.totalSpans = totalSpans;
             this.totalDuration = totalDuration;
             this.avgDuration = avgDuration;
@@ -801,7 +801,7 @@ public class TraceQueryService {
         private final boolean hasError;
         private final Instant startTime;
 
-        public TraceSummary(final String traceId,final String serviceName,final String operationName,final double duration,final int spanCount,final boolean hasError,final Instant startTime) {
+        public TraceSummary(final String traceId, final String serviceName,final String operationName,final double duration,final int spanCount,final boolean hasError,final Instant startTime) {
             this.traceId = traceId;
             this.serviceName = serviceName;
             this.operationName = operationName;
@@ -958,10 +958,10 @@ public class TraceQueryService {
         private final Instant endTime;
 
         // Constructor
-        public TraceStatistics(final long totalTraces,final long totalSpans,final long successfulTraces,final long errorTraces,
-                              final double avgDuration,final double maxDuration,final double minDuration,
-                              final Map<String, Long> serviceStats,final Map<String, Long> operationStats,
-                              final Map<String, Long> statusStats,final Instant startTime,final Instant endTime) {
+        public TraceStatistics(final long totalTraces, final long totalSpans,final long successfulTraces,final long errorTraces,
+                              final double avgDuration, final double maxDuration,final double minDuration,
+                              final Map<String, Long> serviceStats, final Map<String, Long> operationStats,
+                              final Map<String, Long> statusStats, final Instant startTime,final Instant endTime) {
             this.totalTraces = totalTraces;
             this.totalSpans = totalSpans;
             this.successfulTraces = successfulTraces;
@@ -1032,7 +1032,7 @@ public class TraceQueryService {
         private final String format; // json, csv
         private final int maxRecords;
 
-        public TraceExportRequest(final Instant startTime,final Instant endTime,final String format,final int maxRecords) {
+        public TraceExportRequest(final Instant startTime, final Instant endTime,final String format,final int maxRecords) {
             this.startTime = startTime;
             this.endTime = endTime;
             this.format = format;
@@ -1064,7 +1064,7 @@ public class TraceQueryService {
         private final Instant endTime;
         private final Instant exportedAt;
 
-        public TraceExportResult(final int recordCount,final String format,final String data,final Instant startTime,final Instant endTime,final Instant exportedAt) {
+        public TraceExportResult(final int recordCount, final String format,final String data,final Instant startTime,final Instant endTime,final Instant exportedAt) {
             this.recordCount = recordCount;
             this.format = format;
             this.data = data;

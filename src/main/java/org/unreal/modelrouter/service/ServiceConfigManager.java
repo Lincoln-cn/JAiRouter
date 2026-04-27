@@ -73,7 +73,7 @@ public class ServiceConfigManager {
      * 保存服务配置 (API 用)
      */
     @Transactional
-    public ServiceConfigDTO saveServiceConfig(final String serviceType,final CreateServiceConfigRequest request) {
+    public ServiceConfigDTO saveServiceConfig(final String serviceType, final CreateServiceConfigRequest request) {
         log.info("保存服务配置：serviceType={}", serviceType);
 
         // 1. 验证服务类型
@@ -130,7 +130,7 @@ public class ServiceConfigManager {
      * 更新服务配置（不含实例）(API 用)
      */
     @Transactional
-    public void updateServiceConfig(final String serviceType,final UpdateServiceConfigRequest request) {
+    public void updateServiceConfig(final String serviceType, final UpdateServiceConfigRequest request) {
         log.info("更新服务配置：serviceType={}, adapter={}", serviceType, request.getAdapter());
 
         // 1. 获取现有配置（从 StoreManager）
@@ -180,7 +180,7 @@ public class ServiceConfigManager {
      * 创建服务配置 (业务用)
      */
     @Transactional
-    public void createService(final String serviceType,final ServiceConfiguration config) {
+    public void createService(final String serviceType, final ServiceConfiguration config) {
         log.info("创建服务配置：serviceType={}", serviceType);
 
         // 1. 验证服务类型
@@ -258,7 +258,7 @@ public class ServiceConfigManager {
     /**
      * 更新数据库实体
      */
-    private void updateDatabaseEntity(final String serviceType,final UpdateServiceConfigRequest request) {
+    private void updateDatabaseEntity(final String serviceType, final UpdateServiceConfigRequest request) {
         ServiceConfigEntity entity = jpaRepository
                 .findFirstByServiceTypeAndIsLatestTrue(serviceType)
                 .orElseGet(() -> ServiceConfigEntity.builder()

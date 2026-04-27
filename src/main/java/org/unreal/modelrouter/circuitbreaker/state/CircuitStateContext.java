@@ -120,7 +120,7 @@ public class CircuitStateContext {
     /**
      * 记录熔断器事件
      */
-    public void recordEvent(final String eventType,final String state) {
+    public void recordEvent(final String eventType, final String state) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordCircuitBreaker(instanceId, state, eventType);

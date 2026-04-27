@@ -92,7 +92,7 @@ public class TracingMemoryManager {
     /**
      * 缓存追踪数据
      */
-    public Mono<Boolean> cacheTraceData(final String traceId,final String spanId,final Object data,final long estimatedSize) {
+    public Mono<Boolean> cacheTraceData(final String traceId, final String spanId, final Object data,final long estimatedSize) {
         return Mono.fromCallable(() -> {
             if (!isRunning.get()) {
                 return false;
@@ -142,7 +142,7 @@ public class TracingMemoryManager {
     /**
      * 创建Span缓存
      */
-    public Mono<SpanCache> createSpanCache(final String traceId,final int initialCapacity) {
+    public Mono<SpanCache> createSpanCache(final String traceId, final int initialCapacity) {
         return Mono.fromCallable(() -> {
             SpanCache spanCache = new SpanCache(traceId, initialCapacity);
             spanCaches.put(traceId, spanCache);
@@ -390,7 +390,7 @@ public class TracingMemoryManager {
     /**
      * 发出内存告警
      */
-    private void issueMemoryWarning(final MemoryPressureLevel level,final double usageRatio) {
+    private void issueMemoryWarning(final MemoryPressureLevel level, final double usageRatio) {
         if (memoryWarningIssued.compareAndSet(false, true)) {
             log.warn("内存使用告警: 级别={}, 使用率={:.2f}%, 缓存大小={}, Span缓存数={}", 
                     level, usageRatio * 100, traceCache.size(), spanCaches.size());
@@ -431,7 +431,7 @@ public class TracingMemoryManager {
         private final long estimatedSize;
         private final Instant timestamp;
 
-        public CachedTraceData(final String traceId,final String spanId,final Object data,final long estimatedSize,final Instant timestamp) {
+        public CachedTraceData(final String traceId, final String spanId, final Object data,final long estimatedSize,final Instant timestamp) {
             this.traceId = traceId;
             this.spanId = spanId;
             this.data = data;
@@ -468,11 +468,11 @@ public class TracingMemoryManager {
         private volatile Instant lastAccess = Instant.now();
         private final AtomicLong estimatedSize = new AtomicLong(0);
 
-        public SpanCache(final String traceId,final int initialCapacity) {
+        public SpanCache(final String traceId, final int initialCapacity) {
             this.traceId = traceId;
         }
 
-        public void put(final String spanId,final Object spanData,final long size) {
+        public void put(final String spanId, final Object spanData, final long size) {
             spans.put(spanId, spanData);
             estimatedSize.addAndGet(size);
             lastAccess = Instant.now();
@@ -558,7 +558,7 @@ public class TracingMemoryManager {
             return null;
         }
 
-        public synchronized void put(final K key,final V value) {
+        public synchronized void put(final K key, final V value) {
             Node<K, V> existing = map.get(key);
             if (existing != null) {
                 existing.value = value;
@@ -642,7 +642,7 @@ public class TracingMemoryManager {
             Node<K, V> prev;
             Node<K, V> next;
 
-            Node(final K key,final V value) {
+            Node(final K key, final V value) {
                 this.key = key;
                 this.value = value;
             }

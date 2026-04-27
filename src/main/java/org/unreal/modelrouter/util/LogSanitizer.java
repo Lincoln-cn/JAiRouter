@@ -56,7 +56,7 @@ public final class LogSanitizer {
      * @param args 参数
      * @return 格式化后的安全字符串
      */
-    public static String format(final String format,final Object... args) {
+    public static String format(final String format, final Object... args) {
         if (format == null) {
             return "null";
         }

@@ -324,7 +324,7 @@ public class MonitoringHealthChecker {
         private final boolean healthy;
         private final Map<String, Object> details;
         
-        public HealthStatus(final boolean healthy,final Map<String, Object> details) {
+        public HealthStatus(final boolean healthy, final Map<String, Object> details) {
             this.healthy = healthy;
             this.details = details;
         }
@@ -341,7 +341,7 @@ public class MonitoringHealthChecker {
         private final Map<String, Object> details;
         private final String issues;
         
-        public HealthCheckResult(final boolean healthy,final Map<String, Object> details,final String issues) {
+        public HealthCheckResult(final boolean healthy, final Map<String, Object> details, final String issues) {
             this.healthy = healthy;
             this.details = details;
             this.issues = issues;

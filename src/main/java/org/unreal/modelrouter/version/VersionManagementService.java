@@ -68,7 +68,7 @@ public class VersionManagementService {
      * @param operatorId 操作者ID
      * @return 新版本号
      */
-    public int generateNewVersion(final String operation,final String operatorId) {
+    public int generateNewVersion(final String operation, final String operatorId) {
         ConfigMetadata metadata = getOrCreateMetadata();
         List<Integer> existingVersions = getAllVersions();
 
@@ -99,7 +99,7 @@ public class VersionManagementService {
      * @param userId 用户ID
      * @param changeType 变更类型
      */
-    public void recordVersion(final int version,final String description,final String userId,
+    public void recordVersion(final int version, final String description,final String userId,
                               final VersionInfo.ChangeType changeType) {
         // 更新元数据
         ConfigMetadata metadata = getOrCreateMetadata();

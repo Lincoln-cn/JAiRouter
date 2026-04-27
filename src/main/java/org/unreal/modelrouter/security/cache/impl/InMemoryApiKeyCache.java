@@ -91,7 +91,7 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(final String keyValue,final ApiKey apiKey,final Duration ttl) {
+    public Mono<Void> put(final String keyValue, final ApiKey apiKey,final Duration ttl) {
         long startTime = System.nanoTime();
         
         return Mono.<Void>fromRunnable(() -> {
@@ -117,7 +117,7 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(final String keyValue,final ApiKey apiKey) {
+    public Mono<Void> put(final String keyValue, final ApiKey apiKey) {
         return put(keyValue, apiKey, DEFAULT_TTL);
     }
     
@@ -164,7 +164,7 @@ public class InMemoryApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> expire(final String keyValue,final Duration ttl) {
+    public Mono<Void> expire(final String keyValue, final Duration ttl) {
         return Mono.fromRunnable(() -> {
             CacheEntry entry = cache.get(keyValue);
             if (entry != null) {

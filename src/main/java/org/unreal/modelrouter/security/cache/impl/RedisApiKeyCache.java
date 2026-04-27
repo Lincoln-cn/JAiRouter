@@ -72,7 +72,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(final String keyValue,final ApiKey apiKey,final Duration ttl) {
+    public Mono<Void> put(final String keyValue, final ApiKey apiKey,final Duration ttl) {
         long startTime = System.nanoTime();
         String cacheKey = buildCacheKey(keyValue);
 
@@ -100,7 +100,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(final String keyValue,final ApiKey apiKey) {
+    public Mono<Void> put(final String keyValue, final ApiKey apiKey) {
         return put(keyValue, apiKey, DEFAULT_TTL);
     }
     
@@ -143,7 +143,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> expire(final String keyValue,final Duration ttl) {
+    public Mono<Void> expire(final String keyValue, final Duration ttl) {
         String cacheKey = buildCacheKey(keyValue);
         return redisTemplate.expire(cacheKey, ttl)
                 .then()

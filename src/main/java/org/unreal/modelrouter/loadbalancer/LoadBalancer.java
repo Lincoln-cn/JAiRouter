@@ -28,7 +28,7 @@ public interface LoadBalancer {
      * @param serviceType 服务类型
      * @return 选中的实例
      */
-    default ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances,final String clientIp,final String serviceType) {
+    default ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances, final String clientIp,final String serviceType) {
         return selectInstance(instances, clientIp);
     }
 

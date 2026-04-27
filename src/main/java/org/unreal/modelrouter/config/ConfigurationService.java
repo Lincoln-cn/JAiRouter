@@ -266,7 +266,7 @@ public class ConfigurationService {
     /**
      * 保存配置元数据
      */
-    private void saveMetadata(final String key,final ConfigMetadata metadata) {
+    private void saveMetadata(final String key, final ConfigMetadata metadata) {
         try {
             Map<String, Object> metadataMap = new HashMap<>();
             metadataMap.put("configKey", metadata.getConfigKey());
@@ -287,7 +287,7 @@ public class ConfigurationService {
     /**
      * 保存版本历史
      */
-    private void saveVersionHistory(final String key,final List<VersionInfo> versionHistory) {
+    private void saveVersionHistory(final String key, final List<VersionInfo> versionHistory) {
         try {
             List<Map<String, Object>> historyList = new ArrayList<>();
             for (VersionInfo versionInfo : versionHistory) {
@@ -397,14 +397,14 @@ public class ConfigurationService {
      * @return 新版本号
      */
     @Deprecated(since = "2.5.3.1", forRemoval = true)
-    public int saveAsNewVersion(final Map<String, Object> config,final String description,final String userId) {
+    public int saveAsNewVersion(final Map<String, Object> config, final String description, final String userId) {
         return configVersionManager.saveAsNewVersion(config, description, userId);
     }
 
     /**
      * 内部版本保存方法（已在同步块内调用）
      */
-    private int saveAsNewVersionInternal(final Map<String, Object> config,final String description,final String userId) {
+    private int saveAsNewVersionInternal(final Map<String, Object> config, final String description, final String userId) {
         try {
             // 调用链追踪：记录调用来源（用于调试重复版本问题）
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -571,7 +571,7 @@ public class ConfigurationService {
      * @param newConfig     新配置
      * @return true如果配置发生了实质性变化，false如果配置相同
      */
-    private boolean isConfigurationChanged(final Map<String, Object> currentConfig,final Map<String, Object> newConfig) {
+    private boolean isConfigurationChanged(final Map<String, Object> currentConfig, final Map<String, Object> newConfig) {
         if (currentConfig == null && newConfig == null) {
             return false;
         }
@@ -763,7 +763,7 @@ public class ConfigurationService {
      * @return true如果对象相等，false如果不相等
      */
     @SuppressWarnings("unchecked")
-    private boolean deepEquals(final Object obj1,final Object obj2) {
+    private boolean deepEquals(final Object obj1, final Object obj2) {
         if (obj1 == obj2) {
             return true;
         }
@@ -826,7 +826,7 @@ public class ConfigurationService {
      * @param userId      用户ID
      * @return 版本号（如果创建了新版本则返回新版本号，否则返回当前版本号）
      */
-    public int saveAsNewVersionIfChanged(final Map<String, Object> config,final String description,final String userId) {
+    public int saveAsNewVersionIfChanged(final Map<String, Object> config, final String description, final String userId) {
         // 使用同步锁确保配置比较和版本创建的原子性
         synchronized (versionCreationLock) {
             try {
@@ -1030,7 +1030,7 @@ public class ConfigurationService {
      * @return 实例配置
      */
     @Deprecated(since = "2.5.3.3", forRemoval = true)
-    public Map<String, Object> getServiceInstance(final String serviceType,final String instanceId) {
+    public Map<String, Object> getServiceInstance(final String serviceType, final String instanceId) {
         List<Map<String, Object>> instances = instanceManager.getServiceInstancesAsMap(serviceType);
         return instances.stream()
                 .filter(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)))
@@ -1082,7 +1082,7 @@ public class ConfigurationService {
      * @param serviceConfig 服务配置
      */
     @Deprecated(since = "2.5.3.7", forRemoval = true)
-    public void createService(final String serviceType,final Map<String, Object> serviceConfig) {
+    public void createService(final String serviceType, final Map<String, Object> serviceConfig) {
         logger.info("创建新服务: {}", serviceType);
 
         // 验证服务类型
@@ -1155,7 +1155,7 @@ public class ConfigurationService {
      */
     @Deprecated(since = "2.5.3.8", forRemoval = true)
     @SuppressWarnings("unchecked")
-    public Map<String, Object> updateServiceConfig(final String serviceType,final Map<String, Object> serviceConfig) {
+    public Map<String, Object> updateServiceConfig(final String serviceType, final Map<String, Object> serviceConfig) {
         logger.info("更新服务配置：{}", serviceType);
 
         try {
@@ -1198,7 +1198,7 @@ public class ConfigurationService {
      * 简单方案：只更新传入的配置项，保留 instances
      */
     @SuppressWarnings("unchecked")
-    public void updateServiceConfigDto(final String serviceType,final UpdateServiceConfigRequest request) {
+    public void updateServiceConfigDto(final String serviceType, final UpdateServiceConfigRequest request) {
         logger.info("更新服务配置(DTO)：serviceType={}", serviceType);
 
         try {
@@ -1330,7 +1330,7 @@ public class ConfigurationService {
      * @param instanceConfig 实例配置
      */
     @SuppressWarnings("unchecked")
-    public void addServiceInstance(final String serviceType,final ModelRouterProperties.ModelInstance instanceConfig) {
+    public void addServiceInstance(final String serviceType, final ModelRouterProperties.ModelInstance instanceConfig) {
         logger.info("为服务 {} 添加实例: {}", serviceType, instanceConfig.getName());
 
         // 验证服务类型
@@ -1408,7 +1408,7 @@ public class ConfigurationService {
      * @param instanceConfig 新的实例配置
      */
     @Deprecated(since = "2.5.3.4", forRemoval = true)
-    public void updateServiceInstance(final String serviceType,final String instanceId,final ModelRouterProperties.ModelInstance instanceConfig) {
+    public void updateServiceInstance(final String serviceType, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig) {
         instanceManager.updateServiceInstance(serviceType, instanceId, instanceConfig);
     }
 
@@ -1424,7 +1424,7 @@ public class ConfigurationService {
      * 内部实例更新方法
      */
     @SuppressWarnings("unchecked")
-    private void updateServiceInstanceInternal(final String serviceType,final String instanceId,final ModelRouterProperties.ModelInstance instanceConfig) {
+    private void updateServiceInstanceInternal(final String serviceType, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig) {
 
         // 验证服务类型
         if (!isValidServiceType(serviceType)) {
@@ -1524,7 +1524,7 @@ public class ConfigurationService {
      * @param instanceId 实例ID
      */
     @Deprecated(since = "2.5.3.5", forRemoval = true)
-    public void deleteServiceInstance(final String serviceType,final String instanceId) {
+    public void deleteServiceInstance(final String serviceType, final String instanceId) {
         instanceManager.deleteServiceInstance(serviceType, instanceId);
     }
 
@@ -1561,7 +1561,7 @@ public class ConfigurationService {
      * @param operations  实例操作列表
      */
     @SuppressWarnings("unchecked")
-    public void batchUpdateServiceInstances(final String serviceType,final List<InstanceOperation> operations) {
+    public void batchUpdateServiceInstances(final String serviceType, final List<InstanceOperation> operations) {
         logger.info("批量更新服务 {} 的实例，操作数量: {}", serviceType, operations.size());
 
         // 验证服务类型
@@ -1624,7 +1624,7 @@ public class ConfigurationService {
     /**
      * 在实例列表中添加实例
      */
-    private void addInstanceToList(final List<Map<String, Object>> instances,final ModelRouterProperties.ModelInstance instanceConfig,final List<String> operationDetails) {
+    private void addInstanceToList(final List<Map<String, Object>> instances, final ModelRouterProperties.ModelInstance instanceConfig, final List<String> operationDetails) {
         Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(configurationHelper.convertInstanceToMap(instanceConfig));
 
         String name = (String) validatedInstance.get("name");
@@ -1649,7 +1649,7 @@ public class ConfigurationService {
     /**
      * 在实例列表中更新实例
      */
-    private void updateInstanceInList(final List<Map<String, Object>> instances,final String instanceId,final ModelRouterProperties.ModelInstance instanceConfig,final List<String> operationDetails) {
+    private void updateInstanceInList(final List<Map<String, Object>> instances, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig,final List<String> operationDetails) {
         boolean found = false;
 
         for (int i = 0; i < instances.size(); i++) {
@@ -1673,7 +1673,7 @@ public class ConfigurationService {
     /**
      * 从实例列表中删除实例
      */
-    private void deleteInstanceFromList(final List<Map<String, Object>> instances,final String instanceId,final List<String> operationDetails) {
+    private void deleteInstanceFromList(final List<Map<String, Object>> instances, final String instanceId, final List<String> operationDetails) {
         boolean removed = instances.removeIf(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)));
 
         if (!removed) {
@@ -1799,7 +1799,7 @@ public class ConfigurationService {
      * 合并服务配置
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> mergeServiceConfig(final Map<String, Object> existing,final Map<String, Object> updates) {
+    private Map<String, Object> mergeServiceConfig(final Map<String, Object> existing, final Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
 
         for (Map.Entry<String, Object> entry : updates.entrySet()) {
@@ -1932,7 +1932,7 @@ public class ConfigurationService {
     /**
      * 合并实例配置
      */
-    private Map<String, Object> mergeInstanceConfig(final Map<String, Object> existing,final Map<String, Object> updates) {
+    private Map<String, Object> mergeInstanceConfig(final Map<String, Object> existing, final Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
         merged.putAll(updates);
 
@@ -2011,7 +2011,7 @@ public class ConfigurationService {
      * @param traceConfig 新的追踪配置
      * @param createNewVersion 是否创建新版本
      */
-    public void updateTraceConfig(final TraceConfig traceConfig,final boolean createNewVersion) {
+    public void updateTraceConfig(final TraceConfig traceConfig, final boolean createNewVersion) {
         logger.info("更新追踪配置");
 
         Map<String, Object> currentConfig;
@@ -2100,7 +2100,7 @@ public class ConfigurationService {
      * @param samplingConfig 新的采样配置
      * @param createNewVersion 是否创建新版本
      */
-    public void updateTracingSamplingConfig(final Map<String, Object> samplingConfig,final boolean createNewVersion) {
+    public void updateTracingSamplingConfig(final Map<String, Object> samplingConfig, final boolean createNewVersion) {
         logger.info("更新追踪采样配置");
 
         // 验证配置
@@ -2354,7 +2354,7 @@ public class ConfigurationService {
      * @param configData 配置数据
      * @param createNewVersion 是否创建新版本
      */
-    private void logConfigurationChange(final String configType,final String action,final Map<String, Object> configData,final boolean createNewVersion) {
+    private void logConfigurationChange(final String configType, final String action, final Map<String, Object> configData,final boolean createNewVersion) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("configType", configType);
@@ -2389,7 +2389,7 @@ public class ConfigurationService {
      * @param targetVersion 目标版本
      * @param config 回滚后的配置
      */
-    private void logConfigurationRollback(final int targetVersion,final Map<String, Object> config) {
+    private void logConfigurationRollback(final int targetVersion, final Map<String, Object> config) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("configType", "configuration.rollback");
@@ -2443,7 +2443,7 @@ public class ConfigurationService {
      * @param targetVersion 目标版本
      * @param samplingConfig 回滚后的采样配置
      */
-    private void logSamplingConfigRollback(final int targetVersion,final Map<String, Object> samplingConfig) {
+    private void logSamplingConfigRollback(final int targetVersion, final Map<String, Object> samplingConfig) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("configType", "tracing.sampling.rollback");

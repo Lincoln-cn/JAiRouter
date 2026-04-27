@@ -116,8 +116,8 @@ public class SlowQueryAlertService {
      * @param context 追踪上下文
      * @param additionalInfo 额外信息
      */
-    public void checkAndAlert(final String operationName,final long durationMillis,final long threshold, 
-                             final TracingContext context,final Map<String, Object> additionalInfo) {
+    public void checkAndAlert(final String operationName, final long durationMillis, final long threshold, 
+                             final TracingContext context, final Map<String, Object> additionalInfo) {
         
         if (durationMillis < threshold) {
             return; // 未达到慢查询阈值
@@ -135,7 +135,7 @@ public class SlowQueryAlertService {
     /**
      * 记录慢查询指标
      */
-    private void recordSlowQueryMetrics(final String operationName,final long durationMillis,final long threshold) {
+    private void recordSlowQueryMetrics(final String operationName, final long durationMillis, final long threshold) {
         // 记录慢查询计数
         meterRegistry.counter("slow_query_total", 
                 "operation", operationName,
@@ -156,7 +156,7 @@ public class SlowQueryAlertService {
     /**
      * 判断是否应该触发告警
      */
-    private boolean shouldTriggerAlert(final String operationName,final long durationMillis,final long threshold) {
+    private boolean shouldTriggerAlert(final String operationName, final long durationMillis, final long threshold) {
         long currentTime = System.currentTimeMillis();
         String alertKey = operationName;
         
@@ -196,8 +196,8 @@ public class SlowQueryAlertService {
     /**
      * 触发慢查询告警
      */
-    private void triggerSlowQueryAlert(final String operationName,final long durationMillis,final long threshold,
-                                      final TracingContext context,final Map<String, Object> additionalInfo) {
+    private void triggerSlowQueryAlert(final String operationName, final long durationMillis, final long threshold,
+                                      final TracingContext context, final Map<String, Object> additionalInfo) {
         
         String alertKey = operationName;
         long currentTime = System.currentTimeMillis();
@@ -224,8 +224,8 @@ public class SlowQueryAlertService {
     /**
      * 构建慢查询告警对象
      */
-    private SlowQueryAlert buildSlowQueryAlert(final String operationName,final long durationMillis,final long threshold,
-                                              final long alertCount,final TracingContext context,final Map<String, Object> additionalInfo) {
+    private SlowQueryAlert buildSlowQueryAlert(final String operationName, final long durationMillis, final long threshold,
+                                              final long alertCount, final TracingContext context, final Map<String, Object> additionalInfo) {
         
         SlowQueryDetector.SlowQueryStats stats = getSlowQueryDetector().getSlowQueryStats(operationName);
         String severity = getSeverityLevel(durationMillis, threshold);
@@ -251,7 +251,7 @@ public class SlowQueryAlertService {
     /**
      * 记录告警日志
      */
-    private void logSlowQueryAlert(final SlowQueryAlert alert,final TracingContext context) {
+    private void logSlowQueryAlert(final SlowQueryAlert alert, final TracingContext context) {
         Map<String, Object> logData = new HashMap<>();
         logData.put("alert_id", alert.getAlertId());
         logData.put("operation_name", alert.getOperationName());
@@ -271,7 +271,7 @@ public class SlowQueryAlertService {
     /**
      * 发送告警通知
      */
-    private void sendAlertNotification(final SlowQueryAlert alert,final TracingContext context) {
+    private void sendAlertNotification(final SlowQueryAlert alert, final TracingContext context) {
         try {
             // 记录告警到指标系统，供Prometheus抓取
             meterRegistry.counter("slow_query_alert_triggered",
@@ -308,7 +308,7 @@ public class SlowQueryAlertService {
     /**
      * 获取严重程度级别
      */
-    private String getSeverityLevel(final long durationMillis,final long threshold) {
+    private String getSeverityLevel(final long durationMillis, final long threshold) {
         double multiplier = (double) durationMillis / threshold;
         if (multiplier >= 5.0) {
             return "critical";

@@ -277,14 +277,14 @@ public class ExceptionPersistenceService {
     /**
      * 生成小时统计缓存键
      */
-    private String generateHourlyStatsKey(final LocalDateTime hourTimestamp,final String exceptionType,final String errorCode,final String operation) {
+    private String generateHourlyStatsKey(final LocalDateTime hourTimestamp, final String exceptionType, final String errorCode,final String operation) {
         return hourTimestamp.toString() + "|" + exceptionType + "|" + errorCode + "|" + operation;
     }
 
     /**
      * 从 Map 中安全获取字符串值
      */
-    private String getStringValue(final Map<String, Object> map,final String key) {
+    private String getStringValue(final Map<String, Object> map, final String key) {
         if (map == null || !map.containsKey(key)) {
             return null;
         }
@@ -295,7 +295,7 @@ public class ExceptionPersistenceService {
     /**
      * 截断字符串到指定长度
      */
-    private String truncate(final String str,final int maxLength) {
+    private String truncate(final String str, final int maxLength) {
         if (str == null) {
             return null;
         }
@@ -335,7 +335,7 @@ public class ExceptionPersistenceService {
     /**
      * 获取异常统计信息
      */
-    public Map<String, Object> getExceptionStatistics(final LocalDateTime startTime,final LocalDateTime endTime) {
+    public Map<String, Object> getExceptionStatistics(final LocalDateTime startTime, final LocalDateTime endTime) {
         Map<String, Object> result = new HashMap<>();
         
         // 按类型统计

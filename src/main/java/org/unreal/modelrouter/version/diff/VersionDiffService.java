@@ -31,7 +31,7 @@ public class VersionDiffService {
      * @param targetVersion 目标版本号（较新版本）
      * @return 差异结果
      */
-    public ConfigDiff compareVersions(final int sourceVersion,final int targetVersion) {
+    public ConfigDiff compareVersions(final int sourceVersion, final int targetVersion) {
         logger.info("开始比较配置版本: {} vs {}", sourceVersion, targetVersion);
 
         // 读取两个版本的配置
@@ -61,7 +61,7 @@ public class VersionDiffService {
      * @param currentConfig 当前配置（可能未保存）
      * @return 差异结果
      */
-    public ConfigDiff compareWithCurrent(final int baseVersion,final Map<String, Object> currentConfig) {
+    public ConfigDiff compareWithCurrent(final int baseVersion, final Map<String, Object> currentConfig) {
         logger.info("比较版本 {} 与当前未保存配置", baseVersion);
 
         Map<String, Object> baseConfig = loadVersionConfig(baseVersion);
@@ -176,7 +176,7 @@ public class VersionDiffService {
      * @return 所有路径集合
      */
     @SuppressWarnings("unchecked")
-    private Set<String> collectPaths(final Map<String, Object> config,final String prefix) {
+    private Set<String> collectPaths(final Map<String, Object> config, final String prefix) {
         Set<String> paths = new HashSet<>();
 
         if (config == null) {
@@ -207,7 +207,7 @@ public class VersionDiffService {
      * @return 值
      */
     @SuppressWarnings("unchecked")
-    private Object getValueByPath(final Map<String, Object> config,final String path) {
+    private Object getValueByPath(final Map<String, Object> config, final String path) {
         if (config == null || path == null || path.isEmpty()) {
             return null;
         }

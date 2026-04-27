@@ -28,7 +28,7 @@ public class SpanStatusManager {
      * @param span 目标Span
      * @param httpStatus HTTP状态码
      */
-    public void setHttpStatus(final Span span,final HttpStatus httpStatus) {
+    public void setHttpStatus(final Span span, final HttpStatus httpStatus) {
         if (span == null || !span.getSpanContext().isValid() || httpStatus == null) {
             return;
         }
@@ -53,7 +53,7 @@ public class SpanStatusManager {
      * @param span 目标Span
      * @param statusCode HTTP状态码
      */
-    public void setHttpStatus(final Span span,final int statusCode) {
+    public void setHttpStatus(final Span span, final int statusCode) {
         try {
             HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
             setHttpStatus(span, httpStatus);
@@ -79,7 +79,7 @@ public class SpanStatusManager {
      * @param span 目标Span
      * @param description 状态描述
      */
-    public void setSuccess(final Span span,final String description) {
+    public void setSuccess(final Span span, final String description) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -101,7 +101,7 @@ public class SpanStatusManager {
      * @param span 目标Span
      * @param error 错误信息
      */
-    public void setError(final Span span,final Throwable error) {
+    public void setError(final Span span, final Throwable error) {
         if (span == null || !span.getSpanContext().isValid() || error == null) {
             return;
         }
@@ -129,7 +129,7 @@ public class SpanStatusManager {
      * @param span 目标Span
      * @param errorMessage 错误消息
      */
-    public void setError(final Span span,final String errorMessage) {
+    public void setError(final Span span, final String errorMessage) {
         setError(span, errorMessage, null);
     }
     
@@ -140,7 +140,7 @@ public class SpanStatusManager {
      * @param errorMessage 错误消息
      * @param errorCode 错误代码
      */
-    public void setError(final Span span,final String errorMessage,final String errorCode) {
+    public void setError(final Span span, final String errorMessage, final String errorCode) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -170,7 +170,7 @@ public class SpanStatusManager {
      * @param businessErrorCode 业务错误代码
      * @param businessErrorMessage 业务错误消息
      */
-    public void setBusinessError(final Span span,final String businessErrorCode,final String businessErrorMessage) {
+    public void setBusinessError(final Span span, final String businessErrorCode, final String businessErrorMessage) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -198,7 +198,7 @@ public class SpanStatusManager {
      * @param span 目标Span
      * @param timeoutMs 超时时间（毫秒）
      */
-    public void setTimeout(final Span span,final long timeoutMs) {
+    public void setTimeout(final Span span, final long timeoutMs) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -226,7 +226,7 @@ public class SpanStatusManager {
      * @param span 目标Span
      * @param rateLimited 是否被限流
      */
-    public void setRateLimited(final Span span,final boolean rateLimited) {
+    public void setRateLimited(final Span span, final boolean rateLimited) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -254,7 +254,7 @@ public class SpanStatusManager {
      * @param span 目标Span
      * @param circuitOpen 熔断器是否开启
      */
-    public void setCircuitBreakerOpen(final Span span,final boolean circuitOpen) {
+    public void setCircuitBreakerOpen(final Span span, final boolean circuitOpen) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -283,7 +283,7 @@ public class SpanStatusManager {
      * @param statusCode 状态码
      * @param description 状态描述
      */
-    public void setCustomStatus(final Span span,final StatusCode statusCode,final String description) {
+    public void setCustomStatus(final Span span, final StatusCode statusCode, final String description) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }

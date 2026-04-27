@@ -46,7 +46,7 @@ public class SecurityErrorResponse {
      */
     private String requestId;
 
-    public SecurityErrorResponse(final LocalDateTime timestamp,final int status,final String error,final String message,final String errorCode,final String path,final String requestId) {
+    public SecurityErrorResponse(final LocalDateTime timestamp, final int status,final String error,final String message,final String errorCode,final String path,final String requestId) {
         this.timestamp = timestamp;
         this.status = status;
         this.error = error;
@@ -62,7 +62,7 @@ public class SecurityErrorResponse {
     /**
      * 创建认证错误响应
      */
-    public static SecurityErrorResponse authenticationError(final String message,final String errorCode) {
+    public static SecurityErrorResponse authenticationError(final String message, final String errorCode) {
         return SecurityErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(401)
@@ -75,7 +75,7 @@ public class SecurityErrorResponse {
     /**
      * 创建授权错误响应
      */
-    public static SecurityErrorResponse authorizationError(final String message,final String errorCode) {
+    public static SecurityErrorResponse authorizationError(final String message, final String errorCode) {
         return SecurityErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(403)
@@ -88,7 +88,7 @@ public class SecurityErrorResponse {
     /**
      * 创建数据脱敏错误响应
      */
-    public static SecurityErrorResponse sanitizationError(final String message,final String errorCode) {
+    public static SecurityErrorResponse sanitizationError(final String message, final String errorCode) {
         return SecurityErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(500)

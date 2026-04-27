@@ -18,9 +18,9 @@ public class CleanupStats {
     public CleanupStats() {
     }
 
-    public CleanupStats(final LocalDateTime lastCleanupTime,final long totalCleanupRuns, 
-                       final long totalTokensCleaned,final long totalBlacklistEntriesCleaned,
-                       final double averageCleanupDurationSeconds,final LocalDateTime nextScheduledCleanup,
+    public CleanupStats(final LocalDateTime lastCleanupTime, final long totalCleanupRuns, 
+                       final long totalTokensCleaned, final long totalBlacklistEntriesCleaned,
+                       final double averageCleanupDurationSeconds, final LocalDateTime nextScheduledCleanup,
                        final boolean cleanupEnabled) {
         this.lastCleanupTime = lastCleanupTime;
         this.totalCleanupRuns = totalCleanupRuns;

@@ -65,7 +65,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformRequest(final Object request,final String adapterType) {
+    protected Object transformRequest(final Object request, final String adapterType) {
         // 记录Ollama适配器特定的追踪信息
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
                 org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
@@ -492,7 +492,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformResponse(final Object response,final String adapterType) {
+    protected Object transformResponse(final Object response, final String adapterType) {
         if (response instanceof String responseStr) {
             try {
                 JsonNode jsonResponse = objectMapper.readTree(responseStr);
@@ -649,7 +649,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String getAuthorizationHeader(final String authorization,final String adapterType) {
+    protected String getAuthorizationHeader(final String authorization, final String adapterType) {
         // Ollama通常不需要认证，或使用简单的API Key
         if (authorization != null && !authorization.startsWith("Bearer ")) {
             return "Bearer " + authorization;
@@ -658,7 +658,7 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected <T> WebClient.RequestBodySpec configureRequestHeaders(final WebClient.RequestBodySpec requestSpec,final T request) {
+    protected <T> WebClient.RequestBodySpec configureRequestHeaders(final WebClient.RequestBodySpec requestSpec, final T request) {
         // Ollama特有的请求头配置
         return super.configureRequestHeaders(requestSpec, request)
                 .header("User-Agent", "ModelRouter-OllamaAdapter/1.0");

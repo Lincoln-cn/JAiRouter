@@ -40,7 +40,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordRequest(final String service,final String method,final long duration,final String status) {
+    public void recordRequest(final String service, final String method, final long duration,final String status) {
         try {
             if (shouldUseAsyncProcessing()) {
                 // 检查内存压力和采样率
@@ -63,7 +63,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordBackendCall(final String adapter,final String instance,final long duration,final boolean success) {
+    public void recordBackendCall(final String adapter, final String instance, final long duration,final boolean success) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getBackendMetrics();
@@ -84,7 +84,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordRateLimit(final String service,final String algorithm,final boolean allowed) {
+    public void recordRateLimit(final String service, final String algorithm, final boolean allowed) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -105,7 +105,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordCircuitBreaker(final String service,final String state,final String event) {
+    public void recordCircuitBreaker(final String service, final String state, final String event) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -126,7 +126,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordLoadBalancer(final String service,final String strategy,final String selectedInstance) {
+    public void recordLoadBalancer(final String service, final String strategy, final String selectedInstance) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -147,7 +147,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordHealthCheck(final String adapter,final String instance,final boolean healthy,final long responseTime) {
+    public void recordHealthCheck(final String adapter, final String instance, final boolean healthy,final long responseTime) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -168,7 +168,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordRequestSize(final String service,final long requestSize,final long responseSize) {
+    public void recordRequestSize(final String service, final long requestSize, final long responseSize) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getRequestMetrics();
@@ -189,7 +189,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTrace(final String traceId,final String spanId,final String operationName,final long duration,final boolean success) {
+    public void recordTrace(final String traceId, final String spanId, final String operationName,final long duration,final boolean success) {
         try {
             if (shouldUseAsyncProcessing()) {
                 // 对于追踪指标，使用基础设施指标的采样率
@@ -211,7 +211,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceExport(final String exporterType,final long duration,final boolean success,final int batchSize) {
+    public void recordTraceExport(final String exporterType, final long duration, final boolean success,final int batchSize) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -232,7 +232,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceSampling(final double samplingRate,final boolean sampled) {
+    public void recordTraceSampling(final double samplingRate, final boolean sampled) {
         try {
             if (shouldUseAsyncProcessing()) {
                 // 采样指标本身不需要采样
@@ -251,7 +251,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceDataQuality(final String traceId,final int spanCount,final int attributeCount,final int errorCount) {
+    public void recordTraceDataQuality(final String traceId, final int spanCount, final int attributeCount,final int errorCount) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -272,7 +272,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceProcessing(final String processorName,final long duration,final boolean success) {
+    public void recordTraceProcessing(final String processorName, final long duration, final boolean success) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getTraceProcessingMetrics();
@@ -293,7 +293,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceAnalysis(final String analyzerName,final int spanCount,final long duration,final boolean success) {
+    public void recordTraceAnalysis(final String analyzerName, final int spanCount, final long duration,final boolean success) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getTraceAnalysisMetrics();

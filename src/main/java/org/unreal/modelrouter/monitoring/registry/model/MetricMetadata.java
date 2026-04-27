@@ -76,7 +76,7 @@ public class MetricMetadata {
         return samplingRate;
     }
     
-    public static Builder builder(final String name,final Meter.Type type) {
+    public static Builder builder(final String name, final Meter.Type type) {
         return new Builder(name, type);
     }
     
@@ -124,7 +124,7 @@ public class MetricMetadata {
         private boolean enabled = true;
         private double samplingRate = 1.0;
         
-        public Builder(final String name,final Meter.Type type) {
+        public Builder(final String name, final Meter.Type type) {
             this.name = Objects.requireNonNull(name, "Metric name cannot be null");
             this.type = Objects.requireNonNull(type, "Metric type cannot be null");
         }

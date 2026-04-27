@@ -17,7 +17,7 @@ public class TokenBlacklistEntry {
     public TokenBlacklistEntry() {
     }
 
-    public TokenBlacklistEntry(final String tokenHash,final LocalDateTime expiresAt,final String reason,final String addedBy,final LocalDateTime addedAt) {
+    public TokenBlacklistEntry(final String tokenHash, final LocalDateTime expiresAt,final String reason,final String addedBy,final LocalDateTime addedAt) {
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
         this.reason = reason;

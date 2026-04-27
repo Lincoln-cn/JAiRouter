@@ -286,7 +286,7 @@ public class SecurityAuditController {
     /**
      * 应用高级过滤器
      */
-    private boolean applyAdvancedFilters(final SecurityAuditEvent event,final SecurityAuditQueryRequest request) {
+    private boolean applyAdvancedFilters(final SecurityAuditEvent event, final SecurityAuditQueryRequest request) {
         // 客户端IP过滤
         if (request.getClientIp() != null && !request.getClientIp().equals(event.getClientIp())) {
             return false;

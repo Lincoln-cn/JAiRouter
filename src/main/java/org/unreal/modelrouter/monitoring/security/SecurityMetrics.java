@@ -141,7 +141,7 @@ public class SecurityMetrics {
     /**
      * 记录认证失败
      */
-    public void recordAuthenticationFailure(final String authType,final String failureReason) {
+    public void recordAuthenticationFailure(final String authType, final String failureReason) {
         Counter.builder("jairouter.security.authentication.failures")
                 .tag("auth_type", authType != null ? authType : "unknown")
                 .tag("failure_reason", categorizeFailureReason(failureReason))
@@ -212,7 +212,7 @@ public class SecurityMetrics {
     /**
      * 记录脱敏操作
      */
-    public void recordSanitizationOperation(final String contentType,final String direction) {
+    public void recordSanitizationOperation(final String contentType, final String direction) {
         Counter.builder("jairouter.security.sanitization.operations")
                 .tag("content_type", contentType != null ? contentType : "unknown")
                 .tag("direction", direction != null ? direction : "unknown")
@@ -223,7 +223,7 @@ public class SecurityMetrics {
     /**
      * 记录脱敏规则匹配
      */
-    public void recordSanitizationRuleMatch(final String ruleId,final String ruleType,final int matchCount) {
+    public void recordSanitizationRuleMatch(final String ruleId, final String ruleType, final int matchCount) {
         Counter ruleMatchCounter = Counter.builder("jairouter.security.sanitization.rule.matches")
                 .tag("rule_id", ruleId != null ? ruleId : "unknown")
                 .tag("rule_type", ruleType != null ? ruleType : "unknown")
@@ -243,7 +243,7 @@ public class SecurityMetrics {
     /**
      * 完成脱敏计时
      */
-    public void recordSanitizationDuration(final Timer.Sample sample,final String operation) {
+    public void recordSanitizationDuration(final Timer.Sample sample, final String operation) {
         sample.stop(Timer.builder("jairouter.security.sanitization.duration")
                 .tag("operation", operation != null ? operation : "unknown")
                 .register(meterRegistry));
@@ -254,7 +254,7 @@ public class SecurityMetrics {
     /**
      * 记录安全违规事件
      */
-    public void recordSecurityViolation(final String violationType,final String severity) {
+    public void recordSecurityViolation(final String violationType, final String severity) {
         Counter.builder("jairouter.security.violations")
                 .tag("violation_type", violationType != null ? violationType : "unknown")
                 .tag("severity", severity != null ? severity : "medium")
@@ -265,7 +265,7 @@ public class SecurityMetrics {
     /**
      * 记录可疑活动
      */
-    public void recordSuspiciousActivity(final String activityType,final String clientIp) {
+    public void recordSuspiciousActivity(final String activityType, final String clientIp) {
         Counter.builder("jairouter.security.suspicious.activities")
                 .tag("activity_type", activityType != null ? activityType : "unknown")
                 .tag("client_ip_hash", hashClientIp(clientIp))

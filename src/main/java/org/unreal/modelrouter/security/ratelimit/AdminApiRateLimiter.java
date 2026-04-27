@@ -44,7 +44,7 @@ public class AdminApiRateLimiter implements WebFilter {
     private volatile long lastCleanupTime = System.currentTimeMillis();
     
     @Override
-    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
         
         // 只对管理 API 进行速率限制

@@ -155,7 +155,7 @@ public class SecurityConfigMergeService {
      * @return 合并后的配置
      */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> deepMergeConfigs(final Map<String, Object> baseConfig,final Map<String, Object> overrideConfig) {
+    private Map<String, Object> deepMergeConfigs(final Map<String, Object> baseConfig, final Map<String, Object> overrideConfig) {
         if (overrideConfig.isEmpty()) {
             return new HashMap<>(baseConfig);
         }

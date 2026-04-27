@@ -211,8 +211,8 @@ public class MetricLifecycleManager {
         private final int disabledMetrics;
         private final Instant lastCheckTime;
         
-        public LifecycleStatus(final boolean running,final int totalMetrics,final int enabledMetrics, 
-                              final int disabledMetrics,final Instant lastCheckTime) {
+        public LifecycleStatus(final boolean running, final int totalMetrics, final int enabledMetrics, 
+                              final int disabledMetrics, final Instant lastCheckTime) {
             this.running = running;
             this.totalMetrics = totalMetrics;
             this.enabledMetrics = enabledMetrics;

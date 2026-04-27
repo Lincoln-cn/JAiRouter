@@ -48,7 +48,7 @@ public class SpanManager {
      * @param path 请求路径
      * @return 创建的Span
      */
-    public Span createHttpServerSpan(final String operationName,final String method,final String path) {
+    public Span createHttpServerSpan(final String operationName, final String method, final String path) {
         Span span = createSpan(operationName, SpanKind.SERVER);
         
         // 设置HTTP相关属性
@@ -67,7 +67,7 @@ public class SpanManager {
      * @param url 请求URL
      * @return 创建的Span
      */
-    public Span createHttpClientSpan(final String operationName,final String method,final String url) {
+    public Span createHttpClientSpan(final String operationName, final String method, final String url) {
         Span span = createSpan(operationName, SpanKind.CLIENT);
         
         // 设置HTTP客户端相关属性
@@ -85,7 +85,7 @@ public class SpanManager {
      * @param component 组件名称
      * @return 创建的Span
      */
-    public Span createInternalSpan(final String operationName,final String component) {
+    public Span createInternalSpan(final String operationName, final String component) {
         Span span = createSpan(operationName, SpanKind.INTERNAL);
         
         // 设置组件信息
@@ -102,7 +102,7 @@ public class SpanManager {
      * @param dbName 数据库名称
      * @return 创建的Span
      */
-    public Span createDatabaseSpan(final String operationName,final String dbType,final String dbName) {
+    public Span createDatabaseSpan(final String operationName, final String dbType, final String dbName) {
         Span span = createSpan(operationName, SpanKind.CLIENT);
         
         // 设置数据库相关属性
@@ -121,7 +121,7 @@ public class SpanManager {
      * @param destination 目标队列或主题
      * @return 创建的Span
      */
-    public Span createMessagingSpan(final String operationName,final SpanKind kind,final String destination) {
+    public Span createMessagingSpan(final String operationName, final SpanKind kind, final String destination) {
         Span span = createSpan(operationName, kind);
         
         // 设置消息队列相关属性
@@ -138,7 +138,7 @@ public class SpanManager {
      * @param kind Span类型
      * @return 创建的Span
      */
-    public Span createSpan(final String operationName,final SpanKind kind) {
+    public Span createSpan(final String operationName, final SpanKind kind) {
         try {
             Span span = tracer.spanBuilder(operationName)
                     .setSpanKind(kind)
@@ -169,7 +169,7 @@ public class SpanManager {
      * @param span 要完成的Span
      * @param duration 操作耗时
      */
-    public void finishSpanSuccessfully(final Span span,final Duration duration) {
+    public void finishSpanSuccessfully(final Span span, final Duration duration) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -200,7 +200,7 @@ public class SpanManager {
      * @param error 错误信息
      * @param duration 操作耗时
      */
-    public void finishSpanWithError(final Span span,final Throwable error,final Duration duration) {
+    public void finishSpanWithError(final Span span, final Throwable error, final Duration duration) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -238,7 +238,7 @@ public class SpanManager {
      * @param eventName 事件名称
      * @param attributes 事件属性
      */
-    public void addBusinessEvent(final Span span,final String eventName,final Map<String, Object> attributes) {
+    public void addBusinessEvent(final Span span, final String eventName, final Map<String, Object> attributes) {
         if (span == null || !span.getSpanContext().isValid()) {
             return;
         }
@@ -282,7 +282,7 @@ public class SpanManager {
      * @param span 目标Span
      * @param tags 业务标签
      */
-    public void setBusinessTags(final Span span,final Map<String, Object> tags) {
+    public void setBusinessTags(final Span span, final Map<String, Object> tags) {
         if (span == null || !span.getSpanContext().isValid() || tags == null) {
             return;
         }

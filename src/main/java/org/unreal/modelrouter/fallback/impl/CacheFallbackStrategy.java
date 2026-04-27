@@ -27,7 +27,7 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
     private final ConcurrentMap<String, ResponseEntity<?>> cache = new ConcurrentHashMap<>();
     private final int maxCacheSize;
 
-    public CacheFallbackStrategy(final String serviceType,final int maxCacheSize) {
+    public CacheFallbackStrategy(final String serviceType, final int maxCacheSize) {
         this.serviceType = serviceType;
         this.maxCacheSize = maxCacheSize;
     }
@@ -57,7 +57,7 @@ public class CacheFallbackStrategy implements FallbackStrategy<ResponseEntity<?>
      * @param httpRequest
      * @param response    响应结果
      */
-    public void cacheResponse(final ModelServiceRegistry.ServiceType serviceType,final String modelName,final ServerHttpRequest httpRequest,final ResponseEntity<?> response) {
+    public void cacheResponse(final ModelServiceRegistry.ServiceType serviceType, final String modelName,final ServerHttpRequest httpRequest,final ResponseEntity<?> response) {
         if (cache.size() >= maxCacheSize) {
             // 简单的LRU实现：移除第一个元素
             cache.remove(cache.keySet().iterator().next());

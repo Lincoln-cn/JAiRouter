@@ -75,7 +75,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     private static final String DEFAULT_HASH_ALGORITHM = "SHA-256";
     
     @Override
-    public Mono<String> applySanitizationRules(final String content,final List<SanitizationRule> rules,final String contentType) {
+    public Mono<String> applySanitizationRules(final String content, final List<SanitizationRule> rules, final String contentType) {
         if (content == null || content.isEmpty()) {
             return Mono.justOrEmpty(content);
         }
@@ -95,7 +95,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 内存中处理内容
      */
-    private Mono<String> processContentInMemory(final String content,final List<SanitizationRule> rules,final String contentType) {
+    private Mono<String> processContentInMemory(final String content, final List<SanitizationRule> rules, final String contentType) {
         return Mono.fromCallable(() -> {
             List<CompiledRule> applicableRules = getApplicableRules(rules, contentType);
             
@@ -118,7 +118,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 流式处理大文件内容
      */
-    private Mono<String> processLargeContentStreaming(final String content,final List<SanitizationRule> rules,final String contentType) {
+    private Mono<String> processLargeContentStreaming(final String content, final List<SanitizationRule> rules, final String contentType) {
         return Mono.fromCallable(() -> {
             List<CompiledRule> applicableRules = getApplicableRules(rules, contentType);
             
@@ -153,7 +153,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 获取适用的编译规则列表
      */
-    private List<CompiledRule> getApplicableRules(final List<SanitizationRule> rules,final String contentType) {
+    private List<CompiledRule> getApplicableRules(final List<SanitizationRule> rules, final String contentType) {
         String cacheKey = contentType + ":" + rules.stream()
                 .map(SanitizationRule::getRuleId)
                 .sorted()
@@ -190,7 +190,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用编译后的规则
      */
-    private String applyCompiledRule(final String content,final CompiledRule compiledRule) {
+    private String applyCompiledRule(final String content, final CompiledRule compiledRule) {
         java.util.regex.Matcher matcher = compiledRule.getPattern().matcher(content);
         if (!matcher.find()) {
             return content;
@@ -211,7 +211,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用掩码策略
      */
-    private String applyMaskStrategy(final String content,final java.util.regex.Matcher matcher,final SanitizationRule rule) {
+    private String applyMaskStrategy(final String content, final java.util.regex.Matcher matcher, final SanitizationRule rule) {
         String maskChar = rule.getReplacementChar() != null ? rule.getReplacementChar() : DEFAULT_MASK_CHAR;
         
         StringBuffer result = new StringBuffer();
@@ -230,7 +230,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用替换策略
      */
-    private String applyReplaceStrategy(final String content,final java.util.regex.Matcher matcher,final SanitizationRule rule) {
+    private String applyReplaceStrategy(final String content, final java.util.regex.Matcher matcher, final SanitizationRule rule) {
         String replacement = rule.getReplacementText() != null ? rule.getReplacementText() : "[REDACTED]";
         return matcher.replaceAll(java.util.regex.Matcher.quoteReplacement(replacement));
     }
@@ -238,14 +238,14 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用删除策略
      */
-    private String applyRemoveStrategy(final String content,final java.util.regex.Matcher matcher) {
+    private String applyRemoveStrategy(final String content, final java.util.regex.Matcher matcher) {
         return matcher.replaceAll("");
     }
     
     /**
      * 应用哈希策略
      */
-    private String applyHashStrategy(final String content,final java.util.regex.Matcher matcher) {
+    private String applyHashStrategy(final String content, final java.util.regex.Matcher matcher) {
         StringBuffer result = new StringBuffer();
         matcher.reset();
         
@@ -372,7 +372,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 批量处理多个内容
      */
-    public Flux<String> applySanitizationRulesBatch(final List<String> contents,final List<SanitizationRule> rules,final String contentType) {
+    public Flux<String> applySanitizationRulesBatch(final List<String> contents, final List<SanitizationRule> rules, final String contentType) {
         return Flux.fromIterable(contents)
                 .parallel()
                 .runOn(Schedulers.parallel())
@@ -408,7 +408,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
         private final SanitizationRule rule;
         private final Pattern pattern;
         
-        public CompiledRule(final SanitizationRule rule,final Pattern pattern) {
+        public CompiledRule(final SanitizationRule rule, final Pattern pattern) {
             this.rule = rule;
             this.pattern = pattern;
         }
@@ -430,7 +430,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
         private final int contentTypeCacheCount;
         private final long totalMatches;
         
-        public CacheStatistics(final int compiledRulesCount,final int contentTypeCacheCount,final long totalMatches) {
+        public CacheStatistics(final int compiledRulesCount, final int contentTypeCacheCount, final long totalMatches) {
             this.compiledRulesCount = compiledRulesCount;
             this.contentTypeCacheCount = contentTypeCacheCount;
             this.totalMatches = totalMatches;

@@ -201,7 +201,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 记录配置变更事件
      */
-    private void recordConfigurationChange(final String changeType,final String userId,final String description,final Object oldValue,final Object newValue) {
+    private void recordConfigurationChange(final String changeType, final String userId,final String description,final Object oldValue,final Object newValue) {
         String changeId = UUID.randomUUID().toString();
         SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
                 this, changeId, changeType, oldValue, newValue);
@@ -220,11 +220,11 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 发布配置变更事件
      */
-    private void publishConfigurationChangeEvent(final String configType,final Object oldValue,final Object newValue) {
+    private void publishConfigurationChangeEvent(final String configType, final Object oldValue,final Object newValue) {
         try {
             String changeId = UUID.randomUUID().toString();
             SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
-                    this,changeId, configType, oldValue, newValue);
+                    this, changeId, configType, oldValue, newValue);
             eventPublisher.publishEvent(event);
         } catch (Exception e) {
             log.warn("发布配置变更事件失败", e);
@@ -283,7 +283,7 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 验证脱敏子配置
      */
-    private void validateSanitizationSubConfig(final String maskingChar,final String fieldName) {
+    private void validateSanitizationSubConfig(final String maskingChar, final String fieldName) {
         if (maskingChar == null || maskingChar.trim().isEmpty()) {
             throw new IllegalArgumentException(fieldName + "不能为空");
         }

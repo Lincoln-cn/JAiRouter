@@ -180,7 +180,7 @@ public class SecurityBlacklistController {
     /**
      * 脱敏处理目标值
      */
-    private String maskValue(final String type,final String value) {
+    private String maskValue(final String type, final String value) {
         if (value == null || value.length() < 8) {
             return value == null ? "null" : value;
         }

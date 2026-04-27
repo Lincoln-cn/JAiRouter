@@ -15,11 +15,11 @@ public class AuthenticationException extends SecurityException {
     public static final String EXPIRED_JWT_TOKEN = "EXPIRED_JWT_TOKEN";
     public static final String BLACKLISTED_TOKEN = "BLACKLISTED_TOKEN";
     
-    public AuthenticationException(final String message,final String errorCode) {
+    public AuthenticationException(final String message, final String errorCode) {
         super(message, errorCode, HttpStatus.UNAUTHORIZED);
     }
     
-    public AuthenticationException(final String message,final Throwable cause,final String errorCode) {
+    public AuthenticationException(final String message, final Throwable cause, final String errorCode) {
         super(message, cause, errorCode, HttpStatus.UNAUTHORIZED);
     }
     

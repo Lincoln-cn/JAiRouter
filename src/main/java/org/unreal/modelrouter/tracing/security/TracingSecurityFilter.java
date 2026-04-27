@@ -45,7 +45,7 @@ public class TracingSecurityFilter implements WebFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
         // 检查是否需要跳过追踪
         if (shouldSkipTracing(exchange)) {
             return chain.filter(exchange);
@@ -58,7 +58,7 @@ public class TracingSecurityFilter implements WebFilter, Ordered {
     /**
      * 安全地处理追踪逻辑，避免触发ReadOnlyHttpHeaders异常
      */
-    private Mono<Void> handleTracingSafely(final ServerWebExchange exchange,final WebFilterChain chain) {
+    private Mono<Void> handleTracingSafely(final ServerWebExchange exchange, final WebFilterChain chain) {
         return ReactiveSecurityContextHolder.getContext()
                 .cast(org.springframework.security.core.context.SecurityContext.class)
                 .map(org.springframework.security.core.context.SecurityContext::getAuthentication)
@@ -84,7 +84,7 @@ public class TracingSecurityFilter implements WebFilter, Ordered {
     /**
      * 安全地处理已认证的请求
      */
-    private Mono<Void> handleAuthenticatedRequestSafely(final ServerWebExchange exchange,final Authentication authentication) {
+    private Mono<Void> handleAuthenticatedRequestSafely(final ServerWebExchange exchange, final Authentication authentication) {
         return ReactiveTracingContextHolder.getCurrentContext()
                 .doOnNext(context -> {
                     try {
@@ -152,7 +152,7 @@ public class TracingSecurityFilter implements WebFilter, Ordered {
     /**
      * 安全地处理安全错误
      */
-    private Mono<Void> handleSecurityErrorSafely(final ServerWebExchange exchange,final Throwable error) {
+    private Mono<Void> handleSecurityErrorSafely(final ServerWebExchange exchange, final Throwable error) {
         return ReactiveTracingContextHolder.getCurrentContext()
                 .doOnNext(context -> {
                     try {
@@ -187,7 +187,7 @@ public class TracingSecurityFilter implements WebFilter, Ordered {
     /**
      * 添加用户信息到追踪上下文
      */
-    private void addUserInfoToTracingContext(final TracingContext context,final Authentication authentication) {
+    private void addUserInfoToTracingContext(final TracingContext context, final Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {
             try {
                 // 基本用户信息

@@ -40,7 +40,7 @@ public class WebAdminResourceConfig implements WebFluxConfigurer {
     private static class SpaPathResourceResolver extends PathResourceResolver {
 
         @Override
-        protected Mono<Resource> getResource(final String resourcePath,final Resource location) {
+        protected Mono<Resource> getResource(final String resourcePath, final Resource location) {
             // 首先尝试直接获取资源
             try {
                 Resource requestedResource = location.createRelative(resourcePath);

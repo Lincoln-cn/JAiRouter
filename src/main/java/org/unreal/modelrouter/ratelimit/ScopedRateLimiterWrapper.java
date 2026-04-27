@@ -65,7 +65,7 @@ public class ScopedRateLimiterWrapper implements RateLimiter {
     /**
      * 记录限流指标
      */
-    private void recordRateLimitMetrics(final String service,final String algorithm,final boolean allowed) {
+    private void recordRateLimitMetrics(final String service, final String algorithm, final boolean allowed) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordRateLimit(service, algorithm, allowed);

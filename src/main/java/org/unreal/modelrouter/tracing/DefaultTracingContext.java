@@ -48,7 +48,7 @@ public class DefaultTracingContext implements TracingContext {
     /**
      * 私有构造函数，用于复制上下文
      */
-    private DefaultTracingContext(final Tracer tracer,final Context context,final Span currentSpan) {
+    private DefaultTracingContext(final Tracer tracer, final Context context,final Span currentSpan) {
         this.tracer = tracer;
         this.propagator = W3CTraceContextPropagator.getInstance();
         this.context = context;
@@ -56,7 +56,7 @@ public class DefaultTracingContext implements TracingContext {
     }
     
     @Override
-    public Span createSpan(final String operationName,final SpanKind kind) {
+    public Span createSpan(final String operationName, final SpanKind kind) {
         try {
             SpanBuilder spanBuilder = tracer.spanBuilder(operationName)
                     .setSpanKind(kind);
@@ -83,7 +83,7 @@ public class DefaultTracingContext implements TracingContext {
     }
     
     @Override
-    public Span createChildSpan(final String operationName,final SpanKind kind,final Span parentSpan) {
+    public Span createChildSpan(final String operationName, final SpanKind kind,final Span parentSpan) {
         try {
             Context parentContext = context.with(parentSpan);
             
@@ -133,7 +133,7 @@ public class DefaultTracingContext implements TracingContext {
     }
     
     @Override
-    public void finishSpan(final Span span,final Throwable error) {
+    public void finishSpan(final Span span, final Throwable error) {
         if (span != null && span.getSpanContext().isValid()) {
             try {
                 // 记录错误信息
@@ -192,7 +192,7 @@ public class DefaultTracingContext implements TracingContext {
     }
     
     @Override
-    public void setTag(final String key,final String value) {
+    public void setTag(final String key, final String value) {
         if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
             try {
                 currentSpan.setAttribute(AttributeKey.stringKey(key), value);
@@ -203,7 +203,7 @@ public class DefaultTracingContext implements TracingContext {
     }
     
     @Override
-    public void setTag(final String key,final Number value) {
+    public void setTag(final String key, final Number value) {
         if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
             try {
                 if (value instanceof Long) {
@@ -220,7 +220,7 @@ public class DefaultTracingContext implements TracingContext {
     }
     
     @Override
-    public void setTag(final String key,final Boolean value) {
+    public void setTag(final String key, final Boolean value) {
         if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
             try {
                 currentSpan.setAttribute(AttributeKey.booleanKey(key), value);
@@ -231,7 +231,7 @@ public class DefaultTracingContext implements TracingContext {
     }
     
     @Override
-    public void addEvent(final String name,final Map<String, Object> attributes) {
+    public void addEvent(final String name, final Map<String, Object> attributes) {
         if (currentSpan != null && currentSpan.getSpanContext().isValid()) {
             try {
                 if (attributes == null || attributes.isEmpty()) {
@@ -321,7 +321,7 @@ public class DefaultTracingContext implements TracingContext {
     private static final TextMapSetter<Map<String, String>> MAP_SETTER = 
             new TextMapSetter<Map<String, String>>() {
                 @Override
-                public void set(@Nullable final Map<String, String> carrier,final String key,final String value) {
+                public void set(@Nullable final Map<String, String> carrier, final String key,final String value) {
                     if (carrier != null) {
                         carrier.put(key, value);
                     }
@@ -340,7 +340,7 @@ public class DefaultTracingContext implements TracingContext {
                 
                 @Override
                 @Nullable
-                public String get(@Nullable final Map<String, String> carrier,final String key) {
+                public String get(@Nullable final Map<String, String> carrier, final String key) {
                     return carrier != null ? carrier.get(key) : null;
                 }
             };

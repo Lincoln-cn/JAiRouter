@@ -15,7 +15,7 @@ public class MonitorConfigurationChangeEvent {
     private final Object newValue;
     private final LocalDateTime timestamp;
 
-    public MonitorConfigurationChangeEvent(final Object source ,final String changeId,final String configType,final Object oldValue,final Object newValue) {
+    public MonitorConfigurationChangeEvent(final Object source , final String changeId, final String configType,final Object oldValue,final Object newValue) {
         this.source = source;
         this.changeId = changeId;
         this.configType = configType;

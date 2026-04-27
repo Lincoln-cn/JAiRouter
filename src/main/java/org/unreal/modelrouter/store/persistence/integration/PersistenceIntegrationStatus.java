@@ -22,7 +22,7 @@ public class PersistenceIntegrationStatus {
     public PersistenceIntegrationStatus() {
     }
 
-    public PersistenceIntegrationStatus(final boolean initialized,final long syncIntervalMs,final long recoveryTimeoutMs) {
+    public PersistenceIntegrationStatus(final boolean initialized, final long syncIntervalMs,final long recoveryTimeoutMs) {
         this.initialized = initialized;
         this.syncIntervalMs = syncIntervalMs;
         this.recoveryTimeoutMs = recoveryTimeoutMs;

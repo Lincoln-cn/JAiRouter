@@ -124,7 +124,7 @@ public class ApiKeyAuthenticationProvider implements AuthenticationProvider {
     /**
      * 发布认证失败事件
      */
-    private void publishAuthenticationFailureEvent(final String apiKey,final String reason) {
+    private void publishAuthenticationFailureEvent(final String apiKey, final String reason) {
         try {
             // 创建审计事件（不记录完整的API Key）
             SecurityAuditEvent auditEvent = SecurityAuditEvent.builder()

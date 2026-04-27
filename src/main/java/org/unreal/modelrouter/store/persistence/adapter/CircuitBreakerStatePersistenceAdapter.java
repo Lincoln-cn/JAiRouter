@@ -226,7 +226,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param circuitBreaker 熔断器实例
      * @param newState 新状态
      */
-    public void onStateChange(final CircuitBreaker circuitBreaker,final String newState) {
+    public void onStateChange(final CircuitBreaker circuitBreaker, final String newState) {
         logger.debug("Circuit breaker state change event: {}", newState);
         saveCircuitBreakerState(circuitBreaker).subscribe();
     }

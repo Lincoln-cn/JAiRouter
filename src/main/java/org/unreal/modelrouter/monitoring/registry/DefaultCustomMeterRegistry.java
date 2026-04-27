@@ -98,7 +98,7 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
     }
     
     @Override
-    public Gauge registerGauge(final MetricRegistrationRequest request,final Supplier<Number> valueSupplier) {
+    public Gauge registerGauge(final MetricRegistrationRequest request, final Supplier<Number> valueSupplier) {
         validateRequest(request, Meter.Type.GAUGE);
         
         lock.writeLock().lock();
@@ -193,7 +193,7 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
     }
     
     @Override
-    public boolean unregisterMeter(final String metricName,final Map<String, String> tags) {
+    public boolean unregisterMeter(final String metricName, final Map<String, String> tags) {
         lock.writeLock().lock();
         try {
             String meterKey = createMeterKey(metricName, tags);
@@ -240,7 +240,7 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
     }
     
     @Override
-    public boolean updateMetricMetadata(final String metricName,final MetricMetadata metadata) {
+    public boolean updateMetricMetadata(final String metricName, final MetricMetadata metadata) {
         lock.writeLock().lock();
         try {
             if (metricMetadataMap.containsKey(metricName)) {
@@ -263,7 +263,7 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
     }
     
     @Override
-    public boolean meterExists(final String metricName,final Map<String, String> tags) {
+    public boolean meterExists(final String metricName, final Map<String, String> tags) {
         lock.readLock().lock();
         try {
             String meterKey = createMeterKey(metricName, tags);
@@ -274,7 +274,7 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
     }
     
     @Override
-    public Optional<Meter> getMeter(final String metricName,final Map<String, String> tags) {
+    public Optional<Meter> getMeter(final String metricName, final Map<String, String> tags) {
         lock.readLock().lock();
         try {
             String meterKey = createMeterKey(metricName, tags);
@@ -335,7 +335,7 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
         }
     }
     
-    private void validateRequest(final MetricRegistrationRequest request,final Meter.Type expectedType) {
+    private void validateRequest(final MetricRegistrationRequest request, final Meter.Type expectedType) {
         if (request == null) {
             throw new IllegalArgumentException("MetricRegistrationRequest cannot be null");
         }
@@ -353,7 +353,7 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
         }
     }
     
-    private String createMeterKey(final String metricName,final Map<String, String> tags) {
+    private String createMeterKey(final String metricName, final Map<String, String> tags) {
         StringBuilder keyBuilder = new StringBuilder(metricName);
         
         if (tags != null && !tags.isEmpty()) {

@@ -51,7 +51,7 @@ public class ResponseSanitizationFilter implements WebFilter {
     }
     
     @Override
-    public Mono<Void> filter(final ServerWebExchange exchange,final WebFilterChain chain) {
+    public Mono<Void> filter(final ServerWebExchange exchange, final WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         
         // 跳过不需要脱敏的路径
@@ -215,15 +215,15 @@ public class ResponseSanitizationFilter implements WebFilter {
     /**
      * 记录脱敏事件
      */
-    private void recordSanitizationEvent(final ServerHttpRequest request,final String contentType,final boolean sanitized) {
+    private void recordSanitizationEvent(final ServerHttpRequest request, final String contentType, final boolean sanitized) {
         recordSanitizationEvent(request, contentType, sanitized, null);
     }
     
     /**
      * 记录脱敏事件（带错误信息）
      */
-    private void recordSanitizationEvent(final ServerHttpRequest request,final String contentType, 
-                                       final boolean sanitized,final String errorMessage) {
+    private void recordSanitizationEvent(final ServerHttpRequest request, final String contentType, 
+                                       final boolean sanitized, final String errorMessage) {
         if (!securityProperties.getSanitization().getResponse().isLogSanitization()) {
             return;
         }

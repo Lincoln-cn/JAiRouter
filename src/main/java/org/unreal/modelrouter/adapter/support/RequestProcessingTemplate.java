@@ -27,7 +27,7 @@ public class RequestProcessingTemplate {
     private final ObjectMapper objectMapper;
     private final MetricsSupport metricsSupport;
 
-    public RequestProcessingTemplate(final ObjectMapper objectMapper,final MetricsSupport metricsSupport) {
+    public RequestProcessingTemplate(final ObjectMapper objectMapper, final MetricsSupport metricsSupport) {
         this.objectMapper = objectMapper;
         this.metricsSupport = metricsSupport;
     }
@@ -67,7 +67,7 @@ public class RequestProcessingTemplate {
     }
 
     private Mono<ResponseStatusException> handleClientError(
-            final String instanceName,final String path,
+            final String instanceName, final String path,
             final org.springframework.web.reactive.function.client.ClientResponse clientResponse) {
 
         int statusCode = clientResponse.statusCode().value();

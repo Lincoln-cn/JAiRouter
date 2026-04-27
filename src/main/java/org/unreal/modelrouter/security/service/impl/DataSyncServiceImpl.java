@@ -334,8 +334,8 @@ public class DataSyncServiceImpl implements DataSyncService {
         .doOnError(error -> log.error("Recovery operation failed: {}", error.getMessage(), error));
     }
     
-    private Mono<Void> recoverTokenBatch(final List<String> tokenKeys,final AtomicLong processedCount, 
-                                        final AtomicLong successCount,final AtomicLong failureCount) {
+    private Mono<Void> recoverTokenBatch(final List<String> tokenKeys, final AtomicLong processedCount, 
+                                        final AtomicLong successCount, final AtomicLong failureCount) {
         return Flux.fromIterable(tokenKeys)
             .flatMap(key -> {
                 processedCount.incrementAndGet();
@@ -381,8 +381,8 @@ public class DataSyncServiceImpl implements DataSyncService {
             .then();
     }
     
-    private Mono<Void> recoverBlacklistBatch(final List<String> blacklistKeys,final AtomicLong processedCount, 
-                                           final AtomicLong successCount,final AtomicLong failureCount) {
+    private Mono<Void> recoverBlacklistBatch(final List<String> blacklistKeys, final AtomicLong processedCount, 
+                                           final AtomicLong successCount, final AtomicLong failureCount) {
         return Flux.fromIterable(blacklistKeys)
             .flatMap(key -> {
                 processedCount.incrementAndGet();
@@ -448,7 +448,7 @@ public class DataSyncServiceImpl implements DataSyncService {
             });
     }
     
-    private Mono<SyncResult> performRepairOperation(final ConsistencyCheckResult checkResult,final long startTime) {
+    private Mono<SyncResult> performRepairOperation(final ConsistencyCheckResult checkResult, final long startTime) {
         // 实现数据修复逻辑
         // 这里简化实现，实际应该根据一致性检查结果进行具体的修复操作
         return Mono.just(new SyncResult(true, 0, 0, 0, 

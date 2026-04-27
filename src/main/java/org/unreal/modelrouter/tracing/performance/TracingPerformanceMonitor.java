@@ -123,8 +123,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
     /**
      * 记录操作性能
      */
-    public Mono<Void> recordOperationPerformance(final String operation,final long startTime,final long endTime, 
-                                                final boolean success,final Map<String, Object> metadata) {
+    public Mono<Void> recordOperationPerformance(final String operation, final long startTime, final long endTime, 
+                                                final boolean success, final Map<String, Object> metadata) {
         return Mono.fromRunnable(() -> {
             long duration = endTime - startTime;
             totalOperations.incrementAndGet();
@@ -416,7 +416,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         thresholds.put("batch.process", new PerformanceThreshold(500, 2000));
     }
 
-    private void handleSlowOperation(final String operation,final long duration,final Map<String, Object> metadata) {
+    private void handleSlowOperation(final String operation, final long duration, final Map<String, Object> metadata) {
         log.warn("检测到慢操作: operation={}, duration={}ms", operation, duration);
         performanceAnomalyCounter.increment();
     }
@@ -545,7 +545,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             this.operation = operation;
         }
 
-        public void recordOperation(final long latency,final boolean success) {
+        public void recordOperation(final long latency, final boolean success) {
             totalCount.incrementAndGet();
             if (success) {
                 successCount.incrementAndGet();

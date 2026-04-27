@@ -53,7 +53,7 @@ public class SecretKeyValidator {
         private final String displayName;
         private final String description;
 
-        StrengthLevel(final String displayName,final String description) {
+        StrengthLevel(final String displayName, final String description) {
             this.displayName = displayName;
             this.description = description;
         }
@@ -75,7 +75,7 @@ public class SecretKeyValidator {
         private final boolean passed;
         private final String message;
 
-        public ValidationResult(final StrengthLevel strengthLevel,final boolean passed,final String message) {
+        public ValidationResult(final StrengthLevel strengthLevel, final boolean passed,final String message) {
             this.strengthLevel = strengthLevel;
             this.passed = passed;
             this.message = message;
@@ -97,7 +97,7 @@ public class SecretKeyValidator {
             return new ValidationResult(level, true, "密钥强度：" + level.getDisplayName());
         }
 
-        public static ValidationResult failure(final StrengthLevel level,final String reason) {
+        public static ValidationResult failure(final StrengthLevel level, final String reason) {
             return new ValidationResult(level, false, reason);
         }
     }

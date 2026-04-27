@@ -63,7 +63,7 @@ public final class ApiKeyHashUtil {
      * @param storedHash  存储的哈希值（格式：salt:hash）
      * @return 是否匹配
      */
-    public static boolean verifyApiKey(final String apiKey,final String storedHash) {
+    public static boolean verifyApiKey(final String apiKey, final String storedHash) {
         if (apiKey == null || apiKey.isEmpty() || storedHash == null || storedHash.isEmpty()) {
             return false;
         }
@@ -100,7 +100,7 @@ public final class ApiKeyHashUtil {
      * @param b 数组 b
      * @return 是否相等
      */
-    private static boolean constantTimeEquals(final byte[] a,final byte[] b) {
+    private static boolean constantTimeEquals(final byte[] a, final byte[] b) {
         if (a.length != b.length) {
             return false;
         }

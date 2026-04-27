@@ -11,7 +11,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 public class MonitoringEnabledCondition implements Condition {
 
     @Override
-    public boolean matches(final ConditionContext context,final AnnotatedTypeMetadata metadata) {
+    public boolean matches(final ConditionContext context, final AnnotatedTypeMetadata metadata) {
         String enabled = context.getEnvironment().getProperty("monitoring.metrics.enabled", "true");
         return Boolean.parseBoolean(enabled);
     }

@@ -36,7 +36,7 @@ public class ConfigMerger {
      * @param updates 更新配置
      * @return 合并后的配置
      */
-    public ServiceConfiguration merge(final ServiceConfiguration existing,final ServiceConfiguration updates) {
+    public ServiceConfiguration merge(final ServiceConfiguration existing, final ServiceConfiguration updates) {
         if (existing == null) {
             logger.debug("现有配置为空，使用更新配置");
             return updates;
@@ -247,7 +247,7 @@ public class ConfigMerger {
      * @return 合并后的 Map
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> mergeMaps(final Map<String, Object> base,final Map<String, Object> updates) {
+    public Map<String, Object> mergeMaps(final Map<String, Object> base, final Map<String, Object> updates) {
         if (base == null) {
             return updates != null ? new HashMap<>(updates) : new HashMap<>();
         }

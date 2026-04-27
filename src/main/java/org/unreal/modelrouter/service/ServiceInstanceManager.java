@@ -84,7 +84,7 @@ public class ServiceInstanceManager {
      * 创建实例
      */
     @Transactional
-    public ServiceInstanceDTO createInstance(final Long serviceConfigId,final CreateServiceInstanceRequest request) {
+    public ServiceInstanceDTO createInstance(final Long serviceConfigId, final CreateServiceInstanceRequest request) {
         ServiceInstanceEntity entity = ServiceInstanceEntity.builder()
                 .serviceConfigId(serviceConfigId)
                 .instanceName(request.getName())
@@ -110,7 +110,7 @@ public class ServiceInstanceManager {
      * 更新实例
      */
     @Transactional
-    public ServiceInstanceDTO updateInstance(final Long id,final CreateServiceInstanceRequest request) {
+    public ServiceInstanceDTO updateInstance(final Long id, final CreateServiceInstanceRequest request) {
         ServiceInstanceEntity entity = serviceInstanceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Instance not found: " + id));
 
@@ -171,7 +171,7 @@ public class ServiceInstanceManager {
      * 更新健康状态
      */
     @Transactional
-    public void updateHealthStatus(final Long id,final String healthStatus,final String errorMessage) {
+    public void updateHealthStatus(final Long id, final String healthStatus, final String errorMessage) {
         serviceInstanceRepository.findById(id).ifPresent(entity -> {
             entity.setHealthStatus(healthStatus);
             entity.setErrorMessage(errorMessage);
@@ -193,7 +193,7 @@ public class ServiceInstanceManager {
      * 保存或更新限流器配置
      */
     @Transactional
-    public InstanceRateLimitDTO saveRateLimitConfig(final Long instanceId,final InstanceRateLimitDTO dto) {
+    public InstanceRateLimitDTO saveRateLimitConfig(final Long instanceId, final InstanceRateLimitDTO dto) {
         // 确保实例存在
         if (!serviceInstanceRepository.existsById(instanceId)) {
             throw new RuntimeException("Instance not found: " + instanceId);
@@ -262,7 +262,7 @@ public class ServiceInstanceManager {
      * 保存或更新熔断器配置
      */
     @Transactional
-    public InstanceCircuitBreakerDTO saveCircuitBreakerConfig(final Long instanceId,final InstanceCircuitBreakerDTO dto) {
+    public InstanceCircuitBreakerDTO saveCircuitBreakerConfig(final Long instanceId, final InstanceCircuitBreakerDTO dto) {
         // 确保实例存在
         if (!serviceInstanceRepository.existsById(instanceId)) {
             throw new RuntimeException("Instance not found: " + instanceId);

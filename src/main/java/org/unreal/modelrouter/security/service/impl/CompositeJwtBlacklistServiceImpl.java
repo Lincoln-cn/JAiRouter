@@ -32,7 +32,7 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     private final StorageHealthService storageHealthService;
     
     @Override
-    public Mono<Void> addToBlacklist(final String tokenHash,final String reason,final String addedBy) {
+    public Mono<Void> addToBlacklist(final String tokenHash, final String reason,final String addedBy) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {
@@ -189,7 +189,7 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes,final String reason,final String addedBy) {
+    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes, final String reason,final String addedBy) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {

@@ -79,7 +79,7 @@ public class SamplingConfigurationValidator {
     /**
      * 验证采样率
      */
-    private void validateRatio(final String name,final Double ratio,final List<String> errors) {
+    private void validateRatio(final String name, final Double ratio, final List<String> errors) {
         if (ratio == null) {
             errors.add(name + " 不能为null");
         } else if (ratio < 0.0 || ratio > 1.0) {
@@ -91,7 +91,7 @@ public class SamplingConfigurationValidator {
      * 验证采样规则
      */
     private void validateSamplingRule(final TracingConfiguration.SamplingConfig.SamplingRule rule, 
-                                    final int index,final List<String> errors,final List<String> warnings) {
+                                    final int index, final List<String> errors, final List<String> warnings) {
         if (rule == null) {
             errors.add("采样规则[" + index + "] 不能为null");
             return;
@@ -111,7 +111,7 @@ public class SamplingConfigurationValidator {
     /**
      * 验证规则条件语法
      */
-    private void validateRuleCondition(final String condition,final int index,final List<String> warnings) {
+    private void validateRuleCondition(final String condition, final int index, final List<String> warnings) {
         // 简单的条件语法验证
         if (!condition.contains(">=") && !condition.contains("==") && 
             !condition.contains("<=") && !condition.contains("!=")) {
@@ -123,7 +123,7 @@ public class SamplingConfigurationValidator {
      * 验证自适应配置
      */
     private void validateAdaptiveConfig(final TracingConfiguration.SamplingConfig.AdaptiveConfig adaptive, 
-                                      final List<String> errors,final List<String> warnings) {
+                                      final List<String> errors, final List<String> warnings) {
         if (!adaptive.isEnabled()) {
             return; // 未启用则不验证
         }
@@ -153,7 +153,7 @@ public class SamplingConfigurationValidator {
     /**
      * 验证采样列表
      */
-    private void validateSampleLists(final TracingConfiguration.SamplingConfig config,final List<String> warnings) {
+    private void validateSampleLists(final TracingConfiguration.SamplingConfig config, final List<String> warnings) {
         if (config.getAlwaysSample() != null && config.getNeverSample() != null) {
             // 检查是否有冲突的配置
             for (String alwaysSpan : config.getAlwaysSample()) {

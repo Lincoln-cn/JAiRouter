@@ -86,7 +86,7 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
     /**
      * 大小写不敏感地获取请求头
      */
-    private String getHeaderIgnoreCase(final ServerWebExchange exchange,final String headerName) {
+    private String getHeaderIgnoreCase(final ServerWebExchange exchange, final String headerName) {
         // 首先尝试直接获取
         List<String> values = exchange.getRequest().getHeaders().get(headerName);
         if (values != null && !values.isEmpty()) {

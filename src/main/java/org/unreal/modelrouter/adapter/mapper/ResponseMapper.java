@@ -42,7 +42,7 @@ public class ResponseMapper {
      * @param <T> 类型
      * @return 映射后的响应实体
      */
-    public <T> Mono<ResponseEntity<T>> mapResponse(final ClientResponse clientResponse,final Class<T> targetType) {
+    public <T> Mono<ResponseEntity<T>> mapResponse(final ClientResponse clientResponse, final Class<T> targetType) {
         HttpStatus status = HttpStatus.valueOf(clientResponse.statusCode().value());
 
         logger.debug("映射响应：status={}, targetType={}", status, targetType.getSimpleName());
@@ -121,7 +121,7 @@ public class ResponseMapper {
      * @param <T> 类型
      * @return 转换后的对象
      */
-    public <T> T fromJson(final String json,final Class<T> targetType) {
+    public <T> T fromJson(final String json, final Class<T> targetType) {
         try {
             return objectMapper.readValue(json, targetType);
         } catch (JsonProcessingException e) {

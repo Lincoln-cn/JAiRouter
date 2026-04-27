@@ -196,7 +196,7 @@ public class StorageHealthMetricsService {
     /**
      * 记录错误操作
      */
-    private void recordError(final String operation,final String error) {
+    private void recordError(final String operation, final String error) {
         errorCounts.computeIfAbsent(operation, k -> new AtomicLong(0)).incrementAndGet();
         lastErrorTimes.computeIfAbsent(operation, k -> new AtomicLong(0)).set(System.currentTimeMillis());
         

@@ -155,7 +155,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findAllTokens(final int page,final int size) {
+    public Mono<List<JwtTokenInfo>> findAllTokens(final int page, final int size) {
         return Mono.<List<JwtTokenInfo>>fromCallable(() -> {
             try {
                 List<JwtTokenInfo> allTokens = new ArrayList<>();
@@ -210,7 +210,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<Void> updateTokenStatus(final String tokenHash,final TokenStatus status) {
+    public Mono<Void> updateTokenStatus(final String tokenHash, final TokenStatus status) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHash == null || status == null) {
@@ -384,7 +384,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId,final int page,final int size) {
+    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId, final int page,final int size) {
         return Mono.<List<JwtTokenInfo>>fromCallable(() -> {
             try {
                 if (userId == null || userId.trim().isEmpty()) {
@@ -432,7 +432,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
     
     @Override
-    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes,final TokenStatus status,final String reason,final String updatedBy) {
+    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status,final String reason,final String updatedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHashes == null || tokenHashes.isEmpty() || status == null) {
@@ -533,7 +533,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 更新用户索引
      */
-    private void updateUserIndex(final String userId,final String tokenHash,final boolean add) {
+    private void updateUserIndex(final String userId, final String tokenHash,final boolean add) {
         if (userId == null || tokenHash == null) {
             return;
         }
@@ -574,7 +574,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 更新状态索引
      */
-    private void updateStatusIndex(final TokenStatus status,final String tokenHash,final boolean add) {
+    private void updateStatusIndex(final TokenStatus status, final String tokenHash,final boolean add) {
         if (status == null || tokenHash == null) {
             return;
         }

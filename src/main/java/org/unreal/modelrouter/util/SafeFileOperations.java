@@ -30,7 +30,7 @@ public final class SafeFileOperations {
      * @throws SecurityException 如果检测到路径遍历攻击
      * @throws IOException 如果文件操作失败
      */
-    public static File createSafeFile(final String baseDirectory,final String fileName) throws IOException {
+    public static File createSafeFile(final String baseDirectory, final String fileName) throws IOException {
         if (baseDirectory == null || fileName == null) {
             throw new IllegalArgumentException("Base directory and file name cannot be null");
         }
@@ -64,7 +64,7 @@ public final class SafeFileOperations {
      * @throws SecurityException 如果检测到路径遍历攻击
      * @throws IOException 如果目录创建失败
      */
-    public static Path createSafeDirectory(final String baseDirectory,final String subDirectory) throws IOException {
+    public static Path createSafeDirectory(final String baseDirectory, final String subDirectory) throws IOException {
         if (baseDirectory == null || subDirectory == null) {
             throw new IllegalArgumentException("Base directory and sub directory cannot be null");
         }
@@ -96,7 +96,7 @@ public final class SafeFileOperations {
      * @param filePath 文件路径
      * @return 是否安全
      */
-    public static boolean isPathSafe(final String baseDirectory,final String filePath) {
+    public static boolean isPathSafe(final String baseDirectory, final String filePath) {
         try {
             Path basePath = Paths.get(baseDirectory).toAbsolutePath().normalize();
             Path targetPath = Paths.get(filePath).toAbsolutePath().normalize();
@@ -141,7 +141,7 @@ public final class SafeFileOperations {
      * @return 文件的绝对路径
      * @throws IOException 如果文件操作失败
      */
-    public static String writeJsonFile(final Path basePath,final Map<String, Object> data,final ObjectMapper objectMapper)
+    public static String writeJsonFile(final Path basePath, final Map<String, Object> data, final ObjectMapper objectMapper)
             throws IOException {
         if (basePath == null || data == null || objectMapper == null) {
             throw new IllegalArgumentException("Base path, data and object mapper cannot be null");
@@ -174,7 +174,7 @@ public final class SafeFileOperations {
      * @return 文件的绝对路径
      * @throws IOException 如果文件操作失败
      */
-    public static String writeJsonFile(final Path basePath,final List<?> data,final ObjectMapper objectMapper)
+    public static String writeJsonFile(final Path basePath, final List<?> data, final ObjectMapper objectMapper)
             throws IOException {
         if (basePath == null || data == null || objectMapper == null) {
             throw new IllegalArgumentException("Base path, data and object mapper cannot be null");
@@ -207,7 +207,7 @@ public final class SafeFileOperations {
      * @return 从文件读取的数据
      * @throws IOException 如果文件操作失败
      */
-    public static <T> T readJsonFile(final Path basePath,final ObjectMapper objectMapper,final TypeReference<T> typeReference)
+    public static <T> T readJsonFile(final Path basePath, final ObjectMapper objectMapper, final TypeReference<T> typeReference)
             throws IOException {
         if (basePath == null || objectMapper == null || typeReference == null) {
             throw new IllegalArgumentException("Base path, object mapper and type reference cannot be null");

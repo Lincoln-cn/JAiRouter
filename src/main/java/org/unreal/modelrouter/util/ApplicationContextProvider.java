@@ -70,7 +70,7 @@ public class ApplicationContextProvider implements ApplicationContextAware {
      * @return Bean实例
      * @throws BeansException 如果Bean不存在或获取失败
      */
-    public static <T> T getBean(final String name,final Class<T> clazz) throws BeansException {
+    public static <T> T getBean(final String name, final Class<T> clazz) throws BeansException {
         if (applicationContext == null) {
             throw new IllegalStateException("ApplicationContext has not been set");
         }

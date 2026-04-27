@@ -24,20 +24,20 @@ public class RouterResponse<T> {
         this.timestamp = LocalDateTime.now();
     }
 
-    public RouterResponse(final boolean success,final String message,final T data) {
+    public RouterResponse(final boolean success, final String message, final T data) {
         this();
         this.success = success;
         this.message = message;
         this.data = data;
     }
 
-    public RouterResponse(final boolean success,final String message,final T data,final String errorCode) {
+    public RouterResponse(final boolean success, final String message, final T data,final String errorCode) {
         this(success, message, data);
         this.errorCode = errorCode;
     }
 
     // 成功响应
-    public static <T> RouterResponse<T> success(final T data,final String message) {
+    public static <T> RouterResponse<T> success(final T data, final String message) {
         return new RouterResponse<>(true, message, data);
     }
 
@@ -55,7 +55,7 @@ public class RouterResponse<T> {
     }
 
     // 错误响应
-    public static <T> RouterResponse<T> error(final String message,final String errorCode) {
+    public static <T> RouterResponse<T> error(final String message, final String errorCode) {
         return new RouterResponse<>(false, message, null, errorCode);
     }
 

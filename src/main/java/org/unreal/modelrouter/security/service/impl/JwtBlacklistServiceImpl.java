@@ -40,7 +40,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> addToBlacklist(final String tokenHash,final String reason,final String addedBy) {
+    public Mono<Void> addToBlacklist(final String tokenHash, final String reason,final String addedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHash == null || tokenHash.trim().isEmpty()) {
@@ -260,7 +260,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     /**
      * 更新黑名单索引
      */
-    private void updateBlacklistIndex(final String tokenHash,final boolean add) {
+    private void updateBlacklistIndex(final String tokenHash, final boolean add) {
         try {
             Map<String, Object> indexData = storeManager.getConfig(BLACKLIST_INDEX_KEY);
             
@@ -317,7 +317,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     /**
      * 更新黑名单统计信息
      */
-    private void updateBlacklistStats(final long sizeChange,final long cleanedCount) {
+    private void updateBlacklistStats(final long sizeChange, final long cleanedCount) {
         try {
             Map<String, Object> statsData = storeManager.getConfig(BLACKLIST_STATS_KEY);
             
@@ -376,7 +376,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     }
     
     @Override
-    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes,final String reason,final String addedBy) {
+    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes, final String reason,final String addedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHashes == null || tokenHashes.isEmpty()) {

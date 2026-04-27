@@ -161,7 +161,7 @@ public class ErrorMetricsCollector {
      * @param errorType 错误类型
      * @param operation 操作名称
      */
-    public void recordError(final String errorType,final String operation) {
+    public void recordError(final String errorType, final String operation) {
         recordError(errorType, operation, null);
     }
 
@@ -182,7 +182,7 @@ public class ErrorMetricsCollector {
      * @since v2.5.8 标注废弃
      */
     @Deprecated(since = "2.5.8", forRemoval = true)
-    public void recordError(final String errorType,final String operation,final Duration duration) {
+    public void recordError(final String errorType, final String operation, final Duration duration) {
         recordError(errorType, operation, null, "ERROR", null, null, duration);
     }
 
@@ -204,7 +204,7 @@ public class ErrorMetricsCollector {
      * @since v2.5.8 标注废弃
      */
     @Deprecated(since = "2.5.8", forRemoval = true)
-    public void recordError(final String errorType,final String operation,final String errorCode,final String severity) {
+    public void recordError(final String errorType, final String operation, final String errorCode,final String severity) {
         recordError(errorType, operation, errorCode, severity, null, null, null);
     }
 

@@ -99,7 +99,7 @@ public class MonitoringConfigurationValidator {
     /**
      * 验证采样率
      */
-    private void validateSamplingRate(final String name,final double rate) {
+    private void validateSamplingRate(final String name, final double rate) {
         if (rate < 0.0 || rate > 1.0) {
             logger.warn("{}采样率配置无效: {}, 应该在0.0-1.0之间", name, rate);
         } else if (rate < 0.1) {

@@ -57,7 +57,7 @@ public class AdapterErrorHandler {
      * @return 错误响应实体
      */
     @SuppressWarnings("unchecked")
-    public <T> Mono<ResponseEntity<T>> createErrorResponse(final Throwable error,final Class<T> responseType) {
+    public <T> Mono<ResponseEntity<T>> createErrorResponse(final Throwable error, final Class<T> responseType) {
         String errorCode = classifyError(error);
         HttpStatus status = getHttpStatus(errorCode);
 
@@ -75,7 +75,7 @@ public class AdapterErrorHandler {
      * @param maxRetries 最大重试次数
      * @return 是否应该重试
      */
-    public boolean shouldRetry(final Throwable error,final int retryCount,final int maxRetries) {
+    public boolean shouldRetry(final Throwable error, final int retryCount, final int maxRetries) {
         if (retryCount >= maxRetries) {
             logger.debug("达到最大重试次数：{}", maxRetries);
             return false;
@@ -115,7 +115,7 @@ public class AdapterErrorHandler {
      * @param <T> 响应类型
      * @return 降级响应实体
      */
-    public <T> Mono<ResponseEntity<T>> executeFallback(final T fallbackResponse,final Throwable error) {
+    public <T> Mono<ResponseEntity<T>> executeFallback(final T fallbackResponse, final Throwable error) {
         if (fallbackResponse != null) {
             logger.info("执行降级策略：返回降级响应");
             return Mono.just(ResponseEntity.ok(fallbackResponse));
@@ -141,7 +141,7 @@ public class AdapterErrorHandler {
      * 创建错误响应体
      */
     @SuppressWarnings("unchecked")
-    private <T> T createErrorBody(final String errorCode,final String message,final Class<T> responseType) {
+    private <T> T createErrorBody(final String errorCode, final String message, final Class<T> responseType) {
         // 如果是 String 类型，返回 JSON 格式错误信息
         if (responseType == String.class) {
             return (T) String.format("{\"error\": {\"code\": \"%s\", \"message\": \"%s\"}}", errorCode, message);

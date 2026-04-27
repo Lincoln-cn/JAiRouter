@@ -102,7 +102,7 @@ public class LoadBalancerManager {
     /**
      * 为指定服务类型设置负载均衡器
      */
-    public void setLoadBalancer(final ModelServiceRegistry.ServiceType serviceType,final LoadBalancer loadBalancer) {
+    public void setLoadBalancer(final ModelServiceRegistry.ServiceType serviceType, final LoadBalancer loadBalancer) {
         if (loadBalancer == null) {
             throw new IllegalArgumentException("LoadBalancer cannot be null");
         }

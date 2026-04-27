@@ -60,7 +60,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     }
     
     @Override
-    public Mono<ClientResponse> filter(final ClientRequest request,final ExchangeFunction next) {
+    public Mono<ClientResponse> filter(final ClientRequest request, final ExchangeFunction next) {
         // 获取当前追踪上下文
         TracingContext tracingContext = TracingContextHolder.getCurrentContext();
         
@@ -133,7 +133,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     /**
      * 设置Span属性
      */
-    private void setSpanAttributes(final Span span,final ClientRequest request) {
+    private void setSpanAttributes(final Span span, final ClientRequest request) {
         URI uri = request.url();
         
         // HTTP语义约定属性
@@ -161,7 +161,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     /**
      * 从URL中提取后端信息
      */
-    private void extractBackendInfo(final Span span,final URI uri) {
+    private void extractBackendInfo(final Span span, final URI uri) {
         String host = uri.getHost();
         int port = uri.getPort();
         
@@ -214,7 +214,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     /**
      * 注入追踪头到请求中
      */
-    private ClientRequest injectTracingHeaders(final ClientRequest request,final TracingContext tracingContext) {
+    private ClientRequest injectTracingHeaders(final ClientRequest request, final TracingContext tracingContext) {
         Map<String, String> tracingHeaders = new HashMap<>();
         tracingContext.injectContext(tracingHeaders);
         
@@ -232,7 +232,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     /**
      * 记录请求开始日志
      */
-    private void logRequestStart(final ClientRequest request,final TracingContext tracingContext) {
+    private void logRequestStart(final ClientRequest request, final TracingContext tracingContext) {
         try {
             URI uri = request.url();
             String adapter = inferAdapterType(uri.getHost());
@@ -254,8 +254,8 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     /**
      * 处理成功响应
      */
-    private void handleSuccessResponse(final ClientResponse response,final ClientRequest request, 
-                                     final Span span,final TracingContext tracingContext,final Instant startTime) {
+    private void handleSuccessResponse(final ClientResponse response, final ClientRequest request, 
+                                     final Span span, final TracingContext tracingContext,final Instant startTime) {
         try {
             long duration = Instant.now().toEpochMilli() - startTime.toEpochMilli();
             int statusCode = response.statusCode().value();
@@ -318,8 +318,8 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     /**
      * 处理错误响应
      */
-    private void handleErrorResponse(final Throwable error,final ClientRequest request, 
-                                   final Span span,final TracingContext tracingContext,final Instant startTime) {
+    private void handleErrorResponse(final Throwable error, final ClientRequest request, 
+                                   final Span span, final TracingContext tracingContext,final Instant startTime) {
         try {
             long duration = Instant.now().toEpochMilli() - startTime.toEpochMilli();
             

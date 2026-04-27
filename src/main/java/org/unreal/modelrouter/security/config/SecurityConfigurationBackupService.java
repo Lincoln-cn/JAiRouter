@@ -41,7 +41,7 @@ public class SecurityConfigurationBackupService {
      * @param description 备份描述
      * @return 备份ID
      */
-    public String createBackup(final SecurityProperties properties,final String description) {
+    public String createBackup(final SecurityProperties properties, final String description) {
         return createBackup(properties, description, "system");
     }
 
@@ -52,7 +52,7 @@ public class SecurityConfigurationBackupService {
      * @param userId 用户ID
      * @return 备份ID
      */
-    public String createBackup(final SecurityProperties properties,final String description,final String userId) {
+    public String createBackup(final SecurityProperties properties, final String description,final String userId) {
         log.info("开始创建配置备份，用户: {}, 描述: {}", userId, description);
 
         try {
@@ -493,7 +493,7 @@ public class SecurityConfigurationBackupService {
          */
         public record BackupValidationResult(boolean valid, String message,
                                              SecurityConfigurationValidator.ValidationResult configValidationResult) {
-            public BackupValidationResult(final boolean valid,final String message) {
+            public BackupValidationResult(final boolean valid, final String message) {
                 this(valid, message, null);
             }
 
@@ -507,7 +507,7 @@ public class SecurityConfigurationBackupService {
             super(message);
         }
 
-        public ConfigurationBackupException(final String message,final Throwable cause) {
+        public ConfigurationBackupException(final String message, final Throwable cause) {
             super(message, cause);
         }
     }

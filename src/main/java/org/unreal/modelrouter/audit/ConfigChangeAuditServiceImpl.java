@@ -23,7 +23,7 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public ConfigChangeAuditServiceImpl(final ConfigChangeAuditRepository auditRepository,final ObjectMapper objectMapper) {
+    public ConfigChangeAuditServiceImpl(final ConfigChangeAuditRepository auditRepository, final ObjectMapper objectMapper) {
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
     }
@@ -100,7 +100,7 @@ public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
         }
     }
 
-    private String generateChangeSummary(final Map<String, Object> oldValue,final Map<String, Object> newValue) {
+    private String generateChangeSummary(final Map<String, Object> oldValue, final Map<String, Object> newValue) {
         if (oldValue == null && newValue != null) {
             return "Created new configuration";
         } else if (oldValue != null && newValue == null) {

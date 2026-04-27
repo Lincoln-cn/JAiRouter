@@ -199,7 +199,7 @@ public class SecurityAuditEventEntity {
     /**
      * 根据事件类型和成功状态确定风险等级
      */
-    private RiskLevel determineRiskLevel(final AuditEventType type,final Boolean success) {
+    private RiskLevel determineRiskLevel(final AuditEventType type, final Boolean success) {
         if (type == null) return RiskLevel.LOW;
         
         // 失败事件风险较高

@@ -344,7 +344,7 @@ public class LoadBalancerManagementController {
         public String displayName;
         public String description;
 
-        public StrategyInfo(final String name,final String displayName,final String description) {
+        public StrategyInfo(final String name, final String displayName, final String description) {
             this.name = name;
             this.displayName = displayName;
             this.description = description;

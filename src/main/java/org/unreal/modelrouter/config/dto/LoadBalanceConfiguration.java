@@ -71,7 +71,7 @@ public record LoadBalanceConfiguration(
         return map;
     }
 
-    private static String getString(final Map<String, Object> map,final String key) {
+    private static String getString(final Map<String, Object> map, final String key) {
         Object value = map.get(key);
         if (value instanceof String) {
             return (String) value;

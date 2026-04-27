@@ -102,7 +102,7 @@ public class OpenTelemetryAutoConfiguration {
      * @return 追踪器提供者
      */
     @Bean
-    public SdkTracerProvider tracerProvider(final Resource resource,final Sampler sampler,final SpanExporter spanExporter) {
+    public SdkTracerProvider tracerProvider(final Resource resource, final Sampler sampler, final SpanExporter spanExporter) {
         TracingConfiguration.PerformanceConfig performanceConfig = tracingConfig.getPerformance();
         
         // 获取批处理配置

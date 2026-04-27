@@ -112,7 +112,7 @@ public class InstanceManager {
      * @param instanceId 实例 ID
      * @return 实例配置，不存在返回 null
      */
-    public ModelInstanceConfiguration getServiceInstance(final String serviceType,final String instanceId) {
+    public ModelInstanceConfiguration getServiceInstance(final String serviceType, final String instanceId) {
         try {
             List<ModelInstanceConfiguration> instances = getServiceInstances(serviceType);
             
@@ -138,7 +138,7 @@ public class InstanceManager {
      * @param instanceId 实例 ID
      * @param instanceConfig 实例配置（强类型）
      */
-    public void updateServiceInstance(final String serviceType,final String instanceId, 
+    public void updateServiceInstance(final String serviceType, final String instanceId, 
                                       final ModelInstanceConfiguration instanceConfig) {
         if (instanceConfig == null) {
             throw new IllegalArgumentException("实例配置不能为空");
@@ -177,7 +177,7 @@ public class InstanceManager {
     /**
      * 更新服务实例（从 ModelRouterProperties.ModelInstance 转换）
      */
-    public void updateServiceInstance(final String serviceType,final String instanceId,
+    public void updateServiceInstance(final String serviceType, final String instanceId,
                                       final ModelRouterProperties.ModelInstance instanceConfig) {
         if (instanceConfig == null) {
             throw new IllegalArgumentException("实例配置不能为空");
@@ -207,7 +207,7 @@ public class InstanceManager {
      * @param serviceType 服务类型
      * @param instanceId 实例 ID
      */
-    public void deleteServiceInstance(final String serviceType,final String instanceId) {
+    public void deleteServiceInstance(final String serviceType, final String instanceId) {
         logger.info("删除服务 {} 的实例 {}", serviceType, instanceId);
 
         if (serviceType == null || serviceType.trim().isEmpty()) {
@@ -264,7 +264,7 @@ public class InstanceManager {
      * @param serviceType 服务类型
      * @param operations 批量操作
      */
-    public void batchUpdateServiceInstances(final String serviceType,final List<InstanceOperation> operations) {
+    public void batchUpdateServiceInstances(final String serviceType, final List<InstanceOperation> operations) {
         logger.info("批量更新服务 {} 的实例，共 {} 个操作", serviceType, operations.size());
 
         if (serviceType == null || serviceType.trim().isEmpty()) {
@@ -332,7 +332,7 @@ public class InstanceManager {
      * 内部实例更新方法
      */
     @SuppressWarnings("unchecked")
-    private void updateServiceInstanceInternal(final String serviceType,final String instanceId, 
+    private void updateServiceInstanceInternal(final String serviceType, final String instanceId, 
                                                 final ModelInstanceConfiguration instanceConfig) {
 
         if (serviceType == null || serviceType.trim().isEmpty()) {
@@ -453,7 +453,7 @@ public class InstanceManager {
      * 在列表中更新实例
      */
     @SuppressWarnings("unchecked")
-    private void updateInstanceInList(final List<Map<String, Object>> instances,final String instanceId,
+    private void updateInstanceInList(final List<Map<String, Object>> instances, final String instanceId,
                                        final ModelInstanceConfiguration instanceConfig,
                                        final List<String> operationDetails) {
         for (int i = 0; i < instances.size(); i++) {
@@ -473,7 +473,7 @@ public class InstanceManager {
     /**
      * 从列表中删除实例
      */
-    private void deleteInstanceFromList(final List<Map<String, Object>> instances,final String instanceId,
+    private void deleteInstanceFromList(final List<Map<String, Object>> instances, final String instanceId,
                                          final List<String> operationDetails) {
         boolean removed = instances.removeIf(instance -> {
             String currentInstanceId = instance.containsKey("instanceId") ? 
@@ -517,12 +517,12 @@ public class InstanceManager {
         private final String instanceId;
         private ModelInstanceConfiguration instanceConfig;
 
-        public InstanceOperation(final OperationType type,final String instanceId) {
+        public InstanceOperation(final OperationType type, final String instanceId) {
             this.type = type;
             this.instanceId = instanceId;
         }
 
-        public InstanceOperation(final OperationType type,final String instanceId, 
+        public InstanceOperation(final OperationType type, final String instanceId, 
                                   final ModelInstanceConfiguration instanceConfig) {
             this.type = type;
             this.instanceId = instanceId;

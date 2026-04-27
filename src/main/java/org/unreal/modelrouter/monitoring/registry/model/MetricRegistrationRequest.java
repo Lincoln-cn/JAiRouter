@@ -63,7 +63,7 @@ public class MetricRegistrationRequest {
         return samplingRate;
     }
     
-    public static Builder builder(final String name,final Meter.Type type) {
+    public static Builder builder(final String name, final Meter.Type type) {
         return new Builder(name, type);
     }
     
@@ -105,7 +105,7 @@ public class MetricRegistrationRequest {
         private boolean enabled = true;
         private double samplingRate = 1.0;
         
-        public Builder(final String name,final Meter.Type type) {
+        public Builder(final String name, final Meter.Type type) {
             this.name = Objects.requireNonNull(name, "Metric name cannot be null");
             this.type = Objects.requireNonNull(type, "Metric type cannot be null");
         }
@@ -125,7 +125,7 @@ public class MetricRegistrationRequest {
             return this;
         }
         
-        public Builder tag(final String key,final String value) {
+        public Builder tag(final String key, final String value) {
             if (key != null && value != null) {
                 Map<String, String> newTags = new java.util.HashMap<>(this.tags);
                 newTags.put(key, value);

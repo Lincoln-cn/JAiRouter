@@ -22,7 +22,7 @@ public final class PathSanitizer {
      * @return 安全的文件对象
      * @throws SecurityException 如果检测到路径遍历攻击
      */
-    public static File createSafeFile(final String basePath,final String fileName) {
+    public static File createSafeFile(final String basePath, final String fileName) {
         if (basePath == null || fileName == null) {
             throw new IllegalArgumentException("Base path and file name cannot be null");
         }
@@ -50,7 +50,7 @@ public final class PathSanitizer {
      * @return 安全的路径对象
      * @throws SecurityException 如果检测到路径遍历攻击
      */
-    public static Path createSafePath(final String basePath,final String subPath) {
+    public static Path createSafePath(final String basePath, final String subPath) {
         if (basePath == null || subPath == null) {
             throw new IllegalArgumentException("Base path and sub path cannot be null");
         }
@@ -95,7 +95,7 @@ public final class PathSanitizer {
      * @param file 目标文件
      * @return 是否在目录内
      */
-    public static boolean isWithinDirectory(final File directory,final File file) {
+    public static boolean isWithinDirectory(final File directory, final File file) {
         try {
             String dirPath = directory.getCanonicalPath();
             String filePath = file.getCanonicalPath();

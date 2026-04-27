@@ -133,7 +133,7 @@ public class ConfigValidator {
      * @param updates  更新内容
      * @return 合并后的配置
      */
-    public Map<String, Object> mergeInstanceConfig(final Map<String, Object> existing,final Map<String, Object> updates) {
+    public Map<String, Object> mergeInstanceConfig(final Map<String, Object> existing, final Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
         merged.putAll(updates);
 
@@ -157,7 +157,7 @@ public class ConfigValidator {
      * @return 合并后的配置
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> mergeServiceConfig(final Map<String, Object> existing,final Map<String, Object> updates) {
+    public Map<String, Object> mergeServiceConfig(final Map<String, Object> existing, final Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
 
         for (Map.Entry<String, Object> entry : updates.entrySet()) {

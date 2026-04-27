@@ -17,7 +17,7 @@ public class RetrySupport {
     private final MetricsCollector metricsCollector;
     private final String adapterType;
 
-    public RetrySupport(final MetricsCollector metricsCollector,final String adapterType) {
+    public RetrySupport(final MetricsCollector metricsCollector, final String adapterType) {
         this.metricsCollector = metricsCollector;
         this.adapterType = adapterType;
     }
@@ -58,7 +58,7 @@ public class RetrySupport {
     /**
      * 判断是否应该重试
      */
-    public boolean shouldRetry(final Throwable throwable,final int currentRetryCount,final int maxRetries) {
+    public boolean shouldRetry(final Throwable throwable, final int currentRetryCount, final int maxRetries) {
         if (currentRetryCount >= maxRetries) {
             log.debug("达到最大重试次数，不再重试：currentRetryCount={}, maxRetries={}", currentRetryCount, maxRetries);
             return false;

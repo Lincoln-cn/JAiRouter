@@ -39,7 +39,7 @@ public class EnhancedJwtBlacklistService {
      * @param ttlSeconds 过期时间（秒）
      * @return 操作结果
      */
-    public Mono<Boolean> addToBlacklist(final String tokenId,final long ttlSeconds) {
+    public Mono<Boolean> addToBlacklist(final String tokenId, final long ttlSeconds) {
         if (tokenId == null || tokenId.trim().isEmpty()) {
             log.warn("尝试将空的tokenId加入黑名单");
             return Mono.just(false);

@@ -163,7 +163,7 @@ public class ComponentFactory {
      * @return 熔断器实例
      */
     public org.unreal.modelrouter.circuitbreaker.CircuitBreaker createCircuitBreaker(
-            final String instanceId,final int failureThreshold,final long timeout,final int successThreshold) {
+            final String instanceId, final int failureThreshold,final long timeout,final int successThreshold) {
         org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker = 
                 new org.unreal.modelrouter.circuitbreaker.DefaultCircuitBreaker(
                         instanceId, failureThreshold, timeout, successThreshold);
@@ -214,7 +214,7 @@ public class ComponentFactory {
      * @return 包装后的CircuitBreaker
      */
     private org.unreal.modelrouter.circuitbreaker.CircuitBreaker wrapWithTracing(
-            final org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker,final String instanceId) {
+            final org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker, final String instanceId) {
         if (tracingWrapperFactory != null && circuitBreaker != null) {
             try {
                 return tracingWrapperFactory.wrapCircuitBreaker(circuitBreaker, instanceId);

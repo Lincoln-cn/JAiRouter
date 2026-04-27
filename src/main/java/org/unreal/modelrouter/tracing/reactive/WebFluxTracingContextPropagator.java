@@ -52,7 +52,7 @@ public class WebFluxTracingContextPropagator {
      * @param exchange Web交换对象
      * @param tracingContext 追踪上下文
      */
-    public void injectToExchange(final ServerWebExchange exchange,final TracingContext tracingContext) {
+    public void injectToExchange(final ServerWebExchange exchange, final TracingContext tracingContext) {
         if (tracingContext != null) {
             exchange.getAttributes().put(TracingConstants.ContextKeys.TRACING_CONTEXT, tracingContext);
             exchange.getAttributes().put(TracingConstants.ContextKeys.TRACE_ID, tracingContext.getTraceId());
@@ -82,7 +82,7 @@ public class WebFluxTracingContextPropagator {
      * @param <T> 操作返回类型
      * @return 包含追踪上下文的操作结果
      */
-    public <T> Mono<T> withTracingContext(final ServerWebExchange exchange,final Mono<T> operation) {
+    public <T> Mono<T> withTracingContext(final ServerWebExchange exchange, final Mono<T> operation) {
         TracingContext tracingContext = extractFromExchange(exchange);
         if (tracingContext != null) {
             return ReactiveTracingContextHolder.withContext(tracingContext, operation);
@@ -159,7 +159,7 @@ public class WebFluxTracingContextPropagator {
      * @param sourceExchange 源交换对象
      * @param targetExchange 目标交换对象
      */
-    public void copyTracingContext(final ServerWebExchange sourceExchange,final ServerWebExchange targetExchange) {
+    public void copyTracingContext(final ServerWebExchange sourceExchange, final ServerWebExchange targetExchange) {
         TracingContext tracingContext = extractFromExchange(sourceExchange);
         if (tracingContext != null) {
             injectToExchange(targetExchange, tracingContext);
@@ -210,7 +210,7 @@ public class WebFluxTracingContextPropagator {
      * @param <T> 返回类型
      * @return 包含追踪的处理结果
      */
-    public <T> Mono<T> traceRoute(final ServerWebExchange exchange,final String routeName,final Mono<T> handler) {
+    public <T> Mono<T> traceRoute(final ServerWebExchange exchange, final String routeName,final Mono<T> handler) {
         return withTracingContext(exchange, tracingContext -> {
             if (tracingContext != null) {
                 // 添加路由信息到Span

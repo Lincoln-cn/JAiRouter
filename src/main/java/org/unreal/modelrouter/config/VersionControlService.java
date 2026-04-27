@@ -27,7 +27,7 @@ public class VersionControlService {
     /**
      * 创建新版本
      */
-    public Integer createNewVersion(final Map<String, Object> config,final String description,final String userId) {
+    public Integer createNewVersion(final Map<String, Object> config, final String description, final String userId) {
         int newVersion = versionCounter.incrementAndGet();
         log.info("创建新版本: {}, 描述: {}, 用户: {}", newVersion, description, userId);
         return newVersion;

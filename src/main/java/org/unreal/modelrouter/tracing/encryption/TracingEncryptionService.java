@@ -96,7 +96,7 @@ public class TracingEncryptionService {
      * @param dataType 数据类型
      * @return 加密后的数据
      */
-    public Mono<String> encryptTraceData(final String data,final String traceId,final String dataType) {
+    public Mono<String> encryptTraceData(final String data, final String traceId, final String dataType) {
         if (data == null || data.isEmpty()) {
             return Mono.empty();
         }
@@ -149,7 +149,7 @@ public class TracingEncryptionService {
      * @param dataType 数据类型
      * @return 解密后的数据
      */
-    public Mono<String> decryptTraceData(final String encryptedData,final String traceId,final String dataType) {
+    public Mono<String> decryptTraceData(final String encryptedData, final String traceId, final String dataType) {
         if (encryptedData == null || encryptedData.isEmpty()) {
             return Mono.empty();
         }
@@ -349,7 +349,7 @@ public class TracingEncryptionService {
     /**
      * 缓存加密追踪数据
      */
-    private void cacheEncryptedTraceData(final String traceId,final String dataType,final String encryptedData) {
+    private void cacheEncryptedTraceData(final String traceId, final String dataType, final String encryptedData) {
         EncryptedTraceData traceData = new EncryptedTraceData(
                 traceId, dataType, encryptedData, Instant.now(), Instant.now()
         );
@@ -416,8 +416,8 @@ public class TracingEncryptionService {
     /**
      * 记录加密操作审计日志
      */
-    private void recordEncryptionAudit(final String traceId,final String dataType,final String operation, 
-                                     final boolean success,final String error) {
+    private void recordEncryptionAudit(final String traceId, final String dataType, final String operation, 
+                                     final boolean success, final String error) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("traceId", traceId);
@@ -437,7 +437,7 @@ public class TracingEncryptionService {
     /**
      * 记录清理操作审计日志
      */
-    private void recordCleanupAudit(final String traceId,final boolean success,final String error) {
+    private void recordCleanupAudit(final String traceId, final boolean success, final String error) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("traceId", traceId);
@@ -456,7 +456,7 @@ public class TracingEncryptionService {
     /**
      * 记录密钥轮换审计日志
      */
-    private void recordKeyRotationAudit(final String traceId,final boolean success,final String error) {
+    private void recordKeyRotationAudit(final String traceId, final boolean success, final String error) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("traceId", traceId);
@@ -482,8 +482,8 @@ public class TracingEncryptionService {
         private final Instant createdAt;
         private Instant updatedAt;
         
-        public EncryptedTraceData(final String traceId,final String dataType,final String encryptedData, 
-                                final Instant createdAt,final Instant updatedAt) {
+        public EncryptedTraceData(final String traceId, final String dataType, final String encryptedData, 
+                                final Instant createdAt, final Instant updatedAt) {
             this.traceId = traceId;
             this.dataType = dataType;
             this.encryptedData = encryptedData;
@@ -508,7 +508,7 @@ public class TracingEncryptionService {
         private final String policyName;
         private final Duration retentionDuration;
         
-        public TraceRetentionPolicy(final String policyName,final Duration retentionDuration) {
+        public TraceRetentionPolicy(final String policyName, final Duration retentionDuration) {
             this.policyName = policyName;
             this.retentionDuration = retentionDuration;
         }

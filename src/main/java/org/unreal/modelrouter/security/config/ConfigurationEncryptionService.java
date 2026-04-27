@@ -211,7 +211,7 @@ public class ConfigurationEncryptionService {
             super(message);
         }
 
-        public ConfigurationEncryptionException(final String message,final Throwable cause) {
+        public ConfigurationEncryptionException(final String message, final Throwable cause) {
             super(message, cause);
         }
     }

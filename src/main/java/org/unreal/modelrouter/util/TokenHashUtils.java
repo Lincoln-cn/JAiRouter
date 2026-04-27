@@ -49,7 +49,7 @@ public class TokenHashUtils {
      * @param expectedHash 期望的哈希值
      * @return 是否匹配
      */
-    public static boolean verifyTokenHash(final String token,final String expectedHash) {
+    public static boolean verifyTokenHash(final String token, final String expectedHash) {
         if (token == null || expectedHash == null) {
             return false;
         }

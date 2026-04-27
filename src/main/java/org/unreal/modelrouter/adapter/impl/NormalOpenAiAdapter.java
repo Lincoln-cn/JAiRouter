@@ -59,7 +59,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformRequest(final Object request,final String adapterType) {
+    protected Object transformRequest(final Object request, final String adapterType) {
         // 记录适配器特定的追踪信息
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
             org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
@@ -564,7 +564,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformResponse(final Object response,final String adapterType) {
+    protected Object transformResponse(final Object response, final String adapterType) {
         if (response instanceof String responseStr) {
             try {
                 JsonNode jsonResponse = objectMapper.readTree(responseStr);
@@ -720,7 +720,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     @Override
-    protected <T> WebClient.RequestBodySpec configureRequestHeaders(final WebClient.RequestBodySpec requestSpec,final T request) {
+    protected <T> WebClient.RequestBodySpec configureRequestHeaders(final WebClient.RequestBodySpec requestSpec, final T request) {
         // Normal adapter保持标准的OpenAI格式，不需要特殊的头部配置
         return super.configureRequestHeaders(requestSpec, request);
     }

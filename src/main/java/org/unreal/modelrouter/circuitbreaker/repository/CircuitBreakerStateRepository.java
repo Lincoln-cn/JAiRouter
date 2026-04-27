@@ -40,7 +40,7 @@ public class CircuitBreakerStateRepository {
     private final Map<String, Map<String, Object>> stateCache = new ConcurrentHashMap<>();
 
     @Autowired
-    public CircuitBreakerStateRepository(final StoreManager storeManager,final ObjectMapper objectMapper) {
+    public CircuitBreakerStateRepository(final StoreManager storeManager, final ObjectMapper objectMapper) {
         this.storeManager = storeManager;
         this.objectMapper = objectMapper;
     }

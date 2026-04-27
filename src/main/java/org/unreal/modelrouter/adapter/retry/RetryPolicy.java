@@ -66,7 +66,7 @@ public class RetryPolicy {
      * @param maxDelay 最大延迟
      * @param multiplier 退避乘数
      */
-    public RetryPolicy(final int maxRetries,final Duration initialDelay,final Duration maxDelay,final double multiplier) {
+    public RetryPolicy(final int maxRetries, final Duration initialDelay, final Duration maxDelay,final double multiplier) {
         this.maxRetries = maxRetries;
         this.initialDelay = initialDelay;
         this.maxDelay = maxDelay;
@@ -92,7 +92,7 @@ public class RetryPolicy {
      * @param error 异常
      * @return 是否可以重试
      */
-    public boolean canRetry(final int retryCount,final Throwable error) {
+    public boolean canRetry(final int retryCount, final Throwable error) {
         if (retryCount >= maxRetries) {
             logger.debug("达到最大重试次数：{}/{}", retryCount, maxRetries);
             return false;
@@ -110,7 +110,7 @@ public class RetryPolicy {
      * @param <T> 结果类型
      * @return 带重试的 Mono
      */
-    public <T> Mono<T> withRetry(final Supplier<Mono<T>> operation,final Predicate<Throwable> retryCondition) {
+    public <T> Mono<T> withRetry(final Supplier<Mono<T>> operation, final Predicate<Throwable> retryCondition) {
         Retry retry = Retry.backoff(maxRetries, initialDelay)
                 .maxBackoff(maxDelay)
                 .filter(retryCondition);

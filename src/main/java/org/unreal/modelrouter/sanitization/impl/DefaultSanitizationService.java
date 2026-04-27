@@ -42,7 +42,7 @@ public class DefaultSanitizationService implements SanitizationService {
     private final AtomicInteger ruleIdGenerator = new AtomicInteger(1);
     
     @Autowired
-    public DefaultSanitizationService(final SanitizationRuleEngine ruleEngine,final SecurityProperties securityProperties) {
+    public DefaultSanitizationService(final SanitizationRuleEngine ruleEngine, final SecurityProperties securityProperties) {
         this.ruleEngine = ruleEngine;
         this.securityProperties = securityProperties;
     }
@@ -154,7 +154,7 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<String> sanitizeRequest(final String content,final String contentType,final String userId) {
+    public Mono<String> sanitizeRequest(final String content, final String contentType, final String userId) {
         if (content == null || content.isEmpty()) {
             return Mono.justOrEmpty(content);
         }
@@ -175,7 +175,7 @@ public class DefaultSanitizationService implements SanitizationService {
     }
     
     @Override
-    public Mono<String> sanitizeResponse(final String content,final String contentType) {
+    public Mono<String> sanitizeResponse(final String content, final String contentType) {
         if (content == null || content.isEmpty()) {
             return Mono.justOrEmpty(content);
         }
@@ -186,7 +186,7 @@ public class DefaultSanitizationService implements SanitizationService {
     /**
      * 执行脱敏处理
      */
-    private Mono<String> performSanitization(final String content,final String contentType,final String type) {
+    private Mono<String> performSanitization(final String content, final String contentType, final String type) {
         // 获取适用的规则
         List<SanitizationRule> applicableRules = rules.values().stream()
                 .filter(rule -> rule.getRuleId().startsWith(type))

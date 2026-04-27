@@ -360,7 +360,7 @@ public class LoadBalancerStatePersistenceAdapter {
     /**
      * 应用负载均衡器状态数据
      */
-    private void applyLoadBalancerState(final LoadBalancer loadBalancer,final Map<String, Object> stateData) {
+    private void applyLoadBalancerState(final LoadBalancer loadBalancer, final Map<String, Object> stateData) {
         if (loadBalancer instanceof LeastConnectionsLoadBalancer) {
             LeastConnectionsLoadBalancer lclb = (LeastConnectionsLoadBalancer) loadBalancer;
             

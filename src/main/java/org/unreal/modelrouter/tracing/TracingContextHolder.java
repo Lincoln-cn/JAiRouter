@@ -98,7 +98,7 @@ public class TracingContextHolder {
      * @return 操作结果
      * @throws Exception 操作异常
      */
-    public static <T> T executeWithContext(final TracingContext context,final ContextualOperation<T> operation) throws Exception {
+    public static <T> T executeWithContext(final TracingContext context, final ContextualOperation<T> operation) throws Exception {
         TracingContext previousContext = getCurrentContext();
         try {
             setCurrentContext(context);
@@ -115,7 +115,7 @@ public class TracingContextHolder {
      * @param operation 要执行的操作
      * @throws Exception 操作异常
      */
-    public static void executeWithContext(final TracingContext context,final ContextualVoidOperation operation) throws Exception {
+    public static void executeWithContext(final TracingContext context, final ContextualVoidOperation operation) throws Exception {
         TracingContext previousContext = getCurrentContext();
         try {
             setCurrentContext(context);

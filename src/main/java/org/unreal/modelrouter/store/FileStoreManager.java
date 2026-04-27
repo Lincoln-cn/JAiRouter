@@ -160,7 +160,7 @@ public class FileStoreManager extends BaseStoreManager {
      * @param version 版本号
      */
     @Override
-    public void saveConfigVersion(final String key,final Map<String, Object> config,final int version) {
+    public void saveConfigVersion(final String key, final Map<String, Object> config,final int version) {
         // 只有当配置不为空时才保存版本文件
         if (config != null && !config.isEmpty()) {
             try {
@@ -233,7 +233,7 @@ public class FileStoreManager extends BaseStoreManager {
      * @return 配置内容
      */
     @Override
-    public Map<String, Object> getConfigByVersion(final String key,final int version) {
+    public Map<String, Object> getConfigByVersion(final String key, final int version) {
         try {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
             File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
@@ -254,7 +254,7 @@ public class FileStoreManager extends BaseStoreManager {
      * @param version 版本号
      */
     @Override
-    public void deleteConfigVersion(final String key,final int version) {
+    public void deleteConfigVersion(final String key, final int version) {
         try {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
             File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
@@ -304,7 +304,7 @@ public class FileStoreManager extends BaseStoreManager {
      * @return 版本文件的实际路径，如果版本不存在则返回null
      */
     @Override
-    public String getVersionFilePath(final String key,final int version) {
+    public String getVersionFilePath(final String key, final int version) {
         try {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
             File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
@@ -331,7 +331,7 @@ public class FileStoreManager extends BaseStoreManager {
      * @return 版本创建时间，如果版本不存在则返回null
      */
     @Override
-    public LocalDateTime getVersionCreatedTime(final String key,final int version) {
+    public LocalDateTime getVersionCreatedTime(final String key, final int version) {
         try {
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
             File versionFile = new File(storagePath, sanitizedKey + "@" + version + ".json");
@@ -364,7 +364,7 @@ public class FileStoreManager extends BaseStoreManager {
      * @param isUncompressed 是否为未压缩文件
      * @return 文件是否有效
      */
-    private boolean isVersionFileValid(final File file,final boolean isUncompressed) {
+    private boolean isVersionFileValid(final File file, final boolean isUncompressed) {
         try {
             // 检查文件大小（空文件或过小的文件可能损坏）
             if (file.length() < 2) { // 至少应该有"{}"

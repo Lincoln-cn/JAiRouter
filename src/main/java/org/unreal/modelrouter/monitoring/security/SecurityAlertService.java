@@ -50,7 +50,7 @@ public class SecurityAlertService {
     /**
      * 检查认证失败告警
      */
-    public Mono<Void> checkAuthenticationFailureAlert(final String clientIp,final String failureReason) {
+    public Mono<Void> checkAuthenticationFailureAlert(final String clientIp, final String failureReason) {
         return auditService.shouldTriggerAlert("AUTHENTICATION_FAILURE", AUTH_FAILURE_WINDOW_MINUTES, AUTH_FAILURE_THRESHOLD)
                 .flatMap(shouldAlert -> {
                     if (shouldAlert) {
@@ -158,8 +158,8 @@ public class SecurityAlertService {
     /**
      * 触发安全告警
      */
-    private Mono<Void> triggerAlert(final String alertType,final String title,final String description, 
-                                   final String severity,final Map<String, Object> alertData) {
+    private Mono<Void> triggerAlert(final String alertType, final String title, final String description, 
+                                   final String severity, final Map<String, Object> alertData) {
         String alertKey = alertType;
         LocalDateTime now = LocalDateTime.now();
         
@@ -203,7 +203,7 @@ public class SecurityAlertService {
     /**
      * 创建认证失败告警数据
      */
-    private Map<String, Object> createAuthFailureAlertData(final String clientIp,final String failureReason) {
+    private Map<String, Object> createAuthFailureAlertData(final String clientIp, final String failureReason) {
         Map<String, Object> data = new HashMap<>();
         data.put("clientIp", maskIp(clientIp));
         data.put("failureReason", failureReason);
@@ -215,7 +215,7 @@ public class SecurityAlertService {
     /**
      * 创建可疑IP告警数据
      */
-    private Map<String, Object> createSuspiciousIpAlertData(final String clientIp,final long failureCount) {
+    private Map<String, Object> createSuspiciousIpAlertData(final String clientIp, final long failureCount) {
         Map<String, Object> data = new HashMap<>();
         data.put("clientIp", maskIp(clientIp));
         data.put("failureCount", failureCount);

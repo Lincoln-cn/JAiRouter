@@ -60,7 +60,7 @@ public class TracingSecurityManager {
      * @param spanId Span ID（可选）
      * @return 是否有权限
      */
-    public Mono<Boolean> hasTracePermission(final String operation,final String traceId,final String spanId) {
+    public Mono<Boolean> hasTracePermission(final String operation, final String traceId, final String spanId) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> securityContext.getAuthentication())
                 .flatMap(authentication -> {
@@ -223,7 +223,7 @@ public class TracingSecurityManager {
     /**
      * 检查是否可以访问指定的追踪字段
      */
-    private boolean canAccessTraceField(final String fieldName,final Set<String> userPermissions) {
+    private boolean canAccessTraceField(final String fieldName, final Set<String> userPermissions) {
         // 敏感字段需要管理员权限
         if (isSensitiveTraceField(fieldName)) {
             return userPermissions.contains("trace:manage");
@@ -249,8 +249,8 @@ public class TracingSecurityManager {
     /**
      * 记录访问尝试
      */
-    private void recordAccessAttempt(final String username,final String operation,final String traceId, 
-                                   final boolean success,final String reason) {
+    private void recordAccessAttempt(final String username, final String operation, final String traceId, 
+                                   final boolean success, final String reason) {
         TraceAccessRecord record = new TraceAccessRecord(
                 username, operation, traceId, success, reason, Instant.now()
         );
@@ -267,8 +267,8 @@ public class TracingSecurityManager {
     /**
      * 记录追踪访问审计日志
      */
-    private void recordTraceAccessAudit(final String username,final String operation,final String traceId, 
-                                      final String spanId,final String result,final String reason) {
+    private void recordTraceAccessAudit(final String username, final String operation, final String traceId, 
+                                      final String spanId, final String result, final String reason) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("username", username);
@@ -289,7 +289,7 @@ public class TracingSecurityManager {
     /**
      * 记录追踪导出审计日志
      */
-    private void recordTraceExportAudit(final String username,final List<String> traceIds,final boolean success) {
+    private void recordTraceExportAudit(final String username, final List<String> traceIds, final boolean success) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("username", username);
@@ -345,8 +345,8 @@ public class TracingSecurityManager {
         private final String reason;
         private final Instant timestamp;
         
-        public TraceAccessRecord(final String username,final String operation,final String traceId, 
-                               final boolean success,final String reason,final Instant timestamp) {
+        public TraceAccessRecord(final String username, final String operation, final String traceId, 
+                               final boolean success, final String reason, final Instant timestamp) {
             this.username = username;
             this.operation = operation;
             this.traceId = traceId;

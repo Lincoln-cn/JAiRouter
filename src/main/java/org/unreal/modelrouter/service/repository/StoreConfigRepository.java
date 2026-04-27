@@ -85,7 +85,7 @@ public class StoreConfigRepository {
      * @param serviceType 服务类型
      * @param config 服务配置
      */
-    public void save(final String serviceType,final ServiceConfiguration config) {
+    public void save(final String serviceType, final ServiceConfiguration config) {
         logger.info("保存服务配置：serviceType={}", serviceType);
 
         try {
@@ -188,8 +188,8 @@ public class StoreConfigRepository {
     /**
      * 添加版本元数据
      */
-    private void addMetadata(final Map<String, Object> config,final String operation,
-                             final String operationDetail,final String serviceType) {
+    private void addMetadata(final Map<String, Object> config, final String operation,
+                             final String operationDetail, final String serviceType) {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("operation", operation);
         metadata.put("operationDetail", operationDetail);

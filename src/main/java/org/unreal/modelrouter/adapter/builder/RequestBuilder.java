@@ -150,7 +150,7 @@ public class RequestBuilder {
      * @param value 值
      * @return 表单数据
      */
-    public MultiValueMap<String, Object> createFormData(final String key,final Object value) {
+    public MultiValueMap<String, Object> createFormData(final String key, final Object value) {
         MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
         formData.add(key, value);
         return formData;
@@ -163,7 +163,7 @@ public class RequestBuilder {
      * @param key 键
      * @param value 值
      */
-    public void addFormField(final MultiValueMap<String, Object> parts,final String key,final Object value) {
+    public void addFormField(final MultiValueMap<String, Object> parts, final String key, final Object value) {
         if (value != null) {
             if (value instanceof Number) {
                 parts.add(key, value.toString());
@@ -181,7 +181,7 @@ public class RequestBuilder {
      * @param key 键
      * @param file 文件对象
      */
-    public void addFileField(final MultiValueMap<String, Object> parts,final String key,final Object file) {
+    public void addFileField(final MultiValueMap<String, Object> parts, final String key, final Object file) {
         if (file != null) {
             parts.add(key, file);
             String filename = extractFilename(file);

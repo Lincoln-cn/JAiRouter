@@ -203,7 +203,7 @@ public class ModelCallStats implements Serializable {
      * @param success 是否成功
      * @param responseTime 响应时间
      */
-    public void updateStats(final boolean success,final long responseTime) {
+    public void updateStats(final boolean success, final long responseTime) {
         this.totalCalls++;
         if (success) {
             this.successCount++;

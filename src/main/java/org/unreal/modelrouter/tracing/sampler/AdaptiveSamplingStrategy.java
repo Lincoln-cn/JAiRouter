@@ -93,7 +93,7 @@ public class AdaptiveSamplingStrategy implements SamplingStrategy {
      * @param count 当前计数
      * @return 当前采样率
      */
-    private double calculateCurrentRatio(final String spanName,final long count) {
+    private double calculateCurrentRatio(final String spanName, final long count) {
         long currentTime = System.currentTimeMillis();
         
         // 检查是否需要调整采样率

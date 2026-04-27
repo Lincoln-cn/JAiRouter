@@ -61,7 +61,7 @@ public class GpuStackAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformRequest(final Object request,final String adapterType) {
+    protected Object transformRequest(final Object request, final String adapterType) {
         // 记录适配器特定的追踪信息
         org.unreal.modelrouter.tracing.TracingContext tracingContext =
             org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
@@ -432,7 +432,7 @@ public class GpuStackAdapter extends BaseAdapter {
     }
 
     @Override
-    protected Object transformResponse(final Object response,final String adapterType) {
+    protected Object transformResponse(final Object response, final String adapterType) {
         if (response instanceof String responseStr) {
             try {
                 JsonNode jsonResponse = objectMapper.readTree(adaptModelName(responseStr));
@@ -523,7 +523,7 @@ public class GpuStackAdapter extends BaseAdapter {
     }
 
     @Override
-    protected String getAuthorizationHeader(final String authorization,final String adapterType) {
+    protected String getAuthorizationHeader(final String authorization, final String adapterType) {
         if (adaptModelName(authorization) != null && adaptModelName(authorization).startsWith("Bearer ")) {
             return adaptModelName(authorization);
         } else if (adaptModelName(authorization) != null) {

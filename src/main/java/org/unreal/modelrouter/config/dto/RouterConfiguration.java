@@ -68,13 +68,13 @@ public record RouterConfiguration(
         return map;
     }
 
-    private static String getString(final Map<String, Object> map,final String key) {
+    private static String getString(final Map<String, Object> map, final String key) {
         Object value = map.get(key);
         return value instanceof String ? (String) value : null;
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> getMap(final Map<String, Object> map,final String key) {
+    private static Map<String, Object> getMap(final Map<String, Object> map, final String key) {
         Object value = map.get(key);
         return value instanceof Map ? (Map<String, Object>) value : null;
     }

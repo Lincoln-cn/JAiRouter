@@ -57,7 +57,7 @@ public interface StoreManager {
      * @param config 配置内容
      * @param version 版本号
      */
-    default void saveConfigVersion(final String key,final Map<String, Object> config,final int version) {
+    default void saveConfigVersion(final String key, final Map<String, Object> config,final int version) {
         // 默认实现为空，子类可以覆盖
     }
 
@@ -76,7 +76,7 @@ public interface StoreManager {
      * @param version 版本号
      * @return 配置内容
      */
-    default Map<String, Object> getConfigByVersion(final String key,final int version) {
+    default Map<String, Object> getConfigByVersion(final String key, final int version) {
         return null;
     }
 
@@ -85,7 +85,7 @@ public interface StoreManager {
      * @param key 配置键
      * @param version 版本号
      */
-    default void deleteConfigVersion(final String key,final int version) {
+    default void deleteConfigVersion(final String key, final int version) {
         // 默认实现为空
     }
 
@@ -105,7 +105,7 @@ public interface StoreManager {
      * @param version 版本号
      * @return 版本文件的实际路径
      */
-    default String getVersionFilePath(final String key,final int version) {
+    default String getVersionFilePath(final String key, final int version) {
         return null;
     }
 
@@ -115,7 +115,7 @@ public interface StoreManager {
      * @param version 版本号
      * @return 版本创建时间
      */
-    default LocalDateTime getVersionCreatedTime(final String key,final int version) {
+    default LocalDateTime getVersionCreatedTime(final String key, final int version) {
         return null;
     }
 

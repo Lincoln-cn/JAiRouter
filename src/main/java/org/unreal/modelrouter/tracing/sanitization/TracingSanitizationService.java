@@ -77,7 +77,7 @@ public class TracingSanitizationService {
      * @param context 追踪上下文
      * @return 脱敏后的属性
      */
-    public Mono<Attributes> sanitizeSpanAttributes(final Attributes attributes,final TracingContext context) {
+    public Mono<Attributes> sanitizeSpanAttributes(final Attributes attributes, final TracingContext context) {
         if (!isTracingSanitizationEnabled() || attributes.isEmpty()) {
             return Mono.just(attributes);
         }
@@ -158,7 +158,7 @@ public class TracingSanitizationService {
      * @param context 追踪上下文
      * @return 脱敏后的日志数据
      */
-    public Mono<Map<String, Object>> sanitizeLogData(final Map<String, Object> logData,final TracingContext context) {
+    public Mono<Map<String, Object>> sanitizeLogData(final Map<String, Object> logData, final TracingContext context) {
         if (!isTracingSanitizationEnabled() || logData.isEmpty()) {
             return Mono.just(logData);
         }
@@ -170,7 +170,7 @@ public class TracingSanitizationService {
      * 递归脱敏Map数据
      */
     @SuppressWarnings("unchecked")
-    private Mono<Map<String, Object>> sanitizeMapRecursively(final Map<String, Object> data,final TracingContext context) {
+    private Mono<Map<String, Object>> sanitizeMapRecursively(final Map<String, Object> data, final TracingContext context) {
         Map<String, Object> sanitizedData = new HashMap<>();
         
         for (Map.Entry<String, Object> entry : data.entrySet()) {
@@ -200,7 +200,7 @@ public class TracingSanitizationService {
      * 安全地放置属性到AttributesBuilder中，处理泛型类型问题
      */
     @SuppressWarnings("unchecked")
-    private void putAttributeSafely(final AttributesBuilder builder,final AttributeKey<?> key,final Object value) {
+    private void putAttributeSafely(final AttributesBuilder builder, final AttributeKey<?> key, final Object value) {
         try {
             // 根据值的类型创建对应的AttributeKey并放置值
             if (value instanceof String) {
@@ -229,7 +229,7 @@ public class TracingSanitizationService {
      * 脱敏属性值
      */
     @SuppressWarnings("unchecked")
-    private Mono<Object> sanitizeAttributeValue(final AttributeKey<?> key,final Object value,final TracingContext context) {
+    private Mono<Object> sanitizeAttributeValue(final AttributeKey<?> key, final Object value, final TracingContext context) {
         if (value instanceof String) {
             return sanitizationService.sanitizeRequest((String) value, "text/plain", null)
                     .cast(Object.class);
@@ -285,7 +285,7 @@ public class TracingSanitizationService {
     /**
      * 记录脱敏操作审计日志
      */
-    private void recordSanitizationAudit(final String dataType,final String fieldName,final String action,final TracingContext context) {
+    private void recordSanitizationAudit(final String dataType, final String fieldName, final String action,final TracingContext context) {
         try {
             structuredLogger.logSanitization(
                 String.format("%s.%s", dataType, fieldName),

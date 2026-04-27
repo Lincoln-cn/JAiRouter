@@ -68,7 +68,7 @@ public class HealthStatusSseController {
     /**
      * 创建健康状态更新事件
      */
-    private ServerSentEvent<String> createHealthUpdateEvent(final long sequence,final String eventType) {
+    private ServerSentEvent<String> createHealthUpdateEvent(final long sequence, final String eventType) {
         Map<String, Object> data = generateHealthStatusData();
         try {
             return ServerSentEvent.<String>builder()
