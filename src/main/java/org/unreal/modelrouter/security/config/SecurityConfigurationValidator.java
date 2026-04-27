@@ -356,30 +356,63 @@ public class SecurityConfigurationValidator {
     /**
      * 验证结果类
      */
+    /**
+     * 验证结果内部类
+     */
     public static class ValidationResult {
         private final List<String> errors = new ArrayList<>();
         private final List<String> warnings = new ArrayList<>();
 
-        public void addError(String error) {
+        /**
+         * 添加错误消息
+         *
+         * @param error 错误消息
+         */
+        public void addError(final String error) {
             errors.add(error);
         }
 
-        public void addWarning(String warning) {
+        /**
+         * 添加警告消息
+         *
+         * @param warning 警告消息
+         */
+        public void addWarning(final String warning) {
             warnings.add(warning);
         }
 
+        /**
+         * 获取错误消息列表
+         *
+         * @return 错误消息列表副本
+         */
         public List<String> getErrors() {
             return new ArrayList<>(errors);
         }
 
+        /**
+         * 获取警告消息列表
+         *
+         * @return 警告消息列表副本
+         */
         public List<String> getWarnings() {
             return new ArrayList<>(warnings);
         }
 
+        /**
+         * 获取验证是否通过
+         *
+         * @return 验证结果
+         */
         public boolean isValid() {
             return errors.isEmpty();
         }
 
+        /**
+         * 判断是否有警告
+         *
+         * @return 是否存在警告
+         */
         public boolean hasWarnings() {
             return !warnings.isEmpty();
         }

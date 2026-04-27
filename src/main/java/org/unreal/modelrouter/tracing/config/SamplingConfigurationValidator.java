@@ -167,33 +167,68 @@ public class SamplingConfigurationValidator {
     /**
      * 验证结果类
      */
+    /**
+     * 验证结果内部类
+     */
     public static class ValidationResult {
         private final boolean valid;
         private final List<String> errors;
         private final List<String> warnings;
         
-        public ValidationResult(boolean valid, List<String> errors, List<String> warnings) {
+        /**
+         * 构造验证结果
+         *
+         * @param valid 是否验证通过
+         * @param errors 错误消息列表
+         * @param warnings 警告消息列表
+         */
+        public ValidationResult(final boolean valid, final List<String> errors, final List<String> warnings) {
             this.valid = valid;
             this.errors = errors;
             this.warnings = warnings;
         }
         
+        /**
+         * 获取验证是否通过
+         *
+         * @return 验证结果
+         */
         public boolean isValid() {
             return valid;
         }
         
+        /**
+         * 获取错误消息列表
+         *
+         * @return 错误消息列表
+         */
         public List<String> getErrors() {
             return errors;
         }
         
+        /**
+         * 获取警告消息列表
+         *
+         * @return 警告消息列表
+         */
         public List<String> getWarnings() {
             return warnings;
         }
         
+        /**
+         * 判断是否有警告
+         *
+         * @return 是否存在警告
+         */
         public boolean hasWarnings() {
             return warnings != null && !warnings.isEmpty();
         }
         
+        /**
+         * 获取错误消息字符串
+         *
+         * @return 错误消息字符串，无错误时返回 null
+         */
         public String getErrorMessage() {
             if (errors.isEmpty()) {
                 return null;
@@ -201,6 +236,11 @@ public class SamplingConfigurationValidator {
             return String.join("; ", errors);
         }
         
+        /**
+         * 获取警告消息字符串
+         *
+         * @return 警告消息字符串，无警告时返回 null
+         */
         public String getWarningMessage() {
             if (warnings.isEmpty()) {
                 return null;

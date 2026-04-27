@@ -211,27 +211,65 @@ public interface MetricRegistrationService {
     /**
      * 验证结果
      */
+    /**
+     * 验证结果内部类
+     */
     class ValidationResult {
         private final boolean valid;
         private final List<String> errors;
         private final List<String> warnings;
         
-        public ValidationResult(boolean valid, List<String> errors, List<String> warnings) {
+        /**
+         * 构造验证结果
+         *
+         * @param valid 是否验证通过
+         * @param errors 错误消息列表
+         * @param warnings 警告消息列表
+         */
+        public ValidationResult(final boolean valid, final List<String> errors, final List<String> warnings) {
             this.valid = valid;
             this.errors = errors;
             this.warnings = warnings;
         }
         
+        /**
+         * 创建成功验证结果
+         *
+         * @return 成功的验证结果
+         */
         public static ValidationResult success() {
             return new ValidationResult(true, List.of(), List.of());
         }
         
-        public static ValidationResult failure(List<String> errors) {
+        /**
+         * 创建失败验证结果
+         *
+         * @param errors 错误消息列表
+         * @return 失败的验证结果
+         */
+        public static ValidationResult failure(final List<String> errors) {
             return new ValidationResult(false, errors, List.of());
         }
         
+        /**
+         * 获取验证是否通过
+         *
+         * @return 验证结果
+         */
         public boolean isValid() { return valid; }
+        
+        /**
+         * 获取错误消息列表
+         *
+         * @return 错误消息列表
+         */
         public List<String> getErrors() { return errors; }
+        
+        /**
+         * 获取警告消息列表
+         *
+         * @return 警告消息列表
+         */
         public List<String> getWarnings() { return warnings; }
     }
     
