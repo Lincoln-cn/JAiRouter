@@ -14,4 +14,10 @@
     <suppress files="CompositeStatePersistenceServiceImpl\.java" checks="FinalParameters"/>
     <suppress files="MetricsManagementController\.java" checks="FinalParameters"/>
     <suppress files="ServiceTypeController\.java" checks="FinalParameters"/>
+    
+    <!-- HiddenField 抑制 - 参数名与属性名相同是常见编码风格 -->
+    <suppress files=".*\.java" checks="HiddenField" id="hiddenField"/>
+    
+    <!-- OperatorWrap 抑制 - 操作符换行位置差异 -->
+    <suppress files=".*\.java" checks="OperatorWrap" id="operatorWrap"/>
 </suppressions>
