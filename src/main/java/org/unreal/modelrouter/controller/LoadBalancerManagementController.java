@@ -9,7 +9,7 @@ import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.config.ConfigurationService;
+import org.unreal.modelrouter.config.core.ConfigurationService;
 
 import java.util.*;
 import java.util.stream.Collectors;

@@ -2,7 +2,7 @@ package org.unreal.modelrouter.monitoring.error;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.ErrorTrackerProperties;
+import org.unreal.modelrouter.config.core.ErrorTrackerProperties;
 
 import java.util.ArrayList;
 import java.util.List;

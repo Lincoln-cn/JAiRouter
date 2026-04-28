@@ -3,7 +3,7 @@ package org.unreal.modelrouter.ratelimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.factory.ComponentFactory;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;

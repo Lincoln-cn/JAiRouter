@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.config.MonitoringProperties;
+import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCacheAndRetry;
 import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCircuitBreaker;
 import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsDegradationStrategy;

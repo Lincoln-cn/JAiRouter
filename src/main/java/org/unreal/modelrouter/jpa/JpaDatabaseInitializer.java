@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.jpa.entity.ConfigEntity;
 import org.unreal.modelrouter.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.jpa.entity.ServiceConfigEntity;

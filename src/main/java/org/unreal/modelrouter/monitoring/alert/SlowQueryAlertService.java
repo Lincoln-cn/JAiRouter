@@ -5,7 +5,7 @@ import io.micrometer.core.instrument.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.config.MonitoringProperties;
+import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.SlowQueryDetector;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;

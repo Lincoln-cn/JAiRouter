@@ -5,7 +5,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.ErrorTrackerProperties;
+import org.unreal.modelrouter.config.core.ErrorTrackerProperties;
 
 import java.time.Duration;
 import java.util.Map;

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.unreal.modelrouter.config.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.factory.ComponentFactory;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
