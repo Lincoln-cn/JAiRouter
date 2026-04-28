@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
  * @since 2.4.4
  */
 @Service
+@Primary
 public class CompositeStatePersistenceServiceImpl implements StatePersistenceService {
 
     private static final Logger logger = LoggerFactory.getLogger(CompositeStatePersistenceServiceImpl.class);

@@ -3,6 +3,7 @@ package org.unreal.modelrouter.persistence.store.persistence.adapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.router.circuitbreaker.LockFreeCircuitBreaker;
@@ -15,14 +16,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 熔断器状态持久化适配器
- * 
+ *
  * v2.4.4: 使用三层退坡策略持久化熔断器状态
- * 
+ *
  * 事件驱动同步:
  * - 状态变更事件 (CLOSED → OPEN → HALF_OPEN) 触发同步
  * - 熔断触发事件触发同步
  * - 恢复事件触发同步
- * 
+ *
  * @author JAiRouter Team
  * @since 2.4.4
  */
@@ -32,6 +33,7 @@ public class CircuitBreakerStatePersistenceAdapter {
     private static final Logger logger = LoggerFactory.getLogger(CircuitBreakerStatePersistenceAdapter.class);
 
     @Autowired
+    @Qualifier("compositeStatePersistenceServiceImpl")
     private StatePersistenceService persistenceService;
 
     /**
