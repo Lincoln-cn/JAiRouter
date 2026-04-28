@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.dto.SecurityAuditQueryRequest;
 import org.unreal.modelrouter.dto.SecurityAuditQueryResponse;
 import org.unreal.modelrouter.dto.SecurityStatisticsResponse;
-import org.unreal.modelrouter.monitoring.security.SecurityAlertService;
+import org.unreal.modelrouter.monitor.monitoring.security.SecurityAlertService;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Mono;

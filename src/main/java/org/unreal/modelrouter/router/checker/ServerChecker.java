@@ -8,9 +8,9 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.tracing.health.HealthCheckTracingEnhancer;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.tracing.health.HealthCheckTracingEnhancer;
 import org.unreal.modelrouter.util.ApplicationContextProvider;
 import org.unreal.modelrouter.util.NetUtils;
 
@@ -132,9 +132,9 @@ public class ServerChecker {
         
         // 记录批次完成追踪
         try {
-            org.unreal.modelrouter.tracing.health.HealthCheckTracingEnhancer enhancer = 
+            org.unreal.modelrouter.monitor.tracing.health.HealthCheckTracingEnhancer enhancer = 
                 org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                    org.unreal.modelrouter.tracing.health.HealthCheckTracingEnhancer.class);
+                    org.unreal.modelrouter.monitor.tracing.health.HealthCheckTracingEnhancer.class);
             enhancer.logHealthCheckBatchComplete(totalServices, healthyServices, 
                 totalInstances, healthyInstances, batchDuration);
         } catch (Exception e) {

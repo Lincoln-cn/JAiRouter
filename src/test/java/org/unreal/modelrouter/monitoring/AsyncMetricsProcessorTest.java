@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring;
+package org.unreal.modelrouter.monitor.monitoring;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -6,9 +6,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
-import org.unreal.modelrouter.monitoring.*;
-import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCircuitBreaker;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.*;
+import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

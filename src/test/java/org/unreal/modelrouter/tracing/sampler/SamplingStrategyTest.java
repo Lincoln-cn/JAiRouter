@@ -1,9 +1,9 @@
-package org.unreal.modelrouter.tracing.sampler;
+package org.unreal.modelrouter.monitor.tracing.sampler;
 
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.Context;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;

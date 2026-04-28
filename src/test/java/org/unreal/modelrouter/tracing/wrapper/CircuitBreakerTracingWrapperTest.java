@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.tracing.wrapper;
+package org.unreal.modelrouter.monitor.tracing.wrapper;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
@@ -8,9 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
-import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.tracing.TracingContextHolder;
-import org.unreal.modelrouter.tracing.logger.StructuredLogger;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;

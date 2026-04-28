@@ -1,10 +1,10 @@
-package org.unreal.modelrouter.monitoring;
+package org.unreal.modelrouter.monitor.monitoring;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsDegradationStrategy;
+import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsDegradationStrategy;
 
 import static org.junit.jupiter.api.Assertions.*;
 

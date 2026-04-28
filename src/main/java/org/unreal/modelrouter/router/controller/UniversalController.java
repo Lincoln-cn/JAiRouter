@@ -19,9 +19,9 @@ import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.tracing.TracingConstants;
-import org.unreal.modelrouter.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.tracing.TracingConstants;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.util.IpUtils;
 import reactor.core.publisher.Mono;
 
@@ -34,7 +34,7 @@ public class UniversalController {
     private final ModelServiceRegistry registry;
     private final ServiceStateManager serviceStateManager;
     private final MetricsCollector metricsCollector;
-    private final org.unreal.modelrouter.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor;
+    private final org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor;
 
     private final Logger logger = LoggerFactory.getLogger(UniversalController.class);
 
@@ -42,7 +42,7 @@ public class UniversalController {
                                final ModelServiceRegistry registry,
                                final ServiceStateManager serviceStateManager,
                                @Autowired(required = false) final MetricsCollector metricsCollector,
-                               @Autowired(required = false) final org.unreal.modelrouter.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor) {
+                               @Autowired(required = false) final org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor) {
         this.adapterRegistry = adapterRegistry;
         this.registry = registry;
         this.serviceStateManager = serviceStateManager;

@@ -2,10 +2,10 @@ package org.unreal.modelrouter.router.adapter.support;
 
 import lombok.extern.slf4j.Slf4j;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.tracing.TracingContextHolder;
-import org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer;
 import org.unreal.modelrouter.util.ApplicationContextProvider;
 
 /**

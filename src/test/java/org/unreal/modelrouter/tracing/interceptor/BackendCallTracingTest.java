@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.tracing.interceptor;
+package org.unreal.modelrouter.monitor.tracing.interceptor;
 
 import java.net.URI;
 import java.util.List;
@@ -36,11 +36,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
-import org.unreal.modelrouter.tracing.DefaultTracingContext;
-import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.tracing.TracingContextHolder;
-import org.unreal.modelrouter.tracing.client.TracingWebClientFactory;
-import org.unreal.modelrouter.tracing.logger.StructuredLogger;
+import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory;
+import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.Span;

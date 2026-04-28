@@ -3,7 +3,7 @@ package org.unreal.modelrouter.router.ratelimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
 import java.util.concurrent.ConcurrentHashMap;
 

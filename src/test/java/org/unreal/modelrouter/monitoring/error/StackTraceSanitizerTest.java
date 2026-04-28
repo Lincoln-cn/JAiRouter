@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring.error;
+package org.unreal.modelrouter.monitor.monitoring.error;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

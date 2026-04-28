@@ -13,8 +13,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;

@@ -22,7 +22,7 @@ import org.unreal.modelrouter.router.ratelimit.ScopedRateLimiterWrapper;
 import org.unreal.modelrouter.router.ratelimit.impl.LeakyBucketRateLimiter;
 import org.unreal.modelrouter.router.ratelimit.impl.SlidingWindowRateLimiter;
 import org.unreal.modelrouter.router.ratelimit.impl.TokenBucketRateLimiter;
-import org.unreal.modelrouter.tracing.wrapper.TracingWrapperFactory;
+import org.unreal.modelrouter.monitor.tracing.wrapper.TracingWrapperFactory;
 
 @Component
 public class ComponentFactory {

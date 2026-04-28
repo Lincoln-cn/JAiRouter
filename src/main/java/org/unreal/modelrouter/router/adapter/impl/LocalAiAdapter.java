@@ -23,7 +23,7 @@ import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 
 /**
@@ -63,8 +63,8 @@ public class LocalAiAdapter extends BaseAdapter {
     @Override
     protected Object transformRequest(final Object request, final String adapterType) {
         // 记录适配器特定的追踪信息
-        org.unreal.modelrouter.tracing.TracingContext tracingContext =
-            org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        org.unreal.modelrouter.monitor.tracing.TracingContext tracingContext =
+            org.unreal.modelrouter.monitor.tracing.TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
                 io.opentelemetry.api.trace.Span currentSpan = tracingContext.getCurrentSpan();
@@ -99,9 +99,9 @@ public class LocalAiAdapter extends BaseAdapter {
 
                 // 记录适配器调用开始事件
                 try {
-                    org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                    org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
                         org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                            org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
                     enhancer.logAdapterCallStart(adapterType, null, getServiceTypeFromRequest(request),
                         getModelNameFromRequest(request), tracingContext);
                 } catch (Exception e) {

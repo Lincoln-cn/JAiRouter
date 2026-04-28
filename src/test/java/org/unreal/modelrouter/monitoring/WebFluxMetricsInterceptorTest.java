@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring;
+package org.unreal.modelrouter.monitor.monitoring;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,9 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilterChain;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
-import org.unreal.modelrouter.monitoring.WebFluxMetricsInterceptor;
+import org.unreal.modelrouter.monitor.monitoring.WebFluxMetricsInterceptor;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 

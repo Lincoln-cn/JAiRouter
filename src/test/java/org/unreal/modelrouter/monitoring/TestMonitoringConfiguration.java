@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring;
+package org.unreal.modelrouter.monitor.monitoring;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -9,12 +9,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
-import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCircuitBreaker;
-import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
+import org.unreal.modelrouter.monitor.monitoring.collector.DefaultMetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.auth.security.TestSecurityProperties;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
-import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
+import org.unreal.modelrouter.monitor.monitoring.AsyncMetricsProcessor;
 
 import java.util.ArrayList;
 import java.util.List;

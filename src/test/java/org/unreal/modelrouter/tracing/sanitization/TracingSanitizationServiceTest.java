@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.tracing.sanitization;
+package org.unreal.modelrouter.monitor.tracing.sanitization;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -12,10 +12,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.unreal.modelrouter.sanitization.SanitizationService;
-import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.tracing.DefaultTracingContext;
-import org.unreal.modelrouter.tracing.config.TracingConfiguration;
-import org.unreal.modelrouter.tracing.logger.StructuredLogger;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
+import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 

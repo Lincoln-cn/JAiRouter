@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.tracing.query.TraceQueryService;
+import org.unreal.modelrouter.monitor.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 

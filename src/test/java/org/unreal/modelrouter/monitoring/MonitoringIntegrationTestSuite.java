@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring;
+package org.unreal.modelrouter.monitor.monitoring;
 
 /**
  * 监控系统集成测试套件

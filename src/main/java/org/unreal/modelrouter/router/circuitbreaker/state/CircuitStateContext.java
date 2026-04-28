@@ -3,7 +3,7 @@ package org.unreal.modelrouter.router.circuitbreaker.state;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker.State;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
