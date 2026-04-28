@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;

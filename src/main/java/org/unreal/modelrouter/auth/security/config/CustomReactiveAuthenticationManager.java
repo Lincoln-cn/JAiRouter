@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.unreal.modelrouter.exception.SecurityAuthenticationException;
+import org.unreal.modelrouter.common.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
@@ -84,10 +84,10 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
                 })
                 .doOnError(error -> log.debug("API Key认证失败: {}", error.getMessage()))
                 .onErrorMap(throwable -> {
-                    if (throwable instanceof org.unreal.modelrouter.exception.AuthenticationException) {
+                    if (throwable instanceof org.unreal.modelrouter.common.exception.AuthenticationException) {
                         return throwable;
                     }
-                    return new org.unreal.modelrouter.exception.AuthenticationException(
+                    return new org.unreal.modelrouter.common.exception.AuthenticationException(
                             "API Key认证失败: " + throwable.getMessage(),
                             "API_KEY_AUTH_FAILED"
                     );
@@ -121,20 +121,20 @@ public class CustomReactiveAuthenticationManager implements ReactiveAuthenticati
                 .doOnNext(validatedAuth -> log.debug("JWT令牌认证成功: {}", validatedAuth.getName()))
                 .doOnError(error -> log.debug("JWT令牌认证失败: {}", error.getMessage()))
                 .onErrorMap(throwable -> {
-                    if (throwable instanceof org.unreal.modelrouter.exception.AuthenticationException) {
+                    if (throwable instanceof org.unreal.modelrouter.common.exception.AuthenticationException) {
                         return throwable;
                     }
                     
                     // 检查是否是JWT过期相关的错误
                     String message = throwable.getMessage();
                     if (message != null && message.contains("expired")) {
-                        return new org.unreal.modelrouter.exception.AuthenticationException(
+                        return new org.unreal.modelrouter.common.exception.AuthenticationException(
                                 "JWT令牌已过期，请重新获取",
                                 "EXPIRED_JWT_TOKEN"
                         );
                     }
                     
-                    return new org.unreal.modelrouter.exception.AuthenticationException(
+                    return new org.unreal.modelrouter.common.exception.AuthenticationException(
                             "JWT令牌认证失败: " + throwable.getMessage(),
                             "JWT_AUTH_FAILED"
                     );

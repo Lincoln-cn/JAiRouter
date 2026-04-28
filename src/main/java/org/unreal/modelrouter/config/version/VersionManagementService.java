@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.entity.ConfigMetadata;
 import org.unreal.modelrouter.entity.VersionInfo;
 import org.unreal.modelrouter.persistence.store.StoreManager;
-import org.unreal.modelrouter.util.JacksonHelper;
+import org.unreal.modelrouter.common.util.JacksonHelper;
 import org.unreal.modelrouter.config.version.strategy.SequentialVersionGenerator;
 import org.unreal.modelrouter.config.version.strategy.VersionGenerator;
 import org.unreal.modelrouter.config.version.strategy.VersionGeneratorFactory;

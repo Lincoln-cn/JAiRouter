@@ -1,9 +1,9 @@
 package org.unreal.modelrouter.auth.security.service;
 
 import org.springframework.data.domain.Page;
-import org.unreal.modelrouter.dto.AddBlacklistRequest;
-import org.unreal.modelrouter.dto.BlacklistEntryDTO;
-import org.unreal.modelrouter.dto.BlacklistStatsDTO;
+import org.unreal.modelrouter.common.dto.AddBlacklistRequest;
+import org.unreal.modelrouter.common.dto.BlacklistEntryDTO;
+import org.unreal.modelrouter.common.dto.BlacklistStatsDTO;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistType;
 
 /**

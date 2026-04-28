@@ -23,8 +23,8 @@ import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 
 
-import org.unreal.modelrouter.dto.*;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.dto.*;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.repository.ModelCallStatsRepository;
 
@@ -88,7 +88,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
                 // 记录适配器调用开始事件
                 try {
                     org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
-                        org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
+                        org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
                             org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
                     enhancer.logAdapterCallStart(adapterType, null, getServiceTypeFromRequest(request),
                         getModelNameFromRequest(request), tracingContext);

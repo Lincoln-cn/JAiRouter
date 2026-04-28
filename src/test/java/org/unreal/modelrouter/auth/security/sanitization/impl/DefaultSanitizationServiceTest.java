@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.exception.SanitizationException;
+import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
 import org.unreal.modelrouter.sanitization.impl.DefaultSanitizationService;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;

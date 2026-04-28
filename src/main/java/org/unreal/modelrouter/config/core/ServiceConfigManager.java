@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
-import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.common.dto.*;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;

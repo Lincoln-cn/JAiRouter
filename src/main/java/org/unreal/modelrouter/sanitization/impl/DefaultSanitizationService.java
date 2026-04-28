@@ -4,7 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.exception.SanitizationException;
+import org.unreal.modelrouter.common.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
 import org.unreal.modelrouter.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;

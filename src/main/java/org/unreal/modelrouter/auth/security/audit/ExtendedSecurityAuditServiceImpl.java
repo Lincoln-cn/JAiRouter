@@ -9,7 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.common.dto.*;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityAuditEventEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityAuditEventEntity.RiskLevel;
 import org.unreal.modelrouter.persistence.jpa.repository.SecurityAuditEventRepository;

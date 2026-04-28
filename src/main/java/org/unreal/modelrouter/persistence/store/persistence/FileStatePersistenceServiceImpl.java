@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.util.JacksonHelper;
-import org.unreal.modelrouter.util.PathSanitizer;
+import org.unreal.modelrouter.common.util.JacksonHelper;
+import org.unreal.modelrouter.common.util.PathSanitizer;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;

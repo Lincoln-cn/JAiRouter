@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.factory.ComponentFactory;
-import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.router.adapter;
 
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 
 /**
  * 适配器功能类，用于定义和管理适配器支持的各种AI服务类型

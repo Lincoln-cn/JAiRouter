@@ -2,7 +2,7 @@ package org.unreal.modelrouter.auth.security.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;

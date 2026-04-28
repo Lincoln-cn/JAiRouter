@@ -5,12 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.dto.JwtTokenInfo;
-import org.unreal.modelrouter.dto.TokenStatus;
-import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.common.dto.JwtTokenInfo;
+import org.unreal.modelrouter.common.dto.TokenStatus;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.util.TokenHashUtils;
+import org.unreal.modelrouter.common.util.TokenHashUtils;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
 import reactor.core.publisher.Mono;
 

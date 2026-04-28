@@ -9,7 +9,7 @@ import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.SlowQueryDetector;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
-import org.unreal.modelrouter.util.ApplicationContextProvider;
+import org.unreal.modelrouter.common.util.ApplicationContextProvider;
 
 import java.time.Instant;
 import java.time.LocalDateTime;

@@ -7,11 +7,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.dto.JwtTokenInfo;
-import org.unreal.modelrouter.dto.TokenStatus;
+import org.unreal.modelrouter.common.dto.JwtTokenInfo;
+import org.unreal.modelrouter.common.dto.TokenStatus;
 import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
 import org.unreal.modelrouter.persistence.store.StoreManager;
-import org.unreal.modelrouter.util.JacksonHelper;
+import org.unreal.modelrouter.common.util.JacksonHelper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

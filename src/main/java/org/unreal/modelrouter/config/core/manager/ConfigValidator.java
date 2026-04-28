@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.constants.ServiceTypeConstants;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.util.InstanceIdUtils;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.util.InstanceIdUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;

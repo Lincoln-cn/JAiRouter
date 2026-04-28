@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.factory.ComponentFactory;
-import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 
 import java.util.EnumMap;
 import java.util.Map;

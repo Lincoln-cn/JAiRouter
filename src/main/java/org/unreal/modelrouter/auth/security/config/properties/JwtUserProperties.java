@@ -3,8 +3,8 @@ package org.unreal.modelrouter.auth.security.config.properties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.dto.JwtAccountRequest;
-import org.unreal.modelrouter.dto.JwtAccountResponse;
+import org.unreal.modelrouter.common.dto.JwtAccountRequest;
+import org.unreal.modelrouter.common.dto.JwtAccountResponse;
 
 import java.util.List;
 

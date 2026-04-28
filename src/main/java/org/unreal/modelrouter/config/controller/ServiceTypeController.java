@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.ConfigurationValidator;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.dto.UpdateServiceConfigRequest;
+import org.unreal.modelrouter.common.dto.UpdateServiceConfigRequest;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 

@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.config.core.ConfigurationService;
-import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.common.dto.*;
 import org.unreal.modelrouter.persistence.jpa.entity.InstanceCircuitBreakerEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.InstanceRateLimitEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
@@ -14,8 +14,8 @@ import org.unreal.modelrouter.persistence.jpa.repository.InstanceCircuitBreakerR
 import org.unreal.modelrouter.persistence.jpa.repository.InstanceRateLimitRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.util.SecurityUtils;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.util.SecurityUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;

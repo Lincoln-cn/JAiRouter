@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.exception.DownstreamServiceException;
+import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.TimeoutException;

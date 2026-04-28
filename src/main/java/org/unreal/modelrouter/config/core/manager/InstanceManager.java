@@ -7,7 +7,7 @@ import org.unreal.modelrouter.config.core.ConfigMergeService;
 import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.config.core.dto.ModelInstanceConfiguration;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
-import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 
 import java.util.*;

@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.router.loadbalancer.utils;
 
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
 
 import java.util.Arrays;
 import java.util.Collections;

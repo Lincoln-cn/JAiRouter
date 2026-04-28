@@ -6,10 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.dto.TokenBlacklistEntry;
+import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
 import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
 import org.unreal.modelrouter.persistence.store.StoreManager;
-import org.unreal.modelrouter.util.JacksonHelper;
+import org.unreal.modelrouter.common.util.JacksonHelper;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;

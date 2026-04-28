@@ -13,8 +13,8 @@ import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
 import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
-import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 

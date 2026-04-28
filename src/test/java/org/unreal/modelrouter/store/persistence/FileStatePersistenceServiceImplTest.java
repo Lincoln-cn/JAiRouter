@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.unreal.modelrouter.util.JacksonHelper;
+import org.unreal.modelrouter.common.util.JacksonHelper;
 import reactor.test.StepVerifier;
 
 import java.io.IOException;
