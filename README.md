@@ -176,27 +176,132 @@ After starting the project, you can access the automatically generated API docum
 
 ## 📌 Development Roadmap (Status Update)
 
-| Phase   | Status | Content                                                       |
-|---------|--------|---------------------------------------------------------------|
-| 0.1.0   | ✅     | Basic gateway, adapter, load balancing, health check          |
-| 0.2.0   | ✅     | Rate limiting, circuit breaking, degradation, config persistence, dynamic update APIs |
-| 0.2.1   | ✅     | Scheduled cleanup tasks, memory optimization, enhanced client IP rate limiting, automatic config file merging |
-| 0.3.0   | ✅     | Docker containerization, multi-environment deployment, monitoring integration |
-| 0.3.1   | ✅     | Accelerated image building using Alibaba Maven mirror in China |
-| 0.4.0   | ✅     | Monitoring metrics, Prometheus integration, alert notifications |
-| 0.5.0   | ✅     | Managing all documents involved in the project via GitHub Pages |
-| 0.6.0   | ✅     | Authentication and authorization                              |
-| 0.7.0   | ✅     | Log tracing                                                   |
-| 0.8.0   | ✅     | Automated packaging and publishing images to Docker Hub       |
-| 0.9.0   | ✅     | Enhanced monitoring dashboard and user management features    |
-| 1.0.0   | ✅     | Enterprise deployment guide                                   |
-| 1.1.0   | ✅     | Add API playground feature         |
-| 1.2.5   | ✅     | Add H2 database support for persistence and set as default         |
-| 1.3.0   | 🚧     | Integration into self-developed large model application platform |
+### Phase 1: Foundation (v0.x - v1.0.x) ✅
+
+| Version | Status | Content |
+|---------|--------|---------|
+| 0.1.0 | ✅ | Basic gateway, adapter, load balancing, health check |
+| 0.2.0 | ✅ | Rate limiting, circuit breaking, degradation, config persistence |
+| 0.2.1 | ✅ | Scheduled cleanup, memory optimization, client IP rate limiting |
+| 0.3.0 | ✅ | Docker containerization, multi-environment deployment |
+| 0.3.1 | ✅ | Alibaba Maven mirror for China acceleration |
+| 0.4.0 | ✅ | Monitoring metrics, Prometheus integration |
+| 0.5.0 | ✅ | GitHub Pages documentation |
+| 0.6.0 | ✅ | Authentication and authorization |
+| 0.7.0 | ✅ | Log tracing |
+| 0.8.0 | ✅ | Automated Docker Hub publishing |
+| 0.9.0 | ✅ | Enhanced dashboard and user management |
+| 1.0.0 | ✅ | Enterprise deployment guide |
+| 1.1.0 | ✅ | API playground feature |
+| 1.2.5 | ✅ | H2 database support (default persistence) |
+
+### Phase 2: Security & Management (v1.5.x - v1.9.x) ✅
+
+| Version | Status | Content |
+|---------|--------|---------|
+| 1.5.6 | ✅ | Instance-level rate limiter & circuit breaker config |
+| 1.5.7 | ✅ | JWT account initialization |
+| 1.6.0 | ✅ | Config version management optimization |
+| 1.6.1 | ✅ | API Key security enhancement (P0 fixes) |
+| 1.6.2 | ✅ | API Key management enhancement (P1/P2) |
+| 1.7.0 | ✅ | JWT account management optimization |
+| 1.7.2 | ✅ | Playground component refactoring |
+| 1.8.0 | ✅ | Security hardening version |
+| 1.8.1 | ✅ | Quick start guide |
+| 1.9.0 | ✅ | Core refactoring - performance optimization |
+| 1.9.3 | ✅ | Exception management frontend |
+| 1.9.4 | ✅ | Prometheus integration for exception monitoring |
+| 1.9.5 | ✅ | Token usage statistics feature |
+| 1.9.6 | ✅ | Complete monitoring system |
+
+### Phase 3: Refactoring (v2.0.x - v2.3.x) ✅
+
+| Version | Status | Content |
+|---------|--------|---------|
+| 2.0.0 | ✅ | Concurrent performance optimization, model call statistics |
+| 2.1.2 | ✅ | Magic string cleanup - Adapter support classes |
+| 2.1.3 | ✅ | Magic string cleanup - Monitoring & tracing classes |
+| 2.1.4 | ✅ | Magic string cleanup - Full scan and fixes |
+| 2.2.0 | ✅ | ConfigurationService split - ConfigVersionManager & ConfigValidator |
+| 2.2.1 | ✅ | BaseAdapter split - RequestBuilder & ResponseHandler |
+| 2.2.4 | ✅ | BaseAdapter further split - InstanceSelector & ResponseTransformer |
+| 2.2.5 | ✅ | Enhanced instance health check - HTTP connectivity |
+| 2.2.6 | ✅ | ServiceConfigManager refactoring |
+| 2.2.7 | ✅ | Adapter capability check - CapabilityChecker |
+| 2.2.8 | ✅ | Integration tests for new components |
+| 2.2.9 | ✅ | Quality improvement and documentation |
+| 2.3.0 | ✅ | Error handling & retry components |
+| 2.3.1 | ✅ | HttpRequestProcessor & ResponseMapper |
+| 2.3.2 | ✅ | Monitoring & tracing split |
+| 2.3.3 | ✅ | Health check display fix |
+| 2.4.0 | ✅ | Consistent hashing load balancer, weight overflow fix |
+| 2.4.1 | ✅ | Load balancer management page, configuration persistence |
+| 2.4.5 | ✅ | State persistence infrastructure |
+| 2.4.7 | ✅ | Circuit breaker state management page |
+
+### Phase 4: State Persistence (v2.5.x) ✅
+
+| Version | Status | Content |
+|---------|--------|---------|
+| 2.5.0 | ✅ | Circuit breaker state persistence (Redis + File) |
+| 2.5.1 | ✅ | Rate limiter state persistence |
+| 2.5.2 | ✅ | Unified state manager API |
+| 2.5.3-2.5.15 | ✅ | State persistence optimization & bug fixes |
+
+### Phase 5: Code Quality (v2.6.x) ✅
+
+| Version | Status | Content |
+|---------|--------|---------|
+| 2.6.1-2.6.9 | ✅ | Checkstyle FinalParameters cleanup (5,413 → 0) |
+| 2.6.10 | ✅ | WhitespaceAfter fixes (1,655 → 29, 98.2% reduction) |
+| 2.6.11 | ✅ | HiddenField & OperatorWrap suppression config |
+| **Total** | ✅ | **Warnings: 10,413 → 3,424 (67% reduction)** |
+
+### Phase 6: Microservices Preparation (v2.7-v2.9) 🚧
+
+| Version | Status | Content | Duration |
+|---------|--------|---------|----------|
+| **v2.7.x** | 🚧 | **Package Structure Reorganization** | 10 days |
+| 2.7.0 | 🚧 | - Service boundary definition & base structure |
+| 2.7.1 | 🚧 | - auth module migration (security/audit) |
+| 2.7.2 | 🚧 | - config module migration (config/version) |
+| 2.7.3 | 🚧 | - router module migration (adapter/loadbalancer) |
+| 2.7.4 | 🚧 | - router module migration (circuitbreaker/ratelimit) |
+| 2.7.5 | 🚧 | - monitor module migration (tracing/metrics) |
+| 2.7.6 | 🚧 | - persistence module migration (store/jpa) |
+| 2.7.7 | 🚧 | - common module migration (constants/dto/util) |
+| 2.7.8 | 🚧 | - controller grouping by service |
+| 2.7.9 | 🚧 | - test adjustment & dependency fix |
+| **v2.8.x** | 📋 | **Configuration Integration** | 10 days |
+| 2.8.0 | 📋 | - Configuration structure analysis |
+| 2.8.1 | 📋 | - Configuration file split by module |
+| 2.8.2 | 📋 | - Service module config separation |
+| 2.8.3 | 📋 | - Multi-environment config completion |
+| 2.8.4 | 📋 | - External config file support |
+| 2.8.5 | 📋 | - Sensitive config separation |
+| 2.8.6 | 📋 | - Config loading priority |
+| 2.8.7 | 📋 | - Config validation mechanism |
+| 2.8.8 | 📋 | - Configuration documentation |
+| 2.8.9 | 📋 | - Config migration test & summary |
+| **v2.9.0** | 📋 | **Issue Fix & Review** | 7 days |
+| | 📋 | - Fix v2.7/v2.8 leftover issues |
+| | 📋 | - Update all documentation |
+| | 📋 | - Code quality check & performance test |
+
+### Phase 7: Microservices Architecture (v3.0.x) 📋
+
+| Version | Status | Content | Duration |
+|---------|--------|---------|----------|
+| 3.0.0 | 📋 | **Microservices Architecture Transformation** (2026-06-05 ~ 2026-07-15) |
+| | 📋 | - Authentication/Authorization service separation |
+| | 📋 | - Nacos configuration center integration |
+| | 📋 | - Monitoring/Tracing service separation |
+| | 📋 | - Service discovery mechanism |
+| | 📋 | - Inter-service communication stabilization |
 
 ---
 
-📖 **Full Documentation & Deployment Guide**: [Click Here](https://jairouter.com)  
+📖 **Full Documentation & Deployment Guide**: [Click Here](https://jairouter.com)
 🐙 **Source Code Repository**: [GitHub - JAiRouter](https://github.com/Lincoln-cn/jairouter)
 
 ---
