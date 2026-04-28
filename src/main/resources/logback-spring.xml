@@ -74,7 +74,7 @@
     </appender>
 
     <!-- 自定义追踪Appender -->
-    <appender name="TRACING_APPENDER" class="org.unreal.modelrouter.tracing.logger.TracingLogbackAppender">
+    <appender name="TRACING_APPENDER" class="org.unreal.modelrouter.monitor.tracing.logger.TracingLogbackAppender">
         <jsonFormat>true</jsonFormat>
         <includeTraceContext>true</includeTraceContext>
     </appender>

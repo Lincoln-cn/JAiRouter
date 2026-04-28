@@ -3,6 +3,7 @@ package org.unreal.modelrouter.persistence.store.persistence.adapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.LeastConnectionsLoadBalancer;
@@ -45,6 +46,7 @@ public class LoadBalancerStatePersistenceAdapter {
     private static final String TIMESTAMP_KEY = "timestamp";
 
     @Autowired
+    @Qualifier("compositeStatePersistenceServiceImpl")
     private StatePersistenceService persistenceService;
 
     /**
