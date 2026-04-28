@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter.retry;
+package org.unreal.modelrouter.router.adapter.retry;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.loadbalancer.impl;
+package org.unreal.modelrouter.router.loadbalancer.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

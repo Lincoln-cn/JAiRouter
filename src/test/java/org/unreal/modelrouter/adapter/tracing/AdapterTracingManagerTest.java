@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter.tracing;
+package org.unreal.modelrouter.router.adapter.tracing;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;

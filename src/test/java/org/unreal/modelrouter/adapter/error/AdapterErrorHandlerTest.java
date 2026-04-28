@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter.error;
+package org.unreal.modelrouter.router.adapter.error;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

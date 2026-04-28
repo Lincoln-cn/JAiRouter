@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter.handler;
+package org.unreal.modelrouter.router.adapter.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

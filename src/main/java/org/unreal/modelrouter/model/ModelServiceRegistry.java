@@ -13,8 +13,8 @@ import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.config.core.ConfigMergeService;
 import org.unreal.modelrouter.fallback.FallbackManager;
-import org.unreal.modelrouter.loadbalancer.LoadBalancer;
-import org.unreal.modelrouter.loadbalancer.LoadBalancerManager;
+import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.ratelimit.RateLimitManager;
 

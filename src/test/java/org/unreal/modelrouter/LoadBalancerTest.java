@@ -2,11 +2,11 @@ package org.unreal.modelrouter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.loadbalancer.LoadBalancer;
-import org.unreal.modelrouter.loadbalancer.impl.IpHashLoadBalancer;
-import org.unreal.modelrouter.loadbalancer.impl.LeastConnectionsLoadBalancer;
-import org.unreal.modelrouter.loadbalancer.impl.RandomLoadBalancer;
-import org.unreal.modelrouter.loadbalancer.impl.RoundRobinLoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.impl.IpHashLoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.impl.LeastConnectionsLoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.impl.RandomLoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.impl.RoundRobinLoadBalancer;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 
 import java.util.ArrayList;

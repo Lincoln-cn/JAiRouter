@@ -3,7 +3,7 @@ package org.unreal.modelrouter.tracing.wrapper;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import lombok.extern.slf4j.Slf4j;
-import org.unreal.modelrouter.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.TracingContextHolder;
