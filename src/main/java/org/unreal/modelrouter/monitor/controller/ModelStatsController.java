@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.controller;
+package org.unreal.modelrouter.monitor.controller;
 
 
 import io.swagger.v3.oas.annotations.Operation;
