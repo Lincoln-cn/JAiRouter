@@ -17,10 +17,10 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationService;
-import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.config.ExcludedPathsConfig;
-import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
+import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

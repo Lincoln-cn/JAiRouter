@@ -2,8 +2,8 @@ package org.unreal.modelrouter.cli;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.security.util.SecretKeyGenerator;
-import org.unreal.modelrouter.security.util.SecretKeyValidator;
+import org.unreal.modelrouter.auth.security.util.SecretKeyGenerator;
+import org.unreal.modelrouter.auth.security.util.SecretKeyValidator;
 
 /**
  * 密钥生成命令行工具

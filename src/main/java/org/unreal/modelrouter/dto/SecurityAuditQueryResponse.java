@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.unreal.modelrouter.security.model.SecurityAuditEvent;
+import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 
 import java.time.LocalDateTime;
 import java.util.List;

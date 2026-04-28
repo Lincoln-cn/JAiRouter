@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.security.audit.SecurityAuditService;
-import org.unreal.modelrouter.security.model.SecurityAlertEvent;
+import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.auth.security.model.SecurityAlertEvent;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 

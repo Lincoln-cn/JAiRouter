@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.sanitization;
 
-import org.unreal.modelrouter.security.model.SanitizationRule;
+import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;
 
 import java.util.List;

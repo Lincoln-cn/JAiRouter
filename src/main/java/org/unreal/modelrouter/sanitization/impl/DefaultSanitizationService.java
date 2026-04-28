@@ -7,11 +7,11 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
 import org.unreal.modelrouter.sanitization.SanitizationService;
-import org.unreal.modelrouter.security.config.properties.SanitizationConfig;
-import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.model.RuleType;
-import org.unreal.modelrouter.security.model.SanitizationRule;
-import org.unreal.modelrouter.security.model.SanitizationStrategy;
+import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
+import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.model.RuleType;
+import org.unreal.modelrouter.auth.security.model.SanitizationRule;
+import org.unreal.modelrouter.auth.security.model.SanitizationStrategy;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;

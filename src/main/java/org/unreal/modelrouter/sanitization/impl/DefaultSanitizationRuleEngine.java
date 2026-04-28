@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.sanitization.SanitizationRuleEngine;
-import org.unreal.modelrouter.security.model.SanitizationRule;
+import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;

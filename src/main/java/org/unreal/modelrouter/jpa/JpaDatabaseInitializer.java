@@ -18,9 +18,9 @@ import org.unreal.modelrouter.jpa.repository.JwtAccountRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.security.config.properties.JwtAccountProperties;
-import org.unreal.modelrouter.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.security.service.ApiKeyService;
+import org.unreal.modelrouter.auth.security.config.properties.JwtAccountProperties;
+import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.util.JacksonHelper;
 
 import java.time.LocalDateTime;

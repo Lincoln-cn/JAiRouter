@@ -6,11 +6,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-import org.unreal.modelrouter.controller.JwtAccountController;
+import org.unreal.modelrouter.auth.controller.JwtAccountController;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.CreateJwtAccountRequest;
 import org.unreal.modelrouter.dto.JwtAccountDTO;
-import org.unreal.modelrouter.security.service.JwtAccountService;
+import org.unreal.modelrouter.auth.security.service.JwtAccountService;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
