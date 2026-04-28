@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.store.persistence.adapter;
+package org.unreal.modelrouter.persistence.store.persistence.adapter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,8 +12,8 @@ import org.unreal.modelrouter.router.ratelimit.RateLimiter;
 import org.unreal.modelrouter.router.ratelimit.impl.TokenBucketRateLimiter;
 import org.unreal.modelrouter.router.ratelimit.impl.SlidingWindowRateLimiter;
 import org.unreal.modelrouter.router.ratelimit.impl.LeakyBucketRateLimiter;
-import org.unreal.modelrouter.store.persistence.StatePersistenceService;
-import org.unreal.modelrouter.store.persistence.StatePersistenceService.StateType;
+import org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService;
+import org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService.StateType;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 

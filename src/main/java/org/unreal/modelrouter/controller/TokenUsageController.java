@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.TokenUsageRecordDTO;
 import org.unreal.modelrouter.dto.TokenUsageStatisticsDTO;
-import org.unreal.modelrouter.jpa.entity.TokenUsageEntity;
+import org.unreal.modelrouter.persistence.jpa.entity.TokenUsageEntity;
 import org.unreal.modelrouter.service.TokenUsageService;
 
 import java.time.LocalDateTime;

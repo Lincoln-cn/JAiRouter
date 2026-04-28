@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.config.properties.*;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import reactor.core.publisher.Mono;
 
 import java.util.*;

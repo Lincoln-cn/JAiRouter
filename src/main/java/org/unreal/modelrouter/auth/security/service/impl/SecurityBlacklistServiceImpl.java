@@ -11,12 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.dto.AddBlacklistRequest;
 import org.unreal.modelrouter.dto.BlacklistEntryDTO;
 import org.unreal.modelrouter.dto.BlacklistStatsDTO;
-import org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity;
-import org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity.BlacklistSource;
-import org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity.BlacklistStatus;
-import org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity.BlacklistType;
-import org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity.RiskLevel;
-import org.unreal.modelrouter.jpa.repository.SecurityBlacklistRepository;
+import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity;
+import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistSource;
+import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistStatus;
+import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistType;
+import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.RiskLevel;
+import org.unreal.modelrouter.persistence.jpa.repository.SecurityBlacklistRepository;
 import org.unreal.modelrouter.auth.security.service.SecurityBlacklistService;
 
 import java.nio.charset.StandardCharsets;

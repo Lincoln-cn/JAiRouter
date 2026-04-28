@@ -8,7 +8,7 @@ import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.config.core.dto.ModelInstanceConfiguration;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

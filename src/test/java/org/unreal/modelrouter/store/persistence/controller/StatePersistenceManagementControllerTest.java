@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.store.persistence.controller;
+package org.unreal.modelrouter.persistence.store.persistence.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -7,10 +7,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.store.persistence.CompositeStatePersistenceServiceImpl;
-import org.unreal.modelrouter.store.persistence.adapter.CircuitBreakerStatePersistenceAdapter;
-import org.unreal.modelrouter.store.persistence.adapter.LoadBalancerStatePersistenceAdapter;
-import org.unreal.modelrouter.store.persistence.adapter.RateLimiterStatePersistenceAdapter;
+import org.unreal.modelrouter.persistence.store.persistence.CompositeStatePersistenceServiceImpl;
+import org.unreal.modelrouter.persistence.store.persistence.adapter.CircuitBreakerStatePersistenceAdapter;
+import org.unreal.modelrouter.persistence.store.persistence.adapter.LoadBalancerStatePersistenceAdapter;
+import org.unreal.modelrouter.persistence.store.persistence.adapter.RateLimiterStatePersistenceAdapter;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 

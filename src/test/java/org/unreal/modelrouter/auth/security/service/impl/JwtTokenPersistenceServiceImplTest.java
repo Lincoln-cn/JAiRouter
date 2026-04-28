@@ -6,8 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.dto.JwtTokenInfo;
 import org.unreal.modelrouter.dto.TokenStatus;
-import org.unreal.modelrouter.store.MemoryStoreManager;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.MemoryStoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;

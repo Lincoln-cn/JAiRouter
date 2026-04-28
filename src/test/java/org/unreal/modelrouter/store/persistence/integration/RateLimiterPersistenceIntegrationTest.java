@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.store.persistence.integration;
+package org.unreal.modelrouter.persistence.store.persistence.integration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,7 +10,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
-import org.unreal.modelrouter.store.persistence.adapter.RateLimiterStatePersistenceAdapter;
+import org.unreal.modelrouter.persistence.store.persistence.adapter.RateLimiterStatePersistenceAdapter;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;

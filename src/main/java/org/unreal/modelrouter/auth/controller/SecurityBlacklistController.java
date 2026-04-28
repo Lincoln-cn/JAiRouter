@@ -13,7 +13,7 @@ import org.unreal.modelrouter.dto.AddBlacklistRequest;
 import org.unreal.modelrouter.dto.BlacklistEntryDTO;
 import org.unreal.modelrouter.dto.BlacklistStatsDTO;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity.BlacklistType;
+import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistType;
 import org.unreal.modelrouter.auth.security.service.SecurityBlacklistService;
 
 import java.security.Principal;

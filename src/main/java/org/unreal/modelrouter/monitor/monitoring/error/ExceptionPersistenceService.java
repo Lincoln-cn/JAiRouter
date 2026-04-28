@@ -8,9 +8,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.unreal.modelrouter.jpa.entity.ExceptionEventEntity;
-import org.unreal.modelrouter.jpa.entity.ExceptionStatsHourlyEntity;
-import org.unreal.modelrouter.jpa.repository.ExceptionEventRepository;
+import org.unreal.modelrouter.persistence.jpa.entity.ExceptionEventEntity;
+import org.unreal.modelrouter.persistence.jpa.entity.ExceptionStatsHourlyEntity;
+import org.unreal.modelrouter.persistence.jpa.repository.ExceptionEventRepository;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 
 import java.time.Instant;

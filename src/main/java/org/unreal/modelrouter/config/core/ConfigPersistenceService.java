@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.config.core.event.ConfigurationChangedEvent;
-import org.unreal.modelrouter.jpa.JpaStoreManager;
+import org.unreal.modelrouter.persistence.jpa.JpaStoreManager;
 
 import java.util.Map;
 

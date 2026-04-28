@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.unreal.modelrouter.jpa.entity.ServiceConfigEntity;
-import org.unreal.modelrouter.jpa.entity.ServiceInstanceEntity;
-import org.unreal.modelrouter.jpa.repository.InstanceCircuitBreakerRepository;
-import org.unreal.modelrouter.jpa.repository.InstanceRateLimitRepository;
-import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
-import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
+import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
+import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
+import org.unreal.modelrouter.persistence.jpa.repository.InstanceCircuitBreakerRepository;
+import org.unreal.modelrouter.persistence.jpa.repository.InstanceRateLimitRepository;
+import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
+import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -16,7 +16,7 @@ import org.unreal.modelrouter.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.dto.RateLimitConfig;
 import org.unreal.modelrouter.dto.ServiceConfigDTO;
 import org.unreal.modelrouter.dto.UpdateServiceConfigRequest;
-import org.unreal.modelrouter.jpa.entity.ServiceConfigEntity;
+import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 
 import java.util.HashMap;
 import java.util.List;

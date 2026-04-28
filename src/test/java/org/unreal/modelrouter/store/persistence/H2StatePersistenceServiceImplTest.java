@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.store.persistence;
+package org.unreal.modelrouter.persistence.store.persistence;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,7 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import reactor.test.StepVerifier;
 
 import java.util.HashMap;
