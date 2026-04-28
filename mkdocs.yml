@@ -158,6 +158,7 @@ nav:
     - zh/getting-started/index.md
     - 安装指南: zh/getting-started/installation.md
     - 快速开始: zh/getting-started/quick-start.md
+    - 快速开始(v1.8): zh/getting-started/quick-start-v1.8.md
     - 第一步: zh/getting-started/first-steps.md
   - 配置指南:
     - zh/configuration/index.md
@@ -168,6 +169,10 @@ nav:
     - 限流配置: zh/configuration/rate-limiting.md
     - 熔断器: zh/configuration/circuit-breaker.md
     - 存储配置: zh/configuration/store-config.md
+    - JWT持久化: zh/configuration/jwt-persistence.md
+    - 状态持久化: zh/configuration/state-persistence.md
+    - 版本管理: zh/configuration/version-management.md
+    - 验证规则: zh/configuration/validation-rules.md
   - 安全功能:
     - zh/security/index.md
     - API Key管理: zh/security/api-key-management.md
@@ -180,21 +185,29 @@ nav:
     - zh/api-reference/index.md
     - 统一API: zh/api-reference/universal-api.md
     - 管理API: zh/api-reference/management-api.md
+    - 监控API: zh/api-reference/monitoring-api.md
     - OpenAPI规范: zh/api-reference/openapi-spec.md
   - 部署指南:
     - zh/deployment/index.md
     - Docker部署: zh/deployment/docker.md
+    - Docker优化: zh/deployment/docker-optimized.md
     - Kubernetes部署: zh/deployment/kubernetes.md
     - 生产环境: zh/deployment/production.md
     - 中国优化: zh/deployment/china-optimization.md
     - GitHub Pages: zh/deployment/github-pages.md
+    - JWT持久化检查清单: zh/deployment/jwt-persistence-deployment-checklist.md
   - 监控指南:
     - zh/monitoring/index.md
     - 监控设置: zh/monitoring/setup.md
+    - 监控配置: zh/monitoring/configuration.md
     - 仪表板: zh/monitoring/dashboards.md
     - 告警配置: zh/monitoring/alerts.md
+    - 告警规则指南: zh/monitoring/alert_rules_guide.md
     - 慢查询配置: zh/monitoring/slow-query-alerts.md
+    - 监控指标: zh/monitoring/metrics.md
+    - 性能监控: zh/monitoring/performance.md
     - 错误追踪: zh/monitoring/error-tracking.md
+    - 监控测试: zh/monitoring/testing.md
     - 故障排查: zh/monitoring/troubleshooting.md
   - 分布式追踪:
     - zh/tracing/index.md
@@ -213,6 +226,11 @@ nav:
     - 代码质量: zh/development/code-quality.md
     - 部署测试: zh/development/deployment-testing.md
     - 性能优化: zh/development/performance-optimization.md
+    - v1.4.0变更日志: zh/development/V1.4.0-changelog.md
+    - v1.4.1变更日志: zh/development/V1.4.1-changelog.md
+    - v2.7.x Package重构: zh/development/v2.7.x-package-refactoring.md
+    - 追踪全链路设计: zh/development/tracing-full-chain-design.md
+    - 追踪集成: zh/development/tracing-integration.md
   - 故障排查:
     - zh/troubleshooting/index.md
     - 常见问题: zh/troubleshooting/common-issues.md
@@ -225,6 +243,7 @@ nav:
     - 发展路线图: zh/reference/roadmap.md
     - FAQ: zh/reference/faq.md
     - 术语表: zh/reference/glossary.md
+    - 适配器更新: zh/reference/adapter-updates.md
 
 extra:
   social:
