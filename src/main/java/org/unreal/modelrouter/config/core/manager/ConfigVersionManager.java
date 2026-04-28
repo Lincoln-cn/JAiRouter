@@ -8,7 +8,7 @@ import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.entity.ConfigMetadata;
 import org.unreal.modelrouter.entity.VersionInfo;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.util.SecurityUtils;
 
 import java.time.LocalDateTime;

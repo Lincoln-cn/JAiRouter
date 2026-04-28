@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.dto.JwtTokenInfo;
 import org.unreal.modelrouter.dto.TokenStatus;
 import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.util.JacksonHelper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

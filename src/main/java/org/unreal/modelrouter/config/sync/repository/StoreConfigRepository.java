@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 
 import java.util.HashMap;
 import java.util.Map;

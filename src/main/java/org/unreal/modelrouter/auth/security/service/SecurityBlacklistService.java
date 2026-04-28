@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page;
 import org.unreal.modelrouter.dto.AddBlacklistRequest;
 import org.unreal.modelrouter.dto.BlacklistEntryDTO;
 import org.unreal.modelrouter.dto.BlacklistStatsDTO;
-import org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity.BlacklistType;
+import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistType;
 
 /**
  * 统一安全黑名单服务接口

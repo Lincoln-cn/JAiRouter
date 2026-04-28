@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
 import org.unreal.modelrouter.auth.security.service.JwtCleanupService;
 import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import reactor.core.publisher.Mono;
 
 import jakarta.annotation.PostConstruct;

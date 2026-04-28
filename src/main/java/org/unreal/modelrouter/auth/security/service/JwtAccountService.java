@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.dto.CreateJwtAccountRequest;
 import org.unreal.modelrouter.dto.JwtAccountDTO;
-import org.unreal.modelrouter.jpa.entity.JwtAccountEntity;
-import org.unreal.modelrouter.jpa.repository.JwtAccountRepository;
+import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
+import org.unreal.modelrouter.persistence.jpa.repository.JwtAccountRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;

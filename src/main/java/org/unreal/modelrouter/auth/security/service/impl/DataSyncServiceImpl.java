@@ -12,7 +12,7 @@ import org.unreal.modelrouter.dto.TokenBlacklistEntry;
 import org.unreal.modelrouter.dto.TokenStatus;
 import org.unreal.modelrouter.auth.security.service.DataSyncService;
 import org.unreal.modelrouter.auth.security.service.StorageHealthService;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.util.JacksonHelper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

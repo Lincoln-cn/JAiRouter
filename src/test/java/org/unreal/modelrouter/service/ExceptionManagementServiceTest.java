@@ -14,8 +14,8 @@ import org.unreal.modelrouter.dto.ExceptionEventDTO;
 import org.unreal.modelrouter.dto.ExceptionQueryRequest;
 import org.unreal.modelrouter.dto.ExceptionStatisticsDTO;
 import org.unreal.modelrouter.dto.PagedResult;
-import org.unreal.modelrouter.jpa.entity.ExceptionEventEntity;
-import org.unreal.modelrouter.jpa.repository.ExceptionEventRepository;
+import org.unreal.modelrouter.persistence.jpa.entity.ExceptionEventEntity;
+import org.unreal.modelrouter.persistence.jpa.repository.ExceptionEventRepository;
 import org.unreal.modelrouter.monitor.monitoring.error.ExceptionPersistenceService;
 
 import java.time.LocalDateTime;

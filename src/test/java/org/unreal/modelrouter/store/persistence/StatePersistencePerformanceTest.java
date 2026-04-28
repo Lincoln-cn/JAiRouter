@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.store.persistence;
+package org.unreal.modelrouter.persistence.store.persistence;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;

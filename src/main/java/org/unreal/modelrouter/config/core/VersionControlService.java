@@ -3,7 +3,7 @@ package org.unreal.modelrouter.config.core;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.jpa.JpaStoreManager;
+import org.unreal.modelrouter.persistence.jpa.JpaStoreManager;
 import org.unreal.modelrouter.util.JacksonHelper;
 
 import java.time.LocalDateTime;

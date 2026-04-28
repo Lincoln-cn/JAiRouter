@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.util.InstanceIdUtils;
 
 import java.util.ArrayList;

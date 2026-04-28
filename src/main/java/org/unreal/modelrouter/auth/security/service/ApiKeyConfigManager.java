@@ -6,7 +6,7 @@ import org.unreal.modelrouter.exception.AuthenticationException;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;

@@ -13,7 +13,7 @@ import org.unreal.modelrouter.auth.security.service.impl.JwtBlacklistServiceImpl
 import org.unreal.modelrouter.auth.security.service.impl.JwtTokenPersistenceServiceImpl;
 import org.unreal.modelrouter.auth.security.service.impl.RedisJwtBlacklistServiceImpl;
 import org.unreal.modelrouter.auth.security.service.impl.RedisJwtTokenPersistenceServiceImpl;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 
 /**
  * JWT服务配置类

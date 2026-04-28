@@ -14,7 +14,7 @@ import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.dto.RouterConfiguration;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.VersionInfoResponse;
-import org.unreal.modelrouter.store.StoreManager;
+import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.config.version.diff.ConfigDiff;
 import org.unreal.modelrouter.config.version.diff.VersionDiffService;
 import reactor.core.publisher.Mono;

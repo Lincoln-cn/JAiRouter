@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.dto.TokenUsageRecordDTO;
 import org.unreal.modelrouter.dto.TokenUsageStatisticsDTO;
-import org.unreal.modelrouter.jpa.entity.TokenUsageEntity;
-import org.unreal.modelrouter.jpa.repository.TokenUsageRepository;
+import org.unreal.modelrouter.persistence.jpa.entity.TokenUsageEntity;
+import org.unreal.modelrouter.persistence.jpa.repository.TokenUsageRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
