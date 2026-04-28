@@ -7,8 +7,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.tracing.health.HealthCheckTracingEnhancer;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.tracing.health.HealthCheckTracingEnhancer;
 
 import java.util.ArrayList;
 import java.util.HashMap;

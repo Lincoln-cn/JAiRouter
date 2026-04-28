@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring.error;
+package org.unreal.modelrouter.monitor.monitoring.error;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

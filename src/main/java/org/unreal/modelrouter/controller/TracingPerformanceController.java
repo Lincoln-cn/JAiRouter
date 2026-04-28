@@ -8,10 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.tracing.TracingService;
-import org.unreal.modelrouter.tracing.async.AsyncTracingProcessor;
-import org.unreal.modelrouter.tracing.memory.TracingMemoryManager;
-import org.unreal.modelrouter.tracing.performance.TracingPerformanceMonitor;
+import org.unreal.modelrouter.monitor.tracing.TracingService;
+import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
+import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;

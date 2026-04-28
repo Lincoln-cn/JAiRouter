@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.unreal.modelrouter.router.circuitbreaker.state.CircuitState;
 import org.unreal.modelrouter.router.circuitbreaker.state.CircuitStateContext;
 import org.unreal.modelrouter.router.circuitbreaker.state.ClosedState;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
 /**
  * 使用状态模式实现的熔断器

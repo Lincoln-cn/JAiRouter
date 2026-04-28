@@ -649,9 +649,9 @@ public class ModelServiceRegistry {
         return webClientCache.computeIfAbsent(key, url -> {
             // 尝试获取追踪WebClient工厂
             try {
-                org.unreal.modelrouter.tracing.client.TracingWebClientFactory tracingFactory = 
+                org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory tracingFactory = 
                     org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                        org.unreal.modelrouter.tracing.client.TracingWebClientFactory.class);
+                        org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory.class);
                 return tracingFactory.createTracingWebClient(url);
             } catch (Exception e) {
                 // 如果追踪功能不可用，创建普通WebClient

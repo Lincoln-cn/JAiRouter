@@ -22,8 +22,8 @@ import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.store.StoreManager;
-import org.unreal.modelrouter.tracing.config.SamplingConfigurationValidator;
-import org.unreal.modelrouter.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.SamplingConfigurationValidator;
+import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.util.ApplicationContextProvider;
 import org.unreal.modelrouter.util.InstanceIdUtils;
 import org.unreal.modelrouter.util.JacksonHelper;
@@ -2130,7 +2130,7 @@ public class ConfigurationService {
 
             try {
                 // 将Map转换为TracingConfiguration.SamplingConfig对象进行验证
-                org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig config
+                org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration.SamplingConfig config
                         = convertMapToSamplingConfig(samplingConfig);
 
                 SamplingConfigurationValidator.ValidationResult result = samplingValidator.validateSamplingConfig(config);
@@ -2270,11 +2270,11 @@ public class ConfigurationService {
             Object rulesObj = configMap.get("rules");
             if (rulesObj instanceof List) {
                 List<Map<String, Object>> rulesList = (List<Map<String, Object>>) rulesObj;
-                List<org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule> rules = new ArrayList<>();
+                List<org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule> rules = new ArrayList<>();
 
                 for (Map<String, Object> ruleMap : rulesList) {
-                    org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule rule
-                            = new org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule();
+                    org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule rule
+                            = new org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration.SamplingConfig.SamplingRule();
 
                     if (ruleMap.containsKey("condition")) {
                         rule.setCondition((String) ruleMap.get("condition"));
@@ -2296,8 +2296,8 @@ public class ConfigurationService {
             Object adaptiveObj = configMap.get("adaptive");
             if (adaptiveObj instanceof Map) {
                 Map<String, Object> adaptiveMap = (Map<String, Object>) adaptiveObj;
-                org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.AdaptiveConfig adaptiveConfig
-                        = new org.unreal.modelrouter.tracing.config.TracingConfiguration.SamplingConfig.AdaptiveConfig();
+                org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration.SamplingConfig.AdaptiveConfig adaptiveConfig
+                        = new org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration.SamplingConfig.AdaptiveConfig();
 
                 if (adaptiveMap.containsKey("enabled")) {
                     Object enabledObj = adaptiveMap.get("enabled");

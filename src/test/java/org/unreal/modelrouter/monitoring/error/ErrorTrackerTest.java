@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring.error;
+package org.unreal.modelrouter.monitor.monitoring.error;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -27,9 +27,9 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.tracing.TracingContextHolder;
-import org.unreal.modelrouter.tracing.logger.StructuredLogger;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 
 /**
  * ErrorTracker单元测试

@@ -22,9 +22,9 @@ import org.unreal.modelrouter.exception.AuthorizationException;
 import org.unreal.modelrouter.exception.SanitizationException;
 import org.unreal.modelrouter.exception.SecurityException;
 import org.unreal.modelrouter.exception.SecurityAuthenticationException;
-import org.unreal.modelrouter.monitoring.error.ErrorTracker;
-import org.unreal.modelrouter.tracing.TracingContext;
-import org.unreal.modelrouter.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
+import org.unreal.modelrouter.monitor.tracing.TracingContext;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;

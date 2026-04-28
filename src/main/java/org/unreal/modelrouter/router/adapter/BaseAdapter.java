@@ -35,7 +35,7 @@ import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.exception.DownstreamServiceException;
 import org.unreal.modelrouter.util.IpUtils;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
@@ -134,9 +134,9 @@ public abstract class BaseAdapter implements ServiceCapability {
         String baseUrl = selectedInstance.getBaseUrl();
         // 尝试获取带追踪功能的WebClient
         try {
-            org.unreal.modelrouter.tracing.client.TracingWebClientFactory tracingFactory =
+            org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory tracingFactory =
                     org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                            org.unreal.modelrouter.tracing.client.TracingWebClientFactory.class);
+                            org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory.class);
             return tracingFactory.createTracingWebClient(baseUrl);
         } catch (Exception e) {
             return getRegistry().getClient(serviceType, modelName, clientIp);
@@ -253,13 +253,13 @@ public abstract class BaseAdapter implements ServiceCapability {
         String instanceName = selectedInstance.getName();
 
         // 获取追踪上下文并记录适配器调用开始
-        org.unreal.modelrouter.tracing.TracingContext tracingContext =
-                org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        org.unreal.modelrouter.monitor.tracing.TracingContext tracingContext =
+                org.unreal.modelrouter.monitor.tracing.TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
-                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
                         org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
                 enhancer.logAdapterCallStart(adapterType, selectedInstance, serviceType.name(),
                         getModelNameFromRequest(request), tracingContext);
 
@@ -292,7 +292,7 @@ public abstract class BaseAdapter implements ServiceCapability {
             final ModelServiceRegistry.ServiceType serviceType,
             final String modelName,
             final RequestProcessor<T> processor,
-            final org.unreal.modelrouter.tracing.TracingContext tracingContext,
+            final org.unreal.modelrouter.monitor.tracing.TracingContext tracingContext,
             final long startTime,
             final int retryCount) {
 
@@ -325,9 +325,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                     // 记录适配器调用完成追踪
                     if (tracingContext != null && tracingContext.isActive()) {
                         try {
-                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                            org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
                                     org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                                            org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                            org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
                             enhancer.logAdapterCallComplete(adapterType, selectedInstance, serviceType.name(),
                                     getModelNameFromRequest(request), duration, success, tracingContext);
                         } catch (Exception e) {
@@ -358,9 +358,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                         // 记录重试追踪
                         if (tracingContext != null && tracingContext.isActive()) {
                             try {
-                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
                                         org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
                                 enhancer.logAdapterRetry(adapterType, selectedInstance, retryCount + 1,
                                         maxRetries, throwable, tracingContext);
                             } catch (Exception e) {
@@ -384,9 +384,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                         // 记录适配器调用失败追踪
                         if (tracingContext != null && tracingContext.isActive()) {
                             try {
-                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
                                         org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
                                 enhancer.logAdapterCallComplete(adapterType, selectedInstance, serviceType.name(),
                                         getModelNameFromRequest(request), duration, false, tracingContext);
                             } catch (Exception e) {
@@ -1235,13 +1235,13 @@ public abstract class BaseAdapter implements ServiceCapability {
                                         final int retryCount,
                                         final int maxRetries,
                                         final Throwable error) {
-        org.unreal.modelrouter.tracing.TracingContext tracingContext =
-                org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        org.unreal.modelrouter.monitor.tracing.TracingContext tracingContext =
+                org.unreal.modelrouter.monitor.tracing.TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
-                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
                         org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
                 enhancer.logAdapterRetry(adapterType, instance, retryCount, maxRetries, error, tracingContext);
             } catch (Exception ex) {
                 // 忽略追踪错误
@@ -1261,13 +1261,13 @@ public abstract class BaseAdapter implements ServiceCapability {
      * @param error       错误信息
      */
     protected void logAdapterTransformError(final String adapterType, final Throwable error) {
-        org.unreal.modelrouter.tracing.TracingContext tracingContext =
-                org.unreal.modelrouter.tracing.TracingContextHolder.getCurrentContext();
+        org.unreal.modelrouter.monitor.tracing.TracingContext tracingContext =
+                org.unreal.modelrouter.monitor.tracing.TracingContextHolder.getCurrentContext();
         if (tracingContext != null && tracingContext.isActive()) {
             try {
-                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer enhancer =
+                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
                         org.unreal.modelrouter.util.ApplicationContextProvider.getBean(
-                                org.unreal.modelrouter.tracing.adapter.AdapterTracingEnhancer.class);
+                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
                 enhancer.logAdapterRetry(adapterType, null, 0, 0, error, tracingContext);
             } catch (Exception ex) {
                 // 忽略追踪错误

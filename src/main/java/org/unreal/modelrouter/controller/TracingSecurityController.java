@@ -12,9 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.tracing.encryption.TracingEncryptionService;
-import org.unreal.modelrouter.tracing.sanitization.TracingSanitizationService;
-import org.unreal.modelrouter.tracing.security.TracingSecurityManager;
+import org.unreal.modelrouter.monitor.tracing.encryption.TracingEncryptionService;
+import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
+import org.unreal.modelrouter.monitor.tracing.security.TracingSecurityManager;
 
 import java.util.HashMap;
 import java.util.List;

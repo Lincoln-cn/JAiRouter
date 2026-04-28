@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.monitoring;
+package org.unreal.modelrouter.monitor.monitoring;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
-import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.collector.DefaultMetricsCollector;
 
 /**
  * 集成测试专用配置

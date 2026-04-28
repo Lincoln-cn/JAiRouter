@@ -24,7 +24,7 @@ import org.unreal.modelrouter.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
-import org.unreal.modelrouter.tracing.config.TracingSecurityConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingSecurityConfiguration;
 
 import java.util.List;
 
