@@ -252,15 +252,15 @@ public class SecurityUtils {
         }
 
         // 检查是否为JWT认证
-        if (authentication instanceof org.unreal.modelrouter.security.model.JwtAuthentication) {
-            org.unreal.modelrouter.security.model.JwtAuthentication jwtAuth = 
-                (org.unreal.modelrouter.security.model.JwtAuthentication) authentication;
+        if (authentication instanceof org.unreal.modelrouter.auth.security.model.JwtAuthentication) {
+            org.unreal.modelrouter.auth.security.model.JwtAuthentication jwtAuth = 
+                (org.unreal.modelrouter.auth.security.model.JwtAuthentication) authentication;
             
             // 优先从JWT Principal中获取用户ID
             Object details = jwtAuth.getDetails();
-            if (details instanceof org.unreal.modelrouter.security.model.JwtPrincipal) {
-                org.unreal.modelrouter.security.model.JwtPrincipal principal = 
-                    (org.unreal.modelrouter.security.model.JwtPrincipal) details;
+            if (details instanceof org.unreal.modelrouter.auth.security.model.JwtPrincipal) {
+                org.unreal.modelrouter.auth.security.model.JwtPrincipal principal = 
+                    (org.unreal.modelrouter.auth.security.model.JwtPrincipal) details;
                 
                 // 尝试从claims中获取userId
                 String userId = principal.getStringClaim("userId");

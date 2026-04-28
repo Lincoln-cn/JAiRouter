@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import org.unreal.modelrouter.security.config.ExcludedPathsConfig;
+import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
 import org.unreal.modelrouter.tracing.TracingConstants;
 import org.unreal.modelrouter.tracing.TracingContext;
 import org.unreal.modelrouter.tracing.reactive.ReactiveTracingContextHolder;

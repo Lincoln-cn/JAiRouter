@@ -12,7 +12,7 @@ import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCusto
 import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCircuitBreaker;
 import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.security.TestSecurityProperties;
+import org.unreal.modelrouter.auth.security.TestSecurityProperties;
 import org.unreal.modelrouter.config.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
 

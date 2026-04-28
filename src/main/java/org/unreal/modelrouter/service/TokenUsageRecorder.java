@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.dto.TokenUsageRecordDTO;
-import org.unreal.modelrouter.security.model.JwtAuthentication;
+import org.unreal.modelrouter.auth.security.model.JwtAuthentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContext;
 import reactor.core.publisher.Mono;
