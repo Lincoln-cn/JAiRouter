@@ -333,11 +333,11 @@ public class ModelRouterProperties {
             this.clientIpEnable = clientIpEnable;
         }
 
-        public org.unreal.modelrouter.ratelimit.RateLimitConfig covertTo() {
+        public org.unreal.modelrouter.router.ratelimit.RateLimitConfig covertTo() {
             if (!Boolean.TRUE.equals(this.enabled)) {
-                return new org.unreal.modelrouter.ratelimit.RateLimitConfig();
+                return new org.unreal.modelrouter.router.ratelimit.RateLimitConfig();
             }
-            return org.unreal.modelrouter.ratelimit.RateLimitConfig.builder()
+            return org.unreal.modelrouter.router.ratelimit.RateLimitConfig.builder()
                     .algorithm(this.algorithm)
                     .capacity(this.capacity)
                     .rate(this.rate)

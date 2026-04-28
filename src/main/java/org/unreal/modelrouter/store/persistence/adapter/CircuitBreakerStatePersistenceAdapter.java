@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
-import org.unreal.modelrouter.circuitbreaker.LockFreeCircuitBreaker;
+import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
+import org.unreal.modelrouter.router.circuitbreaker.LockFreeCircuitBreaker;
 import org.unreal.modelrouter.store.persistence.StatePersistenceService;
 import org.unreal.modelrouter.store.persistence.StatePersistenceService.StateType;
 import reactor.core.publisher.Mono;
@@ -265,7 +265,7 @@ public class CircuitBreakerStatePersistenceAdapter {
      * @param instanceUrls 实例 URL 映射 (instanceId -> instanceUrl)
      */
     public void retryPendingSyncs(
-            final org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager cbManager,
+            final org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager cbManager,
             final Map<String, String> instanceUrls) {
         if (pendingSync.isEmpty()) {
             logger.debug("No pending syncs to retry");

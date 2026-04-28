@@ -15,7 +15,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
-import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.dto.*;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;

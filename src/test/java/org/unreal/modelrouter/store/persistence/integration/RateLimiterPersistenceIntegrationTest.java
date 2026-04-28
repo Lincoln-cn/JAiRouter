@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.store.persistence.adapter.RateLimiterStatePersistenceAdapter;
 import reactor.core.publisher.Mono;
 

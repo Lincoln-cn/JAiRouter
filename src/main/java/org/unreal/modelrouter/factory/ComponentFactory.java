@@ -6,9 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ConfigurationValidator;
-import org.unreal.modelrouter.fallback.FallbackStrategy;
-import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
-import org.unreal.modelrouter.fallback.impl.DefaultFallbackStrategy;
+import org.unreal.modelrouter.router.fallback.FallbackStrategy;
+import org.unreal.modelrouter.router.fallback.impl.CacheFallbackStrategy;
+import org.unreal.modelrouter.router.fallback.impl.DefaultFallbackStrategy;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.ConsistentHashLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.IpHashLoadBalancer;
@@ -16,12 +16,12 @@ import org.unreal.modelrouter.router.loadbalancer.impl.LeastConnectionsLoadBalan
 import org.unreal.modelrouter.router.loadbalancer.impl.RandomLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.RoundRobinLoadBalancer;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.ratelimit.RateLimitConfig;
-import org.unreal.modelrouter.ratelimit.RateLimiter;
-import org.unreal.modelrouter.ratelimit.ScopedRateLimiterWrapper;
-import org.unreal.modelrouter.ratelimit.impl.LeakyBucketRateLimiter;
-import org.unreal.modelrouter.ratelimit.impl.SlidingWindowRateLimiter;
-import org.unreal.modelrouter.ratelimit.impl.TokenBucketRateLimiter;
+import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
+import org.unreal.modelrouter.router.ratelimit.RateLimiter;
+import org.unreal.modelrouter.router.ratelimit.ScopedRateLimiterWrapper;
+import org.unreal.modelrouter.router.ratelimit.impl.LeakyBucketRateLimiter;
+import org.unreal.modelrouter.router.ratelimit.impl.SlidingWindowRateLimiter;
+import org.unreal.modelrouter.router.ratelimit.impl.TokenBucketRateLimiter;
 import org.unreal.modelrouter.tracing.wrapper.TracingWrapperFactory;
 
 @Component
@@ -77,7 +77,7 @@ public class ComponentFactory {
             case "token-bucket" -> new TokenBucketRateLimiter(cfg);
             case "leaky-bucket" -> new LeakyBucketRateLimiter(cfg);
             case "sliding-window" -> new SlidingWindowRateLimiter(cfg);
-            case "warm-up" -> new org.unreal.modelrouter.ratelimit.impl.WarmUpRateLimiter(cfg);
+            case "warm-up" -> new org.unreal.modelrouter.router.ratelimit.impl.WarmUpRateLimiter(cfg);
             default -> {
                 logger.warn("Unknown algorithm: {}, fallback to token-bucket", cfg.getAlgorithm());
                 yield new TokenBucketRateLimiter(cfg);
@@ -162,10 +162,10 @@ public class ComponentFactory {
      * @param successThreshold 成功阈值
      * @return 熔断器实例
      */
-    public org.unreal.modelrouter.circuitbreaker.CircuitBreaker createCircuitBreaker(
+    public org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker createCircuitBreaker(
             final String instanceId, final int failureThreshold,final long timeout,final int successThreshold) {
-        org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker = 
-                new org.unreal.modelrouter.circuitbreaker.DefaultCircuitBreaker(
+        org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker circuitBreaker = 
+                new org.unreal.modelrouter.router.circuitbreaker.DefaultCircuitBreaker(
                         instanceId, failureThreshold, timeout, successThreshold);
         return wrapWithTracing(circuitBreaker, instanceId);
     }
@@ -213,8 +213,8 @@ public class ComponentFactory {
      * @param instanceId 实例ID
      * @return 包装后的CircuitBreaker
      */
-    private org.unreal.modelrouter.circuitbreaker.CircuitBreaker wrapWithTracing(
-            final org.unreal.modelrouter.circuitbreaker.CircuitBreaker circuitBreaker, final String instanceId) {
+    private org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker wrapWithTracing(
+            final org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker circuitBreaker, final String instanceId) {
         if (tracingWrapperFactory != null && circuitBreaker != null) {
             try {
                 return tracingWrapperFactory.wrapCircuitBreaker(circuitBreaker, instanceId);

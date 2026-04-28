@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.ratelimit.RateLimitConfig;
+import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
 
 import java.util.HashSet;
 import java.util.List;

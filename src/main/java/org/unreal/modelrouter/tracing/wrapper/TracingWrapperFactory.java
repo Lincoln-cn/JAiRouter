@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
+import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
-import org.unreal.modelrouter.ratelimit.RateLimiter;
+import org.unreal.modelrouter.router.ratelimit.RateLimiter;
 import org.unreal.modelrouter.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.tracing.logger.StructuredLogger;
 

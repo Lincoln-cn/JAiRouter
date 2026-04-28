@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.circuitbreaker;
+package org.unreal.modelrouter.router.circuitbreaker;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.checker;
+package org.unreal.modelrouter.router.checker;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
