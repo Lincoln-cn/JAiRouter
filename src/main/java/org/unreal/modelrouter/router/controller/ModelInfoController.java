@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.controller;
+package org.unreal.modelrouter.router.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
