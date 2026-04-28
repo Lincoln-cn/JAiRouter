@@ -8,7 +8,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.store.persistence.adapter.RateLimiterStatePersistenceAdapter;
 
 import java.time.Duration;

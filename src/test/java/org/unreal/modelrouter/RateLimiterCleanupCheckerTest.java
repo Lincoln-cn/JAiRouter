@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.checker.RateLimiterCleanupChecker;
-import org.unreal.modelrouter.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.router.checker.RateLimiterCleanupChecker;
+import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 
 import static org.mockito.Mockito.*;
 

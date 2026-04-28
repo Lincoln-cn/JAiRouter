@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.checker.ServiceStateManager;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

@@ -7,7 +7,7 @@ import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.unreal.modelrouter.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.jpa.repository.ServiceInstanceRepository;

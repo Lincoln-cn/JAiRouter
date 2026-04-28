@@ -9,10 +9,10 @@ import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.factory.ComponentFactory;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
-import org.unreal.modelrouter.ratelimit.RateLimitConfig;
-import org.unreal.modelrouter.ratelimit.RateLimitContext;
-import org.unreal.modelrouter.ratelimit.RateLimitManager;
-import org.unreal.modelrouter.ratelimit.RateLimiter;
+import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
+import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
+import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.router.ratelimit.RateLimiter;
 
 import java.util.HashMap;
 import java.util.Map;

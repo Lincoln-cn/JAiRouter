@@ -3,8 +3,8 @@ package org.unreal.modelrouter;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
-import org.unreal.modelrouter.circuitbreaker.DefaultCircuitBreaker;
+import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
+import org.unreal.modelrouter.router.circuitbreaker.DefaultCircuitBreaker;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
