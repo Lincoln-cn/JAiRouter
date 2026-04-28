@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter.metrics;
+package org.unreal.modelrouter.router.adapter.metrics;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

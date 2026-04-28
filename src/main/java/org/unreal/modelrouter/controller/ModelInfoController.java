@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.unreal.modelrouter.adapter.AdapterRegistry;
+import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.controller.response.RouterResponse;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import reactor.core.publisher.Mono;

@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter;
+package org.unreal.modelrouter.router.adapter;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -6,13 +6,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.unreal.modelrouter.adapter.BaseAdapter;
-import org.unreal.modelrouter.adapter.error.AdapterErrorHandler;
-import org.unreal.modelrouter.adapter.retry.RetryPolicy;
-import org.unreal.modelrouter.adapter.mapper.ResponseMapper;
-import org.unreal.modelrouter.adapter.processor.HttpRequestProcessor;
-import org.unreal.modelrouter.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.adapter.tracing.AdapterTracingManager;
+import org.unreal.modelrouter.router.adapter.BaseAdapter;
+import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
+import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
+import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
+import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
+import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
+import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.model.ModelRouterProperties;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -127,8 +127,8 @@ class BaseAdapterMetricsTest {
         }
 
         @Override
-        public org.unreal.modelrouter.adapter.AdapterCapabilities supportCapability() {
-            return org.unreal.modelrouter.adapter.AdapterCapabilities.builder().chat(true).build();
+        public org.unreal.modelrouter.router.adapter.AdapterCapabilities supportCapability() {
+            return org.unreal.modelrouter.router.adapter.AdapterCapabilities.builder().chat(true).build();
         }
 
         // 暴露protected方法用于测试

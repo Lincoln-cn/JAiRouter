@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.loadbalancer.utils;
+package org.unreal.modelrouter.router.loadbalancer.utils;
 
 import org.junit.jupiter.api.Test;
 import org.unreal.modelrouter.model.ModelRouterProperties;

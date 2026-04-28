@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.adapter.processor;
+package org.unreal.modelrouter.router.adapter.processor;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,10 +1,10 @@
-package org.unreal.modelrouter.adapter.checker;
+package org.unreal.modelrouter.router.adapter.checker;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.unreal.modelrouter.adapter.AdapterCapabilities;
+import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.model.ModelServiceRegistry;
 import reactor.core.publisher.Mono;
 
