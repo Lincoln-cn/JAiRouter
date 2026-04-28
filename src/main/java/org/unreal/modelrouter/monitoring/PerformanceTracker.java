@@ -5,7 +5,7 @@ import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.MonitoringProperties;
+import org.unreal.modelrouter.config.core.MonitoringProperties;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.dto;
 
-import org.unreal.modelrouter.config.dto.RouterConfiguration;
+import org.unreal.modelrouter.config.core.dto.RouterConfiguration;
 
 import java.util.Map;
 

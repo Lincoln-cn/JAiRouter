@@ -11,7 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.checker.ServiceStateManager;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.circuitbreaker.CircuitBreakerManager;
-import org.unreal.modelrouter.config.ConfigMergeService;
+import org.unreal.modelrouter.config.core.ConfigMergeService;
 import org.unreal.modelrouter.fallback.FallbackManager;
 import org.unreal.modelrouter.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.loadbalancer.LoadBalancerManager;
@@ -53,7 +53,7 @@ public class ModelServiceRegistry {
     private final CircuitBreakerManager circuitBreakerManager;
     private final FallbackManager fallbackManager;
     private final ConfigMergeService configMergeService;
-    private final org.unreal.modelrouter.config.ConfigurationHelper configurationHelper;
+    private final org.unreal.modelrouter.config.core.ConfigurationHelper configurationHelper;
 
     // 配置和缓存
     private final ModelRouterProperties originalProperties; // 原始YAML配置
@@ -70,7 +70,7 @@ public class ModelServiceRegistry {
                                 final CircuitBreakerManager circuitBreakerManager,
                                 final FallbackManager fallbackManager,
                                 final ConfigMergeService configMergeService,
-                                final org.unreal.modelrouter.config.ConfigurationHelper configurationHelper) {
+                                final org.unreal.modelrouter.config.core.ConfigurationHelper configurationHelper) {
         this.originalProperties = properties;
         this.serviceStateManager = serviceStateManager;
         this.rateLimitManager = rateLimitManager;

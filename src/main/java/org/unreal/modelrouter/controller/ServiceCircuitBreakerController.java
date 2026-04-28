@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.config.ConfigurationService;
+import org.unreal.modelrouter.config.core.ConfigurationService;
 
 import java.util.Map;
 

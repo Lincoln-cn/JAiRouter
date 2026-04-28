@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.ConfigurationValidator;
+import org.unreal.modelrouter.config.core.ConfigurationValidator;
 import org.unreal.modelrouter.fallback.FallbackStrategy;
 import org.unreal.modelrouter.fallback.impl.CacheFallbackStrategy;
 import org.unreal.modelrouter.fallback.impl.DefaultFallbackStrategy;

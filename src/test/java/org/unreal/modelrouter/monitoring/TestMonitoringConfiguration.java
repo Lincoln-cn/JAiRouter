@@ -13,7 +13,7 @@ import org.unreal.modelrouter.monitoring.circuitbreaker.MetricsCircuitBreaker;
 import org.unreal.modelrouter.monitoring.collector.DefaultMetricsCollector;
 import org.unreal.modelrouter.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.auth.security.TestSecurityProperties;
-import org.unreal.modelrouter.config.MonitoringProperties;
+import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
 
 import java.util.ArrayList;

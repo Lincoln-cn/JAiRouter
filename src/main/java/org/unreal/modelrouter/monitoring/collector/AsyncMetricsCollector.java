@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.MonitoringProperties;
+import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitoring.AsyncMetricsProcessor;
 import org.unreal.modelrouter.monitoring.MetricsMemoryManager;
 import org.unreal.modelrouter.monitoring.config.MonitoringEnabledCondition;
