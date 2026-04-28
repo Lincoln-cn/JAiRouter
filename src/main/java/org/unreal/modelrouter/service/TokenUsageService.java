@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.unreal.modelrouter.dto.TokenUsageRecordDTO;
-import org.unreal.modelrouter.dto.TokenUsageStatisticsDTO;
+import org.unreal.modelrouter.common.dto.TokenUsageRecordDTO;
+import org.unreal.modelrouter.common.dto.TokenUsageStatisticsDTO;
 import org.unreal.modelrouter.persistence.jpa.entity.TokenUsageEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.TokenUsageRepository;
 

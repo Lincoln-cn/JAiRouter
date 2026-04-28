@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.model.JwtAuthentication;

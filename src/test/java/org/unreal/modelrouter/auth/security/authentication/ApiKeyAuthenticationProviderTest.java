@@ -8,7 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.unreal.modelrouter.exception.SecurityAuthenticationException;
+import org.unreal.modelrouter.common.exception.SecurityAuthenticationException;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;

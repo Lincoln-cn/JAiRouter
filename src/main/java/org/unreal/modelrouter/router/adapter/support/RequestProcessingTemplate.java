@@ -14,9 +14,9 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.exception.DownstreamServiceException;
-import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.exception.DownstreamServiceException;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 
 /**
  * 请求处理模板 - 处理非流式和流式请求

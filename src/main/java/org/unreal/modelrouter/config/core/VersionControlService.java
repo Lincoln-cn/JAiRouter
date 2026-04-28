@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.persistence.jpa.JpaStoreManager;
-import org.unreal.modelrouter.util.JacksonHelper;
+import org.unreal.modelrouter.common.util.JacksonHelper;
 
 import java.time.LocalDateTime;
 import java.util.Map;

@@ -4,11 +4,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
-import org.unreal.modelrouter.exception.AuthenticationException;
-import org.unreal.modelrouter.exception.AuthorizationException;
-import org.unreal.modelrouter.exception.DownstreamServiceException;
-import org.unreal.modelrouter.exception.SanitizationException;
-import org.unreal.modelrouter.exception.SecurityAuthenticationException;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
+import org.unreal.modelrouter.common.exception.AuthorizationException;
+import org.unreal.modelrouter.common.exception.DownstreamServiceException;
+import org.unreal.modelrouter.common.exception.SanitizationException;
+import org.unreal.modelrouter.common.exception.SecurityAuthenticationException;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;

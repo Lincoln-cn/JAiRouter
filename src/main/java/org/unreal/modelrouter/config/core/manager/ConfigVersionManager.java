@@ -5,11 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ConfigMergeService;
 import org.unreal.modelrouter.config.core.ConfigurationHelper;
-import org.unreal.modelrouter.dto.UpdateServiceConfigRequest;
+import org.unreal.modelrouter.common.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.entity.ConfigMetadata;
 import org.unreal.modelrouter.entity.VersionInfo;
 import org.unreal.modelrouter.persistence.store.StoreManager;
-import org.unreal.modelrouter.util.SecurityUtils;
+import org.unreal.modelrouter.common.util.SecurityUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;

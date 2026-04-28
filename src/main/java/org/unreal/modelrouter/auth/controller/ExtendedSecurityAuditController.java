@@ -10,7 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.common.dto.*;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
 import reactor.core.publisher.Mono;
 

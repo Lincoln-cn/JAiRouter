@@ -1,11 +1,11 @@
 package org.unreal.modelrouter.monitor.monitoring.error;
 
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.exception.AuthenticationException;
-import org.unreal.modelrouter.exception.AuthorizationException;
-import org.unreal.modelrouter.exception.DownstreamServiceException;
-import org.unreal.modelrouter.exception.SanitizationException;
-import org.unreal.modelrouter.exception.SecurityAuthenticationException;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
+import org.unreal.modelrouter.common.exception.AuthorizationException;
+import org.unreal.modelrouter.common.exception.DownstreamServiceException;
+import org.unreal.modelrouter.common.exception.SanitizationException;
+import org.unreal.modelrouter.common.exception.SecurityAuthenticationException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -108,8 +108,8 @@ public class ErrorCodeResolver {
         }
 
         // 如果异常本身有错误代码，直接使用
-        if (throwable instanceof org.unreal.modelrouter.exception.SecurityException) {
-            return ((org.unreal.modelrouter.exception.SecurityException) throwable).getErrorCode();
+        if (throwable instanceof org.unreal.modelrouter.common.exception.SecurityException) {
+            return ((org.unreal.modelrouter.common.exception.SecurityException) throwable).getErrorCode();
         }
 
         // 根据异常类型生成错误代码
@@ -188,8 +188,8 @@ public class ErrorCodeResolver {
         }
 
         // 安全异常自带 HTTP 状态
-        if (throwable instanceof org.unreal.modelrouter.exception.SecurityException) {
-            return String.valueOf(((org.unreal.modelrouter.exception.SecurityException) throwable)
+        if (throwable instanceof org.unreal.modelrouter.common.exception.SecurityException) {
+            return String.valueOf(((org.unreal.modelrouter.common.exception.SecurityException) throwable)
                     .getHttpStatus().value());
         }
 

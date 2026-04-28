@@ -9,10 +9,10 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.dto.ExceptionEventDTO;
-import org.unreal.modelrouter.dto.ExceptionQueryRequest;
-import org.unreal.modelrouter.dto.ExceptionStatisticsDTO;
-import org.unreal.modelrouter.dto.PagedResult;
+import org.unreal.modelrouter.common.dto.ExceptionEventDTO;
+import org.unreal.modelrouter.common.dto.ExceptionQueryRequest;
+import org.unreal.modelrouter.common.dto.ExceptionStatisticsDTO;
+import org.unreal.modelrouter.common.dto.PagedResult;
 import org.unreal.modelrouter.service.ExceptionManagementService;
 
 import java.time.LocalDateTime;

@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.auth.security.audit.ExtendedSecurityAuditService;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;

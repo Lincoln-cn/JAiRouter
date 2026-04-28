@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
-import org.unreal.modelrouter.exception.DownstreamServiceException;
+import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.TimeoutException;

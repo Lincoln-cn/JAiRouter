@@ -6,9 +6,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.dto.TokenBlacklistEntry;
+import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
 import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
-import org.unreal.modelrouter.util.JacksonHelper;
+import org.unreal.modelrouter.common.util.JacksonHelper;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;

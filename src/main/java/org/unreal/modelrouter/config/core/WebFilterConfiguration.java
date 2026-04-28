@@ -9,7 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
-import org.unreal.modelrouter.filter.CachedBodyWebFilter;
+import org.unreal.modelrouter.common.filter.CachedBodyWebFilter;
 
 /**
  * WebFilter 配置类

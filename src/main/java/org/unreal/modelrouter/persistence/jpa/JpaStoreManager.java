@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.persistence.jpa.entity.ConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ConfigRepository;
 import org.unreal.modelrouter.persistence.store.StoreManager;
-import org.unreal.modelrouter.util.JacksonHelper;
+import org.unreal.modelrouter.common.util.JacksonHelper;
 
 import java.time.LocalDateTime;
 import java.util.List;

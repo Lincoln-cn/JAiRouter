@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.auth.security.service;
 
-import org.unreal.modelrouter.dto.TokenBlacklistEntry;
+import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
 import reactor.core.publisher.Mono;
 
 import java.util.List;

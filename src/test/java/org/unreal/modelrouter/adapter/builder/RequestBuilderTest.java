@@ -9,8 +9,8 @@ import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserter;
-import org.unreal.modelrouter.dto.ImageEditDTO;
-import org.unreal.modelrouter.dto.SttDTO;
+import org.unreal.modelrouter.common.dto.ImageEditDTO;
+import org.unreal.modelrouter.common.dto.SttDTO;
 
 import java.util.List;
 

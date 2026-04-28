@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.auth.security.service;
 
-import org.unreal.modelrouter.dto.JwtTokenInfo;
-import org.unreal.modelrouter.dto.TokenStatus;
+import org.unreal.modelrouter.common.dto.JwtTokenInfo;
+import org.unreal.modelrouter.common.dto.TokenStatus;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;

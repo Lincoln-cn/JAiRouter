@@ -7,7 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.unreal.modelrouter.exception.AuthenticationException;
+import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;

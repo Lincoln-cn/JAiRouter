@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.auth.security.audit;
 
-import org.unreal.modelrouter.dto.AuditEvent;
-import org.unreal.modelrouter.dto.AuditEventQuery;
-import org.unreal.modelrouter.dto.SecurityReport;
+import org.unreal.modelrouter.common.dto.AuditEvent;
+import org.unreal.modelrouter.common.dto.AuditEventQuery;
+import org.unreal.modelrouter.common.dto.SecurityReport;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

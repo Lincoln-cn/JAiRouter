@@ -3,7 +3,7 @@ package org.unreal.modelrouter.repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.dto.ModelCallStats;
+import org.unreal.modelrouter.common.dto.ModelCallStats;
 
 import java.util.Collection;
 import java.util.List;

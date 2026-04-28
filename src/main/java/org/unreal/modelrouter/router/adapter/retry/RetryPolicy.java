@@ -151,7 +151,7 @@ public class RetryPolicy {
         if (error instanceof java.util.concurrent.TimeoutException ||
             error instanceof java.net.ConnectException ||
             error instanceof java.net.SocketTimeoutException ||
-            error instanceof org.unreal.modelrouter.exception.DownstreamServiceException) {
+            error instanceof org.unreal.modelrouter.common.exception.DownstreamServiceException) {
             logger.debug("可重试错误：{}", error.getClass().getSimpleName());
             return true;
         }

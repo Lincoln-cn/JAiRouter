@@ -3,7 +3,7 @@ package org.unreal.modelrouter.router.circuitbreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

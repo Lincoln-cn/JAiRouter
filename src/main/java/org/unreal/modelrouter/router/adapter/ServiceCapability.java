@@ -2,7 +2,7 @@ package org.unreal.modelrouter.router.adapter;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.unreal.modelrouter.dto.*;
+import org.unreal.modelrouter.common.dto.*;
 import reactor.core.publisher.Mono;
 
 /**

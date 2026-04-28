@@ -162,8 +162,8 @@ class RetryPolicyTest {
     @Test
     void testIsRetryable_DownstreamServiceException() {
         // Given
-        org.unreal.modelrouter.exception.DownstreamServiceException exception =
-            new org.unreal.modelrouter.exception.DownstreamServiceException(
+        org.unreal.modelrouter.common.exception.DownstreamServiceException exception =
+            new org.unreal.modelrouter.common.exception.DownstreamServiceException(
                 "Service unavailable",
                 org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE
             );

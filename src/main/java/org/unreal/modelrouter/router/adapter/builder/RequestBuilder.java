@@ -9,8 +9,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.BodyInserters;
-import org.unreal.modelrouter.dto.ImageEditDTO;
-import org.unreal.modelrouter.dto.SttDTO;
+import org.unreal.modelrouter.common.dto.ImageEditDTO;
+import org.unreal.modelrouter.common.dto.SttDTO;
 
 /**
  * 请求构建器

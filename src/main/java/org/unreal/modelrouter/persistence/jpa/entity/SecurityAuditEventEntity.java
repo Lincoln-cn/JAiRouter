@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
-import org.unreal.modelrouter.dto.AuditEventType;
+import org.unreal.modelrouter.common.dto.AuditEventType;
 
 import java.time.LocalDateTime;
 

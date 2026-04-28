@@ -5,7 +5,7 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;

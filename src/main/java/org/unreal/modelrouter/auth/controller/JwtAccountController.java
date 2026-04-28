@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.controller.response.RouterResponse;
-import org.unreal.modelrouter.dto.CreateJwtAccountRequest;
-import org.unreal.modelrouter.dto.JwtAccountDTO;
+import org.unreal.modelrouter.common.dto.CreateJwtAccountRequest;
+import org.unreal.modelrouter.common.dto.JwtAccountDTO;
 import org.unreal.modelrouter.auth.security.service.JwtAccountService;
 
 import java.util.List;

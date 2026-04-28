@@ -16,13 +16,13 @@ import org.springframework.web.server.ServerWebInputException;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
-import org.unreal.modelrouter.dto.*;
-import org.unreal.modelrouter.model.ModelRouterProperties;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.dto.*;
+import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.tracing.TracingConstants;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
-import org.unreal.modelrouter.util.IpUtils;
+import org.unreal.modelrouter.common.util.IpUtils;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -408,7 +408,7 @@ public class UniversalController {
             }
             return String.valueOf(webClientException.getStatusCode().value());
         }
-        if (error instanceof org.unreal.modelrouter.exception.DownstreamServiceException downstreamException) {
+        if (error instanceof org.unreal.modelrouter.common.exception.DownstreamServiceException downstreamException) {
             return String.valueOf(downstreamException.getStatusCode().value());
         }
         return "500";

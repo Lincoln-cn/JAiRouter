@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.LeastConnectionsLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.ConsistentHashLoadBalancer;
-import org.unreal.modelrouter.model.ModelServiceRegistry;
+import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService;
 import org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService.StateType;
 import reactor.core.publisher.Mono;

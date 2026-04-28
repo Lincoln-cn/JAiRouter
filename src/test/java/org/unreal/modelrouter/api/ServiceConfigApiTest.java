@@ -7,8 +7,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.config.controller.ServiceConfigController;
-import org.unreal.modelrouter.dto.CreateServiceConfigRequest;
-import org.unreal.modelrouter.dto.ServiceConfigDTO;
+import org.unreal.modelrouter.common.dto.CreateServiceConfigRequest;
+import org.unreal.modelrouter.common.dto.ServiceConfigDTO;
 import org.unreal.modelrouter.config.core.ServiceConfigManager;
 
 import java.time.LocalDateTime;
