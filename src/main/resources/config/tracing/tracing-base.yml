@@ -93,18 +93,18 @@ jairouter:
       # 异步处理配置
       async:
         enabled: true
-        queue-size: 2048
-        worker-threads: 4
+        queue-size: 8192
+        worker-threads: 8
       
       # 批处理配置
       batch:
         timeout: 30s
-        size: 512
+        size: 2048
         delay: 5s
       
       # 缓冲区配置
       buffer:
-        size: 2048
+        size: 8192
       
       # 资源限制配置
       resource-limits:
