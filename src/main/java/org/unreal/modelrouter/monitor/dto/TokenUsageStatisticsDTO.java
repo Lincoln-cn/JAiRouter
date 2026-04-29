@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.dto;
+package org.unreal.modelrouter.monitor.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

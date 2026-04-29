@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.common.dto.ModelCallStats;
+import org.unreal.modelrouter.monitor.dto.ModelCallStats;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
 import java.util.*;

@@ -4,7 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
-import org.unreal.modelrouter.common.dto.ModelCallStats;
+import org.unreal.modelrouter.monitor.dto.ModelCallStats;
 
 import java.util.Collection;
 import java.util.List;

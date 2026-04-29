@@ -9,8 +9,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
-import org.unreal.modelrouter.common.dto.TokenUsageRecordDTO;
-import org.unreal.modelrouter.common.dto.TokenUsageStatisticsDTO;
+import org.unreal.modelrouter.monitor.dto.TokenUsageRecordDTO;
+import org.unreal.modelrouter.monitor.dto.TokenUsageStatisticsDTO;
 import org.unreal.modelrouter.persistence.jpa.entity.TokenUsageEntity;
 import org.unreal.modelrouter.monitor.service.TokenUsageService;
 
