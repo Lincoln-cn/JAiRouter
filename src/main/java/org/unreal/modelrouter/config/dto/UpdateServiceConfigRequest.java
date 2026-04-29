@@ -1,10 +1,13 @@
-package org.unreal.modelrouter.common.dto;
+package org.unreal.modelrouter.config.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
+import org.unreal.modelrouter.common.dto.RateLimitConfig;
+import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
 
 /**
  * 更新服务配置请求 DTO

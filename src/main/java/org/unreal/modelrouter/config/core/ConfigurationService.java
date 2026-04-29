@@ -15,7 +15,7 @@ import org.unreal.modelrouter.config.core.ServiceConfigManager;
 import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
 import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.common.dto.RateLimitConfig;
-import org.unreal.modelrouter.common.dto.UpdateServiceConfigRequest;
+import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.common.entity.ConfigMetadata;
 import org.unreal.modelrouter.common.entity.VersionInfo;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;

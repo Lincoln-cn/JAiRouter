@@ -10,12 +10,12 @@ import org.unreal.modelrouter.config.core.dto.ModelInstanceConfiguration;
 import org.unreal.modelrouter.config.core.dto.RateLimitConfiguration;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
 import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
-import org.unreal.modelrouter.common.dto.CreateServiceConfigRequest;
-import org.unreal.modelrouter.common.dto.CreateServiceInstanceRequest;
+import org.unreal.modelrouter.config.dto.CreateServiceConfigRequest;
+import org.unreal.modelrouter.config.dto.CreateServiceInstanceRequest;
 import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.common.dto.RateLimitConfig;
-import org.unreal.modelrouter.common.dto.ServiceConfigDTO;
-import org.unreal.modelrouter.common.dto.UpdateServiceConfigRequest;
+import org.unreal.modelrouter.config.dto.ServiceConfigDTO;
+import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 
 import java.util.HashMap;

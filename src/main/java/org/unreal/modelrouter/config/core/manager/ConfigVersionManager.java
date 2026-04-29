@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ConfigMergeService;
 import org.unreal.modelrouter.config.core.ConfigurationHelper;
-import org.unreal.modelrouter.common.dto.UpdateServiceConfigRequest;
+import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.common.entity.ConfigMetadata;
 import org.unreal.modelrouter.common.entity.VersionInfo;
 import org.unreal.modelrouter.persistence.store.StoreManager;

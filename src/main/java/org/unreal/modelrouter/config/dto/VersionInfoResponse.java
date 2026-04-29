@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.dto;
+package org.unreal.modelrouter.config.dto;
 
 import org.unreal.modelrouter.config.core.dto.RouterConfiguration;
 

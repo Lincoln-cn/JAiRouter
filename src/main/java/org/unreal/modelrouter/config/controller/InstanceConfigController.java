@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.common.dto.CreateServiceInstanceRequest;
+import org.unreal.modelrouter.config.dto.CreateServiceInstanceRequest;
 import org.unreal.modelrouter.common.dto.ServiceInstanceDTO;
 import org.unreal.modelrouter.config.core.ServiceInstanceManager;
 

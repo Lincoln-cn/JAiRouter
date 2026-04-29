@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.dto;
+package org.unreal.modelrouter.config.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
