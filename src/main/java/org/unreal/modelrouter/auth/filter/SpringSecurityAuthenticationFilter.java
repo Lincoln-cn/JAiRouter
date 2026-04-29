@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.filter;
+package org.unreal.modelrouter.auth.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;

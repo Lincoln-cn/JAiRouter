@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.sanitization;
+package org.unreal.modelrouter.auth.sanitization;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;

@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.filter;
+package org.unreal.modelrouter.auth.filter;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.common.exception.SanitizationException;
-import org.unreal.modelrouter.common.sanitization.SanitizationService;
+import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;

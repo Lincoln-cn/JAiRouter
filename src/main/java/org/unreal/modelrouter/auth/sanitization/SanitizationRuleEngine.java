@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.sanitization;
+package org.unreal.modelrouter.auth.sanitization;
 
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import reactor.core.publisher.Mono;

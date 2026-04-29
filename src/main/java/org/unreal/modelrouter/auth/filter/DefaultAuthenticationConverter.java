@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.filter;
+package org.unreal.modelrouter.auth.filter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -2,7 +2,7 @@ package org.unreal.modelrouter.auth.security.sanitization.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.unreal.modelrouter.common.sanitization.impl.DefaultSanitizationRuleEngine;
+import org.unreal.modelrouter.auth.sanitization.impl.DefaultSanitizationRuleEngine;
 import org.unreal.modelrouter.auth.security.model.RuleType;
 import org.unreal.modelrouter.auth.security.model.SanitizationRule;
 import org.unreal.modelrouter.auth.security.model.SanitizationStrategy;

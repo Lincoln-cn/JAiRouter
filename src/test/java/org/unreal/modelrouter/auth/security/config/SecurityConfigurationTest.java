@@ -10,7 +10,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.springframework.test.context.TestPropertySource;
-import org.unreal.modelrouter.common.filter.SpringSecurityAuthenticationFilter;
+import org.unreal.modelrouter.auth.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 
