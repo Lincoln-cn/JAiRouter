@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.common.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.persistence.store.persistence.CompositeStatePersistenceServiceImpl;
 import org.unreal.modelrouter.persistence.store.persistence.adapter.CircuitBreakerStatePersistenceAdapter;
 import org.unreal.modelrouter.persistence.store.persistence.adapter.LoadBalancerStatePersistenceAdapter;

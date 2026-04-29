@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.model;
+package org.unreal.modelrouter.router.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.boot.context.properties.ConfigurationProperties;

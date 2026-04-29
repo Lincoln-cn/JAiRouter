@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
-import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 

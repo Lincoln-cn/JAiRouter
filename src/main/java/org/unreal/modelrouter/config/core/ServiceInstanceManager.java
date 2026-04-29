@@ -14,7 +14,7 @@ import org.unreal.modelrouter.persistence.jpa.repository.InstanceCircuitBreakerR
 import org.unreal.modelrouter.persistence.jpa.repository.InstanceRateLimitRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
-import org.unreal.modelrouter.common.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.common.util.SecurityUtils;
 
 import java.util.*;

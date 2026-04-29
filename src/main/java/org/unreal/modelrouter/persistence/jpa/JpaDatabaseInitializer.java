@@ -17,7 +17,7 @@ import org.unreal.modelrouter.persistence.jpa.repository.ConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.JwtAccountRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
-import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.auth.security.config.properties.JwtAccountProperties;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;

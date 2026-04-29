@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
-import org.unreal.modelrouter.common.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -7,7 +7,7 @@ import org.unreal.modelrouter.router.loadbalancer.impl.IpHashLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.LeastConnectionsLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.RandomLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.RoundRobinLoadBalancer;
-import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 
 import java.util.ArrayList;
 import java.util.List;

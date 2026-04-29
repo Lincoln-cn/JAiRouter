@@ -1,4 +1,8 @@
-package org.unreal.modelrouter.common.model;
+package org.unreal.modelrouter.router.model;
+
+
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
+import org.unreal.modelrouter.router.model.ServiceRuntimeConfig;
 
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;

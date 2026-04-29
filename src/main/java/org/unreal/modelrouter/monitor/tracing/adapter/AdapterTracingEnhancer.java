@@ -3,7 +3,7 @@ package org.unreal.modelrouter.monitor.tracing.adapter;
 import io.opentelemetry.api.trace.Span;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
-import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 

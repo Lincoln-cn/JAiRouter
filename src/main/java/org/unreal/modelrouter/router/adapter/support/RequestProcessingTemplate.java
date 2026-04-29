@@ -15,8 +15,8 @@ import reactor.core.publisher.Mono;
 
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
-import org.unreal.modelrouter.common.model.ModelRouterProperties;
-import org.unreal.modelrouter.common.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 /**
  * 请求处理模板 - 处理非流式和流式请求

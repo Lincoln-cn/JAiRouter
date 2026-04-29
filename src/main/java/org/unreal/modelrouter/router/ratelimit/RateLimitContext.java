@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.router.ratelimit;
 
-import org.unreal.modelrouter.common.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 
 public class RateLimitContext {

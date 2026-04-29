@@ -6,7 +6,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
-import org.unreal.modelrouter.common.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.common.util.IpUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import java.util.Map;
 
 /**

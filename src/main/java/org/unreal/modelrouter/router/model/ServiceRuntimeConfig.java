@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.model;
+package org.unreal.modelrouter.router.model;
 
 import java.util.ArrayList;
 import java.util.List;

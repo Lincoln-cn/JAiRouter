@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.factory;
+package org.unreal.modelrouter.router.factory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,7 @@ import org.unreal.modelrouter.router.loadbalancer.impl.IpHashLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.LeastConnectionsLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.RandomLoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.impl.RoundRobinLoadBalancer;
-import org.unreal.modelrouter.common.model.ModelRouterProperties;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
 import org.unreal.modelrouter.router.ratelimit.RateLimiter;
 import org.unreal.modelrouter.router.ratelimit.ScopedRateLimiterWrapper;
