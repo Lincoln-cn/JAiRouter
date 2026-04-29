@@ -13,7 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.common.model.ModelRouterProperties;
 import org.unreal.modelrouter.common.model.ModelServiceRegistry;

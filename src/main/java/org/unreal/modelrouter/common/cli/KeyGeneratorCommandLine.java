@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.cli;
+package org.unreal.modelrouter.common.cli;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;

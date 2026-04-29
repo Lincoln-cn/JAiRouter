@@ -16,8 +16,8 @@ import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
 import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.common.dto.RateLimitConfig;
 import org.unreal.modelrouter.common.dto.UpdateServiceConfigRequest;
-import org.unreal.modelrouter.entity.ConfigMetadata;
-import org.unreal.modelrouter.entity.VersionInfo;
+import org.unreal.modelrouter.common.entity.ConfigMetadata;
+import org.unreal.modelrouter.common.entity.VersionInfo;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.common.model.ModelRouterProperties;
 import org.unreal.modelrouter.common.model.ModelServiceRegistry;
@@ -1852,40 +1852,40 @@ public class ConfigurationService {
         String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
         
         // 使用常量类进行匹配
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.CHAT)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.CHAT)
             || lowerServiceType.equals("chat-completion")
             || lowerServiceType.equals("chat-completions")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.EMBEDDING)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.EMBEDDING)
             || lowerServiceType.equals("embeddings")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.RERANK)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.RERANK)
             || lowerServiceType.equals("re-rank")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.TTS)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.TTS)
             || lowerServiceType.equals("text-to-speech")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.STT)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.STT)
             || lowerServiceType.equals("speech-to-text")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.IMG_GEN)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.IMG_GEN)
             || lowerServiceType.equals("imggen")
             || lowerServiceType.equals("image-generation")
             || lowerServiceType.equals("image-generate")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.IMG_EDIT)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.IMG_EDIT)
             || lowerServiceType.equals("image-edit")
             || lowerServiceType.equals("image-editing")) {
             return true;

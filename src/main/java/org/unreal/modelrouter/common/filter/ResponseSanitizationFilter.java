@@ -16,7 +16,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import org.unreal.modelrouter.common.exception.SanitizationException;
-import org.unreal.modelrouter.sanitization.SanitizationService;
+import org.unreal.modelrouter.common.sanitization.SanitizationService;
 import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
 import org.unreal.modelrouter.auth.security.config.ExcludedPathsConfig;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;

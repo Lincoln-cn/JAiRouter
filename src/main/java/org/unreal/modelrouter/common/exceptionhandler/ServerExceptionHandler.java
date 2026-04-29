@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;

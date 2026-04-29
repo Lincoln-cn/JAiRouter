@@ -9,9 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.ModelCallStats;
-import org.unreal.modelrouter.service.ModelCallAnalyzer;
+import org.unreal.modelrouter.monitor.service.ModelCallAnalyzer;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;

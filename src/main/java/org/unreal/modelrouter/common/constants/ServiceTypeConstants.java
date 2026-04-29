@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.constants;
+package org.unreal.modelrouter.common.constants;
 
 import java.util.Arrays;
 import java.util.Collections;

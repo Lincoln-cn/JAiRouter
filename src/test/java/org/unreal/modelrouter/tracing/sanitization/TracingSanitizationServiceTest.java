@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.unreal.modelrouter.sanitization.SanitizationService;
+import org.unreal.modelrouter.common.sanitization.SanitizationService;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;

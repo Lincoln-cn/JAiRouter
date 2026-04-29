@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.server.ResponseStatusException;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
 import org.unreal.modelrouter.common.exception.AuthorizationException;
 import org.unreal.modelrouter.common.exception.SanitizationException;

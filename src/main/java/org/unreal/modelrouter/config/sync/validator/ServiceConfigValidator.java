@@ -9,7 +9,7 @@ import org.unreal.modelrouter.config.core.dto.LoadBalanceConfiguration;
 import org.unreal.modelrouter.config.core.dto.ModelInstanceConfiguration;
 import org.unreal.modelrouter.config.core.dto.RateLimitConfiguration;
 import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
-import org.unreal.modelrouter.constants.ServiceTypeConstants;
+import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.factory;
+package org.unreal.modelrouter.common.factory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

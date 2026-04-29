@@ -77,9 +77,9 @@ public class RandomLoadBalancer implements LoadBalancer {
         try {
             randomWeight = (long) (java.security.SecureRandom.getInstanceStrong().nextDouble() * totalWeight);
         } catch (java.security.NoSuchAlgorithmException e) {
-            // 如果安全随机数算法不可用，回退到普通随机数
-            randomWeight = (long) (Math.random() * totalWeight);
-            logger.warn("SecureRandom algorithm not available, using Math.random() as fallback: {}", e.getMessage());
+            // 如果安全随机数算法不可用，回退到类中的 SecureRandom 实例
+            randomWeight = (long) (random.nextDouble() * totalWeight);
+            logger.warn("SecureRandom.getInstanceStrong() not available, using class SecureRandom instance: {}", e.getMessage());
         }
         long currentWeight = 0;
 

@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchExportVO;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchImportRequest;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyBatchImportResult;

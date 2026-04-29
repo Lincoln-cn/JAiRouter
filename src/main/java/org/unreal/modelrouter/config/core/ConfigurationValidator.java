@@ -551,40 +551,40 @@ public class ConfigurationValidator {
         String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
         
         // 使用常量类进行匹配
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.CHAT)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.CHAT)
             || lowerServiceType.equals("chat-completion")
             || lowerServiceType.equals("chat-completions")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.EMBEDDING)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.EMBEDDING)
             || lowerServiceType.equals("embeddings")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.RERANK)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.RERANK)
             || lowerServiceType.equals("re-rank")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.TTS)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.TTS)
             || lowerServiceType.equals("text-to-speech")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.STT)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.STT)
             || lowerServiceType.equals("speech-to-text")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.IMG_GEN)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.IMG_GEN)
             || lowerServiceType.equals("imggen")
             || lowerServiceType.equals("image-generation")
             || lowerServiceType.equals("image-generate")) {
             return true;
         }
         
-        if (lowerServiceType.equals(org.unreal.modelrouter.constants.ServiceTypeConstants.IMG_EDIT)
+        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.IMG_EDIT)
             || lowerServiceType.equals("image-edit")
             || lowerServiceType.equals("image-editing")) {
             return true;

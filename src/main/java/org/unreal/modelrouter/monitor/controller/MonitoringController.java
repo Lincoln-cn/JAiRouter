@@ -11,7 +11,7 @@ import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsDegradati
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MonitoringHealthChecker;
 import org.unreal.modelrouter.monitor.monitoring.config.DynamicMonitoringConfigUpdater;
 import org.unreal.modelrouter.monitor.monitoring.error.MetricsErrorHandler;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;

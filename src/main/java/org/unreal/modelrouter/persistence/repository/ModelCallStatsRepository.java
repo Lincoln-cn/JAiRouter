@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.repository;
+package org.unreal.modelrouter.persistence.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;

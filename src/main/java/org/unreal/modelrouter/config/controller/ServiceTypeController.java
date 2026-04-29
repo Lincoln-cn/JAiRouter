@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.ConfigurationValidator;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.UpdateServiceConfigRequest;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;

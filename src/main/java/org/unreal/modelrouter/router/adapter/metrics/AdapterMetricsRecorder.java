@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.repository.ModelCallStatsRepository;
+import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
 /**
  * 适配器监控记录器

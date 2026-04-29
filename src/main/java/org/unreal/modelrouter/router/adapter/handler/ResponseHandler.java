@@ -68,8 +68,8 @@ public class ResponseHandler {
             Object transformedData = transformResponse(downstreamData, adapterType);
 
             // 3. 将最终数据包装到 RouterResponse 中
-            org.unreal.modelrouter.controller.response.RouterResponse<Object> finalResponse =
-                    org.unreal.modelrouter.controller.response.RouterResponse.success(transformedData, "请求成功");
+            org.unreal.modelrouter.common.controller.response.RouterResponse<Object> finalResponse =
+                    org.unreal.modelrouter.common.controller.response.RouterResponse.success(transformedData, "请求成功");
 
             // 4. 构建并返回包含 RouterResponse 的最终 ResponseEntity
             return Mono.just(

@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.service;
+package org.unreal.modelrouter.monitor.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -17,6 +17,9 @@ import java.time.LocalDateTime;
  */
 public final class NetUtils {
 
+    // SpotBugs suppression: This is a TCP port testing utility, not a security-sensitive context
+    // Using plain Socket is intentional for testing TCP connectivity
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NetUtils.class);
     
     /**

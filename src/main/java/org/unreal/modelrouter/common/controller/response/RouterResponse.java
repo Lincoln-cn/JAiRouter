@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.controller.response;
+package org.unreal.modelrouter.common.controller.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonFormat;

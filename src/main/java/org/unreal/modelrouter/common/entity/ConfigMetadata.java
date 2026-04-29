@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.entity;
+package org.unreal.modelrouter.common.entity;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;

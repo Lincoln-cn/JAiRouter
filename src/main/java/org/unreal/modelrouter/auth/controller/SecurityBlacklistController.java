@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.common.dto.AddBlacklistRequest;
 import org.unreal.modelrouter.common.dto.BlacklistEntryDTO;
 import org.unreal.modelrouter.common.dto.BlacklistStatsDTO;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.persistence.jpa.entity.SecurityBlacklistEntity.BlacklistType;
 import org.unreal.modelrouter.auth.security.service.SecurityBlacklistService;
 

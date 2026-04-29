@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.constants.ServiceTypeConstants;
+import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.common.model.ModelRouterProperties;
 import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import org.unreal.modelrouter.constants.ServiceTypeConstants;
+import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledCondition;

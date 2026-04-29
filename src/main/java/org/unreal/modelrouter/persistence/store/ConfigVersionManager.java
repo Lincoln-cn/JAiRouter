@@ -1,7 +1,7 @@
 package org.unreal.modelrouter.persistence.store;
 
-import org.unreal.modelrouter.entity.ConfigMetadata;
-import org.unreal.modelrouter.entity.VersionInfo;
+import org.unreal.modelrouter.common.entity.ConfigMetadata;
+import org.unreal.modelrouter.common.entity.VersionInfo;
 
 import java.util.List;
 import java.util.Map;

@@ -25,7 +25,7 @@ import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.common.dto.*;
 import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.repository.ModelCallStatsRepository;
+import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
 /**
  * Xinference Adapter - 适配Xinference API格式

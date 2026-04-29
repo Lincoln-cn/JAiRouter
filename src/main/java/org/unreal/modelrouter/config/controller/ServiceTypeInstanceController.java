@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.*;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;

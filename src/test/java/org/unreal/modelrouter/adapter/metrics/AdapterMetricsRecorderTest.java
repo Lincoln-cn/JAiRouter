@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.repository.ModelCallStatsRepository;
+import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;

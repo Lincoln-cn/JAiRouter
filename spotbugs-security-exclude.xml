@@ -74,7 +74,7 @@
     
     <!-- 排除健康检查中的未加密Socket警告 - 这是内部健康检查，不需要加密 -->
     <Match>
-        <Class name="org.unreal.modelrouter.util.NetUtils"/>
+        <Class name="org.unreal.modelrouter.common.util.NetUtils"/>
         <Bug pattern="UNENCRYPTED_SOCKET"/>
     </Match>
     
@@ -90,7 +90,7 @@
     
     <!-- 排除可预测随机数警告 - 负载均衡不需要加密级别的随机性 -->
     <Match>
-        <Class name="org.unreal.modelrouter.loadbalancer.impl.RandomLoadBalancer"/>
+        <Class name="org.unreal.modelrouter.router.loadbalancer.impl.RandomLoadBalancer"/>
         <Bug pattern="PREDICTABLE_RANDOM"/>
     </Match>
 </FindBugsFilter>

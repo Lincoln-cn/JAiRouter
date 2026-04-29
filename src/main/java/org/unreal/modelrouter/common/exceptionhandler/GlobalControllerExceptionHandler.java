@@ -4,7 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
-import org.unreal.modelrouter.controller.response.RouterResponse; // 确保引入您项目中的Response类
+import org.unreal.modelrouter.common.controller.response.RouterResponse; // 确保引入您项目中的Response类
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

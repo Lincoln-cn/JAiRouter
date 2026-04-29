@@ -6,7 +6,7 @@ import org.unreal.modelrouter.router.adapter.impl.*;
 import org.unreal.modelrouter.common.model.ModelRouterProperties;
 import org.unreal.modelrouter.common.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.repository.ModelCallStatsRepository;
+import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.checker.CapabilityChecker;
 import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;

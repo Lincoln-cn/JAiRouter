@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.monitor.tracing.encryption.TracingEncryptionService;
 import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
 import org.unreal.modelrouter.monitor.tracing.security.TracingSecurityManager;
