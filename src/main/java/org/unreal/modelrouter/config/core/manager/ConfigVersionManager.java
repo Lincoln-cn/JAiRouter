@@ -6,8 +6,8 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ConfigMergeService;
 import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
-import org.unreal.modelrouter.common.entity.ConfigMetadata;
-import org.unreal.modelrouter.common.entity.VersionInfo;
+import org.unreal.modelrouter.config.version.ConfigMetadata;
+import org.unreal.modelrouter.config.version.VersionInfo;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.common.util.SecurityUtils;
 

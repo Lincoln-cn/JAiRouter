@@ -1,4 +1,4 @@
-package org.unreal.modelrouter.common.entity;
+package org.unreal.modelrouter.config.version;
 
 import java.time.LocalDateTime;
 import java.util.Map;
