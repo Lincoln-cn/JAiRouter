@@ -276,13 +276,10 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
      * @return 哈希值
      */
     private long hash(String key) {
-        if (key == null) {
-            key = "";
-        }
-        
+        String effectiveKey = key != null ? key : "";        
         // 使用 MurmurHash 算法以获得更好的哈希分布
         // 这种算法具有很好的雪崩效应，能够均匀分布键值
-        return murmurHash3(key);
+        return murmurHash3(effectiveKey);
     }
     
     /**

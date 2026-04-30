@@ -89,28 +89,24 @@ public class TokenUsageService {
     @Transactional(readOnly = true)
     public TokenUsageStatisticsDTO getTokenUsageStatistics(LocalDateTime startTime, LocalDateTime endTime) {
         // 设置默认时间范围
-        if (startTime == null) {
-            startTime = LocalDateTime.now().minusDays(7);
-        }
-        if (endTime == null) {
-            endTime = LocalDateTime.now();
-        }
+        LocalDateTime effectiveStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
+        LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
 
         // 构建统计 DTO
         TokenUsageStatisticsDTO dto = TokenUsageStatisticsDTO.builder()
-                .startTime(startTime)
-                .endTime(endTime)
+                .startTime(effectiveStartTime)
+                .endTime(effectiveEndTime)
                 .build();
 
         // 基本统计
         dto.setTotalRequests(tokenUsageRepository.countAllUsage());
-        dto.setTotalTokens(tokenUsageRepository.countTotalTokensByTimeRange(startTime, endTime));
-        dto.setSuccessfulRequests(tokenUsageRepository.countSuccessByTimeRange(startTime, endTime));
-        dto.setFailedRequests(tokenUsageRepository.countFailedByTimeRange(startTime, endTime));
-        dto.setAvgResponseTimeMs(tokenUsageRepository.avgResponseTimeByTimeRange(startTime, endTime));
+        dto.setTotalTokens(tokenUsageRepository.countTotalTokensByTimeRange(effectiveStartTime, effectiveEndTime));
+        dto.setSuccessfulRequests(tokenUsageRepository.countSuccessByTimeRange(effectiveStartTime, effectiveEndTime));
+        dto.setFailedRequests(tokenUsageRepository.countFailedByTimeRange(effectiveStartTime, effectiveEndTime));
+        dto.setAvgResponseTimeMs(tokenUsageRepository.avgResponseTimeByTimeRange(effectiveStartTime, effectiveEndTime));
 
         // 计算输入输出 token（需要单独查询）
-        List<Object[]> tokenDetails = tokenUsageRepository.countTokensByServiceType(startTime, endTime);
+        List<Object[]> tokenDetails = tokenUsageRepository.countTokensByServiceType(effectiveStartTime, effectiveEndTime);
         long totalPrompt = 0L;
         long totalCompletion = 0L;
         for (Object[] row : tokenDetails) {
@@ -128,7 +124,7 @@ public class TokenUsageService {
         }
 
         // 按模型统计
-        List<Object[]> byModel = tokenUsageRepository.countTokensByModel(startTime, endTime);
+        List<Object[]> byModel = tokenUsageRepository.countTokensByModel(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.ModelTokenStats> modelStats = new ArrayList<>();
         for (Object[] row : byModel) {
             String modelName = (String) row[0];
@@ -144,7 +140,7 @@ public class TokenUsageService {
         dto.setByModel(modelStats);
 
         // 按服务类型统计
-        List<Object[]> byServiceType = tokenUsageRepository.countTokensByServiceType(startTime, endTime);
+        List<Object[]> byServiceType = tokenUsageRepository.countTokensByServiceType(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.ServiceTypeStats> serviceTypeStats = new ArrayList<>();
         for (Object[] row : byServiceType) {
             String serviceType = (String) row[0];
@@ -159,7 +155,7 @@ public class TokenUsageService {
         dto.setByServiceType(serviceTypeStats);
 
         // 按提供商统计
-        List<Object[]> byProvider = tokenUsageRepository.countTokensByProvider(startTime, endTime);
+        List<Object[]> byProvider = tokenUsageRepository.countTokensByProvider(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.ProviderStats> providerStats = new ArrayList<>();
         for (Object[] row : byProvider) {
             String provider = (String) row[0];
@@ -171,7 +167,7 @@ public class TokenUsageService {
         dto.setByProvider(providerStats);
 
         // 按日期统计
-        List<Object[]> byDay = tokenUsageRepository.countTokensByDay(startTime, endTime);
+        List<Object[]> byDay = tokenUsageRepository.countTokensByDay(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.DailyStats> dailyStats = new ArrayList<>();
         for (Object[] row : byDay) {
             String date = (String) row[0];
@@ -186,7 +182,7 @@ public class TokenUsageService {
         dto.setByDay(dailyStats);
 
         // 按周统计
-        List<Object[]> byWeek = tokenUsageRepository.countTokensByWeek(startTime, endTime);
+        List<Object[]> byWeek = tokenUsageRepository.countTokensByWeek(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.WeeklyStats> weeklyStats = new ArrayList<>();
         for (Object[] row : byWeek) {
             Integer year = (Integer) row[0];
@@ -203,7 +199,7 @@ public class TokenUsageService {
         dto.setByWeek(weeklyStats);
 
         // 按月统计
-        List<Object[]> byMonth = tokenUsageRepository.countTokensByMonth(startTime, endTime);
+        List<Object[]> byMonth = tokenUsageRepository.countTokensByMonth(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.MonthlyStats> monthlyStats = new ArrayList<>();
         for (Object[] row : byMonth) {
             Integer year = (Integer) row[0];
@@ -220,7 +216,7 @@ public class TokenUsageService {
         dto.setByMonth(monthlyStats);
 
         // 按小时统计
-        List<Object[]> byHour = tokenUsageRepository.countTokensByHour(startTime, endTime);
+        List<Object[]> byHour = tokenUsageRepository.countTokensByHour(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.HourlyStats> hourlyStats = new ArrayList<>();
         for (Object[] row : byHour) {
             Integer hour = (Integer) row[0];
@@ -233,7 +229,7 @@ public class TokenUsageService {
         dto.setByHour(hourlyStats);
 
         // 按 API Key 统计（可选）
-        List<Object[]> byApiKey = tokenUsageRepository.countTokensByApiKey(startTime, endTime);
+        List<Object[]> byApiKey = tokenUsageRepository.countTokensByApiKey(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.ApiKeyStats> apiKeyStats = new ArrayList<>();
         for (Object[] row : byApiKey) {
             String apiKeyId = (String) row[0];
@@ -245,7 +241,7 @@ public class TokenUsageService {
         dto.setByApiKey(apiKeyStats);
 
         // 按用户统计（可选）
-        List<Object[]> byUser = tokenUsageRepository.countTokensByUser(startTime, endTime);
+        List<Object[]> byUser = tokenUsageRepository.countTokensByUser(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.UserStats> userStats = new ArrayList<>();
         for (Object[] row : byUser) {
             String userId = (String) row[0];

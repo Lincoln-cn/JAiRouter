@@ -4,20 +4,25 @@
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <suppressions>
-    <!-- FinalParameters 抑制 - 参数在方法内被重新赋值的文件 -->
-    <suppress files="TokenUsageService\.java" checks="FinalParameters"/>
-    <suppress files="TokenUsageController\.java" checks="FinalParameters"/>
-    <suppress files="ExceptionManagementService\.java" checks="FinalParameters"/>
-    <suppress files="ConsistentHashLoadBalancer\.java" checks="FinalParameters"/>
-    <suppress files="ReactiveMemoryStoreManager\.java" checks="FinalParameters"/>
-    <suppress files="ReactiveFileStoreManager\.java" checks="FinalParameters"/>
-    <suppress files="CompositeStatePersistenceServiceImpl\.java" checks="FinalParameters"/>
-    <suppress files="MetricsManagementController\.java" checks="FinalParameters"/>
-    <suppress files="ServiceTypeController\.java" checks="FinalParameters"/>
+    <!--
+    技术债务说明 (v2.8.15 FinalParameters修复完成)
     
-    <!-- HiddenField 抑制 - 参数名与属性名相同是常见编码风格 -->
+    HiddenField suppression保留原因：
+    - Setter方法参数名与属性名相同是Java标准惯例
+    - 构造函数注入参数名与属性名相同是Spring标准惯例  
+    - Builder模式参数名与属性名相同是常见设计模式
+    
+    OperatorWrap suppression保留原因：
+    - 操作符换行位置差异不影响代码可读性
+    - 后续版本可选择性修复
+    
+    FinalParameters suppression已移除（v2.8.15修复完成）：
+    - 原有9个文件的参数重新赋值问题已通过使用新变量解决
+    -->
+
+    <!-- HiddenField 抑制 - Java/Spring标准编码惯例 -->
     <suppress files=".*\.java" checks="HiddenField" id="hiddenField"/>
-    
+
     <!-- OperatorWrap 抑制 - 操作符换行位置差异 -->
     <suppress files=".*\.java" checks="OperatorWrap" id="operatorWrap"/>
 </suppressions>
