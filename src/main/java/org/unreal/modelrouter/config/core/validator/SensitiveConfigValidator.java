@@ -121,8 +121,11 @@ public class SensitiveConfigValidator implements ApplicationListener<Application
     /**
      * 检查是否是硬编码的秘密值
      * 检测常见的硬编码模式：占位符、测试值等
+     * 
+     * @param secret 要检查的密钥值
+     * @return true 如果是硬编码值，false 如果是合法密钥
      */
-    private boolean isHardcodedSecret(String secret) {
+    public boolean isHardcodedSecret(String secret) {
         if (secret == null) {
             return false;
         }
