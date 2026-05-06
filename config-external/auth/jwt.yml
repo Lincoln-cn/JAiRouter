@@ -1,0 +1,36 @@
+# ========================================
+# 外部 JWT 配置示例
+# ========================================
+# 挂载到 /app/config/auth/jwt.yml
+# 敏感配置使用环境变量
+
+jairouter:
+  security:
+    jwt:
+      enabled: ${JWT_ENABLED:true}
+      
+      # JWT 密钥（必须使用环境变量）
+      secret: "${JWT_SECRET:}"
+      
+      # JWT 头名称
+      jwt-header: "Jairouter_Token"
+      
+      # 令牌过期时间（分钟）
+      expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
+      
+      # 刷新令牌过期时间（天）
+      refresh-expiration-days: ${JWT_REFRESH_EXPIRATION_DAYS:7}
+      
+      # 发行者
+      issuer: "${JWT_ISSUER:jairouter}"
+      
+      # 持久化配置
+      persistence:
+        enabled: ${JWT_PERSISTENCE_ENABLED:true}
+        primary-storage: ${JWT_STORAGE_TYPE:h2}
+        redis:
+          enabled: ${REDIS_ENABLED:false}
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:1}"

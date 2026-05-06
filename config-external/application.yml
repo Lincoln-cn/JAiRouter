@@ -1,0 +1,44 @@
+# ========================================
+# 外部配置文件示例（部署时使用）
+# ========================================
+# 此文件挂载到 Docker 容器的 /app/config/application.yml
+# 用于覆盖内置配置，实现部署时配置管理
+#
+# 使用方法：
+# 1. 复制此目录到生产服务器
+# 2. 修改配置值（敏感配置使用环境变量）
+# 3. Docker Compose 挂载: ./config-external:/app/config:ro
+
+# 服务器配置覆盖
+server:
+  port: ${SERVER_PORT:8080}
+
+# 日志配置覆盖
+logging:
+  level:
+    root: WARN
+    org.unreal.modelrouter: INFO
+  file:
+    name: /app/logs/jairouter.log
+
+# 数据库配置覆盖
+spring:
+  datasource:
+    url: jdbc:h2:file:/app/data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
+    username: sa
+    password: ""
+
+# 存储配置
+store:
+  type: jpa
+  path: /app/config-store
+
+# 监控端点配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when-authorized

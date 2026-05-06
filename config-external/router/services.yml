@@ -1,0 +1,44 @@
+# ========================================
+# 外部服务实例配置示例
+# ========================================
+# 挂载到 /app/config/router/services.yml
+# 用于配置实际的模型服务实例
+
+model:
+  services:
+    # 聊天服务配置
+    chat:
+      load-balance:
+        type: least-connections
+      adapter: ${DEFAULT_ADAPTER:gpustack}
+      instances:
+        - name: "${CHAT_MODEL_NAME:qwen3:4b}"
+          base-url: "${CHAT_MODEL_URL:http://localhost:9090}"
+          path: "/v1/chat/completions"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+
+    # 嵌入服务配置
+    embedding:
+      load-balance:
+        type: round-robin
+      instances:
+        - name: "${EMBEDDING_MODEL_NAME:nomic-embed-text-v1.5}"
+          base-url: "${EMBEDDING_MODEL_URL:http://localhost:9090}"
+          path: "/v1/embeddings"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+
+    # 重排序服务配置
+    rerank:
+      load-balance:
+        type: ip-hash
+      instances:
+        - name: "${RERANK_MODEL_NAME:bge-reranker-v2-m3}"
+          base-url: "${RERANK_MODEL_URL:http://localhost:9090}"
+          path: "/v1/rerank"
+          weight: 1
+          headers:
+            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"

@@ -3,10 +3,17 @@
 # ========================================
 # 此文件为模块化重构后的主配置文件
 # 通过导入各服务模块配置实现配置分离
+# 支持外部配置文件（/app/config/）
 
 spring:
   config:
     import:
+      # ====== 外部配置文件（最高优先级）======
+      # Docker 部署时挂载到 /app/config/
+      - optional:file:/app/config/application.yml
+      - optional:file:/app/config/auth/jwt.yml
+      - optional:file:/app/config/router/services.yml
+      
       # ====== common 模块配置 ======
       - classpath:config/common/server.yml
       - classpath:config/common/webclient.yml

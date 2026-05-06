@@ -38,7 +38,7 @@ jairouter:
       # 用户账户配置
       accounts:
         - username: "admin"
-          password: "{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup}"  # 首次启动应设置环境变量
+          password: "{noop}${INITIAL_ADMIN_PASSWORD:}"  # ⚠️ 必须设置环境变量
           roles: [ "ADMIN", "USER" ]
           enabled: true
 
