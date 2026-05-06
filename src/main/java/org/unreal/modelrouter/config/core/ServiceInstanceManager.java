@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.config.core.ConfigurationService;
+import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
 import org.unreal.modelrouter.common.dto.ServiceInstanceDTO;
 import org.unreal.modelrouter.common.dto.InstanceRateLimitDTO;
 import org.unreal.modelrouter.common.dto.InstanceCircuitBreakerDTO;
@@ -41,6 +42,7 @@ public class ServiceInstanceManager {
     private final InstanceCircuitBreakerRepository circuitBreakerRepository;
     private final ServiceConfigRepository serviceConfigRepository;
     private final ConfigurationService configurationService;
+    private final ConfigVersionManager configVersionManager;  // 新增
     private final ModelServiceRegistry modelServiceRegistry;
 
     public ServiceInstanceManager(
@@ -49,12 +51,14 @@ public class ServiceInstanceManager {
             final InstanceCircuitBreakerRepository circuitBreakerRepository,
             final ServiceConfigRepository serviceConfigRepository,
             @Lazy final ConfigurationService configurationService,
+            final ConfigVersionManager configVersionManager,  // 新增
             final ModelServiceRegistry modelServiceRegistry) {
         this.serviceInstanceRepository = serviceInstanceRepository;
         this.rateLimitRepository = rateLimitRepository;
         this.circuitBreakerRepository = circuitBreakerRepository;
         this.serviceConfigRepository = serviceConfigRepository;
         this.configurationService = configurationService;
+        this.configVersionManager = configVersionManager;  // 新增
         this.modelServiceRegistry = modelServiceRegistry;
     }
 
@@ -385,9 +389,9 @@ public class ServiceInstanceManager {
             metadata.put("timestamp", System.currentTimeMillis());
             fullConfig.put("_metadata", metadata);
             
-            // 保存为新版本
+            // 保存为新版本 - 使用 ConfigVersionManager 替代废弃方法
             String userId = SecurityUtils.getCurrentUserId();
-            configurationService.saveAsNewVersion(fullConfig, description, userId);
+            configVersionManager.saveAsNewVersion(fullConfig, description, userId);
             log.info("版本已保存: {}", description);
 
             // 刷新运行时配置，确保实例变更立即生效

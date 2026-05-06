@@ -308,20 +308,6 @@ public class ConfigurationService {
 
     // ==================== 版本管理 ====================
 
-    /**
-     * 获取所有配置版本号
-     *
-     * @deprecated 此方法已委托给 {@link ConfigVersionManager#getAllVersions()}。
-     *             请直接使用 ConfigVersionManager 进行版本管理。
-     *             此方法将在 v3.0 版本中移除。
-     * @see ConfigVersionManager#getAllVersions()
-     * @since v2.5.3.1 标注废弃，委托实现
-     * @return 版本号列表
-     */
-    @Deprecated(since = "2.5.3.1", forRemoval = true)
-    public List<Integer> getAllVersions() {
-        return configVersionManager.getAllVersions();
-    }
 
     /**
      * 扫描实际存在的版本文件
@@ -351,55 +337,8 @@ public class ConfigurationService {
         return versions;
     }
 
-    /**
-     * 获取指定版本的配置
-     *
-     * @deprecated 此方法已委托给 {@link ConfigVersionManager#getVersionConfig(int)}。
-     *             请直接使用 ConfigVersionManager 进行版本配置获取。
-     *             此方法将在 v3.0 版本中移除。
-     * @see ConfigVersionManager#getVersionConfig(int)
-     * @since v2.5.3.1 标注废弃，委托实现
-     * @param version 版本号，0表示YAML原始配置
-     * @return 配置内容
-     */
-    @Deprecated(since = "2.5.3.1", forRemoval = true)
-    public Map<String, Object> getVersionConfig(final int version) {
-        return configVersionManager.getVersionConfig(version);
-    }
 
-    /**
-     * 保存当前配置为新版本
-     *
-     * @deprecated 此方法已委托给 {@link ConfigVersionManager#saveAsNewVersion(Map)}。
-     *             请直接使用 ConfigVersionManager 进行版本保存。
-     *             此方法将在 v3.0 版本中移除。
-     * @see ConfigVersionManager#saveAsNewVersion(Map)
-     * @since v2.5.3.1 标注废弃，委托实现
-     * @param config 配置内容
-     * @return 新版本号
-     */
-    @Deprecated(since = "2.5.3.1", forRemoval = true)
-    public int saveAsNewVersion(final Map<String, Object> config) {
-        return configVersionManager.saveAsNewVersion(config);
-    }
 
-    /**
-     * 保存当前配置为新版本（带描述和用户信息）
-     *
-     * @deprecated 此方法已委托给 {@link ConfigVersionManager#saveAsNewVersion(Map, String, String)}。
-     *             请直接使用 ConfigVersionManager 进行版本保存。
-     *             此方法将在 v3.0 版本中移除。
-     * @see ConfigVersionManager#saveAsNewVersion(Map, String, String)
-     * @since v2.5.3.1 标注废弃，委托实现
-     * @param config      配置内容
-     * @param description 描述信息
-     * @param userId      用户ID
-     * @return 新版本号
-     */
-    @Deprecated(since = "2.5.3.1", forRemoval = true)
-    public int saveAsNewVersion(final Map<String, Object> config, final String description, final String userId) {
-        return configVersionManager.saveAsNewVersion(config, description, userId);
-    }
 
     /**
      * 内部版本保存方法（已在同步块内调用）
@@ -470,65 +409,9 @@ public class ConfigurationService {
         }
     }
 
-    /**
-     * 应用指定版本的配置
-     *
-     * @deprecated 此方法已委托给 {@link ConfigVersionManager#applyVersion(int)}。
-     *             请直接使用 ConfigVersionManager 进行版本应用。
-     *             此方法将在 v3.0 版本中移除。
-     * @see ConfigVersionManager#applyVersion(int)
-     * @since v2.5.3.2 标注废弃，委托实现
-     * @param version 版本号
-     */
-    @Deprecated(since = "2.5.3.2", forRemoval = true)
-    public void applyVersion(final int version) {
-        configVersionManager.applyVersion(version);
-    }
 
-    /**
-     * 删除指定版本的配置
-     *
-     * @deprecated 此方法已委托给 {@link ConfigVersionManager#deleteConfigVersion(int)}。
-     *             请直接使用 ConfigVersionManager 进行版本删除。
-     *             此方法将在 v3.0 版本中移除。
-     * @see ConfigVersionManager#deleteConfigVersion(int)
-     * @since v2.5.3.2 标注废弃，委托实现
-     * @param version 版本号
-     */
-    @Deprecated(since = "2.5.3.2", forRemoval = true)
-    public void deleteConfigVersion(final int version) {
-        configVersionManager.deleteConfigVersion(version);
-    }
 
-    /**
-     * 获取实际当前配置版本号
-     *
-     * @deprecated 此方法已委托给 {@link ConfigVersionManager#getActualCurrentVersion()}。
-     *             请直接使用 ConfigVersionManager 进行版本查询。
-     *             此方法将在 v3.0 版本中移除。
-     * @see ConfigVersionManager#getActualCurrentVersion()
-     * @since v2.5.3.2 标注废弃，委托实现
-     * @return 当前配置版本号，如果不存在则返回0
-     */
-    @Deprecated(since = "2.5.3.2", forRemoval = true)
-    public int getActualCurrentVersion() {
-        return configVersionManager.getActualCurrentVersion();
-    }
 
-    /**
-     * 获取当前最新版本号（基于版本列表）
-     *
-     * @deprecated 此方法已委托给 {@link ConfigVersionManager#getCurrentVersion()}。
-     *             请直接使用 ConfigVersionManager 进行版本查询。
-     *             此方法将在 v3.0 版本中移除。
-     * @see ConfigVersionManager#getCurrentVersion()
-     * @since v2.5.3.2 标注废弃，委托实现
-     * @return 当前版本号
-     */
-    @Deprecated(since = "2.5.3.2", forRemoval = true)
-    public int getCurrentVersion() {
-        return configVersionManager.getCurrentVersion();
-    }
 
     /**
      * 获取下一个版本号
@@ -938,60 +821,7 @@ public class ConfigurationService {
         return services.keySet();
     }
 
-    /**
-     * 获取指定服务的配置
-     *
-     * @deprecated 建议使用 {@link ServiceConfigManager#getServiceConfig(String)} 或
-     *             {@link ServiceConfigManager#getServiceConfiguration(String)} 获取服务配置。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>ServiceConfigManager 返回强类型 DTO/领域对象，比 Map 更安全</li>
-     *               <li>getServiceConfig 返回 Optional&lt;ServiceConfigDTO&gt;</li>
-     *               <li>getServiceConfiguration 返回 ServiceConfiguration 领域对象</li>
-     *             </ul>
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码 - 返回 Map
-     *             Map<String, Object> config = configurationService.getServiceConfig(serviceType);
-     *             
-     *             // 新代码 - 返回 DTO
-     *             Optional<ServiceConfigDTO> config = serviceConfigManager.getServiceConfig(serviceType);
-     *             ServiceConfigDTO dto = config.orElseThrow(() -> new IllegalArgumentException("服务不存在"));
-     *             
-     *             // 新代码 - 返回领域对象
-     *             ServiceConfiguration domain = serviceConfigManager.getServiceConfiguration(serviceType);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @see ServiceConfigManager#getServiceConfig(String)
-     * @see ServiceConfigManager#getServiceConfiguration(String)
-     * @since v2.5.3.6 标注废弃
-     * @param serviceType 服务类型
-     * @return 服务配置
-     */
-    @Deprecated(since = "2.5.3.6", forRemoval = true)
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> getServiceConfig(final String serviceType) {
-        // v1.5.1: 从 StoreManager 读取配置
-        Map<String, Object> config = getAllConfigurations();
-        Map<String, Object> services = getServicesFromConfig(config);
-        return (Map<String, Object>) services.get(serviceType);
-    }
 
-    /**
-     * 获取指定服务的所有实例
-     *
-     * @deprecated 此方法已委托给 {@link InstanceManager#getServiceInstancesAsMap(String)}。
-     *             请直接使用 InstanceManager 进行实例查询。
-     *             此方法将在 v3.0 版本中移除。
-     * @see InstanceManager#getServiceInstancesAsMap(String)
-     * @since v2.5.3.3 标注废弃，委托实现
-     * @param serviceType 服务类型
-     * @return 实例列表
-     */
-    @Deprecated(since = "2.5.3.3", forRemoval = true)
-    public List<Map<String, Object>> getServiceInstances(final String serviceType) {
-        return instanceManager.getServiceInstancesAsMap(serviceType);
-    }
 
     /**
      * 获取指定服务的所有可用模型名称
@@ -1007,191 +837,10 @@ public class ConfigurationService {
                 .collect(Collectors.toSet());
     }
 
-    /**
-     * 获取指定实例的详细信息
-     *
-     * @deprecated 此方法已简化实现，建议直接使用 InstanceManager 和 ServiceStateManager。
-     *             <p>迁移说明：</p>
-     *             <pre>{@code
-     *             // 旧代码
-     *             Map<String, Object> instance = configurationService.getServiceInstance(serviceType, instanceId);
-     *             
-     *             // 新代码 - 获取实例配置
-     *             ModelInstanceConfiguration instance = instanceManager.getServiceInstance(serviceType, instanceId);
-     *             // 新代码 - 获取健康状态
-     *             String healthStatus = serviceStateManager.getInstanceHealthStatus(serviceType + ":" + instanceId);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @see InstanceManager#getServiceInstance(String, String)
-     * @see ServiceStateManager#getInstanceHealthStatus(String)
-     * @since v2.5.3.3 标注废弃，简化实现
-     * @param serviceType 服务类型
-     * @param instanceId 实例ID
-     * @return 实例配置
-     */
-    @Deprecated(since = "2.5.3.3", forRemoval = true)
-    public Map<String, Object> getServiceInstance(final String serviceType, final String instanceId) {
-        List<Map<String, Object>> instances = instanceManager.getServiceInstancesAsMap(serviceType);
-        return instances.stream()
-                .filter(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)))
-                .map(instance -> {
-                    String healthKey = serviceType + ":" + instanceId;
-                    String healthStatus = serviceStateManager.getInstanceHealthStatus(healthKey);
-                    instance.put("health", "HEALTHY".equals(healthStatus));
-                    instance.put("healthStatus", healthStatus);
-                    if (!instance.containsKey("status")) {
-                        instance.put("status", "active");
-                    }
-                    return instance;
-                })
-                .findFirst()
-                .orElse(null);
-    }
 
     // ==================== 服务管理操作 ====================
 
-    /**
-     * 创建新服务（自动保存为新版本）
-     *
-     * @deprecated 建议使用 {@link ServiceConfigManager#createService(String, ServiceConfiguration)}。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>ServiceConfigManager 使用强类型 ServiceConfiguration 参数</li>
-     *               <li>ConfigurationService 使用弱类型 Map 参数</li>
-     *               <li>强类型参数更安全，避免运行时类型错误</li>
-     *             </ul>
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码 - 使用 Map
-     *             Map<String, Object> config = new HashMap<>();
-     *             config.put("adapter", "ollama");
-     *             config.put("instances", instancesList);
-     *             configurationService.createService(serviceType, config);
-     *             
-     *             // 新代码 - 使用 ServiceConfiguration
-     *             ServiceConfiguration config = ServiceConfiguration.builder()
-     *                 .adapter(AdapterType.OLLAMA)
-     *                 .instances(instances)
-     *                 .build();
-     *             serviceConfigManager.createService(serviceType, config);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @see ServiceConfigManager#createService(String, ServiceConfiguration)
-     * @since v2.5.3.7 标注废弃
-     * @param serviceType 服务类型
-     * @param serviceConfig 服务配置
-     */
-    @Deprecated(since = "2.5.3.7", forRemoval = true)
-    public void createService(final String serviceType, final Map<String, Object> serviceConfig) {
-        logger.info("创建新服务: {}", serviceType);
 
-        // 验证服务类型
-        if (!isValidServiceType(serviceType)) {
-            throw new IllegalArgumentException("无效的服务类型: " + serviceType);
-        }
-
-        Map<String, Object> currentConfig = getCurrentPersistedConfig();
-        Map<String, Object> services = getServicesFromConfig(currentConfig);
-
-        if (services.containsKey(serviceType)) {
-            throw new IllegalArgumentException("服务类型已存在: " + serviceType);
-        }
-
-        // 验证和标准化服务配置
-        Map<String, Object> validatedConfig = validateAndNormalizeServiceConfig(serviceConfig);
-        services.put(serviceType, validatedConfig);
-        currentConfig.put("services", services);
-
-        // 添加版本元数据
-        Map<String, Object> metadata = new HashMap<>();
-        metadata.put("operation", "createService");
-        metadata.put("operationDetail", "创建新服务: " + serviceType);
-        metadata.put("serviceType", serviceType);
-        metadata.put("timestamp", System.currentTimeMillis());
-        currentConfig.put("_metadata", metadata);
-
-        // 保存为新版本并刷新配置
-        saveAsNewVersion(currentConfig);
-        refreshRuntimeConfig();
-
-        logger.info("服务 {} 创建成功", serviceType);
-    }
-
-    /**
-     * 更新服务配置（自动保存为新版本）
-     *
-     * @deprecated 建议使用 {@link ServiceConfigManager#updateServiceConfig(String, UpdateServiceConfigRequest)}
-     *             或 {@link ServiceConfigManager#updateServiceConfig(String, ServiceConfiguration)}。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>ServiceConfigManager 使用强类型参数（DTO或领域对象）</li>
-     *               <li>ConfigurationService 使用弱类型 Map 参数</li>
-     *               <li>强类型参数更安全，避免运行时类型错误</li>
-     *             </ul>
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码 - 使用 Map
-     *             Map<String, Object> config = new HashMap<>();
-     *             config.put("adapter", "ollama");
-     *             configurationService.updateServiceConfig(serviceType, config);
-     *             
-     *             // 新代码 - 使用 UpdateServiceConfigRequest
-     *             UpdateServiceConfigRequest request = new UpdateServiceConfigRequest(...);
-     *             serviceConfigManager.updateServiceConfig(serviceType, request);
-     *             
-     *             // 新代码 - 使用 ServiceConfiguration
-     *             ServiceConfiguration config = ServiceConfiguration.builder()
-     *                 .adapter(AdapterType.OLLAMA)
-     *                 .build();
-     *             serviceConfigManager.updateServiceConfig(serviceType, config);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @see ServiceConfigManager#updateServiceConfig(String, UpdateServiceConfigRequest)
-     * @see ServiceConfigManager#updateServiceConfig(String, ServiceConfiguration)
-     * @since v2.5.3.8 标注废弃
-     * @param serviceType 服务类型
-     * @param serviceConfig 新的服务配置
-     * @return 更新后的完整服务配置
-     */
-    @Deprecated(since = "2.5.3.8", forRemoval = true)
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> updateServiceConfig(final String serviceType, final Map<String, Object> serviceConfig) {
-        logger.info("更新服务配置：{}", serviceType);
-
-        try {
-            Map<String, Object> currentConfig = getAllConfigurations();
-            if (currentConfig == null) {
-                throw new IllegalStateException("无法获取当前配置");
-            }
-            
-            Map<String, Object> services = getServicesFromConfig(currentConfig);
-            Map<String, Object> existingServiceConfig = (Map<String, Object>) services.get(serviceType);
-            
-            if (existingServiceConfig != null) {
-                // 简单方案：保留 instances，用新配置覆盖其他字段
-                Object instances = existingServiceConfig.get("instances");
-                services.put(serviceType, serviceConfig);
-                if (instances != null) {
-                    serviceConfig.put("instances", instances);
-                }
-            } else {
-                services.put(serviceType, serviceConfig);
-            }
-            
-            storeManager.saveConfig("model-router-config", currentConfig);
-            saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
-            refreshRuntimeConfig();
-
-            logger.info("服务 {} 配置更新成功", serviceType);
-            return serviceConfig;
-
-        } catch (IllegalArgumentException e) {
-            throw e;
-        } catch (Exception e) {
-            logger.error("更新服务配置失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
-            throw new RuntimeException("更新服务配置失败：" + e.getMessage(), e);
-        }
-    }
 
     /**
      * 使用强类型 DTO 更新服务配置
@@ -1269,57 +918,6 @@ public class ConfigurationService {
         }
     }
 
-    /**
-     * 删除服务（自动保存为新版本）
-     *
-     * @deprecated 建议使用 {@link ServiceConfigManager#deleteService(String)} 删除服务。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>ServiceConfigManager.deleteService 提供相同功能</li>
-     *               <li>ServiceConfigManager 使用事务管理，更可靠</li>
-     *               <li>直接调用 ServiceConfigManager 更简洁</li>
-     *             </ul>
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码 - 通过 ConfigurationService
-     *             configurationService.deleteService(serviceType);
-     *             
-     *             // 新代码 - 直接使用 ServiceConfigManager
-     *             serviceConfigManager.deleteService(serviceType);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @see ServiceConfigManager#deleteService(String)
-     * @since v2.5.3.8 标注废弃
-     * @param serviceType 服务类型
-     */
-    @Deprecated(since = "2.5.3.8", forRemoval = true)
-    public void deleteService(final String serviceType) {
-        logger.info("删除服务: {}", serviceType);
-
-        Map<String, Object> currentConfig = getCurrentPersistedConfig();
-        Map<String, Object> services = getServicesFromConfig(currentConfig);
-
-        if (!services.containsKey(serviceType)) {
-            throw new IllegalArgumentException("服务类型不存在: " + serviceType);
-        }
-
-        services.remove(serviceType);
-        currentConfig.put("services", services);
-
-        // 添加版本元数据
-        Map<String, Object> metadata = new HashMap<>();
-        metadata.put("operation", "deleteService");
-        metadata.put("operationDetail", "删除服务: " + serviceType);
-        metadata.put("serviceType", serviceType);
-        metadata.put("timestamp", System.currentTimeMillis());
-        currentConfig.put("_metadata", metadata);
-
-        // 保存为新版本并刷新配置
-        saveAsNewVersion(currentConfig);
-        refreshRuntimeConfig();
-
-        logger.info("服务 {} 删除成功", serviceType);
-    }
 
     // ==================== 实例管理操作 ====================
 
@@ -1394,23 +992,6 @@ public class ConfigurationService {
     }
 
 
-    /**
-     * 更新服务实例（优化版本，可选择是否保存为新版本）
-     *
-     * @deprecated 此方法已委托给 {@link InstanceManager#updateServiceInstance(String, String, ModelRouterProperties.ModelInstance)}。
-     *             请直接使用 InstanceManager 进行实例更新。
-     *             <p>InstanceManager 提供相同的去重和锁机制，确保并发安全。</p>
-     *             此方法将在 v3.0 版本中移除。
-     * @see InstanceManager#updateServiceInstance(String, String, ModelRouterProperties.ModelInstance)
-     * @since v2.5.3.4 标注废弃，委托实现
-     * @param serviceType 服务类型
-     * @param instanceId 实例ID
-     * @param instanceConfig 新的实例配置
-     */
-    @Deprecated(since = "2.5.3.4", forRemoval = true)
-    public void updateServiceInstance(final String serviceType, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig) {
-        instanceManager.updateServiceInstance(serviceType, instanceId, instanceConfig);
-    }
 
     /**
      * 清理过期的请求记录
@@ -1512,21 +1093,6 @@ public class ConfigurationService {
     }
 
 
-    /**
-     * 删除服务实例（优化版本，可选择是否保存为新版本）
-     *
-     * @deprecated 此方法已委托给 {@link InstanceManager#deleteServiceInstance(String, String)}。
-     *             请直接使用 InstanceManager 进行实例删除。
-     *             此方法将在 v3.0 版本中移除。
-     * @see InstanceManager#deleteServiceInstance(String, String)
-     * @since v2.5.3.5 标注废弃，委托实现
-     * @param serviceType 服务类型
-     * @param instanceId 实例ID
-     */
-    @Deprecated(since = "2.5.3.5", forRemoval = true)
-    public void deleteServiceInstance(final String serviceType, final String instanceId) {
-        instanceManager.deleteServiceInstance(serviceType, instanceId);
-    }
 
 
     // ==================== 批量操作 ====================

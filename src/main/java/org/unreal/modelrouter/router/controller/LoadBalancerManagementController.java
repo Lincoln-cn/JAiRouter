@@ -5,11 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.config.core.ServiceConfigManager;
+import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
-import org.unreal.modelrouter.config.core.ConfigurationService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ public class LoadBalancerManagementController {
 
     private final LoadBalancerManager loadBalancerManager;
     private final ModelRouterProperties properties;
-    private final ConfigurationService configurationService;
+    private final ServiceConfigManager serviceConfigManager;  // 替换 ConfigurationService
 
     /**
      * 获取所有负载均衡器状态
@@ -42,30 +43,30 @@ public class LoadBalancerManagementController {
                     .map(entry -> {
                         ModelServiceRegistry.ServiceType type = entry.getKey();
                         LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(type);
-                        
+
                         LoadBalancerStatusResponse response = new LoadBalancerStatusResponse();
                         response.serviceType = type.name().toLowerCase();
-                        
+
                         // 解包追踪包装器获取真实负载均衡器类
                         String realClassName = unwrapLoadBalancer(loadBalancer);
                         response.strategy = parseStrategyName(realClassName);
                         response.loadBalancerClass = realClassName;
-                        
-                        // 获取配置信息
+
+                        // 获取配置信息 - 使用 ServiceConfigManager 替代废弃方法
                         try {
-                            Map<String, Object> serviceConfig = configurationService.getServiceConfig(type.name().toLowerCase());
-                            if (serviceConfig != null && serviceConfig.containsKey("loadBalance")) {
-                                @SuppressWarnings("unchecked")
-                                Map<String, Object> lbConfig = (Map<String, Object>) serviceConfig.get("loadBalance");
-                                response.configType = (String) lbConfig.getOrDefault("type", "random");
-                                response.hashAlgorithm = (String) lbConfig.getOrDefault("hashAlgorithm", "md5");
-                                response.virtualNodes = lbConfig.get("virtualNodes") != null ?
-                                        (Integer) lbConfig.get("virtualNodes") : 150;
+                            ServiceConfiguration serviceConfig = serviceConfigManager.getServiceConfiguration(type.name().toLowerCase());
+                            if (serviceConfig != null && serviceConfig.loadBalance() != null) {
+                                response.configType = serviceConfig.loadBalance().type();
+                                response.hashAlgorithm = serviceConfig.loadBalance().hashAlgorithm();
+                                // virtualNodes 从全局配置获取
+                                ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
+                                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null ?
+                                        globalConfig.getVirtualNodes() : 150;
                             }
                         } catch (Exception e) {
                             log.debug("获取服务 {} 配置信息失败: {}", type.name(), e.getMessage());
                         }
-                        
+
                         return response;
                     })
                     .collect(Collectors.toList());
@@ -118,15 +119,15 @@ public class LoadBalancerManagementController {
             response.strategy = parseStrategyName(loadBalancer.getClass().getSimpleName());
             response.loadBalancerClass = loadBalancer.getClass().getSimpleName();
 
-            // 获取该服务类型的实例信息
-            Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
-            if (serviceConfig != null && serviceConfig.containsKey("loadBalance")) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> lbConfig = (Map<String, Object>) serviceConfig.get("loadBalance");
-                response.configType = (String) lbConfig.getOrDefault("type", "random");
-                response.hashAlgorithm = (String) lbConfig.getOrDefault("hashAlgorithm", "md5");
-                response.virtualNodes = lbConfig.get("virtualNodes") != null ?
-                        (Integer) lbConfig.get("virtualNodes") : 150;
+            // 获取该服务类型的实例信息 - 使用 ServiceConfigManager 替代废弃方法
+            ServiceConfiguration serviceConfig = serviceConfigManager.getServiceConfiguration(serviceType);
+            if (serviceConfig != null && serviceConfig.loadBalance() != null) {
+                response.configType = serviceConfig.loadBalance().type();
+                response.hashAlgorithm = serviceConfig.loadBalance().hashAlgorithm();
+                // virtualNodes 从全局配置获取
+                ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
+                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null ?
+                        globalConfig.getVirtualNodes() : 150;
             }
 
             return ResponseEntity.ok(RouterResponse.success(response));
@@ -167,18 +168,19 @@ public class LoadBalancerManagementController {
     public ResponseEntity<RouterResponse<LoadBalanceConfigResponse>> getServiceConfig(
             @PathVariable final String serviceType) {
         try {
-            Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
+            // 使用 ServiceConfigManager 替代废弃方法
+            ServiceConfiguration serviceConfig = serviceConfigManager.getServiceConfiguration(serviceType);
 
             LoadBalanceConfigResponse response = new LoadBalanceConfigResponse();
             response.serviceType = serviceType;
 
-            if (serviceConfig != null && serviceConfig.containsKey("loadBalance")) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> lbConfig = (Map<String, Object>) serviceConfig.get("loadBalance");
-                response.type = (String) lbConfig.getOrDefault("type", "random");
-                response.hashAlgorithm = (String) lbConfig.getOrDefault("hashAlgorithm", "md5");
-                response.virtualNodes = lbConfig.get("virtualNodes") != null ?
-                        (Integer) lbConfig.get("virtualNodes") : 150;
+            if (serviceConfig != null && serviceConfig.loadBalance() != null) {
+                response.type = serviceConfig.loadBalance().type();
+                response.hashAlgorithm = serviceConfig.loadBalance().hashAlgorithm();
+                // virtualNodes 从全局配置获取
+                ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
+                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null ?
+                        globalConfig.getVirtualNodes() : 150;
             } else {
                 // 使用全局配置
                 ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();

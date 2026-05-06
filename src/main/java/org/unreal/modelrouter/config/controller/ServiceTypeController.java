@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.core.ConfigurationService;
+import org.unreal.modelrouter.config.core.ServiceConfigManager;
+import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
 import org.unreal.modelrouter.config.core.ConfigurationValidator;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
@@ -35,11 +37,15 @@ public class ServiceTypeController {
     private static final Logger logger = LoggerFactory.getLogger(ServiceTypeController.class);
 
     private final ConfigurationService configurationService;
+    private final ServiceConfigManager serviceConfigManager;  // 新增
     private final ConfigurationValidator configurationValidator;
 
     @Autowired
-    public ServiceTypeController(final ConfigurationService configurationService, final ConfigurationValidator configurationValidator) {
+    public ServiceTypeController(final ConfigurationService configurationService,
+                                  final ServiceConfigManager serviceConfigManager,  // 新增
+                                  final ConfigurationValidator configurationValidator) {
         this.configurationService = configurationService;
+        this.serviceConfigManager = serviceConfigManager;  // 新增
         this.configurationValidator = configurationValidator;
     }
 
@@ -136,7 +142,9 @@ public class ServiceTypeController {
         // 获取每个服务类型的配置
         for (String serviceType : serviceTypes) {
             try {
-                Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
+                // 使用 ServiceConfigManager 替代废弃方法
+                ServiceConfiguration config = serviceConfigManager.getServiceConfiguration(serviceType);
+                Map<String, Object> serviceConfig = config != null ? config.toMap() : null;
                 if (serviceConfig != null) {
                     result.put(serviceType, serviceConfig);
                 } else {
@@ -188,7 +196,9 @@ public class ServiceTypeController {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
 
-        Map<String, Object> serviceConfig = configurationService.getServiceConfig(serviceType);
+        // 使用 ServiceConfigManager 替代废弃方法
+        ServiceConfiguration config = serviceConfigManager.getServiceConfiguration(serviceType);
+        Map<String, Object> serviceConfig = config != null ? config.toMap() : null;
         if (serviceConfig == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(RouterResponse.error("服务类型不存在: " + serviceType));
@@ -219,7 +229,9 @@ public class ServiceTypeController {
                     .body(RouterResponse.error("参数验证失败: " + String.join(", ", errors)));
         }
 
-        configurationService.createService(serviceType, serviceConfig);
+        // 使用 ServiceConfigManager 替代废弃方法，将 Map 转换为 ServiceConfiguration
+        ServiceConfiguration config = ServiceConfiguration.fromMap(serviceConfig);
+        serviceConfigManager.createService(serviceType, config);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(RouterResponse.success(null, "服务创建成功"));
 
@@ -273,7 +285,8 @@ public class ServiceTypeController {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
 
-        configurationService.deleteService(serviceType);
+        // 使用 ServiceConfigManager 替代废弃方法
+        serviceConfigManager.deleteService(serviceType);
         return ResponseEntity.ok(RouterResponse.success(null, "服务删除成功"));
 
     }

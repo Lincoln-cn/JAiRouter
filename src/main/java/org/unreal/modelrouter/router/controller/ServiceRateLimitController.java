@@ -4,7 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.unreal.modelrouter.config.core.ConfigurationService;
+import org.unreal.modelrouter.config.core.ServiceConfigManager;
+import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
 
 import java.util.Map;
 
@@ -18,7 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ServiceRateLimitController {
 
-    private final ConfigurationService configurationService;
+    private final ServiceConfigManager serviceConfigManager;  // 替换 ConfigurationService
 
     /**
      * 获取限流配置
@@ -26,9 +27,10 @@ public class ServiceRateLimitController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getRateLimitConfig(@PathVariable final String serviceType) {
         log.debug("Getting rate limit config for service: {}", serviceType);
-        Map<String, Object> config = configurationService.getServiceConfig(serviceType);
-        @SuppressWarnings("unchecked")
-        Map<String, Object> rateLimit = config != null ? (Map<String, Object>) config.getOrDefault("rateLimit", Map.of()) : Map.of();
+        // 使用 ServiceConfigManager 替代废弃方法
+        ServiceConfiguration config = serviceConfigManager.getServiceConfiguration(serviceType);
+        Map<String, Object> rateLimit = config != null && config.rateLimit() != null
+                ? config.rateLimit().toMap() : Map.of();
         return ResponseEntity.ok(rateLimit);
     }
 

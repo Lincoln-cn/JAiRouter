@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.unreal.modelrouter.config.core.ConfigurationService;
+import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
 import org.unreal.modelrouter.config.core.dto.RouterConfiguration;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.config.dto.VersionInfoResponse;
@@ -37,14 +38,17 @@ public class ConfigurationVersionController {
     private static final String CONFIG_KEY = "model-router-config";
 
     private final ConfigurationService configurationService;
+    private final ConfigVersionManager configVersionManager;  // 新增
     private final StoreManager storeManager;
     private final VersionDiffService versionDiffService;
 
     @Autowired
     public ConfigurationVersionController(final ConfigurationService configurationService,
+                                          final ConfigVersionManager configVersionManager,  // 新增
                                           final StoreManager storeManager,
                                           final VersionDiffService versionDiffService) {
         this.configurationService = configurationService;
+        this.configVersionManager = configVersionManager;  // 新增
         this.storeManager = storeManager;
         this.versionDiffService = versionDiffService;
     }
@@ -62,7 +66,7 @@ public class ConfigurationVersionController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<List<Integer>>> getConfigVersions() {
         return Mono.fromSupplier(() -> {
-            List<Integer> versions = configurationService.getAllVersions();
+            List<Integer> versions = configVersionManager.getAllVersions();
             return RouterResponse.success(versions, "获取配置版本列表成功");
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -84,7 +88,7 @@ public class ConfigurationVersionController {
             @Parameter(description = "版本号", example = "1")
             @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
-            Map<String, Object> config = configurationService.getVersionConfig(version);
+            Map<String, Object> config = configVersionManager.getVersionConfig(version);
             if (config == null) {
                 return RouterResponse.<Map<String, Object>>error("指定版本的配置不存在: " + version);
             }
@@ -110,12 +114,12 @@ public class ConfigurationVersionController {
             @Parameter(description = "版本号", example = "1")
             @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
-            int currentVersion = configurationService.getCurrentVersion();
+            int currentVersion = configVersionManager.getCurrentVersion();
             if (version == currentVersion) {
                 return RouterResponse.<Void>error("不能删除当前版本");
             }
             // 调用ConfigurationService删除指定版本
-            configurationService.deleteConfigVersion(version);
+            configVersionManager.deleteConfigVersion(version);
             return RouterResponse.<Void>success(null, "配置版本删除成功");
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -133,7 +137,7 @@ public class ConfigurationVersionController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public Mono<RouterResponse<Integer>> getCurrentVersion() {
         return Mono.fromSupplier(() -> {
-            int currentVersion = configurationService.getCurrentVersion();
+            int currentVersion = configVersionManager.getCurrentVersion();
             return RouterResponse.success(currentVersion, "获取当前配置版本成功");
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -155,7 +159,7 @@ public class ConfigurationVersionController {
             @Parameter(description = "版本号", example = "1")
             @PathVariable("version") final int version) {
         return Mono.fromSupplier(() -> {
-            configurationService.applyVersion(version);
+            configVersionManager.applyVersion(version);
             return RouterResponse.<String>success("配置应用成功");
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -174,17 +178,17 @@ public class ConfigurationVersionController {
     public Mono<RouterResponse<List<VersionInfoResponse>>> getAllVersionInfo() {
         return Mono.fromSupplier(() -> {
             // 获取所有版本号
-            List<Integer> versionNumbers = configurationService.getAllVersions();
+            List<Integer> versionNumbers = configVersionManager.getAllVersions();
 
             // 获取实际当前版本号
-            int currentVersion = configurationService.getActualCurrentVersion();
+            int currentVersion = configVersionManager.getActualCurrentVersion();
 
             // 构建所有版本的详细信息
             List<VersionInfoResponse> versionInfos = new ArrayList<>();
 
             for (Integer version : versionNumbers) {
                 // 获取配置详情（Map 格式）
-                Map<String, Object> configMap = configurationService.getVersionConfig(version);
+                Map<String, Object> configMap = configVersionManager.getVersionConfig(version);
 
                 VersionInfoResponse versionInfo = new VersionInfoResponse();
                 versionInfo.setVersion(version);
@@ -283,7 +287,7 @@ public class ConfigurationVersionController {
 
             try {
                 // 获取所有版本
-                List<Integer> allVersions = configurationService.getAllVersions();
+                List<Integer> allVersions = configVersionManager.getAllVersions();
                 if (!allVersions.contains(version)) {
                     return RouterResponse.<ConfigDiff>error("版本不存在: " + version);
                 }
