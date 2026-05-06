@@ -419,7 +419,7 @@ public class ConfigurationService {
      * @return 下一个版本号
      */
     private int getNextVersion() {
-        return getCurrentVersion() + 1;
+        return configVersionManager.getCurrentVersion() + 1;
     }
 
     /**
@@ -440,7 +440,7 @@ public class ConfigurationService {
         }
 
         // 如果没有元数据，检查版本列表
-        List<Integer> versions = getAllVersions();
+        List<Integer> versions = configVersionManager.getAllVersions();
         return versions.contains(version);
     }
 
@@ -830,7 +830,7 @@ public class ConfigurationService {
      * @return 模型名称集合
      */
     public Set<String> getAvailableModels(final String serviceType) {
-        List<Map<String, Object>> instances = getServiceInstances(serviceType);
+        List<Map<String, Object>> instances = instanceManager.getServiceInstancesAsMap(serviceType);
         return instances.stream()
                 .map(instance -> (String) instance.get("name"))
                 .filter(Objects::nonNull)
@@ -907,7 +907,7 @@ public class ConfigurationService {
             
             services.put(serviceType, newConfig);
             storeManager.saveConfig("model-router-config", currentConfig);
-            saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
+            configVersionManager.saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
             refreshRuntimeConfig();
 
             logger.info("服务 {} 配置更新成功", serviceType);
@@ -1113,7 +1113,7 @@ public class ConfigurationService {
         }
 
         // 保存为新版本并刷新配置
-        saveAsNewVersion(currentConfig);
+        configVersionManager.saveAsNewVersion(currentConfig);
         refreshRuntimeConfig();
 
         logger.info("批量配置更新成功");
@@ -1592,7 +1592,7 @@ public class ConfigurationService {
 
         if (createNewVersion) {
             // 保存为新版本并刷新配置
-            saveAsNewVersion(currentConfig);
+            configVersionManager.saveAsNewVersion(currentConfig);
         } else {
             // 直接保存配置但不创建新版本
             storeManager.saveConfig(CURRENT_KEY, currentConfig);
@@ -1622,7 +1622,7 @@ public class ConfigurationService {
 
         if (createNewVersion) {
             // 保存为新版本并刷新配置
-            saveAsNewVersion(currentConfig);
+            configVersionManager.saveAsNewVersion(currentConfig);
         } else {
             // 直接保存配置但不创建新版本
             storeManager.saveConfig(CURRENT_KEY, currentConfig);
@@ -1736,7 +1736,7 @@ public class ConfigurationService {
 
         if (createNewVersion) {
             // 保存为新版本并刷新配置
-            saveAsNewVersion(currentConfig);
+            configVersionManager.saveAsNewVersion(currentConfig);
         } else {
             // 直接保存配置但不创建新版本
             storeManager.saveConfig(CURRENT_KEY, currentConfig);
@@ -1929,7 +1929,7 @@ public class ConfigurationService {
             auditData.put("createNewVersion", createNewVersion);
 
             if (createNewVersion) {
-                auditData.put("version", getCurrentVersion());
+                auditData.put("version", configVersionManager.getCurrentVersion());
             }
 
             // 记录配置变更的关键信息（不记录敏感数据）
@@ -1962,7 +1962,7 @@ public class ConfigurationService {
             auditData.put("action", "rollback");
             auditData.put("timestamp", java.time.Instant.now().toString());
             auditData.put("targetVersion", targetVersion);
-            auditData.put("currentVersion", getCurrentVersion());
+            auditData.put("currentVersion", configVersionManager.getCurrentVersion());
 
             // 记录回滚目标配置的关键信息摘要
             Map<String, Object> configSummary = createConfigSummary(config);
@@ -2016,7 +2016,7 @@ public class ConfigurationService {
             auditData.put("action", "rollback");
             auditData.put("timestamp", java.time.Instant.now().toString());
             auditData.put("targetVersion", targetVersion);
-            auditData.put("currentVersion", getCurrentVersion());
+            auditData.put("currentVersion", configVersionManager.getCurrentVersion());
 
             // 记录回滚后的采样配置摘要
             if (samplingConfig != null && !samplingConfig.isEmpty()) {
@@ -2045,7 +2045,7 @@ public class ConfigurationService {
             auditData.put("action", "delete_version");
             auditData.put("timestamp", java.time.Instant.now().toString());
             auditData.put("deletedVersion", deletedVersion);
-            auditData.put("currentVersion", getCurrentVersion());
+            auditData.put("currentVersion", configVersionManager.getCurrentVersion());
             auditData.put("userId", SecurityUtils.getCurrentUserId());
 
             // 记录删除前的版本统计信息
@@ -2057,7 +2057,7 @@ public class ConfigurationService {
             }
 
             // 记录剩余可用版本
-            auditData.put("remainingVersions", getAllVersions());
+            auditData.put("remainingVersions", configVersionManager.getAllVersions());
 
             // 使用结构化日志记录审计信息
             logger.info("版本删除审计: {}", auditData);
