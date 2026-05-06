@@ -4,13 +4,15 @@
   <img src="logo/JAiRouterLogo.png" alt="JAiRouter Logo" width="400">
 </p>
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
+![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)
+
 JAiRouter is a Spring Boot-based model service routing and load balancing gateway designed to centrally manage and route various AI model services (such as Chat, Embedding, Rerank, TTS, etc.), supporting multiple load balancing strategies, rate limiting, circuit breaking, health checks, dynamic configuration updates, and more.
 
 [中文介绍](README-ZH.md)
 
 ---
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
-![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)
+
 
 ## 🧭 Feature Overview (Web Console)
 
