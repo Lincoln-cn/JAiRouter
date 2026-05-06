@@ -1,0 +1,73 @@
+# ========================================
+# 安全审计配置 (auth 模块)
+# ========================================
+# 此文件包含安全审计日志配置
+# 位置：org.unreal.modelrouter.auth.audit
+
+jairouter:
+  security:
+    audit:
+      # 审计功能开关
+      enabled: true
+      
+      # 日志级别
+      log-level: "INFO"
+      
+      # 是否记录请求体（生产环境建议关闭）
+      include-request-body: false
+      
+      # 是否记录响应体（生产环境建议关闭）
+      include-response-body: false
+      
+      # 日志保留天数
+      retention-days: 90
+      
+      # 告警功能开关
+      alert-enabled: false
+      
+      # 告警阈值配置
+      alert-thresholds:
+        auth-failures-per-minute: 10
+        sanitization-operations-per-minute: 100
+        suspicious-requests-per-minute: 20
+      
+      # 记录的事件类型
+      event-types:
+        authentication-success: false
+        authentication-failure: true
+        authorization-failure: true
+        sanitization-applied: false
+        configuration-changed: true
+        security-alert: true
+        suspicious-activity: true
+      
+      # 存储配置
+      storage:
+        type: "file"
+        file-path: "logs/security-audit.log"
+        rotation:
+          max-file-size: "100MB"
+          max-files: 30
+      
+      # 扩展审计配置
+      extended:
+        enabled: false
+        persistence:
+          enabled: false
+          storage-type: "file"
+          file:
+            enabled: false
+            base-path: "logs/audit"
+            separate-files: true
+            rotation:
+              max-file-size: "10MB"
+              max-files: 30
+              compress-archived: true
+        structured-logging:
+          enabled: false
+          format: "json"
+          include-metadata: true
+        memory-cache:
+          enabled: false
+          max-events: 10000
+          cleanup-interval: "PT1H"

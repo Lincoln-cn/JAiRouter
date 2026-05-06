@@ -1,0 +1,15 @@
+# ========================================
+# 负载均衡配置 (router 模块)
+# ========================================
+# 此文件包含负载均衡策略配置
+# 位置：org.unreal.modelrouter.router.loadbalancer
+
+model:
+  # 全局负载均衡配置
+  load-balance:
+    # 负载均衡策略类型
+    # 支持: random, round-robin, least-connections, ip-hash, consistent-hash
+    type: random
+    
+    # IP Hash 策略的哈希算法
+    hash-algorithm: "md5"

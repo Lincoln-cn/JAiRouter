@@ -1,0 +1,44 @@
+# ========================================
+# 数据脱敏配置 (auth 模块)
+# ========================================
+# 此文件包含响应数据脱敏配置
+# 位置：org.unreal.modelrouter.auth.security
+
+jairouter:
+  security:
+    sanitization:
+      response:
+        # 脱敏功能开关
+        enabled: false
+        
+        # 敏感词列表
+        sensitive-words:
+          - "password"
+          - "account"
+          - "secret"
+          - "token"
+          - "key"
+        
+        # PII 模式（正则表达式）
+        pii-patterns:
+          - "\\d{11}"                                          # 手机号
+          - "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}"  # 邮箱
+          - "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b" # 银行卡号
+        
+        # 脱敏字符
+        masking-char: "*"
+        
+        # 是否记录脱敏日志
+        log-sanitization: false
+        
+        # 是否保留 JSON 结构
+        preserve-json-structure: true
+        
+        # 服务特定规则
+        service-specific-rules:
+          chat:
+            additional-patterns: []
+          embedding:
+            enabled: false
+          rerank:
+            preserve-ranking-scores: true

@@ -1,0 +1,79 @@
+# ========================================
+# JWT 认证配置 (auth 模块)
+# ========================================
+# 此文件包含 JWT 认证相关配置
+# 位置：org.unreal.modelrouter.auth.security
+
+jairouter:
+  security:
+    jwt:
+      # JWT 功能开关
+      enabled: false
+      
+      # JWT 令牌头名称
+      jwt-header: "Jairouter_Token"
+      
+      # JWT 密钥（必须使用环境变量，长度 >= 32 字符）
+      secret: "${JWT_SECRET:}"
+      
+      # JWT 算法
+      algorithm: "HS256"
+      
+      # 令牌过期时间（分钟）
+      expiration-minutes: 60
+      
+      # 刷新令牌过期时间（天）
+      refresh-expiration-days: 7
+      
+      # JWT 发行者
+      issuer: "jairouter"
+      
+      # 黑名单功能
+      blacklist-enabled: true
+      blacklist-cache:
+        expiration-seconds: 86400
+        max-size: 10000
+      
+      # 用户账户配置
+      accounts:
+        - username: "admin"
+          # 密码必须使用环境变量（首次启动时设置）
+          password: "{noop}${INITIAL_ADMIN_PASSWORD:}"
+          roles: ["ADMIN", "USER"]
+          enabled: true
+
+      # JWT 持久化配置
+      persistence:
+        enabled: true
+        primary-storage: h2
+        fallback-storage: memory
+        composite:
+          enabled: false
+        sync:
+          enabled: false
+        startup-recovery:
+          enabled: true
+        cleanup:
+          schedule: "0 */5 * * * ?"
+          retention-days: 7
+        redis:
+          enabled: false
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:1}"
+
+      # JWT 黑名单持久化配置
+      blacklist:
+        persistence:
+          enabled: true
+          primary-storage: h2
+          max-memory-size: 10000
+        composite:
+          enabled: false
+        redis:
+          enabled: false
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:1}"

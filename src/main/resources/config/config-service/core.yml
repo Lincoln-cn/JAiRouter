@@ -1,0 +1,46 @@
+# ========================================
+# 配置服务核心配置 (config 模块)
+# ========================================
+# 此文件包含 ConfigurationService 核心配置
+# 位置：org.unreal.modelrouter.config.core
+
+store:
+  # 存储类型（v1.5.1+ 使用 JPA）
+  type: jpa
+  
+  # 配置文件路径（用于导入导出）
+  path: ./config
+  
+  # 备用存储类型（用于降级）
+  fallback-storage: memory
+  
+  # 配置迁移开关
+  migration:
+    enabled: true
+  
+  # 安全数据迁移开关
+  security-migration:
+    enabled: true
+
+# 数据源配置
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  
+  # JPA 配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  
+  # H2 控制台配置（默认关闭）
+  h2:
+    console:
+      enabled: false

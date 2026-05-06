@@ -1,120 +1,117 @@
 # ========================================
-# JAiRouter 主配置文件（简化版）
+# JAiRouter 主配置文件（v2.8.x 模块化重构版）
 # ========================================
-# 此文件为简化后的主配置文件，通过导入模块化配置实现功能分离
-# 详细配置请参考各个模块配置文件
+# 此文件为模块化重构后的主配置文件
+# 通过导入各服务模块配置实现配置分离
 
 spring:
-  main:
-    allow-circular-references: true
   config:
     import:
-      # 基础配置模块
+      # ====== common 模块配置 ======
+      - classpath:config/common/server.yml
+      - classpath:config/common/webclient.yml
+      - classpath:config/common/logging.yml
+      
+      # ====== config-service 模块配置 ======
+      - classpath:config/config-service/core.yml
+      
+      # ====== router 模块配置 ======
+      - classpath:config/router/adapter.yml
+      - classpath:config/router/loadbalancer.yml
+      - classpath:config/router/ratelimit.yml
+      - classpath:config/router/circuitbreaker.yml
+      - classpath:config/router/fallback.yml
+      - classpath:config/router/services.yml
+      
+      # ====== auth 模块配置 ======
+      - classpath:config/auth/jwt.yml
+      - classpath:config/auth/api-key.yml
+      - classpath:config/auth/audit.yml
+      - classpath:config/auth/sanitization.yml
+      
+      # ====== monitor 模块配置 ======
+      - classpath:config/base/monitoring-base.yml
+      - classpath:config/monitor/slow-query-alerts.yml
+      - classpath:config/monitor/error-tracking.yml
+      - classpath:config/monitor/persistence-monitoring-base.yml
+      
+      # ====== tracing 模块配置 ======
+      - classpath:config/tracing/tracing-base.yml
+      
+      # ====== persistence 模块配置 ======
+      - classpath:config/persistence/state-persistence-base.yml
+      
+      # ====== 向后兼容配置（保留原有路径） ======
       - classpath:config/base/server-base.yml
       - classpath:config/base/model-services-base.yml
-      - classpath:config/base/monitoring-base.yml
-
-      # 追踪配置模块
-      - classpath:config/tracing/tracing-base.yml
-
-      # 安全配置模块
       - classpath:config/security/security-base.yml
       - classpath:config/security/persistence-base.yml
       - classpath:config/security/audit-base.yml
 
-      # 监控配置模块
-      - classpath:config/monitoring/slow-query-alerts.yml
-      - classpath:config/monitoring/error-tracking.yml
-      - classpath:config/monitoring/persistence-monitoring-base.yml
-
-      # 状态持久化配置模块 (v2.4.4)
-      - classpath:config/persistence/state-persistence-base.yml
-      
-  profiles:
-    active: dev  # 默认使用开发环境
-  
-  # JPA 数据源配置（v1.5.1: 替代 R2DBC）
-  datasource:
-    url: jdbc:h2:file:./data/jairouter;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
-
-  # H2 控制台（默认关闭，开发环境可启用）
-  h2:
-    console:
-      enabled: false
-
 # ========================================
-# 存储配置（默认使用 H2）
+# 配置模块说明（v2.8.x）
 # ========================================
-store:
-  type: jpa  # v1.5.1: 使用 JPA 替代 R2DBC (可选: jpa, file, memory)
-  migration:
-    enabled: true  # 是否启用配置迁移
-  security-migration:
-    enabled: true  # 是否启用安全数据迁移
-
-# ========================================
-# 配置模块说明
-# ========================================
-# 原配置文件已按功能拆分到以下模块：
+# 新模块化配置结构：
 #
-# 基础配置模块:
-# - config/base/server-base.yml         # 服务器基础配置
-# - config/base/model-services-base.yml # 模型服务配置
-# - config/base/monitoring-base.yml     # 监控基础配置
+# common 模块（公共基础设施）:
+# - config/common/server.yml       # 服务器配置
+# - config/common/webclient.yml    # WebClient 配置
+# - config/common/logging.yml      # 日志配置
 #
-# 功能配置模块:
-# - config/security/security-base.yml   # 安全功能配置
-# - config/tracing/tracing-base.yml     # 追踪功能配置
-# - config/monitoring/slow-query-alerts.yml # 慢查询告警配置
-# - config/monitoring/error-tracking.yml    # 错误追踪配置
-# - config/persistence/state-persistence-base.yml # 状态持久化配置 (v2.4.4)
+# config-service 模块（配置服务）:
+# - config/config-service/core.yml # ConfigurationService 配置
 #
-# 环境配置文件:
-# - application-dev.yml                 # 开发环境覆盖配置
-# - application-staging.yml             # 预发布环境覆盖配置
-# - application-prod.yml                # 生产环境覆盖配置
-# - application-legacy.yml              # 向后兼容配置
-# - application-security-example.yml    # 安全配置示例
+# router 模块（路由服务）:
+# - config/router/adapter.yml      # 适配器配置
+# - config/router/loadbalancer.yml # 负载均衡配置
+# - config/router/ratelimit.yml    # 限流配置
+# - config/router/circuitbreaker.yml # 熔断器配置
+# - config/router/fallback.yml     # 降级配置
+# - config/router/services.yml     # 服务实例配置
+#
+# auth 模块（认证服务）:
+# - config/auth/jwt.yml            # JWT 认证配置
+# - config/auth/api-key.yml        # API Key 配置
+# - config/auth/audit.yml          # 安全审计配置
+# - config/auth/sanitization.yml   # 数据脱敏配置
+#
+# monitor 模块（监控服务）:
+# - config/base/monitoring-base.yml
+# - config/monitoring/*.yml
+#
+# tracing 模块（链路追踪）:
+# - config/tracing/tracing-base.yml
+#
+# persistence 模块（持久化服务）:
+# - config/persistence/state-persistence-base.yml
+#
+# 向后兼容：
+# - config/base/server-base.yml    # 保留原有配置
+# - config/base/model-services-base.yml
+# - config/security/*.yml
 
 # ========================================
-# 配置优先级说明
+# 配置加载优先级说明
 # ========================================
 # 配置加载优先级（高优先级覆盖低优先级）：
-# 1. 基础配置模块（最低优先级）
-# 2. 功能配置模块
-# 3. 环境特定配置文件  
-# 4. 环境变量
-# 5. 命令行参数（最高优先级）
+# 1. 模块配置文件（最低优先级）
+# 2. 主配置文件 application.yml
+# 3. 环境配置文件 application-{profile}.yml
+# 4. 环境变量（最高优先级）
+#
+# 敏感配置项必须使用环境变量：
+# - JWT_SECRET: JWT 密钥（长度 >= 32 字符）
+# - INITIAL_ADMIN_PASSWORD: 管理员密码
+# - GPUSTACK_API_TOKEN: GPUStack API Token
+# - REDIS_PASSWORD: Redis 密码（如启用 Redis）
 
 # ========================================
 # 使用说明
 # ========================================
-# 1. 基础配置修改：编辑 config/base/ 目录下的对应文件
-# 2. 功能启用/禁用：编辑对应的功能配置文件
-# 3. 环境差异配置：编辑对应的环境配置文件
-# 4. 敏感配置：建议使用环境变量注入
+# 1. 基础配置修改：编辑对应模块配置文件
+# 2. 环境差异配置：编辑对应的环境配置文件
+# 3. 敏感配置：使用环境变量注入
 #
-# 示例：
-# 启动开发环境：java -jar app.jar --spring.profiles.active=dev
-# 启动生产环境：java -jar app.jar --spring.profiles.active=prod
-# 启动兼容模式：java -jar app.jar --spring.profiles.active=legacy
-
-# 开发环境日志配置
-logging:
-  level:
-    org.unreal.modelrouter.config.ConfigurationService: DEBUG
-    org.unreal.modelrouter.config.DatabaseConfigService: DEBUG
-    org.unreal.modelrouter.controller.ServiceTypeController: DEBUG
-
+# 启动示例：
+# 开发环境：java -jar app.jar --spring.profiles.active=dev
+# 生产环境：java -jar app.jar --spring.profiles.active=prod -DJWT_SECRET=your-secret

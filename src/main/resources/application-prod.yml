@@ -1,229 +1,111 @@
 # ========================================
-# 生产环境配置
+# 生产环境配置（v2.8.x 精简版）
 # ========================================
-# 此文件仅包含生产环境特定的配置覆盖
+# 此文件仅包含生产环境特定的差异化配置
 # 基础配置通过模块化导入，详见 application.yml
+# 敏感配置必须使用环境变量！
 
-# ========================================
-# 生产环境 H2 数据库配置（覆盖默认配置）
-# ========================================
+# 日志配置（生产环境最小化）
+logging:
+  level:
+    root: WARN
+    org.unreal.modelrouter: WARN
+    org.springframework: ERROR
+  file:
+    name: logs/jairouter-prod.log
+
+# 存储配置（生产环境关闭自动迁移）
 store:
   migration:
-    enabled: false  # 生产环境关闭自动迁移
+    enabled: false
   security-migration:
-    enabled: false  # 生产环境关闭安全数据迁移
+    enabled: false
 
+# H2 控制台（生产环境关闭）
 spring:
-  r2dbc:
-    # 生产环境使用独立的数据库文件
-    url: r2dbc:h2:file///./data/jairouter-prod?DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=FALSE
-    pool:
-      initial-size: 20  # 生产环境更大的连接池
-      max-size: 50
-      max-idle-time: 30m
-  
-  # H2 控制台（生产环境关闭）
   h2:
     console:
       enabled: false
 
-# 生产环境日志配置（最小化输出）
-logging:
-  level:
-    root: WARN
-    org.unreal.modelrouter.controller: INFO
-    org.unreal.modelrouter.config.ConfigurationService: INFO
-    org.unreal.modelrouter.checker.ServerChecker: WARN
-    org.unreal.modelrouter.checker.RateLimiterCleanupChecker: WARN
-    org.unreal.modelrouter.ratelimit: ERROR
-    org.unreal.modelrouter.loadbalancer: ERROR
-    org.unreal.modelrouter.circuitbreaker: WARN
-    org.unreal.modelrouter: WARN
-    org.springframework: ERROR
-    org.apache.http: ERROR
-    io.netty: ERROR
-    reactor.netty: ERROR
-  pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{50} - %msg%n"
-  file:
-    name: logs/jairouter-prod.log
+# 管理端点（生产环境最小开放）
+management:
+  endpoint:
+    health:
+      show-details: when-authorized
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
 
-# 生产环境性能优化
-server:
-  tomcat:
-    threads:
-      max: 200
-      min-spare: 10
-    connection-timeout: 20000
-    max-connections: 8192
-
-# ========================================
-# 生产环境安全配置覆盖
-# ========================================
-# 仅包含生产环境的安全配置差异
+# 安全配置（生产环境）
 jairouter:
   security:
-    # 生产环境安全功能（默认关闭，需要显式启用）
+    # 生产环境安全功能默认关闭，需要显式启用
     enabled: false
     
-    # 生产环境 API Key 特定配置
+    jwt:
+      enabled: false
+      # 生产环境必须使用环境变量设置密钥
+      secret: "${PROD_JWT_SECRET:}"
+      issuer: "jairouter-prod"
+      
+      persistence:
+        enabled: false
+        redis:
+          enabled: false
+    
     api-key:
       enabled: true
       default-expiration-days: 365
-      cache-expiration-seconds: 3600  # 1小时缓存
     
-    # 生产环境 JWT 配置
-    jwt:
-      enabled: false  # 生产环境默认关闭JWT，根据需要启用
-      jwt-header: "Jairouter_Token"
-      secret: "${PROD_JWT_SECRET:}"
-      issuer: "jairouter-prod"
-      blacklist-cache:
-        max-size: 50000  # 生产环境更大的黑名单缓存
-      
-      # 生产环境JWT持久化配置
-      persistence:
-        enabled: false  # JWT功能关闭时，持久化也应关闭
-        primary-storage: redis
-        fallback-storage: memory
-        composite:
-          enabled: true  # 生产环境启用复合存储策略
-        sync:
-          enabled: true  # 生产环境启用数据同步
-        startup-recovery:
-          enabled: true  # 生产环境启用启动恢复
-        cleanup:
-          retention-days: 30
-        redis:
-          enabled: false  # JWT功能关闭时，Redis持久化也应关闭
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:0}"
-          connection-timeout: 3000
-          retry-attempts: 5
-          pool:
-            max-active: 20
-            max-idle: 10
-            min-idle: 5
-      
-      # 生产环境JWT黑名单配置
-      blacklist:
-        persistence:
-          enabled: false  # JWT功能关闭时，黑名单持久化也应关闭
-          primary-storage: redis
-          max-memory-size: 50000
-        composite:
-          enabled: true  # 生产环境启用复合存储策略
-        redis:
-          enabled: false  # JWT功能关闭时，Redis黑名单也应关闭
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: "${REDIS_DATABASE:0}"
-          connection-timeout: 3000
-          retry-attempts: 5
-          pool:
-            max-active: 20
-            max-idle: 10
-            min-idle: 5
+    audit:
+      log-level: "WARN"
+      include-request-body: false
+      include-response-body: false
+      retention-days: 90
+      alert-enabled: true
+      alert-thresholds:
+        auth-failures-per-minute: 5
+        suspicious-requests-per-minute: 10
     
-    # 生产环境数据脱敏配置（严格模式）
     sanitization:
       response:
         enabled: true
         log-sanitization: false
     
-    # 生产环境审计配置
-    audit:
-      enabled: true
-      storage: h2  # 生产环境使用 H2 存储审计日志
-      include-request-body: false   # 生产环境不包含请求体
-      include-response-body: false  # 生产环境不包含响应体
-      retention-days: 90  # 生产环境保留90天
-      alert-enabled: true
-      
-      alert-thresholds:
-        auth-failures-per-minute: 5      # 生产环境更严格的阈值
-        sanitization-operations-per-minute: 200
-        suspicious-requests-per-minute: 10
-
-      
-      event-types:
-        authentication-success: false    # 生产环境不记录成功认证（减少日志量）
-        sanitization-applied: false      # 生产环境不记录脱敏操作（减少日志量）
-    
-    # 生产环境监控配置
     monitoring:
       enabled: true
-      metrics:
-        security-events:
-          by-user: false  # 生产环境不按用户统计（隐私考虑）
-      
       alerts:
         enabled: true
         thresholds:
-          authentication-failure-rate: 0.05  # 生产环境更严格的失败率阈值（5%）
-          sanitization-error-rate: 0.01      # 生产环境更严格的错误率阈值（1%）
-          response-time-p99: 500              # 生产环境更严格的响应时间要求
-          max-requests-per-minute: 5000       # 生产环境更高的请求量阈值
-        
+          authentication-failure-rate: 0.05
+          sanitization-error-rate: 0.01
+          response-time-p99: 500
+          max-requests-per-minute: 5000
         notifications:
           email:
             enabled: true
-            recipients: 
+            recipients:
               - "${SECURITY_ALERT_EMAIL:}"
           webhook:
             enabled: true
             url: "${SECURITY_ALERT_WEBHOOK:}"
-          log:
-            enabled: true
-      
 
-      
-      # 生产环境错误跟踪配置
-      error-tracking:
-        enabled: ${PROD_ERROR_TRACKING_ENABLED:true}
-  
-  # 生产环境追踪配置
-  tracing:
-    logging:
-      include-stack-trace: false  # 生产环境不记录堆栈跟踪到结构化日志
-    
-    # 生产环境性能配置
+# 性能配置（生产环境优化）
+jairouter:
+  security:
     performance:
       authentication:
-        thread-pool-size: 20  # 生产环境更大的线程池
-        timeout-ms: 3000      # 生产环境更短的超时时间
-      
+        thread-pool-size: 20
+        timeout-ms: 3000
       sanitization:
         thread-pool-size: 10
-        streaming-threshold: 2097152  # 2MB
-        regex-cache-size: 500         # 生产环境更大的缓存
-      
+        streaming-threshold: 2097152
       cache:
-        redis:
-          enabled: true  # 生产环境启用Redis缓存
-          host: "${REDIS_HOST:localhost}"
-          port: "${REDIS_PORT:6379}"
-          password: "${REDIS_PASSWORD:}"
-          database: 0
-          timeout: 2000
-          pool:
-            max-active: 20  # 生产环境更大的连接池
-            max-idle: 10
-            min-idle: 5
         local:
-          enabled: true
           api-key:
-            max-size: 10000  # 生产环境更大的本地缓存
-            expire-after-write: 3600
+            max-size: 10000
           jwt-blacklist:
             max-size: 100000
-            expire-after-write: 86400
-
-# 生产环境监控配置覆盖
-management:
-  endpoint:
-    health:
-      show-details: when-authorized  # 生产环境仅授权用户可见健康详情

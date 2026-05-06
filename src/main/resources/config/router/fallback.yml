@@ -1,0 +1,14 @@
+# ========================================
+# 降级策略配置 (router 模块)
+# ========================================
+# 此文件包含降级策略配置
+# 位置：org.unreal.modelrouter.router.fallback
+
+model:
+  # 全局降级配置
+  fallback:
+    # 降级功能开关
+    enabled: true
+    
+    # 降级策略（支持: default, cache, mock）
+    strategy: default

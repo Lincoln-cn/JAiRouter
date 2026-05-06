@@ -1,0 +1,26 @@
+# ========================================
+# 限流配置 (router 模块)
+# ========================================
+# 此文件包含限流策略配置
+# 位置：org.unreal.modelrouter.router.ratelimit
+
+model:
+  # 全局限流配置
+  rate-limit:
+    # 限流功能开关
+    enabled: true
+    
+    # 限流算法（支持: token-bucket, sliding-window）
+    algorithm: "token-bucket"
+    
+    # 令牌桶容量
+    capacity: 1000
+    
+    # 令牌生成速率（每秒）
+    rate: 100
+    
+    # 限流范围（支持: service, instance, global）
+    scope: "service"
+    
+    # 是否启用客户端 IP 限流
+    client-ip-enable: true

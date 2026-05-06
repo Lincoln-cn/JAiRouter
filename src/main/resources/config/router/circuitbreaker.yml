@@ -1,0 +1,20 @@
+# ========================================
+# 熔断器配置 (router 模块)
+# ========================================
+# 此文件包含熔断器策略配置
+# 位置：org.unreal.modelrouter.router.circuitbreaker
+
+model:
+  # 全局熔断器配置
+  circuit-breaker:
+    # 熔断器功能开关
+    enabled: true
+    
+    # 失败阈值（连续失败次数触发熔断）
+    failureThreshold: 5
+    
+    # 熔断超时时间（毫秒）
+    timeout: 60000
+    
+    # 成功阈值（半开状态下连续成功次数恢复）
+    successThreshold: 2

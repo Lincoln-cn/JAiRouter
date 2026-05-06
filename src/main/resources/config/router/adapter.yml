@@ -1,0 +1,11 @@
+# ========================================
+# 适配器配置 (router 模块)
+# ========================================
+# 此文件包含适配器类型配置
+# 位置：org.unreal.modelrouter.router.adapter
+
+model:
+  # 全局适配器配置
+  # 如果服务没有指定适配器，将使用此配置
+  # 支持: normal, gpustack, ollama, vllm, xinference, localai
+  adapter: gpustack
