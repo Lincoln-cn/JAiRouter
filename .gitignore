@@ -200,6 +200,7 @@ jdeps/
 !config/*.example
 !config/*.template
 !config/*.yml.example
+!config/suppressions.xml
 
 # Keep documentation assets
 !docs/

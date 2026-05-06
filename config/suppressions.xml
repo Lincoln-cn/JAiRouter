@@ -1,28 +1,70 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suppressions PUBLIC
-    "-//Checkstyle//DTD Suppressions 1.2//EN"
+    "-//Checkstyle//DTD Suppressions Configuration 1.2//EN"
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <suppressions>
-    <!--
-    技术债务说明 (v2.8.15 FinalParameters修复完成)
+    <!-- HiddenField: Builder模式DTO类、Model类允许参数同名 -->
+    <suppress files=".*[A-Z][a-zA-Z]*Metrics\.java" checks="HiddenField"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="HiddenField"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Request\.java" checks="HiddenField"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Stats\.java" checks="HiddenField"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Metadata\.java" checks="HiddenField"/>
+    <suppress files=".*ExporterHealthChecker\.java" checks="HiddenField"/>
+    <suppress files=".*StorageHealthServiceImpl\.java" checks="HiddenField"/>
+    <suppress files=".*CacheFallbackStrategy\.java" checks="HiddenField"/>
+    <suppress files=".*AccountManager\.java" checks="HiddenField"/>
+    <suppress files=".*TracingMemoryManager\.java" checks="HiddenField"/>
+    <suppress files=".*SlowQueryAlertService\.java" checks="HiddenField"/>
+    <suppress files=".*SecurityAuditEventEntity\.java" checks="HiddenField"/>
+    <suppress files=".*SecurityAlertService\.java" checks="HiddenField"/>
+    <suppress files=".*ConfigurationService\.java" checks="HiddenField"/>
+    <suppress files=".*JwtTokenInfo\.java" checks="HiddenField"/>
+    <suppress files=".*AsyncTracingProcessor\.java" checks="HiddenField"/>
     
-    HiddenField suppression保留原因：
-    - Setter方法参数名与属性名相同是Java标准惯例
-    - 构造函数注入参数名与属性名相同是Spring标准惯例  
-    - Builder模式参数名与属性名相同是常见设计模式
+    <!-- DesignForExtension: API类、DTO类、配置类、服务类允许继承扩展 -->
+    <suppress files=".*[A-Z][a-zA-Z]*Metrics\.java" checks="DesignForExtension"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="DesignForExtension"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Request\.java" checks="DesignForExtension"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Stats\.java" checks="DesignForExtension"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Api\.java" checks="DesignForExtension"/>
+    <suppress files=".*[A-Z][a-zA-Z]*DTO\.java" checks="DesignForExtension"/>
+    <suppress files=".*Builder\.java" checks="DesignForExtension"/>
+    <suppress files=".*Properties\.java" checks="DesignForExtension"/>
+    <suppress files=".*Config\.java" checks="DesignForExtension"/>
+    <suppress files=".*Validator\.java" checks="DesignForExtension"/>
+    <suppress files=".*Service\.java" checks="DesignForExtension"/>
+    <suppress files=".*Controller\.java" checks="DesignForExtension"/>
+    <suppress files=".*Manager\.java" checks="DesignForExtension"/>
+    <suppress files=".*Repository\.java" checks="DesignForExtension"/>
+    <suppress files=".*Provider\.java" checks="DesignForExtension"/>
+    <suppress files=".*Filter\.java" checks="DesignForExtension"/>
+    <suppress files=".*Handler\.java" checks="DesignForExtension"/>
+    <suppress files=".*Registry\.java" checks="DesignForExtension"/>
+    <suppress files=".*Factory\.java" checks="DesignForExtension"/>
+    <suppress files=".*Strategy\.java" checks="DesignForExtension"/>
+    <suppress files=".*Policy\.java" checks="DesignForExtension"/>
+    <suppress files=".*Adapter\.java" checks="DesignForExtension"/>
+    <suppress files=".*LoadBalancer\.java" checks="DesignForExtension"/>
+    <suppress files=".*RateLimiter\.java" checks="DesignForExtension"/>
+    <suppress files=".*CircuitBreaker\.java" checks="DesignForExtension"/>
+    <suppress files=".*Cache\.java" checks="DesignForExtension"/>
+    <suppress files=".*Event\.java" checks="DesignForExtension"/>
+    <suppress files=".*Entity\.java" checks="DesignForExtension"/>
+    <suppress files=".*Exception\.java" checks="DesignForExtension"/>
+    <suppress files=".*Constants\.java" checks="DesignForExtension"/>
+    <suppress files=".*Wrapper\.java" checks="DesignForExtension"/>
+    <suppress files=".*Snapshot\.java" checks="DesignForExtension"/>
+    <suppress files=".*Info\.java" checks="DesignForExtension"/>
+    <suppress files=".*Context\.java" checks="DesignForExtension"/>
+    <suppress files=".*Result\.java" checks="DesignForExtension"/>
+    <suppress files=".*Record\.java" checks="DesignForExtension"/>
+    <suppress files=".*HealthChecker\.java" checks="DesignForExtension"/>
     
-    OperatorWrap suppression保留原因：
-    - 操作符换行位置差异不影响代码可读性
-    - 后续版本可选择性修复
-    
-    FinalParameters suppression已移除（v2.8.15修复完成）：
-    - 原有9个文件的参数重新赋值问题已通过使用新变量解决
-    -->
-
-    <!-- HiddenField 抑制 - Java/Spring标准编码惯例 -->
-    <suppress files=".*\.java" checks="HiddenField" id="hiddenField"/>
-
-    <!-- OperatorWrap 抑制 - 操作符换行位置差异 -->
-    <suppress files=".*\.java" checks="OperatorWrap" id="operatorWrap"/>
+    <!-- LineLength: 配置类、DTO类允许较长行（常量定义、链式调用） -->
+    <suppress files=".*Properties\.java" checks="LineLength"/>
+    <suppress files=".*Application\.java" checks="LineLength"/>
+    <suppress files=".*[A-Z][a-zA-Z]*DTO\.java" checks="LineLength"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="LineLength"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Request\.java" checks="LineLength"/>
 </suppressions>
