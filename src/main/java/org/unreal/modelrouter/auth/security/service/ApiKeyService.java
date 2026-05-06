@@ -600,8 +600,19 @@ public class ApiKeyService {
         log.info("首次启动，将YAML API Key配置保存为版本1");
 
         try {
-            Map<String, Object> defaultConfig = getVersionConfig(0);
-            saveNewVersion(defaultConfig);
+            // 使用 ApiKeyConfigManager 替代废弃方法
+            Map<String, Object> defaultConfig = apiKeyConfigManager != null
+                    ? apiKeyConfigManager.getVersionConfig(0)
+                    : storeManager.getConfigByVersion(API_KEYS_STORE_KEY, 0);
+            
+            if (apiKeyConfigManager != null) {
+                apiKeyConfigManager.saveNewVersion(defaultConfig);
+            } else {
+                // 兼容旧实现：直接使用 storeManager
+                List<Integer> versions = storeManager.getConfigVersions(API_KEYS_STORE_KEY);
+                int version = versions.isEmpty() ? 1 : versions.stream().max(Integer::compareTo).orElse(0) + 1;
+                storeManager.saveConfigVersion(API_KEYS_STORE_KEY, defaultConfig, version);
+            }
 
             List<ApiKey> keys = (List<ApiKey>) defaultConfig.get(STORE_API_KEYS);
             keys.forEach(item -> {
@@ -633,8 +644,14 @@ public class ApiKeyService {
         log.info("发现持久化API Key配置，加载最新版本");
 
         try {
-            int currentVersion = getCurrentVersion();
-            Map<String, Object> versionConfig = getVersionConfig(currentVersion);
+            // 使用 ApiKeyConfigManager 替代废弃方法
+            int currentVersion = apiKeyConfigManager != null
+                    ? apiKeyConfigManager.getCurrentVersion()
+                    : storeManager.getConfigVersions(API_KEYS_STORE_KEY).stream().max(Integer::compareTo).orElse(0);
+            
+            Map<String, Object> versionConfig = apiKeyConfigManager != null
+                    ? apiKeyConfigManager.getVersionConfig(currentVersion)
+                    : storeManager.getConfigByVersion(API_KEYS_STORE_KEY, currentVersion);
 
             List<Map<String, Object>> keys = (List<Map<String, Object>>) versionConfig.get(STORE_API_KEYS);
             log.debug("从版本 {} 加载了 {} 个API Key配置", currentVersion, keys != null ? keys.size() : 0);
@@ -682,108 +699,14 @@ public class ApiKeyService {
         }
     }
 
-    /**
-     * 保存API Key配置为新版本
-     *
-     * @deprecated 建议使用 {@link ApiKeyConfigManager#saveNewVersion(Map)}。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>ApiKeyConfigManager 专门负责 API Key 配置的版本管理</li>
-     *               <li>新方法提供更好的职责分离和代码组织</li>
-     *             </ul>
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码
-     *             int version = apiKeyService.saveNewVersion(config);
-     *             
-     *             // 新代码
-     *             int version = apiKeyConfigManager.saveNewVersion(config);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @see ApiKeyConfigManager#saveNewVersion(Map)
-     * @since v2.5.5 标注废弃
-     */
-    @Deprecated(since = "2.5.5", forRemoval = true)
-    public int saveNewVersion(final Map<String, Object> config) {
-        if (apiKeyConfigManager != null) {
-            return apiKeyConfigManager.saveNewVersion(config);
-        }
-        // 兼容旧实现
-        int version = getNextAccountVersion();
-        storeManager.saveConfigVersion(API_KEYS_STORE_KEY, config, version);
-        log.info("已保存API Key配置为新版本：{}", version);
-        return version;
-    }
 
-    /**
-     * 获取所有版本列表
-     *
-     * @deprecated 建议使用 {@link ApiKeyConfigManager#getAllVersions()}。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>ApiKeyConfigManager 专门负责 API Key 配置的版本管理</li>
-     *             </ul>
-     *             此方法将在 v3.0 版本中移除。
-     * @see ApiKeyConfigManager#getAllVersions()
-     * @since v2.5.5 标注废弃
-     */
-    @Deprecated(since = "2.5.5", forRemoval = true)
-    public List<Integer> getAllVersions() {
-        if (apiKeyConfigManager != null) {
-            return apiKeyConfigManager.getAllVersions();
-        }
-        return storeManager.getConfigVersions(API_KEYS_STORE_KEY);
-    }
 
-    /**
-     * 获取当前版本号
-     *
-     * @deprecated 建议使用 {@link ApiKeyConfigManager#getCurrentVersion()}。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>ApiKeyConfigManager 专门负责 API Key 配置的版本管理</li>
-     *             </ul>
-     *             此方法将在 v3.0 版本中移除。
-     * @see ApiKeyConfigManager#getCurrentVersion()
-     * @since v2.5.5 标注废弃
-     */
-    @Deprecated(since = "2.5.5", forRemoval = true)
-    public int getCurrentVersion() {
-        if (apiKeyConfigManager != null) {
-            return apiKeyConfigManager.getCurrentVersion();
-        }
-        List<Integer> versions = getAllVersions();
-        return versions.isEmpty() ? 0 : versions.stream().mapToInt(Integer::intValue).max().orElse(0);
-    }
 
     private int getNextAccountVersion() {
-        return getAllVersions().stream().max(Integer::compareTo).orElse(0) + 1;
+        List<Integer> versions = storeManager.getConfigVersions(API_KEYS_STORE_KEY);
+        return versions.isEmpty() ? 1 : versions.stream().max(Integer::compareTo).orElse(0) + 1;
     }
 
-    /**
-     * 获取指定版本的配置
-     *
-     * @deprecated 建议使用 {@link ApiKeyConfigManager#getVersionConfig(int)}。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>ApiKeyConfigManager 专门负责 API Key 配置的版本管理</li>
-     *             </ul>
-     *             此方法将在 v3.0 版本中移除。
-     * @see ApiKeyConfigManager#getVersionConfig(int)
-     * @since v2.5.5 标注废弃
-     */
-    @Deprecated(since = "2.5.5", forRemoval = true)
-    public Map<String, Object> getVersionConfig(final int version) {
-        if (apiKeyConfigManager != null) {
-            return apiKeyConfigManager.getVersionConfig(version);
-        }
-        if (version == 0) {
-            Map<String, Object> config = new HashMap<>();
-            config.put(STORE_API_KEYS, loadApiKeysFromConfig());
-            return config;
-        }
-        return storeManager.getConfigByVersion(API_KEYS_STORE_KEY, version);
-    }
 
     private List<ApiKey> loadApiKeysFromConfig() {
         return securityProperties.getApiKey().getKeys().stream().peek(item -> {
