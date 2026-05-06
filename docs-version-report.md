@@ -3,22 +3,19 @@
 ## 版本统计
 
 - 总文档数: 160
-- 近7天变更: 34
+- 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-05-05 05:15:47
+- 最后扫描: 2026-05-06 05:29:38
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.5 → 1.0.6) - 2026-05-06
 - **MODIFIED**: docs-version-report.md (1.0.4 → 1.0.5) - 2026-05-05
 - **MODIFIED**: docs-version-report.md (1.0.3 → 1.0.4) - 2026-05-04
 - **MODIFIED**: docs-version-report.md (1.0.2 → 1.0.3) - 2026-05-03
 - **MODIFIED**: docs-version-report.md (1.0.1 → 1.0.2) - 2026-05-02
 - **MODIFIED**: docs-version-report.md (1.0.0 → 1.0.1) - 2026-05-01
 - **CREATED**: docs-version-report.md ( → 1.0.0) - 2026-04-30
-- **DELETED**: 工作进度-v1.9.4-v1.9.5.md (1.0.0 → ) - 2026-04-29
-- **DELETED**: v2.3.x-开发总结.md (1.0.0 → ) - 2026-04-29
-- **DELETED**: v2.3.3-健康检查显示修复计划.md (1.0.0 → ) - 2026-04-29
-- **DELETED**: v2.3.1-系列版本规划.md (1.0.0 → ) - 2026-04-29
 
 ## 过期文档 (30天未更新)
 
@@ -672,7 +669,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.5 - 2026-05-05 (7e8a55ce)
+- **docs-version-report.md**: v1.0.6 - 2026-05-06 (9e1ade76)
 - **docs/zh/development/v2.7.x-package-refactoring.md**: v1.0.0 - 2026-04-29 (39b124d3)
 - **docs/docs-version-report.md**: v1.0.0 - 2026-04-29 (f60c279e)
 - **README.md**: v1.0.11 - 2026-04-29 (8bc8a025)
