@@ -353,8 +353,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                         statsRepository.recordErrorCode(serviceType.name(), modelName, errorCode);
                     }
 
-                    // 检查是否应该重试
-                    if (shouldRetry(throwable, retryCount, maxRetries)) {
+                    // v2.9.14: 使用 RetryPolicy 替代 shouldRetry
+                    if (retryPolicy.canRetry(retryCount, throwable) && retryPolicy.isRetryable(throwable)) {
                         // 记录重试追踪
                         if (tracingContext != null && tracingContext.isActive()) {
                             try {
@@ -1304,98 +1304,6 @@ public abstract class BaseAdapter implements ServiceCapability {
                 return 1; // 默认重试1次（降低）
         }
     }
-
-    /**
-     * 判断是否应该重试
-     *
-     * @deprecated 建议使用 {@link RetryPolicy#canRetry(int, Throwable)} 和 {@link RetryPolicy#isRetryable(Throwable)}。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>RetryPolicy.canRetry 检查是否达到最大重试次数</li>
-     *               <li>RetryPolicy.isRetryable 判断错误是否可重试</li>
-     *               <li>两者组合使用替代此方法的综合判断逻辑</li>
-     *             </ul>
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码 - 使用 shouldRetry
-     *             boolean retry = shouldRetry(throwable, currentRetryCount, maxRetries);
-     *             
-     *             // 新代码 - 使用 RetryPolicy
-     *             boolean retry = retryPolicy.canRetry(currentRetryCount, throwable) 
-     *                          && retryPolicy.isRetryable(throwable);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @see RetryPolicy#canRetry(int, Throwable)
-     * @see RetryPolicy#isRetryable(Throwable)
-     * @since v2.5.4 标注废弃
-     */
-    @Deprecated(since = "2.5.4", forRemoval = true)
-    protected boolean shouldRetry(final Throwable throwable, final int currentRetryCount, final int maxRetries) {
-        // 如果已达到最大重试次数，不再重试
-        if (currentRetryCount >= maxRetries) {
-            logger.debug("达到最大重试次数，不再重试: currentRetryCount={}, maxRetries={}", currentRetryCount, maxRetries);
-            return false;
-        }
-
-        // 检查是否是 ServerWebInputException（No request body）- 这种错误不应该重试
-        if (throwable instanceof org.springframework.web.server.ServerWebInputException) {
-            logger.warn("ServerWebInputException 错误，不重试: {}", throwable.getMessage());
-            return false;
-        }
-
-        // 检查异常类型，只对特定类型的异常进行重试
-        if (throwable instanceof org.springframework.web.server.ResponseStatusException) {
-            org.springframework.web.server.ResponseStatusException statusException =
-                    (org.springframework.web.server.ResponseStatusException) throwable;
-
-            // 400 Bad Request 不重试（特别是 No request body 错误）
-            if (statusException.getStatusCode().value() == 400) {
-                logger.warn("400 Bad Request 错误，不重试: {}", statusException.getMessage());
-                return false;
-            }
-
-            // 401 Unauthorized 不重试
-            if (statusException.getStatusCode().value() == 401) {
-                logger.warn("401 Unauthorized 错误，不重试");
-                return false;
-            }
-
-            // 5xx服务器错误可以重试
-            if (statusException.getStatusCode().is5xxServerError()) {
-                logger.debug("5xx服务器错误，可以重试: status={}", statusException.getStatusCode());
-                return true;
-            }
-
-            // 429 Too Many Requests可以重试
-            if (statusException.getStatusCode().value() == 429) {
-                logger.debug("429 Too Many Requests，可以重试");
-                return true;
-            }
-
-            // 408 Request Timeout可以重试
-            if (statusException.getStatusCode().value() == 408) {
-                logger.debug("408 Request Timeout，可以重试");
-                return true;
-            }
-
-            // 记录其他4xx错误
-            logger.debug("其他4xx客户端错误，不重试: status={}", statusException.getStatusCode());
-            return false;
-        }
-
-        // 网络相关异常可以重试
-        if (throwable instanceof java.net.ConnectException ||
-                throwable instanceof java.net.SocketTimeoutException ||
-                throwable instanceof java.io.IOException) {
-            logger.debug("网络相关异常，可以重试: exception={}", throwable.getClass().getSimpleName());
-            return true;
-        }
-
-        // 其他异常不重试
-        logger.debug("其他异常，不重试: exception={}", throwable.getClass().getSimpleName());
-        return false;
-    }
-
     /**
      * 计算重试延迟（指数退避）
      */
@@ -1449,7 +1357,8 @@ public abstract class BaseAdapter implements ServiceCapability {
 
                     // v2.3.2: 使用新组件记录错误
                     if (metricsRecorder != null) {
-                        if (shouldRetry(throwable, retryCount, maxRetries)) {
+                        // v2.9.14: 使用 RetryPolicy 替代 shouldRetry
+                        if (retryPolicy.canRetry(retryCount, throwable) && retryPolicy.isRetryable(throwable)) {
                             metricsRecorder.recordRetry(adapterType, instanceName, retryCount + 1, throwable);
                         } else {
                             metricsRecorder.recordError(
@@ -1462,8 +1371,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                         tracingManager.endAdapterCall(null, false, throwable);
                     }
 
-                    // 重试逻辑
-                    if (shouldRetry(throwable, retryCount, maxRetries)) {
+                    // v2.9.14: 使用 RetryPolicy 替代 shouldRetry 的重试逻辑
+                    if (retryPolicy.canRetry(retryCount, throwable) && retryPolicy.isRetryable(throwable)) {
                         long retryDelay = calculateRetryDelay(retryCount);
                         return Mono.delay(java.time.Duration.ofMillis(retryDelay))
                                 .then(processRequestWithMetricsAndTracing(request, authorization, client, path,
