@@ -369,3 +369,4 @@ mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 - v2.8.x 配置文件整合：拆分 application.yml 为 25 个模块配置文件（auth/router/common/monitor/persistence 等），创建 ConfigSourceTracker/SensitiveConfigValidator/ConfigIntegrityValidator，精简环境配置 763→271 行 (-62%)，测试数 736 个，详见 `innerdoc/16-版本发布/v2.8.x-开发总结.md`
 - v2.9.x 代码质量提升：删除 628 行废弃代码（ApiKeyService/ConfigurationService），新增 57 个测试 (736→793)，覆盖率 10.9%，Checkstyle 警告 6,143→3,334 (-46%)，HiddenField 完全消除，详见 `innerdoc/16-版本发布/v2.9.x-开发总结.md`
 - v2.7-v2.9 微服务化准备完成：Package 模块化 + 配置整合 + 废弃清理，为 v3.0 微服务架构转型做好准备
+- v3.0 微服务架构转型已无限期推迟：当前单体架构满足需求，README/开发计划已更新状态为 ⏸️ 推迟
