@@ -365,3 +365,7 @@ mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 - v2.2.x 系列开发总结：v2.2.0-v2.2.9 共 10 个版本已完成，新增 16 个文件（11 个源代码 +5 个测试），+3,100 行代码，140+ 个测试方法。详细总结参考 `v2.2.x-开发总结.md`。
 - v2.3.x 系列开发经验 (2026-04-22): 1) 创建新组件前必须先搜索现有类名和接口名，避免命名冲突（RequestProcessor 与 BaseAdapter 内部接口冲突，后重命名为 HttpRequestProcessor）；2) 采用渐进式重构策略：创建组件→注入→新增简化方法→保留原方法→逐步迁移，确保零停机时间和向后兼容；3) BaseAdapter 重构模式：extract-and-delegate（提取 - 委托），将复杂方法逻辑提取到独立组件，原方法委托调用；4) Spring Boot WebFlux 组件命名规范：使用具体前缀（如 HttpRequestProcessor 而非 RequestProcessor, AdapterErrorHandler 而非 ErrorHandler）避免冲突；5) 重构时必须保持所有现有测试通过（660 个测试），新增组件测试覆盖率>80%
 - v2.3.x 系列代码统计：新增 4 个组件 (AdapterErrorHandler, RetryPolicy, HttpRequestProcessor, ResponseMapper)，总计~670 行代码；修改 11 个文件 (BaseAdapter, AdapterRegistry, 6 个 Adapter 实现类，测试类)；新增 37 个测试方法；总测试数从 623 增加到 660；重构后 BaseAdapter 方法简化：classifyError 15 行→1 行 (-93%)，shouldRetry 70 行→1 行 (-98%)，processRequestNew 新方法 60 行 (比原方法简化 60%)
+- v2.7.x Package 结构重组：迁移 481 个文件到 6 个服务模块 (auth/config/router/monitor/persistence/common)，测试数 721 个全部通过，详见 `innerdoc/16-版本发布/v2.7.x-开发总结.md`
+- v2.8.x 配置文件整合：拆分 application.yml 为 25 个模块配置文件（auth/router/common/monitor/persistence 等），创建 ConfigSourceTracker/SensitiveConfigValidator/ConfigIntegrityValidator，精简环境配置 763→271 行 (-62%)，测试数 736 个，详见 `innerdoc/16-版本发布/v2.8.x-开发总结.md`
+- v2.9.x 代码质量提升：删除 628 行废弃代码（ApiKeyService/ConfigurationService），新增 57 个测试 (736→793)，覆盖率 10.9%，Checkstyle 警告 6,143→3,334 (-46%)，HiddenField 完全消除，详见 `innerdoc/16-版本发布/v2.9.x-开发总结.md`
+- v2.7-v2.9 微服务化准备完成：Package 模块化 + 配置整合 + 废弃清理，为 v3.0 微服务架构转型做好准备
