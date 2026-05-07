@@ -37,7 +37,58 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
- * 配置管理服务 - 重构版 提供完整的服务配置增删改查功能 支持服务、实例的动态管理 支持配置版本管理
+ * 配置管理服务 - 重构版
+ * 
+ * 提供完整的服务配置增删改查功能，支持服务、实例的动态管理，支持配置版本管理。
+ * 
+ * <h2>职责分层</h2>
+ * 
+ * <h3>【配置协调层】协调器职责，管理配置生命周期</h3>
+ * <ul>
+ *   <li>postConstructInit() - 初始化配置</li>
+ *   <li>setModelServiceRegistry() / setConfigSyncService() - 延迟注入避免循环依赖</li>
+ *   <li>saveAsNewVersionIfChanged() - 保存为新版本</li>
+ *   <li>batchUpdateConfigurations() - 批量更新配置</li>
+ *   <li>resetToDefaultConfig() - 重置为默认配置</li>
+ *   <li>hasPersistedConfig() - 检查是否有持久化配置</li>
+ *   <li>cleanVersion() - 清理版本</li>
+ * </ul>
+ * 
+ * <h3>【配置查询层】提供配置查询功能</h3>
+ * <ul>
+ *   <li>getAllConfigurations() - 获取所有配置</li>
+ *   <li>getAvailableServiceTypes() - 获取可用服务类型</li>
+ *   <li>getAvailableModels() - 获取指定服务类型的可用模型</li>
+ *   <li>getTraceConfig() - 获取追踪配置</li>
+ *   <li>getTracingSamplingConfig() - 获取追踪采样配置</li>
+ * </ul>
+ * 
+ * <h3>【配置更新层】提供配置更新功能</h3>
+ * <ul>
+ *   <li>updateServiceConfigDto() - 更新服务配置DTO</li>
+ *   <li>addServiceInstance() - 添加服务实例</li>
+ *   <li>batchUpdateServiceInstances() - 批量更新服务实例</li>
+ *   <li>updateTraceConfig() - 更新追踪配置</li>
+ *   <li>deleteTraceConfig() - 删除追踪配置</li>
+ *   <li>updateTracingSamplingConfig() - 更新追踪采样配置</li>
+ * </ul>
+ * 
+ * <h2>依赖组件</h2>
+ * <ul>
+ *   <li>ConfigurationHelper - 配置辅助工具</li>
+ *   <li>ConfigMergeService - 配置合并服务</li>
+ *   <li>ServiceConfigManager - 服务配置管理器</li>
+ *   <li>InstanceManager - 实例管理器</li>
+ *   <li>ConfigVersionManager - 配置版本管理器</li>
+ *   <li>ConfigValidator - 配置验证器</li>
+ *   <li>StoreManager - 存储管理器</li>
+ * </ul>
+ * 
+ * @since v1.0.0
+ * @see ConfigurationHelper
+ * @see ConfigMergeService
+ * @see ServiceConfigManager
+ * @see InstanceManager
  */
 @Service
 @DependsOn("jpaDatabaseInitializer")
