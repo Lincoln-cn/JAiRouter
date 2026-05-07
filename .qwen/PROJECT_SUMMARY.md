@@ -1,85 +1,37 @@
-The user wants me to generate a comprehensive project summary in markdown format based on the conversation history. Let me analyze the key information from the conversation:
-
-1. **Overall Goal**: Execute v2.9.x large file refactoring with "先清理后拆分" strategy, then improve test coverage to 60% target.
-
-2. **Key Knowledge**:
-   - Build Command: `mvn compile -DskipTests -Dcheckstyle.skip=true -Dspotbugs.skip=true`
-   - Test Command: `mvn test -Dcheckstyle.skip=true -Dspotbugs.skip=true`
-   - Coverage Command: `mvn clean test jacoco:report -Dcheckstyle.skip=true -Dspotbugs.skip=true`
-   - Current Tests: 793 (all passing, +57 from 736)
-   - Coverage: INSTRUCTION 10.9%, LINE 13.5%, METHOD 12.4% (Target: 60%)
-   - ConfigurationService internal calls MUST use injected managers
-   - ServiceConfiguration is a Java record
-   - LoadBalanceConfig valid types: random, round-robin, least-connections, ip-hash (NOT weighted)
-   - Test file structure: ServiceConfigDTO in config.dto package
-
-3. **Recent Actions**:
-   - Completed v2.9.6 test coverage improvement phase
-   - Created 5 new test files with 57 tests total:
-     - v2.9.6.1: ServiceTypeControllerTest (6 tests)
-     - v2.9.6.2: ConfigurationHelperTest (18 tests)
-     - v2.9.6.3: AdapterCapabilitiesTest (10 tests)
-     - v2.9.6.4: InstanceIdUtilsTest (13 tests)
-     - v2.9.6.5: IpUtilsTest (10 tests)
-   - Coverage improved from 10.6% to 10.9% (INSTRUCTION)
-   - Git tags created: v2.9.6.1 through v2.9.6.5
-
-4. **Current Plan**:
-   - [DONE] v2.9.6 - Test coverage improvement (+57 tests, 736→793)
-   - [IN PROGRESS] v2.9.12 - Release preparation (docs, verification)
-   - [TODO] v2.9.13 - v2.9.x summary and v3.0 planning# Project Summary
+# Project Summary
 
 ## Overall Goal
-Execute v2.9.x large file refactoring with "先清理后拆分" strategy, then improve test coverage to 60% target.
+v2.7-v2.9 微服务化准备系列已完成。Package重组、配置整合、废弃代码清理全部完成，为 v3.0 微服务架构转型做好准备。
 
 ## Key Knowledge
 - **Build Command**: `mvn compile -DskipTests -Dcheckstyle.skip=true -Dspotbugs.skip=true`
 - **Test Command**: `mvn test -Dcheckstyle.skip=true -Dspotbugs.skip=true`
 - **Coverage Command**: `mvn clean test jacoco:report -Dcheckstyle.skip=true -Dspotbugs.skip=true`
-- **Current Tests**: 793 (all passing, +57 from 736)
-- **Coverage**: INSTRUCTION 10.9%, LINE 13.5%, METHOD 12.4% (Target: 60%)
-- **ConfigurationService internal calls MUST use injected managers**:
-  - `configVersionManager.saveAsNewVersion()` (NOT saveAsNewVersion)
-  - `configVersionManager.getCurrentVersion()` (NOT getCurrentVersion)
-  - `configVersionManager.getAllVersions()` (NOT getAllVersions)
-  - `instanceManager.getServiceInstancesAsMap()` (NOT getServiceInstances)
-- **ServiceConfiguration is a Java record**: Use `ServiceConfiguration.defaultConfig()` for test instances, NO setters
-- **ModelRouterProperties location**: `org.unreal.modelrouter.router.model` package (NOT config package)
-- **LoadBalanceConfig valid types**: random, round-robin, least-connections, ip-hash (NOT weighted)
-- **Controller tests require ConfigurationValidator mock**: Service type validation calls configurationValidator.isValidServiceType()
+- **Current Tests**: 793 (all passing)
+- **Coverage**: INSTRUCTION 10.9%, LINE 13.5%, METHOD 12.4%
+- **Package Structure**: 6 service modules (auth/config/router/monitor/persistence/common)
+- **Configuration Files**: 25 modular files under src/main/resources/config/
 
 ## Recent Actions
-- **v2.9.6 Test Coverage Improvement Phase COMPLETED**:
-  - Created 5 new test files with 57 total tests
-  - v2.9.6.1: ServiceTypeControllerTest (6 tests) - config/controller module
-  - v2.9.6.2: ConfigurationHelperTest (18 tests) - config/core module
-  - v2.9.6.3: AdapterCapabilitiesTest (10 tests) - router/adapter module
-  - v2.9.6.4: InstanceIdUtilsTest (13 tests) - common/util module
-  - v2.9.6.5: IpUtilsTest (10 tests) - common/util module
-- **Coverage improved**: INSTRUCTION 10.6% → 10.9%, LINE 13.1% → 13.5%, METHOD 12.0% → 12.4%
-- **Git tags created**: v2.9.6.1, v2.9.6.2, v2.9.6.3, v2.9.6.4, v2.9.6.5
-- **Test file locations**:
-  - `src/test/java/org/unreal/modelrouter/config/controller/ServiceTypeControllerTest.java`
-  - `src/test/java/org/unreal/modelrouter/config/core/ConfigurationHelperTest.java`
-  - `src/test/java/org/unreal/modelrouter/router/adapter/AdapterCapabilitiesTest.java`
-  - `src/test/java/org/unreal/modelrouter/common/util/InstanceIdUtilsTest.java`
-  - `src/test/java/org/unreal/modelrouter/common/util/IpUtilsTest.java`
+- **v2.9.x 封板完成**:
+  - 创建开发总结: innerdoc/16-版本发布/v2.9.x-开发总结.md
+  - 更新 QWEN.md: 添加 v2.7-v2.9 记忆
+  - 更新开发计划: 标记 v2.9.x 完成状态
+  - Git 标签: v2.9.x-final 已更新
 
-## Current Plan
-1. [DONE] v2.9.2 - ApiKeyService deprecated method cleanup (-100 lines)
-2. [DONE] v2.9.3 - Controller migration + ConfigurationService cleanup (-493 lines)
-3. [DONE] v2.9.4 - ConfigurationService split evaluation → SKIPPED
-4. [DONE] v2.9.5 - BaseAdapter split evaluation → SKIPPED
-5. [DONE] v2.9.6 - Test coverage improvement (+57 tests, 736→793)
-6. [IN PROGRESS] v2.9.12 - Release preparation (docs, verification)
-7. [TODO] v2.9.13 - v2.9.x summary and v3.0 planning
+## Completed Versions
+| Series | Status | Summary |
+|--------|--------|---------|
+| v2.7.x | ✅ 完成 | Package 结构重组，481 文件迁移，6 服务模块 |
+| v2.8.x | ✅ 完成 | 配置整合，25 配置文件，校验机制 |
+| v2.9.x | ✅ 完成 | 废弃清理 -628 行，+57 测试，Checkstyle -46% |
 
-**Progress Summary**: 
-- Code reduction: ~593 lines from deprecated cleanup
-- Tests added: +57 (736→793)
-- Coverage: 10.6% → 10.9% (INSTRUCTION)
+## Next Version
+- **v3.0.0**: 微服务架构转型（规划中）
+- **时间**: 2026 年 6 月 - 7 月
+- **任务**: 认证服务拆分、Nacos 配置中心、监控服务拆分
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-05-06T10:59:37.351Z 
+**Update time**: 2026-05-07T10:30:00Z
