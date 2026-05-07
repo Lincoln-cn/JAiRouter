@@ -18,7 +18,6 @@ import org.unreal.modelrouter.config.dto.ServiceConfigDTO;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

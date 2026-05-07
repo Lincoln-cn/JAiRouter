@@ -1,7 +1,6 @@
 package org.unreal.modelrouter.router.adapter.support;
 
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
-import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
 import lombok.extern.slf4j.Slf4j;

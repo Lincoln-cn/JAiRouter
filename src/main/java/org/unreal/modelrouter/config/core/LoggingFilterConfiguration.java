@@ -1,7 +1,6 @@
 package org.unreal.modelrouter.config.core;
 
 import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.turbo.TurboFilter;
 import ch.qos.logback.core.spi.FilterReply;
 import org.springframework.context.annotation.Configuration;

@@ -2,7 +2,12 @@ package org.unreal.modelrouter.router.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Configuration;
-import org.unreal.modelrouter.router.adapter.impl.*;
+import org.unreal.modelrouter.router.adapter.impl.GpuStackAdapter;
+import org.unreal.modelrouter.router.adapter.impl.LocalAiAdapter;
+import org.unreal.modelrouter.router.adapter.impl.NormalOpenAiAdapter;
+import org.unreal.modelrouter.router.adapter.impl.OllamaAdapter;
+import org.unreal.modelrouter.router.adapter.impl.VllmAdapter;
+import org.unreal.modelrouter.router.adapter.impl.XinferenceAdapter;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;

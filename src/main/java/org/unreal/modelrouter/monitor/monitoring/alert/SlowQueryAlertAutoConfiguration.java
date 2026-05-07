@@ -6,9 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
-import org.unreal.modelrouter.monitor.monitoring.SlowQueryDetector;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
-import org.unreal.modelrouter.common.util.ApplicationContextProvider;
 
 /**
  * 慢查询告警自动配置

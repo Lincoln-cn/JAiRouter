@@ -13,9 +13,7 @@ import org.unreal.modelrouter.persistence.jpa.entity.ExceptionStatsHourlyEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ExceptionEventRepository;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;

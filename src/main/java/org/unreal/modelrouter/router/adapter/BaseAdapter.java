@@ -2,12 +2,9 @@ package org.unreal.modelrouter.router.adapter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
@@ -32,7 +29,13 @@ import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
-import org.unreal.modelrouter.common.dto.*;
+import org.unreal.modelrouter.common.dto.ChatDTO;
+import org.unreal.modelrouter.common.dto.EmbeddingDTO;
+import org.unreal.modelrouter.common.dto.ImageEditDTO;
+import org.unreal.modelrouter.common.dto.ImageGenerateDTO;
+import org.unreal.modelrouter.common.dto.RerankDTO;
+import org.unreal.modelrouter.common.dto.SttDTO;
+import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
@@ -46,7 +49,6 @@ import reactor.core.publisher.Flux;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 
 public abstract class BaseAdapter implements ServiceCapability {

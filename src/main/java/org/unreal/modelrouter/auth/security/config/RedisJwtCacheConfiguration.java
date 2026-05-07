@@ -11,7 +11,6 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration;
 
 /**
  * Redis JWT缓存配置类

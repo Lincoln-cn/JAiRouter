@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.util.SecretKeyValidator;
 import org.unreal.modelrouter.auth.security.util.SecretKeyValidator.ValidationResult;
-import org.unreal.modelrouter.auth.security.util.SecretKeyValidator.StrengthLevel;
 
 /**
  * 启动时密钥安全检查器

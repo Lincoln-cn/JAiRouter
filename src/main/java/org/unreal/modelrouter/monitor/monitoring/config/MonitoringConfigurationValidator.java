@@ -3,8 +3,6 @@ package org.unreal.modelrouter.monitor.monitoring.config;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 

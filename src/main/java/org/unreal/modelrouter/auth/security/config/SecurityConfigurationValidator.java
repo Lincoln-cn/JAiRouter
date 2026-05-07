@@ -2,7 +2,12 @@ package org.unreal.modelrouter.auth.security.config;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.auth.security.config.properties.*;
+import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
+import org.unreal.modelrouter.auth.security.config.properties.ApiKeyConfig;
+import org.unreal.modelrouter.auth.security.config.properties.AuditConfig;
+import org.unreal.modelrouter.auth.security.config.properties.JwtConfig;
+import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.config.properties.SanitizationConfig;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

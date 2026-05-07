@@ -4,14 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.unreal.modelrouter.config.core.ConfigurationService;
 import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
 import org.unreal.modelrouter.common.dto.ServiceInstanceDTO;
 import org.unreal.modelrouter.common.dto.InstanceRateLimitDTO;
 import org.unreal.modelrouter.common.dto.InstanceCircuitBreakerDTO;
-import org.unreal.modelrouter.common.dto.InstanceUpdateRequest;
-import org.unreal.modelrouter.common.dto.InstanceCreateRequest;
-import org.unreal.modelrouter.common.dto.InstanceUpdateFlatRequest;
 import org.unreal.modelrouter.config.dto.CreateServiceInstanceRequest;
 import org.unreal.modelrouter.persistence.jpa.entity.InstanceCircuitBreakerEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.InstanceRateLimitEntity;
@@ -24,7 +20,11 @@ import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceReposito
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.common.util.SecurityUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**

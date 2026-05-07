@@ -3,7 +3,6 @@ package org.unreal.modelrouter.router.circuitbreaker;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.unreal.modelrouter.router.circuitbreaker.state.CircuitState;
 import org.unreal.modelrouter.router.circuitbreaker.state.CircuitStateContext;
 import org.unreal.modelrouter.router.circuitbreaker.state.ClosedState;

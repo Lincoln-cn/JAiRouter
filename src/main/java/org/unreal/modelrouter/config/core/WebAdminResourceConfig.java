@@ -9,8 +9,6 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.resource.PathResourceResolver;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-
 /**
  * Web 管理界面静态资源配置
  * 配置前端静态资源的访问路径和缓存策略
