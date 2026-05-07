@@ -152,88 +152,19 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     /**
-     * 通用请求处理模板方法 - v2.3.1.4 简化版本
-     * 使用 HttpRequestProcessor 和 ResponseMapper 组件
-     */
-    @SuppressWarnings("all")
-    protected <T, R> Mono<ResponseEntity<R>> processRequestNew(
-            final T request,
-            final String authorization,
-            final ServerHttpRequest httpRequest,
-            final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName,
-            final Class<R> responseType) {
-
-        ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, IpUtils.getClientIp(httpRequest));
-        WebClient client = getWebClient(serviceType, modelName, httpRequest);
-        String path = getModelPath(serviceType, modelName);
-
-        long startTime = System.currentTimeMillis();
-        String adapterType = getAdapterType();
-        String instanceName = selectedInstance.getName();
-
-        // 使用新组件发送请求
-        return httpRequestProcessor.sendNonStreaming(client, path, authorization, request)
-                .flatMap(clientResponse -> 
-                    responseMapper.mapResponse(clientResponse, responseType)
-                        .onErrorResume(error -> 
-                            responseMapper.handleResponseError(clientResponse, instanceName, path)
-                                .flatMap(Mono::error)
-                        )
-                )
-                .doOnSuccess(response -> {
-                    long duration = System.currentTimeMillis() - startTime;
-                    boolean success = response != null && response.getStatusCode().is2xxSuccessful();
-                    
-                    if (success) {
-                        getRegistry().recordCallComplete(serviceType, selectedInstance);
-                        if (metricsCollector != null) {
-                            metricsCollector.recordBackendCall(adapterType, instanceName, duration, true);
-                        }
-                    } else {
-                        getRegistry().recordCallFailure(serviceType, selectedInstance);
-                        if (metricsCollector != null) {
-                            metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
-                        }
-                    }
-                })
-                .doOnError(error -> {
-                    long duration = System.currentTimeMillis() - startTime;
-                    getRegistry().recordCallFailure(serviceType, selectedInstance);
-                    if (metricsCollector != null) {
-                        metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
-                    }
-                    if (statsRepository != null) {
-                        statsRepository.updateStats(serviceType.name(), modelName, false, duration);
-                        statsRepository.recordErrorCode(serviceType.name(), modelName, classifyError(error));
-                    }
-                });
-    }
-
-    /**
      * 通用请求处理模板方法
-     *
-     * @deprecated 建议使用 {@link #processRequestNew} 方法，该方法使用 HttpRequestProcessor 和 ResponseMapper 组件。
-     *             <p>迁移说明：</p>
-     *             <ul>
-     *               <li>processRequestNew 使用 HttpRequestProcessor 处理请求，代码更简洁</li>
-     *               <li>processRequestNew 使用 ResponseMapper 处理响应，逻辑更清晰</li>
-     *               <li>processRequestNew 返回强类型 ResponseEntity&lt;R&gt;，比 Mono 更安全</li>
-     *             </ul>
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码 - 使用 processRequest
-     *             Mono response = processRequest(request, auth, httpRequest, serviceType, modelName, processor);
-     *             
-     *             // 新代码 - 使用 processRequestNew
-     *             Mono<ResponseEntity<ChatResponse>> response = processRequestNew(
-     *                 request, auth, httpRequest, serviceType, modelName, ChatResponse.class);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @see #processRequestNew
-     * @since v2.5.4 标注废弃
+     * 
+     * 使用 RequestProcessor 函数式接口处理请求，支持降级策略和重试机制。
+     * 
+     * @param request 请求对象
+     * @param authorization 认证信息
+     * @param httpRequest HTTP请求对象
+     * @param serviceType 服务类型
+     * @param modelName 模型名称
+     * @param processor 请求处理器
+     * @return Mono响应
+     * @since v2.0.0
      */
-    @Deprecated(since = "2.5.4", forRemoval = true)
     @SuppressWarnings("all")
     protected <T> Mono processRequest(
             final T request,
