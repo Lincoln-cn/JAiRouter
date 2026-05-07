@@ -3,19 +3,21 @@
 ## 版本统计
 
 - 总文档数: 160
-- 近7天变更: 7
+- 近7天变更: 9
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-05-06 05:29:38
+- 最后扫描: 2026-05-07 05:32:17
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.6 → 1.0.7) - 2026-05-07
+- **MODIFIED**: README.md (1.0.11 → 1.0.12) - 2026-05-07
+- **MODIFIED**: README-ZH.md (1.0.3 → 1.0.4) - 2026-05-07
 - **MODIFIED**: docs-version-report.md (1.0.5 → 1.0.6) - 2026-05-06
 - **MODIFIED**: docs-version-report.md (1.0.4 → 1.0.5) - 2026-05-05
 - **MODIFIED**: docs-version-report.md (1.0.3 → 1.0.4) - 2026-05-04
 - **MODIFIED**: docs-version-report.md (1.0.2 → 1.0.3) - 2026-05-03
 - **MODIFIED**: docs-version-report.md (1.0.1 → 1.0.2) - 2026-05-02
 - **MODIFIED**: docs-version-report.md (1.0.0 → 1.0.1) - 2026-05-01
-- **CREATED**: docs-version-report.md ( → 1.0.0) - 2026-04-30
 
 ## 过期文档 (30天未更新)
 
@@ -669,11 +671,11 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.6 - 2026-05-06 (9e1ade76)
+- **docs-version-report.md**: v1.0.7 - 2026-05-07 (9e69c804)
+- **README.md**: v1.0.12 - 2026-05-07 (171cf5b6)
+- **README-ZH.md**: v1.0.4 - 2026-05-07 (9ba67de7)
 - **docs/zh/development/v2.7.x-package-refactoring.md**: v1.0.0 - 2026-04-29 (39b124d3)
 - **docs/docs-version-report.md**: v1.0.0 - 2026-04-29 (f60c279e)
-- **README.md**: v1.0.11 - 2026-04-29 (8bc8a025)
-- **README-ZH.md**: v1.0.3 - 2026-04-29 (8bc8a025)
 - **docs/zh/getting-started/quick-start-v1.8.md**: v1.0.1 - 2026-04-28 (56f61c77)
 - **docs/zh/configuration/state-persistence.md**: v1.0.0 - 2026-04-28 (e5140df0)
 - **docs/en/configuration/state-persistence.md**: v1.0.0 - 2026-04-28 (e5140df0)
