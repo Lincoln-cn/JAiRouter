@@ -16,15 +16,61 @@ import java.util.stream.Collectors;
 
 /**
  * 追踪数据查询服务
- * 
+ *
  * 提供追踪数据的查询、搜索和聚合功能，包括：
  * - 基于traceId的完整链路查询
  * - 基于时间范围和条件的追踪搜索
  * - 追踪统计和聚合查询
  * - 追踪数据导出功能
- * 
+ *
+ * <h2>职责分层</h2>
+ *
+ * <h3>【查询协调层】提供追踪查询功能</h3>
+ * <ul>
+ *   <li>getTraceChain() - 根据traceId查询完整追踪链路</li>
+ *   <li>searchTraces() - 根据条件搜索追踪</li>
+ *   <li>searchTracesWithPagination() - 分页搜索追踪</li>
+ *   <li>getRecentTraces() - 获取最近追踪</li>
+ *   <li>getServiceStatistics() - 获取服务统计</li>
+ * </ul>
+ *
+ * <h3>【统计计算层】提供统计计算功能</h3>
+ * <ul>
+ *   <li>getTraceStatistics() - 获取时间范围统计</li>
+ *   <li>calculateChainStats() - 计算链路统计信息（私有）</li>
+ *   <li>calculateMaxDepth() - 计算最大调用深度（私有）</li>
+ *   <li>createTraceSummary() - 创建追踪摘要（私有）</li>
+ * </ul>
+ *
+ * <h3>【导出处理层】提供数据导出功能</h3>
+ * <ul>
+ *   <li>exportTraces() - 导出追踪数据</li>
+ *   <li>exportAsJson() - JSON格式导出（私有）</li>
+ *   <li>exportAsCsv() - CSV格式导出（私有）</li>
+ * </ul>
+ *
+ * <h3>【维护管理层】提供数据维护功能</h3>
+ * <ul>
+ *   <li>cleanupExpiredTraces() - 清理过期追踪</li>
+ *   <li>matchesCriteria() - 条件匹配判断（私有）</li>
+ *   <li>convertFromCachedData() - 缓存数据转换（私有）</li>
+ * </ul>
+ *
+ * <h2>数据存储</h2>
+ * <ul>
+ *   <li>traceStore - 追踪数据存储 (ConcurrentHashMap, 最大10000条)</li>
+ *   <li>recentTraces - 最近追踪队列 (ConcurrentLinkedQueue, 最大1000条)</li>
+ *   <li>traceCounter - 追踪计数器 (AtomicLong)</li>
+ * </ul>
+ *
+ * <h2>依赖组件</h2>
+ * <ul>
+ *   <li>TracingMemoryManager - 追踪内存管理器</li>
+ * </ul>
+ *
  * @author JAiRouter Team
  * @since 1.0.0
+ * @see TracingMemoryManager
  */
 @Slf4j
 @Service
