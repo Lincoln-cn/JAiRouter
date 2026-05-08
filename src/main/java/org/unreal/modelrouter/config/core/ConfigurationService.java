@@ -4,8 +4,10 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.config.event.ConfigSyncEvent;
 import org.unreal.modelrouter.router.checker.ServerChecker;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.config.core.manager.ConfigValidator;
@@ -118,6 +120,10 @@ public class ConfigurationService {
     // v1.7.1: 实例仓库，用于从数据库获取健康状态
     @Autowired(required = false)
     private ServiceInstanceRepository serviceInstanceRepository;
+
+    // v2.12.4: 事件发布器，用于发布配置同步事件
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     private static final long REQUEST_DEDUP_WINDOW_MS = 1000; // 1秒内的重复请求将被忽略
     // 版本控制相关字段
@@ -1571,32 +1577,12 @@ public class ConfigurationService {
 
     /**
      * 刷新运行时配置
+     * v2.12.4: 改为事件发布模式，简化实现
      */
     private void refreshRuntimeConfig() {
-        if (modelServiceRegistry != null) {
-            try {
-                // 触发ModelServiceRegistry重新加载配置
-                modelServiceRegistry.refreshFromMergedConfig();
-
-                // 通知健康检查组件清理过期的实例状态缓存
-                try {
-                    ServerChecker serverChecker = ApplicationContextProvider.getBean(ServerChecker.class);
-                    ServiceStateManager serviceStateManager = ApplicationContextProvider.getBean(ServiceStateManager.class);
-
-                    if (serverChecker != null) {
-                        serverChecker.clearExpiredInstanceStates();
-                    }
-
-                    if (serviceStateManager != null) {
-                        serviceStateManager.clearExpiredInstanceHealthStatus();
-                    }
-                } catch (Exception e) {
-                    logger.warn("通知健康检查组件清理缓存时发生错误: {}", e.getMessage());
-                }
-            } catch (Exception e) {
-                logger.warn("刷新运行时配置时发生错误: {}", e.getMessage());
-            }
-        }
+        Map<String, Object> config = getCurrentPersistedConfig();
+        eventPublisher.publishEvent(ConfigSyncEvent.refresh(config));
+        logger.debug("已发布配置同步事件 ConfigSyncEvent.refresh");
     }
 
     /**
@@ -1970,11 +1956,14 @@ public class ConfigurationService {
     /**
      * 记录配置变更审计日志
      *
+     * @deprecated 自 v2.12.2 起废弃，计划在后续版本移除。
+     *             替代方案：使用 {@link org.unreal.modelrouter.monitor.audit.event.AuditLogEvent} 事件机制。
      * @param configType 配置类型
      * @param action 操作类型 (create, update, delete)
      * @param configData 配置数据
      * @param createNewVersion 是否创建新版本
      */
+    @Deprecated(since = "v2.12.2", forRemoval = true)
     private void logConfigurationChange(final String configType, final String action, final Map<String, Object> configData, final boolean createNewVersion) {
         try {
             Map<String, Object> auditData = new HashMap<>();
@@ -2007,9 +1996,12 @@ public class ConfigurationService {
     /**
      * 记录配置回滚审计日志
      *
+     * @deprecated 自 v2.12.2 起废弃，计划在后续版本移除。
+     *             替代方案：使用 {@link org.unreal.modelrouter.monitor.audit.event.AuditLogEvent} 事件机制。
      * @param targetVersion 目标版本
      * @param config 回滚后的配置
      */
+    @Deprecated(since = "v2.12.2", forRemoval = true)
     private void logConfigurationRollback(final int targetVersion, final Map<String, Object> config) {
         try {
             Map<String, Object> auditData = new HashMap<>();
@@ -2036,7 +2028,13 @@ public class ConfigurationService {
 
     /**
      * 创建配置摘要，用于审计日志
+     *
+     * @deprecated 自 v2.12.2 起废弃，计划在后续版本移除。
+     *             替代方案：使用 {@link org.unreal.modelrouter.monitor.audit.event.AuditLogEvent} 事件机制。
+     * @param config 配置数据
+     * @return 配置摘要
      */
+    @Deprecated(since = "v2.12.2", forRemoval = true)
     @SuppressWarnings("unchecked")
     private Map<String, Object> createConfigSummary(final Map<String, Object> config) {
         Map<String, Object> summary = new HashMap<>();
@@ -2061,9 +2059,12 @@ public class ConfigurationService {
     /**
      * 记录采样配置回滚审计日志
      *
+     * @deprecated 自 v2.12.2 起废弃，计划在后续版本移除。
+     *             替代方案：使用 {@link org.unreal.modelrouter.monitor.audit.event.AuditLogEvent} 事件机制。
      * @param targetVersion 目标版本
      * @param samplingConfig 回滚后的采样配置
      */
+    @Deprecated(since = "v2.12.2", forRemoval = true)
     private void logSamplingConfigRollback(final int targetVersion, final Map<String, Object> samplingConfig) {
         try {
             Map<String, Object> auditData = new HashMap<>();
@@ -2091,8 +2092,11 @@ public class ConfigurationService {
     /**
      * 记录版本删除审计日志
      *
+     * @deprecated 自 v2.12.2 起废弃，计划在后续版本移除。
+     *             替代方案：使用 {@link org.unreal.modelrouter.monitor.audit.event.AuditLogEvent} 事件机制。
      * @param deletedVersion 被删除的版本号
      */
+    @Deprecated(since = "v2.12.2", forRemoval = true)
     private void logVersionDeletion(final int deletedVersion) {
         try {
             Map<String, Object> auditData = new HashMap<>();
@@ -2152,9 +2156,12 @@ public class ConfigurationService {
     /**
      * 脱敏配置数据，移除敏感信息
      *
+     * @deprecated 自 v2.12.2 起废弃，计划在后续版本移除。
+     *             替代方案：使用 {@link org.unreal.modelrouter.monitor.audit.event.AuditLogEvent} 事件机制。
      * @param configData 原始配置数据
      * @return 脱敏后的配置数据
      */
+    @Deprecated(since = "v2.12.2", forRemoval = true)
     @SuppressWarnings("unchecked")
     private Map<String, Object> sanitizeConfigData(final Map<String, Object> configData) {
         Map<String, Object> sanitized = new HashMap<>();
@@ -2184,7 +2191,13 @@ public class ConfigurationService {
 
     /**
      * 脱敏配置列表数据
+     *
+     * @deprecated 自 v2.12.2 起废弃，计划在后续版本移除。
+     *             替代方案：使用 {@link org.unreal.modelrouter.monitor.audit.event.AuditLogEvent} 事件机制。
+     * @param configList 配置列表
+     * @return 脱敏后的配置列表
      */
+    @Deprecated(since = "v2.12.2", forRemoval = true)
     @SuppressWarnings("unchecked")
     private List<Object> sanitizeConfigList(final List<Object> configList) {
         List<Object> sanitized = new ArrayList<>();
@@ -2204,7 +2217,13 @@ public class ConfigurationService {
 
     /**
      * 判断字段是否为敏感字段
+     *
+     * @deprecated 自 v2.12.2 起废弃，计划在后续版本移除。
+     *             替代方案：使用 {@link org.unreal.modelrouter.monitor.audit.event.AuditLogEvent} 事件机制。
+     * @param fieldName 字段名称
+     * @return 是否为敏感字段
      */
+    @Deprecated(since = "v2.12.2", forRemoval = true)
     private boolean isSensitiveField(final String fieldName) {
         // 追踪采样配置中暂无敏感字段，但保留扩展性
         String[] sensitiveFields = {
