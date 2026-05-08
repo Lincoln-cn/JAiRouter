@@ -16,6 +16,8 @@ import java.util.UUID;
  * 提供安全相关的通用工具方法
  */
 public class SecurityUtils {
+    /** Private constructor to prevent instantiation. */
+    private SecurityUtils() {}
     
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");

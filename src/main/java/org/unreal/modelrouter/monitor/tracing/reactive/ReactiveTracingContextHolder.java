@@ -22,6 +22,8 @@ import java.util.Optional;
  */
 @Slf4j
 public class ReactiveTracingContextHolder {
+    /** Private constructor to prevent instantiation. */
+    private ReactiveTracingContextHolder() {}
     
     /**
      * 从当前Reactor上下文中获取追踪上下文

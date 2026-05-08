@@ -90,13 +90,13 @@ public class CleanupResult {
     @Override
     public String toString() {
         return "CleanupResult{"
-                +"cleanedTokens=" + cleanedTokens
-                +", cleanedBlacklistEntries=" + cleanedBlacklistEntries
-                +", cleanupStartTime=" + cleanupStartTime
-                +", cleanupEndTime=" + cleanupEndTime
-                +", durationMillis=" + durationMillis
-                +", success=" + success
-                +", errorMessage='" + errorMessage + '\''
-                +'}';
+                + "cleanedTokens=" + cleanedTokens
+                + ", cleanedBlacklistEntries=" + cleanedBlacklistEntries
+                + ", cleanupStartTime=" + cleanupStartTime
+                + ", cleanupEndTime=" + cleanupEndTime
+                + ", durationMillis=" + durationMillis
+                + ", success=" + success
+                + ", errorMessage='" + errorMessage + '\''
+                + '}';
     }
 }

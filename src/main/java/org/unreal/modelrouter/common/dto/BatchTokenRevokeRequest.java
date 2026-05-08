@@ -28,12 +28,20 @@ public class BatchTokenRevokeRequest {
     }
 
     public boolean equals(final Object o) {
-        if (o == this) return true;
-        if (!(o instanceof BatchTokenRevokeRequest other)) return false;
-        if (!other.canEqual(this)) return false;
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof BatchTokenRevokeRequest other)) {
+            return false;
+        }
+        if (!other.canEqual(this)) {
+            return false;
+        }
         final Object this$tokens = this.getTokens();
         final Object other$tokens = other.getTokens();
-        if (!Objects.equals(this$tokens, other$tokens)) return false;
+        if (!Objects.equals(this$tokens, other$tokens)) {
+            return false;
+        }
         final Object this$reason = this.getReason();
         final Object other$reason = other.getReason();
         return Objects.equals(this$reason, other$reason);

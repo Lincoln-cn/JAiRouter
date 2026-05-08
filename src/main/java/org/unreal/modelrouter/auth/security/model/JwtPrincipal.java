@@ -75,10 +75,14 @@ public class JwtPrincipal implements Principal {
     
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         JwtPrincipal that = (JwtPrincipal) o;
-        return Objects.equals(subject, that.subject) 
+        return Objects.equals(subject, that.subject)
         && Objects.equals(issuer, that.issuer);
     }
     

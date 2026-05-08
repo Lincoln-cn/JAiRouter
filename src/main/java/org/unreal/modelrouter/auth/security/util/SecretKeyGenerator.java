@@ -8,6 +8,8 @@ import java.util.Base64;
  * 用于生成安全的随机密钥，包括 JWT 密钥、API Key 等
  */
 public class SecretKeyGenerator {
+    /** Private constructor to prevent instantiation. */
+    private SecretKeyGenerator() {}
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     

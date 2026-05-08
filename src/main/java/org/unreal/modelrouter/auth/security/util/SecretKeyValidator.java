@@ -5,6 +5,8 @@ package org.unreal.modelrouter.auth.security.util;
  * 用于验证 JWT 密钥、密码等敏感信息的安全性
  */
 public class SecretKeyValidator {
+    /** Private constructor to prevent instantiation. */
+    private SecretKeyValidator() {}
 
     /**
      * 最小密钥长度（字节）- 对应 256 位
@@ -179,10 +181,10 @@ public class SecretKeyValidator {
         }
 
         // 字符多样性评分
-        if (password.matches(".*[a-z].*")) score += 1;  // 小写字母
-        if (password.matches(".*[A-Z].*")) score += 1;  // 大写字母
-        if (password.matches(".*\\d.*")) score += 1;    // 数字
-        if (password.matches(".*[^a-zA-Z0-9].*")) score += 1;  // 特殊字符
+        if (password.matches(".*[a-z].*")) { score += 1; }  // 小写字母
+        if (password.matches(".*[A-Z].*")) { score += 1; }  // 大写字母
+        if (password.matches(".*\\d.*")) { score += 1; }    // 数字
+        if (password.matches(".*[^a-zA-Z0-9].*")) { score += 1; }  // 特殊字符
 
         // 评估强度
         if (score <= 3) {

@@ -12,6 +12,8 @@ import java.security.NoSuchAlgorithmException;
  */
 @Slf4j
 public class TokenHashUtils {
+    /** Private constructor to prevent instantiation. */
+    private TokenHashUtils() {}
     
     private static final String HASH_ALGORITHM = "SHA-256";
     

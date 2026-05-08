@@ -15,6 +15,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TracingContextHolder {
+    /** Private constructor to prevent instantiation. */
+    private TracingContextHolder() {}
     
     /**
      * 线程本地存储

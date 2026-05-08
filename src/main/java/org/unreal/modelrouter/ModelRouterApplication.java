@@ -11,6 +11,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @ConfigurationPropertiesScan("org.unreal.modelrouter.config")
 public class ModelRouterApplication {
+    /** Private constructor to prevent instantiation. */
+    private ModelRouterApplication() {}
 
     public static void main(final String[] args) {
         SpringApplication.run(ModelRouterApplication.class, args);

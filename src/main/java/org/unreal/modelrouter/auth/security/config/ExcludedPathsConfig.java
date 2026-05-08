@@ -9,6 +9,8 @@ import org.springframework.util.AntPathMatcher;
  * 统一管理所有需要排除认证和数据脱敏的路径配置
  */
 public class ExcludedPathsConfig {
+    /** Private constructor to prevent instantiation. */
+    private ExcludedPathsConfig() {}
     
     /**
      * 需要排除认证的路径集合

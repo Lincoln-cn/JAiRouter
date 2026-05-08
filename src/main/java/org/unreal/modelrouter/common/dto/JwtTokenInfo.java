@@ -365,25 +365,25 @@ public class JwtTokenInfo {
     @Override
     public String toString() {
         return "JwtTokenInfo{"
-                +"token='" + (token != null ? token.substring(0, Math.min(token.length(), 20)) + "..." : null) + '\''
-                +", tokenType='" + tokenType + '\''
-                +", message='" + message + '\''
-                +", timestamp=" + timestamp
-                +", id='" + id + '\''
-                +", userId='" + userId + '\''
-                +", tokenHash='" + (tokenHash != null ? tokenHash.substring(0, Math.min(tokenHash.length(), 16)) + "..." : null) + '\''
-                +", issuedAt=" + issuedAt
-                +", expiresAt=" + expiresAt
-                +", createdAt=" + createdAt
-                +", updatedAt=" + updatedAt
-                +", status=" + status
-                +", revokeReason='" + revokeReason + '\''
-                +", revokedAt=" + revokedAt
-                +", revokedBy='" + revokedBy + '\''
-                +", deviceInfo='" + deviceInfo + '\''
-                +", ipAddress='" + ipAddress + '\''
-                +", userAgent='" + userAgent + '\''
-                +", metadata=" + metadata
-                +'}';
+                + "token='" + (token != null ? token.substring(0, Math.min(token.length(), 20)) + "..." : null) + '\''
+                + ", tokenType='" + tokenType + '\''
+                + ", message='" + message + '\''
+                + ", timestamp=" + timestamp
+                + ", id='" + id + '\''
+                + ", userId='" + userId + '\''
+                + ", tokenHash='" + (tokenHash != null ? tokenHash.substring(0, Math.min(tokenHash.length(), 16)) + "..." : null) + '\''
+                + ", issuedAt=" + issuedAt
+                + ", expiresAt=" + expiresAt
+                + ", createdAt=" + createdAt
+                + ", updatedAt=" + updatedAt
+                + ", status=" + status
+                + ", revokeReason='" + revokeReason + '\''
+                + ", revokedAt=" + revokedAt
+                + ", revokedBy='" + revokedBy + '\''
+                + ", deviceInfo='" + deviceInfo + '\''
+                + ", ipAddress='" + ipAddress + '\''
+                + ", userAgent='" + userAgent + '\''
+                + ", metadata=" + metadata
+                + '}';
     }
 }

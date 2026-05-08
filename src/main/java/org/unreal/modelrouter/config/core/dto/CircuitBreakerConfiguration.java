@@ -52,10 +52,18 @@ public record CircuitBreakerConfiguration(
      */
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        if (failureThreshold != null) map.put("failureThreshold", failureThreshold);
-        if (timeout != null) map.put("timeout", timeout);
-        if (successThreshold != null) map.put("successThreshold", successThreshold);
-        if (enabled != null) map.put("enabled", enabled);
+        if (failureThreshold != null) {
+            map.put("failureThreshold", failureThreshold);
+        }
+        if (timeout != null) {
+            map.put("timeout", timeout);
+        }
+        if (successThreshold != null) {
+            map.put("successThreshold", successThreshold);
+        }
+        if (enabled != null) {
+            map.put("enabled", enabled);
+        }
         return map;
     }
 

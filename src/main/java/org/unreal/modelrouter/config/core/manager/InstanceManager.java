@@ -307,6 +307,8 @@ public class InstanceManager {
                 case ADD:
                     addInstanceToList(instances, operation.getInstanceConfig(), operationDetails);
                     break;
+                default:
+                    break;
             }
         }
 

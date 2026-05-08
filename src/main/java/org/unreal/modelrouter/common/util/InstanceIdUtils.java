@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public class InstanceIdUtils {
+    /** Private constructor to prevent instantiation. */
+    private InstanceIdUtils() {}
 
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdUtils.class);
 

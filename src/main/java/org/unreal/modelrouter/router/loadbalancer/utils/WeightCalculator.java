@@ -13,6 +13,8 @@ import java.util.List;
  * @since 2.4.0
  */
 public class WeightCalculator {
+    /** Private constructor to prevent instantiation. */
+    private WeightCalculator() {}
     
     /**
      * 安全计算总权重，使用 long 类型避免溢出

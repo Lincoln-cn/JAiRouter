@@ -77,17 +77,39 @@ public record ModelInstanceConfiguration(
      */
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        if (name != null) map.put("name", name);
-        if (baseUrl != null) map.put("baseUrl", baseUrl);
-        if (path != null) map.put("path", path);
-        if (adapter != null) map.put("adapter", adapter);
-        if (weight != null) map.put("weight", weight);
-        if (status != null) map.put("status", status);
-        if (rateLimit != null) map.put("rateLimit", rateLimit.toMap());
-        if (circuitBreaker != null) map.put("circuitBreaker", circuitBreaker.toMap());
-        if (fallback != null) map.put("fallback", fallback.toMap());
-        if (headers != null) map.put("headers", headers);
-        if (instanceId != null) map.put("instanceId", instanceId);
+        if (name != null) {
+            map.put("name", name);
+        }
+        if (baseUrl != null) {
+            map.put("baseUrl", baseUrl);
+        }
+        if (path != null) {
+            map.put("path", path);
+        }
+        if (adapter != null) {
+            map.put("adapter", adapter);
+        }
+        if (weight != null) {
+            map.put("weight", weight);
+        }
+        if (status != null) {
+            map.put("status", status);
+        }
+        if (rateLimit != null) {
+            map.put("rateLimit", rateLimit.toMap());
+        }
+        if (circuitBreaker != null) {
+            map.put("circuitBreaker", circuitBreaker.toMap());
+        }
+        if (fallback != null) {
+            map.put("fallback", fallback.toMap());
+        }
+        if (headers != null) {
+            map.put("headers", headers);
+        }
+        if (instanceId != null) {
+            map.put("instanceId", instanceId);
+        }
         return map;
     }
 

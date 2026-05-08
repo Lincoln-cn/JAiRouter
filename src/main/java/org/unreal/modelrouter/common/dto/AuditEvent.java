@@ -132,17 +132,17 @@ public class AuditEvent {
     @Override
     public String toString() {
         return "AuditEvent{"
-                +"id='" + id + '\''
-                +", type=" + type
-                +", userId='" + userId + '\''
-                +", resourceId='" + resourceId + '\''
-                +", action='" + action + '\''
-                +", details='" + details + '\''
-                +", ipAddress='" + ipAddress + '\''
-                +", userAgent='" + userAgent + '\''
-                +", success=" + success
-                +", timestamp=" + timestamp
-                +", metadata=" + metadata
-                +'}';
+                + "id='" + id + '\''
+                + ", type=" + type
+                + ", userId='" + userId + '\''
+                + ", resourceId='" + resourceId + '\''
+                + ", action='" + action + '\''
+                + ", details='" + details + '\''
+                + ", ipAddress='" + ipAddress + '\''
+                + ", userAgent='" + userAgent + '\''
+                + ", success=" + success
+                + ", timestamp=" + timestamp
+                + ", metadata=" + metadata
+                + '}';
     }
 }

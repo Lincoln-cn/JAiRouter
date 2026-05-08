@@ -55,11 +55,21 @@ public record FallbackConfiguration(
      */
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        if (enabled != null) map.put("enabled", enabled);
-        if (fallbackUrl != null) map.put("fallbackUrl", fallbackUrl);
-        if (maxRetries != null) map.put("maxRetries", maxRetries);
-        if (retryInterval != null) map.put("retryInterval", retryInterval);
-        if (returnDefaultResponse != null) map.put("returnDefaultResponse", returnDefaultResponse);
+        if (enabled != null) {
+            map.put("enabled", enabled);
+        }
+        if (fallbackUrl != null) {
+            map.put("fallbackUrl", fallbackUrl);
+        }
+        if (maxRetries != null) {
+            map.put("maxRetries", maxRetries);
+        }
+        if (retryInterval != null) {
+            map.put("retryInterval", retryInterval);
+        }
+        if (returnDefaultResponse != null) {
+            map.put("returnDefaultResponse", returnDefaultResponse);
+        }
         return map;
     }
 

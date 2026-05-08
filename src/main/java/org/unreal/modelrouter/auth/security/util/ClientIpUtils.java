@@ -14,6 +14,8 @@ import java.util.List;
  */
 @Slf4j
 public class ClientIpUtils {
+    /** Private constructor to prevent instantiation. */
+    private ClientIpUtils() {}
     
     // 代理头列表，按优先级排序
     private static final List<String> PROXY_HEADERS = Arrays.asList(

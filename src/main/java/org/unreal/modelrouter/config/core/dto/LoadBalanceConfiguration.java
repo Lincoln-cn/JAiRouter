@@ -66,8 +66,12 @@ public record LoadBalanceConfiguration(
      */
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        if (type != null) map.put("type", type);
-        if (hashAlgorithm != null) map.put("hashAlgorithm", hashAlgorithm);
+        if (type != null) {
+            map.put("type", type);
+        }
+        if (hashAlgorithm != null) {
+            map.put("hashAlgorithm", hashAlgorithm);
+        }
         return map;
     }
 

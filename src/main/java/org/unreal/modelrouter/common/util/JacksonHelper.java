@@ -25,6 +25,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 public class JacksonHelper {
+    /** Private constructor to prevent instantiation. */
+    private JacksonHelper() {}
 
     public static final String NORM_DATE_PATTERN = "yyyy-MM-dd HH:mm:ss";
     public static final String NORM_TIME_PATTERN = "HH:mm:ss";

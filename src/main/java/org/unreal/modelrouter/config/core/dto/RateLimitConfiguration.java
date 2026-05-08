@@ -59,12 +59,24 @@ public record RateLimitConfiguration(
      */
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        if (requestsPerSecond != null) map.put("requestsPerSecond", requestsPerSecond);
-        if (requestsPerMinute != null) map.put("requestsPerMinute", requestsPerMinute);
-        if (requestsPerHour != null) map.put("requestsPerHour", requestsPerHour);
-        if (requestsPerDay != null) map.put("requestsPerDay", requestsPerDay);
-        if (burstSize != null) map.put("burstSize", burstSize);
-        if (enabled != null) map.put("enabled", enabled);
+        if (requestsPerSecond != null) {
+            map.put("requestsPerSecond", requestsPerSecond);
+        }
+        if (requestsPerMinute != null) {
+            map.put("requestsPerMinute", requestsPerMinute);
+        }
+        if (requestsPerHour != null) {
+            map.put("requestsPerHour", requestsPerHour);
+        }
+        if (requestsPerDay != null) {
+            map.put("requestsPerDay", requestsPerDay);
+        }
+        if (burstSize != null) {
+            map.put("burstSize", burstSize);
+        }
+        if (enabled != null) {
+            map.put("enabled", enabled);
+        }
         return map;
     }
 

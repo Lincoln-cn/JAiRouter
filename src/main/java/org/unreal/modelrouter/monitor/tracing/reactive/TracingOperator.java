@@ -27,6 +27,8 @@ import java.util.function.Function;
  */
 @Slf4j
 public class TracingOperator {
+    /** Private constructor to prevent instantiation. */
+    private TracingOperator() {}
     
     /**
      * 为Mono添加追踪功能

@@ -520,7 +520,7 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     }
 
     private MediaType determineImageContentType(final String filename) {
-        if (filename == null) return MediaType.IMAGE_PNG;
+        if (filename == null) { return MediaType.IMAGE_PNG; }
 
         String lowercaseFilename = filename.toLowerCase();
         if (lowercaseFilename.endsWith(".jpg") || lowercaseFilename.endsWith(".jpeg")) {

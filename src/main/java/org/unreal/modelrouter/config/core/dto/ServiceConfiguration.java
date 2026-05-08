@@ -54,12 +54,24 @@ public record ServiceConfiguration(
      */
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        if (adapter != null) map.put("adapter", adapter);
-        if (instances != null) map.put("instances", ModelInstanceConfiguration.toMapList(instances));
-        if (loadBalance != null) map.put("loadBalance", loadBalance.toMap());
-        if (rateLimit != null) map.put("rateLimit", rateLimit.toMap());
-        if (circuitBreaker != null) map.put("circuitBreaker", circuitBreaker.toMap());
-        if (fallback != null) map.put("fallback", fallback.toMap());
+        if (adapter != null) {
+            map.put("adapter", adapter);
+        }
+        if (instances != null) {
+            map.put("instances", ModelInstanceConfiguration.toMapList(instances));
+        }
+        if (loadBalance != null) {
+            map.put("loadBalance", loadBalance.toMap());
+        }
+        if (rateLimit != null) {
+            map.put("rateLimit", rateLimit.toMap());
+        }
+        if (circuitBreaker != null) {
+            map.put("circuitBreaker", circuitBreaker.toMap());
+        }
+        if (fallback != null) {
+            map.put("fallback", fallback.toMap());
+        }
         return map;
     }
 

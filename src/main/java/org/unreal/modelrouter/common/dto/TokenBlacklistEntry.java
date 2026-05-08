@@ -69,11 +69,11 @@ public class TokenBlacklistEntry {
     @Override
     public String toString() {
         return "TokenBlacklistEntry{"
-                +"tokenHash='" + tokenHash + '\''
-                +", expiresAt=" + expiresAt
-                +", reason='" + reason + '\''
-                +", addedBy='" + addedBy + '\''
-                +", addedAt=" + addedAt
-                +'}';
+                + "tokenHash='" + tokenHash + '\''
+                + ", expiresAt=" + expiresAt
+                + ", reason='" + reason + '\''
+                + ", addedBy='" + addedBy + '\''
+                + ", addedAt=" + addedAt
+                + '}';
     }
 }
