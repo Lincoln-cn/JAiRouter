@@ -100,9 +100,9 @@ public class RetrySupport {
             return false;
         }
 
-        if (throwable instanceof java.net.ConnectException ||
-                throwable instanceof java.net.SocketTimeoutException ||
-                throwable instanceof java.io.IOException) {
+        if (throwable instanceof java.net.ConnectException
+                || throwable instanceof java.net.SocketTimeoutException
+                || throwable instanceof java.io.IOException) {
             log.debug("网络相关异常，可以重试：exception={}", throwable.getClass().getSimpleName());
             return true;
         }

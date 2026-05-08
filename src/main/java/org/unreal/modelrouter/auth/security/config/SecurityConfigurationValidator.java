@@ -167,8 +167,8 @@ public class SecurityConfigurationValidator {
 
         // 验证算法
         if (config.getAlgorithm() == null || !SUPPORTED_JWT_ALGORITHMS.contains(config.getAlgorithm())) {
-            result.addError("不支持的JWT算法: " + config.getAlgorithm() + 
-                    "，支持的算法: " + String.join(", ", SUPPORTED_JWT_ALGORITHMS));
+            result.addError("不支持的JWT算法: " + config.getAlgorithm()
+                    + "，支持的算法: " + String.join(", ", SUPPORTED_JWT_ALGORITHMS));
         }
 
         // 验证过期时间
@@ -324,8 +324,8 @@ public class SecurityConfigurationValidator {
     private void validateAuditConfig(final AuditConfig config, final ValidationResult result) {
         // 验证日志级别
         if (config.getLogLevel() == null || !SUPPORTED_LOG_LEVELS.contains(config.getLogLevel())) {
-            result.addError("不支持的日志级别: " + config.getLogLevel() + 
-                    "，支持的级别: " + String.join(", ", SUPPORTED_LOG_LEVELS));
+            result.addError("不支持的日志级别: " + config.getLogLevel()
+                    + "，支持的级别: " + String.join(", ", SUPPORTED_LOG_LEVELS));
         }
 
         // 验证保留天数

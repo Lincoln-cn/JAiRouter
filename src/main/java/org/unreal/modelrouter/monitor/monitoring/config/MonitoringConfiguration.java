@@ -108,9 +108,9 @@ public class MonitoringConfiguration {
      * 判断是否为系统指标
      */
     private boolean isSystemMetric(final String metricName) {
-        return metricName.startsWith("jvm.") || 
-               metricName.startsWith("system.") || 
-               metricName.startsWith("process.") ||
-               metricName.startsWith("http.server.requests");
+        return metricName.startsWith("jvm.")
+               || metricName.startsWith("system.")
+               || metricName.startsWith("process.")
+               || metricName.startsWith("http.server.requests");
     }
 }

@@ -253,8 +253,8 @@ public class SecurityConfigurationBackupService {
      * 生成备份ID
      */
     private String generateBackupId() {
-        return "backup-" + LocalDateTime.now().format(BACKUP_ID_FORMATTER) + "-" + 
-                UUID.randomUUID().toString().substring(0, 8);
+        return "backup-" + LocalDateTime.now().format(BACKUP_ID_FORMATTER) + "-"
+                + UUID.randomUUID().toString().substring(0, 8);
     }
 
     /**

@@ -148,8 +148,8 @@ public class AccountManager implements UserDetailsService {
 
         // 设置过期时间
         Date now = new Date();
-        Date expiration = new Date(now.getTime() +
-            securityProperties.getJwt().getExpirationMinutes() * 60 * 1000L);
+        Date expiration = new Date(now.getTime() 
+        + securityProperties.getJwt().getExpirationMinutes() * 60 * 1000L);
 
         // 创建签名密钥（使用JJWT 0.12.x API）
         SecretKey signingKey = Keys.hmacShaKeyFor(

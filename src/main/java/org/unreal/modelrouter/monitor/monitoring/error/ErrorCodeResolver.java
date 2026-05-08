@@ -161,12 +161,12 @@ public class ErrorCodeResolver {
             return ErrorCategory.VALIDATION;
         } else if (exceptionClassName.contains("Timeout")) {
             return ErrorCategory.TIMEOUT;
-        } else if (exceptionClassName.contains("Network") || 
-                   exceptionClassName.contains("Connect") ||
-                   exceptionClassName.contains("Socket")) {
+        } else if (exceptionClassName.contains("Network")
+                   || exceptionClassName.contains("Connect")
+                   || exceptionClassName.contains("Socket")) {
             return ErrorCategory.NETWORK;
-        } else if (exceptionClassName.contains("RateLimit") ||
-                   exceptionClassName.contains("Throttle")) {
+        } else if (exceptionClassName.contains("RateLimit")
+                   || exceptionClassName.contains("Throttle")) {
             return ErrorCategory.RATE_LIMIT;
         } else if (exceptionClassName.contains("CircuitBreaker")) {
             return ErrorCategory.CIRCUIT_BREAKER;

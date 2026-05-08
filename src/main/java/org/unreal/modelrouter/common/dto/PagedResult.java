@@ -107,16 +107,16 @@ public class PagedResult<T> {
 
     @Override
     public String toString() {
-        return "PagedResult{" +
-                "content=" + content +
-                ", page=" + page +
-                ", size=" + size +
-                ", totalElements=" + totalElements +
-                ", totalPages=" + totalPages +
-                ", first=" + first +
-                ", last=" + last +
-                ", hasNext=" + hasNext +
-                ", hasPrevious=" + hasPrevious +
-                '}';
+        return "PagedResult{"
+                +"content=" + content
+                +", page=" + page
+                +", size=" + size
+                +", totalElements=" + totalElements
+                +", totalPages=" + totalPages
+                +", first=" + first
+                +", last=" + last
+                +", hasNext=" + hasNext
+                +", hasPrevious=" + hasPrevious
+                +'}';
     }
 }

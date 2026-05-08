@@ -131,14 +131,14 @@ public class ServiceConfigConverter {
         return new ServiceConfiguration(
                 request.getAdapter() != null ? request.getAdapter() : existing.adapter(),
                 existing.instances(), // 保留现有 instances
-                request.getLoadBalance() != null ?
-                        mergeLoadBalance(existing.loadBalance(), request.getLoadBalance()) : existing.loadBalance(),
-                request.getRateLimit() != null ?
-                        toRateLimit(request.getRateLimit()) : existing.rateLimit(),
-                request.getCircuitBreaker() != null ?
-                        toCircuitBreaker(request.getCircuitBreaker()) : existing.circuitBreaker(),
-                request.getFallback() != null ?
-                        toFallback(request.getFallback()) : existing.fallback()
+                request.getLoadBalance() != null
+                        ? mergeLoadBalance(existing.loadBalance(), request.getLoadBalance()) : existing.loadBalance(),
+                request.getRateLimit() != null
+                        ? toRateLimit(request.getRateLimit()) : existing.rateLimit(),
+                request.getCircuitBreaker() != null
+                        ? toCircuitBreaker(request.getCircuitBreaker()) : existing.circuitBreaker(),
+                request.getFallback() != null
+                        ? toFallback(request.getFallback()) : existing.fallback()
         );
     }
 

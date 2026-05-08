@@ -96,8 +96,8 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
         }
         
         // 跳过静态资源
-        if (path.startsWith("/static") || path.startsWith("/css") || 
-            path.startsWith("/js") || path.startsWith("/images")) {
+        if (path.startsWith("/static") || path.startsWith("/css")
+            || path.startsWith("/js") || path.startsWith("/images")) {
             return true;
         }
         
@@ -170,13 +170,13 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
             } else {
                 // 如果没有Content-Length，估算请求头大小
                 long headerSize = request.getHeaders().entrySet().stream()
-                    .mapToLong(entry -> entry.getKey().length() + 
-                              entry.getValue().stream().mapToInt(String::length).sum() + 4) // +4 for ": " and "\r\n"
+                    .mapToLong(entry -> entry.getKey().length()
+                              + entry.getValue().stream().mapToInt(String::length).sum() + 4) // +4 for ": " and "\r\n"
                     .sum();
                 
                 // 添加请求行大小
-                String requestLine = request.getMethod().name() + " " + 
-                                   request.getPath().value() + " HTTP/1.1";
+                String requestLine = request.getMethod().name() + " "
+                                   + request.getPath().value() + " HTTP/1.1";
                 headerSize += requestLine.length() + 2; // +2 for "\r\n"
                 
                 requestSize.set(headerSize);
@@ -211,8 +211,8 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
             context.put("status", status);
             slowQueryDetector.detectSlowQuery(serviceName, duration, context);
             
-            logger.debug("Recorded request metrics: service={}, method={}, duration={}ms, " +
-                        "status={}, requestSize={}, responseSize={}", 
+            logger.debug("Recorded request metrics: service={}, method={}, duration={}ms, "
+                        + "status={}, requestSize={}, responseSize={}", 
                         serviceName, method, duration, status, requestSize, responseSize);
         } catch (Exception e) {
             logger.warn("Failed to record request metrics: {}", e.getMessage());

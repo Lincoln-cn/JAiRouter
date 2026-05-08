@@ -124,17 +124,17 @@ public class SecurityReport {
 
     @Override
     public String toString() {
-        return "SecurityReport{" +
-                "reportPeriodStart=" + reportPeriodStart +
-                ", reportPeriodEnd=" + reportPeriodEnd +
-                ", totalJwtOperations=" + totalJwtOperations +
-                ", totalApiKeyOperations=" + totalApiKeyOperations +
-                ", failedAuthentications=" + failedAuthentications +
-                ", suspiciousActivities=" + suspiciousActivities +
-                ", operationsByType=" + operationsByType +
-                ", operationsByUser=" + operationsByUser +
-                ", topIpAddresses=" + topIpAddresses +
-                ", alerts=" + alerts +
-                '}';
+        return "SecurityReport{"
+                +"reportPeriodStart=" + reportPeriodStart
+                +", reportPeriodEnd=" + reportPeriodEnd
+                +", totalJwtOperations=" + totalJwtOperations
+                +", totalApiKeyOperations=" + totalApiKeyOperations
+                +", failedAuthentications=" + failedAuthentications
+                +", suspiciousActivities=" + suspiciousActivities
+                +", operationsByType=" + operationsByType
+                +", operationsByUser=" + operationsByUser
+                +", topIpAddresses=" + topIpAddresses
+                +", alerts=" + alerts
+                +'}';
     }
 }

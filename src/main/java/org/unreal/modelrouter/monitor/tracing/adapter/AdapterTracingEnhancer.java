@@ -303,21 +303,21 @@ public class AdapterTracingEnhancer {
         }
         
         // 图像模型
-        if (lowerName.contains("dall") || lowerName.contains("stable") ||
-            lowerName.contains("midjourney") || lowerName.contains("image")) {
+        if (lowerName.contains("dall") || lowerName.contains("stable")
+            || lowerName.contains("midjourney") || lowerName.contains("image")) {
             return ServiceTypeConstants.IMG_GEN;
         }
         
         // 嵌入模型
-        if (lowerName.contains("embedding") || lowerName.contains("embed") ||
-            lowerName.contains("bge") || lowerName.contains("sentence")) {
+        if (lowerName.contains("embedding") || lowerName.contains("embed")
+            || lowerName.contains("bge") || lowerName.contains("sentence")) {
             return ServiceTypeConstants.EMBEDDING;
         }
         
         // 大语言模型
-        if (lowerName.contains("gpt") || lowerName.contains("llama") || 
-            lowerName.contains("qwen") || lowerName.contains("chatglm") ||
-            lowerName.contains("baichuan") || lowerName.contains("claude")) {
+        if (lowerName.contains("gpt") || lowerName.contains("llama")
+            || lowerName.contains("qwen") || lowerName.contains("chatglm")
+            || lowerName.contains("baichuan") || lowerName.contains("claude")) {
             return ServiceTypeConstants.CHAT;
         }
         

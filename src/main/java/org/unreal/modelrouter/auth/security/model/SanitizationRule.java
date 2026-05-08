@@ -73,8 +73,8 @@ public class SanitizationRule {
      * @return 是否适用
      */
     public boolean isApplicableToContentType(final String contentType) {
-        return applicableContentTypes == null || 
-               applicableContentTypes.isEmpty() || 
-               applicableContentTypes.contains(contentType);
+        return applicableContentTypes == null 
+        || applicableContentTypes.isEmpty()
+        || applicableContentTypes.contains(contentType);
     }
 }

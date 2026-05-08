@@ -145,8 +145,8 @@ public class MetricsDegradationStrategy {
         }
         
         // 取较高的降级级别
-        return memoryBasedLevel.getLevel() > errorBasedLevel.getLevel() ? 
-               memoryBasedLevel : errorBasedLevel;
+        return memoryBasedLevel.getLevel() > errorBasedLevel.getLevel()
+               ? memoryBasedLevel : errorBasedLevel;
     }
     
     /**

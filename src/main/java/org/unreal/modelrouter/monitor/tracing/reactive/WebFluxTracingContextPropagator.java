@@ -217,8 +217,8 @@ public class WebFluxTracingContextPropagator {
                 tracingContext.setTag("route.name", routeName);
                 tracingContext.setTag("route.path", exchange.getRequest().getPath().value());
                 tracingContext.setTag("route.method", 
-                    exchange.getRequest().getMethod() != null ? 
-                        exchange.getRequest().getMethod().name() : "UNKNOWN");
+                    exchange.getRequest().getMethod() != null
+                        ? exchange.getRequest().getMethod().name() : "UNKNOWN");
                 
                 tracingContext.addEvent("route.start", 
                     java.util.Map.of("route", routeName, "timestamp", java.time.Instant.now().toString()));

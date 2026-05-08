@@ -78,8 +78,8 @@ public class JwtPrincipal implements Principal {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         JwtPrincipal that = (JwtPrincipal) o;
-        return Objects.equals(subject, that.subject) && 
-               Objects.equals(issuer, that.issuer);
+        return Objects.equals(subject, that.subject) 
+        && Objects.equals(issuer, that.issuer);
     }
     
     @Override
@@ -89,11 +89,11 @@ public class JwtPrincipal implements Principal {
     
     @Override
     public String toString() {
-        return "JwtPrincipal{" +
-                "subject='" + subject + '\'' +
-                ", issuer='" + issuer + '\'' +
-                ", roles=" + roles +
-                ", expiresAt=" + expiresAt +
-                '}';
+        return "JwtPrincipal{" 
+        + "subject='" + subject + '\''
+        + ", issuer='" + issuer + '\''
+                + ", roles=" + roles
+                + ", expiresAt=" + expiresAt
+                + '}';
     }
 }

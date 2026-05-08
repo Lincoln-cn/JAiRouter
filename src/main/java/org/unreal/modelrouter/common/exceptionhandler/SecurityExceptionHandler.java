@@ -118,8 +118,8 @@ public class SecurityExceptionHandler {
                 .build();
         
         // 对于认证相关的下游错误，使用401状态码
-        HttpStatus status = ex.getStatusCode().value() == 401 ? 
-            HttpStatus.UNAUTHORIZED : HttpStatus.valueOf(ex.getStatusCode().value());
+        HttpStatus status = ex.getStatusCode().value() == 401
+            ? HttpStatus.UNAUTHORIZED : HttpStatus.valueOf(ex.getStatusCode().value());
             
         return ResponseEntity.status(status).body(errorResponse);
     }

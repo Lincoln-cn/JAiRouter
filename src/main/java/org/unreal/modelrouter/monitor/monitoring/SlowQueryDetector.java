@@ -66,9 +66,9 @@ public class SlowQueryDetector {
     public void detectSlowQuery(final String operationName, final long durationMillis, final Map<String, String> context, final TracingContext tracingContext) {
         // 获取慢查询阈值，如果没有配置则使用默认值1000ms
         Map<String, Long> slowQueryThresholds = monitoringProperties.getThresholds().getSlowQueryThresholds();
-        Long threshold = slowQueryThresholds != null ? 
-            slowQueryThresholds.getOrDefault(operationName, slowQueryThresholds.getOrDefault("default", 1000L)) : 
-            1000L;
+        Long threshold = slowQueryThresholds != null
+            ? slowQueryThresholds.getOrDefault(operationName, slowQueryThresholds.getOrDefault("default", 1000L))
+            : 1000L;
         
         // 如果操作耗时超过阈值，则记录为慢查询
         if (durationMillis >= threshold) {
@@ -98,8 +98,8 @@ public class SlowQueryDetector {
         
         try {
             // 获取当前追踪上下文（如果没有提供）
-            TracingContext currentContext = tracingContext != null ? 
-                    tracingContext : TracingContextHolder.getCurrentContext();
+            TracingContext currentContext = tracingContext != null
+                    ? tracingContext : TracingContextHolder.getCurrentContext();
             
             // 构建额外信息
             Map<String, Object> additionalInfo = new HashMap<>();

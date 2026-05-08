@@ -491,8 +491,8 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     public Mono<Void> recordAuthenticationEvent(final String userId, final String clientIp, final String userAgent,
                                                final boolean success, final String failureReason) {
         return Mono.fromRunnable(() -> {
-            AuditEventType eventType = success ? 
-                    AuditEventType.JWT_TOKEN_ISSUED : AuditEventType.AUTHENTICATION_FAILED;
+            AuditEventType eventType = success 
+            ? AuditEventType.JWT_TOKEN_ISSUED : AuditEventType.AUTHENTICATION_FAILED;
 
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
                     .eventId(UUID.randomUUID().toString())

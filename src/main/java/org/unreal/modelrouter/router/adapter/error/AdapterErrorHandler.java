@@ -88,10 +88,10 @@ public class AdapterErrorHandler {
         }
 
         // 可重试的错误类型
-        if (error instanceof TimeoutException ||
-            error instanceof java.net.ConnectException ||
-            error instanceof java.net.SocketTimeoutException ||
-            error instanceof DownstreamServiceException) {
+        if (error instanceof TimeoutException
+            || error instanceof java.net.ConnectException
+            || error instanceof java.net.SocketTimeoutException
+            || error instanceof DownstreamServiceException) {
             logger.debug("可重试错误：{}", error.getClass().getSimpleName());
             return true;
         }

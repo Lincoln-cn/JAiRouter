@@ -89,9 +89,9 @@ public class MetricMetadata {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MetricMetadata that = (MetricMetadata) o;
-        return Objects.equals(name, that.name) &&
-               Objects.equals(type, that.type) &&
-               Objects.equals(baseTags, that.baseTags);
+        return Objects.equals(name, that.name)
+               && Objects.equals(type, that.type)
+               && Objects.equals(baseTags, that.baseTags);
     }
     
     @Override
@@ -101,15 +101,15 @@ public class MetricMetadata {
     
     @Override
     public String toString() {
-        return "MetricMetadata{" +
-               "name='" + name + '\'' +
-               ", description='" + description + '\'' +
-               ", type=" + type +
-               ", unit='" + unit + '\'' +
-               ", category='" + category + '\'' +
-               ", enabled=" + enabled +
-               ", samplingRate=" + samplingRate +
-               '}';
+        return "MetricMetadata{"
+               + "name='" + name + '\''
+               + ", description='" + description + '\''
+               + ", type=" + type
+               + ", unit='" + unit + '\''
+               + ", category='" + category + '\''
+               + ", enabled=" + enabled
+               + ", samplingRate=" + samplingRate
+               + '}';
     }
     
     public static class Builder {

@@ -113,8 +113,8 @@ public class SamplingConfigurationValidator {
      */
     private void validateRuleCondition(final String condition, final int index, final List<String> warnings) {
         // 简单的条件语法验证
-        if (!condition.contains(">=") && !condition.contains("==") && 
-            !condition.contains("<=") && !condition.contains("!=")) {
+        if (!condition.contains(">=") && !condition.contains("==")
+            && !condition.contains("<=") && !condition.contains("!=")) {
             warnings.add("采样规则[" + index + "] 条件可能无效，支持的操作符: >=, <=, ==, !=");
         }
     }
@@ -138,8 +138,8 @@ public class SamplingConfigurationValidator {
         validateRatio("adaptive max ratio", adaptive.getMaxRatio(), errors);
         
         if (adaptive.getMinRatio() >= adaptive.getMaxRatio()) {
-            errors.add("自适应采样最小率必须小于最大率，min: " + 
-                      adaptive.getMinRatio() + ", max: " + adaptive.getMaxRatio());
+            errors.add("自适应采样最小率必须小于最大率，min: "
+                      + adaptive.getMinRatio() + ", max: " + adaptive.getMaxRatio());
         }
         
         // 验证调整间隔

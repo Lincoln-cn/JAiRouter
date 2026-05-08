@@ -232,8 +232,8 @@ public class CacheMetrics {
 
         @Override
         public String toString() {
-            return String.format("CacheStatistics{hits=%.0f, misses=%.0f, writes=%.0f, " +
-                    "evictions=%.0f, errors=%.0f, hitRate=%.2f%%, size=%d}",
+            return String.format("CacheStatistics{hits=%.0f, misses=%.0f, writes=%.0f, " 
+            + "evictions=%.0f, errors=%.0f, hitRate=%.2f%%, size=%d}",
                     hits, misses, writes, evictions, errors, hitRate * 100, size);
         }
 

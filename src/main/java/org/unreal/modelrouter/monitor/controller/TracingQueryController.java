@@ -275,8 +275,8 @@ public class TracingQueryController {
             performanceStats.put("avgLatency", stats.getAvgDuration());
             performanceStats.put("maxLatency", stats.getMaxDuration());
             performanceStats.put("minLatency", stats.getMinDuration());
-            performanceStats.put("errorRate", stats.getTotalTraces() > 0 ?
-                (double) stats.getErrorTraces() / stats.getTotalTraces() * 100 : 0.0);
+            performanceStats.put("errorRate", stats.getTotalTraces() > 0
+                ? (double) stats.getErrorTraces() / stats.getTotalTraces() * 100 : 0.0);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

@@ -195,8 +195,8 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
             return "huggingface";
         } else if (lowerHost.contains("cohere")) {
             return "cohere";
-        } else if (lowerHost.equals("localhost") || lowerHost.equals("127.0.0.1") || 
-                 lowerHost.startsWith("192.168.") || lowerHost.contains("ollama")) {
+        } else if (lowerHost.equals("localhost") || lowerHost.equals("127.0.0.1")
+                 || lowerHost.startsWith("192.168.") || lowerHost.contains("ollama")) {
             return "ollama";
         } else if (lowerHost.contains("vllm")) {
             return "vllm";
@@ -396,11 +396,11 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
         }
         
         String lowerName = headerName.toLowerCase();
-        return lowerName.contains("authorization") ||
-               lowerName.contains("token") ||
-               lowerName.contains("key") ||
-               lowerName.contains("secret") ||
-               lowerName.contains("password") ||
-               lowerName.contains("credential");
+        return lowerName.contains("authorization")
+               || lowerName.contains("token")
+               || lowerName.contains("key")
+               || lowerName.contains("secret")
+               || lowerName.contains("password")
+               || lowerName.contains("credential");
     }
 }

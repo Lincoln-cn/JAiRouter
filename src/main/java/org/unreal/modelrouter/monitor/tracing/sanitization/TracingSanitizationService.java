@@ -260,12 +260,12 @@ public class TracingSanitizationService {
      */
     private boolean isSensitiveEventAttribute(final String key) {
         String lowerKey = key.toLowerCase();
-        return lowerKey.contains("password") || 
-               lowerKey.contains("token") || 
-               lowerKey.contains("secret") ||
-               lowerKey.contains("credential") ||
-               lowerKey.contains("authorization") ||
-               tracingSensitiveFields.contains(lowerKey);
+        return lowerKey.contains("password")
+               || lowerKey.contains("token")
+               || lowerKey.contains("secret")
+               || lowerKey.contains("credential")
+               || lowerKey.contains("authorization")
+               || tracingSensitiveFields.contains(lowerKey);
     }
     
     /**
@@ -273,13 +273,13 @@ public class TracingSanitizationService {
      */
     private boolean isSensitiveLogField(final String key) {
         String lowerKey = key.toLowerCase();
-        return lowerKey.contains("password") || 
-               lowerKey.contains("token") || 
-               lowerKey.contains("secret") ||
-               lowerKey.contains("email") ||
-               lowerKey.contains("phone") ||
-               lowerKey.contains("id_card") ||
-               tracingSensitiveFields.contains(lowerKey);
+        return lowerKey.contains("password")
+               || lowerKey.contains("token")
+               || lowerKey.contains("secret")
+               || lowerKey.contains("email")
+               || lowerKey.contains("phone")
+               || lowerKey.contains("id_card")
+               || tracingSensitiveFields.contains(lowerKey);
     }
     
     /**

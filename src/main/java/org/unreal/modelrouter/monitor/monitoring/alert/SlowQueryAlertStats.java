@@ -63,7 +63,7 @@ public class SlowQueryAlertStats {
      * @return 平均告警次数
      */
     public double getAverageAlertsPerOperation() {
-        return activeOperations.size() > 0 ? 
-                (double) totalAlertsTriggered / activeOperations.size() : 0.0;
+        return activeOperations.size() > 0
+                ? (double) totalAlertsTriggered / activeOperations.size() : 0.0;
     }
 }

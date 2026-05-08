@@ -133,13 +133,13 @@ public class SensitiveConfigValidator implements ApplicationListener<Application
         String lowerSecret = secret.toLowerCase();
 
         // 检测常见占位符
-        return lowerSecret.contains("your-") ||
-               lowerSecret.contains("placeholder") ||
-               lowerSecret.contains("example") ||
-               lowerSecret.contains("test") ||
-               lowerSecret.contains("demo") ||
-               lowerSecret.contains("changeme") ||
-               lowerSecret.equals("secret") ||
-               lowerSecret.equals("password");
+        return lowerSecret.contains("your-")
+               || lowerSecret.contains("placeholder")
+               || lowerSecret.contains("example")
+               || lowerSecret.contains("test")
+               || lowerSecret.contains("demo")
+               || lowerSecret.contains("changeme")
+               || lowerSecret.equals("secret")
+               || lowerSecret.equals("password");
     }
 }

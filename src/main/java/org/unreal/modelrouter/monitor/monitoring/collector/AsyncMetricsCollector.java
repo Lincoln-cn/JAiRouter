@@ -317,9 +317,9 @@ public class AsyncMetricsCollector implements MetricsCollector {
      * 判断是否应该使用异步处理
      */
     private boolean shouldUseAsyncProcessing() {
-        return monitoringProperties.getPerformance().isAsyncProcessing() && 
-               asyncProcessor != null && 
-               memoryManager != null;
+        return monitoringProperties.getPerformance().isAsyncProcessing()
+               && asyncProcessor != null
+               && memoryManager != null;
     }
 
 

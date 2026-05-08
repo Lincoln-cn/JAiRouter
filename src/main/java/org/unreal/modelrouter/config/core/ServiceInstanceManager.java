@@ -423,8 +423,8 @@ public class ServiceInstanceManager {
             
             // 负载均衡配置
             Map<String, Object> loadBalanceMap = new HashMap<>();
-            loadBalanceMap.put("type", serviceConfig.getLoadBalanceType() != null ? 
-                    serviceConfig.getLoadBalanceType() : "round-robin");
+            loadBalanceMap.put("type", serviceConfig.getLoadBalanceType() != null
+                    ? serviceConfig.getLoadBalanceType() : "round-robin");
             loadBalanceMap.put("hashAlgorithm", "md5");
             serviceMap.put("loadBalance", loadBalanceMap);
             

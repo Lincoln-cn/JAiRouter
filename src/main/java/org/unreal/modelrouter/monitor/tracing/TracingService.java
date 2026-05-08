@@ -211,8 +211,8 @@ public class TracingService {
                 endTimeInstant,
                 duration,
                 !success,
-                exchange.getResponse().getStatusCode() != null ? 
-                    String.valueOf(exchange.getResponse().getStatusCode().value()) : "200",
+                exchange.getResponse().getStatusCode() != null
+                    ? String.valueOf(exchange.getResponse().getStatusCode().value()) : "200",
                 createSpanAttributes(exchange, context)
             ));
             
@@ -363,8 +363,8 @@ public class TracingService {
      * 检查是否包含追踪头部
      */
     private boolean hasTracingHeaders(final Map<String, String> headers) {
-        return headers.containsKey("traceparent") || 
-               headers.containsKey("X-Trace-Id");
+        return headers.containsKey("traceparent")
+               || headers.containsKey("X-Trace-Id");
     }
     
     /**
@@ -392,13 +392,13 @@ public class TracingService {
         String path = request.getPath().value();
         
         // 前端静态资源路径判断
-        if (path.startsWith("/admin/assets/") ||
-            (path.startsWith("/admin/") && isStaticResource(path)) ||
-            path.endsWith(".js") || path.endsWith(".css") ||
-            path.endsWith(".html") || path.endsWith(".ico") ||
-            path.endsWith(".png") || path.endsWith(".jpg") ||
-            path.endsWith(".svg") || path.endsWith(".woff") ||
-            path.endsWith(".woff2") || path.endsWith(".ttf")) {
+        if (path.startsWith("/admin/assets/")
+            || (path.startsWith("/admin/") && isStaticResource(path))
+            || path.endsWith(".js") || path.endsWith(".css")
+            || path.endsWith(".html") || path.endsWith(".ico")
+            || path.endsWith(".png") || path.endsWith(".jpg")
+            || path.endsWith(".svg") || path.endsWith(".woff")
+            || path.endsWith(".woff2") || path.endsWith(".ttf")) {
             return "front";
         }
         
@@ -421,11 +421,11 @@ public class TracingService {
      * 判断是否为静态资源
      */
     private boolean isStaticResource(final String path) {
-        return path.endsWith(".js") || path.endsWith(".css") ||
-               path.endsWith(".html") || path.endsWith(".ico") ||
-               path.endsWith(".png") || path.endsWith(".jpg") ||
-               path.endsWith(".svg") || path.endsWith(".map") ||
-               path.contains("/assets/");
+        return path.endsWith(".js") || path.endsWith(".css")
+               || path.endsWith(".html") || path.endsWith(".ico")
+               || path.endsWith(".png") || path.endsWith(".jpg")
+               || path.endsWith(".svg") || path.endsWith(".map")
+               || path.contains("/assets/");
     }
 
     /**

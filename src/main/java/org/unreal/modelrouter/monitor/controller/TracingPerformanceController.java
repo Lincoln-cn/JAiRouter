@@ -217,8 +217,8 @@ public class TracingPerformanceController {
                 Map<String, Object> alerts = new HashMap<>();
                 alerts.put("count", bottlenecks.size());
                 alerts.put("alerts", bottlenecks.stream()
-                    .filter(b -> b.getSeverity() == TracingPerformanceMonitor.Severity.HIGH ||
-                                 b.getSeverity() == TracingPerformanceMonitor.Severity.CRITICAL)
+                    .filter(b -> b.getSeverity() == TracingPerformanceMonitor.Severity.HIGH
+                                 || b.getSeverity() == TracingPerformanceMonitor.Severity.CRITICAL)
                     .map(b -> Map.of(
                         "type", b.getType().name(),
                         "description", b.getDescription(),

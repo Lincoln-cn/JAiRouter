@@ -131,8 +131,8 @@ public class TracingSecurityFilter implements WebFilter, Ordered {
                         context.addEvent("security.anonymous_access",
                                 java.util.Map.of(
                                         "path", exchange.getRequest().getPath().value(),
-                                        "method", exchange.getRequest().getMethod() != null ?
-                                                exchange.getRequest().getMethod().name() : "UNKNOWN",
+                                        "method", exchange.getRequest().getMethod() != null
+                                                ? exchange.getRequest().getMethod().name() : "UNKNOWN",
                                         "timestamp", java.time.Instant.now().toString()
                                 ));
 

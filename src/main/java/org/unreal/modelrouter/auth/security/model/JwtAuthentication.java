@@ -81,10 +81,10 @@ public class JwtAuthentication implements Authentication {
     
     @Override
     public String toString() {
-        return "JwtAuthentication{" +
-                "principal='" + principal + '\'' +
-                ", authenticated=" + authenticated +
-                ", authorities=" + authorities +
-                '}';
+        return "JwtAuthentication{" 
+        + "principal='" + principal + '\''
+        + ", authenticated=" + authenticated
+                + ", authorities=" + authorities
+                + '}';
     }
 }

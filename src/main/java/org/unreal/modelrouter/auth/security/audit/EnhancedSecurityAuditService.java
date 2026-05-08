@@ -196,9 +196,9 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     public Flux<SecurityAuditEvent> queryEvents(final LocalDateTime startTime, final LocalDateTime endTime,
                                                final String eventType, final String userId, final int limit) {
         return Flux.fromIterable(eventBuffer)
-                .filter(event -> event.getTimestamp() != null && 
-                               event.getTimestamp().isAfter(startTime) && 
-                               event.getTimestamp().isBefore(endTime))
+                .filter(event -> event.getTimestamp() != null
+                        && event.getTimestamp().isAfter(startTime)
+                        && event.getTimestamp().isBefore(endTime))
                 .filter(event -> eventType == null || eventType.equals(event.getEventType()))
                 .filter(event -> userId == null || userId.equals(event.getUserId()))
                 .sort((e1, e2) -> e2.getTimestamp().compareTo(e1.getTimestamp()))
@@ -251,9 +251,9 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
      */
     private void writeToFallbackStorage(final SecurityAuditEvent event) {
         try {
-            String timestamp = event.getTimestamp() != null ? 
-                event.getTimestamp().format(TIMESTAMP_FORMATTER) : 
-                LocalDateTime.now().format(TIMESTAMP_FORMATTER);
+            String timestamp = event.getTimestamp() != null
+                    ? event.getTimestamp().format(TIMESTAMP_FORMATTER)
+                    : LocalDateTime.now().format(TIMESTAMP_FORMATTER);
             
             String logMessage = String.format(
                 "[AUDIT-FALLBACK] %s | eventId=%s | type=%s | userId=%s | action=%s | success=%s | ip=%s",

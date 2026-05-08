@@ -135,9 +135,9 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
                     // 保留原有的自定义声明
                     claims.forEach((key, value) -> {
-                        if (!key.equals("sub") && !key.equals("iss") &&
-                            !key.equals("exp") && !key.equals("iat") &&
-                            !key.equals("nbf")) {
+                        if (!key.equals("sub") && !key.equals("iss") 
+                        && !key.equals("exp") && !key.equals("iat")
+                        && !key.equals("nbf")) {
                             additionalClaims.put(key, value);
                         }
                     });
@@ -287,8 +287,8 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
      */
     public String generateToken(final String subject, final List<String> roles, final Map<String, Object> additionalClaims) {
         Date now = new Date();
-        Date expiration = new Date(now.getTime() +
-            Duration.ofMinutes(securityProperties.getJwt().getExpirationMinutes()).toMillis());
+        Date expiration = new Date(now.getTime() 
+        + Duration.ofMinutes(securityProperties.getJwt().getExpirationMinutes()).toMillis());
 
         JwtBuilder builder = Jwts.builder()
             .subject(subject)

@@ -69,10 +69,10 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按模型名称统计 token 使用量
      */
-    @Query("SELECT t.modelName, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY t.modelName ORDER BY SUM(t.totalTokens) DESC")
+    @Query("SELECT t.modelName, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY t.modelName ORDER BY SUM(t.totalTokens) DESC")
     List<Object[]> countTokensByModel(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -80,10 +80,10 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按服务类型统计 token 使用量
      */
-    @Query("SELECT t.serviceType, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY t.serviceType ORDER BY SUM(t.totalTokens) DESC")
+    @Query("SELECT t.serviceType, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY t.serviceType ORDER BY SUM(t.totalTokens) DESC")
     List<Object[]> countTokensByServiceType(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -91,11 +91,11 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按提供商统计 token 使用量
      */
-    @Query("SELECT t.provider, SUM(t.totalTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "AND t.provider IS NOT NULL " +
-           "GROUP BY t.provider ORDER BY SUM(t.totalTokens) DESC")
+    @Query("SELECT t.provider, SUM(t.totalTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "AND t.provider IS NOT NULL "
+           + "GROUP BY t.provider ORDER BY SUM(t.totalTokens) DESC")
     List<Object[]> countTokensByProvider(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -103,11 +103,11 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按 API Key 统计 token 使用量
      */
-    @Query("SELECT t.apiKeyId, SUM(t.totalTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "AND t.apiKeyId IS NOT NULL " +
-           "GROUP BY t.apiKeyId ORDER BY SUM(t.totalTokens) DESC")
+    @Query("SELECT t.apiKeyId, SUM(t.totalTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "AND t.apiKeyId IS NOT NULL "
+           + "GROUP BY t.apiKeyId ORDER BY SUM(t.totalTokens) DESC")
     List<Object[]> countTokensByApiKey(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -115,11 +115,11 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按用户统计 token 使用量
      */
-    @Query("SELECT t.userId, SUM(t.totalTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "AND t.userId IS NOT NULL " +
-           "GROUP BY t.userId ORDER BY SUM(t.totalTokens) DESC")
+    @Query("SELECT t.userId, SUM(t.totalTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "AND t.userId IS NOT NULL "
+           + "GROUP BY t.userId ORDER BY SUM(t.totalTokens) DESC")
     List<Object[]> countTokensByUser(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -127,10 +127,10 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按日期统计 token 使用量（日级别）
      */
-    @Query("SELECT t.usageDate, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY t.usageDate ORDER BY t.usageDate")
+    @Query("SELECT t.usageDate, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY t.usageDate ORDER BY t.usageDate")
     List<Object[]> countTokensByDay(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -138,10 +138,10 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按小时统计 token 使用量
      */
-    @Query("SELECT t.hour, SUM(t.totalTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY t.hour ORDER BY t.hour")
+    @Query("SELECT t.hour, SUM(t.totalTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY t.hour ORDER BY t.hour")
     List<Object[]> countTokensByHour(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -149,10 +149,10 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按周统计 token 使用量（周级别）
      */
-    @Query("SELECT t.year, t.weekOfYear, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY t.year, t.weekOfYear ORDER BY t.year, t.weekOfYear")
+    @Query("SELECT t.year, t.weekOfYear, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY t.year, t.weekOfYear ORDER BY t.year, t.weekOfYear")
     List<Object[]> countTokensByWeek(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -160,10 +160,10 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按月统计 token 使用量（月级别）
      */
-    @Query("SELECT t.year, t.month, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY t.year, t.month ORDER BY t.year, t.month")
+    @Query("SELECT t.year, t.month, SUM(t.totalTokens), SUM(t.promptTokens), SUM(t.completionTokens), COUNT(t) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY t.year, t.month ORDER BY t.year, t.month")
     List<Object[]> countTokensByMonth(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -171,10 +171,10 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 按模型和日期统计 token 使用量（用于热力图）
      */
-    @Query("SELECT t.modelName, t.usageDate, SUM(t.totalTokens) " +
-           "FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY t.modelName, t.usageDate ORDER BY t.modelName, t.usageDate")
+    @Query("SELECT t.modelName, t.usageDate, SUM(t.totalTokens) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY t.modelName, t.usageDate ORDER BY t.modelName, t.usageDate")
     List<Object[]> countTokensByModelAndDay(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -182,9 +182,9 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 统计成功率
      */
-    @Query("SELECT COUNT(t) FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "AND t.isSuccess = true")
+    @Query("SELECT COUNT(t) FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "AND t.isSuccess = true")
     long countSuccessByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -192,9 +192,9 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 统计失败数
      */
-    @Query("SELECT COUNT(t) FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "AND t.isSuccess = false")
+    @Query("SELECT COUNT(t) FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "AND t.isSuccess = false")
     long countFailedByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -202,9 +202,9 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 统计平均响应时间
      */
-    @Query("SELECT COALESCE(AVG(t.responseTimeMs), 0) FROM TokenUsageEntity t " +
-           "WHERE t.occurredAt BETWEEN :startTime AND :endTime " +
-           "AND t.responseTimeMs IS NOT NULL")
+    @Query("SELECT COALESCE(AVG(t.responseTimeMs), 0) FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "AND t.responseTimeMs IS NOT NULL")
     double avgResponseTimeByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);

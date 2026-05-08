@@ -276,8 +276,8 @@ public class TraceQueryService {
             List<TraceRecord> traces = traceStore.values().stream()
                 .filter(trace -> {
                     Instant traceTime = trace.getCreatedAt();
-                    return traceTime.isAfter(request.getStartTime()) && 
-                           traceTime.isBefore(request.getEndTime());
+                    return traceTime.isAfter(request.getStartTime())
+                           && traceTime.isBefore(request.getEndTime());
                 })
                 .limit(request.getMaxRecords())
                 .collect(Collectors.toList());
@@ -518,24 +518,24 @@ public class TraceQueryService {
 
     private boolean matchesCriteria(final TraceRecord trace, final TraceSearchCriteria criteria) {
         // 时间范围过滤
-        if (criteria.getStartTime() != null && 
-            trace.getCreatedAt().isBefore(criteria.getStartTime())) {
+        if (criteria.getStartTime() != null
+            && trace.getCreatedAt().isBefore(criteria.getStartTime())) {
             return false;
         }
-        if (criteria.getEndTime() != null && 
-            trace.getCreatedAt().isAfter(criteria.getEndTime())) {
+        if (criteria.getEndTime() != null
+            && trace.getCreatedAt().isAfter(criteria.getEndTime())) {
             return false;
         }
         
         // 服务名过滤
-        if (criteria.getServiceName() != null && 
-            !criteria.getServiceName().equals(trace.getServiceName())) {
+        if (criteria.getServiceName() != null
+            && !criteria.getServiceName().equals(trace.getServiceName())) {
             return false;
         }
         
         // 追踪ID过滤
-        if (criteria.getTraceId() != null && 
-            !trace.getTraceId().contains(criteria.getTraceId())) {
+        if (criteria.getTraceId() != null
+            && !trace.getTraceId().contains(criteria.getTraceId())) {
             return false;
         }
         

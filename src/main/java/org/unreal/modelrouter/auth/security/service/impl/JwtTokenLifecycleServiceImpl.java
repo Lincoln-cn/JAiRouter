@@ -123,10 +123,10 @@ public class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
                 List<Mono<Void>> updateTasks = new ArrayList<>();
                 
                 for (JwtTokenInfo token : tokens) {
-                    if (token.getStatus() == TokenStatus.ACTIVE && 
-                        token.getExpiresAt() != null && 
-                        token.getExpiresAt().isBefore(now)) {
-                        
+                    if (token.getStatus() == TokenStatus.ACTIVE
+                            && token.getExpiresAt() != null
+                            && token.getExpiresAt().isBefore(now)) {
+
                         Mono<Void> updateTask = updateTokenStatus(
                             token.getTokenHash(), 
                             TokenStatus.EXPIRED, 

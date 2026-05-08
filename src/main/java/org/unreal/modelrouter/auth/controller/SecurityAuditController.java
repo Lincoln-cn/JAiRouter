@@ -314,9 +314,9 @@ public class SecurityAuditController {
         }
         
         // 失败原因过滤
-        if (request.getFailureReason() != null && 
-            (event.getFailureReason() == null || 
-             !event.getFailureReason().contains(request.getFailureReason()))) {
+        if (request.getFailureReason() != null
+                && (event.getFailureReason() == null
+                    || !event.getFailureReason().contains(request.getFailureReason()))) {
             return false;
         }
         

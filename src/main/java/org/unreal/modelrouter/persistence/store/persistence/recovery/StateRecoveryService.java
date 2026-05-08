@@ -88,7 +88,8 @@ public class StateRecoveryService {
         )
                 .doOnTerminate(() -> {
                     stats.endTime = System.currentTimeMillis();
-                    stats.durationMs = stats.endTime - stats.startTime;
+                    stats.durationMs = stats.endTime
+                            - stats.startTime;
                     stats.success = true;
                 })
                 .thenReturn(stats);
@@ -154,8 +155,8 @@ public class StateRecoveryService {
         Map<String, String> instanceUrls = new HashMap<>();
         
         if (properties.getServices() != null) {
-            for (Map.Entry<String, ModelRouterProperties.ServiceConfig> entry : 
-                    properties.getServices().entrySet()) {
+            for (Map.Entry<String, ModelRouterProperties.ServiceConfig> entry
+                    : properties.getServices().entrySet()) {
                 ModelRouterProperties.ServiceConfig serviceConfig = entry.getValue();
                 if (serviceConfig.getInstances() != null) {
                     for (ModelRouterProperties.ModelInstance instance : serviceConfig.getInstances()) {
@@ -189,8 +190,8 @@ public class StateRecoveryService {
                     int recoveredCount = 0;
                     int failedCount = 0;
 
-                    for (Map.Entry<ModelServiceRegistry.ServiceType, Map<String, Object>> entry : 
-                            allStates.entrySet()) {
+                    for (Map.Entry<ModelServiceRegistry.ServiceType, Map<String, Object>> entry
+                            : allStates.entrySet()) {
                         ModelServiceRegistry.ServiceType serviceType = entry.getKey();
                         LoadBalancer lb = loadBalancerManager.getLoadBalancer(serviceType);
                         
@@ -327,9 +328,9 @@ public class StateRecoveryService {
         @Override
         public String toString() {
             return String.format(
-                    "RecoveryStatistics{success=%s, duration=%dms, " +
-                    "cb(found=%d, recovered=%d, failed=%d), " +
-                    "lb(found=%d, recovered=%d, failed=%d)}",
+                    "RecoveryStatistics{success=%s, duration=%dms, "
+                    + "cb(found=%d, recovered=%d, failed=%d), "
+                    + "lb(found=%d, recovered=%d, failed=%d)}",
                     success, durationMs,
                     cbStatesFound, cbStatesRecovered, cbStatesFailed,
                     lbStatesFound, lbStatesRecovered, lbStatesFailed);

@@ -120,8 +120,8 @@ public class InstanceManager {
             List<ModelInstanceConfiguration> instances = getServiceInstances(serviceType);
             
             for (ModelInstanceConfiguration instance : instances) {
-                if (instanceId.equals(instance.instanceId()) || 
-                    (instance.instanceId() == null && instanceId.equals(instance.name()))) {
+                if (instanceId.equals(instance.instanceId())
+                    || (instance.instanceId() == null && instanceId.equals(instance.name()))) {
                     return instance;
                 }
             }
@@ -148,8 +148,8 @@ public class InstanceManager {
         }
 
         // 创建请求唯一标识，用于去重
-        String requestKey = serviceType + ":" + instanceId + ":" +
-                (instanceConfig.status() != null ? instanceConfig.status() : "null");
+        String requestKey = serviceType + ":" + instanceId + ":"
+                + (instanceConfig.status() != null ? instanceConfig.status() : "null");
 
         // 检查是否为重复请求
         long currentTime = System.currentTimeMillis();
@@ -233,8 +233,8 @@ public class InstanceManager {
 
         // 删除匹配的实例
         boolean removed = instances.removeIf(instance -> {
-            String currentInstanceId = instance.containsKey("instanceId") ? 
-                (String) instance.get("instanceId") : (String) instance.get("name");
+            String currentInstanceId = instance.containsKey("instanceId")
+                ? (String) instance.get("instanceId") : (String) instance.get("name");
             return instanceId.equals(currentInstanceId);
         });
 
@@ -360,8 +360,8 @@ public class InstanceManager {
         // 查找实例位置
         for (int i = 0; i < instances.size(); i++) {
             Map<String, Object> instance = instances.get(i);
-            String currentInstanceId = instance.containsKey("instanceId") ? 
-                (String) instance.get("instanceId") : (String) instance.get("name");
+            String currentInstanceId = instance.containsKey("instanceId")
+                ? (String) instance.get("instanceId") : (String) instance.get("name");
             if (instanceId.equals(currentInstanceId)) {
                 targetIndex = i;
                 oldInstance = instance;
@@ -461,8 +461,8 @@ public class InstanceManager {
                                        final List<String> operationDetails) {
         for (int i = 0; i < instances.size(); i++) {
             Map<String, Object> instance = instances.get(i);
-            String currentInstanceId = instance.containsKey("instanceId") ? 
-                (String) instance.get("instanceId") : (String) instance.get("name");
+            String currentInstanceId = instance.containsKey("instanceId")
+                ? (String) instance.get("instanceId") : (String) instance.get("name");
             if (instanceId.equals(currentInstanceId)) {
                 Map<String, Object> merged = mergeInstanceConfig(instance, instanceConfig.toMap());
                 instances.set(i, merged);
@@ -479,8 +479,8 @@ public class InstanceManager {
     private void deleteInstanceFromList(final List<Map<String, Object>> instances, final String instanceId,
                                          final List<String> operationDetails) {
         boolean removed = instances.removeIf(instance -> {
-            String currentInstanceId = instance.containsKey("instanceId") ? 
-                (String) instance.get("instanceId") : (String) instance.get("name");
+            String currentInstanceId = instance.containsKey("instanceId")
+                ? (String) instance.get("instanceId") : (String) instance.get("name");
             return instanceId.equals(currentInstanceId);
         });
         if (removed) {

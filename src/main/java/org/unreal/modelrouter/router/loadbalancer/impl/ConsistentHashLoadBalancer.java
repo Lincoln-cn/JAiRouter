@@ -162,8 +162,8 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
             
             iterationCount++;
             
-        } while (iterationCount < maxIterations && currentEntry != null && 
-                !currentEntry.getKey().equals(startEntry.getKey()));
+        } while (iterationCount < maxIterations && currentEntry != null
+                && !currentEntry.getKey().equals(startEntry.getKey()));
         
         return null; // 没有找到健康实例
     }
@@ -308,8 +308,8 @@ public class ConsistentHashLoadBalancer implements LoadBalancer {
         
         int i = 0;
         while (i <= len - 4) {
-            int k = (data[i] & 0xff) | ((data[i + 1] & 0xff) << 8) | 
-                    ((data[i + 2] & 0xff) << 16) | (data[i + 3] << 24);
+            int k = (data[i] & 0xff) | ((data[i + 1] & 0xff) << 8)
+                    | ((data[i + 2] & 0xff) << 16) | (data[i + 3] << 24);
             k *= c1;
             k = (k << r1) | (k >>> (32 - r1));
             k *= c2;

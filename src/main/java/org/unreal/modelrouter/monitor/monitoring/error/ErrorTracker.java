@@ -269,12 +269,12 @@ public class ErrorTracker {
         
         @Override
         public String toString() {
-            return "ErrorAggregation{" +
-                    "errorType='" + errorType + '\'' +
-                    ", operation='" + operation + '\'' +
-                    ", count=" + count +
-                    ", firstOccurrence=" + firstOccurrence +
-                    '}';
+            return "ErrorAggregation{"
+                    + "errorType='" + errorType + '\''
+                    + ", operation='" + operation + '\''
+                    + ", count=" + count
+                    + ", firstOccurrence=" + firstOccurrence
+                    + '}';
         }
     }
 }

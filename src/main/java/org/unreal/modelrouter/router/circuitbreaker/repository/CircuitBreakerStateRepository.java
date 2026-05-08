@@ -212,8 +212,8 @@ public class CircuitBreakerStateRepository {
      * @return 是否存在
      */
     public boolean exists(final String instanceId) {
-        return stateCache.containsKey(instanceId) || 
-               storeManager.exists(STORE_KEY_PREFIX + instanceId);
+        return stateCache.containsKey(instanceId)
+               || storeManager.exists(STORE_KEY_PREFIX + instanceId);
     }
 
     /**

@@ -245,12 +245,12 @@ public class TracingSecurityManager {
      */
     private boolean isSensitiveTraceField(final String fieldName) {
         String lowerField = fieldName.toLowerCase();
-        return lowerField.contains("user") ||
-               lowerField.contains("auth") ||
-               lowerField.contains("token") ||
-               lowerField.contains("credential") ||
-               lowerField.contains("password") ||
-               lowerField.contains("secret");
+        return lowerField.contains("user")
+               || lowerField.contains("auth")
+               || lowerField.contains("token")
+               || lowerField.contains("credential")
+               || lowerField.contains("password")
+               || lowerField.contains("secret");
     }
     
     /**

@@ -235,13 +235,13 @@ public class MetricLifecycleManager {
         
         @Override
         public String toString() {
-            return "LifecycleStatus{" +
-                   "running=" + running +
-                   ", totalMetrics=" + totalMetrics +
-                   ", enabledMetrics=" + enabledMetrics +
-                   ", disabledMetrics=" + disabledMetrics +
-                   ", lastCheckTime=" + lastCheckTime +
-                   '}';
+            return "LifecycleStatus{"
+                   + "running=" + running
+                   + ", totalMetrics=" + totalMetrics
+                   + ", enabledMetrics=" + enabledMetrics
+                   + ", disabledMetrics=" + disabledMetrics
+                   + ", lastCheckTime=" + lastCheckTime
+                   + '}';
         }
     }
 }

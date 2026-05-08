@@ -232,8 +232,8 @@ public class SecretKeyValidator {
         }
 
         // 检查连续字符
-        if (secret.matches("^[a-zA-Z0-9]{1,}$") && 
-            (secret.equals(secret.toLowerCase()) || secret.equals(secret.toUpperCase()))) {
+        if (secret.matches("^[a-zA-Z0-9]{1,}$") 
+        && (secret.equals(secret.toLowerCase()) || secret.equals(secret.toUpperCase()))) {
             return true;
         }
 

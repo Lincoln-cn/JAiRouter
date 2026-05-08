@@ -247,8 +247,8 @@ public class ControllerTracingInterceptor {
                 eventData.put("model_name", modelName);
                 eventData.put("selected_instance", selectedInstance.getInstanceId());
                 eventData.put("instance_url", selectedInstance.getBaseUrl());
-                eventData.put("adapter", selectedInstance.getAdapter() != null ?
-                    selectedInstance.getAdapter() : "default");
+                eventData.put("adapter", selectedInstance.getAdapter() != null
+                    ? selectedInstance.getAdapter() : "default");
 
                 structuredLogger.logBusinessEvent("instance_selected", eventData, tracingContext);
 

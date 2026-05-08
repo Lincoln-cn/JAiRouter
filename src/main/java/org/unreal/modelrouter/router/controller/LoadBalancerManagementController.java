@@ -68,8 +68,8 @@ public class LoadBalancerManagementController {
                                 response.hashAlgorithm = serviceConfig.loadBalance().hashAlgorithm();
                                 // virtualNodes 从全局配置获取
                                 ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
-                                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null ?
-                                        globalConfig.getVirtualNodes() : 150;
+                                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null
+                                        ? globalConfig.getVirtualNodes() : 150;
                             }
                         } catch (Exception e) {
                             log.debug("获取服务 {} 配置信息失败: {}", type.name(), e.getMessage());
@@ -134,8 +134,8 @@ public class LoadBalancerManagementController {
                 response.hashAlgorithm = serviceConfig.loadBalance().hashAlgorithm();
                 // virtualNodes 从全局配置获取
                 ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
-                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null ?
-                        globalConfig.getVirtualNodes() : 150;
+                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null
+                        ? globalConfig.getVirtualNodes() : 150;
             }
 
             return ResponseEntity.ok(RouterResponse.success(response));
@@ -159,8 +159,8 @@ public class LoadBalancerManagementController {
             LoadBalanceConfigResponse response = new LoadBalanceConfigResponse();
             response.type = config != null ? config.getType() : "random";
             response.hashAlgorithm = config != null ? config.getHashAlgorithm() : "md5";
-            response.virtualNodes = config != null && config.getVirtualNodes() != null ?
-                    config.getVirtualNodes() : 150;
+            response.virtualNodes = config != null && config.getVirtualNodes() != null
+                    ? config.getVirtualNodes() : 150;
 
             return ResponseEntity.ok(RouterResponse.success(response));
         } catch (Exception e) {
@@ -187,15 +187,15 @@ public class LoadBalancerManagementController {
                 response.hashAlgorithm = serviceConfig.loadBalance().hashAlgorithm();
                 // virtualNodes 从全局配置获取
                 ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
-                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null ?
-                        globalConfig.getVirtualNodes() : 150;
+                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null
+                        ? globalConfig.getVirtualNodes() : 150;
             } else {
                 // 使用全局配置
                 ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
                 response.type = globalConfig != null ? globalConfig.getType() : "random";
                 response.hashAlgorithm = globalConfig != null ? globalConfig.getHashAlgorithm() : "md5";
-                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null ?
-                        globalConfig.getVirtualNodes() : 150;
+                response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null
+                        ? globalConfig.getVirtualNodes() : 150;
                 response.isGlobal = true;
             }
 

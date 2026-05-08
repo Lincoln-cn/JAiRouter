@@ -187,13 +187,13 @@ public class InstanceSelector {
             // 解析 URL
             java.net.URI uri = java.net.URI.create(baseUrl);
             String host = uri.getHost();
-            int port = uri.getPort() != -1 ? uri.getPort() :
-                    ("https".equals(uri.getScheme()) ? 443 : 80);
+            int port = uri.getPort() != -1 ? uri.getPort()
+                    : ("https".equals(uri.getScheme()) ? 443 : 80);
 
             // 尝试建立 TCP 连接（仅用于健康检查，不传输敏感数据）
-            javax.net.SocketFactory factory = "https".equals(uri.getScheme()) ?
-                    javax.net.ssl.SSLSocketFactory.getDefault() :
-                    javax.net.SocketFactory.getDefault();
+            javax.net.SocketFactory factory = "https".equals(uri.getScheme())
+                    ? javax.net.ssl.SSLSocketFactory.getDefault()
+                    : javax.net.SocketFactory.getDefault();
             java.net.Socket socket = factory.createSocket();
             socket.connect(new java.net.InetSocketAddress(host, port), (int) HEALTH_CHECK_TIMEOUT_MS);
             socket.close();

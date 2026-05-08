@@ -865,8 +865,8 @@ public class ApiKeyService {
                 if (apiKey.needsRotation()) {
                     keysNeedingRotation++;
                 }
-                if (apiKey.getLastRotatedAt() != null &&
-                        !apiKey.getLastRotatedAt().isBefore(todayStart)) {
+                if (apiKey.getLastRotatedAt() != null 
+                && !apiKey.getLastRotatedAt().isBefore(todayStart)) {
                     rotatedToday++;
                 }
             }
@@ -968,8 +968,8 @@ public class ApiKeyService {
             for (ApiKey apiKey : apiKeyCache.values()) {
                 if (apiKey.isExpired()) {
                     expiredKeys++;
-                } else if (apiKey.getExpiresAt() != null &&
-                        !apiKey.getExpiresAt().isAfter(todayEnd)) {
+                } else if (apiKey.getExpiresAt() != null 
+                && !apiKey.getExpiresAt().isAfter(todayEnd)) {
                     expiringToday++;
                 }
                 if (!apiKey.isEnabled()) {

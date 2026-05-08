@@ -123,19 +123,19 @@ public class AuditEventQuery {
 
     @Override
     public String toString() {
-        return "AuditEventQuery{" +
-                "startTime=" + startTime +
-                ", endTime=" + endTime +
-                ", eventTypes=" + eventTypes +
-                ", userId='" + userId + '\'' +
-                ", resourceId='" + resourceId + '\'' +
-                ", action='" + action + '\'' +
-                ", ipAddress='" + ipAddress + '\'' +
-                ", success=" + success +
-                ", page=" + page +
-                ", size=" + size +
-                ", sortBy='" + sortBy + '\'' +
-                ", sortDirection='" + sortDirection + '\'' +
-                '}';
+        return "AuditEventQuery{"
+                +"startTime=" + startTime
+                +", endTime=" + endTime
+                +", eventTypes=" + eventTypes
+                +", userId='" + userId + '\''
+                +", resourceId='" + resourceId + '\''
+                +", action='" + action + '\''
+                +", ipAddress='" + ipAddress + '\''
+                +", success=" + success
+                +", page=" + page
+                +", size=" + size
+                +", sortBy='" + sortBy + '\''
+                +", sortDirection='" + sortDirection + '\''
+                +'}';
     }
 }

@@ -180,9 +180,9 @@ public class JwtRedisHealthMonitor implements HealthIndicator {
             
             return Map.of(
                 "responseTime", responseTime + "ms",
-                "status", responseTime < 100 ? "excellent" : 
-                         responseTime < 500 ? "good" : 
-                         responseTime < 1000 ? "acceptable" : "slow",
+                "status", responseTime < 100 ? "excellent" 
+                : responseTime < 500 ? "good"
+                : responseTime < 1000 ? "acceptable" : "slow",
                 "threshold", "< 100ms excellent, < 500ms good, < 1000ms acceptable",
                 "lastCheck", System.currentTimeMillis()
             );

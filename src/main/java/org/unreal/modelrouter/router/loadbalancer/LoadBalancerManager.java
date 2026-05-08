@@ -183,14 +183,14 @@ public class LoadBalancerManager {
 
         // 验证各服务配置
         if (properties.getServices() != null) {
-            for (Map.Entry<String, ModelRouterProperties.ServiceConfig> entry :
-                    properties.getServices().entrySet()) {
+            for (Map.Entry<String, ModelRouterProperties.ServiceConfig> entry
+                    : properties.getServices().entrySet()) {
 
                 String serviceKey = entry.getKey();
                 ModelRouterProperties.ServiceConfig serviceConfig = entry.getValue();
 
-                if (serviceConfig.getLoadBalance() != null &&
-                        !componentFactory.validateLoadBalanceConfig(serviceConfig.getLoadBalance())) {
+                if (serviceConfig.getLoadBalance() != null
+                        && !componentFactory.validateLoadBalanceConfig(serviceConfig.getLoadBalance())) {
                     logger.warn("Invalid load balance configuration for service: {}", serviceKey);
                     return false;
                 }

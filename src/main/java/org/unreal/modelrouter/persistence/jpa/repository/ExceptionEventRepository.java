@@ -15,7 +15,7 @@ import java.util.Optional;
 
 /**
  * 异常事件仓库接口
- * 
+ *
  * @author JAiRouter Team
  * @since 1.9.1
  */
@@ -118,17 +118,17 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 根据条件分页查询
      */
-    @Query("SELECT e FROM ExceptionEventEntity e WHERE " +
-           "(:startTime IS NULL OR e.occurredAt >= :startTime) AND " +
-           "(:endTime IS NULL OR e.occurredAt <= :endTime) AND " +
-           "(:exceptionType IS NULL OR e.exceptionType LIKE %:exceptionType%) AND " +
-           "(:operation IS NULL OR e.operation LIKE %:operation%) AND " +
-           "(:errorCode IS NULL OR e.errorCode = :errorCode) AND " +
-           "(:errorCategory IS NULL OR e.errorCategory = :errorCategory) AND " +
-           "(:traceId IS NULL OR e.traceId = :traceId) AND " +
-           "(:clientIp IS NULL OR e.clientIp = :clientIp) AND " +
-           "(:isAggregated IS NULL OR e.isAggregated = :isAggregated) " +
-           "ORDER BY e.occurredAt DESC")
+    @Query("SELECT e FROM ExceptionEventEntity e WHERE "
+           + "(:startTime IS NULL OR e.occurredAt >= :startTime) AND "
+           + "(:endTime IS NULL OR e.occurredAt <= :endTime) AND "
+           + "(:exceptionType IS NULL OR e.exceptionType LIKE %:exceptionType%) AND "
+           + "(:operation IS NULL OR e.operation LIKE %:operation%) AND "
+           + "(:errorCode IS NULL OR e.errorCode = :errorCode) AND "
+           + "(:errorCategory IS NULL OR e.errorCategory = :errorCategory) AND "
+           + "(:traceId IS NULL OR e.traceId = :traceId) AND "
+           + "(:clientIp IS NULL OR e.clientIp = :clientIp) AND "
+           + "(:isAggregated IS NULL OR e.isAggregated = :isAggregated) "
+           + "ORDER BY e.occurredAt DESC")
     Page<ExceptionEventEntity> findByConditions(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
@@ -144,16 +144,16 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 统计符合条件的异常数量
      */
-    @Query("SELECT COUNT(e) FROM ExceptionEventEntity e WHERE " +
-           "(:startTime IS NULL OR e.occurredAt >= :startTime) AND " +
-           "(:endTime IS NULL OR e.occurredAt <= :endTime) AND " +
-           "(:exceptionType IS NULL OR e.exceptionType LIKE %:exceptionType%) AND " +
-           "(:operation IS NULL OR e.operation LIKE %:operation%) AND " +
-           "(:errorCode IS NULL OR e.errorCode = :errorCode) AND " +
-           "(:errorCategory IS NULL OR e.errorCategory = :errorCategory) AND " +
-           "(:traceId IS NULL OR e.traceId = :traceId) AND " +
-           "(:clientIp IS NULL OR e.clientIp = :clientIp) AND " +
-           "(:isAggregated IS NULL OR e.isAggregated = :isAggregated)")
+    @Query("SELECT COUNT(e) FROM ExceptionEventEntity e WHERE "
+           + "(:startTime IS NULL OR e.occurredAt >= :startTime) AND "
+           + "(:endTime IS NULL OR e.occurredAt <= :endTime) AND "
+           + "(:exceptionType IS NULL OR e.exceptionType LIKE %:exceptionType%) AND "
+           + "(:operation IS NULL OR e.operation LIKE %:operation%) AND "
+           + "(:errorCode IS NULL OR e.errorCode = :errorCode) AND "
+           + "(:errorCategory IS NULL OR e.errorCategory = :errorCategory) AND "
+           + "(:traceId IS NULL OR e.traceId = :traceId) AND "
+           + "(:clientIp IS NULL OR e.clientIp = :clientIp) AND "
+           + "(:isAggregated IS NULL OR e.isAggregated = :isAggregated)")
     long countByConditions(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
@@ -170,9 +170,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 按异常类型统计
      */
-    @Query("SELECT e.exceptionType, COUNT(e) FROM ExceptionEventEntity e " +
-           "WHERE e.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY e.exceptionType ORDER BY COUNT(e) DESC")
+    @Query("SELECT e.exceptionType, COUNT(e) FROM ExceptionEventEntity e "
+           + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY e.exceptionType ORDER BY COUNT(e) DESC")
     List<Object[]> countByExceptionType(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -180,9 +180,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 按错误分类统计
      */
-    @Query("SELECT e.errorCategory, COUNT(e) FROM ExceptionEventEntity e " +
-           "WHERE e.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY e.errorCategory ORDER BY COUNT(e) DESC")
+    @Query("SELECT e.errorCategory, COUNT(e) FROM ExceptionEventEntity e "
+           + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY e.errorCategory ORDER BY COUNT(e) DESC")
     List<Object[]> countByErrorCategory(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -190,9 +190,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 按操作统计
      */
-    @Query("SELECT e.operation, COUNT(e) FROM ExceptionEventEntity e " +
-           "WHERE e.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY e.operation ORDER BY COUNT(e) DESC")
+    @Query("SELECT e.operation, COUNT(e) FROM ExceptionEventEntity e "
+           + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY e.operation ORDER BY COUNT(e) DESC")
     List<Object[]> countByOperation(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
@@ -201,10 +201,10 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 按客户端 IP 统计
      */
-    @Query("SELECT e.clientIp, COUNT(e) FROM ExceptionEventEntity e " +
-           "WHERE e.occurredAt BETWEEN :startTime AND :endTime " +
-           "AND e.clientIp IS NOT NULL " +
-           "GROUP BY e.clientIp ORDER BY COUNT(e) DESC")
+    @Query("SELECT e.clientIp, COUNT(e) FROM ExceptionEventEntity e "
+           + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
+           + "AND e.clientIp IS NOT NULL "
+           + "GROUP BY e.clientIp ORDER BY COUNT(e) DESC")
     List<Object[]> countByClientIp(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
@@ -213,10 +213,10 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 按 HTTP 状态码统计
      */
-    @Query("SELECT e.httpStatus, COUNT(e) FROM ExceptionEventEntity e " +
-           "WHERE e.occurredAt BETWEEN :startTime AND :endTime " +
-           "AND e.httpStatus IS NOT NULL " +
-           "GROUP BY e.httpStatus ORDER BY COUNT(e) DESC")
+    @Query("SELECT e.httpStatus, COUNT(e) FROM ExceptionEventEntity e "
+           + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
+           + "AND e.httpStatus IS NOT NULL "
+           + "GROUP BY e.httpStatus ORDER BY COUNT(e) DESC")
     List<Object[]> countByHttpStatus(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -224,9 +224,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 按小时分布统计
      */
-    @Query("SELECT FUNCTION('HOUR', e.occurredAt), COUNT(e) FROM ExceptionEventEntity e " +
-           "WHERE e.occurredAt BETWEEN :startTime AND :endTime " +
-           "GROUP BY FUNCTION('HOUR', e.occurredAt) ORDER BY FUNCTION('HOUR', e.occurredAt)")
+    @Query("SELECT FUNCTION('HOUR', e.occurredAt), COUNT(e) FROM ExceptionEventEntity e "
+           + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
+           + "GROUP BY FUNCTION('HOUR', e.occurredAt) ORDER BY FUNCTION('HOUR', e.occurredAt)")
     List<Object[]> countByHour(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -280,11 +280,11 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 查找相同类型的未聚合异常
      */
-    @Query("SELECT e FROM ExceptionEventEntity e WHERE " +
-           "e.exceptionType = :exceptionType AND " +
-           "e.operation = :operation AND " +
-           "e.isAggregated = false " +
-           "ORDER BY e.occurredAt ASC")
+    @Query("SELECT e FROM ExceptionEventEntity e WHERE "
+           + "e.exceptionType = :exceptionType AND "
+           + "e.operation = :operation AND "
+           + "e.isAggregated = false "
+           + "ORDER BY e.occurredAt ASC")
     List<ExceptionEventEntity> findUnaggregatedEventsByTypeAndOperation(
             @Param("exceptionType") String exceptionType,
             @Param("operation") String operation);
@@ -292,9 +292,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 查找需要聚合的异常（超过阈值）
      */
-    @Query("SELECT e.exceptionType, e.operation, COUNT(e) as cnt, MIN(e.occurredAt) as first, MAX(e.occurredAt) as last " +
-           "FROM ExceptionEventEntity e WHERE e.isAggregated = false " +
-           "GROUP BY e.exceptionType, e.operation " +
-           "HAVING COUNT(e) >= :threshold")
+    @Query("SELECT e.exceptionType, e.operation, COUNT(e) as cnt, MIN(e.occurredAt) as first, MAX(e.occurredAt) as last "
+           + "FROM ExceptionEventEntity e WHERE e.isAggregated = false "
+           + "GROUP BY e.exceptionType, e.operation "
+           + "HAVING COUNT(e) >= :threshold")
     List<Object[]> findEventsForAggregation(@Param("threshold") int threshold);
 }

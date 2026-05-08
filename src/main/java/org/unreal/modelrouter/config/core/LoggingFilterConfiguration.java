@@ -21,9 +21,9 @@ public class LoggingFilterConfiguration {
         @Override
         public FilterReply decide(final Marker marker, final ch.qos.logback.classic.Logger logger, final Level level, final String format, final Object[] params, final Throwable t) {
             // 检查日志信息是否包含ReadOnlyHttpHeaders.set相关的异常
-            if (format != null && 
-                (format.contains("ReadOnlyHttpHeaders.set") ||
-                 format.contains("UnsupportedOperationException: null"))) {
+            if (format != null
+                && (format.contains("ReadOnlyHttpHeaders.set")
+                 || format.contains("UnsupportedOperationException: null"))) {
                 // 屏蔽这个特定的异常日志
                 return FilterReply.DENY;
             }
@@ -31,9 +31,9 @@ public class LoggingFilterConfiguration {
             // 检查异常堆栈信息是否包含ReadOnlyHttpHeaders.set或UnsupportedOperationException
             if (t != null) {
                 String message = t.getMessage();
-                if (message != null && 
-                    (message.contains("ReadOnlyHttpHeaders.set") || 
-                     message.contains("UnsupportedOperationException"))) {
+                if (message != null
+                    && (message.contains("ReadOnlyHttpHeaders.set")
+                     || message.contains("UnsupportedOperationException"))) {
                     return FilterReply.DENY;
                 }
                 
@@ -41,8 +41,8 @@ public class LoggingFilterConfiguration {
                 StackTraceElement[] stackTrace = t.getStackTrace();
                 if (stackTrace != null) {
                     for (StackTraceElement element : stackTrace) {
-                        if (element.toString().contains("ReadOnlyHttpHeaders.set") || 
-                            element.toString().contains("UnsupportedOperationException")) {
+                        if (element.toString().contains("ReadOnlyHttpHeaders.set")
+                            || element.toString().contains("UnsupportedOperationException")) {
                             return FilterReply.DENY;
                         }
                     }

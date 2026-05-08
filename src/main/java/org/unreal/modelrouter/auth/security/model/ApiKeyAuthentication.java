@@ -81,10 +81,10 @@ public class ApiKeyAuthentication implements Authentication {
     
     @Override
     public String toString() {
-        return "ApiKeyAuthentication{" +
-                "principal='" + principal + '\'' +
-                ", authenticated=" + authenticated +
-                ", authorities=" + authorities +
-                '}';
+        return "ApiKeyAuthentication{" 
+        + "principal='" + principal + '\''
+        + ", authenticated=" + authenticated
+                + ", authorities=" + authorities
+                + '}';
     }
 }

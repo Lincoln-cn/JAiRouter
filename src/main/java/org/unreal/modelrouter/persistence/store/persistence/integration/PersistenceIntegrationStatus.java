@@ -126,12 +126,12 @@ public class PersistenceIntegrationStatus {
 
     @Override
     public String toString() {
-        return "PersistenceIntegrationStatus{" +
-                "initialized=" + initialized +
-                ", syncIntervalMs=" + syncIntervalMs +
-                ", recoveryTimeoutMs=" + recoveryTimeoutMs +
-                ", registeredCount=" + registeredCount +
-                ", pendingSyncCount=" + pendingSyncCount +
-                '}';
+        return "PersistenceIntegrationStatus{"
+                + "initialized=" + initialized
+                + ", syncIntervalMs=" + syncIntervalMs
+                + ", recoveryTimeoutMs=" + recoveryTimeoutMs
+                + ", registeredCount=" + registeredCount
+                + ", pendingSyncCount=" + pendingSyncCount
+                + '}';
     }
 }

@@ -106,15 +106,15 @@ public class SecurityAlert {
 
     @Override
     public String toString() {
-        return "SecurityAlert{" +
-                "id='" + id + '\'' +
-                ", alertType='" + alertType + '\'' +
-                ", severity='" + severity + '\'' +
-                ", message='" + message + '\'' +
-                ", userId='" + userId + '\'' +
-                ", ipAddress='" + ipAddress + '\'' +
-                ", timestamp=" + timestamp +
-                ", resolved=" + resolved +
-                '}';
+        return "SecurityAlert{"
+                +"id='" + id + '\''
+                +", alertType='" + alertType + '\''
+                +", severity='" + severity + '\''
+                +", message='" + message + '\''
+                +", userId='" + userId + '\''
+                +", ipAddress='" + ipAddress + '\''
+                +", timestamp=" + timestamp
+                +", resolved=" + resolved
+                +'}';
     }
 }

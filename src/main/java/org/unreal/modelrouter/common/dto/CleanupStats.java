@@ -90,14 +90,14 @@ public class CleanupStats {
 
     @Override
     public String toString() {
-        return "CleanupStats{" +
-                "lastCleanupTime=" + lastCleanupTime +
-                ", totalCleanupRuns=" + totalCleanupRuns +
-                ", totalTokensCleaned=" + totalTokensCleaned +
-                ", totalBlacklistEntriesCleaned=" + totalBlacklistEntriesCleaned +
-                ", averageCleanupDurationSeconds=" + averageCleanupDurationSeconds +
-                ", nextScheduledCleanup=" + nextScheduledCleanup +
-                ", cleanupEnabled=" + cleanupEnabled +
-                '}';
+        return "CleanupStats{"
+                +"lastCleanupTime=" + lastCleanupTime
+                +", totalCleanupRuns=" + totalCleanupRuns
+                +", totalTokensCleaned=" + totalTokensCleaned
+                +", totalBlacklistEntriesCleaned=" + totalBlacklistEntriesCleaned
+                +", averageCleanupDurationSeconds=" + averageCleanupDurationSeconds
+                +", nextScheduledCleanup=" + nextScheduledCleanup
+                +", cleanupEnabled=" + cleanupEnabled
+                +'}';
     }
 }

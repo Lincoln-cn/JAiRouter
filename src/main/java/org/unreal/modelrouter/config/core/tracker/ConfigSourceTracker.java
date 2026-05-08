@@ -162,10 +162,10 @@ public class ConfigSourceTracker implements ApplicationListener<ApplicationReady
      * 判断是否是敏感配置
      */
     private boolean isSensitiveProperty(String propertyName) {
-        return propertyName.contains("secret") ||
-               propertyName.contains("password") ||
-               propertyName.contains("token") ||
-               propertyName.contains("key");
+        return propertyName.contains("secret")
+               || propertyName.contains("password")
+               || propertyName.contains("token")
+               || propertyName.contains("key");
     }
 
     /**

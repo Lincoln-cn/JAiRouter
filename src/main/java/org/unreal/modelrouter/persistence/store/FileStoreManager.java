@@ -141,7 +141,7 @@ public class FileStoreManager extends BaseStoreManager {
         try {
             Set<String> keys = new HashSet<>();
             Path storageDir = PathSanitizer.sanitizePath(storagePath);
-            
+
             if (Files.exists(storageDir) && Files.isDirectory(storageDir)) {
                 Files.list(storageDir)
                         .filter(path -> path.toString().endsWith(".json") && !path.toString().contains("@"))
@@ -189,19 +189,19 @@ public class FileStoreManager extends BaseStoreManager {
             List<Integer> versions = new ArrayList<>();
             File storageDir = new File(storagePath);
             String sanitizedKey = PathSanitizer.sanitizeFileName(key);
-            
+
             // 使用缓存来减少文件系统遍历
-            File[] files = storageDir.listFiles((dir, name) -> 
-                name.startsWith(sanitizedKey + "@") && 
-                (name.endsWith(".json") || name.endsWith(".json.gz")));
-            
+            File[] files = storageDir.listFiles((dir, name) ->
+                name.startsWith(sanitizedKey + "@")
+                && (name.endsWith(".json") || name.endsWith(".json.gz")));
+
             if (files != null) {
                 for (File file : files) {
                     String fileName = file.getName();
                     // 提取版本号，支持压缩和未压缩的文件
                     if (fileName.endsWith(".json")) {
                         String versionStr = fileName.substring(
-                            (sanitizedKey + "@").length(), 
+                            (sanitizedKey + "@").length(),
                             fileName.length() - ".json".length());
                         try {
                             versions.add(Integer.parseInt(versionStr));
@@ -211,7 +211,7 @@ public class FileStoreManager extends BaseStoreManager {
                         }
                     } else if (fileName.endsWith(".json.gz")) {
                         String versionStr = fileName.substring(
-                            (sanitizedKey + "@").length(), 
+                            (sanitizedKey + "@").length(),
                             fileName.length() - ".json.gz".length());
                         try {
                             versions.add(Integer.parseInt(versionStr));
@@ -222,7 +222,7 @@ public class FileStoreManager extends BaseStoreManager {
                     }
                 }
             }
-            
+
             Collections.sort(versions);
             return versions;
         } catch (Exception e) {

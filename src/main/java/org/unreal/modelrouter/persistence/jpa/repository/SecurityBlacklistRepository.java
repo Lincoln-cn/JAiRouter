@@ -42,46 +42,46 @@ public interface SecurityBlacklistRepository extends JpaRepository<SecurityBlack
     Page<SecurityBlacklistEntity> findByBlacklistTypeAndStatus(
             BlacklistType blacklistType, BlacklistStatus status, Pageable pageable);
 
-    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END " +
-           "FROM SecurityBlacklistEntity e " +
-           "WHERE e.blacklistType = :type AND e.targetValue = :value " +
-           "AND e.status = :status " +
-           "AND (e.expiresAt IS NULL OR e.expiresAt > :now)")
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END "
+           + "FROM SecurityBlacklistEntity e "
+           + "WHERE e.blacklistType = :type AND e.targetValue = :value "
+           + "AND e.status = :status "
+           + "AND (e.expiresAt IS NULL OR e.expiresAt > :now)")
     boolean isActiveInBlacklist(
             @Param("type") BlacklistType type,
             @Param("value") String value,
             @Param("status") BlacklistStatus status,
             @Param("now") LocalDateTime now);
 
-    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END " +
-           "FROM SecurityBlacklistEntity e " +
-           "WHERE e.targetHash = :hash " +
-           "AND e.status = :status " +
-           "AND (e.expiresAt IS NULL OR e.expiresAt > :now)")
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END "
+           + "FROM SecurityBlacklistEntity e "
+           + "WHERE e.targetHash = :hash "
+           + "AND e.status = :status "
+           + "AND (e.expiresAt IS NULL OR e.expiresAt > :now)")
     boolean isHashInBlacklist(
             @Param("hash") String hash,
             @Param("status") BlacklistStatus status,
             @Param("now") LocalDateTime now);
 
-    @Query("SELECT e.blacklistType, COUNT(e) " +
-           "FROM SecurityBlacklistEntity e " +
-           "WHERE e.status = :status " +
-           "GROUP BY e.blacklistType")
+    @Query("SELECT e.blacklistType, COUNT(e) "
+           + "FROM SecurityBlacklistEntity e "
+           + "WHERE e.status = :status "
+           + "GROUP BY e.blacklistType")
     List<Object[]> countByType(@Param("status") BlacklistStatus status);
 
     @Query("SELECT COUNT(e) FROM SecurityBlacklistEntity e WHERE e.status = :status")
     long countByStatus(@Param("status") BlacklistStatus status);
 
     @Modifying
-    @Query("UPDATE SecurityBlacklistEntity e SET e.status = :expired " +
-           "WHERE e.status = :active AND e.expiresAt IS NOT NULL AND e.expiresAt < :now")
+    @Query("UPDATE SecurityBlacklistEntity e SET e.status = :expired "
+           + "WHERE e.status = :active AND e.expiresAt IS NOT NULL AND e.expiresAt < :now")
     int markExpired(@Param("active") BlacklistStatus active,
                     @Param("expired") BlacklistStatus expired,
                     @Param("now") LocalDateTime now);
 
     @Modifying
-    @Query("DELETE FROM SecurityBlacklistEntity e " +
-           "WHERE e.status = :expired AND e.expiresAt < :threshold")
+    @Query("DELETE FROM SecurityBlacklistEntity e "
+           + "WHERE e.status = :expired AND e.expiresAt < :threshold")
     int cleanupExpired(@Param("expired") BlacklistStatus expired,
                        @Param("threshold") LocalDateTime threshold);
 }

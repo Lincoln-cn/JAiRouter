@@ -109,9 +109,9 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
         performFullCleanup()
             .doOnSuccess(result -> {
                 if (result.isSuccess()) {
-                    log.info("Scheduled cleanup completed successfully at {}. " +
-                            "Removed {} tokens and {} blacklist entries in {}ms. " +
-                            "Total cleanups performed: {}, Total items removed: {}",
+                    log.info("Scheduled cleanup completed successfully at {}. " 
+                    + "Removed {} tokens and {} blacklist entries in {}ms. "
+                    + "Total cleanups performed: {}, Total items removed: {}",
                             LocalDateTime.now(),
                             result.getRemovedTokens(), result.getRemovedBlacklistEntries(), result.getDurationMs(),
                             totalCleanupsPerformed.get(), totalTokensRemoved.get() + totalBlacklistEntriesRemoved.get());
@@ -124,8 +124,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                             successRate, totalCleanups - failedCount, totalCleanups);
                     
                 } else {
-                    log.warn("Scheduled cleanup completed with errors at {}. " +
-                            "Removed {} tokens and {} blacklist entries in {}ms. Error: {}",
+                    log.warn("Scheduled cleanup completed with errors at {}. " 
+                    + "Removed {} tokens and {} blacklist entries in {}ms. Error: {}",
                             LocalDateTime.now(),
                             result.getRemovedTokens(), result.getRemovedBlacklistEntries(), result.getDurationMs(),
                             result.getErrorMessage());
@@ -165,8 +165,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                 }
                 
                 // 记录故障排除信息
-                log.error("Troubleshooting info: Check storage connectivity, verify configuration, " +
-                         "review retention settings (current: {}days)", retentionDays);
+                log.error("Troubleshooting info: Check storage connectivity, verify configuration, " 
+                + "review retention settings (current: {}days)", retentionDays);
             })
             .subscribe();
     }
@@ -215,8 +215,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                 totalTokensRemoved.addAndGet(removedCount);
                 
                 if (removedCount > 0) {
-                    log.info("Expired tokens cleanup completed successfully. " +
-                            "Removed {} tokens in {}ms. Total tokens removed: {}", 
+                    log.info("Expired tokens cleanup completed successfully. " 
+                    + "Removed {} tokens in {}ms. Total tokens removed: {}",
                             removedCount, duration, totalTokensRemoved.get());
                 } else {
                     log.debug("Expired tokens cleanup completed. No expired tokens found. Duration: {}ms", duration);
@@ -296,8 +296,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                 totalBlacklistEntriesRemoved.addAndGet(removedCount);
                 
                 if (removedCount > 0) {
-                    log.info("Expired blacklist entries cleanup completed successfully. " +
-                            "Removed {} entries in {}ms. Total blacklist entries removed: {}", 
+                    log.info("Expired blacklist entries cleanup completed successfully. " 
+                    + "Removed {} entries in {}ms. Total blacklist entries removed: {}",
                             removedCount, duration, totalBlacklistEntriesRemoved.get());
                 } else {
                     log.debug("Expired blacklist entries cleanup completed. No expired entries found. Duration: {}ms", duration);
@@ -441,9 +441,9 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                 sample.stop(cleanupTimer);
                 
                 // 详细的完成日志
-                log.info("Full cleanup summary: Success={}, Tokens removed={}, Blacklist entries removed={}, " +
-                        "Total duration={}ms, Token phase={}ms, Blacklist phase={}ms, " +
-                        "Total cleanups performed={}, Total items removed={}",
+                log.info("Full cleanup summary: Success={}, Tokens removed={}, Blacklist entries removed={}, " 
+                + "Total duration={}ms, Token phase={}ms, Blacklist phase={}ms, "
+                + "Total cleanups performed={}, Total items removed={}",
                         combinedResult.isSuccess(), 
                         combinedResult.getRemovedTokens(), 
                         combinedResult.getRemovedBlacklistEntries(), 
@@ -542,16 +542,16 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
             performanceMetrics.put("averageCleanupTimeMs", stats.getAverageCleanupDurationMs());
             
             // 成功率统计
-            double successRate = totalCleanups > 0 ? 
-                (double) (totalCleanups - failedCleanups.get()) / totalCleanups * 100 : 100.0;
+            double successRate = totalCleanups > 0 
+            ? (double) (totalCleanups - failedCleanups.get()) / totalCleanups * 100 : 100.0;
             performanceMetrics.put("successRate", successRate);
             performanceMetrics.put("failureRate", 100.0 - successRate);
             
             // 清理效率统计
             long totalItemsRemoved = totalTokensRemoved.get() + totalBlacklistEntriesRemoved.get();
             performanceMetrics.put("totalItemsRemoved", totalItemsRemoved);
-            performanceMetrics.put("averageItemsPerCleanup", totalCleanups > 0 ? 
-                (double) totalItemsRemoved / totalCleanups : 0.0);
+            performanceMetrics.put("averageItemsPerCleanup", totalCleanups > 0 
+            ? (double) totalItemsRemoved / totalCleanups : 0.0);
             
             // 时间效率统计
             if (totalCleanupTimeMs > 0 && totalItemsRemoved > 0) {
@@ -563,15 +563,15 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
             }
             
             // 分类统计
-            performanceMetrics.put("tokenCleanupRatio", totalItemsRemoved > 0 ? 
-                (double) totalTokensRemoved.get() / totalItemsRemoved * 100 : 0.0);
-            performanceMetrics.put("blacklistCleanupRatio", totalItemsRemoved > 0 ? 
-                (double) totalBlacklistEntriesRemoved.get() / totalItemsRemoved * 100 : 0.0);
+            performanceMetrics.put("tokenCleanupRatio", totalItemsRemoved > 0 
+            ? (double) totalTokensRemoved.get() / totalItemsRemoved * 100 : 0.0);
+            performanceMetrics.put("blacklistCleanupRatio", totalItemsRemoved > 0 
+            ? (double) totalBlacklistEntriesRemoved.get() / totalItemsRemoved * 100 : 0.0);
             
             // 健康状态指标
             performanceMetrics.put("isHealthy", successRate >= 90.0); // 90%以上成功率认为健康
-            performanceMetrics.put("lastCleanupAge", lastCleanupTime != null ? 
-                java.time.Duration.between(lastCleanupTime, LocalDateTime.now()).toHours() : -1);
+            performanceMetrics.put("lastCleanupAge", lastCleanupTime != null 
+            ? java.time.Duration.between(lastCleanupTime, LocalDateTime.now()).toHours() : -1);
             
             // Micrometer指标统计
             performanceMetrics.put("tokenCleanupCount", tokenCleanupCounter.count());
@@ -639,8 +639,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                     log.warn("Loaded cleanup stats appear to be corrupted, resetting to defaults");
                     resetCleanupStats();
                 } else {
-                    double successRate = totalCleanups > 0 ? 
-                        (double) (totalCleanups - failures) / totalCleanups * 100 : 100.0;
+                    double successRate = totalCleanups > 0 
+                    ? (double) (totalCleanups - failures) / totalCleanups * 100 : 100.0;
                     
                     log.info("Loaded cleanup stats: cleanups={}, tokens={}, blacklist={}, failed={}, success={:.1f}%",
                             totalCleanups, totalTokensRemoved.get(), 

@@ -115,16 +115,16 @@ public class TracingWebFilter implements WebFilter, Ordered {
         String path = exchange.getRequest().getPath().value();
         
         // 跳过健康检查和监控端点
-        if (path.startsWith("/actuator/health") || 
-            path.startsWith("/actuator/metrics") ||
-            path.startsWith("/actuator/prometheus")) {
+        if (path.startsWith("/actuator/health")
+            || path.startsWith("/actuator/metrics")
+            || path.startsWith("/actuator/prometheus")) {
             return true;
         }
         
         // 跳过静态资源
-        if (path.startsWith("/swagger-ui/") || 
-            path.startsWith("/webjars/") ||
-            path.startsWith("/v3/api-docs/")) {
+        if (path.startsWith("/swagger-ui/")
+            || path.startsWith("/webjars/")
+            || path.startsWith("/v3/api-docs/")) {
             return true;
         }
         

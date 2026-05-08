@@ -247,11 +247,11 @@ public class SanitizationMetrics {
         
         @Override
         public String toString() {
-            return String.format("SanitizationStatistics{" +
-                    "requestSanitizations=%.0f, responseSanitizations=%.0f, " +
-                    "ruleMatches=%.0f, errors=%.0f, errorRate=%.2f%%, " +
-                    "totalContentSize=%d, totalSanitizedSize=%d, compressionRatio=%.2f, " +
-                    "avgRequestDuration=%.2fms, avgResponseDuration=%.2fms, avgCompilationDuration=%.2fms}",
+            return String.format("SanitizationStatistics{"
+                    + "requestSanitizations=%.0f, responseSanitizations=%.0f, "
+                    + "ruleMatches=%.0f, errors=%.0f, errorRate=%.2f%%, "
+                    + "totalContentSize=%d, totalSanitizedSize=%d, compressionRatio=%.2f, "
+                    + "avgRequestDuration=%.2fms, avgResponseDuration=%.2fms, avgCompilationDuration=%.2fms}",
                     requestSanitizations, responseSanitizations, ruleMatches, errors, getErrorRate() * 100,
                     totalContentSize, totalSanitizedSize, getCompressionRatio(),
                     avgRequestDuration, avgResponseDuration, avgCompilationDuration);

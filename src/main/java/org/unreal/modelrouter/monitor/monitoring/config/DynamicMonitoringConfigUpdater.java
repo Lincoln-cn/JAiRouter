@@ -150,12 +150,12 @@ public class DynamicMonitoringConfigUpdater {
                 case "enabled":
                     return newValue instanceof Boolean;
                 case "prefix":
-                    return newValue instanceof String && 
-                           ((String) newValue).matches("^[a-zA-Z][a-zA-Z0-9_]*$");
+                    return newValue instanceof String
+                           && ((String) newValue).matches("^[a-zA-Z][a-zA-Z0-9_]*$");
                 case "collectionInterval":
-                    return newValue instanceof Duration && 
-                           !((Duration) newValue).isNegative() && 
-                           !((Duration) newValue).isZero();
+                    return newValue instanceof Duration
+                           && !((Duration) newValue).isNegative()
+                           && !((Duration) newValue).isZero();
                 case "enabledCategories":
                     if (!(newValue instanceof Set)) return false;
                     Set<?> categories = (Set<?>) newValue;

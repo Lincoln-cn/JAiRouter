@@ -98,8 +98,8 @@ public class TracingHealthIndicator implements HealthIndicator {
             
             // 检查丢弃率
             if (processingStats.getDropRate() > 0.1) { // 丢弃率超过10%
-                healthBuilder = Health.down().withDetail("issue", "数据丢弃率过高: " + 
-                    String.format("%.2f%%", processingStats.getDropRate() * 100));
+                healthBuilder = Health.down().withDetail("issue", "数据丢弃率过高: "
+                    + String.format("%.2f%%", processingStats.getDropRate() * 100));
             }
             
             // 检查内存压力

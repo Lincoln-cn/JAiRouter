@@ -548,8 +548,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                         // 记录请求大小指标
                         if (metricsCollector != null && responseEntity != null) {
                             long requestSize = calculateRequestSize(transformedRequest);
-                            long responseSize = responseEntity.getBody() != null ?
-                                    ((byte[]) responseEntity.getBody()).length : 0;
+                            long responseSize = responseEntity.getBody() != null
+                                    ? ((byte[]) responseEntity.getBody()).length : 0;
                             metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
 
                             // 记录响应时间指标

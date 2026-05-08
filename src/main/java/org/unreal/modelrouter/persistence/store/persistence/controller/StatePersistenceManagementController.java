@@ -180,9 +180,11 @@ public class StatePersistenceManagementController {
             Map<String, Object> stats = new HashMap<>();
             stats.put("circuitBreakerCount", cbPersistenceAdapter.getPendingSyncCount());
             stats.put("loadBalancerCount", lbPersistenceAdapter.getPendingSyncCount());
-            stats.put("rateLimiterCount", rlPersistenceAdapter != null ? 
-                    (int) rlPersistenceAdapter.getStats().block().get("registeredCount") : 0);
-            stats.put("pendingSync", cbPersistenceAdapter.getPendingSyncCount() + lbPersistenceAdapter.getPendingSyncCount());
+            stats.put("rateLimiterCount", rlPersistenceAdapter != null
+                    ? (int) rlPersistenceAdapter.getStats().block().get("registeredCount")
+                    : 0);
+            stats.put("pendingSync", cbPersistenceAdapter.getPendingSyncCount()
+                    + lbPersistenceAdapter.getPendingSyncCount());
             data.put("stats", stats);
 
             // 添加恢复统计

@@ -48,8 +48,8 @@ public final class ApiKeyHashUtil {
             byte[] hash = digest.digest(apiKey.getBytes(StandardCharsets.UTF_8));
 
             // 返回 Base64 编码的盐值和哈希值
-            return Base64.getEncoder().encodeToString(salt) + ":" +
-                   Base64.getEncoder().encodeToString(hash);
+            return Base64.getEncoder().encodeToString(salt) + ":" 
+            + Base64.getEncoder().encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
             log.error("SHA-256 算法不可用", e);
             throw new RuntimeException("SHA-256 算法不可用", e);

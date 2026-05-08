@@ -63,8 +63,8 @@ public class SlidingWindowRateLimiter implements RateLimiter {
     private void recordRateLimitMetrics(final RateLimitContext context, final boolean allowed) {
         if (metricsCollector != null) {
             try {
-                String serviceName = context.getServiceType() != null ? 
-                    context.getServiceType().name().toLowerCase() : "unknown";
+                String serviceName = context.getServiceType() != null
+                    ? context.getServiceType().name().toLowerCase() : "unknown";
                 metricsCollector.recordRateLimit(serviceName, "sliding_window", allowed);
             } catch (Exception e) {
                 // 静默处理指标记录异常，不影响业务逻辑

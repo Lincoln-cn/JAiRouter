@@ -242,8 +242,8 @@ public class AdapterTracingManager {
         // 添加模型名称（简化版）
         if (modelName != null && !modelName.isEmpty()) {
             // 只取模型名称的一部分，避免 Span 名称过长
-            String shortModelName = modelName.length() > 20 ? 
-                    modelName.substring(0, 20) : modelName;
+            String shortModelName = modelName.length() > 20
+                    ? modelName.substring(0, 20) : modelName;
             spanName.append(".").append(shortModelName);
         }
         

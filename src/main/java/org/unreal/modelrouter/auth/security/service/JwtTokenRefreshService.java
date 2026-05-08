@@ -207,8 +207,8 @@ public class JwtTokenRefreshService {
                         return false;
                     }
                     // 检查是否过期
-                    if (tokenInfo.getExpiresAt() != null && 
-                        tokenInfo.getExpiresAt().isBefore(LocalDateTime.now())) {
+                    if (tokenInfo.getExpiresAt() != null 
+                    && tokenInfo.getExpiresAt().isBefore(LocalDateTime.now())) {
                         return false;
                     }
                     return true;
@@ -285,8 +285,8 @@ public class JwtTokenRefreshService {
     private void addToMemoryBlacklist(final String token) {
         try {
             // 计算令牌过期时间（简单实现：使用配置的过期时间）
-            long expirationTime = System.currentTimeMillis() + 
-                (securityProperties.getJwt().getExpirationMinutes() * 60 * 1000);
+            long expirationTime = System.currentTimeMillis() 
+            + (securityProperties.getJwt().getExpirationMinutes() * 60 * 1000);
             
             String tokenHash = String.valueOf(token.hashCode());
             memoryBlacklist.put(tokenHash, expirationTime);

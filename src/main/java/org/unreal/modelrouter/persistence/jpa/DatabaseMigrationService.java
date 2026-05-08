@@ -51,7 +51,7 @@ public class DatabaseMigrationService implements ApplicationRunner {
 
         // 直接尝试执行 ALTER TABLE，跳过前置检查
         // H2 MySQL模式下的 INFORMATION_SCHEMA 查询可能不可靠
-        
+
         boolean migrated = false;
         String lastError = null;
 
@@ -59,7 +59,7 @@ public class DatabaseMigrationService implements ApplicationRunner {
         String[] sqlStatements = {
             // H2 语法 1: ALTER COLUMN ... DROP NOT NULL
             "ALTER TABLE " + tableName + " ALTER COLUMN " + columnName + " DROP NOT NULL",
-            // H2 语法 2: ALTER COLUMN ... SET NULL  
+            // H2 语法 2: ALTER COLUMN ... SET NULL
             "ALTER TABLE " + tableName + " ALTER COLUMN " + columnName + " SET NULL",
             // MySQL 语法: MODIFY COLUMN ... NULL
             "ALTER TABLE " + tableName + " MODIFY COLUMN " + columnName + " TIMESTAMP NULL",
@@ -77,11 +77,11 @@ public class DatabaseMigrationService implements ApplicationRunner {
             } catch (Exception e) {
                 lastError = e.getMessage();
                 log.debug("SQL failed: {} - Error: {}", sql, lastError);
-                
+
                 // 检查是否是表不存在的情况（真正的错误）
-                if (lastError != null && 
-                    (lastError.contains("Table \"") && lastError.contains("\" not found") ||
-                     lastError.contains("Table \"") && lastError.contains("\" doesn't exist"))) {
+                if (lastError != null
+                    && (lastError.contains("Table \"") && lastError.contains("\" not found")
+                    || lastError.contains("Table \"") && lastError.contains("\" doesn't exist"))) {
                     log.info("Table {} does not exist in database, skipping migration", tableName);
                     return;
                 }

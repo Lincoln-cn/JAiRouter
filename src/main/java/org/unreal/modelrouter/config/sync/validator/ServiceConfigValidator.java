@@ -38,8 +38,8 @@ public class ServiceConfigValidator {
         }
 
         if (!ServiceTypeConstants.isValidServiceType(serviceType)) {
-            throw new IllegalArgumentException("无效的服务类型：" + serviceType +
-                "，支持的服务类型：" + ServiceTypeConstants.getServiceTypeList());
+            throw new IllegalArgumentException("无效的服务类型：" + serviceType
+                + "，支持的服务类型：" + ServiceTypeConstants.getServiceTypeList());
         }
 
         logger.debug("服务类型验证通过：{}", serviceType);

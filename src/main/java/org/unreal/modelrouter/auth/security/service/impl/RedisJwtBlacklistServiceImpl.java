@@ -89,8 +89,8 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         TokenBlacklistEntry cachedEntry = memoryCache.get(tokenHash);
         if (cachedEntry != null) {
             // 检查是否过期
-            if (cachedEntry.getExpiresAt() != null && 
-                cachedEntry.getExpiresAt().isBefore(LocalDateTime.now())) {
+            if (cachedEntry.getExpiresAt() != null 
+            && cachedEntry.getExpiresAt().isBefore(LocalDateTime.now())) {
                 // 过期了，从缓存中移除
                 memoryCache.remove(tokenHash);
                 return Mono.just(false);
@@ -163,8 +163,8 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 LocalDateTime now = LocalDateTime.now();
                 memoryCache.entrySet().removeIf(entry -> {
                     TokenBlacklistEntry blacklistEntry = entry.getValue();
-                    return blacklistEntry.getExpiresAt() != null && 
-                           blacklistEntry.getExpiresAt().isBefore(now);
+                    return blacklistEntry.getExpiresAt() != null 
+                    && blacklistEntry.getExpiresAt().isBefore(now);
                 });
                 log.info("Successfully cleaned up expired blacklist entries");
             })
@@ -286,8 +286,8 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                             TokenBlacklistEntry entry = JacksonHelper.getObjectMapper()
                                 .readValue(entryJson, TokenBlacklistEntry.class);
                             
-                            if (entry.getExpiresAt() != null && 
-                                entry.getExpiresAt().isBefore(LocalDateTime.now())) {
+                            if (entry.getExpiresAt() != null 
+                            && entry.getExpiresAt().isBefore(LocalDateTime.now())) {
                                 // 过期了，删除条目
                                 redisTemplate.delete(blacklistKey).subscribe();
                                 updateBlacklistIndexInRedis(tokenHash, false).subscribe();
@@ -334,8 +334,8 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                             TokenBlacklistEntry entry = JacksonHelper.getObjectMapper()
                                 .readValue(entryJson, TokenBlacklistEntry.class);
                             
-                            if (entry.getExpiresAt() != null && 
-                                entry.getExpiresAt().isBefore(LocalDateTime.now())) {
+                            if (entry.getExpiresAt() != null 
+                            && entry.getExpiresAt().isBefore(LocalDateTime.now())) {
                                 return tokenHash;
                             }
                         } catch (Exception e) {
@@ -421,8 +421,8 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                             TokenBlacklistEntry entry = JacksonHelper.getObjectMapper()
                                 .readValue(entryJson, TokenBlacklistEntry.class);
                             
-                            if (entry.getExpiresAt() != null && 
-                                entry.getExpiresAt().isBefore(threshold)) {
+                            if (entry.getExpiresAt() != null 
+                            && entry.getExpiresAt().isBefore(threshold)) {
                                 return 1L;
                             }
                         } catch (Exception e) {
@@ -465,12 +465,12 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
             .defaultIfEmpty(new HashMap<>())
             .flatMap(stats -> {
                 // 更新统计数据
-                long totalAdded = stats.get("totalAdded") instanceof Number ? 
-                    ((Number) stats.get("totalAdded")).longValue() : 0L;
-                long totalCleaned = stats.get("totalCleaned") instanceof Number ? 
-                    ((Number) stats.get("totalCleaned")).longValue() : 0L;
-                long currentSize = stats.get("currentSize") instanceof Number ? 
-                    ((Number) stats.get("currentSize")).longValue() : 0L;
+                long totalAdded = stats.get("totalAdded") instanceof Number 
+                ? ((Number) stats.get("totalAdded")).longValue() : 0L;
+                long totalCleaned = stats.get("totalCleaned") instanceof Number 
+                ? ((Number) stats.get("totalCleaned")).longValue() : 0L;
+                long currentSize = stats.get("currentSize") instanceof Number 
+                ? ((Number) stats.get("currentSize")).longValue() : 0L;
                 
                 if (sizeChange > 0) {
                     totalAdded += sizeChange;
@@ -523,8 +523,8 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 TokenBlacklistEntry entry = convertFromMap(entryData);
                 
                 // 检查是否过期
-                if (entry.getExpiresAt() != null && 
-                    entry.getExpiresAt().isBefore(LocalDateTime.now())) {
+                if (entry.getExpiresAt() != null 
+                && entry.getExpiresAt().isBefore(LocalDateTime.now())) {
                     // 过期了，删除条目
                     fallbackStoreManager.deleteConfig(blacklistKey);
                     return false;
@@ -606,8 +606,8 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 LocalDateTime now = LocalDateTime.now();
                 memoryCache.entrySet().removeIf(entry -> {
                     TokenBlacklistEntry blacklistEntry = entry.getValue();
-                    return blacklistEntry.getExpiresAt() != null && 
-                           blacklistEntry.getExpiresAt().isBefore(now);
+                    return blacklistEntry.getExpiresAt() != null 
+                    && blacklistEntry.getExpiresAt().isBefore(now);
                 });
                 
                 lastCacheUpdate = currentTime;

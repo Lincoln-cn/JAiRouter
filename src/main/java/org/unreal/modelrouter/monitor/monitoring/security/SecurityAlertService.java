@@ -165,8 +165,8 @@ public class SecurityAlertService {
         
         // 检查告警冷却时间
         LocalDateTime lastAlertTime = lastAlertTimes.get(alertKey);
-        if (lastAlertTime != null && 
-            lastAlertTime.plusMinutes(ALERT_COOLDOWN_MINUTES).isAfter(now)) {
+        if (lastAlertTime != null
+            && lastAlertTime.plusMinutes(ALERT_COOLDOWN_MINUTES).isAfter(now)) {
             log.debug("告警 {} 在冷却期内，跳过触发", alertType);
             return Mono.empty();
         }

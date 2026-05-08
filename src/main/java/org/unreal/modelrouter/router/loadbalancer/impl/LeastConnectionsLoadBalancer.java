@@ -44,11 +44,11 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
             long connections = connectionCounts.getOrDefault(key, new AtomicLong(0)).get();
 
             // 考虑权重的最少连接算法: connections / weight
-            double weightedConnections = instance.getWeight() > 0 ?
-                    (double) connections / instance.getWeight() : connections;
+            double weightedConnections = instance.getWeight() > 0
+                    ? (double) connections / instance.getWeight() : connections;
 
-            if (weightedConnections < minWeightedConnections ||
-                    (weightedConnections == minWeightedConnections && connections < minConnections)) {
+            if (weightedConnections < minWeightedConnections
+                    || (weightedConnections == minWeightedConnections && connections < minConnections)) {
                 minWeightedConnections = weightedConnections;
                 minConnections = connections;
                 selectedInstance = instance;

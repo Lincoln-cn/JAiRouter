@@ -157,10 +157,12 @@ public class JpaDatabaseInitializer {
             ServiceConfigEntity configEntity = ServiceConfigEntity.builder()
                     .configKey("model-router-config")
                     .serviceType(serviceType)
-                    .adapter(serviceConfig.getAdapter() != null ? serviceConfig.getAdapter() : modelRouterProperties.getAdapter())
-                    .loadBalanceType(serviceConfig.getLoadBalance() != null ?
-                            serviceConfig.getLoadBalance().getType() :
-                            modelRouterProperties.getLoadBalance().getType())
+                    .adapter(serviceConfig.getAdapter() != null
+                            ? serviceConfig.getAdapter()
+                            : modelRouterProperties.getAdapter())
+                    .loadBalanceType(serviceConfig.getLoadBalance() != null
+                            ? serviceConfig.getLoadBalance().getType()
+                            : modelRouterProperties.getLoadBalance().getType())
                     .version(1)
                     .isLatest(true)
                     .build();

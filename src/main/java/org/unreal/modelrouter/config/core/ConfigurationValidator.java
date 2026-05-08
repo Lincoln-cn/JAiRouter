@@ -220,10 +220,10 @@ public class ConfigurationValidator {
             return false;
         }
         String normalizedAlgorithm = algorithm.toLowerCase(java.util.Locale.ROOT);
-        return "token-bucket".equals(normalizedAlgorithm) ||
-                "leaky-bucket".equals(normalizedAlgorithm) ||
-                "sliding-window".equals(normalizedAlgorithm) ||
-                "warm-up".equals(normalizedAlgorithm);
+        return "token-bucket".equals(normalizedAlgorithm)
+                || "leaky-bucket".equals(normalizedAlgorithm)
+                || "sliding-window".equals(normalizedAlgorithm)
+                || "warm-up".equals(normalizedAlgorithm);
     }
 
     /**
@@ -237,10 +237,10 @@ public class ConfigurationValidator {
             return false;
         }
         String normalizedScope = scope.toLowerCase(java.util.Locale.ROOT);
-        return "service".equals(normalizedScope) ||
-                "model".equals(normalizedScope) ||
-                "client-ip".equals(normalizedScope) ||
-                "instance".equals(normalizedScope);
+        return "service".equals(normalizedScope)
+                || "model".equals(normalizedScope)
+                || "client-ip".equals(normalizedScope)
+                || "instance".equals(normalizedScope);
     }
 
     /**
@@ -254,10 +254,10 @@ public class ConfigurationValidator {
             return false;
         }
         String normalizedType = type.toLowerCase(java.util.Locale.ROOT);
-        return "random".equals(normalizedType) ||
-                "round-robin".equals(normalizedType) ||
-                "least-connections".equals(normalizedType) ||
-                "ip-hash".equals(normalizedType);
+        return "random".equals(normalizedType)
+                || "round-robin".equals(normalizedType)
+                || "least-connections".equals(normalizedType)
+                || "ip-hash".equals(normalizedType);
     }
 
     /**
@@ -271,9 +271,9 @@ public class ConfigurationValidator {
             return false;
         }
         String normalizedAlgorithm = algorithm.toLowerCase(java.util.Locale.ROOT);
-        return "md5".equals(normalizedAlgorithm) ||
-                "sha1".equals(normalizedAlgorithm) ||
-                "sha256".equals(normalizedAlgorithm);
+        return "md5".equals(normalizedAlgorithm)
+                || "sha1".equals(normalizedAlgorithm)
+                || "sha256".equals(normalizedAlgorithm);
     }
 
     /**
@@ -315,8 +315,8 @@ public class ConfigurationValidator {
         Map<String, Object> rateLimit = (Map<String, Object>) rateLimitObj;
 
         // 如果未启用，则无需验证
-        if (rateLimit.containsKey("enabled") &&
-                (Boolean.FALSE.equals(rateLimit.get("enabled")) || "false".equalsIgnoreCase(rateLimit.get("enabled").toString()))) {
+        if (rateLimit.containsKey("enabled")
+                && (Boolean.FALSE.equals(rateLimit.get("enabled")) || "false".equalsIgnoreCase(rateLimit.get("enabled").toString()))) {
             return;
         }
 
@@ -437,8 +437,8 @@ public class ConfigurationValidator {
         }
 
         // 验证实例ID唯一性
-        if (instance.containsKey("name") && instance.get("name") != null &&
-                instance.containsKey("baseUrl") && instance.get("baseUrl") != null) {
+        if (instance.containsKey("name") && instance.get("name") != null
+                && instance.containsKey("baseUrl") && instance.get("baseUrl") != null) {
             String name = (String) instance.get("name");
             String baseUrl = (String) instance.get("baseUrl");
             String instanceId = name + "@" + baseUrl;

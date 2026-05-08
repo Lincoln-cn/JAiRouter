@@ -194,8 +194,8 @@ public class MetricsCacheAndRetry {
             return;
         }
         
-        long delayMs = (long) (INITIAL_RETRY_DELAY.toMillis() * 
-                              Math.pow(RETRY_BACKOFF_MULTIPLIER, retryableMetric.getAttempts()));
+        long delayMs = (long) (INITIAL_RETRY_DELAY.toMillis()
+                              * Math.pow(RETRY_BACKOFF_MULTIPLIER, retryableMetric.getAttempts()));
         
         retryExecutor.schedule(() -> {
             executeRetry(retryableMetric);

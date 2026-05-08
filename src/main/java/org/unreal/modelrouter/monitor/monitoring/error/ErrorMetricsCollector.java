@@ -240,8 +240,8 @@ public class ErrorMetricsCollector {
                                          final String module,
                                          final String model) {
         String errorCode = errorCodeResolver != null ? errorCodeResolver.resolveErrorCode(throwable) : "UNK_000";
-        ErrorCodeResolver.ErrorCategory category = errorCodeResolver != null ?
-            errorCodeResolver.resolveErrorCategory(throwable) : ErrorCodeResolver.ErrorCategory.UNKNOWN;
+        ErrorCodeResolver.ErrorCategory category = errorCodeResolver != null
+            ? errorCodeResolver.resolveErrorCategory(throwable) : ErrorCodeResolver.ErrorCategory.UNKNOWN;
         String severity = mapCategoryToSeverity(category);
 
         recordError(

@@ -72,9 +72,9 @@ public class MetricRegistrationRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MetricRegistrationRequest that = (MetricRegistrationRequest) o;
-        return Objects.equals(name, that.name) &&
-               Objects.equals(type, that.type) &&
-               Objects.equals(tags, that.tags);
+        return Objects.equals(name, that.name)
+               && Objects.equals(type, that.type)
+               && Objects.equals(tags, that.tags);
     }
     
     @Override
@@ -84,15 +84,15 @@ public class MetricRegistrationRequest {
     
     @Override
     public String toString() {
-        return "MetricRegistrationRequest{" +
-               "name='" + name + '\'' +
-               ", description='" + description + '\'' +
-               ", type=" + type +
-               ", unit='" + unit + '\'' +
-               ", category='" + category + '\'' +
-               ", enabled=" + enabled +
-               ", samplingRate=" + samplingRate +
-               '}';
+        return "MetricRegistrationRequest{"
+               + "name='" + name + '\''
+               + ", description='" + description + '\''
+               + ", type=" + type
+               + ", unit='" + unit + '\''
+               + ", category='" + category + '\''
+               + ", enabled=" + enabled
+               + ", samplingRate=" + samplingRate
+               + '}';
     }
     
     public static class Builder {

@@ -198,10 +198,10 @@ public class SecurityAuditEventEntity {
         String typeName = type.name();
         if (typeName.startsWith("JWT_TOKEN")) return "JWT_TOKEN";
         if (typeName.startsWith("API_KEY")) return "API_KEY";
-        if (typeName.equals(AuditEventType.AUTHENTICATION_FAILED.name()) ||
-            typeName.equals(AuditEventType.AUTHORIZATION_FAILED.name())) return "AUTH";
-        if (typeName.equals(AuditEventType.SECURITY_ALERT.name()) ||
-            typeName.equals(AuditEventType.SUSPICIOUS_ACTIVITY.name())) return "SECURITY";
+        if (typeName.equals(AuditEventType.AUTHENTICATION_FAILED.name())
+            || typeName.equals(AuditEventType.AUTHORIZATION_FAILED.name())) return "AUTH";
+        if (typeName.equals(AuditEventType.SECURITY_ALERT.name())
+            || typeName.equals(AuditEventType.SUSPICIOUS_ACTIVITY.name())) return "SECURITY";
         return "SYSTEM";
     }
 

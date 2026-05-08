@@ -275,8 +275,9 @@ public class ResponseSanitizationFilter implements WebFilter {
             return xRealIp;
         }
         
-        return request.getRemoteAddress() != null ? 
-                request.getRemoteAddress().getAddress().getHostAddress() : "unknown";
+        return request.getRemoteAddress() != null
+                ? request.getRemoteAddress().getAddress().getHostAddress()
+                : "unknown";
     }
     
     /**

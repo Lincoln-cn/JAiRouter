@@ -221,8 +221,8 @@ public class JwtBlacklistCacheManager {
         
         // 统计本地缓存中即将过期的条目
         long localExpiringCount = localCache.values().stream()
-            .filter(entry -> entry.getExpiresAt() != null && 
-                           entry.getExpiresAt().isBefore(threshold))
+            .filter(entry -> entry.getExpiresAt() != null 
+            && entry.getExpiresAt().isBefore(threshold))
             .count();
         
         // 统计Redis缓存中即将过期的条目
@@ -385,8 +385,8 @@ public class JwtBlacklistCacheManager {
                                     TokenBlacklistEntry entry = JacksonHelper.getObjectMapper()
                                         .readValue(entryJson, TokenBlacklistEntry.class);
                                     
-                                    if (entry.getExpiresAt() != null && 
-                                        entry.getExpiresAt().isBefore(threshold)) {
+                                    if (entry.getExpiresAt() != null 
+                                    && entry.getExpiresAt().isBefore(threshold)) {
                                         return 1L;
                                     }
                                 } catch (Exception e) {
@@ -408,10 +408,10 @@ public class JwtBlacklistCacheManager {
                     Map<String, Object> stats = JacksonHelper.getObjectMapper()
                         .readValue(statsJson, Map.class);
                     
-                    long totalAdded = stats.get("totalAdded") instanceof Number ? 
-                        ((Number) stats.get("totalAdded")).longValue() : 0L;
-                    long totalCleaned = stats.get("totalCleaned") instanceof Number ? 
-                        ((Number) stats.get("totalCleaned")).longValue() : 0L;
+                    long totalAdded = stats.get("totalAdded") instanceof Number 
+                    ? ((Number) stats.get("totalAdded")).longValue() : 0L;
+                    long totalCleaned = stats.get("totalCleaned") instanceof Number 
+                    ? ((Number) stats.get("totalCleaned")).longValue() : 0L;
                     
                     stats.put("totalAdded", totalAdded + addedCount);
                     stats.put("totalCleaned", totalCleaned + cleanedCount);

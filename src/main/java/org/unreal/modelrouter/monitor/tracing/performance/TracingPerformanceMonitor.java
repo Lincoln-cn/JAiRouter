@@ -198,8 +198,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             }
             
             // 4. 检查系统整体瓶颈
-            double slowOperationRatio = totalOperations.get() > 0 ? 
-                    (double) slowOperations.get() / totalOperations.get() : 0.0;
+            double slowOperationRatio = totalOperations.get() > 0
+                    ? (double) slowOperations.get() / totalOperations.get() : 0.0;
             if (slowOperationRatio > 0.2) {
                 bottlenecks.add(new PerformanceBottleneck(
                         BottleneckType.SYSTEM,
@@ -395,8 +395,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             }
             
             // 检查性能指标
-            double slowRatio = totalOperations.get() > 0 ? 
-                    (double) slowOperations.get() / totalOperations.get() : 0.0;
+            double slowRatio = totalOperations.get() > 0
+                    ? (double) slowOperations.get() / totalOperations.get() : 0.0;
             if (slowRatio > 0.5) {
                 issues.add("慢操作比例过高");
             }

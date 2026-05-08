@@ -308,10 +308,10 @@ public class ConfigurationHelper {
             return false;
         }
         String normalizedAlgorithm = algorithm.toLowerCase(java.util.Locale.ROOT);
-        return "token-bucket".equals(normalizedAlgorithm) ||
-                "leaky-bucket".equals(normalizedAlgorithm) ||
-                "sliding-window".equals(normalizedAlgorithm) ||
-                "warm-up".equals(normalizedAlgorithm);
+        return "token-bucket".equals(normalizedAlgorithm)
+                || "leaky-bucket".equals(normalizedAlgorithm)
+                || "sliding-window".equals(normalizedAlgorithm)
+                || "warm-up".equals(normalizedAlgorithm);
     }
 
     /**
@@ -325,10 +325,10 @@ public class ConfigurationHelper {
             return false;
         }
         String normalizedScope = scope.toLowerCase(java.util.Locale.ROOT);
-        return "service".equals(normalizedScope) ||
-                "model".equals(normalizedScope) ||
-                "client-ip".equals(normalizedScope) ||
-                "instance".equals(normalizedScope);
+        return "service".equals(normalizedScope)
+                || "model".equals(normalizedScope)
+                || "client-ip".equals(normalizedScope)
+                || "instance".equals(normalizedScope);
     }
 
     /**
@@ -342,10 +342,10 @@ public class ConfigurationHelper {
             return false;
         }
         String normalizedType = type.toLowerCase(java.util.Locale.ROOT);
-        return "random".equals(normalizedType) ||
-                "round-robin".equals(normalizedType) ||
-                "least-connections".equals(normalizedType) ||
-                "ip-hash".equals(normalizedType);
+        return "random".equals(normalizedType)
+                || "round-robin".equals(normalizedType)
+                || "least-connections".equals(normalizedType)
+                || "ip-hash".equals(normalizedType);
     }
 
     /**
@@ -359,9 +359,9 @@ public class ConfigurationHelper {
             return false;
         }
         String normalizedAlgorithm = algorithm.toLowerCase(java.util.Locale.ROOT);
-        return "md5".equals(normalizedAlgorithm) ||
-                "sha1".equals(normalizedAlgorithm) ||
-                "sha256".equals(normalizedAlgorithm);
+        return "md5".equals(normalizedAlgorithm)
+                || "sha1".equals(normalizedAlgorithm)
+                || "sha256".equals(normalizedAlgorithm);
     }
 
     /**
@@ -403,8 +403,8 @@ public class ConfigurationHelper {
         Map<String, Object> rateLimit = (Map<String, Object>) rateLimitObj;
 
         // 如果未启用，则无需验证
-        if (rateLimit.containsKey("enabled") &&
-                (Boolean.FALSE.equals(rateLimit.get("enabled")) || "false".equalsIgnoreCase(rateLimit.get("enabled").toString()))) {
+        if (rateLimit.containsKey("enabled")
+                && (Boolean.FALSE.equals(rateLimit.get("enabled")) || "false".equalsIgnoreCase(rateLimit.get("enabled").toString()))) {
             return;
         }
 
@@ -461,8 +461,8 @@ public class ConfigurationHelper {
         Map<String, Object> circuitBreaker = (Map<String, Object>) circuitBreakerObj;
 
         // 如果未启用，则无需验证
-        if (circuitBreaker.containsKey("enabled") &&
-                (Boolean.FALSE.equals(circuitBreaker.get("enabled")) || "false".equalsIgnoreCase(circuitBreaker.get("enabled").toString()))) {
+        if (circuitBreaker.containsKey("enabled")
+                && (Boolean.FALSE.equals(circuitBreaker.get("enabled")) || "false".equalsIgnoreCase(circuitBreaker.get("enabled").toString()))) {
             return;
         }
 
@@ -755,25 +755,25 @@ public class ConfigurationHelper {
             return false;
         }
         String pkgName = pkg.getName();
-        return pkgName.startsWith("java.") || 
-               pkgName.startsWith("javax.") || 
-               pkgName.startsWith("sun.") || 
-               pkgName.startsWith("com.sun.");
+        return pkgName.startsWith("java.")
+               || pkgName.startsWith("javax.")
+               || pkgName.startsWith("sun.")
+               || pkgName.startsWith("com.sun.");
     }
 
     /**
      * 检查是否是基本类型或其包装类
      */
     private boolean isPrimitiveOrWrapper(final Class<?> clazz) {
-        return clazz.isPrimitive() ||
-               clazz == Boolean.class ||
-               clazz == Character.class ||
-               clazz == Byte.class ||
-               clazz == Short.class ||
-               clazz == Integer.class ||
-               clazz == Long.class ||
-               clazz == Float.class ||
-               clazz == Double.class;
+        return clazz.isPrimitive()
+               || clazz == Boolean.class
+               || clazz == Character.class
+               || clazz == Byte.class
+               || clazz == Short.class
+               || clazz == Integer.class
+               || clazz == Long.class
+               || clazz == Float.class
+               || clazz == Double.class;
     }
 
     /**

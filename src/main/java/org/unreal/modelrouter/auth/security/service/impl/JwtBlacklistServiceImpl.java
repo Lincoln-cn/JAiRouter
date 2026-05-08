@@ -454,9 +454,9 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                         
                         if (entryData != null) {
                             TokenBlacklistEntry entry = convertFromMap(entryData);
-                            if (entry.getExpiresAt() != null && 
-                                entry.getExpiresAt().isBefore(cutoffTime) && 
-                                entry.getExpiresAt().isAfter(LocalDateTime.now())) {
+                            if (entry.getExpiresAt() != null
+                                    && entry.getExpiresAt().isBefore(cutoffTime)
+                                    && entry.getExpiresAt().isAfter(LocalDateTime.now())) {
                                 expiringCount++;
                             }
                         }

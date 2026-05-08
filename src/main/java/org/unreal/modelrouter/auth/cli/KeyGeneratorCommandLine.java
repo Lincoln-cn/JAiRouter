@@ -31,9 +31,9 @@ public class KeyGeneratorCommandLine implements CommandLineRunner {
 
         boolean shouldRun = false;
         for (String arg : args) {
-            if (arg.equals("--generate-key") || 
-                arg.equals("--generate-api-token") || 
-                arg.equals("--generate-password")) {
+            if (arg.equals("--generate-key") 
+            || arg.equals("--generate-api-token")
+            || arg.equals("--generate-password")) {
                 shouldRun = true;
                 break;
             }

@@ -145,9 +145,9 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
      */
     private boolean isMultipartRequest(final ServerHttpRequest request) {
         MediaType contentType = request.getHeaders().getContentType();
-        return contentType != null &&
-                (contentType.isCompatibleWith(MediaType.MULTIPART_FORM_DATA) ||
-                        contentType.getType().equals("multipart"));
+        return contentType != null
+                && (contentType.isCompatibleWith(MediaType.MULTIPART_FORM_DATA)
+                        || contentType.getType().equals("multipart"));
     }
 
     /**

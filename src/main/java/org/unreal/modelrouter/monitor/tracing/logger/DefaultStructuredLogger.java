@@ -625,11 +625,11 @@ public class DefaultStructuredLogger implements StructuredLogger {
         }
         
         String lowerName = headerName.toLowerCase();
-        return lowerName.contains("authorization") ||
-               lowerName.contains("token") ||
-               lowerName.contains("key") ||
-               lowerName.contains("secret") ||
-               lowerName.contains("password");
+        return lowerName.contains("authorization")
+               || lowerName.contains("token")
+               || lowerName.contains("key")
+               || lowerName.contains("secret")
+               || lowerName.contains("password");
     }
     
     /**
@@ -788,12 +788,12 @@ public class DefaultStructuredLogger implements StructuredLogger {
      */
     private boolean isSensitiveQueryParam(final String key) {
         String lowerKey = key.toLowerCase();
-        return lowerKey.contains("token") ||
-               lowerKey.contains("key") ||
-               lowerKey.contains("password") ||
-               lowerKey.contains("secret") ||
-               lowerKey.contains("auth") ||
-               lowerKey.contains("credential");
+        return lowerKey.contains("token")
+               || lowerKey.contains("key")
+               || lowerKey.contains("password")
+               || lowerKey.contains("secret")
+               || lowerKey.contains("auth")
+               || lowerKey.contains("credential");
     }
     
     /**
@@ -868,10 +868,10 @@ public class DefaultStructuredLogger implements StructuredLogger {
             Map<String, Object> fieldsMap = (Map<String, Object>) fields;
             
             // 检查是否包含需要加密的字段
-            return fieldsMap.containsKey("authorization") ||
-                   fieldsMap.containsKey("token") ||
-                   fieldsMap.containsKey("password") ||
-                   fieldsMap.containsKey("secret");
+            return fieldsMap.containsKey("authorization")
+                   || fieldsMap.containsKey("token")
+                   || fieldsMap.containsKey("password")
+                   || fieldsMap.containsKey("secret");
         }
         
         return false;

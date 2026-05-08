@@ -350,9 +350,9 @@ public class SpanExporterFactory {
         }
         
         String lowerKey = key.toLowerCase();
-        if (lowerKey.contains("token") || lowerKey.contains("key") || 
-            lowerKey.contains("secret") || lowerKey.contains("password") ||
-            lowerKey.contains("authorization")) {
+        if (lowerKey.contains("token") || lowerKey.contains("key")
+            || lowerKey.contains("secret") || lowerKey.contains("password")
+            || lowerKey.contains("authorization")) {
             return "***";
         }
         
