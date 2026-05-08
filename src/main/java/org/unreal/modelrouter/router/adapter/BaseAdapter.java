@@ -23,6 +23,8 @@ import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
+import org.unreal.modelrouter.router.adapter.processor.StreamingRequestProcessor;
+import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
@@ -105,6 +107,13 @@ public abstract class BaseAdapter implements ServiceCapability {
         this.tracingManager = tracingManager;
     }
 
+    // ============ v2.15.x 新组件注入 (setter方式，向后兼容) ============
+
+    @Autowired(required = false)
+    private StreamingRequestProcessor streamingRequestProcessor;
+
+    @Autowired(required = false)
+    private MultipartRequestHandler multipartRequestHandler;
     /**
      * v2.0.0: 错误分类
      * v2.3.0: 委托给 AdapterErrorHandler
@@ -690,6 +699,14 @@ public abstract class BaseAdapter implements ServiceCapability {
             final String path,
             final ModelRouterProperties.ModelInstance selectedInstance,
             final ModelServiceRegistry.ServiceType serviceType) {
+        // v2.15.2: 优先使用 StreamingRequestProcessor
+        if (streamingRequestProcessor != null) {
+            return streamingRequestProcessor.processStreamingRequest(
+                    request, authorization, client, path,
+                    selectedInstance, serviceType, getAdapterType());
+        }
+
+        // 原有实现（向后兼容）
 
         Object transformedRequest = transformRequest(request, getAdapterType());
         String adapterType = getAdapterType();
@@ -775,6 +792,12 @@ public abstract class BaseAdapter implements ServiceCapability {
             final T request,
             final ModelRouterProperties.ModelInstance instance) {
         // 首先应用默认的请求头配置
+        // v2.15.2: 优先使用 MultipartRequestHandler
+        if (multipartRequestHandler != null) {
+            return multipartRequestHandler.configureRequestHeaders(requestSpec, request, instance);
+        }
+
+        // 原有实现（向后兼容）
         WebClient.RequestBodySpec spec = configureRequestHeaders(requestSpec, request);
         
         // 然后应用实例配置中的自定义headers
@@ -793,6 +816,12 @@ public abstract class BaseAdapter implements ServiceCapability {
      */
     protected BodyInserter<?, ? super ClientHttpRequest> createRequestBody(final Object request) {
         logger.debug("创建请求体，请求类型: {}", request.getClass().getSimpleName());
+        // v2.15.2: 优先使用 MultipartRequestHandler
+        if (multipartRequestHandler != null) {
+            return multipartRequestHandler.createRequestBody(request);
+        }
+
+        // 原有实现（向后兼容）
 
         // 检查是否已经是转换后的multipart数据
         if (request instanceof MultiValueMap) {
