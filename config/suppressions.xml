@@ -4,6 +4,9 @@
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <suppressions>
+    <!-- ConstantName: logger/log 是SLF4J/Lombok标准命名约定 -->
+    <suppress files=".*\.java" checks="ConstantName"/>
+
     <!-- HiddenField: Builder模式DTO类、Model类允许参数同名 -->
     <suppress files=".*[A-Z][a-zA-Z]*Metrics\.java" checks="HiddenField"/>
     <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="HiddenField"/>
