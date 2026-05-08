@@ -31,7 +31,7 @@ public class RouterResponse<T> {
         this.data = data;
     }
 
-    public RouterResponse(final boolean success, final String message, final T data,final String errorCode) {
+    public RouterResponse(final boolean success, final String message, final T data, final String errorCode) {
         this(success, message, data);
         this.errorCode = errorCode;
     }

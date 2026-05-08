@@ -15,7 +15,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @Configuration
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.cleanup.enabled", havingValue = "true", matchIfMissing = true)
 public class JwtCleanupConfiguration {
-    
+
     /**
      * 配置JWT清理任务的专用调度器
      * 使用独立的线程池避免与其他定时任务冲突
@@ -28,11 +28,11 @@ public class JwtCleanupConfiguration {
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
         scheduler.setAwaitTerminationSeconds(30);
         scheduler.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
-        
+
         log.info("Configured JWT cleanup task scheduler with pool size: {}", scheduler.getPoolSize());
         return scheduler;
     }
-    
+
     /**
      * 清理任务配置属性
      */
@@ -41,7 +41,7 @@ public class JwtCleanupConfiguration {
     public JwtCleanupProperties jwtCleanupProperties() {
         return new JwtCleanupProperties();
     }
-    
+
     /**
      * JWT清理配置属性类
      */
@@ -52,24 +52,54 @@ public class JwtCleanupConfiguration {
         private int batchSize = 1000;
         private int maxRetries = 3;
         private long retryDelayMs = 1000;
-        
+
         // Getters and Setters
-        public boolean isEnabled() { return enabled; }
-        public void setEnabled(final boolean enabled) { this.enabled = enabled; }
-        
-        public String getSchedule() { return schedule; }
-        public void setSchedule(final String schedule) { this.schedule = schedule; }
-        
-        public int getRetentionDays() { return retentionDays; }
-        public void setRetentionDays(final int retentionDays) { this.retentionDays = retentionDays; }
-        
-        public int getBatchSize() { return batchSize; }
-        public void setBatchSize(final int batchSize) { this.batchSize = batchSize; }
-        
-        public int getMaxRetries() { return maxRetries; }
-        public void setMaxRetries(final int maxRetries) { this.maxRetries = maxRetries; }
-        
-        public long getRetryDelayMs() { return retryDelayMs; }
-        public void setRetryDelayMs(final long retryDelayMs) { this.retryDelayMs = retryDelayMs; }
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(final boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getSchedule() {
+            return schedule;
+        }
+
+        public void setSchedule(final String schedule) {
+            this.schedule = schedule;
+        }
+
+        public int getRetentionDays() {
+            return retentionDays;
+        }
+
+        public void setRetentionDays(final int retentionDays) {
+            this.retentionDays = retentionDays;
+        }
+
+        public int getBatchSize() {
+            return batchSize;
+        }
+
+        public void setBatchSize(final int batchSize) {
+            this.batchSize = batchSize;
+        }
+
+        public int getMaxRetries() {
+            return maxRetries;
+        }
+
+        public void setMaxRetries(final int maxRetries) {
+            this.maxRetries = maxRetries;
+        }
+
+        public long getRetryDelayMs() {
+            return retryDelayMs;
+        }
+
+        public void setRetryDelayMs(final long retryDelayMs) {
+            this.retryDelayMs = retryDelayMs;
+        }
     }
 }

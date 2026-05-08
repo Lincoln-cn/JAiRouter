@@ -93,7 +93,7 @@ public class ApiKeyService {
      * @param ipAddress 客户端 IP 地址
      * @return 验证成功返回 ApiKey 信息
      */
-    public Mono<ApiKey> validateApiKey(final String keyValue, final String endpoint,final String ipAddress) {
+    public Mono<ApiKey> validateApiKey(final String keyValue, final String endpoint, final String ipAddress) {
         return Mono.defer(() -> {
             try {
                 if (keyValue == null || keyValue.trim().isEmpty()) {
@@ -179,7 +179,7 @@ public class ApiKeyService {
      * @param ipAddress 创建者 IP
      * @return 创建响应 VO
      */
-    public Mono<ApiKeyCreationVO> createApiKey(final ApiKeyCreateRequest request, final String createdBy,final String ipAddress) {
+    public Mono<ApiKeyCreationVO> createApiKey(final ApiKeyCreateRequest request, final String createdBy, final String ipAddress) {
         return Mono.fromCallable(() -> {
             // 生成 keyId
             String keyId = request.getKeyId() != null && !request.getKeyId().trim().isEmpty()
@@ -548,7 +548,7 @@ public class ApiKeyService {
 
     // ============ 审计辅助方法 ============
 
-    private void auditSecurityEvent(final String eventType, final String message,final String keyId,final String ipAddress) {
+    private void auditSecurityEvent(final String eventType, final String message, final String keyId, final String ipAddress) {
         if (extendedAuditService != null) {
             extendedAuditService.auditSecurityEvent(eventType, message, keyId, ipAddress)
                     .onErrorResume(ex -> {
@@ -559,7 +559,7 @@ public class ApiKeyService {
         }
     }
 
-    private void auditApiKeyCreated(final String keyId, final String createdBy,final String ipAddress) {
+    private void auditApiKeyCreated(final String keyId, final String createdBy, final String ipAddress) {
         if (extendedAuditService != null) {
             extendedAuditService.auditApiKeyCreated(keyId, createdBy, ipAddress)
                     .onErrorResume(ex -> {
@@ -570,7 +570,7 @@ public class ApiKeyService {
         }
     }
 
-    private void auditApiKeyUsed(final String keyId, final String endpoint,final String ipAddress,final boolean success) {
+    private void auditApiKeyUsed(final String keyId, final String endpoint, final String ipAddress, final boolean success) {
         if (extendedAuditService != null) {
             extendedAuditService.auditApiKeyUsed(keyId, endpoint, ipAddress, success)
                     .onErrorResume(ex -> {
@@ -581,7 +581,7 @@ public class ApiKeyService {
         }
     }
 
-    private void auditApiKeyRevoked(final String keyId, final String reason,final String revokedBy) {
+    private void auditApiKeyRevoked(final String keyId, final String reason, final String revokedBy) {
         if (extendedAuditService != null) {
             extendedAuditService.auditApiKeyRevoked(keyId, reason, revokedBy)
                     .onErrorResume(ex -> {
@@ -884,17 +884,25 @@ public class ApiKeyService {
         private final int keysNeedingRotation;
         private final int rotatedToday;
 
-        public RotationStats(final int totalKeys, final int keysWithRotation,final int keysNeedingRotation,final int rotatedToday) {
+        public RotationStats(final int totalKeys, final int keysWithRotation, final int keysNeedingRotation, final int rotatedToday) {
             this.totalKeys = totalKeys;
             this.keysWithRotation = keysWithRotation;
             this.keysNeedingRotation = keysNeedingRotation;
             this.rotatedToday = rotatedToday;
         }
 
-        public int getTotalKeys() { return totalKeys; }
-        public int getKeysWithRotation() { return keysWithRotation; }
-        public int getKeysNeedingRotation() { return keysNeedingRotation; }
-        public int getRotatedToday() { return rotatedToday; }
+        public int getTotalKeys() {
+            return totalKeys;
+        }
+        public int getKeysWithRotation() {
+            return keysWithRotation;
+        }
+        public int getKeysNeedingRotation() {
+            return keysNeedingRotation;
+        }
+        public int getRotatedToday() {
+            return rotatedToday;
+        }
     }
 
     private void auditApiKeyRotated(final String keyId, final String rotatedBy) {
@@ -982,17 +990,25 @@ public class ApiKeyService {
         private final int expiringToday;
         private final int disabledKeys;
 
-        public ExpirationStats(final int totalKeys, final int expiredKeys,final int expiringToday,final int disabledKeys) {
+        public ExpirationStats(final int totalKeys, final int expiredKeys, final int expiringToday, final int disabledKeys) {
             this.totalKeys = totalKeys;
             this.expiredKeys = expiredKeys;
             this.expiringToday = expiringToday;
             this.disabledKeys = disabledKeys;
         }
 
-        public int getTotalKeys() { return totalKeys; }
-        public int getExpiredKeys() { return expiredKeys; }
-        public int getExpiringToday() { return expiringToday; }
-        public int getDisabledKeys() { return disabledKeys; }
+        public int getTotalKeys() {
+            return totalKeys;
+        }
+        public int getExpiredKeys() {
+            return expiredKeys;
+        }
+        public int getExpiringToday() {
+            return expiringToday;
+        }
+        public int getDisabledKeys() {
+            return disabledKeys;
+        }
     }
 
     private void auditApiKeyExpired(final String keyId) {
@@ -1168,7 +1184,7 @@ public class ApiKeyService {
         });
     }
 
-    private void auditBatchImport(final String importedBy, final String ipAddress,final int successCount,final int failureCount) {
+    private void auditBatchImport(final String importedBy, final String ipAddress, final int successCount, final int failureCount) {
         if (extendedAuditService != null) {
             extendedAuditService.auditSecurityEvent("API_KEY_BATCH_IMPORT",
                     "批量导入完成: 成功 " + successCount + ", 失败 " + failureCount, null, ipAddress)

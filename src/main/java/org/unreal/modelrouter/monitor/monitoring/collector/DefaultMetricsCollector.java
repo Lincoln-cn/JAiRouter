@@ -42,7 +42,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordRequest(final String service, final String method, final long duration,final String status) {
+    public void recordRequest(final String service, final String method, final long duration, final String status) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -78,7 +78,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordBackendCall(final String adapter, final String instance, final long duration,final boolean success) {
+    public void recordBackendCall(final String adapter, final String instance, final long duration, final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -200,7 +200,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordHealthCheck(final String adapter, final String instance, final boolean healthy,final long responseTime) {
+    public void recordHealthCheck(final String adapter, final String instance, final boolean healthy, final long responseTime) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -270,7 +270,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTrace(final String traceId, final String spanId, final String operationName,final long duration,final boolean success) {
+    public void recordTrace(final String traceId, final String spanId, final String operationName, final long duration, final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -305,7 +305,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceExport(final String exporterType, final long duration, final boolean success,final int batchSize) {
+    public void recordTraceExport(final String exporterType, final long duration, final boolean success, final int batchSize) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -375,7 +375,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceDataQuality(final String traceId, final int spanCount, final int attributeCount,final int errorCount) {
+    public void recordTraceDataQuality(final String traceId, final int spanCount, final int attributeCount, final int errorCount) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -450,7 +450,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceAnalysis(final String analyzerName, final int spanCount, final long duration,final boolean success) {
+    public void recordTraceAnalysis(final String analyzerName, final int spanCount, final long duration, final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";

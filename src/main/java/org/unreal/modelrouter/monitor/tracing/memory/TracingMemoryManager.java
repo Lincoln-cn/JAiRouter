@@ -92,7 +92,7 @@ public class TracingMemoryManager {
     /**
      * 缓存追踪数据
      */
-    public Mono<Boolean> cacheTraceData(final String traceId, final String spanId, final Object data,final long estimatedSize) {
+    public Mono<Boolean> cacheTraceData(final String traceId, final String spanId, final Object data, final long estimatedSize) {
         return Mono.fromCallable(() -> {
             if (!isRunning.get()) {
                 return false;
@@ -431,7 +431,7 @@ public class TracingMemoryManager {
         private final long estimatedSize;
         private final Instant timestamp;
 
-        public CachedTraceData(final String traceId, final String spanId, final Object data,final long estimatedSize,final Instant timestamp) {
+        public CachedTraceData(final String traceId, final String spanId, final Object data, final long estimatedSize, final Instant timestamp) {
             this.traceId = traceId;
             this.spanId = spanId;
             this.data = data;

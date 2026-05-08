@@ -102,7 +102,7 @@ public class HealthCheckTracingEnhancer {
      * @param context      追踪上下文
      */
     public void logHealthCheckComplete(final String serviceType, final ModelRouterProperties.ModelInstance instance,
-                                       final boolean healthy, final long responseTime,final String message,final TracingContext context) {
+                                       final boolean healthy, final long responseTime, final String message, final TracingContext context) {
         // 更新Span状态
         Span currentSpan = context.getCurrentSpan();
         if (currentSpan != null && currentSpan.isRecording()) {
@@ -163,7 +163,7 @@ public class HealthCheckTracingEnhancer {
      * @param reason        状态变化原因
      */
     public void logInstanceStateChange(final String serviceType, final ModelRouterProperties.ModelInstance instance,
-                                       final boolean previousState, final boolean currentState,final String reason) {
+                                       final boolean previousState, final boolean currentState, final String reason) {
         // 创建独立的追踪上下文用于状态变化事件
         TracingContext context = new DefaultTracingContext(tracer);
 
@@ -276,7 +276,7 @@ public class HealthCheckTracingEnhancer {
      * @param checkDuration    检查总耗时
      */
     public void logHealthCheckBatchComplete(final int totalServices, final int healthyServices,
-                                            final int totalInstances, final int healthyInstances,final long checkDuration) {
+                                            final int totalInstances, final int healthyInstances, final long checkDuration) {
         // 创建独立的追踪上下文用于批次完成事件
         TracingContext context = new DefaultTracingContext(tracer);
 

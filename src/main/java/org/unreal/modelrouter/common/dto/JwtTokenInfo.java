@@ -16,7 +16,7 @@ public class JwtTokenInfo {
     private String token;           // 令牌值
     private String tokenType;       // 令牌类型 (Bearer)
     private String message;         // 响应消息
-    private LocalDateTime timestamp;// 响应时间戳
+    private LocalDateTime timestamp; // 响应时间戳
 
     // 令牌标识和用户信息
     private String id;              // 令牌ID (UUID)
@@ -25,20 +25,20 @@ public class JwtTokenInfo {
 
     // 时间信息
     private LocalDateTime issuedAt; // 颁发时间
-    private LocalDateTime expiresAt;// 过期时间
+    private LocalDateTime expiresAt; // 过期时间
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdAt;// 创建时间
+    private LocalDateTime createdAt; // 创建时间
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime updatedAt;// 更新时间
+    private LocalDateTime updatedAt; // 更新时间
 
     // 状态信息
     private TokenStatus status;     // 令牌状态 (ACTIVE, REVOKED, EXPIRED)
 
     // 撤销信息
     private String revokeReason;    // 撤销原因
-    private LocalDateTime revokedAt;// 撤销时间
+    private LocalDateTime revokedAt; // 撤销时间
     private String revokedBy;       // 撤销者
 
     // 上下文信息
@@ -75,7 +75,7 @@ public class JwtTokenInfo {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public JwtTokenInfo(final String token, final String tokenType,final String message,final LocalDateTime timestamp) {
+    public JwtTokenInfo(final String token, final String tokenType, final String message, final LocalDateTime timestamp) {
         this.token = token;
         this.tokenType = tokenType;
         this.message = message;
@@ -107,7 +107,7 @@ public class JwtTokenInfo {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public JwtTokenInfo(final String userId, final String token,final LocalDateTime issuedAt,final LocalDateTime expiresAt,final TokenStatus status) {
+    public JwtTokenInfo(final String userId, final String token, final LocalDateTime issuedAt, final LocalDateTime expiresAt, final TokenStatus status) {
         this.userId = userId;
         this.token = token;
         this.issuedAt = issuedAt;

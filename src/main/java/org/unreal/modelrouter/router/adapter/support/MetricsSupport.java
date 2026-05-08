@@ -105,7 +105,7 @@ public class MetricsSupport {
     /**
      * 记录响应时间指标
      */
-    public void recordResponseTimeMetrics(final String serviceType, final String method, final long responseTime,final String status) {
+    public void recordResponseTimeMetrics(final String serviceType, final String method, final long responseTime, final String status) {
         if (metricsCollector != null) {
             metricsCollector.recordRequest(serviceType, method, responseTime, status);
         }

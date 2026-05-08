@@ -48,7 +48,7 @@ public class SamplingResult {
     private final Map<String, Object> attributes;
     private final String traceState;
     
-    private SamplingResult(final Decision decision, final Map<String, Object> attributes,final String traceState) {
+    private SamplingResult(final Decision decision, final Map<String, Object> attributes, final String traceState) {
         this.decision = decision;
         this.attributes = attributes;
         this.traceState = traceState;
@@ -62,7 +62,7 @@ public class SamplingResult {
      * @param traceState 追踪状态
      * @return 采样结果
      */
-    public static SamplingResult create(final Decision decision, final Map<String, Object> attributes,final String traceState) {
+    public static SamplingResult create(final Decision decision, final Map<String, Object> attributes, final String traceState) {
         return new SamplingResult(decision, attributes, traceState);
     }
     

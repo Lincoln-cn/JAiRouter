@@ -19,7 +19,7 @@ public class LoggingFilterConfiguration {
     public static class ReadOnlyHttpHeadersExceptionFilter extends TurboFilter {
         
         @Override
-        public FilterReply decide(final Marker marker, final ch.qos.logback.classic.Logger logger, final Level level,final String format,final Object[] params,final Throwable t) {
+        public FilterReply decide(final Marker marker, final ch.qos.logback.classic.Logger logger, final Level level, final String format, final Object[] params, final Throwable t) {
             // 检查日志信息是否包含ReadOnlyHttpHeaders.set相关的异常
             if (format != null && 
                 (format.contains("ReadOnlyHttpHeaders.set") ||

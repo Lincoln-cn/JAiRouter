@@ -16,56 +16,56 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Component
 public class CacheMetrics {
-    
+
     private final Counter cacheHits;
     private final Counter cacheMisses;
     private final Counter cacheWrites;
     private final Counter cacheEvictions;
     private final Counter cacheErrors;
-    
+
     private final Timer cacheReadTimer;
     private final Timer cacheWriteTimer;
-    
+
     private final AtomicLong cacheSize = new AtomicLong(0);
-    
+
     public CacheMetrics(final MeterRegistry meterRegistry) {
         // 缓存命中率指标
         this.cacheHits = Counter.builder("jairouter.security.cache.hits")
                 .description("API Key缓存命中次数")
                 .register(meterRegistry);
-        
+
         this.cacheMisses = Counter.builder("jairouter.security.cache.misses")
                 .description("API Key缓存未命中次数")
                 .register(meterRegistry);
-        
+
         // 缓存操作指标
         this.cacheWrites = Counter.builder("jairouter.security.cache.writes")
                 .description("API Key缓存写入次数")
                 .register(meterRegistry);
-        
+
         this.cacheEvictions = Counter.builder("jairouter.security.cache.evictions")
                 .description("API Key缓存失效次数")
                 .register(meterRegistry);
-        
+
         this.cacheErrors = Counter.builder("jairouter.security.cache.errors")
                 .description("API Key缓存错误次数")
                 .register(meterRegistry);
-        
+
         // 缓存操作耗时指标
         this.cacheReadTimer = Timer.builder("jairouter.security.cache.read.duration")
                 .description("API Key缓存读取耗时")
                 .register(meterRegistry);
-        
+
         this.cacheWriteTimer = Timer.builder("jairouter.security.cache.write.duration")
                 .description("API Key缓存写入耗时")
                 .register(meterRegistry);
-        
+
         // 缓存大小指标
         meterRegistry.gauge("jairouter.security.cache.size", cacheSize, AtomicLong::get);
-        
+
         log.info("缓存性能指标收集器初始化完成");
     }
-    
+
     /**
      * 记录缓存命中
      */
@@ -73,7 +73,7 @@ public class CacheMetrics {
         cacheHits.increment();
         log.debug("记录缓存命中");
     }
-    
+
     /**
      * 记录缓存未命中
      */
@@ -81,7 +81,7 @@ public class CacheMetrics {
         cacheMisses.increment();
         log.debug("记录缓存未命中");
     }
-    
+
     /**
      * 记录缓存写入
      */
@@ -89,7 +89,7 @@ public class CacheMetrics {
         cacheWrites.increment();
         log.debug("记录缓存写入");
     }
-    
+
     /**
      * 记录缓存失效
      */
@@ -98,7 +98,7 @@ public class CacheMetrics {
         cacheSize.decrementAndGet();
         log.debug("记录缓存失效");
     }
-    
+
     /**
      * 记录缓存错误
      */
@@ -106,7 +106,7 @@ public class CacheMetrics {
         cacheErrors.increment();
         log.debug("记录缓存错误");
     }
-    
+
     /**
      * 记录缓存读取耗时
      */
@@ -114,7 +114,7 @@ public class CacheMetrics {
         cacheReadTimer.record(duration);
         log.debug("记录缓存读取耗时: {} ms", duration.toMillis());
     }
-    
+
     /**
      * 记录缓存写入耗时
      */
@@ -122,7 +122,7 @@ public class CacheMetrics {
         cacheWriteTimer.record(duration);
         log.debug("记录缓存写入耗时: {} ms", duration.toMillis());
     }
-    
+
     /**
      * 更新缓存大小
      */
@@ -130,21 +130,21 @@ public class CacheMetrics {
         cacheSize.set(size);
         log.debug("更新缓存大小: {}", size);
     }
-    
+
     /**
      * 增加缓存大小
      */
     public void incrementCacheSize() {
         cacheSize.incrementAndGet();
     }
-    
+
     /**
      * 减少缓存大小
      */
     public void decrementCacheSize() {
         cacheSize.decrementAndGet();
     }
-    
+
     /**
      * 获取缓存命中率
      */
@@ -152,14 +152,14 @@ public class CacheMetrics {
         double hits = cacheHits.count();
         double misses = cacheMisses.count();
         double total = hits + misses;
-        
+
         if (total == 0) {
             return 0.0;
         }
-        
+
         return hits / total;
     }
-    
+
     /**
      * 获取缓存统计信息
      */
@@ -174,7 +174,7 @@ public class CacheMetrics {
                 .size(cacheSize.get())
                 .build();
     }
-    
+
     /**
      * 缓存统计信息
      */
@@ -186,7 +186,7 @@ public class CacheMetrics {
         private final double errors;
         private final double hitRate;
         private final long size;
-        
+
         private CacheStatistics(final Builder builder) {
             this.hits = builder.hits;
             this.misses = builder.misses;
@@ -196,27 +196,47 @@ public class CacheMetrics {
             this.hitRate = builder.hitRate;
             this.size = builder.size;
         }
-        
+
         public static Builder builder() {
             return new Builder();
         }
-        
+
         // Getters
-        public double getHits() { return hits; }
-        public double getMisses() { return misses; }
-        public double getWrites() { return writes; }
-        public double getEvictions() { return evictions; }
-        public double getErrors() { return errors; }
-        public double getHitRate() { return hitRate; }
-        public long getSize() { return size; }
-        
+        public double getHits() {
+            return hits;
+        }
+
+        public double getMisses() {
+            return misses;
+        }
+
+        public double getWrites() {
+            return writes;
+        }
+
+        public double getEvictions() {
+            return evictions;
+        }
+
+        public double getErrors() {
+            return errors;
+        }
+
+        public double getHitRate() {
+            return hitRate;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
         @Override
         public String toString() {
             return String.format("CacheStatistics{hits=%.0f, misses=%.0f, writes=%.0f, " +
-                    "evictions=%.0f, errors=%.0f, hitRate=%.2f%%, size=%d}", 
+                    "evictions=%.0f, errors=%.0f, hitRate=%.2f%%, size=%d}",
                     hits, misses, writes, evictions, errors, hitRate * 100, size);
         }
-        
+
         public static class Builder {
             private double hits;
             private double misses;
@@ -225,15 +245,42 @@ public class CacheMetrics {
             private double errors;
             private double hitRate;
             private long size;
-            
-            public Builder hits(final double hits) { this.hits = hits; return this; }
-            public Builder misses(final double misses) { this.misses = misses; return this; }
-            public Builder writes(final double writes) { this.writes = writes; return this; }
-            public Builder evictions(final double evictions) { this.evictions = evictions; return this; }
-            public Builder errors(final double errors) { this.errors = errors; return this; }
-            public Builder hitRate(final double hitRate) { this.hitRate = hitRate; return this; }
-            public Builder size(final long size) { this.size = size; return this; }
-            
+
+            public Builder hits(final double hits) {
+                this.hits = hits;
+                return this;
+            }
+
+            public Builder misses(final double misses) {
+                this.misses = misses;
+                return this;
+            }
+
+            public Builder writes(final double writes) {
+                this.writes = writes;
+                return this;
+            }
+
+            public Builder evictions(final double evictions) {
+                this.evictions = evictions;
+                return this;
+            }
+
+            public Builder errors(final double errors) {
+                this.errors = errors;
+                return this;
+            }
+
+            public Builder hitRate(final double hitRate) {
+                this.hitRate = hitRate;
+                return this;
+            }
+
+            public Builder size(final long size) {
+                this.size = size;
+                return this;
+            }
+
             public CacheStatistics build() {
                 return new CacheStatistics(this);
             }

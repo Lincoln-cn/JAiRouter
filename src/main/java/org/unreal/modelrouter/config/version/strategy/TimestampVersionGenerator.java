@@ -95,5 +95,5 @@ public class TimestampVersionGenerator implements VersionGenerator {
         return String.valueOf(version);
     }
 
-    private static class NumberOverflowException extends RuntimeException {}
+    private static class NumberOverflowException extends RuntimeException { }
 }

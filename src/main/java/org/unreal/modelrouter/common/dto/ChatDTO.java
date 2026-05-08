@@ -250,7 +250,7 @@ public class ChatDTO {
             String role,
             String content,
             String name
-    ) {}
+    ) { }
 
     public record Response(
             String id,
@@ -260,23 +260,23 @@ public class ChatDTO {
             List<Choice> choices,
             Usage usage,
             @JsonProperty("system_fingerprint") String systemFingerprint
-    ) {}
+    ) { }
 
     public record Choice(
             Integer index,
             Message message,
             Delta delta,
             @JsonProperty("finish_reason") String finishReason
-    ) {}
+    ) { }
 
     public record Delta(
             String role,
             String content
-    ) {}
+    ) { }
 
     public record Usage(
             @JsonProperty("prompt_tokens") Integer promptTokens,
             @JsonProperty("completion_tokens") Integer completionTokens,
             @JsonProperty("total_tokens") Integer totalTokens
-    ) {}
+    ) { }
 }

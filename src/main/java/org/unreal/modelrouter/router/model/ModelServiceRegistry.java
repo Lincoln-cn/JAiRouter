@@ -279,7 +279,7 @@ public class ModelServiceRegistry {
     /**
      * 获取WebClient
      */
-    public WebClient getClient(final ServiceType serviceType, final String modelName,final String clientIp) {
+    public WebClient getClient(final ServiceType serviceType, final String modelName, final String clientIp) {
         ModelRouterProperties.ModelInstance selectedInstance = selectInstance(serviceType, modelName, clientIp);
         return getWebClient(selectedInstance);
     }

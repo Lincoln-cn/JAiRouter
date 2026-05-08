@@ -191,7 +191,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
      * 记录指标
      */
     private void recordMetrics(final long startTime, final String method, final String serviceName, 
-                             final int statusCode, final long requestSize, final long responseSize,final String path) {
+                             final int statusCode, final long requestSize, final long responseSize, final String path) {
         try {
             long duration = System.currentTimeMillis() - startTime;
             String status = String.valueOf(statusCode);

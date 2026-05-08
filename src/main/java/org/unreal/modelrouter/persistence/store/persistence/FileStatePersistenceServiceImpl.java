@@ -37,7 +37,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
     private String storagePath;
 
     @Override
-    public Mono<Boolean> save(final StateType stateType, final String key,final Map<String, Object> stateData) {
+    public Mono<Boolean> save(final StateType stateType, final String key, final Map<String, Object> stateData) {
         return Mono.fromCallable(() -> {
             try {
                 Path filePath = resolveFilePath(stateType, key);
@@ -64,7 +64,7 @@ public class FileStatePersistenceServiceImpl implements StatePersistenceService 
                 }
                 
                 Map<String, Object> stateData = JacksonHelper.getObjectMapper().readValue(
-                        filePath.toFile(), new TypeReference<Map<String, Object>>() {});
+                        filePath.toFile(), new TypeReference<Map<String, Object>>() { });
                 logger.debug("State loaded from file: {}", filePath);
                 return stateData;
             } catch (IOException e) {

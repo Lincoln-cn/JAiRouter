@@ -90,7 +90,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Mono<Void> recordAuthenticationEvent(final String userId, final String clientIp,final String userAgent, 
+    public Mono<Void> recordAuthenticationEvent(final String userId, final String clientIp, final String userAgent, 
                                               final boolean success, final String failureReason) {
         SecurityAuditEvent event = SecurityAuditEvent.builder()
                 .eventType(success ? "AUTHENTICATION_SUCCESS" : "AUTHENTICATION_FAILURE")
@@ -107,7 +107,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Mono<Void> recordSanitizationEvent(final String userId, final String contentType,final String ruleId,final int matchCount) {
+    public Mono<Void> recordSanitizationEvent(final String userId, final String contentType, final String ruleId, final int matchCount) {
         Map<String, Object> additionalData = new HashMap<>();
         additionalData.put("contentType", contentType);
         additionalData.put("ruleId", ruleId);
@@ -126,7 +126,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     
     @Override
     public Flux<SecurityAuditEvent> queryEvents(final LocalDateTime startTime, final LocalDateTime endTime, 
-                                               final String eventType, final String userId,final int limit) {
+                                               final String eventType, final String userId, final int limit) {
         return Flux.fromIterable(auditEvents)
                 .filter(event -> event.getTimestamp().isAfter(startTime) && event.getTimestamp().isBefore(endTime))
                 .filter(event -> eventType == null || eventType.equals(event.getEventType()))
@@ -287,7 +287,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     }
     
     @Override
-    public Mono<Boolean> shouldTriggerAlert(final String eventType, final int timeWindowMinutes,final int threshold) {
+    public Mono<Boolean> shouldTriggerAlert(final String eventType, final int timeWindowMinutes, final int threshold) {
         LocalDateTime windowStart = LocalDateTime.now().minusMinutes(timeWindowMinutes);
         
         return Mono.fromCallable(() -> {

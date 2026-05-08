@@ -379,7 +379,7 @@ public class UniversalController {
 
 
 
-    private void recordRequestMetrics(final String service, final String method, final long duration,final String status, 
+    private void recordRequestMetrics(final String service, final String method, final long duration, final String status, 
                                     final long requestSize, final long responseSize) {
         if (metricsCollector == null) {
             return;

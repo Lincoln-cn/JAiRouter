@@ -210,7 +210,7 @@ public class WebFluxTracingContextPropagator {
      * @param <T> 返回类型
      * @return 包含追踪的处理结果
      */
-    public <T> Mono<T> traceRoute(final ServerWebExchange exchange, final String routeName,final Mono<T> handler) {
+    public <T> Mono<T> traceRoute(final ServerWebExchange exchange, final String routeName, final Mono<T> handler) {
         return withTracingContext(exchange, tracingContext -> {
             if (tracingContext != null) {
                 // 添加路由信息到Span

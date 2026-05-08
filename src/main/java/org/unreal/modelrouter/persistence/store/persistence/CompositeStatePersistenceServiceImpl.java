@@ -94,7 +94,7 @@ public class CompositeStatePersistenceServiceImpl implements StatePersistenceSer
     }
 
     @Override
-    public Mono<Boolean> save(final StateType stateType, final String key,final Map<String, Object> stateData) {
+    public Mono<Boolean> save(final StateType stateType, final String key, final Map<String, Object> stateData) {
         return executeWithFallback(
                 () -> activeService.save(stateType, key, stateData),
                 stateType, key);

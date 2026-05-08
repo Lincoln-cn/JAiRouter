@@ -20,21 +20,21 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
 public class EnhancedJwtBlacklistService {
-    
+
     private static final String BLACKLIST_KEY_PREFIX = "jwt:blacklist:";
     private static final String BLACKLIST_BACKUP_KEY_PREFIX = "jwt:blacklist:backup:";
-    
+
     private final ReactiveStringRedisTemplate redisTemplate;
-    
+
     // 本地缓存作为备份，防止Redis连接问题
     private final ConcurrentMap<String, Long> localBlacklistCache = new ConcurrentHashMap<>();
-    
+
     // 最大本地缓存大小
     private static final int MAX_LOCAL_CACHE_SIZE = 10000;
-    
+
     /**
      * 将令牌加入黑名单
-     * 
+     *
      * @param tokenId 令牌ID或令牌哈希
      * @param ttlSeconds 过期时间（秒）
      * @return 操作结果
@@ -44,18 +44,18 @@ public class EnhancedJwtBlacklistService {
             log.warn("尝试将空的tokenId加入黑名单");
             return Mono.just(false);
         }
-        
+
         String trimmedTokenId = tokenId.trim();
         String blacklistKey = BLACKLIST_KEY_PREFIX + trimmedTokenId;
         String backupKey = BLACKLIST_BACKUP_KEY_PREFIX + trimmedTokenId;
-        
+
         // 1. 立即加入本地缓存
         long expirationTime = System.currentTimeMillis() + (ttlSeconds * 1000);
         localBlacklistCache.put(trimmedTokenId, expirationTime);
-        
+
         // 清理本地缓存（如果超过最大大小）
         cleanupLocalCache();
-        
+
         // 2. 加入Redis黑名单
         return redisTemplate.opsForValue()
                 .set(blacklistKey, "blacklisted", Duration.ofSeconds(ttlSeconds))
@@ -83,11 +83,11 @@ public class EnhancedJwtBlacklistService {
                     return Mono.just(true);
                 });
     }
-    
+
     /**
      * 检查令牌是否在黑名单中
      * 使用多重检查策略：本地缓存 -> Redis主键 -> Redis备份键
-     * 
+     *
      * @param tokenId 令牌ID或令牌哈希
      * @return 是否在黑名单中
      */
@@ -95,9 +95,9 @@ public class EnhancedJwtBlacklistService {
         if (tokenId == null || tokenId.trim().isEmpty()) {
             return Mono.just(false);
         }
-        
+
         String trimmedTokenId = tokenId.trim();
-        
+
         // 1. 首先检查本地缓存
         Long expirationTime = localBlacklistCache.get(trimmedTokenId);
         if (expirationTime != null) {
@@ -109,7 +109,7 @@ public class EnhancedJwtBlacklistService {
                 localBlacklistCache.remove(trimmedTokenId);
             }
         }
-        
+
         // 2. 检查Redis主键
         String blacklistKey = BLACKLIST_KEY_PREFIX + trimmedTokenId;
         return redisTemplate.hasKey(blacklistKey)
@@ -148,10 +148,10 @@ public class EnhancedJwtBlacklistService {
                     return Mono.just(false); // 默认允许，但记录警告
                 });
     }
-    
+
     /**
      * 从黑名单中移除令牌（用于测试或特殊情况）
-     * 
+     *
      * @param tokenId 令牌ID或令牌哈希
      * @return 操作结果
      */
@@ -159,16 +159,16 @@ public class EnhancedJwtBlacklistService {
         if (tokenId == null || tokenId.trim().isEmpty()) {
             return Mono.just(false);
         }
-        
+
         String trimmedTokenId = tokenId.trim();
-        
+
         // 1. 从本地缓存移除
         localBlacklistCache.remove(trimmedTokenId);
-        
+
         // 2. 从Redis移除
         String blacklistKey = BLACKLIST_KEY_PREFIX + trimmedTokenId;
         String backupKey = BLACKLIST_BACKUP_KEY_PREFIX + trimmedTokenId;
-        
+
         return redisTemplate.delete(blacklistKey)
                 .flatMap(deleted -> redisTemplate.delete(backupKey))
                 .map(backupDeleted -> {
@@ -180,21 +180,21 @@ public class EnhancedJwtBlacklistService {
                     return Mono.just(false);
                 });
     }
-    
+
     /**
      * 获取黑名单统计信息
-     * 
+     *
      * @return 统计信息
      */
     public Mono<BlacklistStats> getStats() {
         return Mono.fromCallable(() -> {
             BlacklistStats stats = new BlacklistStats();
-            
+
             // 本地缓存统计
             cleanupLocalCache(); // 先清理过期条目
             stats.setLocalCacheSize(localBlacklistCache.size());
             stats.setLocalCacheMaxSize(MAX_LOCAL_CACHE_SIZE);
-            
+
             return stats;
         }).flatMap(stats -> {
             // Redis统计（异步获取，失败不影响本地统计）
@@ -208,7 +208,7 @@ public class EnhancedJwtBlacklistService {
                     .onErrorReturn(stats); // Redis失败时返回本地统计
         });
     }
-    
+
     /**
      * 清理本地缓存中的过期条目
      */
@@ -221,14 +221,14 @@ public class EnhancedJwtBlacklistService {
             // 缓存过大，清理过期条目和最老的条目
             long currentTime = System.currentTimeMillis();
             localBlacklistCache.entrySet().removeIf(entry -> entry.getValue() < currentTime);
-            
+
             // 如果还是太大，移除最老的条目
             while (localBlacklistCache.size() > MAX_LOCAL_CACHE_SIZE) {
                 String oldestKey = localBlacklistCache.entrySet().stream()
                         .min((e1, e2) -> Long.compare(e1.getValue(), e2.getValue()))
                         .map(entry -> entry.getKey())
                         .orElse(null);
-                
+
                 if (oldestKey != null) {
                     localBlacklistCache.remove(oldestKey);
                 } else {
@@ -237,14 +237,14 @@ public class EnhancedJwtBlacklistService {
             }
         }
     }
-    
+
     /**
      * 获取Redis统计信息
      */
     private Mono<RedisStats> getRedisStats() {
         return redisTemplate.keys(BLACKLIST_KEY_PREFIX + "*")
                 .count()
-                .flatMap(mainCount -> 
+                .flatMap(mainCount ->
                     redisTemplate.keys(BLACKLIST_BACKUP_KEY_PREFIX + "*")
                             .count()
                             .map(backupCount -> {
@@ -255,7 +255,7 @@ public class EnhancedJwtBlacklistService {
                             })
                 );
     }
-    
+
     /**
      * 黑名单统计信息
      */
@@ -265,35 +265,70 @@ public class EnhancedJwtBlacklistService {
         private int redisSize;
         private int redisBackupSize;
         private boolean redisAvailable;
-        
+
         // Getters and Setters
-        public int getLocalCacheSize() { return localCacheSize; }
-        public void setLocalCacheSize(final int localCacheSize) { this.localCacheSize = localCacheSize; }
-        
-        public int getLocalCacheMaxSize() { return localCacheMaxSize; }
-        public void setLocalCacheMaxSize(final int localCacheMaxSize) { this.localCacheMaxSize = localCacheMaxSize; }
-        
-        public int getRedisSize() { return redisSize; }
-        public void setRedisSize(final int redisSize) { this.redisSize = redisSize; }
-        
-        public int getRedisBackupSize() { return redisBackupSize; }
-        public void setRedisBackupSize(final int redisBackupSize) { this.redisBackupSize = redisBackupSize; }
-        
-        public boolean isRedisAvailable() { return redisAvailable; }
-        public void setRedisAvailable(final boolean redisAvailable) { this.redisAvailable = redisAvailable; }
+        public int getLocalCacheSize() {
+            return localCacheSize;
+        }
+
+        public void setLocalCacheSize(final int localCacheSize) {
+            this.localCacheSize = localCacheSize;
+        }
+
+        public int getLocalCacheMaxSize() {
+            return localCacheMaxSize;
+        }
+
+        public void setLocalCacheMaxSize(final int localCacheMaxSize) {
+            this.localCacheMaxSize = localCacheMaxSize;
+        }
+
+        public int getRedisSize() {
+            return redisSize;
+        }
+
+        public void setRedisSize(final int redisSize) {
+            this.redisSize = redisSize;
+        }
+
+        public int getRedisBackupSize() {
+            return redisBackupSize;
+        }
+
+        public void setRedisBackupSize(final int redisBackupSize) {
+            this.redisBackupSize = redisBackupSize;
+        }
+
+        public boolean isRedisAvailable() {
+            return redisAvailable;
+        }
+
+        public void setRedisAvailable(final boolean redisAvailable) {
+            this.redisAvailable = redisAvailable;
+        }
     }
-    
+
     /**
      * Redis统计信息
      */
     private static class RedisStats {
         private int redisSize;
         private int redisBackupSize;
-        
-        public int getRedisSize() { return redisSize; }
-        public void setRedisSize(final int redisSize) { this.redisSize = redisSize; }
-        
-        public int getRedisBackupSize() { return redisBackupSize; }
-        public void setRedisBackupSize(final int redisBackupSize) { this.redisBackupSize = redisBackupSize; }
+
+        public int getRedisSize() {
+            return redisSize;
+        }
+
+        public void setRedisSize(final int redisSize) {
+            this.redisSize = redisSize;
+        }
+
+        public int getRedisBackupSize() {
+            return redisBackupSize;
+        }
+
+        public void setRedisBackupSize(final int redisBackupSize) {
+            this.redisBackupSize = redisBackupSize;
+        }
     }
 }

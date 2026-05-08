@@ -119,7 +119,7 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                     // 记录成功率统计
                     long totalCleanups = totalCleanupsPerformed.get();
                     long failedCount = failedCleanups.get();
-                    double successRate = totalCleanups > 0 ? (double)(totalCleanups - failedCount) / totalCleanups * 100 : 100.0;
+                    double successRate = totalCleanups > 0 ? (double) (totalCleanups - failedCount) / totalCleanups * 100 : 100.0;
                     log.info("Cleanup success rate: {:.1f}% ({} successful out of {} total)", 
                             successRate, totalCleanups - failedCount, totalCleanups);
                     
@@ -543,7 +543,7 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
             
             // 成功率统计
             double successRate = totalCleanups > 0 ? 
-                (double)(totalCleanups - failedCleanups.get()) / totalCleanups * 100 : 100.0;
+                (double) (totalCleanups - failedCleanups.get()) / totalCleanups * 100 : 100.0;
             performanceMetrics.put("successRate", successRate);
             performanceMetrics.put("failureRate", 100.0 - successRate);
             
@@ -640,7 +640,7 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                     resetCleanupStats();
                 } else {
                     double successRate = totalCleanups > 0 ? 
-                        (double)(totalCleanups - failures) / totalCleanups * 100 : 100.0;
+                        (double) (totalCleanups - failures) / totalCleanups * 100 : 100.0;
                     
                     log.info("Loaded cleanup stats: cleanups={}, tokens={}, blacklist={}, failed={}, success={:.1f}%",
                             totalCleanups, totalTokensRemoved.get(), 
@@ -707,7 +707,7 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                 double avgDuration = cleanupTimer.totalTime(java.util.concurrent.TimeUnit.MILLISECONDS) / totalCleanups;
                 statsData.put("averageCleanupDurationMs", avgDuration);
                 
-                double successRate = (double)(totalCleanups - failedCleanups.get()) / totalCleanups * 100;
+                double successRate = (double) (totalCleanups - failedCleanups.get()) / totalCleanups * 100;
                 statsData.put("successRate", successRate);
             } else {
                 statsData.put("averageCleanupDurationMs", 0.0);

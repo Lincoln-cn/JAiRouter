@@ -57,7 +57,7 @@ public interface StoreManager {
      * @param config 配置内容
      * @param version 版本号
      */
-    default void saveConfigVersion(final String key, final Map<String, Object> config,final int version) {
+    default void saveConfigVersion(final String key, final Map<String, Object> config, final int version) {
         // 默认实现为空，子类可以覆盖
     }
 

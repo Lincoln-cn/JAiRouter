@@ -33,7 +33,7 @@ public class SecurityAuditQueryResponse {
     @Schema(description = "响应生成时间")
     private LocalDateTime generatedAt = LocalDateTime.now();
 
-    SecurityAuditQueryResponse(final List<SecurityAuditEvent> events, final int page,final int size,final int totalElements,final LocalDateTime startTime,final LocalDateTime endTime,final LocalDateTime generatedAt) {
+    SecurityAuditQueryResponse(final List<SecurityAuditEvent> events, final int page, final int size, final int totalElements, final LocalDateTime startTime, final LocalDateTime endTime, final LocalDateTime generatedAt) {
         this.events = events;
         this.page = page;
         this.size = size;

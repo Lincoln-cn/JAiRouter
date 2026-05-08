@@ -285,7 +285,7 @@ public class TracingSanitizationService {
     /**
      * 记录脱敏操作审计日志
      */
-    private void recordSanitizationAudit(final String dataType, final String fieldName, final String action,final TracingContext context) {
+    private void recordSanitizationAudit(final String dataType, final String fieldName, final String action, final TracingContext context) {
         try {
             structuredLogger.logSanitization(
                 String.format("%s.%s", dataType, fieldName),

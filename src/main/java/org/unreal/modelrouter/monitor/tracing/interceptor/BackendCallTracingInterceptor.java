@@ -255,7 +255,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
      * 处理成功响应
      */
     private void handleSuccessResponse(final ClientResponse response, final ClientRequest request, 
-                                     final Span span, final TracingContext tracingContext,final Instant startTime) {
+                                     final Span span, final TracingContext tracingContext, final Instant startTime) {
         try {
             long duration = Instant.now().toEpochMilli() - startTime.toEpochMilli();
             int statusCode = response.statusCode().value();
@@ -319,7 +319,7 @@ public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
      * 处理错误响应
      */
     private void handleErrorResponse(final Throwable error, final ClientRequest request, 
-                                   final Span span, final TracingContext tracingContext,final Instant startTime) {
+                                   final Span span, final TracingContext tracingContext, final Instant startTime) {
         try {
             long duration = Instant.now().toEpochMilli() - startTime.toEpochMilli();
             

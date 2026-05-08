@@ -48,9 +48,15 @@ public class MetricsDegradationStrategy {
             this.description = description;
         }
         
-        public int getLevel() { return level; }
-        public double getSamplingRate() { return samplingRate; }
-        public String getDescription() { return description; }
+        public int getLevel() {
+            return level;
+        }
+        public double getSamplingRate() {
+            return samplingRate;
+        }
+        public String getDescription() {
+            return description;
+        }
         
         public static DegradationLevel fromLevel(final int level) {
             for (DegradationLevel dl : values()) {
@@ -284,10 +290,20 @@ public class MetricsDegradationStrategy {
             this.errorComponentCount = errorComponentCount;
         }
         
-        public DegradationLevel getLevel() { return level; }
-        public double getSamplingRate() { return samplingRate; }
-        public boolean isAutoModeEnabled() { return autoModeEnabled; }
-        public Duration getTimeSinceLastChange() { return timeSinceLastChange; }
-        public int getErrorComponentCount() { return errorComponentCount; }
+        public DegradationLevel getLevel() {
+            return level;
+        }
+        public double getSamplingRate() {
+            return samplingRate;
+        }
+        public boolean isAutoModeEnabled() {
+            return autoModeEnabled;
+        }
+        public Duration getTimeSinceLastChange() {
+            return timeSinceLastChange;
+        }
+        public int getErrorComponentCount() {
+            return errorComponentCount;
+        }
     }
 }

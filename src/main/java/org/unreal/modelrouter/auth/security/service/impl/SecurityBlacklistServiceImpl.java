@@ -158,7 +158,7 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     }
 
     @Override
-    public Page<BlacklistEntryDTO> getBlacklistPage(final BlacklistType type, final String status,final int page,final int size) {
+    public Page<BlacklistEntryDTO> getBlacklistPage(final BlacklistType type, final String status, final int page, final int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "addedAt"));
 
         Page<SecurityBlacklistEntity> entityPage;

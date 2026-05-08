@@ -165,7 +165,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Void> recordAuthenticationEvent(final String userId, final String clientIp,final String userAgent,
+    public Mono<Void> recordAuthenticationEvent(final String userId, final String clientIp, final String userAgent,
                                                final boolean success, final String failureReason) {
         SecurityAuditEvent event = SecurityAuditEvent.builder()
                 .eventType(success ? "AUTHENTICATION_SUCCESS" : "AUTHENTICATION_FAILURE")
@@ -181,7 +181,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Void> recordSanitizationEvent(final String userId, final String contentType,final String ruleId,final int matchCount) {
+    public Mono<Void> recordSanitizationEvent(final String userId, final String contentType, final String ruleId, final int matchCount) {
         SecurityAuditEvent event = SecurityAuditEvent.builder()
                 .eventType("DATA_SANITIZATION")
                 .userId(userId)
@@ -194,7 +194,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
 
     @Override
     public Flux<SecurityAuditEvent> queryEvents(final LocalDateTime startTime, final LocalDateTime endTime,
-                                               final String eventType, final String userId,final int limit) {
+                                               final String eventType, final String userId, final int limit) {
         return Flux.fromIterable(eventBuffer)
                 .filter(event -> event.getTimestamp() != null && 
                                event.getTimestamp().isAfter(startTime) && 
@@ -227,7 +227,7 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Boolean> shouldTriggerAlert(final String eventType, final int timeWindowMinutes,final int threshold) {
+    public Mono<Boolean> shouldTriggerAlert(final String eventType, final int timeWindowMinutes, final int threshold) {
         return Mono.just(false);
     }
 

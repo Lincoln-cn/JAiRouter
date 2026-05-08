@@ -98,7 +98,7 @@ public class CleanupMetricsService {
     /**
      * 完成令牌清理操作
      */
-    public void finishTokenCleanup(final Timer.Sample sample, final long itemsRemoved,final boolean success) {
+    public void finishTokenCleanup(final Timer.Sample sample, final long itemsRemoved, final boolean success) {
         if (sample != null) {
             sample.stop(tokenCleanupTimer);
         }
@@ -140,7 +140,7 @@ public class CleanupMetricsService {
     /**
      * 完成黑名单清理操作
      */
-    public void finishBlacklistCleanup(final Timer.Sample sample, final long itemsRemoved,final boolean success) {
+    public void finishBlacklistCleanup(final Timer.Sample sample, final long itemsRemoved, final boolean success) {
         if (sample != null) {
             sample.stop(blacklistCleanupTimer);
         }
@@ -175,7 +175,7 @@ public class CleanupMetricsService {
     /**
      * 记录手动清理操作
      */
-    public void recordManualCleanup(final String type, final long itemsRemoved,final Duration duration) {
+    public void recordManualCleanup(final String type, final long itemsRemoved, final Duration duration) {
         Timer.builder("jwt.cleanup.manual.duration")
             .description("手动清理操作耗时")
             .tag("cleanup_type", type)

@@ -492,13 +492,27 @@ public class TracingEncryptionService {
         }
         
         // Getters and Setters
-        public String getTraceId() { return traceId; }
-        public String getDataType() { return dataType; }
-        public String getEncryptedData() { return encryptedData; }
-        public void setEncryptedData(final String encryptedData) { this.encryptedData = encryptedData; }
-        public Instant getCreatedAt() { return createdAt; }
-        public Instant getUpdatedAt() { return updatedAt; }
-        public void setUpdatedAt(final Instant updatedAt) { this.updatedAt = updatedAt; }
+        public String getTraceId() {
+            return traceId;
+        }
+        public String getDataType() {
+            return dataType;
+        }
+        public String getEncryptedData() {
+            return encryptedData;
+        }
+        public void setEncryptedData(final String encryptedData) {
+            this.encryptedData = encryptedData;
+        }
+        public Instant getCreatedAt() {
+            return createdAt;
+        }
+        public Instant getUpdatedAt() {
+            return updatedAt;
+        }
+        public void setUpdatedAt(final Instant updatedAt) {
+            this.updatedAt = updatedAt;
+        }
     }
     
     /**
@@ -517,7 +531,11 @@ public class TracingEncryptionService {
             return Duration.between(createdAt, Instant.now()).compareTo(retentionDuration) > 0;
         }
         
-        public String getPolicyName() { return policyName; }
-        public Duration getRetentionDuration() { return retentionDuration; }
+        public String getPolicyName() {
+            return policyName;
+        }
+        public Duration getRetentionDuration() {
+            return retentionDuration;
+        }
     }
 }

@@ -363,11 +363,23 @@ public class TracingSecurityManager {
         }
         
         // Getters
-        public String getUsername() { return username; }
-        public String getOperation() { return operation; }
-        public String getTraceId() { return traceId; }
-        public boolean isSuccess() { return success; }
-        public String getReason() { return reason; }
-        public Instant getTimestamp() { return timestamp; }
+        public String getUsername() {
+            return username;
+        }
+        public String getOperation() {
+            return operation;
+        }
+        public String getTraceId() {
+            return traceId;
+        }
+        public boolean isSuccess() {
+            return success;
+        }
+        public String getReason() {
+            return reason;
+        }
+        public Instant getTimestamp() {
+            return timestamp;
+        }
     }
 }

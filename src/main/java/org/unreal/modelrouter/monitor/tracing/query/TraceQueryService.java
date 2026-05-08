@@ -676,7 +676,7 @@ public class TraceQueryService {
         private final double duration;
         private final Instant createdAt;
 
-        public TraceRecord(final String traceId, final String serviceName,final List<SpanRecord> spans,final double duration,final Instant createdAt) {
+        public TraceRecord(final String traceId, final String serviceName, final List<SpanRecord> spans, final double duration, final Instant createdAt) {
             this.traceId = traceId;
             this.serviceName = serviceName;
             this.spans = spans;
@@ -716,8 +716,8 @@ public class TraceQueryService {
         private final String statusCode;
         private final Map<String, Object> attributes;
 
-        public SpanRecord(final String spanId, final String traceId,final String operationName,final Instant startTime,final Instant endTime,
-                         final double duration, final boolean error,final String statusCode,final Map<String, Object> attributes) {
+        public SpanRecord(final String spanId, final String traceId, final String operationName, final Instant startTime, final Instant endTime,
+                         final double duration, final boolean error, final String statusCode, final Map<String, Object> attributes) {
             this.spanId = spanId;
             this.traceId = traceId;
             this.operationName = operationName;
@@ -773,7 +773,7 @@ public class TraceQueryService {
         private final TraceChainStats stats;
         private final Instant startTime;
 
-        public TraceChain(final String traceId, final String serviceName,final List<SpanRecord> spans,final TraceChainStats stats,final Instant startTime) {
+        public TraceChain(final String traceId, final String serviceName, final List<SpanRecord> spans, final TraceChainStats stats, final Instant startTime) {
             this.traceId = traceId;
             this.serviceName = serviceName;
             this.spans = spans;
@@ -810,7 +810,7 @@ public class TraceQueryService {
         private final long errorCount;
         private final int depth;
 
-        public TraceChainStats(final int totalSpans, final double totalDuration,final double avgDuration,final double maxDuration,final long errorCount,final int depth) {
+        public TraceChainStats(final int totalSpans, final double totalDuration, final double avgDuration, final double maxDuration, final long errorCount, final int depth) {
             this.totalSpans = totalSpans;
             this.totalDuration = totalDuration;
             this.avgDuration = avgDuration;
@@ -853,7 +853,7 @@ public class TraceQueryService {
         private final boolean hasError;
         private final Instant startTime;
 
-        public TraceSummary(final String traceId, final String serviceName,final String operationName,final double duration,final int spanCount,final boolean hasError,final Instant startTime) {
+        public TraceSummary(final String traceId, final String serviceName, final String operationName, final double duration, final int spanCount, final boolean hasError, final Instant startTime) {
             this.traceId = traceId;
             this.serviceName = serviceName;
             this.operationName = operationName;
@@ -1010,10 +1010,10 @@ public class TraceQueryService {
         private final Instant endTime;
 
         // Constructor
-        public TraceStatistics(final long totalTraces, final long totalSpans,final long successfulTraces,final long errorTraces,
-                              final double avgDuration, final double maxDuration,final double minDuration,
+        public TraceStatistics(final long totalTraces, final long totalSpans, final long successfulTraces, final long errorTraces,
+                              final double avgDuration, final double maxDuration, final double minDuration,
                               final Map<String, Long> serviceStats, final Map<String, Long> operationStats,
-                              final Map<String, Long> statusStats, final Instant startTime,final Instant endTime) {
+                              final Map<String, Long> statusStats, final Instant startTime, final Instant endTime) {
             this.totalTraces = totalTraces;
             this.totalSpans = totalSpans;
             this.successfulTraces = successfulTraces;
@@ -1084,7 +1084,7 @@ public class TraceQueryService {
         private final String format; // json, csv
         private final int maxRecords;
 
-        public TraceExportRequest(final Instant startTime, final Instant endTime,final String format,final int maxRecords) {
+        public TraceExportRequest(final Instant startTime, final Instant endTime, final String format, final int maxRecords) {
             this.startTime = startTime;
             this.endTime = endTime;
             this.format = format;
@@ -1116,7 +1116,7 @@ public class TraceQueryService {
         private final Instant endTime;
         private final Instant exportedAt;
 
-        public TraceExportResult(final int recordCount, final String format,final String data,final Instant startTime,final Instant endTime,final Instant exportedAt) {
+        public TraceExportResult(final int recordCount, final String format, final String data, final Instant startTime, final Instant endTime, final Instant exportedAt) {
             this.recordCount = recordCount;
             this.format = format;
             this.data = data;

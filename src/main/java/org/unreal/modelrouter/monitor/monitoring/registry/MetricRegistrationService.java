@@ -113,7 +113,7 @@ public interface MetricRegistrationService {
         private final String metricName;
         private final Exception error;
         
-        public MetricRegistrationResult(final boolean success, final String message, final String metricName,final Exception error) {
+        public MetricRegistrationResult(final boolean success, final String message, final String metricName, final Exception error) {
             this.success = success;
             this.message = message;
             this.metricName = metricName;
@@ -128,10 +128,18 @@ public interface MetricRegistrationService {
             return new MetricRegistrationResult(false, message, metricName, error);
         }
         
-        public boolean isSuccess() { return success; }
-        public String getMessage() { return message; }
-        public String getMetricName() { return metricName; }
-        public Exception getError() { return error; }
+        public boolean isSuccess() {
+            return success;
+        }
+        public String getMessage() {
+            return message;
+        }
+        public String getMetricName() {
+            return metricName;
+        }
+        public Exception getError() {
+            return error;
+        }
     }
     
     /**
@@ -151,11 +159,21 @@ public interface MetricRegistrationService {
             this.results = results;
         }
         
-        public int getTotalRequests() { return totalRequests; }
-        public int getSuccessCount() { return successCount; }
-        public int getFailureCount() { return failureCount; }
-        public List<MetricRegistrationResult> getResults() { return results; }
-        public boolean isAllSuccess() { return failureCount == 0; }
+        public int getTotalRequests() {
+            return totalRequests;
+        }
+        public int getSuccessCount() {
+            return successCount;
+        }
+        public int getFailureCount() {
+            return failureCount;
+        }
+        public List<MetricRegistrationResult> getResults() {
+            return results;
+        }
+        public boolean isAllSuccess() {
+            return failureCount == 0;
+        }
     }
     
     /**
@@ -175,11 +193,21 @@ public interface MetricRegistrationService {
             this.failedMetrics = failedMetrics;
         }
         
-        public int getTotalRequests() { return totalRequests; }
-        public int getSuccessCount() { return successCount; }
-        public int getFailureCount() { return failureCount; }
-        public List<String> getFailedMetrics() { return failedMetrics; }
-        public boolean isAllSuccess() { return failureCount == 0; }
+        public int getTotalRequests() {
+            return totalRequests;
+        }
+        public int getSuccessCount() {
+            return successCount;
+        }
+        public int getFailureCount() {
+            return failureCount;
+        }
+        public List<String> getFailedMetrics() {
+            return failedMetrics;
+        }
+        public boolean isAllSuccess() {
+            return failureCount == 0;
+        }
     }
     
     /**
@@ -201,11 +229,21 @@ public interface MetricRegistrationService {
             this.metricsByType = metricsByType;
         }
         
-        public int getTotalMetrics() { return totalMetrics; }
-        public int getEnabledMetrics() { return enabledMetrics; }
-        public int getDisabledMetrics() { return disabledMetrics; }
-        public Map<String, Integer> getMetricsByCategory() { return metricsByCategory; }
-        public Map<String, Integer> getMetricsByType() { return metricsByType; }
+        public int getTotalMetrics() {
+            return totalMetrics;
+        }
+        public int getEnabledMetrics() {
+            return enabledMetrics;
+        }
+        public int getDisabledMetrics() {
+            return disabledMetrics;
+        }
+        public Map<String, Integer> getMetricsByCategory() {
+            return metricsByCategory;
+        }
+        public Map<String, Integer> getMetricsByType() {
+            return metricsByType;
+        }
     }
     
     /**
@@ -256,21 +294,27 @@ public interface MetricRegistrationService {
          *
          * @return 验证结果
          */
-        public boolean isValid() { return valid; }
+        public boolean isValid() {
+            return valid;
+        }
         
         /**
          * 获取错误消息列表
          *
          * @return 错误消息列表
          */
-        public List<String> getErrors() { return errors; }
+        public List<String> getErrors() {
+            return errors;
+        }
         
         /**
          * 获取警告消息列表
          *
          * @return 警告消息列表
          */
-        public List<String> getWarnings() { return warnings; }
+        public List<String> getWarnings() {
+            return warnings;
+        }
     }
     
     /**
@@ -287,8 +331,14 @@ public interface MetricRegistrationService {
             this.cleanedMetricNames = cleanedMetricNames;
         }
         
-        public int getCleanedMetrics() { return cleanedMetrics; }
-        public int getTotalMetrics() { return totalMetrics; }
-        public List<String> getCleanedMetricNames() { return cleanedMetricNames; }
+        public int getCleanedMetrics() {
+            return cleanedMetrics;
+        }
+        public int getTotalMetrics() {
+            return totalMetrics;
+        }
+        public List<String> getCleanedMetricNames() {
+            return cleanedMetricNames;
+        }
     }
 }

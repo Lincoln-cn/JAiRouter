@@ -40,7 +40,7 @@ public class TokenResponse {
     public TokenResponse() {
     }
 
-    public TokenResponse(final String token, final String tokenType,final String message,final LocalDateTime timestamp) {
+    public TokenResponse(final String token, final String tokenType, final String message, final LocalDateTime timestamp) {
         this.token = token;
         this.tokenType = tokenType;
         this.message = message;

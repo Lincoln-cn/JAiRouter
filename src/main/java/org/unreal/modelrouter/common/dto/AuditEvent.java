@@ -18,15 +18,15 @@ public class AuditEvent {
     private String ipAddress;       // IP地址
     private String userAgent;       // 用户代理
     private boolean success;        // 操作是否成功
-    private LocalDateTime timestamp;// 时间戳
+    private LocalDateTime timestamp; // 时间戳
     private Map<String, Object> metadata; // 额外元数据
 
     public AuditEvent() {
     }
 
-    public AuditEvent(final String id, final AuditEventType type,final String userId,final String resourceId, 
-                     final String action, final String details,final String ipAddress,final String userAgent, 
-                     final boolean success, final LocalDateTime timestamp,final Map<String, Object> metadata) {
+    public AuditEvent(final String id, final AuditEventType type, final String userId, final String resourceId,
+                     final String action, final String details, final String ipAddress, final String userAgent,
+                     final boolean success, final LocalDateTime timestamp, final Map<String, Object> metadata) {
         this.id = id;
         this.type = type;
         this.userId = userId;

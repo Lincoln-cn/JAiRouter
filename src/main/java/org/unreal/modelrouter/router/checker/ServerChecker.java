@@ -298,7 +298,7 @@ public class ServerChecker {
     /**
      * 记录健康检查指标
      */
-    private void recordHealthCheckMetrics(final String adapter, final String instance, final boolean healthy,final long responseTime) {
+    private void recordHealthCheckMetrics(final String adapter, final String instance, final boolean healthy, final long responseTime) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordHealthCheck(adapter, instance, healthy, responseTime);
@@ -366,7 +366,7 @@ public class ServerChecker {
      * @param healthStatus 健康状态 (HEALTHY, UNHEALTHY, UNKNOWN)
      * @param errorMessage 错误信息
      */
-    private void updateDatabaseHealthStatus(final String instanceName, final String instanceId, final String healthStatus,final String errorMessage) {
+    private void updateDatabaseHealthStatus(final String instanceName, final String instanceId, final String healthStatus, final String errorMessage) {
         if (serviceInstanceRepository == null) {
             return;
         }

@@ -140,7 +140,7 @@ public class MetricsCacheAndRetry {
     /**
      * 带缓存的指标获取
      */
-    public <T> T getOrCompute(final String key, final Class<T> type, final Supplier<T> supplier,final Duration ttl) {
+    public <T> T getOrCompute(final String key, final Class<T> type, final Supplier<T> supplier, final Duration ttl) {
         T cached = getCachedMetric(key, type);
         if (cached != null) {
             return cached;
@@ -322,9 +322,15 @@ public class MetricsCacheAndRetry {
             this.createdAt = Instant.now();
         }
         
-        public Object getValue() { return value; }
-        public Instant getExpiryTime() { return expiryTime; }
-        public Instant getCreatedAt() { return createdAt; }
+        public Object getValue() {
+            return value;
+        }
+        public Instant getExpiryTime() {
+            return expiryTime;
+        }
+        public Instant getCreatedAt() {
+            return createdAt;
+        }
         
         public boolean isExpired() {
             return isExpired(Instant.now());
@@ -344,17 +350,25 @@ public class MetricsCacheAndRetry {
         private final int attempts;
         private final Exception lastError;
         
-        public RetryableMetric(final String operationId, final Supplier<?> operation, final int attempts,final Exception lastError) {
+        public RetryableMetric(final String operationId, final Supplier<?> operation, final int attempts, final Exception lastError) {
             this.operationId = operationId;
             this.operation = operation;
             this.attempts = attempts;
             this.lastError = lastError;
         }
         
-        public String getOperationId() { return operationId; }
-        public Supplier<?> getOperation() { return operation; }
-        public int getAttempts() { return attempts; }
-        public Exception getLastError() { return lastError; }
+        public String getOperationId() {
+            return operationId;
+        }
+        public Supplier<?> getOperation() {
+            return operation;
+        }
+        public int getAttempts() {
+            return attempts;
+        }
+        public Exception getLastError() {
+            return lastError;
+        }
     }
     
     /**
@@ -366,17 +380,27 @@ public class MetricsCacheAndRetry {
         private final int activeRetries;
         private final int queuedRetries;
         
-        public CacheStats(final int currentSize, final int maxSize, final int activeRetries,final int queuedRetries) {
+        public CacheStats(final int currentSize, final int maxSize, final int activeRetries, final int queuedRetries) {
             this.currentSize = currentSize;
             this.maxSize = maxSize;
             this.activeRetries = activeRetries;
             this.queuedRetries = queuedRetries;
         }
         
-        public int getCurrentSize() { return currentSize; }
-        public int getMaxSize() { return maxSize; }
-        public int getActiveRetries() { return activeRetries; }
-        public int getQueuedRetries() { return queuedRetries; }
-        public double getUsageRatio() { return (double) currentSize / maxSize; }
+        public int getCurrentSize() {
+            return currentSize;
+        }
+        public int getMaxSize() {
+            return maxSize;
+        }
+        public int getActiveRetries() {
+            return activeRetries;
+        }
+        public int getQueuedRetries() {
+            return queuedRetries;
+        }
+        public double getUsageRatio() {
+            return (double) currentSize / maxSize;
+        }
     }
 }

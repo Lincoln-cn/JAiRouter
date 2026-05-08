@@ -118,16 +118,16 @@ public class EmbeddingDTO {
             List<EmbeddingData> data,
             String model,
             Usage usage
-    ) {}
+    ) { }
 
     public record EmbeddingData(
             String object,
             List<Double> embedding,
             Integer index
-    ) {}
+    ) { }
 
     public record Usage(
             @JsonProperty("prompt_tokens") Integer promptTokens,
             @JsonProperty("total_tokens") Integer totalTokens
-    ) {}
+    ) { }
 }

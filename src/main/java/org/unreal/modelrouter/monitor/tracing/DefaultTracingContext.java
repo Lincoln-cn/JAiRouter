@@ -52,7 +52,7 @@ public class DefaultTracingContext implements TracingContext {
     /**
      * 私有构造函数，用于复制上下文
      */
-    private DefaultTracingContext(final Tracer tracer, final Context context,final Span currentSpan) {
+    private DefaultTracingContext(final Tracer tracer, final Context context, final Span currentSpan) {
         this.tracer = tracer;
         this.propagator = W3CTraceContextPropagator.getInstance();
         this.context = context;
@@ -87,7 +87,7 @@ public class DefaultTracingContext implements TracingContext {
     }
     
     @Override
-    public Span createChildSpan(final String operationName, final SpanKind kind,final Span parentSpan) {
+    public Span createChildSpan(final String operationName, final SpanKind kind, final Span parentSpan) {
         try {
             Context parentContext = context.with(parentSpan);
             
@@ -325,7 +325,7 @@ public class DefaultTracingContext implements TracingContext {
     private static final TextMapSetter<Map<String, String>> MAP_SETTER = 
             new TextMapSetter<Map<String, String>>() {
                 @Override
-                public void set(@Nullable final Map<String, String> carrier, final String key,final String value) {
+                public void set(@Nullable final Map<String, String> carrier, final String key, final String value) {
                     if (carrier != null) {
                         carrier.put(key, value);
                     }

@@ -100,7 +100,7 @@ public class ServiceStateManager {
      * @since v2.5.1 标注废弃
      */
     @Deprecated(since = "2.5.1", forRemoval = true)
-    public boolean isInstanceHealthy(final String serviceType, final String instanceName , final String baseUrl) {
+    public boolean isInstanceHealthy(final String serviceType, final String instanceName, final String baseUrl) {
         // v2.3.3 修复：不再使用 name@baseUrl 作为键
         log.warn("isInstanceHealthy(String, String, String) 已废弃，请使用 isInstanceHealthyByKey(String)");
         return true;

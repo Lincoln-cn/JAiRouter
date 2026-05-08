@@ -95,7 +95,7 @@ public class JpaStoreManager implements StoreManager {
 
     @Override
     @Transactional
-    public void saveConfigVersion(final String key, final Map<String, Object> config,final int version) {
+    public void saveConfigVersion(final String key, final Map<String, Object> config, final int version) {
         if (config == null || config.isEmpty()) {
             return;
         }
@@ -167,7 +167,7 @@ public class JpaStoreManager implements StoreManager {
         try {
             return JacksonHelper.getObjectMapper().readValue(
                     entity.getConfigValue(),
-                    new TypeReference<Map<String, Object>>() {}
+                    new TypeReference<Map<String, Object>>() { }
             );
         } catch (JsonProcessingException e) {
             log.error("Failed to deserialize config for key: {} version: {}", 

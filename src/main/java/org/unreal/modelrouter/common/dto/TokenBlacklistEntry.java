@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 public class TokenBlacklistEntry {
     
     private String tokenHash;       // 令牌哈希值
-    private LocalDateTime expiresAt;// 过期时间
+    private LocalDateTime expiresAt; // 过期时间
     private String reason;          // 加入黑名单原因
     private String addedBy;         // 添加者
     private LocalDateTime addedAt;  // 添加时间
@@ -17,7 +17,7 @@ public class TokenBlacklistEntry {
     public TokenBlacklistEntry() {
     }
 
-    public TokenBlacklistEntry(final String tokenHash, final LocalDateTime expiresAt,final String reason,final String addedBy,final LocalDateTime addedAt) {
+    public TokenBlacklistEntry(final String tokenHash, final LocalDateTime expiresAt, final String reason, final String addedBy, final LocalDateTime addedAt) {
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
         this.reason = reason;

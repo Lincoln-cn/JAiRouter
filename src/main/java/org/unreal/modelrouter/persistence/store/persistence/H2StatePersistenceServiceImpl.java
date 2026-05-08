@@ -34,7 +34,7 @@ public class H2StatePersistenceServiceImpl implements StatePersistenceService {
     private StoreManager storeManager;
 
     @Override
-    public Mono<Boolean> save(final StateType stateType, final String key,final Map<String, Object> stateData) {
+    public Mono<Boolean> save(final StateType stateType, final String key, final Map<String, Object> stateData) {
         String storeKey = buildStoreKey(stateType, key);
         return Mono.fromCallable(() -> {
             try {

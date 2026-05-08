@@ -66,7 +66,7 @@ public class RetryPolicy {
      * @param maxDelay 最大延迟
      * @param multiplier 退避乘数
      */
-    public RetryPolicy(final int maxRetries, final Duration initialDelay, final Duration maxDelay,final double multiplier) {
+    public RetryPolicy(final int maxRetries, final Duration initialDelay, final Duration maxDelay, final double multiplier) {
         this.maxRetries = maxRetries;
         this.initialDelay = initialDelay;
         this.maxDelay = maxDelay;

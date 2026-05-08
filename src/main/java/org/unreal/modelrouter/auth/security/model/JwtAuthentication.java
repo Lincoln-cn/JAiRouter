@@ -36,7 +36,7 @@ public class JwtAuthentication implements Authentication {
     /**
      * 构造函数 - 用于已认证的请求
      */
-    public JwtAuthentication(final String subject, final String token,final List<String> roles) {
+    public JwtAuthentication(final String subject, final String token, final List<String> roles) {
         this.principal = subject;
         this.credentials = token;
         this.authorities = roles.stream()

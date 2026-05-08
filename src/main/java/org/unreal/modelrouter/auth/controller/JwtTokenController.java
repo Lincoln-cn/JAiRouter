@@ -619,7 +619,7 @@ public class JwtTokenController {
     /**
      * 更新令牌在持久化存储中的状态
      */
-    private Mono<Void> updateTokenStatusInPersistence(final String token, final TokenStatus status, final String reason,final String updatedBy) {
+    private Mono<Void> updateTokenStatusInPersistence(final String token, final TokenStatus status, final String reason, final String updatedBy) {
         if (jwtPersistenceService == null) {
             log.warn("!!! JwtPersistenceService不可用，无法更新令牌状态到H2 !!!");
             return Mono.empty(); // 服务不可用时直接返回
@@ -651,7 +651,7 @@ public class JwtTokenController {
     /**
      * 批量更新令牌在持久化存储中的状态
      */
-    private Mono<Void> batchUpdateTokenStatusInPersistence(final java.util.List<String> tokens, final TokenStatus status, final String reason,final String updatedBy) {
+    private Mono<Void> batchUpdateTokenStatusInPersistence(final java.util.List<String> tokens, final TokenStatus status, final String reason, final String updatedBy) {
         if (jwtPersistenceService == null || tokens == null || tokens.isEmpty()) {
             return Mono.empty();
         }

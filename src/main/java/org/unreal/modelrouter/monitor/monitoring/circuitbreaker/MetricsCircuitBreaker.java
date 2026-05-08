@@ -241,7 +241,7 @@ public class MetricsCircuitBreaker {
         private final int requestCount;
         private final double failureRate;
 
-        public CircuitBreakerStats(final String state, final int failureCount, final int successCount,final int requestCount,final double failureRate) {
+        public CircuitBreakerStats(final String state, final int failureCount, final int successCount, final int requestCount, final double failureRate) {
             this.state = state;
             this.failureCount = failureCount;
             this.successCount = successCount;
@@ -249,11 +249,21 @@ public class MetricsCircuitBreaker {
             this.failureRate = failureRate;
         }
 
-        public String getState() { return state; }
-        public int getFailureCount() { return failureCount; }
-        public int getSuccessCount() { return successCount; }
-        public int getRequestCount() { return requestCount; }
-        public double getFailureRate() { return failureRate; }
+        public String getState() {
+            return state;
+        }
+        public int getFailureCount() {
+            return failureCount;
+        }
+        public int getSuccessCount() {
+            return successCount;
+        }
+        public int getRequestCount() {
+            return requestCount;
+        }
+        public double getFailureRate() {
+            return failureRate;
+        }
 
         @Override
         public String toString() {

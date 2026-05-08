@@ -1270,7 +1270,7 @@ public class ConfigurationService {
     /**
      * 在实例列表中更新实例
      */
-    private void updateInstanceInList(final List<Map<String, Object>> instances, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig,final List<String> operationDetails) {
+    private void updateInstanceInList(final List<Map<String, Object>> instances, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig, final List<String> operationDetails) {
         boolean found = false;
 
         for (int i = 0; i < instances.size(); i++) {
@@ -1975,7 +1975,7 @@ public class ConfigurationService {
      * @param configData 配置数据
      * @param createNewVersion 是否创建新版本
      */
-    private void logConfigurationChange(final String configType, final String action, final Map<String, Object> configData,final boolean createNewVersion) {
+    private void logConfigurationChange(final String configType, final String action, final Map<String, Object> configData, final boolean createNewVersion) {
         try {
             Map<String, Object> auditData = new HashMap<>();
             auditData.put("configType", configType);

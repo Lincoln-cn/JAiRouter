@@ -36,7 +36,7 @@ public class ApiKeyAuthentication implements Authentication {
     /**
      * 构造函数 - 用于已认证的请求
      */
-    public ApiKeyAuthentication(final String keyId, final String apiKey,final List<String> permissions) {
+    public ApiKeyAuthentication(final String keyId, final String apiKey, final List<String> permissions) {
         this.principal = keyId;
         this.credentials = apiKey;
         this.authorities = permissions.stream()

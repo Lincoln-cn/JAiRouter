@@ -436,9 +436,15 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
             this.totalMatches = totalMatches;
         }
         
-        public int getCompiledRulesCount() { return compiledRulesCount; }
-        public int getContentTypeCacheCount() { return contentTypeCacheCount; }
-        public long getTotalMatches() { return totalMatches; }
+        public int getCompiledRulesCount() {
+        return compiledRulesCount;
+    }
+        public int getContentTypeCacheCount() {
+        return contentTypeCacheCount;
+    }
+        public long getTotalMatches() {
+        return totalMatches;
+    }
         
         @Override
         public String toString() {

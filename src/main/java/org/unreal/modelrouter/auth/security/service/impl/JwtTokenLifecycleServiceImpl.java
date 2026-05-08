@@ -44,7 +44,7 @@ public class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
     private JwtPersistenceService jwtPersistenceService;
     
     @Override
-    public Mono<Void> updateTokenStatus(final String tokenHash, final TokenStatus newStatus,final String reason,final String updatedBy) {
+    public Mono<Void> updateTokenStatus(final String tokenHash, final TokenStatus newStatus, final String reason, final String updatedBy) {
         if (jwtPersistenceService == null) {
             log.warn("JWT持久化服务未启用，无法更新令牌状态");
             return Mono.empty();
@@ -112,7 +112,7 @@ public class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
             .doOnError(error -> log.error("更新过期令牌状态时发生错误", error));
     }
     
-    private Mono<Long> updateExpiredTokensRecursive(final int page, final int size,final AtomicLong updatedCount) {
+    private Mono<Long> updateExpiredTokensRecursive(final int page, final int size, final AtomicLong updatedCount) {
         return jwtPersistenceService.findAllTokens(page, size)
             .flatMap(tokens -> {
                 if (tokens.isEmpty()) {
@@ -149,7 +149,7 @@ public class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
     }
     
     @Override
-    public Mono<JwtTokenInfo> collectAndStoreTokenMetadata(final String token, final String userId,final Map<String, Object> additionalMetadata) {
+    public Mono<JwtTokenInfo> collectAndStoreTokenMetadata(final String token, final String userId, final Map<String, Object> additionalMetadata) {
         if (jwtPersistenceService == null) {
             log.warn("JWT持久化服务未启用，无法存储令牌元数据");
             return Mono.empty();
@@ -233,7 +233,7 @@ public class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
     }
     
     @Override
-    public Mono<Long> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus newStatus,final String reason,final String updatedBy) {
+    public Mono<Long> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus newStatus, final String reason, final String updatedBy) {
         if (jwtPersistenceService == null || tokenHashes == null || tokenHashes.isEmpty()) {
             return Mono.just(0L);
         }

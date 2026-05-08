@@ -240,8 +240,16 @@ public class MetricsErrorHandler {
             this.totalErrors = totalErrors;
         }
         
-        public int getActiveErrorComponents() { return activeErrorComponents; }
-        public int getDegradedComponents() { return degradedComponents; }
-        public int getTotalErrors() { return totalErrors; }
+        public int getActiveErrorComponents() {
+            return activeErrorComponents;
+        }
+
+        public int getDegradedComponents() {
+            return degradedComponents;
+        }
+
+        public int getTotalErrors() {
+            return totalErrors;
+        }
     }
 }

@@ -36,13 +36,13 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     
     @jakarta.annotation.PostConstruct
     public void init() {
-        log.info("=== JwtBlacklistServiceImpl initialized with StoreManager: {} ===", 
+        log.info("=== JwtBlacklistServiceImpl initialized with StoreManager: { } ===", 
                 storeManager.getClass().getSimpleName());
         log.info("JWT Blacklist persistence is ENABLED and using H2 database storage");
     }
     
     @Override
-    public Mono<Void> addToBlacklist(final String tokenHash, final String reason,final String addedBy) {
+    public Mono<Void> addToBlacklist(final String tokenHash, final String reason, final String addedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHash == null || tokenHash.trim().isEmpty()) {
@@ -67,10 +67,10 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 // 更新统计信息
                 updateBlacklistStats(1, 0);
                 
-                log.debug("Successfully added token to blacklist: {}", tokenHash);
+                log.debug("Successfully added token to blacklist: { }", tokenHash);
                 
             } catch (Exception e) {
-                log.error("Failed to add token to blacklist: {}", e.getMessage(), e);
+                log.error("Failed to add token to blacklist: { }", e.getMessage(), e);
                 throw new RuntimeException("Failed to add token to blacklist", e);
             }
         });
@@ -102,7 +102,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 return true;
                 
             } catch (Exception e) {
-                log.error("Failed to check blacklist status for token: {}", e.getMessage(), e);
+                log.error("Failed to check blacklist status for token: { }", e.getMessage(), e);
                 return false;
             }
         });
@@ -129,11 +129,11 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                     // 更新统计信息
                     updateBlacklistStats(-1, 0);
                     
-                    log.debug("Successfully removed token from blacklist: {}", tokenHash);
+                    log.debug("Successfully removed token from blacklist: { }", tokenHash);
                 }
                 
             } catch (Exception e) {
-                log.error("Failed to remove token from blacklist: {}", e.getMessage(), e);
+                log.error("Failed to remove token from blacklist: { }", e.getMessage(), e);
                 throw new RuntimeException("Failed to remove token from blacklist", e);
             }
         });
@@ -147,7 +147,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 return (long) blacklistTokens.size();
                 
             } catch (Exception e) {
-                log.error("Failed to get blacklist size: {}", e.getMessage(), e);
+                log.error("Failed to get blacklist size: { }", e.getMessage(), e);
                 return 0L;
             }
         });
@@ -176,18 +176,18 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                             }
                         }
                     } catch (Exception e) {
-                        log.warn("Failed to process blacklist entry for cleanup: {}", tokenHash, e);
+                        log.warn("Failed to process blacklist entry for cleanup: { }", tokenHash, e);
                     }
                 }
                 
                 if (removedCount > 0) {
                     // 更新统计信息
                     updateBlacklistStats(-removedCount, removedCount);
-                    log.info("Cleaned up {} expired blacklist entries", removedCount);
+                    log.info("Cleaned up { } expired blacklist entries", removedCount);
                 }
                 
             } catch (Exception e) {
-                log.error("Failed to cleanup expired blacklist entries: {}", e.getMessage(), e);
+                log.error("Failed to cleanup expired blacklist entries: { }", e.getMessage(), e);
                 throw new RuntimeException("Failed to cleanup expired blacklist entries", e);
             }
         });
@@ -224,7 +224,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 return stats;
                 
             } catch (Exception e) {
-                log.error("Failed to get blacklist stats: {}", e.getMessage(), e);
+                log.error("Failed to get blacklist stats: { }", e.getMessage(), e);
                 Map<String, Object> errorStats = new HashMap<>();
                 errorStats.put("error", e.getMessage());
                 errorStats.put("currentSize", 0L);
@@ -240,9 +240,9 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
      */
     private Map<String, Object> convertToMap(final TokenBlacklistEntry entry) {
         try {
-            return JacksonHelper.getObjectMapper().convertValue(entry, new TypeReference<Map<String, Object>>() {});
+            return JacksonHelper.getObjectMapper().convertValue(entry, new TypeReference<Map<String, Object>>() { });
         } catch (Exception e) {
-            log.error("Failed to convert blacklist entry to map: {}", e.getMessage(), e);
+            log.error("Failed to convert blacklist entry to map: { }", e.getMessage(), e);
             throw new RuntimeException("Failed to convert blacklist entry to map", e);
         }
     }
@@ -254,7 +254,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
         try {
             return JacksonHelper.getObjectMapper().convertValue(entryData, TokenBlacklistEntry.class);
         } catch (Exception e) {
-            log.error("Failed to convert map to blacklist entry: {}", e.getMessage(), e);
+            log.error("Failed to convert map to blacklist entry: { }", e.getMessage(), e);
             throw new RuntimeException("Failed to convert map to blacklist entry", e);
         }
     }
@@ -291,7 +291,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
             storeManager.saveConfig(BLACKLIST_INDEX_KEY, indexData);
             
         } catch (Exception e) {
-            log.warn("Failed to update blacklist index: {}", e.getMessage());
+            log.warn("Failed to update blacklist index: { }", e.getMessage());
         }
     }
     
@@ -311,7 +311,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
             return tokenHashes != null ? new ArrayList<>(tokenHashes) : new ArrayList<>();
             
         } catch (Exception e) {
-            log.warn("Failed to get blacklist index: {}", e.getMessage());
+            log.warn("Failed to get blacklist index: { }", e.getMessage());
             return new ArrayList<>();
         }
     }
@@ -349,7 +349,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
             storeManager.saveConfig(BLACKLIST_STATS_KEY, statsData);
             
         } catch (Exception e) {
-            log.warn("Failed to update blacklist stats: {}", e.getMessage());
+            log.warn("Failed to update blacklist stats: { }", e.getMessage());
         }
     }
     
@@ -371,14 +371,14 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 return convertFromMap(entryData);
                 
             } catch (Exception e) {
-                log.error("Failed to get blacklist entry for token: {}", e.getMessage(), e);
+                log.error("Failed to get blacklist entry for token: { }", e.getMessage(), e);
                 return null;
             }
         });
     }
     
     @Override
-    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes, final String reason,final String addedBy) {
+    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes, final String reason, final String addedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHashes == null || tokenHashes.isEmpty()) {
@@ -408,18 +408,18 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                             addedCount++;
                         }
                     } catch (Exception e) {
-                        log.warn("Failed to add token to blacklist in batch: {}", tokenHash, e);
+                        log.warn("Failed to add token to blacklist in batch: { }", tokenHash, e);
                     }
                 }
                 
                 if (addedCount > 0) {
                     // 更新统计信息
                     updateBlacklistStats(addedCount, 0);
-                    log.info("Batch added {} tokens to blacklist", addedCount);
+                    log.info("Batch added { } tokens to blacklist", addedCount);
                 }
                 
             } catch (Exception e) {
-                log.error("Failed to batch add tokens to blacklist: {}", e.getMessage(), e);
+                log.error("Failed to batch add tokens to blacklist: { }", e.getMessage(), e);
                 throw new RuntimeException("Failed to batch add tokens to blacklist", e);
             }
         });
@@ -433,7 +433,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 getBlacklistSize().block();
                 return true;
             } catch (Exception e) {
-                log.warn("Blacklist service health check failed: {}", e.getMessage());
+                log.warn("Blacklist service health check failed: { }", e.getMessage());
                 return false;
             }
         });
@@ -461,14 +461,14 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                             }
                         }
                     } catch (Exception e) {
-                        log.warn("Failed to check expiry for blacklist entry: {}", tokenHash, e);
+                        log.warn("Failed to check expiry for blacklist entry: { }", tokenHash, e);
                     }
                 }
                 
                 return expiringCount;
                 
             } catch (Exception e) {
-                log.warn("Failed to count expiring blacklist entries: {}", e.getMessage());
+                log.warn("Failed to count expiring blacklist entries: { }", e.getMessage());
                 return 0L;
             }
         });
@@ -497,20 +497,20 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                             }
                         }
                     } catch (Exception e) {
-                        log.warn("Failed to process blacklist entry for cleanup: {}", tokenHash, e);
+                        log.warn("Failed to process blacklist entry for cleanup: { }", tokenHash, e);
                     }
                 }
                 
                 if (removedCount > 0) {
                     // 更新统计信息
                     updateBlacklistStats(-removedCount, removedCount);
-                    log.info("Cleaned up {} expired blacklist entries", removedCount);
+                    log.info("Cleaned up { } expired blacklist entries", removedCount);
                 }
                 
                 return removedCount;
                 
             } catch (Exception e) {
-                log.error("Failed to cleanup expired blacklist entries: {}", e.getMessage(), e);
+                log.error("Failed to cleanup expired blacklist entries: { }", e.getMessage(), e);
                 return 0L;
             }
         });
@@ -536,14 +536,14 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                         }
                     }
                 } catch (Exception e) {
-                    log.warn("Failed to check expiry for blacklist entry: {}", tokenHash, e);
+                    log.warn("Failed to check expiry for blacklist entry: { }", tokenHash, e);
                 }
             }
             
             return expiredCount;
             
         } catch (Exception e) {
-            log.warn("Failed to count expired blacklist entries: {}", e.getMessage());
+            log.warn("Failed to count expired blacklist entries: { }", e.getMessage());
             return 0L;
         }
     }

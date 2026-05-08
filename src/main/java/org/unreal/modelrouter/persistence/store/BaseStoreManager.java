@@ -133,7 +133,7 @@ public abstract class BaseStoreManager implements StoreManager {
      * @param version 版本号
      */
     @Override
-    public void saveConfigVersion(final String key, final Map<String, Object> config,final int version) {
+    public void saveConfigVersion(final String key, final Map<String, Object> config, final int version) {
         // 基础实现，具体实现在子类中
     }
 

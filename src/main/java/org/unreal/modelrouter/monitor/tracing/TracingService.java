@@ -158,7 +158,7 @@ public class TracingService {
      * @param context 追踪上下文
      * @param duration 请求处理时长（毫秒）
      */
-    public void finishHttpSpan(final ServerWebExchange exchange, final TracingContext context,final long duration) {
+    public void finishHttpSpan(final ServerWebExchange exchange, final TracingContext context, final long duration) {
         if (context == null || !context.isActive()) {
             return;
         }
@@ -472,7 +472,7 @@ public class TracingService {
     /**
      * 设置HTTP响应相关属性
      */
-    private void setResponseAttributes(final Span span, final ServerWebExchange exchange,final long duration) {
+    private void setResponseAttributes(final Span span, final ServerWebExchange exchange, final long duration) {
         try {
             // 响应状态码
             if (exchange.getResponse().getStatusCode() != null) {
@@ -570,7 +570,7 @@ public class TracingService {
     /**
      * 创建错误元数据
      */
-    private Map<String, Object> createErrorMetadata(final ServerWebExchange exchange, final TracingContext context,final Throwable error) {
+    private Map<String, Object> createErrorMetadata(final ServerWebExchange exchange, final TracingContext context, final Throwable error) {
         Map<String, Object> metadata = createMetadata(exchange, context);
         
         metadata.put("error.type", error.getClass().getSimpleName());

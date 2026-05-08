@@ -38,7 +38,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 增强后的Mono
      */
-    public static <T> Mono<T> trace(final Mono<T> source, final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+    public static <T> Mono<T> trace(final Mono<T> source, final String operationName, final SpanKind spanKind, final TracingService tracingService) {
         return new TracingMono<>(source, operationName, spanKind, tracingService);
     }
     
@@ -52,7 +52,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 增强后的Flux
      */
-    public static <T> Flux<T> trace(final Flux<T> source, final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+    public static <T> Flux<T> trace(final Flux<T> source, final String operationName, final SpanKind spanKind, final TracingService tracingService) {
         return new TracingFlux<>(source, operationName, spanKind, tracingService);
     }
     
@@ -65,7 +65,7 @@ public class TracingOperator {
      * @param <T> 数据类型
      * @return 追踪转换函数
      */
-    public static <T> Function<Publisher<T>, Publisher<T>> trace(final String operationName, final SpanKind spanKind,final TracingService tracingService) {
+    public static <T> Function<Publisher<T>, Publisher<T>> trace(final String operationName, final SpanKind spanKind, final TracingService tracingService) {
         return source -> {
             if (source instanceof Mono) {
                 return trace((Mono<T>) source, operationName, spanKind, tracingService);
@@ -86,7 +86,7 @@ public class TracingOperator {
         private final SpanKind spanKind;
         private final TracingService tracingService;
         
-        public TracingMono(final Mono<T> source, final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+        public TracingMono(final Mono<T> source, final String operationName, final SpanKind spanKind, final TracingService tracingService) {
             this.source = source;
             this.operationName = operationName;
             this.spanKind = spanKind;
@@ -121,7 +121,7 @@ public class TracingOperator {
         private final SpanKind spanKind;
         private final TracingService tracingService;
         
-        public TracingFlux(final Flux<T> source, final String operationName,final SpanKind spanKind,final TracingService tracingService) {
+        public TracingFlux(final Flux<T> source, final String operationName, final SpanKind spanKind, final TracingService tracingService) {
             this.source = source;
             this.operationName = operationName;
             this.spanKind = spanKind;
@@ -158,7 +158,7 @@ public class TracingOperator {
         private final long startTime;
         
         public TracingSubscriber(final CoreSubscriber<? super T> actual, final Context context, 
-                               final TracingContext tracingContext, final Span operationSpan,final long startTime) {
+                               final TracingContext tracingContext, final Span operationSpan, final long startTime) {
             this.actual = actual;
             this.context = context;
             this.tracingContext = tracingContext;

@@ -58,15 +58,15 @@ public class RerankDTO {
             List<RerankResult> results,
             String model,
             Usage usage
-    ) {}
+    ) { }
 
     public record RerankResult(
             Integer index,
             Double score,
             String document
-    ) {}
+    ) { }
 
     public record Usage(
             @JsonProperty("total_tokens") Integer totalTokens
-    ) {}
+    ) { }
 }

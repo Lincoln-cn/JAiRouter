@@ -56,7 +56,7 @@ public class SecurityConfigurationBackupService {
      * @param userId 用户ID
      * @return 备份ID
      */
-    public String createBackup(final SecurityProperties properties, final String description,final String userId) {
+    public String createBackup(final SecurityProperties properties, final String description, final String userId) {
         log.info("开始创建配置备份，用户: {}, 描述: {}", userId, description);
 
         try {
@@ -444,24 +444,52 @@ public class SecurityConfigurationBackupService {
         private SecurityConfigurationValidator.ValidationResult validationResult;
 
         // Getters and setters
-        public String getBackupId() { return backupId; }
-        public void setBackupId(final String backupId) { this.backupId = backupId; }
+        public String getBackupId() {
+            return backupId;
+        }
 
-        public String getDescription() { return description; }
-        public void setDescription(final String description) { this.description = description; }
+        public void setBackupId(final String backupId) {
+            this.backupId = backupId;
+        }
 
-        public String getUserId() { return userId; }
-        public void setUserId(final String userId) { this.userId = userId; }
+        public String getDescription() {
+            return description;
+        }
 
-        public LocalDateTime getCreatedAt() { return createdAt; }
-        public void setCreatedAt(final LocalDateTime createdAt) { this.createdAt = createdAt; }
+        public void setDescription(final String description) {
+            this.description = description;
+        }
 
-        public SecurityProperties getConfiguration() { return configuration; }
-        public void setConfiguration(final SecurityProperties configuration) { this.configuration = configuration; }
+        public String getUserId() {
+            return userId;
+        }
 
-        public SecurityConfigurationValidator.ValidationResult getValidationResult() { return validationResult; }
-        public void setValidationResult(final SecurityConfigurationValidator.ValidationResult validationResult) { 
-            this.validationResult = validationResult; 
+        public void setUserId(final String userId) {
+            this.userId = userId;
+        }
+
+        public LocalDateTime getCreatedAt() {
+            return createdAt;
+        }
+
+        public void setCreatedAt(final LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+        }
+
+        public SecurityProperties getConfiguration() {
+            return configuration;
+        }
+
+        public void setConfiguration(final SecurityProperties configuration) {
+            this.configuration = configuration;
+        }
+
+        public SecurityConfigurationValidator.ValidationResult getValidationResult() {
+            return validationResult;
+        }
+
+        public void setValidationResult(final SecurityConfigurationValidator.ValidationResult validationResult) {
+            this.validationResult = validationResult;
         }
     }
 
@@ -476,20 +504,45 @@ public class SecurityConfigurationBackupService {
         private boolean valid;
 
         // Getters and setters
-        public String getBackupId() { return backupId; }
-        public void setBackupId(final String backupId) { this.backupId = backupId; }
+        public String getBackupId() {
+            return backupId;
+        }
 
-        public String getDescription() { return description; }
-        public void setDescription(final String description) { this.description = description; }
+        public void setBackupId(final String backupId) {
+            this.backupId = backupId;
+        }
 
-        public String getUserId() { return userId; }
-        public void setUserId(final String userId) { this.userId = userId; }
+        public String getDescription() {
+            return description;
+        }
 
-        public LocalDateTime getCreatedAt() { return createdAt; }
-        public void setCreatedAt(final LocalDateTime createdAt) { this.createdAt = createdAt; }
+        public void setDescription(final String description) {
+            this.description = description;
+        }
 
-        public boolean isValid() { return valid; }
-        public void setValid(final boolean valid) { this.valid = valid; }
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(final String userId) {
+            this.userId = userId;
+        }
+
+        public LocalDateTime getCreatedAt() {
+            return createdAt;
+        }
+
+        public void setCreatedAt(final LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+        }
+
+        public boolean isValid() {
+            return valid;
+        }
+
+        public void setValid(final boolean valid) {
+            this.valid = valid;
+        }
     }
 
     /**

@@ -26,7 +26,7 @@ public class SecurityStatisticsResponse {
     @Schema(description = "统计生成时间")
     private LocalDateTime generatedAt;
 
-    SecurityStatisticsResponse(final LocalDateTime startTime, final LocalDateTime endTime,final Map<String, Object> auditStatistics,final Map<String, Object> alertStatistics,final LocalDateTime generatedAt) {
+    SecurityStatisticsResponse(final LocalDateTime startTime, final LocalDateTime endTime, final Map<String, Object> auditStatistics, final Map<String, Object> alertStatistics, final LocalDateTime generatedAt) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.auditStatistics = auditStatistics;

@@ -129,9 +129,9 @@ public class FallbackManager {
     }
 
     public ModelRouterProperties.FallbackConfig getDefaultFallbackConfig() {
-        if(globalFallbackConfig!=null) {
+        if (globalFallbackConfig != null) {
             return globalFallbackConfig;
-        }else{
+        } else {
             return new ModelRouterProperties.FallbackConfig();
         }
     }

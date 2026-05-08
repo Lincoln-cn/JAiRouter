@@ -275,7 +275,7 @@ public class ExceptionPersistenceService {
     /**
      * 生成小时统计缓存键
      */
-    private String generateHourlyStatsKey(final LocalDateTime hourTimestamp, final String exceptionType, final String errorCode,final String operation) {
+    private String generateHourlyStatsKey(final LocalDateTime hourTimestamp, final String exceptionType, final String errorCode, final String operation) {
         return hourTimestamp.toString() + "|" + exceptionType + "|" + errorCode + "|" + operation;
     }
 

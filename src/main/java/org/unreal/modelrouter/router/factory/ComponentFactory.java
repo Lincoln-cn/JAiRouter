@@ -163,7 +163,7 @@ public class ComponentFactory {
      * @return 熔断器实例
      */
     public org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker createCircuitBreaker(
-            final String instanceId, final int failureThreshold,final long timeout,final int successThreshold) {
+            final String instanceId, final int failureThreshold, final long timeout, final int successThreshold) {
         org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker circuitBreaker = 
                 new org.unreal.modelrouter.router.circuitbreaker.DefaultCircuitBreaker(
                         instanceId, failureThreshold, timeout, successThreshold);

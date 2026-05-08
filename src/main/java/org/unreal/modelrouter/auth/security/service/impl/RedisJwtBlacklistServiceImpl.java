@@ -51,7 +51,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
     private static final Duration STATS_TTL = Duration.ofMinutes(5);
     
     @Override
-    public Mono<Void> addToBlacklist(final String tokenHash, final String reason,final String addedBy) {
+    public Mono<Void> addToBlacklist(final String tokenHash, final String reason, final String addedBy) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.error(new IllegalArgumentException("Token hash cannot be null or empty"));
         }
@@ -68,15 +68,15 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         
         return addToBlacklistInRedis(entry)
             .onErrorResume(error -> {
-                log.warn("Failed to add token to blacklist in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to add token to blacklist in Redis, falling back to StoreManager: { }", error.getMessage());
                 return addToBlacklistInFallback(entry);
             })
             .doOnSuccess(unused -> {
                 // 更新内存缓存
                 memoryCache.put(tokenHash, entry);
-                log.debug("Successfully added token to blacklist: {}", tokenHash);
+                log.debug("Successfully added token to blacklist: { }", tokenHash);
             })
-            .doOnError(error -> log.error("Failed to add token to blacklist: {}", error.getMessage(), error));
+            .doOnError(error -> log.error("Failed to add token to blacklist: { }", error.getMessage(), error));
     }
     
     @Override
@@ -101,7 +101,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         // 检查Redis
         return isBlacklistedInRedis(tokenHash)
             .onErrorResume(error -> {
-                log.warn("Failed to check blacklist in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to check blacklist in Redis, falling back to StoreManager: { }", error.getMessage());
                 return isBlacklistedInFallback(tokenHash);
             })
             .doOnNext(isBlacklisted -> {
@@ -115,7 +115,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                         });
                 }
             })
-            .doOnError(error -> log.error("Failed to check blacklist status for token: {}", error.getMessage(), error));
+            .doOnError(error -> log.error("Failed to check blacklist status for token: { }", error.getMessage(), error));
     }
     
     @Override
@@ -126,15 +126,15 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         
         return removeFromBlacklistInRedis(tokenHash)
             .onErrorResume(error -> {
-                log.warn("Failed to remove token from blacklist in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to remove token from blacklist in Redis, falling back to StoreManager: { }", error.getMessage());
                 return removeFromBlacklistInFallback(tokenHash);
             })
             .doOnSuccess(unused -> {
                 // 从内存缓存中移除
                 memoryCache.remove(tokenHash);
-                log.debug("Successfully removed token from blacklist: {}", tokenHash);
+                log.debug("Successfully removed token from blacklist: { }", tokenHash);
             })
-            .doOnError(error -> log.error("Failed to remove token from blacklist: {}", error.getMessage(), error));
+            .doOnError(error -> log.error("Failed to remove token from blacklist: { }", error.getMessage(), error));
     }
     
     @Override
@@ -144,18 +144,18 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         
         return getBlacklistSizeFromRedis()
             .onErrorResume(error -> {
-                log.warn("Failed to get blacklist size from Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to get blacklist size from Redis, falling back to StoreManager: { }", error.getMessage());
                 return getBlacklistSizeFromFallback();
             })
-            .doOnNext(size -> log.debug("Blacklist size: {}", size))
-            .doOnError(error -> log.error("Failed to get blacklist size: {}", error.getMessage(), error));
+            .doOnNext(size -> log.debug("Blacklist size: { }", size))
+            .doOnError(error -> log.error("Failed to get blacklist size: { }", error.getMessage(), error));
     }
     
     @Override
     public Mono<Void> cleanupExpiredEntries() {
         return cleanupExpiredEntriesInRedis()
             .onErrorResume(error -> {
-                log.warn("Failed to cleanup expired entries in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to cleanup expired entries in Redis, falling back to StoreManager: { }", error.getMessage());
                 return cleanupExpiredEntriesInFallback();
             })
             .doOnSuccess(unused -> {
@@ -168,14 +168,14 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 });
                 log.info("Successfully cleaned up expired blacklist entries");
             })
-            .doOnError(error -> log.error("Failed to cleanup expired blacklist entries: {}", error.getMessage(), error));
+            .doOnError(error -> log.error("Failed to cleanup expired blacklist entries: { }", error.getMessage(), error));
     }
     
     @Override
     public Mono<Map<String, Object>> getBlacklistStats() {
         return getBlacklistStatsFromRedis()
             .onErrorResume(error -> {
-                log.warn("Failed to get blacklist stats from Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to get blacklist stats from Redis, falling back to StoreManager: { }", error.getMessage());
                 return getBlacklistStatsFromFallback();
             })
             .map(stats -> {
@@ -186,7 +186,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 stats.put("currentTime", System.currentTimeMillis());
                 return stats;
             })
-            .doOnError(error -> log.error("Failed to get blacklist stats: {}", error.getMessage(), error));
+            .doOnError(error -> log.error("Failed to get blacklist stats: { }", error.getMessage(), error));
     }
     
     @Override
@@ -203,7 +203,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         
         return getBlacklistEntryFromRedis(tokenHash)
             .onErrorResume(error -> {
-                log.warn("Failed to get blacklist entry from Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to get blacklist entry from Redis, falling back to StoreManager: { }", error.getMessage());
                 return getBlacklistEntryFromFallback(tokenHash);
             })
             .doOnNext(entry -> {
@@ -212,22 +212,22 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                     memoryCache.put(tokenHash, entry);
                 }
             })
-            .doOnError(error -> log.error("Failed to get blacklist entry for token: {}", error.getMessage(), error));
+            .doOnError(error -> log.error("Failed to get blacklist entry for token: { }", error.getMessage(), error));
     }
     
     @Override
-    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes, final String reason,final String addedBy) {
+    public Mono<Void> batchAddToBlacklist(final List<String> tokenHashes, final String reason, final String addedBy) {
         if (tokenHashes == null || tokenHashes.isEmpty()) {
             return Mono.empty();
         }
         
         return batchAddToBlacklistInRedis(tokenHashes, reason, addedBy)
             .onErrorResume(error -> {
-                log.warn("Failed to batch add to blacklist in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to batch add to blacklist in Redis, falling back to StoreManager: { }", error.getMessage());
                 return batchAddToBlacklistInFallback(tokenHashes, reason, addedBy);
             })
-            .doOnSuccess(unused -> log.info("Batch added {} tokens to blacklist", tokenHashes.size()))
-            .doOnError(error -> log.error("Failed to batch add tokens to blacklist: {}", error.getMessage(), error));
+            .doOnSuccess(unused -> log.info("Batch added { } tokens to blacklist", tokenHashes.size()))
+            .doOnError(error -> log.error("Failed to batch add tokens to blacklist: { }", error.getMessage(), error));
     }
     
     @Override
@@ -235,18 +235,18 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
         return redisTemplate.hasKey(BLACKLIST_INDEX_KEY)
             .map(exists -> true)
             .onErrorReturn(false)
-            .doOnNext(available -> log.debug("Blacklist service availability: {}", available));
+            .doOnNext(available -> log.debug("Blacklist service availability: { }", available));
     }
     
     @Override
     public Mono<Long> getExpiringEntriesCount(final int hoursUntilExpiry) {
         return getExpiringEntriesCountFromRedis(hoursUntilExpiry)
             .onErrorResume(error -> {
-                log.warn("Failed to get expiring entries count from Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to get expiring entries count from Redis, falling back to StoreManager: { }", error.getMessage());
                 return getExpiringEntriesCountFromFallback(hoursUntilExpiry);
             })
-            .doOnNext(count -> log.debug("Expiring entries count ({}h): {}", hoursUntilExpiry, count))
-            .doOnError(error -> log.error("Failed to get expiring entries count: {}", error.getMessage(), error));
+            .doOnNext(count -> log.debug("Expiring entries count ({ }h): { }", hoursUntilExpiry, count))
+            .doOnError(error -> log.error("Failed to get expiring entries count: { }", error.getMessage(), error));
     }
     
     // Redis操作方法
@@ -296,7 +296,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                             
                             return true;
                         } catch (Exception e) {
-                            log.warn("Failed to deserialize blacklist entry: {}", e.getMessage());
+                            log.warn("Failed to deserialize blacklist entry: { }", e.getMessage());
                             return false;
                         }
                     })
@@ -339,7 +339,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                                 return tokenHash;
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to check blacklist entry expiry: {}", e.getMessage());
+                            log.warn("Failed to check blacklist entry expiry: { }", e.getMessage());
                         }
                         return null;
                     })
@@ -357,9 +357,9 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
             .map(statsJson -> {
                 try {
                     return JacksonHelper.getObjectMapper().readValue(statsJson, 
-                        new TypeReference<Map<String, Object>>() {});
+                        new TypeReference<Map<String, Object>>() { });
                 } catch (Exception e) {
-                    log.warn("Failed to deserialize blacklist stats: {}", e.getMessage());
+                    log.warn("Failed to deserialize blacklist stats: { }", e.getMessage());
                     return new HashMap<String, Object>();
                 }
             })
@@ -388,7 +388,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
             });
     }
     
-    private Mono<Void> batchAddToBlacklistInRedis(final List<String> tokenHashes, final String reason,final String addedBy) {
+    private Mono<Void> batchAddToBlacklistInRedis(final List<String> tokenHashes, final String reason, final String addedBy) {
         LocalDateTime now = LocalDateTime.now();
         
         return Flux.fromIterable(tokenHashes)
@@ -426,7 +426,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                                 return 1L;
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to check blacklist entry expiry: {}", e.getMessage());
+                            log.warn("Failed to check blacklist entry expiry: { }", e.getMessage());
                         }
                         return 0L;
                     })
@@ -457,7 +457,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
             .map(statsJson -> {
                 try {
                     return JacksonHelper.getObjectMapper().readValue(statsJson, 
-                        new TypeReference<Map<String, Object>>() {});
+                        new TypeReference<Map<String, Object>>() { });
                 } catch (Exception e) {
                     return new HashMap<String, Object>();
                 }
@@ -490,7 +490,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                     return redisTemplate.opsForValue().set(BLACKLIST_STATS_KEY, updatedStatsJson, STATS_TTL)
                         .then();
                 } catch (Exception e) {
-                    log.warn("Failed to serialize blacklist stats: {}", e.getMessage());
+                    log.warn("Failed to serialize blacklist stats: { }", e.getMessage());
                     return Mono.empty();
                 }
             });
@@ -505,7 +505,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 String blacklistKey = "jwt_blacklist_" + entry.getTokenHash();
                 fallbackStoreManager.saveConfig(blacklistKey, entryData);
             } catch (Exception e) {
-                log.warn("Failed to add token to blacklist in fallback storage: {}", e.getMessage());
+                log.warn("Failed to add token to blacklist in fallback storage: { }", e.getMessage());
             }
         });
     }
@@ -532,7 +532,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 
                 return true;
             } catch (Exception e) {
-                log.warn("Failed to check blacklist in fallback storage: {}", e.getMessage());
+                log.warn("Failed to check blacklist in fallback storage: { }", e.getMessage());
                 return false;
             }
         });
@@ -546,7 +546,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                     fallbackStoreManager.deleteConfig(blacklistKey);
                 }
             } catch (Exception e) {
-                log.warn("Failed to remove token from blacklist in fallback storage: {}", e.getMessage());
+                log.warn("Failed to remove token from blacklist in fallback storage: { }", e.getMessage());
             }
         });
     }
@@ -573,13 +573,13 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 Map<String, Object> entryData = fallbackStoreManager.getConfig(blacklistKey);
                 return entryData != null ? convertFromMap(entryData) : null;
             } catch (Exception e) {
-                log.warn("Failed to get blacklist entry from fallback storage: {}", e.getMessage());
+                log.warn("Failed to get blacklist entry from fallback storage: { }", e.getMessage());
                 return null;
             }
         });
     }
     
-    private Mono<Void> batchAddToBlacklistInFallback(final List<String> tokenHashes, final String reason,final String addedBy) {
+    private Mono<Void> batchAddToBlacklistInFallback(final List<String> tokenHashes, final String reason, final String addedBy) {
         return Mono.empty();
     }
     
@@ -611,17 +611,17 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 });
                 
                 lastCacheUpdate = currentTime;
-                log.debug("Refreshed blacklist memory cache, current size: {}", memoryCache.size());
+                log.debug("Refreshed blacklist memory cache, current size: { }", memoryCache.size());
                 
             } catch (Exception e) {
-                log.warn("Failed to refresh blacklist cache: {}", e.getMessage());
+                log.warn("Failed to refresh blacklist cache: { }", e.getMessage());
             }
         }
     }
     
     private Map<String, Object> convertToMap(final TokenBlacklistEntry entry) {
         try {
-            return JacksonHelper.getObjectMapper().convertValue(entry, new TypeReference<Map<String, Object>>() {});
+            return JacksonHelper.getObjectMapper().convertValue(entry, new TypeReference<Map<String, Object>>() { });
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert blacklist entry to map", e);
         }
@@ -645,7 +645,7 @@ public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
                 return 0L;
             }))
             .onErrorResume(error -> {
-                log.warn("Failed to cleanup expired entries with count: {}", error.getMessage());
+                log.warn("Failed to cleanup expired entries with count: { }", error.getMessage());
                 return Mono.just(0L);
             });
     }

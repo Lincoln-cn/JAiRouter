@@ -414,7 +414,7 @@ public class ControllerTracingInterceptor {
     /**
      * 记录子Span到TraceQueryService
      */
-    private void recordChildSpan(final Span span, final TracingContext tracingContext,final Instant startTime,final String operationName) {
+    private void recordChildSpan(final Span span, final TracingContext tracingContext, final Instant startTime, final String operationName) {
         if (traceQueryService == null || tracingContext == null || span == null) {
             return;
         }

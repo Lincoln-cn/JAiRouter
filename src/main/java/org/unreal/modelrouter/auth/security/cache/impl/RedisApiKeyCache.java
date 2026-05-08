@@ -72,7 +72,7 @@ public class RedisApiKeyCache implements ApiKeyCache {
     }
     
     @Override
-    public Mono<Void> put(final String keyValue, final ApiKey apiKey,final Duration ttl) {
+    public Mono<Void> put(final String keyValue, final ApiKey apiKey, final Duration ttl) {
         long startTime = System.nanoTime();
         String cacheKey = buildCacheKey(keyValue);
 

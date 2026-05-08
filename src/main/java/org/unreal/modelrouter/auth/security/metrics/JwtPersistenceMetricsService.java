@@ -113,7 +113,7 @@ public class JwtPersistenceMetricsService {
     /**
      * 完成令牌操作计时
      */
-    public void finishTokenOperation(final Timer.Sample sample, final String operation,final String storageType,final boolean success) {
+    public void finishTokenOperation(final Timer.Sample sample, final String operation, final String storageType, final boolean success) {
         String key = operation + "." + storageType;
         Timer timer = tokenOperationTimers.get(key);
         if (timer != null && sample != null) {
@@ -164,7 +164,7 @@ public class JwtPersistenceMetricsService {
     /**
      * 完成黑名单操作计时
      */
-    public void finishBlacklistOperation(final Timer.Sample sample, final String operation,final String storageType,final boolean success) {
+    public void finishBlacklistOperation(final Timer.Sample sample, final String operation, final String storageType, final boolean success) {
         String key = operation + "." + storageType;
         Timer timer = blacklistOperationTimers.get(key);
         if (timer != null && sample != null) {
@@ -231,7 +231,7 @@ public class JwtPersistenceMetricsService {
     /**
      * 记录清理操作统计
      */
-    public void recordCleanupOperation(final String type, final long itemsRemoved,final Duration duration) {
+    public void recordCleanupOperation(final String type, final long itemsRemoved, final Duration duration) {
         Timer.builder("jwt.cleanup.duration")
             .description("清理操作耗时")
             .tag("cleanup_type", type)

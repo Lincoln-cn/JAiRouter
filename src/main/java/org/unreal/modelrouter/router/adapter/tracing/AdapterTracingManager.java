@@ -200,7 +200,7 @@ public class AdapterTracingManager {
      * @param durationMs 响应时间（毫秒）
      * @param statusCode HTTP 状态码
      */
-    public void recordResponseAttributes(final Span span, final long responseSize, final long durationMs,final int statusCode) {
+    public void recordResponseAttributes(final Span span, final long responseSize, final long durationMs, final int statusCode) {
         if (span == null) {
             return;
         }

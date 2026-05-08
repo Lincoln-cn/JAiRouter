@@ -45,7 +45,7 @@ public class UserTokenInfo {
     public UserTokenInfo() {
     }
 
-    public UserTokenInfo(final String userId, final String token,final LocalDateTime issuedAt,final LocalDateTime expiresAt,final String status) {
+    public UserTokenInfo(final String userId, final String token, final LocalDateTime issuedAt, final LocalDateTime expiresAt, final String status) {
         this.userId = userId;
         this.token = token;
         this.issuedAt = issuedAt;

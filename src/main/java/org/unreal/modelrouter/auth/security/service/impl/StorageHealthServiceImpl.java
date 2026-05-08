@@ -215,7 +215,7 @@ public class StorageHealthServiceImpl implements StorageHealthService {
     }
     
     @Override
-    public Mono<Void> recordStorageFailure(final String storageType, final String operation,final Throwable error) {
+    public Mono<Void> recordStorageFailure(final String storageType, final String operation, final Throwable error) {
         return Mono.fromRunnable(() -> {
             String key = storageType + "_" + operation;
             

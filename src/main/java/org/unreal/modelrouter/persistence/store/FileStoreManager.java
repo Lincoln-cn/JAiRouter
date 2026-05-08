@@ -165,7 +165,7 @@ public class FileStoreManager extends BaseStoreManager {
      * @param version 版本号
      */
     @Override
-    public void saveConfigVersion(final String key, final Map<String, Object> config,final int version) {
+    public void saveConfigVersion(final String key, final Map<String, Object> config, final int version) {
         // 只有当配置不为空时才保存版本文件
         if (config != null && !config.isEmpty()) {
             try {

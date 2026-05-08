@@ -288,15 +288,33 @@ public class ExporterHealthChecker implements HealthIndicator {
         }
         
         // Getters
-        public long getTotalExports() { return totalExports; }
-        public long getSuccessfulExports() { return successfulExports; }
-        public long getFailedExports() { return failedExports; }
-        public double getSuccessRate() { return successRate; }
-        public double getAverageExportTime() { return averageExportTime; }
-        public boolean isHealthy() { return isHealthy; }
-        public String getLastError() { return lastError; }
-        public Instant getLastSuccessTime() { return lastSuccessTime; }
-        public Instant getLastCheckTime() { return lastCheckTime; }
+        public long getTotalExports() {
+            return totalExports;
+        }
+        public long getSuccessfulExports() {
+            return successfulExports;
+        }
+        public long getFailedExports() {
+            return failedExports;
+        }
+        public double getSuccessRate() {
+            return successRate;
+        }
+        public double getAverageExportTime() {
+            return averageExportTime;
+        }
+        public boolean isHealthy() {
+            return isHealthy;
+        }
+        public String getLastError() {
+            return lastError;
+        }
+        public Instant getLastSuccessTime() {
+            return lastSuccessTime;
+        }
+        public Instant getLastCheckTime() {
+            return lastCheckTime;
+        }
         
         public static class Builder {
             private long totalExports;

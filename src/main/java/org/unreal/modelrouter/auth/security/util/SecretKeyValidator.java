@@ -75,7 +75,7 @@ public class SecretKeyValidator {
         private final boolean passed;
         private final String message;
 
-        public ValidationResult(final StrengthLevel strengthLevel, final boolean passed,final String message) {
+        public ValidationResult(final StrengthLevel strengthLevel, final boolean passed, final String message) {
             this.strengthLevel = strengthLevel;
             this.passed = passed;
             this.message = message;

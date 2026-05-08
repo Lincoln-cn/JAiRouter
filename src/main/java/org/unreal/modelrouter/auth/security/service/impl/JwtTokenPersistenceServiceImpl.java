@@ -40,7 +40,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     
     @jakarta.annotation.PostConstruct
     public void init() {
-        log.info("=== JwtTokenPersistenceServiceImpl initialized with StoreManager: {} ===", 
+        log.info("=== JwtTokenPersistenceServiceImpl initialized with StoreManager: { } ===", 
                 storeManager.getClass().getSimpleName());
         log.info("JWT Token persistence is ENABLED and using H2 database storage");
     }
@@ -83,14 +83,14 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                     // 更新计数器
                     incrementTokenCounter();
                     
-                    log.debug("Successfully saved token for user: {}", tokenInfo.getUserId());
+                    log.debug("Successfully saved token for user: { }", tokenInfo.getUserId());
                     return null;
                 })
                 .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
                 .then();
                 
             } catch (Exception e) {
-                log.error("Failed to save token: {}", e.getMessage(), e);
+                log.error("Failed to save token: { }", e.getMessage(), e);
                 return Mono.error(new RuntimeException("Failed to save token", e));
             }
         });
@@ -114,7 +114,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 return convertFromMap(tokenData);
                 
             } catch (Exception e) {
-                log.error("Failed to find token by hash: {}", e.getMessage(), e);
+                log.error("Failed to find token by hash: { }", e.getMessage(), e);
                 return null;
             }
         })
@@ -140,7 +140,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                             Map<String, Object> tokenData = storeManager.getConfig(tokenKey);
                             return tokenData != null ? convertFromMap(tokenData) : null;
                         } catch (Exception e) {
-                            log.warn("Failed to load token {}: {}", hash, e.getMessage());
+                            log.warn("Failed to load token { }: { }", hash, e.getMessage());
                             return null;
                         }
                     })
@@ -150,7 +150,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                     .collect(Collectors.toList());
                 
             } catch (Exception e) {
-                log.error("Failed to find active tokens for user {}: {}", userId, e.getMessage(), e);
+                log.error("Failed to find active tokens for user { }: { }", userId, e.getMessage(), e);
                 return new ArrayList<>();
             }
         });
@@ -175,13 +175,13 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                                 if (token.getTokenHash() != null || token.getId() != null) {
                                     allTokens.add(token);
                                 } else {
-                                    log.warn("Skipping invalid token data from key {}: missing tokenHash and id", key);
+                                    log.warn("Skipping invalid token data from key { }: missing tokenHash and id", key);
                                 }
                             } else {
-                                log.debug("Skipping empty or invalid token data from key {}", key);
+                                log.debug("Skipping empty or invalid token data from key { }", key);
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to load token from key {}: {}", key, e.getMessage());
+                            log.warn("Failed to load token from key { }: { }", key, e.getMessage());
                         }
                     }
                 }
@@ -204,7 +204,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 return new ArrayList<>(allTokens.subList(start, end));
                 
             } catch (Exception e) {
-                log.error("Failed to find all tokens: {}", e.getMessage(), e);
+                log.error("Failed to find all tokens: { }", e.getMessage(), e);
                 return new ArrayList<JwtTokenInfo>();
             }
         })
@@ -223,7 +223,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 Map<String, Object> tokenData = storeManager.getConfig(tokenKey);
                 
                 if (tokenData == null) {
-                    log.warn("Token not found for hash: {}", tokenHash);
+                    log.warn("Token not found for hash: { }", tokenHash);
                     return;
                 }
                 
@@ -252,10 +252,10 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                     updateStatusIndex(status, tokenHash, true);
                 }
                 
-                log.debug("Successfully updated token status to {} for hash: {}", status, tokenHash);
+                log.debug("Successfully updated token status to { } for hash: { }", status, tokenHash);
                 
             } catch (Exception e) {
-                log.error("Failed to update token status: {}", e.getMessage(), e);
+                log.error("Failed to update token status: { }", e.getMessage(), e);
                 throw new RuntimeException("Failed to update token status", e);
             }
         });
@@ -278,7 +278,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                                 return isTokenExpired(token) ? 0 : 1;
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to check token expiry for hash {}: {}", hash, e.getMessage());
+                            log.warn("Failed to check token expiry for hash { }: { }", hash, e.getMessage());
                         }
                         return 0;
                     })
@@ -287,7 +287,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 return count;
                 
             } catch (Exception e) {
-                log.error("Failed to count active tokens: {}", e.getMessage(), e);
+                log.error("Failed to count active tokens: { }", e.getMessage(), e);
                 return 0L;
             }
         });
@@ -301,7 +301,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 return (long) tokenHashes.size();
                 
             } catch (Exception e) {
-                log.error("Failed to count tokens by status {}: {}", status, e.getMessage(), e);
+                log.error("Failed to count tokens by status { }: { }", status, e.getMessage(), e);
                 return 0L;
             }
         });
@@ -337,15 +337,15 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                                 }
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to process token for expiry check: {}", key, e);
+                            log.warn("Failed to process token for expiry check: { }", key, e);
                         }
                     }
                 }
                 
-                log.info("Removed {} expired tokens", removedCount);
+                log.info("Removed { } expired tokens", removedCount);
                 
             } catch (Exception e) {
-                log.error("Failed to remove expired tokens: {}", e.getMessage(), e);
+                log.error("Failed to remove expired tokens: { }", e.getMessage(), e);
                 throw new RuntimeException("Failed to remove expired tokens", e);
             }
         });
@@ -371,7 +371,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                                 }
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to check token ID for key {}: {}", key, e.getMessage());
+                            log.warn("Failed to check token ID for key { }: { }", key, e.getMessage());
                         }
                     }
                 }
@@ -379,14 +379,14 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 return null;
                 
             } catch (Exception e) {
-                log.error("Failed to find token by ID {}: {}", tokenId, e.getMessage(), e);
+                log.error("Failed to find token by ID { }: { }", tokenId, e.getMessage(), e);
                 return null;
             }
         });
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId, final int page,final int size) {
+    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId, final int page, final int size) {
         return Mono.<List<JwtTokenInfo>>fromCallable(() -> {
             try {
                 if (userId == null || userId.trim().isEmpty()) {
@@ -404,7 +404,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                             Map<String, Object> tokenData = storeManager.getConfig(tokenKey);
                             return tokenData != null ? convertFromMap(tokenData) : null;
                         } catch (Exception e) {
-                            log.warn("Failed to load token {}: {}", hash, e.getMessage());
+                            log.warn("Failed to load token { }: { }", hash, e.getMessage());
                             return null;
                         }
                     })
@@ -427,14 +427,14 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 return new ArrayList<>(tokens.subList(start, end));
                 
             } catch (Exception e) {
-                log.error("Failed to find tokens for user {}: {}", userId, e.getMessage(), e);
+                log.error("Failed to find tokens for user { }: { }", userId, e.getMessage(), e);
                 return new ArrayList<JwtTokenInfo>();
             }
         });
     }
     
     @Override
-    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status,final String reason,final String updatedBy) {
+    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status, final String reason, final String updatedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHashes == null || tokenHashes.isEmpty() || status == null) {
@@ -483,14 +483,14 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                         }
                         
                     } catch (Exception e) {
-                        log.warn("Failed to update token status for hash {}: {}", tokenHash, e.getMessage());
+                        log.warn("Failed to update token status for hash { }: { }", tokenHash, e.getMessage());
                     }
                 }
                 
-                log.info("Batch updated {} tokens to status {}", updatedCount, status);
+                log.info("Batch updated { } tokens to status { }", updatedCount, status);
                 
             } catch (Exception e) {
-                log.error("Failed to batch update token status: {}", e.getMessage(), e);
+                log.error("Failed to batch update token status: { }", e.getMessage(), e);
                 throw new RuntimeException("Failed to batch update token status", e);
             }
         });
@@ -503,9 +503,9 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
      */
     private Map<String, Object> convertToMap(final JwtTokenInfo tokenInfo) {
         try {
-            return JacksonHelper.getObjectMapper().convertValue(tokenInfo, new TypeReference<Map<String, Object>>() {});
+            return JacksonHelper.getObjectMapper().convertValue(tokenInfo, new TypeReference<Map<String, Object>>() { });
         } catch (Exception e) {
-            log.error("Failed to convert token info to map: {}", e.getMessage(), e);
+            log.error("Failed to convert token info to map: { }", e.getMessage(), e);
             throw new RuntimeException("Failed to convert token info to map", e);
         }
     }
@@ -517,7 +517,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
         try {
             return JacksonHelper.getObjectMapper().convertValue(tokenData, JwtTokenInfo.class);
         } catch (Exception e) {
-            log.error("Failed to convert map to token info: {}", e.getMessage(), e);
+            log.error("Failed to convert map to token info: { }", e.getMessage(), e);
             throw new RuntimeException("Failed to convert map to token info", e);
         }
     }
@@ -535,7 +535,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     /**
      * 更新用户索引
      */
-    private void updateUserIndex(final String userId, final String tokenHash,final boolean add) {
+    private void updateUserIndex(final String userId, final String tokenHash, final boolean add) {
         if (userId == null || tokenHash == null) {
             return;
         }
@@ -569,14 +569,14 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
             storeManager.saveConfig(indexKey, indexData);
             
         } catch (Exception e) {
-            log.warn("Failed to update user index for user {}: {}", userId, e.getMessage());
+            log.warn("Failed to update user index for user { }: { }", userId, e.getMessage());
         }
     }
     
     /**
      * 更新状态索引
      */
-    private void updateStatusIndex(final TokenStatus status, final String tokenHash,final boolean add) {
+    private void updateStatusIndex(final TokenStatus status, final String tokenHash, final boolean add) {
         if (status == null || tokenHash == null) {
             return;
         }
@@ -610,7 +610,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
             storeManager.saveConfig(indexKey, indexData);
             
         } catch (Exception e) {
-            log.warn("Failed to update status index for status {}: {}", status, e.getMessage());
+            log.warn("Failed to update status index for status { }: { }", status, e.getMessage());
         }
     }
     
@@ -631,7 +631,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
             return tokenHashes != null ? new ArrayList<>(tokenHashes) : new ArrayList<>();
             
         } catch (Exception e) {
-            log.warn("Failed to get user token hashes for user {}: {}", userId, e.getMessage());
+            log.warn("Failed to get user token hashes for user { }: { }", userId, e.getMessage());
             return new ArrayList<>();
         }
     }
@@ -653,7 +653,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
             return tokenHashes != null ? new ArrayList<>(tokenHashes) : new ArrayList<>();
             
         } catch (Exception e) {
-            log.warn("Failed to get status token hashes for status {}: {}", status, e.getMessage());
+            log.warn("Failed to get status token hashes for status { }: { }", status, e.getMessage());
             return new ArrayList<>();
         }
     }
@@ -677,7 +677,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
             storeManager.saveConfig(TOKEN_COUNTER_KEY, counterData);
             
         } catch (Exception e) {
-            log.warn("Failed to increment token counter: {}", e.getMessage());
+            log.warn("Failed to increment token counter: { }", e.getMessage());
         }
     }
 }

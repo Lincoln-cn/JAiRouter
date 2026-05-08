@@ -12,7 +12,7 @@ import java.util.Map;
  * 提供令牌状态更新、过期处理和元数据管理功能
  */
 public interface JwtTokenLifecycleService {
-    
+
     /**
      * 更新令牌状态
      * @param tokenHash 令牌哈希值
@@ -22,13 +22,13 @@ public interface JwtTokenLifecycleService {
      * @return 更新操作结果
      */
     Mono<Void> updateTokenStatus(String tokenHash, TokenStatus newStatus, String reason, String updatedBy);
-    
+
     /**
      * 自动更新过期令牌的状态
      * @return 更新的令牌数量
      */
     Mono<Long> updateExpiredTokens();
-    
+
     /**
      * 收集并存储令牌元数据
      * @param token JWT令牌
@@ -37,14 +37,14 @@ public interface JwtTokenLifecycleService {
      * @return 操作结果
      */
     Mono<JwtTokenInfo> collectAndStoreTokenMetadata(String token, String userId, Map<String, Object> additionalMetadata);
-    
+
     /**
      * 获取令牌的完整生命周期信息
      * @param tokenHash 令牌哈希值
      * @return 令牌生命周期信息
      */
     Mono<TokenLifecycleInfo> getTokenLifecycleInfo(String tokenHash);
-    
+
     /**
      * 批量更新令牌状态
      * @param tokenHashes 令牌哈希列表
@@ -54,13 +54,13 @@ public interface JwtTokenLifecycleService {
      * @return 更新操作结果
      */
     Mono<Long> batchUpdateTokenStatus(java.util.List<String> tokenHashes, TokenStatus newStatus, String reason, String updatedBy);
-    
+
     /**
      * 获取令牌生命周期统计信息
      * @return 统计信息
      */
     Mono<TokenLifecycleStats> getLifecycleStats();
-    
+
     /**
      * 令牌生命周期信息
      */
@@ -74,36 +74,81 @@ public interface JwtTokenLifecycleService {
         private String lastChangeReason;
         private String lastChangedBy;
         private Map<String, Object> metadata;
-        
+
         // Getters and Setters
-        public String getTokenHash() { return tokenHash; }
-        public void setTokenHash(final String tokenHash) { this.tokenHash = tokenHash; }
-        
-        public String getUserId() { return userId; }
-        public void setUserId(final String userId) { this.userId = userId; }
-        
-        public TokenStatus getCurrentStatus() { return currentStatus; }
-        public void setCurrentStatus(final TokenStatus currentStatus) { this.currentStatus = currentStatus; }
-        
-        public LocalDateTime getIssuedAt() { return issuedAt; }
-        public void setIssuedAt(final LocalDateTime issuedAt) { this.issuedAt = issuedAt; }
-        
-        public LocalDateTime getExpiresAt() { return expiresAt; }
-        public void setExpiresAt(final LocalDateTime expiresAt) { this.expiresAt = expiresAt; }
-        
-        public LocalDateTime getLastStatusChange() { return lastStatusChange; }
-        public void setLastStatusChange(final LocalDateTime lastStatusChange) { this.lastStatusChange = lastStatusChange; }
-        
-        public String getLastChangeReason() { return lastChangeReason; }
-        public void setLastChangeReason(final String lastChangeReason) { this.lastChangeReason = lastChangeReason; }
-        
-        public String getLastChangedBy() { return lastChangedBy; }
-        public void setLastChangedBy(final String lastChangedBy) { this.lastChangedBy = lastChangedBy; }
-        
-        public Map<String, Object> getMetadata() { return metadata; }
-        public void setMetadata(final Map<String, Object> metadata) { this.metadata = metadata; }
+        public String getTokenHash() {
+            return tokenHash;
+        }
+
+        public void setTokenHash(final String tokenHash) {
+            this.tokenHash = tokenHash;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(final String userId) {
+            this.userId = userId;
+        }
+
+        public TokenStatus getCurrentStatus() {
+            return currentStatus;
+        }
+
+        public void setCurrentStatus(final TokenStatus currentStatus) {
+            this.currentStatus = currentStatus;
+        }
+
+        public LocalDateTime getIssuedAt() {
+            return issuedAt;
+        }
+
+        public void setIssuedAt(final LocalDateTime issuedAt) {
+            this.issuedAt = issuedAt;
+        }
+
+        public LocalDateTime getExpiresAt() {
+            return expiresAt;
+        }
+
+        public void setExpiresAt(final LocalDateTime expiresAt) {
+            this.expiresAt = expiresAt;
+        }
+
+        public LocalDateTime getLastStatusChange() {
+            return lastStatusChange;
+        }
+
+        public void setLastStatusChange(final LocalDateTime lastStatusChange) {
+            this.lastStatusChange = lastStatusChange;
+        }
+
+        public String getLastChangeReason() {
+            return lastChangeReason;
+        }
+
+        public void setLastChangeReason(final String lastChangeReason) {
+            this.lastChangeReason = lastChangeReason;
+        }
+
+        public String getLastChangedBy() {
+            return lastChangedBy;
+        }
+
+        public void setLastChangedBy(final String lastChangedBy) {
+            this.lastChangedBy = lastChangedBy;
+        }
+
+        public Map<String, Object> getMetadata() {
+            return metadata;
+        }
+
+        public void setMetadata(final Map<String, Object> metadata) {
+            this.metadata = metadata;
+        }
     }
-    
+
     /**
      * 令牌生命周期统计信息
      */
@@ -114,24 +159,54 @@ public interface JwtTokenLifecycleService {
         private long expiredTokens;
         private LocalDateTime lastUpdateTime;
         private Map<String, Long> statusDistribution;
-        
+
         // Getters and Setters
-        public long getTotalTokens() { return totalTokens; }
-        public void setTotalTokens(final long totalTokens) { this.totalTokens = totalTokens; }
-        
-        public long getActiveTokens() { return activeTokens; }
-        public void setActiveTokens(final long activeTokens) { this.activeTokens = activeTokens; }
-        
-        public long getRevokedTokens() { return revokedTokens; }
-        public void setRevokedTokens(final long revokedTokens) { this.revokedTokens = revokedTokens; }
-        
-        public long getExpiredTokens() { return expiredTokens; }
-        public void setExpiredTokens(final long expiredTokens) { this.expiredTokens = expiredTokens; }
-        
-        public LocalDateTime getLastUpdateTime() { return lastUpdateTime; }
-        public void setLastUpdateTime(final LocalDateTime lastUpdateTime) { this.lastUpdateTime = lastUpdateTime; }
-        
-        public Map<String, Long> getStatusDistribution() { return statusDistribution; }
-        public void setStatusDistribution(final Map<String, Long> statusDistribution) { this.statusDistribution = statusDistribution; }
+        public long getTotalTokens() {
+            return totalTokens;
+        }
+
+        public void setTotalTokens(final long totalTokens) {
+            this.totalTokens = totalTokens;
+        }
+
+        public long getActiveTokens() {
+            return activeTokens;
+        }
+
+        public void setActiveTokens(final long activeTokens) {
+            this.activeTokens = activeTokens;
+        }
+
+        public long getRevokedTokens() {
+            return revokedTokens;
+        }
+
+        public void setRevokedTokens(final long revokedTokens) {
+            this.revokedTokens = revokedTokens;
+        }
+
+        public long getExpiredTokens() {
+            return expiredTokens;
+        }
+
+        public void setExpiredTokens(final long expiredTokens) {
+            this.expiredTokens = expiredTokens;
+        }
+
+        public LocalDateTime getLastUpdateTime() {
+            return lastUpdateTime;
+        }
+
+        public void setLastUpdateTime(final LocalDateTime lastUpdateTime) {
+            this.lastUpdateTime = lastUpdateTime;
+        }
+
+        public Map<String, Long> getStatusDistribution() {
+            return statusDistribution;
+        }
+
+        public void setStatusDistribution(final Map<String, Long> statusDistribution) {
+            this.statusDistribution = statusDistribution;
+        }
     }
 }

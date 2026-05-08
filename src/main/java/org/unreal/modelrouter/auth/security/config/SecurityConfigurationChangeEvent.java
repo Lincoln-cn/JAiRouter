@@ -13,7 +13,7 @@ public class SecurityConfigurationChangeEvent {
     private final Object newValue;
     private final LocalDateTime timestamp;
 
-    public SecurityConfigurationChangeEvent(final Object source, final String changeId ,final String configType,final Object oldValue,final Object newValue) {
+    public SecurityConfigurationChangeEvent(final Object source, final String changeId, final String configType, final Object oldValue, final Object newValue) {
         this.source = source;
         this.changeId = changeId;
         this.configType = configType;

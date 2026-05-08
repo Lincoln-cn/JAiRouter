@@ -153,7 +153,7 @@ public class MemoryUsageHealthService {
     /**
      * 评估内存健康状态
      */
-    private boolean evaluateMemoryHealth(final double heapUsagePercent, final double nonHeapUsagePercent,final double gcPressure) {
+    private boolean evaluateMemoryHealth(final double heapUsagePercent, final double nonHeapUsagePercent, final double gcPressure) {
         boolean healthy = true;
         
         // 检查堆内存使用情况

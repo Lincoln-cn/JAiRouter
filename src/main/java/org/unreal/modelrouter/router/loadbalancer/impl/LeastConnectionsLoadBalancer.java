@@ -29,7 +29,7 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
     }
 
     @Override
-    public ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances, final String clientIp,final String serviceType) {
+    public ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances, final String clientIp, final String serviceType) {
         if (instances == null || instances.isEmpty()) {
             logger.warn("No instances available for least connections selection");
             throw new IllegalArgumentException("No instances available");
@@ -87,7 +87,7 @@ public class LeastConnectionsLoadBalancer implements LoadBalancer {
     /**
      * 记录负载均衡器选择指标
      */
-    private void recordLoadBalancerSelection(final String service, final String strategy,final String selectedInstance) {
+    private void recordLoadBalancerSelection(final String service, final String strategy, final String selectedInstance) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordLoadBalancer(service, strategy, selectedInstance);

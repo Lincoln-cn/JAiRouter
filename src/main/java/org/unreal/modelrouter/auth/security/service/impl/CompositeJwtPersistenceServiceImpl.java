@@ -230,7 +230,7 @@ public class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId, final int page,final int size) {
+    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId, final int page, final int size) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {
@@ -254,7 +254,7 @@ public class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService
     }
     
     @Override
-    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status,final String reason,final String updatedBy) {
+    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status, final String reason, final String updatedBy) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {

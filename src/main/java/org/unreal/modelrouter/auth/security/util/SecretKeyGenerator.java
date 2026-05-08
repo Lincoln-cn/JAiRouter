@@ -104,7 +104,7 @@ public class SecretKeyGenerator {
      * @param segmentCount 分段数量
      * @return 带分隔符的可读密钥
      */
-    public static String generateFormattedKey(final String prefix, final int segmentLength,final int segmentCount) {
+    public static String generateFormattedKey(final String prefix, final int segmentLength, final int segmentCount) {
         StringBuilder key = new StringBuilder();
         
         if (prefix != null && !prefix.isEmpty()) {

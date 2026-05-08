@@ -264,7 +264,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证敏感词列表
      */
-    private void validateSensitiveWords(final List<String> sensitiveWords, final String context,final ValidationResult result) {
+    private void validateSensitiveWords(final List<String> sensitiveWords, final String context, final ValidationResult result) {
         if (sensitiveWords.isEmpty()) {
             result.addWarning(context + "敏感词列表为空，脱敏功能可能无效");
             return;
@@ -283,7 +283,7 @@ public class SecurityConfigurationValidator {
     /**
      * 验证PII模式列表
      */
-    private void validatePiiPatterns(final List<String> piiPatterns, final String context,final ValidationResult result) {
+    private void validatePiiPatterns(final List<String> piiPatterns, final String context, final ValidationResult result) {
         if (piiPatterns.isEmpty()) {
             result.addWarning(context + "PII模式列表为空，PII数据脱敏功能可能无效");
             return;

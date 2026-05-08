@@ -329,8 +329,12 @@ public class MonitoringHealthChecker {
             this.details = details;
         }
         
-        public boolean isHealthy() { return healthy; }
-        public Map<String, Object> getDetails() { return details; }
+        public boolean isHealthy() {
+            return healthy;
+        }
+        public Map<String, Object> getDetails() {
+            return details;
+        }
     }
     
     /**
@@ -347,8 +351,14 @@ public class MonitoringHealthChecker {
             this.issues = issues;
         }
         
-        public boolean isHealthy() { return healthy; }
-        public Map<String, Object> getDetails() { return details; }
-        public String getIssues() { return issues; }
+        public boolean isHealthy() {
+            return healthy;
+        }
+        public Map<String, Object> getDetails() {
+            return details;
+        }
+        public String getIssues() {
+            return issues;
+        }
     }
 }

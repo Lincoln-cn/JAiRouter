@@ -160,7 +160,7 @@ public class AdapterTracingEnhancer {
      * @param context 追踪上下文
      */
     public void logAdapterRetry(final String adapterType, final ModelRouterProperties.ModelInstance instance,
-                               final int retryCount, final int maxRetries, final Throwable lastError,final TracingContext context) {
+                               final int retryCount, final int maxRetries, final Throwable lastError, final TracingContext context) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("adapter_type", adapterType);
         eventData.put("retry_count", retryCount);

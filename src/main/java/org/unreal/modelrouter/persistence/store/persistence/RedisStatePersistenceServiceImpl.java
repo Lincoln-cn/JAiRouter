@@ -41,7 +41,7 @@ public class RedisStatePersistenceServiceImpl implements StatePersistenceService
     private ObjectMapper objectMapper;
 
     @Override
-    public Mono<Boolean> save(final StateType stateType, final String key,final Map<String, Object> stateData) {
+    public Mono<Boolean> save(final StateType stateType, final String key, final Map<String, Object> stateData) {
         if (!isRedisAvailable()) {
             logger.debug("Redis not available, skipping save for key: {}", key);
             return Mono.just(false);

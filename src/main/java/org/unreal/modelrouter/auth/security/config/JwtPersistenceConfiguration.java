@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.enabled", havingValue = "true")
 public class JwtPersistenceConfiguration {
-    
+
     /**
      * JWT持久化配置属性
      */
@@ -22,31 +22,56 @@ public class JwtPersistenceConfiguration {
     public static class JwtPersistenceProperties {
         private String storagePath = "config-store";
         private Memory memory = new Memory();
-        
+
         public static class Memory {
             private int maxTokens = 50000;
             private double cleanupThreshold = 0.8;
             private boolean lruEnabled = true;
-            
+
             // Getters and Setters
-            public int getMaxTokens() { return maxTokens; }
-            public void setMaxTokens(final int maxTokens) { this.maxTokens = maxTokens; }
-            
-            public double getCleanupThreshold() { return cleanupThreshold; }
-            public void setCleanupThreshold(final double cleanupThreshold) { this.cleanupThreshold = cleanupThreshold; }
-            
-            public boolean isLruEnabled() { return lruEnabled; }
-            public void setLruEnabled(final boolean lruEnabled) { this.lruEnabled = lruEnabled; }
+            public int getMaxTokens() {
+                return maxTokens;
+            }
+
+            public void setMaxTokens(final int maxTokens) {
+                this.maxTokens = maxTokens;
+            }
+
+            public double getCleanupThreshold() {
+                return cleanupThreshold;
+            }
+
+            public void setCleanupThreshold(final double cleanupThreshold) {
+                this.cleanupThreshold = cleanupThreshold;
+            }
+
+            public boolean isLruEnabled() {
+                return lruEnabled;
+            }
+
+            public void setLruEnabled(final boolean lruEnabled) {
+                this.lruEnabled = lruEnabled;
+            }
         }
-        
+
         // Getters and Setters
-        public String getStoragePath() { return storagePath; }
-        public void setStoragePath(final String storagePath) { this.storagePath = storagePath; }
-        
-        public Memory getMemory() { return memory; }
-        public void setMemory(final Memory memory) { this.memory = memory; }
+        public String getStoragePath() {
+            return storagePath;
+        }
+
+        public void setStoragePath(final String storagePath) {
+            this.storagePath = storagePath;
+        }
+
+        public Memory getMemory() {
+            return memory;
+        }
+
+        public void setMemory(final Memory memory) {
+            this.memory = memory;
+        }
     }
-    
+
     /**
      * JWT黑名单配置属性
      */
@@ -55,18 +80,33 @@ public class JwtPersistenceConfiguration {
         private String storagePath = "config-store/jwt-blacklist";
         private int maxMemorySize = 10000;
         private int cleanupInterval = 3600; // 1小时
-        
+
         // Getters and Setters
-        public String getStoragePath() { return storagePath; }
-        public void setStoragePath(final String storagePath) { this.storagePath = storagePath; }
-        
-        public int getMaxMemorySize() { return maxMemorySize; }
-        public void setMaxMemorySize(final int maxMemorySize) { this.maxMemorySize = maxMemorySize; }
-        
-        public int getCleanupInterval() { return cleanupInterval; }
-        public void setCleanupInterval(final int cleanupInterval) { this.cleanupInterval = cleanupInterval; }
+        public String getStoragePath() {
+            return storagePath;
+        }
+
+        public void setStoragePath(final String storagePath) {
+            this.storagePath = storagePath;
+        }
+
+        public int getMaxMemorySize() {
+            return maxMemorySize;
+        }
+
+        public void setMaxMemorySize(final int maxMemorySize) {
+            this.maxMemorySize = maxMemorySize;
+        }
+
+        public int getCleanupInterval() {
+            return cleanupInterval;
+        }
+
+        public void setCleanupInterval(final int cleanupInterval) {
+            this.cleanupInterval = cleanupInterval;
+        }
     }
-    
+
     /**
      * JWT持久化配置属性Bean
      */
@@ -75,7 +115,7 @@ public class JwtPersistenceConfiguration {
     public JwtPersistenceProperties jwtPersistenceProperties() {
         return new JwtPersistenceProperties();
     }
-    
+
     /**
      * JWT黑名单配置属性Bean
      */

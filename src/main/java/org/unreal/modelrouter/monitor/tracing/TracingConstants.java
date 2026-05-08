@@ -59,7 +59,7 @@ public final class TracingConstants {
         public static final String CONFIG_UPDATE = "config.update";
         public static final String CONFIG_VALIDATION = "config.validation";
         
-        private Operations() {}
+        private Operations() { }
     }
     
     // ========================================
@@ -82,7 +82,7 @@ public final class TracingConstants {
         public static final String USER_AGENT = "http.user_agent";
         public static final String RESPONSE_TIME = "http.response_time_ms";
         
-        private HttpAttributes() {}
+        private HttpAttributes() { }
     }
     
     /**
@@ -99,7 +99,7 @@ public final class TracingConstants {
         public static final String MAX_TOKENS = "ai.max_tokens";
         public static final String STREAM = "ai.stream";
         
-        private AiAttributes() {}
+        private AiAttributes() { }
     }
     
     /**
@@ -117,7 +117,7 @@ public final class TracingConstants {
         public static final String FAILURE_COUNT = "failure.count";
         public static final String SUCCESS_COUNT = "success.count";
         
-        private InfrastructureAttributes() {}
+        private InfrastructureAttributes() { }
     }
     
     /**
@@ -133,7 +133,7 @@ public final class TracingConstants {
         public static final String TIMEOUT = "backend.timeout";
         public static final String CONNECTION_POOL = "backend.connection_pool";
         
-        private BackendAttributes() {}
+        private BackendAttributes() { }
     }
     
     /**
@@ -148,7 +148,7 @@ public final class TracingConstants {
         public static final String SANITIZED_FIELDS = "security.sanitized_fields";
         public static final String SANITIZATION_RULES = "security.sanitization_rules";
         
-        private SecurityAttributes() {}
+        private SecurityAttributes() { }
     }
     
     /**
@@ -162,7 +162,7 @@ public final class TracingConstants {
         public static final String ERROR_CODE = "error.code";
         public static final String RETRY_AFTER = "error.retry_after";
         
-        private ErrorAttributes() {}
+        private ErrorAttributes() { }
     }
     
     // ========================================
@@ -203,7 +203,7 @@ public final class TracingConstants {
         public static final String CONFIG_UPDATED = "config.updated";
         public static final String CONFIG_VALIDATION_FAILED = "config.validation_failed";
         
-        private Events() {}
+        private Events() { }
     }
     
     // ========================================
@@ -225,7 +225,7 @@ public final class TracingConstants {
         public static final String CONFIG_MANAGER = "config-manager";
         public static final String SANITIZER = "sanitizer";
 
-        private Components() {}
+        private Components() { }
     }
 
     // 服务类型常量已移至 org.unreal.modelrouter.constants.ServiceTypeConstants
@@ -239,7 +239,7 @@ public final class TracingConstants {
         public static final String LEAST_CONNECTIONS = "least-connections";
         public static final String IP_HASH = "ip-hash";
         
-        private LoadBalanceStrategies() {}
+        private LoadBalanceStrategies() { }
     }
     
     /**
@@ -251,7 +251,7 @@ public final class TracingConstants {
         public static final String SLIDING_WINDOW = "sliding-window";
         public static final String WARM_UP = "warm-up";
         
-        private RateLimitAlgorithms() {}
+        private RateLimitAlgorithms() { }
     }
     
     /**
@@ -262,7 +262,7 @@ public final class TracingConstants {
         public static final String OPEN = "open";
         public static final String HALF_OPEN = "half-open";
         
-        private CircuitBreakerStates() {}
+        private CircuitBreakerStates() { }
     }
     
     /**
@@ -277,7 +277,7 @@ public final class TracingConstants {
         public static final String OPENAI = "openai";
         public static final String NORMAL = "normal";
         
-        private AdapterTypes() {}
+        private AdapterTypes() { }
     }
     
     // ========================================
@@ -295,7 +295,7 @@ public final class TracingConstants {
         public static final String PARENT_SPAN_ID = "tracing.parent_span_id";
         public static final String SAMPLING_DECISION = "tracing.sampling_decision";
         
-        private ContextKeys() {}
+        private ContextKeys() { }
     }
     
     // ========================================
@@ -319,8 +319,8 @@ public final class TracingConstants {
         public static final String X_REQUEST_ID = "X-Request-Id";
         public static final String X_CORRELATION_ID = "X-Correlation-Id";
         
-        private Headers() {}
+        private Headers() { }
     }
     
-    private TracingConstants() {}
+    private TracingConstants() { }
 }

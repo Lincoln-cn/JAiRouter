@@ -112,7 +112,7 @@ public class ModelCallStatsRepository {
      * @param success 是否成功
      * @param responseTime 响应时间
      */
-    public void updateStats(final String serviceType, final String modelName, final boolean success,final long responseTime) {
+    public void updateStats(final String serviceType, final String modelName, final boolean success, final long responseTime) {
         ModelCallStats stats = getOrCreate(serviceType, modelName);
         synchronized (stats) {
             stats.updateStats(success, responseTime);

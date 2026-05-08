@@ -169,7 +169,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logResponse(final ServerHttpResponse response, final TracingContext context,final long duration) {
+    public void logResponse(final ServerHttpResponse response, final TracingContext context, final long duration) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -219,13 +219,13 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logBackendCall(final String adapter, final String instance,final long duration,final boolean success,final TracingContext context) {
+    public void logBackendCall(final String adapter, final String instance, final long duration, final boolean success, final TracingContext context) {
         logBackendCallDetails(adapter, instance, null, null, duration, success ? 200 : 500, success, context);
     }
     
     @Override
-    public void logBackendCallDetails(final String adapter, final String instance,final String url,final String method, 
-                                     final long duration, final int statusCode,final boolean success,final TracingContext context) {
+    public void logBackendCallDetails(final String adapter, final String instance, final String url, final String method, 
+                                     final long duration, final int statusCode, final boolean success, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -269,7 +269,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logError(final Throwable error, final TracingContext context,final Map<String, Object> additionalInfo) {
+    public void logError(final Throwable error, final TracingContext context, final Map<String, Object> additionalInfo) {
         if (!isLoggingEnabled() || error == null) {
             return;
         }
@@ -311,7 +311,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logBusinessEvent(final String event, final Map<String, Object> data,final TracingContext context) {
+    public void logBusinessEvent(final String event, final Map<String, Object> data, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -341,7 +341,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logLoadBalancerDecision(final String strategy, final String selectedInstance,final int availableInstances,final TracingContext context) {
+    public void logLoadBalancerDecision(final String strategy, final String selectedInstance, final int availableInstances, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("strategy", strategy);
         data.put("selectedInstance", selectedInstance);
@@ -351,7 +351,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logRateLimitCheck(final String algorithm, final boolean allowed,final long remainingTokens,final TracingContext context) {
+    public void logRateLimitCheck(final String algorithm, final boolean allowed, final long remainingTokens, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("algorithm", algorithm);
         data.put("allowed", allowed);
@@ -361,7 +361,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logCircuitBreakerStateChange(final String previousState, final String currentState,final String reason,final TracingContext context) {
+    public void logCircuitBreakerStateChange(final String previousState, final String currentState, final String reason, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("previousState", previousState);
         data.put("currentState", currentState);
@@ -371,7 +371,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logPerformance(final String operation, final long duration,final Map<String, Object> metrics,final TracingContext context) {
+    public void logPerformance(final String operation, final long duration, final Map<String, Object> metrics, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -403,7 +403,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logSlowQuery(final String operation, final long duration,final long threshold,final TracingContext context) {
+    public void logSlowQuery(final String operation, final long duration, final long threshold, final TracingContext context) {
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("threshold", threshold);
         metrics.put("slowQueryDetected", true);
@@ -412,7 +412,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logSecurityEvent(final String event, final String user,final String ip,final TracingContext context) {
+    public void logSecurityEvent(final String event, final String user, final String ip, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
@@ -442,7 +442,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logAuthenticationEvent(final boolean success, final String authMethod,final String user,final String ip,final TracingContext context) {
+    public void logAuthenticationEvent(final boolean success, final String authMethod, final String user, final String ip, final TracingContext context) {
         String event = success ? "authentication_success" : "authentication_failure";
         Map<String, Object> data = new HashMap<>();
         data.put("authMethod", authMethod);
@@ -452,7 +452,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logSanitization(final String field, final String action,final String ruleId,final TracingContext context) {
+    public void logSanitization(final String field, final String action, final String ruleId, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("field", field);
         data.put("action", action);
@@ -462,7 +462,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logConfigurationChange(final String configType, final String action,final Map<String, Object> details,final TracingContext context) {
+    public void logConfigurationChange(final String configType, final String action, final Map<String, Object> details, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("configType", configType);
         data.put("action", action);
@@ -474,7 +474,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
     
     @Override
-    public void logSystemEvent(final String event, final String level,final Map<String, Object> details,final TracingContext context) {
+    public void logSystemEvent(final String event, final String level, final Map<String, Object> details, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }

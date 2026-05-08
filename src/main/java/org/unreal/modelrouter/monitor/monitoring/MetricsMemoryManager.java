@@ -331,8 +331,9 @@ public class MetricsMemoryManager {
         private final long evictions;
         private final long memoryCleanups;
 
-        public MemoryStats(final double memoryUsageRatio, final long usedMemory, final long maxMemory,final int cacheSize,
-                          final long cacheHits, final long cacheMisses, final long evictions,final long memoryCleanups) {
+        public MemoryStats(final double memoryUsageRatio, final long usedMemory, final long maxMemory,
+                          final int cacheSize, final long cacheHits, final long cacheMisses,
+                          final long evictions, final long memoryCleanups) {
             this.memoryUsageRatio = memoryUsageRatio;
             this.usedMemory = usedMemory;
             this.maxMemory = maxMemory;
@@ -344,14 +345,37 @@ public class MetricsMemoryManager {
         }
 
         // Getters
-        public double getMemoryUsageRatio() { return memoryUsageRatio; }
-        public long getUsedMemory() { return usedMemory; }
-        public long getMaxMemory() { return maxMemory; }
-        public int getCacheSize() { return cacheSize; }
-        public long getCacheHits() { return cacheHits; }
-        public long getCacheMisses() { return cacheMisses; }
-        public long getEvictions() { return evictions; }
-        public long getMemoryCleanups() { return memoryCleanups; }
+        public double getMemoryUsageRatio() {
+            return memoryUsageRatio;
+        }
+
+        public long getUsedMemory() {
+            return usedMemory;
+        }
+
+        public long getMaxMemory() {
+            return maxMemory;
+        }
+
+        public int getCacheSize() {
+            return cacheSize;
+        }
+
+        public long getCacheHits() {
+            return cacheHits;
+        }
+
+        public long getCacheMisses() {
+            return cacheMisses;
+        }
+
+        public long getEvictions() {
+            return evictions;
+        }
+
+        public long getMemoryCleanups() {
+            return memoryCleanups;
+        }
 
         public double getCacheHitRatio() {
             long total = cacheHits + cacheMisses;

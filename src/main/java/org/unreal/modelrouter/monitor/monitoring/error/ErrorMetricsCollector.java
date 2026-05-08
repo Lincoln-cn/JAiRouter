@@ -204,7 +204,7 @@ public class ErrorMetricsCollector {
      * @since v2.5.8 标注废弃
      */
     @Deprecated(since = "2.5.8", forRemoval = true)
-    public void recordError(final String errorType, final String operation, final String errorCode,final String severity) {
+    public void recordError(final String errorType, final String operation, final String errorCode, final String severity) {
         recordError(errorType, operation, errorCode, severity, null, null, null);
     }
 

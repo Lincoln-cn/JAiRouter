@@ -46,7 +46,7 @@ public class SecurityErrorResponse {
      */
     private String requestId;
 
-    public SecurityErrorResponse(final LocalDateTime timestamp, final int status,final String error,final String message,final String errorCode,final String path,final String requestId) {
+    public SecurityErrorResponse(final LocalDateTime timestamp, final int status, final String error, final String message, final String errorCode, final String path, final String requestId) {
         this.timestamp = timestamp;
         this.status = status;
         this.error = error;

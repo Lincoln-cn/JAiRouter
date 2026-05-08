@@ -208,15 +208,33 @@ public class SanitizationMetrics {
         }
         
         // Getters
-        public double getRequestSanitizations() { return requestSanitizations; }
-        public double getResponseSanitizations() { return responseSanitizations; }
-        public double getRuleMatches() { return ruleMatches; }
-        public double getErrors() { return errors; }
-        public long getTotalContentSize() { return totalContentSize; }
-        public long getTotalSanitizedSize() { return totalSanitizedSize; }
-        public double getAvgRequestDuration() { return avgRequestDuration; }
-        public double getAvgResponseDuration() { return avgResponseDuration; }
-        public double getAvgCompilationDuration() { return avgCompilationDuration; }
+        public double getRequestSanitizations() {
+        return requestSanitizations;
+    }
+        public double getResponseSanitizations() {
+        return responseSanitizations;
+    }
+        public double getRuleMatches() {
+        return ruleMatches;
+    }
+        public double getErrors() {
+        return errors;
+    }
+        public long getTotalContentSize() {
+        return totalContentSize;
+    }
+        public long getTotalSanitizedSize() {
+        return totalSanitizedSize;
+    }
+        public double getAvgRequestDuration() {
+        return avgRequestDuration;
+    }
+        public double getAvgResponseDuration() {
+        return avgResponseDuration;
+    }
+        public double getAvgCompilationDuration() {
+        return avgCompilationDuration;
+    }
         
         public double getErrorRate() {
             double total = requestSanitizations + responseSanitizations;

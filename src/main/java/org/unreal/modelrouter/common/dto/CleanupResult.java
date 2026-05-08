@@ -20,7 +20,7 @@ public class CleanupResult {
 
     public CleanupResult(final long cleanedTokens, final long cleanedBlacklistEntries, 
                         final LocalDateTime cleanupStartTime, final LocalDateTime cleanupEndTime, 
-                        final long durationMillis, final boolean success,final String errorMessage) {
+                        final long durationMillis, final boolean success, final String errorMessage) {
         this.cleanedTokens = cleanedTokens;
         this.cleanedBlacklistEntries = cleanedBlacklistEntries;
         this.cleanupStartTime = cleanupStartTime;

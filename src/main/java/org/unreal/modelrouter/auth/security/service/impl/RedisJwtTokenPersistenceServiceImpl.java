@@ -69,11 +69,11 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         })
         .then(saveTokenToRedis(tokenInfo))
         .onErrorResume(error -> {
-            log.warn("Failed to save token to Redis, falling back to StoreManager: {}", error.getMessage());
+            log.warn("Failed to save token to Redis, falling back to StoreManager: { }", error.getMessage());
             return saveTokenToFallback(tokenInfo);
         })
-        .doOnSuccess(unused -> log.debug("Successfully saved token for user: {}", tokenInfo.getUserId()))
-        .doOnError(error -> log.error("Failed to save token: {}", error.getMessage(), error));
+        .doOnSuccess(unused -> log.debug("Successfully saved token for user: { }", tokenInfo.getUserId()))
+        .doOnError(error -> log.error("Failed to save token: { }", error.getMessage(), error));
     }
     
     @Override
@@ -84,11 +84,11 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         
         return findTokenInRedis(tokenHash)
             .onErrorResume(error -> {
-                log.warn("Failed to find token in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to find token in Redis, falling back to StoreManager: { }", error.getMessage());
                 return findTokenInFallback(tokenHash);
             })
-            .doOnNext(token -> log.debug("Found token for hash: {}", tokenHash))
-            .doOnError(error -> log.error("Failed to find token by hash: {}", error.getMessage(), error));
+            .doOnNext(token -> log.debug("Found token for hash: { }", tokenHash))
+            .doOnError(error -> log.error("Failed to find token by hash: { }", error.getMessage(), error));
     }
     
     @Override
@@ -99,22 +99,22 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         
         return findActiveTokensInRedis(userId)
             .onErrorResume(error -> {
-                log.warn("Failed to find active tokens in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to find active tokens in Redis, falling back to StoreManager: { }", error.getMessage());
                 return findActiveTokensInFallback(userId);
             })
-            .doOnNext(tokens -> log.debug("Found {} active tokens for user: {}", tokens.size(), userId))
-            .doOnError(error -> log.error("Failed to find active tokens for user {}: {}", userId, error.getMessage(), error));
+            .doOnNext(tokens -> log.debug("Found { } active tokens for user: { }", tokens.size(), userId))
+            .doOnError(error -> log.error("Failed to find active tokens for user { }: { }", userId, error.getMessage(), error));
     }
     
     @Override
     public Mono<List<JwtTokenInfo>> findAllTokens(final int page, final int size) {
         return findAllTokensInRedis(page, size)
             .onErrorResume(error -> {
-                log.warn("Failed to find all tokens in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to find all tokens in Redis, falling back to StoreManager: { }", error.getMessage());
                 return findAllTokensInFallback(page, size);
             })
-            .doOnNext(tokens -> log.debug("Found {} tokens (page: {}, size: {})", tokens.size(), page, size))
-            .doOnError(error -> log.error("Failed to find all tokens: {}", error.getMessage(), error));
+            .doOnNext(tokens -> log.debug("Found { } tokens (page: { }, size: { })", tokens.size(), page, size))
+            .doOnError(error -> log.error("Failed to find all tokens: { }", error.getMessage(), error));
     }
     
     @Override
@@ -125,44 +125,44 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         
         return updateTokenStatusInRedis(tokenHash, status)
             .onErrorResume(error -> {
-                log.warn("Failed to update token status in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to update token status in Redis, falling back to StoreManager: { }", error.getMessage());
                 return updateTokenStatusInFallback(tokenHash, status);
             })
-            .doOnSuccess(unused -> log.debug("Successfully updated token status to {} for hash: {}", status, tokenHash))
-            .doOnError(error -> log.error("Failed to update token status: {}", error.getMessage(), error));
+            .doOnSuccess(unused -> log.debug("Successfully updated token status to { } for hash: { }", status, tokenHash))
+            .doOnError(error -> log.error("Failed to update token status: { }", error.getMessage(), error));
     }
     
     @Override
     public Mono<Long> countActiveTokens() {
         return countActiveTokensInRedis()
             .onErrorResume(error -> {
-                log.warn("Failed to count active tokens in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to count active tokens in Redis, falling back to StoreManager: { }", error.getMessage());
                 return countActiveTokensInFallback();
             })
-            .doOnNext(count -> log.debug("Active tokens count: {}", count))
-            .doOnError(error -> log.error("Failed to count active tokens: {}", error.getMessage(), error));
+            .doOnNext(count -> log.debug("Active tokens count: { }", count))
+            .doOnError(error -> log.error("Failed to count active tokens: { }", error.getMessage(), error));
     }
     
     @Override
     public Mono<Long> countTokensByStatus(final TokenStatus status) {
         return countTokensByStatusInRedis(status)
             .onErrorResume(error -> {
-                log.warn("Failed to count tokens by status in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to count tokens by status in Redis, falling back to StoreManager: { }", error.getMessage());
                 return countTokensByStatusInFallback(status);
             })
-            .doOnNext(count -> log.debug("Tokens count for status {}: {}", status, count))
-            .doOnError(error -> log.error("Failed to count tokens by status {}: {}", status, error.getMessage(), error));
+            .doOnNext(count -> log.debug("Tokens count for status { }: { }", status, count))
+            .doOnError(error -> log.error("Failed to count tokens by status { }: { }", status, error.getMessage(), error));
     }
     
     @Override
     public Mono<Void> removeExpiredTokens() {
         return removeExpiredTokensFromRedis()
             .onErrorResume(error -> {
-                log.warn("Failed to remove expired tokens from Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to remove expired tokens from Redis, falling back to StoreManager: { }", error.getMessage());
                 return removeExpiredTokensFromFallback();
             })
             .doOnSuccess(unused -> log.info("Successfully removed expired tokens"))
-            .doOnError(error -> log.error("Failed to remove expired tokens: {}", error.getMessage(), error));
+            .doOnError(error -> log.error("Failed to remove expired tokens: { }", error.getMessage(), error));
     }
     
     @Override
@@ -173,41 +173,41 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         
         return findTokenByIdInRedis(tokenId)
             .onErrorResume(error -> {
-                log.warn("Failed to find token by ID in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to find token by ID in Redis, falling back to StoreManager: { }", error.getMessage());
                 return findTokenByIdInFallback(tokenId);
             })
-            .doOnNext(token -> log.debug("Found token by ID: {}", tokenId))
-            .doOnError(error -> log.error("Failed to find token by ID {}: {}", tokenId, error.getMessage(), error));
+            .doOnNext(token -> log.debug("Found token by ID: { }", tokenId))
+            .doOnError(error -> log.error("Failed to find token by ID { }: { }", tokenId, error.getMessage(), error));
     }
     
     @Override
-    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId, final int page,final int size) {
+    public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId, final int page, final int size) {
         if (userId == null || userId.trim().isEmpty()) {
             return Mono.just(new ArrayList<>());
         }
         
         return findTokensByUserIdInRedis(userId, page, size)
             .onErrorResume(error -> {
-                log.warn("Failed to find tokens by user ID in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to find tokens by user ID in Redis, falling back to StoreManager: { }", error.getMessage());
                 return findTokensByUserIdInFallback(userId, page, size);
             })
-            .doOnNext(tokens -> log.debug("Found {} tokens for user {} (page: {}, size: {})", tokens.size(), userId, page, size))
-            .doOnError(error -> log.error("Failed to find tokens for user {}: {}", userId, error.getMessage(), error));
+            .doOnNext(tokens -> log.debug("Found { } tokens for user { } (page: { }, size: { })", tokens.size(), userId, page, size))
+            .doOnError(error -> log.error("Failed to find tokens for user { }: { }", userId, error.getMessage(), error));
     }
     
     @Override
-    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status,final String reason,final String updatedBy) {
+    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status, final String reason, final String updatedBy) {
         if (tokenHashes == null || tokenHashes.isEmpty() || status == null) {
             return Mono.empty();
         }
         
         return batchUpdateTokenStatusInRedis(tokenHashes, status, reason, updatedBy)
             .onErrorResume(error -> {
-                log.warn("Failed to batch update token status in Redis, falling back to StoreManager: {}", error.getMessage());
+                log.warn("Failed to batch update token status in Redis, falling back to StoreManager: { }", error.getMessage());
                 return batchUpdateTokenStatusInFallback(tokenHashes, status, reason, updatedBy);
             })
-            .doOnSuccess(unused -> log.info("Batch updated {} tokens to status {}", tokenHashes.size(), status))
-            .doOnError(error -> log.error("Failed to batch update token status: {}", error.getMessage(), error));
+            .doOnSuccess(unused -> log.info("Batch updated { } tokens to status { }", tokenHashes.size(), status))
+            .doOnError(error -> log.error("Failed to batch update token status: { }", error.getMessage(), error));
     }
     
     // Redis操作方法
@@ -271,7 +271,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
                 try {
                     return JacksonHelper.getObjectMapper().readValue(tokenJson, JwtTokenInfo.class);
                 } catch (Exception e) {
-                    log.warn("Failed to deserialize token: {}", e.getMessage());
+                    log.warn("Failed to deserialize token: { }", e.getMessage());
                     return null;
                 }
             })
@@ -330,7 +330,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
                         JwtTokenInfo token = JacksonHelper.getObjectMapper().readValue(tokenJson, JwtTokenInfo.class);
                         return isTokenExpired(token) ? key : null;
                     } catch (Exception e) {
-                        log.warn("Failed to check token expiry: {}", e.getMessage());
+                        log.warn("Failed to check token expiry: { }", e.getMessage());
                         return null;
                     }
                 })
@@ -358,7 +358,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             .next();
     }
     
-    private Mono<List<JwtTokenInfo>> findTokensByUserIdInRedis(final String userId, final int page,final int size) {
+    private Mono<List<JwtTokenInfo>> findTokensByUserIdInRedis(final String userId, final int page, final int size) {
         String userIndexKey = USER_INDEX_PREFIX + userId;
         
         return redisTemplate.opsForSet().members(userIndexKey)
@@ -373,7 +373,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
             .collectList();
     }
     
-    private Mono<Void> batchUpdateTokenStatusInRedis(final List<String> tokenHashes, final TokenStatus status,final String reason,final String updatedBy) {
+    private Mono<Void> batchUpdateTokenStatusInRedis(final List<String> tokenHashes, final TokenStatus status, final String reason, final String updatedBy) {
         return Flux.fromIterable(tokenHashes)
             .flatMap(tokenHash -> findTokenInRedis(tokenHash)
                 .flatMap(token -> {
@@ -398,7 +398,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
                         .then(updateStatusIndexInRedis(status, tokenHash, true));
                 })
                 .onErrorResume(error -> {
-                    log.warn("Failed to update token status for hash {}: {}", tokenHash, error.getMessage());
+                    log.warn("Failed to update token status for hash { }: { }", tokenHash, error.getMessage());
                     return Mono.empty();
                 })
             )
@@ -407,7 +407,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     
     // Redis索引操作方法
     
-    private Mono<Void> updateUserIndexInRedis(final String userId, final String tokenHash,final boolean add) {
+    private Mono<Void> updateUserIndexInRedis(final String userId, final String tokenHash, final boolean add) {
         if (userId == null || tokenHash == null) {
             return Mono.empty();
         }
@@ -424,7 +424,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         }
     }
     
-    private Mono<Void> updateStatusIndexInRedis(final TokenStatus status, final String tokenHash,final boolean add) {
+    private Mono<Void> updateStatusIndexInRedis(final TokenStatus status, final String tokenHash, final boolean add) {
         if (status == null || tokenHash == null) {
             return Mono.empty();
         }
@@ -456,7 +456,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
                 String tokenKey = "jwt_token_" + tokenInfo.getTokenHash();
                 fallbackStoreManager.saveConfig(tokenKey, tokenData);
             } catch (Exception e) {
-                log.warn("Failed to save token to fallback storage: {}", e.getMessage());
+                log.warn("Failed to save token to fallback storage: { }", e.getMessage());
             }
         });
     }
@@ -468,7 +468,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
                 Map<String, Object> tokenData = fallbackStoreManager.getConfig(tokenKey);
                 return tokenData != null ? convertFromMap(tokenData) : null;
             } catch (Exception e) {
-                log.warn("Failed to find token in fallback storage: {}", e.getMessage());
+                log.warn("Failed to find token in fallback storage: { }", e.getMessage());
                 return null;
             }
         });
@@ -501,7 +501,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
                     fallbackStoreManager.updateConfig(tokenKey, tokenData);
                 }
             } catch (Exception e) {
-                log.warn("Failed to update token status in fallback storage: {}", e.getMessage());
+                log.warn("Failed to update token status in fallback storage: { }", e.getMessage());
             }
         });
     }
@@ -522,11 +522,11 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
         return Mono.empty();
     }
     
-    private Mono<List<JwtTokenInfo>> findTokensByUserIdInFallback(final String userId, final int page,final int size) {
+    private Mono<List<JwtTokenInfo>> findTokensByUserIdInFallback(final String userId, final int page, final int size) {
         return Mono.just(new ArrayList<>());
     }
     
-    private Mono<Void> batchUpdateTokenStatusInFallback(final List<String> tokenHashes, final TokenStatus status,final String reason,final String updatedBy) {
+    private Mono<Void> batchUpdateTokenStatusInFallback(final List<String> tokenHashes, final TokenStatus status, final String reason, final String updatedBy) {
         return Mono.empty();
     }
     
@@ -549,7 +549,7 @@ public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceServic
     
     private Map<String, Object> convertToMap(final JwtTokenInfo tokenInfo) {
         try {
-            return JacksonHelper.getObjectMapper().convertValue(tokenInfo, new TypeReference<Map<String, Object>>() {});
+            return JacksonHelper.getObjectMapper().convertValue(tokenInfo, new TypeReference<Map<String, Object>>() { });
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert token info to map", e);
         }

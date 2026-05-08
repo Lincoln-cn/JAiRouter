@@ -285,7 +285,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
     /**
      * 生成新的JWT令牌（使用JJWT 0.12.x API）
      */
-    public String generateToken(final String subject, final List<String> roles,final Map<String, Object> additionalClaims) {
+    public String generateToken(final String subject, final List<String> roles, final Map<String, Object> additionalClaims) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() +
             Duration.ofMinutes(securityProperties.getJwt().getExpirationMinutes()).toMillis());

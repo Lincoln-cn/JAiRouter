@@ -433,14 +433,37 @@ public class MetricsManagementController {
         private Double traceMetrics;
 
         // Getters and Setters
-        public Double getRequestMetrics() { return requestMetrics; }
-        public void setRequestMetrics(final Double requestMetrics) { this.requestMetrics = requestMetrics; }
-        public Double getBackendMetrics() { return backendMetrics; }
-        public void setBackendMetrics(final Double backendMetrics) { this.backendMetrics = backendMetrics; }
-        public Double getInfrastructureMetrics() { return infrastructureMetrics; }
-        public void setInfrastructureMetrics(final Double infrastructureMetrics) { this.infrastructureMetrics = infrastructureMetrics; }
-        public Double getTraceMetrics() { return traceMetrics; }
-        public void setTraceMetrics(final Double traceMetrics) { this.traceMetrics = traceMetrics; }
+        public Double getRequestMetrics() {
+            return requestMetrics;
+        }
+
+        public void setRequestMetrics(final Double requestMetrics) {
+            this.requestMetrics = requestMetrics;
+        }
+
+        public Double getBackendMetrics() {
+            return backendMetrics;
+        }
+
+        public void setBackendMetrics(final Double backendMetrics) {
+            this.backendMetrics = backendMetrics;
+        }
+
+        public Double getInfrastructureMetrics() {
+            return infrastructureMetrics;
+        }
+
+        public void setInfrastructureMetrics(final Double infrastructureMetrics) {
+            this.infrastructureMetrics = infrastructureMetrics;
+        }
+
+        public Double getTraceMetrics() {
+            return traceMetrics;
+        }
+
+        public void setTraceMetrics(final Double traceMetrics) {
+            this.traceMetrics = traceMetrics;
+        }
     }
 
     public static class PerformanceUpdateRequest {
@@ -449,11 +472,28 @@ public class MetricsManagementController {
         private Integer bufferSize;
 
         // Getters and Setters
-        public Boolean getAsyncProcessing() { return asyncProcessing; }
-        public void setAsyncProcessing(final Boolean asyncProcessing) { this.asyncProcessing = asyncProcessing; }
-        public Integer getBatchSize() { return batchSize; }
-        public void setBatchSize(final Integer batchSize) { this.batchSize = batchSize; }
-        public Integer getBufferSize() { return bufferSize; }
-        public void setBufferSize(final Integer bufferSize) { this.bufferSize = bufferSize; }
+        public Boolean getAsyncProcessing() {
+            return asyncProcessing;
+        }
+
+        public void setAsyncProcessing(final Boolean asyncProcessing) {
+            this.asyncProcessing = asyncProcessing;
+        }
+
+        public Integer getBatchSize() {
+            return batchSize;
+        }
+
+        public void setBatchSize(final Integer batchSize) {
+            this.batchSize = batchSize;
+        }
+
+        public Integer getBufferSize() {
+            return bufferSize;
+        }
+
+        public void setBufferSize(final Integer bufferSize) {
+            this.bufferSize = bufferSize;
+        }
     }
 }

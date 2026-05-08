@@ -217,11 +217,21 @@ public class MetricLifecycleManager {
             this.lastCheckTime = lastCheckTime;
         }
         
-        public boolean isRunning() { return running; }
-        public int getTotalMetrics() { return totalMetrics; }
-        public int getEnabledMetrics() { return enabledMetrics; }
-        public int getDisabledMetrics() { return disabledMetrics; }
-        public Instant getLastCheckTime() { return lastCheckTime; }
+        public boolean isRunning() {
+            return running;
+        }
+        public int getTotalMetrics() {
+            return totalMetrics;
+        }
+        public int getEnabledMetrics() {
+            return enabledMetrics;
+        }
+        public int getDisabledMetrics() {
+            return disabledMetrics;
+        }
+        public Instant getLastCheckTime() {
+            return lastCheckTime;
+        }
         
         @Override
         public String toString() {
