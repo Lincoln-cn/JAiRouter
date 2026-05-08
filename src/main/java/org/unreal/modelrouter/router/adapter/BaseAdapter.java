@@ -25,6 +25,7 @@ import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.router.adapter.processor.StreamingRequestProcessor;
 import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
+import org.unreal.modelrouter.router.adapter.processor.FallbackRequestProcessor;
 import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
@@ -114,6 +115,8 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     @Autowired(required = false)
     private MultipartRequestHandler multipartRequestHandler;
+    @Autowired(required = false)
+    private FallbackRequestProcessor fallbackRequestProcessor;
     /**
      * v2.0.0: 错误分类
      * v2.3.0: 委托给 AdapterErrorHandler
@@ -382,6 +385,10 @@ public abstract class BaseAdapter implements ServiceCapability {
         FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
                 getRegistry().getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
 
+        // v2.15.4: TODO - FallbackRequestProcessor 委托调用因类型推断问题暂未启用
+        // processRequest 返回原始 Mono 类型，导致泛型推断失败
+        // 未来改进：修复 processRequest 泛型声明后启用委托
+
         // 如果未启用降级，则使用普通的处理方法
         if (fallbackStrategy == null) {
             return processRequest(request, authorization, httpRequest, serviceType, modelName, processor);
@@ -392,7 +399,6 @@ public abstract class BaseAdapter implements ServiceCapability {
                     try {
                         ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback((Exception) throwable);
                         if (fallbackResponse == null || fallbackResponse.getBody() == null) {
-                            // 修复：保持原始错误状态码
                             if (throwable instanceof DownstreamServiceException) {
                                 DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
                                 return Mono.error(new ResponseStatusException(
@@ -402,12 +408,11 @@ public abstract class BaseAdapter implements ServiceCapability {
                             } else if (throwable instanceof ResponseStatusException) {
                                 return Mono.error((ResponseStatusException) throwable);
                             } else {
-                                return Mono.error(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存"));
+                                return Mono.error(new ResponseStatusException(
+                                        HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存"));
                             }
                         }
-                        // 只要不是 2xx，直接抛异常
                         if (!fallbackResponse.getStatusCode().is2xxSuccessful()) {
-                            // 修复：保持原始错误状态码
                             if (throwable instanceof DownstreamServiceException) {
                                 DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
                                 return Mono.error(new ResponseStatusException(
@@ -419,11 +424,10 @@ public abstract class BaseAdapter implements ServiceCapability {
                             } else {
                                 return Mono.error(new ResponseStatusException(
                                         fallbackResponse.getStatusCode(),
-                                        fallbackResponse.getBody() != null ? fallbackResponse.getBody().toString() : "未知错误"
-                                ));
+                                        fallbackResponse.getBody() != null
+                                                ? fallbackResponse.getBody().toString() : "未知错误"));
                             }
                         }
-                        // 只有成功的 ResponseEntity 才 ResponseEntity 返回
                         return Mono.just(fallbackResponse);
                     } catch (Exception e) {
                         return Mono.error(e);
