@@ -86,7 +86,7 @@ public class TracingOperator {
         private final SpanKind spanKind;
         private final TracingService tracingService;
         
-        public TracingMono(final Mono<T> source, final String operationName, final SpanKind spanKind, final TracingService tracingService) {
+        TracingMono(final Mono<T> source, final String operationName, final SpanKind spanKind, final TracingService tracingService) {
             this.source = source;
             this.operationName = operationName;
             this.spanKind = spanKind;
@@ -121,7 +121,7 @@ public class TracingOperator {
         private final SpanKind spanKind;
         private final TracingService tracingService;
         
-        public TracingFlux(final Flux<T> source, final String operationName, final SpanKind spanKind, final TracingService tracingService) {
+        TracingFlux(final Flux<T> source, final String operationName, final SpanKind spanKind, final TracingService tracingService) {
             this.source = source;
             this.operationName = operationName;
             this.spanKind = spanKind;
@@ -157,7 +157,7 @@ public class TracingOperator {
         private final Span operationSpan;
         private final long startTime;
         
-        public TracingSubscriber(final CoreSubscriber<? super T> actual, final Context context, 
+        TracingSubscriber(final CoreSubscriber<? super T> actual, final Context context, 
                                final TracingContext tracingContext, final Span operationSpan, final long startTime) {
             this.actual = actual;
             this.context = context;

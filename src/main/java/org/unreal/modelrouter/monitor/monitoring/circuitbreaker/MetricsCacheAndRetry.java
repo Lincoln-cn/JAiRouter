@@ -316,7 +316,7 @@ public class MetricsCacheAndRetry {
         private final Instant expiryTime;
         private final Instant createdAt;
         
-        public CachedMetric(final Object value, final Instant expiryTime) {
+        CachedMetric(final Object value, final Instant expiryTime) {
             this.value = value;
             this.expiryTime = expiryTime;
             this.createdAt = Instant.now();
@@ -350,7 +350,7 @@ public class MetricsCacheAndRetry {
         private final int attempts;
         private final Exception lastError;
         
-        public RetryableMetric(final String operationId, final Supplier<?> operation, final int attempts, final Exception lastError) {
+        RetryableMetric(final String operationId, final Supplier<?> operation, final int attempts, final Exception lastError) {
             this.operationId = operationId;
             this.operation = operation;
             this.attempts = attempts;

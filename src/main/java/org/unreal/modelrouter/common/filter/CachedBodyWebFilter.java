@@ -174,7 +174,7 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
         private final byte[] cachedBody;
         private final ServerWebExchange exchange;
 
-        public MultipartCachedRequestDecorator(final ServerHttpRequest delegate, final byte[] cachedBody, final ServerWebExchange exchange) {
+        MultipartCachedRequestDecorator(final ServerHttpRequest delegate, final byte[] cachedBody, final ServerWebExchange exchange) {
             super(delegate);
             this.cachedBody = cachedBody;
             this.exchange = exchange;

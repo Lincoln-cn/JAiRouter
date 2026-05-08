@@ -408,7 +408,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
         private final SanitizationRule rule;
         private final Pattern pattern;
         
-        public CompiledRule(final SanitizationRule rule, final Pattern pattern) {
+        CompiledRule(final SanitizationRule rule, final Pattern pattern) {
             this.rule = rule;
             this.pattern = pattern;
         }

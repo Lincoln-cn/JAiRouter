@@ -1339,12 +1339,12 @@ public abstract class BaseAdapter implements ServiceCapability {
     @FunctionalInterface
     protected interface RequestProcessor<T> {
         Mono<? extends ResponseEntity<?>> process(
-                final T request,
-                final String authorization,
-                final WebClient client,
-                final String path,
-                final ModelRouterProperties.ModelInstance selectedInstance,
-                final ModelServiceRegistry.ServiceType serviceType
+                T request,
+                String authorization,
+                WebClient client,
+                String path,
+                ModelRouterProperties.ModelInstance selectedInstance,
+                ModelServiceRegistry.ServiceType serviceType
         );
     }
 }

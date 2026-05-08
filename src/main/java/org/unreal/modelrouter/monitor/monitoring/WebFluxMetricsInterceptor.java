@@ -232,7 +232,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
         
         private final AtomicLong responseSize;
 
-        public MetricsServerHttpResponseDecorator(final ServerHttpResponse delegate, final AtomicLong responseSize) {
+        MetricsServerHttpResponseDecorator(final ServerHttpResponse delegate, final AtomicLong responseSize) {
             super(delegate);
             this.responseSize = responseSize;
         }

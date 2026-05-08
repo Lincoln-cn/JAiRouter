@@ -543,7 +543,7 @@ public class TracingMemoryManager {
         private final Node<K, V> head = new Node<>(null, null);
         private final Node<K, V> tail = new Node<>(null, null);
 
-        public LRUCache(final int capacity) {
+        LRUCache(final int capacity) {
             this.capacity = capacity;
             head.next = tail;
             tail.prev = head;

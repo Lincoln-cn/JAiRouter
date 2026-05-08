@@ -1158,7 +1158,7 @@ public class TraceQueryService {
         private int errorCount = 0;
         private int requestCount = 0;  // 请求数量（等同于追踪数）
 
-        public ServiceStatistics(final String serviceName) {
+        ServiceStatistics(final String serviceName) {
             this.serviceName = serviceName;
         }
 
