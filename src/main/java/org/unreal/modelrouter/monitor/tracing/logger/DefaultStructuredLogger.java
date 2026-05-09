@@ -14,6 +14,14 @@ import org.unreal.modelrouter.monitor.tracing.encryption.TracingEncryptionServic
 import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
 import org.unreal.modelrouter.monitor.tracing.security.TracingSecurityManager;
 import reactor.core.publisher.Mono;
+import org.unreal.modelrouter.monitor.tracing.logger.builder.BusinessEventLogBuilder;
+import org.unreal.modelrouter.monitor.tracing.logger.builder.PerformanceLogBuilder;
+import org.unreal.modelrouter.monitor.tracing.logger.builder.SecurityEventLogBuilder;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.LogType;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.SecurityEventFields;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.PerformanceFields;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.BusinessEventFields;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.StructuredLogEntry;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -47,6 +55,11 @@ public class DefaultStructuredLogger implements StructuredLogger {
     private final TracingSanitizationService tracingSanitizationService;
     private final TracingSecurityManager tracingSecurityManager;
     private final TracingEncryptionService tracingEncryptionService;
+
+    // Builder组件 - v2.16.4 委托调用
+    private final SecurityEventLogBuilder securityEventLogBuilder;
+    private final PerformanceLogBuilder performanceLogBuilder;
+    private final BusinessEventLogBuilder businessEventLogBuilder;
     
     // 日志类型常量
     private static final String LOG_TYPE_REQUEST = "request";
