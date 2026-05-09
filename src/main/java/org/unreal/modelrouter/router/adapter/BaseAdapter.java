@@ -369,75 +369,79 @@ public abstract class BaseAdapter implements ServiceCapability {
                 });
     }
 
-    /**
-     * 通用请求处理模板方法（带降级处理）
-     */
-    @SuppressWarnings("all")
-    protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
-            final T request,
-            final String authorization,
-            final ServerHttpRequest httpRequest,
-            final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName,
-            final RequestProcessor<T> processor) {
+/**
+ * 通用请求处理模板方法（带降级处理）
+ * v2.20.x: 使用中间变量强制类型转换解决泛型推断
+ */
+@SuppressWarnings({"all", "unchecked"})
+protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
+        final T request,
+        final String authorization,
+        final ServerHttpRequest httpRequest,
+        final ModelServiceRegistry.ServiceType serviceType,
+        final String modelName,
+        final RequestProcessor<T> processor) {
 
-        ModelRouterProperties.ServiceConfig serviceConfig = getRegistry().getServiceConfig(serviceType);
-        FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
-                getRegistry().getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
+    ModelRouterProperties.ServiceConfig serviceConfig = getRegistry().getServiceConfig(serviceType);
+    FallbackStrategy<ResponseEntity<?>> fallbackStrategy =
+            getRegistry().getFallbackManager().getFallbackStrategy(serviceType.name(), serviceConfig);
 
-        // v2.15.4: TODO - FallbackRequestProcessor 委托调用因类型推断问题暂未启用
-        // processRequest 返回原始 Mono 类型，导致泛型推断失败
-        // 未来改进：修复 processRequest 泛型声明后启用委托
-
-        // 如果未启用降级，则使用普通的处理方法
-        if (fallbackStrategy == null) {
-            return processRequest(request, authorization, httpRequest, serviceType, modelName, processor);
-        }
-
-        return processRequest(request, authorization, httpRequest, serviceType, modelName, processor)
-                .onErrorResume(throwable -> {
-                    try {
-                        ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback((Exception) throwable);
-                        if (fallbackResponse == null || fallbackResponse.getBody() == null) {
-                            if (throwable instanceof DownstreamServiceException) {
-                                DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
-                                return Mono.error(new ResponseStatusException(
-                                        downStreamEx.getStatusCode(),
-                                        downStreamEx.getMessage(),
-                                        downStreamEx));
-                            } else if (throwable instanceof ResponseStatusException) {
-                                return Mono.error((ResponseStatusException) throwable);
-                            } else {
-                                return Mono.error(new ResponseStatusException(
-                                        HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存"));
-                            }
-                        }
-                        if (!fallbackResponse.getStatusCode().is2xxSuccessful()) {
-                            if (throwable instanceof DownstreamServiceException) {
-                                DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
-                                return Mono.error(new ResponseStatusException(
-                                        downStreamEx.getStatusCode(),
-                                        downStreamEx.getMessage(),
-                                        downStreamEx));
-                            } else if (throwable instanceof ResponseStatusException) {
-                                return Mono.error((ResponseStatusException) throwable);
-                            } else {
-                                return Mono.error(new ResponseStatusException(
-                                        fallbackResponse.getStatusCode(),
-                                        fallbackResponse.getBody() != null
-                                                ? fallbackResponse.getBody().toString() : "未知错误"));
-                            }
-                        }
-                        return Mono.just(fallbackResponse);
-                    } catch (Exception e) {
-                        return Mono.error(e);
-                    }
-                });
+    // 如果未启用降级，则使用普通的处理方法
+    if (fallbackStrategy == null) {
+        return processRequest(request, authorization, httpRequest, serviceType, modelName, processor);
     }
 
-    /**
-     * 通用非流式请求处理
-     */
+    // v2.20.x: 使用中间变量强制类型转换，绕过泛型推断问题
+    // 原始Mono类型导致泛型信息丢失，需要显式类型声明
+    Mono<ResponseEntity<?>> requestMono = 
+            (Mono<ResponseEntity<?>>)(Mono) processRequest(request, authorization, httpRequest, serviceType, modelName, processor);
+
+    // 委托给 FallbackRequestProcessor
+    if (fallbackRequestProcessor != null) {
+        return requestMono.onErrorResume(throwable -> 
+                fallbackRequestProcessor.handleFallbackError(throwable, fallbackStrategy));
+    }
+
+    // 降级实现（FallbackRequestProcessor不可用时）
+    return requestMono.onErrorResume(throwable -> {
+        try {
+            ResponseEntity<?> fallbackResponse = fallbackStrategy.fallback((Exception) throwable);
+            if (fallbackResponse == null || fallbackResponse.getBody() == null) {
+                if (throwable instanceof DownstreamServiceException) {
+                    DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
+                    return Mono.error(new ResponseStatusException(
+                            downStreamEx.getStatusCode(),
+                            downStreamEx.getMessage(),
+                            downStreamEx));
+                } else if (throwable instanceof ResponseStatusException) {
+                    return Mono.error((ResponseStatusException) throwable);
+                } else {
+                    return Mono.error(new ResponseStatusException(
+                            HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存"));
+                }
+            }
+            if (!fallbackResponse.getStatusCode().is2xxSuccessful()) {
+                if (throwable instanceof DownstreamServiceException) {
+                    DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
+                    return Mono.error(new ResponseStatusException(
+                            downStreamEx.getStatusCode(),
+                            downStreamEx.getMessage(),
+                            downStreamEx));
+                } else if (throwable instanceof ResponseStatusException) {
+                    return Mono.error((ResponseStatusException) throwable);
+                } else {
+                    return Mono.error(new ResponseStatusException(
+                            fallbackResponse.getStatusCode(),
+                            fallbackResponse.getBody() != null
+                                    ? fallbackResponse.getBody().toString() : "未知错误"));
+                }
+            }
+            return Mono.just(fallbackResponse);
+        } catch (Exception e) {
+            return Mono.error(e);
+        }
+    });
+}
     protected <T> Mono<? extends ResponseEntity<?>> processNonStreamingRequest(
             final T request,
             final String authorization,
