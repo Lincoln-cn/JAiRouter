@@ -17,22 +17,22 @@
 package org.unreal.modelrouter.monitor.tracing.logger.builder;
 
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.PerformanceFields;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 性能日志构建器 - v2.16.2
+ * 性能日志构建器 - v2.16.4重构
  *
- * 从DefaultStructuredLogger提取的性能日志数据构建逻辑：
+ * 返回强类型PerformanceFields DTO，替代Map<String, Object>弱约束方案：
  * - 构建性能指标日志字段
  * - 构建慢查询日志字段
  *
  * 设计模式：Builder Pattern（构建器模式）
- * 注意：只负责构建日志数据，不负责输出
+ * 注意：只负责构建日志字段数据，不负责输出
  *
  * @author JAiRouter Team
- * @since v2.16.2
+ * @since v2.16.2 (重构于 v2.16.4)
  */
 @Component
 public class PerformanceLogBuilder {
@@ -43,21 +43,12 @@ public class PerformanceLogBuilder {
      * @param operation 操作名称
      * @param duration 持续时间（毫秒）
      * @param metrics 指标数据
-     * @return 日志字段Map
+     * @return 强类型PerformanceFields DTO
      */
-    public Map<String, Object> buildPerformanceFields(final String operation,
-                                                       final long duration,
-                                                       final Map<String, Object> metrics) {
-        Map<String, Object> fields = new HashMap<>();
-        fields.put("operation", operation);
-        fields.put("duration", duration);
-        fields.put("durationMs", duration);
-
-        if (metrics != null && !metrics.isEmpty()) {
-            fields.put("metrics", metrics);
-        }
-
-        return fields;
+    public PerformanceFields buildPerformance(final String operation,
+                                                final long duration,
+                                                final Map<String, Object> metrics) {
+        return PerformanceFields.forPerformance(operation, duration, metrics);
     }
 
     /**
@@ -66,17 +57,12 @@ public class PerformanceLogBuilder {
      * @param operation 操作名称
      * @param duration 持续时间（毫秒）
      * @param threshold 阈值（毫秒）
-     * @return 日志字段Map
+     * @return 强类型PerformanceFields DTO
      */
-    public Map<String, Object> buildSlowQueryFields(final String operation,
-                                                     final long duration,
-                                                     final long threshold) {
-        Map<String, Object> metrics = new HashMap<>();
-        metrics.put("threshold", threshold);
-        metrics.put("slowQueryDetected", true);
-        metrics.put("exceededBy", duration - threshold);
-
-        return buildPerformanceFields(operation, duration, metrics);
+    public PerformanceFields buildSlowQuery(final String operation,
+                                              final long duration,
+                                              final long threshold) {
+        return PerformanceFields.forSlowQuery(operation, duration, threshold);
     }
 
     /**
@@ -87,7 +73,7 @@ public class PerformanceLogBuilder {
      * @return 日志消息
      */
     public String buildPerformanceMessage(final String operation,
-                                           final long duration) {
+                                            final long duration) {
         return String.format("性能指标: %s，耗时: %dms", operation, duration);
     }
 
@@ -100,8 +86,8 @@ public class PerformanceLogBuilder {
      * @return 日志消息
      */
     public String buildSlowQueryMessage(final String operation,
-                                         final long duration,
-                                         final long threshold) {
+                                          final long duration,
+                                          final long threshold) {
         return String.format("慢查询检测: %s，耗时: %dms，阈值: %dms，超出: %dms",
                 operation, duration, threshold, duration - threshold);
     }
@@ -114,7 +100,7 @@ public class PerformanceLogBuilder {
      * @return 日志级别
      */
     public String getPerformanceLogLevel(final long duration,
-                                          final long threshold) {
+                                           final long threshold) {
         // 超过阈值使用WARN级别
         if (duration > threshold) {
             return "WARN";
@@ -130,7 +116,7 @@ public class PerformanceLogBuilder {
      * @return 是否慢查询
      */
     public boolean isSlowQuery(final long duration,
-                                final long threshold) {
+                                 final long threshold) {
         return duration > threshold;
     }
 }
