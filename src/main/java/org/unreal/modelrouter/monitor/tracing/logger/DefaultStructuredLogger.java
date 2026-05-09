@@ -328,24 +328,19 @@ public class DefaultStructuredLogger implements StructuredLogger {
         if (!isLoggingEnabled()) {
             return;
         }
-        
+
         try {
             // 设置MDC
             setMDC(context);
-            
-            Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_BUSINESS_EVENT, context);
-            Map<String, Object> fields = new HashMap<>();
-            
-            fields.put("event", event);
-            if (data != null && !data.isEmpty()) {
-                fields.put("data", sanitizeMap(data));
-            }
-            
-            logEntry.put("fields", fields);
-            logEntry.put("message", String.format("业务事件: %s", event));
-            
-            logStructuredEntry(logEntry);
-            
+
+            // 使用DTO版本 - v2.16.5
+            BusinessEventFields fields = businessEventLogBuilder.buildBusinessEvent(event, sanitizeMap(data));
+            StructuredLogEntry logEntry = createStructuredLogEntry(LogType.BUSINESS_EVENT, context);
+            logEntry.setFields(fields);
+            logEntry.setMessage(businessEventLogBuilder.buildBusinessEventMessage(event));
+
+            logStructuredLogEntry(logEntry);
+
         } catch (Exception e) {
             log.debug("记录业务事件日志时发生错误", e);
         } finally {
@@ -388,33 +383,25 @@ public class DefaultStructuredLogger implements StructuredLogger {
         if (!isLoggingEnabled()) {
             return;
         }
-        
+
         try {
             // 设置MDC
             setMDC(context);
-            
-            Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_PERFORMANCE, context);
-            Map<String, Object> fields = new HashMap<>();
-            
-            fields.put("operation", operation);
-            fields.put("duration", duration);
-            
-            if (metrics != null && !metrics.isEmpty()) {
-                fields.put("metrics", metrics);
-            }
-            
-            logEntry.put("fields", fields);
-            logEntry.put("message", String.format("性能指标: %s，耗时: %dms", operation, duration));
-            
-            logStructuredEntry(logEntry);
-            
+
+            // 使用DTO版本 - v2.16.5
+            PerformanceFields fields = performanceLogBuilder.buildPerformance(operation, duration, metrics);
+            StructuredLogEntry logEntry = createStructuredLogEntry(LogType.PERFORMANCE, context);
+            logEntry.setFields(fields);
+            logEntry.setMessage(performanceLogBuilder.buildPerformanceMessage(operation, duration));
+
+            logStructuredLogEntry(logEntry);
+
         } catch (Exception e) {
             log.debug("记录性能日志时发生错误", e);
         } finally {
             clearMDC();
         }
     }
-    
     @Override
     public void logSlowQuery(final String operation, final long duration, final long threshold, final TracingContext context) {
         Map<String, Object> metrics = new HashMap<>();
@@ -429,32 +416,26 @@ public class DefaultStructuredLogger implements StructuredLogger {
         if (!isLoggingEnabled()) {
             return;
         }
-        
+
         try {
             // 设置MDC
             setMDC(context);
-            
-            Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_SECURITY, context);
-            Map<String, Object> fields = new HashMap<>();
-            
-            fields.put("event", event);
-            fields.put("user", sanitizeIfNeeded(user));
-            fields.put("ip", ip);
-            
-            logEntry.put("fields", fields);
-            logEntry.put("message", String.format("安全事件: %s，用户: %s，IP: %s", event, user, ip));
-            logEntry.put("level", "WARN");
-            
-            logStructuredEntry(logEntry);
-            
+
+            // 使用DTO版本 - v2.16.5
+            SecurityEventFields fields = securityEventLogBuilder.buildSecurityEvent(event, sanitizeIfNeeded(user), ip);
+            StructuredLogEntry logEntry = createStructuredLogEntry(LogType.SECURITY, context);
+            logEntry.setFields(fields);
+            logEntry.setMessage(securityEventLogBuilder.buildSecurityEventMessage(event, user, ip));
+            logEntry.setLevel(securityEventLogBuilder.getSecurityLogLevel(event));
+
+            logStructuredLogEntry(logEntry);
+
         } catch (Exception e) {
             log.debug("记录安全事件日志时发生错误", e);
         } finally {
             clearMDC();
         }
     }
-    
-    @Override
     public void logAuthenticationEvent(final boolean success, final String authMethod, final String user, final String ip, final TracingContext context) {
         String event = success ? "authentication_success" : "authentication_failure";
         Map<String, Object> data = new HashMap<>();
@@ -581,6 +562,50 @@ public class DefaultStructuredLogger implements StructuredLogger {
         }
     }
     
+
+    // ========================================
+    // DTO版本辅助方法 - v2.16.5
+    // ========================================
+
+    /**
+     * 创建结构化日志条目（DTO版本） - v2.16.5
+     */
+    private StructuredLogEntry createStructuredLogEntry(final LogType type, final TracingContext context) {
+        return StructuredLogEntry.builder()
+                .timestamp(Instant.now())
+                .type(type)
+                .serviceName(getServiceName())
+                .serviceVersion(getServiceVersion())
+                .environment(getEnvironment())
+                .traceId(context != null ? context.getTraceId() : null)
+                .spanId(context != null ? context.getSpanId() : null)
+                .build();
+    }
+
+    /**
+     * 输出结构化日志条目（DTO版本） - v2.16.5
+     */
+    private void logStructuredLogEntry(final StructuredLogEntry logEntry) {
+        try {
+            String jsonLog = objectMapper.writeValueAsString(logEntry);
+
+            // 根据日志级别输出
+            String level = logEntry.getLevel();
+            if ("ERROR".equals(level)) {
+                log.error(jsonLog);
+            } else if ("WARN".equals(level)) {
+                log.warn(jsonLog);
+            } else if ("DEBUG".equals(level)) {
+                log.debug(jsonLog);
+            } else {
+                log.info(jsonLog);
+            }
+
+        } catch (JsonProcessingException e) {
+            log.debug("序列化日志条目失败", e);
+        }
+    }
+
     /**
      * 脱敏处理字符串
      */
