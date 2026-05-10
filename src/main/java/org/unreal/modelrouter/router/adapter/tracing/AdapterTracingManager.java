@@ -6,21 +6,24 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
+import org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer;
 
 /**
  * 适配器追踪管理器
- * 
+ *
  * 负责管理适配器调用的分布式追踪，包括：
  * - 适配器调用 Span 的创建和管理
  * - 追踪上下文的传播
  * - 追踪属性记录
  * - 错误状态记录
- * 
+ * - 业务日志记录 (v2.27.0)
+ *
  * @author JAiRouter Team
  * @since v2.3.2
  */
@@ -30,6 +33,13 @@ import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 public class AdapterTracingManager {
 
     private final Tracer tracer;
+    
+    private AdapterTracingEnhancer enhancer; // v2.27.0: 延迟注入避免循环依赖
+    
+    @Autowired
+    public void setEnhancer(final AdapterTracingEnhancer enhancer) {
+        this.enhancer = enhancer;
+    }
 
     /**
      * 开始适配器调用追踪
@@ -248,5 +258,162 @@ public class AdapterTracingManager {
         }
         
         return spanName.toString();
+    }
+
+    // ========== v2.27.0: 业务日志封装方法 ==========
+
+    /**
+     * 记录适配器调用开始（整合 logAdapterCallStart + enhanceAdapterSpan）
+     * 
+     * @param adapterType 适配器类型
+     * @param instance 实例信息
+     * @param serviceType 服务类型
+     * @param modelName 模型名称
+     * @since v2.27.0
+     */
+    public void recordCallStart(
+            final String adapterType,
+            final ModelRouterProperties.ModelInstance instance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName) {
+        
+        TracingContext context = TracingContextHolder.getCurrentContext();
+        if (!isTracingActive(context)) {
+            return;
+        }
+        
+        try {
+            if (enhancer != null) {
+                // 1. 记录调用开始日志
+                enhancer.logAdapterCallStart(adapterType, instance, serviceType.name(), modelName, context);
+                
+                // 2. 增强 Span
+                Span currentSpan = context.getCurrentSpan();
+                if (currentSpan != null) {
+                    enhancer.enhanceAdapterSpan(currentSpan, adapterType, instance, serviceType.name(), modelName);
+                }
+            }
+            
+            log.debug("记录适配器调用开始: adapter={}, instance={}, model={}", 
+                    adapterType, instance.getName(), modelName);
+        } catch (Exception e) {
+            log.debug("记录适配器调用开始追踪失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 记录适配器调用完成
+     * 
+     * @param adapterType 适配器类型
+     * @param instance 实例信息
+     * @param serviceType 服务类型
+     * @param modelName 模型名称
+     * @param durationMs 耗时（毫秒）
+     * @param success 是否成功
+     * @since v2.27.0
+     */
+    public void recordCallComplete(
+            final String adapterType,
+            final ModelRouterProperties.ModelInstance instance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final long durationMs,
+            final boolean success) {
+        
+        TracingContext context = TracingContextHolder.getCurrentContext();
+        if (!isTracingActive(context)) {
+            return;
+        }
+        
+        try {
+            if (enhancer != null) {
+                enhancer.logAdapterCallComplete(adapterType, instance, serviceType.name(), 
+                        modelName, durationMs, success, context);
+            }
+            
+            log.debug("记录适配器调用完成: adapter={}, instance={}, duration={}ms, success={}", 
+                    adapterType, instance.getName(), durationMs, success);
+        } catch (Exception e) {
+            log.debug("记录适配器调用完成追踪失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 记录适配器重试事件
+     * 
+     * @param adapterType 适配器类型
+     * @param instance 实例信息
+     * @param retryCount 当前重试次数
+     * @param maxRetries 最大重试次数
+     * @param error 导致重试的错误
+     * @since v2.27.0
+     */
+    public void recordRetry(
+            final String adapterType,
+            final ModelRouterProperties.ModelInstance instance,
+            final int retryCount,
+            final int maxRetries,
+            final Throwable error) {
+        
+        TracingContext context = TracingContextHolder.getCurrentContext();
+        if (!isTracingActive(context)) {
+            return;
+        }
+        
+        try {
+            if (enhancer != null) {
+                enhancer.logAdapterRetry(adapterType, instance, retryCount, maxRetries, error, context);
+            }
+            
+            log.debug("记录适配器重试: adapter={}, instance={}, retry={}/{}", 
+                    adapterType, instance.getName(), retryCount, maxRetries);
+        } catch (Exception e) {
+            log.debug("记录适配器重试追踪失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 记录适配器转换错误
+     * 
+     * @param adapterType 适配器类型
+     * @param error 错误对象
+     * @since v2.27.0
+     */
+    public void recordTransformError(
+            final String adapterType,
+            final Throwable error) {
+        
+        TracingContext context = TracingContextHolder.getCurrentContext();
+        if (!isTracingActive(context)) {
+            return;
+        }
+        
+        try {
+            if (enhancer != null) {
+                enhancer.logAdapterRetry(adapterType, null, 0, 0, error, context);
+            }
+            
+            log.debug("记录适配器转换错误: adapter={}, error={}", adapterType, error.getMessage());
+        } catch (Exception e) {
+            log.debug("记录适配器转换错误追踪失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 检查追踪是否活跃（便捷方法）
+     * 
+     * @return 追踪是否活跃
+     * @since v2.27.0
+     */
+    public boolean isTracingActive() {
+        TracingContext context = TracingContextHolder.getCurrentContext();
+        return isTracingActive(context);
+    }
+    
+    /**
+     * 内部方法：检查追踪上下文是否活跃
+     */
+    private boolean isTracingActive(final TracingContext context) {
+        return context != null && context.isActive();
     }
 }
