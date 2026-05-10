@@ -31,6 +31,7 @@ import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
+import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.ChatDTO;
@@ -72,6 +73,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     private final AdapterMetricsRecorder metricsRecorder;
     private final AdapterTracingManager tracingManager;
     private final ErrorResponseBuilder errorResponseBuilder;
+    private final NonStreamingRequestProcessor nonStreamingProcessor;
 
     protected final ObjectMapper objectMapper;
 
@@ -93,7 +95,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final ResponseMapper responseMapper,
                        final AdapterMetricsRecorder metricsRecorder,
                        final AdapterTracingManager tracingManager,
-                       final ErrorResponseBuilder errorResponseBuilder) {
+                       final ErrorResponseBuilder errorResponseBuilder,
+                       final NonStreamingRequestProcessor nonStreamingProcessor) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
@@ -110,6 +113,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         this.metricsRecorder = metricsRecorder;
         this.tracingManager = tracingManager;
         this.errorResponseBuilder = errorResponseBuilder;
+        this.nonStreamingProcessor = nonStreamingProcessor;
     }
 
     // ============ v2.15.x 新组件注入 (setter方式，向后兼容) ============

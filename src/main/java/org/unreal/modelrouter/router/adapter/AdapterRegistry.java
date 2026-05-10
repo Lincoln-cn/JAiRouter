@@ -24,6 +24,7 @@ import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
+import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
 
 
 import java.util.HashMap;
@@ -51,6 +52,7 @@ public class AdapterRegistry {
     private final AdapterMetricsRecorder metricsRecorder;
     private final AdapterTracingManager tracingManager;
     private final ErrorResponseBuilder errorResponseBuilder;
+    private final NonStreamingRequestProcessor nonStreamingProcessor;
 
     public AdapterRegistry(final ModelRouterProperties properties,
                            final ModelServiceRegistry registry,
@@ -68,7 +70,8 @@ public class AdapterRegistry {
                            final RetryPolicy retryPolicy,
                            final AdapterMetricsRecorder metricsRecorder,
                            final AdapterTracingManager tracingManager,
-                           final ErrorResponseBuilder errorResponseBuilder) {
+                           final ErrorResponseBuilder errorResponseBuilder,
+                           final NonStreamingRequestProcessor nonStreamingProcessor) {
         this.properties = properties;
         this.registry = registry;
         this.metricsCollector = metricsCollector;
@@ -86,18 +89,19 @@ public class AdapterRegistry {
         this.metricsRecorder = metricsRecorder;
         this.tracingManager = tracingManager;
         this.errorResponseBuilder = errorResponseBuilder;
+        this.nonStreamingProcessor = nonStreamingProcessor;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
 
     private void initializeAdapters() {
         // 注册各种adapter实现，传入MetricsCollector
-        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder));
-        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder));
-        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder));
-        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder));
-        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder));
-        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder));
+        adapters.put("normal", new NormalOpenAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
+        adapters.put("gpustack", new GpuStackAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
+        adapters.put("ollama", new OllamaAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
+        adapters.put("vllm", new VllmAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
+        adapters.put("xinference", new XinferenceAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
+        adapters.put("localai", new LocalAiAdapter(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
     }
 
     /**

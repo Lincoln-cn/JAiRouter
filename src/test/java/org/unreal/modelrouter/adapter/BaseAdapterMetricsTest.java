@@ -14,6 +14,7 @@ import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
+import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -119,7 +120,7 @@ class BaseAdapterMetricsTest {
     private static class TestAdapter extends BaseAdapter {
 
         public TestAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
-            super(registry, metricsCollector, objectMapper, null, null, null, null, null, null, new AdapterErrorHandler(), new RetryPolicy(), new HttpRequestProcessor(), new ResponseMapper(new ObjectMapper()), null, null, new ErrorResponseBuilder()); // 测试时创建新实例
+            super(registry, metricsCollector, objectMapper, null, null, null, null, null, null, new AdapterErrorHandler(), new RetryPolicy(), new HttpRequestProcessor(), new ResponseMapper(new ObjectMapper()), null, null, new ErrorResponseBuilder(), null); // 测试时创建新实例
         }
 
         @Override

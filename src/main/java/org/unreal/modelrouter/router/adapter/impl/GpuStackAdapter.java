@@ -20,6 +20,7 @@ import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
+import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
 
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
@@ -51,8 +52,9 @@ public class GpuStackAdapter extends BaseAdapter {
                          final ResponseMapper responseMapper,
                          final AdapterMetricsRecorder metricsRecorder,
                          final AdapterTracingManager tracingManager,
-                         final ErrorResponseBuilder errResponseBuilder) {
-        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errResponseBuilder);
+                         final ErrorResponseBuilder errResponseBuilder,
+                         final NonStreamingRequestProcessor nonStreamingProcessor) {
+        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errResponseBuilder, nonStreamingProcessor);
     }
 
     @Override
