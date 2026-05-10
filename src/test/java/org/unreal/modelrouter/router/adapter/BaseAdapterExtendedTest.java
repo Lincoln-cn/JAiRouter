@@ -38,6 +38,7 @@ import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
+import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 import org.unreal.modelrouter.router.fallback.impl.CacheFallbackStrategy;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
@@ -1068,7 +1069,8 @@ class BaseAdapterExtendedTest {
                     new HttpRequestProcessor(),
                     new ResponseMapper(objectMapper),
                     null,
-                    null
+                    null,
+                    new ErrorResponseBuilder()
             );
         }
 

@@ -30,6 +30,7 @@ import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
+import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.ChatDTO;
@@ -70,6 +71,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     private final ResponseMapper responseMapper;
     private final AdapterMetricsRecorder metricsRecorder;
     private final AdapterTracingManager tracingManager;
+    private final ErrorResponseBuilder errorResponseBuilder;
 
     protected final ObjectMapper objectMapper;
 
@@ -90,7 +92,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final HttpRequestProcessor httpRequestProcessor,
                        final ResponseMapper responseMapper,
                        final AdapterMetricsRecorder metricsRecorder,
-                       final AdapterTracingManager tracingManager) {
+                       final AdapterTracingManager tracingManager,
+                       final ErrorResponseBuilder errorResponseBuilder) {
         this.registry = registry;
         this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
@@ -106,6 +109,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         this.responseMapper = responseMapper;
         this.metricsRecorder = metricsRecorder;
         this.tracingManager = tracingManager;
+        this.errorResponseBuilder = errorResponseBuilder;
     }
 
     // ============ v2.15.x 新组件注入 (setter方式，向后兼容) ============
@@ -275,25 +279,9 @@ public abstract class BaseAdapter implements ServiceCapability {
 
                         // v2.26.0: 最终失败已在上面 recordCompleteCall 中记录，无需额外记录
 
-                        // 修复：保持原始的错误状态码，并确保传递给 Mono.error() 的参数是 Throwable 类型
-                        if (throwable instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
-                            org.springframework.web.reactive.function.client.WebClientResponseException webEx =
-                                    (org.springframework.web.reactive.function.client.WebClientResponseException) throwable;
-                            ResponseStatusException responseEx = new ResponseStatusException(webEx.getStatusCode(), webEx.getMessage(), webEx);
-                            logger.error("WebClientResponseException 处理失败: {}", responseEx.getMessage(), responseEx);
-                            return Mono.error(responseEx);
-                        } else if (throwable instanceof DownstreamServiceException) {
-                            DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
-                            ResponseStatusException responseEx = new ResponseStatusException(
-                                    downStreamEx.getStatusCode(),
-                                    downStreamEx.getMessage(),
-                                    downStreamEx);
-                            logger.error("DownstreamServiceException 处理失败: {}", responseEx.getMessage(), responseEx);
-                            return Mono.error(responseEx);
-                        } else {
-                            logger.error("未知异常类型处理失败: {}", throwable.getMessage(), throwable);
-                            return Mono.error(throwable);
-                        }
+                        // v2.5.8: 委托给 ErrorResponseBuilder
+                        return errorResponseBuilder.buildErrorResponse(throwable)
+                                .flatMap(ex -> Mono.error(ex));
                     }
                 });
     }
@@ -1279,23 +1267,10 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                                         System.currentTimeMillis(), retryCount + 1));
                     }
 
-                    // 最终失败处理 - 直接返回错误
-                    if (throwable instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
-                        org.springframework.web.reactive.function.client.WebClientResponseException webEx =
-                                (org.springframework.web.reactive.function.client.WebClientResponseException) throwable;
-                        ResponseStatusException responseEx = new ResponseStatusException(webEx.getStatusCode(), webEx.getMessage(), webEx);
-                        logger.error("WebClientResponseException: {}", responseEx.getMessage(), responseEx);
-                        return Mono.error(responseEx);
-                    } else if (throwable instanceof DownstreamServiceException) {
-                        DownstreamServiceException downStreamEx = (DownstreamServiceException) throwable;
-                        ResponseStatusException responseEx = new ResponseStatusException(
-                                downStreamEx.getStatusCode(), downStreamEx.getMessage(), downStreamEx);
-                        logger.error("DownstreamServiceException: {}", responseEx.getMessage(), responseEx);
-                        return Mono.error(responseEx);
-                    } else {
-                        logger.error("Unexpected error: {}", throwable.getMessage(), throwable);
-                        return Mono.error(throwable);
-                    }
+                    // v2.5.8: 委托给 ErrorResponseBuilder
+                    // v2.5.8: 委托给 ErrorResponseBuilder
+                    return errorResponseBuilder.buildErrorResponse(throwable)
+                            .flatMap(ex -> Mono.error(ex));
                 });
     }
 
