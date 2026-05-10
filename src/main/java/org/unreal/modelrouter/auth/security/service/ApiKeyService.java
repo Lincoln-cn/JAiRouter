@@ -3,6 +3,7 @@ package org.unreal.modelrouter.auth.security.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,7 @@ public class ApiKeyService {
     @Autowired private ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    public ApiKeyService(StoreManager sm, ObjectMapper om, SecurityProperties sp) { this.securityProperties = sp; }
+    public ApiKeyService(@Qualifier("jpaStoreManager") StoreManager sm, ObjectMapper om, SecurityProperties sp) { this.securityProperties = sp; }
 
     @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKey> validateApiKey(String kv) { return validateApiKey(kv, null, null); }

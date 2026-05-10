@@ -26,6 +26,9 @@ import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
  * 
  * @since v2.5.9
  */
+import org.springframework.stereotype.Component;
+
+@Component
 public class NonStreamingRequestProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(NonStreamingRequestProcessor.class);
