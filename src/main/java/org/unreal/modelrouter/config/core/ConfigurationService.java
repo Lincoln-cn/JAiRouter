@@ -602,7 +602,7 @@ private final ConfigComparisonService configComparisonService;
         logger.info("为服务 {} 添加实例: {}", serviceType, instanceConfig.getName());
 
         // 验证服务类型
-        if (!isValidServiceType(serviceType)) {
+        if (!configValidator.isValidServiceType(serviceType)) {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
 
@@ -678,7 +678,7 @@ private final ConfigComparisonService configComparisonService;
     private void updateServiceInstanceInternal(final String serviceType, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig) {
 
         // 验证服务类型
-        if (!isValidServiceType(serviceType)) {
+        if (!configValidator.isValidServiceType(serviceType)) {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
 
@@ -801,7 +801,7 @@ private final ConfigComparisonService configComparisonService;
         logger.info("批量更新服务 {} 的实例，操作数量: {}", serviceType, operations.size());
 
         // 验证服务类型
-        if (!isValidServiceType(serviceType)) {
+        if (!configValidator.isValidServiceType(serviceType)) {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);
         }
 
@@ -1030,76 +1030,6 @@ private final ConfigComparisonService configComparisonService;
         config.put("services", services);
         return services;
     }
-    /**
-     * 验证服务类型是否有效
-     */
-    private boolean isValidServiceType(final String serviceType) {
-        if (serviceType == null) {
-            return false;
-        }
-
-        try {
-            // 标准化处理：转小写，移除空格、下划线和连字符
-            String normalizedKey = serviceType.toLowerCase(java.util.Locale.ROOT)
-                    .replaceAll("[\\s_-]+", "");
-            // 直接匹配枚举值
-            ModelServiceRegistry.ServiceType.valueOf(normalizedKey);
-            return true;
-        } catch (Exception e) {
-            // 处理常见的别名映射
-            return isValidServiceTypeAlias(serviceType);
-        }
-    }
-
-    /**
-     * 检查是否是有效的服务类型别名
-     */
-    private boolean isValidServiceTypeAlias(final String serviceType) {
-        String lowerServiceType = serviceType.toLowerCase(java.util.Locale.ROOT);
-        
-        // 使用常量类进行匹配
-        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.CHAT)
-            || lowerServiceType.equals("chat-completion")
-            || lowerServiceType.equals("chat-completions")) {
-            return true;
-        }
-        
-        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.EMBEDDING)
-            || lowerServiceType.equals("embeddings")) {
-            return true;
-        }
-        
-        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.RERANK)
-            || lowerServiceType.equals("re-rank")) {
-            return true;
-        }
-        
-        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.TTS)
-            || lowerServiceType.equals("text-to-speech")) {
-            return true;
-        }
-        
-        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.STT)
-            || lowerServiceType.equals("speech-to-text")) {
-            return true;
-        }
-        
-        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.IMG_GEN)
-            || lowerServiceType.equals("imggen")
-            || lowerServiceType.equals("image-generation")
-            || lowerServiceType.equals("image-generate")) {
-            return true;
-        }
-        
-        if (lowerServiceType.equals(org.unreal.modelrouter.common.constants.ServiceTypeConstants.IMG_EDIT)
-            || lowerServiceType.equals("image-edit")
-            || lowerServiceType.equals("image-editing")) {
-            return true;
-        }
-        
-        return false;
-    }
-
     /**
      * 创建默认服务配置
      */
