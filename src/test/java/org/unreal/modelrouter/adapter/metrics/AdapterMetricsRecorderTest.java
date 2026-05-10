@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
@@ -17,13 +18,14 @@ import static org.mockito.Mockito.*;
 
 /**
  * AdapterMetricsRecorder 单元测试
- * 
+ *
  * 测试适配器监控记录器的功能，包括：
  * - 请求开始/完成记录
  * - 错误记录
  * - 重试记录
  * - 请求大小和响应时间记录
- * 
+ * - 服务注册调用记录 (v2.26.0)
+ *
  * @author JAiRouter Team
  * @since v2.3.2
  */
@@ -37,11 +39,14 @@ class AdapterMetricsRecorderTest {
     @Mock
     private ModelCallStatsRepository statsRepository;
 
+    @Mock
+    private ModelServiceRegistry registry;
+
     private AdapterMetricsRecorder metricsRecorder;
 
     @BeforeEach
     void setUp() {
-        metricsRecorder = new AdapterMetricsRecorder(metricsCollector, statsRepository);
+        metricsRecorder = new AdapterMetricsRecorder(metricsCollector, statsRepository, registry);
     }
 
     // ========================================
@@ -68,7 +73,7 @@ class AdapterMetricsRecorderTest {
     @DisplayName("记录请求开始 - statsRepository 为 null 时不抛异常")
     void testRecordRequestStart_NullStatsRepository() {
         // Arrange
-        AdapterMetricsRecorder recorder = new AdapterMetricsRecorder(metricsCollector, null);
+        AdapterMetricsRecorder recorder = new AdapterMetricsRecorder(metricsCollector, null, registry);
 
         // Act & Assert
         assertDoesNotThrow(() -> 
@@ -129,7 +134,7 @@ class AdapterMetricsRecorderTest {
     @DisplayName("记录请求完成 - metricsCollector 为 null 时不抛异常")
     void testRecordRequestComplete_NullMetricsCollector() {
         // Arrange
-        AdapterMetricsRecorder recorder = new AdapterMetricsRecorder(null, statsRepository);
+        AdapterMetricsRecorder recorder = new AdapterMetricsRecorder(null, statsRepository, registry);
 
         // Act & Assert
         assertDoesNotThrow(() -> 

@@ -4,18 +4,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
 /**
  * 适配器监控记录器
- * 
+ *
  * 负责记录和上报适配器调用的监控指标，包括：
  * - 请求开始/完成时间记录
  * - 错误记录
  * - 后端调用指标
  * - 模型调用统计
- * 
+ * - 服务注册调用记录 (v2.26.0)
+ *
  * @author JAiRouter Team
  * @since v2.3.2
  */
@@ -26,6 +28,7 @@ public class AdapterMetricsRecorder {
 
     private final MetricsCollector metricsCollector;
     private final ModelCallStatsRepository statsRepository;
+    private final ModelServiceRegistry registry;
 
     /**
      * 记录请求开始
@@ -205,6 +208,99 @@ public class AdapterMetricsRecorder {
         if (log.isDebugEnabled()) {
             log.debug("记录响应时间：service={}, method={}, responseTime={}ms, status={}",
                     serviceType, method, responseTime, status);
+        }
+    }
+
+    // ========== v2.26.0: 服务注册调用记录 ==========
+
+    /**
+     * 记录调用成功到服务注册
+     * 
+     * @param serviceType 服务类型
+     * @param instance 实例
+     * @since v2.26.0
+     */
+    public void recordCallSuccessToRegistry(
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
+        
+        if (registry != null && serviceType != null && instance != null) {
+            registry.recordCallComplete(serviceType, instance);
+        }
+        
+        if (log.isDebugEnabled()) {
+            log.debug("记录调用成功：service={}, instance={}", serviceType, instance.getName());
+        }
+    }
+
+    /**
+     * 记录调用失败到服务注册
+     * 
+     * @param serviceType 服务类型
+     * @param instance 实例
+     * @since v2.26.0
+     */
+    public void recordCallFailureToRegistry(
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
+        
+        if (registry != null && serviceType != null && instance != null) {
+            registry.recordCallFailure(serviceType, instance);
+        }
+        
+        if (log.isDebugEnabled()) {
+            log.debug("记录调用失败：service={}, instance={}", serviceType, instance.getName());
+        }
+    }
+
+    /**
+     * 完整的调用成功记录（统一入口）
+     * 
+     * 同时更新：Registry + MetricsCollector + StatsRepository
+     * 
+     * @param adapterType 适配器类型
+     * @param instanceId 实例ID
+     * @param durationMs 耗时（毫秒）
+     * @param success 是否成功
+     * @param errorCode 错误代码（失败时）
+     * @param modelName 模型名称
+     * @param serviceType 服务类型
+     * @param instance 实例对象
+     * @since v2.26.0
+     */
+    public void recordCompleteCall(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final boolean success,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
+        
+        // 更新 Registry
+        if (success) {
+            recordCallSuccessToRegistry(serviceType, instance);
+        } else {
+            recordCallFailureToRegistry(serviceType, instance);
+        }
+        
+        // 更新 MetricsCollector
+        if (metricsCollector != null) {
+            metricsCollector.recordBackendCall(adapterType, instanceId, durationMs, success);
+        }
+        
+        // 更新 StatsRepository
+        if (statsRepository != null && serviceType != null && modelName != null) {
+            statsRepository.updateStats(serviceType.name(), modelName, success, durationMs);
+            if (!success && errorCode != null) {
+                statsRepository.recordErrorCode(serviceType.name(), modelName, errorCode);
+            }
+        }
+        
+        if (log.isDebugEnabled()) {
+            log.debug("完整调用记录：adapter={}, instance={}, duration={}ms, success={}, errorCode={}",
+                    adapterType, instanceId, durationMs, success, errorCode);
         }
     }
 }

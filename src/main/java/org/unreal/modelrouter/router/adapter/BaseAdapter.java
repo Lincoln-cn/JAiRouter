@@ -246,25 +246,16 @@ public abstract class BaseAdapter implements ServiceCapability {
         int maxRetries = getMaxRetries(serviceType);
 
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
-                // 在成功完成时记录成功
+                // 在成功完成时记录成功 - v2.26.0: 委托给 AdapterMetricsRecorder
                 .doOnSuccess(response -> {
                     long duration = System.currentTimeMillis() - startTime;
                     boolean success = response != null && response.getStatusCode().is2xxSuccessful();
 
-                    if (success) {
-                        getRegistry().recordCallComplete(serviceType, selectedInstance);
-                        // 记录成功的后端调用指标
-                        if (metricsCollector != null) {
-                            metricsCollector.recordBackendCall(adapterType, instanceName, duration, true);
-                        }
-                        // 缓存功能由降级策略处理 (CacheFallbackStrategy)
-                    } else {
-                        // 非2xx响应视为失败
-                        getRegistry().recordCallFailure(serviceType, selectedInstance);
-                        // 记录失败的后端调用指标
-                        if (metricsCollector != null) {
-                            metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
-                        }
+                    // v2.26.0: 使用统一入口记录所有指标
+                    if (metricsRecorder != null) {
+                        metricsRecorder.recordCompleteCall(
+                                adapterType, instanceName, duration, success,
+                                null, modelName, serviceType, selectedInstance);
                     }
 
                     // 记录适配器调用完成追踪
@@ -280,22 +271,16 @@ public abstract class BaseAdapter implements ServiceCapability {
                         }
                     }
                 })
-                // 在发生错误时处理重试逻辑
+                // 在发生错误时处理重试逻辑 - v2.26.0: 委托给 AdapterMetricsRecorder
                 .onErrorResume(throwable -> {
                     long duration = System.currentTimeMillis() - startTime;
-                    getRegistry().recordCallFailure(serviceType, selectedInstance);
+                    String errorCode = classifyError(throwable);
 
-                    // 记录异常的后端调用指标
-                    if (metricsCollector != null) {
-                        metricsCollector.recordBackendCall(adapterType, instanceName, duration, false);
-                    }
-
-                    // v2.0.0: 记录模型调用统计
-                    if (statsRepository != null) {
-                        statsRepository.updateStats(serviceType.name(), modelName, false, duration);
-                        // 记录错误类型
-                        String errorCode = classifyError(throwable);
-                        statsRepository.recordErrorCode(serviceType.name(), modelName, errorCode);
+                    // v2.26.0: 使用 AdapterMetricsRecorder 记录错误
+                    if (metricsRecorder != null) {
+                        metricsRecorder.recordCompleteCall(
+                                adapterType, instanceName, duration, false,
+                                errorCode, modelName, serviceType, selectedInstance);
                     }
 
                     // v2.9.14: 使用 RetryPolicy 替代 shouldRetry
@@ -313,10 +298,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                             }
                         }
 
-                        // 记录重试指标
-                        if (metricsCollector != null) {
-                            // 使用 recordBackendCall 记录重试，duration 为 0，success 为 false 表示需要重试
-                            metricsCollector.recordBackendCall(adapterType, instanceName, 0, false);
+                        // v2.26.0: 使用 AdapterMetricsRecorder 记录重试
+                        if (metricsRecorder != null) {
+                            metricsRecorder.recordRetry(adapterType, instanceName, retryCount + 1, throwable);
                         }
 
                         // 等待重试延迟
@@ -339,12 +323,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                             }
                         }
 
-                        // 记录最终失败指标
-                        if (metricsCollector != null) {
-                            // 使用 recordBackendCall 记录最终失败
-                            long finalDuration = System.currentTimeMillis() - startTime;
-                            metricsCollector.recordBackendCall(adapterType, instanceName, finalDuration, false);
-                        }
+                        // v2.26.0: 最终失败已在上面 recordCompleteCall 中记录，无需额外记录
 
                         // 修复：保持原始的错误状态码，并确保传递给 Mono.error() 的参数是 Throwable 类型
                         if (throwable instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
