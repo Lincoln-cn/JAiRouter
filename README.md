@@ -264,49 +264,16 @@ After starting the project, you can access the automatically generated API docum
 
 > ⚠️ **LTS Notice**: `v2.6.11` is the **final feature release**. This branch will continue to receive security patches, critical bug fixes, and dependency updates for 24 months (until 2028-05). No new features will be added.
 
-### Phase 6: Microservices Preparation (v2.7-v2.9) ⏸️ Postponed
+### Phase 6-7: Future Architecture Evolution (v2.7-v3.0) ⏸️ Indefinitely Postponed
 
-| Version | Status | Content | Duration |
-|---------|--------|---------|----------|
-| **v2.7.x** | ⏸️ | **Package Structure Reorganization** | 10 days |
-| 2.7.0 | ⏸️ | - Service boundary definition & base structure |
-| 2.7.1 | ⏸️ | - auth module migration (security/audit) |
-| 2.7.2 | ⏸️ | - config module migration (config/version) |
-| 2.7.3 | ⏸️ | - router module migration (adapter/loadbalancer) |
-| 2.7.4 | ⏸️ | - router module migration (circuitbreaker/ratelimit) |
-| 2.7.5 | ⏸️ | - monitor module migration (tracing/metrics) |
-| 2.7.6 | ⏸️ | - persistence module migration (store/jpa) |
-| 2.7.7 | ⏸️ | - common module migration (constants/dto/util) |
-| 2.7.8 | ⏸️ | - controller grouping by service |
-| 2.7.9 | ⏸️ | - test adjustment & dependency fix |
-| **v2.8.x** | ⏸️ | **Configuration Integration** | 10 days |
-| 2.8.0 | ⏸️ | - Configuration structure analysis |
-| 2.8.1 | ⏸️ | - Configuration file split by module |
-| 2.8.2 | ⏸️ | - Service module config separation |
-| 2.8.3 | ⏸️ | - Multi-environment config completion |
-| 2.8.4 | ⏸️ | - External config file support |
-| 2.8.5 | ⏸️ | - Sensitive config separation |
-| 2.8.6 | ⏸️ | - Config loading priority |
-| 2.8.7 | ⏸️ | - Config validation mechanism |
-| 2.8.8 | ⏸️ | - Configuration documentation |
-| 2.8.9 | ⏸️ | - Config migration test & summary |
-| **v2.9.0** | ⏸️ | **Issue Fix & Review** | 7 days |
-| | ⏸️ | - Fix v2.7/v2.8 leftover issues |
-| | ⏸️ | - Update all documentation |
-| | ⏸️ | - Code quality check & performance test |
+| Version | Status | Scope |
+|---------|--------|-------|
+| **v2.7.x** | ⏸️ | **Package Structure Reorganization** - Service boundary definition, module migration (auth, config, router, monitor, persistence) |
+| **v2.8.x** | ⏸️ | **Configuration Integration** - Config file split, multi-environment support, external config, validation mechanism |
+| **v2.9.x** | ⏸️ | **Review & Stabilization** - Issue resolution, documentation update, quality check |
+| **v3.0.x** | ⏸️ | **Microservices Architecture** - Service decomposition (auth, monitoring), Nacos integration, service discovery |
 
-### Phase 7: Microservices Architecture (v3.0.x) ⏸️ Indefinitely Postponed
-
-| Version | Status | Content | Duration |
-|---------|--------|---------|----------|
-| 3.0.0 | ⏸️ | **Microservices Architecture Transformation** | TBD |
-| | ⏸️ | - Authentication/Authorization service separation |
-| | ⏸️ | - Nacos configuration center integration |
-| | ⏸️ | - Monitoring/Tracing service separation |
-| | ⏸️ | - Service discovery mechanism |
-| | ⏸️ | - Inter-service communication stabilization |
-
-> 📢 **Important**: Due to limited community demand for major architectural changes, **v3.0 is indefinitely postponed**. The `v2.6.x` LTS branch will be the final release line, focusing on stability, security, and maintenance.
+> 📢 **Important**: Due to limited community demand for major architectural changes, **v2.7-v3.0 is indefinitely postponed**. The `v2.6.x` LTS branch will be the final release line, focusing on stability, security, and maintenance.
 
 ---
 
