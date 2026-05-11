@@ -4,9 +4,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.unreal.modelrouter.router.adapter.BaseAdapter;
 import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
 import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
@@ -15,10 +12,8 @@ import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
 import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
-import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -26,6 +21,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * 测试BaseAdapter中的指标收集功能
+ * v2.26.x: MetricsCollector已从BaseAdapter移除，指标记录委托给AdapterMetricsRecorder
  */
 @ExtendWith(MockitoExtension.class)
 class BaseAdapterMetricsTest {
@@ -34,30 +30,17 @@ class BaseAdapterMetricsTest {
     private ModelServiceRegistry registry;
 
     @Mock
-    private MetricsCollector metricsCollector;
-
-    @Mock
-    private ServerHttpRequest httpRequest;
-
-    @Test
-    void shouldHaveMetricsCollectorInjected() {
-        // Given & When
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
-        
-        // Then
-        assertNotNull(adapter.getMetricsCollector());
-        assertEquals(metricsCollector, adapter.getMetricsCollector());
-    }
+    private AdapterMetricsRecorder metricsRecorder;
 
     @Test
     void shouldCalculateRequestSize() {
         // Given
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
+        TestAdapter adapter = new TestAdapter(registry, new ObjectMapper());
         String testRequest = "test request content";
-        
+
         // When
         long size = adapter.calculateRequestSize(testRequest);
-        
+
         // Then
         assertTrue(size > 0);
         assertEquals(testRequest.getBytes().length, size);
@@ -66,52 +49,13 @@ class BaseAdapterMetricsTest {
     @Test
     void shouldHandleNullRequestInSizeCalculation() {
         // Given
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
-        
+        TestAdapter adapter = new TestAdapter(registry, new ObjectMapper());
+
         // When
         long size = adapter.calculateRequestSize(null);
-        
+
         // Then
         assertEquals(0, size);
-    }
-
-    @Test
-    void shouldRecordMetricsOnSuccessfulResponse() {
-        // Given
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
-        ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
-        instance.setName("test-instance");
-        
-        // Mock successful response
-        ResponseEntity<String> successResponse = ResponseEntity.ok("success");
-        
-        // When - simulate the doOnSuccess callback
-        long startTime = System.currentTimeMillis();
-        long duration = System.currentTimeMillis() - startTime;
-        
-        // Simulate what happens in processRequest
-        if (successResponse.getStatusCode().is2xxSuccessful()) {
-            adapter.getMetricsCollector().recordBackendCall("test", "test-instance", duration, true);
-        }
-        
-        // Then
-        verify(metricsCollector).recordBackendCall(eq("test"), eq("test-instance"), anyLong(), eq(true));
-    }
-
-    @Test
-    void shouldRecordMetricsOnFailedResponse() {
-        // Given
-        TestAdapter adapter = new TestAdapter(registry, metricsCollector, new ObjectMapper());
-        
-        // When - simulate error scenario
-        long startTime = System.currentTimeMillis();
-        long duration = System.currentTimeMillis() - startTime;
-        
-        // Simulate what happens in processRequest onError
-        adapter.getMetricsCollector().recordBackendCall("test", "test-instance", duration, false);
-        
-        // Then
-        verify(metricsCollector).recordBackendCall(eq("test"), eq("test-instance"), anyLong(), eq(false));
     }
 
     /**
@@ -119,8 +63,8 @@ class BaseAdapterMetricsTest {
      */
     private static class TestAdapter extends BaseAdapter {
 
-        public TestAdapter(ModelServiceRegistry registry, MetricsCollector metricsCollector, ObjectMapper objectMapper) {
-            super(registry, metricsCollector, objectMapper, null, null, null, null, null, null, new AdapterErrorHandler(), new RetryPolicy(), new HttpRequestProcessor(), new ResponseMapper(new ObjectMapper()), null, null, new ErrorResponseBuilder(), null); // 测试时创建新实例
+        public TestAdapter(ModelServiceRegistry registry, ObjectMapper objectMapper) {
+            super(registry, objectMapper, null, null, null, null, null, null, new AdapterErrorHandler(), new RetryPolicy(), new HttpRequestProcessor(), new ResponseMapper(new ObjectMapper()), null, null, new ErrorResponseBuilder(), null);
         }
 
         @Override
@@ -131,12 +75,6 @@ class BaseAdapterMetricsTest {
         @Override
         public org.unreal.modelrouter.router.adapter.AdapterCapabilities supportCapability() {
             return org.unreal.modelrouter.router.adapter.AdapterCapabilities.builder().chat(true).build();
-        }
-
-        // 暴露protected方法用于测试
-        @Override
-        public MetricsCollector getMetricsCollector() {
-            return super.getMetricsCollector();
         }
 
         @Override

@@ -43,7 +43,6 @@ import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
-import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
@@ -59,7 +58,6 @@ import java.util.Map;
 public abstract class BaseAdapter implements ServiceCapability {
 
     private final ModelServiceRegistry registry;
-    private final MetricsCollector metricsCollector;
     private final ModelCallStatsRepository statsRepository;
     private final RequestBuilder requestBuilder;
     private final ResponseHandler responseHandler;
@@ -81,7 +79,6 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     @Autowired
     public BaseAdapter(final ModelServiceRegistry registry,
-                       final MetricsCollector metricsCollector,
                        final ObjectMapper objectMapper,
                        final ModelCallStatsRepository statsRepository,
                        final RequestBuilder requestBuilder,
@@ -98,7 +95,6 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final ErrorResponseBuilder errorResponseBuilder,
                        final NonStreamingRequestProcessor nonStreamingProcessor) {
         this.registry = registry;
-        this.metricsCollector = metricsCollector;
         this.objectMapper = objectMapper;
         this.statsRepository = statsRepository;
         this.requestBuilder = requestBuilder;

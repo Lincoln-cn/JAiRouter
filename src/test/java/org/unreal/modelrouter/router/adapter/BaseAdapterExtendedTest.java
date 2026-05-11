@@ -25,7 +25,6 @@ import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.ImageGenerateDTO;
 import org.unreal.modelrouter.common.dto.ImageEditDTO;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
-import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.checker.CapabilityChecker;
@@ -70,9 +69,6 @@ class BaseAdapterExtendedTest {
     private ModelServiceRegistry registry;
 
     @Mock
-    private MetricsCollector metricsCollector;
-
-    @Mock
     private ModelCallStatsRepository statsRepository;
 
     @Mock
@@ -115,7 +111,6 @@ class BaseAdapterExtendedTest {
         // 创建测试适配器
         testAdapter = new TestAdapter(
                 registry,
-                metricsCollector,
                 objectMapper,
                 statsRepository,
                 instanceSelector,
@@ -648,22 +643,6 @@ class BaseAdapterExtendedTest {
         }
     }
 
-    @Nested
-    @DisplayName("getMetricsCollector 测试")
-    class GetMetricsCollectorTests {
-
-        @Test
-        @DisplayName("返回注入的 MetricsCollector")
-        void shouldReturnInjectedMetricsCollector() {
-            // When
-            MetricsCollector result = testAdapter.getMetricsCollectorPublic();
-
-            // Then
-            assertNotNull(result);
-            assertEquals(metricsCollector, result);
-        }
-    }
-
     // ========== 错误分类测试 ==========
 
     @Nested
@@ -1047,7 +1026,6 @@ class BaseAdapterExtendedTest {
 
         public TestAdapter(
                 ModelServiceRegistry registry,
-                MetricsCollector metricsCollector,
                 ObjectMapper objectMapper,
                 ModelCallStatsRepository statsRepository,
                 InstanceSelector instanceSelector,
@@ -1057,7 +1035,6 @@ class BaseAdapterExtendedTest {
                 RetryPolicy retryPolicy) {
             super(
                     registry,
-                    metricsCollector,
                     objectMapper,
                     statsRepository,
                     new RequestBuilder(),
@@ -1145,10 +1122,6 @@ class BaseAdapterExtendedTest {
 
         public String transformStreamChunkPublic(String chunk) {
             return super.transformStreamChunk(chunk);
-        }
-
-        public MetricsCollector getMetricsCollectorPublic() {
-            return super.getMetricsCollector();
         }
     }
 }

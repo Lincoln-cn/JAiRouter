@@ -28,7 +28,6 @@ import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
 /**
@@ -38,7 +37,6 @@ import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 public class LocalAiAdapter extends BaseAdapter {
 
     public LocalAiAdapter(final ModelServiceRegistry registry,
-                         final MetricsCollector metricsCollector,
                          final ObjectMapper objectMapper,
                          final ModelCallStatsRepository statsRepository,
                          final RequestBuilder requestBuilder,
@@ -54,7 +52,7 @@ public class LocalAiAdapter extends BaseAdapter {
                          final AdapterTracingManager tracingManager,
                          final ErrorResponseBuilder errResponseBuilder,
                          final NonStreamingRequestProcessor nonStreamingProcessor) {
-        super(registry, metricsCollector, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errResponseBuilder, nonStreamingProcessor);
+        super(registry, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errResponseBuilder, nonStreamingProcessor);
     }
 
     @Override
