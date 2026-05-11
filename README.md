@@ -11,6 +11,8 @@ JAiRouter is a Spring Boot-based model service routing and load balancing gatewa
 
 [中文介绍](README-ZH.md)
 
+> ⚠️ **LTS Release Notice**: `v2.6.11` is the final Long-Term Support version. No new features will be added to this branch. v3.0 is indefinitely postponed due to limited community demand. The v2.6.x LTS branch will continue to receive security patches, critical bug fixes, and dependency updates for 24 months.
+
 ---
 
 
