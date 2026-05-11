@@ -11,11 +11,8 @@ import org.unreal.modelrouter.common.util.SecurityUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -39,10 +36,8 @@ public class ConfigVersionManager {
     private final ConfigMergeService configMergeService;
     private final ConfigComparator configComparator;
     private final VersionValidator versionValidator;
-
-    // 版本控制相关字段
-    private final Map<String, ConfigMetadata> configMetadataMap = new HashMap<>();
-    private final Map<String, List<VersionInfo>> versionHistoryMap = new ConcurrentHashMap<>();
+    private final VersionMetadataManager metadataManager;
+    private final VersionSyncService syncService;
 
     // 版本创建锁 - 使用 ReentrantLock 提升并发性能
     private final ReentrantLock versionCreationLock = new ReentrantLock();
@@ -54,92 +49,22 @@ public class ConfigVersionManager {
     public ConfigVersionManager(final StoreManager storeManager,
                                  final ConfigMergeService configMergeService,
                                  final ConfigComparator configComparator,
-                                 final VersionValidator versionValidator) {
+                                 final VersionValidator versionValidator,
+                                 final VersionMetadataManager metadataManager,
+                                 final VersionSyncService syncService) {
         this.storeManager = storeManager;
         this.configMergeService = configMergeService;
         this.configComparator = configComparator;
         this.versionValidator = versionValidator;
+        this.metadataManager = metadataManager;
+        this.syncService = syncService;
     }
 
     /**
      * 初始化版本控制，从数据库同步版本信息
      */
     public void initializeVersionControl() {
-        try {
-            logger.info("初始化版本控制，从数据库同步版本信息...");
-
-            // 从数据库获取已存在的版本列表
-            List<Integer> dbVersions = storeManager.getConfigVersions(CURRENT_KEY);
-            logger.info("从数据库获取到 {} 个版本：{}", dbVersions.size(), dbVersions);
-
-            // 创建或更新元数据
-            ConfigMetadata metadata = configMetadataMap.computeIfAbsent(CURRENT_KEY, k -> {
-                ConfigMetadata newMetadata = new ConfigMetadata();
-                newMetadata.setConfigKey(CURRENT_KEY);
-                newMetadata.setCreatedAt(LocalDateTime.now());
-                return newMetadata;
-            });
-
-            // 从数据库版本列表同步元数据
-            if (!dbVersions.isEmpty()) {
-                // 当前版本为数据库中的最大版本号
-                int maxVersion = dbVersions.stream().max(Integer::compareTo).orElse(0);
-                metadata.setCurrentVersion(maxVersion);
-                metadata.setInitialVersion(dbVersions.stream().min(Integer::compareTo).orElse(1));
-                metadata.setTotalVersions(dbVersions.size());
-                metadata.setExistingVersions(new HashSet<>(dbVersions));
-                metadata.setLastModified(LocalDateTime.now());
-                metadata.setLastModifiedBy("system-sync");
-
-                logger.info("已从数据库同步版本元数据：当前版本={}, 总版本数={}, 版本列表={}",
-                        maxVersion, dbVersions.size(), dbVersions);
-
-                // 构建版本历史记录
-                List<VersionInfo> versionHistory = new ArrayList<>();
-                for (Integer version : dbVersions) {
-                    VersionInfo versionInfo = new VersionInfo();
-                    versionInfo.setVersion(version);
-                    versionInfo.setCreatedAt(storeManager.getVersionCreatedTime(CURRENT_KEY, version));
-                    versionInfo.setCreatedBy("system");
-                    versionInfo.setDescription("配置版本 " + version);
-                    versionInfo.setChangeType(version == 1 ? VersionInfo.ChangeType.INITIAL : VersionInfo.ChangeType.UPDATE);
-
-                    // 尝试从配置中获取 metadata 信息
-                    Map<String, Object> config = storeManager.getConfigByVersion(CURRENT_KEY, version);
-                    if (config != null && config.containsKey("_metadata")) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> configMetadata = (Map<String, Object>) config.get("_metadata");
-                        if (configMetadata != null && configMetadata.containsKey("operation")) {
-                            versionInfo.setDescription((String) configMetadata.get("operationDetail"));
-                        }
-                    }
-                    versionHistory.add(versionInfo);
-                }
-                versionHistoryMap.put(CURRENT_KEY, versionHistory);
-            } else {
-                // 数据库中没有版本，创建初始元数据
-                metadata.setInitialVersion(1);
-                metadata.setCurrentVersion(0);
-                metadata.setTotalVersions(0);
-                metadata.setExistingVersions(new HashSet<>());
-                metadata.setLastModified(LocalDateTime.now());
-                metadata.setLastModifiedBy("system-init");
-
-                versionHistoryMap.put(CURRENT_KEY, new ArrayList<>());
-                logger.info("数据库中没有版本记录，创建初始元数据");
-            }
-
-            configMetadataMap.put(CURRENT_KEY, metadata);
-
-            // 保存元数据到文件（作为备份）
-            saveMetadata(CURRENT_KEY, metadata);
-
-            logger.info("版本控制初始化完成");
-
-        } catch (Exception e) {
-            logger.error("初始化版本控制失败", e);
-            throw new RuntimeException("初始化版本控制失败", e);
-        }
+        syncService.syncFromDatabase(CURRENT_KEY);
     }
 
     /**
@@ -157,24 +82,21 @@ public class ConfigVersionManager {
         }
 
         // 从元数据获取版本列表
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
+        ConfigMetadata metadata = metadataManager.getMetadata(CURRENT_KEY);
         if (metadata != null && metadata.getExistingVersions() != null) {
             versions.addAll(metadata.getExistingVersions());
         }
 
         // 从版本历史获取版本列表
-        List<VersionInfo> versionHistory = versionHistoryMap.get(CURRENT_KEY);
-        if (versionHistory != null) {
-            for (VersionInfo info : versionHistory) {
-                if (!versions.contains(info.getVersion())) {
-                    versions.add(info.getVersion());
-                }
+        List<VersionInfo> versionHistory = metadataManager.getVersionHistory(CURRENT_KEY);
+        for (VersionInfo info : versionHistory) {
+            if (!versions.contains(info.getVersion())) {
+                versions.add(info.getVersion());
             }
         }
 
         // 排序并去重
-        versions = versions.stream().distinct().sorted().collect(Collectors.toList());
-        return versions;
+        return versions.stream().distinct().sorted().collect(Collectors.toList());
     }
 
     /**
@@ -220,7 +142,8 @@ public class ConfigVersionManager {
     /**
      * 内部版本保存方法
      */
-    private int saveAsNewVersionInternal(final Map<String, Object> config, final String description, final String userId) {
+    private int saveAsNewVersionInternal(final Map<String, Object> config,
+                                          final String description, final String userId) {
         try {
             // 调用链追踪：记录调用来源
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -233,19 +156,14 @@ public class ConfigVersionManager {
             recordVersionCreationTiming(description);
 
             // 获取或创建配置元数据
-            ConfigMetadata metadata = configMetadataMap.computeIfAbsent(CURRENT_KEY, k -> {
-                ConfigMetadata newMetadata = new ConfigMetadata();
-                newMetadata.setConfigKey(CURRENT_KEY);
-                newMetadata.setInitialVersion(1);
-                newMetadata.setCurrentVersion(0);
-                newMetadata.setCreatedAt(LocalDateTime.now());
-                newMetadata.setTotalVersions(0);
+            ConfigMetadata metadata = metadataManager.getOrCreateMetadata(CURRENT_KEY);
+            if (metadata.getTotalVersions() == 0) {
+                metadata.setInitialVersion(1);
                 logger.info("创建新的配置元数据");
-                return newMetadata;
-            });
+            }
 
-            // 生成新版本号
-            int newVersion = generateNextVersionNumber();
+            // 内联生成新版本号
+            int newVersion = getCurrentVersion() + 1;
             logger.info("生成新版本号：{}", newVersion);
 
             // 保存版本配置
@@ -253,25 +171,19 @@ public class ConfigVersionManager {
             logger.debug("版本配置已保存：{}", newVersion);
 
             // 更新元数据
-            metadata.setCurrentVersion(newVersion);
-            metadata.setLastModified(LocalDateTime.now());
-            metadata.setLastModifiedBy(userId != null ? userId : "system");
-            metadata.setTotalVersions(metadata.getTotalVersions() + 1);
-            metadata.addVersion(newVersion);
-            saveMetadata(CURRENT_KEY, metadata);
+            String effectiveUserId = userId != null ? userId : "system";
+            metadataManager.updateMetadataVersion(CURRENT_KEY, newVersion, effectiveUserId);
             logger.debug("元数据已更新");
 
             // 创建版本历史记录
             VersionInfo versionInfo = new VersionInfo();
             versionInfo.setVersion(newVersion);
             versionInfo.setCreatedAt(LocalDateTime.now());
-            versionInfo.setCreatedBy(userId != null ? userId : "system");
+            versionInfo.setCreatedBy(effectiveUserId);
             versionInfo.setDescription(description != null ? description : "配置更新");
             versionInfo.setChangeType(VersionInfo.ChangeType.UPDATE);
 
-            List<VersionInfo> versionHistory = versionHistoryMap.computeIfAbsent(CURRENT_KEY, k -> new ArrayList<>());
-            versionHistory.add(versionInfo);
-            saveVersionHistory(CURRENT_KEY, versionHistory);
+            metadataManager.addVersionToHistory(CURRENT_KEY, versionInfo);
             logger.debug("版本历史已更新");
 
             // 更新当前活跃配置
@@ -296,7 +208,7 @@ public class ConfigVersionManager {
 
         try {
             // 1. 获取元数据和版本列表
-            ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
+            ConfigMetadata metadata = metadataManager.getMetadata(CURRENT_KEY);
             List<Integer> allVersions = getAllVersions();
 
             // 2. 验证版本存在性（委托给 VersionValidator）
@@ -310,25 +222,21 @@ public class ConfigVersionManager {
 
             logger.debug("获取到版本 {} 的配置，包含 {} 个顶级配置项", version, config.size());
 
-            // 5. 备份当前配置（用于错误恢复）
+            // 5. 备份当前配置（用于错误恢复）- 内联调用
             Map<String, Object> backupConfig = null;
             try {
-                backupConfig = getCurrentPersistedConfig();
+                backupConfig = storeManager.getConfig(CURRENT_KEY);
             } catch (Exception e) {
                 logger.warn("无法备份当前配置：{}", e.getMessage());
             }
 
             // 6. 原子性应用配置
             try {
-                // 应用配置到存储
                 storeManager.saveConfig(CURRENT_KEY, config);
                 logger.debug("配置已成功应用到存储管理器");
 
                 // 更新当前版本状态
-                updateCurrentVersionAfterApply(version);
-
-                // 记录配置应用审计日志
-                logConfigurationRollback(version, config);
+                metadataManager.updateCurrentVersion(CURRENT_KEY, version, SecurityUtils.getCurrentUserId());
 
                 logger.info("成功应用配置版本：{}", version);
 
@@ -368,7 +276,7 @@ public class ConfigVersionManager {
 
         try {
             // 1. 获取元数据和版本列表
-            ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
+            ConfigMetadata metadata = metadataManager.getMetadata(CURRENT_KEY);
             List<Integer> allVersions = getAllVersions();
 
             // 2. 验证是否可以删除（委托给 VersionValidator）
@@ -382,27 +290,13 @@ public class ConfigVersionManager {
 
                 // 4. 更新元数据和版本范围
                 if (metadata != null) {
-                    metadata.setTotalVersions(Math.max(0, metadata.getTotalVersions() - 1));
-                    metadata.setLastModified(LocalDateTime.now());
-                    metadata.setLastModifiedBy(SecurityUtils.getCurrentUserId());
-                    metadata.removeVersion(version);
-
-                    saveMetadata(CURRENT_KEY, metadata);
+                    metadataManager.decrementVersionCount(CURRENT_KEY, version,
+                            SecurityUtils.getCurrentUserId());
                     logger.debug("已更新配置元数据和版本范围");
                 }
 
                 // 5. 更新版本历史记录
-                List<VersionInfo> versionHistory = versionHistoryMap.get(CURRENT_KEY);
-                if (versionHistory != null) {
-                    boolean removed = versionHistory.removeIf(info -> info.getVersion() == version);
-                    if (removed) {
-                        saveVersionHistory(CURRENT_KEY, versionHistory);
-                        logger.debug("已从版本历史中移除版本 {}", version);
-                    }
-                }
-
-                // 6. 记录删除操作的审计日志
-                logVersionDeletion(version);
+                metadataManager.removeVersionFromHistory(CURRENT_KEY, version);
 
                 logger.info("成功删除配置版本：{}", version);
 
@@ -451,8 +345,7 @@ public class ConfigVersionManager {
      * @return 版本历史列表
      */
     public List<VersionInfo> getVersionHistory() {
-        List<VersionInfo> history = versionHistoryMap.get(CURRENT_KEY);
-        return history != null ? new ArrayList<>(history) : new ArrayList<>();
+        return metadataManager.getVersionHistory(CURRENT_KEY);
     }
 
     /**
@@ -462,14 +355,7 @@ public class ConfigVersionManager {
      * @return 版本详情
      */
     public VersionInfo getVersionDetail(final int version) {
-        List<VersionInfo> history = versionHistoryMap.get(CURRENT_KEY);
-        if (history != null) {
-            return history.stream()
-                    .filter(info -> info.getVersion() == version)
-                    .findFirst()
-                    .orElse(null);
-        }
-        return null;
+        return metadataManager.getVersionDetail(CURRENT_KEY, version);
     }
 
     /**
@@ -498,63 +384,5 @@ public class ConfigVersionManager {
         }
         lastVersionCreationTime = currentTime;
         lastVersionDescription = description;
-    }
-
-    /**
-     * 生成下一个版本号
-     */
-    private int generateNextVersionNumber() {
-        return getCurrentVersion() + 1;
-    }
-
-    /**
-     * 获取当前持久化的配置
-     */
-    private Map<String, Object> getCurrentPersistedConfig() {
-        return storeManager.getConfig(CURRENT_KEY);
-    }
-
-    /**
-     * 应用版本后更新当前版本状态
-     */
-    private void updateCurrentVersionAfterApply(final int version) {
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-        if (metadata != null) {
-            metadata.setCurrentVersion(version);
-            metadata.setLastModified(LocalDateTime.now());
-            metadata.setLastModifiedBy(SecurityUtils.getCurrentUserId());
-            saveMetadata(CURRENT_KEY, metadata);
-        }
-    }
-
-    /**
-     * 记录配置回滚的审计日志
-     */
-    private void logConfigurationRollback(final int version, final Map<String, Object> config) {
-        logger.info("配置回滚到版本 {}: 操作类型=ROLLBACK, 目标版本={}", version, version);
-    }
-
-    /**
-     * 记录版本删除的审计日志
-     */
-    private void logVersionDeletion(final int version) {
-        logger.info("配置版本删除：删除版本={}, 操作时间={}", version, LocalDateTime.now());
-    }
-
-    /**
-     * 保存元数据
-     */
-    private void saveMetadata(final String key, final ConfigMetadata metadata) {
-        // 元数据保存到内存和文件备份
-        configMetadataMap.put(key, metadata);
-        logger.debug("元数据已保存：{}", key);
-    }
-
-    /**
-     * 保存版本历史
-     */
-    private void saveVersionHistory(final String key, final List<VersionInfo> versionHistory) {
-        versionHistoryMap.put(key, versionHistory);
-        logger.debug("版本历史已保存：{}", key);
     }
 }

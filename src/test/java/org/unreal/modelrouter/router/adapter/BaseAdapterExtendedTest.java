@@ -1085,19 +1085,19 @@ class BaseAdapterExtendedTest {
         }
 
         public String getModelNameFromRequestPublic(Object request) {
-            return super.getModelNameFromRequest(request);
+            return org.unreal.modelrouter.router.adapter.util.ModelUtils.getModelNameFromRequest(request);
         }
 
         public String getServiceTypeFromRequestPublic(Object request) {
-            return super.getServiceTypeFromRequest(request);
+            return org.unreal.modelrouter.router.adapter.util.ModelUtils.getServiceTypeFromRequest(request);
         }
 
         public int getMaxRetriesPublic(ModelServiceRegistry.ServiceType serviceType) {
-            return super.getMaxRetries(serviceType);
+            return getRetryPolicy().getMaxRetriesByServiceType(serviceType);
         }
 
         public long calculateRetryDelayPublic(int retryCount) {
-            return super.calculateRetryDelay(retryCount);
+            return getRetryPolicy().calculateRetryDelay(retryCount);
         }
 
         public long calculateRequestSizePublic(Object request) {

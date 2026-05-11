@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+
 import java.time.Duration;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -42,6 +44,11 @@ public class RetryPolicy {
      * 默认退避乘数
      */
     public static final double DEFAULT_MULTIPLIER = 2.0;
+
+    /**
+     * 最大延迟上限 (毫秒) - v2.26.5
+     */
+    public static final long MAX_DELAY_CAP_MS = 10000;
 
     private final int maxRetries;
     private final Duration initialDelay;
@@ -187,5 +194,50 @@ public class RetryPolicy {
      */
     public double getMultiplier() {
         return multiplier;
+    }
+
+    // ============ v2.26.5: 从 BaseAdapter 迁移的方法 ============
+
+    /**
+     * 根据服务类型获取最大重试次数
+     *
+     * @param serviceType 服务类型
+     * @return 最大重试次数
+     */
+    public int getMaxRetriesByServiceType(final ModelServiceRegistry.ServiceType serviceType) {
+        if (serviceType == null) {
+            return 1;
+        }
+        switch (serviceType) {
+            case chat:
+                return 2; // 聊天服务重试2次
+            case embedding:
+                return 2; // 嵌入服务重试2次
+            case rerank:
+                return 1; // 重排序服务重试1次（避免body重读问题）
+            case tts:
+                return 1; // TTS服务重试1次（文件较大）
+            case stt:
+                return 1; // STT服务重试1次（文件较大）
+            case imgGen:
+                return 1; // 图像生成重试1次（耗时较长）
+            case imgEdit:
+                return 1; // 图像编辑重试1次（耗时较长）
+            default:
+                return 1; // 默认重试1次
+        }
+    }
+
+    /**
+     * 计算重试延迟（指数退避）
+     *
+     * @param retryCount 当前重试次数
+     * @return 延迟毫秒数
+     */
+    public long calculateRetryDelay(final int retryCount) {
+        // 指数退避：基础延迟 * 2^重试次数，最大不超过10秒
+        long baseDelay = 1000; // 1秒基础延迟
+        long delay = baseDelay * (long) Math.pow(2, retryCount);
+        return Math.min(delay, MAX_DELAY_CAP_MS);
     }
 }

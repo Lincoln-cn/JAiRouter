@@ -27,6 +27,7 @@ import org.unreal.modelrouter.router.adapter.processor.StreamingRequestProcessor
 import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.processor.FallbackRequestProcessor;
 import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
+import org.unreal.modelrouter.router.adapter.util.ModelUtils;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
@@ -139,6 +140,14 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     /**
+     * 获取重试策略（供子类和测试使用）
+     * v2.28.0: 新增 getter 方法
+     */
+    protected RetryPolicy getRetryPolicy() {
+        return retryPolicy;
+    }
+
+    /**
      * 获取WebClient实例
      * 确保WebClient配置了追踪拦截器
      */
@@ -200,9 +209,9 @@ public abstract class BaseAdapter implements ServiceCapability {
         String instanceName = selectedInstance.getName();
 
         // v2.5.7: 委托给 AdapterTracingManager
-        tracingManager.recordCallStart(adapterType, selectedInstance, serviceType, getModelNameFromRequest(request));
+        tracingManager.recordCallStart(adapterType, selectedInstance, serviceType, ModelUtils.getModelNameFromRequest(request));
 
-        String modelNameFromRequest = getModelNameFromRequest(request);
+        String modelNameFromRequest = ModelUtils.getModelNameFromRequest(request);
         return processRequestWithRetry(request, authorization, client, path, selectedInstance,
                 serviceType, modelNameFromRequest, processor, startTime, 0);
     }
@@ -225,7 +234,7 @@ public abstract class BaseAdapter implements ServiceCapability {
 
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
-        int maxRetries = getMaxRetries(serviceType);
+        int maxRetries = retryPolicy.getMaxRetriesByServiceType(serviceType);
 
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
                 // 在成功完成时记录成功 - v2.26.0: 委托给 AdapterMetricsRecorder
@@ -242,7 +251,7 @@ public abstract class BaseAdapter implements ServiceCapability {
 
                     // v2.5.7: 委托给 AdapterTracingManager
                     tracingManager.recordCallComplete(adapterType, selectedInstance, serviceType, 
-                            getModelNameFromRequest(request), duration, success);
+                            ModelUtils.getModelNameFromRequest(request), duration, success);
                 })
                 // 在发生错误时处理重试逻辑 - v2.26.0: 委托给 AdapterMetricsRecorder
                 .onErrorResume(throwable -> {
@@ -267,7 +276,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                         }
 
                         // 等待重试延迟
-                        long retryDelay = calculateRetryDelay(retryCount);
+                        long retryDelay = retryPolicy.calculateRetryDelay(retryCount);
                         return Mono.delay(java.time.Duration.ofMillis(retryDelay))
                                 .then(processRequestWithRetry(request, authorization, client, path,
                                         selectedInstance, serviceType, modelName, processor,
@@ -369,7 +378,7 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
         Object transformedRequest = transformRequest(request, getAdapterType());
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
-        String modelName = getModelNameFromRequest(request);
+        String modelName = ModelUtils.getModelNameFromRequest(request);
 
         // 记录请求开始指标
         long requestStartTime = System.currentTimeMillis();
@@ -477,25 +486,17 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                                 }));
                     })
                     .doOnSuccess(responseEntity -> {
-                        // v2.26.2: 指标记录委托给 AdapterMetricsRecorder
+                        // v2.26.5: 简化回调 - 指标记录委托给 AdapterMetricsRecorder
                         if (metricsRecorder != null && responseEntity != null) {
-                            long requestSize = calculateRequestSize(transformedRequest);
-                            long responseSize = responseEntity.getBody() != null
-                                    ? ((byte[]) responseEntity.getBody()).length : 0;
-                            metricsRecorder.recordRequestSize(serviceType, requestSize, responseSize);
-
-                            // 记录响应时间指标
-                            long responseTime = System.currentTimeMillis() - requestStartTime;
-                            String status = responseEntity.getStatusCode().toString();
-                            metricsRecorder.recordResponseTime(serviceType, "POST", responseTime, status);
+                            long responseSize = responseEntity.getBody() != null ? ((byte[]) responseEntity.getBody()).length : 0;
+                            metricsRecorder.recordRequestSize(serviceType, calculateRequestSize(transformedRequest), responseSize);
+                            metricsRecorder.recordResponseTime(serviceType, "POST", System.currentTimeMillis() - requestStartTime, responseEntity.getStatusCode().toString());
                         }
                     })
                     .doOnError(throwable -> {
-                        // v2.26.2: 错误指标委托给 AdapterMetricsRecorder
+                        // v2.26.5: 简化回调 - 错误指标委托给 AdapterMetricsRecorder
                         if (metricsRecorder != null) {
-                            long responseTime = System.currentTimeMillis() - requestStartTime;
-                            String errorCode = throwable.getClass().getSimpleName();
-                            metricsRecorder.recordError(adapterType, instanceName, errorCode, throwable, responseTime, serviceType);
+                            metricsRecorder.recordError(adapterType, instanceName, throwable.getClass().getSimpleName(), throwable, System.currentTimeMillis() - requestStartTime, serviceType);
                         }
                     });
         } else {
@@ -577,32 +578,17 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                     })
                     // ==================== 核心修改结束 ====================
                     .doOnSuccess(responseEntity -> {
-                        // v2.26.4: 合并日志记录和指标记录
-                        if (responseEntity != null) {
-                            Object responseBody = responseEntity.getBody();
-                            String bodyStr = responseBody != null ? responseBody.toString() : "";
-                            logger.debug("下游服务响应成功: instance={}, path={}, status={}, body length={}",
-                                    instanceName, path, responseEntity.getStatusCode(), bodyStr.length());
-
-                            // v2.26.2: 指标记录委托给 AdapterMetricsRecorder
-                            if (metricsRecorder != null) {
-                                long requestSize = calculateRequestSize(transformedRequest);
-                                long responseSize = bodyStr.getBytes().length;
-                                metricsRecorder.recordRequestSize(serviceType, requestSize, responseSize);
-
-                                // 记录响应时间指标
-                                long responseTime = System.currentTimeMillis() - requestStartTime;
-                                String status = responseEntity.getStatusCode().toString();
-                                metricsRecorder.recordResponseTime(serviceType, "POST", responseTime, status);
-                            }
+                        // v2.26.5: 简化回调 - 指标记录委托给 AdapterMetricsRecorder
+                        if (metricsRecorder != null && responseEntity != null) {
+                            String bodyStr = responseEntity.getBody() != null ? responseEntity.getBody().toString() : "";
+                            metricsRecorder.recordRequestSize(serviceType, calculateRequestSize(transformedRequest), bodyStr.getBytes().length);
+                            metricsRecorder.recordResponseTime(serviceType, "POST", System.currentTimeMillis() - requestStartTime, responseEntity.getStatusCode().toString());
                         }
                     })
                     .doOnError(throwable -> {
-                        // v2.26.2: 错误指标委托给 AdapterMetricsRecorder
+                        // v2.26.5: 简化回调 - 错误指标委托给 AdapterMetricsRecorder
                         if (metricsRecorder != null) {
-                            long responseTime = System.currentTimeMillis() - requestStartTime;
-                            String errorCode = throwable.getClass().getSimpleName();
-                            metricsRecorder.recordError(adapterType, instanceName, errorCode, throwable, responseTime, serviceType);
+                            metricsRecorder.recordError(adapterType, instanceName, throwable.getClass().getSimpleName(), throwable, System.currentTimeMillis() - requestStartTime, serviceType);
                         }
                     });
         }
@@ -630,7 +616,7 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
         Object transformedRequest = transformRequest(request, getAdapterType());
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
-        String modelName = getModelNameFromRequest(request);
+        String modelName = ModelUtils.getModelNameFromRequest(request);
 
         // 记录请求开始指标
         long requestStartTime = System.currentTimeMillis();
@@ -661,21 +647,16 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                             .build();
                 })
                 .doOnComplete(() -> {
-                    // v2.26.2: 流式响应指标委托给 AdapterMetricsRecorder
+                    // v2.26.5: 简化回调 - 流式响应指标委托给 AdapterMetricsRecorder
                     if (metricsRecorder != null) {
                         metricsRecorder.recordRequestSize(serviceType, requestSize, 0);
-
-                        // 记录响应时间指标
-                        long responseTime = System.currentTimeMillis() - requestStartTime;
-                        metricsRecorder.recordResponseTime(serviceType, "POST", responseTime, "200");
+                        metricsRecorder.recordResponseTime(serviceType, "POST", System.currentTimeMillis() - requestStartTime, "200");
                     }
                 })
                 .doOnError(throwable -> {
-                    // v2.26.2: 错误指标委托给 AdapterMetricsRecorder
+                    // v2.26.5: 简化回调 - 错误指标委托给 AdapterMetricsRecorder
                     if (metricsRecorder != null) {
-                        long responseTime = System.currentTimeMillis() - requestStartTime;
-                        String errorCode = throwable.getClass().getSimpleName();
-                        metricsRecorder.recordError(adapterType, instanceName, errorCode, throwable, responseTime, serviceType);
+                        metricsRecorder.recordError(adapterType, instanceName, throwable.getClass().getSimpleName(), throwable, System.currentTimeMillis() - requestStartTime, serviceType);
                     }
                 })
                 .onErrorResume(throwable -> {
@@ -958,51 +939,9 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
     }
 
     /**
-     * 从请求对象中提取模型名称
+     * v2.26.5: getModelNameFromRequest 和 getServiceTypeFromRequest 已迁移到 ModelUtils
+     * v2.26.5: getMaxRetries 和 calculateRetryDelay 已迁移到 RetryPolicy
      */
-    protected String getModelNameFromRequest(final Object request) {
-        if (request == null) {
-            return "unknown";
-        }
-
-        try {
-            // 使用反射获取model字段
-            java.lang.reflect.Method modelMethod = request.getClass().getMethod("model");
-            Object modelName = modelMethod.invoke(request);
-            return modelName != null ? modelName.toString() : "unknown";
-        } catch (Exception e) {
-            // 如果无法获取模型名称，返回unknown
-            return "unknown";
-        }
-    }
-
-    /**
-     * 从请求对象中提取服务类型
-     */
-    protected String getServiceTypeFromRequest(final Object request) {
-        if (request == null) {
-            return "unknown";
-        }
-
-        // 根据请求类型判断服务类型
-        if (request instanceof org.unreal.modelrouter.common.dto.ChatDTO.Request) {
-            return ServiceTypeConstants.CHAT;
-        } else if (request instanceof org.unreal.modelrouter.common.dto.EmbeddingDTO.Request) {
-            return ServiceTypeConstants.EMBEDDING;
-        } else if (request instanceof org.unreal.modelrouter.common.dto.RerankDTO.Request) {
-            return ServiceTypeConstants.RERANK;
-        } else if (request instanceof org.unreal.modelrouter.common.dto.TtsDTO.Request) {
-            return ServiceTypeConstants.TTS;
-        } else if (request instanceof org.unreal.modelrouter.common.dto.SttDTO.Request) {
-            return ServiceTypeConstants.STT;
-        } else if (request instanceof org.unreal.modelrouter.common.dto.ImageGenerateDTO.Request) {
-            return ServiceTypeConstants.IMG_GEN;
-        } else if (request instanceof org.unreal.modelrouter.common.dto.ImageEditDTO.Request) {
-            return ServiceTypeConstants.IMG_EDIT;
-        } else {
-            return "unknown";
-        }
-    }
 
     /**
      * 记录适配器重试事件
@@ -1043,39 +982,7 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
         }
     }
 
-    /**
-     * 获取最大重试次数
-     */
-    protected int getMaxRetries(final ModelServiceRegistry.ServiceType serviceType) {
-        // 根据服务类型返回不同的重试次数
-        switch (serviceType) {
-            case chat:
-                return 2; // 聊天服务重试2次
-            case embedding:
-                return 2; // 嵌入服务重试2次（降低）
-            case rerank:
-                return 1; // 重排序服务重试1次（降低，避免body重读问题）
-            case tts:
-                return 1; // TTS服务重试1次（文件较大）
-            case stt:
-                return 1; // STT服务重试1次（文件较大）
-            case imgGen:
-                return 1; // 图像生成重试1次（耗时较长）
-            case imgEdit:
-                return 1; // 图像编辑重试1次（耗时较长）
-            default:
-                return 1; // 默认重试1次（降低）
-        }
-    }
-    /**
-     * 计算重试延迟（指数退避）
-     */
-    protected long calculateRetryDelay(final int retryCount) {
-        // 指数退避：基础延迟 * 2^重试次数，最大不超过10秒
-        long baseDelay = 1000; // 1秒基础延迟
-        long delay = baseDelay * (1L << retryCount); // 2^retryCount
-        return Math.min(delay, 10000); // 最大10秒
-    }
+    // v2.26.5: getMaxRetries 和 calculateRetryDelay 已迁移到 RetryPolicy
 
     /**
      * 函数式接口用于请求处理

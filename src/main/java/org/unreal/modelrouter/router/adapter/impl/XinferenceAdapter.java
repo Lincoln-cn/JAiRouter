@@ -112,8 +112,10 @@ public class XinferenceAdapter extends BaseAdapter {
                     org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
                         org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
                             org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
-                    enhancer.logAdapterCallStart(adapterType, null, getServiceTypeFromRequest(request),
-                        getModelNameFromRequest(request), tracingContext);
+                    enhancer.logAdapterCallStart(adapterType, null,
+                        org.unreal.modelrouter.router.adapter.util.ModelUtils.getServiceTypeFromRequest(request),
+                        org.unreal.modelrouter.router.adapter.util.ModelUtils.getModelNameFromRequest(request),
+                        tracingContext);
                 } catch (Exception e) {
                     // 忽略追踪增强错误
                 }
