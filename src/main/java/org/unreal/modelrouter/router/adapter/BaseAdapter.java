@@ -1126,18 +1126,8 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                                         final int retryCount,
                                         final int maxRetries,
                                         final Throwable error) {
-        org.unreal.modelrouter.monitor.tracing.TracingContext tracingContext =
-                org.unreal.modelrouter.monitor.tracing.TracingContextHolder.getCurrentContext();
-        if (tracingContext != null && tracingContext.isActive()) {
-            try {
-                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
-                        org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
-                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
-                enhancer.logAdapterRetry(adapterType, instance, retryCount, maxRetries, error, tracingContext);
-            } catch (Exception ex) {
-                // 忽略追踪错误
-            }
-        }
+        // v2.26.1: 追踪逻辑委托给 AdapterTracingManager
+        tracingManager.recordRetry(adapterType, instance, retryCount, maxRetries, error);
 
         // 记录重试指标
         if (metricsCollector != null) {
@@ -1152,18 +1142,8 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
      * @param error       错误信息
      */
     protected void logAdapterTransformError(final String adapterType, final Throwable error) {
-        org.unreal.modelrouter.monitor.tracing.TracingContext tracingContext =
-                org.unreal.modelrouter.monitor.tracing.TracingContextHolder.getCurrentContext();
-        if (tracingContext != null && tracingContext.isActive()) {
-            try {
-                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer enhancer =
-                        org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
-                                org.unreal.modelrouter.monitor.tracing.adapter.AdapterTracingEnhancer.class);
-                enhancer.logAdapterRetry(adapterType, null, 0, 0, error, tracingContext);
-            } catch (Exception ex) {
-                // 忽略追踪错误
-            }
-        }
+        // v2.26.1: 追踪逻辑委托给 AdapterTracingManager
+        tracingManager.recordTransformError(adapterType, error);
 
         // 记录转换错误指标
         if (metricsCollector != null) {
