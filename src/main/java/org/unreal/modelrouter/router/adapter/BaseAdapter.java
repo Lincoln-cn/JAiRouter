@@ -140,10 +140,6 @@ public abstract class BaseAdapter implements ServiceCapability {
         return registry;
     }
 
-    protected MetricsCollector getMetricsCollector() {
-        return metricsCollector;
-    }
-
     /**
      * 获取WebClient实例
      * 确保WebClient配置了追踪拦截器
@@ -583,28 +579,24 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                     })
                     // ==================== 核心修改结束 ====================
                     .doOnSuccess(responseEntity -> {
-                        Object responseBody = responseEntity.getBody();
-                        String bodyStr = responseBody != null ? responseBody.toString() : "";
-                        logger.debug("下游服务响应成功: instance={}, path={}, status={}, body length={}",
-                                instanceName, path, responseEntity.getStatusCode(), bodyStr.length());
-                        if (!bodyStr.isEmpty()) {
-                            logger.debug("响应内容预览: {}", bodyStr.length() > 200 ? bodyStr.substring(0, 200) + "..." : bodyStr);
-                        }
-                    })
-                    .doOnSuccess(responseEntity -> {
-                        // 记录请求大小指标
-                        // v2.26.2: 指标记录委托给 AdapterMetricsRecorder
-                        if (metricsRecorder != null && responseEntity != null) {
-                            long requestSize = calculateRequestSize(transformedRequest);
+                        // v2.26.4: 合并日志记录和指标记录
+                        if (responseEntity != null) {
                             Object responseBody = responseEntity.getBody();
                             String bodyStr = responseBody != null ? responseBody.toString() : "";
-                            long responseSize = bodyStr.getBytes().length;
-                            metricsRecorder.recordRequestSize(serviceType, requestSize, responseSize);
+                            logger.debug("下游服务响应成功: instance={}, path={}, status={}, body length={}",
+                                    instanceName, path, responseEntity.getStatusCode(), bodyStr.length());
 
-                            // 记录响应时间指标
-                            long responseTime = System.currentTimeMillis() - requestStartTime;
-                            String status = responseEntity.getStatusCode().toString();
-                            metricsRecorder.recordResponseTime(serviceType, "POST", responseTime, status);
+                            // v2.26.2: 指标记录委托给 AdapterMetricsRecorder
+                            if (metricsRecorder != null) {
+                                long requestSize = calculateRequestSize(transformedRequest);
+                                long responseSize = bodyStr.getBytes().length;
+                                metricsRecorder.recordRequestSize(serviceType, requestSize, responseSize);
+
+                                // 记录响应时间指标
+                                long responseTime = System.currentTimeMillis() - requestStartTime;
+                                String status = responseEntity.getStatusCode().toString();
+                                metricsRecorder.recordResponseTime(serviceType, "POST", responseTime, status);
+                            }
                         }
                     })
                     .doOnError(throwable -> {
