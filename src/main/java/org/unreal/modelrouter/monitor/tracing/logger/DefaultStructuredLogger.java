@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 JAiRouter Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.unreal.modelrouter.monitor.tracing.logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,17 +32,16 @@ import org.unreal.modelrouter.monitor.tracing.security.TracingSecurityManager;
 import reactor.core.publisher.Mono;
 import org.unreal.modelrouter.monitor.tracing.logger.builder.BusinessEventLogBuilder;
 import org.unreal.modelrouter.monitor.tracing.logger.builder.PerformanceLogBuilder;
+import org.unreal.modelrouter.monitor.tracing.logger.builder.RequestLogBuilder;
+import org.unreal.modelrouter.monitor.tracing.logger.builder.ResponseLogBuilder;
 import org.unreal.modelrouter.monitor.tracing.logger.builder.SecurityEventLogBuilder;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.LogType;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.SecurityEventFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.PerformanceFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.BusinessEventFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.StructuredLogEntry;
-import org.unreal.modelrouter.monitor.tracing.logger.dto.SystemEventFields;
-import org.unreal.modelrouter.monitor.tracing.logger.dto.ErrorLogFields;
-import org.unreal.modelrouter.monitor.tracing.logger.dto.BackendCallFields;
-import org.unreal.modelrouter.monitor.tracing.logger.dto.ResponseLogFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.RequestLogFields;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.ResponseLogFields;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -34,15 +49,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 默认结构化日志记录器实现
- * 
+ * 默认结构化日志记录器实现 - v2.16.4重构
+ *
  * 实现结构化的JSON格式日志输出，包括：
  * - 自动集成Logback MDC，添加traceId和spanId
  * - JSON格式的日志输出
  * - 敏感数据脱敏处理
  * - 异步日志处理
  * - 性能优化的日志缓存
- * 
+ *
+ * 重构历史：
+ * - v2.16.4: 提取RequestLogBuilder和ResponseLogBuilder，委托调用
+ * - v2.16.5: 使用DTO替代Map<String, Object>弱约束
+ *
  * @author JAiRouter Team
  * @since 1.0.0
  */
@@ -50,13 +69,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @RequiredArgsConstructor
 public class DefaultStructuredLogger implements StructuredLogger {
-    
+
     private final ObjectMapper objectMapper;
     private final SanitizationService sanitizationService;
     private final TracingConfiguration tracingConfiguration;
     private final TracingMDCManager tracingMDCManager;
-    
-    // 追踪安全组件 - 使用懒加载解决循环依赖
+
+    // 追踪安全组件
     private final TracingSanitizationService tracingSanitizationService;
     private final TracingSecurityManager tracingSecurityManager;
     private final TracingEncryptionService tracingEncryptionService;
@@ -65,30 +84,36 @@ public class DefaultStructuredLogger implements StructuredLogger {
     private final SecurityEventLogBuilder securityEventLogBuilder;
     private final PerformanceLogBuilder performanceLogBuilder;
     private final BusinessEventLogBuilder businessEventLogBuilder;
-    
-    // 缓存常用的日志字段，避免重复创建
+    private final RequestLogBuilder requestLogBuilder;
+    private final ResponseLogBuilder responseLogBuilder;
+
+    // 缓存常用的日志字段
     private final Map<String, Object> commonFields = new ConcurrentHashMap<>();
-    
+
+    // ========================================
+    // 请求/响应日志方法 - v2.16.4 委托Builder
+    // ========================================
+
     @Override
     public void logRequest(final ServerHttpRequest request, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
-        
-        // 检查访问权限
+
+        // 检查访问权限并委托RequestLogBuilder构建日志
         tracingSecurityManager.canAccessTraceContext(context)
                 .filter(hasPermission -> hasPermission)
-                .doOnNext(hasPermission -> {
+                .flatMap(hasPermission -> requestLogBuilder.buildRequestFields(request, context))
+                .doOnNext(fields -> {
                     try {
-                        // 设置MDC
                         setMDC(context);
-                        
-                        Map<String, Object> logEntry = createBaseLogEntry(LogType.REQUEST.getValue(), context);
-                        Map<String, Object> fields = new HashMap<>();
-                        
-                        // 处理请求日志的其余部分
-                        processRequestLogging(request, context, logEntry, fields);
-                        
+
+                        StructuredLogEntry logEntry = createStructuredLogEntry(LogType.REQUEST, context);
+                        logEntry.setFields(fields);
+                        logEntry.setMessage(requestLogBuilder.buildRequestMessage());
+
+                        logStructuredLogEntry(logEntry);
+
                     } catch (Exception e) {
                         log.debug("记录请求日志时发生错误", e);
                     } finally {
@@ -97,227 +122,135 @@ public class DefaultStructuredLogger implements StructuredLogger {
                 })
                 .subscribe();
     }
-    
-    /**
-     * 处理请求日志记录
-     */
-    private void processRequestLogging(final ServerHttpRequest request, final TracingContext context, 
-                                     final Map<String, Object> logEntry, final Map<String, Object> fields) {
-        try {
-            
-            // HTTP请求信息（安全处理）
-            fields.put("method", request.getMethod() != null ? request.getMethod().name() : "UNKNOWN");
-            fields.put("path", sanitizeUrlPath(request.getPath().value()));
-            fields.put("url", request.getURI().toString());
-            
-            // 客户端信息（脱敏处理）
-            String clientIp = getClientIp(request);
-            if (clientIp != null) {
-                fields.put("clientIp", sanitizeClientIp(clientIp));
-            }
-            
-            String userAgent = request.getHeaders().getFirst("User-Agent");
-            if (userAgent != null) {
-                fields.put("userAgent", userAgent);
-            }
-            
-            // 请求大小
-            String contentLength = request.getHeaders().getFirst("Content-Length");
-            if (contentLength != null) {
-                try {
-                    fields.put("requestSize", Long.parseLong(contentLength));
-                } catch (NumberFormatException e) {
-                    // 忽略无效的Content-Length
-                }
-            }
-            
-            // 请求头（安全脱敏处理）
-            if (tracingConfiguration.getLogging().isCaptureHeaders()) {
-                Map<String, String> rawHeaders = request.getHeaders().toSingleValueMap();
-                sanitizeRequestHeaders(rawHeaders, context)
-                        .doOnNext(sanitizedHeaders -> {
-                            fields.put("headers", sanitizedHeaders);
-                            
-                            // 应用追踪特定的脱敏
-                            tracingSanitizationService.sanitizeLogData(fields, context)
-                                    .doOnNext(sanitizedFields -> {
-                                        logEntry.put("fields", sanitizedFields);
-                                        logEntry.put("message", "HTTP请求开始");
-                                        
-                                        // 如果需要加密存储
-                                        if (shouldEncryptLogData(logEntry)) {
-                                            encryptAndLogEntry(logEntry, context);
-                                        } else {
-                                            logStructuredEntry(logEntry);
-                                        }
-                                    })
-                                    .subscribe();
-                        })
-                        .subscribe();
-            } else {
-                // 应用追踪特定的脱敏
-                tracingSanitizationService.sanitizeLogData(fields, context)
-                        .doOnNext(sanitizedFields -> {
-                            logEntry.put("fields", sanitizedFields);
-                            logEntry.put("message", "HTTP请求开始");
-                            
-                            // 如果需要加密存储
-                            if (shouldEncryptLogData(logEntry)) {
-                                encryptAndLogEntry(logEntry, context);
-                            } else {
-                                logStructuredEntry(logEntry);
-                            }
-                        })
-                        .subscribe();
-            }
-            
-        } catch (Exception e) {
-            log.debug("处理请求日志时发生错误", e);
-        }
-    }
-    
+
     @Override
     public void logResponse(final ServerHttpResponse response, final TracingContext context, final long duration) {
         if (!isLoggingEnabled()) {
             return;
         }
-        
+
         try {
-            // 设置MDC
             setMDC(context);
-            
-            Map<String, Object> logEntry = createBaseLogEntry(LogType.RESPONSE.getValue(), context);
-            Map<String, Object> fields = new HashMap<>();
-            
-            // 响应信息
-            if (response.getStatusCode() != null) {
-                fields.put("statusCode", response.getStatusCode().value());
-                // HttpStatusCode接口没有getReasonPhrase方法，需要转换为HttpStatus
-                if (response.getStatusCode() instanceof org.springframework.http.HttpStatus) {
-                    org.springframework.http.HttpStatus httpStatus = (org.springframework.http.HttpStatus) response.getStatusCode();
-                    fields.put("statusText", httpStatus.getReasonPhrase());
-                }
-            }
-            
-            // 响应大小
-            long contentLength = response.getHeaders().getContentLength();
-            if (contentLength > 0) {
-                fields.put("responseSize", contentLength);
-            }
-            
-            // 处理时长
-            fields.put("duration", duration);
-            
-            // 响应头（脱敏处理）
-            if (tracingConfiguration.getLogging().isCaptureHeaders()) {
-                Map<String, String> sanitizedHeaders = sanitizeHeaders(response.getHeaders().toSingleValueMap());
-                fields.put("headers", sanitizedHeaders);
-            }
-            
-            logEntry.put("fields", fields);
-            logEntry.put("message", String.format("HTTP请求完成，耗时: %dms", duration));
-            
-            logStructuredEntry(logEntry);
-            
+
+            // 委托ResponseLogBuilder构建日志 - v2.16.4
+            ResponseLogFields fields = responseLogBuilder.buildResponseFields(response, duration);
+            StructuredLogEntry logEntry = createStructuredLogEntry(LogType.RESPONSE, context);
+            logEntry.setFields(fields);
+            logEntry.setMessage(responseLogBuilder.buildResponseMessage(duration));
+
+            logStructuredLogEntry(logEntry);
+
         } catch (Exception e) {
             log.debug("记录响应日志时发生错误", e);
         } finally {
             clearMDC();
         }
     }
-    
+
+    // ========================================
+    // 后端调用日志方法
+    // ========================================
+
     @Override
-    public void logBackendCall(final String adapter, final String instance, final long duration, final boolean success, final TracingContext context) {
+    public void logBackendCall(final String adapter, final String instance, final long duration,
+                               final boolean success, final TracingContext context) {
         logBackendCallDetails(adapter, instance, null, null, duration, success ? 200 : 500, success, context);
     }
-    
+
     @Override
-    public void logBackendCallDetails(final String adapter, final String instance, final String url, final String method, 
-                                     final long duration, final int statusCode, final boolean success, final TracingContext context) {
+    public void logBackendCallDetails(final String adapter, final String instance, final String url,
+                                      final String method, final long duration, final int statusCode,
+                                      final boolean success, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
-        
+
         try {
-            // 设置MDC
             setMDC(context);
-            
+
             Map<String, Object> logEntry = createBaseLogEntry(LogType.BACKEND_CALL.getValue(), context);
             Map<String, Object> fields = new HashMap<>();
-            
+
             fields.put("adapter", adapter);
             fields.put("instance", instance);
             fields.put("duration", duration);
             fields.put("success", success);
             fields.put("statusCode", statusCode);
-            
+
             if (url != null) {
                 fields.put("url", url);
             }
             if (method != null) {
                 fields.put("method", method);
             }
-            
+
             logEntry.put("fields", fields);
-            logEntry.put("message", String.format("后端服务调用%s，适配器: %s，实例: %s，耗时: %dms", 
+            logEntry.put("message", String.format("后端服务调用%s，适配器: %s，实例: %s，耗时: %dms",
                     success ? "成功" : "失败", adapter, instance, duration));
-            
+
             logStructuredEntry(logEntry);
-            
+
         } catch (Exception e) {
             log.debug("记录后端调用日志时发生错误", e);
         } finally {
             clearMDC();
         }
     }
-    
+
+    // ========================================
+    // 错误日志方法
+    // ========================================
+
     @Override
     public void logError(final Throwable error, final TracingContext context) {
         logError(error, context, null);
     }
-    
+
     @Override
-    public void logError(final Throwable error, final TracingContext context, final Map<String, Object> additionalInfo) {
+    public void logError(final Throwable error, final TracingContext context,
+                        final Map<String, Object> additionalInfo) {
         if (!isLoggingEnabled() || error == null) {
             return;
         }
-        
+
         try {
-            // 设置MDC
             setMDC(context);
-            
+
             Map<String, Object> logEntry = createBaseLogEntry(LogType.ERROR.getValue(), context);
             Map<String, Object> fields = new HashMap<>();
-            
+
             fields.put("errorType", error.getClass().getSimpleName());
             fields.put("errorMessage", error.getMessage());
-            
-            // 堆栈信息（截断处理）- 仅在配置允许时记录
+
+            // 堆栈信息（截断处理）
             if (tracingConfiguration.getLogging().isIncludeStackTrace()) {
                 String stackTrace = getStackTrace(error);
                 if (stackTrace != null) {
                     fields.put("stackTrace", stackTrace);
                 }
             }
-            
-            // 额外信息
+
             if (additionalInfo != null && !additionalInfo.isEmpty()) {
                 fields.put("additionalInfo", additionalInfo);
             }
-            
+
             logEntry.put("fields", fields);
             logEntry.put("message", String.format("发生错误: %s", error.getMessage()));
             logEntry.put("level", "ERROR");
-            
+
             logStructuredEntry(logEntry);
-            
+
         } catch (Exception e) {
             log.debug("记录错误日志时发生错误", e);
         } finally {
             clearMDC();
         }
     }
-    
+
+    // ========================================
+    // 业务事件日志方法 - v2.16.5 委托Builder
+    // ========================================
+
     @Override
     public void logBusinessEvent(final String event, final Map<String, Object> data, final TracingContext context) {
         if (!isLoggingEnabled()) {
@@ -325,7 +258,6 @@ public class DefaultStructuredLogger implements StructuredLogger {
         }
 
         try {
-            // 设置MDC
             setMDC(context);
 
             // 使用DTO版本 - v2.16.5
@@ -342,45 +274,52 @@ public class DefaultStructuredLogger implements StructuredLogger {
             clearMDC();
         }
     }
-    
+
     @Override
-    public void logLoadBalancerDecision(final String strategy, final String selectedInstance, final int availableInstances, final TracingContext context) {
+    public void logLoadBalancerDecision(final String strategy, final String selectedInstance,
+                                        final int availableInstances, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("strategy", strategy);
         data.put("selectedInstance", selectedInstance);
         data.put("availableInstances", availableInstances);
-        
+
         logBusinessEvent("load_balancer_decision", data, context);
     }
-    
+
     @Override
-    public void logRateLimitCheck(final String algorithm, final boolean allowed, final long remainingTokens, final TracingContext context) {
+    public void logRateLimitCheck(final String algorithm, final boolean allowed,
+                                 final long remainingTokens, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("algorithm", algorithm);
         data.put("allowed", allowed);
         data.put("remainingTokens", remainingTokens);
-        
+
         logBusinessEvent("rate_limit_check", data, context);
     }
-    
+
     @Override
-    public void logCircuitBreakerStateChange(final String previousState, final String currentState, final String reason, final TracingContext context) {
+    public void logCircuitBreakerStateChange(final String previousState, final String currentState,
+                                             final String reason, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("previousState", previousState);
         data.put("currentState", currentState);
         data.put("reason", reason);
-        
+
         logBusinessEvent("circuit_breaker_state_change", data, context);
     }
-    
+
+    // ========================================
+    // 性能日志方法 - v2.16.5 委托Builder
+    // ========================================
+
     @Override
-    public void logPerformance(final String operation, final long duration, final Map<String, Object> metrics, final TracingContext context) {
+    public void logPerformance(final String operation, final long duration,
+                              final Map<String, Object> metrics, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
 
         try {
-            // 设置MDC
             setMDC(context);
 
             // 使用DTO版本 - v2.16.5
@@ -397,23 +336,29 @@ public class DefaultStructuredLogger implements StructuredLogger {
             clearMDC();
         }
     }
+
     @Override
-    public void logSlowQuery(final String operation, final long duration, final long threshold, final TracingContext context) {
+    public void logSlowQuery(final String operation, final long duration,
+                            final long threshold, final TracingContext context) {
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("threshold", threshold);
         metrics.put("slowQueryDetected", true);
-        
+
         logPerformance(operation, duration, metrics, context);
     }
-    
+
+    // ========================================
+    // 安全事件日志方法 - v2.16.5 委托Builder
+    // ========================================
+
     @Override
-    public void logSecurityEvent(final String event, final String user, final String ip, final TracingContext context) {
+    public void logSecurityEvent(final String event, final String user,
+                                final String ip, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
 
         try {
-            // 设置MDC
             setMDC(context);
 
             // 使用DTO版本 - v2.16.5
@@ -431,136 +376,99 @@ public class DefaultStructuredLogger implements StructuredLogger {
             clearMDC();
         }
     }
-    public void logAuthenticationEvent(final boolean success, final String authMethod, final String user, final String ip, final TracingContext context) {
+
+    public void logAuthenticationEvent(final boolean success, final String authMethod,
+                                       final String user, final String ip, final TracingContext context) {
         String event = success ? "authentication_success" : "authentication_failure";
         Map<String, Object> data = new HashMap<>();
         data.put("authMethod", authMethod);
         data.put("success", success);
-        
+
         logSecurityEvent(event, user, ip, context);
     }
-    
+
     @Override
-    public void logSanitization(final String field, final String action, final String ruleId, final TracingContext context) {
+    public void logSanitization(final String field, final String action,
+                               final String ruleId, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("field", field);
         data.put("action", action);
         data.put("ruleId", ruleId);
-        
+
         logBusinessEvent("data_sanitization", data, context);
     }
-    
+
     @Override
-    public void logConfigurationChange(final String configType, final String action, final Map<String, Object> details, final TracingContext context) {
+    public void logConfigurationChange(final String configType, final String action,
+                                       final Map<String, Object> details, final TracingContext context) {
         Map<String, Object> data = new HashMap<>();
         data.put("configType", configType);
         data.put("action", action);
         if (details != null) {
             data.put("details", details);
         }
-        
+
         logBusinessEvent("configuration_change", data, context);
     }
-    
+
+    // ========================================
+    // 系统事件日志方法
+    // ========================================
+
     @Override
-    public void logSystemEvent(final String event, final String level, final Map<String, Object> details, final TracingContext context) {
+    public void logSystemEvent(final String event, final String level,
+                              final Map<String, Object> details, final TracingContext context) {
         if (!isLoggingEnabled()) {
             return;
         }
-        
+
         try {
-            // 设置MDC
             setMDC(context);
-            
+
             Map<String, Object> logEntry = createBaseLogEntry(LogType.SYSTEM.getValue(), context);
             Map<String, Object> fields = new HashMap<>();
-            
+
             fields.put("event", event);
             if (details != null && !details.isEmpty()) {
                 fields.put("details", details);
             }
-            
+
             logEntry.put("fields", fields);
             logEntry.put("message", String.format("系统事件: %s", event));
             logEntry.put("level", level != null ? level : "INFO");
-            
+
             logStructuredEntry(logEntry);
-            
+
         } catch (Exception e) {
             log.debug("记录系统事件日志时发生错误", e);
         } finally {
             clearMDC();
         }
     }
-    
+
     // ========================================
-    // 私有辅助方法
+    // 私有辅助方法 - 基础构建
     // ========================================
-    
+
     /**
-     * 创建基础日志条目
+     * 创建基础日志条目（Map版本，用于向后兼容）
      */
     private Map<String, Object> createBaseLogEntry(final String type, final TracingContext context) {
         Map<String, Object> logEntry = new HashMap<>();
-        
+
         logEntry.put("timestamp", Instant.now().toString());
         logEntry.put("type", type);
         logEntry.put("serviceName", getServiceName());
         logEntry.put("serviceVersion", getServiceVersion());
         logEntry.put("environment", getEnvironment());
-        
+
         if (context != null) {
             logEntry.put("traceId", context.getTraceId());
             logEntry.put("spanId", context.getSpanId());
         }
-        
+
         return logEntry;
     }
-    
-    /**
-     * 设置MDC上下文
-     */
-    private void setMDC(final TracingContext context) {
-        if (context != null && tracingConfiguration.getLogging().isIncludeTraceId()) {
-            tracingMDCManager.setMDC(context);
-        }
-    }
-    
-    /**
-     * 清理MDC上下文
-     */
-    private void clearMDC() {
-        tracingMDCManager.clearMDC();
-    }
-    
-    /**
-     * 输出结构化日志条目
-     */
-    private void logStructuredEntry(final Map<String, Object> logEntry) {
-        try {
-            String jsonLog = objectMapper.writeValueAsString(logEntry);
-            
-            // 根据日志级别输出
-            String level = (String) logEntry.get("level");
-            if ("ERROR".equals(level)) {
-                log.error(jsonLog);
-            } else if ("WARN".equals(level)) {
-                log.warn(jsonLog);
-            } else if ("DEBUG".equals(level)) {
-                log.debug(jsonLog);
-            } else {
-                log.info(jsonLog);
-            }
-            
-        } catch (JsonProcessingException e) {
-            log.debug("序列化日志条目失败", e);
-        }
-    }
-    
-
-    // ========================================
-    // DTO版本辅助方法 - v2.16.5
-    // ========================================
 
     /**
      * 创建结构化日志条目（DTO版本） - v2.16.5
@@ -575,6 +483,50 @@ public class DefaultStructuredLogger implements StructuredLogger {
                 .traceId(context != null ? context.getTraceId() : null)
                 .spanId(context != null ? context.getSpanId() : null)
                 .build();
+    }
+
+    /**
+     * 设置MDC上下文
+     */
+    private void setMDC(final TracingContext context) {
+        if (context != null && tracingConfiguration.getLogging().isIncludeTraceId()) {
+            tracingMDCManager.setMDC(context);
+        }
+    }
+
+    /**
+     * 清理MDC上下文
+     */
+    private void clearMDC() {
+        tracingMDCManager.clearMDC();
+    }
+
+    // ========================================
+    // 私有辅助方法 - 日志输出
+    // ========================================
+
+    /**
+     * 输出结构化日志条目（Map版本）
+     */
+    private void logStructuredEntry(final Map<String, Object> logEntry) {
+        try {
+            String jsonLog = objectMapper.writeValueAsString(logEntry);
+
+            // 根据日志级别输出
+            String level = (String) logEntry.get("level");
+            if ("ERROR".equals(level)) {
+                log.error(jsonLog);
+            } else if ("WARN".equals(level)) {
+                log.warn(jsonLog);
+            } else if ("DEBUG".equals(level)) {
+                log.debug(jsonLog);
+            } else {
+                log.info(jsonLog);
+            }
+
+        } catch (JsonProcessingException e) {
+            log.debug("序列化日志条目失败", e);
+        }
     }
 
     /**
@@ -601,48 +553,42 @@ public class DefaultStructuredLogger implements StructuredLogger {
         }
     }
 
-    
-    
+    // ========================================
+    // 私有辅助方法 - 配置获取
+    // ========================================
+
     /**
-     * 脱敏处理HTTP头部
+     * 检查是否启用日志记录
      */
-    private Map<String, String> sanitizeHeaders(final Map<String, String> headers) {
-        if (headers == null || headers.isEmpty()) {
-            return headers;
-        }
-
-        Map<String, String> sanitizedHeaders = new HashMap<>();
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-
-            // 敏感头部直接脱敏
-            if (isSensitiveHeader(key)) {
-                sanitizedHeaders.put(key, "***");
-            } else {
-                sanitizedHeaders.put(key, value);
-            }
-        }
-
-        return sanitizedHeaders;
+    private boolean isLoggingEnabled() {
+        return tracingConfiguration.getLogging().isStructuredLogging();
     }
-    
+
     /**
-     * 检查是否为敏感头部
+     * 获取服务名称
      */
-    private boolean isSensitiveHeader(final String headerName) {
-        if (headerName == null) {
-            return false;
-        }
-        
-        String lowerName = headerName.toLowerCase();
-        return lowerName.contains("authorization")
-               || lowerName.contains("token")
-               || lowerName.contains("key")
-               || lowerName.contains("secret")
-               || lowerName.contains("password");
+    private String getServiceName() {
+        return tracingConfiguration.getServiceName();
     }
-    
+
+    /**
+     * 获取服务版本
+     */
+    private String getServiceVersion() {
+        return tracingConfiguration.getServiceVersion();
+    }
+
+    /**
+     * 获取环境名称
+     */
+    private String getEnvironment() {
+        return tracingConfiguration.getServiceNamespace();
+    }
+
+    // ========================================
+    // 私有辅助方法 - 错误处理
+    // ========================================
+
     /**
      * 获取异常堆栈信息（截断处理）
      */
@@ -650,248 +596,22 @@ public class DefaultStructuredLogger implements StructuredLogger {
         if (error == null) {
             return null;
         }
-        
+
         try {
             java.io.StringWriter sw = new java.io.StringWriter();
             java.io.PrintWriter pw = new java.io.PrintWriter(sw);
             error.printStackTrace(pw);
             String stackTrace = sw.toString();
-            
+
             // 截断过长的堆栈信息
             int maxLength = 2000;
             if (stackTrace.length() > maxLength) {
                 stackTrace = stackTrace.substring(0, maxLength) + "... (truncated)";
             }
-            
+
             return stackTrace;
         } catch (Exception e) {
             return error.toString();
-        }
-    }
-    
-    /**
-     * 获取客户端IP地址
-     */
-    private String getClientIp(final ServerHttpRequest request) {
-        // 检查X-Forwarded-For头部
-        String xForwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        
-        // 检查X-Real-IP头部
-        String xRealIp = request.getHeaders().getFirst("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        
-        // 使用远程地址
-        if (request.getRemoteAddress() != null) {
-            return request.getRemoteAddress().getAddress().getHostAddress();
-        }
-        
-        return null;
-    }
-    
-    /**
-     * 检查是否启用日志记录
-     */
-    private boolean isLoggingEnabled() {
-        return tracingConfiguration.getLogging().isStructuredLogging();
-    }
-    
-    /**
-     * 获取服务名称
-     */
-    private String getServiceName() {
-        return tracingConfiguration.getServiceName();
-    }
-    
-    /**
-     * 获取服务版本
-     */
-    private String getServiceVersion() {
-        return tracingConfiguration.getServiceVersion();
-    }
-    
-    /**
-     * 获取环境名称
-     */
-    private String getEnvironment() {
-        return tracingConfiguration.getServiceNamespace();
-    }
-    
-    // ========================================
-    // 安全和脱敏相关方法
-    // ========================================
-    
-    /**
-     * 安全处理URL路径
-     */
-    private String sanitizeUrlPath(final String path) {
-        if (path == null) {
-            return null;
-        }
-        
-        // 移除查询参数中的敏感信息
-        if (path.contains("?")) {
-            String[] parts = path.split("\\?", 2);
-            String basePath = parts[0];
-            String queryString = parts[1];
-            
-            // 脱敏查询参数
-            String sanitizedQuery = sanitizeQueryString(queryString);
-            return basePath + "?" + sanitizedQuery;
-        }
-        
-        return path;
-    }
-    
-    
-    /**
-     * 脱敏查询参数
-     */
-    private String sanitizeQueryString(final String queryString) {
-        if (queryString == null || queryString.isEmpty()) {
-            return queryString;
-        }
-        
-        StringBuilder sanitized = new StringBuilder();
-        String[] params = queryString.split("&");
-        
-        for (int i = 0; i < params.length; i++) {
-            if (i > 0) {
-                sanitized.append("&");
-            }
-            
-            String param = params[i];
-            if (param.contains("=")) {
-                String[] keyValue = param.split("=", 2);
-                String key = keyValue[0];
-                String value = keyValue.length > 1 ? keyValue[1] : "";
-                
-                if (isSensitiveQueryParam(key)) {
-                    sanitized.append(key).append("=[REDACTED]");
-                } else {
-                    sanitized.append(param);
-                }
-            } else {
-                sanitized.append(param);
-            }
-        }
-        
-        return sanitized.toString();
-    }
-    
-    /**
-     * 检查是否为敏感查询参数
-     */
-    private boolean isSensitiveQueryParam(final String key) {
-        String lowerKey = key.toLowerCase();
-        return lowerKey.contains("token")
-               || lowerKey.contains("key")
-               || lowerKey.contains("password")
-               || lowerKey.contains("secret")
-               || lowerKey.contains("auth")
-               || lowerKey.contains("credential");
-    }
-    
-    
-    /**
-     * 脱敏客户端IP
-     */
-    private String sanitizeClientIp(final String clientIp) {
-        if (clientIp == null) {
-            return null;
-        }
-        
-        // 对IPv4地址进行部分脱敏（保留前两段）
-        if (clientIp.matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) {
-            String[] parts = clientIp.split("\\.");
-            return parts[0] + "." + parts[1] + ".xxx.xxx";
-        }
-        
-        // 对IPv6地址进行部分脱敏
-        if (clientIp.contains(":")) {
-            String[] parts = clientIp.split(":");
-            if (parts.length >= 4) {
-                return parts[0] + ":" + parts[1] + "::xxxx";
-            }
-        }
-        
-        return clientIp;
-    }
-    
-    /**
-     * 脱敏请求头（非阻塞）
-     */
-    private Mono<Map<String, String>> sanitizeRequestHeaders(final Map<String, String> headers, final TracingContext context) {
-        if (headers == null || headers.isEmpty()) {
-            return Mono.just(headers);
-        }
-
-        Map<String, String> sanitizedHeaders = new HashMap<>();
-
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-
-            if (isSensitiveHeader(key)) {
-                sanitizedHeaders.put(key, "[REDACTED]");
-            } else {
-                sanitizedHeaders.put(key, value);
-            }
-        }
-
-        return Mono.just(sanitizedHeaders);
-    }
-    
-    /**
-     * 检查是否需要加密日志数据
-     */
-    private boolean shouldEncryptLogData(final Map<String, Object> logEntry) {
-        // 检查是否包含敏感数据
-        Object fields = logEntry.get("fields");
-        if (fields instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> fieldsMap = (Map<String, Object>) fields;
-            
-            // 检查是否包含需要加密的字段
-            return fieldsMap.containsKey("authorization")
-                   || fieldsMap.containsKey("token")
-                   || fieldsMap.containsKey("password")
-                   || fieldsMap.containsKey("secret");
-        }
-        
-        return false;
-    }
-    
-    /**
-     * 加密并记录日志条目
-     */
-    private void encryptAndLogEntry(final Map<String, Object> logEntry, final TracingContext context) {
-        try {
-            String jsonLog = objectMapper.writeValueAsString(logEntry);
-            
-            tracingEncryptionService.encryptTraceData(jsonLog, context.getTraceId(), "log_entry")
-                    .doOnNext(encryptedData -> {
-                        // 创建加密日志条目
-                        Map<String, Object> encryptedLogEntry = new HashMap<>();
-                        encryptedLogEntry.put("timestamp", logEntry.get("timestamp"));
-                        encryptedLogEntry.put("level", logEntry.get("level"));
-                        encryptedLogEntry.put("type", logEntry.get("type"));
-                        encryptedLogEntry.put("traceId", context.getTraceId());
-                        encryptedLogEntry.put("spanId", context.getSpanId());
-                        encryptedLogEntry.put("encrypted_data", encryptedData);
-                        encryptedLogEntry.put("message", "[ENCRYPTED] " + logEntry.get("message"));
-                        
-                        logStructuredEntry(encryptedLogEntry);
-                    })
-                    .subscribe();
-                    
-        } catch (Exception e) {
-            log.debug("加密日志条目失败，使用普通日志", e);
-            logStructuredEntry(logEntry);
         }
     }
 }

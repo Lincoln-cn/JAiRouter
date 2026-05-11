@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 
 /**
  * 配置版本管理器
- * 
+ *
  * 负责配置版本的创建、查询、应用和删除操作
  * 提供完整的版本控制功能，包括版本历史记录和元数据管理
- * 
+ *
  * @author AI Assistant
  * @since v2.2.0
  */
@@ -38,6 +38,7 @@ public class ConfigVersionManager {
     private final StoreManager storeManager;
     private final ConfigMergeService configMergeService;
     private final ConfigComparator configComparator;
+    private final VersionValidator versionValidator;
 
     // 版本控制相关字段
     private final Map<String, ConfigMetadata> configMetadataMap = new HashMap<>();
@@ -52,10 +53,12 @@ public class ConfigVersionManager {
 
     public ConfigVersionManager(final StoreManager storeManager,
                                  final ConfigMergeService configMergeService,
-                                 final ConfigComparator configComparator) {
+                                 final ConfigComparator configComparator,
+                                 final VersionValidator versionValidator) {
         this.storeManager = storeManager;
         this.configMergeService = configMergeService;
         this.configComparator = configComparator;
+        this.versionValidator = versionValidator;
     }
 
     /**
@@ -292,23 +295,22 @@ public class ConfigVersionManager {
         logger.info("开始应用配置版本：{}", version);
 
         try {
-            // 1. 验证版本存在性
-            if (!versionExists(version)) {
-                String availableVersions = getAllVersions().toString();
-                throw new IllegalArgumentException(
-                        String.format("版本 %d 不存在。可用版本：%s", version, availableVersions));
-            }
+            // 1. 获取元数据和版本列表
+            ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
+            List<Integer> allVersions = getAllVersions();
 
-            // 2. 获取版本配置
+            // 2. 验证版本存在性（委托给 VersionValidator）
+            versionValidator.validateExists(version, metadata, allVersions);
+
+            // 3. 获取版本配置
             Map<String, Object> config = getVersionConfig(version);
-            if (config == null || config.isEmpty()) {
-                throw new IllegalStateException(
-                        String.format("无法读取版本 %d 的配置内容，配置文件可能已损坏", version));
-            }
+
+            // 4. 验证配置内容不为空（委托给 VersionValidator）
+            versionValidator.validateConfigNotEmpty(config, version);
 
             logger.debug("获取到版本 {} 的配置，包含 {} 个顶级配置项", version, config.size());
 
-            // 3. 备份当前配置（用于错误恢复）
+            // 5. 备份当前配置（用于错误恢复）
             Map<String, Object> backupConfig = null;
             try {
                 backupConfig = getCurrentPersistedConfig();
@@ -316,7 +318,7 @@ public class ConfigVersionManager {
                 logger.warn("无法备份当前配置：{}", e.getMessage());
             }
 
-            // 4. 原子性应用配置
+            // 6. 原子性应用配置
             try {
                 // 应用配置到存储
                 storeManager.saveConfig(CURRENT_KEY, config);
@@ -365,33 +367,20 @@ public class ConfigVersionManager {
         logger.info("开始删除配置版本：{}", version);
 
         try {
-            // 1. 验证版本存在性
-            if (!versionExists(version)) {
-                String availableVersions = getAllVersions().toString();
-                throw new IllegalArgumentException(
-                        String.format("版本 %d 不存在。可用版本：%s", version, availableVersions));
-            }
-
-            // 2. 检查是否为当前版本，禁止删除当前版本
+            // 1. 获取元数据和版本列表
             ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-            if (metadata != null && version == metadata.getCurrentVersion()) {
-                throw new IllegalStateException(
-                        String.format("不能删除当前版本 %d。请先应用其他版本后再删除此版本", version));
-            }
-
-            // 3. 验证删除前的完整性检查
             List<Integer> allVersions = getAllVersions();
-            if (allVersions.size() <= 1) {
-                throw new IllegalStateException("不能删除最后一个版本，系统至少需要保留一个配置版本");
-            }
 
-            // 4. 执行删除操作
+            // 2. 验证是否可以删除（委托给 VersionValidator）
+            versionValidator.validateCanDelete(version, metadata, allVersions);
+
+            // 3. 执行删除操作
             try {
                 // 删除版本文件
                 storeManager.deleteConfigVersion(CURRENT_KEY, version);
                 logger.debug("已从存储中删除版本 {} 的配置文件", version);
 
-                // 5. 更新元数据和版本范围
+                // 4. 更新元数据和版本范围
                 if (metadata != null) {
                     metadata.setTotalVersions(Math.max(0, metadata.getTotalVersions() - 1));
                     metadata.setLastModified(LocalDateTime.now());
@@ -402,7 +391,7 @@ public class ConfigVersionManager {
                     logger.debug("已更新配置元数据和版本范围");
                 }
 
-                // 6. 更新版本历史记录
+                // 5. 更新版本历史记录
                 List<VersionInfo> versionHistory = versionHistoryMap.get(CURRENT_KEY);
                 if (versionHistory != null) {
                     boolean removed = versionHistory.removeIf(info -> info.getVersion() == version);
@@ -412,7 +401,7 @@ public class ConfigVersionManager {
                     }
                 }
 
-                // 7. 记录删除操作的审计日志
+                // 6. 记录删除操作的审计日志
                 logVersionDeletion(version);
 
                 logger.info("成功删除配置版本：{}", version);
@@ -516,23 +505,6 @@ public class ConfigVersionManager {
      */
     private int generateNextVersionNumber() {
         return getCurrentVersion() + 1;
-    }
-
-    /**
-     * 验证指定版本是否存在
-     */
-    private boolean versionExists(final int version) {
-        if (version <= 0) {
-            return false;
-        }
-
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-        if (metadata != null) {
-            return metadata.getExistingVersions().contains(version);
-        }
-
-        List<Integer> versions = getAllVersions();
-        return versions.contains(version);
     }
 
     /**
