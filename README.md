@@ -4,12 +4,17 @@
   <img src="logo/JAiRouterLogo.png" alt="JAiRouter Logo" width="400">
 </p>
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
+![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)
+
 JAiRouter is a Spring Boot-based model service routing and load balancing gateway designed to centrally manage and route various AI model services (such as Chat, Embedding, Rerank, TTS, etc.), supporting multiple load balancing strategies, rate limiting, circuit breaking, health checks, dynamic configuration updates, and more.
 
 [中文介绍](README-ZH.md)
 
+> ⚠️ **LTS Release Notice**: `v2.6.11` is the final Long-Term Support version. No new features will be added to this branch. v3.0 is indefinitely postponed due to limited community demand. The v2.6.x LTS branch will continue to receive security patches, critical bug fixes, and dependency updates for 24 months.
+
 ---
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
+
 
 ## 🧭 Feature Overview (Web Console)
 
@@ -248,58 +253,27 @@ After starting the project, you can access the automatically generated API docum
 | 2.5.2 | ✅ | Unified state manager API |
 | 2.5.3-2.5.15 | ✅ | State persistence optimization & bug fixes |
 
-### Phase 5: Code Quality (v2.6.x) ✅
+### Phase 5: Code Quality (v2.6.x) ✅ LTS
 
 | Version | Status | Content |
 |---------|--------|---------|
 | 2.6.1-2.6.9 | ✅ | Checkstyle FinalParameters cleanup (5,413 → 0) |
 | 2.6.10 | ✅ | WhitespaceAfter fixes (1,655 → 29, 98.2% reduction) |
-| 2.6.11 | ✅ | HiddenField & OperatorWrap suppression config |
+| **2.6.11** | **✅ LTS** | **Final LTS Release - HiddenField & OperatorWrap suppression config** |
 | **Total** | ✅ | **Warnings: 10,413 → 3,424 (67% reduction)** |
 
-### Phase 6: Microservices Preparation (v2.7-v2.9) 🚧
+> ⚠️ **LTS Notice**: `v2.6.11` is the **final feature release**. This branch will continue to receive security patches, critical bug fixes, and dependency updates for 24 months (until 2028-05). No new features will be added.
 
-| Version | Status | Content | Duration |
-|---------|--------|---------|----------|
-| **v2.7.x** | 🚧 | **Package Structure Reorganization** | 10 days |
-| 2.7.0 | 🚧 | - Service boundary definition & base structure |
-| 2.7.1 | 🚧 | - auth module migration (security/audit) |
-| 2.7.2 | 🚧 | - config module migration (config/version) |
-| 2.7.3 | 🚧 | - router module migration (adapter/loadbalancer) |
-| 2.7.4 | 🚧 | - router module migration (circuitbreaker/ratelimit) |
-| 2.7.5 | 🚧 | - monitor module migration (tracing/metrics) |
-| 2.7.6 | 🚧 | - persistence module migration (store/jpa) |
-| 2.7.7 | 🚧 | - common module migration (constants/dto/util) |
-| 2.7.8 | 🚧 | - controller grouping by service |
-| 2.7.9 | 🚧 | - test adjustment & dependency fix |
-| **v2.8.x** | 📋 | **Configuration Integration** | 10 days |
-| 2.8.0 | 📋 | - Configuration structure analysis |
-| 2.8.1 | 📋 | - Configuration file split by module |
-| 2.8.2 | 📋 | - Service module config separation |
-| 2.8.3 | 📋 | - Multi-environment config completion |
-| 2.8.4 | 📋 | - External config file support |
-| 2.8.5 | 📋 | - Sensitive config separation |
-| 2.8.6 | 📋 | - Config loading priority |
-| 2.8.7 | 📋 | - Config validation mechanism |
-| 2.8.8 | 📋 | - Configuration documentation |
-| 2.8.9 | 📋 | - Config migration test & summary |
-| **v2.9.0** | 📋 | **Issue Fix & Review** | 7 days |
-| | 📋 | - Fix v2.7/v2.8 leftover issues |
-| | 📋 | - Update all documentation |
-| | 📋 | - Code quality check & performance test |
+### Phase 6-7: Future Architecture Evolution (v2.7-v3.0) ⏸️ Indefinitely Postponed
 
-### Phase 7: Microservices Architecture (v3.0.x) ⏸️ Deferred
+| Version | Status | Scope |
+|---------|--------|-------|
+| **v2.7.x** | ⏸️ | **Package Structure Reorganization** - Service boundary definition, module migration (auth, config, router, monitor, persistence) |
+| **v2.8.x** | ⏸️ | **Configuration Integration** - Config file split, multi-environment support, external config, validation mechanism |
+| **v2.9.x** | ⏸️ | **Review & Stabilization** - Issue resolution, documentation update, quality check |
+| **v3.0.x** | ⏸️ | **Microservices Architecture** - Service decomposition (auth, monitoring), Nacos integration, service discovery |
 
-| Version | Status | Content | Duration |
-|---------|--------|---------|----------|
-| 3.0.0 | ⏸️ | **Microservices Architecture Transformation** - Deferred indefinitely |
-| | ⏸️ | - Authentication/Authorization service separation |
-| | ⏸️ | - Nacos configuration center integration |
-| | ⏸️ | - Monitoring/Tracing service separation |
-| | ⏸️ | - Service discovery mechanism |
-| | ⏸️ | - Inter-service communication stabilization |
-
-> **Note**: v3.0 microservices architecture is deferred indefinitely. Current monolithic architecture meets requirements.
+> 📢 **Important**: Due to limited community demand for major architectural changes, **v2.7-v3.0 is indefinitely postponed**. The `v2.6.x` LTS branch will be the final release line, focusing on stability, security, and maintenance.
 
 ---
 
