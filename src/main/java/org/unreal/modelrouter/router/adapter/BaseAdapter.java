@@ -483,25 +483,25 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                                 }));
                     })
                     .doOnSuccess(responseEntity -> {
-                        // 记录请求大小指标
-                        if (metricsCollector != null && responseEntity != null) {
+                        // v2.26.2: 指标记录委托给 AdapterMetricsRecorder
+                        if (metricsRecorder != null && responseEntity != null) {
                             long requestSize = calculateRequestSize(transformedRequest);
                             long responseSize = responseEntity.getBody() != null
                                     ? ((byte[]) responseEntity.getBody()).length : 0;
-                            metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
+                            metricsRecorder.recordRequestSize(serviceType, requestSize, responseSize);
 
                             // 记录响应时间指标
                             long responseTime = System.currentTimeMillis() - requestStartTime;
                             String status = responseEntity.getStatusCode().toString();
-                            metricsCollector.recordRequest(serviceType.name(), "POST", responseTime, status);
+                            metricsRecorder.recordResponseTime(serviceType, "POST", responseTime, status);
                         }
                     })
                     .doOnError(throwable -> {
-                        // 记录错误指标
-                        if (metricsCollector != null) {
+                        // v2.26.2: 错误指标委托给 AdapterMetricsRecorder
+                        if (metricsRecorder != null) {
                             long responseTime = System.currentTimeMillis() - requestStartTime;
-                            String errorType = throwable.getClass().getSimpleName();
-                            metricsCollector.recordBackendCall(adapterType, instanceName, responseTime, false);
+                            String errorCode = throwable.getClass().getSimpleName();
+                            metricsRecorder.recordError(adapterType, instanceName, errorCode, throwable, responseTime, serviceType);
                         }
                     });
         } else {
@@ -593,26 +593,26 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                     })
                     .doOnSuccess(responseEntity -> {
                         // 记录请求大小指标
-                        if (metricsCollector != null && responseEntity != null) {
+                        // v2.26.2: 指标记录委托给 AdapterMetricsRecorder
+                        if (metricsRecorder != null && responseEntity != null) {
                             long requestSize = calculateRequestSize(transformedRequest);
                             Object responseBody = responseEntity.getBody();
                             String bodyStr = responseBody != null ? responseBody.toString() : "";
                             long responseSize = bodyStr.getBytes().length;
-                            metricsCollector.recordRequestSize(serviceType.name(), requestSize, responseSize);
+                            metricsRecorder.recordRequestSize(serviceType, requestSize, responseSize);
 
                             // 记录响应时间指标
                             long responseTime = System.currentTimeMillis() - requestStartTime;
                             String status = responseEntity.getStatusCode().toString();
-                            metricsCollector.recordRequest(serviceType.name(), "POST", responseTime, status);
+                            metricsRecorder.recordResponseTime(serviceType, "POST", responseTime, status);
                         }
                     })
                     .doOnError(throwable -> {
-                        // 记录错误指标
-                        if (metricsCollector != null) {
+                        // v2.26.2: 错误指标委托给 AdapterMetricsRecorder
+                        if (metricsRecorder != null) {
                             long responseTime = System.currentTimeMillis() - requestStartTime;
-                            String errorType = throwable.getClass().getSimpleName();
-                            metricsCollector.recordBackendCall(adapterType, instanceName, responseTime, false);
-                            // 可以考虑添加更多错误类型记录
+                            String errorCode = throwable.getClass().getSimpleName();
+                            metricsRecorder.recordError(adapterType, instanceName, errorCode, throwable, responseTime, serviceType);
                         }
                     });
         }
@@ -671,22 +671,21 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
                             .build();
                 })
                 .doOnComplete(() -> {
-                    // 流式响应完成时记录请求大小指标（响应大小难以准确计算）
-                    if (metricsCollector != null) {
-                        metricsCollector.recordRequestSize(serviceType.name(), requestSize, 0);
+                    // v2.26.2: 流式响应指标委托给 AdapterMetricsRecorder
+                    if (metricsRecorder != null) {
+                        metricsRecorder.recordRequestSize(serviceType, requestSize, 0);
 
                         // 记录响应时间指标
                         long responseTime = System.currentTimeMillis() - requestStartTime;
-                        metricsCollector.recordRequest(serviceType.name(), "POST", responseTime, "200");
+                        metricsRecorder.recordResponseTime(serviceType, "POST", responseTime, "200");
                     }
                 })
                 .doOnError(throwable -> {
-                    // 记录错误指标
-                    if (metricsCollector != null) {
+                    // v2.26.2: 错误指标委托给 AdapterMetricsRecorder
+                    if (metricsRecorder != null) {
                         long responseTime = System.currentTimeMillis() - requestStartTime;
-                        String errorType = throwable.getClass().getSimpleName();
-                        metricsCollector.recordBackendCall(adapterType, instanceName, responseTime, false);
-                        // 可以考虑添加更多错误类型记录
+                        String errorCode = throwable.getClass().getSimpleName();
+                        metricsRecorder.recordError(adapterType, instanceName, errorCode, throwable, responseTime, serviceType);
                     }
                 })
                 .onErrorResume(throwable -> {
@@ -1129,9 +1128,9 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
         // v2.26.1: 追踪逻辑委托给 AdapterTracingManager
         tracingManager.recordRetry(adapterType, instance, retryCount, maxRetries, error);
 
-        // 记录重试指标
-        if (metricsCollector != null) {
-            metricsCollector.recordBackendCall(adapterType, instance != null ? instance.getName() : "unknown", 0, false);
+        // v2.26.2: 重试指标委托给 AdapterMetricsRecorder
+        if (metricsRecorder != null) {
+            metricsRecorder.recordRetry(adapterType, instance != null ? instance.getName() : "unknown", retryCount, error);
         }
     }
 
@@ -1145,9 +1144,9 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
         // v2.26.1: 追踪逻辑委托给 AdapterTracingManager
         tracingManager.recordTransformError(adapterType, error);
 
-        // 记录转换错误指标
-        if (metricsCollector != null) {
-            metricsCollector.recordBackendCall(adapterType, "unknown", 0, false);
+        // v2.26.2: 转换错误指标委托给 AdapterMetricsRecorder
+        if (metricsRecorder != null) {
+            metricsRecorder.recordError(adapterType, "unknown", "TRANSFORM_ERROR", error, 0, null);
         }
     }
 
