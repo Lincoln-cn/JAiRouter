@@ -87,7 +87,7 @@ public class TracingService {
                     traceId,
                     spanId,
                     rootSpan,
-                    estimateSpanSize(rootSpan)
+                    800L // 固定估算值：基础256 + TraceId/SpanId 48 + 属性约500
                 ).subscribe(
                     success -> {
                         if (!success) {
@@ -128,7 +128,7 @@ public class TracingService {
                 childContext.getTraceId(),
                 childContext.getSpanId(),
                 childSpan,
-                estimateSpanSize(childSpan)
+                800L // 固定估算值
             ).subscribe();
             
             return childContext;
@@ -143,7 +143,7 @@ public class TracingService {
                     context.getTraceId(),
                     context.getSpanId(),
                     span,
-                    estimateSpanSize(span)
+                    800L // 固定估算值
                 ).subscribe();
             }
             
@@ -232,7 +232,7 @@ public class TracingService {
                 startTime,
                 System.currentTimeMillis(),
                 success,
-                createMetadata(exchange, context)
+                createSpanAttributes(exchange, context)
             ).subscribe();
             
             log.debug("完成HTTP请求追踪，耗时: {}ms (traceId: {}, spanId: {})", 
@@ -522,56 +522,10 @@ public class TracingService {
     }
     
     /**
-     * 估算Span的内存大小
-     */
-    private long estimateSpanSize(final Span span) {
-        if (span == null || !span.getSpanContext().isValid()) {
-            return 0L;
-        }
-        
-        // 基本Span结构大小估算
-        long baseSize = 256L; // 基础对象大小
-        
-        // TraceId + SpanId 大小
-        baseSize += 32L + 16L;
-        
-        // 属性大小估算（简化计算）
-        baseSize += 512L; // 假设平均属性大小
-        
-        return baseSize;
-    }
-    
-    /**
-     * 创建操作元数据
-     */
-    private Map<String, Object> createMetadata(final ServerWebExchange exchange, final TracingContext context) {
-        Map<String, Object> metadata = new HashMap<>();
-        
-        if (exchange.getRequest().getMethod() != null) {
-            metadata.put("http.method", exchange.getRequest().getMethod().name());
-        }
-        
-        metadata.put("http.path", exchange.getRequest().getPath().value());
-        metadata.put("traceId", context.getTraceId());
-        metadata.put("spanId", context.getSpanId());
-        
-        if (exchange.getResponse().getStatusCode() != null) {
-            metadata.put("http.status_code", exchange.getResponse().getStatusCode().value());
-        }
-        
-        String clientIp = getClientIp(exchange.getRequest());
-        if (clientIp != null) {
-            metadata.put("client.ip", clientIp);
-        }
-        
-        return metadata;
-    }
-    
-    /**
      * 创建错误元数据
      */
     private Map<String, Object> createErrorMetadata(final ServerWebExchange exchange, final TracingContext context, final Throwable error) {
-        Map<String, Object> metadata = createMetadata(exchange, context);
+        Map<String, Object> metadata = createSpanAttributes(exchange, context);
         
         metadata.put("error.type", error.getClass().getSimpleName());
         metadata.put("error.message", error.getMessage());
@@ -607,8 +561,8 @@ public class TracingService {
             ));
             
             // 生成趋势数据（模拟数据，实际项目中应该从时序数据库获取）
-            stats.put("traceVolumeTrend", generateTraceVolumeTrend());
-            stats.put("errorTrend", generateErrorTrend());
+            stats.put("traceVolumeTrend", buildTrendData(true));
+            stats.put("errorTrend", buildTrendData(false));
             
             return stats;
         });
@@ -617,46 +571,38 @@ public class TracingService {
     /**
      * 生成追踪量趋势数据（真实数据）
      */
-    private List<Map<String, Object>> generateTraceVolumeTrend() {
+    /**
+     * 构建趋势数据（统一处理追踪量和错误量）
+     * @param isTraceVolume true=追踪量趋势，false=错误量趋势
+     */
+    private List<Map<String, Object>> buildTrendData(final boolean isTraceVolume) {
         List<Map<String, Object>> trend = new ArrayList<>();
         long now = System.currentTimeMillis();
-        
-        // 生成最近1小时的数据点（每5分钟一个点）
+
         for (int i = 12; i >= 0; i--) {
-            long timestamp = now - (i * 5 * 60 * 1000); // 5分钟间隔
+            long timestamp = now - (i * 5 * 60 * 1000);
             Map<String, Object> point = new HashMap<>();
             point.put("timestamp", timestamp);
-            // 使用真实的追踪数据，这里简化处理，实际应该从traceQueryService获取
-            point.put("value", getTraceCountForTimeRange(timestamp, timestamp + 5 * 60 * 1000));
+            point.put("value", getTrendValue(timestamp, timestamp + 5 * 60 * 1000, isTraceVolume));
             trend.add(point);
         }
-        
         return trend;
     }
-    
+
     /**
-     * 生成错误趋势数据（真实数据）
+     * 获取趋势值（从 traceQueryService 直接获取）
      */
-    private List<Map<String, Object>> generateErrorTrend() {
-        List<Map<String, Object>> trend = new ArrayList<>();
-        long now = System.currentTimeMillis();
-        
-        // 生成最近1小时的数据点（每5分钟一个点）
-        for (int i = 12; i >= 0; i--) {
-            long timestamp = now - (i * 5 * 60 * 1000); // 5分钟间隔
-            Map<String, Object> point = new HashMap<>();
-            point.put("timestamp", timestamp);
-            // 使用真实的错误数据，这里简化处理，实际应该从traceQueryService获取
-            point.put("value", getErrorCountForTimeRange(timestamp, timestamp + 5 * 60 * 1000));
-            trend.add(point);
+    private int getTrendValue(final long startTime, final long endTime, final boolean isTraceVolume) {
+        try {
+            TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block();
+            if (stats == null) return 0;
+            return isTraceVolume ? (int) stats.getTotalTraces() : (int) stats.getErrorTraces();
+        } catch (Exception e) {
+            log.debug("获取趋势数据时发生错误", e);
+            return 0;
         }
-        
-        return trend;
     }
-    
-    /**
-     * 手动触发性能优化
-     */
+
     public Mono<Void> triggerPerformanceOptimization() {
         return performanceMonitor.detectBottlenecks()
             .flatMap(bottlenecks -> {
@@ -678,32 +624,6 @@ public class TracingService {
     
     /**
      * 获取指定时间范围内的追踪数量
-     */
-    private int getTraceCountForTimeRange(final long startTime, final long endTime) {
-        try {
-            TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block();
-            return stats != null ? (int) stats.getTotalTraces() : 0;
-        } catch (Exception e) {
-            log.debug("获取追踪统计信息时发生错误", e);
-            return 0;
-        }
-    }
-    
-    /**
-     * 获取指定时间范围内的错误数量
-     */
-    private int getErrorCountForTimeRange(final long startTime, final long endTime) {
-        try {
-            TraceQueryService.TraceStatistics stats = traceQueryService.getTraceStatistics(startTime, endTime).block();
-            return stats != null ? (int) stats.getErrorTraces() : 0;
-        } catch (Exception e) {
-            log.debug("获取错误统计信息时发生错误", e);
-            return 0;
-        }
-    }
-    
-    /**
-     * 创建Span属性映射
      */
     private Map<String, Object> createSpanAttributes(final ServerWebExchange exchange, final TracingContext context) {
         Map<String, Object> attributes = new HashMap<>();

@@ -37,6 +37,7 @@ public class ConfigVersionManager {
 
     private final StoreManager storeManager;
     private final ConfigMergeService configMergeService;
+    private final ConfigComparator configComparator;
 
     // 版本控制相关字段
     private final Map<String, ConfigMetadata> configMetadataMap = new HashMap<>();
@@ -50,9 +51,11 @@ public class ConfigVersionManager {
     private volatile String lastVersionDescription = "";
 
     public ConfigVersionManager(final StoreManager storeManager,
-                                 final ConfigMergeService configMergeService) {
+                                 final ConfigMergeService configMergeService,
+                                 final ConfigComparator configComparator) {
         this.storeManager = storeManager;
         this.configMergeService = configMergeService;
+        this.configComparator = configComparator;
     }
 
     /**
@@ -319,10 +322,6 @@ public class ConfigVersionManager {
                 storeManager.saveConfig(CURRENT_KEY, config);
                 logger.debug("配置已成功应用到存储管理器");
 
-                // 刷新运行时配置
-                refreshRuntimeConfig();
-                logger.debug("运行时配置已成功刷新");
-
                 // 更新当前版本状态
                 updateCurrentVersionAfterApply(version);
 
@@ -338,7 +337,6 @@ public class ConfigVersionManager {
                 if (backupConfig != null) {
                     try {
                         storeManager.saveConfig(CURRENT_KEY, backupConfig);
-                        refreshRuntimeConfig();
                         logger.info("已恢复到应用前的配置状态");
                     } catch (Exception recoveryException) {
                         logger.error("恢复配置失败", recoveryException);
@@ -496,14 +494,7 @@ public class ConfigVersionManager {
         Map<String, Object> config1 = getVersionConfig(version1);
         Map<String, Object> config2 = getVersionConfig(version2);
 
-        Map<String, Object> comparison = new HashMap<>();
-        comparison.put("version1", version1);
-        comparison.put("version2", version2);
-        comparison.put("config1", config1);
-        comparison.put("config2", config2);
-        comparison.put("isChanged", isConfigurationChanged(config1, config2));
-
-        return comparison;
+        return configComparator.compareVersions(version1, version2, config1, config2);
     }
 
     // ==================== 私有辅助方法 ====================
@@ -545,159 +536,10 @@ public class ConfigVersionManager {
     }
 
     /**
-     * 智能配置比较，检查配置是否真正发生变化
-     */
-    private boolean isConfigurationChanged(final Map<String, Object> currentConfig, final Map<String, Object> newConfig) {
-        if (currentConfig == null && newConfig == null) {
-            return false;
-        }
-        if (currentConfig == null || newConfig == null) {
-            return true;
-        }
-
-        Map<String, Object> normalizedCurrent = normalizeConfigForComparison(currentConfig);
-        Map<String, Object> normalizedNew = normalizeConfigForComparison(newConfig);
-
-        return !deepEquals(normalizedCurrent, normalizedNew);
-    }
-
-    /**
-     * 标准化配置，移除比较时不相关的字段
-     */
-    private Map<String, Object> normalizeConfigForComparison(final Map<String, Object> config) {
-        if (config == null) {
-            return new HashMap<>();
-        }
-
-        Map<String, Object> normalized = new HashMap<>(config);
-
-        // 移除元数据字段和时间戳字段
-        normalized.remove("_metadata");
-        normalized.remove("timestamp");
-        normalized.remove("lastModified");
-        normalized.remove("createdAt");
-        normalized.remove("version");
-        normalized.remove("versionInfo");
-        normalized.remove("lastUpdated");
-        normalized.remove("modifiedAt");
-        normalized.remove("updatedAt");
-        normalized.remove("saveTime");
-        normalized.remove("createTime");
-
-        // 递归移除嵌套对象中的时间戳字段
-        removeTimestampFieldsRecursively(normalized);
-
-        return normalized;
-    }
-
-    /**
-     * 递归移除嵌套对象中的时间戳字段
-     */
-    @SuppressWarnings("unchecked")
-    private void removeTimestampFieldsRecursively(final Map<String, Object> config) {
-        for (Map.Entry<String, Object> entry : config.entrySet()) {
-            Object value = entry.getValue();
-            if (value instanceof Map) {
-                Map<String, Object> nestedMap = (Map<String, Object>) value;
-                nestedMap.remove("timestamp");
-                nestedMap.remove("lastModified");
-                nestedMap.remove("createdAt");
-                nestedMap.remove("updatedAt");
-                removeTimestampFieldsRecursively(nestedMap);
-            } else if (value instanceof List) {
-                List<Object> list = (List<Object>) value;
-                for (Object item : list) {
-                    if (item instanceof Map) {
-                        removeTimestampFieldsRecursively((Map<String, Object>) item);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * 深度比较两个配置对象
-     */
-    private boolean deepEquals(final Map<String, Object> config1, final Map<String, Object> config2) {
-        if (config1.size() != config2.size()) {
-            return false;
-        }
-
-        for (Map.Entry<String, Object> entry : config1.entrySet()) {
-            String key = entry.getKey();
-            Object value1 = entry.getValue();
-            Object value2 = config2.get(key);
-
-            if (value1 == null && value2 == null) {
-                continue;
-            }
-            if (value1 == null || value2 == null) {
-                return false;
-            }
-
-            if (value1 instanceof Map && value2 instanceof Map) {
-                if (!deepEquals((Map<String, Object>) value1, (Map<String, Object>) value2)) {
-                    return false;
-                }
-            } else if (value1 instanceof List && value2 instanceof List) {
-                if (!deepEquals((List<Object>) value1, (List<Object>) value2)) {
-                    return false;
-                }
-            } else {
-                if (!value1.equals(value2)) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * 深度比较两个列表
-     */
-    @SuppressWarnings("unchecked")
-    private boolean deepEquals(final List<Object> list1, final List<Object> list2) {
-        if (list1.size() != list2.size()) {
-            return false;
-        }
-
-        for (int i = 0; i < list1.size(); i++) {
-            Object item1 = list1.get(i);
-            Object item2 = list2.get(i);
-
-            if (item1 == null && item2 == null) {
-                continue;
-            }
-            if (item1 == null || item2 == null) {
-                return false;
-            }
-
-            if (item1 instanceof Map && item2 instanceof Map) {
-                if (!deepEquals((Map<String, Object>) item1, (Map<String, Object>) item2)) {
-                    return false;
-                }
-            } else if (!item1.equals(item2)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * 获取当前持久化的配置
      */
     private Map<String, Object> getCurrentPersistedConfig() {
         return storeManager.getConfig(CURRENT_KEY);
-    }
-
-    /**
-     * 刷新运行时配置
-     */
-    private void refreshRuntimeConfig() {
-        // 刷新配置缓存
-        // 配置刷新由 ConfigurationService 处理
     }
 
     /**

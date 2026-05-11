@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ClientHttpRequest;
+import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserter;
@@ -19,7 +20,9 @@ import java.util.Map;
  * 负责处理 multipart/form-data 格式的请求（STT语音转文本、图像编辑等）
  *
  * @since v2.15.1
+ * @since v2.26.0 注册为Spring Service，确保始终可用
  */
+@Service
 public class MultipartRequestHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(MultipartRequestHandler.class);

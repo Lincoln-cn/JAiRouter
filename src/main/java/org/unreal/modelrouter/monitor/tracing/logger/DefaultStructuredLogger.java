@@ -22,6 +22,11 @@ import org.unreal.modelrouter.monitor.tracing.logger.dto.SecurityEventFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.PerformanceFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.BusinessEventFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.StructuredLogEntry;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.SystemEventFields;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.ErrorLogFields;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.BackendCallFields;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.ResponseLogFields;
+import org.unreal.modelrouter.monitor.tracing.logger.dto.RequestLogFields;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -61,16 +66,6 @@ public class DefaultStructuredLogger implements StructuredLogger {
     private final PerformanceLogBuilder performanceLogBuilder;
     private final BusinessEventLogBuilder businessEventLogBuilder;
     
-    // 日志类型常量
-    private static final String LOG_TYPE_REQUEST = "request";
-    private static final String LOG_TYPE_RESPONSE = "response";
-    private static final String LOG_TYPE_BACKEND_CALL = "backend_call";
-    private static final String LOG_TYPE_ERROR = "error";
-    private static final String LOG_TYPE_BUSINESS_EVENT = "business_event";
-    private static final String LOG_TYPE_PERFORMANCE = "performance";
-    private static final String LOG_TYPE_SECURITY = "security";
-    private static final String LOG_TYPE_SYSTEM = "system";
-    
     // 缓存常用的日志字段，避免重复创建
     private final Map<String, Object> commonFields = new ConcurrentHashMap<>();
     
@@ -88,7 +83,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
                         // 设置MDC
                         setMDC(context);
                         
-                        Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_REQUEST, context);
+                        Map<String, Object> logEntry = createBaseLogEntry(LogType.REQUEST.getValue(), context);
                         Map<String, Object> fields = new HashMap<>();
                         
                         // 处理请求日志的其余部分
@@ -113,7 +108,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             // HTTP请求信息（安全处理）
             fields.put("method", request.getMethod() != null ? request.getMethod().name() : "UNKNOWN");
             fields.put("path", sanitizeUrlPath(request.getPath().value()));
-            fields.put("url", sanitizeUrl(request.getURI().toString()));
+            fields.put("url", request.getURI().toString());
             
             // 客户端信息（脱敏处理）
             String clientIp = getClientIp(request);
@@ -123,7 +118,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             
             String userAgent = request.getHeaders().getFirst("User-Agent");
             if (userAgent != null) {
-                fields.put("userAgent", sanitizeUserAgent(userAgent));
+                fields.put("userAgent", userAgent);
             }
             
             // 请求大小
@@ -191,7 +186,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             // 设置MDC
             setMDC(context);
             
-            Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_RESPONSE, context);
+            Map<String, Object> logEntry = createBaseLogEntry(LogType.RESPONSE.getValue(), context);
             Map<String, Object> fields = new HashMap<>();
             
             // 响应信息
@@ -247,7 +242,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             // 设置MDC
             setMDC(context);
             
-            Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_BACKEND_CALL, context);
+            Map<String, Object> logEntry = createBaseLogEntry(LogType.BACKEND_CALL.getValue(), context);
             Map<String, Object> fields = new HashMap<>();
             
             fields.put("adapter", adapter);
@@ -257,7 +252,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             fields.put("statusCode", statusCode);
             
             if (url != null) {
-                fields.put("url", sanitizeIfNeeded(url));
+                fields.put("url", url);
             }
             if (method != null) {
                 fields.put("method", method);
@@ -291,7 +286,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             // 设置MDC
             setMDC(context);
             
-            Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_ERROR, context);
+            Map<String, Object> logEntry = createBaseLogEntry(LogType.ERROR.getValue(), context);
             Map<String, Object> fields = new HashMap<>();
             
             fields.put("errorType", error.getClass().getSimpleName());
@@ -307,7 +302,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             
             // 额外信息
             if (additionalInfo != null && !additionalInfo.isEmpty()) {
-                fields.put("additionalInfo", sanitizeMap(additionalInfo));
+                fields.put("additionalInfo", additionalInfo);
             }
             
             logEntry.put("fields", fields);
@@ -334,7 +329,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             setMDC(context);
 
             // 使用DTO版本 - v2.16.5
-            BusinessEventFields fields = businessEventLogBuilder.buildBusinessEvent(event, sanitizeMap(data));
+            BusinessEventFields fields = businessEventLogBuilder.buildBusinessEvent(event, data);
             StructuredLogEntry logEntry = createStructuredLogEntry(LogType.BUSINESS_EVENT, context);
             logEntry.setFields(fields);
             logEntry.setMessage(businessEventLogBuilder.buildBusinessEventMessage(event));
@@ -422,7 +417,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
             setMDC(context);
 
             // 使用DTO版本 - v2.16.5
-            SecurityEventFields fields = securityEventLogBuilder.buildSecurityEvent(event, sanitizeIfNeeded(user), ip);
+            SecurityEventFields fields = securityEventLogBuilder.buildSecurityEvent(event, user, ip);
             StructuredLogEntry logEntry = createStructuredLogEntry(LogType.SECURITY, context);
             logEntry.setFields(fields);
             logEntry.setMessage(securityEventLogBuilder.buildSecurityEventMessage(event, user, ip));
@@ -461,7 +456,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
         data.put("configType", configType);
         data.put("action", action);
         if (details != null) {
-            data.put("details", sanitizeMap(details));
+            data.put("details", details);
         }
         
         logBusinessEvent("configuration_change", data, context);
@@ -477,12 +472,12 @@ public class DefaultStructuredLogger implements StructuredLogger {
             // 设置MDC
             setMDC(context);
             
-            Map<String, Object> logEntry = createBaseLogEntry(LOG_TYPE_SYSTEM, context);
+            Map<String, Object> logEntry = createBaseLogEntry(LogType.SYSTEM.getValue(), context);
             Map<String, Object> fields = new HashMap<>();
             
             fields.put("event", event);
             if (details != null && !details.isEmpty()) {
-                fields.put("details", sanitizeMap(details));
+                fields.put("details", details);
             }
             
             logEntry.put("fields", fields);
@@ -606,29 +601,7 @@ public class DefaultStructuredLogger implements StructuredLogger {
         }
     }
 
-    /**
-     * 脱敏处理字符串
-     */
-    private String sanitizeIfNeeded(final String value) {
-        if (value == null || !tracingConfiguration.getLogging().isSanitizeEnabled()) {
-            return value;
-        }
-
-        // 直接返回原值，避免在响应式线程中进行阻塞操作
-        return value;
-    }
     
-    /**
-     * 脱敏处理Map
-     */
-    private Map<String, Object> sanitizeMap(final Map<String, Object> map) {
-        if (map == null || map.isEmpty() || !tracingConfiguration.getLogging().isSanitizeEnabled()) {
-            return map;
-        }
-
-        // 为避免阻塞操作，直接返回原map
-        return map;
-    }
     
     /**
      * 脱敏处理HTTP头部
@@ -774,17 +747,6 @@ public class DefaultStructuredLogger implements StructuredLogger {
         return path;
     }
     
-    /**
-     * 安全处理完整URL
-     */
-    private String sanitizeUrl(final String url) {
-        if (url == null) {
-            return null;
-        }
-        
-        // 直接返回原URL，避免在响应式线程中进行阻塞操作
-        return url;
-    }
     
     /**
      * 脱敏查询参数
@@ -834,17 +796,6 @@ public class DefaultStructuredLogger implements StructuredLogger {
                || lowerKey.contains("credential");
     }
     
-    /**
-     * 脱敏User-Agent
-     */
-    private String sanitizeUserAgent(final String userAgent) {
-        if (userAgent == null) {
-            return null;
-        }
-        
-        // 直接返回原User-Agent，避免在响应式线程中进行阻塞操作
-        return userAgent;
-    }
     
     /**
      * 脱敏客户端IP

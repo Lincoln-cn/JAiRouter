@@ -117,8 +117,10 @@ public abstract class BaseAdapter implements ServiceCapability {
     @Autowired(required = false)
     private StreamingRequestProcessor streamingRequestProcessor;
 
-    @Autowired(required = false)
+    // v2.26.0: MultipartRequestHandler 已注册为 Spring Service，移除 required=false
+    @Autowired
     private MultipartRequestHandler multipartRequestHandler;
+
     @Autowired(required = false)
     private FallbackRequestProcessor fallbackRequestProcessor;
     /**
@@ -687,128 +689,31 @@ protected <T> Mono<? extends ResponseEntity<?>> processRequestWithFallback(
 
     /**
      * 配置请求头 - 子类可以重写
+     * v2.26.0: 直接委托给 MultipartRequestHandler（已注册为 Spring Service）
      */
     protected <T> WebClient.RequestBodySpec configureRequestHeaders(
             final WebClient.RequestBodySpec requestSpec,
             final T request) {
-        // 默认设置JSON Content-Type
-        if (!(request instanceof SttDTO.Request) && !(request instanceof ImageEditDTO.Request)) { // STT需要multipart
-            requestSpec.header("Content-Type", "application/json");
-        } else {
-            requestSpec.contentType(MediaType.MULTIPART_FORM_DATA);
-        }
-        return requestSpec;
+        return multipartRequestHandler.configureRequestHeaders(requestSpec, request);
     }
 
     /**
      * 配置请求头（带实例配置） - 子类可以重写
+     * v2.26.0: 直接委托给 MultipartRequestHandler（已注册为 Spring Service）
      */
     protected <T> WebClient.RequestBodySpec configureRequestHeaders(
             final WebClient.RequestBodySpec requestSpec,
             final T request,
             final ModelRouterProperties.ModelInstance instance) {
-        // 首先应用默认的请求头配置
-        // v2.15.2: 优先使用 MultipartRequestHandler
-        if (multipartRequestHandler != null) {
-            return multipartRequestHandler.configureRequestHeaders(requestSpec, request, instance);
-        }
-
-        // 原有实现（向后兼容）
-        WebClient.RequestBodySpec spec = configureRequestHeaders(requestSpec, request);
-        
-        // 然后应用实例配置中的自定义headers
-        if (instance != null && instance.getHeaders() != null) {
-            for (Map.Entry<String, String> header : instance.getHeaders().entrySet()) {
-                spec = spec.header(header.getKey(), header.getValue());
-                logger.debug("应用实例自定义请求头: {} = {}", header.getKey(), header.getValue());
-            }
-        }
-        
-        return spec;
+        return multipartRequestHandler.configureRequestHeaders(requestSpec, request, instance);
     }
 
     /**
      * 创建请求体 - 处理不同类型的请求体格式
+     * v2.26.0: 直接委托给 MultipartRequestHandler（已注册为 Spring Service）
      */
     protected BodyInserter<?, ? super ClientHttpRequest> createRequestBody(final Object request) {
-        logger.debug("创建请求体，请求类型: {}", request.getClass().getSimpleName());
-        // v2.15.2: 优先使用 MultipartRequestHandler
-        if (multipartRequestHandler != null) {
-            return multipartRequestHandler.createRequestBody(request);
-        }
-
-        // 原有实现（向后兼容）
-
-        // 检查是否已经是转换后的multipart数据
-        if (request instanceof MultiValueMap) {
-            logger.debug("检测到已转换的multipart数据，直接使用");
-            return BodyInserters.fromMultipartData((MultiValueMap<String, ?>) request);
-        } else if (request instanceof SttDTO.Request) {
-            logger.debug("检测到STT请求，使用multipart处理");
-            return createMultipartBody((SttDTO.Request) request);
-        } else if (request instanceof ImageEditDTO.Request) {
-            logger.debug("检测到图像编辑请求，使用multipart处理");
-            return createMultipartBody((ImageEditDTO.Request) request);
-        } else {
-            // 普通JSON请求
-            logger.debug("使用JSON请求体处理");
-            return BodyInserters.fromValue(request);
-        }
-    }
-
-    /**
-     * 创建STT请求的multipart表单数据
-     */
-    private BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(final SttDTO.Request sttRequest) {
-        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-
-        logger.debug("创建STT multipart请求体: model={}, file={}, language={}",
-                sttRequest.model(),
-                sttRequest.file() != null ? sttRequest.file().filename() : "null",
-                sttRequest.language());
-
-        // 添加文件部分
-        if (sttRequest.file() != null) {
-            parts.add("file", sttRequest.file());
-            logger.debug("添加文件部分: filename={}", sttRequest.file().filename());
-        }
-
-        // 添加其他表单字段
-        if (sttRequest.model() != null) {
-            parts.add("model", sttRequest.model());
-            logger.debug("添加model字段: {}", sttRequest.model());
-        }
-        if (sttRequest.language() != null) {
-            parts.add("language", sttRequest.language());
-            logger.debug("添加language字段: {}", sttRequest.language());
-        }
-        if (sttRequest.prompt() != null) {
-            parts.add("prompt", sttRequest.prompt());
-            logger.debug("添加prompt字段: {}", sttRequest.prompt());
-        }
-        if (sttRequest.responseFormat() != null) {
-            parts.add("response_format", sttRequest.responseFormat());
-            logger.debug("添加response_format字段: {}", sttRequest.responseFormat());
-        }
-        if (sttRequest.temperature() != null) {
-            parts.add("temperature", sttRequest.temperature().toString());
-            logger.debug("添加temperature字段: {}", sttRequest.temperature());
-        }
-
-        logger.debug("Multipart表单数据创建完成，包含{}个字段", parts.size());
-        return BodyInserters.fromMultipartData(parts);
-    }
-
-    /**
-     * 创建图像编辑请求的multipart表单数据
-     */
-    private BodyInserter<?, ? super ClientHttpRequest> createMultipartBody(final ImageEditDTO.Request imageEditRequest) {
-        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-
-        // 这里需要根据ImageEditDTO.Request的实际结构来实现
-        // 暂时返回空的multipart数据
-
-        return BodyInserters.fromMultipartData(parts);
+        return multipartRequestHandler.createRequestBody(request);
     }
 
     /**
