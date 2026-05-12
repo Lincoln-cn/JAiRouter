@@ -1,5 +1,8 @@
 package org.unreal.modelrouter.config.listener;
 
+import java.util.List;
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,46 +12,39 @@ import org.springframework.stereotype.Component;
 
 import org.unreal.modelrouter.config.core.ConfigSyncService;
 import org.unreal.modelrouter.config.event.ConfigSyncEvent;
+import org.unreal.modelrouter.config.sync.service.ConfigMigrationService;
+import org.unreal.modelrouter.config.sync.service.ConfigPushService;
+import org.unreal.modelrouter.config.sync.service.InstanceConfigUpdateService;
 
 /**
- * 配置同步事件监听器
+ * Config sync event listener.
  *
- * <p>处理配置同步事件（REFRESH、ROLLBACK、INSTANCE_UPDATE），
- * 异步执行配置同步操作。
- *
- * <p>使用 {@code @Async} 注解实现异步处理，避免阻塞主线程。
- * ConfigSyncService 为可选依赖，当服务不可用时仅记录日志。
+ * Handles config sync events (REFRESH, ROLLBACK, INSTANCE_UPDATE, MIGRATE).
  *
  * @since v2.12.0
+ * @since v2.6.12 Added push, update, and migration services
  */
 @Component
 @Slf4j
 public class ConfigSyncEventListener {
 
     private final ConfigSyncService configSyncService;
+    private final ConfigPushService configPushService;
+    private final InstanceConfigUpdateService instanceConfigUpdateService;
+    private final ConfigMigrationService configMigrationService;
 
-    /**
-     * 构造函数注入 ConfigSyncService（可选依赖）
-     *
-     * @param configSyncService 配置同步服务（可选）
-     */
     @Autowired(required = false)
-    public ConfigSyncEventListener(ConfigSyncService configSyncService) {
+    public ConfigSyncEventListener(
+            ConfigSyncService configSyncService,
+            ConfigPushService configPushService,
+            InstanceConfigUpdateService instanceConfigUpdateService,
+            ConfigMigrationService configMigrationService) {
         this.configSyncService = configSyncService;
+        this.configPushService = configPushService;
+        this.instanceConfigUpdateService = instanceConfigUpdateService;
+        this.configMigrationService = configMigrationService;
     }
 
-    /**
-     * 处理配置同步事件
-     *
-     * <p>根据事件类型执行不同的同步操作：
-     * <ul>
-     *   <li>ROLLBACK: 同步实例数据到数据库</li>
-     *   <li>REFRESH: 记录日志，后续可扩展推送配置</li>
-     *   <li>INSTANCE_UPDATE: 记录日志，后续可扩展更新实例</li>
-     * </ul>
-     *
-     * @param event 配置同步事件
-     */
     @EventListener
     @Async
     public void onConfigSync(ConfigSyncEvent event) {
@@ -58,24 +54,13 @@ public class ConfigSyncEventListener {
             event.isBroadcast(),
             event.timestamp());
 
-        if (configSyncService == null) {
-            log.debug("ConfigSyncService not available, sync skipped");
-            return;
-        }
-
         try {
             handleSyncEvent(event);
         } catch (Exception e) {
-            log.error("ConfigSync failed: type={}, error={}",
-                event.syncType(), e.getMessage(), e);
+            log.error("ConfigSync failed: type={}, error={}", event.syncType(), e.getMessage(), e);
         }
     }
 
-    /**
-     * 根据事件类型处理同步逻辑
-     *
-     * @param event 配置同步事件
-     */
     private void handleSyncEvent(ConfigSyncEvent event) {
         switch (event.syncType()) {
             case "ROLLBACK" -> handleRollback(event);
@@ -86,16 +71,14 @@ public class ConfigSyncEventListener {
         }
     }
 
-    /**
-     * 处理回滚同步
-     *
-     * <p>将配置中的实例数据同步回数据库，恢复之前的状态
-     *
-     * @param event 配置同步事件
-     */
     private void handleRollback(ConfigSyncEvent event) {
         log.info("Handling ROLLBACK sync for target: {}",
             event.targetService() != null ? event.targetService() : "all services");
+
+        if (configSyncService == null) {
+            log.warn("ConfigSyncService not available, skipping ROLLBACK");
+            return;
+        }
 
         if (event.config() != null) {
             configSyncService.syncInstancesToDatabase(event.config());
@@ -105,49 +88,120 @@ public class ConfigSyncEventListener {
         }
     }
 
-    /**
-     * 处理刷新同步
-     *
-     * <p>广播配置刷新通知，后续可扩展推送配置到各服务
-     *
-     * @param event 配置同步事件
-     */
     private void handleRefresh(ConfigSyncEvent event) {
-        log.info("Handling REFRESH sync, broadcast={}", event.isBroadcast());
+        log.info("Handling REFRESH sync, broadcast={}, target={}",
+            event.isBroadcast(), event.targetService());
 
-        // TODO: 实现配置推送逻辑
-        // 当 isBroadcast() 为 true 时，推送配置到所有服务
-        // 当 targetService 不为 null 时，推送到指定服务
-        log.debug("REFRESH sync completed (no action required currently)");
+        if (configPushService == null) {
+            log.warn("ConfigPushService not available, skipping REFRESH");
+            return;
+        }
+
+        if (event.config() == null) {
+            log.warn("REFRESH event has no config data, skipping");
+            return;
+        }
+
+        if (event.isBroadcast()) {
+            configPushService.broadcastConfig(event.config())
+                .subscribe(result -> {
+                    if (result.success()) {
+                        log.info("Broadcast completed: {} services updated", result.successCount());
+                    } else {
+                        log.warn("Broadcast partially failed: {} failures", result.failureCount());
+                    }
+                });
+        } else if (event.targetService() != null) {
+            configPushService.pushToService(event.targetService(), event.config())
+                .subscribe(result -> {
+                    if (result.success()) {
+                        log.info("Push to {} completed successfully", event.targetService());
+                    } else {
+                        log.warn("Push to {} failed: {}", event.targetService(), result.message());
+                    }
+                });
+        } else {
+            log.warn("REFRESH event has no target service and not broadcast, skipping");
+        }
     }
 
-    /**
-     * 处理实例更新同步
-     *
-     * <p>更新特定服务实例的配置，后续可扩展实例级别配置同步
-     *
-     * @param event 配置同步事件
-     */
     private void handleInstanceUpdate(ConfigSyncEvent event) {
         log.info("Handling INSTANCE_UPDATE sync for service: {}",
             event.targetService() != null ? event.targetService() : "unknown");
 
-        // TODO: 实现实例级别配置更新逻辑
-        log.debug("INSTANCE_UPDATE sync completed (no action required currently)");
+        if (instanceConfigUpdateService == null) {
+            log.warn("InstanceConfigUpdateService not available, skipping INSTANCE_UPDATE");
+            return;
+        }
+
+        Map<String, Object> config = event.config();
+        if (config == null) {
+            log.warn("INSTANCE_UPDATE event has no config data, skipping");
+            return;
+        }
+
+        String tempInstanceId = (String) config.get("instanceId");
+        final String instanceId = (tempInstanceId != null) ? tempInstanceId : event.targetService();
+
+        if (instanceId != null) {
+            // Create mutable copy of config to safely remove instanceId
+            Map<String, Object> mutableConfig = new java.util.HashMap<>(config);
+            mutableConfig.remove("instanceId");
+            instanceConfigUpdateService.updateInstanceConfig(instanceId, mutableConfig)
+                .subscribe(result -> {
+                    if (result.success()) {
+                        log.info("Instance config updated: instanceId={}", instanceId);
+                    } else {
+                        log.warn("Instance config update failed: instanceId={}, error={}",
+                            instanceId, result.message());
+                    }
+                });
+        } else {
+            log.warn("INSTANCE_UPDATE event has no instance ID, skipping");
+        }
     }
 
-    /**
-     * 处理迁移同步
-     *
-     * <p>处理配置迁移事件，后续可扩展跨环境配置同步
-     *
-     * @param event 配置同步事件
-     */
     private void handleMigrate(ConfigSyncEvent event) {
         log.info("Handling MIGRATE sync for target: {}",
             event.targetService() != null ? event.targetService() : "unknown");
 
-        // TODO: 实现配置迁移逻辑
-        log.debug("MIGRATE sync completed (no action required currently)");
+        if (configMigrationService == null) {
+            log.warn("ConfigMigrationService not available, skipping MIGRATE");
+            return;
+        }
+
+        Map<String, Object> config = event.config();
+        if (config == null) {
+            log.warn("MIGRATE event has no config data, skipping");
+            return;
+        }
+
+        String sourceEnv = (String) config.get("sourceEnv");
+        String targetEnv = (String) config.get("targetEnv");
+
+        if (sourceEnv == null || targetEnv == null) {
+            log.warn("MIGRATE event missing sourceEnv or targetEnv, skipping");
+            return;
+        }
+
+        Object servicesObj = config.get("serviceTypes");
+        final String[] serviceTypes;
+        if (servicesObj instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> services = (List<String>) servicesObj;
+            serviceTypes = services.toArray(new String[0]);
+        } else {
+            serviceTypes = null;
+        }
+
+        configMigrationService.exportConfig(sourceEnv, targetEnv, serviceTypes)
+            .subscribe(result -> {
+                if (result.success()) {
+                    log.info("Migration completed: {} configs migrated from {} to {}",
+                        result.migratedCount(), sourceEnv, targetEnv);
+                } else {
+                    log.warn("Migration failed: {}", result.message());
+                }
+            });
     }
 }

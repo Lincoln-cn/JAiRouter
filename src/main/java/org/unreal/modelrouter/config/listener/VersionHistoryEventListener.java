@@ -1,38 +1,38 @@
 package org.unreal.modelrouter.config.listener;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Instant;
 
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import org.unreal.modelrouter.config.event.VersionCreatedEvent;
+import org.unreal.modelrouter.persistence.jpa.entity.ConfigVersionHistoryEntity;
+import org.unreal.modelrouter.persistence.jpa.repository.ConfigVersionHistoryRepository;
 
 /**
- * 版本历史事件监听器
+ * Version history event listener.
  *
- * <p>处理版本创建事件，异步记录版本历史。使用 {@code @TransactionalEventListener}
- * 确保事件处理在事务提交后执行，避免数据不一致问题。
- *
- * <p>后续可扩展：持久化版本历史到数据库，支持版本回滚和审计。
+ * Handles version creation events, persists version history to database.
  *
  * @since v2.12.0
+ * @since v2.6.12 Added database persistence
  */
 @Component
 @Slf4j
 public class VersionHistoryEventListener {
 
-    /**
-     * 处理版本创建事件
-     *
-     * <p>在事务提交后异步处理，记录版本历史信息。
-     *
-     * @param event 版本创建事件
-     */
+    private final ConfigVersionHistoryRepository versionHistoryRepository;
+
+    @Autowired(required = false)
+    public VersionHistoryEventListener(ConfigVersionHistoryRepository versionHistoryRepository) {
+        this.versionHistoryRepository = versionHistoryRepository;
+    }
+
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
     public void onVersionCreated(VersionCreatedEvent event) {
@@ -42,22 +42,27 @@ public class VersionHistoryEventListener {
             event.userId(),
             event.timestamp());
 
-        // TODO: 后续持久化版本历史到数据库
-        // versionHistoryRepository.save(buildVersionRecord(event));
+        persistVersionHistory(event);
     }
 
-    /**
-     * 构建版本记录
-     *
-     * @param event 版本创建事件
-     * @return 版本记录Map
-     */
-    private Map<String, Object> buildVersionRecord(VersionCreatedEvent event) {
-        Map<String, Object> record = new HashMap<>();
-        record.put("versionNumber", event.versionNumber());
-        record.put("description", event.description());
-        record.put("userId", event.userId());
-        record.put("timestamp", event.timestamp().toString());
-        return record;
+    private void persistVersionHistory(VersionCreatedEvent event) {
+        if (versionHistoryRepository == null) {
+            log.warn("ConfigVersionHistoryRepository not available, skipping persistence");
+            return;
+        }
+
+        try {
+            ConfigVersionHistoryEntity entity = new ConfigVersionHistoryEntity();
+            entity.setVersionNumber(String.valueOf(event.versionNumber()));
+            entity.setDescription(event.description());
+            entity.setUserId(event.userId());
+            entity.setTimestamp(event.timestamp() != null ? event.timestamp() : Instant.now());
+            entity.setStatus("ACTIVE");
+
+            versionHistoryRepository.save(entity);
+            log.debug("Version history persisted: version={}", event.versionNumber());
+        } catch (Exception e) {
+            log.error("Failed to persist version history: {}", e.getMessage(), e);
+        }
     }
 }

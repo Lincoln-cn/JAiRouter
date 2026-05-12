@@ -1,33 +1,38 @@
 package org.unreal.modelrouter.config.listener;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.unreal.modelrouter.common.util.JacksonHelper;
 import org.unreal.modelrouter.config.event.AuditLogEvent;
 import org.unreal.modelrouter.config.event.ConfigurationChangeEvent;
+import org.unreal.modelrouter.persistence.jpa.entity.ConfigAuditLogEntity;
+import org.unreal.modelrouter.persistence.jpa.repository.ConfigAuditLogRepository;
+
+import java.time.Instant;
 
 /**
- * 配置审计事件监听器
+ * Configuration audit event listener.
  *
- * 处理配置变更和审计日志事件，记录审计信息到日志文件。
- * 后续可扩展持久化到数据库。
+ * Handles configuration change and audit log events, persists audit info to database.
  *
  * @since v2.12.0
+ * @since v2.6.12 Added database persistence
  */
 @Component
 @Slf4j
 public class ConfigAuditEventListener {
 
-    /**
-     * 处理配置变更事件
-     *
-     * <p>使用 @TransactionalEventListener 确保事务提交后才处理，
-     * 避免事务回滚导致审计日志不一致。
-     *
-     * @param event 配置变更事件
-     */
+    private final ConfigAuditLogRepository auditLogRepository;
+
+    @Autowired(required = false)
+    public ConfigAuditEventListener(ConfigAuditLogRepository auditLogRepository) {
+        this.auditLogRepository = auditLogRepository;
+    }
+
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
     public void onConfigurationChange(ConfigurationChangeEvent event) {
@@ -37,29 +42,36 @@ public class ConfigAuditEventListener {
             event.userId(),
             event.timestamp());
 
-        // 记录变更详情（脱敏后）
-        if (event.isCreate()) {
-            log.info("AuditDetail: Created new config, newConfig keys={}",
-                event.newConfig() != null ? event.newConfig().keySet() : "null");
-        } else if (event.isUpdate()) {
-            log.info("AuditDetail: Updated config, oldConfig keys={}, newConfig keys={}",
-                event.oldConfig() != null ? event.oldConfig().keySet() : "null",
-                event.newConfig() != null ? event.newConfig().keySet() : "null");
-        } else if (event.isDelete()) {
-            log.info("AuditDetail: Deleted config, oldConfig keys={}",
-                event.oldConfig() != null ? event.oldConfig().keySet() : "null");
-        }
-
-        // TODO: 后续持久化到审计表
+        persistAuditLog(event);
     }
 
-    /**
-     * 处理通用审计日志事件
-     *
-     * <p>使用普通 @EventListener，适用于非事务场景。
-     *
-     * @param event 审计日志事件
-     */
+    private void persistAuditLog(ConfigurationChangeEvent event) {
+        if (auditLogRepository == null) {
+            log.warn("ConfigAuditLogRepository not available, skipping persistence");
+            return;
+        }
+
+        try {
+            ConfigAuditLogEntity entity = new ConfigAuditLogEntity();
+            entity.setChangeType(event.changeType());
+            entity.setServiceType(event.serviceType());
+            entity.setUserId(event.userId());
+            entity.setTimestamp(event.timestamp() != null ? event.timestamp() : Instant.now());
+
+            if (event.oldConfig() != null) {
+                entity.setOldConfig(JacksonHelper.getObjectMapper().writeValueAsString(event.oldConfig()));
+            }
+            if (event.newConfig() != null) {
+                entity.setNewConfig(JacksonHelper.getObjectMapper().writeValueAsString(event.newConfig()));
+            }
+
+            auditLogRepository.save(entity);
+            log.debug("Audit log persisted: id={}", entity.getId());
+        } catch (Exception e) {
+            log.error("Failed to persist audit log: {}", e.getMessage(), e);
+        }
+    }
+
     @Async
     @org.springframework.context.event.EventListener
     public void onAuditLog(AuditLogEvent event) {
@@ -70,14 +82,31 @@ public class ConfigAuditEventListener {
             event.userId(),
             event.timestamp());
 
-        // 记录操作数据（脱敏后）
-        if (event.data() != null && !event.data().isEmpty()) {
-            log.info("AuditData: entityType={}, entityId={}, dataKeys={}",
-                event.entityType(),
-                event.entityId(),
-                event.data().keySet());
+        persistAuditLogEvent(event);
+    }
+
+    private void persistAuditLogEvent(AuditLogEvent event) {
+        if (auditLogRepository == null) {
+            log.warn("ConfigAuditLogRepository not available, skipping persistence");
+            return;
         }
 
-        // TODO: 后续持久化到审计表
+        try {
+            ConfigAuditLogEntity entity = new ConfigAuditLogEntity();
+            entity.setChangeType(event.operation());
+            entity.setEntityType(event.entityType());
+            entity.setEntityId(event.entityId());
+            entity.setUserId(event.userId());
+            entity.setTimestamp(event.timestamp() != null ? event.timestamp() : Instant.now());
+
+            if (event.data() != null) {
+                entity.setDescription(JacksonHelper.getObjectMapper().writeValueAsString(event.data()));
+            }
+
+            auditLogRepository.save(entity);
+            log.debug("Audit log event persisted: id={}", entity.getId());
+        } catch (Exception e) {
+            log.error("Failed to persist audit log event: {}", e.getMessage(), e);
+        }
     }
 }
