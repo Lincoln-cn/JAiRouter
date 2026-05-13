@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * JWT黑名单缓存管理器
@@ -33,6 +34,9 @@ public class JwtBlacklistCacheManager {
     private final Map<String, TokenBlacklistEntry> localCache = new ConcurrentHashMap<>();
     private volatile long lastCacheSync = 0;
     private static final long CACHE_SYNC_INTERVAL = 300000; // 5分钟同步间隔
+    
+    // 用于定时任务互斥的锁，防止cleanup和sync任务并发执行
+    private final ReentrantLock cacheOperationLock = new ReentrantLock();
     
     // Redis键前缀
     private static final String BLACKLIST_PREFIX = "jwt:blacklist:";
@@ -149,6 +153,10 @@ public class JwtBlacklistCacheManager {
      */
     @Scheduled(fixedRate = 300000) // 每5分钟执行一次
     public void cleanupExpiredCacheEntries() {
+        if (!cacheOperationLock.tryLock()) {
+            log.debug("Cache operation in progress, skipping cleanup task");
+            return;
+        }
         try {
             log.debug("Starting blacklist cache cleanup");
             
@@ -169,16 +177,23 @@ public class JwtBlacklistCacheManager {
             
         } catch (Exception e) {
             log.error("Failed to cleanup blacklist cache: {}", e.getMessage(), e);
+        } finally {
+            cacheOperationLock.unlock();
         }
     }
-    
+
     /**
      * 定时同步本地缓存与Redis
      */
     @Scheduled(fixedRate = 300000) // 每5分钟执行一次
     public void syncLocalCacheWithRedis() {
-        long currentTime = System.currentTimeMillis();
+        if (!cacheOperationLock.tryLock()) {
+            log.debug("Cache operation in progress, skipping sync task");
+            return;
+        }
         
+        long currentTime = System.currentTimeMillis();
+
         if (currentTime - lastCacheSync > CACHE_SYNC_INTERVAL) {
             try {
                 log.debug("Starting local cache sync with Redis");
@@ -211,8 +226,9 @@ public class JwtBlacklistCacheManager {
                 log.error("Failed to sync local cache with Redis: {}", e.getMessage(), e);
             }
         }
+        cacheOperationLock.unlock();
     }
-    
+
     /**
      * 获取即将过期的缓存条目数量
      */

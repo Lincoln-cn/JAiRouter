@@ -21,7 +21,13 @@ public class JwtAccountProperties {
     private String username;
 
     /**
-     * 密码（支持 {noop} 前缀表示明文密码）
+     * 密码
+     * 支持两种格式：
+     * 1. {noop}明文密码 - 仅用于开发/测试环境，不推荐生产使用
+     * 2. {bcrypt}$2a$10$... - BCrypt加密密码，生产环境推荐
+     * 
+     * 推荐使用环境变量注入：password: "${ADMIN_PASSWORD}"
+     * 并使用密码加密工具生成安全的BCrypt哈希
      */
     @NotBlank
     private String password;

@@ -1,11 +1,16 @@
 package org.unreal.modelrouter.auth.security.config;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 import org.unreal.modelrouter.auth.security.util.SecretKeyValidator;
 import org.unreal.modelrouter.auth.security.util.SecretKeyValidator.ValidationResult;
+
+import java.util.Arrays;
 
 /**
  * 启动时密钥安全检查器
@@ -27,11 +32,21 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
             + "║                                                                              ║\n"
             + "╚══════════════════════════════════════════════════════════════════════════════╝\n";
 
+    @Autowired
+    private Environment environment;
+
+    @Autowired
+    private SecurityProperties securityProperties;
+
     @Override
     public void run(final String... args) throws Exception {
         log.info(ASCII_ART_BORDER);
 
         boolean allPassed = true;
+        boolean isProduction = isProductionEnvironment();
+
+        // 生产环境检查 JWT 是否启用
+        allPassed &= checkJwtEnabledForProduction(isProduction);
 
         // 检查 JWT 密钥
         allPassed &= checkJwtSecrets();
@@ -47,7 +62,8 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
                 + "║  在生产环境使用之前，请务必：                                                ║\n"
                 + "║  1. 设置强密钥：export JWT_SECRET=\"<随机生成的 32+ 字节密钥>\"                    ║\n"
                 + "║  2. 设置强密码：export INITIAL_ADMIN_PASSWORD=\"<复杂密码>\"                     ║\n"
-                + "║  3. 使用密钥生成工具：java -jar jairouter.jar --generate-key                 ║\n"
+                + "║  3. 启用 JWT 认证：jairouter.security.jwt.enabled=true                       ║\n"
+                + "║  4. 使用密钥生成工具：java -jar jairouter.jar --generate-key                 ║\n"
                 + "║                                                                              ║\n"
                 + "║  密钥生成工具使用说明：                                                      ║\n"
                 + "║  --generate-key              生成 Base64 编码的 JWT 密钥                          ║\n"
@@ -60,6 +76,62 @@ public class StartupSecretKeyChecker implements CommandLineRunner {
                 + "║  ✓ 所有密钥和密码检查通过                                                    ║\n"
                 + "╚══════════════════════════════════════════════════════════════════════════════╝\n");
         }
+    }
+
+    /**
+     * 检查是否为生产环境
+     */
+    private boolean isProductionEnvironment() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        return Arrays.stream(activeProfiles)
+                .anyMatch(profile -> "prod".equalsIgnoreCase(profile)
+                        || "production".equalsIgnoreCase(profile));
+    }
+
+    /**
+     * 生产环境检查 JWT 是否启用
+     */
+    private boolean checkJwtEnabledForProduction(final boolean isProduction) {
+        if (!isProduction) {
+            log.info("当前环境：开发/测试环境，跳过 JWT 启用检查");
+            return true;
+        }
+
+        log.info("当前环境：生产环境，检查 JWT 认证配置...");
+
+        boolean jwtEnabled = securityProperties.getJwt() != null
+                && securityProperties.getJwt().isEnabled();
+
+        if (!jwtEnabled) {
+            log.error("\n"
+                + "╔══════════════════════════════════════════════════════════════════════════════╗\n"
+                + "║  🚨 严重安全警告：生产环境 JWT 认证未启用！                                   ║\n"
+                + "║                                                                              ║\n"
+                + "║  这意味着所有 API 端点都将没有认证保护，存在极高的安全风险！                  ║\n"
+                + "║                                                                              ║\n"
+                + "║  请立即采取以下措施之一：                                                    ║\n"
+                + "║  1. 启用 JWT 认证：                                                          ║\n"
+                + "║     export JWT_SECRET=\"<your-secret-key>\"                                   ║\n"
+                + "║     在 application-prod.yml 中设置：                                         ║\n"
+                + "║     jairouter.security.jwt.enabled: true                                     ║\n"
+                + "║                                                                              ║\n"
+                + "║  2. 或配置其他认证方式（如 API Key、OAuth2）                                 ║\n"
+                + "║                                                                              ║\n"
+                + "║  如果您确定要在无认证情况下运行（如内网环境），请设置：                       ║\n"
+                + "║     export JAROUTER_SKIP_AUTH_WARNING=true                                   ║\n"
+                + "╚══════════════════════════════════════════════════════════════════════════════╝\n");
+
+            // 检查是否设置了跳过警告的环境变量
+            String skipWarning = System.getenv("JAROUTER_SKIP_AUTH_WARNING");
+            if ("true".equalsIgnoreCase(skipWarning)) {
+                log.warn("已设置 JAROUTER_SKIP_AUTH_WARNING=true，跳过认证警告");
+                return true;
+            }
+            return false;
+        }
+
+        log.info("✓ 生产环境 JWT 认证已启用");
+        return true;
     }
 
     /**

@@ -413,7 +413,7 @@ public class TracingQueryController {
                     .toInstant()
                     .toEpochMilli();
             } catch (Exception ex) {
-                System.out.println("无法解析时间字符串: " + timeStr);
+                log.warn("无法解析时间字符串: {}, 使用当前时间", timeStr);
                 return System.currentTimeMillis();
             }
         }
