@@ -2,22 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 160
-- 近7天变更: 9
+- 总文档数: 162
+- 近7天变更: 10
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-05-11 05:59:05
+- 最后扫描: 2026-05-14 05:48:26
 
 ## 最近变更
 
+- **CREATED**: docs/configuration-guide.md ( → 1.0.0) - 2026-05-14
+- **CREATED**: docs/CHANGELOG-v2.5.x.md ( → 1.0.0) - 2026-05-14
+- **MODIFIED**: docs-version-report.md (1.0.11 → 1.0.12) - 2026-05-14
+- **MODIFIED**: README.md (1.0.12 → 1.0.13) - 2026-05-14
+- **MODIFIED**: README-ZH.md (1.0.4 → 1.0.5) - 2026-05-14
+- **MODIFIED**: QWEN.md (1.0.1 → 1.0.2) - 2026-05-14
 - **MODIFIED**: docs-version-report.md (1.0.10 → 1.0.11) - 2026-05-11
 - **MODIFIED**: docs-version-report.md (1.0.9 → 1.0.10) - 2026-05-10
 - **MODIFIED**: docs-version-report.md (1.0.8 → 1.0.9) - 2026-05-09
 - **MODIFIED**: docs-version-report.md (1.0.7 → 1.0.8) - 2026-05-08
-- **MODIFIED**: docs-version-report.md (1.0.6 → 1.0.7) - 2026-05-07
-- **MODIFIED**: README.md (1.0.11 → 1.0.12) - 2026-05-07
-- **MODIFIED**: README-ZH.md (1.0.3 → 1.0.4) - 2026-05-07
-- **MODIFIED**: docs-version-report.md (1.0.5 → 1.0.6) - 2026-05-06
-- **MODIFIED**: docs-version-report.md (1.0.4 → 1.0.5) - 2026-05-05
 
 ## 过期文档 (30天未更新)
 
@@ -668,18 +669,22 @@
   - docs/zh/configuration/circuit-breaker.md
   - docs/zh/configuration/rate-limiting.md
   - docs/zh/configuration/store-config.md
+- **docs/configuration-guide.md**: 依赖 1 个文档
+  - config-external/README.md
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.11 - 2026-05-11 (6ab35b85)
-- **README.md**: v1.0.12 - 2026-05-07 (171cf5b6)
-- **README-ZH.md**: v1.0.4 - 2026-05-07 (9ba67de7)
+- **docs/configuration-guide.md**: v1.0.0 - 2026-05-14 (58a90803)
+- **docs/CHANGELOG-v2.5.x.md**: v1.0.0 - 2026-05-14 (947dc154)
+- **docs-version-report.md**: v1.0.12 - 2026-05-14 (e3995cce)
+- **README.md**: v1.0.13 - 2026-05-14 (313f6e47)
+- **README-ZH.md**: v1.0.5 - 2026-05-14 (313f6e47)
+- **QWEN.md**: v1.0.2 - 2026-05-14 (72f227e7)
 - **docs/zh/development/v2.7.x-package-refactoring.md**: v1.0.0 - 2026-04-29 (39b124d3)
 - **docs/docs-version-report.md**: v1.0.0 - 2026-04-29 (f60c279e)
 - **docs/zh/getting-started/quick-start-v1.8.md**: v1.0.1 - 2026-04-28 (56f61c77)
 - **docs/zh/configuration/state-persistence.md**: v1.0.0 - 2026-04-28 (e5140df0)
 - **docs/en/configuration/state-persistence.md**: v1.0.0 - 2026-04-28 (e5140df0)
-- **QWEN.md**: v1.0.1 - 2026-04-28 (210dfbd6)
 - **docs/zh/troubleshooting/issue-fixes.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
 - **docs/zh/security/jwt-authentication.md**: v1.0.3 - 2026-04-17 (8ece44a1)
 - **docs/zh/security/blacklist-management.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
