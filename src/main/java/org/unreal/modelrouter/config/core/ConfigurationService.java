@@ -345,7 +345,7 @@ private final ConfigComparisonService configComparisonService;
         // 确保服务存在
         if (!services.containsKey(serviceType)) {
             // 自动创建服务
-            services.put(serviceType, createDefaultServiceConfig());
+            services.put(serviceType, configValidator.createDefaultServiceConfig());
         }
 
         Map<String, Object> serviceConfig = (Map<String, Object>) services.get(serviceType);
@@ -543,7 +543,7 @@ private final ConfigComparisonService configComparisonService;
 
         // 确保服务存在
         if (!services.containsKey(serviceType)) {
-            services.put(serviceType, createDefaultServiceConfig());
+            services.put(serviceType, configValidator.createDefaultServiceConfig());
         }
 
         Map<String, Object> serviceConfig = (Map<String, Object>) services.get(serviceType);
@@ -691,40 +691,6 @@ private final ConfigComparisonService configComparisonService;
         Map<String, Object> services = new HashMap<>();
         config.put("services", services);
         return services;
-    }
-    /**
-     * 创建默认服务配置
-     */
-    private Map<String, Object> createDefaultServiceConfig() {
-        Map<String, Object> config = new HashMap<>();
-        config.put("instances", new ArrayList<>());
-
-        // 添加默认负载均衡配置
-        Map<String, Object> loadBalance = new HashMap<>();
-        loadBalance.put("type", "random");
-        loadBalance.put("hashAlgorithm", "md5");
-        config.put("loadBalance", loadBalance);
-
-        return config;
-    }
-
-    /**
-     * 验证和标准化服务配置
-     */
-    private Map<String, Object> validateAndNormalizeServiceConfig(final Map<String, Object> serviceConfig) {
-        Map<String, Object> normalized = new HashMap<>(serviceConfig);
-
-        // 确保instances字段存在
-        if (!normalized.containsKey("instances")) {
-            normalized.put("instances", new ArrayList<>());
-        }
-
-        // 验证instances是List类型
-        if (!(normalized.get("instances") instanceof List)) {
-            normalized.put("instances", new ArrayList<>());
-        }
-
-        return normalized;
     }
 
     /**
