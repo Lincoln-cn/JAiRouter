@@ -372,6 +372,30 @@ public class ConfigVersionManager {
         return configComparator.compareVersions(version1, version2, config1, config2);
     }
 
+    /**
+     * 清理版本元数据和历史记录
+     * v2.28.0: 从 ConfigurationService 迁移
+     */
+    public void cleanVersion() {
+        logger.info("开始清理版本元数据和历史记录");
+
+        // 清理元数据
+        ConfigMetadata metadata = metadataManager.getMetadata(CURRENT_KEY);
+        if (metadata != null) {
+            metadata.clean();
+            metadataManager.saveMetadata(CURRENT_KEY, metadata);
+            logger.debug("元数据已清理");
+        }
+
+        // 清理版本历史
+        List<VersionInfo> versionHistory = metadataManager.getVersionHistoryForUpdate(CURRENT_KEY);
+        versionHistory.clear();
+        metadataManager.saveVersionHistory(CURRENT_KEY, versionHistory);
+        logger.debug("版本历史已清理");
+
+        logger.info("版本元数据和历史记录清理完成");
+    }
+
     // ==================== 私有辅助方法 ====================
 
     /**

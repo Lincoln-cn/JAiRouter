@@ -8,7 +8,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.config.event.ConfigSyncEvent;
-import org.unreal.modelrouter.router.checker.ServerChecker;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.config.core.manager.ConfigValidator;
 import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
@@ -18,30 +17,23 @@ import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
 import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.common.dto.RateLimitConfig;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
-import org.unreal.modelrouter.config.version.ConfigMetadata;
-import org.unreal.modelrouter.config.version.VersionInfo;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.monitor.tracing.config.SamplingConfigurationValidator;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
-import org.unreal.modelrouter.common.util.ApplicationContextProvider;
 import org.unreal.modelrouter.common.util.InstanceIdUtils;
 import org.unreal.modelrouter.common.util.SecurityUtils;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.unreal.modelrouter.config.core.manager.ConfigComparisonService;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 /**
@@ -106,6 +98,9 @@ public class ConfigurationService {
 
     private static final String CURRENT_KEY = "model-router-config";
 
+    // 请求去重窗口时间（毫秒）
+    private static final long REQUEST_DEDUP_WINDOW_MS = 1000; // 1秒内的重复请求将被忽略
+
     private final StoreManager storeManager;
     private final ConfigurationHelper configurationHelper;
     private final ConfigMergeService configMergeService;
@@ -129,22 +124,11 @@ private final ConfigComparisonService configComparisonService;
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
-    private static final long REQUEST_DEDUP_WINDOW_MS = 1000; // 1秒内的重复请求将被忽略
-    // 版本控制相关字段
-    private final Map<String, ConfigMetadata> configMetadataMap = new HashMap<>();
-    private final Map<String, List<VersionInfo>> versionHistoryMap = new HashMap<String, List<VersionInfo>>();
-
-    // 版本创建锁 - v2.0.0: 使用 ReentrantLock 替代 synchronized 提升并发性能
-    private final ReentrantLock versionCreationLock = new ReentrantLock();
-
     // 实例更新锁，防止同一实例的并发更新
     private final ConcurrentHashMap<String, Object> instanceUpdateLocks = new ConcurrentHashMap<>();
 
     // 请求去重缓存，防止短时间内的重复请求
     private final ConcurrentHashMap<String, Long> recentUpdateRequests = new ConcurrentHashMap<>();
-    // 记录最近版本创建的时间，用于检测短时间内的重复创建
-    private volatile long lastVersionCreationTime = 0;
-    private volatile String lastVersionDescription = "";
 
     @Autowired
     public ConfigurationService(final StoreManager storeManager,
@@ -201,178 +185,12 @@ private final ConfigComparisonService configComparisonService;
         this.configSyncService = configSyncService;
     }
 
-    /**
-     * 生成下一个可用的版本号
-     * v1.5.2: 使用简单的递增策略，直接从数据库获取最大版本号+1
-     */
-    private int generateNextVersionNumber() {
-        // 从数据库获取当前所有版本
-        List<Integer> existingVersions = storeManager.getConfigVersions(CURRENT_KEY);
-        
-        // 找到最大版本号
-        int maxVersion = existingVersions.stream()
-                .max(Integer::compareTo)
-                .orElse(0);
-        
-        // 新版本号 = 最大版本号 + 1
-        int newVersion = maxVersion + 1;
-        
-        logger.debug("生成新版本号: {} (当前最大版本: {})", newVersion, maxVersion);
-        return newVersion;
-    }
-
-    /**
-     * 记录版本创建的时间间隔，帮助识别短时间内的重复创建
-     */
-    private void recordVersionCreationTiming(final String description) {
-        long currentTime = System.currentTimeMillis();
-        long timeSinceLastCreation = currentTime - lastVersionCreationTime;
-
-        if (lastVersionCreationTime > 0) {
-            // 如果两次版本创建间隔小于5秒，记录警告
-            if (timeSinceLastCreation < 5000) {
-                logger.warn("检测到短时间内重复版本创建！间隔: {}ms, 上次描述: '{}', 本次描述: '{}'",
-                        timeSinceLastCreation, lastVersionDescription, description);
-
-                // 如果描述相同且间隔很短，可能是重复请求
-                if (description.equals(lastVersionDescription) && timeSinceLastCreation < 1000) {
-                    logger.error("疑似重复请求！相同描述的版本创建间隔仅 {}ms: '{}'",
-                            timeSinceLastCreation, description);
-                }
-            } else {
-                logger.debug("版本创建时间间隔正常: {}ms", timeSinceLastCreation);
-            }
-        }
-
-        lastVersionCreationTime = currentTime;
-        lastVersionDescription = description;
-    }
-
-
-    /**
-     * 保存配置元数据
-     */
-    private void saveMetadata(final String key, final ConfigMetadata metadata) {
-        try {
-            Map<String, Object> metadataMap = new HashMap<>();
-            metadataMap.put("configKey", metadata.getConfigKey());
-            metadataMap.put("currentVersion", metadata.getCurrentVersion());
-            metadataMap.put("initialVersion", metadata.getInitialVersion());
-            metadataMap.put("createdAt", metadata.getCreatedAt());
-            metadataMap.put("lastModified", metadata.getLastModified());
-            metadataMap.put("lastModifiedBy", metadata.getLastModifiedBy());
-            metadataMap.put("totalVersions", metadata.getTotalVersions());
-            metadataMap.put("existingVersions", new ArrayList<>(metadata.getExistingVersions())); // 保存版本列表
-            storeManager.saveConfig(key + ".metadata", metadataMap);
-            configMetadataMap.put(key, metadata);
-        } catch (Exception e) {
-            logger.error("保存配置元数据失败: " + key, e);
-        }
-    }
-
-    /**
-     * 保存版本历史
-     */
-    private void saveVersionHistory(final String key, final List<VersionInfo> versionHistory) {
-        try {
-            List<Map<String, Object>> historyList = new ArrayList<>();
-            for (VersionInfo versionInfo : versionHistory) {
-                Map<String, Object> historyItem = new HashMap<>();
-                historyItem.put("version", versionInfo.getVersion());
-                historyItem.put("createdAt", versionInfo.getCreatedAt());
-                historyItem.put("createdBy", versionInfo.getCreatedBy());
-                historyItem.put("description", versionInfo.getDescription());
-                historyItem.put("changeType", versionInfo.getChangeType().name());
-                historyList.add(historyItem);
-            }
-            storeManager.saveConfig(key + ".history", Collections.singletonMap("history", historyList));
-            versionHistoryMap.put(key, versionHistory);
-        } catch (Exception e) {
-            logger.error("保存版本历史失败: " + key, e);
-        }
-    }
-
     // ==================== 版本管理 ====================
-
-
-
-
+    // v2.28.0: 版本管理方法已迁移到 ConfigVersionManager
 
     /**
-     * 内部版本保存方法（已在同步块内调用）
-     */
-    private int saveAsNewVersionInternal(final Map<String, Object> config, final String description, final String userId) {
-        try {
-            // 调用链追踪：记录调用来源（用于调试重复版本问题）
-            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-            String callerInfo = stackTrace.length > 3 ? stackTrace[3].toString() : "unknown";
-            logger.info("【版本创建调用链】描述='{}', 调用来源={}", description, callerInfo);
-
-            logger.debug("开始保存新版本，描述: {}, 用户: {}", description, userId);
-
-            // 记录版本创建的时间间隔，帮助识别短时间内的重复创建
-            recordVersionCreationTiming(description);
-
-            // 获取或创建配置元数据
-            ConfigMetadata metadata = configMetadataMap.computeIfAbsent(CURRENT_KEY, k -> {
-                ConfigMetadata newMetadata = new ConfigMetadata();
-                newMetadata.setConfigKey(CURRENT_KEY);
-                newMetadata.setInitialVersion(1);
-                newMetadata.setCurrentVersion(0);
-                newMetadata.setCreatedAt(LocalDateTime.now());
-                newMetadata.setTotalVersions(0);
-                logger.info("创建新的配置元数据");
-                return newMetadata;
-            });
-
-            // 生成新版本号 - 不要求连续，只要求唯一
-            int newVersion = generateNextVersionNumber();
-            logger.info("生成新版本号: {}", newVersion);
-
-            // 保存版本配置
-            storeManager.saveConfigVersion(CURRENT_KEY, config, newVersion);
-            logger.debug("版本配置已保存: {}", newVersion);
-
-            // 更新元数据
-            metadata.setCurrentVersion(newVersion);
-            metadata.setLastModified(LocalDateTime.now());
-            metadata.setLastModifiedBy(userId != null ? userId : "system");
-            metadata.setTotalVersions(metadata.getTotalVersions() + 1);
-            metadata.addVersion(newVersion); // 添加到版本列表
-            saveMetadata(CURRENT_KEY, metadata);
-            logger.debug("元数据已更新");
-
-            // 创建版本历史记录
-            VersionInfo versionInfo = new VersionInfo();
-            versionInfo.setVersion(newVersion);
-            versionInfo.setCreatedAt(LocalDateTime.now());
-            versionInfo.setCreatedBy(userId != null ? userId : "system");
-            versionInfo.setDescription(description != null ? description : "配置更新");
-            versionInfo.setChangeType(VersionInfo.ChangeType.UPDATE);
-
-            List<VersionInfo> versionHistory = versionHistoryMap.computeIfAbsent(CURRENT_KEY, k -> new ArrayList<>());
-            versionHistory.add(versionInfo);
-            saveVersionHistory(CURRENT_KEY, versionHistory);
-            logger.debug("版本历史已更新");
-
-            // 更新当前活跃配置
-            storeManager.saveConfig(CURRENT_KEY, config);
-            logger.debug("当前活跃配置已更新");
-
-            logger.info("已保存配置为新版本：{}", newVersion);
-            return newVersion;
-        } catch (Exception e) {
-            logger.error("保存新版本配置失败", e);
-            throw new RuntimeException("保存新版本配置失败", e);
-        }
-    }
-
-
-
-
-
-    /**
-     * 获取下一个版本号
+     * 条件性保存为新版本（如果配置发生变化）
+     * v2.28.0: 简化实现，委托到 ConfigVersionManager
      *
      * @param config      配置内容
      * @param description 描述信息
@@ -380,37 +198,13 @@ private final ConfigComparisonService configComparisonService;
      * @return 版本号（如果创建了新版本则返回新版本号，否则返回当前版本号）
      */
     public int saveAsNewVersionIfChanged(final Map<String, Object> config, final String description, final String userId) {
-        // 使用同步锁确保配置比较和版本创建的原子性
-        synchronized (versionCreationLock) {
-            try {
-                logger.debug("开始条件性版本保存，描述: {}, 用户: {}", description, userId);
-
-                // 获取当前配置用于比较
-                Map<String, Object> currentConfig = getCurrentPersistedConfig();
-
-                // 使用智能配置比较
-                if (!configComparisonService.isConfigurationChanged(currentConfig, config)) {
-                    logger.info("配置未发生变化，不创建新版本");
-                    ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-                    return metadata != null ? metadata.getCurrentVersion() : 0;
-                }
-
-                // 配置发生变化，创建新版本
-                logger.info("检测到配置变化，创建新版本");
-
-                // 记录条件性版本保存的调用栈
-                if (logger.isDebugEnabled()) {
-                    logger.debug("条件性版本保存触发 - 描述: {}, 用户: {}", description, userId);
-                }
-
-                // 注意：这里不需要再次同步，因为已经在同步块内
-                return saveAsNewVersionInternal(config, description, userId);
-
-            } catch (Exception e) {
-                logger.error("条件性版本保存失败", e);
-                throw new RuntimeException("条件性版本保存失败", e);
-            }
+        Map<String, Object> currentConfig = getCurrentPersistedConfig();
+        if (!configComparisonService.isConfigurationChanged(currentConfig, config)) {
+            logger.info("配置未发生变化，不创建新版本");
+            return configVersionManager.getCurrentVersion();
         }
+        logger.info("检测到配置变化，创建新版本");
+        return configVersionManager.saveAsNewVersion(config, description, userId);
     }
 
     // ==================== 查询操作 ====================
@@ -1216,16 +1010,12 @@ private final ConfigComparisonService configComparisonService;
         return configMergeService.hasPersistedConfig();
     }
 
+    /**
+     * 清理版本元数据和历史记录
+     * v2.28.0: 委托到 ConfigVersionManager
+     */
     public void cleanVersion() {
-        ConfigMetadata metadata = configMetadataMap.get(CURRENT_KEY);
-        List<VersionInfo> versionInfos = versionHistoryMap.get(CURRENT_KEY);
-
-        metadata.clean();
-        saveMetadata(CURRENT_KEY, metadata);
-        versionInfos.clear();
-        saveVersionHistory(CURRENT_KEY, versionInfos);
-
-
+        configVersionManager.cleanVersion();
     }
 
     /**
