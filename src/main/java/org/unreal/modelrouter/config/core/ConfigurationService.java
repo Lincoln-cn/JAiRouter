@@ -17,7 +17,6 @@ import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
 import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
 import org.unreal.modelrouter.common.dto.RateLimitConfig;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
-import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.persistence.store.StoreManager;
@@ -31,10 +30,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.unreal.modelrouter.config.core.manager.ConfigComparisonService;
-import java.util.Objects;
+import org.unreal.modelrouter.config.core.service.ConfigQueryService;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * 配置管理服务 - 重构版
@@ -112,13 +110,11 @@ public class ConfigurationService {
     private final ConfigVersionManager configVersionManager;
     private final ConfigValidator configValidator;
     private final TracingConfigManager tracingConfigManager;
+    private final ConfigQueryService configQueryService;
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
     // v1.5.6: 配置同步服务，用于版本回滚时同步实例到数据库
     private ConfigSyncService configSyncService;
 private final ConfigComparisonService configComparisonService;
-    // v1.7.1: 实例仓库，用于从数据库获取健康状态
-    @Autowired(required = false)
-    private ServiceInstanceRepository serviceInstanceRepository;
 
     // v2.12.4: 事件发布器，用于发布配置同步事件
     @Autowired
@@ -141,7 +137,8 @@ private final ConfigComparisonService configComparisonService;
                                 final ConfigVersionManager configVersionManager,
                                 final ConfigValidator configValidator,
                                 final TracingConfigManager tracingConfigManager,
-                                final ConfigComparisonService configComparisonService) {
+                                final ConfigComparisonService configComparisonService,
+                                final ConfigQueryService configQueryService) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
@@ -153,6 +150,7 @@ private final ConfigComparisonService configComparisonService;
         this.configValidator = configValidator;
         this.tracingConfigManager = tracingConfigManager;
         this.configComparisonService = configComparisonService;
+        this.configQueryService = configQueryService;
         // 版本控制初始化移到 @PostConstruct 中，确保 JpaDatabaseInitializer 先执行
     }
 
@@ -211,94 +209,35 @@ private final ConfigComparisonService configComparisonService;
 
     /**
      * 获取所有配置（合并后的最终配置）
+     * v2.6.14: 委托到 ConfigQueryService
      *
      * @return 完整配置Map
      */
     public Map<String, Object> getAllConfigurations() {
-        Map<String, Object> configs = configMergeService.getPersistedConfig();
-
-        // 为每个实例添加instanceId和health属性
-        if (configs != null && configs.containsKey("services")) {
-            Map<String, Object> services = (Map<String, Object>) configs.get("services");
-            for (Map.Entry<String, Object> serviceEntry : services.entrySet()) {
-                String serviceType = serviceEntry.getKey();
-                Map<String, Object> serviceConfig = (Map<String, Object>) serviceEntry.getValue();
-                if (serviceConfig != null && serviceConfig.containsKey("instances")) {
-                    List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.get("instances");
-                    for (Map<String, Object> instance : instances) {
-                        if (instance != null && instance.containsKey("name") && instance.containsKey("baseUrl")) {
-                            String name = (String) instance.get("name");
-                            String baseUrl = (String) instance.get("baseUrl");
-                            // 检查是否已存在instanceId，如果不存在才生成新的
-                            if (!instance.containsKey("instanceId") || instance.get("instanceId") == null) {
-                                String instanceId = InstanceIdUtils.getInstanceId(instance);
-                                instance.put("instanceId", instanceId);
-                            }
-
-                            // v1.7.1: 从数据库获取健康状态，而非内存缓存
-                            // 优先使用数据库中的 healthStatus 字段
-                            String healthStatus = getHealthStatusFromDatabase(name);
-                            if (healthStatus != null) {
-                                instance.put("health", "HEALTHY".equals(healthStatus));
-                                instance.put("healthStatus", healthStatus);
-                            } else {
-                                // 如果数据库中没有记录，默认为未知状态
-                                instance.put("health", true); // 默认健康
-                                instance.put("healthStatus", "UNKNOWN");
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return configs;
-    }
-
-    /**
-     * 从数据库获取实例的健康状态
-     *
-     * @param instanceName 实例名称
-     * @return 健康状态字符串 (HEALTHY, UNHEALTHY, UNKNOWN)，如果找不到返回 null
-     */
-    private String getHealthStatusFromDatabase(final String instanceName) {
-        if (serviceInstanceRepository == null) {
-            return null;
-        }
-        try {
-            return serviceInstanceRepository.findByInstanceName(instanceName)
-                    .map(entity -> entity.getHealthStatus())
-                    .orElse(null);
-        } catch (Exception e) {
-            logger.warn("从数据库获取实例健康状态失败: {}", e.getMessage());
-            return null;
-        }
+        return configQueryService.getAllConfigurations();
     }
 
     /**
      * 获取所有可用服务类型
+     * v2.6.14: 委托到 ConfigQueryService
      *
      * @return 服务类型列表
      */
     public Set<String> getAvailableServiceTypes() {
-        Map<String, Object> config = getAllConfigurations();
-        Map<String, Object> services = getServicesFromConfig(config);
-        return services.keySet();
+        return configQueryService.getAvailableServiceTypes();
     }
 
 
 
     /**
      * 获取指定服务的所有可用模型名称
+     * v2.6.14: 委托到 ConfigQueryService
      *
      * @param serviceType 服务类型
      * @return 模型名称集合
      */
     public Set<String> getAvailableModels(final String serviceType) {
-        List<Map<String, Object>> instances = instanceManager.getServiceInstancesAsMap(serviceType);
-        return instances.stream()
-                .map(instance -> (String) instance.get("name"))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+        return configQueryService.getAvailableModels(serviceType);
     }
 
 
@@ -871,27 +810,12 @@ private final ConfigComparisonService configComparisonService;
 
     /**
      * 获取当前追踪配置
+     * v2.6.14: 委托到 ConfigQueryService
      *
      * @return TraceConfig对象
      */
     public TraceConfig getTraceConfig() {
-        Map<String, Object> currentConfig = getAllConfigurations();
-        return extractTraceConfig(currentConfig);
-    }
-
-    /**
-     * 从配置Map中提取追踪配置
-     *
-     * @param config 配置Map
-     * @return TraceConfig对象
-     */
-    private TraceConfig extractTraceConfig(final Map<String, Object> config) {
-        if (config.containsKey("trace")) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> traceConfigMap = (Map<String, Object>) config.get("trace");
-            return TraceConfig.fromMap(traceConfigMap);
-        }
-        return new TraceConfig(); // 返回默认配置
+        return configQueryService.getTraceConfig();
     }
 
     // ==================== 追踪配置管理 ====================
@@ -959,11 +883,6 @@ private final ConfigComparisonService configComparisonService;
 
     /**
      * 获取追踪采样配置
-     *
-     * @return 采样配置Map
-     */
-    /**
-     * 获取追踪采样配置
      * v2.22.0: 委托到 TracingConfigManager
      *
      * @return 采样配置Map
@@ -972,12 +891,6 @@ private final ConfigComparisonService configComparisonService;
         return tracingConfigManager.getTracingSamplingConfig();
     }
 
-    /**
-     * 更新追踪采样配置
-     *
-     * @param samplingConfig 新的采样配置
-     * @param createNewVersion 是否创建新版本
-     */
     /**
      * 更新追踪采样配置
      * v2.22.0: 委托到 TracingConfigManager
@@ -990,24 +903,14 @@ private final ConfigComparisonService configComparisonService;
         refreshRuntimeConfig();
     }
 
-    // ==================== 追踪采样配置管理 ====================
-
     /**
-     * 从版本配置中提取采样配置
-     */
-    @SuppressWarnings("unchecked")
-
-
-    /**
-     * 将Map转换为SamplingConfig对象
-     *
-     * @param configMap 配置Map
      * 检查是否存在持久化配置
+     * v2.6.14: 委托到 ConfigQueryService
      *
      * @return true如果存在持久化配置
      */
     public boolean hasPersistedConfig() {
-        return configMergeService.hasPersistedConfig();
+        return configQueryService.hasPersistedConfig();
     }
 
     /**
