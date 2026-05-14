@@ -355,7 +355,7 @@ private final ConfigComparisonService configComparisonService;
         Map<String, Object> instanceMap = configurationHelper.convertInstanceToMap(instanceConfig);
         logger.debug("转换后的实例配置Map: {}", instanceMap);
         logger.debug("实例配置中的headers字段: {}", instanceMap != null ? instanceMap.get("headers") : "null");
-        Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(instanceMap);
+        Map<String, Object> validatedInstance = configValidator.validateAndNormalizeInstanceConfig(instanceMap);
 
         // 检查是否已存在（通过name和baseUrl判断）
         String name = (String) validatedInstance.get("name");
@@ -451,7 +451,7 @@ private final ConfigComparisonService configComparisonService;
             Map<String, Object> updatedInstance = configComparisonService.mergeInstanceConfig(oldInstance, newInstanceMap);
             logger.debug("更新实例 - 合并后的实例配置: {}", updatedInstance);
             logger.debug("更新实例 - 合并后的headers字段: {}", updatedInstance.get("headers"));
-            Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(updatedInstance);
+            Map<String, Object> validatedInstance = configValidator.validateAndNormalizeInstanceConfig(updatedInstance);
             logger.debug("更新实例 - 验证后的实例配置: {}", validatedInstance);
             logger.debug("更新实例 - 验证后的headers字段: {}", validatedInstance.get("headers"));
             instances.set(targetIndex, validatedInstance);
@@ -551,18 +551,50 @@ private final ConfigComparisonService configComparisonService;
 
         List<String> operationDetails = new ArrayList<>();
 
-        // 执行所有操作
+        // 执行所有操作（内联实现）
         for (InstanceOperation operation : operations) {
             switch (operation.type()) {
-                case ADD:
-                    addInstanceToList(instances, operation.instanceConfig(), operationDetails);
+                case ADD: {
+                    Map<String, Object> validatedInstance = configValidator.validateAndNormalizeInstanceConfig(
+                            configurationHelper.convertInstanceToMap(operation.instanceConfig()));
+                    String name = (String) validatedInstance.get("name");
+                    String baseUrl = (String) validatedInstance.get("baseUrl");
+                    boolean exists = instances.stream().anyMatch(inst ->
+                            name.equals(inst.get("name")) && baseUrl.equals(inst.get("baseUrl")));
+                    if (exists) {
+                        throw new IllegalArgumentException("实例已存在: " + name + "@" + baseUrl);
+                    }
+                    instances.add(validatedInstance);
+                    operationDetails.add("添加 " + name + "@" + baseUrl);
                     break;
-                case UPDATE:
-                    updateInstanceInList(instances, operation.instanceId(), operation.instanceConfig(), operationDetails);
+                }
+                case UPDATE: {
+                    boolean found = false;
+                    for (int i = 0; i < instances.size(); i++) {
+                        Map<String, Object> instance = instances.get(i);
+                        if (operation.instanceId().equals(InstanceIdUtils.getInstanceId(instance))) {
+                            Map<String, Object> updated = configComparisonService.mergeInstanceConfig(
+                                    instance, configurationHelper.convertInstanceToMap(operation.instanceConfig()));
+                            instances.set(i, configValidator.validateAndNormalizeInstanceConfig(updated));
+                            found = true;
+                            operationDetails.add("更新 " + operation.instanceId());
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        throw new IllegalArgumentException("实例不存在: " + operation.instanceId());
+                    }
                     break;
-                case DELETE:
-                    deleteInstanceFromList(instances, operation.instanceId(), operationDetails);
+                }
+                case DELETE: {
+                    boolean removed = instances.removeIf(inst ->
+                            operation.instanceId().equals(InstanceIdUtils.getInstanceId(inst)));
+                    if (!removed) {
+                        throw new IllegalArgumentException("实例不存在: " + operation.instanceId());
+                    }
+                    operationDetails.add("删除 " + operation.instanceId());
                     break;
+                }
             }
         }
 
@@ -588,68 +620,6 @@ private final ConfigComparisonService configComparisonService;
         refreshRuntimeConfig();
 
         logger.info("批量更新服务 {} 的实例完成，操作详情: {}", serviceType, String.join(", ", operationDetails));
-    }
-
-    /**
-     * 在实例列表中添加实例
-     */
-    private void addInstanceToList(final List<Map<String, Object>> instances, final ModelRouterProperties.ModelInstance instanceConfig, final List<String> operationDetails) {
-        Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(configurationHelper.convertInstanceToMap(instanceConfig));
-
-        String name = (String) validatedInstance.get("name");
-        String baseUrl = (String) validatedInstance.get("baseUrl");
-
-        // 检查是否已存在
-        boolean exists = instances.stream()
-                .anyMatch(instance -> {
-                    String instanceName = (String) instance.get("name");
-                    String instanceBaseUrl = (String) instance.get("baseUrl");
-                    return name.equals(instanceName) && baseUrl.equals(instanceBaseUrl);
-                });
-
-        if (exists) {
-            throw new IllegalArgumentException("实例已存在: " + name + "@" + baseUrl);
-        }
-
-        instances.add(validatedInstance);
-        operationDetails.add("添加 " + name + "@" + baseUrl);
-    }
-
-    /**
-     * 在实例列表中更新实例
-     */
-    private void updateInstanceInList(final List<Map<String, Object>> instances, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig, final List<String> operationDetails) {
-        boolean found = false;
-
-        for (int i = 0; i < instances.size(); i++) {
-            Map<String, Object> instance = instances.get(i);
-            String currentInstanceId = InstanceIdUtils.getInstanceId(instance);
-            if (instanceId.equals(currentInstanceId)) {
-                Map<String, Object> updatedInstance = configComparisonService.mergeInstanceConfig(instance, configurationHelper.convertInstanceToMap(instanceConfig));
-                Map<String, Object> validatedInstance = validateAndNormalizeInstanceConfig(updatedInstance);
-                instances.set(i, validatedInstance);
-                found = true;
-                operationDetails.add("更新 " + instanceId);
-                break;
-            }
-        }
-
-        if (!found) {
-            throw new IllegalArgumentException("实例不存在: " + instanceId);
-        }
-    }
-
-    /**
-     * 从实例列表中删除实例
-     */
-    private void deleteInstanceFromList(final List<Map<String, Object>> instances, final String instanceId, final List<String> operationDetails) {
-        boolean removed = instances.removeIf(instance -> instanceId.equals(InstanceIdUtils.getInstanceId(instance)));
-
-        if (!removed) {
-            throw new IllegalArgumentException("实例不存在: " + instanceId);
-        }
-
-        operationDetails.add("删除 " + instanceId);
     }
 
     /**
@@ -705,47 +675,6 @@ private final ConfigComparisonService configComparisonService;
     }
 
     // ==================== 辅助方法 ====================
-
-    /**
-     * 验证和标准化实例配置
-     */
-    private Map<String, Object> validateAndNormalizeInstanceConfig(final Map<String, Object> instanceConfig) {
-        Map<String, Object> normalized = new HashMap<>(instanceConfig);
-
-        // 必需字段验证
-        if (!normalized.containsKey("name") || normalized.get("name") == null) {
-            throw new IllegalArgumentException("实例名称不能为空");
-        }
-
-        if (!normalized.containsKey("baseUrl") || normalized.get("baseUrl") == null) {
-            throw new IllegalArgumentException("实例baseUrl不能为空");
-        }
-
-        // 设置默认值
-        if (!normalized.containsKey("weight")) {
-            normalized.put("weight", 1);
-        }
-
-        // 添加status字段的默认值
-        if (!normalized.containsKey("status")) {
-            normalized.put("status", "active");
-        }
-
-        // 确保instanceId字段存在
-        if (!normalized.containsKey("instanceId") || normalized.get("instanceId") == null) {
-            String name = (String) normalized.get("name");
-            String baseUrl = (String) normalized.get("baseUrl");
-            if (name != null && baseUrl != null) {
-                normalized.put("instanceId", InstanceIdUtils.getInstanceId(instanceConfig));
-            }
-        }
-
-        logger.debug("验证和标准化实例配置 - 输入: {}", instanceConfig);
-        logger.debug("验证和标准化实例配置 - 输出: {}", normalized);
-        logger.debug("验证和标准化实例配置 - headers字段: {}", normalized.get("headers"));
-
-        return normalized;
-    }
 
     /**
      * 从配置中获取services部分，并添加健康状态信息
