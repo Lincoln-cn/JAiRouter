@@ -341,4 +341,61 @@ public class TracingConfigManager {
     private Map<String, Object> getCurrentPersistedConfig() {
         return configMergeService.getPersistedConfig();
     }
+
+    // ==================== TraceConfig 管理方法 (v2.6.15) ====================
+
+    /**
+     * 更新追踪配置
+     *
+     * @param traceConfigMap   追踪配置 Map
+     * @param createNewVersion 是否创建新版本
+     */
+    public void updateTraceConfig(final Map<String, Object> traceConfigMap, final boolean createNewVersion) {
+        logger.info("更新追踪配置");
+
+        Map<String, Object> currentConfig;
+        if (createNewVersion) {
+            currentConfig = getCurrentPersistedConfig();
+        } else {
+            currentConfig = configMergeService.getPersistedConfig();
+        }
+
+        // 更新配置
+        currentConfig.put("trace", traceConfigMap);
+
+        if (createNewVersion) {
+            configVersionManager.saveAsNewVersion(currentConfig);
+        } else {
+            storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        }
+
+        logger.info("追踪配置更新成功");
+    }
+
+    /**
+     * 删除追踪配置
+     *
+     * @param createNewVersion 是否创建新版本
+     */
+    public void deleteTraceConfig(final boolean createNewVersion) {
+        logger.info("删除追踪配置");
+
+        Map<String, Object> currentConfig;
+        if (createNewVersion) {
+            currentConfig = getCurrentPersistedConfig();
+        } else {
+            currentConfig = configMergeService.getPersistedConfig();
+        }
+
+        // 删除追踪配置
+        currentConfig.remove("trace");
+
+        if (createNewVersion) {
+            configVersionManager.saveAsNewVersion(currentConfig);
+        } else {
+            storeManager.saveConfig(CURRENT_KEY, currentConfig);
+        }
+
+        logger.info("追踪配置删除成功");
+    }
 }

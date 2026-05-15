@@ -13,9 +13,6 @@ import org.unreal.modelrouter.config.core.manager.ConfigValidator;
 import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
 import org.unreal.modelrouter.config.core.manager.InstanceManager;
 import org.unreal.modelrouter.config.core.manager.TracingConfigManager;
-import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
-import org.unreal.modelrouter.common.dto.LoadBalanceConfig;
-import org.unreal.modelrouter.common.dto.RateLimitConfig;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -31,8 +28,9 @@ import java.util.List;
 import java.util.Map;
 import org.unreal.modelrouter.config.core.manager.ConfigComparisonService;
 import org.unreal.modelrouter.config.core.service.ConfigQueryService;
+import org.unreal.modelrouter.config.core.service.InstanceOperationService;
+import org.unreal.modelrouter.config.core.service.ServiceConfigUpdateService;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 配置管理服务 - 重构版
@@ -96,9 +94,6 @@ public class ConfigurationService {
 
     private static final String CURRENT_KEY = "model-router-config";
 
-    // 请求去重窗口时间（毫秒）
-    private static final long REQUEST_DEDUP_WINDOW_MS = 1000; // 1秒内的重复请求将被忽略
-
     private final StoreManager storeManager;
     private final ConfigurationHelper configurationHelper;
     private final ConfigMergeService configMergeService;
@@ -111,6 +106,8 @@ public class ConfigurationService {
     private final ConfigValidator configValidator;
     private final TracingConfigManager tracingConfigManager;
     private final ConfigQueryService configQueryService;
+    private final InstanceOperationService instanceOperationService;
+    private final ServiceConfigUpdateService serviceConfigUpdateService;
     private ModelServiceRegistry modelServiceRegistry; // 延迟注入避免循环依赖
     // v1.5.6: 配置同步服务，用于版本回滚时同步实例到数据库
     private ConfigSyncService configSyncService;
@@ -119,12 +116,6 @@ private final ConfigComparisonService configComparisonService;
     // v2.12.4: 事件发布器，用于发布配置同步事件
     @Autowired
     private ApplicationEventPublisher eventPublisher;
-
-    // 实例更新锁，防止同一实例的并发更新
-    private final ConcurrentHashMap<String, Object> instanceUpdateLocks = new ConcurrentHashMap<>();
-
-    // 请求去重缓存，防止短时间内的重复请求
-    private final ConcurrentHashMap<String, Long> recentUpdateRequests = new ConcurrentHashMap<>();
 
     @Autowired
     public ConfigurationService(final StoreManager storeManager,
@@ -138,7 +129,9 @@ private final ConfigComparisonService configComparisonService;
                                 final ConfigValidator configValidator,
                                 final TracingConfigManager tracingConfigManager,
                                 final ConfigComparisonService configComparisonService,
-                                final ConfigQueryService configQueryService) {
+                                final ConfigQueryService configQueryService,
+                                final InstanceOperationService instanceOperationService,
+                                final ServiceConfigUpdateService serviceConfigUpdateService) {
         this.storeManager = storeManager;
         this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
@@ -151,6 +144,8 @@ private final ConfigComparisonService configComparisonService;
         this.tracingConfigManager = tracingConfigManager;
         this.configComparisonService = configComparisonService;
         this.configQueryService = configQueryService;
+        this.instanceOperationService = instanceOperationService;
+        this.serviceConfigUpdateService = serviceConfigUpdateService;
         // 版本控制初始化移到 @PostConstruct 中，确保 JpaDatabaseInitializer 先执行
     }
 
@@ -247,7 +242,7 @@ private final ConfigComparisonService configComparisonService;
 
     /**
      * 使用强类型 DTO 更新服务配置
-     * 简单方案：只更新传入的配置项，保留 instances
+     * v2.6.15: 委托到 ServiceConfigUpdateService
      */
     @SuppressWarnings("unchecked")
     public void updateServiceConfigDto(final String serviceType, final UpdateServiceConfigRequest request) {
@@ -258,56 +253,13 @@ private final ConfigComparisonService configComparisonService;
             if (currentConfig == null) {
                 currentConfig = configMergeService.getDefaultConfig();
             }
-            
+
             Map<String, Object> services = getServicesFromConfig(currentConfig);
             Map<String, Object> existingServiceConfig = (Map<String, Object>) services.get(serviceType);
-            
-            // 构建新配置
-            Map<String, Object> newConfig = new HashMap<>();
-            
-            // 保留现有的 instances
-            if (existingServiceConfig != null && existingServiceConfig.containsKey("instances")) {
-                newConfig.put("instances", existingServiceConfig.get("instances"));
-            }
-            
-            // 更新传入的配置
-            if (request.getAdapter() != null) {
-                newConfig.put("adapter", request.getAdapter());
-            }
-            
-            LoadBalanceConfig lb = request.getLoadBalance();
-            if (lb != null) {
-                Map<String, Object> lbMap = new HashMap<>();
-                lbMap.put("type", lb.getType());
-                if (lb.getHashAlgorithm() != null) {
-                    lbMap.put("hashAlgorithm", lb.getHashAlgorithm());
-                }
-                newConfig.put("loadBalance", lbMap);
-            }
-            
-            RateLimitConfig rl = request.getRateLimit();
-            if (rl != null) {
-                Map<String, Object> rlMap = new HashMap<>();
-                rlMap.put("enabled", rl.getEnabled());
-                rlMap.put("algorithm", rl.getAlgorithm());
-                rlMap.put("capacity", rl.getCapacity());
-                rlMap.put("rate", rl.getRate());
-                rlMap.put("scope", rl.getScope());
-                rlMap.put("key", rl.getKey());
-                rlMap.put("clientIpEnable", rl.getClientIpEnable());
-                newConfig.put("rateLimit", rlMap);
-            }
-            
-            CircuitBreakerConfig cb = request.getCircuitBreaker();
-            if (cb != null) {
-                Map<String, Object> cbMap = new HashMap<>();
-                cbMap.put("enabled", cb.getEnabled());
-                cbMap.put("failureThreshold", cb.getFailureThreshold());
-                cbMap.put("timeout", cb.getTimeout());
-                cbMap.put("successThreshold", cb.getSuccessThreshold());
-                newConfig.put("circuitBreaker", cbMap);
-            }
-            
+
+            // 委托到 ServiceConfigUpdateService
+            Map<String, Object> newConfig = serviceConfigUpdateService.buildServiceConfigUpdate(existingServiceConfig, request);
+
             services.put(serviceType, newConfig);
             storeManager.saveConfig("model-router-config", currentConfig);
             configVersionManager.saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
@@ -344,68 +296,40 @@ private final ConfigComparisonService configComparisonService;
 
         // 确保服务存在
         if (!services.containsKey(serviceType)) {
-            // 自动创建服务
             services.put(serviceType, configValidator.createDefaultServiceConfig());
         }
 
         Map<String, Object> serviceConfig = (Map<String, Object>) services.get(serviceType);
         List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.computeIfAbsent("instances", k -> new ArrayList<>());
 
-        // 验证实例配置
+        // 委托到 InstanceOperationService
         Map<String, Object> instanceMap = configurationHelper.convertInstanceToMap(instanceConfig);
-        logger.debug("转换后的实例配置Map: {}", instanceMap);
-        logger.debug("实例配置中的headers字段: {}", instanceMap != null ? instanceMap.get("headers") : "null");
-        Map<String, Object> validatedInstance = configValidator.validateAndNormalizeInstanceConfig(instanceMap);
+        String detail = instanceOperationService.addInstance(instances, instanceMap);
 
-        // 检查是否已存在（通过name和baseUrl判断）
-        String name = (String) validatedInstance.get("name");
-        String baseUrl = (String) validatedInstance.get("baseUrl");
-        boolean exists = instances.stream()
-                .anyMatch(instance -> {
-                    String instanceName = (String) instance.get("name");
-                    String instanceBaseUrl = (String) instance.get("baseUrl");
-                    return name.equals(instanceName) && baseUrl.equals(instanceBaseUrl);
-                });
-
-        if (exists) {
-            throw new IllegalArgumentException("实例已存在: " + name + "@" + baseUrl);
-        }
-
-        instances.add(validatedInstance);
         currentConfig.put("services", services);
 
         // 添加版本元数据
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("operation", "addInstance");
-        metadata.put("operationDetail", "添加服务实例: " + name + "@" + baseUrl);
+        metadata.put("operationDetail", detail);
         metadata.put("serviceType", serviceType);
-        metadata.put("instanceName", name);
-        metadata.put("instanceUrl", baseUrl);
         metadata.put("timestamp", System.currentTimeMillis());
         currentConfig.put("_metadata", metadata);
 
-        // 使用智能版本控制 - 只有在配置真正变化时才创建新版本
+        // 使用智能版本控制
         String userId = SecurityUtils.getCurrentUserId();
-        String description = "添加服务实例: " + name + "@" + baseUrl;
-        saveAsNewVersionIfChanged(currentConfig, description, userId);
+        saveAsNewVersionIfChanged(currentConfig, detail, userId);
 
         refreshRuntimeConfig();
 
-        logger.info("实例 {} 添加成功", name + "@" + baseUrl);
+        logger.info("实例添加成功: {}", detail);
     }
 
 
-
-    /**
-     * 清理过期的请求记录
-     */
-    private void cleanupExpiredRequests(final long currentTime) {
-        recentUpdateRequests.entrySet().removeIf(entry ->
-                (currentTime - entry.getValue()) > REQUEST_DEDUP_WINDOW_MS * 2);
-    }
 
     /**
      * 内部实例更新方法
+     * v2.6.15: 简化实现，委托到 InstanceOperationService
      */
     @SuppressWarnings("unchecked")
     private void updateServiceInstanceInternal(final String serviceType, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig) {
@@ -425,74 +349,30 @@ private final ConfigComparisonService configComparisonService;
         Map<String, Object> serviceConfig = (Map<String, Object>) services.get(serviceType);
         List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
 
-        boolean found = false;
-        int targetIndex = -1;
-        Map<String, Object> oldInstance = null;
+        // 委托到 InstanceOperationService
+        Map<String, Object> instanceMap = configurationHelper.convertInstanceToMap(instanceConfig);
+        String detail = instanceOperationService.updateInstance(instances, instanceId, instanceMap);
 
-        // 先查找实例位置和原始配置
-        for (int i = 0; i < instances.size(); i++) {
-            Map<String, Object> instance = instances.get(i);
-            String currentInstanceId = InstanceIdUtils.getInstanceId(instance);
-            logger.info("比较实例ID: 请求ID={}, 配置ID={}, 匹配结果={}", instanceId, currentInstanceId, instanceId.equals(currentInstanceId));
-            if (instanceId.equals(currentInstanceId)) {
-                targetIndex = i;
-                oldInstance = instance;
-                found = true;
-                break;
-            }
-        }
-
-        if (found) {
-            instanceConfig.setInstanceId(instanceId);
-            // 合并更新配置
-            Map<String, Object> newInstanceMap = configurationHelper.convertInstanceToMap(instanceConfig);
-            logger.debug("更新实例 - 转换后的实例配置Map: {}", newInstanceMap);
-            logger.debug("更新实例 - 实例配置中的headers字段: {}", newInstanceMap != null ? newInstanceMap.get("headers") : "null");
-            Map<String, Object> updatedInstance = configComparisonService.mergeInstanceConfig(oldInstance, newInstanceMap);
-            logger.debug("更新实例 - 合并后的实例配置: {}", updatedInstance);
-            logger.debug("更新实例 - 合并后的headers字段: {}", updatedInstance.get("headers"));
-            Map<String, Object> validatedInstance = configValidator.validateAndNormalizeInstanceConfig(updatedInstance);
-            logger.debug("更新实例 - 验证后的实例配置: {}", validatedInstance);
-            logger.debug("更新实例 - 验证后的headers字段: {}", validatedInstance.get("headers"));
-            instances.set(targetIndex, validatedInstance);
-        }
-
-        if (!found) {
-            // 记录所有实例信息用于调试
-            logger.warn("实例不存在: {}，服务 {} 中的所有实例:", instanceId, serviceType);
-            for (int i = 0; i < instances.size(); i++) {
-                Map<String, Object> instance = instances.get(i);
-                String currentInstanceId = InstanceIdUtils.getInstanceId(instance);
-                logger.warn("  实例 {}: ID={}, name={}, baseUrl={}", i, currentInstanceId, instance.get("name"), instance.get("baseUrl"));
-            }
-            throw new IllegalArgumentException("实例不存在: " + instanceId);
-        }
-
-        // 更新服务配置
+        // 更新配置
         serviceConfig.put("instances", instances);
         services.put(serviceType, serviceConfig);
         currentConfig.put("services", services);
 
         // 添加版本元数据
-        String name = (String) configurationHelper.convertInstanceToMap(instanceConfig).get("name");
-        String baseUrl = (String) configurationHelper.convertInstanceToMap(instanceConfig).get("baseUrl");
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("operation", "updateInstance");
-        metadata.put("operationDetail", "更新服务实例: " + name + "@" + baseUrl);
+        metadata.put("operationDetail", detail);
         metadata.put("serviceType", serviceType);
-        metadata.put("instanceName", name);
-        metadata.put("instanceUrl", baseUrl);
         metadata.put("timestamp", System.currentTimeMillis());
         currentConfig.put("_metadata", metadata);
 
-        // 使用智能版本控制 - 只有在配置真正变化时才创建新版本
+        // 使用智能版本控制
         String userId = SecurityUtils.getCurrentUserId();
-        String description = "更新服务实例: " + name + "@" + baseUrl;
-        saveAsNewVersionIfChanged(currentConfig, description, userId);
+        saveAsNewVersionIfChanged(currentConfig, detail, userId);
 
         refreshRuntimeConfig();
 
-        logger.info("实例 {} 更新成功", instanceId);
+        logger.info("实例更新成功: {}", instanceId);
     }
 
 
@@ -551,50 +431,27 @@ private final ConfigComparisonService configComparisonService;
 
         List<String> operationDetails = new ArrayList<>();
 
-        // 执行所有操作（内联实现）
+        // 执行所有操作（委托到 InstanceOperationService）
         for (InstanceOperation operation : operations) {
+            String detail;
             switch (operation.type()) {
-                case ADD: {
-                    Map<String, Object> validatedInstance = configValidator.validateAndNormalizeInstanceConfig(
+                case ADD:
+                    detail = instanceOperationService.addInstance(
+                            instances,
                             configurationHelper.convertInstanceToMap(operation.instanceConfig()));
-                    String name = (String) validatedInstance.get("name");
-                    String baseUrl = (String) validatedInstance.get("baseUrl");
-                    boolean exists = instances.stream().anyMatch(inst ->
-                            name.equals(inst.get("name")) && baseUrl.equals(inst.get("baseUrl")));
-                    if (exists) {
-                        throw new IllegalArgumentException("实例已存在: " + name + "@" + baseUrl);
-                    }
-                    instances.add(validatedInstance);
-                    operationDetails.add("添加 " + name + "@" + baseUrl);
+                    operationDetails.add(detail);
                     break;
-                }
-                case UPDATE: {
-                    boolean found = false;
-                    for (int i = 0; i < instances.size(); i++) {
-                        Map<String, Object> instance = instances.get(i);
-                        if (operation.instanceId().equals(InstanceIdUtils.getInstanceId(instance))) {
-                            Map<String, Object> updated = configComparisonService.mergeInstanceConfig(
-                                    instance, configurationHelper.convertInstanceToMap(operation.instanceConfig()));
-                            instances.set(i, configValidator.validateAndNormalizeInstanceConfig(updated));
-                            found = true;
-                            operationDetails.add("更新 " + operation.instanceId());
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        throw new IllegalArgumentException("实例不存在: " + operation.instanceId());
-                    }
+                case UPDATE:
+                    detail = instanceOperationService.updateInstance(
+                            instances,
+                            operation.instanceId(),
+                            configurationHelper.convertInstanceToMap(operation.instanceConfig()));
+                    operationDetails.add(detail);
                     break;
-                }
-                case DELETE: {
-                    boolean removed = instances.removeIf(inst ->
-                            operation.instanceId().equals(InstanceIdUtils.getInstanceId(inst)));
-                    if (!removed) {
-                        throw new IllegalArgumentException("实例不存在: " + operation.instanceId());
-                    }
-                    operationDetails.add("删除 " + operation.instanceId());
+                case DELETE:
+                    detail = instanceOperationService.deleteInstance(instances, operation.instanceId());
+                    operationDetails.add(detail);
                     break;
-                }
             }
         }
 
@@ -717,63 +574,20 @@ private final ConfigComparisonService configComparisonService;
 
     /**
      * 更新追踪配置
-     *
-     * @param traceConfig 新的追踪配置
-     * @param createNewVersion 是否创建新版本
+     * v2.6.15: 委托到 TracingConfigManager
      */
     public void updateTraceConfig(final TraceConfig traceConfig, final boolean createNewVersion) {
-        logger.info("更新追踪配置");
-
-        Map<String, Object> currentConfig;
-        if (createNewVersion) {
-            currentConfig = getCurrentPersistedConfig();
-        } else {
-            currentConfig = configMergeService.getPersistedConfig();
-        }
-
-        // 更新配置
-        currentConfig.put("trace", traceConfig.toMap());
-
-        if (createNewVersion) {
-            // 保存为新版本并刷新配置
-            configVersionManager.saveAsNewVersion(currentConfig);
-        } else {
-            // 直接保存配置但不创建新版本
-            storeManager.saveConfig(CURRENT_KEY, currentConfig);
-        }
-
+        tracingConfigManager.updateTraceConfig(traceConfig.toMap(), createNewVersion);
         refreshRuntimeConfig();
-        logger.info("追踪配置更新成功");
     }
 
     /**
      * 删除追踪配置
-     *
-     * @param createNewVersion 是否创建新版本
+     * v2.6.15: 委托到 TracingConfigManager
      */
     public void deleteTraceConfig(final boolean createNewVersion) {
-        logger.info("删除追踪配置");
-
-        Map<String, Object> currentConfig;
-        if (createNewVersion) {
-            currentConfig = getCurrentPersistedConfig();
-        } else {
-            currentConfig = configMergeService.getPersistedConfig();
-        }
-
-        // 删除追踪配置
-        currentConfig.remove("trace");
-
-        if (createNewVersion) {
-            // 保存为新版本并刷新配置
-            configVersionManager.saveAsNewVersion(currentConfig);
-        } else {
-            // 直接保存配置但不创建新版本
-            storeManager.saveConfig(CURRENT_KEY, currentConfig);
-        }
-
+        tracingConfigManager.deleteTraceConfig(createNewVersion);
         refreshRuntimeConfig();
-        logger.info("追踪配置删除成功");
     }
 
     /**
