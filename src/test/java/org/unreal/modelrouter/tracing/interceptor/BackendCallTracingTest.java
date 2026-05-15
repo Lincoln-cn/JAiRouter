@@ -41,6 +41,7 @@ import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
+import org.unreal.modelrouter.router.http.WebClientPool;
 
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.Span;
@@ -95,10 +96,11 @@ class BackendCallTracingTest {
         // 创建一个活跃的Span使TracingContext变为活跃状态
         Span testSpan = tracingContext.createSpan("test-operation", SpanKind.SERVER);
         tracingContext.setCurrentSpan(testSpan);
-        
+
         // 创建测试对象
         interceptor = new BackendCallTracingInterceptor(structuredLogger);
-        webClientFactory = new TracingWebClientFactory(interceptor);
+        WebClientPool webClientPool = new WebClientPool();
+        webClientFactory = new TracingWebClientFactory(interceptor, webClientPool);
         
         // 设置ClientResponse Mock行为
         when(clientResponse.statusCode()).thenReturn(HttpStatus.OK);

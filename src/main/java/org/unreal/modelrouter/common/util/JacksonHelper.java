@@ -33,9 +33,39 @@ public class JacksonHelper {
     public static final String NORM_DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     /**
-     * Jackson对 LocalDate及LocalDateTime格式化的支持
+     * 单例 ObjectMapper 实例
+     * ObjectMapper 是线程安全的，可以全局复用
+     * 
+     * 性能优化 (v2.7.0): 
+     * - 避免每次调用创建新实例 (~50-100ms 初始化开销)
+     * - 减少对象创建和 GC 压力
+     */
+    private static final ObjectMapper INSTANCE = createObjectMapper();
+
+    /**
+     * 获取单例 ObjectMapper 实例
+     * 推荐用于大多数场景，性能最优
+     * 
+     * @return 全局共享的 ObjectMapper 实例
      */
     public static ObjectMapper getObjectMapper() {
+        return INSTANCE;
+    }
+
+    /**
+     * 创建新的 ObjectMapper 实例
+     * 用于需要自定义配置的特殊场景
+     * 
+     * @return 新创建的 ObjectMapper 实例
+     */
+    public static ObjectMapper createNewObjectMapper() {
+        return createObjectMapper();
+    }
+
+    /**
+     * 创建并配置 ObjectMapper
+     */
+    private static ObjectMapper createObjectMapper() {
         return new ObjectMapper()
                 .setLocale(Locale.CHINA)
                 .setTimeZone(TimeZone.getTimeZone(ZoneId.systemDefault()))
