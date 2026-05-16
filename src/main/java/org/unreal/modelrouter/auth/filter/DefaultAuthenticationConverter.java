@@ -69,18 +69,12 @@ public class DefaultAuthenticationConverter implements ServerAuthenticationConve
 
     /**
      * 提取JWT令牌
+     * 注意：Authorization 头保留给下游 AI 服务使用，JAiRouter 认证使用 Jairouter_Token
      */
     private String extractJwtToken(final ServerWebExchange exchange) {
-        // 首先尝试从配置的自定义头中提取（大小写不敏感）
+        // 从配置的自定义头中提取（大小写不敏感）
         String jwtHeader = securityProperties.getJwt().getJwtHeader();
-        String authHeader = getHeaderIgnoreCase(exchange, jwtHeader);
-        if (authHeader != null) {
-            if (authHeader.startsWith("Bearer ")) {
-                return authHeader.substring(7);
-            }
-            return authHeader;
-        }
-        return null;
+        return getHeaderIgnoreCase(exchange, jwtHeader);
     }
 
     /**
