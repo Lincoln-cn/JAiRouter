@@ -286,6 +286,12 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Caffeine for local caching (v2.7.10: client IP rate limiter cache) -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
         <!-- Lombok for reducing boilerplate code -->
         <dependency>
             <groupId>org.projectlombok</groupId>

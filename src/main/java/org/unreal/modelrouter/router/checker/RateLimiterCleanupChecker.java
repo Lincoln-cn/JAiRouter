@@ -28,7 +28,7 @@ public class RateLimiterCleanupChecker {
     @Scheduled(fixedRate = 300000) // 5分钟 = 300,000毫秒
     public void cleanupInactiveRateLimiters() {
         log.debug("开始清理不活跃的客户端IP限流器");
-        
+
         try {
             rateLimitManager.cleanupInactiveClientIpLimiters();
             log.debug("客户端IP限流器清理任务完成");

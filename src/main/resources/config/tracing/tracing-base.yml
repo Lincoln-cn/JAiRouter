@@ -32,8 +32,9 @@ jairouter:
     # 采样配置
     sampling:
       strategy: "parent_based_traceid_ratio"
-      ratio: 1.0
-      default-ratio: 1.0
+      # v2.7.9 优化：默认采样率从 1.0 改为 0.1，减少追踪开销 90%
+      ratio: 0.1
+      default-ratio: 0.1
       service-ratios: {}
       always-sample:
         - "/api/v1"

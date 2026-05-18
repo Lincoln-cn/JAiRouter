@@ -16,6 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 统一限流管理器
  * 支持：实例级 > 服务级 > 全局级 三层限流
  * 使用 ComponentFactory 创建限流器，彻底消除递归问题
+ *
+ * v2.7.10 优化：使用 Caffeine 缓存替代 ConcurrentHashMap 存储客户端 IP 限流器
  */
 @Component
 public class RateLimitManager {
@@ -31,15 +33,9 @@ public class RateLimitManager {
             new EnumMap<>(ModelServiceRegistry.ServiceType.class);  // 服务级
     private final Map<String, RateLimiter> instanceLimiters =
             new ConcurrentHashMap<>();                               // 实例级
-    // 客户端IP限流器：serviceType -> (clientIp -> RateLimiter)
-    private final Map<ModelServiceRegistry.ServiceType, Map<String, RateLimiter>> clientIpLimiters =
-            new ConcurrentHashMap<>();
-    
-    // 客户端IP限流器的最后访问时间，用于清理不活跃的限流器
-    private final Map<String, Long> clientIpLastAccessTime = new ConcurrentHashMap<>();
-    
-    // 不活跃阈值（毫秒）
-    private static final long INACTIVE_THRESHOLD = 1800000; // 30分钟
+
+    // v2.7.10: 使用 Caffeine 缓存替代 ConcurrentHashMap，解决内存泄漏风险
+    private final ClientIpRateLimiterCache clientIpRateLimiterCache = new ClientIpRateLimiterCache();
 
     public RateLimitManager(final ComponentFactory componentFactory,
                             final ConfigurationHelper configHelper,
@@ -171,6 +167,8 @@ public class RateLimitManager {
 
     /**
      * 客户端IP限流检查
+     *
+     * v2.7.10 优化：使用 Caffeine 缓存，自动过期清理，解决内存泄漏风险
      * @param context 限流上下文
      * @return 是否通过限流检查
      */
@@ -181,85 +179,50 @@ public class RateLimitManager {
 
         ModelServiceRegistry.ServiceType serviceType = context.getServiceType();
         String clientIp = context.getClientIp();
-        String accessKey = serviceType.name() + ":" + clientIp;
-
-        // 更新最后访问时间
-        clientIpLastAccessTime.put(accessKey, System.currentTimeMillis());
 
         // 检查服务级配置是否启用了客户端IP限流
         ModelRouterProperties.ServiceConfig serviceConfig = getServiceConfig(serviceType);
-        if (serviceConfig != null 
+        if (serviceConfig != null
                 && serviceConfig.getRateLimit() != null
                 && Boolean.TRUE.equals(serviceConfig.getRateLimit().getClientIpEnable())) {
-            // 获取或创建针对该服务类型和客户端IP的限流器
-            Map<String, RateLimiter> ipLimiters = clientIpLimiters.computeIfAbsent(
-                    serviceType, k -> new ConcurrentHashMap<>());
-
-            RateLimiter ipLimiter = ipLimiters.computeIfAbsent(clientIp, k -> {
+            // v2.7.10: 使用 Caffeine 缓存获取限流器
+            RateLimiter ipLimiter = clientIpRateLimiterCache.get(serviceType, clientIp, () -> {
                 RateLimitConfig config = configHelper.convertRateLimitConfig(serviceConfig.getRateLimit());
                 return componentFactory.createScopedRateLimiter(config);
             });
-
-            return ipLimiter.tryAcquire(context);
+            return ipLimiter != null && ipLimiter.tryAcquire(context);
         }
 
         // 检查全局配置是否启用了客户端IP限流
         ModelRouterProperties.RateLimitConfig globalRateLimit = properties.getRateLimit();
         if (globalRateLimit != null && Boolean.TRUE.equals(globalRateLimit.getClientIpEnable())) {
-            // 获取或创建针对该服务类型和客户端IP的限流器
-            Map<String, RateLimiter> ipLimiters = clientIpLimiters.computeIfAbsent(
-                    serviceType, k -> new ConcurrentHashMap<>());
-
-            RateLimiter ipLimiter = ipLimiters.computeIfAbsent(clientIp, k -> {
+            // v2.7.10: 使用 Caffeine 缓存获取限流器
+            RateLimiter ipLimiter = clientIpRateLimiterCache.get(serviceType, clientIp, () -> {
                 RateLimitConfig config = configHelper.convertRateLimitConfig(globalRateLimit);
                 return componentFactory.createScopedRateLimiter(config);
             });
-
-            return ipLimiter.tryAcquire(context);
+            return ipLimiter != null && ipLimiter.tryAcquire(context);
         }
 
         return true; // 未启用客户端IP限流
     }
 
     /**
-     * 清理不活跃的客户端IP限流器
-     * 定期调用此方法以防止内存泄漏
+     * v2.7.10: 获取客户端 IP 限流器缓存统计信息
+     */
+    public ClientIpRateLimiterCache.CacheStats getClientIpCacheStats() {
+        return clientIpRateLimiterCache.getStats();
+    }
+
+    /**
+     * v2.7.10: 清理不活跃的客户端 IP 限流器
+     * Caffeine 缓存会自动过期，此方法为兼容性保留
      */
     public void cleanupInactiveClientIpLimiters() {
-        long currentTime = System.currentTimeMillis();
-        
-        clientIpLastAccessTime.entrySet().removeIf(entry -> {
-            String accessKey = entry.getKey();
-            long lastAccessTime = entry.getValue();
-            
-            if (currentTime - lastAccessTime > INACTIVE_THRESHOLD) {
-                // 解析accessKey获取serviceType和clientIp
-                String[] parts = accessKey.split(":", 2);
-                if (parts.length == 2) {
-                    try {
-                        ModelServiceRegistry.ServiceType serviceType = 
-                            ModelServiceRegistry.ServiceType.valueOf(parts[0]);
-                        String clientIp = parts[1];
-                        
-                        // 从clientIpLimiters中移除
-                        Map<String, RateLimiter> ipLimiters = clientIpLimiters.get(serviceType);
-                        if (ipLimiters != null) {
-                            ipLimiters.remove(clientIp);
-                            if (ipLimiters.isEmpty()) {
-                                clientIpLimiters.remove(serviceType);
-                            }
-                        }
-                        
-                        LOGGER.debug("清理不活跃的客户端IP限流器: {}", accessKey);
-                        return true;
-                    } catch (IllegalArgumentException e) {
-                        LOGGER.warn("解析accessKey失败: {}", accessKey);
-                        return true; // 移除无效的key
-                    }
-                }
-            }
-            return false;
-        });
+        // Caffeine cache auto-expires entries, no manual cleanup needed
+        ClientIpRateLimiterCache.CacheStats stats = clientIpRateLimiterCache.getStats();
+        LOGGER.debug("Client IP limiter cache stats: size={}, evictions={}", 
+                stats.getSize(), stats.getEvictionCount());
     }
 
     private ModelRouterProperties.ServiceConfig getServiceConfig(final ModelServiceRegistry.ServiceType serviceType) {
@@ -356,18 +319,17 @@ public class RateLimitManager {
         LOGGER.info("Reloading rate limiters");
         var oldSvc = new EnumMap<>(serviceLimiters);
         var oldInst = new ConcurrentHashMap<>(instanceLimiters);
-        var oldClientIp = new ConcurrentHashMap<>(clientIpLimiters);
+        // v2.7.10: clientIpRateLimiterCache has built-in cleanup, no need to backup/restore
 
         try {
             serviceLimiters.clear();
             instanceLimiters.clear();
-            clientIpLimiters.clear();
+            // v2.7.10: Caffeine cache auto-expires, no explicit clear needed
             initializeRateLimiters();
             LOGGER.info("Reloaded successfully");
         } catch (Exception e) {
             serviceLimiters.putAll(oldSvc);
             instanceLimiters.putAll(oldInst);
-            clientIpLimiters.putAll(oldClientIp);
             LOGGER.error("Reload failed, rollback. Error: {}", e.getMessage());
             throw new RuntimeException("Rate limit reload failed", e);
         }
