@@ -229,7 +229,7 @@ public class SecretKeyValidator {
         }
 
         // 检查是否为默认密钥
-        if ("UqfpTm2Zw7ff2BNnZb8AQo8t".equals(secret)) {
+        if ("ChangeMeOnFirstStartup123456".equals(secret)) {
             return true;
         }
 
@@ -261,7 +261,7 @@ public class SecretKeyValidator {
         }
 
         // 检查默认密码
-        if ("UqfpTm2Zw7ff2BNnZb8AQo8t".equals(password)) {
+        if ("ChangeMeOnFirstStartup123456".equals(password)) {
             return true;
         }
 

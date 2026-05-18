@@ -61,10 +61,10 @@ jairouter:
     jwt:
       enabled: true
       secret: "${DEV_JWT_SECRET:dev-secret-key-for-testing-only-32-characters-minimum}"
-      
+
       accounts:
         - username: "admin"
-          password: "{noop}${DEV_ADMIN_PASSWORD:admin123}"
+          password: "{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}"
           roles: ["ADMIN", "USER"]
           enabled: true
         - username: "user"

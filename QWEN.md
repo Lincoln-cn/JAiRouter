@@ -165,7 +165,13 @@ docker-compose --profile monitoring up -d
 ### Default Credentials
 
 - Username: `admin`
-- Password: `UqfpTm2Zw7ff2BNnZb8AQo8t` (check logs on first startup)
+- Password: Value of `INITIAL_ADMIN_PASSWORD` environment variable
+  - **Development default**: `ChangeMeOnFirstStartup123456` (when not set)
+  - **Production**: Must be set via environment variable, otherwise a security warning is issued
+- Recommendation: Use the key generation tool:
+  ```bash
+  docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
+  ```
 
 ---
 
@@ -234,7 +240,9 @@ mvn package -Dcheckstyle.skip=true -Dspotbugs.skip=true
 
 - JWT secret must be at least 32 characters in production
 - API keys are stored hashed with SHA-256
-- Default passwords are generated on first startup - check logs
+- Admin password set via `INITIAL_ADMIN_PASSWORD` environment variable
+  - Development default: `ChangeMeOnFirstStartup123456`
+  - Production: Must be set explicitly, security warning if not configured
 - Enable HTTPS for production deployments
 
 ---

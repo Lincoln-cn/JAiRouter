@@ -50,7 +50,7 @@ class SecretKeyValidatorTest {
     @Test
     @DisplayName("验证 JWT 密钥 - 默认密钥")
     void testValidateJwtSecret_DefaultKey() {
-        ValidationResult result = SecretKeyValidator.validateJwtSecret("UqfpTm2Zw7ff2BNnZb8AQo8t");
+        ValidationResult result = SecretKeyValidator.validateJwtSecret("ChangeMeOnFirstStartup123456");
         assertEquals(StrengthLevel.VERY_WEAK, result.getStrengthLevel());
         assertFalse(result.isPassed());
         assertTrue(result.getMessage().contains("常见弱密钥"));
@@ -125,7 +125,7 @@ class SecretKeyValidatorTest {
             "default",
             "test",
             "guest",
-            "UqfpTm2Zw7ff2BNnZb8AQo8t"  // 默认密码
+            "ChangeMeOnFirstStartup123456"  // 默认密码
         };
         
         for (String password : weakPasswords) {

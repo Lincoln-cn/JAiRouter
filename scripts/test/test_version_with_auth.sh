@@ -19,7 +19,7 @@ AUTH_PREFIX="/api/auth/jwt"
 
 # 默认凭据（来自 QWEN.md）
 USERNAME="admin"
-PASSWORD="UqfpTm2Zw7ff2BNnZb8AQo8t"
+PASSWORD="ChangeMeOnFirstStartup123456"
 
 # Token 存储
 JWT_TOKEN=""
@@ -362,7 +362,7 @@ case "${1:-}" in
         echo "环境变量:"
         echo "  BASE_URL   API 基础 URL (默认: http://localhost:8080)"
         echo "  USERNAME   登录用户名 (默认: admin)"
-        echo "  PASSWORD   登录密码 (默认: UqfpTm2Zw7ff2BNnZb8AQo8t)"
+        echo "  PASSWORD   登录密码 (默认: ChangeMeOnFirstStartup123456)"
         exit 0
         ;;
     *)

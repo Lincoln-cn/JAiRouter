@@ -48,7 +48,7 @@ print_step "1" "获取 JWT 令牌"
 
 TOKEN_RESPONSE=$(curl -s -X POST "${BASE_URL}/api/auth/jwt/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"UqfpTm2Zw7ff2BNnZb8AQo8t"}')
+  -d '{"username":"admin","password":"ChangeMeOnFirstStartup123456"}')
 
 TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.data.token')
 

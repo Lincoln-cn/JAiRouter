@@ -7,7 +7,7 @@ BASE_URL="http://172.16.30.6:8080"
 # 获取令牌
 TOKEN=$(curl -s -X POST "${BASE_URL}/api/auth/jwt/login" \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"UqfpTm2Zw7ff2BNnZb8AQo8t"}' | jq -r '.data.token')
+  -d '{"username":"admin","password":"ChangeMeOnFirstStartup123456"}' | jq -r '.data.token')
 
 echo "Token: ${TOKEN:0:50}..."
 
