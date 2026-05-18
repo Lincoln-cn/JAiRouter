@@ -44,22 +44,22 @@ jairouter:
   security:
     # 生产环境安全功能默认关闭，需要显式启用
     enabled: false
-    
+
     jwt:
       enabled: false
       # 生产环境必须使用环境变量设置密钥
       secret: "${PROD_JWT_SECRET:}"
       issuer: "jairouter-prod"
-      
+
       persistence:
         enabled: false
         redis:
           enabled: false
-    
+
     api-key:
       enabled: true
       default-expiration-days: 365
-    
+
     audit:
       log-level: "WARN"
       include-request-body: false
@@ -69,12 +69,12 @@ jairouter:
       alert-thresholds:
         auth-failures-per-minute: 5
         suspicious-requests-per-minute: 10
-    
+
     sanitization:
       response:
         enabled: true
         log-sanitization: false
-    
+
     monitoring:
       enabled: true
       alerts:
@@ -93,9 +93,7 @@ jairouter:
             enabled: true
             url: "${SECURITY_ALERT_WEBHOOK:}"
 
-# 性能配置（生产环境优化）
-jairouter:
-  security:
+    # 性能配置（生产环境优化）
     performance:
       authentication:
         thread-pool-size: 20

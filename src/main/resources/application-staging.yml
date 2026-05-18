@@ -27,12 +27,12 @@ management:
 jairouter:
   security:
     enabled: true
-    
+
     jwt:
       enabled: true
       secret: "${STAGING_JWT_SECRET:}"
       issuer: "jairouter-staging"
-      
+
       persistence:
         enabled: true
         primary-storage: redis
@@ -42,22 +42,20 @@ jairouter:
           port: "${REDIS_PORT:6379}"
           password: "${REDIS_PASSWORD:}"
           database: "${REDIS_DATABASE:2}"
-    
+
     api-key:
       enabled: true
-    
+
     audit:
       log-level: "INFO"
       retention-days: 30
       alert-enabled: true
-    
+
     sanitization:
       response:
         enabled: true
 
-# 性能配置（预发布环境）
-jairouter:
-  security:
+    # 性能配置（预发布环境）
     performance:
       authentication:
         thread-pool-size: 10
