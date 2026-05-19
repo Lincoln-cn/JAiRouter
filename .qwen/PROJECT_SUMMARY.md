@@ -1,69 +1,90 @@
 # Project Summary
 
 ## Overall Goal
-v2.7-v2.9 微服务化准备系列已完成。v2.10-v2.15 代码质量提升和超大类重构进行中。
-**当前重点**：超大类拆分，降低代码复杂度，提升可维护性。
+整合 innerdoc 目录中的 v1.8 快速开始文档与 docs 目录下的正式文档，确保文档完整性并通过 mkdocs 严格模式编译验证。
 
 ## Key Knowledge
-- **Build Command**: `mvn compile -DskipTests -Dcheckstyle.skip=true -Dspotbugs.skip=true`
-- **Test Command**: `mvn test -Dcheckstyle.skip=true -Dspotbugs.skip=true`
-- **Coverage Command**: `mvn clean test jacoco:report -Dcheckstyle.skip=true -Dspotbugs.skip=true`
-- **Current Tests**: 941 (all passing)
-- **Coverage**: INSTRUCTION 13.1%
-- **Package Structure**: 6 service modules (auth/config/router/monitor/persistence/common)
-- **Configuration Files**: 25 modular files under src/main/resources/config/
-- **超大类进度**: ~38% (已提取~3084行)
+
+### 项目技术栈
+- **后端**: Java 17, Spring Boot 3.5.5 (WebFlux/Reactive)
+- **前端**: Vue 3 + TypeScript + Element Plus + Vite
+- **数据库**: H2 (嵌入式), R2DBC 响应式访问
+- **文档系统**: MkDocs with Material theme, i18n plugin
+- **构建工具**: Maven 3.x
+
+### 文档规范
+- 文档存放在 `docs/` 目录，按语言分为 `docs/zh/` 和 `docs/en/`
+- mkdocs.yml 控制导航结构，需要同步更新中英文翻译映射
+- `mkdocs build --strict` 用于验证文档完整性
+- innerdoc 目录下的文档**严禁提交到 Git 仓库**（仅供本地参考）
+
+### 目录用途区分
+| 目录 | 用途 | 文档数 |
+|------|------|--------|
+| docs/ | 用户公开文档 | 159 |
+| innerdoc/ | 内部开发记录 | 154 |
+
+### 关键命令
+```bash
+# MkDocs 严格模式编译验证
+mkdocs build --strict
+
+# Maven 快速构建
+mvn clean package -Pfast
+
+# Docker 运行
+docker run -d -p 8080:8080 sodlinken/jairouter:latest
+```
 
 ## Recent Actions
-- **v2.15.x BaseAdapter拆分第一阶段完成**:
-  - 创建StreamingRequestProcessor(163行) - 流式请求处理
-  - 创建MultipartRequestHandler(221行) - multipart请求处理
-  - 新增384行代码
-  - Git 标签: v2.15.1
-  - **待完成**: BaseAdapter委托调用
 
-## Completed Versions
-| Series | Status | Summary |
-|--------|--------|---------|
-| v2.7.x | ✅ 完成 | Package 结构重组，481 文件迁移，6 服务模块 |
-| v2.8.x | ✅ 完成 | 配置整合，25 配置文件，校验机制 |
-| v2.9.x | ✅ 完成 | 废弃清理 -628 行，+57 测试，Checkstyle -46% |
-| v2.10.x | ✅ 完成 | Checkstyle修复，警告-65% |
-| v2.11.x | ✅ 完成 | TraceQueryService拆分，+145测试，覆盖率+2.1% |
-| v2.12.x | ✅ 完成 | 事件驱动重构，4事件类+3监听器，代码复杂度-82% |
-| v2.13.x | ✅ 完成 | ConfigurationHelper拆分，3helper类(1159行)，委托调用 |
-| v2.14.x | ✅ 完成 | ApiKeyService拆分，5新类(1539行)，事件驱动审计 |
-| v2.15.x | ⚠️ 第一阶段 | BaseAdapter拆分，2新类(384行)，待委托调用 |
+### 本次会话完成的工作
+| 任务 | 状态 | 说明 |
+|------|------|------|
+| 分析文档差异 | ✅ | innerdoc 和 docs 目录对比分析 |
+| innerdoc 文档检查 | ✅ | 确认 docs 已完整覆盖用户主题 |
+| 结论确认 | ✅ | 无需额外整合 |
 
-## Next Version (下次推进)
-- **v2.15.2**: BaseAdapter委托调用 (工作量: 1天)
-  - 添加StreamingRequestProcessor注入
-  - 添加MultipartRequestHandler注入
-  - 方法改为可选委托
+### 文档覆盖分析结果
+| innerdoc 目录 | docs 对应目录 | 状态 |
+|--------------|--------------|------|
+| 06-运维监控 | zh/monitoring (12文件) | ✅ 已覆盖 |
+| 08-安全认证 | zh/security (6文件) | ✅ 已覆盖 |
+| 09-构建部署 | zh/deployment (7文件) | ✅ 已覆盖 |
+| 10-开发指南 | zh/development (12文件) | ✅ 已覆盖 |
+| 11-数据库配置 | zh/configuration/store-config.md | ✅ 已覆盖 |
+| 14-链路追踪 | zh/tracing (7文件) | ✅ 已覆盖 |
+| 15-故障排查 | zh/troubleshooting (4文件) | ✅ 已覆盖 |
 
-- **v2.15.3+**: BaseAdapter继续拆分
-  - NonStreamingRequestProcessor提取
-  - FallbackRequestProcessor提取
+### 修改的文件（上次会话）
+1. **新增**: `docs/en/getting-started/quick-start-v1.8.md` - 英文版 v1.8 快速开始指南
+2. **修改**: `mkdocs.yml` - 添加导航翻译配置
+3. **修改**: `docs/configuration-guide.md` - 修复无效链接
 
-## 关键文档 (下次启动请先读取)
-| 文档 | 路径 |
-|------|------|
-| 下次推进待办任务 | `innerdoc/03-重构记录/下次推进待办任务.md` |
-| v2.15.x开发总结 | `innerdoc/16-版本发布/v2.15.x-开发总结.md` |
-| 超大类重构分析报告 | `innerdoc/03-重构记录/超大类重构分析报告.md` |
+## Current Plan
 
-## 超大类重构进度
-| 文件 | 原行数 | 当前行数 | 目标行数 | 进度 |
-|------|--------|----------|----------|------|
-| ConfigurationService | 2269 | 2269 | ~1200 | 50% (事件驱动已设计) |
-| BaseAdapter | 1350 | 1350 | ~600 | 30% (新组件已创建，待委托) |
-| ApiKeyService | 1198 | 263 | ~400 | ✅ **100%（完成）** |
-| ConfigurationHelper | 1091 | 357 | ~200 | ✅ **100%（完成）** |
-| 其他4个 | 3006 | 3006 | ~800 | 0% (待开始) |
+### 已完成 [DONE]
+- [DONE] 分析 innerdoc 和 docs 目录下的文档差异
+- [DONE] 确认中文版 `quick-start-v1.8.md` 已完整
+- [DONE] 创建英文版 `quick-start-v1.8.md`
+- [DONE] 更新 mkdocs.yml 导航翻译配置
+- [DONE] 使用 mkdocs build --strict 验证编译通过
+- [DONE] 提交到本地 Git 仓库 (commit: 4086294f)
+- [DONE] 检查 innerdoc 文档是否需要整合（结论：无需整合）
+
+### 待处理 [TODO]
+- [ ] 推送到远程仓库（需用户确认）
+
+### 项目版本状态
+- 当前最新提交: `4086294f` - docs: 添加英文版 v1.8 快速开始指南并修复文档链接
+- 文档站点: https://jairouter.com
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-05-08T22:30:00Z
-**Current Git Tag**: v2.15.1
-**Next Tag**: v2.15.2
+**Update time**: 2026-05-19T(当前会话)
+
+---
+
+## Summary Metadata
+**Update time**: 2026-05-19T02:06:19.826Z 

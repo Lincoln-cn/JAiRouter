@@ -69,7 +69,6 @@ plugins:
             入门: Getting Started
             安装指南: Installation Guide
             快速开始: Quick Start
-            快速开始(v1.8): Quick Start (v1.8)
             第一步: First Steps
             配置指南: Configuration
             应用配置: Application Config
@@ -159,7 +158,6 @@ nav:
     - zh/getting-started/index.md
     - 安装指南: zh/getting-started/installation.md
     - 快速开始: zh/getting-started/quick-start.md
-    - 快速开始(v1.8): zh/getting-started/quick-start-v1.8.md
     - 第一步: zh/getting-started/first-steps.md
   - 配置指南:
     - zh/configuration/index.md

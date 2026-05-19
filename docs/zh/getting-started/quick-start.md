@@ -1,9 +1,10 @@
 ﻿# 快速开始
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**: c1aa5b0f  
+> **文档版本**: 1.1.0
+> **最后更新**: 2026-05-19
+> **适用版本**: v1.8.0+
+> **Git 提交**: c1aa5b0f
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -18,6 +19,7 @@
 - ✅ 配置第一个 AI 模型服务
 - ✅ 发送 API 请求并获得响应
 - ✅ 体验负载均衡和限流功能
+- ✅ 使用密钥生成工具创建安全配置
 
 ## 📋 前提条件
 
@@ -36,6 +38,42 @@
 - 如果没有，我们将在步骤中提供测试用的模拟服务
 
 > 💡 **提示**: 如果您还没有安装 JAiRouter，请先查看 [安装指南](installation.md)。
+
+## 🗝️ 步骤 0：生成安全密钥（v1.8.0+ 推荐）
+
+**v1.8.0+ 版本提供密钥生成工具**，支持自动生成安全的 JWT 密钥和管理员密码。
+
+### 方式一：使用 Docker 运行密钥生成工具（推荐）
+
+```bash
+# 生成 JWT 密钥（Base64 编码）
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
+
+# 生成管理员密码
+docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
+```
+
+### 方式二：使用系统命令生成（无需 Docker）
+
+```bash
+# 生成 Base64 编码的 JWT 密钥（至少 32 字节）
+openssl rand -base64 32
+
+# 生成随机密码（16 字符，包含字母数字）
+openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 16
+```
+
+### 设置环境变量
+
+```bash
+# 设置 JWT 密钥（使用生成的密钥）
+export JWT_SECRET="your-base64-encoded-secret"
+
+# 设置管理员密码（使用生成的密码）
+export INITIAL_ADMIN_PASSWORD="MyStr0ng!Pass#2026"
+```
+
+> 💡 **提示**: v1.8.0+ 版本在启动时会自动检查密钥强度，确保生产环境安全。
 
 ## 🚀 步骤 1：启动 JAiRouter
 
