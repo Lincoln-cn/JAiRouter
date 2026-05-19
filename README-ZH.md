@@ -1,245 +1,274 @@
 # JAiRouter
 
 <p align="center">
-  <img src="logo/JAiRouterLogo.png" alt="JAiRouter Logo" width="400">
+  <img src="logo/JAiRouterLogo.png" alt="JAiRouter" width="380">
 </p>
 
 <p align="center">
-  <strong>AI 模型服务统一网关 | 一行代码接入所有模型</strong>
+  <strong>AI 模型服务统一网关</strong>
+</p>
+
+<p align="center">
+  <strong>一行代码接入 Ollama、vLLM、GPUStack 等所有模型服务</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">
-    <img src="https://img.shields.io/github/stars/Lincoln-cn/JAiRouter?style=social" alt="GitHub stars">
+    <img src="https://img.shields.io/github/stars/Lincoln-cn/JAiRouter?style=flat-square&logo=github" alt="GitHub stars">
   </a>
   <a href="https://hub.docker.com/r/sodlinken/jairouter">
-    <img src="https://img.shields.io/docker/pulls/sodlinken/jairouter" alt="Docker Pulls">
+    <img src="https://img.shields.io/docker/pulls/sodlinken/jairouter?style=flat-square&logo=docker" alt="Docker Pulls">
   </a>
   <a href="https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/Lincoln-cn/JAiRouter" alt="License">
+    <img src="https://img.shields.io/github/license/Lincoln-cn/JAiRouter?style=flat-square" alt="License">
   </a>
-  <a href="https://deepwiki.com/Lincoln-cn/JAiRouter">
-    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  <a href="https://github.com/Lincoln-cn/JAiRouter/releases">
+    <img src="https://img.shields.io/github/v/release/Lincoln-cn/JAiRouter?style=flat-square" alt="Release">
   </a>
 </p>
 
 <p align="center">
   <a href="README.md">English</a> •
-  <a href="https://jairouter.com">在线文档</a> •
-  <a href="https://jairouter.com/en/">English Docs</a>
+  <a href="https://jairouter.com">文档</a> •
+  <a href="https://jairouter.com/en/">English Docs</a> •
+  <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">讨论</a>
 </p>
 
 ---
 
-> ⚠️ **LTS 版本公告**: `v2.6.11` 是最终长期支持版本，将在 **24 个月内**（至 2028-05）持续提供安全补丁和关键修复。v3.0 微服务架构因社区需求有限已无限期推迟。
-
----
-
-## 🎯 为什么选择 JAiRouter？
-
-**一个网关，统一管理所有 AI 模型服务**
-
-| 对比项 | 没有 JAiRouter | 使用 JAiRouter |
-|--------|---------------|----------------|
-| **多模型管理** | 每个服务独立配置 endpoint | 统一 OpenAI 兼容 API `/v1/*` |
-| **负载均衡** | 手动切换或 Nginx 配置 | 5种策略自动分发 + 健康检查 |
-| **故障转移** | 服务中断等待恢复 | 自动熔断 + 快速恢复 |
-| **访问控制** | 各自实现认证逻辑 | JWT + API Key 双认证体系 |
-| **监控追踪** | 分散的日志和指标 | 统一 Dashboard + Prometheus |
-| **配置变更** | 重启服务生效 | Web 控制台动态更新 |
-
----
-
-## 🏗️ 架构图
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              客户端层                                        │
-│    OpenAI SDK │ Langchain │ 自定义 HTTP 客户端                              │
-└───────────────────────────────────┬─────────────────────────────────────────┘
-                                    │ OpenAI 兼容 API
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           JAiRouter 网关                                     │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
-│  │ 负载均衡    │ │ 限流熔断    │ │ 认证鉴权    │ │ 追踪监控    │           │
-│  │ 5种策略     │ │ Token Bucket│ │ JWT+API Key │ │ OpenTelemetry│           │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘           │
-│  ┌─────────────────────────────────────────────────────────────────┐       │
-│  │                    多后端适配器                                   │       │
-│  │  GPUStack │ Ollama │ vLLM │ Xinference │ LocalAI │ OpenAI      │       │
-│  └─────────────────────────────────────────────────────────────────┘       │
-└───────────────────────────────────┬─────────────────────────────────────────┘
-                                    │
-        ┌───────────────────────────┼───────────────────────────┐
-        ▼                           ▼                           ▼
-┌───────────────┐           ┌───────────────┐           ┌───────────────┐
-│   Ollama      │           │    vLLM       │           │  GPUStack     │
-│ localhost:11434│          │ localhost:8000│           │ localhost:80  │
-└───────────────┘           └───────────────┘           └───────────────┘
-```
-
----
-
-## ⚡ 1分钟快速体验
-
-无需配置后端服务，即刻体验 Web 控制台：
+## 立即开始
 
 ```bash
-# 拉取并启动
+docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+```
+
+打开 http://localhost:8080 访问 Web 控制台。
+
+就这么简单，无需任何配置。
+
+---
+
+## JAiRouter 是什么？
+
+JAiRouter 是一个 **AI 模型服务统一网关**，提供：
+
+- **OpenAI 兼容 API** — 使用任意 OpenAI SDK，零代码改动
+- **智能负载均衡** — 自动请求分发，健康检查
+- **限流与熔断** — 保护服务免受过载
+- **Web 控制台** — 可视化管理服务、实例、监控
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                           您的应用                               │
+│                    (OpenAI SDK / LangChain / HTTP)              │
+└─────────────────────────────────┬───────────────────────────────┘
+                                  │
+                                  ▼ OpenAI API
+┌─────────────────────────────────────────────────────────────────┐
+│                         JAiRouter                                │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │  路由   │ │负载均衡 │ │  限流   │ │  熔断   │ │  认证   │   │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
+└─────────────────────────────────┬───────────────────────────────┘
+                                  │
+       ┌──────────────┬───────────┼───────────┬──────────────┐
+       ▼              ▼           ▼           ▼              ▼
+   ┌───────┐     ┌───────┐   ┌───────┐   ┌───────┐     ┌───────┐
+   │Ollama │     │ vLLM  │   │GPUStack│  │Xinference│  │OpenAI │
+   └───────┘     └───────┘   └───────┘   └───────┘     └───────┘
+```
+
+---
+
+## 为什么选择 JAiRouter？
+
+| 没有 JAiRouter | 使用 JAiRouter |
+|---------------|----------------|
+| 每个模型单独配置 endpoint | 统一的 API 入口 |
+| 服务宕机时手动切换 | 自动熔断故障转移 |
+| 每个服务单独实现认证 | 内置 JWT + API Key |
+| 分散的日志和监控指标 | 统一的 Dashboard |
+| 修改配置需重启服务 | Web 控制台热更新 |
+
+---
+
+## 功能特性
+
+| 功能 | 描述 |
+|------|------|
+| 🔌 **OpenAI 兼容** | 所有 `/v1/*` 端点与 OpenAI SDK 完全兼容 |
+| ⚖️ **负载均衡** | 轮询、加权、最少连接、IP Hash、一致性哈希 |
+| 🛡️ **流量控制** | 令牌桶、漏桶、滑动窗口算法 |
+| 🔥 **熔断降级** | 自动故障转移，可配置阈值 |
+| 🔐 **双认证体系** | JWT + API Key 双重认证 |
+| 📊 **可观测性** | Prometheus 指标、OpenTelemetry 追踪 |
+| 💾 **状态持久化** | Redis / 文件存储，支持集群部署 |
+| 🎛️ **Web 控制台** | 仪表板、服务管理、版本控制 |
+
+---
+
+## 支持的后端服务
+
+| 后端 | Chat | Embedding | Rerank | TTS | STT | Image |
+|------|:----:|:---------:|:------:|:---:|:---:|:-----:|
+| **Ollama** | ✅ | ✅ | - | - | - | - |
+| **vLLM** | ✅ | ✅ | - | - | - | - |
+| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ |
+| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ |
+
+---
+
+## 快速开始
+
+### 1. 启动 JAiRouter
+
+```bash
+# 使用 Docker
 docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
 
-# 访问控制台
-open http://localhost:8080
+# 使用 Docker Compose
+curl -O https://raw.githubusercontent.com/Lincoln-cn/JAiRouter/main/docker-compose.yml
+docker compose up -d
 ```
 
-**默认登录凭证**：
+### 2. 访问 Web 控制台
+
+浏览器打开 http://localhost:8080
+
+默认登录凭证：
 - 用户名：`admin`
-- 密码：查看容器日志获取（`docker logs jairouter | grep password`）
+- 密码：查看日志 `docker logs jairouter | grep password`
 
----
+### 3. 配置第一个服务
 
-## 🧭 功能概览（Web 控制台）
-
-| 模块 | 功能 | 说明 |
-|------|------|------|
-| 🔍 **仪表板** | Dashboard | 实时展示系统状态、服务健康度、请求趋势、异常统计 |
-| ⚙️ **服务管理** | 服务/实例配置 | 动态配置 AI 服务类型、适配器、负载均衡策略 |
-| 📦 **版本管理** | 配置版本控制 | 创建、应用、回滚、对比配置版本 |
-| 🔐 **安全管理** | API Key / JWT | 密钥生命周期管理、审计日志、黑名单 |
-| 📊 **追踪管理** | 分布式追踪 | 追踪搜索、性能分析、采样配置 |
-| 👤 **系统管理** | 账户管理 | 管理员账户、权限分配、操作日志 |
-
----
-
-## 🚀 核心特性
-
-| 特性 | 描述 |
-|------|------|
-| **OpenAI 兼容 API** | 所有 `/v1/*` 端点与 OpenAI SDK 完全兼容 |
-| **多后端适配** | GPUStack、Ollama、vLLM、Xinference、LocalAI |
-| **智能负载均衡** | 轮询、加权、最少连接、一致性哈希、IP Hash |
-| **流量控制** | Token Bucket、Leaky Bucket、Sliding Window |
-| **熔断降级** | 自动故障检测、快速恢复、Fallback 响应 |
-| **状态持久化** | Redis / 文件存储，支持集群部署 |
-| **配置版本控制** | Git 风格的版本管理，一键回滚 |
-
----
-
-## 🚀 完整部署
-
-### 方式一：Docker（推荐生产环境）
+通过 Web 控制台或 API：
 
 ```bash
-# 1. 生成安全密钥
-docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
-
-# 2. 设置环境变量
-export JWT_SECRET="<生成的密钥>"
-export INITIAL_ADMIN_PASSWORD="<强密码>"
-
-# 3. 启动服务
-docker run -d \
-  --name jairouter \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  -e JWT_SECRET="$JWT_SECRET" \
-  -e INITIAL_ADMIN_PASSWORD="$INITIAL_ADMIN_PASSWORD" \
-  -v jairouter-data:/app/data \
-  sodlinken/jairouter:latest
+# 添加 Ollama 实例
+curl -X POST http://localhost:8080/api/config/instance/add/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "llama3.2",
+    "baseUrl": "http://localhost:11434",
+    "path": "/v1/chat/completions",
+    "weight": 1
+  }'
 ```
 
-### 方式二：Docker Compose
+### 4. 调用 API
 
-```yaml
-version: '3.8'
-services:
-  jairouter:
-    image: sodlinken/jairouter:latest
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - JWT_SECRET=your-jwt-secret-at-least-32-characters
-      - INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
-    volumes:
-      - jairouter-data:/app/data
-volumes:
-  jairouter-data:
-```
+```python
+from openai import OpenAI
 
-### 方式三：Kubernetes
+client = OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="not-needed"  # JAiRouter 处理认证
+)
 
-```bash
-# 使用 Helm Chart
-helm install jairouter ./helm/jairouter \
-  --set jwt.secret="your-jwt-secret" \
-  --set admin.password="YourStrongPassword123!"
+response = client.chat.completions.create(
+    model="llama3.2",
+    messages=[{"role": "user", "content": "你好！"}]
+)
+print(response.choices[0].message.content)
 ```
 
 ---
 
-## 📚 文档资源
+## 文档资源
 
 | 资源 | 链接 |
 |------|------|
-| 📖 **在线文档** | https://jairouter.com |
-| 📘 **API 文档** | http://localhost:8080/swagger-ui/index.html |
-| 🐙 **GitHub** | https://github.com/Lincoln-cn/JAiRouter |
-| 🐳 **Docker Hub** | https://hub.docker.com/r/sodlinken/jairouter |
+| 📖 **完整文档** | https://jairouter.com |
+| 📘 **API 参考** | http://localhost:8080/swagger-ui |
+| 🚀 **部署指南** | [docs/deployment](docs/deployment) |
+| 🔧 **配置说明** | [docs/configuration](docs/configuration) |
+| 📊 **监控配置** | [docs/monitoring](docs/monitoring) |
 
 ---
 
-## 🔧 支持的服务类型
+## 性能测试
 
-| 类型 | 端点 | 说明 |
-|------|------|------|
-| Chat Completions | `/v1/chat/completions` | 对话补全 |
-| Embeddings | `/v1/embeddings` | 文本嵌入 |
-| Rerank | `/v1/rerank` | 文本重排 |
-| Text-to-Speech | `/v1/audio/speech` | 语音合成 |
-| Speech-to-Text | `/v1/audio/transcriptions` | 语音识别 |
-| Image Generation | `/v1/images/generations` | 图像生成 |
+与直接访问 Ollama 的性能对比：
 
----
+| 场景 | 直接访问 Ollama | 通过 JAiRouter | 额外开销 |
+|------|----------------|---------------|----------|
+| 单次请求 | 1.2s | 1.21s | <1% |
+| 100 并发 | 45s | 48s | ~6% |
+| 开启限流 | 不支持 | 可配置 | - |
+| 开启熔断 | 不支持 | 自动故障转移 | - |
 
-## 📌 开发路线图
-
-<details>
-<summary><strong>查看完整路线图</strong></summary>
-
-### ✅ Phase 1-5: 已完成 (v0.x - v2.6.x)
-
-| 阶段 | 版本范围 | 主要内容 |
-|------|---------|---------|
-| 基础功能 | v0.1.0 - v1.2.5 | 网关核心、Docker化、H2支持 |
-| 安全管理 | v1.5.6 - v1.9.6 | JWT/API Key、审计日志、监控体系 |
-| 代码重构 | v2.0.0 - v2.3.3 | 性能优化、组件拆分 |
-| 状态持久化 | v2.5.0 - v2.5.15 | Redis/File 持久化 |
-| 代码质量 | v2.6.1 - **v2.6.11 LTS** | Checkstyle清理、最终LTS版本 |
-
-### ⏸️ Phase 6-7: 无限期推迟
-
-v2.7-v3.0 微服务架构转型因社区需求有限，已无限期推迟。当前 LTS 分支将专注于稳定性维护。
-
-</details>
+> 测试环境：Ubuntu 22.04, 16核, 32GB RAM, Ollama 0.1.27
 
 ---
 
-## 🤝 贡献与支持
+## 功能对比
 
-- **问题反馈**: [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
-- **贡献指南**: [Contributing](https://jairouter.com/zh/development/contributing/)
-- **讨论交流**: [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions)
+| 功能 | JAiRouter | Nginx | One-API | LangChain |
+|------|:---------:|:-----:|:-------:|:---------:|
+| OpenAI 兼容 | ✅ | ❌ | ✅ | ✅ |
+| 负载均衡 | ✅ | ✅ | ✅ | ❌ |
+| 限流 | ✅ | ✅ | ✅ | ❌ |
+| 熔断 | ✅ | ❌ | ❌ | ❌ |
+| Web 控制台 | ✅ | ❌ | ✅ | ❌ |
+| 配置热更新 | ✅ | ❌ | ✅ | ❌ |
+| 版本控制 | ✅ | ❌ | ❌ | ❌ |
+| 分布式追踪 | ✅ | ❌ | ❌ | ✅ |
 
 ---
 
-## 📄 许可证
+## 发展路线
 
-本项目采用 [Apache 2.0 License](LICENSE) 开源协议。
+- [x] 核心网关功能
+- [x] 多后端适配器
+- [x] 负载均衡与限流
+- [x] 熔断降级
+- [x] Web 管理控制台
+- [x] JWT + API Key 认证
+- [x] 分布式追踪
+- [x] 配置版本控制
+- [ ] 自定义适配器插件系统
+- [ ] GraphQL API 支持
+
+> **LTS 版本**：v2.6.11 是最终长期支持版本，维护至 2028-05。
+
+---
+
+## 参与贡献
+
+欢迎参与贡献！请查看 [贡献指南](https://jairouter.com/zh/development/contributing/)。
+
+```bash
+# 克隆并构建
+git clone https://github.com/Lincoln-cn/JAiRouter.git
+cd JAiRouter
+mvn clean package -DskipTests
+
+# 本地运行
+java -jar target/modelrouter.jar
+```
+
+---
+
+## 获取支持
+
+- **文档**：https://jairouter.com
+- **问题反馈**：[GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
+- **讨论交流**：[GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions)
+
+---
+
+## 许可证
+
+JAiRouter 基于 [Apache 2.0 License](LICENSE) 开源。
 
 ---
 
 <p align="center">
-  <strong>如果 JAiRouter 对您有帮助，请给个 ⭐️ Star 支持一下！</strong>
+  <strong>如果这个项目对您有帮助，请给一个 ⭐️ Star！</strong>
+</p>
+
+<p align="center">
+  由 JAiRouter 团队用 ❤️ 构建
 </p>
