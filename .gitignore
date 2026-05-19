@@ -126,8 +126,10 @@ innerdoc/
 # Site build output
 site/
 
-# Capture/screenshots directory
-capture/
+# Capture/screenshots directory (root level only)
+/capture/
+# Keep docs/capture/ for documentation screenshots
+!docs/capture/
 
 # Static admin data (runtime generated)
 src/main/resources/static/admin/data/

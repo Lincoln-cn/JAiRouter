@@ -1,55 +1,107 @@
 ﻿# JAiRouter
 
-<!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**: c1aa5b0f  
-> **作者**: Lincoln
-<!-- /版本信息 -->
+<div class="hero-section" style="text-align: center; margin-bottom: 2rem;">
 
+**AI Model Service Unified Gateway**
 
+Connect to all models with a single line of code
 
-JAiRouter is a Spring Boot-based AI model service routing and load balancing gateway that provides unified access to various AI model services through OpenAI-compatible APIs.
-
-## Core Features
-
-- **Unified API Interface**: Provides OpenAI-compatible `/v1/*` API endpoints
-- **Multiple Backend Support**: Supports GPUStack, Ollama, VLLM, Xinference, LocalAI, OpenAI and other backend adapters
-- **Intelligent Load Balancing**: Supports Random, Round Robin, Least Connections, IP Hash and other load balancing strategies
-- **Traffic Control**: Provides Token Bucket, Leaky Bucket, Sliding Window and other rate limiting algorithms
-- **Fault Protection**: Built-in circuit breaker mechanism with fault detection and automatic recovery
-- **Health Monitoring**: Automatic detection and removal of unhealthy service instances
-- **Dynamic Configuration**: Supports runtime configuration updates without service restart
-
-## Supported Service Types
-
-- **Chat Completions**
-- **Embeddings**
-- **Rerank**
-- **Text-to-Speech**
-- **Speech-to-Text**
-- **Image Generation**
-- **Image Editing**
-
-## Quick Start
-
-1. [Installation Guide](getting-started/installation.md) - Learn how to install and configure JAiRouter
-2. [Quick Start](getting-started/quick-start.md) - Get started with JAiRouter quickly
-3. [Configuration Guide](configuration/index.md) - Detailed configuration instructions and examples
-
-## Architecture Features
-
-- **High Performance**: Reactive architecture based on Spring WebFlux, supporting high concurrency
-- **High Availability**: Built-in health checks, circuit breakers and failover mechanisms
-- **Easy to Extend**: Plugin-based adapter architecture supporting custom backend services
-- **Easy to Operate**: Comprehensive monitoring metrics and management interfaces
-
-## Community & Support
-
-- [GitHub Repository](https://github.com/Lincoln-cn/JAiRouter)
-- [Issue Reporting](https://github.com/Lincoln-cn/JAiRouter/issues)
-- [Contributing Guide](development/contributing.md)
+</div>
 
 ---
 
-Welcome to JAiRouter! If you encounter any issues during use, please check our [Troubleshooting Guide](troubleshooting/index.md) or submit an issue on GitHub.
+<div class="hero-cta" style="text-align: center; margin: 2rem 0;">
+
+[🚀 Quick Start](getting-started/quick-start.md){ .md-button .md-button--primary }
+[📖 Configuration](configuration/index.md){ .md-button }
+[🐙 GitHub](https://github.com/Lincoln-cn/JAiRouter){ .md-button target="_blank" }
+
+</div>
+
+---
+
+## 🎯 Core Value
+
+| Feature | Description |
+|---------|-------------|
+| **🔌 Unified API** | OpenAI-compatible interface, seamlessly connect to Ollama, vLLM, GPUStack, etc. |
+| **⚖️ Smart Load Balancing** | 5 strategies for automatic request distribution, health checks to remove failed nodes |
+| **🛡️ Traffic Control** | Rate limiting, circuit breaking, degradation for service stability |
+| **🔐 Dual Authentication** | JWT + API Key with audit logs and blacklist support |
+| **📊 Full-chain Tracing** | OpenTelemetry integration, performance bottlenecks at a glance |
+| **💾 State Persistence** | Redis / file storage, supports high-availability cluster deployment |
+
+---
+
+## 🏗️ Architecture Overview
+
+```
+┌─────────────────┐     ┌─────────────────────┐     ┌─────────────────┐
+│   OpenAI SDK    │────▶│     JAiRouter       │────▶│    Ollama       │
+│   Langchain     │     │  • Load Balancing   │     │    vLLM         │
+│   HTTP Client   │     │  • Rate Limiting    │     │    GPUStack     │
+└─────────────────┘     │  • Authentication   │     │    Xinference   │
+                        └─────────────────────┘     └─────────────────┘
+```
+
+---
+
+## ⚡ 1-Minute Quick Start
+
+```bash
+# Start the service
+docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+
+# Access the console
+open http://localhost:8080
+```
+
+---
+
+## 📚 Quick Navigation
+
+| I want to... | Recommended Docs |
+|--------------|------------------|
+| Get started quickly | [Quick Start Guide](getting-started/quick-start.md) |
+| Deploy in production | [Deployment Guide](deployment/index.md) |
+| Configure services | [Configuration Guide](configuration/index.md) |
+| Integrate via API | [API Reference](api-reference/index.md) |
+| Set up monitoring | [Monitoring Guide](monitoring/index.md) |
+| Troubleshoot issues | [Troubleshooting](troubleshooting/index.md) |
+
+---
+
+## 📈 Project Status
+
+[![GitHub stars](https://img.shields.io/github/stars/Lincoln-cn/JAiRouter?style=social)](https://github.com/Lincoln-cn/JAiRouter/stargazers)
+[![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
+[![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE)
+
+> **LTS Release**: v2.6.11 is the final Long-Term Support version, maintained until 2028-05
+
+---
+
+## 🔧 Supported Backends
+
+| Backend | Description |
+|---------|-------------|
+| **GPUStack** | GPUStack private model service |
+| **Ollama** | Local LLM runtime |
+| **vLLM** | High-performance LLM inference engine |
+| **Xinference** | Distributed model inference framework |
+| **LocalAI** | OpenAI-compatible local inference |
+| **OpenAI** | Official OpenAI API |
+
+---
+
+## 🤝 Community Support
+
+- [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues) - Bug reports
+- [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions) - Discussions
+- [Contributing Guide](development/contributing.md) - Join development
+
+---
+
+<p align="center">
+If JAiRouter helps you, please give it a ⭐️ <a href="https://github.com/Lincoln-cn/JAiRouter">Star</a>!
+</p>

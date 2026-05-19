@@ -1,55 +1,107 @@
 ﻿# JAiRouter
 
-<!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**: c1aa5b0f  
-> **作者**: Lincoln
-<!-- /版本信息 -->
+<div class="hero-section" style="text-align: center; margin-bottom: 2rem;">
 
+**AI 模型服务统一网关**
 
+一行代码接入所有模型
 
-JAiRouter 是一个基于 Spring Boot 的 AI 模型服务路由和负载均衡网关，通过 OpenAI 兼容的 API 提供对各种 AI 模型服务的统一访问。
-
-## 核心功能
-
-- **统一 API 接口**: 提供与 OpenAI 兼容的 `/v1/*` API 端点
-- **多后端支持**: 支持 GPUStack、Ollama、VLLM、Xinference、LocalAI、OpenAI 等多种后端适配器
-- **智能负载均衡**: 支持随机、轮询、最少连接、IP 哈希等多种负载均衡策略
-- **流量控制**: 提供令牌桶、漏桶、滑动窗口等多种限流算法
-- **故障保护**: 内置熔断器机制，提供故障检测和自动恢复
-- **健康监控**: 自动检测和移除不健康的服务实例
-- **动态配置**: 支持运行时配置更新，无需重启服务
-
-## 支持的服务类型
-
-- **聊天对话** (Chat Completions)
-- **文本嵌入** (Embeddings)
-- **文本重排** (Rerank)
-- **语音合成** (Text-to-Speech)
-- **语音识别** (Speech-to-Text)
-- **图像生成** (Image Generation)
-- **图像编辑** (Image Editing)
-
-## 快速开始
-
-1. [安装指南](getting-started/installation.md) - 了解如何安装和配置 JAiRouter
-2. [快速开始](getting-started/quick-start.md) - 快速上手使用 JAiRouter
-3. [配置指南](configuration/index.md) - 详细的配置说明和示例
-
-## 架构特点
-
-- **高性能**: 基于 Spring WebFlux 的响应式架构，支持高并发处理
-- **高可用**: 内置健康检查、熔断器和故障转移机制
-- **易扩展**: 插件化的适配器架构，支持自定义后端服务
-- **易运维**: 完善的监控指标和管理接口
-
-## 社区与支持
-
-- [GitHub 仓库](https://github.com/Lincoln-cn/JAiRouter)
-- [问题反馈](https://github.com/Lincoln-cn/JAiRouter/issues)
-- [贡献指南](development/contributing.md)
+</div>
 
 ---
 
-欢迎使用 JAiRouter！如果您在使用过程中遇到任何问题，请查看我们的[故障排查指南](troubleshooting/index.md)或在 GitHub 上提交问题。
+<div class="hero-cta" style="text-align: center; margin: 2rem 0;">
+
+[🚀 快速开始](getting-started/quick-start.md){ .md-button .md-button--primary }
+[📖 配置指南](configuration/index.md){ .md-button }
+[🐙 GitHub](https://github.com/Lincoln-cn/JAiRouter){ .md-button target="_blank" }
+
+</div>
+
+---
+
+## 🎯 核心价值
+
+| 特性 | 描述 |
+|------|------|
+| **🔌 统一 API** | OpenAI 兼容接口，无缝对接 Ollama、vLLM、GPUStack 等 |
+| **⚖️ 智能负载均衡** | 5 种策略自动分发请求，健康检查自动剔除故障节点 |
+| **🛡️ 流量控制** | 限流、熔断、降级，保障服务稳定性 |
+| **🔐 双认证体系** | JWT + API Key，支持审计日志和黑名单 |
+| **📊 全链路追踪** | OpenTelemetry 集成，性能瓶颈一目了然 |
+| **💾 状态持久化** | Redis / 文件存储，支持集群高可用部署 |
+
+---
+
+## 🏗️ 架构概览
+
+```
+┌─────────────────┐     ┌─────────────────────┐     ┌─────────────────┐
+│   OpenAI SDK    │────▶│     JAiRouter       │────▶│    Ollama       │
+│   Langchain     │     │  • 负载均衡          │     │    vLLM         │
+│   HTTP Client   │     │  • 限流熔断          │     │    GPUStack     │
+└─────────────────┘     │  • 认证鉴权          │     │    Xinference   │
+                        └─────────────────────┘     └─────────────────┘
+```
+
+---
+
+## ⚡ 1分钟快速体验
+
+```bash
+# 启动服务
+docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+
+# 访问控制台
+open http://localhost:8080
+```
+
+---
+
+## 📚 快速导航
+
+| 我想要... | 推荐文档 |
+|-----------|----------|
+| 快速体验 | [快速开始指南](getting-started/quick-start.md) |
+| 生产部署 | [部署指南](deployment/index.md) |
+| 配置服务 | [配置指南](configuration/index.md) |
+| API 集成 | [API 参考](api-reference/index.md) |
+| 监控告警 | [监控指南](monitoring/index.md) |
+| 故障排查 | [常见问题](troubleshooting/index.md) |
+
+---
+
+## 📈 项目状态
+
+[![GitHub stars](https://img.shields.io/github/stars/Lincoln-cn/JAiRouter?style=social)](https://github.com/Lincoln-cn/JAiRouter/stargazers)
+[![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
+[![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE)
+
+> **LTS 版本**: v2.6.11 是最终长期支持版本，持续维护至 2028-05
+
+---
+
+## 🔧 支持的后端服务
+
+| 后端 | 说明 |
+|------|------|
+| **GPUStack** | GPUStack 私有模型服务 |
+| **Ollama** | 本地大模型运行工具 |
+| **vLLM** | 高性能 LLM 推理引擎 |
+| **Xinference** | 分布式模型推理框架 |
+| **LocalAI** | OpenAI 兼容本地推理 |
+| **OpenAI** | OpenAI 官方 API |
+
+---
+
+## 🤝 社区支持
+
+- [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues) - 问题反馈
+- [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions) - 讨论交流
+- [贡献指南](development/contributing.md) - 参与开发
+
+---
+
+<p align="center">
+如果 JAiRouter 对您有帮助，请给个 ⭐️ <a href="https://github.com/Lincoln-cn/JAiRouter">Star</a> 支持一下！
+</p>

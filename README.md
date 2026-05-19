@@ -4,282 +4,242 @@
   <img src="logo/JAiRouterLogo.png" alt="JAiRouter Logo" width="400">
 </p>
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
-![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)
+<p align="center">
+  <strong>AI 模型服务统一网关 | 一行代码接入所有模型</strong>
+</p>
 
-JAiRouter is a Spring Boot-based model service routing and load balancing gateway designed to centrally manage and route various AI model services (such as Chat, Embedding, Rerank, TTS, etc.), supporting multiple load balancing strategies, rate limiting, circuit breaking, health checks, dynamic configuration updates, and more.
+<p align="center">
+  <a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">
+    <img src="https://img.shields.io/github/stars/Lincoln-cn/JAiRouter?style=social" alt="GitHub stars">
+  </a>
+  <a href="https://hub.docker.com/r/sodlinken/jairouter">
+    <img src="https://img.shields.io/docker/pulls/sodlinken/jairouter" alt="Docker Pulls">
+  </a>
+  <a href="https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/Lincoln-cn/JAiRouter" alt="License">
+  </a>
+  <a href="https://deepwiki.com/Lincoln-cn/JAiRouter">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
+</p>
 
-[中文介绍](README-ZH.md)
-
-> ⚠️ **LTS Release Notice**: `v2.6.11` is the final Long-Term Support version. No new features will be added to this branch. v3.0 is indefinitely postponed due to limited community demand. The v2.6.x LTS branch will continue to receive security patches, critical bug fixes, and dependency updates for 24 months.
-
----
-
-
-## 🧭 Feature Overview (Web Console)
-
-| Module Category     | Menu             | Description                                                                                      |
-|---------------------|------------------|--------------------------------------------------------------------------------------------------|
-| 🔍 **Overview**      | Dashboard        | Real-time display of system status, service health, request trends, exception statistics, with chart visualization and dynamic refresh support. |
-| ⚙️ **Configuration Management** | Service Management   | Supports dynamic configuration of AI service types, adapters, load balancing policies, and service-level rate limiting and circuit breaker rules. |
-|                     | Instance Management  | Provides instance creation, editing, deletion, status management, and supports instance-level rate limiting, circuit breaking, health checks, and weight configuration. |
-|                     | Version Management   | Full lifecycle management of configuration versions: create, apply, rollback, delete; metadata recording and version comparison supported. |
-| 🔐 **Security Management** | API Key Management   | Supports API key creation, enable/disable, permission assignment, usage statistics, expiration reminders, and field desensitization for sensitive data. |
-|                     | JWT Token Management | Lifecycle management of JWT tokens: query, revoke, refresh, blacklist mechanism; supports Redis and file persistence. |
-|                     | Audit Logs           | Comprehensive logging of user login, configuration changes, token operations, key management events, with event type filtering and tracking. |
-| 👤 **System Management** | Account Management   | Supports admin account creation, permission allocation, status management, and action log tracking. |
-| 📊 **Trace Management** | Trace Overview       | Real-time display of trace data health status, sampling rate, service statistics, and trend charts. |
-|                     | Trace Search         | Multi-condition combined queries for trace records, supporting filtering by service, time, status, tags, etc. |
-|                     | Performance Analysis | Service-level performance analysis including latency distribution, error rates, throughput, bottleneck diagnosis, and optimization suggestions. |
-|                     | Trace Management     | Configurable sampling strategies (global/service-level), performance settings, exporter configuration, real-time refresh of trace data. |
+<p align="center">
+  <a href="README-ZH.md">中文文档</a> •
+  <a href="https://jairouter.com">在线文档</a> •
+  <a href="https://jairouter.com/en/">English Docs</a>
+</p>
 
 ---
 
-## 🚀 Core Highlights
-
-- ✅ **Full-featured Web Console**: Built from scratch covering complete management chains such as configuration, security, tracing, and auditing.
-- ✅ **Frontend-backend Separation Architecture**: Based on Vue3 + Element Plus with responsive design and friendly interaction.
-- ✅ **Configuration Version Control**: Supports multi-version configuration management and rollback to ensure traceability of changes.
-- ✅ **Tracing & Performance Monitoring**: Integrated distributed tracing and performance analysis to enhance system observability.
-- ✅ **Enterprise-grade Security Mechanism**: Dual authentication system with JWT + API Key, built-in audit and desensitization mechanisms.
-- ✅ **High Availability & Scalability**: Supports high availability deployment via Redis, multi-tier storage strategy for configurations and tokens.
-- ✅ **Multi-backend Adapter Support**: Supports latest API features for GPUStack, Ollama, VLLM, Xinference, LocalAI and other backend services.
+> ⚠️ **LTS 版本公告**: `v2.6.11` 是最终长期支持版本，将在 **24 个月内**（至 2028-05）持续提供安全补丁和关键修复。v3.0 微服务架构因社区需求有限已无限期推迟。
 
 ---
 
-## 🧩 Use Cases
+## 🎯 为什么选择 JAiRouter？
 
-- Centralized internal AI service gateway management
-- Multi-model service routing and load balancing
-- API security authentication and access control
-- Distributed system tracing and performance analysis
-- Configuration change audit and version rollback
+**一个网关，统一管理所有 AI 模型服务**
 
----
-
-## 📚 Online Documentation
-
-Complete project documentation has been migrated to GitHub Pages and can be accessed online:
-
-- [Chinese Documentation](https://jairouter.com/)
-- [English Documentation](https://jairouter.com/en/)
-
-Documentation includes:
-
-- Quick Start Guide
-- Detailed Configuration Instructions
-- API Reference
-- Deployment Guide
-- Monitoring Configuration
-- Development Guide
-- Troubleshooting
+| 对比项 | 没有 JAiRouter | 使用 JAiRouter |
+|--------|---------------|----------------|
+| **多模型管理** | 每个服务独立配置 endpoint | 统一 OpenAI 兼容 API `/v1/*` |
+| **负载均衡** | 手动切换或 Nginx 配置 | 5种策略自动分发 + 健康检查 |
+| **故障转移** | 服务中断等待恢复 | 自动熔断 + 快速恢复 |
+| **访问控制** | 各自实现认证逻辑 | JWT + API Key 双认证体系 |
+| **监控追踪** | 分散的日志和指标 | 统一 Dashboard + Prometheus |
+| **配置变更** | 重启服务生效 | Web 控制台动态更新 |
 
 ---
 
-## 🚀 Quick Start
+## 🏗️ 架构图
 
-### 1. Pull Image
-
-```bash
-# Pull the latest image
-docker pull sodlinken/jairouter:latest
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              客户端层                                        │
+│    OpenAI SDK │ Langchain │ 自定义 HTTP 客户端                              │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │ OpenAI 兼容 API
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           JAiRouter 网关                                     │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
+│  │ 负载均衡    │ │ 限流熔断    │ │ 认证鉴权    │ │ 追踪监控    │           │
+│  │ 5种策略     │ │ Token Bucket│ │ JWT+API Key │ │ OpenTelemetry│           │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘           │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │                    多后端适配器                                   │       │
+│  │  GPUStack │ Ollama │ vLLM │ Xinference │ LocalAI │ OpenAI      │       │
+│  └─────────────────────────────────────────────────────────────────┘       │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        ▼                           ▼                           ▼
+┌───────────────┐           ┌───────────────┐           ┌───────────────┐
+│   Ollama      │           │    vLLM       │           │  GPUStack     │
+│ localhost:11434│          │ localhost:8000│           │ localhost:80  │
+└───────────────┘           └───────────────┘           └───────────────┘
 ```
 
-### 2. Generate Secure Keys (Recommended)
+---
 
-**New in v1.8.0**: Key generation tool for automatic generation of secure JWT secrets and admin passwords.
+## ⚡ 1分钟快速体验
 
-**Option 1: Using Docker (Recommended)**
+无需配置后端服务，即刻体验 Web 控制台：
 
 ```bash
-# Generate JWT secret (Base64 encoded, at least 32 characters)
+# 拉取并启动
+docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+
+# 访问控制台
+open http://localhost:8080
+```
+
+**默认登录凭证**：
+- 用户名：`admin`
+- 密码：查看容器日志获取（`docker logs jairouter | grep password`）
+
+---
+
+## 🧭 功能概览（Web 控制台）
+
+| 模块 | 功能 | 说明 |
+|------|------|------|
+| 🔍 **仪表板** | Dashboard | 实时展示系统状态、服务健康度、请求趋势、异常统计 |
+| ⚙️ **服务管理** | 服务/实例配置 | 动态配置 AI 服务类型、适配器、负载均衡策略 |
+| 📦 **版本管理** | 配置版本控制 | 创建、应用、回滚、对比配置版本 |
+| 🔐 **安全管理** | API Key / JWT | 密钥生命周期管理、审计日志、黑名单 |
+| 📊 **追踪管理** | 分布式追踪 | 追踪搜索、性能分析、采样配置 |
+| 👤 **系统管理** | 账户管理 | 管理员账户、权限分配、操作日志 |
+
+---
+
+## 🚀 核心特性
+
+| 特性 | 描述 |
+|------|------|
+| **OpenAI 兼容 API** | 所有 `/v1/*` 端点与 OpenAI SDK 完全兼容 |
+| **多后端适配** | GPUStack、Ollama、vLLM、Xinference、LocalAI |
+| **智能负载均衡** | 轮询、加权、最少连接、一致性哈希、IP Hash |
+| **流量控制** | Token Bucket、Leaky Bucket、Sliding Window |
+| **熔断降级** | 自动故障检测、快速恢复、Fallback 响应 |
+| **状态持久化** | Redis / 文件存储，支持集群部署 |
+| **配置版本控制** | Git 风格的版本管理，一键回滚 |
+
+---
+
+## 🚀 完整部署
+
+### 方式一：Docker（推荐生产环境）
+
+```bash
+# 1. 生成安全密钥
 docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
 
-# Example output:
-# Base64 Encoded (recommended for JWT HS256):
-#   cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg==
-# Key Strength: Very Strong
+# 2. 设置环境变量
+export JWT_SECRET="<生成的密钥>"
+export INITIAL_ADMIN_PASSWORD="<强密码>"
 
-# Generate random password
-docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
-
-# Example output:
-# 16 character password: aB3dEfGhIjKlMnOp
-# Password Strength: Strong
-```
-
-**Option 2: Using OpenSSL (No jar needed)**
-
-```bash
-# Generate JWT secret
-openssl rand -base64 32
-
-# Generate random password
-openssl rand -base64 24 | tr -dc 'A-Za-z0-9!@#$%^&*' | head -c 16
-```
-
-### 3. Run Container
-
-**Option 1: Using generated keys (Recommended)**
-
-```bash
-# Set environment variables
-export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
-export INITIAL_ADMIN_PASSWORD="MyStr0ng!Pass#2026"
-
-# Run container
+# 3. 启动服务
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e JWT_SECRET="$JWT_SECRET" \
   -e INITIAL_ADMIN_PASSWORD="$INITIAL_ADMIN_PASSWORD" \
+  -v jairouter-data:/app/data \
   sodlinken/jairouter:latest
 ```
 
-**Option 2: Using default password (Development only)**
+### 方式二：Docker Compose
 
-```bash
-docker run -d \
-  --name jairouter-dev \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=dev \
-  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
-  -e JAVA_OPTS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n" \
-  sodlinken/jairouter:dev
+```yaml
+version: '3.8'
+services:
+  jairouter:
+    image: sodlinken/jairouter:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=your-jwt-secret-at-least-32-characters
+      - INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
+    volumes:
+      - jairouter-data:/app/data
+volumes:
+  jairouter-data:
 ```
 
-### 4. Access Service
+### 方式三：Kubernetes
 
 ```bash
-curl http://localhost:8080/admin/login
+# 使用 Helm Chart
+helm install jairouter ./helm/jairouter \
+  --set jwt.secret="your-jwt-secret" \
+  --set admin.password="YourStrongPassword123!"
 ```
-
-![](./docs/capture/login.png)
-
-**Default Login Credentials**:
-- Username: `admin`
-- Password: The value of `INITIAL_ADMIN_PASSWORD` environment variable set at startup
-  - **Development environment default**: `ChangeMeOnFirstStartup123456` (when not set)
-  - **Production environment**: Must be set via environment variable, otherwise security warnings will be issued during startup
-  - **Recommended**: Generate a strong password using the key generation tool:
-    ```bash
-    docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
-    ```
-
-After successful login, you can enter the web interface to perform service configuration, management, tracing, and performance analysis operations.
-
-![](./docs/capture/dashboard.png)
-
-
-## 📘 API Documentation
-
-After starting the project, you can access the automatically generated API documentation at the following addresses:
-
-- **Swagger UI**: http://127.0.0.1:8080/swagger-ui/index.html
-- **OpenAPI JSON**: http://127.0.0.1:8080/v3/api-docs
-
-## 📌 Development Roadmap (Status Update)
-
-### Phase 1: Foundation (v0.x - v1.0.x) ✅
-
-| Version | Status | Content |
-|---------|--------|---------|
-| 0.1.0 | ✅ | Basic gateway, adapter, load balancing, health check |
-| 0.2.0 | ✅ | Rate limiting, circuit breaking, degradation, config persistence |
-| 0.2.1 | ✅ | Scheduled cleanup, memory optimization, client IP rate limiting |
-| 0.3.0 | ✅ | Docker containerization, multi-environment deployment |
-| 0.3.1 | ✅ | Alibaba Maven mirror for China acceleration |
-| 0.4.0 | ✅ | Monitoring metrics, Prometheus integration |
-| 0.5.0 | ✅ | GitHub Pages documentation |
-| 0.6.0 | ✅ | Authentication and authorization |
-| 0.7.0 | ✅ | Log tracing |
-| 0.8.0 | ✅ | Automated Docker Hub publishing |
-| 0.9.0 | ✅ | Enhanced dashboard and user management |
-| 1.0.0 | ✅ | Enterprise deployment guide |
-| 1.1.0 | ✅ | API playground feature |
-| 1.2.5 | ✅ | H2 database support (default persistence) |
-
-### Phase 2: Security & Management (v1.5.x - v1.9.x) ✅
-
-| Version | Status | Content |
-|---------|--------|---------|
-| 1.5.6 | ✅ | Instance-level rate limiter & circuit breaker config |
-| 1.5.7 | ✅ | JWT account initialization |
-| 1.6.0 | ✅ | Config version management optimization |
-| 1.6.1 | ✅ | API Key security enhancement (P0 fixes) |
-| 1.6.2 | ✅ | API Key management enhancement (P1/P2) |
-| 1.7.0 | ✅ | JWT account management optimization |
-| 1.7.2 | ✅ | Playground component refactoring |
-| 1.8.0 | ✅ | Security hardening version |
-| 1.8.1 | ✅ | Quick start guide |
-| 1.9.0 | ✅ | Core refactoring - performance optimization |
-| 1.9.3 | ✅ | Exception management frontend |
-| 1.9.4 | ✅ | Prometheus integration for exception monitoring |
-| 1.9.5 | ✅ | Token usage statistics feature |
-| 1.9.6 | ✅ | Complete monitoring system |
-
-### Phase 3: Refactoring (v2.0.x - v2.3.x) ✅
-
-| Version | Status | Content |
-|---------|--------|---------|
-| 2.0.0 | ✅ | Concurrent performance optimization, model call statistics |
-| 2.1.2 | ✅ | Magic string cleanup - Adapter support classes |
-| 2.1.3 | ✅ | Magic string cleanup - Monitoring & tracing classes |
-| 2.1.4 | ✅ | Magic string cleanup - Full scan and fixes |
-| 2.2.0 | ✅ | ConfigurationService split - ConfigVersionManager & ConfigValidator |
-| 2.2.1 | ✅ | BaseAdapter split - RequestBuilder & ResponseHandler |
-| 2.2.4 | ✅ | BaseAdapter further split - InstanceSelector & ResponseTransformer |
-| 2.2.5 | ✅ | Enhanced instance health check - HTTP connectivity |
-| 2.2.6 | ✅ | ServiceConfigManager refactoring |
-| 2.2.7 | ✅ | Adapter capability check - CapabilityChecker |
-| 2.2.8 | ✅ | Integration tests for new components |
-| 2.2.9 | ✅ | Quality improvement and documentation |
-| 2.3.0 | ✅ | Error handling & retry components |
-| 2.3.1 | ✅ | HttpRequestProcessor & ResponseMapper |
-| 2.3.2 | ✅ | Monitoring & tracing split |
-| 2.3.3 | ✅ | Health check display fix |
-| 2.4.0 | ✅ | Consistent hashing load balancer, weight overflow fix |
-| 2.4.1 | ✅ | Load balancer management page, configuration persistence |
-| 2.4.5 | ✅ | State persistence infrastructure |
-| 2.4.7 | ✅ | Circuit breaker state management page |
-
-### Phase 4: State Persistence (v2.5.x) ✅
-
-| Version | Status | Content |
-|---------|--------|---------|
-| 2.5.0 | ✅ | Circuit breaker state persistence (Redis + File) |
-| 2.5.1 | ✅ | Rate limiter state persistence |
-| 2.5.2 | ✅ | Unified state manager API |
-| 2.5.3-2.5.15 | ✅ | State persistence optimization & bug fixes |
-
-### Phase 5: Code Quality (v2.6.x) ✅ LTS
-
-| Version | Status | Content |
-|---------|--------|---------|
-| 2.6.1-2.6.9 | ✅ | Checkstyle FinalParameters cleanup (5,413 → 0) |
-| 2.6.10 | ✅ | WhitespaceAfter fixes (1,655 → 29, 98.2% reduction) |
-| **2.6.11** | **✅ LTS** | **Final LTS Release - HiddenField & OperatorWrap suppression config** |
-| **Total** | ✅ | **Warnings: 10,413 → 3,424 (67% reduction)** |
-
-> ⚠️ **LTS Notice**: `v2.6.11` is the **final feature release**. This branch will continue to receive security patches, critical bug fixes, and dependency updates for 24 months (until 2028-05). No new features will be added.
-
-### Phase 6-7: Future Architecture Evolution (v2.7-v3.0) ⏸️ Indefinitely Postponed
-
-| Version | Status | Scope |
-|---------|--------|-------|
-| **v2.7.x** | ⏸️ | **Package Structure Reorganization** - Service boundary definition, module migration (auth, config, router, monitor, persistence) |
-| **v2.8.x** | ⏸️ | **Configuration Integration** - Config file split, multi-environment support, external config, validation mechanism |
-| **v2.9.x** | ⏸️ | **Review & Stabilization** - Issue resolution, documentation update, quality check |
-| **v3.0.x** | ⏸️ | **Microservices Architecture** - Service decomposition (auth, monitoring), Nacos integration, service discovery |
-
-> 📢 **Important**: Due to limited community demand for major architectural changes, **v2.7-v3.0 is indefinitely postponed**. The `v2.6.x` LTS branch will be the final release line, focusing on stability, security, and maintenance.
 
 ---
 
-📖 **Full Documentation & Deployment Guide**: [Click Here](https://jairouter.com)
-🐙 **Source Code Repository**: [GitHub - JAiRouter](https://github.com/Lincoln-cn/jairouter)
+## 📚 文档资源
+
+| 资源 | 链接 |
+|------|------|
+| 📖 **在线文档** | https://jairouter.com |
+| 📘 **API 文档** | http://localhost:8080/swagger-ui/index.html |
+| 🐙 **GitHub** | https://github.com/Lincoln-cn/JAiRouter |
+| 🐳 **Docker Hub** | https://hub.docker.com/r/sodlinken/jairouter |
 
 ---
 
-💬 Welcome feedback and collaboration—let's make JAiRouter better together!
+## 🔧 支持的服务类型
+
+| 类型 | 端点 | 说明 |
+|------|------|------|
+| Chat Completions | `/v1/chat/completions` | 对话补全 |
+| Embeddings | `/v1/embeddings` | 文本嵌入 |
+| Rerank | `/v1/rerank` | 文本重排 |
+| Text-to-Speech | `/v1/audio/speech` | 语音合成 |
+| Speech-to-Text | `/v1/audio/transcriptions` | 语音识别 |
+| Image Generation | `/v1/images/generations` | 图像生成 |
+
+---
+
+## 📌 开发路线图
+
+<details>
+<summary><strong>查看完整路线图</strong></summary>
+
+### ✅ Phase 1-5: 已完成 (v0.x - v2.6.x)
+
+| 阶段 | 版本范围 | 主要内容 |
+|------|---------|---------|
+| 基础功能 | v0.1.0 - v1.2.5 | 网关核心、Docker化、H2支持 |
+| 安全管理 | v1.5.6 - v1.9.6 | JWT/API Key、审计日志、监控体系 |
+| 代码重构 | v2.0.0 - v2.3.3 | 性能优化、组件拆分 |
+| 状态持久化 | v2.5.0 - v2.5.15 | Redis/File 持久化 |
+| 代码质量 | v2.6.1 - **v2.6.11 LTS** | Checkstyle清理、最终LTS版本 |
+
+### ⏸️ Phase 6-7: 无限期推迟
+
+v2.7-v3.0 微服务架构转型因社区需求有限，已无限期推迟。当前 LTS 分支将专注于稳定性维护。
+
+</details>
+
+---
+
+## 🤝 贡献与支持
+
+- **问题反馈**: [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
+- **贡献指南**: [Contributing](https://jairouter.com/zh/development/contributing/)
+- **讨论交流**: [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions)
+
+---
+
+## 📄 许可证
+
+本项目采用 [Apache 2.0 License](LICENSE) 开源协议。
+
+---
+
+<p align="center">
+  <strong>如果 JAiRouter 对您有帮助，请给个 ⭐️ Star 支持一下！</strong>
+</p>

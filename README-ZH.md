@@ -4,280 +4,242 @@
   <img src="logo/JAiRouterLogo.png" alt="JAiRouter Logo" width="400">
 </p>
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Lincoln-cn/JAiRouter)
-![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)
+<p align="center">
+  <strong>AI 模型服务统一网关 | 一行代码接入所有模型</strong>
+</p>
 
-JAiRouter 是一个基于 Spring Boot 的模型服务路由和负载均衡网关，用于统一管理和路由各种 AI 模型服务（如
-Chat、Embedding、Rerank、TTS 等），支持多种负载均衡策略、限流、熔断、健康检查、动态配置更新等功能。
+<p align="center">
+  <a href="https://github.com/Lincoln-cn/JAiRouter/stargazers">
+    <img src="https://img.shields.io/github/stars/Lincoln-cn/JAiRouter?style=social" alt="GitHub stars">
+  </a>
+  <a href="https://hub.docker.com/r/sodlinken/jairouter">
+    <img src="https://img.shields.io/docker/pulls/sodlinken/jairouter" alt="Docker Pulls">
+  </a>
+  <a href="https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/Lincoln-cn/JAiRouter" alt="License">
+  </a>
+  <a href="https://deepwiki.com/Lincoln-cn/JAiRouter">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
+</p>
 
-[English Introduction](README.md)
-
-> ⚠️ **LTS 版本公告**：`v2.6.11` 为最终长期支持版本，后续不再添加新特性。v3.0 因需求有限无限期推迟。该分支将在 24 个月内持续提供安全补丁、关键缺陷修复与依赖更新。
+<p align="center">
+  <a href="README.md">English</a> •
+  <a href="https://jairouter.com">在线文档</a> •
+  <a href="https://jairouter.com/en/">English Docs</a>
+</p>
 
 ---
 
+> ⚠️ **LTS 版本公告**: `v2.6.11` 是最终长期支持版本，将在 **24 个月内**（至 2028-05）持续提供安全补丁和关键修复。v3.0 微服务架构因社区需求有限已无限期推迟。
+
+---
+
+## 🎯 为什么选择 JAiRouter？
+
+**一个网关，统一管理所有 AI 模型服务**
+
+| 对比项 | 没有 JAiRouter | 使用 JAiRouter |
+|--------|---------------|----------------|
+| **多模型管理** | 每个服务独立配置 endpoint | 统一 OpenAI 兼容 API `/v1/*` |
+| **负载均衡** | 手动切换或 Nginx 配置 | 5种策略自动分发 + 健康检查 |
+| **故障转移** | 服务中断等待恢复 | 自动熔断 + 快速恢复 |
+| **访问控制** | 各自实现认证逻辑 | JWT + API Key 双认证体系 |
+| **监控追踪** | 分散的日志和指标 | 统一 Dashboard + Prometheus |
+| **配置变更** | 重启服务生效 | Web 控制台动态更新 |
+
+---
+
+## 🏗️ 架构图
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              客户端层                                        │
+│    OpenAI SDK │ Langchain │ 自定义 HTTP 客户端                              │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │ OpenAI 兼容 API
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           JAiRouter 网关                                     │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐           │
+│  │ 负载均衡    │ │ 限流熔断    │ │ 认证鉴权    │ │ 追踪监控    │           │
+│  │ 5种策略     │ │ Token Bucket│ │ JWT+API Key │ │ OpenTelemetry│           │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘           │
+│  ┌─────────────────────────────────────────────────────────────────┐       │
+│  │                    多后端适配器                                   │       │
+│  │  GPUStack │ Ollama │ vLLM │ Xinference │ LocalAI │ OpenAI      │       │
+│  └─────────────────────────────────────────────────────────────────┘       │
+└───────────────────────────────────┬─────────────────────────────────────────┘
+                                    │
+        ┌───────────────────────────┼───────────────────────────┐
+        ▼                           ▼                           ▼
+┌───────────────┐           ┌───────────────┐           ┌───────────────┐
+│   Ollama      │           │    vLLM       │           │  GPUStack     │
+│ localhost:11434│          │ localhost:8000│           │ localhost:80  │
+└───────────────┘           └───────────────┘           └───────────────┘
+```
+
+---
+
+## ⚡ 1分钟快速体验
+
+无需配置后端服务，即刻体验 Web 控制台：
+
+```bash
+# 拉取并启动
+docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+
+# 访问控制台
+open http://localhost:8080
+```
+
+**默认登录凭证**：
+- 用户名：`admin`
+- 密码：查看容器日志获取（`docker logs jairouter | grep password`）
+
+---
 
 ## 🧭 功能概览（Web 控制台）
 
-| 模块分类 | 功能菜单 | 功能描述 |
-|----------|----------|----------|
-| 🔍 **概览** | 仪表板 | 实时展示系统状态、服务健康度、请求趋势、异常统计等关键信息，支持图表可视化与动态刷新。 |
-| ⚙️ **配置管理** | 服务管理 | 支持动态配置 AI 服务类型、适配器、负载均衡策略，支持服务级限流与熔断规则配置。 |
-|  | 实例管理 | 提供实例的新增、编辑、删除、状态管理，支持实例级限流、熔断、健康检查与权重配置。 |
-|  | 版本管理 | 支持配置版本的全生命周期管理：创建、应用、回滚、删除，支持元数据记录与版本对比。 |
-|  | 配置合并 | 提供多版本配置的智能合并、冲突检测、合并预览与操作日志，支持自动合并与手动干预。 |
-| 🔐 **安全管理** | API 密钥管理 | 支持 API Key 的创建、启用/禁用、权限分配、使用统计与过期提醒，支持敏感字段脱敏。 |
-|  | JWT 令牌管理 | 提供 JWT 令牌的生命周期管理：查询、撤销、刷新、黑名单机制，支持 Redis 与文件持久化。 |
-|  | 审计日志 | 完整记录用户登录、配置变更、令牌操作、密钥管理等关键事件，支持事件类型筛选与追踪。 |
-| 👤 **系统管理** | 账户管理 | 支持管理员账户的创建、权限分配、状态管理与操作日志追踪。 |
-| 📊 **追踪管理** | 追踪概览 | 实时展示追踪数据的健康状态、采样率、服务统计与趋势图表。 |
-|  | 追踪搜索 | 支持多条件组合查询追踪记录，支持按服务、时间、状态、标签等维度筛选。 |
-|  | 性能分析 | 提供服务级性能指标分析：延迟分布、错误率、吞吐量、瓶颈诊断与优化建议。 |
-|  | 追踪管理 | 支持采样策略配置（全局/服务级）、性能配置、导出器配置，支持追踪数据实时刷新。 |
+| 模块 | 功能 | 说明 |
+|------|------|------|
+| 🔍 **仪表板** | Dashboard | 实时展示系统状态、服务健康度、请求趋势、异常统计 |
+| ⚙️ **服务管理** | 服务/实例配置 | 动态配置 AI 服务类型、适配器、负载均衡策略 |
+| 📦 **版本管理** | 配置版本控制 | 创建、应用、回滚、对比配置版本 |
+| 🔐 **安全管理** | API Key / JWT | 密钥生命周期管理、审计日志、黑名单 |
+| 📊 **追踪管理** | 分布式追踪 | 追踪搜索、性能分析、采样配置 |
+| 👤 **系统管理** | 账户管理 | 管理员账户、权限分配、操作日志 |
 
 ---
 
-## 🚀 核心亮点
+## 🚀 核心特性
 
-- ✅ **全功能 Web 控制台**：从零构建，覆盖配置、安全、追踪、审计等完整管理链路。
-- ✅ **前后端分离架构**：基于 Vue3 + Element Plus，响应式设计，交互友好。
-- ✅ **配置版本控制**：支持配置的多版本管理与回滚，保障变更可追溯。
-- ✅ **追踪与性能监控**：集成分布式追踪与性能分析，助力系统可观测性。
-- ✅ **企业级安全机制**：支持 JWT + API Key 双认证体系，内置审计与脱敏机制。
-- ✅ **高可用与扩展性**：支持 Redis 高可用部署，配置与令牌支持多级存储策略。
-- ✅ **多后端适配器支持**：支持最新的 GPUStack、Ollama、VLLM、Xinference、LocalAI 等后端服务的最新 API 特性。
-
----
-
-## 🧩 适用场景
-
-- 企业内部 AI 服务网关统一管理
-- 多模型服务路由与负载均衡
-- API 安全认证与访问控制
-- 分布式系统追踪与性能分析
-- 配置变更审计与版本回滚
+| 特性 | 描述 |
+|------|------|
+| **OpenAI 兼容 API** | 所有 `/v1/*` 端点与 OpenAI SDK 完全兼容 |
+| **多后端适配** | GPUStack、Ollama、vLLM、Xinference、LocalAI |
+| **智能负载均衡** | 轮询、加权、最少连接、一致性哈希、IP Hash |
+| **流量控制** | Token Bucket、Leaky Bucket、Sliding Window |
+| **熔断降级** | 自动故障检测、快速恢复、Fallback 响应 |
+| **状态持久化** | Redis / 文件存储，支持集群部署 |
+| **配置版本控制** | Git 风格的版本管理，一键回滚 |
 
 ---
 
-## 📚 在线文档
+## 🚀 完整部署
 
-完整的项目文档已迁移至 GitHub Pages，可在线访问：
-
-- [中文文档](https://jairouter.com/)
-- [English Documentation](https://jairouter.com/en/)
-
-文档内容包括：
-
-- 快速开始指南
-- 详细配置说明
-- API 参考
-- 部署指南
-- 监控配置
-- 开发指南
-- 故障排查
-
----
-
-## 🚀 快速开始
-
-### 1. 拉取镜像
+### 方式一：Docker（推荐生产环境）
 
 ```bash
-# 拉取最新镜像
-docker pull sodlinken/jairouter:latest
-```
-
-### 2. 生成安全密钥（推荐）
-
-**v1.8.0+ 新增密钥生成工具**，支持自动生成安全的 JWT 密钥和管理员密码：
-
-**方式一：使用 Docker 运行（推荐）**
-
-```bash
-# 生成 JWT 密钥（Base64 编码，至少 32 字符）
+# 1. 生成安全密钥
 docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-key
 
-# 示例输出：
-# Base64 编码（推荐，适用于 JWT HS256）:
-#   cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg==
-# 密钥强度：非常强
+# 2. 设置环境变量
+export JWT_SECRET="<生成的密钥>"
+export INITIAL_ADMIN_PASSWORD="<强密码>"
 
-# 生成随机密码
-docker run --rm sodlinken/jairouter:latest java -jar /app/modelrouter.jar --generate-password
-
-# 示例输出：
-# 16 字符密码：aB3dEfGhIjKlMnOp
-# 密码强度：强
-```
-
-**方式二：使用 OpenSSL（无需 jar 包）**
-
-```bash
-# 生成 JWT 密钥
-openssl rand -base64 32
-
-# 生成随机密码
-openssl rand -base64 24 | tr -dc 'A-Za-z0-9!@#$%^&*' | head -c 16
-```
-
-### 3. 运行容器
-
-**方式一：使用生成的密钥（推荐）**
-
-```bash
-# 设置环境变量
-export JWT_SECRET="cGFzc3dvcmQtdGVzdC1rZXktZm9yLWphb3V0ZXItMjAyNg=="
-export INITIAL_ADMIN_PASSWORD="MyStr0ng!Pass#2026"
-
-# 运行容器
+# 3. 启动服务
 docker run -d \
   --name jairouter \
   -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e JWT_SECRET="$JWT_SECRET" \
   -e INITIAL_ADMIN_PASSWORD="$INITIAL_ADMIN_PASSWORD" \
+  -v jairouter-data:/app/data \
   sodlinken/jairouter:latest
 ```
 
-**方式二：使用默认密码（仅限开发环境）**
+### 方式二：Docker Compose
 
-```bash
-docker run -d \
-  --name jairouter-dev \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=dev \
-  -e JWT_SECRET="your-very-strong-jwt-secret-key-at-least-32-characters-long" \
-  -e JAVA_OPTS="-Xms256m -Xmx512m -agentlib:jdwp=transport=dt_socket,server=y,suspend=n" \
-  sodlinken/jairouter:dev
+```yaml
+version: '3.8'
+services:
+  jairouter:
+    image: sodlinken/jairouter:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - JWT_SECRET=your-jwt-secret-at-least-32-characters
+      - INITIAL_ADMIN_PASSWORD=YourStrongPassword123!
+    volumes:
+      - jairouter-data:/app/data
+volumes:
+  jairouter-data:
 ```
 
-### 4. 访问服务
+### 方式三：Kubernetes
 
 ```bash
-curl http://localhost:8080/admin/login
+# 使用 Helm Chart
+helm install jairouter ./helm/jairouter \
+  --set jwt.secret="your-jwt-secret" \
+  --set admin.password="YourStrongPassword123!"
 ```
-
-![](./docs/capture/login.png)
-
-**默认登录凭证**：
-- 用户名：`admin`
-- 密码：启动时设置的 `INITIAL_ADMIN_PASSWORD` 环境变量值
-  - 如果未设置，开发环境使用默认密码（见启动日志）
-  - 生产环境必须设置，否则启动时会发出安全警告
-
-登录成功后，即可进入 Web 界面进行服务配置、管理、追踪与性能分析等操作。
-
-![](./docs/capture/dashboard.png)
-
-
-## 📘 API 文档
-
-启动项目后，可通过以下地址访问自动生成的 API 文档：
-
-- **Swagger UI**: http://127.0.0.1:8080/swagger-ui/index.html
-- **OpenAPI JSON**: http://127.0.0.1:8080/v3/api-docs
-
-## 📌 开发计划（更新状态）
-
-### 第一阶段：基础功能 (v0.x - v1.0.x) ✅
-
-| 版本 | 状态 | 内容 |
-|------|------|------|
-| 0.1.0 | ✅ | 基础网关、适配器、负载均衡、健康检查 |
-| 0.2.0 | ✅ | 限流、熔断、降级、配置持久化、动态更新接口 |
-| 0.2.1 | ✅ | 定时清理任务、内存优化、客户端IP限流增强 |
-| 0.3.0 | ✅ | Docker容器化、多环境部署、监控集成 |
-| 0.3.1 | ✅ | Alibaba Maven镜像加速（中国） |
-| 0.4.0 | ✅ | 监控指标、Prometheus集成、告警通知 |
-| 0.5.0 | ✅ | GitHub Pages文档管理 |
-| 0.6.0 | ✅ | 认证鉴权 |
-| 0.7.0 | ✅ | 日志追踪 |
-| 0.8.0 | ✅ | Docker Hub自动打包发布 |
-| 0.9.0 | ✅ | 增强监控仪表板和用户管理 |
-| 1.0.0 | ✅ | 企业级部署指南 |
-| 1.1.0 | ✅ | API试验场功能 |
-| 1.2.5 | ✅ | H2数据库支持（默认持久化） |
-
-### 第二阶段：安全与管理 (v1.5.x - v1.9.x) ✅
-
-| 版本 | 状态 | 内容 |
-|------|------|------|
-| 1.5.6 | ✅ | 实例级限流器和熔断器配置独立存储 |
-| 1.5.7 | ✅ | JWT账户初始化功能 |
-| 1.6.0 | ✅ | 配置版本管理优化 |
-| 1.6.1 | ✅ | API Key安全增强（P0修复） |
-| 1.6.2 | ✅ | API Key管理功能增强（P1/P2） |
-| 1.7.0 | ✅ | JWT账户管理优化 |
-| 1.7.2 | ✅ | Playground组件化重构 |
-| 1.8.0 | ✅ | 安全加固版本 |
-| 1.8.1 | ✅ | 快速开始指南 |
-| 1.9.0 | ✅ | 核心重构 - 性能优化和代码结构改进 |
-| 1.9.3 | ✅ | 异常管理前端开发 |
-| 1.9.4 | ✅ | 异常管理Prometheus集成 |
-| 1.9.5 | ✅ | Token使用量统计功能 |
-| 1.9.6 | ✅ | 完整监控体系 |
-
-### 第三阶段：重构优化 (v2.0.x - v2.3.x) ✅
-
-| 版本 | 状态 | 内容 |
-|------|------|------|
-| 2.0.0 | ✅ | 并发性能优化、模型调用统计分析 |
-| 2.1.2 | ✅ | 魔法字符串清理 - Adapter支持类 |
-| 2.1.3 | ✅ | 魔法字符串清理 - 监控追踪类 |
-| 2.1.4 | ✅ | 魔法字符串清理 - 全面扫描修复 |
-| 2.2.0 | ✅ | ConfigurationService拆分 |
-| 2.2.1 | ✅ | BaseAdapter拆分 - RequestBuilder & ResponseHandler |
-| 2.2.4 | ✅ | BaseAdapter进一步拆分 |
-| 2.2.5 | ✅ | 实例健康检查增强 - HTTP连通性检测 |
-| 2.2.6 | ✅ | ServiceConfigManager重构 |
-| 2.2.7 | ✅ | 适配器能力检查拆分 |
-| 2.2.8 | ✅ | 新组件集成测试 |
-| 2.2.9 | ✅ | 质量提升和文档专项 |
-| 2.3.0 | ✅ | 错误处理与重试组件 |
-| 2.3.1 | ✅ | HttpRequestProcessor & ResponseMapper |
-| 2.3.2 | ✅ | 监控与追踪拆分 |
-| 2.3.3 | ✅ | 健康检查显示修复 |
-| 2.4.0 | ✅ | 一致性哈希负载均衡器、权重溢出修复 |
-| 2.4.1 | ✅ | 负载均衡器管理页面、配置持久化 |
-| 2.4.5 | ✅ | 状态持久化基础设施 |
-| 2.4.7 | ✅ | 熔断器状态管理页面 |
-
-### 第四阶段：状态持久化 (v2.5.x) ✅
-
-| 版本 | 状态 | 内容 |
-|------|------|------|
-| 2.5.0 | ✅ | 熔断器状态持久化（Redis + 文件） |
-| 2.5.1 | ✅ | 限流器状态持久化 |
-| 2.5.2 | ✅ | 统一状态管理器API |
-| 2.5.3-2.5.15 | ✅ | 状态持久化优化与Bug修复 |
-
-### 第五阶段：代码质量 (v2.6.x) ✅ LTS
-
-| 版本 | 状态 | 内容 |
-|------|------|------|
-| 2.6.1-2.6.9 | ✅ | Checkstyle FinalParameters清理 (5,413→0) |
-| 2.6.10 | ✅ | WhitespaceAfter修复 (1,655→29, 减少98.2%) |
-| **2.6.11** | **✅ LTS** | **最终LTS版本 - HiddenField & OperatorWrap suppression配置** |
-| **总计** | ✅ | **警告数: 10,413→3,424 (减少67%)** |
-
-> ⚠️ **LTS 公告**：`v2.6.11` 为**最终特性版本**。该分支将在 24 个月内（至 2028-05）持续提供安全补丁、关键缺陷修复与依赖更新。不再添加新特性。
-
-### 第六至七阶段：未来架构演进 (v2.7-v3.0) ⏸️ 无限期延期
-
-| 版本 | 状态 | 范围 |
-|------|------|------|
-| **v2.7.x** | ⏸️ | **Package结构重组** - 服务边界定义、模块迁移（auth、config、router、monitor、persistence） |
-| **v2.8.x** | ⏸️ | **配置文件整合** - 配置文件拆分、多环境支持、外部配置、校验机制 |
-| **v2.9.x** | ⏸️ | **审查与稳定** - 问题修复、文档更新、质量检查 |
-| **v3.0.x** | ⏸️ | **微服务架构** - 服务拆分（认证授权、监控追踪）、Nacos集成、服务发现 |
-
-> 📢 **重要公告**：因社区对重大架构调整需求有限，**v2.7-v3.0 无限期推迟**。`v2.6.x` LTS 分支将成为最终发布线，专注于稳定性、安全性和维护。
 
 ---
 
-📖 **完整文档与部署指南**：[点击查看](https://jairouter.com)
-🐙 **开源地址**：[GitHub - JAiRouter](https://github.com/Lincoln-cn/jairouter)
+## 📚 文档资源
+
+| 资源 | 链接 |
+|------|------|
+| 📖 **在线文档** | https://jairouter.com |
+| 📘 **API 文档** | http://localhost:8080/swagger-ui/index.html |
+| 🐙 **GitHub** | https://github.com/Lincoln-cn/JAiRouter |
+| 🐳 **Docker Hub** | https://hub.docker.com/r/sodlinken/jairouter |
 
 ---
 
-💬 欢迎反馈与共建，让我们一起让 JAiRouter 变得更好！
+## 🔧 支持的服务类型
+
+| 类型 | 端点 | 说明 |
+|------|------|------|
+| Chat Completions | `/v1/chat/completions` | 对话补全 |
+| Embeddings | `/v1/embeddings` | 文本嵌入 |
+| Rerank | `/v1/rerank` | 文本重排 |
+| Text-to-Speech | `/v1/audio/speech` | 语音合成 |
+| Speech-to-Text | `/v1/audio/transcriptions` | 语音识别 |
+| Image Generation | `/v1/images/generations` | 图像生成 |
+
+---
+
+## 📌 开发路线图
+
+<details>
+<summary><strong>查看完整路线图</strong></summary>
+
+### ✅ Phase 1-5: 已完成 (v0.x - v2.6.x)
+
+| 阶段 | 版本范围 | 主要内容 |
+|------|---------|---------|
+| 基础功能 | v0.1.0 - v1.2.5 | 网关核心、Docker化、H2支持 |
+| 安全管理 | v1.5.6 - v1.9.6 | JWT/API Key、审计日志、监控体系 |
+| 代码重构 | v2.0.0 - v2.3.3 | 性能优化、组件拆分 |
+| 状态持久化 | v2.5.0 - v2.5.15 | Redis/File 持久化 |
+| 代码质量 | v2.6.1 - **v2.6.11 LTS** | Checkstyle清理、最终LTS版本 |
+
+### ⏸️ Phase 6-7: 无限期推迟
+
+v2.7-v3.0 微服务架构转型因社区需求有限，已无限期推迟。当前 LTS 分支将专注于稳定性维护。
+
+</details>
+
+---
+
+## 🤝 贡献与支持
+
+- **问题反馈**: [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues)
+- **贡献指南**: [Contributing](https://jairouter.com/zh/development/contributing/)
+- **讨论交流**: [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions)
+
+---
+
+## 📄 许可证
+
+本项目采用 [Apache 2.0 License](LICENSE) 开源协议。
+
+---
+
+<p align="center">
+  <strong>如果 JAiRouter 对您有帮助，请给个 ⭐️ Star 支持一下！</strong>
+</p>

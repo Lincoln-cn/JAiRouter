@@ -1,5 +1,5 @@
 site_name: JAiRouter 文档
-site_description: AI模型服务路由和负载均衡网关
+site_description: JAiRouter - AI模型服务统一网关，OpenAI兼容API，支持Ollama/vLLM/GPUStack负载均衡、限流熔断、认证鉴权
 site_author: Lincoln
 site_url: https://jairouter.com/
 
@@ -247,6 +247,19 @@ nav:
     - 适配器更新: zh/reference/adapter-updates.md
 
 extra:
+  # SEO Meta Tags
+  seo:
+    title: "JAiRouter - AI 模型服务统一网关"
+    keywords:
+      - AI gateway
+      - Ollama proxy
+      - vLLM load balancer
+      - OpenAI compatible API
+      - GPUStack
+      - Xinference
+      - AI模型路由
+      - 负载均衡
+      - 限流熔断
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/Lincoln-cn/jairouter
