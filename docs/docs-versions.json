@@ -2,15 +2,13 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-05-14T05:48:24.542285",
-      "ContentHash": "fbbd8a9ff1a05fdd",
-      "GitCommit": "313f6e47",
+      "Version": "1.0.14",
+      "LastModified": "2026-05-19T06:08:23.876358",
+      "ContentHash": "84b5a53e4221fcf1",
+      "GitCommit": "bade75ba",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": [
-        "README-ZH.md"
-      ]
+      "Dependencies": []
     },
     "docs/README.md": {
       "FilePath": "docs/README.md",
@@ -369,17 +367,19 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.198524",
-      "ContentHash": "242e7d827a597de4",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-05-19T06:08:24.123845",
+      "ContentHash": "d18e26d8e6a6f5b2",
+      "GitCommit": "5e7e6a64",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/en/api-reference/index.md",
         "docs/en/configuration/index.md",
+        "docs/en/deployment/index.md",
         "docs/en/development/contributing.md",
-        "docs/en/getting-started/installation.md",
         "docs/en/getting-started/quick-start.md",
+        "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
       ]
     },
@@ -996,17 +996,19 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.387004",
-      "ContentHash": "0aa55bb7a354b039",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-05-19T06:08:24.561359",
+      "ContentHash": "d412807cea65d34c",
+      "GitCommit": "5e7e6a64",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
+        "docs/zh/api-reference/index.md",
         "docs/zh/configuration/index.md",
+        "docs/zh/deployment/index.md",
         "docs/zh/development/contributing.md",
-        "docs/zh/getting-started/installation.md",
         "docs/zh/getting-started/quick-start.md",
+        "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md"
       ]
     },
@@ -1801,15 +1803,13 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-05-14T05:48:24.540074",
-      "ContentHash": "b796fb0fbec08179",
-      "GitCommit": "313f6e47",
+      "Version": "1.0.6",
+      "LastModified": "2026-05-19T06:08:23.874012",
+      "ContentHash": "566946c3e0d7c407",
+      "GitCommit": "bade75ba",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": [
-        "README.md"
-      ]
+      "Dependencies": []
     },
     "docs/zh/reference/adapter-updates.md": {
       "FilePath": "docs/zh/reference/adapter-updates.md",
@@ -1827,10 +1827,10 @@
     },
     "QWEN.md": {
       "FilePath": "QWEN.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-05-14T05:48:24.537688",
-      "ContentHash": "c0a0767712c885b3",
-      "GitCommit": "72f227e7",
+      "Version": "1.0.3",
+      "LastModified": "2026-05-19T06:08:23.871418",
+      "ContentHash": "d10037dc19f13d44",
+      "GitCommit": "8c4e0ad9",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2116,10 +2116,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.16",
-      "LastModified": "2026-05-18T06:14:48.203144",
-      "ContentHash": "c314d6189fcc0d6c",
-      "GitCommit": "e73d761e",
+      "Version": "1.0.17",
+      "LastModified": "2026-05-19T06:08:23.878908",
+      "ContentHash": "69cd1d20a95132c8",
+      "GitCommit": "880a1185",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2136,26 +2136,31 @@
     },
     "docs/configuration-guide.md": {
       "FilePath": "docs/configuration-guide.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-05-14T05:48:24.558787",
-      "ContentHash": "9d78d561c7d9cb54",
-      "GitCommit": "58a90803",
+      "Version": "1.0.1",
+      "LastModified": "2026-05-19T06:08:23.890508",
+      "ContentHash": "f21a3f37dae38ce9",
+      "GitCommit": "4086294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "config-external/README.md"
+        "docs/zh/configuration/application-config.md",
+        "docs/zh/configuration/dynamic-config.md"
+      ]
+    },
+    "docs/en/getting-started/quick-start-v1.8.md": {
+      "FilePath": "docs/en/getting-started/quick-start-v1.8.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-05-19T06:08:24.114497",
+      "ContentHash": "ae61b283947dcbbb",
+      "GitCommit": "4086294f",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/deployment/docker.md"
       ]
     }
   },
   "changes": [
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.182",
-      "NewVersion": "1.0.183",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-02-18T04:22:25.192559",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.183",
@@ -3211,7 +3216,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-05-18T06:14:48.203150",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "QWEN.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-19T06:08:23.871430",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-19T06:08:23.874018",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-19T06:08:23.876363",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.16",
+      "NewVersion": "1.0.17",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-19T06:08:23.878914",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/configuration-guide.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-19T06:08:23.890519",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start-v1.8.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-05-19T06:08:24.114510",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-19T06:08:24.123855",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-19T06:08:24.561370",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-05-18T06:14:49.070143"
+  "last_updated": "2026-05-19T06:08:24.884442"
 }
