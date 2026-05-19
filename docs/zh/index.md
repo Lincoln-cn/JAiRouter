@@ -1,22 +1,21 @@
 ﻿# JAiRouter
 
-<div class="hero-section" style="text-align: center; margin-bottom: 2rem;">
+<p align="center">
+  <strong>AI 模型服务统一网关</strong><br>
+  <em>一行代码接入所有模型</em>
+</p>
 
-**AI 模型服务统一网关**
-
-一行代码接入所有模型
-
-</div>
-
----
-
-<div class="hero-cta" style="text-align: center; margin: 2rem 0;">
-
-[🚀 快速开始](getting-started/quick-start.md){ .md-button .md-button--primary }
-[📖 配置指南](configuration/index.md){ .md-button }
-[🐙 GitHub](https://github.com/Lincoln-cn/JAiRouter){ .md-button target="_blank" }
-
-</div>
+<p align="center">
+  <a href="getting-started/quick-start.md">
+    <img src="https://img.shields.io/badge/快速开始-🚀-blue?style=for-the-badge" alt="快速开始">
+  </a>
+  <a href="configuration/index.md">
+    <img src="https://img.shields.io/badge/配置指南-📖-green?style=for-the-badge" alt="配置指南">
+  </a>
+  <a href="https://github.com/Lincoln-cn/JAiRouter">
+    <img src="https://img.shields.io/badge/GitHub-🐙-black?style=for-the-badge" alt="GitHub">
+  </a>
+</p>
 
 ---
 

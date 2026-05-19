@@ -1,22 +1,21 @@
 ﻿# JAiRouter
 
-<div class="hero-section" style="text-align: center; margin-bottom: 2rem;">
+<p align="center">
+  <strong>AI Model Service Unified Gateway</strong><br>
+  <em>Connect to all models with a single line of code</em>
+</p>
 
-**AI Model Service Unified Gateway**
-
-Connect to all models with a single line of code
-
-</div>
-
----
-
-<div class="hero-cta" style="text-align: center; margin: 2rem 0;">
-
-[🚀 Quick Start](getting-started/quick-start.md){ .md-button .md-button--primary }
-[📖 Configuration](configuration/index.md){ .md-button }
-[🐙 GitHub](https://github.com/Lincoln-cn/JAiRouter){ .md-button target="_blank" }
-
-</div>
+<p align="center">
+  <a href="getting-started/quick-start.md">
+    <img src="https://img.shields.io/badge/Quick_Start-🚀-blue?style=for-the-badge" alt="Quick Start">
+  </a>
+  <a href="configuration/index.md">
+    <img src="https://img.shields.io/badge/Configuration-📖-green?style=for-the-badge" alt="Configuration">
+  </a>
+  <a href="https://github.com/Lincoln-cn/JAiRouter">
+    <img src="https://img.shields.io/badge/GitHub-🐙-black?style=for-the-badge" alt="GitHub">
+  </a>
+</p>
 
 ---
 
