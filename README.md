@@ -42,7 +42,20 @@
 docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
 ```
 
-Open http://localhost:8080 to access the Web Console.
+### Access Web Console
+
+Open http://localhost:8080/admin in your browser.
+
+**Default Login Credentials:**
+- Username: `admin`
+- Password: `ChangeMeOnFirstStartup123456` (development default)
+
+> 💡 **Security Note**: For production, set a strong password via environment variable:
+> ```bash
+> docker run -d --name jairouter -p 8080:8080 \
+>   -e INITIAL_ADMIN_PASSWORD="YourSecurePassword!" \
+>   sodlinken/jairouter:latest
+> ```
 
 That's it. No configuration needed.
 

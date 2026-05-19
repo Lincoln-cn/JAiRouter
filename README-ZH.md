@@ -135,11 +135,18 @@ docker compose up -d
 
 ### 2. 访问 Web 控制台
 
-浏览器打开 http://localhost:8080
+浏览器打开 http://localhost:8080/admin
 
-默认登录凭证：
+**默认登录凭证：**
 - 用户名：`admin`
-- 密码：查看日志 `docker logs jairouter | grep password`
+- 密码：`ChangeMeOnFirstStartup123456`（开发环境默认值）
+
+> 💡 **安全提示**：生产环境建议通过环境变量设置强密码：
+> ```bash
+> docker run -d --name jairouter -p 8080:8080 \
+>   -e INITIAL_ADMIN_PASSWORD="YourSecurePassword!" \
+>   sodlinken/jairouter:latest
+> ```
 
 ### 3. 配置第一个服务
 
