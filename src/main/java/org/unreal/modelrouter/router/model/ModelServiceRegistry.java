@@ -66,10 +66,12 @@ public class ModelServiceRegistry {
     // v2.7.7: 实例选择优化器
     private final SelectInstanceOptimizer selectInstanceOptimizer;
 
+    // v2.7.20: WebClient缓存管理器
+    private final WebClientCacheManager webClientCacheManager;
+
     // 配置和缓存
     private final ModelRouterProperties originalProperties; // 原始YAML配置
     private volatile Map<String, Object> currentConfig; // 当前运行时配置
-    private final Map<String, WebClient> webClientCache;
 
     // 运行时服务配置缓存
     private volatile Map<String, ServiceRuntimeConfig> serviceConfigCache;
@@ -81,7 +83,8 @@ public class ModelServiceRegistry {
                                 final CircuitBreakerManager circuitBreakerManager,
                                 final FallbackManager fallbackManager,
                                 final ConfigMergeService configMergeService,
-                                final org.unreal.modelrouter.config.core.ConfigurationHelper configurationHelper) {
+                                final org.unreal.modelrouter.config.core.ConfigurationHelper configurationHelper,
+                                final WebClientCacheManager webClientCacheManager) {
         this.originalProperties = properties;
         this.serviceStateManager = serviceStateManager;
         this.rateLimitManager = rateLimitManager;
@@ -90,7 +93,7 @@ public class ModelServiceRegistry {
         this.fallbackManager = fallbackManager;
         this.configMergeService = configMergeService;
         this.configurationHelper = configurationHelper;
-        this.webClientCache = new ConcurrentHashMap<>();
+        this.webClientCacheManager = webClientCacheManager;
         this.serviceConfigCache = new ConcurrentHashMap<>();
         // v2.7.7: 初始化实例选择优化器
         this.selectInstanceOptimizer = new SelectInstanceOptimizer(serviceStateManager, circuitBreakerManager);
@@ -673,19 +676,7 @@ public class ModelServiceRegistry {
      * 获取WebClient
      */
     private WebClient getWebClient(final ModelRouterProperties.ModelInstance instance) {
-        String key = instance.getBaseUrl();
-        return webClientCache.computeIfAbsent(key, url -> {
-            // 尝试获取追踪WebClient工厂
-            try {
-                org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory tracingFactory = 
-                    org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
-                        org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory.class);
-                return tracingFactory.createTracingWebClient(url);
-            } catch (Exception e) {
-                // 如果追踪功能不可用，创建普通WebClient
-                return WebClient.builder().baseUrl(url).build();
-            }
-        });
+        return webClientCacheManager.getOrCreate(instance.getBaseUrl());
     }
 
     /**
