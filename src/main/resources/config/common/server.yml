@@ -10,7 +10,7 @@ server:
 # Spring Boot 基础配置
 spring:
   main:
-    allow-circular-references: true
+    allow-circular-references: false
   
   # WebFlux 配置
   webflux:

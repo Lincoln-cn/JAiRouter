@@ -52,71 +52,6 @@ public class JwtTokenInfo {
     public JwtTokenInfo() {
     }
 
-    /**
-     * 兼容 TokenResponse 的构造函数
-     *
-     * @deprecated 此构造函数仅为兼容 {@link TokenResponse} 而保留。
-     *             请使用完整构造函数或 Builder 模式创建 JwtTokenInfo。
-     *             推荐使用以下方式：
-     *             <pre>{@code
-     *             JwtTokenInfo info = new JwtTokenInfo();
-     *             info.setToken(token);
-     *             info.setTokenType("Bearer");
-     *             info.setMessage("Success");
-     *             info.setTimestamp(LocalDateTime.now());
-     *             info.setUserId(userId);
-     *             info.setStatus(TokenStatus.ACTIVE);
-     *             }</pre>
-     *             此构造函数将在 v3.0 版本中移除。
-     * @param token 令牌值
-     * @param tokenType 令牌类型
-     * @param message 响应消息
-     * @param timestamp 响应时间戳
-     * @since v2.5.1 标注废弃
-     */
-    @Deprecated(since = "2.5.1", forRemoval = true)
-    public JwtTokenInfo(final String token, final String tokenType, final String message, final LocalDateTime timestamp) {
-        this.token = token;
-        this.tokenType = tokenType;
-        this.message = message;
-        this.timestamp = timestamp;
-    }
-
-    /**
-     * 兼容 UserTokenInfo 的构造函数
-     *
-     * @deprecated 此构造函数仅为兼容 {@link UserTokenInfo} 而保留。
-     *             请使用 Builder 模式或 setter 方法创建 JwtTokenInfo，以便设置更多字段。
-     *             推荐使用以下方式：
-     *             <pre>{@code
-     *             JwtTokenInfo info = new JwtTokenInfo();
-     *             info.setUserId(userId);
-     *             info.setToken(token);
-     *             info.setIssuedAt(issuedAt);
-     *             info.setExpiresAt(expiresAt);
-     *             info.setStatus(TokenStatus.ACTIVE);
-     *             info.setTokenType("Bearer");
-     *             info.setCreatedAt(LocalDateTime.now());
-     *             }</pre>
-     *             此构造函数将在 v3.0 版本中移除。
-     * @param userId 用户ID
-     * @param token 令牌值
-     * @param issuedAt 颁发时间
-     * @param expiresAt 过期时间
-     * @param status 令牌状态
-     * @since v2.5.1 标注废弃
-     */
-    @Deprecated(since = "2.5.1", forRemoval = true)
-    public JwtTokenInfo(final String userId, final String token, final LocalDateTime issuedAt, final LocalDateTime expiresAt, final TokenStatus status) {
-        this.userId = userId;
-        this.token = token;
-        this.issuedAt = issuedAt;
-        this.expiresAt = expiresAt;
-        this.status = status;
-        this.tokenType = "Bearer";
-        this.timestamp = LocalDateTime.now();
-    }
-
     // Getters and Setters
 
     // 基础令牌信息 (TokenResponse兼容)
@@ -300,66 +235,6 @@ public class JwtTokenInfo {
     public boolean isExpired() {
         return TokenStatus.EXPIRED.equals(this.status)
                || (this.expiresAt != null && this.expiresAt.isBefore(LocalDateTime.now()));
-    }
-
-    /**
-     * 获取状态字符串 (兼容UserTokenInfo)
-     *
-     * @deprecated 此方法仅为兼容 {@link UserTokenInfo#getStatus()} 而保留。
-     *             请使用 {@link #getStatus()} 返回 {@link TokenStatus} 枚举替代。
-     *             枚举类型更安全，支持编译时检查。
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码
-     *             String status = info.getStatusString(); // 返回 "active"
-     *             
-     *             // 新代码
-     *             TokenStatus status = info.getStatus(); // 返回 TokenStatus.ACTIVE
-     *             boolean isActive = info.isActive(); // 直接使用 boolean 方法
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @return 状态字符串 (小写格式)
-     * @since v2.5.1 标注废弃
-     */
-    @Deprecated(since = "2.5.1", forRemoval = true)
-    public String getStatusString() {
-        return this.status != null ? this.status.name().toLowerCase() : "unknown";
-    }
-
-    /**
-     * 设置状态字符串 (兼容UserTokenInfo)
-     *
-     * @deprecated 此方法仅为兼容 {@link UserTokenInfo#setStatus(String)} 而保留。
-     *             请使用 {@link #setStatus(TokenStatus)} 替代。
-     *             使用枚举类型设置状态，避免字符串错误。
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码
-     *             info.setStatusString("active"); // 字符串设置
-     *             
-     *             // 新代码
-     *             info.setStatus(TokenStatus.ACTIVE); // 枚举设置
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @param status 状态字符串 ("active", "revoked", "expired")
-     * @since v2.5.1 标注废弃
-     */
-    @Deprecated(since = "2.5.1", forRemoval = true)
-    public void setStatusString(final String status) {
-        if (status != null) {
-            try {
-                this.status = TokenStatus.valueOf(status.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                // 兼容旧的字符串状态
-                if ("active".equalsIgnoreCase(status)) {
-                    this.status = TokenStatus.ACTIVE;
-                } else if ("revoked".equalsIgnoreCase(status)) {
-                    this.status = TokenStatus.REVOKED;
-                } else if ("expired".equalsIgnoreCase(status)) {
-                    this.status = TokenStatus.EXPIRED;
-                }
-            }
-        }
     }
 
     @Override
