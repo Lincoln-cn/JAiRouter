@@ -1,90 +1,79 @@
 # Project Summary
 
 ## Overall Goal
-整合 innerdoc 目录中的 v1.8 快速开始文档与 docs 目录下的正式文档，确保文档完整性并通过 mkdocs 严格模式编译验证。
+整理 innerdoc/01-项目概述/ 目录下的文档，合并重复文件，对齐版本开发文件和任务跟踪表，更新内部文档索引。
 
 ## Key Knowledge
 
 ### 项目技术栈
 - **后端**: Java 17, Spring Boot 3.5.5 (WebFlux/Reactive)
 - **前端**: Vue 3 + TypeScript + Element Plus + Vite
-- **数据库**: H2 (嵌入式), R2DBC 响应式访问
-- **文档系统**: MkDocs with Material theme, i18n plugin
+- **数据库**: H2 (embedded, default), R2DBC reactive access
 - **构建工具**: Maven 3.x
 
-### 文档规范
-- 文档存放在 `docs/` 目录，按语言分为 `docs/zh/` 和 `docs/en/`
-- mkdocs.yml 控制导航结构，需要同步更新中英文翻译映射
-- `mkdocs build --strict` 用于验证文档完整性
-- innerdoc 目录下的文档**严禁提交到 Git 仓库**（仅供本地参考）
+### 版本状态
+- **当前 pom.xml 版本**: 2.6.11-SNAPSHOT
+- **最新 Git 标签**: v2.7.13 (JMH基准测试套件)
+- **LTS 版本**: v2.6.11 LTS (final feature release)
 
-### 目录用途区分
-| 目录 | 用途 | 文档数 |
-|------|------|--------|
-| docs/ | 用户公开文档 | 159 |
-| innerdoc/ | 内部开发记录 | 154 |
+### 版本标签压缩规则
+| 版本系列 | 标签情况 | 压缩说明 |
+|---------|---------|---------|
+| v2.6.x | v2.6.1~v2.6.11, v2.6.15 | v2.6.12~v2.6.14 无标签（ConfigurationService重构中间版本） |
+| v2.7.x | v2.7.5, v2.7.6, v2.7.12, v2.7.13 | v2.7.0~v2.7.4 压缩到 v2.7.5；v2.7.7~v2.7.11 压缩到 v2.7.12 |
+| v2.9.x | 无标签 | 全部压缩，v2.9.x封板完成 |
 
-### 关键命令
-```bash
-# MkDocs 严格模式编译验证
-mkdocs build --strict
-
-# Maven 快速构建
-mvn clean package -Pfast
-
-# Docker 运行
-docker run -d -p 8080:8080 sodlinken/jairouter:latest
-```
+### innerdoc 目录规则
+- 根目录只保留《开发计划-2026.md》和《任务跟踪表.md》两个核心文档
+- 其他文档按内容归档到子目录
+- **innerdoc 目录下的文档禁止提交到 Git**
 
 ## Recent Actions
 
-### 本次会话完成的工作
-| 任务 | 状态 | 说明 |
-|------|------|------|
-| 分析文档差异 | ✅ | innerdoc 和 docs 目录对比分析 |
-| innerdoc 文档检查 | ✅ | 确认 docs 已完整覆盖用户主题 |
-| 结论确认 | ✅ | 无需额外整合 |
+### 已完成的整理工作
+1. **删除重复/临时文件（3个）**
+   - `开发计划-2026.md` - 与 `开发计划2026.md` 重复
+   - `v2.6.12-任务排期与里程碑.md` - 内容已合并到任务跟踪表
+   - `README-整理方案.md` - 临时整理方案文件
 
-### 文档覆盖分析结果
-| innerdoc 目录 | docs 对应目录 | 状态 |
-|--------------|--------------|------|
-| 06-运维监控 | zh/monitoring (12文件) | ✅ 已覆盖 |
-| 08-安全认证 | zh/security (6文件) | ✅ 已覆盖 |
-| 09-构建部署 | zh/deployment (7文件) | ✅ 已覆盖 |
-| 10-开发指南 | zh/development (12文件) | ✅ 已覆盖 |
-| 11-数据库配置 | zh/configuration/store-config.md | ✅ 已覆盖 |
-| 14-链路追踪 | zh/tracing (7文件) | ✅ 已覆盖 |
-| 15-故障排查 | zh/troubleshooting (4文件) | ✅ 已覆盖 |
+2. **更新 README-INNERDOC.md**
+   - 更新01-项目概述目录文档列表（21个文档）
+   - 更新16-版本发布目录文档列表（48个文档）
+   - 添加版本标签压缩说明章节
+   - 更新文档统计（总计200个文档）
 
-### 修改的文件（上次会话）
-1. **新增**: `docs/en/getting-started/quick-start-v1.8.md` - 英文版 v1.8 快速开始指南
-2. **修改**: `mkdocs.yml` - 添加导航翻译配置
-3. **修改**: `docs/configuration-guide.md` - 修复无效链接
+3. **更新 任务跟踪表.md**
+   - 更新v2.6.13-v2.6.16 ConfigurationService拆分状态为**已完成**
+   - 添加v2.7.x-v2.9.x版本状态（已完成）
+   - 添加v2.10.x-v2.11.x规划信息
+
+4. **Git 核实结果**
+   - 通过 `git tag -l | sort -V` 确认标签压缩情况
+   - 通过 `git log --oneline --decorate` 确认版本提交历史
+   - 确认 v2.6.13-v2.6.16 代码已提交但部分无标签
 
 ## Current Plan
 
-### 已完成 [DONE]
-- [DONE] 分析 innerdoc 和 docs 目录下的文档差异
-- [DONE] 确认中文版 `quick-start-v1.8.md` 已完整
-- [DONE] 创建英文版 `quick-start-v1.8.md`
-- [DONE] 更新 mkdocs.yml 导航翻译配置
-- [DONE] 使用 mkdocs build --strict 验证编译通过
-- [DONE] 提交到本地 Git 仓库 (commit: 4086294f)
-- [DONE] 检查 innerdoc 文档是否需要整合（结论：无需整合）
+### 已完成任务
+1. [DONE] 删除重复文件：开发计划-2026.md
+2. [DONE] 删除重复文件：v2.6.12-任务排期与里程碑.md
+3. [DONE] 更新主开发计划文档：开发计划2026.md（无需修改，内容已是最新）
+4. [DONE] 更新任务跟踪表.md
+5. [DONE] 更新README-INNERDOC.md索引
 
-### 待处理 [TODO]
-- [ ] 推送到远程仓库（需用户确认）
+### 后续版本规划
+- **v2.10.x**: Checkstyle 警告修复（3327→1200）- 📋 规划中
+- **v2.11.x**: 测试覆盖率提升（10.9%→30%）- 📋 规划中
+- **v3.0**: 微服务架构转型 - ⏸️ 无限期推迟
 
-### 项目版本状态
-- 当前最新提交: `4086294f` - docs: 添加英文版 v1.8 快速开始指南并修复文档链接
-- 文档站点: https://jairouter.com
-
----
-
-## Summary Metadata
-**Update time**: 2026-05-19T(当前会话)
+### 文档路径参考
+- 主开发计划: `innerdoc/01-项目概述/开发计划2026.md`
+- 任务跟踪表: `innerdoc/01-项目概述/任务跟踪表.md`
+- 文档索引: `innerdoc/README-INNERDOC.md`
+- v2.10.x规划: `innerdoc/01-项目概述/v2.10.x-封版修复计划.md`
+- v2.11.x规划: `innerdoc/01-项目概述/v2.11.x-版本规划.md`
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-05-19T02:06:19.826Z 
+**Update time**: 2026-05-20T03:02:32.123Z 
