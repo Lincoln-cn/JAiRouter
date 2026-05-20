@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.14",
-      "LastModified": "2026-05-19T06:08:23.876358",
-      "ContentHash": "84b5a53e4221fcf1",
-      "GitCommit": "bade75ba",
+      "Version": "1.0.15",
+      "LastModified": "2026-05-20T06:08:07.668683",
+      "ContentHash": "2440a0c4feb6c656",
+      "GitCommit": "57b4627f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -352,10 +352,10 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.195585",
-      "ContentHash": "cd9645956c2273db",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-05-20T06:08:07.872721",
+      "ContentHash": "efe314513a35e0b5",
+      "GitCommit": "2ef125ce",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -573,10 +573,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-11-27T03:11:57.157004",
-      "ContentHash": "2ae0d565e50eeef4",
-      "GitCommit": "f0909611",
+      "Version": "1.0.3",
+      "LastModified": "2026-05-20T06:08:07.969217",
+      "ContentHash": "e0afa52c1249b369",
+      "GitCommit": "7f3ab042",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -979,10 +979,10 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.390541",
-      "ContentHash": "1a4e0956203f612a",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-05-20T06:08:08.259869",
+      "ContentHash": "8e6dbdc89a40069d",
+      "GitCommit": "2ef125ce",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1217,10 +1217,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-11-27T03:11:57.392941",
-      "ContentHash": "2ede74e44ca625c5",
-      "GitCommit": "f0909611",
+      "Version": "1.0.3",
+      "LastModified": "2026-05-20T06:08:08.354778",
+      "ContentHash": "ddfe5cd09254fd3a",
+      "GitCommit": "7f3ab042",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1803,10 +1803,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-05-19T06:08:23.874012",
-      "ContentHash": "566946c3e0d7c407",
-      "GitCommit": "bade75ba",
+      "Version": "1.0.7",
+      "LastModified": "2026-05-20T06:08:07.666413",
+      "ContentHash": "d6f8f8915c6104a5",
+      "GitCommit": "57b4627f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2008,19 +2008,6 @@
       "ChangeSummary": "",
       "Dependencies": []
     },
-    "docs/zh/getting-started/quick-start-v1.8.md": {
-      "FilePath": "docs/zh/getting-started/quick-start-v1.8.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-04-28T05:31:17.462855",
-      "ContentHash": "aea55700241f0300",
-      "GitCommit": "56f61c77",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/configuration/validation-rules.md",
-        "docs/zh/deployment/docker.md"
-      ]
-    },
     "docs/zh/security/audit-log-management.md": {
       "FilePath": "docs/zh/security/audit-log-management.md",
       "Version": "1.0.0",
@@ -2116,10 +2103,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.17",
-      "LastModified": "2026-05-19T06:08:23.878908",
-      "ContentHash": "69cd1d20a95132c8",
-      "GitCommit": "880a1185",
+      "Version": "1.0.18",
+      "LastModified": "2026-05-20T06:08:07.671092",
+      "ContentHash": "3da4b71af3ed5543",
+      "GitCommit": "8ebc4364",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2146,29 +2133,9 @@
         "docs/zh/configuration/application-config.md",
         "docs/zh/configuration/dynamic-config.md"
       ]
-    },
-    "docs/en/getting-started/quick-start-v1.8.md": {
-      "FilePath": "docs/en/getting-started/quick-start-v1.8.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-05-19T06:08:24.114497",
-      "ContentHash": "ae61b283947dcbbb",
-      "GitCommit": "4086294f",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/deployment/docker.md"
-      ]
     }
   },
   "changes": [
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.183",
-      "NewVersion": "1.0.184",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-02-19T04:21:03.341637",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.184",
@@ -3280,7 +3247,79 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-05-19T06:08:24.561370",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-20T06:08:07.666421",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.14",
+      "NewVersion": "1.0.15",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-20T06:08:07.668689",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.17",
+      "NewVersion": "1.0.18",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-20T06:08:07.671099",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-20T06:08:07.872732",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-20T06:08:07.969227",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-20T06:08:08.259878",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-05-20T06:08:08.354787",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start-v1.8.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-05-20T06:08:08.451800",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start-v1.8.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-05-20T06:08:08.451836",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-05-19T06:08:24.884442"
+  "last_updated": "2026-05-20T06:08:08.550962"
 }
