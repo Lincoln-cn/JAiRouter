@@ -1,150 +1,285 @@
 # Modular Configuration Guide
 
+<!-- 版本信息 -->
+> **文档版本**: 2.0.0
+> **最后更新**: 2026-05-21
+> **Git 提交**: 61384b4a
+> **作者**: Lincoln
+<!-- /版本信息 -->
+
 ## Overview
 
-JAiRouter adopts a modular configuration management approach, splitting complex configurations into multiple independent configuration files by function. This design improves configuration maintainability, readability, and reusability.
+JAiRouter adopts a **modular configuration management** approach, splitting complex configurations into multiple independent configuration files by function and service module. This design improves configuration maintainability, readability, and reusability.
 
-## Configuration Structure
+## Configuration Module Structure (v2.8.x)
 
-### Main Configuration File
+### Directory Structure
+
+```
+config/
+├── common/              # Common infrastructure
+│   ├── server.yml       # Server configuration
+│   ├── webclient.yml    # WebClient configuration
+│   └── logging.yml      # Logging configuration
+├── config-service/      # Configuration service
+│   └── core.yml         # ConfigurationService settings
+├── router/              # Router service
+│   ├── adapter.yml      # Adapter configuration
+│   ├── loadbalancer.yml # Load balancer configuration
+│   ├── ratelimit.yml    # Rate limiting configuration
+│   ├── circuitbreaker.yml # Circuit breaker configuration
+│   ├── fallback.yml     # Fallback configuration
+│   └── services.yml     # Service instance configuration
+├── auth/                # Authentication service
+│   ├── jwt.yml          # JWT authentication configuration
+│   ├── api-key.yml      # API key configuration
+│   ├── audit.yml        # Audit configuration
+│   └── sanitization.yml # Data sanitization configuration
+├── monitor/             # Monitoring service
+│   ├── slow-query-alerts.yml
+│   ├── error-tracking.yml
+│   └── persistence-monitoring-base.yml
+├── tracing/             # Tracing service
+│   └── tracing-base.yml
+├── persistence/         # Persistence service
+│   └── state-persistence-base.yml
+├── base/                # Base configurations (legacy)
+│   ├── server-base.yml
+│   └── model-services-base.yml
+└── security/            # Security configurations (legacy)
+    ├── security-base.yml
+    ├── persistence-base.yml
+    └── audit-base.yml
+```
+
+### Module Categories
+
+| Module | Directory | Purpose |
+|--------|-----------|---------|
+| **Common** | `config/common/` | Shared infrastructure (server, webclient, logging) |
+| **Config Service** | `config/config-service/` | Configuration management service |
+| **Router** | `config/router/` | Routing, load balancing, rate limiting, circuit breaker |
+| **Auth** | `config/auth/` | Authentication (JWT, API Key), audit, sanitization |
+| **Monitor** | `config/monitor/` | Performance monitoring, error tracking |
+| **Tracing** | `config/tracing/` | Distributed tracing |
+| **Persistence** | `config/persistence/` | State persistence |
+
+---
+
+## Main Configuration Import
+
+### application.yml
 
 ```yaml
-# application.yml
 spring:
   config:
     import:
-      - classpath:config/base/server-base.yml
-      - classpath:config/base/model-services-base.yml
+      # External configuration (highest priority)
+      - optional:file:/app/config/application.yml
+      - optional:file:/app/config/auth/jwt.yml
+      - optional:file:/app/config/router/services.yml
+
+      # common module
+      - classpath:config/common/server.yml
+      - classpath:config/common/webclient.yml
+      - classpath:config/common/logging.yml
+
+      # config-service module
+      - classpath:config/config-service/core.yml
+
+      # router module
+      - classpath:config/router/adapter.yml
+      - classpath:config/router/loadbalancer.yml
+      - classpath:config/router/ratelimit.yml
+      - classpath:config/router/circuitbreaker.yml
+      - classpath:config/router/fallback.yml
+      - classpath:config/router/services.yml
+
+      # auth module
+      - classpath:config/auth/jwt.yml
+      - classpath:config/auth/api-key.yml
+      - classpath:config/auth/audit.yml
+      - classpath:config/auth/sanitization.yml
+
+      # monitor module
       - classpath:config/base/monitoring-base.yml
+      - classpath:config/monitor/slow-query-alerts.yml
+      - classpath:config/monitor/error-tracking.yml
+      - classpath:config/monitor/persistence-monitoring-base.yml
+
+      # tracing module
       - classpath:config/tracing/tracing-base.yml
-      - classpath:config/security/security-base.yml
-      - classpath:config/monitoring/slow-query-alerts.yml
-      - classpath:config/monitoring/error-tracking.yml
+
+      # persistence module
+      - classpath:config/persistence/state-persistence-base.yml
 ```
 
-### Configuration Module Categories
-
-1. **Base Configuration Modules** (`config/base/`)
-   - [server-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/server-base.yml) - Server base configuration
-   - [model-services-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) - Model services configuration
-   - [monitoring-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/monitoring-base.yml) - Monitoring base configuration
-
-2. **Feature Configuration Modules** (`config/{feature}/`)
-   - [tracing/tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml) - Tracing feature configuration
-   - [security/security-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/security/security-base.yml) - Security feature configuration
-   - [monitoring/slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml) - Slow query alert configuration
-   - [monitoring/error-tracking.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/error-tracking.yml) - Error tracking configuration
-
-3. **Environment Configuration Files** (`application-{profile}.yml`)
-   - [application-dev.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml) - Development environment configuration
-   - [application-staging.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-staging.yml) - Staging environment configuration
-   - [application-prod.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-prod.yml) - Production environment configuration
-   - [application-legacy.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-legacy.yml) - Legacy compatibility configuration
+---
 
 ## Configuration Priority
 
 Configuration loading follows this priority order (higher priority overrides lower priority):
 
-1. Base configuration modules (lowest priority)
-2. Feature configuration modules
-3. Environment-specific configuration files
-4. External configuration files
-5. Environment variables
-6. Command-line arguments (highest priority)
+1. Command-line arguments (highest priority)
+2. Environment variables
+3. External configuration files (`/app/config/`)
+4. Environment-specific configuration files (`application-{profile}.yml`)
+5. Module configuration files (`config/{module}/*.yml`)
+6. Base configuration modules (lowest priority)
 
-## Base Configuration Modules Details
+---
 
-### Server Base Configuration (server-base.yml)
+## Module Configuration Details
 
-Contains server port, storage path, WebClient base configuration, etc.:
+### Common Module
+
+#### Server Configuration (`config/common/server.yml`)
 
 ```yaml
 server:
-  port: 8080
+  port: 8080                    # Service port
+  compression:
+    enabled: true               # Enable response compression
+    mime-types: application/json,text/plain,text/html
+  http2:
+    enabled: true               # Enable HTTP/2
+```
 
-store:
-  type: file
-  path: "config/"
+#### WebClient Configuration (`config/common/webclient.yml`)
 
+```yaml
 webclient:
-  connection-timeout: 10s
-  read-timeout: 30s
-  write-timeout: 30s
-  max-in-memory-size: 10MB
+  connect-timeout: 10000        # Connection timeout (ms)
+  read-timeout: 60000           # Read timeout (ms)
+  write-timeout: 60000          # Write timeout (ms)
+  max-in-memory-size: 10MB      # Max in-memory buffer size
+  pool:
+    max-connections: 500        # Maximum connections
+    acquire-timeout: 10000      # Acquire timeout (ms)
 ```
 
-### Model Services Base Configuration (model-services-base.yml)
-
-Contains core business configurations such as load balancing, rate limiting, and circuit breaking:
+#### Logging Configuration (`config/common/logging.yml`)
 
 ```yaml
-model:
-  load-balance:
-    type: random
-  adapter: gpustack
-  rate-limit:
-    enabled: true
-    algorithm: "token-bucket"
-  circuit-breaker:
-    enabled: true
-    failureThreshold: 5
+logging:
+  level:
+    root: INFO
+    org.unreal.modelrouter: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/jairouter.log
+    max-size: 10MB
+    max-history: 30
 ```
 
-### Monitoring Base Configuration (monitoring-base.yml)
+---
 
-Contains observability configurations such as monitoring metrics and management endpoints:
+### Router Module
 
-```yaml
-monitoring:
-  enabled: true
-  metrics:
-    enabled: true
-    prefix: "jairouter"
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus,jairouter-metrics
-```
-
-## Feature Configuration Modules Details
-
-### Tracing Configuration (tracing-base.yml)
-
-Complete configuration for distributed tracing:
+#### Adapter Configuration (`config/router/adapter.yml`)
 
 ```yaml
 jairouter:
-  tracing:
-    enabled: true
-    service-name: "jairouter"
-    sampling:
-      strategy: "parent_based_traceid_ratio"
-      ratio: 1.0
-    exporter:
-      type: "logging"
+  adapter:
+    default-adapter: "ollama"           # Default adapter type
+    connect-timeout: 10000              # Connection timeout (ms)
+    read-timeout: 60000                 # Read timeout (ms)
 ```
 
-### Security Configuration (security-base.yml)
+#### Load Balancer Configuration (`config/router/loadbalancer.yml`)
 
-Base configuration template for security features:
+```yaml
+jairouter:
+  loadbalancer:
+    default-strategy: "random"          # random, round_robin, weighted
+    health-check-interval: 30000        # Health check interval (ms)
+```
+
+#### Rate Limiting Configuration (`config/router/ratelimit.yml`)
+
+```yaml
+jairouter:
+  ratelimit:
+    enabled: true
+    default-algorithm: "token_bucket"   # token_bucket, leaky_bucket
+    default-capacity: 100               # Default bucket capacity
+    default-refill-rate: 10             # Tokens per second
+```
+
+#### Circuit Breaker Configuration (`config/router/circuitbreaker.yml`)
+
+```yaml
+jairouter:
+  circuitbreaker:
+    enabled: true
+    failure-threshold: 5                # Failures to trigger open
+    success-threshold: 3                # Successes to close
+    timeout: 30000                      # Open state timeout (ms)
+```
+
+---
+
+### Auth Module
+
+#### JWT Configuration (`config/auth/jwt.yml`)
 
 ```yaml
 jairouter:
   security:
-    enabled: false  # Disabled by default, enabled as needed per environment
-    api-key:
-      enabled: false
-      header-name: "X-API-Key"
     jwt:
-      enabled: false
-      secret: ""
+      enabled: false                    # Enable JWT authentication
+      jwt-header: "Jairouter_Token"     # Custom JWT header
+      secret: "${JWT_SECRET:}"          # JWT secret (use env var)
+      algorithm: "HS256"                # Signing algorithm
+      expiration-minutes: 60            # Access token expiration
+      refresh-expiration-days: 7        # Refresh token expiration
+      issuer: "jairouter"               # Token issuer
+      blacklist-enabled: true           # Enable token blacklist
 ```
 
-### Slow Query Alert Configuration (slow-query-alerts.yml)
+#### API Key Configuration (`config/auth/api-key.yml`)
 
-Performance monitoring and alert configuration:
+```yaml
+jairouter:
+  security:
+    api-key:
+      enabled: true                     # Enable API key authentication
+      header-name: "X-API-Key"          # API key header name
+      hash-algorithm: "SHA-256"         # Key hashing algorithm
+```
+
+#### Audit Configuration (`config/auth/audit.yml`)
+
+```yaml
+jairouter:
+  security:
+    audit:
+      enabled: true                     # Enable audit logging
+      include-request-body: true        # Log request bodies
+      include-response-body: false      # Log response bodies
+      max-body-length: 1024             # Max body length to log
+```
+
+#### Data Sanitization Configuration (`config/auth/sanitization.yml`)
+
+```yaml
+jairouter:
+  security:
+    sanitization:
+      enabled: true                     # Enable data sanitization
+      mask-sensitive-fields:            # Fields to mask
+        - "password"
+        - "secret"
+        - "token"
+        - "api-key"
+```
+
+---
+
+### Monitor Module
+
+#### Slow Query Alerts (`config/monitor/slow-query-alerts.yml`)
 
 ```yaml
 jairouter:
@@ -153,125 +288,145 @@ jairouter:
       enabled: true
       global:
         enabled: true
-        min-interval-ms: 300000
+        min-interval-ms: 300000         # Alert cooldown
 ```
 
-### Error Tracking Configuration (error-tracking.yml)
-
-Error monitoring and analysis configuration:
+#### Error Tracking (`config/monitor/error-tracking.yml`)
 
 ```yaml
 jairouter:
   monitoring:
     error-tracking:
-      enabled: false  # Disabled by default, enabled as needed per environment
-      aggregation-window-minutes: 5
+      enabled: false                    # Disabled by default
+      aggregation-window-minutes: 5     # Aggregation window
       sanitization:
         enabled: true
 ```
 
-## Environment Configuration Files Details
+---
 
-### Development Environment (application-dev.yml)
+### Tracing Module
 
-Configuration optimized for development and testing:
+#### Tracing Configuration (`config/tracing/tracing-base.yml`)
 
 ```yaml
-# Enable detailed logging
+jairouter:
+  tracing:
+    enabled: false
+    service-name: "jairouter"
+    sampling-rate: 1.0                  # Sampling rate (0.0 - 1.0)
+    export-enabled: false
+    exporter-type: "otlp"               # otlp, jaeger, zipkin
+    endpoint: "http://localhost:4317"
+```
+
+---
+
+### Persistence Module
+
+#### State Persistence (`config/persistence/state-persistence-base.yml`)
+
+```yaml
+jairouter:
+  persistence:
+    enabled: true
+    primary-storage: "h2"               # h2, redis, memory
+    fallback-storage: "memory"
+    cleanup:
+      enabled: true
+      schedule: "0 */5 * * * ?"         # Every 5 minutes
+      retention-days: 7
+```
+
+---
+
+## Environment-Specific Configuration
+
+### Development (`application-dev.yml`)
+
+```yaml
+spring:
+  config:
+    activate:
+      on-profile: dev
+
 logging:
   level:
-    org.unreal.modelrouter: DEBUG
-
-# Enable Swagger documentation
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
+    root: DEBUG
 
 jairouter:
   security:
-    enabled: true  # Enable security features for testing in development environment
+    jwt:
+      enabled: false                    # Disable JWT in dev
+  monitoring:
+    enabled: false                      # Disable monitoring in dev
 ```
 
-### Staging Environment (application-staging.yml)
-
-Configuration close to production environment:
+### Production (`application-prod.yml`)
 
 ```yaml
-# Detailed logging configuration
+spring:
+  config:
+    activate:
+      on-profile: prod
+
 logging:
   level:
     root: INFO
-    org.unreal.modelrouter.security: DEBUG
 
 jairouter:
   security:
-    enabled: true  # Enable security features for testing in staging environment
+    jwt:
+      enabled: true
+      secret: "${JWT_SECRET}"           # Must be set via env var
+  monitoring:
+    enabled: true
 ```
 
-### Production Environment (application-prod.yml)
+---
 
-Configuration optimized for production environment:
+## External Configuration (Docker)
 
-```yaml
-# Minimize log output
-logging:
-  level:
-    root: WARN
-
-jairouter:
-  security:
-    enabled: false  # Security features disabled by default in production, explicitly enable as needed
-```
-
-### Legacy Compatibility Environment (application-legacy.yml)
-
-Configuration to ensure smooth upgrade of legacy deployments:
-
-```yaml
-jairouter:
-  security:
-    enabled: false  # All security features disabled by default in legacy compatibility mode
-```
-
-## Usage Guide
-
-### Starting Different Environments
+Mount external configuration files to override defaults:
 
 ```bash
-# Start development environment
-java -jar app.jar --spring.profiles.active=dev
-
-# Start staging environment
-java -jar app.jar --spring.profiles.active=staging
-
-# Start production environment
-java -jar app.jar --spring.profiles.active=prod
-
-# Start legacy compatibility mode
-java -jar app.jar --spring.profiles.active=legacy
+docker run -d \
+  --name jairouter \
+  -p 8080:8080 \
+  -v /path/to/config:/app/config \
+  -e JWT_SECRET="your-secret-key" \
+  sodlinken/jairouter:latest
 ```
 
-### Modifying Configuration
+### External Configuration Structure
 
-1. **Base Configuration Modification**: Edit corresponding files in the [config/base/](file://d:/IdeaProjects/model-router/src/main/resources/config/base/) directory
-2. **Feature Enable/Disable**: Edit corresponding feature configuration files
-3. **Environment Differences**: Edit corresponding environment configuration files
-4. **Sensitive Configuration**: Use environment variables for injection
+```
+/app/config/
+├── application.yml      # Override main config
+├── auth/
+│   └── jwt.yml          # Override JWT config
+└── router/
+    └── services.yml     # Override service instances
+```
 
-### Configuration Best Practices
+---
 
-1. **Modularization Principle**: Split configurations into independent modules by function
-2. **Environment Separation**: Use environment configuration files to override base configurations
-3. **Sensitive Information Protection**: Inject sensitive configurations via environment variables
-4. **Version Control**: Include configuration files in version control
-5. **Documentation Synchronization**: Keep configurations consistent with documentation
+## Configuration Best Practices
+
+1. **Use environment variables** for sensitive values (secrets, passwords)
+2. **Use external configuration** for Docker deployments
+3. **Use profile-specific configuration** for different environments
+4. **Keep module configurations** focused and independent
+5. **Document custom configurations** in your deployment guide
+
+---
 
 ## Troubleshooting
 
 ### Configuration Not Taking Effect
 
-1. Check if configuration file paths are correct
-2. Confirm if environment configuration files are loaded correctly
+1. Check configuration file paths
+2. Confirm environment configuration files are loaded
 3. Verify configuration priority order
 4. Check for syntax errors
 
@@ -279,5 +434,9 @@ java -jar app.jar --spring.profiles.active=legacy
 
 1. Understand configuration priority rules
 2. Check for duplicate configuration items
-3. Confirm if environment variables override expected configurations
-4. Use `--debug` parameter to view configuration loading process
+3. Confirm environment variables don't override expected values
+4. Use `--debug` flag to view configuration loading process
+
+---
+
+*Last updated: 2026-05-21*
