@@ -110,6 +110,10 @@ public class ErrorTracker {
                 errorMetricsCollector.recordError(
                     throwable.getClass().getSimpleName(),
                     operation,
+                    null,
+                    null,
+                    null,
+                    null,
                     duration
                 );
             }

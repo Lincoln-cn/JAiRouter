@@ -201,7 +201,7 @@ public class ModelServiceRegistry {
         }
 
         // 服务级限流检查
-        RateLimitContext serviceContext = new RateLimitContext(serviceType, modelName, clientIp, 1);
+        RateLimitContext serviceContext = new RateLimitContext(serviceType, modelName, clientIp, 1, null, null);
         if (!rateLimitManager.tryAcquire(serviceContext)) {
             throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS,
