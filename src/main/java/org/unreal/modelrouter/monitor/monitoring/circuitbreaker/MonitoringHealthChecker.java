@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.monitoring.AsyncMetricsProcessor;
 import org.unreal.modelrouter.monitor.monitoring.MetricsMemoryManager;
+import org.unreal.modelrouter.monitor.monitoring.event.ProcessingStats;
 import org.unreal.modelrouter.monitor.monitoring.error.MetricsErrorHandler;
 
 import java.time.Duration;
@@ -206,7 +207,7 @@ public class MonitoringHealthChecker {
      */
     private HealthStatus checkAsyncProcessor() {
         try {
-            AsyncMetricsProcessor.ProcessingStats stats = asyncProcessor.getStats();
+            ProcessingStats stats = asyncProcessor.getStats();
             Map<String, Object> details = new HashMap<>();
             
             details.put("queueSize", stats.getQueueSize());

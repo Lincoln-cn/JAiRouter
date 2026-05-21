@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.AsyncMetricsProcessor;
 import org.unreal.modelrouter.monitor.monitoring.MetricsMemoryManager;
+import org.unreal.modelrouter.monitor.monitoring.event.ProcessingStats;
 import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledCondition;
 
 /**
@@ -327,7 +328,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
      * 获取性能统计信息
      */
     public PerformanceStats getPerformanceStats() {
-        AsyncMetricsProcessor.ProcessingStats processingStats = asyncProcessor.getStats();
+        ProcessingStats processingStats = asyncProcessor.getStats();
         MetricsMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
 
         return new PerformanceStats(
@@ -342,11 +343,11 @@ public class AsyncMetricsCollector implements MetricsCollector {
      */
     public static class PerformanceStats {
         private final boolean asyncProcessingEnabled;
-        private final AsyncMetricsProcessor.ProcessingStats processingStats;
+        private final ProcessingStats processingStats;
         private final MetricsMemoryManager.MemoryStats memoryStats;
 
         public PerformanceStats(final boolean asyncProcessingEnabled,
-                                final AsyncMetricsProcessor.ProcessingStats processingStats,
+                                final ProcessingStats processingStats,
                                 final MetricsMemoryManager.MemoryStats memoryStats) {
             this.asyncProcessingEnabled = asyncProcessingEnabled;
             this.processingStats = processingStats;
@@ -357,7 +358,7 @@ public class AsyncMetricsCollector implements MetricsCollector {
             return asyncProcessingEnabled;
         }
 
-        public AsyncMetricsProcessor.ProcessingStats getProcessingStats() {
+        public ProcessingStats getProcessingStats() {
             return processingStats;
         }
 
