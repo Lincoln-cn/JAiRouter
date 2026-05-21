@@ -24,6 +24,8 @@ import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
 import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
+import org.unreal.modelrouter.router.adapter.transformer.OpenAiRequestTransformer;
+import org.unreal.modelrouter.router.adapter.transformer.OpenAiResponseTransformer;
 
 
 import java.util.HashMap;
@@ -51,6 +53,8 @@ public class AdapterRegistry {
     private final AdapterTracingManager tracingManager;
     private final ErrorResponseBuilder errorResponseBuilder;
     private final NonStreamingRequestProcessor nonStreamingProcessor;
+    private final OpenAiRequestTransformer openAiRequestTransformer;
+    private final OpenAiResponseTransformer openAiResponseTransformer;
 
     public AdapterRegistry(final ModelRouterProperties properties,
                            final ModelServiceRegistry registry,
@@ -68,7 +72,9 @@ public class AdapterRegistry {
                            final AdapterMetricsRecorder metricsRecorder,
                            final AdapterTracingManager tracingManager,
                            final ErrorResponseBuilder errorResponseBuilder,
-                           final NonStreamingRequestProcessor nonStreamingProcessor) {
+                           final NonStreamingRequestProcessor nonStreamingProcessor,
+                           final OpenAiRequestTransformer openAiRequestTransformer,
+                           final OpenAiResponseTransformer openAiResponseTransformer) {
         this.properties = properties;
         this.registry = registry;
         this.objectMapper = objectMapper;
@@ -86,13 +92,15 @@ public class AdapterRegistry {
         this.tracingManager = tracingManager;
         this.errorResponseBuilder = errorResponseBuilder;
         this.nonStreamingProcessor = nonStreamingProcessor;
+        this.openAiRequestTransformer = openAiRequestTransformer;
+        this.openAiResponseTransformer = openAiResponseTransformer;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
 
     private void initializeAdapters() {
         // 注册各种adapter实现
-        adapters.put("normal", new NormalOpenAiAdapter(registry, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
+        adapters.put("normal", new NormalOpenAiAdapter(registry, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor, openAiRequestTransformer, openAiResponseTransformer));
         adapters.put("gpustack", new GpuStackAdapter(registry, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
         adapters.put("ollama", new OllamaAdapter(registry, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
         adapters.put("vllm", new VllmAdapter(registry, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errorResponseBuilder, nonStreamingProcessor));
