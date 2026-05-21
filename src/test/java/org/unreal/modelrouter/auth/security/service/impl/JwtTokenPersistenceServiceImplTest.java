@@ -21,14 +21,16 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @ExtendWith(MockitoExtension.class)
 class JwtTokenPersistenceServiceImplTest {
-    
+
     private JwtTokenPersistenceServiceImpl persistenceService;
     private StoreManager storeManager;
-    
+    private JwtTokenIndexManager indexManager;
+
     @BeforeEach
     void setUp() {
         storeManager = new MemoryStoreManager();
-        persistenceService = new JwtTokenPersistenceServiceImpl(storeManager);
+        indexManager = new JwtTokenIndexManager(storeManager);
+        persistenceService = new JwtTokenPersistenceServiceImpl(storeManager, indexManager);
     }
     
     @Test

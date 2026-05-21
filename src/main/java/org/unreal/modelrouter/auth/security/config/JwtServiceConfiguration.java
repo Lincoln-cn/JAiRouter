@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
 import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
 import org.unreal.modelrouter.auth.security.service.impl.JwtBlacklistServiceImpl;
+import org.unreal.modelrouter.auth.security.service.impl.JwtTokenIndexManager;
 import org.unreal.modelrouter.auth.security.service.impl.JwtTokenPersistenceServiceImpl;
 import org.unreal.modelrouter.auth.security.service.impl.RedisJwtBlacklistServiceImpl;
 import org.unreal.modelrouter.auth.security.service.impl.RedisJwtTokenPersistenceServiceImpl;
@@ -22,7 +23,7 @@ import org.unreal.modelrouter.persistence.store.StoreManager;
 @Slf4j
 @Configuration
 public class JwtServiceConfiguration {
-    
+
     /**
      * 主要的JWT持久化服务 - Redis实现
      * 当Redis启用时使用
@@ -33,11 +34,11 @@ public class JwtServiceConfiguration {
     public JwtPersistenceService redisJwtPersistenceService(
             @Qualifier("jwtReactiveRedisTemplate") final ReactiveRedisTemplate<String, String> redisTemplate,
             final StoreManager storeManager) {
-        
+
         log.info("Initializing Redis-based JWT persistence service");
         return new RedisJwtTokenPersistenceServiceImpl(redisTemplate, storeManager);
     }
-    
+
     /**
      * 备用的JWT持久化服务 - StoreManager实现
      * 当Redis未启用时使用
@@ -45,10 +46,12 @@ public class JwtServiceConfiguration {
     @Bean
     @Primary
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "false", matchIfMissing = true)
-    public JwtPersistenceService storeManagerJwtPersistenceService(final StoreManager storeManager) {
-        
+    public JwtPersistenceService storeManagerJwtPersistenceService(
+            final StoreManager storeManager,
+            final JwtTokenIndexManager indexManager) {
+
         log.info("Initializing StoreManager-based JWT persistence service");
-        return new JwtTokenPersistenceServiceImpl(storeManager);
+        return new JwtTokenPersistenceServiceImpl(storeManager, indexManager);
     }
     
     /**
