@@ -3,6 +3,7 @@ package org.unreal.modelrouter.router.checker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.controller.HealthStatusSseController;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
@@ -24,6 +25,7 @@ public class ServiceStateManager {
     private static final Logger log = LoggerFactory.getLogger(ServiceStateManager.class);
 
     // 注入SSE控制器
+    @Lazy
     @Autowired(required = false)
     private HealthStatusSseController healthStatusSseController;
 

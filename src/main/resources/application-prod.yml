@@ -42,11 +42,11 @@ management:
 # 安全配置（生产环境）
 jairouter:
   security:
-    # 生产环境安全功能默认关闭，需要显式启用
-    enabled: false
+    # 生产环境安全功能
+    enabled: true
 
     jwt:
-      enabled: false
+      enabled: true
       # 生产环境必须使用环境变量设置密钥
       secret: "${PROD_JWT_SECRET:}"
       issuer: "jairouter-prod"

@@ -2,7 +2,6 @@ package org.unreal.modelrouter.config.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -56,18 +55,6 @@ public class ConfigurationValidator {
     private static final Pattern DOMAIN_PATTERN = Pattern.compile(
             "^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,6}$"
     );
-
-    private ConfigurationHelper configurationHelper;
-
-    /**
-     * Sets the configuration helper for this validator.
-     * 
-     * @param configurationHelper the configuration helper to set
-     */
-    @Autowired
-    public void setConfigurationHelper(final ConfigurationHelper configurationHelper) {
-        this.configurationHelper = configurationHelper;
-    }
 
     /**
      * 验证限流配置参数的合法性
