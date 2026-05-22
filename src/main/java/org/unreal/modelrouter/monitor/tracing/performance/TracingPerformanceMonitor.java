@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
@@ -163,7 +164,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             List<PerformanceBottleneck> bottlenecks = new ArrayList<>();
             
             // 1. 检查内存瓶颈
-            TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+            MemoryStats memoryStats = memoryManager.getMemoryStats();
             if (memoryStats.getHeapUsageRatio() > 0.8) {
                 bottlenecks.add(new PerformanceBottleneck(
                         BottleneckType.MEMORY,
@@ -219,7 +220,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
      */
     public Mono<PerformanceReport> generatePerformanceReport() {
         return Mono.fromCallable(() -> {
-            TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+            MemoryStats memoryStats = memoryManager.getMemoryStats();
             AsyncTracingProcessor.ProcessingStats processingStats = asyncTracingProcessor.getProcessingStats();
             
             return new PerformanceReport(
@@ -281,7 +282,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
     public Health health() {
         try {
             SystemHealth currentHealth = systemHealth.get();
-            TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+            MemoryStats memoryStats = memoryManager.getMemoryStats();
             AsyncTracingProcessor.ProcessingStats processingStats = asyncTracingProcessor.getProcessingStats();
             
             Health.Builder builder = new Health.Builder();
@@ -360,7 +361,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
      */
     private Mono<PerformanceSnapshot> collectPerformanceSnapshot() {
         return Mono.fromCallable(() -> {
-            TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+            MemoryStats memoryStats = memoryManager.getMemoryStats();
             AsyncTracingProcessor.ProcessingStats processingStats = asyncTracingProcessor.getProcessingStats();
             
             return new PerformanceSnapshot(
@@ -383,7 +384,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             List<String> issues = new ArrayList<>();
             
             // 检查内存健康
-            TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+            MemoryStats memoryStats = memoryManager.getMemoryStats();
             if (memoryStats.getHeapUsageRatio() > 0.9) {
                 issues.add("内存使用率危险");
             }
@@ -426,7 +427,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
     }
 
     private double getCurrentMemoryUsage() {
-        TracingMemoryManager.MemoryStats stats = memoryManager.getMemoryStats();
+        MemoryStats stats = memoryManager.getMemoryStats();
         return stats.getHeapUsageRatio() * 100;
     }
 
@@ -451,7 +452,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         }
     }
 
-    private List<OptimizationSuggestion> generateMemoryOptimizationSuggestions(final TracingMemoryManager.MemoryStats stats) {
+    private List<OptimizationSuggestion> generateMemoryOptimizationSuggestions(final MemoryStats stats) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
         suggestions.add(new OptimizationSuggestion(
                 "增加堆内存大小",
@@ -608,7 +609,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         private final Instant timestamp;
         private final long totalOperations;
         private final long slowOperations;
-        private final TracingMemoryManager.MemoryStats memoryStats;
+        private final MemoryStats memoryStats;
         private final AsyncTracingProcessor.ProcessingStats processingStats;
         private final List<OperationMetrics> operationMetrics;
         private final SystemHealth systemHealth;

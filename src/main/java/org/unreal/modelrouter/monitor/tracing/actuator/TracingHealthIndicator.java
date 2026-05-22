@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryPressureLevel;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 
 import java.time.LocalDateTime;
@@ -66,7 +68,7 @@ public class TracingHealthIndicator implements HealthIndicator {
             ));
             
             // 检查内存管理器状态
-            TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+            MemoryStats memoryStats = memoryManager.getMemoryStats();
             details.put("memoryManager", Map.of(
                 "heapUsageRatio", memoryStats.getHeapUsageRatio(),
                 "cacheSize", memoryStats.getCacheSize(),
@@ -103,9 +105,9 @@ public class TracingHealthIndicator implements HealthIndicator {
             }
             
             // 检查内存压力
-            if (memoryStats.getPressureLevel() == TracingMemoryManager.MemoryPressureLevel.CRITICAL) {
+            if (memoryStats.getPressureLevel() == MemoryPressureLevel.CRITICAL) {
                 healthBuilder = Health.down().withDetail("issue", "内存压力严重");
-            } else if (memoryStats.getPressureLevel() == TracingMemoryManager.MemoryPressureLevel.HIGH) {
+            } else if (memoryStats.getPressureLevel() == MemoryPressureLevel.HIGH) {
                 healthBuilder = Health.status("WARNING").withDetail("warning", "内存压力较高");
             }
             

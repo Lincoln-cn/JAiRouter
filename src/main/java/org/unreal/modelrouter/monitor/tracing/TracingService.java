@@ -13,6 +13,8 @@ import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
 import org.unreal.modelrouter.monitor.tracing.helper.SpanAttributeHelper;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.memory.model.CachedTraceData;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 import org.unreal.modelrouter.monitor.tracing.query.TraceQueryService;
 import reactor.core.publisher.Mono;
@@ -402,7 +404,7 @@ public class TracingService {
             ));
 
             // 内存管理器统计
-            TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+            MemoryStats memoryStats = memoryManager.getMemoryStats();
             stats.put("memory", Map.of(
                 "heap_usage_ratio", memoryStats.getHeapUsageRatio(),
                 "cache_size", memoryStats.getCacheSize(),

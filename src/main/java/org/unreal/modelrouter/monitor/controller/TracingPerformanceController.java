@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.monitor.tracing.TracingService;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.memory.model.GCResult;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryCheckResult;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 import reactor.core.publisher.Mono;
 
@@ -67,7 +70,7 @@ public class TracingPerformanceController {
     @GetMapping("/memory-stats")
     @Operation(summary = "获取内存使用统计", description = "获取追踪系统的内存使用统计信息")
     @ApiResponse(responseCode = "200", description = "成功返回内存统计信息")
-    public Mono<ResponseEntity<TracingMemoryManager.MemoryStats>> getMemoryStats() {
+    public Mono<ResponseEntity<MemoryStats>> getMemoryStats() {
         return Mono.fromCallable(() -> memoryManager.getMemoryStats())
             .map(ResponseEntity::ok)
             .onErrorReturn(ResponseEntity.internalServerError().build());
@@ -137,7 +140,7 @@ public class TracingPerformanceController {
     @PostMapping("/memory/gc")
     @Operation(summary = "触发垃圾回收", description = "手动触发内存垃圾回收")
     @ApiResponse(responseCode = "200", description = "成功触发垃圾回收")
-    public Mono<ResponseEntity<TracingMemoryManager.GCResult>> triggerGarbageCollection() {
+    public Mono<ResponseEntity<GCResult>> triggerGarbageCollection() {
         return memoryManager.performGarbageCollection()
             .map(ResponseEntity::ok)
             .onErrorReturn(ResponseEntity.internalServerError().build());
@@ -146,7 +149,7 @@ public class TracingPerformanceController {
     @PostMapping("/memory/check")
     @Operation(summary = "执行内存检查", description = "手动执行内存使用检查")
     @ApiResponse(responseCode = "200", description = "成功执行内存检查")
-    public Mono<ResponseEntity<TracingMemoryManager.MemoryCheckResult>> performMemoryCheck() {
+    public Mono<ResponseEntity<MemoryCheckResult>> performMemoryCheck() {
         return memoryManager.performMemoryCheck()
             .map(ResponseEntity::ok)
             .onErrorReturn(ResponseEntity.internalServerError().build());
@@ -186,7 +189,7 @@ public class TracingPerformanceController {
             ));
             
             // 内存统计
-            TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+            MemoryStats memoryStats = memoryManager.getMemoryStats();
             dashboard.put("memory", Map.of(
                 "heap_used_mb", memoryStats.getUsedHeap() / (1024 * 1024),
                 "heap_max_mb", memoryStats.getMaxHeap() / (1024 * 1024),
