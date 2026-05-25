@@ -884,14 +884,25 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ### 常见错误码
 
+> 📖 **完整错误码对照表**: [错误码参考文档](./error-codes.md)
+
+| 错误码 | 描述 | HTTP 状态码 |
+|--------|------|-------------|
+| `NOT_FOUND` | 资源未找到 | 404 |
+| `VALIDATION_ERROR` | 请求数据无效 | 400 |
+| `UNAUTHORIZED` | 需要认证 | 401 |
+| `FORBIDDEN` | 权限不足 | 403 |
+| `CONFLICT` | 资源冲突 | 409 |
+| `RATE_LIMIT_EXCEEDED` | 请求过多 | 429 |
+| `INTERNAL_ERROR` | 服务器错误 | 500 |
+
+**认证相关错误码**:
 | 错误码 | 描述 |
 |--------|------|
-| `NOT_FOUND` | 资源未找到 |
-| `VALIDATION_ERROR` | 请求数据无效 |
-| `UNAUTHORIZED` | 需要认证 |
-| `FORBIDDEN` | 权限不足 |
-| `CONFLICT` | 资源冲突 |
-| `INTERNAL_ERROR` | 服务器错误 |
+| `INVALID_API_KEY` | 无效的 API Key |
+| `EXPIRED_API_KEY` | API Key 已过期 |
+| `INVALID_JWT_TOKEN` | 无效的 JWT 令牌 |
+| `EXPIRED_JWT_TOKEN` | JWT 令牌已过期 |
 
 ---
 
