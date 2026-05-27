@@ -3,22 +3,19 @@
 ## 版本统计
 
 - 总文档数: 161
-- 近7天变更: 23
+- 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-05-26 06:07:05
+- 最后扫描: 2026-05-27 06:21:06
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.24 → 1.0.25) - 2026-05-27
 - **MODIFIED**: docs-version-report.md (1.0.23 → 1.0.24) - 2026-05-26
 - **MODIFIED**: docs-version-report.md (1.0.22 → 1.0.23) - 2026-05-25
 - **MODIFIED**: docs-version-report.md (1.0.21 → 1.0.22) - 2026-05-24
 - **MODIFIED**: docs-version-report.md (1.0.20 → 1.0.21) - 2026-05-23
 - **MODIFIED**: docs-version-report.md (1.0.19 → 1.0.20) - 2026-05-22
 - **MODIFIED**: docs-version-report.md (1.0.18 → 1.0.19) - 2026-05-21
-- **DELETED**: docs/en/getting-started/quick-start-v1.8.md (1.0.0 → ) - 2026-05-20
-- **DELETED**: docs/zh/getting-started/quick-start-v1.8.md (1.0.1 → ) - 2026-05-20
-- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.2 → 1.0.3) - 2026-05-20
-- **MODIFIED**: docs/zh/getting-started/quick-start.md (1.0.2 → 1.0.3) - 2026-05-20
 
 ## 过期文档 (30天未更新)
 
@@ -697,7 +694,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.24 - 2026-05-26 (be2cfe43)
+- **docs-version-report.md**: v1.0.25 - 2026-05-27 (870ff4cd)
 - **docs/zh/reference/roadmap.md**: v1.0.3 - 2026-05-20 (7f3ab042)
 - **docs/zh/getting-started/quick-start.md**: v1.0.3 - 2026-05-20 (2ef125ce)
 - **docs/en/reference/roadmap.md**: v1.0.3 - 2026-05-20 (7f3ab042)
