@@ -5,17 +5,17 @@
 - 总文档数: 161
 - 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-05-28 06:12:36
+- 最后扫描: 2026-05-29 06:14:00
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.26 → 1.0.27) - 2026-05-29
 - **MODIFIED**: docs-version-report.md (1.0.25 → 1.0.26) - 2026-05-28
 - **MODIFIED**: docs-version-report.md (1.0.24 → 1.0.25) - 2026-05-27
 - **MODIFIED**: docs-version-report.md (1.0.23 → 1.0.24) - 2026-05-26
 - **MODIFIED**: docs-version-report.md (1.0.22 → 1.0.23) - 2026-05-25
 - **MODIFIED**: docs-version-report.md (1.0.21 → 1.0.22) - 2026-05-24
 - **MODIFIED**: docs-version-report.md (1.0.20 → 1.0.21) - 2026-05-23
-- **MODIFIED**: docs-version-report.md (1.0.19 → 1.0.20) - 2026-05-22
 
 ## 过期文档 (30天未更新)
 
@@ -166,6 +166,8 @@
 - docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/en/configuration/state-persistence.md (版本: 1.0.0, 最后更新: 2026-04-28)
 - docs/zh/configuration/state-persistence.md (版本: 1.0.0, 最后更新: 2026-04-28)
+- docs/docs-version-report.md (版本: 1.0.0, 最后更新: 2026-04-29)
+- docs/zh/development/v2.7.x-package-refactoring.md (版本: 1.0.0, 最后更新: 2026-04-29)
 
 ## 依赖关系分析
 
@@ -696,7 +698,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.26 - 2026-05-28 (a1f55173)
+- **docs-version-report.md**: v1.0.27 - 2026-05-29 (5ec1816d)
 - **docs/zh/reference/roadmap.md**: v1.0.3 - 2026-05-20 (7f3ab042)
 - **docs/zh/getting-started/quick-start.md**: v1.0.3 - 2026-05-20 (2ef125ce)
 - **docs/en/reference/roadmap.md**: v1.0.3 - 2026-05-20 (7f3ab042)
