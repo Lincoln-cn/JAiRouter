@@ -2,23 +2,20 @@
 
 ## 版本统计
 
-- 总文档数: 163
-- 近7天变更: 18
+- 总文档数: 161
+- 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-05-19 06:08:24
+- 最后扫描: 2026-06-02 06:42:03
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/index.md (1.0.1 → 1.0.2) - 2026-05-19
-- **MODIFIED**: docs/en/index.md (1.0.1 → 1.0.2) - 2026-05-19
-- **CREATED**: docs/en/getting-started/quick-start-v1.8.md ( → 1.0.0) - 2026-05-19
-- **MODIFIED**: docs/configuration-guide.md (1.0.0 → 1.0.1) - 2026-05-19
-- **MODIFIED**: docs-version-report.md (1.0.16 → 1.0.17) - 2026-05-19
-- **MODIFIED**: README.md (1.0.13 → 1.0.14) - 2026-05-19
-- **MODIFIED**: README-ZH.md (1.0.5 → 1.0.6) - 2026-05-19
-- **MODIFIED**: QWEN.md (1.0.2 → 1.0.3) - 2026-05-19
-- **MODIFIED**: docs-version-report.md (1.0.15 → 1.0.16) - 2026-05-18
-- **MODIFIED**: docs-version-report.md (1.0.14 → 1.0.15) - 2026-05-17
+- **MODIFIED**: docs-version-report.md (1.0.30 → 1.0.31) - 2026-06-02
+- **MODIFIED**: docs-version-report.md (1.0.29 → 1.0.30) - 2026-06-01
+- **MODIFIED**: docs-version-report.md (1.0.28 → 1.0.29) - 2026-05-31
+- **MODIFIED**: docs-version-report.md (1.0.27 → 1.0.28) - 2026-05-30
+- **MODIFIED**: docs-version-report.md (1.0.26 → 1.0.27) - 2026-05-29
+- **MODIFIED**: docs-version-report.md (1.0.25 → 1.0.26) - 2026-05-28
+- **MODIFIED**: docs-version-report.md (1.0.24 → 1.0.25) - 2026-05-27
 
 ## 过期文档 (30天未更新)
 
@@ -49,7 +46,6 @@
 - docs/en/getting-started/first-steps.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/getting-started/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/getting-started/installation.md (版本: 1.0.2, 最后更新: 2025-09-02)
-- docs/en/getting-started/quick-start.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/monitoring/alerts.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/monitoring/configuration.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/monitoring/dashboards.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -63,7 +59,6 @@
 - docs/en/reference/faq.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/en/reference/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
-- docs/en/reference/roadmap.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/en/troubleshooting/common-issues.md (版本: 1.0.3, 最后更新: 2025-10-15)
 - docs/en/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/en/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -94,7 +89,6 @@
 - docs/zh/getting-started/first-steps.md (版本: 1.0.2, 最后更新: 2026-04-17)
 - docs/zh/getting-started/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/getting-started/installation.md (版本: 1.0.3, 最后更新: 2026-04-17)
-- docs/zh/getting-started/quick-start.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/monitoring/alert_rules_guide.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/monitoring/alerts.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/monitoring/configuration.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -109,7 +103,6 @@
 - docs/zh/reference/faq.md (版本: 1.0.4, 最后更新: 2026-04-17)
 - docs/zh/reference/glossary.md (版本: 1.0.1, 最后更新: 2025-08-29)
 - docs/zh/reference/index.md (版本: 1.0.2, 最后更新: 2026-03-12)
-- docs/zh/reference/roadmap.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/zh/troubleshooting/common-issues.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/troubleshooting/debugging.md (版本: 1.0.2, 最后更新: 2025-09-02)
 - docs/zh/troubleshooting/index.md (版本: 1.0.1, 最后更新: 2025-08-29)
@@ -171,6 +164,10 @@
 - docs/zh/security/audit-log-management.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/zh/security/blacklist-management.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.0, 最后更新: 2026-04-17)
+- docs/en/configuration/state-persistence.md (版本: 1.0.0, 最后更新: 2026-04-28)
+- docs/zh/configuration/state-persistence.md (版本: 1.0.0, 最后更新: 2026-04-28)
+- docs/docs-version-report.md (版本: 1.0.0, 最后更新: 2026-04-29)
+- docs/zh/development/v2.7.x-package-refactoring.md (版本: 1.0.0, 最后更新: 2026-04-29)
 
 ## 依赖关系分析
 
@@ -672,9 +669,6 @@
   - docs/zh/development/V1.4.1-changelog.md
   - docs/zh/development/architecture.md
   - docs/zh/development/contributing.md
-- **docs/zh/getting-started/quick-start-v1.8.md**: 依赖 2 个文档
-  - docs/zh/configuration/validation-rules.md
-  - docs/zh/deployment/docker.md
 - **docs/zh/security/audit-log-management.md**: 依赖 4 个文档
   - docs/zh/security/api-key-management.md
   - docs/zh/security/blacklist-management.md
@@ -701,23 +695,23 @@
 - **docs/configuration-guide.md**: 依赖 2 个文档
   - docs/zh/configuration/application-config.md
   - docs/zh/configuration/dynamic-config.md
-- **docs/en/getting-started/quick-start-v1.8.md**: 依赖 1 个文档
-  - docs/en/deployment/docker.md
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.31 - 2026-06-02 (f8783f68)
+- **docs/zh/reference/roadmap.md**: v1.0.3 - 2026-05-20 (7f3ab042)
+- **docs/zh/getting-started/quick-start.md**: v1.0.3 - 2026-05-20 (2ef125ce)
+- **docs/en/reference/roadmap.md**: v1.0.3 - 2026-05-20 (7f3ab042)
+- **docs/en/getting-started/quick-start.md**: v1.0.2 - 2026-05-20 (2ef125ce)
+- **README.md**: v1.0.15 - 2026-05-20 (57b4627f)
+- **README-ZH.md**: v1.0.7 - 2026-05-20 (57b4627f)
 - **docs/zh/index.md**: v1.0.2 - 2026-05-19 (5e7e6a64)
 - **docs/en/index.md**: v1.0.2 - 2026-05-19 (5e7e6a64)
-- **docs/en/getting-started/quick-start-v1.8.md**: v1.0.0 - 2026-05-19 (4086294f)
 - **docs/configuration-guide.md**: v1.0.1 - 2026-05-19 (4086294f)
-- **docs-version-report.md**: v1.0.17 - 2026-05-19 (880a1185)
-- **README.md**: v1.0.14 - 2026-05-19 (bade75ba)
-- **README-ZH.md**: v1.0.6 - 2026-05-19 (bade75ba)
 - **QWEN.md**: v1.0.3 - 2026-05-19 (8c4e0ad9)
 - **docs/CHANGELOG-v2.5.x.md**: v1.0.0 - 2026-05-14 (947dc154)
 - **docs/zh/development/v2.7.x-package-refactoring.md**: v1.0.0 - 2026-04-29 (39b124d3)
 - **docs/docs-version-report.md**: v1.0.0 - 2026-04-29 (f60c279e)
-- **docs/zh/getting-started/quick-start-v1.8.md**: v1.0.1 - 2026-04-28 (56f61c77)
 - **docs/zh/configuration/state-persistence.md**: v1.0.0 - 2026-04-28 (e5140df0)
 - **docs/en/configuration/state-persistence.md**: v1.0.0 - 2026-04-28 (e5140df0)
 - **docs/zh/troubleshooting/issue-fixes.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
@@ -755,11 +749,9 @@
 - **docs/zh/reference/adapter-updates.md**: v1.0.0 - 2026-03-12 (af9079ea)
 - **docs/zh/development/contributing.md**: v1.0.2 - 2026-03-12 (af9079ea)
 - **docs/zh/development/architecture.md**: v1.0.2 - 2026-03-12 (af9079ea)
-- **docs/zh/reference/roadmap.md**: v1.0.2 - 2025-11-27 (f0909611)
 - **docs/zh/configuration/store-config.md**: v1.0.2 - 2025-11-27 (6a1e776e)
 - **docs/en/security/jwt-authentication.md**: v1.0.3 - 2025-11-27 (6a1e776e)
 - **docs/en/security/api-key-management.md**: v1.0.1 - 2025-11-27 (6a1e776e)
-- **docs/en/reference/roadmap.md**: v1.0.2 - 2025-11-27 (f0909611)
 - **docs/en/configuration/store-config.md**: v1.0.2 - 2025-11-27 (6a1e776e)
 - **docs/en/troubleshooting/common-issues.md**: v1.0.3 - 2025-10-15 (f3050558)
 - **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.0 - 2025-10-15 (6a1e776e)
@@ -779,7 +771,6 @@
 - **docs/zh/security/data-sanitization.md**: v1.0.1 - 2025-09-02 (94f2e981)
 - **docs/zh/monitoring/testing.md**: v1.0.3 - 2025-09-02 (94f2e981)
 - **docs/zh/monitoring/setup.md**: v1.0.2 - 2025-09-02 (94f2e981)
-- **docs/zh/getting-started/quick-start.md**: v1.0.2 - 2025-09-02 (94f2e981)
 - **docs/zh/deployment/kubernetes.md**: v1.0.2 - 2025-09-02 (94f2e981)
 - **docs/zh/deployment/index.md**: v1.0.2 - 2025-09-02 (94f2e981)
 - **docs/zh/deployment/china-optimization.md**: v1.0.2 - 2025-09-02 (94f2e981)
@@ -847,7 +838,6 @@
 - **docs/en/monitoring/dashboards.md**: v1.0.1 - 2025-08-29 (94f2e981)
 - **docs/en/monitoring/configuration.md**: v1.0.1 - 2025-08-29 (94f2e981)
 - **docs/en/monitoring/alerts.md**: v1.0.1 - 2025-08-29 (94f2e981)
-- **docs/en/getting-started/quick-start.md**: v1.0.1 - 2025-08-29 (94f2e981)
 - **docs/en/getting-started/index.md**: v1.0.1 - 2025-08-29 (94f2e981)
 - **docs/en/getting-started/first-steps.md**: v1.0.1 - 2025-08-29 (94f2e981)
 - **docs/en/development/tracing-integration.md**: v1.0.0 - 2025-08-29 (94f2e981)
