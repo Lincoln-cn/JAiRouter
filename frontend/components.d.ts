@@ -9,6 +9,8 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     CircuitBreakerConfig: typeof import('./src/components/CircuitBreakerConfig.vue')['default']
+    DataTable: typeof import('./src/components/common/DataTable.vue')['default']
+    DetailDialog: typeof import('./src/components/common/DetailDialog.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
@@ -70,9 +72,20 @@ declare module 'vue' {
     ElTimelineItem: typeof import('element-plus/es')['ElTimelineItem']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    EmptyState: typeof import('./src/components/common/EmptyState.vue')['default']
+    FormDialog: typeof import('./src/components/common/FormDialog.vue')['default']
+    FormGroup: typeof import('./src/components/common/FormGroup.vue')['default']
+    FormSection: typeof import('./src/components/common/FormSection.vue')['default']
+    ManagementCard: typeof import('./src/components/common/ManagementCard.vue')['default']
+    PageAlert: typeof import('./src/components/common/PageAlert.vue')['default']
+    PageHeader: typeof import('./src/components/common/PageHeader.vue')['default']
     RateLimitConfig: typeof import('./src/components/RateLimitConfig.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SearchBar: typeof import('./src/components/common/SearchBar.vue')['default']
+    ServiceTabs: typeof import('./src/components/common/ServiceTabs.vue')['default']
+    StatCard: typeof import('./src/components/common/StatCard.vue')['default']
+    StatCardRow: typeof import('./src/components/common/StatCardRow.vue')['default']
   }
   export interface GlobalDirectives {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

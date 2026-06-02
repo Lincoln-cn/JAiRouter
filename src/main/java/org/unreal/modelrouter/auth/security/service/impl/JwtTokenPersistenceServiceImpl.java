@@ -29,22 +29,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.enabled", havingValue = "true")
 public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
-    
+
     private final StoreManager storeManager;
-    
+    private final JwtTokenIndexManager indexManager;
+
     // 存储键前缀
     private static final String TOKEN_PREFIX = "jwt_token_";
-    private static final String USER_INDEX_PREFIX = "jwt_user_index_";
-    private static final String STATUS_INDEX_PREFIX = "jwt_status_index_";
-    private static final String TOKEN_COUNTER_KEY = "jwt_token_counter";
-    
+
     @jakarta.annotation.PostConstruct
     public void init() {
-        log.info("=== JwtTokenPersistenceServiceImpl initialized with StoreManager: { } ===", 
+        log.info("=== JwtTokenPersistenceServiceImpl initialized with StoreManager: {} ===",
                 storeManager.getClass().getSimpleName());
         log.info("JWT Token persistence is ENABLED and using H2 database storage");
     }
-    
+
     @Override
     public Mono<Void> saveToken(final JwtTokenInfo tokenInfo) {
         return Mono.defer(() -> {
@@ -52,50 +50,50 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 if (tokenInfo == null || tokenInfo.getTokenHash() == null) {
                     return Mono.error(new IllegalArgumentException("Token info and token hash cannot be null"));
                 }
-                
+
                 // 设置创建和更新时间
                 LocalDateTime now = LocalDateTime.now();
                 if (tokenInfo.getCreatedAt() == null) {
                     tokenInfo.setCreatedAt(now);
                 }
                 tokenInfo.setUpdatedAt(now);
-                
+
                 // 如果没有设置状态，默认为ACTIVE
                 if (tokenInfo.getStatus() == null) {
                     tokenInfo.setStatus(TokenStatus.ACTIVE);
                 }
-                
+
                 // 转换为Map进行存储
                 Map<String, Object> tokenData = convertToMap(tokenInfo);
-                
+
                 // 保存令牌数据 - 在单独的线程中执行以避免阻塞
                 String tokenKey = TOKEN_PREFIX + tokenInfo.getTokenHash();
-                
+
                 return Mono.fromCallable(() -> {
                     storeManager.saveConfig(tokenKey, tokenData);
-                    
+
                     // 更新用户索引
-                    updateUserIndex(tokenInfo.getUserId(), tokenInfo.getTokenHash(), true);
-                    
+                    indexManager.updateUserIndex(tokenInfo.getUserId(), tokenInfo.getTokenHash(), true);
+
                     // 更新状态索引
-                    updateStatusIndex(tokenInfo.getStatus(), tokenInfo.getTokenHash(), true);
-                    
+                    indexManager.updateStatusIndex(tokenInfo.getStatus(), tokenInfo.getTokenHash(), true);
+
                     // 更新计数器
-                    incrementTokenCounter();
-                    
-                    log.debug("Successfully saved token for user: { }", tokenInfo.getUserId());
+                    indexManager.incrementTokenCounter();
+
+                    log.debug("Successfully saved token for user: {}", tokenInfo.getUserId());
                     return null;
                 })
                 .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
                 .then();
-                
+
             } catch (Exception e) {
-                log.error("Failed to save token: { }", e.getMessage(), e);
+                log.error("Failed to save token: {}", e.getMessage(), e);
                 return Mono.error(new RuntimeException("Failed to save token", e));
             }
         });
     }
-    
+
     @Override
     public Mono<JwtTokenInfo> findByTokenHash(final String tokenHash) {
         return Mono.fromCallable(() -> {
@@ -103,24 +101,24 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 if (tokenHash == null || tokenHash.trim().isEmpty()) {
                     return null;
                 }
-                
+
                 String tokenKey = TOKEN_PREFIX + tokenHash;
                 Map<String, Object> tokenData = storeManager.getConfig(tokenKey);
-                
+
                 if (tokenData == null) {
                     return null;
                 }
-                
+
                 return convertFromMap(tokenData);
-                
+
             } catch (Exception e) {
-                log.error("Failed to find token by hash: { }", e.getMessage(), e);
+                log.error("Failed to find token by hash: {}", e.getMessage(), e);
                 return null;
             }
         })
         .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
     }
-    
+
     @Override
     public Mono<List<JwtTokenInfo>> findActiveTokensByUserId(final String userId) {
         return Mono.fromCallable(() -> {
@@ -128,10 +126,10 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 if (userId == null || userId.trim().isEmpty()) {
                     return new ArrayList<>();
                 }
-                
+
                 // 从用户索引获取令牌哈希列表
-                List<String> tokenHashes = getUserTokenHashes(userId);
-                
+                List<String> tokenHashes = indexManager.getUserTokenHashes(userId);
+
                 // 获取所有令牌并过滤活跃的
                 return tokenHashes.stream()
                     .map(hash -> {
@@ -140,7 +138,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                             Map<String, Object> tokenData = storeManager.getConfig(tokenKey);
                             return tokenData != null ? convertFromMap(tokenData) : null;
                         } catch (Exception e) {
-                            log.warn("Failed to load token { }: { }", hash, e.getMessage());
+                            log.warn("Failed to load token {}: {}", hash, e.getMessage());
                             return null;
                         }
                     })
@@ -148,20 +146,20 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                     .filter(token -> TokenStatus.ACTIVE.equals(token.getStatus()))
                     .filter(token -> !isTokenExpired(token))
                     .collect(Collectors.toList());
-                
+
             } catch (Exception e) {
-                log.error("Failed to find active tokens for user { }: { }", userId, e.getMessage(), e);
+                log.error("Failed to find active tokens for user {}: {}", userId, e.getMessage(), e);
                 return new ArrayList<>();
             }
         });
     }
-    
+
     @Override
     public Mono<List<JwtTokenInfo>> findAllTokens(final int page, final int size) {
         return Mono.<List<JwtTokenInfo>>fromCallable(() -> {
             try {
                 List<JwtTokenInfo> allTokens = new ArrayList<>();
-                
+
                 // 遍历所有令牌键
                 for (String key : storeManager.getAllKeys()) {
                     if (key.startsWith(TOKEN_PREFIX)) {
@@ -175,42 +173,42 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                                 if (token.getTokenHash() != null || token.getId() != null) {
                                     allTokens.add(token);
                                 } else {
-                                    log.warn("Skipping invalid token data from key { }: missing tokenHash and id", key);
+                                    log.warn("Skipping invalid token data from key {}: missing tokenHash and id", key);
                                 }
                             } else {
-                                log.debug("Skipping empty or invalid token data from key { }", key);
+                                log.debug("Skipping empty or invalid token data from key {}", key);
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to load token from key { }: { }", key, e.getMessage());
+                            log.warn("Failed to load token from key {}: {}", key, e.getMessage());
                         }
                     }
                 }
-                
+
                 // 按创建时间倒序排序
                 allTokens.sort((a, b) -> {
                     LocalDateTime timeA = a.getCreatedAt() != null ? a.getCreatedAt() : LocalDateTime.MIN;
                     LocalDateTime timeB = b.getCreatedAt() != null ? b.getCreatedAt() : LocalDateTime.MIN;
                     return timeB.compareTo(timeA);
                 });
-                
+
                 // 分页处理
                 int start = page * size;
                 int end = Math.min(start + size, allTokens.size());
-                
+
                 if (start >= allTokens.size()) {
                     return new ArrayList<JwtTokenInfo>();
                 }
-                
+
                 return new ArrayList<>(allTokens.subList(start, end));
-                
+
             } catch (Exception e) {
-                log.error("Failed to find all tokens: { }", e.getMessage(), e);
+                log.error("Failed to find all tokens: {}", e.getMessage(), e);
                 return new ArrayList<JwtTokenInfo>();
             }
         })
         .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
     }
-    
+
     @Override
     public Mono<Void> updateTokenStatus(final String tokenHash, final TokenStatus status) {
         return Mono.fromRunnable(() -> {
@@ -218,55 +216,55 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 if (tokenHash == null || status == null) {
                     throw new IllegalArgumentException("Token hash and status cannot be null");
                 }
-                
+
                 String tokenKey = TOKEN_PREFIX + tokenHash;
                 Map<String, Object> tokenData = storeManager.getConfig(tokenKey);
-                
+
                 if (tokenData == null) {
-                    log.warn("Token not found for hash: { }", tokenHash);
+                    log.warn("Token not found for hash: {}", tokenHash);
                     return;
                 }
-                
+
                 // 获取旧状态用于更新索引
                 TokenStatus oldStatus = null;
                 Object statusObj = tokenData.get("status");
                 if (statusObj != null) {
                     oldStatus = TokenStatus.valueOf(statusObj.toString());
                 }
-                
+
                 // 更新状态和时间
                 tokenData.put("status", status.name());
                 tokenData.put("updatedAt", LocalDateTime.now());
-                
+
                 // 如果是撤销状态，设置撤销时间
                 if (TokenStatus.REVOKED.equals(status)) {
                     tokenData.put("revokedAt", LocalDateTime.now());
                 }
-                
+
                 // 保存更新后的数据
                 storeManager.updateConfig(tokenKey, tokenData);
-                
+
                 // 更新状态索引
                 if (oldStatus != null && !oldStatus.equals(status)) {
-                    updateStatusIndex(oldStatus, tokenHash, false);
-                    updateStatusIndex(status, tokenHash, true);
+                    indexManager.updateStatusIndex(oldStatus, tokenHash, false);
+                    indexManager.updateStatusIndex(status, tokenHash, true);
                 }
-                
-                log.debug("Successfully updated token status to { } for hash: { }", status, tokenHash);
-                
+
+                log.debug("Successfully updated token status to {} for hash: {}", status, tokenHash);
+
             } catch (Exception e) {
-                log.error("Failed to update token status: { }", e.getMessage(), e);
+                log.error("Failed to update token status: {}", e.getMessage(), e);
                 throw new RuntimeException("Failed to update token status", e);
             }
         });
     }
-    
+
     @Override
     public Mono<Long> countActiveTokens() {
         return Mono.fromCallable(() -> {
             try {
-                List<String> activeTokenHashes = getStatusTokenHashes(TokenStatus.ACTIVE);
-                
+                List<String> activeTokenHashes = indexManager.getStatusTokenHashes(TokenStatus.ACTIVE);
+
                 // 过滤掉已过期的令牌
                 long count = activeTokenHashes.stream()
                     .mapToLong(hash -> {
@@ -278,41 +276,41 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                                 return isTokenExpired(token) ? 0 : 1;
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to check token expiry for hash { }: { }", hash, e.getMessage());
+                            log.warn("Failed to check token expiry for hash {}: {}", hash, e.getMessage());
                         }
                         return 0;
                     })
                     .sum();
-                
+
                 return count;
-                
+
             } catch (Exception e) {
-                log.error("Failed to count active tokens: { }", e.getMessage(), e);
+                log.error("Failed to count active tokens: {}", e.getMessage(), e);
                 return 0L;
             }
         });
     }
-    
+
     @Override
     public Mono<Long> countTokensByStatus(final TokenStatus status) {
         return Mono.fromCallable(() -> {
             try {
-                List<String> tokenHashes = getStatusTokenHashes(status);
+                List<String> tokenHashes = indexManager.getStatusTokenHashes(status);
                 return (long) tokenHashes.size();
-                
+
             } catch (Exception e) {
-                log.error("Failed to count tokens by status { }: { }", status, e.getMessage(), e);
+                log.error("Failed to count tokens by status {}: {}", status, e.getMessage(), e);
                 return 0L;
             }
         });
     }
-    
+
     @Override
     public Mono<Void> removeExpiredTokens() {
         return Mono.fromRunnable(() -> {
             try {
                 int removedCount = 0;
-                
+
                 // 遍历所有令牌
                 for (String key : storeManager.getAllKeys()) {
                     if (key.startsWith(TOKEN_PREFIX)) {
@@ -320,37 +318,37 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                             Map<String, Object> tokenData = storeManager.getConfig(key);
                             if (tokenData != null) {
                                 JwtTokenInfo token = convertFromMap(tokenData);
-                                
+
                                 if (isTokenExpired(token)) {
                                     // 删除令牌
                                     storeManager.deleteConfig(key);
-                                    
+
                                     // 从索引中移除
                                     if (token.getUserId() != null) {
-                                        updateUserIndex(token.getUserId(), token.getTokenHash(), false);
+                                        indexManager.updateUserIndex(token.getUserId(), token.getTokenHash(), false);
                                     }
                                     if (token.getStatus() != null) {
-                                        updateStatusIndex(token.getStatus(), token.getTokenHash(), false);
+                                        indexManager.updateStatusIndex(token.getStatus(), token.getTokenHash(), false);
                                     }
-                                    
+
                                     removedCount++;
                                 }
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to process token for expiry check: { }", key, e);
+                            log.warn("Failed to process token for expiry check: {}", key, e);
                         }
                     }
                 }
-                
-                log.info("Removed { } expired tokens", removedCount);
-                
+
+                log.info("Removed {} expired tokens", removedCount);
+
             } catch (Exception e) {
-                log.error("Failed to remove expired tokens: { }", e.getMessage(), e);
+                log.error("Failed to remove expired tokens: {}", e.getMessage(), e);
                 throw new RuntimeException("Failed to remove expired tokens", e);
             }
         });
     }
-    
+
     @Override
     public Mono<JwtTokenInfo> findByTokenId(final String tokenId) {
         return Mono.fromCallable(() -> {
@@ -358,7 +356,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 if (tokenId == null || tokenId.trim().isEmpty()) {
                     return null;
                 }
-                
+
                 // 遍历所有令牌查找匹配的ID
                 for (String key : storeManager.getAllKeys()) {
                     if (key.startsWith(TOKEN_PREFIX)) {
@@ -371,20 +369,20 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                                 }
                             }
                         } catch (Exception e) {
-                            log.warn("Failed to check token ID for key { }: { }", key, e.getMessage());
+                            log.warn("Failed to check token ID for key {}: {}", key, e.getMessage());
                         }
                     }
                 }
-                
+
                 return null;
-                
+
             } catch (Exception e) {
-                log.error("Failed to find token by ID { }: { }", tokenId, e.getMessage(), e);
+                log.error("Failed to find token by ID {}: {}", tokenId, e.getMessage(), e);
                 return null;
             }
         });
     }
-    
+
     @Override
     public Mono<List<JwtTokenInfo>> findTokensByUserId(final String userId, final int page, final int size) {
         return Mono.<List<JwtTokenInfo>>fromCallable(() -> {
@@ -392,10 +390,10 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 if (userId == null || userId.trim().isEmpty()) {
                     return new ArrayList<JwtTokenInfo>();
                 }
-                
+
                 // 从用户索引获取令牌哈希列表
-                List<String> tokenHashes = getUserTokenHashes(userId);
-                
+                List<String> tokenHashes = indexManager.getUserTokenHashes(userId);
+
                 // 获取所有令牌
                 List<JwtTokenInfo> tokens = tokenHashes.stream()
                     .map(hash -> {
@@ -404,7 +402,7 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                             Map<String, Object> tokenData = storeManager.getConfig(tokenKey);
                             return tokenData != null ? convertFromMap(tokenData) : null;
                         } catch (Exception e) {
-                            log.warn("Failed to load token { }: { }", hash, e.getMessage());
+                            log.warn("Failed to load token {}: {}", hash, e.getMessage());
                             return null;
                         }
                     })
@@ -415,24 +413,24 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                         return timeB.compareTo(timeA);
                     })
                     .collect(Collectors.toList());
-                
+
                 // 分页处理
                 int start = page * size;
                 int end = Math.min(start + size, tokens.size());
-                
+
                 if (start >= tokens.size()) {
                     return new ArrayList<JwtTokenInfo>();
                 }
-                
+
                 return new ArrayList<>(tokens.subList(start, end));
-                
+
             } catch (Exception e) {
-                log.error("Failed to find tokens for user { }: { }", userId, e.getMessage(), e);
+                log.error("Failed to find tokens for user {}: {}", userId, e.getMessage(), e);
                 return new ArrayList<JwtTokenInfo>();
             }
         });
     }
-    
+
     @Override
     public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status, final String reason, final String updatedBy) {
         return Mono.fromRunnable(() -> {
@@ -440,14 +438,14 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                 if (tokenHashes == null || tokenHashes.isEmpty() || status == null) {
                     return;
                 }
-                
+
                 int updatedCount = 0;
-                
+
                 for (String tokenHash : tokenHashes) {
                     try {
                         String tokenKey = TOKEN_PREFIX + tokenHash;
                         Map<String, Object> tokenData = storeManager.getConfig(tokenKey);
-                        
+
                         if (tokenData != null) {
                             // 获取旧状态用于更新索引
                             TokenStatus oldStatus = null;
@@ -455,11 +453,11 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                             if (statusObj != null) {
                                 oldStatus = TokenStatus.valueOf(statusObj.toString());
                             }
-                            
+
                             // 更新状态和相关信息
                             tokenData.put("status", status.name());
                             tokenData.put("updatedAt", LocalDateTime.now());
-                            
+
                             if (reason != null) {
                                 tokenData.put("revokeReason", reason);
                             }
@@ -469,35 +467,35 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
                             if (TokenStatus.REVOKED.equals(status)) {
                                 tokenData.put("revokedAt", LocalDateTime.now());
                             }
-                            
+
                             // 保存更新后的数据
                             storeManager.updateConfig(tokenKey, tokenData);
-                            
+
                             // 更新状态索引
                             if (oldStatus != null && !oldStatus.equals(status)) {
-                                updateStatusIndex(oldStatus, tokenHash, false);
-                                updateStatusIndex(status, tokenHash, true);
+                                indexManager.updateStatusIndex(oldStatus, tokenHash, false);
+                                indexManager.updateStatusIndex(status, tokenHash, true);
                             }
-                            
+
                             updatedCount++;
                         }
-                        
+
                     } catch (Exception e) {
-                        log.warn("Failed to update token status for hash { }: { }", tokenHash, e.getMessage());
+                        log.warn("Failed to update token status for hash {}: {}", tokenHash, e.getMessage());
                     }
                 }
-                
-                log.info("Batch updated { } tokens to status { }", updatedCount, status);
-                
+
+                log.info("Batch updated {} tokens to status {}", updatedCount, status);
+
             } catch (Exception e) {
-                log.error("Failed to batch update token status: { }", e.getMessage(), e);
+                log.error("Failed to batch update token status: {}", e.getMessage(), e);
                 throw new RuntimeException("Failed to batch update token status", e);
             }
         });
     }
-    
+
     // 私有辅助方法
-    
+
     /**
      * 将JwtTokenInfo转换为Map用于存储
      */
@@ -505,11 +503,11 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
         try {
             return JacksonHelper.getObjectMapper().convertValue(tokenInfo, new TypeReference<Map<String, Object>>() { });
         } catch (Exception e) {
-            log.error("Failed to convert token info to map: { }", e.getMessage(), e);
+            log.error("Failed to convert token info to map: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to convert token info to map", e);
         }
     }
-    
+
     /**
      * 将Map转换为JwtTokenInfo
      */
@@ -517,11 +515,11 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
         try {
             return JacksonHelper.getObjectMapper().convertValue(tokenData, JwtTokenInfo.class);
         } catch (Exception e) {
-            log.error("Failed to convert map to token info: { }", e.getMessage(), e);
+            log.error("Failed to convert map to token info: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to convert map to token info", e);
         }
     }
-    
+
     /**
      * 检查令牌是否已过期
      */
@@ -530,154 +528,5 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
             return false;
         }
         return token.getExpiresAt().isBefore(LocalDateTime.now());
-    }
-    
-    /**
-     * 更新用户索引
-     */
-    private void updateUserIndex(final String userId, final String tokenHash, final boolean add) {
-        if (userId == null || tokenHash == null) {
-            return;
-        }
-        
-        try {
-            String indexKey = USER_INDEX_PREFIX + userId;
-            Map<String, Object> indexData = storeManager.getConfig(indexKey);
-            
-            if (indexData == null) {
-                indexData = new HashMap<>();
-                indexData.put("tokenHashes", new ArrayList<String>());
-            }
-            
-            @SuppressWarnings("unchecked")
-            List<String> tokenHashes = (List<String>) indexData.get("tokenHashes");
-            if (tokenHashes == null) {
-                tokenHashes = new ArrayList<>();
-            }
-            
-            if (add) {
-                if (!tokenHashes.contains(tokenHash)) {
-                    tokenHashes.add(tokenHash);
-                }
-            } else {
-                tokenHashes.remove(tokenHash);
-            }
-            
-            indexData.put("tokenHashes", tokenHashes);
-            indexData.put("updatedAt", LocalDateTime.now());
-            
-            storeManager.saveConfig(indexKey, indexData);
-            
-        } catch (Exception e) {
-            log.warn("Failed to update user index for user { }: { }", userId, e.getMessage());
-        }
-    }
-    
-    /**
-     * 更新状态索引
-     */
-    private void updateStatusIndex(final TokenStatus status, final String tokenHash, final boolean add) {
-        if (status == null || tokenHash == null) {
-            return;
-        }
-        
-        try {
-            String indexKey = STATUS_INDEX_PREFIX + status.name();
-            Map<String, Object> indexData = storeManager.getConfig(indexKey);
-            
-            if (indexData == null) {
-                indexData = new HashMap<>();
-                indexData.put("tokenHashes", new ArrayList<String>());
-            }
-            
-            @SuppressWarnings("unchecked")
-            List<String> tokenHashes = (List<String>) indexData.get("tokenHashes");
-            if (tokenHashes == null) {
-                tokenHashes = new ArrayList<>();
-            }
-            
-            if (add) {
-                if (!tokenHashes.contains(tokenHash)) {
-                    tokenHashes.add(tokenHash);
-                }
-            } else {
-                tokenHashes.remove(tokenHash);
-            }
-            
-            indexData.put("tokenHashes", tokenHashes);
-            indexData.put("updatedAt", LocalDateTime.now());
-            
-            storeManager.saveConfig(indexKey, indexData);
-            
-        } catch (Exception e) {
-            log.warn("Failed to update status index for status { }: { }", status, e.getMessage());
-        }
-    }
-    
-    /**
-     * 获取用户的令牌哈希列表
-     */
-    private List<String> getUserTokenHashes(final String userId) {
-        try {
-            String indexKey = USER_INDEX_PREFIX + userId;
-            Map<String, Object> indexData = storeManager.getConfig(indexKey);
-            
-            if (indexData == null) {
-                return new ArrayList<>();
-            }
-            
-            @SuppressWarnings("unchecked")
-            List<String> tokenHashes = (List<String>) indexData.get("tokenHashes");
-            return tokenHashes != null ? new ArrayList<>(tokenHashes) : new ArrayList<>();
-            
-        } catch (Exception e) {
-            log.warn("Failed to get user token hashes for user { }: { }", userId, e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-    
-    /**
-     * 获取指定状态的令牌哈希列表
-     */
-    private List<String> getStatusTokenHashes(final TokenStatus status) {
-        try {
-            String indexKey = STATUS_INDEX_PREFIX + status.name();
-            Map<String, Object> indexData = storeManager.getConfig(indexKey);
-            
-            if (indexData == null) {
-                return new ArrayList<>();
-            }
-            
-            @SuppressWarnings("unchecked")
-            List<String> tokenHashes = (List<String>) indexData.get("tokenHashes");
-            return tokenHashes != null ? new ArrayList<>(tokenHashes) : new ArrayList<>();
-            
-        } catch (Exception e) {
-            log.warn("Failed to get status token hashes for status { }: { }", status, e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-    
-    /**
-     * 增加令牌计数器
-     */
-    private void incrementTokenCounter() {
-        try {
-            Map<String, Object> counterData = storeManager.getConfig(TOKEN_COUNTER_KEY);
-            if (counterData == null) {
-                counterData = new HashMap<>();
-                counterData.put("count", 1L);
-            } else {
-                Object countObj = counterData.get("count");
-                long count = countObj instanceof Number ? ((Number) countObj).longValue() : 0L;
-                counterData.put("count", count + 1);
-            }
-            
-            counterData.put("updatedAt", LocalDateTime.now());
-            storeManager.saveConfig(TOKEN_COUNTER_KEY, counterData);
-            
-        } catch (Exception e) {
-            log.warn("Failed to increment token counter: { }", e.getMessage());
-        }
     }
 }

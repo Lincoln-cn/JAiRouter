@@ -6,15 +6,18 @@
 
 jairouter:
   security:
+    # 安全功能开关
+    enabled: true
+
     jwt:
       # JWT 功能开关
-      enabled: false
+      enabled: true
       
       # JWT 令牌头名称
       jwt-header: "Jairouter_Token"
       
       # JWT 密钥（必须使用环境变量，长度 >= 32 字符）
-      secret: "${JWT_SECRET:}"
+      secret: "${JWT_SECRET:ThisIsADefaultSecretKeyForDevOnly12345678}"
       
       # JWT 算法
       algorithm: "HS256"
@@ -38,7 +41,7 @@ jairouter:
       accounts:
         - username: "admin"
           # 密码必须使用环境变量（首次启动时设置）
-          password: "{noop}${INITIAL_ADMIN_PASSWORD:}"
+          password: "{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}"
           roles: ["ADMIN", "USER"]
           enabled: true
 

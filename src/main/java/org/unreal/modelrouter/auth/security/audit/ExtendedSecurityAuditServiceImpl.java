@@ -1,7 +1,5 @@
 package org.unreal.modelrouter.auth.security.audit;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -41,7 +39,7 @@ import java.util.stream.Collectors;
 public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditService {
 
     private final SecurityAuditEventRepository auditRepository;
-    private final ObjectMapper objectMapper;
+    private final AuditEntityMapper entityMapper;
 
     // JWT令牌相关事件类型
     private static final List<AuditEventType> JWT_EVENT_TYPES = Arrays.asList(
@@ -109,7 +107,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .action("REFRESH")
                     .details("JWT令牌刷新成功")
                     .success(true)
-                    .metadata(toJson(metadata))
+                    .metadata(entityMapper.toJson(metadata))
                     .timestamp(LocalDateTime.now())
                     .build();
             auditRepository.save(entity);
@@ -133,7 +131,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .action("REVOKE")
                     .details("JWT令牌撤销: " + reason)
                     .success(true)
-                    .metadata(toJson(metadata))
+                    .metadata(entityMapper.toJson(metadata))
                     .riskLevel(RiskLevel.MEDIUM)
                     .timestamp(LocalDateTime.now())
                     .build();
@@ -202,7 +200,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .details(success ? "API Key使用成功" : "API Key使用失败")
                     .success(success)
                     .failureReason(success ? null : "认证失败或权限不足")
-                    .metadata(toJson(metadata))
+                    .metadata(entityMapper.toJson(metadata))
                     .timestamp(LocalDateTime.now())
                     .build();
             auditRepository.save(entity);
@@ -226,7 +224,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .action("REVOKE")
                     .details("API Key撤销: " + reason)
                     .success(true)
-                    .metadata(toJson(metadata))
+                    .metadata(entityMapper.toJson(metadata))
                     .riskLevel(RiskLevel.MEDIUM)
                     .timestamp(LocalDateTime.now())
                     .build();
@@ -259,8 +257,8 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     @Transactional
     public Mono<Void> auditSecurityEvent(final String eventType, final String details, final String userId, final String ipAddress) {
         return Mono.fromRunnable(() -> {
-            AuditEventType type = parseEventType(eventType);
-            RiskLevel riskLevel = determineRiskLevel(type, false);
+            AuditEventType type = entityMapper.parseEventType(eventType);
+            RiskLevel riskLevel = entityMapper.determineRiskLevel(type, false);
 
             SecurityAuditEventEntity entity = SecurityAuditEventEntity.builder()
                     .eventId(UUID.randomUUID().toString())
@@ -294,7 +292,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .action("SUSPICIOUS")
                     .details(activity)
                     .success(false)
-                    .metadata(toJson(metadata))
+                    .metadata(entityMapper.toJson(metadata))
                     .riskLevel(RiskLevel.HIGH)
                     .timestamp(LocalDateTime.now())
                     .build();
@@ -328,7 +326,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
             );
 
             return page.getContent().stream()
-                    .map(this::entityToDto)
+                    .map(entityMapper::entityToDto)
                     .collect(Collectors.toList());
         })
         .subscribeOn(Schedulers.boundedElastic())
@@ -428,7 +426,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     @Transactional
     public Mono<Void> recordAuditEvent(final AuditEvent auditEvent) {
         return Mono.fromRunnable(() -> {
-            SecurityAuditEventEntity entity = dtoToEntity(auditEvent);
+            SecurityAuditEventEntity entity = entityMapper.dtoToEntity(auditEvent);
             auditRepository.save(entity);
             log.debug("审计事件记录: type={}, userId={}", auditEvent.getType(), auditEvent.getUserId());
         }).subscribeOn(Schedulers.boundedElastic()).then();
@@ -439,7 +437,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     public Mono<Void> batchRecordAuditEvents(final List<AuditEvent> auditEvents) {
         return Mono.fromRunnable(() -> {
             List<SecurityAuditEventEntity> entities = auditEvents.stream()
-                    .map(this::dtoToEntity)
+                    .map(entityMapper::dtoToEntity)
                     .collect(Collectors.toList());
             auditRepository.saveAll(entities);
             log.info("批量审计事件记录: count={}", auditEvents.size());
@@ -453,7 +451,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
             return entities.stream()
                     .filter(e -> userId.equals(e.getUserId()))
                     .limit(limit)
-                    .map(this::entityToDto)
+                    .map(entityMapper::entityToDto)
                     .collect(Collectors.toList());
         })
         .subscribeOn(Schedulers.boundedElastic())
@@ -467,7 +465,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
             return entities.stream()
                     .filter(e -> ipAddress.equals(e.getClientIp()))
                     .limit(limit)
-                    .map(this::entityToDto)
+                    .map(entityMapper::entityToDto)
                     .collect(Collectors.toList());
         })
         .subscribeOn(Schedulers.boundedElastic())
@@ -480,7 +478,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
     @Transactional
     public Mono<Void> recordEvent(final SecurityAuditEvent event) {
         return Mono.fromRunnable(() -> {
-            SecurityAuditEventEntity entity = securityEventToEntity(event);
+            SecurityAuditEventEntity entity = entityMapper.securityEventToEntity(event);
             auditRepository.save(entity);
             log.debug("安全审计事件记录: eventType={}", event.getEventType());
         }).subscribeOn(Schedulers.boundedElastic()).then();
@@ -527,7 +525,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .action("SANITIZE")
                     .details("数据脱敏处理")
                     .success(true)
-                    .metadata(toJson(metadata))
+                    .metadata(entityMapper.toJson(metadata))
                     .timestamp(LocalDateTime.now())
                     .build();
             auditRepository.save(entity);
@@ -543,7 +541,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
                     .filter(e -> eventType == null || eventType.equals(e.getEventType().name()))
                     .filter(e -> userId == null || userId.equals(e.getUserId()))
                     .limit(limit)
-                    .map(this::entityToSecurityEvent)
+                    .map(entityMapper::entityToSecurityEvent)
                     .collect(Collectors.toList());
         })
         .subscribeOn(Schedulers.boundedElastic())
@@ -607,7 +605,7 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
         return Mono.fromCallable(() -> {
             LocalDateTime windowEnd = LocalDateTime.now();
             LocalDateTime windowStart = windowEnd.minusMinutes(timeWindowMinutes);
-            AuditEventType type = parseEventType(eventType);
+            AuditEventType type = entityMapper.parseEventType(eventType);
             long count = auditRepository.countEventsInTimeWindow(type, windowStart, windowEnd);
             boolean shouldAlert = count >= threshold;
             if (shouldAlert) {
@@ -617,118 +615,5 @@ public class ExtendedSecurityAuditServiceImpl implements ExtendedSecurityAuditSe
             return shouldAlert;
         })
         .subscribeOn(Schedulers.boundedElastic());
-    }
-
-    // ========== 辅助方法 ==========
-
-    private AuditEvent entityToDto(final SecurityAuditEventEntity entity) {
-        AuditEvent dto = new AuditEvent();
-        dto.setId(entity.getEventId());
-        dto.setType(entity.getEventType());
-        dto.setUserId(entity.getUserId());
-        dto.setResourceId(entity.getResourceId());
-        dto.setAction(entity.getAction());
-        dto.setDetails(entity.getDetails());
-        dto.setIpAddress(entity.getClientIp());
-        dto.setUserAgent(entity.getUserAgent());
-        dto.setSuccess(entity.getSuccess());
-        dto.setTimestamp(entity.getTimestamp());
-        dto.setMetadata(parseJson(entity.getMetadata()));
-        return dto;
-    }
-
-    private SecurityAuditEventEntity dtoToEntity(final AuditEvent dto) {
-        return SecurityAuditEventEntity.builder()
-                .eventId(dto.getId() != null ? dto.getId() : UUID.randomUUID().toString())
-                .eventType(dto.getType())
-                .userId(dto.getUserId())
-                .resourceId(dto.getResourceId())
-                .clientIp(dto.getIpAddress())
-                .userAgent(dto.getUserAgent())
-                .action(dto.getAction())
-                .details(dto.getDetails())
-                .success(dto.isSuccess())
-                .metadata(toJson(dto.getMetadata()))
-                .timestamp(dto.getTimestamp() != null ? dto.getTimestamp() : LocalDateTime.now())
-                .build();
-    }
-
-    private SecurityAuditEvent entityToSecurityEvent(final SecurityAuditEventEntity entity) {
-        return SecurityAuditEvent.builder()
-                .eventId(entity.getEventId())
-                .eventType(entity.getEventType().name())
-                .userId(entity.getUserId())
-                .clientIp(entity.getClientIp())
-                .userAgent(entity.getUserAgent())
-                .timestamp(entity.getTimestamp())
-                .resource(entity.getResource())
-                .action(entity.getAction())
-                .success(entity.getSuccess())
-                .failureReason(entity.getFailureReason())
-                .additionalData(parseJson(entity.getMetadata()))
-                .requestId(entity.getRequestId())
-                .sessionId(entity.getSessionId())
-                .build();
-    }
-
-    private SecurityAuditEventEntity securityEventToEntity(final SecurityAuditEvent event) {
-        return SecurityAuditEventEntity.builder()
-                .eventId(event.getEventId() != null ? event.getEventId() : UUID.randomUUID().toString())
-                .eventType(parseEventType(event.getEventType()))
-                .userId(event.getUserId())
-                .clientIp(event.getClientIp())
-                .userAgent(event.getUserAgent())
-                .timestamp(event.getTimestamp() != null ? event.getTimestamp() : LocalDateTime.now())
-                .resource(event.getResource())
-                .action(event.getAction())
-                .success(event.isSuccess())
-                .failureReason(event.getFailureReason())
-                .metadata(toJson(event.getAdditionalData()))
-                .requestId(event.getRequestId())
-                .sessionId(event.getSessionId())
-                .build();
-    }
-
-    private AuditEventType parseEventType(final String eventType) {
-        try {
-            return AuditEventType.valueOf(eventType);
-        } catch (IllegalArgumentException e) {
-            log.warn("无法解析事件类型: {}, 使用默认值", eventType);
-            return AuditEventType.SYSTEM_MAINTENANCE;
-        }
-    }
-
-    private RiskLevel determineRiskLevel(final AuditEventType type, final Boolean success) {
-        if (type == null) return RiskLevel.LOW;
-        if (success != null && !success) {
-            if (type == AuditEventType.SECURITY_ALERT) return RiskLevel.CRITICAL;
-            if (type == AuditEventType.SUSPICIOUS_ACTIVITY) return RiskLevel.HIGH;
-            if (type == AuditEventType.AUTHORIZATION_FAILED) return RiskLevel.MEDIUM;
-            return RiskLevel.LOW;
-        }
-        if (type == AuditEventType.JWT_TOKEN_REVOKED || type == AuditEventType.API_KEY_REVOKED) {
-            return RiskLevel.MEDIUM;
-        }
-        return RiskLevel.LOW;
-    }
-
-    private String toJson(final Map<String, Object> map) {
-        if (map == null || map.isEmpty()) return null;
-        try {
-            return objectMapper.writeValueAsString(map);
-        } catch (JsonProcessingException e) {
-            log.error("JSON序列化失败", e);
-            return null;
-        }
-    }
-
-    private Map<String, Object> parseJson(final String json) {
-        if (json == null || json.isEmpty()) return new HashMap<>();
-        try {
-            return objectMapper.readValue(json, Map.class);
-        } catch (JsonProcessingException e) {
-            log.error("JSON解析失败", e);
-            return new HashMap<>();
-        }
     }
 }

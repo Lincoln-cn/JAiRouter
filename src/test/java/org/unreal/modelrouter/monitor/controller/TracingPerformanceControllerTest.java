@@ -14,6 +14,10 @@ import org.springframework.boot.actuate.health.Health;
 import org.unreal.modelrouter.monitor.tracing.TracingService;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
+import org.unreal.modelrouter.monitor.tracing.memory.model.GCResult;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryCheckResult;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryPressureLevel;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -92,13 +96,13 @@ class TracingPerformanceControllerTest {
         @Test
         @DisplayName("获取成功")
         void getSuccess() {
-            TracingMemoryManager.MemoryStats stats = mock(TracingMemoryManager.MemoryStats.class);
+            MemoryStats stats = mock(MemoryStats.class);
             when(stats.getUsedHeap()).thenReturn(1024L * 1024 * 100);
             when(stats.getMaxHeap()).thenReturn(1024L * 1024 * 512);
             when(stats.getHeapUsageRatio()).thenReturn(0.2);
             when(stats.getCacheSize()).thenReturn(50);
             when(stats.getHitRatio()).thenReturn(0.95);
-            when(stats.getPressureLevel()).thenReturn(TracingMemoryManager.MemoryPressureLevel.LOW);
+            when(stats.getPressureLevel()).thenReturn(MemoryPressureLevel.LOW);
             when(memoryManager.getMemoryStats()).thenReturn(stats);
 
             StepVerifier.create(controller.getMemoryStats())
@@ -224,7 +228,7 @@ class TracingPerformanceControllerTest {
         @Test
         @DisplayName("触发成功")
         void triggerSuccess() {
-            TracingMemoryManager.GCResult result = mock(TracingMemoryManager.GCResult.class);
+            GCResult result = mock(GCResult.class);
             when(memoryManager.performGarbageCollection()).thenReturn(Mono.just(result));
 
             StepVerifier.create(controller.triggerGarbageCollection())
@@ -242,8 +246,8 @@ class TracingPerformanceControllerTest {
         @Test
         @DisplayName("执行成功")
         void performSuccess() {
-            TracingMemoryManager.MemoryCheckResult result =
-                    mock(TracingMemoryManager.MemoryCheckResult.class);
+            MemoryCheckResult result =
+                    mock(MemoryCheckResult.class);
             when(memoryManager.performMemoryCheck()).thenReturn(Mono.just(result));
 
             StepVerifier.create(controller.performMemoryCheck())
@@ -289,14 +293,14 @@ class TracingPerformanceControllerTest {
             when(processingStats.isRunning()).thenReturn(true);
             when(asyncTracingProcessor.getProcessingStats()).thenReturn(processingStats);
 
-            TracingMemoryManager.MemoryStats memoryStats =
-                    mock(TracingMemoryManager.MemoryStats.class);
+            MemoryStats memoryStats =
+                    mock(MemoryStats.class);
             when(memoryStats.getUsedHeap()).thenReturn(1024L * 1024 * 100);
             when(memoryStats.getMaxHeap()).thenReturn(1024L * 1024 * 512);
             when(memoryStats.getHeapUsageRatio()).thenReturn(0.2);
             when(memoryStats.getCacheSize()).thenReturn(50);
             when(memoryStats.getHitRatio()).thenReturn(0.95);
-            when(memoryStats.getPressureLevel()).thenReturn(TracingMemoryManager.MemoryPressureLevel.LOW);
+            when(memoryStats.getPressureLevel()).thenReturn(MemoryPressureLevel.LOW);
             when(memoryManager.getMemoryStats()).thenReturn(memoryStats);
 
             Health health = Health.up().build();

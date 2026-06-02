@@ -43,7 +43,11 @@
       "Bash(f.writelines)",
       "Bash(old_method *)",
       "Bash(new_method *)",
-      "Bash(old_method, *)"
+      "Bash(old_method, *)",
+      "Bash(find *)",
+      "Bash(xargs *)",
+      "Bash(paste *)",
+      "Bash(grep *)"
     ]
   },
   "$version": 4

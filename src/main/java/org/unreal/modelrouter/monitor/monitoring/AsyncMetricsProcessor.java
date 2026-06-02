@@ -10,6 +10,22 @@ import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledCondition;
+import org.unreal.modelrouter.monitor.monitoring.event.BackendCallMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.CircuitBreakerMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.HealthCheckMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.LoadBalancerMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.MetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.MetricsType;
+import org.unreal.modelrouter.monitor.monitoring.event.ProcessingStats;
+import org.unreal.modelrouter.monitor.monitoring.event.RateLimitMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.RequestMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.RequestSizeMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.TraceAnalysisMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.TraceDataQualityMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.TraceExportMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.TraceMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.TraceProcessingMetricsEvent;
+import org.unreal.modelrouter.monitor.monitoring.event.TraceSamplingMetricsEvent;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -36,48 +52,47 @@ public class AsyncMetricsProcessor {
     private final MonitoringProperties monitoringProperties;
     private final MetricsCollector metricsCollector;
     private final MetricsCircuitBreaker circuitBreaker;
-    
+
     // 异步处理相关
     private final ExecutorService executorService;
     private final ScheduledExecutorService scheduledExecutorService;
     private final BlockingQueue<MetricsEvent> metricsQueue;
     private final AtomicBoolean running = new AtomicBoolean(true);
-    
+
     // 统计信息
     private final AtomicLong processedCount = new AtomicLong(0);
     private final AtomicLong droppedCount = new AtomicLong(0);
     private final AtomicLong queueSize = new AtomicLong(0);
-    
+
     // 安全随机数生成器
     private final SecureRandom secureRandom = new SecureRandom();
 
-
-    public AsyncMetricsProcessor(final MonitoringProperties monitoringProperties, 
+    public AsyncMetricsProcessor(final MonitoringProperties monitoringProperties,
                                @Lazy final MetricsCollector metricsCollector,
                                final MetricsCircuitBreaker circuitBreaker) {
         this.monitoringProperties = monitoringProperties;
         this.metricsCollector = metricsCollector;
         this.circuitBreaker = circuitBreaker;
-        
+
         int bufferSize = monitoringProperties.getPerformance().getBufferSize();
         this.metricsQueue = new ArrayBlockingQueue<>(bufferSize);
-        
+
         // 创建线程池
         this.executorService = Executors.newFixedThreadPool(2, r -> {
             Thread t = new Thread(r, "metrics-processor");
             t.setDaemon(true);
             return t;
         });
-        
+
         this.scheduledExecutorService = Executors.newScheduledThreadPool(1, r -> {
             Thread t = new Thread(r, "metrics-scheduler");
             t.setDaemon(true);
             return t;
         });
-        
+
         // 启动处理器
         startProcessing();
-        
+
         logger.info("AsyncMetricsProcessor initialized with buffer size: {}", bufferSize);
     }
 
@@ -88,9 +103,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.REQUEST)) {
             return;
         }
-        
-        MetricsEvent event = new RequestMetricsEvent(service, method, duration, status);
-        submitEvent(event);
+        submitEvent(new RequestMetricsEvent(service, method, duration, status));
     }
 
     /**
@@ -100,9 +113,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.BACKEND)) {
             return;
         }
-        
-        MetricsEvent event = new BackendCallMetricsEvent(adapter, instance, duration, success);
-        submitEvent(event);
+        submitEvent(new BackendCallMetricsEvent(adapter, instance, duration, success));
     }
 
     /**
@@ -112,9 +123,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
-        
-        MetricsEvent event = new RateLimitMetricsEvent(service, algorithm, allowed);
-        submitEvent(event);
+        submitEvent(new RateLimitMetricsEvent(service, algorithm, allowed));
     }
 
     /**
@@ -124,9 +133,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
-        
-        MetricsEvent metricsEvent = new CircuitBreakerMetricsEvent(service, state, event);
-        submitEvent(metricsEvent);
+        submitEvent(new CircuitBreakerMetricsEvent(service, state, event));
     }
 
     /**
@@ -136,9 +143,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
-        
-        MetricsEvent event = new LoadBalancerMetricsEvent(service, strategy, selectedInstance);
-        submitEvent(event);
+        submitEvent(new LoadBalancerMetricsEvent(service, strategy, selectedInstance));
     }
 
     /**
@@ -148,9 +153,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
-        
-        MetricsEvent event = new HealthCheckMetricsEvent(adapter, instance, healthy, responseTime);
-        submitEvent(event);
+        submitEvent(new HealthCheckMetricsEvent(adapter, instance, healthy, responseTime));
     }
 
     /**
@@ -160,9 +163,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.REQUEST)) {
             return;
         }
-        
-        MetricsEvent event = new RequestSizeMetricsEvent(service, requestSize, responseSize);
-        submitEvent(event);
+        submitEvent(new RequestSizeMetricsEvent(service, requestSize, responseSize));
     }
 
     /**
@@ -172,11 +173,9 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
-        
-        MetricsEvent event = new TraceMetricsEvent(traceId, spanId, operationName, duration, success);
-        submitEvent(event);
+        submitEvent(new TraceMetricsEvent(traceId, spanId, operationName, duration, success));
     }
-    
+
     /**
      * 异步记录追踪处理指标
      */
@@ -184,11 +183,9 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.TRACE_PROCESSING)) {
             return;
         }
-        
-        MetricsEvent event = new TraceProcessingMetricsEvent(processorName, duration, success);
-        submitEvent(event);
+        submitEvent(new TraceProcessingMetricsEvent(processorName, duration, success));
     }
-    
+
     /**
      * 异步记录追踪分析指标
      */
@@ -196,9 +193,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.TRACE_ANALYSIS)) {
             return;
         }
-        
-        MetricsEvent event = new TraceAnalysisMetricsEvent(analyzerName, spanCount, duration, success);
-        submitEvent(event);
+        submitEvent(new TraceAnalysisMetricsEvent(analyzerName, spanCount, duration, success));
     }
 
     /**
@@ -208,18 +203,14 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
-        
-        MetricsEvent event = new TraceExportMetricsEvent(exporterType, duration, success, batchSize);
-        submitEvent(event);
+        submitEvent(new TraceExportMetricsEvent(exporterType, duration, success, batchSize));
     }
 
     /**
      * 异步记录追踪采样指标
      */
     public void recordTraceSamplingAsync(final double samplingRate, final boolean sampled) {
-        // 采样指标本身不需要采样
-        MetricsEvent event = new TraceSamplingMetricsEvent(samplingRate, sampled);
-        submitEvent(event);
+        submitEvent(new TraceSamplingMetricsEvent(samplingRate, sampled));
     }
 
     /**
@@ -229,9 +220,7 @@ public class AsyncMetricsProcessor {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
-        
-        MetricsEvent event = new TraceDataQualityMetricsEvent(traceId, spanCount, attributeCount, errorCount);
-        submitEvent(event);
+        submitEvent(new TraceDataQualityMetricsEvent(traceId, spanCount, attributeCount, errorCount));
     }
 
     /**
@@ -243,7 +232,7 @@ public class AsyncMetricsProcessor {
             logger.debug("Metrics event dropped due to circuit breaker: {}", event.getClass().getSimpleName());
             return;
         }
-        
+
         boolean offered = metricsQueue.offer(event);
         if (offered) {
             queueSize.incrementAndGet();
@@ -288,14 +277,8 @@ public class AsyncMetricsProcessor {
      * 启动异步处理
      */
     private void startProcessing() {
-        // 启动批量处理器
         executorService.submit(this::processBatch);
-        
-        // 启动统计信息定期输出
-        scheduledExecutorService.scheduleAtFixedRate(
-            this::logStatistics, 
-            60, 60, TimeUnit.SECONDS
-        );
+        scheduledExecutorService.scheduleAtFixedRate(this::logStatistics, 60, 60, TimeUnit.SECONDS);
     }
 
     /**
@@ -304,16 +287,14 @@ public class AsyncMetricsProcessor {
     private void processBatch() {
         List<MetricsEvent> batch = new ArrayList<>();
         int batchSize = monitoringProperties.getPerformance().getBatchSize();
-        
+
         while (running.get()) {
             try {
-                // 收集批量事件
                 MetricsEvent event = metricsQueue.poll(1, TimeUnit.SECONDS);
                 if (event != null) {
                     batch.add(event);
                     queueSize.decrementAndGet();
-                    
-                    // 继续收集直到达到批量大小或队列为空
+
                     while (batch.size() < batchSize) {
                         MetricsEvent nextEvent = metricsQueue.poll();
                         if (nextEvent == null) {
@@ -322,8 +303,7 @@ public class AsyncMetricsProcessor {
                         batch.add(nextEvent);
                         queueSize.decrementAndGet();
                     }
-                    
-                    // 处理批量事件
+
                     processBatchEvents(batch);
                     batch.clear();
                 }
@@ -362,43 +342,43 @@ public class AsyncMetricsProcessor {
         try {
             if (event instanceof RequestMetricsEvent) {
                 RequestMetricsEvent req = (RequestMetricsEvent) event;
-                metricsCollector.recordRequest(req.service, req.method, req.duration, req.status);
+                metricsCollector.recordRequest(req.getService(), req.getMethod(), req.getDuration(), req.getStatus());
             } else if (event instanceof BackendCallMetricsEvent) {
                 BackendCallMetricsEvent backend = (BackendCallMetricsEvent) event;
-                metricsCollector.recordBackendCall(backend.adapter, backend.instance, backend.duration, backend.success);
+                metricsCollector.recordBackendCall(backend.getAdapter(), backend.getInstance(), backend.getDuration(), backend.isSuccess());
             } else if (event instanceof RateLimitMetricsEvent) {
                 RateLimitMetricsEvent rateLimit = (RateLimitMetricsEvent) event;
-                metricsCollector.recordRateLimit(rateLimit.service, rateLimit.algorithm, rateLimit.allowed);
+                metricsCollector.recordRateLimit(rateLimit.getService(), rateLimit.getAlgorithm(), rateLimit.isAllowed());
             } else if (event instanceof CircuitBreakerMetricsEvent) {
                 CircuitBreakerMetricsEvent cb = (CircuitBreakerMetricsEvent) event;
-                metricsCollector.recordCircuitBreaker(cb.service, cb.state, cb.event);
+                metricsCollector.recordCircuitBreaker(cb.getService(), cb.getState(), cb.getEvent());
             } else if (event instanceof LoadBalancerMetricsEvent) {
                 LoadBalancerMetricsEvent lb = (LoadBalancerMetricsEvent) event;
-                metricsCollector.recordLoadBalancer(lb.service, lb.strategy, lb.selectedInstance);
+                metricsCollector.recordLoadBalancer(lb.getService(), lb.getStrategy(), lb.getSelectedInstance());
             } else if (event instanceof HealthCheckMetricsEvent) {
                 HealthCheckMetricsEvent health = (HealthCheckMetricsEvent) event;
-                metricsCollector.recordHealthCheck(health.adapter, health.instance, health.healthy, health.responseTime);
+                metricsCollector.recordHealthCheck(health.getAdapter(), health.getInstance(), health.isHealthy(), health.getResponseTime());
             } else if (event instanceof RequestSizeMetricsEvent) {
                 RequestSizeMetricsEvent size = (RequestSizeMetricsEvent) event;
-                metricsCollector.recordRequestSize(size.service, size.requestSize, size.responseSize);
+                metricsCollector.recordRequestSize(size.getService(), size.getRequestSize(), size.getResponseSize());
             } else if (event instanceof TraceMetricsEvent) {
                 TraceMetricsEvent trace = (TraceMetricsEvent) event;
-                metricsCollector.recordTrace(trace.traceId, trace.spanId, trace.operationName, trace.duration, trace.success);
+                metricsCollector.recordTrace(trace.getTraceId(), trace.getSpanId(), trace.getOperationName(), trace.getDuration(), trace.isSuccess());
             } else if (event instanceof TraceExportMetricsEvent) {
                 TraceExportMetricsEvent traceExport = (TraceExportMetricsEvent) event;
-                metricsCollector.recordTraceExport(traceExport.exporterType, traceExport.duration, traceExport.success, traceExport.batchSize);
+                metricsCollector.recordTraceExport(traceExport.getExporterType(), traceExport.getDuration(), traceExport.isSuccess(), traceExport.getBatchSize());
             } else if (event instanceof TraceSamplingMetricsEvent) {
                 TraceSamplingMetricsEvent traceSampling = (TraceSamplingMetricsEvent) event;
-                metricsCollector.recordTraceSampling(traceSampling.samplingRate, traceSampling.sampled);
+                metricsCollector.recordTraceSampling(traceSampling.getSamplingRate(), traceSampling.isSampled());
             } else if (event instanceof TraceDataQualityMetricsEvent) {
                 TraceDataQualityMetricsEvent traceDataQuality = (TraceDataQualityMetricsEvent) event;
-                metricsCollector.recordTraceDataQuality(traceDataQuality.traceId, traceDataQuality.spanCount, traceDataQuality.attributeCount, traceDataQuality.errorCount);
+                metricsCollector.recordTraceDataQuality(traceDataQuality.getTraceId(), traceDataQuality.getSpanCount(), traceDataQuality.getAttributeCount(), traceDataQuality.getErrorCount());
             } else if (event instanceof TraceProcessingMetricsEvent) {
                 TraceProcessingMetricsEvent traceProcessing = (TraceProcessingMetricsEvent) event;
-                metricsCollector.recordTraceProcessing(traceProcessing.processorName, traceProcessing.duration, traceProcessing.success);
+                metricsCollector.recordTraceProcessing(traceProcessing.getProcessorName(), traceProcessing.getDuration(), traceProcessing.isSuccess());
             } else if (event instanceof TraceAnalysisMetricsEvent) {
                 TraceAnalysisMetricsEvent traceAnalysis = (TraceAnalysisMetricsEvent) event;
-                metricsCollector.recordTraceAnalysis(traceAnalysis.analyzerName, traceAnalysis.spanCount, traceAnalysis.duration, traceAnalysis.success);
+                metricsCollector.recordTraceAnalysis(traceAnalysis.getAnalyzerName(), traceAnalysis.getSpanCount(), traceAnalysis.getDuration(), traceAnalysis.isSuccess());
             }
         } catch (Exception e) {
             logger.warn("Failed to process metrics event: {}", e.getMessage());
@@ -409,7 +389,7 @@ public class AsyncMetricsProcessor {
      * 记录统计信息
      */
     private void logStatistics() {
-        logger.info("Metrics processor statistics - Processed: {}, Dropped: {}, Queue size: {}, Circuit breaker state: {}", 
+        logger.info("Metrics processor statistics - Processed: {}, Dropped: {}, Queue size: {}, Circuit breaker state: {}",
                    processedCount.get(), droppedCount.get(), queueSize.get(), circuitBreaker.getState());
     }
 
@@ -429,10 +409,10 @@ public class AsyncMetricsProcessor {
     public void shutdown() {
         logger.info("Shutting down AsyncMetricsProcessor");
         running.set(false);
-        
+
         executorService.shutdown();
         scheduledExecutorService.shutdown();
-        
+
         try {
             if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
                 executorService.shutdownNow();
@@ -445,219 +425,7 @@ public class AsyncMetricsProcessor {
             scheduledExecutorService.shutdownNow();
             Thread.currentThread().interrupt();
         }
-        
+
         logger.info("AsyncMetricsProcessor shutdown completed");
-    }
-
-    // 指标类型枚举
-    private enum MetricsType {
-        REQUEST, BACKEND, INFRASTRUCTURE, TRACE, TRACE_PROCESSING, TRACE_ANALYSIS
-    }
-
-    // 指标事件基类
-    private abstract static class MetricsEvent {
-        protected final long timestamp = System.currentTimeMillis();
-    }
-
-    // 各种指标事件类
-    private static class RequestMetricsEvent extends MetricsEvent {
-        final String service;
-        final String method;
-        final long duration;
-        final String status;
-
-        RequestMetricsEvent(final String service, final String method, final long duration, final String status) {
-            this.service = service;
-            this.method = method;
-            this.duration = duration;
-            this.status = status;
-        }
-    }
-
-    private static class BackendCallMetricsEvent extends MetricsEvent {
-        final String adapter;
-        final String instance;
-        final long duration;
-        final boolean success;
-
-        BackendCallMetricsEvent(final String adapter, final String instance, final long duration, final boolean success) {
-            this.adapter = adapter;
-            this.instance = instance;
-            this.duration = duration;
-            this.success = success;
-        }
-    }
-
-    private static class RateLimitMetricsEvent extends MetricsEvent {
-        final String service;
-        final String algorithm;
-        final boolean allowed;
-
-        RateLimitMetricsEvent(final String service, final String algorithm, final boolean allowed) {
-            this.service = service;
-            this.algorithm = algorithm;
-            this.allowed = allowed;
-        }
-    }
-
-    private static class CircuitBreakerMetricsEvent extends MetricsEvent {
-        final String service;
-        final String state;
-        final String event;
-
-        CircuitBreakerMetricsEvent(final String service, final String state, final String event) {
-            this.service = service;
-            this.state = state;
-            this.event = event;
-        }
-    }
-
-    private static class LoadBalancerMetricsEvent extends MetricsEvent {
-        final String service;
-        final String strategy;
-        final String selectedInstance;
-
-        LoadBalancerMetricsEvent(final String service, final String strategy, final String selectedInstance) {
-            this.service = service;
-            this.strategy = strategy;
-            this.selectedInstance = selectedInstance;
-        }
-    }
-
-    private static class HealthCheckMetricsEvent extends MetricsEvent {
-        final String adapter;
-        final String instance;
-        final boolean healthy;
-        final long responseTime;
-
-        HealthCheckMetricsEvent(final String adapter, final String instance, final boolean healthy, final long responseTime) {
-            this.adapter = adapter;
-            this.instance = instance;
-            this.healthy = healthy;
-            this.responseTime = responseTime;
-        }
-    }
-
-    private static class RequestSizeMetricsEvent extends MetricsEvent {
-        final String service;
-        final long requestSize;
-        final long responseSize;
-
-        RequestSizeMetricsEvent(final String service, final long requestSize, final long responseSize) {
-            this.service = service;
-            this.requestSize = requestSize;
-            this.responseSize = responseSize;
-        }
-    }
-
-    private static class TraceMetricsEvent extends MetricsEvent {
-        final String traceId;
-        final String spanId;
-        final String operationName;
-        final long duration;
-        final boolean success;
-
-        TraceMetricsEvent(final String traceId, final String spanId, final String operationName, final long duration, final boolean success) {
-            this.traceId = traceId;
-            this.spanId = spanId;
-            this.operationName = operationName;
-            this.duration = duration;
-            this.success = success;
-        }
-    }
-    
-    private static class TraceProcessingMetricsEvent extends MetricsEvent {
-        final String processorName;
-        final long duration;
-        final boolean success;
-
-        TraceProcessingMetricsEvent(final String processorName, final long duration, final boolean success) {
-            this.processorName = processorName;
-            this.duration = duration;
-            this.success = success;
-        }
-    }
-    
-    private static class TraceAnalysisMetricsEvent extends MetricsEvent {
-        final String analyzerName;
-        final int spanCount;
-        final long duration;
-        final boolean success;
-
-        TraceAnalysisMetricsEvent(final String analyzerName, final int spanCount, final long duration, final boolean success) {
-            this.analyzerName = analyzerName;
-            this.spanCount = spanCount;
-            this.duration = duration;
-            this.success = success;
-        }
-    }
-
-    private static class TraceExportMetricsEvent extends MetricsEvent {
-        final String exporterType;
-        final long duration;
-        final boolean success;
-        final int batchSize;
-
-        TraceExportMetricsEvent(final String exporterType, final long duration, final boolean success, final int batchSize) {
-            this.exporterType = exporterType;
-            this.duration = duration;
-            this.success = success;
-            this.batchSize = batchSize;
-        }
-    }
-
-    private static class TraceSamplingMetricsEvent extends MetricsEvent {
-        final double samplingRate;
-        final boolean sampled;
-
-        TraceSamplingMetricsEvent(final double samplingRate, final boolean sampled) {
-            this.samplingRate = samplingRate;
-            this.sampled = sampled;
-        }
-    }
-
-    private static class TraceDataQualityMetricsEvent extends MetricsEvent {
-        final String traceId;
-        final int spanCount;
-        final int attributeCount;
-        final int errorCount;
-
-        TraceDataQualityMetricsEvent(final String traceId, final int spanCount, final int attributeCount, final int errorCount) {
-            this.traceId = traceId;
-            this.spanCount = spanCount;
-            this.attributeCount = attributeCount;
-            this.errorCount = errorCount;
-        }
-    }
-
-    // 处理统计信息类
-    public static class ProcessingStats {
-        private final long processedCount;
-        private final long droppedCount;
-        private final long queueSize;
-        private final String circuitBreakerState;
-
-        public ProcessingStats(final long processedCount, final long droppedCount, final long queueSize, final String circuitBreakerState) {
-            this.processedCount = processedCount;
-            this.droppedCount = droppedCount;
-            this.queueSize = queueSize;
-            this.circuitBreakerState = circuitBreakerState;
-        }
-
-        public long getProcessedCount() {
-            return processedCount;
-        }
-
-        public long getDroppedCount() {
-            return droppedCount;
-        }
-
-        public long getQueueSize() {
-            return queueSize;
-        }
-
-        public String getCircuitBreakerState() {
-            return circuitBreakerState;
-        }
     }
 }

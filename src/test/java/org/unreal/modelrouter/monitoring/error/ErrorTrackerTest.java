@@ -177,8 +177,12 @@ class ErrorTrackerTest {
 
         // Then
         verify(errorMetricsCollector, times(1)).recordError(
-            eq("RuntimeException"), 
-            eq(operation), 
+            eq("RuntimeException"),
+            eq(operation),
+            isNull(),
+            isNull(),
+            isNull(),
+            isNull(),
             any(Duration.class)
         );
     }

@@ -104,6 +104,8 @@ public class SecurityConfiguration {
                 .pathMatchers("/swagger-ui/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                 // Web管理界面静态资源允许匿名访问（前端会处理认证）
                 .pathMatchers("/admin/**").permitAll()
+                // favicon.ico 允许匿名访问
+                .pathMatchers("/favicon.ico").permitAll()
                 // JWT登录端点允许匿名访问
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll()
                 // JWT验证端点允许匿名访问（用于验证令牌有效性）

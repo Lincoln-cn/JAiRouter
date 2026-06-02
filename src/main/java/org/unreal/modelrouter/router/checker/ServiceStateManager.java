@@ -3,6 +3,7 @@ package org.unreal.modelrouter.router.checker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.controller.HealthStatusSseController;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
@@ -24,6 +25,7 @@ public class ServiceStateManager {
     private static final Logger log = LoggerFactory.getLogger(ServiceStateManager.class);
 
     // 注入SSE控制器
+    @Lazy
     @Autowired(required = false)
     private HealthStatusSseController healthStatusSseController;
 
@@ -83,35 +85,6 @@ public class ServiceStateManager {
             return "UNKNOWN";
         }
         return status ? "HEALTHY" : "UNHEALTHY";
-    }
-
-    /**
-     * 获取特定实例的健康状态（旧版本）
-     *
-     * @deprecated 此方法使用 name@baseUrl 作为键，与新的键格式不一致。
-     *             请使用 {@link #isInstanceHealthyByKey(String)} 替代。
-     *             <p>新键格式：serviceType:instanceId（使用数字ID而非名称）</p>
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码
-     *             boolean healthy = manager.isInstanceHealthy("chat", "model-name", "http://localhost:8080");
-     *             
-     *             // 新代码
-     *             String instanceKey = "chat:123"; // serviceType:instanceId
-     *             boolean healthy = manager.isInstanceHealthyByKey(instanceKey);
-     *             }</pre>
-     *             此方法将在 v3.0 版本中移除。
-     * @param serviceType 服务类型
-     * @param instanceName 实例名称（已废弃）
-     * @param baseUrl 基础URL（已废弃）
-     * @return 始终返回 true（无实际功能）
-     * @since v2.5.1 标注废弃
-     */
-    @Deprecated(since = "2.5.1", forRemoval = true)
-    public boolean isInstanceHealthy(final String serviceType, final String instanceName, final String baseUrl) {
-        // v2.3.3 修复：不再使用 name@baseUrl 作为键
-        log.warn("isInstanceHealthy(String, String, String) 已废弃，请使用 isInstanceHealthyByKey(String)");
-        return true;
     }
 
     /**

@@ -27,41 +27,6 @@ public class RateLimitContext {
     }
 
     /**
-     * 兼容旧版本的构造函数（不含实例信息）
-     *
-     * @deprecated 此构造函数不支持实例信息，功能不完整。
-     *             请使用完整构造函数 {@link #RateLimitContext(ModelServiceRegistry.ServiceType, String, String, int, String, String)} 替代。
-     *             <p>迁移示例：</p>
-     *             <pre>{@code
-     *             // 旧代码 - 缺少实例信息
-     *             RateLimitContext context = new RateLimitContext(serviceType, modelName, clientIp, tokens);
-     *             
-     *             // 新代码 - 包含完整实例信息
-     *             RateLimitContext context = new RateLimitContext(
-     *                 serviceType, modelName, clientIp, tokens, instanceId, instanceUrl
-     *             );
-     *             
-     *             // 检查是否有实例信息
-     *             if (context.hasInstanceInfo()) {
-     *                 // 可以使用 instanceId 和 instanceUrl
-     *             }
-     *             }</pre>
-     *             此构造函数将在 v3.0 版本中移除。
-     * @param serviceType 服务类型
-     * @param modelName 模型名称
-     * @param clientIp 客户端IP
-     * @param tokens 令牌数
-     * @since v2.5.1 标注废弃
-     */
-    @Deprecated(since = "2.5.1", forRemoval = true)
-    public RateLimitContext(final ModelServiceRegistry.ServiceType serviceType,
-                            final String modelName,
-                            final String clientIp,
-                            final int tokens) {
-        this(serviceType, modelName, clientIp, tokens, null, null);
-    }
-
-    /**
      * 获取服务类型
      * @return 服务类型
      */

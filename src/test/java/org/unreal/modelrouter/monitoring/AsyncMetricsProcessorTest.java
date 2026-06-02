@@ -9,6 +9,7 @@ import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.monitor.monitoring.*;
 import org.unreal.modelrouter.monitor.monitoring.circuitbreaker.MetricsCircuitBreaker;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.monitoring.event.ProcessingStats;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -92,7 +93,7 @@ class AsyncMetricsProcessorTest {
         verifyNoInteractions(metricsCollector);
         
         // 验证统计信息中丢弃计数增加
-        AsyncMetricsProcessor.ProcessingStats stats = asyncProcessor.getStats();
+        ProcessingStats stats = asyncProcessor.getStats();
         assertTrue(stats.getDroppedCount() > 0);
     }
 
@@ -160,7 +161,7 @@ class AsyncMetricsProcessorTest {
         }
         
         // 验证有指标被丢弃
-        AsyncMetricsProcessor.ProcessingStats stats = smallBufferProcessor.getStats();
+        ProcessingStats stats = smallBufferProcessor.getStats();
         assertTrue(stats.getDroppedCount() > 0 || stats.getQueueSize() >= 0);
         
         smallBufferProcessor.shutdown();
@@ -173,7 +174,7 @@ class AsyncMetricsProcessorTest {
         asyncProcessor.recordBackendCallAsync("ollama", "instance1", 200L, true);
         
         // 获取统计信息
-        AsyncMetricsProcessor.ProcessingStats stats = asyncProcessor.getStats();
+        ProcessingStats stats = asyncProcessor.getStats();
         
         assertNotNull(stats);
         assertTrue(stats.getQueueSize() >= 0);
@@ -210,7 +211,7 @@ class AsyncMetricsProcessorTest {
         asyncProcessor.shutdown();
         
         // 验证处理器已停止
-        AsyncMetricsProcessor.ProcessingStats stats = asyncProcessor.getStats();
+        ProcessingStats stats = asyncProcessor.getStats();
         assertNotNull(stats);
     }
 

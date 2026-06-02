@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.monitor.tracing.exporter.TraceExporter;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.memory.model.CachedTraceData;
 import org.unreal.modelrouter.monitor.tracing.statistics.TraceStatisticsCalculator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -42,7 +43,7 @@ public class TraceQueryService {
         return Mono.fromCallable(() -> {
             TraceRecord trace = traceStore.get(traceId);
             if (trace == null) {
-                TracingMemoryManager.CachedTraceData cachedData =
+                CachedTraceData cachedData =
                     memoryManager.getCachedTraceData(traceId).block();
                 if (cachedData != null) {
                     trace = convertFromCachedData(cachedData);
@@ -197,7 +198,7 @@ public class TraceQueryService {
             trace.getDuration(), trace.getSpans().size(), hasError, trace.getCreatedAt());
     }
 
-    private TraceRecord convertFromCachedData(final TracingMemoryManager.CachedTraceData cachedData) {
+    private TraceRecord convertFromCachedData(final CachedTraceData cachedData) {
         SpanRecord span = new SpanRecord(cachedData.getSpanId(), cachedData.getTraceId(),
             "cached-operation", cachedData.getTimestamp(), cachedData.getTimestamp().plusMillis(100),
             100.0, false, "200", new HashMap<>());

@@ -223,14 +223,18 @@ public class JwtTokenController {
         Mono<Void> revokeMono;
         if (isTokenHash) {
             // 直接使用tokenHash进行撤销
-            revokeMono = revokeTokenByHash(tokenToRevoke, request.getReason(), 
-                    authentication != null ? authentication.getName() : "system");
+            revokeMono = jwtTokenManagementService != null
+                    ? jwtTokenManagementService.revokeTokenByHash(tokenToRevoke, request.getReason(),
+                            authentication != null ? authentication.getName() : "system")
+                    : Mono.empty();
         } else {
             // 使用完整token进行撤销
             revokeMono = tokenRefreshService.revokeToken(tokenToRevoke)
-                    .then(updateTokenStatusInPersistence(tokenToRevoke, TokenStatus.REVOKED, 
-                            request.getReason() != null ? request.getReason() : "手动撤销", 
-                            authentication != null ? authentication.getName() : "system"));
+                    .then(jwtTokenManagementService != null
+                            ? jwtTokenManagementService.updateTokenStatus(tokenToRevoke, TokenStatus.REVOKED,
+                                    request.getReason() != null ? request.getReason() : "手动撤销",
+                                    authentication != null ? authentication.getName() : "system")
+                            : Mono.empty());
         }
 
         return revokeMono
@@ -280,14 +284,18 @@ public class JwtTokenController {
         Mono<Void> batchRevokeMono;
         if (areTokenHashes) {
             // 批量撤销tokenHash
-            batchRevokeMono = batchRevokeTokensByHash(request.getTokens(), request.getReason(),
-                    authentication != null ? authentication.getName() : "system");
+            batchRevokeMono = jwtTokenManagementService != null
+                    ? jwtTokenManagementService.batchRevokeTokensByHash(request.getTokens(), request.getReason(),
+                            authentication != null ? authentication.getName() : "system")
+                    : Mono.empty();
         } else {
             // 批量撤销完整token
             batchRevokeMono = tokenRefreshService.revokeTokens(request.getTokens())
-                    .then(batchUpdateTokenStatusInPersistence(request.getTokens(), TokenStatus.REVOKED, 
-                            request.getReason() != null ? request.getReason() : "批量撤销", 
-                            authentication != null ? authentication.getName() : "system"));
+                    .then(jwtTokenManagementService != null
+                            ? jwtTokenManagementService.batchUpdateTokenStatus(request.getTokens(), TokenStatus.REVOKED,
+                                    request.getReason() != null ? request.getReason() : "批量撤销",
+                                    authentication != null ? authentication.getName() : "system")
+                            : Mono.empty());
         }
         
         return batchRevokeMono
@@ -329,7 +337,9 @@ public class JwtTokenController {
                 .flatMap(isValid -> {
                     if (isValid) {
                         // 令牌基本有效，进一步检查持久化状态
-                        return checkTokenPersistenceStatus(request.getToken())
+                        return (jwtTokenQueryService != null
+                                ? jwtTokenQueryService.checkTokenPersistenceStatus(request.getToken())
+                                : Mono.just(true))
                                 .flatMap(persistenceValid -> {
                                     if (persistenceValid) {
                                         // 令牌有效，提取用户信息
@@ -393,8 +403,8 @@ public class JwtTokenController {
         return tokenRefreshService.getBlacklistStats()
                 .flatMap(stats -> {
                     // 如果持久化服务可用，添加持久化统计信息
-                    if (jwtPersistenceService != null) {
-                        return addPersistenceStatsToBlacklistStats(stats)
+                    if (jwtPersistenceService != null && jwtTokenQueryService != null) {
+                        return jwtTokenQueryService.enhanceBlacklistStats(stats)
                                 .map(enhancedStats -> RouterResponse.success(enhancedStats, "获取黑名单统计信息成功"));
                     } else {
                         return Mono.just(RouterResponse.success(stats, "获取黑名单统计信息成功"));
@@ -608,112 +618,4 @@ public class JwtTokenController {
     private String getClientIpAddress(final org.springframework.web.server.ServerWebExchange exchange) {
         return org.unreal.modelrouter.auth.security.util.ClientIpUtils.getClientIpAddress(exchange);
     }
-// ========================================
-    // 辅助方法（委托到专业服务）
-    // ========================================
-
-    /**
-     * 计算令牌哈希值
-     * @deprecated 使用 JwtTokenManagementService.calculateTokenHash() 替代
-     */
-    @Deprecated
-    private String calculateTokenHash(final String token) {
-        if (jwtTokenManagementService != null) {
-            return jwtTokenManagementService.calculateTokenHash(token);
-        }
-        // 降级实现
-        try {
-            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            return java.util.Base64.getEncoder().encodeToString(hash);
-        } catch (Exception ex) {
-            log.warn("计算令牌哈希失败: {}", ex.getMessage());
-            return String.valueOf(token.hashCode());
-        }
-    }
-
-    /**
-     * 更新令牌在持久化存储中的状态
-     * @deprecated 使用 JwtTokenManagementService.updateTokenStatus() 替代
-     */
-    @Deprecated
-    private Mono<Void> updateTokenStatusInPersistence(final String token, final TokenStatus status,
-                                                        final String reason, final String updatedBy) {
-        if (jwtTokenManagementService != null) {
-            return jwtTokenManagementService.updateTokenStatus(token, status, reason, updatedBy);
-        }
-        // 降级实现（服务不可用）
-        log.warn("JwtTokenManagementService不可用，无法更新令牌状态");
-        return Mono.empty();
-    }
-
-    /**
-     * 批量更新令牌在持久化存储中的状态
-     * @deprecated 使用 JwtTokenManagementService.batchUpdateTokenStatus() 替代
-     */
-    @Deprecated
-    private Mono<Void> batchUpdateTokenStatusInPersistence(final java.util.List<String> tokens,
-                                                             final TokenStatus status, final String reason,
-                                                             final String updatedBy) {
-        if (jwtTokenManagementService != null) {
-            return jwtTokenManagementService.batchUpdateTokenStatus(tokens, status, reason, updatedBy);
-        }
-        // 降级实现
-        log.warn("JwtTokenManagementService不可用，无法批量更新令牌状态");
-        return Mono.empty();
-    }
-
-    /**
-     * 检查令牌的持久化状态
-     * @deprecated 使用 JwtTokenQueryService.checkTokenPersistenceStatus() 替代
-     */
-    @Deprecated
-    private Mono<Boolean> checkTokenPersistenceStatus(final String token) {
-        if (jwtTokenQueryService != null) {
-            return jwtTokenQueryService.checkTokenPersistenceStatus(token);
-        }
-        // 降级实现（服务不可用时默认有效）
-        return Mono.just(true);
-    }
-
-    /**
-     * 为黑名单统计信息添加持久化数据
-     * @deprecated 使用 JwtTokenQueryService.enhanceBlacklistStats() 替代
-     */
-    @Deprecated
-    private Mono<Map<String, Object>> addPersistenceStatsToBlacklistStats(final Map<String, Object> originalStats) {
-        if (jwtTokenQueryService != null) {
-            return jwtTokenQueryService.enhanceBlacklistStats(originalStats);
-        }
-        // 降级实现
-        return Mono.just(originalStats);
-    }
-
-    /**
-     * 通过tokenHash撤销令牌
-     * @deprecated 使用 JwtTokenManagementService.revokeTokenByHash() 替代
-     */
-    @Deprecated
-    private Mono<Void> revokeTokenByHash(final String tokenHash, final String reason, final String revokedBy) {
-        if (jwtTokenManagementService != null) {
-            return jwtTokenManagementService.revokeTokenByHash(tokenHash, reason, revokedBy);
-        }
-        // 降级实现
-        return Mono.error(new RuntimeException("令牌管理服务未启用"));
-    }
-
-    /**
-     * 批量通过tokenHash撤销令牌
-     * @deprecated 使用 JwtTokenManagementService.batchRevokeTokensByHash() 替代
-     */
-    @Deprecated
-    private Mono<Void> batchRevokeTokensByHash(final java.util.List<String> tokenHashes,
-                                                 final String reason, final String revokedBy) {
-        if (jwtTokenManagementService != null) {
-            return jwtTokenManagementService.batchRevokeTokensByHash(tokenHashes, reason, revokedBy);
-        }
-        // 降级实现
-        return Mono.error(new RuntimeException("令牌管理服务未启用"));
-    }
-
 }

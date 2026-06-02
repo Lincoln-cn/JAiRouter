@@ -1,174 +1,125 @@
 ﻿# Management API
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**: c1aa5b0f  
+> **文档版本**: 2.0.0
+> **最后更新**: 2026-05-21
+> **Git 提交**: 61384b4a
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
-
-
 JAiRouter provides a complete set of management APIs for dynamic configuration management, service instance management, monitoring configuration, and more. All management APIs use the `/api` prefix.
 
-## Service Type Management
+## Table of Contents
 
-### Base Path: `/api/config/type`
+- [Service Configuration Management](#service-configuration-management)
+- [Instance Management](#instance-management)
+- [Service Type Management](#service-type-management)
+- [Authentication Management](#authentication-management)
+- [Security Management](#security-management)
+- [Monitoring Management](#monitoring-management)
+- [Tracing Management](#tracing-management)
+- [Load Balancer Management](#load-balancer-management)
+- [Circuit Breaker & Rate Limit](#circuit-breaker--rate-limit)
+- [Model Statistics](#model-statistics)
+- [Token Usage](#token-usage)
+- [Configuration Version Management](#configuration-version-management)
 
-#### `GET /api/config/type`
-Get all configuration information of the current system.
+---
 
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Configuration retrieved successfully",
-  "data": {
-    "chat": {
-      "loadBalancer": "random",
-      "rateLimit": {
-        "algorithm": "token_bucket",
-        "capacity": 100
-      },
-      "instances": [...]
-    }
-  }
-}
-```
+## Service Configuration Management
 
-#### `GET /api/config/type/services`
-Get all available service types in the system.
+### Base Path: `/api/services`
+
+Manage service configurations including load balancer, rate limit, and circuit breaker settings.
+
+#### `GET /api/services`
+Get all service configurations.
 
 **Response Example:**
 ```json
-{
-  "success": true,
-  "message": "Service types retrieved successfully",
-  "data": ["chat", "embedding", "rerank", "tts", "stt", "imgGen", "imgEdit"]
-}
-```
-
-#### `GET /api/config/type/services/{serviceType}`
-Get configuration information for a specified service type.
-
-**Path Parameters:**
-- `serviceType` (string): Service type, e.g., "chat"
-
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Service configuration retrieved successfully",
-  "data": {
+[
+  {
+    "serviceType": "chat",
     "loadBalancer": "random",
     "rateLimit": {
+      "enabled": true,
       "algorithm": "token_bucket",
-      "capacity": 100,
-      "refillRate": 10
+      "capacity": 100
     },
     "circuitBreaker": {
       "enabled": true,
-      "failureThreshold": 5,
-      "recoveryTimeout": 30000
-    },
-    "instances": [...]
+      "failureThreshold": 5
+    }
   }
-}
+]
 ```
 
-#### `POST /api/config/type/services/{serviceType}`
-Create a new service type configuration.
+#### `GET /api/services/{serviceType}`
+Get configuration for a specific service type.
+
+**Path Parameters:**
+- `serviceType` (string): Service type (chat, embedding, rerank, tts, stt, imgGen, imgEdit)
+
+#### `POST /api/services/{serviceType}`
+Create or update service configuration.
 
 **Request Body Example:**
 ```json
 {
   "loadBalancer": "round_robin",
   "rateLimit": {
-    "algorithm": "leaky_bucket",
-    "capacity": 50,
-    "refillRate": 5
+    "enabled": true,
+    "algorithm": "token_bucket",
+    "capacity": 50
   },
   "circuitBreaker": {
     "enabled": true,
-    "failureThreshold": 3,
-    "recoveryTimeout": 60000
+    "failureThreshold": 3
   }
 }
 ```
 
-#### `PUT /api/config/type/services/{serviceType}`
-Update configuration for a specified service type.
+#### `DELETE /api/services/{serviceType}`
+Delete a service configuration.
 
-#### `DELETE /api/config/type/services/{serviceType}`
-Delete a specified service type and all its configurations.
+---
 
-#### `GET /api/config/type/{serviceType}/models`
-Get all available models under a specified service type.
+## Instance Management
 
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Model list retrieved successfully",
-  "data": ["qwen2:7b", "llama3:8b", "gpt-3.5-turbo"]
-}
-```
+### Base Path: `/api/instances`
 
-#### `POST /api/config/type/reset`
-Reset system configuration to default values.
+Manage service instances (model endpoints).
 
-## Service Instance Management
+#### `GET /api/instances`
+Get all instances.
 
-### Base Path: `/api/config/instance`
+#### `GET /api/instances/service/{serviceConfigId}`
+Get all instances for a specific service configuration.
 
-#### `GET /api/config/instance/type/{serviceType}`
-Get all instances under a specified service type.
+**Path Parameters:**
+- `serviceConfigId` (long): Service configuration ID
 
 **Response Example:**
 ```json
-{
-  "success": true,
-  "message": "Instance list retrieved successfully",
-  "data": [
-    {
-      "name": "qwen2:7b",
-      "baseUrl": "http://localhost:8000",
-      "apiKey": "sk-xxx",
-      "weight": 1,
-      "enabled": true,
-      "adapter": "ollama"
-    }
-  ]
-}
-```
-
-#### `GET /api/config/instance/info/{serviceType}`
-Get detailed information about a specified instance.
-
-**Query Parameters:**
-- [modelName](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitContext.java#L7-L7) (string): Model name
-- [baseUrl](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\dto\UpdateInstanceDTO.java#L22-L22) (string): Base URL
-
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Instance information retrieved successfully",
-  "data": {
+[
+  {
+    "id": 1,
     "name": "qwen2:7b",
     "baseUrl": "http://localhost:8000",
     "apiKey": "sk-xxx",
     "weight": 1,
     "enabled": true,
     "adapter": "ollama",
-    "healthStatus": "healthy",
-    "lastHealthCheck": "2025-01-15T10:30:00Z"
+    "healthStatus": "healthy"
   }
-}
+]
 ```
 
-#### `POST /api/config/instance/add/{serviceType}`
-Add a new instance for a specified service type.
+#### `GET /api/instances/{id}`
+Get a specific instance by ID.
+
+#### `POST /api/instances/service/{serviceConfigId}`
+Add a new instance to a service configuration.
 
 **Request Body Example:**
 ```json
@@ -182,30 +133,270 @@ Add a new instance for a specified service type.
 }
 ```
 
-#### `PUT /api/config/instance/update/{serviceType}`
-Update configuration for a specified service instance.
+#### `PUT /api/instances/{id}`
+Update an instance.
+
+#### `DELETE /api/instances/{id}`
+Delete an instance.
+
+#### `POST /api/instances/{id}/health`
+Trigger health check for an instance.
+
+---
+
+## Service Type Management
+
+### Base Path: `/api/config/type`
+
+Manage service types and their models.
+
+#### `GET /api/config/type`
+Get all service type configurations.
+
+#### `GET /api/config/type/services`
+Get all available service types.
+
+**Response Example:**
+```json
+["chat", "embedding", "rerank", "tts", "stt", "imgGen", "imgEdit"]
+```
+
+#### `GET /api/config/type/services/{serviceType}`
+Get configuration for a specific service type.
+
+#### `POST /api/config/type/services/{serviceType}`
+Create a new service type configuration.
+
+#### `PUT /api/config/type/services/{serviceType}`
+Update a service type configuration.
+
+#### `DELETE /api/config/type/services/{serviceType}`
+Delete a service type configuration.
+
+#### `GET /api/config/type/{serviceType}/models`
+Get all models under a service type.
+
+#### `POST /api/config/type/reset`
+Reset all configurations to default values.
+
+---
+
+## Authentication Management
+
+### JWT Token Management
+
+#### Base Path: `/api/auth/jwt`
+
+#### `POST /api/auth/jwt/login`
+Login and obtain JWT token.
 
 **Request Body Example:**
 ```json
 {
-  "instanceId": "qwen2:7b@http://localhost:8000",
-  "instance": {
-    "name": "qwen2:7b",
-    "baseUrl": "http://localhost:8000",
-    "apiKey": "sk-new-key",
-    "weight": 2,
-    "enabled": true,
-    "adapter": "ollama"
-  }
+  "username": "admin",
+  "password": "your-password"
 }
 ```
 
-#### `DELETE /api/config/instance/del/{serviceType}`
-Delete a specified service instance.
+**Response Example:**
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+  "expiresIn": 3600
+}
+```
 
-**Query Parameters:**
-- [modelName](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitContext.java#L7-L7) (string): Model name
-- [baseUrl](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\dto\UpdateInstanceDTO.java#L22-L22) (string): Base URL
+#### `POST /api/auth/jwt/refresh`
+Refresh access token using refresh token.
+
+#### `POST /api/auth/jwt/revoke`
+Revoke current token.
+
+#### `POST /api/auth/jwt/revoke/batch`
+Revoke multiple tokens in batch.
+
+#### `POST /api/auth/jwt/validate`
+Validate a JWT token.
+
+#### `GET /api/auth/jwt/blacklist/stats`
+Get JWT blacklist statistics.
+
+#### `GET /api/auth/jwt/tokens`
+Get all JWT tokens with pagination.
+
+#### `GET /api/auth/jwt/tokens/{tokenId}`
+Get details of a specific token.
+
+#### `POST /api/auth/jwt/cleanup`
+Trigger cleanup of expired tokens.
+
+#### `GET /api/auth/jwt/cleanup/stats`
+Get cleanup statistics.
+
+### API Key Management
+
+#### Base Path: `/api/auth/api-keys`
+
+#### `GET /api/auth/api-keys`
+List all API keys.
+
+#### `GET /api/auth/api-keys/{keyId}`
+Get details of a specific API key.
+
+#### `POST /api/auth/api-keys`
+Create a new API key.
+
+**Request Body Example:**
+```json
+{
+  "name": "my-api-key",
+  "permissions": ["read", "write"],
+  "expiresAt": "2026-12-31T23:59:59Z"
+}
+```
+
+#### `PUT /api/auth/api-keys/{keyId}`
+Update an API key.
+
+#### `DELETE /api/auth/api-keys/{keyId}`
+Delete an API key.
+
+#### `PATCH /api/auth/api-keys/{keyId}/disable`
+Disable an API key.
+
+#### `PATCH /api/auth/api-keys/{keyId}/enable`
+Enable an API key.
+
+#### `POST /api/auth/api-keys/{keyId}/reset`
+Reset an API key (generate new key value).
+
+#### `POST /api/auth/api-keys/{keyId}/rotate`
+Rotate an API key.
+
+#### `GET /api/auth/api-keys/export`
+Export API keys.
+
+#### `POST /api/auth/api-keys/import`
+Import API keys.
+
+### JWT Account Management
+
+#### Base Path: `/api/security/jwt/accounts`
+
+#### `GET /api/security/jwt/accounts`
+List all JWT accounts.
+
+#### `GET /api/security/jwt/accounts/{username}`
+Get details of a specific account.
+
+#### `POST /api/security/jwt/accounts`
+Create a new JWT account.
+
+#### `PUT /api/security/jwt/accounts/{username}`
+Update a JWT account.
+
+#### `DELETE /api/security/jwt/accounts/{username}`
+Delete a JWT account.
+
+#### `POST /api/security/jwt/accounts/{username}/verify`
+Verify account credentials.
+
+#### `PATCH /api/security/jwt/accounts/{username}/status`
+Update account status.
+
+---
+
+## Security Management
+
+### Security Audit
+
+#### Base Path: `/api/security/audit`
+
+#### `GET /api/security/audit/logs`
+Get audit logs with pagination.
+
+#### `POST /api/security/audit/logs/query`
+Query audit logs with filters.
+
+#### `GET /api/security/audit/statistics`
+Get audit statistics.
+
+#### `DELETE /api/security/audit/logs/cleanup`
+Cleanup old audit logs.
+
+#### `GET /api/security/audit/alerts/check`
+Check for security alerts.
+
+#### `GET /api/security/audit/alerts/statistics`
+Get alert statistics.
+
+#### `POST /api/security/audit/alerts/reset`
+Reset alert status.
+
+### Extended Security Audit
+
+#### Base Path: `/api/security/audit/extended`
+
+#### `GET /api/security/audit/extended/jwt-tokens`
+Get JWT token audit records.
+
+#### `GET /api/security/audit/extended/api-keys`
+Get API key audit records.
+
+#### `GET /api/security/audit/extended/security-events`
+Get security events.
+
+#### `POST /api/security/audit/extended/query`
+Query extended audit data.
+
+#### `GET /api/security/audit/extended/reports/security`
+Get security reports.
+
+#### `GET /api/security/audit/extended/users/{userId}/events`
+Get events for a specific user.
+
+#### `GET /api/security/audit/extended/ip-addresses/{ipAddress}/events`
+Get events for a specific IP address.
+
+#### `POST /api/security/audit/extended/events/batch`
+Batch query events.
+
+#### `POST /api/security/audit/extended/test-data/generate`
+Generate test audit data.
+
+#### `GET /api/security/audit/extended/statistics/extended`
+Get extended statistics.
+
+### Security Blacklist
+
+#### Base Path: `/api/security/blacklist`
+
+#### `GET /api/security/blacklist/list`
+Get blacklist entries.
+
+#### `GET /api/security/blacklist/stats`
+Get blacklist statistics.
+
+#### `GET /api/security/blacklist/{id}`
+Get a specific blacklist entry.
+
+#### `POST /api/security/blacklist/add`
+Add entry to blacklist.
+
+#### `POST /api/security/blacklist/batch-add`
+Batch add entries to blacklist.
+
+#### `DELETE /api/security/blacklist/{id}`
+Remove entry from blacklist.
+
+#### `GET /api/security/blacklist/check`
+Check if an entry is blacklisted.
+
+#### `POST /api/security/blacklist/cleanup`
+Cleanup expired blacklist entries.
+
+---
 
 ## Monitoring Management
 
@@ -221,156 +412,42 @@ Get current monitoring configuration.
   "prefix": "jairouter",
   "collectionInterval": "PT30S",
   "enabledCategories": ["request", "system", "custom"],
-  "customTags": {
-    "environment": "production",
-    "version": "1.0.0"
-  },
   "sampling": {
     "enabled": true,
     "rate": 0.1
-  },
-  "performance": {
-    "batchSize": 100,
-    "flushInterval": "PT10S"
   }
 }
 ```
 
 #### `PUT /api/monitoring/config/enabled`
-Update monitoring enabled status.
-
-**Request Body Example:**
-```json
-{
-  "enabled": true
-}
-```
+Enable or disable monitoring.
 
 #### `PUT /api/monitoring/config/prefix`
 Update metric prefix.
 
-**Request Body Example:**
-```json
-{
-  "prefix": "jairouter_v2"
-}
-```
-
 #### `PUT /api/monitoring/config/collection-interval`
 Update collection interval.
 
-**Request Body Example:**
-```json
-{
-  "interval": "PT60S"
-}
-```
-
 #### `PUT /api/monitoring/config/categories`
-Update enabled monitoring categories.
-
-**Request Body Example:**
-```json
-{
-  "categories": ["request", "system"]
-}
-```
+Update enabled categories.
 
 #### `PUT /api/monitoring/config/custom-tags`
 Update custom tags.
 
-**Request Body Example:**
-```json
-{
-  "customTags": {
-    "environment": "staging",
-    "region": "us-west-2"
-  }
-}
-```
-
 #### `GET /api/monitoring/config/snapshot`
-Get monitoring configuration snapshot.
+Get configuration snapshot.
 
 #### `GET /api/monitoring/health`
-Get monitoring system health status.
-
-**Response Example:**
-```json
-{
-  "status": "UP",
-  "healthy": true,
-  "details": {
-    "metricsCollector": "UP",
-    "prometheusRegistry": "UP",
-    "configUpdater": "UP"
-  }
-}
-```
-
-#### `GET /api/monitoring/overview`
-Get an overview of the monitoring system's overall status.
-
-**Response Example:**
-```json
-{
-  "enabled": true,
-  "prefix": "jairouter",
-  "enabledCategories": ["request", "system"],
-  "healthy": true,
-  "errorStats": {
-    "activeErrorComponents": 0,
-    "degradedComponents": 0,
-    "totalErrors": 0
-  },
-  "degradationStatus": {
-    "level": "NORMAL",
-    "samplingRate": 1.0,
-    "autoModeEnabled": true
-  },
-  "cacheStats": {
-    "usageRatio": 0.3,
-    "activeRetries": 0
-  },
-  "circuitBreakerStats": {
-    "state": "CLOSED",
-    "failureRate": 0.0
-  }
-}
-```
-
-### Error Handling Management
+Get monitoring system health.
 
 #### `GET /api/monitoring/errors/stats`
-Get error handling statistics.
+Get error statistics.
 
 #### `POST /api/monitoring/errors/reset`
-Reset error status for a specified component.
-
-**Request Body Example:**
-```json
-{
-  "component": "metricsCollector",
-  "operation": "collect"
-}
-```
-
-### Degradation Policy Management
+Reset error status.
 
 #### `GET /api/monitoring/degradation/status`
-Get degradation policy status.
-
-**Response Example:**
-```json
-{
-  "level": "NORMAL",
-  "levelDescription": "Normal Mode",
-  "samplingRate": 1.0,
-  "autoModeEnabled": true,
-  "timeSinceLastChange": 3600000,
-  "errorComponentCount": 0
-}
-```
+Get degradation status.
 
 #### `POST /api/monitoring/degradation/level`
 Set degradation level.
@@ -382,460 +459,474 @@ Set degradation level.
 }
 ```
 
-**Available Levels:**
-- `NORMAL` - Normal Mode
-- `PARTIAL` - Partial Degradation
-- `MINIMAL` - Minimal Mode
-- `DISABLED` - Disabled Mode
+**Available Levels:** `NORMAL`, `PARTIAL`, `MINIMAL`, `DISABLED`
 
 #### `POST /api/monitoring/degradation/auto-mode`
-Enable/disable automatic degradation policy mode.
-
-**Request Body Example:**
-```json
-{
-  "enabled": false
-}
-```
+Enable/disable auto degradation mode.
 
 #### `POST /api/monitoring/degradation/force-recovery`
 Force recovery to normal mode.
 
-### Cache Management
-
 #### `GET /api/monitoring/cache/stats`
 Get cache statistics.
-
-**Response Example:**
-```json
-{
-  "currentSize": 150,
-  "maxSize": 1000,
-  "usageRatio": 0.15,
-  "activeRetries": 2,
-  "queuedRetries": 0
-}
-```
 
 #### `POST /api/monitoring/cache/clear`
 Clear cache.
 
-### Circuit Breaker Management
-
 #### `GET /api/monitoring/circuit-breaker/stats`
 Get circuit breaker statistics.
 
-**Response Example:**
-```json
-{
-  "state": "CLOSED",
-  "failureCount": 0,
-  "successCount": 100,
-  "requestCount": 100,
-  "failureRate": 0.0
-}
-```
-
 #### `POST /api/monitoring/circuit-breaker/force-open`
-Force open the circuit breaker.
+Force open circuit breaker.
 
 #### `POST /api/monitoring/circuit-breaker/force-close`
-Force close the circuit breaker.
+Force close circuit breaker.
 
-## JWT Token Management
+---
 
-### Base Path: `/api/auth/jwt`
+## Tracing Management
 
-#### `GET /api/auth/jwt/tokens`
-Get a list of all JWT tokens with pagination and filtering support.
+### Tracing Actuator
 
-**Query Parameters:**
-- `page` (integer, optional): Page number, default is 0
-- `size` (integer, optional): Page size, default is 20
-- `userId` (string, optional): Filter by user ID
-- `status` (string, optional): Filter by token status (ACTIVE, REVOKED, EXPIRED)
+#### Base Path: `/api/tracing/actuator`
 
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Token list retrieved successfully",
-  "data": {
-    "content": [
-      {
-        "id": "token-uuid-123",
-        "userId": "user123",
-        "tokenHash": "sha256-hash-of-token",
-        "issuedAt": "2025-01-15T10:30:00Z",
-        "expiresAt": "2025-01-15T11:30:00Z",
-        "status": "ACTIVE",
-        "deviceInfo": "Mozilla/5.0...",
-        "ipAddress": "192.168.1.100",
-        "createdAt": "2025-01-15T10:30:00Z",
-        "updatedAt": "2025-01-15T10:30:00Z"
-      }
-    ],
-    "totalElements": 150,
-    "totalPages": 8,
-    "size": 20,
-    "number": 0
-  }
-}
-```
+#### `GET /api/tracing/actuator/status`
+Get tracing status.
 
-#### `GET /api/auth/jwt/tokens/{tokenId}`
-Get detailed information about a specific JWT token.
+#### `GET /api/tracing/actuator/health`
+Get tracing health.
 
-**Path Parameters:**
-- `tokenId` (string): Token ID (UUID)
+#### `GET /api/tracing/actuator/config`
+Get tracing configuration.
 
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Token details retrieved successfully",
-  "data": {
-    "id": "token-uuid-123",
-    "userId": "user123",
-    "tokenHash": "sha256-hash-of-token",
-    "issuedAt": "2025-01-15T10:30:00Z",
-    "expiresAt": "2025-01-15T11:30:00Z",
-    "status": "ACTIVE",
-    "deviceInfo": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-    "ipAddress": "192.168.1.100",
-    "revokeReason": null,
-    "revokedAt": null,
-    "revokedBy": null,
-    "createdAt": "2025-01-15T10:30:00Z",
-    "updatedAt": "2025-01-15T10:30:00Z"
-  }
-}
-```
+#### `PUT /api/tracing/actuator/config`
+Update tracing configuration.
 
-#### `POST /api/auth/jwt/tokens/{tokenId}/revoke`
-Revoke a specific JWT token.
+#### `POST /api/tracing/actuator/sampling/refresh`
+Refresh sampling configuration.
 
-**Path Parameters:**
-- `tokenId` (string): Token ID (UUID)
+#### `GET /api/tracing/actuator/stats`
+Get tracing statistics.
+
+#### `POST /api/tracing/actuator/enable`
+Enable tracing.
+
+#### `POST /api/tracing/actuator/disable`
+Disable tracing.
+
+#### `GET /api/tracing/actuator/export`
+Export tracing data.
+
+#### `POST /api/tracing/actuator/clear-cache`
+Clear tracing cache.
+
+### Tracing Query
+
+#### Base Path: `/api/tracing/query`
+
+#### `GET /api/tracing/query/trace/{traceId}`
+Get trace by ID.
+
+#### `GET /api/tracing/query/search`
+Search traces.
+
+#### `GET /api/tracing/query/recent`
+Get recent traces.
+
+#### `GET /api/tracing/query/services`
+Get traced services.
+
+#### `GET /api/tracing/query/statistics`
+Get tracing statistics.
+
+#### `POST /api/tracing/query/export`
+Export trace data.
+
+#### `POST /api/tracing/query/cleanup`
+Cleanup old traces.
+
+#### `GET /api/tracing/query/operations`
+Get operation list.
+
+#### `GET /api/tracing/query/health`
+Get query health.
+
+#### `GET /api/tracing/query/performance/stats`
+Get performance statistics.
+
+#### `GET /api/tracing/query/performance/latency`
+Get latency metrics.
+
+#### `GET /api/tracing/query/performance/errors`
+Get error metrics.
+
+#### `GET /api/tracing/query/performance/throughput`
+Get throughput metrics.
+
+### Tracing Performance
+
+#### Base Path: `/api/tracing/performance`
+
+#### `GET /api/tracing/performance/stats`
+Get performance stats.
+
+#### `GET /api/tracing/performance/processing-stats`
+Get processing statistics.
+
+#### `GET /api/tracing/performance/memory-stats`
+Get memory statistics.
+
+#### `GET /api/tracing/performance/health`
+Get performance health.
+
+#### `GET /api/tracing/performance/bottlenecks`
+Identify bottlenecks.
+
+#### `GET /api/tracing/performance/suggestions`
+Get optimization suggestions.
+
+#### `GET /api/tracing/performance/report`
+Get performance report.
+
+#### `POST /api/tracing/performance/optimize`
+Trigger optimization.
+
+#### `POST /api/tracing/performance/tuning`
+Apply performance tuning.
+
+#### `POST /api/tracing/performance/memory/gc`
+Trigger garbage collection.
+
+#### `POST /api/tracing/performance/memory/check`
+Check memory status.
+
+#### `POST /api/tracing/performance/processing/flush`
+Flush processing buffers.
+
+#### `GET /api/tracing/performance/metrics/dashboard`
+Get dashboard metrics.
+
+#### `GET /api/tracing/performance/alerts/active`
+Get active alerts.
+
+### Tracing Security
+
+#### Base Path: `/api/config/tracing/security`
+
+#### `GET /api/config/tracing/security/sanitization/sensitive-fields`
+Get sensitive fields for sanitization.
+
+#### `POST /api/config/tracing/security/sanitization/sensitive-fields`
+Add sensitive field.
+
+#### `DELETE /api/config/tracing/security/sanitization/sensitive-fields`
+Remove sensitive field.
+
+#### `GET /api/config/tracing/security/access/history/{username}`
+Get access history for a user.
+
+#### `DELETE /api/config/tracing/security/access/cache/{username}`
+Clear access cache for a user.
+
+#### `DELETE /api/config/tracing/security/access/cache`
+Clear all access cache.
+
+#### `POST /api/config/tracing/security/encryption/rotate-key/{traceId}`
+Rotate encryption key for a trace.
+
+#### `POST /api/config/tracing/security/encryption/cleanup`
+Cleanup encryption data.
+
+#### `DELETE /api/config/tracing/security/encryption/data/{traceId}`
+Delete encryption data for a trace.
+
+#### `GET /api/config/tracing/security/overview`
+Get security overview.
+
+---
+
+## Load Balancer Management
+
+### Base Path: `/api/loadbalancer`
+
+#### `GET /api/loadbalancer/status`
+Get load balancer status for all services.
+
+#### `GET /api/loadbalancer/status/{serviceType}`
+Get load balancer status for a specific service.
+
+#### `GET /api/loadbalancer/config/global`
+Get global load balancer configuration.
+
+#### `GET /api/loadbalancer/config/{serviceType}`
+Get load balancer configuration for a service.
+
+#### `PUT /api/loadbalancer/config/{serviceType}`
+Update load balancer configuration.
 
 **Request Body Example:**
 ```json
 {
-  "reason": "Security breach detected"
-}
-```
-
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Token revoked successfully",
-  "data": {
-    "tokenId": "token-uuid-123",
-    "revokedAt": "2025-01-15T12:00:00Z",
-    "reason": "Security breach detected"
+  "strategy": "round_robin",
+  "weights": {
+    "instance1": 2,
+    "instance2": 1
   }
 }
 ```
 
-#### `POST /api/auth/jwt/tokens/revoke-batch`
-Revoke multiple JWT tokens in batch.
+#### `GET /api/loadbalancer/strategies`
+Get available load balancing strategies.
+
+**Response Example:**
+```json
+["random", "round_robin", "weighted", "least_connections"]
+```
+
+#### `GET /api/loadbalancer/stats`
+Get load balancer statistics.
+
+---
+
+## Circuit Breaker & Rate Limit
+
+### Circuit Breaker
+
+#### Base Path: `/api/services/{serviceType}/circuitbreaker`
+
+#### `GET /api/services/{serviceType}/circuitbreaker`
+Get circuit breaker configuration for a service.
+
+**Response Example:**
+```json
+{
+  "enabled": true,
+  "failureThreshold": 5,
+  "successThreshold": 3,
+  "timeout": 30000,
+  "state": "CLOSED"
+}
+```
+
+#### `PUT /api/services/{serviceType}/circuitbreaker`
+Update circuit breaker configuration.
+
+### Rate Limit
+
+#### Base Path: `/api/services/{serviceType}/ratelimit`
+
+#### `GET /api/services/{serviceType}/ratelimit`
+Get rate limit configuration for a service.
+
+**Response Example:**
+```json
+{
+  "enabled": true,
+  "algorithm": "token_bucket",
+  "capacity": 100,
+  "refillRate": 10
+}
+```
+
+#### `PUT /api/services/{serviceType}/ratelimit`
+Update rate limit configuration.
+
+---
+
+## Model Statistics
+
+### Base Path: `/api/model-stats`
+
+#### `GET /api/model-stats/summary`
+Get model statistics summary.
+
+#### `GET /api/model-stats/models`
+Get all model statistics.
+
+#### `GET /api/model-stats/service-types/{serviceType}`
+Get statistics for a service type.
+
+#### `GET /api/model-stats/models/{serviceType}/{modelName}`
+Get statistics for a specific model.
+
+#### `GET /api/model-stats/top/active`
+Get top active models.
+
+#### `GET /api/model-stats/unhealthy`
+Get unhealthy models.
+
+#### `GET /api/model-stats/grouped-by-service-type`
+Get statistics grouped by service type.
+
+#### `GET /api/model-stats/trend`
+Get usage trend.
+
+#### `POST /api/model-stats/refresh`
+Refresh statistics.
+
+#### `DELETE /api/model-stats/clear`
+Clear all statistics.
+
+---
+
+## Token Usage
+
+### Base Path: `/api/token-usage`
+
+#### `POST /api/token-usage/record`
+Record token usage.
 
 **Request Body Example:**
 ```json
 {
-  "tokenIds": ["token-uuid-123", "token-uuid-456"],
-  "reason": "Bulk security cleanup"
+  "modelName": "qwen2:7b",
+  "serviceType": "chat",
+  "inputTokens": 100,
+  "outputTokens": 50,
+  "requestId": "req-123"
 }
 ```
 
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Batch revocation completed",
-  "data": {
-    "successCount": 2,
-    "failureCount": 0,
-    "revokedTokens": ["token-uuid-123", "token-uuid-456"],
-    "failedTokens": []
-  }
-}
-```
+#### `POST /api/token-usage/record/batch`
+Batch record token usage.
 
-#### `POST /api/auth/jwt/cleanup`
-Manually trigger cleanup of expired tokens and blacklist entries.
+#### `GET /api/token-usage/statistics`
+Get token usage statistics.
 
-**Request Body Example:**
-```json
-{
-  "cleanupType": "ALL"
-}
-```
+#### `GET /api/token-usage/recent`
+Get recent token usage.
 
-**Available Cleanup Types:**
-- `EXPIRED_TOKENS` - Clean up expired tokens only
-- `EXPIRED_BLACKLIST` - Clean up expired blacklist entries only
-- `ALL` - Clean up both expired tokens and blacklist entries
+#### `GET /api/token-usage/recent/{modelName}`
+Get recent usage for a model.
 
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Cleanup completed successfully",
-  "data": {
-    "cleanupType": "ALL",
-    "expiredTokensRemoved": 45,
-    "expiredBlacklistEntriesRemoved": 12,
-    "cleanupDuration": "PT2.5S",
-    "completedAt": "2025-01-15T12:00:00Z"
-  }
-}
-```
+#### `GET /api/token-usage/top/models`
+Get top models by token usage.
 
-#### `GET /api/auth/jwt/blacklist/stats`
-Get JWT blacklist statistics and system health information.
+#### `GET /api/token-usage/top/services`
+Get top services by token usage.
 
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Blacklist statistics retrieved successfully",
-  "data": {
-    "blacklistSize": 156,
-    "memoryUsage": {
-      "used": "45MB",
-      "max": "512MB",
-      "usagePercentage": 8.8
-    },
-    "lastCleanup": "2025-01-15T02:00:00Z",
-    "nextScheduledCleanup": "2025-01-16T02:00:00Z",
-    "configurationStatus": {
-      "persistenceEnabled": true,
-      "primaryStorage": "redis",
-      "fallbackStorage": "memory",
-      "redisConnectionStatus": "HEALTHY"
-    },
-    "performanceMetrics": {
-      "averageValidationTime": "2.5ms",
-      "cacheHitRate": 0.95,
-      "totalValidations": 10450
-    }
-  }
-}
-```
+#### `GET /api/token-usage/dashboard`
+Get token usage dashboard data.
 
-## Model Information Query
+#### `DELETE /api/token-usage/cleanup`
+Cleanup old usage records.
 
-### Base Path: `/api/models`
-
-#### `GET /api/models`
-Get information for all available models.
-
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Model list retrieved successfully",
-  "data": {
-    "object": "list",
-    "data": [
-      {
-        "id": "qwen2:7b",
-        "object": "model",
-        "created": 1705123200,
-        "owned_by": "model-router",
-        "service_type": "chat",
-        "adapter": "OllamaAdapter"
-      },
-      {
-        "id": "text-embedding-ada-002",
-        "object": "model",
-        "created": 1705123200,
-        "owned_by": "model-router",
-        "service_type": "embedding",
-        "adapter": "OpenAIAdapter"
-      }
-    ]
-  }
-}
-```
+---
 
 ## Configuration Version Management
 
 ### Base Path: `/api/config/version`
 
 #### `GET /api/config/version`
-Get a list of all configuration versions.
-
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Configuration version list retrieved successfully",
-  "data": [1, 2, 3, 4, 5]
-}
-```
+Get all configuration versions.
 
 #### `GET /api/config/version/{version}`
-Get details of a specified version configuration.
-
-**Path Parameters:**
-- [version](file://springfox\documentation\service\ApiInfo.java#L8-L8) (integer): Version number
-
-#### `GET /api/config/version/current`
-Get the current configuration version number.
-
-**Response Example:**
-```json
-{
-  "success": true,
-  "message": "Current configuration version retrieved successfully",
-  "data": 5
-}
-```
-
-#### `POST /api/config/version/rollback/{version}`
-Rollback to a specified version configuration.
-
-#### `POST /api/config/version/apply/{version}`
-Apply a specified version configuration.
+Get a specific version.
 
 #### `DELETE /api/config/version/{version}`
-Delete a specified version configuration (cannot delete the current version).
+Delete a version.
 
-## General Response Format
+#### `GET /api/config/version/current`
+Get current version.
 
-All management APIs use a unified response format:
+#### `POST /api/config/version/apply/{version}`
+Apply a specific version.
 
-### Success Response
-```json
-{
-  "success": true,
-  "message": "Operation successful description",
-  "data": "Response data"
-}
-```
+#### `GET /api/config/version/info`
+Get version information.
 
-### Error Response
+#### `GET /api/config/version/compare/{sourceVersion}/{targetVersion}`
+Compare two versions.
+
+#### `GET /api/config/version/compare/{version}`
+Compare a version with current.
+
+---
+
+## Configuration Validation
+
+### Base Path: `/api/config`
+
+#### `GET /api/config/sources`
+Get configuration sources.
+
+#### `GET /api/config/validation-rules`
+Get validation rules.
+
+#### `GET /api/config/environment-variables`
+Get environment variable configuration.
+
+---
+
+## Adapter Configuration
+
+### Base Path: `/api/config/adapter`
+
+#### `GET /api/config/adapter`
+Get adapter configuration and capabilities.
+
+---
+
+## Instance Configs (Legacy)
+
+### Base Path: `/api/instance-configs`
+
+#### `GET /api/instance-configs/service/{serviceConfigId}`
+Get instance configs for a service.
+
+#### `POST /api/instance-configs/service/{serviceConfigId}`
+Create instance config.
+
+#### `PUT /api/instance-configs/{id}`
+Update instance config.
+
+#### `DELETE /api/instance-configs/{id}`
+Delete instance config.
+
+---
+
+## Error Responses
+
+All API endpoints follow a consistent error response format:
+
 ```json
 {
   "success": false,
   "message": "Error description",
-  "data": null
+  "error": {
+    "code": "ERROR_CODE",
+    "details": "Detailed error information"
+  }
 }
 ```
 
-## Error Code Explanation
+### Common Error Codes
 
-| HTTP Status Code | Description | Example |
-|------------------|-------------|---------|
-| 200 | Operation successful | Configuration updated successfully |
-| 201 | Resource created successfully | Instance added successfully |
-| 400 | Request parameter error | Parameter validation failed |
-| 404 | Resource not found | Specified service type does not exist |
-| 500 | Internal server error | Configuration save failed |
-| 501 | Function not implemented | Delete configuration version function not yet implemented |
+| Code | Description |
+|------|-------------|
+| `NOT_FOUND` | Resource not found |
+| `VALIDATION_ERROR` | Invalid request data |
+| `UNAUTHORIZED` | Authentication required |
+| `FORBIDDEN` | Permission denied |
+| `CONFLICT` | Resource conflict |
+| `INTERNAL_ERROR` | Server error |
 
-## Usage Examples
+---
 
-### cURL Examples
+## Authentication
 
-```bash
-# Get all service types
-curl -X GET "http://localhost:8080/api/config/type/services"
+All management APIs require authentication. Use one of the following methods:
 
-# Add a new service instance
-curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "qwen2:7b",
-    "baseUrl": "http://localhost:8000",
-    "apiKey": "sk-xxx",
-    "weight": 1,
-    "enabled": true,
-    "adapter": "ollama"
-  }'
-
-# Update monitoring configuration
-curl -X PUT "http://localhost:8080/api/monitoring/config/enabled" \
-  -H "Content-Type: application/json" \
-  -d '{"enabled": true}'
-
-# Get monitoring system overview
-curl -X GET "http://localhost:8080/api/monitoring/overview"
+### JWT Token
+```
+Header: Jairouter_Token: <your-jwt-token>
 ```
 
-### Python Examples
-
-```python
-import requests
-
-base_url = "http://localhost:8080"
-
-# Get all available models
-response = requests.get(f"{base_url}/api/models")
-models = response.json()
-print("Available models:", models['data']['data'])
-
-# Add new instance
-instance_data = {
-    "name": "llama3:8b",
-    "baseUrl": "http://localhost:8001",
-    "apiKey": "sk-test",
-    "weight": 1,
-    "enabled": True,
-    "adapter": "ollama"
-}
-
-response = requests.post(
-    f"{base_url}/api/config/instance/add/chat",
-    json=instance_data
-)
-print("Add instance result:", response.json())
-
-# Get monitoring status
-response = requests.get(f"{base_url}/api/monitoring/health")
-health = response.json()
-print("Monitoring health status:", health)
+### API Key
+```
+Header: X-API-Key: <your-api-key>
 ```
 
-### JavaScript Examples
+---
 
-```javascript
-const baseUrl = 'http://localhost:8080';
-
-// Get service configuration
-async function getServiceConfig(serviceType) {
-  const response = await fetch(`${baseUrl}/api/config/type/services/${serviceType}`);
-  const data = await response.json();
-  return data;
-}
-
-// Update monitoring configuration
-async function updateMonitoringConfig(config) {
-  const response = await fetch(`${baseUrl}/api/monitoring/config/enabled`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(config)
-  });
-  return await response.json();
-}
-
-// Get system overview
-async function getSystemOverview() {
-  const response = await fetch(`${baseUrl}/api/monitoring/overview`);
-  return await response.json();
-}
-
-// Usage examples
-getServiceConfig('chat').then(config => {
-  console.log('Chat service configuration:', config);
-});
-
-updateMonitoringConfig({ enabled: true }).then(result => {
-  console.log('Monitoring configuration update result:', result);
-});
-```
+*Last updated: 2026-05-21*

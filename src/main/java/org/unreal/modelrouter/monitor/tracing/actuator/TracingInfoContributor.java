@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryPressureLevel;
+import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 
 import java.time.LocalDateTime;
@@ -136,7 +138,7 @@ public class TracingInfoContributor implements InfoContributor {
                 runtime.put("processing", processingInfo);
                 
                 // 内存管理器统计
-                TracingMemoryManager.MemoryStats memoryStats = memoryManager.getMemoryStats();
+                MemoryStats memoryStats = memoryManager.getMemoryStats();
                 Map<String, Object> memoryInfo = new HashMap<>();
                 memoryInfo.put("heapUsedMb", memoryStats.getUsedHeap() / (1024 * 1024));
                 memoryInfo.put("heapMaxMb", memoryStats.getMaxHeap() / (1024 * 1024));

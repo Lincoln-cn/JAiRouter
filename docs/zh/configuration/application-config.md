@@ -1,9 +1,9 @@
 ﻿# 应用配置
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.0  
-> **最后更新**: 2025-08-19  
-> **Git 提交**: c1aa5b0f  
+> **文档版本**: 2.0.0
+> **最后更新**: 2026-05-21
+> **Git 提交**: 61384b4a
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -11,70 +11,124 @@
 
 ## 配置文件位置
 
-- **主配置文件**：[src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
-- **环境配置**：`application-{profile}.yml`
-- **外部配置**：`config/application.yml`（可选）
-- **模块化配置**：`config/{module}/*.yml`
+| 位置 | 描述 |
+|------|------|
+| `src/main/resources/application.yml` | 主配置文件 |
+| `src/main/resources/config/{module}/*.yml` | 模块配置文件 |
+| `/app/config/*.yml` | 外部配置（Docker 部署） |
+| `application-{profile}.yml` | 环境特定配置 |
 
-## 模块化配置说明
+## 模块化配置结构 (v2.8.x)
 
-JAiRouter 采用模块化的配置管理方式，将复杂的配置按功能拆分为多个独立的配置文件。这种设计提高了配置的可维护性、可读性和可重用性。
+JAiRouter 采用**模块化配置管理**方式，将复杂的配置按功能和服务模块拆分为多个独立的配置文件。
 
-### 配置结构
+### 配置模块概览
 
 ```
-# application.yml
+config/
+├── common/              # 公共基础设施
+│   ├── server.yml       # 服务器配置
+│   ├── webclient.yml    # WebClient 配置
+│   └── logging.yml      # 日志配置
+├── config-service/      # 配置服务
+│   └── core.yml         # ConfigurationService 设置
+├── router/              # 路由服务
+│   ├── adapter.yml      # 适配器配置
+│   ├── loadbalancer.yml # 负载均衡配置
+│   ├── ratelimit.yml    # 限流配置
+│   ├── circuitbreaker.yml # 熔断器配置
+│   ├── fallback.yml     # 降级配置
+│   └── services.yml     # 服务实例配置
+├── auth/                # 认证服务
+│   ├── jwt.yml          # JWT 认证配置
+│   ├── api-key.yml      # API 密钥配置
+│   ├── audit.yml        # 审计配置
+│   └── sanitization.yml # 数据脱敏配置
+├── monitor/             # 监控服务
+│   ├── slow-query-alerts.yml
+│   ├── error-tracking.yml
+│   └── persistence-monitoring-base.yml
+├── tracing/             # 链路追踪服务
+│   └── tracing-base.yml
+├── persistence/         # 持久化服务
+│   └── state-persistence-base.yml
+├── base/                # 基础配置（遗留）
+│   ├── server-base.yml
+│   └── model-services-base.yml
+└── security/            # 安全配置（遗留）
+    ├── security-base.yml
+    ├── persistence-base.yml
+    └── audit-base.yml
+```
+
+### 配置导入
+
+主配置文件 `application.yml` 导入所有模块配置：
+
+```yaml
 spring:
   config:
     import:
-      - classpath:config/base/server-base.yml
-      - classpath:config/base/model-services-base.yml
+      # 外部配置（最高优先级）
+      - optional:file:/app/config/application.yml
+      - optional:file:/app/config/auth/jwt.yml
+      - optional:file:/app/config/router/services.yml
+
+      # common 模块
+      - classpath:config/common/server.yml
+      - classpath:config/common/webclient.yml
+      - classpath:config/common/logging.yml
+
+      # config-service 模块
+      - classpath:config/config-service/core.yml
+
+      # router 模块
+      - classpath:config/router/adapter.yml
+      - classpath:config/router/loadbalancer.yml
+      - classpath:config/router/ratelimit.yml
+      - classpath:config/router/circuitbreaker.yml
+      - classpath:config/router/fallback.yml
+      - classpath:config/router/services.yml
+
+      # auth 模块
+      - classpath:config/auth/jwt.yml
+      - classpath:config/auth/api-key.yml
+      - classpath:config/auth/audit.yml
+      - classpath:config/auth/sanitization.yml
+
+      # monitor 模块
       - classpath:config/base/monitoring-base.yml
+      - classpath:config/monitor/slow-query-alerts.yml
+      - classpath:config/monitor/error-tracking.yml
+      - classpath:config/monitor/persistence-monitoring-base.yml
+
+      # tracing 模块
       - classpath:config/tracing/tracing-base.yml
-      - classpath:config/security/security-base.yml
-      - classpath:config/monitoring/slow-query-alerts.yml
-      - classpath:config/monitoring/error-tracking.yml
+
+      # persistence 模块
+      - classpath:config/persistence/state-persistence-base.yml
 ```
-
-### 配置模块分类
-
-1. **基础配置模块** (`config/base/`)
-   - [server-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/server-base.yml) - 服务器基础配置
-   - [model-services-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) - 模型服务配置
-   - [monitoring-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/base/monitoring-base.yml) - 监控基础配置
-
-2. **功能配置模块** (`config/{feature}/`)
-   - [tracing/tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml) - 追踪功能配置
-   - [security/security-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/security/security-base.yml) - 安全功能配置
-   - [monitoring/slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml) - 慢查询告警配置
-   - [monitoring/error-tracking.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/error-tracking.yml) - 错误追踪配置
-
-3. **环境配置文件** (`application-{profile}.yml`)
-   - [application-dev.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml) - 开发环境配置
-   - [application-staging.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-staging.yml) - 预发布环境配置
-   - [application-prod.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-prod.yml) - 生产环境配置
-   - [application-legacy.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-legacy.yml) - 向后兼容配置
 
 ### 配置优先级
 
 配置加载遵循以下优先级顺序（高优先级覆盖低优先级）：
 
-1. 基础配置模块（最低优先级）
-2. 功能配置模块
-3. 环境特定配置文件
-4. 外部配置文件
-5. 环境变量
-6. 命令行参数（最高优先级）
+1. 命令行参数（最高优先级）
+2. 环境变量
+3. 外部配置文件（`/app/config/`）
+4. 环境特定配置文件（`application-{profile}.yml`）
+5. 模块配置文件（`config/{module}/*.yml`）
+6. 基础配置模块（最低优先级）
+
+---
 
 ## 服务器配置
 
-### 基本服务器配置
+### 文件：`config/common/server.yml`
 
-```
+```yaml
 server:
   port: 8080                    # 服务端口
-  servlet:
-    context-path: /             # 应用上下文路径
   compression:
     enabled: true               # 启用响应压缩
     mime-types: application/json,text/plain,text/html
@@ -84,228 +138,284 @@ server:
 
 ### 高级服务器配置
 
-```
+```yaml
 server:
-  tomcat:
-    threads:
-      max: 200                  # 最大线程数
-      min-spare: 10            # 最小空闲线程数
-    connection-timeout: 20000   # 连接超时（毫秒）
-    max-connections: 8192       # 最大连接数
-    accept-count: 100          # 等待队列长度
   netty:
     connection-timeout: 45s     # Netty 连接超时
     h2c-max-content-length: 0   # H2C 最大内容长度
 ```
 
+---
+
 ## WebClient 配置
 
-JAiRouter 使用 WebClient 进行后端服务调用，支持详细的连接配置：
+### 文件：`config/common/webclient.yml`
 
-```
+```yaml
 webclient:
-  connection-timeout: 10s       # 连接超时
-  read-timeout: 30s            # 读取超时
-  write-timeout: 30s           # 写入超时
-  max-in-memory-size: 10MB     # 最大内存缓冲区大小
-  
-  # 连接池配置
-  connection-pool:
+  connect-timeout: 10000        # 连接超时（毫秒）
+  read-timeout: 60000           # 读取超时（毫秒）
+  write-timeout: 60000          # 写入超时（毫秒）
+  max-in-memory-size: 10MB      # 内存缓冲区最大值
+  pool:
     max-connections: 500        # 最大连接数
-    max-idle-time: 20s         # 最大空闲时间
-    max-life-time: 60s         # 连接最大生存时间
-    pending-acquire-timeout: 45s # 获取连接超时
-    evict-in-background: 120s   # 后台清理间隔
-  
-  # SSL 配置
-  ssl:
-    enabled: false              # 是否启用 SSL
-    trust-all: false           # 是否信任所有证书
-    key-store: classpath:keystore.p12
-    key-store-password: password
-    trust-store: classpath:truststore.p12
-    trust-store-password: password
+    acquire-timeout: 10000      # 获取连接超时（毫秒）
 ```
 
-### WebClient 性能调优
+---
 
+## 日志配置
+
+### 文件：`config/common/logging.yml`
+
+```yaml
+logging:
+  level:
+    root: INFO
+    org.unreal.modelrouter: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/jairouter.log
+    max-size: 10MB
+    max-history: 30
 ```
-webclient:
-  # 针对高并发场景的优化配置
-  connection-pool:
-    max-connections: 1000       # 增加最大连接数
-    max-idle-time: 30s         # 适当增加空闲时间
-    pending-acquire-timeout: 60s # 增加获取连接超时
-  
-  # 针对大文件传输的优化
-  max-in-memory-size: 50MB     # 增加内存缓冲区
-  read-timeout: 120s           # 增加读取超时
-  write-timeout: 120s          # 增加写入超时
+
+---
+
+## 认证配置
+
+### JWT 配置
+
+#### 文件：`config/auth/jwt.yml`
+
+```yaml
+jairouter:
+  security:
+    jwt:
+      enabled: false                    # 启用 JWT 认证
+      jwt-header: "Jairouter_Token"     # 自定义 JWT 头
+      secret: "${JWT_SECRET:}"          # JWT 密钥（使用环境变量）
+      algorithm: "HS256"                # 签名算法
+      expiration-minutes: 60            # 访问令牌过期时间
+      refresh-expiration-days: 7        # 刷新令牌过期时间
+      issuer: "jairouter"               # 令牌签发者
+      blacklist-enabled: true           # 启用令牌黑名单
 ```
+
+### API 密钥配置
+
+#### 文件：`config/auth/api-key.yml`
+
+```yaml
+jairouter:
+  security:
+    api-key:
+      enabled: true                     # 启用 API 密钥认证
+      header-name: "X-API-Key"          # API 密钥头名称
+      hash-algorithm: "SHA-256"         # 密钥哈希算法
+```
+
+---
+
+## 路由配置
+
+### 适配器配置
+
+#### 文件：`config/router/adapter.yml`
+
+```yaml
+jairouter:
+  adapter:
+    default-adapter: "ollama"           # 默认适配器类型
+    connect-timeout: 10000              # 连接超时（毫秒）
+    read-timeout: 60000                 # 读取超时（毫秒）
+```
+
+### 负载均衡配置
+
+#### 文件：`config/router/loadbalancer.yml`
+
+```yaml
+jairouter:
+  loadbalancer:
+    default-strategy: "random"          # 默认策略：random, round_robin, weighted
+    health-check-interval: 30000        # 健康检查间隔（毫秒）
+```
+
+### 限流配置
+
+#### 文件：`config/router/ratelimit.yml`
+
+```yaml
+jairouter:
+  ratelimit:
+    enabled: true
+    default-algorithm: "token_bucket"   # token_bucket, leaky_bucket
+    default-capacity: 100               # 默认令牌桶容量
+    default-refill-rate: 10             # 每秒补充令牌数
+```
+
+### 熔断器配置
+
+#### 文件：`config/router/circuitbreaker.yml`
+
+```yaml
+jairouter:
+  circuitbreaker:
+    enabled: true
+    failure-threshold: 5                # 触发熔断的失败次数
+    success-threshold: 3                # 恢复所需成功次数
+    timeout: 30000                      # 熔断状态超时（毫秒）
+```
+
+---
 
 ## 监控配置
 
-### 基础监控配置
+### 文件：`config/base/monitoring-base.yml`
 
-```
-monitoring:
-  metrics:
-    enabled: true               # 启用指标收集
-    prefix: "jairouter"        # 指标前缀
-    collection-interval: 10s    # 收集间隔
-    
-    # 启用的指标类别
+```yaml
+jairouter:
+  monitoring:
+    enabled: true
+    prefix: "jairouter"                 # 指标前缀
+    collection-interval: "PT30S"        # 采集间隔
     enabled-categories:
-      - system                  # 系统指标
-      - business               # 业务指标
-      - infrastructure         # 基础设施指标
-    
-    # 自定义标签
-    custom-tags:
-      environment: "production"
-      version: "1.0.0"
-      datacenter: "us-west-1"
+      - request
+      - system
+      - custom
 ```
 
-### 高级监控配置
+---
 
-```
-monitoring:
-  metrics:
-    # 指标采样配置
-    sampling:
-      request-metrics: 1.0      # 请求指标采样率（0.0-1.0）
-      backend-metrics: 1.0      # 后端调用指标采样率
-      infrastructure-metrics: 0.1 # 基础设施指标采样率
-    
-    # 性能优化配置
-    performance:
-      async-processing: true    # 异步处理指标
-      batch-size: 100          # 批量处理大小
-      buffer-size: 1000        # 缓冲区大小
-      flush-interval: 5s       # 刷新间隔
-    
-    # 指标过滤配置
-    filters:
-      exclude-paths:            # 排除的路径
-        - "/actuator/health"
-        - "/favicon.ico"
-      include-status-codes:     # 包含的状态码
-        - 2xx
-        - 4xx
-        - 5xx
+## 链路追踪配置
+
+### 文件：`config/tracing/tracing-base.yml`
+
+```yaml
+jairouter:
+  tracing:
+    enabled: false
+    sampling-rate: 1.0                  # 采样率（0.0 - 1.0）
+    export-enabled: false
+    exporter-type: "otlp"               # otlp, jaeger, zipkin
+    endpoint: "http://localhost:4317"
 ```
 
-## Spring Actuator 配置
+---
 
-### 基础 Actuator 配置
+## 持久化配置
 
-```
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus,jairouter-metrics
-      base-path: /actuator      # 端点基础路径
-    enabled-by-default: true    # 默认启用所有端点
-  
-  endpoint:
-    health:
-      show-details: always      # 显示健康检查详情
-      show-components: always   # 显示组件状态
-      cache:
-        time-to-live: 10s      # 健康检查缓存时间
-    
-    info:
-      enabled: true            # 启用信息端点
-    
-    metrics:
-      enabled: true            # 启用指标端点
-    
-    prometheus:
-      enabled: true            # 启用 Prometheus 端点
-      cache:
-        time-to-live: 10s      # Prometheus 指标缓存时间
-```
+### 文件：`config/persistence/state-persistence-base.yml`
 
-### 安全配置
-
-```
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info    # 仅暴露基础端点
-  
-  endpoint:
-    health:
-      show-details: when-authorized # 仅授权用户可见详情
-  
-  security:
-    enabled: true              # 启用安全控制
-    roles: ADMIN,ACTUATOR     # 允许的角色
-```
-
-## Prometheus 集成配置
-
-```
-management:
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-        descriptions: true
-        step: 10s
-  endpoint:
-    prometheus:
+```yaml
+jairouter:
+  persistence:
+    enabled: true
+    primary-storage: "h2"               # h2, redis, memory
+    fallback-storage: "memory"
+    cleanup:
       enabled: true
+      schedule: "0 */5 * * * ?"         # 每 5 分钟执行
+      retention-days: 7
 ```
 
-## 使用指南
+---
 
-### 启动不同环境
+## 环境特定配置
+
+### 开发环境（`application-dev.yml`）
+
+```yaml
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+jairouter:
+  security:
+    jwt:
+      enabled: false                    # 开发环境禁用 JWT
+  monitoring:
+    enabled: false                      # 开发环境禁用监控
+
+logging:
+  level:
+    root: DEBUG
+```
+
+### 生产环境（`application-prod.yml`）
+
+```yaml
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+jairouter:
+  security:
+    jwt:
+      enabled: true
+      secret: "${JWT_SECRET}"           # 必须通过环境变量设置
+  monitoring:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+```
+
+---
+
+## 外部配置（Docker）
+
+使用 Docker 部署时，可以挂载外部配置文件：
+
+```bash
+docker run -d \
+  --name jairouter \
+  -p 8080:8080 \
+  -v /path/to/config:/app/config \
+  -e JWT_SECRET="your-secret-key" \
+  sodlinken/jairouter:latest
+```
+
+### 外部配置结构
 
 ```
-# 启动开发环境
-java -jar app.jar --spring.profiles.active=dev
-
-# 启动预发布环境
-java -jar app.jar --spring.profiles.active=staging
-
-# 启动生产环境
-java -jar app.jar --spring.profiles.active=prod
-
-# 启动兼容模式
-java -jar app.jar --spring.profiles.active=legacy
+/app/config/
+├── application.yml      # 覆盖主配置
+├── auth/
+│   └── jwt.yml          # 覆盖 JWT 配置
+└── router/
+    └── services.yml     # 覆盖服务实例配置
 ```
 
-### 修改配置
+---
 
-1. **基础配置修改**：编辑 [config/base/](file://d:/IdeaProjects/model-router/src/main/resources/config/base/) 目录下的对应文件
-2. **功能启用/禁用**：编辑对应的功能配置文件
-3. **环境差异配置**：编辑对应的环境配置文件
-4. **敏感配置**：建议使用环境变量注入
+## 环境变量
 
-### 配置最佳实践
+| 变量 | 描述 | 默认值 |
+|------|------|--------|
+| `JWT_SECRET` | JWT 签名密钥 | （生产环境必填） |
+| `INITIAL_ADMIN_PASSWORD` | 初始管理员密码 | （生产环境必填） |
+| `REDIS_HOST` | Redis 主机 | localhost |
+| `REDIS_PORT` | Redis 端口 | 6379 |
+| `REDIS_PASSWORD` | Redis 密码 | （空） |
+| `SERVER_PORT` | 服务器端口 | 8080 |
 
-1. **模块化原则**：按功能将配置拆分为独立模块
-2. **环境分离**：使用环境配置文件覆盖基础配置
-3. **敏感信息保护**：通过环境变量注入敏感配置
-4. **版本控制**：将配置文件纳入版本控制
-5. **文档同步**：保持配置与文档的一致性
+---
 
-## 故障排除
+## 配置最佳实践
 
-### 配置未生效
+1. **使用环境变量**存储敏感值（密钥、密码）
+2. **使用外部配置**进行 Docker 部署
+3. **使用环境特定配置**区分不同环境
+4. **保持模块配置**专注和独立
+5. **在部署指南中记录**自定义配置
 
-1. 检查配置文件路径是否正确
-2. 确认环境配置文件是否正确加载
-3. 验证配置优先级顺序
-4. 检查是否有语法错误
+---
 
-### 配置冲突
-
-1. 理解配置优先级规则
-2. 检查是否有重复配置项
-3. 确认环境变量是否覆盖了预期配置
-4. 使用 `--debug` 参数查看配置加载过程
+*最后更新：2026-05-21*
