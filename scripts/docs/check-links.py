@@ -200,8 +200,14 @@ class LinkChecker:
         """检查单个文件中的所有链接"""
         print(f"📄 检查文件: {file_path}")
 
+        # 处理相对路径和绝对路径
+        if file_path.is_absolute():
+            relative_path = str(file_path.relative_to(Path.cwd()))
+        else:
+            relative_path = str(file_path)
+
         file_result = {
-            "file": str(file_path.relative_to(Path.cwd())),
+            "file": relative_path,
             "links": [],
             "summary": {"total": 0, "valid": 0, "invalid": 0, "skipped": 0},
         }
@@ -243,7 +249,7 @@ class LinkChecker:
                 # 添加到全局无效链接列表
                 self.results["invalid_links"].append(
                     {
-                        "file": str(file_path.relative_to(Path.cwd())),
+                        "file": relative_path,
                         "url": url,
                         "line": line_num,
                         "message": message,
