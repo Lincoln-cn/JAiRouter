@@ -31,10 +31,10 @@ JAiRouter monitoring metrics are categorized by function into the following grou
 **Unit**: Count
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service type (chat, embedding, rerank, tts, stt, image)
-- [method](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L368-L368): HTTP method (GET, POST, PUT, DELETE)
-- [status](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L370-L370): HTTP status code (200, 400, 404, 500, etc.)
-- [path](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\dto\UpdateInstanceDTO.java#L23-L23): Request path
+- `service`: Service type (chat, embedding, rerank, tts, stt, image)
+- `method`: HTTP method (GET, POST, PUT, DELETE)
+- `status`: HTTP status code (200, 400, 404, 500, etc.)
+- `path`: Request path
 - `client_type`: Client type (web, mobile, api)
 
 **Usage Scenarios**:
@@ -63,9 +63,9 @@ sum(rate(jairouter_requests_total{status=~"2.."}[5m])) / sum(rate(jairouter_requ
 **Unit**: Seconds
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service type
-- [method](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L368-L368): HTTP method
-- [status](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L370-L370): HTTP status code
+- `service`: Service type
+- `method`: HTTP method
+- `status`: HTTP status code
 
 **Buckets**: 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, +Inf
 
@@ -95,8 +95,8 @@ sum(rate(jairouter_request_duration_seconds_bucket{le="2"}[5m])) / sum(rate(jair
 **Unit**: Bytes
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service type
-- [method](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L368-L368): HTTP method
+- `service`: Service type
+- `method`: HTTP method
 
 **Buckets**: 100, 1000, 10000, 100000, 1000000, 10000000, +Inf
 
@@ -118,8 +118,8 @@ sum(rate(jairouter_request_size_bytes_bucket{le="1000000"}[5m])) / sum(rate(jair
 **Unit**: Bytes
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service type
-- [status](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L370-L370): HTTP status code
+- `service`: Service type
+- `status`: HTTP status code
 
 **Query Examples**:
 ```promql
@@ -141,7 +141,7 @@ sum by (service) (rate(jairouter_response_size_bytes_sum[5m])) / sum by (service
 - `model_type`: Model type (chat, embedding, rerank)
 - `model_name`: Specific model name
 - `provider`: Model provider
-- [status](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L370-L370): Call status (success, error, timeout)
+- `status`: Call status (success, error, timeout)
 
 **Usage Scenarios**:
 - Monitor model usage
@@ -193,7 +193,7 @@ bottomk(5, sum by (model_name) (rate(jairouter_model_call_duration_seconds_sum[5
 **Unit**: Count
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service type
+- `service`: Service type
 - `region`: Geographic region
 
 **Query Examples**:
@@ -214,7 +214,7 @@ rate(jairouter_user_sessions_active[5m])
 **Unit**: Count
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service type
+- `service`: Service type
 - `session_type`: Session type (new, returning)
 
 **Query Examples**:
@@ -236,8 +236,8 @@ sum(rate(jairouter_user_sessions_total{session_type="returning"}[5m])) / sum(rat
 **Unit**: Count
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service name
-- [strategy](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L420-L420): Load balancing strategy (random, round_robin, least_connections, ip_hash)
+- `service`: Service name
+- `strategy`: Load balancing strategy (random, round_robin, least_connections, ip_hash)
 - `selected_instance`: Selected instance
 
 **Query Examples**:
@@ -263,8 +263,8 @@ topk(5, sum by (selected_instance) (rate(jairouter_loadbalancer_selections_total
 **Unit**: Count
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service name
-- [algorithm](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L396-L396): Rate limiting algorithm (token_bucket, leaky_bucket, sliding_window)
+- `service`: Service name
+- `algorithm`: Rate limiting algorithm (token_bucket, leaky_bucket, sliding_window)
 - `result`: Rate limiting result (allowed, denied)
 
 **Query Examples**:
@@ -285,8 +285,8 @@ sum by (algorithm) (rate(jairouter_rate_limit_events_total{result="denied"}[5m])
 **Unit**: Count
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service name
-- [algorithm](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L396-L396): Rate limiting algorithm
+- `service`: Service name
+- `algorithm`: Rate limiting algorithm
 
 **Query Examples**:
 ```promql
@@ -308,7 +308,7 @@ jairouter_rate_limit_tokens == 0
 **Unit**: State value
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service name
+- `service`: Service name
 - `circuit_breaker`: Circuit breaker name
 
 **Value Definition**:
@@ -334,9 +334,9 @@ jairouter_circuit_breaker_state == 2
 **Unit**: Count
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service name
+- `service`: Service name
 - `circuit_breaker`: Circuit breaker name
-- [event](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L409-L409): Event type (success, error, timeout, circuit_open, circuit_close)
+- `event`: Event type (success, error, timeout, circuit_open, circuit_close)
 
 **Query Examples**:
 ```promql
@@ -356,7 +356,7 @@ sum(rate(jairouter_circuit_breaker_events_total{event="circuit_close"}[5m]))
 **Unit**: Percentage
 
 **Labels**:
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service name
+- `service`: Service name
 - `circuit_breaker`: Circuit breaker name
 
 **Query Examples**:
@@ -379,8 +379,8 @@ rate(jairouter_circuit_breaker_failure_rate[5m])
 **Unit**: Status value
 
 **Labels**:
-- [adapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L381-L381): Adapter type (gpustack, ollama, vllm)
-- [instance](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L432-L432): Instance name
+- `adapter`: Adapter type (gpustack, ollama, vllm)
+- `instance`: Instance name
 - `base_url`: Backend service URL
 
 **Value Definition**:
@@ -408,10 +408,10 @@ sum(jairouter_backend_health) / count(jairouter_backend_health) * 100
 **Unit**: Count
 
 **Labels**:
-- [adapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L381-L381): Adapter type (gpustack, ollama, vllm, xinference, localai, openai)
-- [instance](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L432-L432): Instance name
-- [method](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L368-L368): Call method
-- [status](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L370-L370): Call status (success, error, timeout)
+- `adapter`: Adapter type (gpustack, ollama, vllm, xinference, localai, openai)
+- `instance`: Instance name
+- `method`: Call method
+- `status`: Call status (success, error, timeout)
 
 **Query Examples**:
 ```promql
@@ -434,9 +434,9 @@ topk(5, sum by (instance) (rate(jairouter_backend_calls_total[5m])))
 **Unit**: Seconds
 
 **Labels**:
-- [adapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L381-L381): Adapter type
-- [instance](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L432-L432): Instance name
-- [method](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L368-L368): Call method
+- `adapter`: Adapter type
+- `instance`: Instance name
+- `method`: Call method
 
 **Buckets**: 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, +Inf
 
@@ -529,8 +529,8 @@ rate(jvm_threads_live_threads[5m])
 **Unit**: Count
 
 **Labels**:
-- [adapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L381-L381): Adapter type
-- [instance](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L432-L432): Instance name
+- `adapter`: Adapter type
+- `instance`: Instance name
 
 **Query Examples**:
 ```promql
@@ -698,11 +698,11 @@ max_over_time(histogram_quantile(0.95, sum(rate(jairouter_request_duration_secon
 
 ### Common Labels
 
-- [service](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L367-L367): Service type
-- [method](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L368-L368): HTTP method or call method
-- [status](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L370-L370): Status code or call result
-- [instance](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\AsyncMetricsProcessor.java#L432-L432): Instance identifier
-- [environment](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\monitoring\config\DynamicMonitoringConfigUpdater.java#L24-L24): Environment identifier (dev, test, prod)
+- `service`: Service type
+- `method`: HTTP method or call method
+- `status`: Status code or call result
+- `instance`: Instance identifier
+- `environment`: Environment identifier (dev, test, prod)
 - [version](file://springfox\documentation\service\ApiInfo.java#L8-L8): Version number
 
 ### Label Usage Examples

@@ -74,7 +74,7 @@ open http://localhost:8080
 
 [![GitHub stars](https://img.shields.io/github/stars/Lincoln-cn/JAiRouter?style=social)](https://github.com/Lincoln-cn/JAiRouter/stargazers)
 [![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
-[![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE)
 
 > **LTS 版本**: v2.6.11 是最终长期支持版本，持续维护至 2028-05
 

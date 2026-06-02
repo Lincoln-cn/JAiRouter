@@ -51,6 +51,74 @@ class LinkChecker:
             r"^http://127\.0\.0\.1",
             r"^https://127\.0\.0\.1",
             r"\.(jpg|jpeg|png|gif|svg|ico|pdf)$",
+            # Windows本地路径（包括带行号的）
+            r"^file://[A-Za-z]:/",
+            # 示例服务URL（内部服务名）
+            r"^http://[a-z0-9-]+:(8080|8000|11434|9090|9997|5001|5005|9411)(/|$)",
+            r"^http://[a-z0-9-]+-server:\d+",
+            r"^http://[a-z0-9-]+-cluster:\d+",
+            r"^http://(backend|frontend|new-server|old-server|backup-server|gpu-server|cpu-server|stable-server|fast-server|slow-server|experimental-server|reliable-server|unstable-server|high-risk-server|primary|secondary|backup|openai-proxy|jairouter|prometheus|alertmanager|jaeger|zipkin|grafana|webhook-server|your-webhook|proxy\.example|your-sms-gateway|jairouter_backend)(:|/|$|\$)",
+            # 变量模板URL
+            r"^\{\{",
+            r"\$[a-zA-Z_]+",
+            r"VERSION",  # 版本变量占位符
+            # shields.io emoji badges（编码问题）
+            r"badge/.*%F0%9F",
+            r"badge/.*[\U0001F300-\U0001F9FF]",
+            # 内部Kubernetes服务地址
+            r"\.svc\.cluster\.local",
+            # 示例域名
+            r"example\.(com|org|net)",
+            r"jairouter\.example\.(com|org)",
+            r"admin\.jairouter\.example\.(com|org)",
+            # 外部镜像源（经常超时或不可达）
+            r"maven\.aliyun\.com",
+            r"docker\.mirrors\.ustc\.edu\.cn",
+            r"hub-mirror\.c\.163\.com",
+            r"mirror\.baidubce\.com",
+            # Docker官方站点（经常连接重置）
+            r"docs\.docker\.com",
+            r"www\.docker\.com",
+            # Docker Hub
+            r"hub\.docker\.com",
+            # Maven XSD命名空间（返回404但有效）
+            r"maven\.apache\.org/SETTINGS",
+            r"maven\.apache\.org/xsd",
+            # AI服务商端点（通常不需要文档访问）
+            r"dashscope\.aliyuncs\.com",
+            r"api\.openai\.com",
+            r"api\.anthropic\.com",
+            # 内网IP地址
+            r"^http://172\.",
+            r"^http://10\.",
+            r"^http://192\.168\.",
+            # webhook示例URL
+            r"your-webhook",
+            r"webhook-server",
+            r"your-sms-gateway",
+            # Slack webhook占位符
+            r"hooks\.slack\.com/services/YOUR",
+            # 示例域名组合
+            r"your-webhook-url\.com",
+            r"your-org",
+            # jairouter.com 故障排查页面（可能尚未部署）
+            r"jairouter\.com/troubleshooting/",
+            # springfox内部引用（文档生成工具引用）
+            r"^springfox/",
+            # 单独的文档文件名（相对路径解析失败的情况）
+            r"^[a-z-]+\.md$",
+            # Java内部类引用
+            r"[A-Z][a-zA-Z]+\.java#L\d",
+            # nginx变量格式URL
+            r"http://[a-z_]+;$",
+            # jwt-decoder（第三方工具站点）
+            r"jwt-decoder\.com",
+            # api.jairouter.com（示例API端点）
+            r"api\.jairouter\.com",
+            # jairouter.com 中文页面（尚未部署）
+            r"jairouter\.com/zh/",
+            # httpbin.org（测试服务，经常不可用）
+            r"httpbin\.org",
         ]
 
         # HTTP 请求头

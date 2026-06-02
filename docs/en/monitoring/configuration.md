@@ -15,7 +15,7 @@ This document provides a complete configuration reference for the JAiRouter moni
 
 ### Main Configuration File
 
-JAiRouter monitoring configuration is primarily defined in [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml):
+JAiRouter monitoring configuration is primarily defined in `application.yml`:
 
 ```yaml
 # Monitoring configuration

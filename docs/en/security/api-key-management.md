@@ -27,7 +27,7 @@ The API Key authentication feature of JAiRouter provides a secure access control
 
 ### 1. Enable API Key Authentication
 
-Enable security features in [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml):
+Enable security features in `application.yml`:
 
 ```yaml
 jairouter:
@@ -71,7 +71,7 @@ curl -H "X-API-Key: your-api-key-here" \
 
 | Parameter | Type | Default Value | Description |
 |-----------|------|---------------|-------------|
-| [enabled](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitConfig.java#L7-L7) | boolean | true | Whether to enable API Key authentication |
+| `enabled` | boolean | true | Whether to enable API Key authentication |
 | `header-name` | string | "X-API-Key" | Name of the API Key request header |
 | `default-expiration-days` | int | 365 | Default number of days until expiration |
 | `cache-enabled` | boolean | true | Whether to enable caching |

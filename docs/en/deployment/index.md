@@ -44,11 +44,14 @@ docker run -d \
 For simple deployments without Docker:
 
 ```bash
-# Download the latest release
-wget https://github.com/Lincoln-cn/JAiRouter/releases/latest/download/jairouter.jar
+# Download from Releases page
+# https://github.com/Lincoln-cn/JAiRouter/releases
+
+# Or use wget (replace VERSION with actual version number)
+wget https://github.com/Lincoln-cn/JAiRouter/releases/download/vVERSION/model-router-VERSION.jar
 
 # Run the application
-java -jar jairouter.jar
+java -jar model-router-VERSION.jar
 ```
 
 ## Configuration for Deployment

@@ -19,7 +19,7 @@
   <a href="https://hub.docker.com/r/sodlinken/jairouter">
     <img src="https://img.shields.io/docker/pulls/sodlinken/jairouter?style=flat-square&logo=docker" alt="Docker Pulls">
   </a>
-  <a href="https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE">
+  <a href="https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/Lincoln-cn/JAiRouter?style=flat-square" alt="License">
   </a>
   <a href="https://github.com/Lincoln-cn/JAiRouter/releases">
@@ -142,7 +142,7 @@ JAiRouter is a **unified gateway for AI model services** that provides:
 docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
 
 # Using Docker Compose
-curl -O https://raw.githubusercontent.com/Lincoln-cn/JAiRouter/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/Lincoln-cn/JAiRouter/master/docker-compose.yml
 docker compose up -d
 ```
 
@@ -195,9 +195,9 @@ print(response.choices[0].message.content)
 |----------|------|
 | 📖 **Full Documentation** | https://jairouter.com |
 | 📘 **API Reference** | http://localhost:8080/swagger-ui |
-| 🚀 **Deployment Guide** | [docs/deployment](docs/deployment) |
-| 🔧 **Configuration** | [docs/configuration](docs/configuration) |
-| 📊 **Monitoring** | [docs/monitoring](docs/monitoring) |
+| 🚀 **Deployment Guide** | https://jairouter.com/en/deployment/ |
+| 🔧 **Configuration** | https://jairouter.com/en/configuration/ |
+| 📊 **Monitoring** | https://jairouter.com/en/monitoring/ |
 
 ---
 

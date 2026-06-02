@@ -19,7 +19,7 @@
   <a href="https://hub.docker.com/r/sodlinken/jairouter">
     <img src="https://img.shields.io/docker/pulls/sodlinken/jairouter?style=flat-square&logo=docker" alt="Docker Pulls">
   </a>
-  <a href="https://github.com/Lincoln-cn/JAiRouter/blob/main/LICENSE">
+  <a href="https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE">
     <img src="https://img.shields.io/github/license/Lincoln-cn/JAiRouter?style=flat-square" alt="License">
   </a>
   <a href="https://github.com/Lincoln-cn/JAiRouter/releases">
@@ -129,7 +129,7 @@ JAiRouter 是一个 **AI 模型服务统一网关**，提供：
 docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
 
 # 使用 Docker Compose
-curl -O https://raw.githubusercontent.com/Lincoln-cn/JAiRouter/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/Lincoln-cn/JAiRouter/master/docker-compose.yml
 docker compose up -d
 ```
 
@@ -189,9 +189,9 @@ print(response.choices[0].message.content)
 |------|------|
 | 📖 **完整文档** | https://jairouter.com |
 | 📘 **API 参考** | http://localhost:8080/swagger-ui |
-| 🚀 **部署指南** | [docs/deployment](docs/deployment) |
-| 🔧 **配置说明** | [docs/configuration](docs/configuration) |
-| 📊 **监控配置** | [docs/monitoring](docs/monitoring) |
+| 🚀 **部署指南** | https://jairouter.com/zh/deployment/ |
+| 🔧 **配置说明** | https://jairouter.com/zh/configuration/ |
+| 📊 **监控配置** | https://jairouter.com/zh/monitoring/ |
 
 ---
 

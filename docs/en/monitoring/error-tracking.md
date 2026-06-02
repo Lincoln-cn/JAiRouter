@@ -8,9 +8,9 @@ JAiRouter's error tracking feature is a complete error monitoring and analysis s
 
 JAiRouter uses a modular configuration management approach, with error tracking configuration located in a separate configuration file:
 
-- **Main Configuration File**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
-- **Error Tracking Configuration File**: [src/main/resources/config/monitoring/error-tracking.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/error-tracking.yml)
-- **Environment Configuration Files**: [src/main/resources/application-{profile}.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+- **Main Configuration File**: `src/main/resources/application.yml`
+- **Error Tracking Configuration File**: `src/main/resources/config/monitoring/error-tracking.yml`
+- **Environment Configuration Files**: `src/main/resources/application-{profile}.yml`
 
 ## Modular Configuration Explanation
 
@@ -50,7 +50,7 @@ spring:
 
 ### 1. Enable Error Tracking
 
-Configure in [error-tracking.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/error-tracking.yml):
+Configure in `error-tracking.yml`:
 
 ```yaml
 jairouter:
@@ -266,7 +266,7 @@ jairouter:
 
 ### Configuration Management
 
-1. **Base Configuration**: Define common configurations in [error-tracking.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/error-tracking.yml)
+1. **Base Configuration**: Define common configurations in `error-tracking.yml`
 2. **Environment Differences**: Override specific configurations in corresponding environment configuration files
 3. **Sensitive Information Protection**: Properly configure stack trace sanitization rules to protect system security
 

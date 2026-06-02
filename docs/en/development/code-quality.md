@@ -18,7 +18,7 @@ The JAiRouter project adopts strict code quality standards, combining automated 
 ### 1. Checkstyle
 
 #### Configuration Files
-- **Configuration File**: [checkstyle.xml](file://D:\IdeaProjects\model-router\checkstyle.xml)
+- **Configuration File**: `checkstyle.xml`
 - **Rule Set**: Based on Google Java Style Guide, customized for project characteristics
 
 #### Main Rules

@@ -26,7 +26,7 @@ JAiRouter monitoring system testing is divided into the following layers:
 
 ### Test Configuration
 
-Create a test-specific configuration [application-test.yml](file://D:\IdeaProjects\model-router\target\classes\application-test.yml):
+Create a test-specific configuration `application-test.yml`:
 
 ```yaml
 # Test environment monitoring configuration

@@ -80,7 +80,7 @@ docker-compose -f docker-compose-monitoring.yml logs
 
 ### JAiRouter Application Configuration
 
-Enable monitoring in [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml):
+Enable monitoring in `application.yml`:
 
 ```yaml
 # Monitoring metrics configuration
@@ -196,7 +196,7 @@ providers:
 
 ### Complete Monitoring Stack Configuration
 
-Create [docker-compose-monitoring.yml](file://D:\IdeaProjects\model-router\docker-compose-monitoring.yml):
+Create `docker-compose-monitoring.yml`:
 
 ```yaml
 version: '3.8'

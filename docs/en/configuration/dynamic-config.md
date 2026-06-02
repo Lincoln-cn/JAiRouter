@@ -13,10 +13,10 @@ JAiRouter provides flexible configuration options to meet various deployment sce
 
 Starting from v1.0.0, JAiRouter adopts a modular configuration structure:
 
-- Main configuration file: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
-- Base configuration modules: Files in the [config/base/](file://D:/IdeaProjects/model-router/src/main/resources/config/base/) directory
-- Feature configuration modules: Files in the [config/security/](file://D:/IdeaProjects/model-router/src/main/resources/config/security/), [config/tracing/](file://D:/IdeaProjects/model-router/src/main/resources/config/tracing/) directories, etc.
-- Environment configuration files: [application-dev.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-dev.yml), [application-prod.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-prod.yml), etc.
+- Main configuration file: `application.yml`
+- Base configuration modules: Files in the `config/base/` directory
+- Feature configuration modules: Files in the `config/security/`, `config/tracing/` directories, etc.
+- Environment configuration files: `application-dev.yml`, `application-prod.yml`, etc.
 
 Although the configuration has been modularized, the dynamic configuration API can still be used to update instance configurations at runtime without affecting the modular structure.
 

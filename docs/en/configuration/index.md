@@ -39,7 +39,7 @@ src/main/resources/
 
 ### Configuration Import Mechanism
 
-The main configuration file [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml) imports various module configurations through the `spring.config.import` mechanism:
+The main configuration file `application.yml` imports various module configurations through the `spring.config.import` mechanism:
 
 ```yaml
 # application.yml
@@ -255,11 +255,11 @@ store:
 
 JAiRouter supports multiple environment configuration files:
 
-- **Development Environment**: [application-dev.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
-- **Staging Environment**: [application-staging.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-staging.yml)
-- **Production Environment**: [application-prod.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-prod.yml)
-- **Compatibility Mode**: [application-legacy.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-legacy.yml)
-- **Security Example**: [application-security-example.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-security-example.yml)
+- **Development Environment**: `application-dev.yml`
+- **Staging Environment**: `application-staging.yml`
+- **Production Environment**: `application-prod.yml`
+- **Compatibility Mode**: `application-legacy.yml`
+- **Security Example**: `application-security-example.yml`
 
 Environment configuration files only contain the differences from the base configuration, following Spring Boot's configuration override mechanism.
 

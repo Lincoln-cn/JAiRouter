@@ -13,10 +13,10 @@ JAiRouter provides four load balancing strategies, supporting configuration at g
 
 Starting from v1.0.0, JAiRouter adopts a modular configuration structure with load balancing related configurations moved to separate configuration files:
 
-- Main configuration file: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
-- Load balancing base configuration: [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml)
+- Main configuration file: `application.yml`
+- Load balancing base configuration: `config/base/model-services-base.yml`
 
-You can find all load balancing related configurations in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file, including global configurations, service type configurations, and instance configurations.
+You can find all load balancing related configurations in the `config/base/model-services-base.yml` file, including global configurations, service type configurations, and instance configurations.
 
 ## Load Balancing Overview
 
@@ -49,7 +49,7 @@ graph TB
 
 ### Basic Configuration
 
-Configure global load balancing strategies in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure global load balancing strategies in the `config/base/model-services-base.yml` file:
 
 ```yaml
 # config/base/model-services-base.yml
@@ -108,7 +108,7 @@ model:
 
 ### YAML Configuration Method
 
-Configure load balancing strategies for each service type in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure load balancing strategies for each service type in the `config/base/model-services-base.yml` file:
 
 ```yaml
 model:
@@ -686,5 +686,5 @@ After completing load balancing configuration, you can continue to learn about:
 
 - **[Rate Limiting Configuration](rate-limiting.md)** - Setting up traffic control and protection
 - **[Circuit Breaker Configuration](circuit-breaker.md)** - Configuring fault protection mechanisms
-- **[Monitoring Guide](../../monitoring/index.md)** - Setting up load balancing monitoring
+- **[Monitoring Guide](../monitoring/index.md)** - Setting up load balancing monitoring
 - **[Troubleshooting](../troubleshooting/index.md)** - Load balancing issue diagnosis

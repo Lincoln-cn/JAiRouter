@@ -246,7 +246,7 @@ docker run -d \
 
 ### 1. 基础 Compose 配置
 
-创建 [docker-compose.yml](file://d:\IdeaProjects\model-router\docker-compose.yml)：
+创建 `docker-compose.yml`：
 
 ```
 version: '3.8'
@@ -359,7 +359,7 @@ networks:
 
 ### 3. 开发环境 Compose 配置
 
-创建 [docker-compose.dev.yml](file://d:\IdeaProjects\model-router\docker-compose.dev.yml)：
+创建 `docker-compose.dev.yml`：
 
 ```
 version: '3.8'
@@ -1204,7 +1204,7 @@ docker run -d \
 
 ### 1. 基础 Compose 配置
 
-创建 [docker-compose.yml](file://d:\IdeaProjects\model-router\docker-compose.yml)：
+创建 `docker-compose.yml`：
 
 ```
 version: '3.8'

@@ -8,9 +8,9 @@ JAiRouter's slow query alert feature is a complete performance monitoring and al
 
 JAiRouter uses a modular configuration management approach, with slow query alert configuration located in a separate configuration file:
 
-- **Main Configuration File**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
-- **Slow Query Alert Configuration File**: [src/main/resources/config/monitoring/slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml)
-- **Environment Configuration Files**: [src/main/resources/application-{profile}.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+- **Main Configuration File**: `src/main/resources/application.yml`
+- **Slow Query Alert Configuration File**: `src/main/resources/config/monitoring/slow-query-alerts.yml`
+- **Environment Configuration Files**: `src/main/resources/application-{profile}.yml`
 
 ## Modular Configuration Explanation
 
@@ -50,7 +50,7 @@ spring:
 
 ### 1. Enable Slow Query Alerts
 
-Configure in [slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml):
+Configure in `slow-query-alerts.yml`:
 
 ```yaml
 jairouter:
@@ -108,7 +108,7 @@ curl http://localhost:8080/api/monitoring/slow-queries/alerts/status
 
 | Configuration Item | Type | Default Value | Description |
 |--------------------|------|---------------|-------------|
-| [enabled](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\config\TraceConfig.java#L12-L12) | boolean | true | Whether to enable slow query alerts |
+| `enabled` | boolean | true | Whether to enable slow query alerts |
 | `min-interval-ms` | long | 300000 | Minimum alert interval (milliseconds) |
 | `min-occurrences` | long | 3 | Minimum slow query occurrences to trigger alert |
 | `enabled-severities` | Set<String> | [critical, warning] | Enabled alert severity levels |
@@ -267,7 +267,7 @@ jairouter:
 
 ### Configuration Management
 
-1. **Base Configuration**: Define common configurations in [slow-query-alerts.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/monitoring/slow-query-alerts.yml)
+1. **Base Configuration**: Define common configurations in `slow-query-alerts.yml`
 2. **Environment Differences**: Override specific configurations in corresponding environment configuration files
 3. **Threshold Setting**: Set reasonable thresholds based on actual business needs and performance test results
 
