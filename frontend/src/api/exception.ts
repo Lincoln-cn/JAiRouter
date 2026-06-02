@@ -114,7 +114,7 @@ export const getRecentExceptionEventsByType = async (
   limit: number = 10
 ): Promise<ExceptionEvent[]> => {
   try {
-    const response = await request.get<RouterResponse<ExceptionEvent[]>>(`/api/exceptions/recent/${exceptionType}`, {
+    const response = await request.get<RouterResponse<ExceptionEvent[]>>(`/exceptions/recent/${exceptionType}`, {
       params: { limit }
     })
     return response.data.data || []
@@ -134,7 +134,7 @@ export const deleteOldExceptionEvents = async (
   aggregatedOnly: boolean = false
 ): Promise<ExceptionDeleteResult> => {
   try {
-    const response = await request.delete<RouterResponse<ExceptionDeleteResult>>('/api/exceptions/cleanup', {
+    const response = await request.delete<RouterResponse<ExceptionDeleteResult>>('/exceptions/cleanup', {
       params: { cutoffTime, aggregatedOnly }
     })
     return response.data.data || {
@@ -162,7 +162,7 @@ export const getExceptionDashboardData = async (
     if (startTime) params.startTime = startTime
     if (endTime) params.endTime = endTime
 
-    const response = await request.get<RouterResponse<ExceptionDashboardData>>('/api/exceptions/dashboard', { params })
+    const response = await request.get<RouterResponse<ExceptionDashboardData>>('/exceptions/dashboard', { params })
     return response.data.data || {
       statistics: {
         startTime: startTime || '',

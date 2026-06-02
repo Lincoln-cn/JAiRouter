@@ -76,6 +76,10 @@ public class SpaWebFluxConfig {
         ClassPathResource adminRoot = new ClassPathResource("static/admin/");
 
         return RouterFunctions.route()
+                // 处理 favicon.ico 请求，返回 204 No Content 避免认证异常
+                .GET("/favicon.ico", request ->
+                    ServerResponse.noContent().build()
+                )
                 .GET("/admin", request ->
                     ServerResponse.ok()
                         .contentType(MediaType.TEXT_HTML)
