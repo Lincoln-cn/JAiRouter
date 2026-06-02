@@ -6,9 +6,9 @@
 
 JAiRouter 使用模块化的配置管理方式，追踪配置位于独立的配置文件中：
 
-- **主配置文件**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
-- **追踪配置文件**: [src/main/resources/config/tracing/tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml)
-- **环境配置文件**: [src/main/resources/application-{profile}.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+- **主配置文件**: `src/main/resources/application.yml`
+- **追踪配置文件**: `src/main/resources/config/tracing/tracing-base.yml`
+- **环境配置文件**: `src/main/resources/application-{profile}.yml`
 
 ## 模块化配置说明
 
@@ -394,7 +394,7 @@ jairouter:
 
 ### 配置管理
 
-1. **基础配置**：在 [tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml) 中定义通用配置
+1. **基础配置**：在 `tracing-base.yml` 中定义通用配置
 2. **环境差异**：在对应的环境配置文件中覆盖特定配置
 3. **敏感信息**：使用环境变量注入敏感配置，如导出器端点、认证信息等
 

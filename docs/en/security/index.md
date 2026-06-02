@@ -40,7 +40,7 @@ JAiRouter provides enterprise-grade security features, including authentication,
 
 ### 1. Enable Security Features
 
-Enable security features in [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml):
+Enable security features in `application.yml`:
 
 ```yaml
 jairouter:

@@ -6,9 +6,9 @@ This document provides complete configuration reference for JAiRouter's distribu
 
 JAiRouter uses a modular configuration management approach, with tracing configuration located in a separate configuration file:
 
-- **Main Configuration File**: [src/main/resources/application.yml](file://d:/IdeaProjects/model-router/src/main/resources/application.yml)
-- **Tracing Configuration File**: [src/main/resources/config/tracing/tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml)
-- **Environment Configuration Files**: [src/main/resources/application-{profile}.yml](file://d:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
+- **Main Configuration File**: `src/main/resources/application.yml`
+- **Tracing Configuration File**: `src/main/resources/config/tracing/tracing-base.yml`
+- **Environment Configuration Files**: `src/main/resources/application-{profile}.yml`
 
 ## Modular Configuration Explanation
 
@@ -394,7 +394,7 @@ jairouter:
 
 ### Configuration Management
 
-1. **Base Configuration**: Define common configurations in [tracing-base.yml](file://d:/IdeaProjects/model-router/src/main/resources/config/tracing/tracing-base.yml)
+1. **Base Configuration**: Define common configurations in `tracing-base.yml`
 2. **Environment Differences**: Override specific configurations in corresponding environment configuration files
 3. **Sensitive Information**: Use environment variables to inject sensitive configurations such as exporter endpoints and authentication information
 

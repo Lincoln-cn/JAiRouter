@@ -486,8 +486,8 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 #### New Features
 - **China Accelerated Build**: Docker builds optimized specifically for Chinese users
 - **Alibaba Cloud Mirror**: Using Alibaba Cloud Maven mirror to accelerate dependency downloads
-- **Build Script**: Added [docker-build-china.sh](file://D:\IdeaProjects\model-router\scripts\docker-build-china.sh) build script
-- **Maven Profile**: Added [china](file://D:\IdeaProjects\model-router\Dockerfile.china) profile support
+- **Build Script**: Added `docker-build-china.sh` build script
+- **Maven Profile**: Added china profile support
 
 #### Improvements & Optimizations
 - **Build Speed**: Build speed for Chinese users improved by 5-10 times
@@ -623,7 +623,7 @@ monitoring:
 
 #### Deployment Changes
 - Added Prometheus and Grafana containers
-- Updated [docker-compose.yml](file://D:\IdeaProjects\model-router\docker-compose.yml) configuration
+- Updated `docker-compose.yml` configuration
 - Imported new Grafana dashboards
 
 #### Notes

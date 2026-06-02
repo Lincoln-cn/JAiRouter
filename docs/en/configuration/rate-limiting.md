@@ -13,10 +13,10 @@ JAiRouter provides multiple rate limiting algorithms, supporting global, service
 
 Starting from v1.0.0, JAiRouter adopts a modular configuration structure with rate limiting related configurations moved to separate configuration files:
 
-- Main configuration file: [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml)
-- Model services base configuration: [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml)
+- Main configuration file: `application.yml`
+- Model services base configuration: `config/base/model-services-base.yml`
 
-You can find all rate limiting related configurations in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file, including global configurations, service type configurations, and instance configurations.
+You can find all rate limiting related configurations in the `config/base/model-services-base.yml` file, including global configurations, service type configurations, and instance configurations.
 
 ## Rate Limiting Overview
 
@@ -53,7 +53,7 @@ graph TB
 
 ### Basic Configuration
 
-Configure global rate limiting in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure global rate limiting in the `config/base/model-services-base.yml` file:
 
 ```yaml
 # config/base/model-services-base.yml
@@ -124,7 +124,7 @@ graph LR
 
 #### Configuration Example
 
-Configure the token bucket algorithm in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure the token bucket algorithm in the `config/base/model-services-base.yml` file:
 
 ```yaml
 model:
@@ -162,8 +162,8 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| [capacity](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitConfig.java#L9-L9) | Integer | Bucket capacity, maximum number of tokens | 100 |
-| [rate](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitConfig.java#L10-L10)/`refillRate` | Integer | Token refill rate (per second) | 10 |
+| `capacity` | Integer | Bucket capacity, maximum number of tokens | 100 |
+| `rate`/`refillRate` | Integer | Token refill rate (per second) | 10 |
 | `client-ip-enable` | Boolean | Whether to enable client IP rate limiting | false |
 
 #### Use Cases
@@ -205,7 +205,7 @@ graph TB
 
 #### Configuration Example
 
-Configure the leaky bucket algorithm in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure the leaky bucket algorithm in the `config/base/model-services-base.yml` file:
 
 ```yaml
 model:
@@ -243,8 +243,8 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| [capacity](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitConfig.java#L9-L9) | Integer | Bucket capacity, maximum queued requests | 50 |
-| [rate](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitConfig.java#L10-L10)/`leakRate` | Integer | Leak rate (per second) | 5 |
+| `capacity` | Integer | Bucket capacity, maximum queued requests | 50 |
+| `rate`/`leakRate` | Integer | Leak rate (per second) | 5 |
 
 #### Use Cases
 
@@ -269,7 +269,7 @@ graph LR
 
 #### Configuration Example
 
-Configure the sliding window algorithm in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure the sliding window algorithm in the `config/base/model-services-base.yml` file:
 
 ```yaml
 model:
@@ -334,7 +334,7 @@ graph LR
 
 #### Configuration Example
 
-Configure the warm-up algorithm in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure the warm-up algorithm in the `config/base/model-services-base.yml` file:
 
 ```yaml
 model:
@@ -374,8 +374,8 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| [capacity](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitConfig.java#L9-L9) | Integer | Final capacity | 100 |
-| `warm-up-period`/[warmUpPeriod](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimitConfig.java#L13-L13) | Integer | Warm-up time (seconds) | 300 |
+| `capacity` | Integer | Final capacity | 100 |
+| `warm-up-period`/`warmUpPeriod` | Integer | Warm-up time (seconds) | 300 |
 | `cold-factor`/`coldFactor` | Integer | Cold start factor | 3 |
 
 #### Use Cases
@@ -388,7 +388,7 @@ JAiRouter also supports updating rate limiting configurations via the dynamic co
 
 ### Basic Configuration
 
-Configure client IP rate limiting in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure client IP rate limiting in the `config/base/model-services-base.yml` file:
 
 ```yaml
 model:
@@ -456,7 +456,7 @@ curl "http://localhost:8080/actuator/metrics/jairouter.ratelimit.cleanup"
 
 ### Layered Rate Limiting Strategy
 
-Configure multi-layer rate limiting in the [config/base/model-services-base.yml](file://D:/IdeaProjects/model-router/src/main/resources/config/base/model-services-base.yml) file:
+Configure multi-layer rate limiting in the `config/base/model-services-base.yml` file:
 
 ```yaml
 model:
@@ -777,6 +777,6 @@ done
 After completing rate limiting configuration, you can continue to learn about:
 
 - **[Circuit Breaker Configuration](circuit-breaker.md)** - Configure fault protection mechanisms
-- **[Monitoring Guide](../../monitoring/index.md)** - Set up rate limiting monitoring and alerts
+- **[Monitoring Guide](../monitoring/index.md)** - Set up rate limiting monitoring and alerts
 - **[Troubleshooting](../troubleshooting/index.md)** - Diagnose and resolve rate limiting issues
 - **[Performance Tuning](../troubleshooting/performance.md)** - Optimize rate limiting performance

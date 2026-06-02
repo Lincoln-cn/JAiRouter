@@ -1576,7 +1576,7 @@ iostat -x 1
 
 After completing the production environment deployment, you can:
 
-- **[Monitoring Guide](../../monitoring/index.md)** - Deep dive into monitoring configuration
+- **[Monitoring Guide](../monitoring/index.md)** - Deep dive into monitoring configuration
 - **[Troubleshooting](../troubleshooting/index.md)** - Learn fault diagnosis skills
 - **[Performance Tuning](../troubleshooting/performance.md)** - Optimize system performance
 - **[API Reference](../api-reference/index.md)** - Understand management API

@@ -82,7 +82,7 @@ java -jar target/model-router-*.jar
 
 ### Q7: How to configure backend AI services?
 
-**A**: Configure in [application.yml](file://D:\IdeaProjects\model-router\target\classes\application.yml):
+**A**: Configure in `application.yml`:
 
 ```yaml
 model:

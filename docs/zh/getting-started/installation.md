@@ -114,11 +114,11 @@ java -version
 从 [GitHub Releases](https://github.com/Lincoln-cn/JAiRouter/releases) 下载最新版本的 JAR 文件：
 
 ```bash
-# 下载最新版本
-wget https://github.com/Lincoln-cn/JAiRouter/releases/latest/download/model-router.jar
+# 访问 Releases 页面下载
+# https://github.com/Lincoln-cn/JAiRouter/releases
 
-# 或使用 curl
-curl -L -o model-router.jar https://github.com/Lincoln-cn/JAiRouter/releases/latest/download/model-router.jar
+# 或使用命令行（替换 VERSION 为实际版本号）
+wget https://github.com/Lincoln-cn/JAiRouter/releases/download/vVERSION/model-router-VERSION.jar
 ```
 
 ### 3. 运行应用

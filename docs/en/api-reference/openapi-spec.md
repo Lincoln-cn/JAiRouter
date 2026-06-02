@@ -36,7 +36,7 @@ http://localhost:8080/v3/api-docs.yaml
 
 ## Configuration Instructions
 
-JAiRouter's OpenAPI configuration is located in the [application-dev.yml](file://D:\IdeaProjects\model-router\target\classes\application-dev.yml) file:
+JAiRouter's OpenAPI configuration is located in the `application-dev.yml` file:
 
 ```yaml
 springdoc:

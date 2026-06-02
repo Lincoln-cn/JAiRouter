@@ -254,8 +254,8 @@ curl http://localhost:8080/api/config/environment-variables
 
 ## 相关文档
 
-- [外部配置使用指南](https://github.com/Lincoln-cn/JAiRouter/tree/main/config-external/README.md) - GitHub 上的配置示例
-- [环境变量模板](https://github.com/Lincoln-cn/JAiRouter/blob/main/.env.example) - GitHub 上的 .env.example
+- [外部配置使用指南](https://github.com/Lincoln-cn/JAiRouter/tree/master/config-external/README.md) - GitHub 上的配置示例
+- [环境变量模板](https://github.com/Lincoln-cn/JAiRouter/blob/master/.env.example) - GitHub 上的 .env.example
 - [应用配置](zh/configuration/application-config.md) - 应用配置详解
 - [动态配置](zh/configuration/dynamic-config.md) - 动态配置管理
 

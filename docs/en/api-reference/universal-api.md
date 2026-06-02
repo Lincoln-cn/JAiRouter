@@ -50,7 +50,7 @@ Handles chat completion requests, supporting both streaming and non-streaming re
 |-----------|------|----------|-------------|
 | `model` | string | Yes | The name of the model to use |
 | `messages` | array | Yes | List of conversation messages |
-| [stream](file://D:\IdeaProjects\model-router\target\surefire-reports\2025-08-13T17-42-36_664.dumpstream) | boolean | No | Whether to enable streaming response, default is false |
+| `stream` | boolean | No | Whether to enable streaming response, default is false |
 | `max_tokens` | integer | No | Maximum number of tokens to generate |
 | `temperature` | number | No | Sampling temperature between 0-2, default is 1 |
 | `top_p` | number | No | Nucleus sampling parameter between 0-1, default is 1 |
@@ -269,7 +269,7 @@ temperature: 0
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| [file](file://D:\IdeaProjects\model-router\Makefile) | file | Yes | Audio file |
+| `file` | file | Yes | Audio file |
 | `model` | string | Yes | STT model name |
 | `language` | string | No | Audio language code |
 | `response_format` | string | No | Response format, default is json |
@@ -310,7 +310,7 @@ Generates images based on text descriptions.
 |-----------|------|----------|-------------|
 | `model` | string | Yes | Image generation model name |
 | `prompt` | string | Yes | Image description text |
-| [n](file://D:\IdeaProjects\model-router\monitoring\grafana\dashboards\infrastructure.json) | integer | No | Number of images to generate, default is 1 |
+| `n` | integer | No | Number of images to generate, default is 1 |
 | `size` | string | No | Image dimensions, default is 1024x1024 |
 | `quality` | string | No | Image quality, standard or hd |
 | `response_format` | string | No | Response format, url or b64_json |

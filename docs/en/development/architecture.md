@@ -293,7 +293,7 @@ graph TB
 ## Extension Points
 
 ### 1. Adapter Extension
-Implement the [BaseAdapter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\adapter\BaseAdapter.java#L19-L539) interface to support new backend services:
+Implement the `BaseAdapter` interface to support new backend services:
 
 ```java
 @Component
@@ -306,7 +306,7 @@ public class CustomAdapter extends BaseAdapter {
 ```
 
 ### 2. Load Balancing Strategy Extension
-Implement the [LoadBalancer](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\LoadBalancer.java#L13-L57) interface to add new load balancing algorithms:
+Implement the `LoadBalancer` interface to add new load balancing algorithms:
 
 ```java
 @Component
@@ -319,7 +319,7 @@ public class CustomLoadBalancer implements LoadBalancer {
 ```
 
 ### 3. Rate Limiting Algorithm Extension
-Implement the [RateLimiter](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\ratelimit\RateLimiter.java#L5-L18) interface to add new rate limiting algorithms:
+Implement the `RateLimiter` interface to add new rate limiting algorithms:
 
 ```java
 @Component

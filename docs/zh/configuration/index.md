@@ -39,7 +39,7 @@ src/main/resources/
 
 ### 配置导入机制
 
-主配置文件 [application.yml](file://D:/IdeaProjects/model-router/src/main/resources/application.yml) 通过 `spring.config.import` 机制导入各个模块配置：
+主配置文件 `application.yml` 通过 `spring.config.import` 机制导入各个模块配置：
 
 ```yaml
 # application.yml
@@ -255,11 +255,11 @@ store:
 
 JAiRouter 支持多种环境配置文件：
 
-- **开发环境**: [application-dev.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-dev.yml)
-- **预发布环境**: [application-staging.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-staging.yml)
-- **生产环境**: [application-prod.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-prod.yml)
-- **兼容模式**: [application-legacy.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-legacy.yml)
-- **安全示例**: [application-security-example.yml](file://D:/IdeaProjects/model-router/src/main/resources/application-security-example.yml)
+- **开发环境**: `application-dev.yml`
+- **预发布环境**: `application-staging.yml`
+- **生产环境**: `application-prod.yml`
+- **兼容模式**: `application-legacy.yml`
+- **安全示例**: `application-security-example.yml`
 
 环境配置文件只包含与基础配置的差异部分，遵循 Spring Boot 的配置覆盖机制。
 

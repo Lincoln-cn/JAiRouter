@@ -72,7 +72,7 @@ Thank you for your interest in the JAiRouter project! We welcome all forms of co
 
 2. **Configure Code Style**
    - File → Settings → Editor → Code Style
-   - Import [checkstyle.xml](file://D:\IdeaProjects\model-router\checkstyle.xml) configuration from project root
+   - Import `checkstyle.xml` configuration from project root
 
 3. **Configure Maven**
    - File → Settings → Build → Build Tools → Maven
@@ -109,8 +109,8 @@ git checkout -b fix/issue-number-description
 #### Naming Conventions
 
 - **Class names**: PascalCase (e.g., `LoadBalancerFactory`)
-- **Method names**: camelCase (e.g., [selectInstance](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\loadbalancer\LoadBalancer.java#L21-L21))
-- **Constants**: UPPER_SNAKE_CASE (e.g., [DEFAULT_TIMEOUT](file://D:\IdeaProjects\model-router\src\main\java\org\unreal\modelrouter\circuitbreaker\CircuitBreakerManager.java#L20-L20))
+- **Method names**: camelCase (e.g., `selectInstance`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_TIMEOUT`)
 - **Package names**: lowercase, dot-separated (e.g., `org.unreal.modelrouter.adapter`)
 
 #### Comment Standards
