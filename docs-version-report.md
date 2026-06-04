@@ -5,10 +5,11 @@
 - 总文档数: 163
 - 近7天变更: 132
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-03 06:53:11
+- 最后扫描: 2026-06-04 06:42:45
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.32 → 1.0.33) - 2026-06-04
 - **MODIFIED**: docs/zh/troubleshooting/performance.md (1.0.1 → 1.0.2) - 2026-06-03
 - **MODIFIED**: docs/zh/troubleshooting/issue-fixes.md (1.0.0 → 1.0.1) - 2026-06-03
 - **MODIFIED**: docs/zh/troubleshooting/index.md (1.0.1 → 1.0.2) - 2026-06-03
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/zh/security/troubleshooting.md (1.0.0 → 1.0.1) - 2026-06-03
 - **MODIFIED**: docs/zh/security/jwt-authentication.md (1.0.3 → 1.0.4) - 2026-06-03
 - **MODIFIED**: docs/zh/security/index.md (1.0.1 → 1.0.2) - 2026-06-03
-- **MODIFIED**: docs/zh/security/data-sanitization.md (1.0.1 → 1.0.2) - 2026-06-03
 
 ## 过期文档 (30天未更新)
 
@@ -586,6 +586,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.33 - 2026-06-04 (d2cdd8d4)
 - **docs/zh/troubleshooting/performance.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/issue-fixes.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
@@ -709,7 +710,6 @@
 - **docs/en/api-reference/error-codes.md**: v1.0.0 - 2026-06-03 (cbb53aec)
 - **docs/configuration-guide.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/README.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs-version-report.md**: v1.0.32 - 2026-06-03 (dfcd0d42)
 - **README.md**: v1.0.16 - 2026-06-03 (b305e6de)
 - **README-ZH.md**: v1.0.8 - 2026-06-03 (b305e6de)
 - **QWEN.md**: v1.0.3 - 2026-05-19 (8c4e0ad9)
