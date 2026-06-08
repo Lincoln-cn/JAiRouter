@@ -240,7 +240,7 @@ jairouter:
 // ✅ 正确的响应式上下文传播
 return Mono.just(data)
     .flatMap(this::processAsync)
-    .contextWrite(Context.of("tracing", TracingContext.current()));
+    .contextWrite(Context.of("tracing", TracingContextHolder.getCurrentContext()));
 
 // ❌ 错误的用法 - 没有传播上下文
 return Mono.just(data)

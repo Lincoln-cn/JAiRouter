@@ -30,7 +30,7 @@ jairouter:
     enabled: true
     service-name: "jairouter"
     sampling:
-      strategy: "ratio"  # Optional values: ratio, rule, adaptive
+      strategy: "parent_based_traceid_ratio"  # Options: parent_based_traceid_ratio, ratio, rule, adaptive
       ratio: 1.0         # 100% sampling (recommended for development)
 ```
 

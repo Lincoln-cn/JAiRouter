@@ -1,9 +1,9 @@
 ﻿# Development Guide
 
 <!-- Version Info -->
-> **Document Version**: 1.7.3
-> **Last Updated**: 2026-04-14
-> **Git Commit**: c64fb15
+> **Document Version**: 1.8.0
+> **Last Updated**: 2026-06-08
+> **Git Commit**: dd7b68ad
 > **Author**: JAiRouter Team
 <!-- /Version Info -->
 

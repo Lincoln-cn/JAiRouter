@@ -240,7 +240,7 @@ jairouter:
 // ✅ Correct reactive context propagation
 return Mono.just(data)
     .flatMap(this::processAsync)
-    .contextWrite(Context.of("tracing", TracingContext.current()));
+    .contextWrite(Context.of("tracing", TracingContextHolder.getCurrentContext()));
 
 // ❌ Wrong usage - no context propagation
 return Mono.just(data)
