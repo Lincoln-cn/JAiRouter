@@ -30,7 +30,7 @@ jairouter:
     enabled: true
     service-name: "jairouter"
     sampling:
-      strategy: "ratio"  # 可选值：ratio, rule, adaptive
+      strategy: "parent_based_traceid_ratio"  # 可选值：parent_based_traceid_ratio, ratio, rule, adaptive
       ratio: 1.0         # 100% 采样（开发环境推荐）
 ```
 

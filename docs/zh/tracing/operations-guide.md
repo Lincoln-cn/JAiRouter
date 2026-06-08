@@ -42,29 +42,41 @@ jairouter:
     enabled: true
     service-name: "jairouter-prod"
     service-version: "${app.version}"
-    environment: "production"
-    
+    service-namespace: "production"
+
     # 采样配置
     sampling:
-      strategy: "adaptive"
+      strategy: "parent_based_traceid_ratio"
+      ratio: 0.01      # 1% 基础采样（v2.7.9+ 优化默认值）
+      default-ratio: 0.01
+      
+      # 自适应采样（可选）
       adaptive:
         base-sample-rate: 0.01      # 1% 基础采样
         max-traces-per-second: 100
         error-sample-rate: 1.0      # 错误 100% 采样
         slow-request-threshold: 3000
     
-    # 导出配置
+    # 导出配置 (v2.7.x 优化)
     exporter:
       type: "otlp"
-      batch-size: 512
-      export-timeout: 10s
-      max-queue-size: 2048
-      
-    # 内存管理
-    memory:
-      max-spans: 50000
-      cleanup-interval: 30s
-      span-ttl: 300s
+      otlp:
+        endpoint: "http://otel-collector:4317"
+        timeout: 10s
+        compression: "gzip"
+
+    # 性能配置 (v2.7.x 优化)
+    performance:
+      async:
+        enabled: true
+        queue-size: 8192
+        worker-threads: 8
+      batch:
+        timeout: 30s
+        size: 2048
+        delay: 5s
+      buffer:
+        size: 8192
       
     # 安全配置
     security:

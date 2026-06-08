@@ -42,29 +42,41 @@ jairouter:
     enabled: true
     service-name: "jairouter-prod"
     service-version: "${app.version}"
-    environment: "production"
-    
+    service-namespace: "production"
+
     # Sampling configuration
     sampling:
-      strategy: "adaptive"
+      strategy: "parent_based_traceid_ratio"
+      ratio: 0.01      # 1% base sampling (v2.7.9+ optimized default)
+      default-ratio: 0.01
+      
+      # Adaptive sampling (optional)
       adaptive:
         base-sample-rate: 0.01      # 1% base sampling
         max-traces-per-second: 100
         error-sample-rate: 1.0      # 100% error sampling
         slow-request-threshold: 3000
     
-    # Export configuration
+    # Export configuration (v2.7.x optimized)
     exporter:
       type: "otlp"
-      batch-size: 512
-      export-timeout: 10s
-      max-queue-size: 2048
-      
-    # Memory management
-    memory:
-      max-spans: 50000
-      cleanup-interval: 30s
-      span-ttl: 300s
+      otlp:
+        endpoint: "http://otel-collector:4317"
+        timeout: 10s
+        compression: "gzip"
+
+    # Performance configuration (v2.7.x optimized)
+    performance:
+      async:
+        enabled: true
+        queue-size: 8192
+        worker-threads: 8
+      batch:
+        timeout: 30s
+        size: 2048
+        delay: 5s
+      buffer:
+        size: 8192
       
     # Security configuration
     security:

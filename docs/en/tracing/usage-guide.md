@@ -48,51 +48,97 @@ curl http://localhost:8080/actuator/metrics | grep tracing
 ```java
 @RestController
 public class CustomController {
-    
+
     @Autowired
     private TracingService tracingService;
-    
+
     @PostMapping("/api/custom")
-    public ResponseEntity<?> customEndpoint(@RequestBody CustomRequest request) {
-        // Add business tags
-        tracingService.addTag("user.id", request.getUserId());
-        tracingService.addTag("business.type", request.getType());
-        tracingService.addTag("custom.operation", "data-processing");
+    public Mono<ResponseEntity<?>> customEndpoint(@RequestBody CustomRequest request) {
+        // Get current tracing context (automatically created by HTTP filter)
+        TracingContext context = TracingContextHolder.getCurrentContext();
         
-        // Record business events
-        tracingService.addEvent("business.started", 
-            Map.of("input.size", request.getData().size()));
-        
+        if (context != null && context.isActive()) {
+            Span currentSpan = context.getCurrentSpan();
+            
+            // Add business attributes to Span
+            currentSpan.setAttribute("user.id", request.getUserId());
+            currentSpan.setAttribute("business.type", request.getType());
+            currentSpan.setAttribute("custom.operation", "data-processing");
+            
+            // Record business event
+            currentSpan.addEvent("business.started", 
+                Attributes.of(AttributeKey.longKey("input.size"), request.getData().size()));
+        }
+
         // Business logic processing
-        CustomResponse response = processRequest(request);
-        
-        // Record processing results
-        tracingService.addTag("result.status", response.getStatus());
-        tracingService.addEvent("business.completed",
-            Map.of("output.size", response.getData().size()));
-        
-        return ResponseEntity.ok(response);
+        return processRequest(request)
+            .doOnSuccess(response -> {
+                if (context != null && context.isActive()) {
+                    Span span = context.getCurrentSpan();
+                    span.setAttribute("result.status", response.getStatus());
+                    span.addEvent("business.completed",
+                        Attributes.of(AttributeKey.longKey("output.size"), response.getData().size()));
+                }
+            })
+            .map(ResponseEntity::ok);
     }
 }
 ```
 
-#### 2. Using Annotations to Add Tracing
+#### 2. Manual Span Creation in Business Services
 
 ```java
 @Component
 public class BusinessService {
-    
-    @TraceAsync("user-data-processing")
+
+    @Autowired
+    private TracingService tracingService;
+
     public Mono<ProcessResult> processUserData(UserData data) {
         return Mono.fromCallable(() -> {
-            // Business logic
-            return new ProcessResult();
+            // Create custom operation span
+            TracingContext context = tracingService.createOperationSpan(
+                "user-data-processing", 
+                SpanKind.INTERNAL
+            );
+            
+            try {
+                Span span = context.getCurrentSpan();
+                span.setAttribute("user.id", data.getUserId());
+                span.setAttribute("data.size", data.getSize());
+                
+                // Business logic
+                ProcessResult result = performProcessing(data);
+                
+                span.addEvent("processing.completed");
+                return result;
+            } finally {
+                context.finishSpan(context.getCurrentSpan());
+            }
         });
     }
-    
-    @TraceSpan(name = "database-query", tags = {"operation", "query"})
+
     public List<Entity> queryDatabase(String condition) {
-        // Database query logic
+        TracingContext parentContext = TracingContextHolder.getCurrentContext();
+        
+        if (parentContext != null && parentContext.isActive()) {
+            // Create child span for database operation
+            Span dbSpan = parentContext.createChildSpan(
+                "database-query", 
+                SpanKind.CLIENT,
+                parentContext.getCurrentSpan()
+            );
+            
+            dbSpan.setAttribute("db.operation", "query");
+            dbSpan.setAttribute("db.condition", condition);
+            
+            try {
+                return entityRepository.findByCondition(condition);
+            } finally {
+                dbSpan.end();
+            }
+        }
+        
         return entityRepository.findByCondition(condition);
     }
 }
@@ -107,36 +153,55 @@ public class BusinessService {
 ```java
 @Service
 public class ExternalServiceClient {
-    
+
     @Autowired
     private WebClient webClient;
-    
-    @Autowired
-    private TracingService tracingService;
-    
+
     public Mono<ExternalResponse> callExternalService(ExternalRequest request) {
-        // Create child Span for external service call
-        return tracingService.withChildSpan("external-service-call", span -> {
-            // Add service information
-            span.addTag("external.service", "ai-model-service");
-            span.addTag("external.endpoint", "/v1/chat/completions");
-            span.addTag("request.model", request.getModel());
+        TracingContext parentContext = TracingContextHolder.getCurrentContext();
+        
+        if (parentContext != null && parentContext.isActive()) {
+            // Create child Span for external service call
+            Span externalSpan = parentContext.createChildSpan(
+                "external-service-call",
+                SpanKind.CLIENT,
+                parentContext.getCurrentSpan()
+            );
             
+            // Add service information
+            externalSpan.setAttribute("external.service", "ai-model-service");
+            externalSpan.setAttribute("external.endpoint", "/v1/chat/completions");
+            externalSpan.setAttribute("request.model", request.getModel());
+            
+            // Prepare headers with tracing context
+            Map<String, String> headers = new HashMap<>();
+            parentContext.injectContext(headers);
+
             return webClient.post()
                 .uri("/v1/chat/completions")
+                .headers(httpHeaders -> headers.forEach(httpHeaders::add))
                 .body(BodyInserters.fromValue(request))
                 .retrieve()
                 .bodyToMono(ExternalResponse.class)
                 .doOnSuccess(response -> {
-                    span.addTag("response.status", "success");
-                    span.addTag("response.tokens", response.getUsage().getTotalTokens());
+                    externalSpan.setAttribute("response.status", "success");
+                    externalSpan.setAttribute("response.tokens", response.getUsage().getTotalTokens());
+                    externalSpan.end();
                 })
                 .doOnError(error -> {
-                    span.addTag("error.type", error.getClass().getSimpleName());
-                    span.addTag("error.message", error.getMessage());
-                    span.recordException(error);
+                    externalSpan.setAttribute("error.type", error.getClass().getSimpleName());
+                    externalSpan.setAttribute("error.message", error.getMessage());
+                    externalSpan.recordException(error);
+                    externalSpan.end();
                 });
-        });
+        }
+        
+        // Fallback without tracing
+        return webClient.post()
+            .uri("/v1/chat/completions")
+            .body(BodyInserters.fromValue(request))
+            .retrieve()
+            .bodyToMono(ExternalResponse.class);
     }
 }
 ```
@@ -146,32 +211,37 @@ public class ExternalServiceClient {
 ```java
 @Component
 public class ReactiveProcessor {
-    
+
     public Mono<ProcessedData> processDataPipeline(InputData input) {
         return Mono.just(input)
             // First stage: validation
             .flatMap(this::validateInput)
-            .contextWrite(ctx -> 
-                TracingContext.currentContext()
-                    .map(tracing -> ctx.put("tracing", tracing))
-                    .orElse(ctx))
-            
+            .doOnNext(validated -> {
+                TracingContext context = TracingContextHolder.getCurrentContext();
+                if (context != null && context.isActive()) {
+                    context.getCurrentSpan().addEvent("pipeline.stage.validation");
+                }
+            })
+
             // Second stage: transformation
             .flatMap(this::transformData)
-            .contextWrite(ctx -> {
-                // Update tracing information at each stage
-                TracingContext.current()
-                    .ifPresent(tracing -> 
-                        tracing.addEvent("pipeline.stage.transform"));
-                return ctx;
+            .doOnNext(transformed -> {
+                TracingContext context = TracingContextHolder.getCurrentContext();
+                if (context != null && context.isActive()) {
+                    Span span = context.getCurrentSpan();
+                    span.addEvent("pipeline.stage.transform");
+                    span.setAttribute("data.transformed", true);
+                }
             })
-            
+
             // Third stage: storage
             .flatMap(this::saveData)
-            .doOnSuccess(result -> 
-                TracingContext.current()
-                    .ifPresent(tracing -> 
-                        tracing.addTag("pipeline.result", "success")));
+            .doOnSuccess(result -> {
+                TracingContext context = TracingContextHolder.getCurrentContext();
+                if (context != null && context.isActive()) {
+                    context.getCurrentSpan().setAttribute("pipeline.result", "success");
+                }
+            });
     }
 }
 ```
@@ -197,26 +267,29 @@ jairouter:
 ```java
 @Component
 public class SlowQueryAnalyzer {
-    
-    @Autowired
-    private TracingService tracingService;
-    
+
     public void analyzeSlowOperation() {
+        TracingContext context = TracingContextHolder.getCurrentContext();
         long startTime = System.currentTimeMillis();
-        
+
         try {
             // Execute potentially slow operation
             performComplexOperation();
         } finally {
             long duration = System.currentTimeMillis() - startTime;
-            
-            if (duration > 5000) { // 5-second threshold
-                // Mark as slow query
-                tracingService.addTag("performance.slow", "true");
-                tracingService.addTag("performance.duration", String.valueOf(duration));
-                tracingService.addEvent("slow.query.detected", 
-                    Map.of("threshold", "5000ms", "actual", duration + "ms"));
+
+            if (duration > 5000 && context != null && context.isActive()) { // 5-second threshold
+                Span span = context.getCurrentSpan();
                 
+                // Mark as slow query
+                span.setAttribute("performance.slow", true);
+                span.setAttribute("performance.duration_ms", duration);
+                span.addEvent("slow.query.detected",
+                    Attributes.of(
+                        AttributeKey.stringKey("threshold"), "5000ms",
+                        AttributeKey.stringKey("actual"), duration + "ms"
+                    ));
+
                 // Record detailed performance information
                 recordPerformanceDetails();
             }
@@ -232,25 +305,32 @@ public class SlowQueryAnalyzer {
 ```java
 @Component
 public class ErrorHandlingService {
-    
+
+    @Autowired
+    private TracingService tracingService;
+
     public Mono<Result> processWithErrorHandling(Request request) {
         return Mono.fromCallable(() -> processRequest(request))
             .onErrorResume(BusinessException.class, ex -> {
                 // Business exception handling
-                TracingContext.current().ifPresent(tracing -> {
-                    tracing.addTag("error.type", "business");
-                    tracing.addTag("error.code", ex.getErrorCode());
-                    tracing.recordException(ex);
-                });
+                TracingContext context = TracingContextHolder.getCurrentContext();
+                if (context != null && context.isActive()) {
+                    Span span = context.getCurrentSpan();
+                    span.setAttribute("error.type", "business");
+                    span.setAttribute("error.code", ex.getErrorCode());
+                    span.recordException(ex);
+                }
                 return Mono.just(createErrorResult(ex));
             })
             .onErrorResume(Exception.class, ex -> {
                 // System exception handling
-                TracingContext.current().ifPresent(tracing -> {
-                    tracing.addTag("error.type", "system");
-                    tracing.addTag("error.severity", "high");
-                    tracing.recordException(ex);
-                });
+                TracingContext context = TracingContextHolder.getCurrentContext();
+                if (context != null && context.isActive()) {
+                    Span span = context.getCurrentSpan();
+                    span.setAttribute("error.type", "system");
+                    span.setAttribute("error.severity", "high");
+                    span.recordException(ex);
+                }
                 return Mono.error(new SystemException("System processing failed", ex));
             });
     }
@@ -262,34 +342,41 @@ public class ErrorHandlingService {
 ```java
 @Component
 public class CustomErrorTracker {
-    
-    @Autowired
-    private TracingService tracingService;
-    
+
     public void trackCustomError(String operation, Throwable error, Map<String, Object> context) {
-        tracingService.withSpan("error-analysis", span -> {
+        TracingContext parentContext = TracingContextHolder.getCurrentContext();
+        
+        if (parentContext != null && parentContext.isActive()) {
+            // Create error analysis span
+            Span errorSpan = parentContext.createChildSpan(
+                "error-analysis",
+                SpanKind.INTERNAL,
+                parentContext.getCurrentSpan()
+            );
+            
             // Record basic error information
-            span.addTag("error.operation", operation);
-            span.addTag("error.class", error.getClass().getSimpleName());
-            span.addTag("error.message", error.getMessage());
-            
+            errorSpan.setAttribute("error.operation", operation);
+            errorSpan.setAttribute("error.class", error.getClass().getSimpleName());
+            errorSpan.setAttribute("error.message", error.getMessage());
+
             // Record context information
-            context.forEach((key, value) -> 
-                span.addTag("context." + key, String.valueOf(value)));
-            
+            context.forEach((key, value) ->
+                errorSpan.setAttribute("context." + key, String.valueOf(value)));
+
             // Record stack trace (sanitized)
             String sanitizedStackTrace = sanitizeStackTrace(error);
-            span.addEvent("error.stacktrace", 
-                Map.of("trace", sanitizedStackTrace));
-            
+            errorSpan.addEvent("error.stacktrace",
+                Attributes.of(AttributeKey.stringKey("trace"), sanitizedStackTrace));
+
             // Analyze error severity
             String severity = analyzeSeverity(error);
-            span.addTag("error.severity", severity);
+            errorSpan.setAttribute("error.severity", severity);
             
-            return null;
-        });
+            // End the error span
+            errorSpan.end();
+        }
     }
-    
+
     private String sanitizeStackTrace(Throwable error) {
         // Implement stack trace sanitization logic
         return error.getStackTrace()[0].toString();
@@ -395,9 +482,9 @@ public class TracingSanitizer {
             if (isSensitiveAttribute(key)) {
                 // Sanitization processing
                 String sanitizedValue = sanitizeValue(String.valueOf(value));
-                span.addTag(key + ".sanitized", sanitizedValue);
+                span.setAttribute(key + ".sanitized", sanitizedValue);
             } else {
-                span.addTag(key, String.valueOf(value));
+                span.setAttribute(key, String.valueOf(value));
             }
         });
     }
@@ -560,29 +647,29 @@ public class ContextDiagnostic {
 - **Test Environment**: Use rule sampling, focusing on critical interfaces
 - **Production Environment**: Use adaptive sampling, balancing performance and observability
 
-### 2. Tag Usage Standards
+### 2. Attribute Usage Standards
 
 ```java
-// ✅ Good tag naming
-span.addTag("http.method", "POST");
-span.addTag("user.id", userId);
-span.addTag("business.operation", "payment");
+// ✅ Good attribute naming
+span.setAttribute("http.method", "POST");
+span.setAttribute("user.id", userId);
+span.setAttribute("business.operation", "payment");
 
-// ❌ Avoid tag naming
-span.addTag("tag1", "value");  // Unclear naming
-span.addTag("user_data", largeObject.toString());  // Large values
+// ❌ Avoid attribute naming
+span.setAttribute("tag1", "value");  // Unclear naming
+span.setAttribute("user_data", largeObject.toString());  // Large values
 ```
 
 ### 3. Error Handling
 
 ```java
 // ✅ Proper error recording
-span.addTag("error", "true");
-span.addTag("error.type", "validation");
+span.setAttribute("error", "true");
+span.setAttribute("error.type", "validation");
 span.recordException(exception);
 
 // ❌ Avoid recording sensitive error information
-span.addTag("error.details", exception.getMessage());  // May contain sensitive information
+span.setAttribute("error.details", exception.getMessage());  // May contain sensitive information
 ```
 
 ### 4. Performance Considerations

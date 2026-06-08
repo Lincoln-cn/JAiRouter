@@ -2,30 +2,30 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.15",
-      "LastModified": "2026-05-20T06:08:07.668683",
-      "ContentHash": "2440a0c4feb6c656",
-      "GitCommit": "57b4627f",
+      "Version": "1.0.14",
+      "LastModified": "2026-06-08T10:24:35.426607",
+      "ContentHash": "fb12ebd9503eefc3",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/README.md": {
       "FilePath": "docs/README.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.117171",
-      "ContentHash": "9a685510a17a109d",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.455209",
+      "ContentHash": "e3b5708f0382d16c",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/api-reference/index.md": {
       "FilePath": "docs/en/api-reference/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.120341",
-      "ContentHash": "ed9a2725e0800307",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.491694",
+      "ContentHash": "06200d80abfcbb6f",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -37,63 +37,65 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-10-15T03:04:35.123628",
-      "ContentHash": "e8ac56c244630dee",
-      "GitCommit": "f3050558",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.499758",
+      "ContentHash": "0058f434a91fb35a",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/api-reference/openapi-spec.md": {
       "FilePath": "docs/en/api-reference/openapi-spec.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.129057",
-      "ContentHash": "a08d29a756101341",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.508589",
+      "ContentHash": "83cee060ea99044e",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/api-reference/universal-api.md": {
       "FilePath": "docs/en/api-reference/universal-api.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.131746",
-      "ContentHash": "4a0231fb8294d2da",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.519433",
+      "ContentHash": "55df4e98560ecdbd",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/configuration/application-config.md": {
       "FilePath": "docs/en/configuration/application-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-06T02:53:48.969467",
-      "ContentHash": "dc55f88cf8f409b4",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.527083",
+      "ContentHash": "3746de5fec7cbdf4",
+      "GitCommit": "69e80538",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/configuration/circuit-breaker.md": {
       "FilePath": "docs/en/configuration/circuit-breaker.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.136558",
-      "ContentHash": "21f17ce17900ad57",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.532212",
+      "ContentHash": "0f1d41b0f722f9b0",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/index.md",
+        "docs/en/deployment/index.md",
+        "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
       ]
     },
     "docs/en/configuration/dynamic-config.md": {
       "FilePath": "docs/en/configuration/dynamic-config.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.139120",
-      "ContentHash": "79e565f2f57e3808",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.535787",
+      "ContentHash": "7df131afe8182dd8",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -105,10 +107,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2025-10-15T03:04:35.143436",
-      "ContentHash": "5b01c432577418d2",
-      "GitCommit": "f3050558",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:35.540187",
+      "ContentHash": "4b76414056d7493a",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -124,72 +126,75 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.144247",
-      "ContentHash": "ab4d03f55b606cad",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.564140",
+      "ContentHash": "4f3e672223efbc02",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/circuit-breaker.md",
         "docs/en/configuration/rate-limiting.md",
+        "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
       ]
     },
     "docs/en/configuration/rate-limiting.md": {
       "FilePath": "docs/en/configuration/rate-limiting.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.149015",
-      "ContentHash": "4c2a47519511021d",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.573342",
+      "ContentHash": "4388f9a3f323c3cb",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/circuit-breaker.md",
+        "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md",
         "docs/en/troubleshooting/performance.md"
       ]
     },
     "docs/en/deployment/china-optimization.md": {
       "FilePath": "docs/en/deployment/china-optimization.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.156071",
-      "ContentHash": "a8c97a458b835b3d",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.617894",
+      "ContentHash": "354acb81cfc4ef6c",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/deployment/docker.md",
         "docs/en/deployment/production.md",
+        "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
       ]
     },
     "docs/en/deployment/docker.md": {
       "FilePath": "docs/en/deployment/docker.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-04-17T04:49:13.056026",
-      "ContentHash": "7a08eb895c79b6e5",
-      "GitCommit": "3f9c7cf5",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:35.637338",
+      "ContentHash": "dc8b97cfc993c1ab",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/deployment/github-pages.md": {
       "FilePath": "docs/en/deployment/github-pages.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.154991",
-      "ContentHash": "314a1076195591a0",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.644584",
+      "ContentHash": "1be4cdb60ed5a130",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/deployment/index.md": {
       "FilePath": "docs/en/deployment/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-10-15T03:04:35.170158",
-      "ContentHash": "7271515282c2511e",
-      "GitCommit": "f3050558",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.650216",
+      "ContentHash": "48911f5230205e45",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -202,68 +207,70 @@
     },
     "docs/en/deployment/kubernetes.md": {
       "FilePath": "docs/en/deployment/kubernetes.md",
-      "Version": "1.0.3",
-      "LastModified": "2025-09-06T02:53:48.997957",
-      "ContentHash": "ff323e0c7ee8ef5f",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:35.669969",
+      "ContentHash": "1d1302ea5251978b",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/deployment/production.md",
+        "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md",
         "docs/en/troubleshooting/performance.md"
       ]
     },
     "docs/en/deployment/production.md": {
       "FilePath": "docs/en/deployment/production.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-04-17T04:49:13.085237",
-      "ContentHash": "90a631982b8f0b5e",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.5",
+      "LastModified": "2026-06-08T10:24:35.674082",
+      "ContentHash": "9095e5979b719d81",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/index.md",
+        "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md",
         "docs/en/troubleshooting/performance.md"
       ]
     },
     "docs/en/development/architecture.md": {
       "FilePath": "docs/en/development/architecture.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.164877",
-      "ContentHash": "4b968207745226fa",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.691376",
+      "ContentHash": "1218979896e63d55",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/development/code-quality.md": {
       "FilePath": "docs/en/development/code-quality.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.167494",
-      "ContentHash": "9df357b72d090e9b",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.695677",
+      "ContentHash": "1c8b41196c889340",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/development/contributing.md": {
       "FilePath": "docs/en/development/contributing.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.170061",
-      "ContentHash": "5566330c269da531",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.700531",
+      "ContentHash": "13a1408a7107447f",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/development/deployment-testing.md": {
       "FilePath": "docs/en/development/deployment-testing.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-08-29T03:02:12.172656",
-      "ContentHash": "6cbadd5e7cce3fdb",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.707240",
+      "ContentHash": "8364ae5955a42f6f",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -286,10 +293,10 @@
     },
     "docs/en/development/performance-optimization.md": {
       "FilePath": "docs/en/development/performance-optimization.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-08-29T03:02:12.178391",
-      "ContentHash": "3fdf6eb979319814",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.727161",
+      "ContentHash": "232a724620b378ce",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -299,20 +306,20 @@
     },
     "docs/en/development/testing.md": {
       "FilePath": "docs/en/development/testing.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.181087",
-      "ContentHash": "9694dd80d7013772",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.740343",
+      "ContentHash": "2944f8ca9dc4394f",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/getting-started/first-steps.md": {
       "FilePath": "docs/en/getting-started/first-steps.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.186377",
-      "ContentHash": "6c4b9782f9aac63d",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.770501",
+      "ContentHash": "a3c036ea6ed13989",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -326,10 +333,10 @@
     },
     "docs/en/getting-started/index.md": {
       "FilePath": "docs/en/getting-started/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.189375",
-      "ContentHash": "fee3342444f7e09d",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.778242",
+      "ContentHash": "47d22417ec2f718c",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -340,10 +347,10 @@
     },
     "docs/en/getting-started/installation.md": {
       "FilePath": "docs/en/getting-started/installation.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.197982",
-      "ContentHash": "d5c4440dd7725f2a",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.786115",
+      "ContentHash": "78419211e17bc097",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -353,9 +360,9 @@
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
       "Version": "1.0.2",
-      "LastModified": "2026-05-20T06:08:07.872721",
-      "ContentHash": "efe314513a35e0b5",
-      "GitCommit": "2ef125ce",
+      "LastModified": "2026-06-08T10:24:35.793768",
+      "ContentHash": "b8c236ac175dec25",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -368,9 +375,9 @@
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
       "Version": "1.0.2",
-      "LastModified": "2026-05-19T06:08:24.123845",
-      "ContentHash": "d18e26d8e6a6f5b2",
-      "GitCommit": "5e7e6a64",
+      "LastModified": "2026-06-08T10:24:35.798758",
+      "ContentHash": "4e4b9f38026be942",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -385,10 +392,10 @@
     },
     "docs/en/monitoring/alerts.md": {
       "FilePath": "docs/en/monitoring/alerts.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.201267",
-      "ContentHash": "6524bf13fbc1f1cb",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.835738",
+      "ContentHash": "7344fb304ef5e13e",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -400,10 +407,10 @@
     },
     "docs/en/monitoring/configuration.md": {
       "FilePath": "docs/en/monitoring/configuration.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.204444",
-      "ContentHash": "0b0f583857e57fe6",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.843493",
+      "ContentHash": "80d6e72a872f8259",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -415,10 +422,10 @@
     },
     "docs/en/monitoring/dashboards.md": {
       "FilePath": "docs/en/monitoring/dashboards.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.207276",
-      "ContentHash": "337a87a73bfb385a",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.851808",
+      "ContentHash": "afda37f7219d71b1",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -430,10 +437,10 @@
     },
     "docs/en/monitoring/index.md": {
       "FilePath": "docs/en/monitoring/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.217651",
-      "ContentHash": "e475ec610059734f",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.867369",
+      "ContentHash": "3fec7b35fee0468e",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -446,10 +453,10 @@
     },
     "docs/en/monitoring/metrics.md": {
       "FilePath": "docs/en/monitoring/metrics.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.215875",
-      "ContentHash": "fb3a0f8b19579e17",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.872931",
+      "ContentHash": "7c90ceeddd0c6bdb",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -461,10 +468,10 @@
     },
     "docs/en/monitoring/performance.md": {
       "FilePath": "docs/en/monitoring/performance.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.218895",
-      "ContentHash": "2cd69f239dc041f3",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.880072",
+      "ContentHash": "81f1118ba3f55451",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -476,10 +483,10 @@
     },
     "docs/en/monitoring/setup.md": {
       "FilePath": "docs/en/monitoring/setup.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.226160",
-      "ContentHash": "124dd84b95d3e1b8",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.884576",
+      "ContentHash": "25f2cbe8262f8344",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -491,10 +498,10 @@
     },
     "docs/en/monitoring/testing.md": {
       "FilePath": "docs/en/monitoring/testing.md",
-      "Version": "1.0.3",
-      "LastModified": "2025-09-02T03:06:00.230915",
-      "ContentHash": "6dfa2bd024cba2cd",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:35.892331",
+      "ContentHash": "df68fd193a51eb62",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -506,10 +513,10 @@
     },
     "docs/en/monitoring/troubleshooting.md": {
       "FilePath": "docs/en/monitoring/troubleshooting.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.229781",
-      "ContentHash": "84c80b9b474127fb",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.898779",
+      "ContentHash": "b31699635b8b25c2",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -521,20 +528,20 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-04-17T04:49:13.252171",
-      "ContentHash": "629fff9ad320efef",
-      "GitCommit": "8bc21f3c",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:35.919052",
+      "ContentHash": "9b07321764a7e796",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/reference/faq.md": {
       "FilePath": "docs/en/reference/faq.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.239351",
-      "ContentHash": "10ad45d997546a42",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:35.931601",
+      "ContentHash": "a81116281a2fcb8a",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -544,20 +551,20 @@
     },
     "docs/en/reference/glossary.md": {
       "FilePath": "docs/en/reference/glossary.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.238436",
-      "ContentHash": "3db018af00d45ca7",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.939534",
+      "ContentHash": "31eeccc7338f0553",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/reference/index.md": {
       "FilePath": "docs/en/reference/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.243299",
-      "ContentHash": "213fdf378689ab18",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.948052",
+      "ContentHash": "49543f24fe0307c4",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -574,39 +581,39 @@
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
       "Version": "1.0.3",
-      "LastModified": "2026-05-20T06:08:07.969217",
-      "ContentHash": "e0afa52c1249b369",
-      "GitCommit": "7f3ab042",
+      "LastModified": "2026-06-08T10:24:35.954822",
+      "ContentHash": "0408735bb242b033",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/troubleshooting/common-issues.md": {
       "FilePath": "docs/en/troubleshooting/common-issues.md",
-      "Version": "1.0.3",
-      "LastModified": "2025-10-15T03:04:35.301208",
-      "ContentHash": "4f8bba5cf242a22e",
-      "GitCommit": "f3050558",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:36.125390",
+      "ContentHash": "f342f40c63e0e156",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/troubleshooting/debugging.md": {
       "FilePath": "docs/en/troubleshooting/debugging.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.291148",
-      "ContentHash": "b46b383a9fd407c6",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.132840",
+      "ContentHash": "1aa86b4b647ef72c",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/troubleshooting/index.md": {
       "FilePath": "docs/en/troubleshooting/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.289606",
-      "ContentHash": "113e1d655309ff5b",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.139370",
+      "ContentHash": "9fd323d3925ec36d",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -620,20 +627,20 @@
     },
     "docs/en/troubleshooting/performance.md": {
       "FilePath": "docs/en/troubleshooting/performance.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.292566",
-      "ContentHash": "ad0f1ac766fbe18d",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.145035",
+      "ContentHash": "7f912f89a0576c66",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/api-reference/index.md": {
       "FilePath": "docs/zh/api-reference/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.296236",
-      "ContentHash": "6c89a01635a6b2a3",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.178980",
+      "ContentHash": "277f095f0d47e753",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -645,50 +652,52 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.299132",
-      "ContentHash": "d90e536a7a4c22ec",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.184493",
+      "ContentHash": "d6db70f7536f5347",
+      "GitCommit": "cbb53aec",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": []
+      "Dependencies": [
+        "docs/zh/api-reference/error-codes.md"
+      ]
     },
     "docs/zh/api-reference/openapi-spec.md": {
       "FilePath": "docs/zh/api-reference/openapi-spec.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.305216",
-      "ContentHash": "dd9323ac3b745ee1",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.197604",
+      "ContentHash": "0757ff40e08d9493",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/api-reference/universal-api.md": {
       "FilePath": "docs/zh/api-reference/universal-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-04-17T04:49:13.410493",
-      "ContentHash": "a36c2fecc914152d",
-      "GitCommit": "27a2c045",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.205565",
+      "ContentHash": "c7c52cdc9133d565",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/configuration/application-config.md": {
       "FilePath": "docs/zh/configuration/application-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-06T02:53:49.148199",
-      "ContentHash": "6e83b349616cf09d",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.214323",
+      "ContentHash": "90647338673cc009",
+      "GitCommit": "69e80538",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/configuration/circuit-breaker.md": {
       "FilePath": "docs/zh/configuration/circuit-breaker.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.313561",
-      "ContentHash": "f93348012d6c92a8",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.218878",
+      "ContentHash": "ba0ac3c6f403300f",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -700,10 +709,10 @@
     },
     "docs/zh/configuration/dynamic-config.md": {
       "FilePath": "docs/zh/configuration/dynamic-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-04-17T04:49:13.426564",
-      "ContentHash": "87418b85cc1a1d3b",
-      "GitCommit": "5d7928c0",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.223527",
+      "ContentHash": "d216b3abcdcbe2f0",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -715,10 +724,10 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-25T03:01:10.530351",
-      "ContentHash": "3899f4479074afc4",
-      "GitCommit": "98827628",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.228102",
+      "ContentHash": "ce3bf86682d5b703",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -733,10 +742,10 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.322557",
-      "ContentHash": "067ee32099e33982",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.254065",
+      "ContentHash": "e35da9a9b157ea5b",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -748,10 +757,10 @@
     },
     "docs/zh/configuration/rate-limiting.md": {
       "FilePath": "docs/zh/configuration/rate-limiting.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.327874",
-      "ContentHash": "34c8660a75ddfc88",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.267525",
+      "ContentHash": "ba8d88bb2acbdcf9",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -763,10 +772,10 @@
     },
     "docs/zh/deployment/china-optimization.md": {
       "FilePath": "docs/zh/deployment/china-optimization.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.339102",
-      "ContentHash": "7eaac0eb35a0aab8",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.339319",
+      "ContentHash": "592b8670d02f3b9f",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -778,10 +787,10 @@
     },
     "docs/zh/deployment/docker.md": {
       "FilePath": "docs/zh/deployment/docker.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-04-17T04:49:13.480002",
-      "ContentHash": "91f89983ffbc01c7",
-      "GitCommit": "3f9c7cf5",
+      "Version": "1.0.6",
+      "LastModified": "2026-06-08T10:24:36.353498",
+      "ContentHash": "0887d87563839410",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -793,20 +802,20 @@
     },
     "docs/zh/deployment/github-pages.md": {
       "FilePath": "docs/zh/deployment/github-pages.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.335672",
-      "ContentHash": "0f19f29e21bfcef4",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.356921",
+      "ContentHash": "0f5404f2220048eb",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/deployment/index.md": {
       "FilePath": "docs/zh/deployment/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.348268",
-      "ContentHash": "d567bf756771da0f",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.363590",
+      "ContentHash": "d5bf6bdafed0d170",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -818,10 +827,10 @@
     },
     "docs/zh/deployment/kubernetes.md": {
       "FilePath": "docs/zh/deployment/kubernetes.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.351398",
-      "ContentHash": "83c914b033a40501",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.377325",
+      "ContentHash": "95bff30a4ba7baff",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -833,10 +842,10 @@
     },
     "docs/zh/deployment/production.md": {
       "FilePath": "docs/zh/deployment/production.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-04-17T04:49:13.505864",
-      "ContentHash": "76df5949e7b922be",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.5",
+      "LastModified": "2026-06-08T10:24:36.384532",
+      "ContentHash": "f8203a501b2230b1",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -848,40 +857,40 @@
     },
     "docs/zh/development/architecture.md": {
       "FilePath": "docs/zh/development/architecture.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-03-12T04:14:10.397430",
-      "ContentHash": "be06781b8e150aa7",
-      "GitCommit": "af9079ea",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.439843",
+      "ContentHash": "83fe46325ea1eb69",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/development/code-quality.md": {
       "FilePath": "docs/zh/development/code-quality.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.350478",
-      "ContentHash": "61d4d3a38e42de3f",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.446430",
+      "ContentHash": "e2578c8fe80fd3c3",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/development/contributing.md": {
       "FilePath": "docs/zh/development/contributing.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-03-12T04:14:10.404087",
-      "ContentHash": "9b8e9b3c576df57c",
-      "GitCommit": "af9079ea",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.456376",
+      "ContentHash": "0283eadc7d7c681e",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/development/deployment-testing.md": {
       "FilePath": "docs/zh/development/deployment-testing.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-08-29T03:02:12.356179",
-      "ContentHash": "89297b9f5f3d0e95",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.464239",
+      "ContentHash": "b2ec0326c3e5a9e5",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -890,10 +899,10 @@
     },
     "docs/zh/development/index.md": {
       "FilePath": "docs/zh/development/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-04-17T04:49:13.536297",
-      "ContentHash": "7d9a37716838ff69",
-      "GitCommit": "d58d8224",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.472382",
+      "ContentHash": "8d1a405048902c83",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -908,10 +917,10 @@
     },
     "docs/zh/development/performance-optimization.md": {
       "FilePath": "docs/zh/development/performance-optimization.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-08-29T03:02:12.362736",
-      "ContentHash": "ed05f4be2c27c063",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.479788",
+      "ContentHash": "ae27e67ea352e427",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -921,20 +930,20 @@
     },
     "docs/zh/development/testing.md": {
       "FilePath": "docs/zh/development/testing.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.365679",
-      "ContentHash": "9ade8f33df4887a5",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.486102",
+      "ContentHash": "52f33fc3468e3bd5",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/getting-started/first-steps.md": {
       "FilePath": "docs/zh/getting-started/first-steps.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-04-17T04:49:13.561929",
-      "ContentHash": "7d25ef9eaf78c065",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.534457",
+      "ContentHash": "6d1d4db0d2430b0f",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -950,10 +959,10 @@
     },
     "docs/zh/getting-started/index.md": {
       "FilePath": "docs/zh/getting-started/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.376259",
-      "ContentHash": "d1375a3adc23476f",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.543226",
+      "ContentHash": "da51acabc4b818e1",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -964,10 +973,10 @@
     },
     "docs/zh/getting-started/installation.md": {
       "FilePath": "docs/zh/getting-started/installation.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-04-17T04:49:13.571129",
-      "ContentHash": "182500159725782f",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:36.548498",
+      "ContentHash": "413b91e9998ff436",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -980,9 +989,9 @@
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
       "Version": "1.0.3",
-      "LastModified": "2026-05-20T06:08:08.259869",
-      "ContentHash": "8e6dbdc89a40069d",
-      "GitCommit": "2ef125ce",
+      "LastModified": "2026-06-08T10:24:36.558056",
+      "ContentHash": "7819d6115e39492b",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -997,9 +1006,9 @@
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
       "Version": "1.0.2",
-      "LastModified": "2026-05-19T06:08:24.561359",
-      "ContentHash": "d412807cea65d34c",
-      "GitCommit": "5e7e6a64",
+      "LastModified": "2026-06-08T10:24:36.563162",
+      "ContentHash": "1914cdc552a94407",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1014,20 +1023,20 @@
     },
     "docs/zh/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/zh/monitoring/alert_rules_guide.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.389612",
-      "ContentHash": "18df087a73b709aa",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.571158",
+      "ContentHash": "c2646ec3d6207410",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/monitoring/alerts.md": {
       "FilePath": "docs/zh/monitoring/alerts.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.392098",
-      "ContentHash": "66cc3f377cf0adb9",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.579618",
+      "ContentHash": "ffe198da1dc271af",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1039,10 +1048,10 @@
     },
     "docs/zh/monitoring/configuration.md": {
       "FilePath": "docs/zh/monitoring/configuration.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.395145",
-      "ContentHash": "f25c3db6fa081870",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.587562",
+      "ContentHash": "6ae45369887c6748",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1054,10 +1063,10 @@
     },
     "docs/zh/monitoring/dashboards.md": {
       "FilePath": "docs/zh/monitoring/dashboards.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.398131",
-      "ContentHash": "836249d88b0faab8",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.603715",
+      "ContentHash": "d05b65ce596a7c64",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1069,10 +1078,10 @@
     },
     "docs/zh/monitoring/index.md": {
       "FilePath": "docs/zh/monitoring/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.403567",
-      "ContentHash": "8fc4eb165a8e4b6a",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.613703",
+      "ContentHash": "9204ed13b2803032",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1089,10 +1098,10 @@
     },
     "docs/zh/monitoring/metrics.md": {
       "FilePath": "docs/zh/monitoring/metrics.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.406655",
-      "ContentHash": "18f55ceee5bfd11c",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.621720",
+      "ContentHash": "b0122b15192fc162",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1104,10 +1113,10 @@
     },
     "docs/zh/monitoring/performance.md": {
       "FilePath": "docs/zh/monitoring/performance.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.409671",
-      "ContentHash": "06c6dccc2cec7a21",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.629868",
+      "ContentHash": "49093e5cecce67de",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1119,10 +1128,10 @@
     },
     "docs/zh/monitoring/setup.md": {
       "FilePath": "docs/zh/monitoring/setup.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.419717",
-      "ContentHash": "783a204c48ac7734",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.637037",
+      "ContentHash": "a8f49b127beec512",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1134,10 +1143,10 @@
     },
     "docs/zh/monitoring/testing.md": {
       "FilePath": "docs/zh/monitoring/testing.md",
-      "Version": "1.0.3",
-      "LastModified": "2025-09-02T03:06:00.424528",
-      "ContentHash": "5480b402c43e76a4",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:36.649779",
+      "ContentHash": "93f0d61e52ded6be",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1149,10 +1158,10 @@
     },
     "docs/zh/monitoring/troubleshooting.md": {
       "FilePath": "docs/zh/monitoring/troubleshooting.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.421325",
-      "ContentHash": "cba5da37e9966364",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.657960",
+      "ContentHash": "5187f8f49f70d5a3",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1174,10 +1183,10 @@
     },
     "docs/zh/reference/faq.md": {
       "FilePath": "docs/zh/reference/faq.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-04-17T04:49:13.676512",
-      "ContentHash": "2b747a7617159d3d",
-      "GitCommit": "5d7928c0",
+      "Version": "1.0.5",
+      "LastModified": "2026-06-08T10:24:36.687599",
+      "ContentHash": "b13d209fea6e3a19",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1187,20 +1196,20 @@
     },
     "docs/zh/reference/glossary.md": {
       "FilePath": "docs/zh/reference/glossary.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.429588",
-      "ContentHash": "30fecb1b77a15df4",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.702997",
+      "ContentHash": "ece596f2c9fda2ac",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/reference/index.md": {
       "FilePath": "docs/zh/reference/index.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-03-12T04:14:10.529017",
-      "ContentHash": "0de57ec99b3cc8fd",
-      "GitCommit": "af9079ea",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.715801",
+      "ContentHash": "ce87774fa80c34b0",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1218,39 +1227,39 @@
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
       "Version": "1.0.3",
-      "LastModified": "2026-05-20T06:08:08.354778",
-      "ContentHash": "ddfe5cd09254fd3a",
-      "GitCommit": "7f3ab042",
+      "LastModified": "2026-06-08T10:24:36.719989",
+      "ContentHash": "2cf32d876143081f",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/troubleshooting/common-issues.md": {
       "FilePath": "docs/zh/troubleshooting/common-issues.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.473955",
-      "ContentHash": "f6c66c7162e38c30",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.912042",
+      "ContentHash": "d54a3bd35c70dea1",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/troubleshooting/debugging.md": {
       "FilePath": "docs/zh/troubleshooting/debugging.md",
-      "Version": "1.0.2",
-      "LastModified": "2025-09-02T03:06:00.476055",
-      "ContentHash": "507baebd7723abe8",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-08T10:24:36.920253",
+      "ContentHash": "0299173fb775d2f0",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/troubleshooting/index.md": {
       "FilePath": "docs/zh/troubleshooting/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.475356",
-      "ContentHash": "955951a7cec3b2dc",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.930151",
+      "ContentHash": "0f444e4ccbfd203b",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1264,20 +1273,20 @@
     },
     "docs/zh/troubleshooting/performance.md": {
       "FilePath": "docs/zh/troubleshooting/performance.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-08-29T03:02:12.478015",
-      "ContentHash": "2b99078bf17c6be8",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.943681",
+      "ContentHash": "7d414c95ddcd2075",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/api-reference/monitoring-api.md": {
       "FilePath": "docs/en/api-reference/monitoring-api.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-20T03:08:21.382209",
-      "ContentHash": "ee811922d033a597",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:35.504253",
+      "ContentHash": "8957b872b3ea30cc",
+      "GitCommit": "069ead36",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1288,10 +1297,10 @@
     },
     "docs/zh/api-reference/monitoring-api.md": {
       "FilePath": "docs/zh/api-reference/monitoring-api.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-20T03:08:21.491577",
-      "ContentHash": "06e68af2ac49685a",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.188790",
+      "ContentHash": "3bff8e41951f68da",
+      "GitCommit": "069ead36",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1302,10 +1311,10 @@
     },
     "docs/en/configuration/modular-config.md": {
       "FilePath": "docs/en/configuration/modular-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.146364",
-      "ContentHash": "9c2fdfd4cd944b18",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:35.569646",
+      "ContentHash": "eaf6327723f67a44",
+      "GitCommit": "69e80538",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1326,30 +1335,30 @@
     },
     "docs/en/monitoring/error-tracking.md": {
       "FilePath": "docs/en/monitoring/error-tracking.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.209457",
-      "ContentHash": "159e7dee50df0a87",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:35.858375",
+      "ContentHash": "231e275b970069db",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/monitoring/slow-query-alerts.md": {
       "FilePath": "docs/en/monitoring/slow-query-alerts.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.223917",
-      "ContentHash": "8bec04b8fc820c5c",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:35.888068",
+      "ContentHash": "8a37fc882acfa85c",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-11-27T03:11:57.159429",
-      "ContentHash": "3b9e9d0094484d9c",
-      "GitCommit": "6a1e776e",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:35.959742",
+      "ContentHash": "2fd4e826138fee2d",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1360,10 +1369,10 @@
     },
     "docs/en/security/data-sanitization.md": {
       "FilePath": "docs/en/security/data-sanitization.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.252345",
-      "ContentHash": "72390f180038b8e9",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:35.979275",
+      "ContentHash": "73294421223dd868",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1375,10 +1384,10 @@
     },
     "docs/en/security/index.md": {
       "FilePath": "docs/en/security/index.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.256012",
-      "ContentHash": "218ef6f82cf13064",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:35.983535",
+      "ContentHash": "d03ace38c158b789",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1390,25 +1399,20 @@
     },
     "docs/en/security/jwt-authentication.md": {
       "FilePath": "docs/en/security/jwt-authentication.md",
-      "Version": "1.0.3",
-      "LastModified": "2025-11-27T03:11:57.170610",
-      "ContentHash": "d0f6af235392f0b8",
-      "GitCommit": "6a1e776e",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:35.989285",
+      "ContentHash": "b866872eb125c924",
+      "GitCommit": "e7ca1741",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/monitoring/index.md",
-        "docs/en/security/api-key-management.md",
-        "docs/en/security/data-sanitization.md",
-        "docs/en/security/troubleshooting.md"
-      ]
+      "Dependencies": []
     },
     "docs/en/security/troubleshooting.md": {
       "FilePath": "docs/en/security/troubleshooting.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.261295",
-      "ContentHash": "15d5a69be9f03bf6",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.008236",
+      "ContentHash": "378d3fd9501344a4",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1420,10 +1424,10 @@
     },
     "docs/en/tracing/config-reference.md": {
       "FilePath": "docs/en/tracing/config-reference.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.263562",
-      "ContentHash": "f93e611cf5b80669",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.014939",
+      "ContentHash": "da74122c9c8a241e",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1518,10 +1522,10 @@
     },
     "docs/zh/configuration/modular-config.md": {
       "FilePath": "docs/zh/configuration/modular-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.324884",
-      "ContentHash": "8a0f4e41f7a8e26f",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.261803",
+      "ContentHash": "343a200770a8f94f",
+      "GitCommit": "69e80538",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1542,30 +1546,30 @@
     },
     "docs/zh/monitoring/error-tracking.md": {
       "FilePath": "docs/zh/monitoring/error-tracking.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.400304",
-      "ContentHash": "aa3414da9ccd86d1",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.607219",
+      "ContentHash": "eb84307ee1ddc550",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/monitoring/slow-query-alerts.md": {
       "FilePath": "docs/zh/monitoring/slow-query-alerts.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.415007",
-      "ContentHash": "934484ed8c934b83",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.641463",
+      "ContentHash": "c4964f43a9e5d574",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-04-17T04:49:13.695186",
-      "ContentHash": "cbec47733fbc9f58",
-      "GitCommit": "8ece44a1",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:36.730187",
+      "ContentHash": "8eeffadd35fe9ab8",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1576,10 +1580,10 @@
     },
     "docs/zh/security/data-sanitization.md": {
       "FilePath": "docs/zh/security/data-sanitization.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-09-02T03:06:00.446834",
-      "ContentHash": "3700e184ada7f28f",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.753655",
+      "ContentHash": "3f80fcaf5ff2486e",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1591,10 +1595,10 @@
     },
     "docs/zh/security/index.md": {
       "FilePath": "docs/zh/security/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2025-09-02T03:06:00.449267",
-      "ContentHash": "1969b6957ffce354",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-08T10:24:36.761097",
+      "ContentHash": "dd80cdfc62bcb956",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1606,25 +1610,20 @@
     },
     "docs/zh/security/jwt-authentication.md": {
       "FilePath": "docs/zh/security/jwt-authentication.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-04-17T04:49:13.716773",
-      "ContentHash": "090eac9e123dc2a2",
-      "GitCommit": "8ece44a1",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-08T10:24:36.767042",
+      "ContentHash": "5049b5930402c814",
+      "GitCommit": "e7ca1741",
       "Author": "Lincoln",
       "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/monitoring/index.md",
-        "docs/zh/security/api-key-management.md",
-        "docs/zh/security/data-sanitization.md",
-        "docs/zh/security/troubleshooting.md"
-      ]
+      "Dependencies": []
     },
     "docs/zh/security/troubleshooting.md": {
       "FilePath": "docs/zh/security/troubleshooting.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.449484",
-      "ContentHash": "15d5a69be9f03bf6",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.778987",
+      "ContentHash": "378d3fd9501344a4",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1636,10 +1635,10 @@
     },
     "docs/zh/tracing/config-reference.md": {
       "FilePath": "docs/zh/tracing/config-reference.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-08-29T03:02:12.451645",
-      "ContentHash": "958df22a0b9746d1",
-      "GitCommit": "94f2e981",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.785171",
+      "ContentHash": "ea020b46ec5c9bc0",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1803,20 +1802,20 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-05-20T06:08:07.666413",
-      "ContentHash": "d6f8f8915c6104a5",
-      "GitCommit": "57b4627f",
+      "Version": "1.0.6",
+      "LastModified": "2026-06-08T10:24:35.422805",
+      "ContentHash": "acf722d931e228ef",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/reference/adapter-updates.md": {
       "FilePath": "docs/zh/reference/adapter-updates.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-03-12T04:14:10.515789",
-      "ContentHash": "426ff81ce7f74775",
-      "GitCommit": "af9079ea",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.665379",
+      "ContentHash": "14e7be3bad3c5264",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1828,7 +1827,7 @@
     "QWEN.md": {
       "FilePath": "QWEN.md",
       "Version": "1.0.3",
-      "LastModified": "2026-05-19T06:08:23.871418",
+      "LastModified": "2026-06-08T10:24:35.418065",
       "ContentHash": "d10037dc19f13d44",
       "GitCommit": "8c4e0ad9",
       "Author": "Lincoln",
@@ -1903,10 +1902,10 @@
     },
     "docs/zh/configuration/jwt-persistence.md": {
       "FilePath": "docs/zh/configuration/jwt-persistence.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.435721",
-      "ContentHash": "efd850875a5cfd9f",
-      "GitCommit": "2d11d5b9",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.235771",
+      "ContentHash": "460ff99d2c2689e0",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1929,10 +1928,10 @@
     },
     "docs/zh/deployment/docker-optimized.md": {
       "FilePath": "docs/zh/deployment/docker-optimized.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.476494",
-      "ContentHash": "c29065f55eda0c01",
-      "GitCommit": "bc275091",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.347034",
+      "ContentHash": "285d23a8ca5a5027",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1943,10 +1942,10 @@
     },
     "docs/zh/deployment/jwt-persistence-deployment-checklist.md": {
       "FilePath": "docs/zh/deployment/jwt-persistence-deployment-checklist.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.496174",
-      "ContentHash": "06bfeafb1b25455e",
-      "GitCommit": "2d11d5b9",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.370078",
+      "ContentHash": "c507db8ba1b90632",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1986,10 +1985,10 @@
     },
     "docs/zh/development/architecture-refactoring.md": {
       "FilePath": "docs/zh/development/architecture-refactoring.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.512975",
-      "ContentHash": "416b6ccabd3ee735",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.432870",
+      "ContentHash": "2b59fa7180c3ee62",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2010,10 +2009,10 @@
     },
     "docs/zh/security/audit-log-management.md": {
       "FilePath": "docs/zh/security/audit-log-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.697599",
-      "ContentHash": "d5961c654aad5be8",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.737627",
+      "ContentHash": "dd71ea4df2aa9c6e",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2025,10 +2024,10 @@
     },
     "docs/zh/security/blacklist-management.md": {
       "FilePath": "docs/zh/security/blacklist-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.700103",
-      "ContentHash": "8444f2785e5beaef",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.746176",
+      "ContentHash": "e6bc40c81613bbcc",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2041,10 +2040,10 @@
     },
     "docs/zh/troubleshooting/issue-fixes.md": {
       "FilePath": "docs/zh/troubleshooting/issue-fixes.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.792470",
-      "ContentHash": "897adca9ea08ea7e",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-08T10:24:36.937060",
+      "ContentHash": "3d5bee258a93a7a0",
+      "GitCommit": "85bfdb3e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2103,10 +2102,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.31",
-      "LastModified": "2026-06-02T06:42:02.353352",
-      "ContentHash": "effc600892a93851",
-      "GitCommit": "f8783f68",
+      "Version": "1.0.17",
+      "LastModified": "2026-06-08T10:24:35.434851",
+      "ContentHash": "69cd1d20a95132c8",
+      "GitCommit": "880a1185",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2124,18 +2123,158 @@
     "docs/configuration-guide.md": {
       "FilePath": "docs/configuration-guide.md",
       "Version": "1.0.1",
-      "LastModified": "2026-05-19T06:08:23.890508",
-      "ContentHash": "f21a3f37dae38ce9",
-      "GitCommit": "4086294f",
+      "LastModified": "2026-06-08T10:24:35.461230",
+      "ContentHash": "50e02093f2ea0b50",
+      "GitCommit": "b305e6de",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/application-config.md",
         "docs/zh/configuration/dynamic-config.md"
       ]
+    },
+    "docs/en/api-reference/error-codes.md": {
+      "FilePath": "docs/en/api-reference/error-codes.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-06-08T10:24:35.479853",
+      "ContentHash": "6289c91012eba2c2",
+      "GitCommit": "cbb53aec",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/zh/api-reference/error-codes.md": {
+      "FilePath": "docs/zh/api-reference/error-codes.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-06-08T10:24:36.149961",
+      "ContentHash": "c1281ab6f446e375",
+      "GitCommit": "cbb53aec",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
     }
   },
   "changes": [
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.182",
+      "NewVersion": "1.0.183",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-18T04:22:25.192559",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.183",
+      "NewVersion": "1.0.184",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-19T04:21:03.341637",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.184",
+      "NewVersion": "1.0.185",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-20T04:15:55.698046",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.185",
+      "NewVersion": "1.0.186",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-21T04:07:32.696615",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.186",
+      "NewVersion": "1.0.187",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-22T04:18:24.809210",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.187",
+      "NewVersion": "1.0.188",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-23T04:25:05.812598",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.188",
+      "NewVersion": "1.0.189",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-24T04:19:51.296758",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.189",
+      "NewVersion": "1.0.190",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-25T04:21:24.899420",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.190",
+      "NewVersion": "1.0.191",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-26T04:17:56.665486",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.191",
+      "NewVersion": "1.0.192",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-27T04:13:48.636151",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.192",
+      "NewVersion": "1.0.193",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-02-28T03:55:39.671263",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.193",
+      "NewVersion": "1.0.194",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-03-01T04:22:44.698010",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.194",
+      "NewVersion": "1.0.195",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-03-02T04:14:41.419765",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.195",
+      "NewVersion": "1.0.196",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-03-03T04:15:26.948292",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.196",
+      "NewVersion": "1.0.197",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-03-04T04:09:05.670985",
+      "Description": "文档modified"
+    },
     {
       "FilePath": "README-ZH.md",
       "OldVersion": "",
@@ -3085,7 +3224,7 @@
       "OldVersion": "1.0.2",
       "NewVersion": "1.0.3",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.871430",
+      "Timestamp": "2026-06-08T10:24:35.418084",
       "Description": "文档modified"
     },
     {
@@ -3093,7 +3232,7 @@
       "OldVersion": "1.0.5",
       "NewVersion": "1.0.6",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.874018",
+      "Timestamp": "2026-06-08T10:24:35.422817",
       "Description": "文档modified"
     },
     {
@@ -3101,7 +3240,7 @@
       "OldVersion": "1.0.13",
       "NewVersion": "1.0.14",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.876363",
+      "Timestamp": "2026-06-08T10:24:35.426618",
       "Description": "文档modified"
     },
     {
@@ -3109,7 +3248,15 @@
       "OldVersion": "1.0.16",
       "NewVersion": "1.0.17",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.878914",
+      "Timestamp": "2026-06-08T10:24:35.434871",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/README.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.455222",
       "Description": "文档modified"
     },
     {
@@ -3117,55 +3264,231 @@
       "OldVersion": "1.0.0",
       "NewVersion": "1.0.1",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.890519",
+      "Timestamp": "2026-06-08T10:24:35.461258",
       "Description": "文档modified"
     },
     {
-      "FilePath": "docs/en/getting-started/quick-start-v1.8.md",
+      "FilePath": "docs/en/api-reference/error-codes.md",
       "OldVersion": "",
       "NewVersion": "1.0.0",
       "ChangeType": "CREATED",
-      "Timestamp": "2026-05-19T06:08:24.114510",
+      "Timestamp": "2026-06-08T10:24:35.479865",
       "Description": "文档created"
     },
     {
-      "FilePath": "docs/en/index.md",
+      "FilePath": "docs/en/api-reference/index.md",
       "OldVersion": "1.0.1",
       "NewVersion": "1.0.2",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:24.123855",
+      "Timestamp": "2026-06-08T10:24:35.491719",
       "Description": "文档modified"
     },
     {
-      "FilePath": "docs/zh/index.md",
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.499778",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.504266",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/openapi-spec.md",
       "OldVersion": "1.0.1",
       "NewVersion": "1.0.2",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:24.561370",
+      "Timestamp": "2026-06-08T10:24:35.508607",
       "Description": "文档modified"
     },
     {
-      "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.6",
-      "NewVersion": "1.0.7",
+      "FilePath": "docs/en/api-reference/universal-api.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.666421",
+      "Timestamp": "2026-06-08T10:24:35.519457",
       "Description": "文档modified"
     },
     {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.14",
-      "NewVersion": "1.0.15",
+      "FilePath": "docs/en/configuration/application-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.668689",
+      "Timestamp": "2026-06-08T10:24:35.527111",
       "Description": "文档modified"
     },
     {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.17",
-      "NewVersion": "1.0.18",
+      "FilePath": "docs/en/configuration/circuit-breaker.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.671099",
+      "Timestamp": "2026-06-08T10:24:35.532236",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/dynamic-config.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.535800",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.540200",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.564167",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/modular-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.569659",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/rate-limiting.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.573354",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/china-optimization.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.617913",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.637360",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/github-pages.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.644595",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.650228",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/kubernetes.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.669998",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/production.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.674097",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/architecture.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.691400",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/code-quality.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.695699",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/contributing.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.700561",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/deployment-testing.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.707263",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/performance-optimization.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.727196",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/testing.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.740372",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/first-steps.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.770531",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.778272",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/getting-started/installation.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.786151",
       "Description": "文档modified"
     },
     {
@@ -3173,7 +3496,135 @@
       "OldVersion": "1.0.1",
       "NewVersion": "1.0.2",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.872732",
+      "Timestamp": "2026-06-08T10:24:35.793790",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.798789",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/alerts.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.835766",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/configuration.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.843537",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/dashboards.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.851831",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/error-tracking.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.858394",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.867391",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/metrics.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.872949",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/performance.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.880090",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/setup.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.884597",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/slow-query-alerts.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.888084",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/testing.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.892344",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/troubleshooting.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.898791",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.919081",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/faq.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.931624",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/glossary.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.939574",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.948071",
       "Description": "文档modified"
     },
     {
@@ -3181,7 +3632,351 @@
       "OldVersion": "1.0.2",
       "NewVersion": "1.0.3",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.969227",
+      "Timestamp": "2026-06-08T10:24:35.954844",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.959754",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/data-sanitization.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.979295",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/index.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.983547",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/jwt-authentication.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:35.989297",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/troubleshooting.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.008266",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/config-reference.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.014979",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/common-issues.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.125411",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/debugging.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.132860",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.139396",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/troubleshooting/performance.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.145047",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/error-codes.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-06-08T10:24:36.149980",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.179010",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.184509",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/monitoring-api.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.188802",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/openapi-spec.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.197634",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/universal-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.205595",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/application-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.214349",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/circuit-breaker.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.218895",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/dynamic-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.223550",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.228115",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/jwt-persistence.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.235791",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.254095",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/modular-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.261830",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/rate-limiting.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.267555",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/china-optimization.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.339355",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker-optimized.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.347064",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/docker.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.353520",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/github-pages.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.356933",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.363602",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/jwt-persistence-deployment-checklist.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.370090",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/kubernetes.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.377339",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/deployment/production.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.384544",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/architecture-refactoring.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.432889",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/architecture.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.439865",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/code-quality.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.446442",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/contributing.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.456404",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/deployment-testing.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.464277",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.472393",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/performance-optimization.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.479809",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/testing.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.486124",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/first-steps.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.534478",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.543277",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/installation.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.548519",
       "Description": "文档modified"
     },
     {
@@ -3189,7 +3984,143 @@
       "OldVersion": "1.0.2",
       "NewVersion": "1.0.3",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:08.259878",
+      "Timestamp": "2026-06-08T10:24:36.558076",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.563180",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/alert_rules_guide.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.571188",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/alerts.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.579639",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/configuration.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.587581",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/dashboards.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.603731",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/error-tracking.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.607232",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.613715",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/metrics.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.621749",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/performance.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.629895",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/setup.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.637072",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/slow-query-alerts.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.641494",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/testing.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.649803",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/monitoring/troubleshooting.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.657985",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/adapter-updates.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.665401",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/faq.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.687625",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/glossary.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.703025",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/index.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.715832",
       "Description": "文档modified"
     },
     {
@@ -3197,7 +4128,111 @@
       "OldVersion": "1.0.2",
       "NewVersion": "1.0.3",
       "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:08.354787",
+      "Timestamp": "2026-06-08T10:24:36.720008",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.730215",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/audit-log-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.737648",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/blacklist-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.746198",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/data-sanitization.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.753678",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.761152",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/jwt-authentication.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.767064",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/troubleshooting.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.779008",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/config-reference.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.785193",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/common-issues.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.912070",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/debugging.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.920283",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.930184",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/issue-fixes.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.937081",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/troubleshooting/performance.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-08T10:24:36.943703",
       "Description": "文档modified"
     },
     {
@@ -3205,121 +4240,9 @@
       "OldVersion": "1.0.1",
       "NewVersion": "",
       "ChangeType": "DELETED",
-      "Timestamp": "2026-05-20T06:08:08.451800",
+      "Timestamp": "2026-06-08T10:24:36.943887",
       "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/en/getting-started/quick-start-v1.8.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-05-20T06:08:08.451836",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.18",
-      "NewVersion": "1.0.19",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-21T06:10:29.733981",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.19",
-      "NewVersion": "1.0.20",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-22T06:08:14.776011",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.20",
-      "NewVersion": "1.0.21",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-23T05:39:35.406118",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.21",
-      "NewVersion": "1.0.22",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-24T06:01:48.897724",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.22",
-      "NewVersion": "1.0.23",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-25T06:35:34.784498",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.23",
-      "NewVersion": "1.0.24",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-26T06:07:04.807666",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.24",
-      "NewVersion": "1.0.25",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-27T06:21:05.062990",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.25",
-      "NewVersion": "1.0.26",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-28T06:12:35.230825",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.26",
-      "NewVersion": "1.0.27",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-29T06:13:59.415048",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.27",
-      "NewVersion": "1.0.28",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-30T05:48:30.019907",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.28",
-      "NewVersion": "1.0.29",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-31T06:19:22.663904",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.29",
-      "NewVersion": "1.0.30",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-06-01T06:56:53.144465",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.30",
-      "NewVersion": "1.0.31",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-06-02T06:42:02.353361",
-      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-06-02T06:42:03.257931"
+  "last_updated": "2026-06-08T10:24:36.944993"
 }
