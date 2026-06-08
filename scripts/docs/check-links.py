@@ -54,7 +54,7 @@ class LinkChecker:
             # Windows本地路径（包括带行号的）
             r"^file://[A-Za-z]:/",
             # 示例服务URL（内部服务名）
-            r"^http://[a-z0-9-]+:(8080|8000|11434|9090|9997|5001|5005|9411)(/|$)",
+            r"^http://[a-z0-9-]+:(8080|8000|11434|9090|9997|5001|5005|9411|4317|4318)(/|$)",
             r"^http://[a-z0-9-]+-server:\d+",
             r"^http://[a-z0-9-]+-cluster:\d+",
             r"^http://(backend|frontend|new-server|old-server|backup-server|gpu-server|cpu-server|stable-server|fast-server|slow-server|experimental-server|reliable-server|unstable-server|high-risk-server|primary|secondary|backup|openai-proxy|jairouter|prometheus|alertmanager|jaeger|zipkin|grafana|webhook-server|your-webhook|proxy\.example|your-sms-gateway|jairouter_backend)(:|/|$|\$)",
