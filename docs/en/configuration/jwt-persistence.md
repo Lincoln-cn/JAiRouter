@@ -1,10 +1,10 @@
 # JWT Token Persistence Configuration Guide
 
 <!-- Version Information -->
-> **Document Version**: 1.0.0  
-> **Last Updated**: 2025-01-15  
-> **Git Commit**: -  
-> **Author**: System
+> **Document Version**: 2.6.11  
+> **Last Updated**: 2026-06-09  
+> **Configuration Path**: `src/main/resources/config/security/persistence-base.yml`  
+> **Author**: JAiRouter Team
 <!-- /Version Information -->
 
 ## Overview
@@ -22,7 +22,7 @@ spring:
     import:
       - classpath:config/security/security-base.yml
       - classpath:config/security/persistence-base.yml  # JWT persistence config
-      - classpath:config/monitoring/persistence-monitoring-base.yml
+      - classpath:config/monitor/persistence-monitoring-base.yml
 ```
 
 ## Core Configuration
@@ -36,29 +36,51 @@ jairouter:
       # Token persistence configuration
       persistence:
         enabled: false  # Default: disabled, enable per environment
-        primary-storage: redis    # Options: redis, memory
+        primary-storage: file    # Options: file (H2), redis, memory
         fallback-storage: memory  # Options: memory
-        
+
+        # Composite storage strategy (NEW in v2.x)
+        composite:
+          enabled: true  # Enable composite storage (Redis + StoreManager)
+
+        # Data synchronization (NEW in v2.x)
+        sync:
+          enabled: true  # Enable data synchronization
+
+        # Startup recovery (NEW in v2.x)
+        startup-recovery:
+          enabled: true  # Enable data recovery on startup
+
         # Cleanup configuration
         cleanup:
           enabled: true
           schedule: "0 0 2 * * ?"  # Cron expression: daily at 2 AM
           retention-days: 30       # Keep tokens for 30 days
           batch-size: 1000        # Process 1000 tokens per batch
-        
+
         # Memory storage configuration
         memory:
-          max-tokens: 50000       # Maximum tokens in memory
+          max-tokens: 500         # Maximum tokens in memory (reduced in v2.x)
           cleanup-threshold: 0.8  # Cleanup when 80% full
           lru-enabled: true       # Use LRU eviction policy
-          
+
         # Redis storage configuration
         redis:
+          enabled: false          # Default: disabled, enable when using Redis
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:0}"
           key-prefix: "jwt:"      # Redis key prefix
           default-ttl: 3600       # Default TTL in seconds
           connection-timeout: 5000 # Connection timeout in ms
           retry-attempts: 3       # Retry attempts for failed operations
           serialization-format: "json"  # Options: json, binary
+          pool:                   # Connection pool (NEW in v2.x)
+            max-active: 8
+            max-idle: 8
+            min-idle: 0
+            max-wait: -1
 ```
 
 ### Blacklist Configuration
@@ -71,10 +93,31 @@ jairouter:
       blacklist:
         persistence:
           enabled: false          # Default: disabled
-          primary-storage: redis  # Options: redis, memory
+          primary-storage: file  # Options: file (H2), redis, memory
           fallback-storage: memory
           max-memory-size: 10000  # Maximum blacklist entries in memory
           cleanup-interval: 3600  # Cleanup interval in seconds (1 hour)
+
+        # Composite storage strategy (NEW in v2.x)
+        composite:
+          enabled: true  # Enable composite storage (Redis + StoreManager)
+
+        # Redis blacklist configuration (NEW in v2.x)
+        redis:
+          enabled: false
+          host: "${REDIS_HOST:localhost}"
+          port: "${REDIS_PORT:6379}"
+          password: "${REDIS_PASSWORD:}"
+          database: "${REDIS_DATABASE:0}"
+          key-prefix: "jwt:blacklist:"
+          default-ttl: 86400      # 24 hours
+          connection-timeout: 5000
+          retry-attempts: 3
+          pool:
+            max-active: 8
+            max-idle: 8
+            min-idle: 0
+            max-wait: -1
 ```
 
 ### Security Audit Configuration
