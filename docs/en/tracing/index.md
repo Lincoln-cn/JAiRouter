@@ -1,10 +1,8 @@
 # Distributed Tracing Overview
 
----
-**Version:** 2.6.11  
-**Last Updated:** 2026-06-09  
-**Configuration Path:** `src/main/resources/config/tracing/tracing-base.yml`
----
+> **Version:** 2.6.11  
+> **Last Updated:** 2026-06-09  
+> **Configuration Path:** `src/main/resources/config/tracing/tracing-base.yml`
 
 JAiRouter integrates OpenTelemetry-based distributed tracing system, providing comprehensive request tracing, performance monitoring, and fault diagnosis capabilities.
 

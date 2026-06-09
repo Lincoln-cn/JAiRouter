@@ -1,10 +1,8 @@
 # 分布式追踪概述
 
----
-**版本：** 2.6.11  
-**最后更新：** 2026-06-09  
-**配置路径：** `src/main/resources/config/tracing/tracing-base.yml`
----
+> **版本：** 2.6.11  
+> **最后更新：** 2026-06-09  
+> **配置路径：** `src/main/resources/config/tracing/tracing-base.yml`
 
 JAiRouter 集成了基于 OpenTelemetry 的分布式追踪系统，提供完整的请求链路追踪、性能监控和故障诊断能力。
 
