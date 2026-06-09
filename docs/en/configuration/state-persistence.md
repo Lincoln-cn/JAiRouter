@@ -1,8 +1,8 @@
 # State Persistence Configuration
 
-> Document Version: 1.0
-> Applicable Version: v2.4.x
-> Last Updated: 2026-04-26
+> Document Version: 2.6.11
+> Applicable Version: v2.6.x
+> Last Updated: 2026-06-09
 
 ---
 
