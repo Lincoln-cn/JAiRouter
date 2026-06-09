@@ -3,41 +3,28 @@
 ## 版本统计
 
 - 总文档数: 163
-- 近7天变更: 133
+- 近7天变更: 147
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-08 06:44:06
+- 最后扫描: 2026-06-09 06:09:48
 
 ## 最近变更
 
-- **MODIFIED**: docs-version-report.md (1.0.36 → 1.0.37) - 2026-06-08
-- **MODIFIED**: docs-version-report.md (1.0.35 → 1.0.36) - 2026-06-07
-- **MODIFIED**: docs-version-report.md (1.0.34 → 1.0.35) - 2026-06-06
-- **MODIFIED**: docs-version-report.md (1.0.33 → 1.0.34) - 2026-06-05
-- **MODIFIED**: docs-version-report.md (1.0.32 → 1.0.33) - 2026-06-04
-- **MODIFIED**: docs/zh/troubleshooting/performance.md (1.0.1 → 1.0.2) - 2026-06-03
-- **MODIFIED**: docs/zh/troubleshooting/issue-fixes.md (1.0.0 → 1.0.1) - 2026-06-03
-- **MODIFIED**: docs/zh/troubleshooting/index.md (1.0.1 → 1.0.2) - 2026-06-03
-- **MODIFIED**: docs/zh/troubleshooting/debugging.md (1.0.2 → 1.0.3) - 2026-06-03
-- **MODIFIED**: docs/zh/troubleshooting/common-issues.md (1.0.2 → 1.0.3) - 2026-06-03
+- **MODIFIED**: docs/zh/tracing/usage-guide.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/zh/tracing/troubleshooting.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/zh/tracing/quickstart.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/zh/tracing/performance-tuning.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/zh/tracing/operations-guide.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/zh/development/tracing-integration.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/zh/development/index.md (1.0.3 → 1.0.4) - 2026-06-09
+- **MODIFIED**: docs/en/tracing/usage-guide.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/en/tracing/troubleshooting.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/en/tracing/quickstart.md (1.0.0 → 1.0.1) - 2026-06-09
 
 ## 过期文档 (30天未更新)
 
-- docs/en/development/index.md (版本: 1.0.2, 最后更新: 2026-04-17)
 - docs/zh/reference/changelog.md (版本: 1.0.3, 最后更新: 2026-04-17)
-- docs/en/development/tracing-integration.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/tracing/operations-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/tracing/performance-tuning.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/tracing/quickstart.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/tracing/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/zh/development/tracing-integration.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/zh/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/zh/tracing/operations-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/zh/tracing/performance-tuning.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/zh/tracing/quickstart.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/zh/tracing/troubleshooting.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/zh/tracing/usage-guide.md (版本: 1.0.0, 最后更新: 2025-08-29)
 - docs/en/configuration/store-config.md (版本: 1.0.2, 最后更新: 2025-11-27)
 - docs/en/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
 - docs/zh/configuration/store-config.md (版本: 1.0.2, 最后更新: 2025-11-27)
@@ -432,7 +419,8 @@
   - docs/en/development/tracing-integration.md
   - docs/en/tracing/performance-tuning.md
   - docs/en/tracing/troubleshooting.md
-- **docs/en/tracing/performance-tuning.md**: 依赖 2 个文档
+- **docs/en/tracing/performance-tuning.md**: 依赖 3 个文档
+  - docs/en/tracing/config-reference.md
   - docs/en/tracing/operations-guide.md
   - docs/en/tracing/troubleshooting.md
 - **docs/en/tracing/quickstart.md**: 依赖 5 个文档
@@ -483,7 +471,8 @@
   - docs/zh/development/tracing-integration.md
   - docs/zh/tracing/performance-tuning.md
   - docs/zh/tracing/troubleshooting.md
-- **docs/zh/tracing/performance-tuning.md**: 依赖 2 个文档
+- **docs/zh/tracing/performance-tuning.md**: 依赖 3 个文档
+  - docs/zh/tracing/config-reference.md
   - docs/zh/tracing/operations-guide.md
   - docs/zh/tracing/troubleshooting.md
 - **docs/zh/tracing/quickstart.md**: 依赖 5 个文档
@@ -586,7 +575,21 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.37 - 2026-06-08 (893b4eab)
+- **docs/zh/tracing/usage-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/zh/tracing/troubleshooting.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/zh/tracing/quickstart.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/zh/tracing/performance-tuning.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/zh/tracing/operations-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/zh/development/tracing-integration.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/zh/development/index.md**: v1.0.4 - 2026-06-09 (b9fa976b)
+- **docs/en/tracing/usage-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/en/tracing/troubleshooting.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/en/tracing/quickstart.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/en/tracing/performance-tuning.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/en/tracing/operations-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/en/development/tracing-integration.md**: v1.0.1 - 2026-06-09 (b9fa976b)
+- **docs/en/development/index.md**: v1.0.3 - 2026-06-09 (b9fa976b)
+- **docs-version-report.md**: v1.0.38 - 2026-06-09 (f3249710)
 - **docs/zh/troubleshooting/performance.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/issue-fixes.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
@@ -624,7 +627,6 @@
 - **docs/zh/getting-started/first-steps.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/development/testing.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/development/performance-optimization.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
-- **docs/zh/development/index.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/development/deployment-testing.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/development/contributing.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/development/code-quality.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
@@ -726,7 +728,6 @@
 - **docs/en/security/blacklist-management.md**: v1.0.0 - 2026-04-17 (8ece44a1)
 - **docs/en/reference/adapter-updates.md**: v1.0.0 - 2026-04-17 (bc275091)
 - **docs/en/monitoring/alert_rules_guide.md**: v1.0.0 - 2026-04-17 (2d11d5b9)
-- **docs/en/development/index.md**: v1.0.2 - 2026-04-17 (d58d8224)
 - **docs/en/development/V1.4.1-changelog.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
 - **docs/en/deployment/docker-optimized.md**: v1.0.0 - 2026-04-17 (bc275091)
 - **docs/zh/configuration/store-config.md**: v1.0.2 - 2025-11-27 (6a1e776e)
@@ -735,17 +736,5 @@
 - **docs/en/configuration/jwt-persistence.md**: v1.0.0 - 2025-10-15 (6a1e776e)
 - **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (6a1e776e)
 - **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (6a1e776e)
-- **docs/zh/tracing/usage-guide.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/zh/tracing/troubleshooting.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/zh/tracing/quickstart.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/zh/tracing/performance-tuning.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/zh/tracing/operations-guide.md**: v1.0.0 - 2025-08-29 (94f2e981)
 - **docs/zh/tracing/index.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/zh/development/tracing-integration.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/en/tracing/usage-guide.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/en/tracing/troubleshooting.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/en/tracing/quickstart.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/en/tracing/performance-tuning.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/en/tracing/operations-guide.md**: v1.0.0 - 2025-08-29 (94f2e981)
 - **docs/en/tracing/index.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/en/development/tracing-integration.md**: v1.0.0 - 2025-08-29 (94f2e981)
