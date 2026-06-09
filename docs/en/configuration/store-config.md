@@ -1,10 +1,8 @@
 # Store Configuration
 
----
-**Version:** 2.6.11  
-**Last Updated:** 2026-06-09  
-**Default Storage:** H2 Database  
----
+> **Version:** 2.6.11  
+> **Last Updated:** 2026-06-09  
+> **Default Storage:** H2 Database
 
 JAiRouter uses a storage manager to persist configuration data and version control. This page details the storage-related configuration options.
 

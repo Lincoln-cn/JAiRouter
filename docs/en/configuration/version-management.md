@@ -1,10 +1,8 @@
 # Configuration Version Management
 
----
-**Version:** 2.6.11  
-**Last Updated:** 2026-06-09  
-**API Endpoint:** `/api/config/version`
----
+> **Version:** 2.6.11  
+> **Last Updated:** 2026-06-09  
+> **API Endpoint:** `/api/config/version`
 
 ## Overview
 
