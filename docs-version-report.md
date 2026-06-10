@@ -3,45 +3,34 @@
 ## 版本统计
 
 - 总文档数: 163
-- 近7天变更: 147
+- 近7天变更: 158
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-09 06:09:48
+- 最后扫描: 2026-06-10 06:24:28
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/tracing/usage-guide.md (1.0.0 → 1.0.1) - 2026-06-09
-- **MODIFIED**: docs/zh/tracing/troubleshooting.md (1.0.0 → 1.0.1) - 2026-06-09
-- **MODIFIED**: docs/zh/tracing/quickstart.md (1.0.0 → 1.0.1) - 2026-06-09
-- **MODIFIED**: docs/zh/tracing/performance-tuning.md (1.0.0 → 1.0.1) - 2026-06-09
-- **MODIFIED**: docs/zh/tracing/operations-guide.md (1.0.0 → 1.0.1) - 2026-06-09
-- **MODIFIED**: docs/zh/development/tracing-integration.md (1.0.0 → 1.0.1) - 2026-06-09
-- **MODIFIED**: docs/zh/development/index.md (1.0.3 → 1.0.4) - 2026-06-09
-- **MODIFIED**: docs/en/tracing/usage-guide.md (1.0.0 → 1.0.1) - 2026-06-09
-- **MODIFIED**: docs/en/tracing/troubleshooting.md (1.0.0 → 1.0.1) - 2026-06-09
-- **MODIFIED**: docs/en/tracing/quickstart.md (1.0.0 → 1.0.1) - 2026-06-09
+- **MODIFIED**: docs/zh/tracing/index.md (1.0.0 → 1.0.1) - 2026-06-10
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.3 → 1.0.4) - 2026-06-10
+- **MODIFIED**: docs/zh/configuration/version-management.md (1.0.1 → 1.0.2) - 2026-06-10
+- **MODIFIED**: docs/zh/configuration/validation-rules.md (1.0.0 → 1.0.1) - 2026-06-10
+- **MODIFIED**: docs/zh/configuration/store-config.md (1.0.2 → 1.0.3) - 2026-06-10
+- **MODIFIED**: docs/zh/configuration/state-persistence.md (1.0.0 → 1.0.1) - 2026-06-10
+- **MODIFIED**: docs/en/tracing/index.md (1.0.0 → 1.0.1) - 2026-06-10
+- **MODIFIED**: docs/en/configuration/version-management.md (1.0.1 → 1.0.2) - 2026-06-10
+- **MODIFIED**: docs/en/configuration/store-config.md (1.0.2 → 1.0.3) - 2026-06-10
+- **MODIFIED**: docs/en/configuration/state-persistence.md (1.0.0 → 1.0.1) - 2026-06-10
 
 ## 过期文档 (30天未更新)
 
-- docs/zh/reference/changelog.md (版本: 1.0.3, 最后更新: 2026-04-17)
-- docs/en/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/zh/tracing/index.md (版本: 1.0.0, 最后更新: 2025-08-29)
-- docs/en/configuration/store-config.md (版本: 1.0.2, 最后更新: 2025-11-27)
-- docs/en/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
-- docs/zh/configuration/store-config.md (版本: 1.0.2, 最后更新: 2025-11-27)
-- docs/zh/configuration/version-management.md (版本: 1.0.1, 最后更新: 2025-10-01)
-- docs/en/configuration/jwt-persistence.md (版本: 1.0.0, 最后更新: 2025-10-15)
 - docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.0, 最后更新: 2025-10-15)
 - docs/en/deployment/docker-optimized.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/en/development/V1.4.1-changelog.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/en/monitoring/alert_rules_guide.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/en/reference/adapter-updates.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/en/security/blacklist-management.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/zh/configuration/validation-rules.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/zh/development/V1.4.0-changelog.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/zh/development/V1.4.1-changelog.md (版本: 1.0.0, 最后更新: 2026-04-17)
 - docs/zh/development/tracing-full-chain-design.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/en/configuration/state-persistence.md (版本: 1.0.0, 最后更新: 2026-04-28)
-- docs/zh/configuration/state-persistence.md (版本: 1.0.0, 最后更新: 2026-04-28)
 - docs/docs-version-report.md (版本: 1.0.0, 最后更新: 2026-04-29)
 - docs/zh/development/v2.7.x-package-refactoring.md (版本: 1.0.0, 最后更新: 2026-04-29)
 
@@ -575,6 +564,18 @@
 
 ## 所有文档版本
 
+- **docs/zh/tracing/index.md**: v1.0.1 - 2026-06-10 (227a92b7)
+- **docs/zh/reference/changelog.md**: v1.0.4 - 2026-06-10 (ba6d6ddf)
+- **docs/zh/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
+- **docs/zh/configuration/validation-rules.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
+- **docs/zh/configuration/store-config.md**: v1.0.3 - 2026-06-10 (227a92b7)
+- **docs/zh/configuration/state-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
+- **docs/en/tracing/index.md**: v1.0.1 - 2026-06-10 (227a92b7)
+- **docs/en/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
+- **docs/en/configuration/store-config.md**: v1.0.3 - 2026-06-10 (227a92b7)
+- **docs/en/configuration/state-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
+- **docs/en/configuration/jwt-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
+- **docs-version-report.md**: v1.0.39 - 2026-06-10 (758fbfbb)
 - **docs/zh/tracing/usage-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/zh/tracing/troubleshooting.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/zh/tracing/quickstart.md**: v1.0.1 - 2026-06-09 (b9fa976b)
@@ -589,7 +590,6 @@
 - **docs/en/tracing/operations-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/en/development/tracing-integration.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/en/development/index.md**: v1.0.3 - 2026-06-09 (b9fa976b)
-- **docs-version-report.md**: v1.0.38 - 2026-06-09 (f3249710)
 - **docs/zh/troubleshooting/performance.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/issue-fixes.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
@@ -718,23 +718,12 @@
 - **docs/CHANGELOG-v2.5.x.md**: v1.0.0 - 2026-05-14 (947dc154)
 - **docs/zh/development/v2.7.x-package-refactoring.md**: v1.0.0 - 2026-04-29 (39b124d3)
 - **docs/docs-version-report.md**: v1.0.0 - 2026-04-29 (f60c279e)
-- **docs/zh/configuration/state-persistence.md**: v1.0.0 - 2026-04-28 (e5140df0)
-- **docs/en/configuration/state-persistence.md**: v1.0.0 - 2026-04-28 (e5140df0)
-- **docs/zh/reference/changelog.md**: v1.0.3 - 2026-04-17 (d58d8224)
 - **docs/zh/development/tracing-full-chain-design.md**: v1.0.0 - 2026-04-17 (6ed4233c)
 - **docs/zh/development/V1.4.1-changelog.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
 - **docs/zh/development/V1.4.0-changelog.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
-- **docs/zh/configuration/validation-rules.md**: v1.0.0 - 2026-04-17 (bc275091)
 - **docs/en/security/blacklist-management.md**: v1.0.0 - 2026-04-17 (8ece44a1)
 - **docs/en/reference/adapter-updates.md**: v1.0.0 - 2026-04-17 (bc275091)
 - **docs/en/monitoring/alert_rules_guide.md**: v1.0.0 - 2026-04-17 (2d11d5b9)
 - **docs/en/development/V1.4.1-changelog.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
 - **docs/en/deployment/docker-optimized.md**: v1.0.0 - 2026-04-17 (bc275091)
-- **docs/zh/configuration/store-config.md**: v1.0.2 - 2025-11-27 (6a1e776e)
-- **docs/en/configuration/store-config.md**: v1.0.2 - 2025-11-27 (6a1e776e)
 - **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.0 - 2025-10-15 (6a1e776e)
-- **docs/en/configuration/jwt-persistence.md**: v1.0.0 - 2025-10-15 (6a1e776e)
-- **docs/zh/configuration/version-management.md**: v1.0.1 - 2025-10-01 (6a1e776e)
-- **docs/en/configuration/version-management.md**: v1.0.1 - 2025-10-01 (6a1e776e)
-- **docs/zh/tracing/index.md**: v1.0.0 - 2025-08-29 (94f2e981)
-- **docs/en/tracing/index.md**: v1.0.0 - 2025-08-29 (94f2e981)
