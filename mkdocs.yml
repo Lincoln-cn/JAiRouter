@@ -227,7 +227,6 @@ nav:
     - 性能优化: zh/development/performance-optimization.md
     - v1.4.0变更日志: zh/development/V1.4.0-changelog.md
     - v1.4.1变更日志: zh/development/V1.4.1-changelog.md
-    - v2.7.x Package重构: zh/development/v2.7.x-package-refactoring.md
     - 追踪全链路设计: zh/development/tracing-full-chain-design.md
     - 追踪集成: zh/development/tracing-integration.md
   - 故障排查:
