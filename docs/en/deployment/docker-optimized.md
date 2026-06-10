@@ -1,9 +1,10 @@
 # Docker Image Optimization Guide
 
 <!-- Version Info -->
-> **Doc Version**: 1.1.0
-> **Last Updated**: 2026-04-16
-> **Git Commit**: f58f0e0
+> **Doc Version**: 1.2.0
+> **Last Updated**: 2026-06-10
+> **Applicable Version**: v2.7.x+
+> **Git Commit**: 135f9a60
 > **Author**: Lincoln
 <!-- /Version Info -->
 

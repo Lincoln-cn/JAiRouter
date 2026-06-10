@@ -1,9 +1,10 @@
 # JWT Persistence Deployment Checklist
 
 <!-- Version Information -->
-> **Document Version**: 1.0.0  
-> **Last Updated**: 2025-01-15  
-> **Git Commit**: -  
+> **Document Version**: 1.1.0
+> **Last Updated**: 2026-06-10
+> **Applicable Version**: v2.7.x+
+> **Git Commit**: 135f9a60
 > **Author**: System
 <!-- /Version Information -->
 

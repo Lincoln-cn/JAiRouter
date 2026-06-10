@@ -1,8 +1,8 @@
 # Security Blacklist Management
 
 <!-- Version Info -->
-> **Document Version**: 1.7.0
-> **Last Updated**: 2026-04-10
+> **Document Version**: 1.8.0
+> **Last Updated**: 2026-06-10
 > **Git Commit**: 2cba097
 > **Author**: Lincoln
 <!-- /Version Info -->
