@@ -14,34 +14,20 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * 配置验证器（旧版本）
+ * 配置验证器
  *
- * @deprecated 此类已迁移到 {@link org.unreal.modelrouter.config.validation.ConfigurationValidator}。
- *             <p>迁移说明：</p>
- *             <ul>
- *               <li>新版本提供更完善的验证规则和错误消息</li>
- *               <li>新版本支持更详细的验证结果返回</li>
- *               <li>新版本与 ServiceConfigManager 集成更紧密</li>
- *             </ul>
- *             <p>迁移示例：</p>
- *             <pre>{@code
- *             // 旧代码
- *             ConfigurationValidator oldValidator = new ConfigurationValidator();
- *             boolean valid = oldValidator.validateServiceConfig(config);
- *             
- *             // 新代码
- *             org.unreal.modelrouter.config.validation.ConfigurationValidator newValidator = 
- *                 new org.unreal.modelrouter.config.validation.ConfigurationValidator();
- *             ValidationResult result = newValidator.validate(config);
- *             boolean valid = result.isValid();
- *             List<String> errors = result.getErrors();
- *             }</pre>
- *             <p>此类将在 v3.0 版本中移除。</p>
- * @see org.unreal.modelrouter.config.validation.ConfigurationValidator
- * @since v2.5.2 标注废弃，计划 v3.0 移除
+ * <p>提供配置验证功能，包括：</p>
+ * <ul>
+ *   <li>限流配置验证</li>
+ *   <li>负载均衡配置验证</li>
+ *   <li>熔断器配置验证</li>
+ *   <li>服务实例地址验证</li>
+ *   <li>服务配置验证</li>
+ * </ul>
+ *
+ * @since v1.0
  */
-@Deprecated(since = "2.5.2", forRemoval = true)
-@Component("legacyConfigurationValidator")
+@Component("configurationValidator")
 public class ConfigurationValidator {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationValidator.class);

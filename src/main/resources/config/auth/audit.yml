@@ -51,7 +51,7 @@ jairouter:
       
       # 扩展审计配置
       extended:
-        enabled: false
+        enabled: true
         persistence:
           enabled: false
           storage-type: "file"

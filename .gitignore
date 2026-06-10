@@ -216,3 +216,7 @@ jdeps/
 !scripts/monitoring/
 !scripts/test/
 !scripts/tools/
+# Qwen Code temporary files
+.qwen/skills/
+.qwen/welcome-back-state.json
+link-check-report.json

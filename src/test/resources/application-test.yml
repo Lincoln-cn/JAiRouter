@@ -4,10 +4,28 @@ store:
     url: mem:testdb
 
 spring:
+  # R2DBC 配置 (响应式数据库)
   r2dbc:
     url: r2dbc:h2:mem:///testdb
     username: sa
     password:
+
+  # JDBC 配置 (JPA Repository 测试)
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # JPA 配置
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
 
 logging:
   level:
