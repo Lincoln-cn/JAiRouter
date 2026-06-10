@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Primary
 @Service
-@Deprecated(since = "v2.14.3", forRemoval = false)
 public class ApiKeyService {
 
     private final Map<String, ApiKey> apiKeyCache = new ConcurrentHashMap<>();
@@ -38,10 +37,8 @@ public class ApiKeyService {
     @Autowired
     public ApiKeyService(@Qualifier("jpaStoreManager") StoreManager sm, ObjectMapper om, SecurityProperties sp) { this.securityProperties = sp; }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKey> validateApiKey(String kv) { return validateApiKey(kv, null, null); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKey> validateApiKey(String kv, String ep, String ip) {
         return Mono.defer(() -> {
             var r = apiKeyValidator.validateFully(kv, apiKeyCache, ip);
@@ -61,10 +58,8 @@ public class ApiKeyService {
         });
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyCreationVO> createApiKey(ApiKeyCreateRequest req) { return createApiKey(req, "system", null); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyCreationVO> createApiKey(ApiKeyCreateRequest req, String by, String ip) {
         return Mono.fromCallable(() -> {
             String kid = req.getKeyId() != null && !req.getKeyId().isEmpty() ? req.getKeyId() : "key-" + UUID.randomUUID().toString().substring(0, 8);
@@ -88,7 +83,6 @@ public class ApiKeyService {
         });
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyVO> updateApiKey(String kid, ApiKeyUpdateRequest req) {
         return Mono.fromCallable(() -> {
             String kh = keyIdIndex.get(kid);
@@ -108,10 +102,8 @@ public class ApiKeyService {
         });
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<Void> deleteApiKey(String kid) { return deleteApiKey(kid, "system"); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<Void> deleteApiKey(String kid, String by) {
         return Mono.fromRunnable(() -> {
             String kh = keyIdIndex.get(kid);
@@ -123,7 +115,6 @@ public class ApiKeyService {
         });
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyListVO> getAllApiKeysVO() {
         return Mono.fromCallable(() -> {
             List<ApiKeyVO> items = apiKeyCache.values().stream().map(this::convertToVO)
@@ -147,7 +138,6 @@ public class ApiKeyService {
         });
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyVO> getApiKeyByIdVO(String kid) {
         return Mono.fromCallable(() -> {
             String kh = keyIdIndex.get(kid);
@@ -158,7 +148,6 @@ public class ApiKeyService {
         });
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyVO> enableApiKey(String kid) {
         return Mono.fromCallable(() -> {
             String kh = keyIdIndex.get(kid);
@@ -172,7 +161,6 @@ public class ApiKeyService {
         });
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyVO> disableApiKey(String kid) {
         return Mono.fromCallable(() -> {
             String kh = keyIdIndex.get(kid);
@@ -186,40 +174,30 @@ public class ApiKeyService {
         });
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyBatchExportVO> exportApiKeys() { return apiKeyBatchService.exportApiKeys(apiKeyCache); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyBatchImportResult> importApiKeys(ApiKeyBatchImportRequest req, String by, String ip) {
         return apiKeyBatchService.importApiKeys(req, apiKeyCache, keyIdIndex, by, ip);
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<Integer> rotateExpiredKeys() { return apiKeyBatchService.rotateExpiredKeys(apiKeyCache, keyIdIndex); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyCreationVO> forceRotateKey(String kid, String by) {
         return apiKeyBatchService.forceRotateKey(kid, apiKeyCache, keyIdIndex, by);
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<Integer> cleanupExpiredKeys() { return apiKeyBatchService.cleanupExpiredKeys(apiKeyCache); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyBatchService.RotationStats> getRotationStats() { return apiKeyBatchService.getRotationStats(apiKeyCache); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public Mono<ApiKeyBatchService.ExpirationStats> getExpirationStats() { return apiKeyBatchService.getExpirationStats(apiKeyCache); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public boolean hasPersistedAccountConfig() { return apiKeyPersistenceService.hasPersistedAccountConfig(); }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public void initializeApiKeyFromYaml() {
         apiKeyPersistenceService.initializeApiKeyFromYaml(apiKeyCache, keyIdIndex, loadApiKeysFromConfig());
     }
 
-    @Deprecated(since = "v2.14.3", forRemoval = false)
     public void loadLatestApiKeyConfig() {
         apiKeyPersistenceService.loadLatestApiKeyConfig(apiKeyCache, keyIdIndex, loadApiKeysFromConfig());
     }
