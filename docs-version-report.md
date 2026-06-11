@@ -2,37 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 163
-- 近7天变更: 158
+- 总文档数: 162
+- 近7天变更: 43
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-10 06:24:28
+- 最后扫描: 2026-06-11 06:49:25
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/tracing/index.md (1.0.0 → 1.0.1) - 2026-06-10
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.3 → 1.0.4) - 2026-06-10
-- **MODIFIED**: docs/zh/configuration/version-management.md (1.0.1 → 1.0.2) - 2026-06-10
-- **MODIFIED**: docs/zh/configuration/validation-rules.md (1.0.0 → 1.0.1) - 2026-06-10
-- **MODIFIED**: docs/zh/configuration/store-config.md (1.0.2 → 1.0.3) - 2026-06-10
-- **MODIFIED**: docs/zh/configuration/state-persistence.md (1.0.0 → 1.0.1) - 2026-06-10
-- **MODIFIED**: docs/en/tracing/index.md (1.0.0 → 1.0.1) - 2026-06-10
-- **MODIFIED**: docs/en/configuration/version-management.md (1.0.1 → 1.0.2) - 2026-06-10
-- **MODIFIED**: docs/en/configuration/store-config.md (1.0.2 → 1.0.3) - 2026-06-10
-- **MODIFIED**: docs/en/configuration/state-persistence.md (1.0.0 → 1.0.1) - 2026-06-10
-
-## 过期文档 (30天未更新)
-
-- docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.0, 最后更新: 2025-10-15)
-- docs/en/deployment/docker-optimized.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/en/development/V1.4.1-changelog.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/en/monitoring/alert_rules_guide.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/en/reference/adapter-updates.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/en/security/blacklist-management.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/zh/development/V1.4.0-changelog.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/zh/development/V1.4.1-changelog.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/zh/development/tracing-full-chain-design.md (版本: 1.0.0, 最后更新: 2026-04-17)
-- docs/docs-version-report.md (版本: 1.0.0, 最后更新: 2026-04-29)
-- docs/zh/development/v2.7.x-package-refactoring.md (版本: 1.0.0, 最后更新: 2026-04-29)
+- **DELETED**: docs/zh/development/v2.7.x-package-refactoring.md (1.0.0 → ) - 2026-06-11
+- **MODIFIED**: docs/zh/development/tracing-full-chain-design.md (1.0.0 → 1.0.1) - 2026-06-11
+- **MODIFIED**: docs/zh/development/V1.4.1-changelog.md (1.0.0 → 1.0.1) - 2026-06-11
+- **MODIFIED**: docs/zh/development/V1.4.0-changelog.md (1.0.0 → 1.0.1) - 2026-06-11
+- **MODIFIED**: docs/en/security/blacklist-management.md (1.0.0 → 1.0.1) - 2026-06-11
+- **MODIFIED**: docs/en/reference/adapter-updates.md (1.0.0 → 1.0.1) - 2026-06-11
+- **MODIFIED**: docs/en/monitoring/alert_rules_guide.md (1.0.0 → 1.0.1) - 2026-06-11
+- **MODIFIED**: docs/en/development/V1.4.1-changelog.md (1.0.0 → 1.0.1) - 2026-06-11
+- **MODIFIED**: docs/en/deployment/jwt-persistence-deployment-checklist.md (1.0.0 → 1.0.1) - 2026-06-11
+- **MODIFIED**: docs/en/deployment/docker-optimized.md (1.0.0 → 1.0.1) - 2026-06-11
 
 ## 依赖关系分析
 
@@ -564,6 +550,17 @@
 
 ## 所有文档版本
 
+- **docs/zh/development/tracing-full-chain-design.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/zh/development/V1.4.1-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/zh/development/V1.4.0-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/en/security/blacklist-management.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/en/reference/adapter-updates.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/en/monitoring/alert_rules_guide.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/en/development/V1.4.1-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/en/deployment/docker-optimized.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/docs-version-report.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs-version-report.md**: v1.0.40 - 2026-06-11 (4eafd54e)
 - **docs/zh/tracing/index.md**: v1.0.1 - 2026-06-10 (227a92b7)
 - **docs/zh/reference/changelog.md**: v1.0.4 - 2026-06-10 (ba6d6ddf)
 - **docs/zh/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
@@ -575,7 +572,6 @@
 - **docs/en/configuration/store-config.md**: v1.0.3 - 2026-06-10 (227a92b7)
 - **docs/en/configuration/state-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
 - **docs/en/configuration/jwt-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
-- **docs-version-report.md**: v1.0.39 - 2026-06-10 (758fbfbb)
 - **docs/zh/tracing/usage-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/zh/tracing/troubleshooting.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/zh/tracing/quickstart.md**: v1.0.1 - 2026-06-09 (b9fa976b)
@@ -716,14 +712,3 @@
 - **README-ZH.md**: v1.0.8 - 2026-06-03 (b305e6de)
 - **QWEN.md**: v1.0.3 - 2026-05-19 (8c4e0ad9)
 - **docs/CHANGELOG-v2.5.x.md**: v1.0.0 - 2026-05-14 (947dc154)
-- **docs/zh/development/v2.7.x-package-refactoring.md**: v1.0.0 - 2026-04-29 (39b124d3)
-- **docs/docs-version-report.md**: v1.0.0 - 2026-04-29 (f60c279e)
-- **docs/zh/development/tracing-full-chain-design.md**: v1.0.0 - 2026-04-17 (6ed4233c)
-- **docs/zh/development/V1.4.1-changelog.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
-- **docs/zh/development/V1.4.0-changelog.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
-- **docs/en/security/blacklist-management.md**: v1.0.0 - 2026-04-17 (8ece44a1)
-- **docs/en/reference/adapter-updates.md**: v1.0.0 - 2026-04-17 (bc275091)
-- **docs/en/monitoring/alert_rules_guide.md**: v1.0.0 - 2026-04-17 (2d11d5b9)
-- **docs/en/development/V1.4.1-changelog.md**: v1.0.0 - 2026-04-17 (34d6d1cf)
-- **docs/en/deployment/docker-optimized.md**: v1.0.0 - 2026-04-17 (bc275091)
-- **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.0 - 2025-10-15 (6a1e776e)
