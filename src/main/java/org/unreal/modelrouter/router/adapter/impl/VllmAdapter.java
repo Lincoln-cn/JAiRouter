@@ -1,34 +1,21 @@
 package org.unreal.modelrouter.router.adapter.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.router.adapter.BaseAdapter;
-import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
-import org.unreal.modelrouter.router.adapter.checker.CapabilityChecker;
-import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
-import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
-import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
-import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
-import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
-import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
-import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
-import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
-import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
-import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
+import org.unreal.modelrouter.router.adapter.support.AdapterContext;
+import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
+import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
-import org.unreal.modelrouter.router.model.ModelServiceRegistry;
-import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
 /**
  * VLLM Adapter - 适配VLLM API格式
@@ -37,23 +24,10 @@ import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
  */
 public class VllmAdapter extends BaseAdapter {
 
-    public VllmAdapter(final ModelServiceRegistry registry,
-                         final ObjectMapper objectMapper,
-                         final ModelCallStatsRepository statsRepository,
-                         final RequestBuilder requestBuilder,
-                         final ResponseHandler responseHandler,
-                         final InstanceSelector instanceSelector,
-                         final ResponseTransformer responseTransformer,
-                         final CapabilityChecker capabilityChecker,
-                         final AdapterErrorHandler errorHandler,
-                         final RetryPolicy retryPolicy,
-                         final HttpRequestProcessor httpRequestProcessor,
-                         final ResponseMapper responseMapper,
-                         final AdapterMetricsRecorder metricsRecorder,
-                         final AdapterTracingManager tracingManager,
-                         final ErrorResponseBuilder errResponseBuilder,
-                         final NonStreamingRequestProcessor nonStreamingProcessor) {
-        super(registry, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder, tracingManager, errResponseBuilder, nonStreamingProcessor);
+    public VllmAdapter(final AdapterContext context,
+                       final RequestProcessingSupport requestSupport,
+                       final ResilienceSupport resilienceSupport) {
+        super(context, requestSupport, resilienceSupport);
     }
 
     @Override

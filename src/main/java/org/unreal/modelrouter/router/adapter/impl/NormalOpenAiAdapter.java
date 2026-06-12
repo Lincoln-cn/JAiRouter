@@ -1,25 +1,14 @@
 package org.unreal.modelrouter.router.adapter.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.router.adapter.BaseAdapter;
-import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
-import org.unreal.modelrouter.router.adapter.checker.CapabilityChecker;
-import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
-import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
-import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
-import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
-import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
-import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
-import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
-import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
-import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
-import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
+import org.unreal.modelrouter.router.adapter.support.AdapterContext;
+import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
+import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import org.unreal.modelrouter.router.adapter.transformer.OpenAiRequestTransformer;
 import org.unreal.modelrouter.router.adapter.transformer.OpenAiResponseTransformer;
 
@@ -29,8 +18,6 @@ import org.unreal.modelrouter.common.dto.ImageEditDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
-import org.unreal.modelrouter.router.model.ModelServiceRegistry;
-import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
 /**
  * 标准OpenAI适配器
@@ -41,27 +28,12 @@ public class NormalOpenAiAdapter extends BaseAdapter {
     private final OpenAiRequestTransformer requestTransformer;
     private final OpenAiResponseTransformer responseTransformer;
 
-    public NormalOpenAiAdapter(final ModelServiceRegistry registry,
-                               final ObjectMapper objectMapper,
-                               final ModelCallStatsRepository statsRepository,
-                               final RequestBuilder requestBuilder,
-                               final ResponseHandler responseHandler,
-                               final InstanceSelector instanceSelector,
-                               final ResponseTransformer responseTransformer,
-                               final CapabilityChecker capabilityChecker,
-                               final AdapterErrorHandler errorHandler,
-                               final RetryPolicy retryPolicy,
-                               final HttpRequestProcessor httpRequestProcessor,
-                               final ResponseMapper responseMapper,
-                               final AdapterMetricsRecorder metricsRecorder,
-                               final AdapterTracingManager tracingManager,
-                               final ErrorResponseBuilder errResponseBuilder,
-                               final NonStreamingRequestProcessor nonStreamingProcessor,
+    public NormalOpenAiAdapter(final AdapterContext context,
+                               final RequestProcessingSupport requestSupport,
+                               final ResilienceSupport resilienceSupport,
                                final OpenAiRequestTransformer openAiRequestTransformer,
                                final OpenAiResponseTransformer openAiResponseTransformer) {
-        super(registry, objectMapper, statsRepository, requestBuilder, responseHandler, instanceSelector, 
-              responseTransformer, capabilityChecker, errorHandler, retryPolicy, httpRequestProcessor, 
-              responseMapper, metricsRecorder, tracingManager, errResponseBuilder, nonStreamingProcessor);
+        super(context, requestSupport, resilienceSupport);
         this.requestTransformer = openAiRequestTransformer;
         this.responseTransformer = openAiResponseTransformer;
     }

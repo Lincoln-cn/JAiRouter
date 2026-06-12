@@ -19,6 +19,9 @@ import org.unreal.modelrouter.router.adapter.processor.StreamingRequestProcessor
 import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
 import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
+import org.unreal.modelrouter.router.adapter.support.AdapterContext;
+import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
+import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.util.ModelUtils;
@@ -43,26 +46,15 @@ import java.time.Duration;
 import java.util.function.Function;
 
 /**
- * BaseAdapter - v2.26.6 精简版
+ * BaseAdapter - v2.28.0 重构版
+ * 使用聚合组件减少构造函数参数：16 参数 → 3 参数。
  * 所有请求处理逻辑已完全委托给专门组件。
  */
 public abstract class BaseAdapter implements ServiceCapability {
 
-    private final ModelServiceRegistry registry;
-    private final ModelCallStatsRepository statsRepository;
-    private final RequestBuilder requestBuilder;
-    private final ResponseHandler responseHandler;
-    private final InstanceSelector instanceSelector;
-    private final ResponseTransformer responseTransformer;
-    private final CapabilityChecker capabilityChecker;
-    private final AdapterErrorHandler errorHandler;
-    private final RetryPolicy retryPolicy;
-    private final HttpRequestProcessor httpRequestProcessor;
-    private final ResponseMapper responseMapper;
-    private final AdapterMetricsRecorder metricsRecorder;
-    private final AdapterTracingManager tracingManager;
-    private final ErrorResponseBuilder errorResponseBuilder;
-    private final NonStreamingRequestProcessor nonStreamingProcessor;
+    private final AdapterContext context;
+    private final RequestProcessingSupport requestSupport;
+    private final ResilienceSupport resilienceSupport;
     protected final ObjectMapper objectMapper;
     private final Logger logger = LoggerFactory.getLogger(BaseAdapter.class);
 
@@ -73,7 +65,27 @@ public abstract class BaseAdapter implements ServiceCapability {
     @Autowired(required = false)
     private FallbackRequestProcessor fallbackRequestProcessor;
 
+    /**
+     * 新构造函数 - 使用聚合组件（推荐）。
+     * @param context 核心上下文
+     * @param requestSupport 请求处理支持
+     * @param resilienceSupport 弹性支持
+     */
     @Autowired
+    public BaseAdapter(final AdapterContext context,
+                       final RequestProcessingSupport requestSupport,
+                       final ResilienceSupport resilienceSupport) {
+        this.context = context;
+        this.requestSupport = requestSupport;
+        this.resilienceSupport = resilienceSupport;
+        this.objectMapper = context.getObjectMapper();
+    }
+
+    /**
+     * 旧构造函数 - 已废弃，仅为向后兼容保留。
+     * @deprecated 使用 {@link #BaseAdapter(AdapterContext, RequestProcessingSupport, ResilienceSupport)} 替代
+     */
+    @Deprecated(since = "2.28.0", forRemoval = true)
     public BaseAdapter(final ModelServiceRegistry registry, final ObjectMapper objectMapper,
                        final ModelCallStatsRepository statsRepository, final RequestBuilder requestBuilder,
                        final ResponseHandler responseHandler, final InstanceSelector instanceSelector,
@@ -83,33 +95,23 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final AdapterMetricsRecorder metricsRecorder, final AdapterTracingManager tracingManager,
                        final ErrorResponseBuilder errorResponseBuilder,
                        final NonStreamingRequestProcessor nonStreamingProcessor) {
-        this.registry = registry;
+        this.context = new AdapterContext(registry, objectMapper, statsRepository);
+        this.requestSupport = new RequestProcessingSupport(requestBuilder, responseHandler, instanceSelector,
+                responseTransformer, httpRequestProcessor, responseMapper, nonStreamingProcessor);
+        this.resilienceSupport = new ResilienceSupport(capabilityChecker, errorHandler, retryPolicy,
+                metricsRecorder, tracingManager, errorResponseBuilder);
         this.objectMapper = objectMapper;
-        this.statsRepository = statsRepository;
-        this.requestBuilder = requestBuilder;
-        this.responseHandler = responseHandler;
-        this.instanceSelector = instanceSelector;
-        this.responseTransformer = responseTransformer;
-        this.capabilityChecker = capabilityChecker;
-        this.errorHandler = errorHandler;
-        this.retryPolicy = retryPolicy;
-        this.httpRequestProcessor = httpRequestProcessor;
-        this.responseMapper = responseMapper;
-        this.metricsRecorder = metricsRecorder;
-        this.tracingManager = tracingManager;
-        this.errorResponseBuilder = errorResponseBuilder;
-        this.nonStreamingProcessor = nonStreamingProcessor;
     }
 
     // ==================== 核心方法 ====================
 
     private String classifyError(final Throwable throwable) {
-        return errorHandler.classifyError(throwable);
+        return resilienceSupport.getErrorHandler().classifyError(throwable);
     }
 
-    public ModelServiceRegistry getRegistry() { return registry; }
+    public ModelServiceRegistry getRegistry() { return context.getRegistry(); }
 
-    protected RetryPolicy getRetryPolicy() { return retryPolicy; }
+    protected RetryPolicy getRetryPolicy() { return resilienceSupport.getRetryPolicy(); }
 
     protected WebClient getWebClient(final ModelServiceRegistry.ServiceType serviceType,
                                      final String modelName, final ServerHttpRequest httpRequest) {
@@ -126,7 +128,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     protected Mono<ResponseEntity<String>> checkCapability(final ModelServiceRegistry.ServiceType serviceType) {
-        return capabilityChecker.checkCapability(supportCapability(), serviceType);
+        return resilienceSupport.getCapabilityChecker().checkCapability(supportCapability(), serviceType);
     }
 
     // ==================== 请求处理模板方法 ====================
@@ -142,7 +144,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         long startTime = System.currentTimeMillis();
         String adapterType = getAdapterType();
         String modelNameFromRequest = ModelUtils.getModelNameFromRequest(request);
-        tracingManager.recordCallStart(adapterType, selectedInstance, serviceType, modelNameFromRequest);
+        resilienceSupport.getTracingManager().recordCallStart(adapterType, selectedInstance, serviceType, modelNameFromRequest);
         return processRequestWithRetry(request, authorization, client, path, selectedInstance,
                 serviceType, modelNameFromRequest, processor, startTime, 0);
     }
@@ -154,27 +156,30 @@ public abstract class BaseAdapter implements ServiceCapability {
             final RequestProcessor<T> processor, final long startTime, final int retryCount) {
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
+        RetryPolicy retryPolicy = resilienceSupport.getRetryPolicy();
         int maxRetries = retryPolicy.getMaxRetriesByServiceType(serviceType);
         return processor.process(request, authorization, client, path, selectedInstance, serviceType)
                 .doOnSuccess(response -> {
                     long duration = System.currentTimeMillis() - startTime;
                     boolean success = response != null && response.getStatusCode().is2xxSuccessful();
+                    AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
                     if (metricsRecorder != null) {
                         metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, success,
                                 null, modelName, serviceType, selectedInstance);
                     }
-                    tracingManager.recordCallComplete(adapterType, selectedInstance, serviceType,
+                    resilienceSupport.getTracingManager().recordCallComplete(adapterType, selectedInstance, serviceType,
                             ModelUtils.getModelNameFromRequest(request), duration, success);
                 })
                 .onErrorResume(throwable -> {
                     long duration = System.currentTimeMillis() - startTime;
                     String errorCode = classifyError(throwable);
+                    AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
                     if (metricsRecorder != null) {
                         metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, false,
                                 errorCode, modelName, serviceType, selectedInstance);
                     }
                     if (retryPolicy.canRetry(retryCount, throwable) && retryPolicy.isRetryable(throwable)) {
-                        tracingManager.recordRetry(adapterType, selectedInstance, retryCount + 1, maxRetries, throwable);
+                        resilienceSupport.getTracingManager().recordRetry(adapterType, selectedInstance, retryCount + 1, maxRetries, throwable);
                         if (metricsRecorder != null) {
                             metricsRecorder.recordRetry(adapterType, instanceName, retryCount + 1, throwable);
                         }
@@ -184,7 +189,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                                         selectedInstance, serviceType, modelName, processor,
                                         System.currentTimeMillis(), retryCount + 1));
                     }
-                    return errorResponseBuilder.buildErrorResponse(throwable).flatMap(Mono::error);
+                    return resilienceSupport.getErrorResponseBuilder().buildErrorResponse(throwable).flatMap(Mono::error);
                 });
     }
 
@@ -222,7 +227,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), adapterType);
         Function<Object, Object> transformRequestFn = req -> transformRequest(req, adapterType);
         Function<Object, Object> transformResponseFn = data -> transformResponse(data, adapterType);
-        return nonStreamingProcessor.processRequest(request, finalAuth, client, finalPath,
+        return requestSupport.getNonStreamingProcessor().processRequest(request, finalAuth, client, finalPath,
                 selectedInstance, serviceType, responseType, adapterType,
                 transformRequestFn, transformResponseFn, multipartRequestHandler);
     }
@@ -345,7 +350,7 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     protected String transformStreamChunk(final String chunk) {
-        return responseTransformer.transformStreamChunk(chunk);
+        return requestSupport.getResponseTransformer().transformStreamChunk(chunk);
     }
 
     protected long calculateRequestSize(final Object request) {
@@ -357,23 +362,23 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     protected ModelRouterProperties.ModelInstance selectInstance(
             final ModelServiceRegistry.ServiceType serviceType, final String modelName, final String clientIp) {
-        return instanceSelector.selectInstance(serviceType, modelName, clientIp);
+        return requestSupport.getInstanceSelector().selectInstance(serviceType, modelName, clientIp);
     }
 
     protected String getModelPath(final ModelServiceRegistry.ServiceType serviceType, final String modelName) {
-        return instanceSelector.getModelPath(serviceType, modelName);
+        return requestSupport.getInstanceSelector().getModelPath(serviceType, modelName);
     }
 
     protected Object transformRequest(final Object request, final String adapterType) {
-        return responseTransformer.transformRequest(request, adapterType);
+        return requestSupport.getResponseTransformer().transformRequest(request, adapterType);
     }
 
     protected String adaptModelName(final String originalModelName) {
-        return responseTransformer.adaptModelName(originalModelName);
+        return requestSupport.getResponseTransformer().adaptModelName(originalModelName);
     }
 
     protected Object transformResponse(final Object responseData, final String adapterType) {
-        return responseTransformer.transformResponse(responseData, adapterType);
+        return requestSupport.getResponseTransformer().transformResponse(responseData, adapterType);
     }
 
     protected String getAuthorizationHeader(final String authorization, final String adapterType) {
@@ -393,14 +398,16 @@ public abstract class BaseAdapter implements ServiceCapability {
     protected void logAdapterRetryEvent(final String adapterType,
             final ModelRouterProperties.ModelInstance instance, final int retryCount,
             final int maxRetries, final Throwable error) {
-        tracingManager.recordRetry(adapterType, instance, retryCount, maxRetries, error);
+        resilienceSupport.getTracingManager().recordRetry(adapterType, instance, retryCount, maxRetries, error);
+        AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
         if (metricsRecorder != null) {
             metricsRecorder.recordRetry(adapterType, instance != null ? instance.getName() : "unknown", retryCount, error);
         }
     }
 
     protected void logAdapterTransformError(final String adapterType, final Throwable error) {
-        tracingManager.recordTransformError(adapterType, error);
+        resilienceSupport.getTracingManager().recordTransformError(adapterType, error);
+        AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
         if (metricsRecorder != null) {
             metricsRecorder.recordError(adapterType, "unknown", "TRANSFORM_ERROR", error, 0, null);
         }

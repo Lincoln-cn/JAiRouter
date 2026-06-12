@@ -16,19 +16,11 @@ import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
-import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
-import org.unreal.modelrouter.router.adapter.checker.CapabilityChecker;
-import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
-import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
-import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
-import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
-import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
-import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
-import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
-import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
-import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
+import org.unreal.modelrouter.router.adapter.support.AdapterContext;
+import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
+import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
+import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 
@@ -49,31 +41,15 @@ class VllmAdapterTest {
     @Mock
     private ModelCallStatsRepository statsRepository;
     @Mock
-    private RequestBuilder requestBuilder;
+    private AdapterContext context;
     @Mock
-    private ResponseHandler responseHandler;
+    private RequestProcessingSupport requestSupport;
     @Mock
-    private InstanceSelector instanceSelector;
+    private ResilienceSupport resilienceSupport;
     @Mock
     private ResponseTransformer responseTransformer;
     @Mock
-    private CapabilityChecker capabilityChecker;
-    @Mock
-    private AdapterErrorHandler errorHandler;
-    @Mock
-    private RetryPolicy retryPolicy;
-    @Mock
-    private HttpRequestProcessor httpRequestProcessor;
-    @Mock
-    private ResponseMapper responseMapper;
-    @Mock
-    private AdapterMetricsRecorder metricsRecorder;
-    @Mock
     private AdapterTracingManager tracingManager;
-    @Mock
-    private ErrorResponseBuilder errorResponseBuilder;
-    @Mock
-    private NonStreamingRequestProcessor nonStreamingProcessor;
 
     private ObjectMapper objectMapper;
     private TestVllmAdapter adapter;
@@ -81,29 +57,19 @@ class VllmAdapterTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
+        lenient().when(context.getObjectMapper()).thenReturn(objectMapper);
+        lenient().when(requestSupport.getResponseTransformer()).thenReturn(responseTransformer);
+        lenient().when(resilienceSupport.getTracingManager()).thenReturn(tracingManager);
         lenient().when(responseTransformer.adaptModelName(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-        adapter = new TestVllmAdapter(
-                registry, objectMapper, statsRepository, requestBuilder, responseHandler,
-                instanceSelector, responseTransformer, capabilityChecker, errorHandler,
-                retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder,
-                tracingManager, errorResponseBuilder, nonStreamingProcessor
-        );
+        adapter = new TestVllmAdapter(context, requestSupport, resilienceSupport);
     }
 
     // 测试辅助类 - 暴露 protected 方法
     private static class TestVllmAdapter extends VllmAdapter {
-        public TestVllmAdapter(ModelServiceRegistry registry, ObjectMapper objectMapper,
-                               ModelCallStatsRepository statsRepository, RequestBuilder requestBuilder,
-                               ResponseHandler responseHandler, InstanceSelector instanceSelector,
-                               ResponseTransformer responseTransformer, CapabilityChecker capabilityChecker,
-                               AdapterErrorHandler errorHandler, RetryPolicy retryPolicy,
-                               HttpRequestProcessor httpRequestProcessor, ResponseMapper responseMapper,
-                               AdapterMetricsRecorder metricsRecorder, AdapterTracingManager tracingManager,
-                               ErrorResponseBuilder errorResponseBuilder, NonStreamingRequestProcessor nonStreamingProcessor) {
-            super(registry, objectMapper, statsRepository, requestBuilder, responseHandler,
-                    instanceSelector, responseTransformer, capabilityChecker, errorHandler,
-                    retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder,
-                    tracingManager, errorResponseBuilder, nonStreamingProcessor);
+        public TestVllmAdapter(AdapterContext context,
+                               RequestProcessingSupport requestSupport,
+                               ResilienceSupport resilienceSupport) {
+            super(context, requestSupport, resilienceSupport);
         }
 
         public String getAdapterTypePublic() {

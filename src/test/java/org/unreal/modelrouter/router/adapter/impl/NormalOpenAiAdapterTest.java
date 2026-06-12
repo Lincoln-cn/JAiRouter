@@ -16,21 +16,13 @@ import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
-import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
-import org.unreal.modelrouter.router.adapter.checker.CapabilityChecker;
-import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
-import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
-import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
-import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
-import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
-import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
-import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
-import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
-import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
+import org.unreal.modelrouter.router.adapter.support.AdapterContext;
+import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
+import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
+import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.transformer.OpenAiRequestTransformerImpl;
 import org.unreal.modelrouter.router.adapter.transformer.OpenAiResponseTransformerImpl;
-import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
+import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 import java.util.Arrays;
@@ -56,16 +48,16 @@ class NormalOpenAiAdapterTest {
     private ModelCallStatsRepository statsRepository;
 
     @Mock
-    private InstanceSelector instanceSelector;
+    private AdapterContext context;
+
+    @Mock
+    private RequestProcessingSupport requestSupport;
+
+    @Mock
+    private ResilienceSupport resilienceSupport;
 
     @Mock
     private ResponseTransformer responseTransformer;
-
-    @Mock
-    private CapabilityChecker capabilityChecker;
-
-    @Mock
-    private AdapterMetricsRecorder metricsRecorder;
 
     @Mock
     private AdapterTracingManager tracingManager;
@@ -81,20 +73,12 @@ class NormalOpenAiAdapterTest {
         OpenAiRequestTransformerImpl requestTransformer = new OpenAiRequestTransformerImpl(objectMapper);
         OpenAiResponseTransformerImpl responseTransformerImpl = new OpenAiResponseTransformerImpl(objectMapper);
 
-        adapter = new TestNormalOpenAiAdapter(
-                registry, objectMapper, statsRepository,
-                new RequestBuilder(), new ResponseHandler(objectMapper),
-                instanceSelector, responseTransformer, capabilityChecker,
-                new AdapterErrorHandler(), new RetryPolicy(),
-                new HttpRequestProcessor(), new ResponseMapper(objectMapper),
-                metricsRecorder, tracingManager,
-                new ErrorResponseBuilder(),
-                new NonStreamingRequestProcessor(objectMapper, new RequestBuilder(), metricsRecorder),
-                requestTransformer, responseTransformerImpl
-        );
-
-        lenient().when(responseTransformer.adaptModelName(anyString()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(context.getObjectMapper()).thenReturn(objectMapper);
+        lenient().when(requestSupport.getResponseTransformer()).thenReturn(responseTransformer);
+        lenient().when(resilienceSupport.getTracingManager()).thenReturn(tracingManager);
+        lenient().when(responseTransformer.adaptModelName(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+        adapter = new TestNormalOpenAiAdapter(context, requestSupport, resilienceSupport,
+                requestTransformer, responseTransformerImpl);
     }
 
     private JsonNode toJsonNode(Object result) throws Exception {
@@ -105,21 +89,12 @@ class NormalOpenAiAdapterTest {
     }
 
     private static class TestNormalOpenAiAdapter extends NormalOpenAiAdapter {
-        public TestNormalOpenAiAdapter(ModelServiceRegistry registry, ObjectMapper objectMapper,
-                ModelCallStatsRepository statsRepository, RequestBuilder requestBuilder,
-                ResponseHandler responseHandler, InstanceSelector instanceSelector,
-                ResponseTransformer responseTransformer, CapabilityChecker capabilityChecker,
-                AdapterErrorHandler errorHandler, RetryPolicy retryPolicy,
-                HttpRequestProcessor httpRequestProcessor, ResponseMapper responseMapper,
-                AdapterMetricsRecorder metricsRecorder, AdapterTracingManager tracingManager,
-                ErrorResponseBuilder errorResponseBuilder, NonStreamingRequestProcessor nonStreamingProcessor,
-                org.unreal.modelrouter.router.adapter.transformer.OpenAiRequestTransformer openAiRequestTransformer,
-                org.unreal.modelrouter.router.adapter.transformer.OpenAiResponseTransformer openAiResponseTransformer) {
-            super(registry, objectMapper, statsRepository, requestBuilder, responseHandler,
-                    instanceSelector, responseTransformer, capabilityChecker, errorHandler,
-                    retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder,
-                    tracingManager, errorResponseBuilder, nonStreamingProcessor,
-                    openAiRequestTransformer, openAiResponseTransformer);
+        public TestNormalOpenAiAdapter(AdapterContext context,
+                                       RequestProcessingSupport requestSupport,
+                                       ResilienceSupport resilienceSupport,
+                                       org.unreal.modelrouter.router.adapter.transformer.OpenAiRequestTransformer openAiRequestTransformer,
+                                       org.unreal.modelrouter.router.adapter.transformer.OpenAiResponseTransformer openAiResponseTransformer) {
+            super(context, requestSupport, resilienceSupport, openAiRequestTransformer, openAiResponseTransformer);
         }
 
         public String getAdapterTypePublic() { return getAdapterType(); }

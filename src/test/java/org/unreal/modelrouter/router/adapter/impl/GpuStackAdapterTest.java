@@ -16,19 +16,11 @@ import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
-import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
-import org.unreal.modelrouter.router.adapter.checker.CapabilityChecker;
-import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
-import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
-import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
-import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
-import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
-import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
-import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
-import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
-import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
+import org.unreal.modelrouter.router.adapter.support.AdapterContext;
+import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
+import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
+import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 import java.util.Arrays;
@@ -54,16 +46,16 @@ class GpuStackAdapterTest {
     private ModelCallStatsRepository statsRepository;
 
     @Mock
-    private InstanceSelector instanceSelector;
+    private AdapterContext context;
+
+    @Mock
+    private RequestProcessingSupport requestSupport;
+
+    @Mock
+    private ResilienceSupport resilienceSupport;
 
     @Mock
     private ResponseTransformer responseTransformer;
-
-    @Mock
-    private CapabilityChecker capabilityChecker;
-
-    @Mock
-    private AdapterMetricsRecorder metricsRecorder;
 
     @Mock
     private AdapterTracingManager tracingManager;
@@ -76,20 +68,11 @@ class GpuStackAdapterTest {
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
 
-        adapter = new TestGpuStackAdapter(
-                registry, objectMapper, statsRepository,
-                new RequestBuilder(), new ResponseHandler(objectMapper),
-                instanceSelector, responseTransformer, capabilityChecker,
-                new AdapterErrorHandler(), new RetryPolicy(),
-                new HttpRequestProcessor(), new ResponseMapper(objectMapper),
-                metricsRecorder, tracingManager,
-                new ErrorResponseBuilder(),
-                new NonStreamingRequestProcessor(objectMapper, new RequestBuilder(), metricsRecorder)
-        );
-
-        // 设置 mock 行为 - adaptModelName 直接返回原值
-        lenient().when(responseTransformer.adaptModelName(anyString()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(context.getObjectMapper()).thenReturn(objectMapper);
+        lenient().when(requestSupport.getResponseTransformer()).thenReturn(responseTransformer);
+        lenient().when(resilienceSupport.getTracingManager()).thenReturn(tracingManager);
+        lenient().when(responseTransformer.adaptModelName(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+        adapter = new TestGpuStackAdapter(context, requestSupport, resilienceSupport);
     }
 
     /**
@@ -103,18 +86,10 @@ class GpuStackAdapterTest {
     }
 
     private static class TestGpuStackAdapter extends GpuStackAdapter {
-        public TestGpuStackAdapter(ModelServiceRegistry registry, ObjectMapper objectMapper,
-                ModelCallStatsRepository statsRepository, RequestBuilder requestBuilder,
-                ResponseHandler responseHandler, InstanceSelector instanceSelector,
-                ResponseTransformer responseTransformer, CapabilityChecker capabilityChecker,
-                AdapterErrorHandler errorHandler, RetryPolicy retryPolicy,
-                HttpRequestProcessor httpRequestProcessor, ResponseMapper responseMapper,
-                AdapterMetricsRecorder metricsRecorder, AdapterTracingManager tracingManager,
-                ErrorResponseBuilder errorResponseBuilder, NonStreamingRequestProcessor nonStreamingProcessor) {
-            super(registry, objectMapper, statsRepository, requestBuilder, responseHandler,
-                    instanceSelector, responseTransformer, capabilityChecker, errorHandler,
-                    retryPolicy, httpRequestProcessor, responseMapper, metricsRecorder,
-                    tracingManager, errorResponseBuilder, nonStreamingProcessor);
+        public TestGpuStackAdapter(AdapterContext context,
+                                   RequestProcessingSupport requestSupport,
+                                   ResilienceSupport resilienceSupport) {
+            super(context, requestSupport, resilienceSupport);
         }
 
         public String getAdapterTypePublic() { return getAdapterType(); }
