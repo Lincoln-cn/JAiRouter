@@ -5,10 +5,11 @@
 - 总文档数: 162
 - 近7天变更: 43
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-11 06:49:25
+- 最后扫描: 2026-06-12 06:42:14
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.40 → 1.0.41) - 2026-06-12
 - **DELETED**: docs/zh/development/v2.7.x-package-refactoring.md (1.0.0 → ) - 2026-06-11
 - **MODIFIED**: docs/zh/development/tracing-full-chain-design.md (1.0.0 → 1.0.1) - 2026-06-11
 - **MODIFIED**: docs/zh/development/V1.4.1-changelog.md (1.0.0 → 1.0.1) - 2026-06-11
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/en/monitoring/alert_rules_guide.md (1.0.0 → 1.0.1) - 2026-06-11
 - **MODIFIED**: docs/en/development/V1.4.1-changelog.md (1.0.0 → 1.0.1) - 2026-06-11
 - **MODIFIED**: docs/en/deployment/jwt-persistence-deployment-checklist.md (1.0.0 → 1.0.1) - 2026-06-11
-- **MODIFIED**: docs/en/deployment/docker-optimized.md (1.0.0 → 1.0.1) - 2026-06-11
 
 ## 依赖关系分析
 
@@ -550,6 +550,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.41 - 2026-06-12 (e262f008)
 - **docs/zh/development/tracing-full-chain-design.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/zh/development/V1.4.1-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/zh/development/V1.4.0-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
@@ -560,7 +561,6 @@
 - **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/deployment/docker-optimized.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/docs-version-report.md**: v1.0.1 - 2026-06-11 (a9e349a6)
-- **docs-version-report.md**: v1.0.40 - 2026-06-11 (4eafd54e)
 - **docs/zh/tracing/index.md**: v1.0.1 - 2026-06-10 (227a92b7)
 - **docs/zh/reference/changelog.md**: v1.0.4 - 2026-06-10 (ba6d6ddf)
 - **docs/zh/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
