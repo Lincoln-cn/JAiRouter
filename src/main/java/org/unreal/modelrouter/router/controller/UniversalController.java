@@ -1,10 +1,22 @@
+/*
+ * Copyright 2024 JAiRouter Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.unreal.modelrouter.router.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
@@ -15,12 +27,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.ServerWebInputException;
-import org.unreal.modelrouter.router.adapter.AdapterRegistry;
-import org.unreal.modelrouter.router.adapter.ServiceCapability;
-import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.ImageEditDTO;
@@ -28,47 +36,27 @@ import org.unreal.modelrouter.common.dto.ImageGenerateDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
-import org.unreal.modelrouter.router.model.ModelRouterProperties;
-import org.unreal.modelrouter.router.model.ModelServiceRegistry;
-import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
-import org.unreal.modelrouter.monitor.tracing.TracingConstants;
-import org.unreal.modelrouter.monitor.tracing.TracingContext;
-import org.unreal.modelrouter.common.util.IpUtils;
+import org.unreal.modelrouter.router.handler.ServiceEndpoint;
+import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import reactor.core.publisher.Mono;
 
+/**
+ * 统一模型接口控制器.
+ *
+ * <p>提供兼容OpenAI格式的统一模型服务接口，所有请求处理逻辑委托给 {@link ServiceRequestHandler}。
+ *
+ * @author JAiRouter Team
+ * @since 1.0.0
+ */
 @RestController
 @RequestMapping("/api/v1")
 @Tag(name = "统一模型接口", description = "提供兼容OpenAI格式的统一模型服务接口")
 public class UniversalController {
 
-    private final AdapterRegistry adapterRegistry;
-    private final ModelServiceRegistry registry;
-    private final ServiceStateManager serviceStateManager;
-    private final MetricsCollector metricsCollector;
-    private final org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor;
+    private final ServiceRequestHandler requestHandler;
 
-    private final Logger logger = LoggerFactory.getLogger(UniversalController.class);
-
-    public UniversalController(final AdapterRegistry adapterRegistry,
-                               final ModelServiceRegistry registry,
-                               final ServiceStateManager serviceStateManager,
-                               @Autowired(required = false) final MetricsCollector metricsCollector,
-                               @Autowired(required = false) final org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInterceptor tracingInterceptor) {
-        this.adapterRegistry = adapterRegistry;
-        this.registry = registry;
-        this.serviceStateManager = serviceStateManager;
-        this.metricsCollector = metricsCollector;
-        this.tracingInterceptor = tracingInterceptor;
-    }
-
-    /**
-     * 从 ServerWebExchange 获取追踪上下文
-     */
-    private TracingContext getTracingContext(final ServerWebExchange exchange) {
-        if (exchange != null) {
-            return exchange.getAttribute(TracingConstants.ContextKeys.TRACING_CONTEXT);
-        }
-        return null;
+    public UniversalController(final ServiceRequestHandler requestHandler) {
+        this.requestHandler = requestHandler;
     }
 
     @PostMapping("/chat/completions")
@@ -77,34 +65,12 @@ public class UniversalController {
             @RequestBody(required = false) final ChatDTO.Request request,
             final ServerWebExchange exchange) {
 
-        ServerHttpRequest httpRequest = exchange.getRequest();
-        TracingContext tracingContext = getTracingContext(exchange);
-
-        if (tracingInterceptor != null && tracingContext != null && tracingContext.isActive()) {
-            return tracingInterceptor.traceControllerCall(
-                exchange,
-                ModelServiceRegistry.ServiceType.chat,
-                request.model(),
-                httpRequest,
-                "chatCompletions",
-                () -> handleServiceRequestWithInstanceAdapter(
-                    ModelServiceRegistry.ServiceType.chat,
-                    request.model(),
-                    exchange,
-                    tracingContext,
-                    (adapter) -> adapter.chat(request, authorization, httpRequest)
-                            .map(resp -> (ResponseEntity<?>) resp)
-                )
-            );
-        }
-
-        return handleServiceRequestWithInstanceAdapter(
-                ModelServiceRegistry.ServiceType.chat,
-                request.model(),
-                exchange,
-                tracingContext,
-                (adapter) -> adapter.chat(request, authorization, httpRequest)
-                        .map(resp -> (ResponseEntity<?>) resp)
+        return requestHandler.handleRequest(
+            ServiceEndpoint.CHAT,
+            request.model(),
+            authorization,
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.chat(request, auth, httpRequest)
         );
     }
 
@@ -118,28 +84,12 @@ public class UniversalController {
             throw new ServerWebInputException("Request body is required");
         }
 
-        if (tracingInterceptor != null) {
-            return tracingInterceptor.traceControllerCall(
-                ModelServiceRegistry.ServiceType.embedding,
-                request.model(),
-                httpRequest,
-                "embeddings",
-                () -> handleServiceRequestWithInstanceAdapter(
-                    ModelServiceRegistry.ServiceType.embedding,
-                    request.model(),
-                    httpRequest,
-                    (adapter) -> adapter.embedding(request, authorization, httpRequest)
-                            .map(resp -> (ResponseEntity<?>) resp)
-                )
-            );
-        }
-
-        return handleServiceRequestWithInstanceAdapter(
-                ModelServiceRegistry.ServiceType.embedding,
-                request.model(),
-                httpRequest,
-                (adapter) -> adapter.embedding(request, authorization, httpRequest)
-                        .map(resp -> (ResponseEntity<?>) resp)
+        return requestHandler.handleRequest(
+            ServiceEndpoint.EMBEDDING,
+            request.model(),
+            authorization,
+            httpRequest,
+            (adapter, auth, req) -> adapter.embedding(request, auth, req)
         );
     }
 
@@ -150,32 +100,15 @@ public class UniversalController {
             final ServerHttpRequest httpRequest) {
 
         if (request == null) {
-            logger.error("Rerank request body is null");
             throw new ServerWebInputException("Request body is required");
         }
 
-        if (tracingInterceptor != null) {
-            return tracingInterceptor.traceControllerCall(
-                ModelServiceRegistry.ServiceType.rerank,
-                request.model(),
-                httpRequest,
-                "rerank",
-                () -> handleServiceRequestWithInstanceAdapter(
-                    ModelServiceRegistry.ServiceType.rerank,
-                    request.model(),
-                    httpRequest,
-                    (adapter) -> adapter.rerank(request, authorization, httpRequest)
-                            .map(resp -> (ResponseEntity<?>) resp)
-                )
-            );
-        }
-
-        return handleServiceRequestWithInstanceAdapter(
-                ModelServiceRegistry.ServiceType.rerank,
-                request.model(),
-                httpRequest,
-                (adapter) -> adapter.rerank(request, authorization, httpRequest)
-                        .map(resp -> (ResponseEntity<?>) resp)
+        return requestHandler.handleRequest(
+            ServiceEndpoint.RERANK,
+            request.model(),
+            authorization,
+            httpRequest,
+            (adapter, auth, req) -> adapter.rerank(request, auth, req)
         );
     }
 
@@ -189,28 +122,12 @@ public class UniversalController {
             throw new ServerWebInputException("Request body is required");
         }
 
-        if (tracingInterceptor != null) {
-            return tracingInterceptor.traceControllerCall(
-                ModelServiceRegistry.ServiceType.tts,
-                request.model(),
-                httpRequest,
-                "textToSpeech",
-                () -> handleServiceRequestWithInstanceAdapter(
-                    ModelServiceRegistry.ServiceType.tts,
-                    request.model(),
-                    httpRequest,
-                    (adapter) -> adapter.tts(request, authorization, httpRequest)
-                            .map(resp -> (ResponseEntity<?>) resp)
-                )
-            );
-        }
-
-        return handleServiceRequestWithInstanceAdapter(
-                ModelServiceRegistry.ServiceType.tts,
-                request.model(),
-                httpRequest,
-                (adapter) -> adapter.tts(request, authorization, httpRequest)
-                        .map(resp -> (ResponseEntity<?>) resp)
+        return requestHandler.handleRequest(
+            ServiceEndpoint.TTS,
+            request.model(),
+            authorization,
+            httpRequest,
+            (adapter, auth, req) -> adapter.tts(request, auth, req)
         );
     }
 
@@ -227,28 +144,12 @@ public class UniversalController {
 
         SttDTO.Request request = new SttDTO.Request(model, file, language, prompt, responseFormat, temperature);
 
-        if (tracingInterceptor != null) {
-            return tracingInterceptor.traceControllerCall(
-                ModelServiceRegistry.ServiceType.stt,
-                request.model(),
-                httpRequest,
-                "speechToText",
-                () -> handleServiceRequestWithInstanceAdapter(
-                    ModelServiceRegistry.ServiceType.stt,
-                    request.model(),
-                    httpRequest,
-                    (adapter) -> adapter.stt(request, authorization, httpRequest)
-                            .map(resp -> (ResponseEntity<?>) resp)
-                )
-            );
-        }
-
-        return handleServiceRequestWithInstanceAdapter(
-                ModelServiceRegistry.ServiceType.stt,
-                request.model(),
-                httpRequest,
-                (adapter) -> adapter.stt(request, authorization, httpRequest)
-                        .map(resp -> (ResponseEntity<?>) resp)
+        return requestHandler.handleRequest(
+            ServiceEndpoint.STT,
+            request.model(),
+            authorization,
+            httpRequest,
+            (adapter, auth, req) -> adapter.stt(request, auth, req)
         );
     }
 
@@ -262,28 +163,12 @@ public class UniversalController {
             throw new ServerWebInputException("Request body is required");
         }
 
-        if (tracingInterceptor != null) {
-            return tracingInterceptor.traceControllerCall(
-                ModelServiceRegistry.ServiceType.imgGen,
-                request.model(),
-                httpRequest,
-                "imageGenerate",
-                () -> handleServiceRequestWithInstanceAdapter(
-                    ModelServiceRegistry.ServiceType.imgGen,
-                    request.model(),
-                    httpRequest,
-                    (adapter) -> adapter.imageGenerate(request, authorization, httpRequest)
-                            .map(resp -> (ResponseEntity<?>) resp)
-                )
-            );
-        }
-
-        return handleServiceRequestWithInstanceAdapter(
-                ModelServiceRegistry.ServiceType.imgGen,
-                request.model(),
-                httpRequest,
-                (adapter) -> adapter.imageGenerate(request, authorization, httpRequest)
-                        .map(resp -> (ResponseEntity<?>) resp)
+        return requestHandler.handleRequest(
+            ServiceEndpoint.IMAGE_GEN,
+            request.model(),
+            authorization,
+            httpRequest,
+            (adapter, auth, req) -> adapter.imageGenerate(request, auth, req)
         );
     }
 
@@ -297,322 +182,12 @@ public class UniversalController {
             throw new ServerWebInputException("Request body is required");
         }
 
-        if (tracingInterceptor != null) {
-            return tracingInterceptor.traceControllerCall(
-                ModelServiceRegistry.ServiceType.imgEdit,
-                request.model(),
-                httpRequest,
-                "imageEdits",
-                () -> handleServiceRequestWithInstanceAdapter(
-                    ModelServiceRegistry.ServiceType.imgEdit,
-                    request.model(),
-                    httpRequest,
-                    (adapter) -> adapter.imageEdit(request, authorization, httpRequest)
-                            .map(resp -> (ResponseEntity<?>) resp)
-                )
-            );
-        }
-
-        return handleServiceRequestWithInstanceAdapter(
-                ModelServiceRegistry.ServiceType.imgEdit,
-                request.model(),
-                httpRequest,
-                (adapter) -> adapter.imageEdit(request, authorization, httpRequest)
-                        .map(resp -> (ResponseEntity<?>) resp)
-        );
-    }
-
-    /**
-     * 通用服务请求处理器
-     */
-    private Mono<ResponseEntity<?>> handleServiceRequest(
-            final ModelServiceRegistry.ServiceType serviceType,
-            final ServiceRequestSupplier requestSupplier,
-            final ServerHttpRequest httpRequest,
-            final String modelName) {
-
-        String serviceName = serviceType.name();
-        long startTime = System.currentTimeMillis();
-        String method = httpRequest.getMethod().name();
-
-        // 检查服务健康状态
-        if (!serviceStateManager.isServiceHealthy(serviceName)) {
-            long duration = System.currentTimeMillis() - startTime;
-            recordRequestMetrics(serviceName, method, duration, "503", 0, 0);
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    serviceName + " service is currently unavailable");
-        }
-
-        try {
-            return requestSupplier.get()
-                .doOnSuccess(response -> {
-                    long duration = System.currentTimeMillis() - startTime;
-                    String status = getResponseStatus(response);
-                    long requestSize = estimateRequestSize(httpRequest);
-                    long responseSize = estimateResponseSize(response);
-                    recordRequestMetrics(serviceName, method, duration, status, requestSize, responseSize);
-                })
-                .doOnError(error -> {
-                    long duration = System.currentTimeMillis() - startTime;
-                    String status = getErrorStatus(error);
-                    long requestSize = estimateRequestSize(httpRequest);
-                    recordRequestMetrics(serviceName, method, duration, status, requestSize, 0);
-                });
-
-        } catch (UnsupportedOperationException e) {
-            long duration = System.currentTimeMillis() - startTime;
-            recordRequestMetrics(serviceName, method, duration, "501", 0, 0);
-            throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,
-                    "Service not supported by current adapter: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            long duration = System.currentTimeMillis() - startTime;
-            recordRequestMetrics(serviceName, method, duration, "400", 0, 0);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Adapter configuration error: " + e.getMessage());
-        } catch (Exception e) {
-            long duration = System.currentTimeMillis() - startTime;
-            recordRequestMetrics(serviceName, method, duration, "500", 0, 0);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Internal server error: " + e.getMessage());
-        }
-    }
-
-
-
-    private void recordRequestMetrics(final String service, final String method, final long duration, final String status, 
-                                    final long requestSize, final long responseSize) {
-        if (metricsCollector == null) {
-            return;
-        }
-        try {
-            metricsCollector.recordRequest(service, method, duration, status);
-            if (requestSize > 0 || responseSize > 0) {
-                metricsCollector.recordRequestSize(service, requestSize, responseSize);
-            }
-        } catch (Exception e) {
-            // 仅记录日志
-        }
-    }
-
-    private String getResponseStatus(final ResponseEntity<?> response) {
-        if (response == null) {
-            return "unknown";
-        }
-        return String.valueOf(response.getStatusCode().value());
-    }
-
-    private String getErrorStatus(final Throwable error) {
-        if (error instanceof ResponseStatusException) {
-            return String.valueOf(((ResponseStatusException) error).getStatusCode().value());
-        }
-        if (error instanceof org.springframework.web.reactive.function.client.WebClientResponseException webClientException) {
-            if (webClientException.getStatusCode().value() == 401) {
-                logger.error("下游服务认证失败: status={}, message={}, response body={}", 
-                    webClientException.getStatusCode(), 
-                    webClientException.getMessage(), 
-                    webClientException.getResponseBodyAsString());
-            } else if (webClientException.getStatusCode().value() == 400) {
-                logger.error("下游服务请求错误: status={}, message={}, response body={}", 
-                    webClientException.getStatusCode(), 
-                    webClientException.getMessage(), 
-                    webClientException.getResponseBodyAsString());
-            }
-            return String.valueOf(webClientException.getStatusCode().value());
-        }
-        if (error instanceof org.unreal.modelrouter.common.exception.DownstreamServiceException downstreamException) {
-            return String.valueOf(downstreamException.getStatusCode().value());
-        }
-        return "500";
-    }
-
-    private long estimateRequestSize(final ServerHttpRequest request) {
-        try {
-            String contentLength = request.getHeaders().getFirst("Content-Length");
-            if (contentLength != null) {
-                return Long.parseLong(contentLength);
-            }
-            return 0;
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    private long estimateResponseSize(final ResponseEntity<?> response) {
-        try {
-            if (response == null || response.getBody() == null) {
-                return 0;
-            }
-            String body = response.getBody().toString();
-            return body.getBytes().length;
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-
-
-    @FunctionalInterface
-    protected interface ServiceRequestSupplier {
-        Mono<ResponseEntity<?>> get() throws Exception;
-    }
-
-    @FunctionalInterface
-    protected interface InstanceAdapterRequestSupplier {
-        Mono<ResponseEntity<?>> get(ServiceCapability adapter) throws Exception;
-    }
-
-
-    /**
-     * 支持实例级适配器选择的服务请求处理器（带追踪上下文）
-     */
-    private Mono<ResponseEntity<?>> handleServiceRequestWithInstanceAdapter(
-            final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName,
-            final ServerWebExchange exchange,
-            final TracingContext tracingContext,
-            final InstanceAdapterRequestSupplier requestSupplier) {
-
-        ServerHttpRequest httpRequest = exchange.getRequest();
-        String clientIp = IpUtils.getClientIp(httpRequest);
-
-        // 1. 首先选择实例
-        ModelRouterProperties.ModelInstance selectedInstance;
-        try {
-            selectedInstance = registry.selectInstance(serviceType, modelName, clientIp);
-
-            // 追踪实例选择（使用传入的 TracingContext）
-            if (tracingInterceptor != null && tracingContext != null && tracingContext.isActive()) {
-                tracingInterceptor.traceInstanceSelection(tracingContext, serviceType, modelName, clientIp, selectedInstance);
-            }
-        } catch (Exception e) {
-            logger.error("Failed to select instance for service: {}, model: {}", serviceType, modelName, e);
-
-            // 追踪实例选择失败（使用传入的 TracingContext）
-            if (tracingInterceptor != null && tracingContext != null && tracingContext.isActive()) {
-                tracingInterceptor.traceInstanceSelectionFailure(tracingContext, serviceType, modelName, clientIp, e);
-            }
-
-            return Mono.error(e);
-        }
-
-        // 2. 根据选中的实例获取适配器
-        ServiceCapability adapter;
-        String adapterName;
-        try {
-            adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
-            adapterName = selectedInstance.getAdapter() != null ? selectedInstance.getAdapter() : "default";
-            logger.info("Selected adapter '{}' for instance '{}' in service '{}'",
-                       adapterName, selectedInstance.getName(), serviceType);
-        } catch (Exception e) {
-            logger.error("Failed to get adapter for instance: {}", selectedInstance.getName(), e);
-            return Mono.error(e);
-        }
-
-        // 3. 使用选中的适配器处理请求，并追踪适配器调用
-        final String finalAdapterName = adapterName;
-        final TracingContext finalTracingContext = tracingContext;
-        return handleServiceRequest(
-                serviceType,
-                () -> {
-                    try {
-                        if (tracingInterceptor != null && finalTracingContext != null && finalTracingContext.isActive()) {
-                            return tracingInterceptor.traceAdapterCall(
-                                finalTracingContext,
-                                finalAdapterName,
-                                serviceType,
-                                selectedInstance,
-                                () -> {
-                                    try {
-                                        return requestSupplier.get(adapter);
-                                    } catch (Exception e) {
-                                        return Mono.error(e);
-                                    }
-                                }
-                            );
-                        } else {
-                            return requestSupplier.get(adapter);
-                        }
-                    } catch (Exception e) {
-                        return Mono.error(e);
-                    }
-                },
-                httpRequest,
-                modelName
-        );
-    }
-
-    /**
-     * 支持实例级适配器选择的服务请求处理器
-     */
-    private Mono<ResponseEntity<?>> handleServiceRequestWithInstanceAdapter(
-            final ModelServiceRegistry.ServiceType serviceType,
-            final String modelName,
-            final ServerHttpRequest httpRequest,
-            final InstanceAdapterRequestSupplier requestSupplier) {
-
-        String clientIp = IpUtils.getClientIp(httpRequest);
-        
-        // 1. 首先选择实例
-        ModelRouterProperties.ModelInstance selectedInstance;
-        try {
-            selectedInstance = registry.selectInstance(serviceType, modelName, clientIp);
-            
-            // 追踪实例选择
-            if (tracingInterceptor != null) {
-                tracingInterceptor.traceInstanceSelection(serviceType, modelName, clientIp, selectedInstance);
-            }
-        } catch (Exception e) {
-            logger.error("Failed to select instance for service: {}, model: {}", serviceType, modelName, e);
-            
-            // 追踪实例选择失败
-            if (tracingInterceptor != null) {
-                tracingInterceptor.traceInstanceSelectionFailure(serviceType, modelName, clientIp, e);
-            }
-            
-            return Mono.error(e);
-        }
-
-        // 2. 根据选中的实例获取适配器
-        ServiceCapability adapter;
-        String adapterName;
-        try {
-            adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
-            adapterName = selectedInstance.getAdapter() != null ? selectedInstance.getAdapter() : "default";
-            logger.info("Selected adapter '{}' for instance '{}' in service '{}'", 
-                       adapterName, selectedInstance.getName(), serviceType);
-        } catch (Exception e) {
-            logger.error("Failed to get adapter for instance: {}", selectedInstance.getName(), e);
-            return Mono.error(e);
-        }
-
-        // 3. 使用选中的适配器处理请求，并追踪适配器调用
-        final String finalAdapterName = adapterName;
-        return handleServiceRequest(
-                serviceType,
-                () -> {
-                    try {
-                        if (tracingInterceptor != null) {
-                            return tracingInterceptor.traceAdapterCall(
-                                finalAdapterName,
-                                serviceType,
-                                selectedInstance,
-                                () -> {
-                                    try {
-                                        return requestSupplier.get(adapter);
-                                    } catch (Exception e) {
-                                        return Mono.error(e);
-                                    }
-                                }
-                            );
-                        } else {
-                            return requestSupplier.get(adapter);
-                        }
-                    } catch (Exception e) {
-                        return Mono.error(e);
-                    }
-                },
-                httpRequest,
-                modelName
+        return requestHandler.handleRequest(
+            ServiceEndpoint.IMAGE_EDIT,
+            request.model(),
+            authorization,
+            httpRequest,
+            (adapter, auth, req) -> adapter.imageEdit(request, auth, req)
         );
     }
 }
