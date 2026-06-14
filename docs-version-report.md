@@ -5,10 +5,11 @@
 - 总文档数: 162
 - 近7天变更: 43
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-13 06:17:14
+- 最后扫描: 2026-06-14 06:41:08
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.42 → 1.0.43) - 2026-06-14
 - **MODIFIED**: docs-version-report.md (1.0.41 → 1.0.42) - 2026-06-13
 - **MODIFIED**: docs-version-report.md (1.0.40 → 1.0.41) - 2026-06-12
 - **DELETED**: docs/zh/development/v2.7.x-package-refactoring.md (1.0.0 → ) - 2026-06-11
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/en/security/blacklist-management.md (1.0.0 → 1.0.1) - 2026-06-11
 - **MODIFIED**: docs/en/reference/adapter-updates.md (1.0.0 → 1.0.1) - 2026-06-11
 - **MODIFIED**: docs/en/monitoring/alert_rules_guide.md (1.0.0 → 1.0.1) - 2026-06-11
-- **MODIFIED**: docs/en/development/V1.4.1-changelog.md (1.0.0 → 1.0.1) - 2026-06-11
 
 ## 过期文档 (30天未更新)
 
@@ -554,7 +554,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.42 - 2026-06-13 (01c231a6)
+- **docs-version-report.md**: v1.0.43 - 2026-06-14 (34a1a250)
 - **docs/zh/development/tracing-full-chain-design.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/zh/development/V1.4.1-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/zh/development/V1.4.0-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
