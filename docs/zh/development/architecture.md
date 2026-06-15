@@ -1,13 +1,11 @@
 ﻿# 架构说明
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.2  
-> **最后更新**: 2026-05-21  
-> **Git 提交**: 61384b4a  
-> **作者**: Lincoln
+> **文档版本**: 2.0.0
+> **最后更新**: 2026-06-15
+> **Git 提交**: 0f56b957
+> **作者**: JAiRouter Team
 <!-- /版本信息 -->
-
-
 
 ## 概述
 
@@ -22,28 +20,28 @@ graph TB
         B[移动应用]
         C[第三方服务]
     end
-    
+
     subgraph "网关层"
         D[统一API网关]
         E[负载均衡器]
         F[限流器]
         G[熔断器]
     end
-    
+
     subgraph "适配器层"
         H[GPUStack适配器]
         I[Ollama适配器]
         J[VLLM适配器]
         K[OpenAI适配器]
     end
-    
+
     subgraph "后端服务"
         L[GPUStack实例]
         M[Ollama实例]
         N[VLLM实例]
         O[OpenAI服务]
     end
-    
+
     A --> D
     B --> D
     C --> D
@@ -72,18 +70,15 @@ graph LR
     A --> E[TTS API]
     A --> F[STT API]
     A --> G[Image API]
-    
+
     H[ModelManagerController] --> I[实例管理]
     H --> J[配置更新]
-    
-    K[AutoMergeController] --> L[配置合并]
-    K --> M[文件管理]
 ```
 
 **职责：**
 - 统一 API 入口，提供 OpenAI 兼容接口
 - 动态配置管理接口
-- 配置文件自动合并功能
+- 服务请求路由分发
 
 ### 2. 服务层 (Service Layer)
 
@@ -95,13 +90,13 @@ graph TB
         C[RateLimiterFactory]
         D[CircuitBreakerFactory]
     end
-    
+
     subgraph "管理服务"
         E[ConfigurationService]
         F[HealthCheckService]
-        G[AutoMergeService]
+        G[TracingService]
     end
-    
+
     A --> B
     A --> C
     A --> D
@@ -114,6 +109,7 @@ graph TB
 - 组件工厂管理
 - 配置动态更新
 - 健康检查监控
+- 分布式追踪
 
 ### 3. 适配器层 (Adapter Layer)
 
@@ -158,14 +154,14 @@ graph TB
     A --> C[RoundRobinLoadBalancer]
     A --> D[LeastConnectionsLoadBalancer]
     A --> E[IPHashLoadBalancer]
-    
+
     subgraph "负载均衡策略"
         F[随机选择]
         G[轮询调度]
         H[最少连接]
         I[IP哈希]
     end
-    
+
     B --> F
     C --> G
     D --> H
@@ -185,14 +181,14 @@ graph TB
     A --> C[LeakyBucketRateLimiter]
     A --> D[SlidingWindowRateLimiter]
     A --> E[WarmUpRateLimiter]
-    
+
     subgraph "限流算法"
         F[令牌桶]
         G[漏桶]
         H[滑动窗口]
         I[预热限流]
     end
-    
+
     B --> F
     C --> G
     D --> H
@@ -216,7 +212,7 @@ stateDiagram-v2
 ```
 
 **职责：**
-- 实现熔断器状态管理
+- 实现熔断器状态管理（状态模式）
 - 失败率统计和阈值检测
 - 自动恢复机制
 
@@ -226,26 +222,41 @@ stateDiagram-v2
 graph TB
     A[ConfigStore接口] --> B[MemoryConfigStore]
     A --> C[FileConfigStore]
-    
+    A --> D[H2Database]
+
     subgraph "存储功能"
-        D[配置持久化]
-        E[配置加载]
-        F[配置合并]
+        E[配置持久化]
+        F[配置加载]
         G[版本管理]
     end
-    
-    B --> D
+
     B --> E
-    C --> D
     C --> E
     C --> F
-    C --> G
+    D --> G
 ```
 
 **职责：**
 - 配置数据持久化
-- 支持内存和文件存储
-- 配置版本管理和合并
+- 支持内存和数据库存储
+- 配置版本管理
+
+---
+
+## Package 结构（v2.7.x 重构后）
+
+从 v2.7.x 开始，项目采用模块化的 package 结构：
+
+| 模块 | 包路径 | 职责 |
+|------|--------|------|
+| **auth** | `org.unreal.modelrouter.auth` | 认证授权、JWT、API Key |
+| **config** | `org.unreal.modelrouter.config` | 配置管理、版本控制 |
+| **router** | `org.unreal.modelrouter.router` | 路由、负载均衡、限流、熔断 |
+| **monitor** | `org.unreal.modelrouter.monitor` | 监控、追踪、指标 |
+| **persistence** | `org.unreal.modelrouter.persistence` | 数据持久化、仓库 |
+| **common** | `org.unreal.modelrouter.common` | 公共工具、异常、常量 |
+
+---
 
 ## 技术栈
 
@@ -255,6 +266,11 @@ graph TB
 - **Spring WebFlux**: 响应式Web框架
 - **Reactor Core**: 响应式编程支持
 
+### 数据存储
+- **H2 Database**: 嵌入式数据库（默认）
+- **R2DBC**: 响应式数据库访问
+- **Redis**: 缓存和会话存储（可选）
+
 ### 构建工具
 - **Maven 3.8+**: 项目构建和依赖管理
 - **Maven Wrapper**: 确保构建环境一致性
@@ -263,11 +279,14 @@ graph TB
 - **SpringDoc OpenAPI**: API文档自动生成
 - **Micrometer**: 指标收集和监控
 - **Spring Boot Actuator**: 健康检查和管理端点
+- **OpenTelemetry**: 分布式追踪
 
 ### 代码质量
 - **Checkstyle**: 代码风格检查
 - **SpotBugs**: 静态代码分析
 - **JaCoCo**: 代码覆盖率分析
+
+---
 
 ## 设计原则
 
@@ -287,14 +306,17 @@ graph TB
 - 配置版本管理和回滚
 
 ### 4. 容错设计
-- 多层次的容错机制
+- 多层次的容错机制（限流、熔断、重试）
 - 优雅降级和故障恢复
 - 完善的错误处理和日志记录
 
 ### 5. 可观测性
-- 全面的指标监控
+- 全面的指标监控（Prometheus）
 - 结构化日志输出
+- 分布式追踪（OpenTelemetry）
 - 健康检查和状态报告
+
+---
 
 ## 扩展点
 
@@ -337,6 +359,29 @@ public class CustomRateLimiter implements RateLimiter {
 }
 ```
 
+---
+
+## 架构演进历史
+
+### V2.5.x 重构（2026-05）
+- 超大类重构（BaseAdapter、TracingService 等）
+- 新增 12 个组件，减少 2011 行代码（-62%）
+- 测试数量达到 971 个
+
+### V2.7.x Package 重构（2026-06）
+- 迁移 481 个文件到 6 个服务模块
+- 模块化准备，为微服务架构铺路
+
+### V2.8.x 配置整合（2026-06）
+- 拆分 application.yml 为 25 个模块配置文件
+- 精简环境配置 763→271 行（-62%）
+
+### V2.9.x 代码清理（2026-06）
+- 删除 628 行废弃代码
+- Checkstyle 警告减少 46%
+
+---
+
 ## 性能考虑
 
 ### 1. 内存管理
@@ -359,21 +404,25 @@ public class CustomRateLimiter implements RateLimiter {
 - 性能瓶颈识别
 - 动态参数调整
 
+---
+
 ## 安全考虑
 
-### 1. 输入验证
-- 请求参数校验
-- 防止注入攻击
-- 数据格式验证
+### 1. 认证鉴权
+- API Key 认证
+- JWT Token 支持
+- 基于角色的访问控制 (RBAC)
 
 ### 2. 访问控制
-- API密钥认证
 - 请求频率限制
-- IP白名单机制
+- IP 白名单机制
+- 安全黑名单
 
 ### 3. 数据保护
 - 敏感信息脱敏
-- 传输加密
-- 日志安全
+- 传输加密（HTTPS）
+- API Key 哈希存储
 
-这个架构设计确保了 JAiRouter 的可扩展性、可维护性和高性能，为AI模型服务路由提供了稳定可靠的基础平台。
+---
+
+这个架构设计确保了 JAiRouter 的可扩展性、可维护性和高性能，为 AI 模型服务路由提供了稳定可靠的基础平台。

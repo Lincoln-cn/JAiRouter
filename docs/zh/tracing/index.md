@@ -263,5 +263,5 @@ sequenceDiagram
 - [快速开始](quickstart.md) - 快速启用和配置追踪功能
 - [配置参考](config-reference.md) - 详细的配置选项说明
 - [使用指南](usage-guide.md) - 常见使用场景和最佳实践
-- [开发集成](../development/tracing-integration.md) - 开发者集成指南
+- [开发集成](developer-guide.md) - 开发者集成指南
 - [故障排除](troubleshooting.md) - 常见问题和解决方案

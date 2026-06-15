@@ -1,13 +1,11 @@
-﻿# Architecture Description
+﻿# Architecture Overview
 
-<!-- 版本信息 -->
-> **文档版本**: 1.0.2  
-> **最后更新**: 2026-05-21  
-> **Git 提交**: 61384b4a  
-> **作者**: Lincoln
-<!-- /版本信息 -->
-
-
+<!-- Version Info -->
+> **Document Version**: 2.0.0
+> **Last Updated**: 2026-06-15
+> **Git Commit**: 0f56b957
+> **Author**: JAiRouter Team
+<!-- /Version Info -->
 
 ## Overview
 
@@ -22,28 +20,28 @@ graph TB
         B[Mobile Application]
         C[Third-party Services]
     end
-    
+
     subgraph "Gateway Layer"
         D[Unified API Gateway]
         E[Load Balancer]
         F[Rate Limiter]
         G[Circuit Breaker]
     end
-    
+
     subgraph "Adapter Layer"
         H[GPUStack Adapter]
         I[Ollama Adapter]
         J[VLLM Adapter]
         K[OpenAI Adapter]
     end
-    
+
     subgraph "Backend Services"
         L[GPUStack Instance]
         M[Ollama Instance]
         N[VLLM Instance]
         O[OpenAI Service]
     end
-    
+
     A --> D
     B --> D
     C --> D
@@ -72,18 +70,15 @@ graph LR
     A --> E[TTS API]
     A --> F[STT API]
     A --> G[Image API]
-    
+
     H[ModelManagerController] --> I[Instance Management]
     H --> J[Configuration Update]
-    
-    K[AutoMergeController] --> L[Configuration Merge]
-    K --> M[File Management]
 ```
 
 **Responsibilities:**
 - Unified API entry point, providing OpenAI-compatible interfaces
 - Dynamic configuration management interfaces
-- Automatic configuration file merging functionality
+- Service request routing and dispatch
 
 ### 2. Service Layer
 
@@ -95,13 +90,13 @@ graph TB
         C[RateLimiterFactory]
         D[CircuitBreakerFactory]
     end
-    
+
     subgraph "Management Services"
         E[ConfigurationService]
         F[HealthCheckService]
-        G[AutoMergeService]
+        G[TracingService]
     end
-    
+
     A --> B
     A --> C
     A --> D
@@ -114,6 +109,7 @@ graph TB
 - Component factory management
 - Dynamic configuration updates
 - Health check monitoring
+- Distributed tracing
 
 ### 3. Adapter Layer
 
@@ -125,24 +121,30 @@ graph TB
     A --> E[XinferenceAdapter]
     A --> F[LocalAIAdapter]
     A --> G[OpenAIAdapter]
-    
+
     subgraph "Adapter Functions"
         H[Request Transformation]
         I[Response Mapping]
         J[Error Handling]
         K[Streaming Processing]
+        L[Extended Parameters]
+        M[API Compatibility]
     end
-    
+
     B --> H
     B --> I
     B --> J
     B --> K
+    B --> L
+    B --> M
 ```
 
 **Responsibilities:**
 - Unifying invocation methods for different backend services
 - Request/response format conversion
 - Protocol adaptation and error handling
+- Support for latest API features
+- Extended parameter handling
 
 ### 4. Load Balancer Layer
 
@@ -152,14 +154,14 @@ graph TB
     A --> C[RoundRobinLoadBalancer]
     A --> D[LeastConnectionsLoadBalancer]
     A --> E[IPHashLoadBalancer]
-    
+
     subgraph "Load Balancing Strategies"
         F[Random Selection]
         G[Round Robin]
         H[Least Connections]
         I[IP Hash]
     end
-    
+
     B --> F
     C --> G
     D --> H
@@ -179,14 +181,14 @@ graph TB
     A --> C[LeakyBucketRateLimiter]
     A --> D[SlidingWindowRateLimiter]
     A --> E[WarmUpRateLimiter]
-    
+
     subgraph "Rate Limiting Algorithms"
         F[Token Bucket]
         G[Leaky Bucket]
         H[Sliding Window]
         I[Warm-up Rate Limiting]
     end
-    
+
     B --> F
     C --> G
     D --> H
@@ -210,7 +212,7 @@ stateDiagram-v2
 ```
 
 **Responsibilities:**
-- Circuit breaker state management
+- Circuit breaker state management (State Pattern)
 - Failure rate statistics and threshold detection
 - Automatic recovery mechanism
 
@@ -220,26 +222,41 @@ stateDiagram-v2
 graph TB
     A[ConfigStore Interface] --> B[MemoryConfigStore]
     A --> C[FileConfigStore]
-    
+    A --> D[H2Database]
+
     subgraph "Storage Functions"
-        D[Configuration Persistence]
-        E[Configuration Loading]
-        F[Configuration Merging]
+        E[Configuration Persistence]
+        F[Configuration Loading]
         G[Version Management]
     end
-    
-    B --> D
+
     B --> E
-    C --> D
     C --> E
     C --> F
-    C --> G
+    D --> G
 ```
 
 **Responsibilities:**
 - Configuration data persistence
-- Support for memory and file storage
-- Configuration version management and merging
+- Support for memory and database storage
+- Configuration version management
+
+---
+
+## Package Structure (v2.7.x+)
+
+Starting from v2.7.x, the project adopts a modular package structure:
+
+| Module | Package Path | Responsibility |
+|--------|--------------|----------------|
+| **auth** | `org.unreal.modelrouter.auth` | Authentication, JWT, API Key |
+| **config** | `org.unreal.modelrouter.config` | Configuration management, version control |
+| **router** | `org.unreal.modelrouter.router` | Routing, load balancing, rate limiting, circuit breaker |
+| **monitor** | `org.unreal.modelrouter.monitor` | Monitoring, tracing, metrics |
+| **persistence** | `org.unreal.modelrouter.persistence` | Data persistence, repositories |
+| **common** | `org.unreal.modelrouter.common` | Common utilities, exceptions, constants |
+
+---
 
 ## Technology Stack
 
@@ -249,6 +266,11 @@ graph TB
 - **Spring WebFlux**: Reactive web framework
 - **Reactor Core**: Reactive programming support
 
+### Data Storage
+- **H2 Database**: Embedded database (default)
+- **R2DBC**: Reactive database access
+- **Redis**: Cache and session storage (optional)
+
 ### Build Tools
 - **Maven 3.8+**: Project building and dependency management
 - **Maven Wrapper**: Ensuring build environment consistency
@@ -257,11 +279,14 @@ graph TB
 - **SpringDoc OpenAPI**: Automatic API documentation generation
 - **Micrometer**: Metrics collection and monitoring
 - **Spring Boot Actuator**: Health checks and management endpoints
+- **OpenTelemetry**: Distributed tracing
 
 ### Code Quality
 - **Checkstyle**: Code style checking
 - **SpotBugs**: Static code analysis
 - **JaCoCo**: Code coverage analysis
+
+---
 
 ## Design Principles
 
@@ -281,14 +306,17 @@ graph TB
 - Configuration version management and rollback
 
 ### 4. Fault Tolerance Design
-- Multi-layered fault tolerance mechanisms
+- Multi-layered fault tolerance mechanisms (rate limiting, circuit breaker, retry)
 - Graceful degradation and failure recovery
 - Comprehensive error handling and logging
 
 ### 5. Observability
-- Comprehensive metrics monitoring
+- Comprehensive metrics monitoring (Prometheus)
 - Structured log output
+- Distributed tracing (OpenTelemetry)
 - Health checks and status reporting
+
+---
 
 ## Extension Points
 
@@ -331,6 +359,29 @@ public class CustomRateLimiter implements RateLimiter {
 }
 ```
 
+---
+
+## Architecture Evolution History
+
+### V2.5.x Refactoring (2026-05)
+- Super-large class refactoring (BaseAdapter, TracingService, etc.)
+- Added 12 components, reduced 2011 lines of code (-62%)
+- Test count reached 971
+
+### V2.7.x Package Refactoring (2026-06)
+- Migrated 481 files to 6 service modules
+- Modularization preparation for microservices architecture
+
+### V2.8.x Configuration Integration (2026-06)
+- Split application.yml into 25 module configuration files
+- Streamlined environment configuration 763→271 lines (-62%)
+
+### V2.9.x Code Cleanup (2026-06)
+- Deleted 628 lines of deprecated code
+- Checkstyle warnings reduced by 46%
+
+---
+
 ## Performance Considerations
 
 ### 1. Memory Management
@@ -353,21 +404,25 @@ public class CustomRateLimiter implements RateLimiter {
 - Performance bottleneck identification
 - Dynamic parameter adjustment
 
+---
+
 ## Security Considerations
 
-### 1. Input Validation
-- Request parameter validation
-- Prevention of injection attacks
-- Data format validation
+### 1. Authentication & Authorization
+- API Key authentication
+- JWT Token support
+- Role-based access control (RBAC)
 
 ### 2. Access Control
-- API key authentication
 - Request frequency limiting
 - IP whitelist mechanism
+- Security blacklist
 
 ### 3. Data Protection
 - Sensitive information masking
-- Transmission encryption
-- Log security
+- Transmission encryption (HTTPS)
+- API Key hashed storage
+
+---
 
 This architecture design ensures JAiRouter's scalability, maintainability, and high performance, providing a stable and reliable foundation platform for AI model service routing.
