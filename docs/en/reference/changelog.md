@@ -21,6 +21,34 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [2.5.15] - 2026-05-11 - Stable Release
+
+#### Large Class Refactoring Complete
+
+This release completed refactoring of 4 oversized classes, reducing 2011 lines of code (-62%).
+
+| File | Original Lines | Final Lines | Reduction | Target |
+|------|----------------|-------------|-----------|--------|
+| BaseAdapter | 1386 | 416 | -70% | 600 ✅ |
+| TracingService | 764 | 483 | -37% | 400 ✅ |
+| DefaultStructuredLogger | 945 | 365 | -61% | 400 ✅ |
+| ConfigVersionManager | 746 | 387 | -48% | 400 ✅ |
+
+#### New Components (12)
+
+- ConfigComparator, SpanAttributeHelper, ServiceNameResolver
+- RequestLogBuilder, ResponseLogBuilder, BackendCallLogBuilder
+- ErrorLogBuilder, SystemEventLogBuilder, VersionValidator
+- VersionMetadataManager, VersionSyncService, ModelUtils
+
+#### Quality Checks
+
+- Checkstyle: ✅ Passed
+- SpotBugs: ✅ Passed
+- Tests: 971 passed ✅
+
+---
+
 ### [1.7.3] - 2026-04-14
 
 #### Bug Fixes
