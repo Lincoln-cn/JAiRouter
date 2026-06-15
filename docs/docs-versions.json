@@ -1789,10 +1789,10 @@
     },
     "docs/en/deployment/jwt-persistence-deployment-checklist.md": {
       "FilePath": "docs/en/deployment/jwt-persistence-deployment-checklist.md",
-      "Version": "1.0.0",
-      "LastModified": "2025-10-15T03:04:35.172349",
-      "ContentHash": "e8942d43ff9a4197",
-      "GitCommit": "6a1e776e",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.726228",
+      "ContentHash": "e3895675f8a8594f",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1838,10 +1838,10 @@
     },
     "docs/en/deployment/docker-optimized.md": {
       "FilePath": "docs/en/deployment/docker-optimized.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.053960",
-      "ContentHash": "d258d4d899cd59fa",
-      "GitCommit": "bc275091",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.718869",
+      "ContentHash": "70c4b129d93cea71",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1852,10 +1852,10 @@
     },
     "docs/en/development/V1.4.1-changelog.md": {
       "FilePath": "docs/en/development/V1.4.1-changelog.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.087884",
-      "ContentHash": "304a1bfb4e9df5bd",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.731786",
+      "ContentHash": "9d093c2a6710c76d",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1866,20 +1866,20 @@
     },
     "docs/en/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/en/monitoring/alert_rules_guide.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.174915",
-      "ContentHash": "7eca1fab834fbf05",
-      "GitCommit": "2d11d5b9",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.757116",
+      "ContentHash": "e84f7825f22e7ac3",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/reference/adapter-updates.md": {
       "FilePath": "docs/en/reference/adapter-updates.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.249828",
-      "ContentHash": "6699a20d38366a6f",
-      "GitCommit": "bc275091",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.779738",
+      "ContentHash": "eed418a4d6fd5d20",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1890,10 +1890,10 @@
     },
     "docs/en/security/blacklist-management.md": {
       "FilePath": "docs/en/security/blacklist-management.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.285090",
-      "ContentHash": "b0d42e399f8e00b7",
-      "GitCommit": "8ece44a1",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.793225",
+      "ContentHash": "f2eea9f9424e949d",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1959,10 +1959,10 @@
     },
     "docs/zh/development/V1.4.0-changelog.md": {
       "FilePath": "docs/zh/development/V1.4.0-changelog.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.508216",
-      "ContentHash": "b1249c12d6305d43",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.873423",
+      "ContentHash": "8482ac2de5dbf2bf",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1973,10 +1973,10 @@
     },
     "docs/zh/development/V1.4.1-changelog.md": {
       "FilePath": "docs/zh/development/V1.4.1-changelog.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.510608",
-      "ContentHash": "00018c57a94c480b",
-      "GitCommit": "34d6d1cf",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.875131",
+      "ContentHash": "ec0be8b6de8b47de",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2001,10 +2001,10 @@
     },
     "docs/zh/development/tracing-full-chain-design.md": {
       "FilePath": "docs/zh/development/tracing-full-chain-design.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-17T04:49:13.551970",
-      "ContentHash": "93f141a6640f2938",
-      "GitCommit": "6ed4233c",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.892136",
+      "ContentHash": "73da8050d2ba82a3",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2084,30 +2084,20 @@
     },
     "docs/docs-version-report.md": {
       "FilePath": "docs/docs-version-report.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-29T05:26:47.462097",
-      "ContentHash": "036835f279cc13cb",
-      "GitCommit": "f60c279e",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "docs/zh/development/v2.7.x-package-refactoring.md": {
-      "FilePath": "docs/zh/development/v2.7.x-package-refactoring.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-04-29T05:26:48.263695",
-      "ContentHash": "d40db29163a87f3a",
-      "GitCommit": "39b124d3",
+      "Version": "1.0.1",
+      "LastModified": "2026-06-11T06:49:24.684090",
+      "ContentHash": "55d674767eab73fc",
+      "GitCommit": "a9e349a6",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.39",
-      "LastModified": "2026-06-10T06:24:27.666045",
-      "ContentHash": "ed59e6465f49a2bc",
-      "GitCommit": "758fbfbb",
+      "Version": "1.0.43",
+      "LastModified": "2026-06-14T06:41:07.911207",
+      "ContentHash": "89b4110af7c868d3",
+      "GitCommit": "34a1a250",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2157,14 +2147,6 @@
     }
   },
   "changes": [
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.205",
-      "NewVersion": "1.0.206",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-03-13T04:12:32.625722",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "QWEN.md",
       "OldVersion": "",
@@ -4460,7 +4442,127 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-06-10T06:24:27.951678",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.39",
+      "NewVersion": "1.0.40",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.676747",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/docs-version-report.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.684097",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/docker-optimized.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.718877",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/deployment/jwt-persistence-deployment-checklist.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.726234",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/V1.4.1-changelog.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.731791",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/monitoring/alert_rules_guide.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.757125",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/adapter-updates.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.779746",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/blacklist-management.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.793233",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/V1.4.0-changelog.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.873431",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/V1.4.1-changelog.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.875137",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/tracing-full-chain-design.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-11T06:49:24.892145",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/v2.7.x-package-refactoring.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-11T06:49:24.981419",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.40",
+      "NewVersion": "1.0.41",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-12T06:42:13.601706",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.41",
+      "NewVersion": "1.0.42",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-13T06:17:14.126757",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.42",
+      "NewVersion": "1.0.43",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-14T06:41:07.911217",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-06-10T06:24:28.036322"
+  "last_updated": "2026-06-14T06:41:08.452786"
 }
