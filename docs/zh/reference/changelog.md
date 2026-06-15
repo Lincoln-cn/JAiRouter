@@ -70,7 +70,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 更新前端静态资源构建产物
 
-***
+---
 
 ### \[1.7.2] - 2026-04-14
 
@@ -116,7 +116,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * `src/main/resources/db/migration/V3__add_adapter_headers_fields.sql`
 
-***
+---
 
 ### \[1.7.1] - 2026-04-13
 
@@ -152,7 +152,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * `docs/zh/development/tracing-full-chain-design.md`
 
-***
+---
 
 ### \[1.7.0] - 2026-04-10
 
@@ -188,7 +188,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 清理未使用的前端代码和类型定义
 
-***
+---
 
 ### \[1.6.2] - 2026-04-08
 
@@ -228,7 +228,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * `ApiKeyExpirationScheduler.java`
 
-***
+---
 
 ### \[1.6.1] - 2026-04-06
 
@@ -260,7 +260,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * `ApiKeyVO/ApiKeyCreationVO/ApiKeyListVO/ApiKeyCreateRequest/ApiKeyUpdateRequest` - 强类型 DTO
 
-***
+---
 
 ### \[1.6.0] - 2026-04-04
 
@@ -286,7 +286,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * `SecurityConfigMergeService`：安全配置合并服务
 
-***
+---
 
 ### \[1.5.7] - 2026-04-02
 
@@ -310,7 +310,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * `JwtConfig.accounts` 字段 - 支持账户列表配置
 
-***
+---
 
 ### \[1.5.6] - 2026-03-30
 
@@ -342,7 +342,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * `build-and-deploy.sh` 脚本自动清理旧编译文件
 
-***
+---
 
 ### \[1.5.2] - 2026-03-20
 
@@ -358,7 +358,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 修复服务配置功能恢复
 
-***
+---
 
 ### \[1.4.6] - 2026-03-10
 
@@ -372,7 +372,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 修复 `buildInstanceMap` 和 `convertToVO` 方法
 
-***
+---
 
 ### \[1.4.4] - 2026-03-31
 
@@ -382,7 +382,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 优化数据展示逻辑
 
-***
+---
 
 ### \[1.4.3] - 2026-03-25
 
@@ -392,7 +392,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 改进错误提示信息
 
-***
+---
 
 ### \[1.4.2] - 2026-03-25
 
@@ -400,7 +400,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * **Adapter 重构计划**：创建适配器重构计划文档，为后续架构优化做准备
 
-***
+---
 
 ### \[1.4.1] - 2026-03-24
 
@@ -408,7 +408,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * **值对象模式**：引入 InstanceId 值对象，提升代码类型安全性
 
-***
+---
 
 ### \[1.4.0] - 2026-03-24
 
@@ -418,7 +418,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 优化响应式编程模型
 
-***
+---
 
 ### \[1.2.5] - 2025-11-26
 
@@ -428,7 +428,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 代码同步和稳定性改进
 
-***
+---
 
 ### \[1.1.2] - 2025-10-30
 
@@ -438,7 +438,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 代码稳定性改进
 
-***
+---
 
 ### \[1.1.1] - 2025-10-28
 
@@ -448,7 +448,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 代码重构和清理
 
-***
+---
 
 ### \[1.1.0] - 2025-10-28
 
@@ -458,7 +458,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 功能稳定性改进
 
-***
+---
 
 ### \[1.0.0] - 2025-10-16
 
@@ -470,7 +470,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 核心适配器支持
 
-***
+---
 
 ### \[0.9.2] - 2025-09-30
 
@@ -478,7 +478,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * **ApiKey 模型统一**：合并 ApiKeyInfo 与 ApiKeyProperties 为统一 ApiKey 模型
 
-***
+---
 
 ### \[0.9.1] - 2025-09-12
 
@@ -488,7 +488,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 代码稳定性改进
 
-***
+---
 
 ### \[0.9.0] - 2025-09-10
 
@@ -498,7 +498,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 前端管理控制台规划
 
-***
+---
 
 ### \[0.8.2] - 2025-09-05
 
@@ -508,7 +508,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 代码同步
 
-***
+---
 
 ### \[0.8.1] - 2025-09-03
 
@@ -518,7 +518,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 版本管理规范化
 
-***
+---
 
 ### \[0.7.3] - 2025-08-27
 
@@ -528,7 +528,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 安全模块基础功能
 
-***
+---
 
 ### \[0.7.2] - 2025-08-27
 
@@ -536,7 +536,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * **分布式追踪文档**：添加分布式追踪系统文档
 
-***
+---
 
 ### \[0.7.1] - 2025-08-27
 
@@ -544,7 +544,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * **文档优化**：集成谷歌广告并优化文档样式
 
-***
+---
 
 ### \[0.7.0] - 2025-08-22
 
@@ -554,7 +554,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 监控模块增强
 
-***
+---
 
 ### \[0.6.1] - 2025-08-19
 
@@ -564,7 +564,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 文档系统增强
 
-***
+---
 
 ### \[0.6.0] - 2025-08-18
 
@@ -574,7 +574,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 安全模块核心功能
 
-***
+---
 
 ### \[0.5.0] - 2025-08-18
 
@@ -584,7 +584,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 文档系统重构
 
-***
+---
 
 ### \[0.4.0] - 2025-08-15
 
@@ -652,7 +652,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 解决Docker容器中的DNS解析问题
 
-***
+---
 
 ### \[0.3.2] - 2025-08-20
 
@@ -690,7 +690,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 优化构建和部署流程
 
-***
+---
 
 ### \[0.3.1] - 2025-08-15
 
@@ -720,7 +720,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 修复 Docker 构建过程中的网络错误
 
-***
+---
 
 ### \[0.3.0] - 2025-08-14
 
@@ -760,7 +760,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 环境变量命名规范调整
 
-***
+---
 
 ### \[0.2.1] - 2025-08--12
 
@@ -802,7 +802,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 优化代码质量检查规则
 
-***
+---
 
 ### \[0.2.0] - 2025-08-11
 
@@ -844,7 +844,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 扩展健康检查 API，包含更多状态信息
 
-***
+---
 
 ### \[0.1.0] - 2025-08-04
 
@@ -882,7 +882,7 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 * 建立完整的构建和测试流程
 
-***
+---
 
 ## 升级指南
 
