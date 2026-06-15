@@ -5,8 +5,9 @@ services:
     image: sodlinken/jairouter:latest
     container_name: jairouter
     ports:
-      - "9900:9900"
+      - "9900:8080"
     environment:
+      - SERVER_PORT=8080
       - SPRING_PROFILES_ACTIVE=prod
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -22,45 +23,14 @@ services:
     restart: unless-stopped
     networks:
       - jairouter-network
-    depends_on:
-      - redis
+    external_links:
+      - redis:redis
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9900/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-
-  redis:
-    image: redis:7-alpine
-    container_name: jairouter-redis
-    ports:
-      - "6379:6379"
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
-    command: >
-      sh -c "
-        if [ -n \"$$REDIS_PASSWORD\" ]; then
-          redis-server --requirepass $$REDIS_PASSWORD --appendonly yes --appendfsync everysec
-        else
-          redis-server --appendonly yes --appendfsync everysec
-        fi
-      "
-    volumes:
-      - redis-data:/data
-      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
-    restart: unless-stopped
-    networks:
-      - jairouter-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-volumes:
-  redis-data:
-    driver: local
 
 networks:
   jairouter-network:

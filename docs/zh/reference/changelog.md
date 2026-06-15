@@ -22,6 +22,34 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### \[2.5.15] - 2026-05-11 - 封板版本
+
+#### 超大类重构完成
+
+本次版本完成了 4 个超大类的重构工作，总计减少 2011 行代码（-62%）。
+
+| 文件 | 原行数 | 最终行数 | 减少 | 目标 |
+|------|--------|----------|------|------|
+| BaseAdapter | 1386 | 416 | -70% | 600 ✅ |
+| TracingService | 764 | 483 | -37% | 400 ✅ |
+| DefaultStructuredLogger | 945 | 365 | -61% | 400 ✅ |
+| ConfigVersionManager | 746 | 387 | -48% | 400 ✅ |
+
+#### 新增组件（12个）
+
+- ConfigComparator、SpanAttributeHelper、ServiceNameResolver
+- RequestLogBuilder、ResponseLogBuilder、BackendCallLogBuilder
+- ErrorLogBuilder、SystemEventLogBuilder、VersionValidator
+- VersionMetadataManager、VersionSyncService、ModelUtils
+
+#### 质量检查
+
+- Checkstyle: ✅ 通过
+- SpotBugs: ✅ 通过
+- 测试: 971 passed ✅
+
+---
+
 ### \[1.7.3] - 2026-04-14
 
 #### 问题修复

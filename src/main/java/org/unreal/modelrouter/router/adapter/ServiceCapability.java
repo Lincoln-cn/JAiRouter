@@ -95,7 +95,7 @@ public interface ServiceCapability {
      * @param httpRequest HTTP请求对象
      * @return 响应结果
      */
-    default Mono<? extends ResponseEntity<?>> imageEdit(final ImageEditDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
+    default Mono<ResponseEntity<?>> imageEdit(final ImageEditDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
         throw new UnsupportedOperationException("does not support image edit service");
     }
 }
