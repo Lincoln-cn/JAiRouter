@@ -683,5 +683,5 @@ span.setAttribute("error.details", exception.getMessage());  // May contain sens
 
 - [Performance Tuning](performance-tuning.md) - In-depth performance optimization guide
 - [Troubleshooting](troubleshooting.md) - Detailed troubleshooting manual
-- [Development Integration](../development/tracing-integration.md) - Developer integration guide
+- [Development Integration](developer-guide.md) - Developer integration guide
 - [Operations Guide](operations-guide.md) - Production environment operations best practices

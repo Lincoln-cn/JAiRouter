@@ -496,4 +496,4 @@ curl -X POST http://localhost:8080/api/admin/tracing/force-cleanup
 
 - [故障排除](troubleshooting.md) - 详细的问题诊断和解决方案
 - [性能调优](performance-tuning.md) - 深入的性能优化指南
-- [开发集成](../development/tracing-integration.md) - 开发者集成文档
+- [开发集成](developer-guide.md) - 开发者集成文档

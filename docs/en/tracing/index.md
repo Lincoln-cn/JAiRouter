@@ -208,5 +208,5 @@ Structured logging component:
 - [Quick Start](quickstart.md) - Quickly enable and configure tracing features
 - [Configuration Reference](config-reference.md) - Detailed configuration options
 - [Usage Guide](usage-guide.md) - Common use cases and best practices
-- [Development Integration](../development/tracing-integration.md) - Developer integration guide
+- [Development Integration](developer-guide.md) - Developer integration guide
 - [Troubleshooting](troubleshooting.md) - Common issues and solutions

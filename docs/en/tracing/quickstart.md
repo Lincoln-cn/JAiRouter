@@ -273,4 +273,4 @@ Visit `http://localhost:8080/actuator/prometheus` to view tracing-related metric
 - [Usage Guide](usage-guide.md) - Learn advanced usage techniques
 - [Troubleshooting](troubleshooting.md) - Solve common problems
 - [Performance Tuning](performance-tuning.md) - Optimize tracing performance
-- [Development Integration](../development/tracing-integration.md) - Developer guide
+- [Development Integration](developer-guide.md) - Developer guide

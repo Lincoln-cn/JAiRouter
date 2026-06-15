@@ -683,5 +683,5 @@ span.setAttribute("error.details", exception.getMessage());  // 可能包含敏�
 
 - [性能调优](performance-tuning.md) - 深入的性能优化指南
 - [故障排除](troubleshooting.md) - 详细的故障排除手册
-- [开发集成](../development/tracing-integration.md) - 开发者集成指南
+- [开发集成](developer-guide.md) - 开发者集成指南
 - [运维指南](operations-guide.md) - 生产环境运维最佳实践
