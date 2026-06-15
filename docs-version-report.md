@@ -2,27 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 162
-- 近7天变更: 43
+- 总文档数: 152
+- 近7天变更: 71
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-14 06:41:08
+- 最后扫描: 2026-06-15 07:21:27
 
 ## 最近变更
 
-- **MODIFIED**: docs-version-report.md (1.0.42 → 1.0.43) - 2026-06-14
-- **MODIFIED**: docs-version-report.md (1.0.41 → 1.0.42) - 2026-06-13
-- **MODIFIED**: docs-version-report.md (1.0.40 → 1.0.41) - 2026-06-12
-- **DELETED**: docs/zh/development/v2.7.x-package-refactoring.md (1.0.0 → ) - 2026-06-11
-- **MODIFIED**: docs/zh/development/tracing-full-chain-design.md (1.0.0 → 1.0.1) - 2026-06-11
-- **MODIFIED**: docs/zh/development/V1.4.1-changelog.md (1.0.0 → 1.0.1) - 2026-06-11
-- **MODIFIED**: docs/zh/development/V1.4.0-changelog.md (1.0.0 → 1.0.1) - 2026-06-11
-- **MODIFIED**: docs/en/security/blacklist-management.md (1.0.0 → 1.0.1) - 2026-06-11
-- **MODIFIED**: docs/en/reference/adapter-updates.md (1.0.0 → 1.0.1) - 2026-06-11
-- **MODIFIED**: docs/en/monitoring/alert_rules_guide.md (1.0.0 → 1.0.1) - 2026-06-11
-
-## 过期文档 (30天未更新)
-
-- docs/CHANGELOG-v2.5.x.md (版本: 1.0.0, 最后更新: 2026-05-14)
+- **DELETED**: docs/CHANGELOG-v2.5.x.md (1.0.0 → ) - 2026-06-15
+- **DELETED**: docs/zh/development/tracing-full-chain-design.md (1.0.1 → ) - 2026-06-15
+- **DELETED**: docs/zh/development/architecture-refactoring.md (1.0.1 → ) - 2026-06-15
+- **DELETED**: docs/zh/development/V1.4.1-changelog.md (1.0.1 → ) - 2026-06-15
+- **DELETED**: docs/zh/development/V1.4.0-changelog.md (1.0.1 → ) - 2026-06-15
+- **DELETED**: docs/en/development/V1.4.1-changelog.md (1.0.1 → ) - 2026-06-15
+- **DELETED**: docs/zh/development/tracing-integration.md (1.0.1 → ) - 2026-06-15
+- **DELETED**: docs/en/development/tracing-integration.md (1.0.1 → ) - 2026-06-15
+- **DELETED**: docs/zh/development/performance-optimization.md (1.0.3 → ) - 2026-06-15
+- **DELETED**: docs/zh/development/deployment-testing.md (1.0.3 → ) - 2026-06-15
 
 ## 依赖关系分析
 
@@ -81,15 +77,11 @@
   - docs/en/monitoring/index.md
   - docs/en/troubleshooting/index.md
   - docs/en/troubleshooting/performance.md
-- **docs/en/development/index.md**: 依赖 5 个文档
+- **docs/en/development/index.md**: 依赖 4 个文档
   - docs/en/development/architecture.md
   - docs/en/development/code-quality.md
   - docs/en/development/contributing.md
   - docs/en/development/testing.md
-  - docs/en/reference/changelog.md
-- **docs/en/development/performance-optimization.md**: 依赖 2 个文档
-  - docs/en/development/architecture.md
-  - docs/en/development/deployment-testing.md
 - **docs/en/getting-started/first-steps.md**: 依赖 6 个文档
   - docs/en/api-reference/index.md
   - docs/en/configuration/index.md
@@ -241,19 +233,11 @@
   - docs/zh/monitoring/index.md
   - docs/zh/troubleshooting/index.md
   - docs/zh/troubleshooting/performance.md
-- **docs/zh/development/deployment-testing.md**: 依赖 1 个文档
-  - docs/README.md
-- **docs/zh/development/index.md**: 依赖 7 个文档
-  - docs/zh/development/V1.4.0-changelog.md
-  - docs/zh/development/V1.4.1-changelog.md
+- **docs/zh/development/index.md**: 依赖 4 个文档
   - docs/zh/development/architecture.md
   - docs/zh/development/code-quality.md
   - docs/zh/development/contributing.md
   - docs/zh/development/testing.md
-  - docs/zh/reference/changelog.md
-- **docs/zh/development/performance-optimization.md**: 依赖 2 个文档
-  - docs/zh/development/architecture.md
-  - docs/zh/development/deployment-testing.md
 - **docs/zh/getting-started/first-steps.md**: 依赖 8 个文档
   - docs/zh/api-reference/index.md
   - docs/zh/configuration/index.md
@@ -365,10 +349,6 @@
   - docs/zh/api-reference/management-api.md
   - docs/zh/api-reference/openapi-spec.md
   - docs/zh/api-reference/universal-api.md
-- **docs/en/development/tracing-integration.md**: 依赖 3 个文档
-  - docs/en/api-reference/index.md
-  - docs/en/tracing/config-reference.md
-  - docs/en/tracing/performance-tuning.md
 - **docs/en/security/api-key-management.md**: 依赖 3 个文档
   - docs/en/security/data-sanitization.md
   - docs/en/security/jwt-authentication.md
@@ -389,13 +369,13 @@
   - docs/en/security/data-sanitization.md
   - docs/en/security/jwt-authentication.md
 - **docs/en/tracing/index.md**: 依赖 5 个文档
-  - docs/en/development/tracing-integration.md
   - docs/en/tracing/config-reference.md
+  - docs/en/tracing/developer-guide.md
   - docs/en/tracing/quickstart.md
   - docs/en/tracing/troubleshooting.md
   - docs/en/tracing/usage-guide.md
 - **docs/en/tracing/operations-guide.md**: 依赖 3 个文档
-  - docs/en/development/tracing-integration.md
+  - docs/en/tracing/developer-guide.md
   - docs/en/tracing/performance-tuning.md
   - docs/en/tracing/troubleshooting.md
 - **docs/en/tracing/performance-tuning.md**: 依赖 3 个文档
@@ -403,8 +383,8 @@
   - docs/en/tracing/operations-guide.md
   - docs/en/tracing/troubleshooting.md
 - **docs/en/tracing/quickstart.md**: 依赖 5 个文档
-  - docs/en/development/tracing-integration.md
   - docs/en/tracing/config-reference.md
+  - docs/en/tracing/developer-guide.md
   - docs/en/tracing/performance-tuning.md
   - docs/en/tracing/troubleshooting.md
   - docs/en/tracing/usage-guide.md
@@ -413,14 +393,10 @@
   - docs/en/tracing/operations-guide.md
   - docs/en/tracing/performance-tuning.md
 - **docs/en/tracing/usage-guide.md**: 依赖 4 个文档
-  - docs/en/development/tracing-integration.md
+  - docs/en/tracing/developer-guide.md
   - docs/en/tracing/operations-guide.md
   - docs/en/tracing/performance-tuning.md
   - docs/en/tracing/troubleshooting.md
-- **docs/zh/development/tracing-integration.md**: 依赖 3 个文档
-  - docs/zh/api-reference/index.md
-  - docs/zh/tracing/config-reference.md
-  - docs/zh/tracing/performance-tuning.md
 - **docs/zh/security/api-key-management.md**: 依赖 3 个文档
   - docs/zh/security/data-sanitization.md
   - docs/zh/security/jwt-authentication.md
@@ -441,13 +417,13 @@
   - docs/zh/security/data-sanitization.md
   - docs/zh/security/jwt-authentication.md
 - **docs/zh/tracing/index.md**: 依赖 5 个文档
-  - docs/zh/development/tracing-integration.md
   - docs/zh/tracing/config-reference.md
+  - docs/zh/tracing/developer-guide.md
   - docs/zh/tracing/quickstart.md
   - docs/zh/tracing/troubleshooting.md
   - docs/zh/tracing/usage-guide.md
 - **docs/zh/tracing/operations-guide.md**: 依赖 3 个文档
-  - docs/zh/development/tracing-integration.md
+  - docs/zh/tracing/developer-guide.md
   - docs/zh/tracing/performance-tuning.md
   - docs/zh/tracing/troubleshooting.md
 - **docs/zh/tracing/performance-tuning.md**: 依赖 3 个文档
@@ -455,8 +431,8 @@
   - docs/zh/tracing/operations-guide.md
   - docs/zh/tracing/troubleshooting.md
 - **docs/zh/tracing/quickstart.md**: 依赖 5 个文档
-  - docs/zh/development/tracing-integration.md
   - docs/zh/tracing/config-reference.md
+  - docs/zh/tracing/developer-guide.md
   - docs/zh/tracing/performance-tuning.md
   - docs/zh/tracing/troubleshooting.md
   - docs/zh/tracing/usage-guide.md
@@ -465,7 +441,7 @@
   - docs/zh/tracing/operations-guide.md
   - docs/zh/tracing/performance-tuning.md
 - **docs/zh/tracing/usage-guide.md**: 依赖 4 个文档
-  - docs/zh/development/tracing-integration.md
+  - docs/zh/tracing/developer-guide.md
   - docs/zh/tracing/operations-guide.md
   - docs/zh/tracing/performance-tuning.md
   - docs/zh/tracing/troubleshooting.md
@@ -486,10 +462,6 @@
   - docs/en/deployment/docker.md
   - docs/en/deployment/production.md
   - docs/en/monitoring/index.md
-- **docs/en/development/V1.4.1-changelog.md**: 依赖 3 个文档
-  - docs/en/configuration/circuit-breaker.md
-  - docs/en/configuration/dynamic-config.md
-  - docs/en/reference/glossary.md
 - **docs/en/reference/adapter-updates.md**: 依赖 3 个文档
   - docs/en/api-reference/index.md
   - docs/en/configuration/index.md
@@ -513,18 +485,6 @@
   - docs/zh/monitoring/index.md
   - docs/zh/security/jwt-authentication.md
   - docs/zh/troubleshooting/common-issues.md
-- **docs/zh/development/V1.4.0-changelog.md**: 依赖 3 个文档
-  - docs/zh/development/performance-optimization.md
-  - docs/zh/monitoring/setup.md
-  - docs/zh/security/jwt-authentication.md
-- **docs/zh/development/V1.4.1-changelog.md**: 依赖 3 个文档
-  - docs/zh/configuration/circuit-breaker.md
-  - docs/zh/configuration/dynamic-config.md
-  - docs/zh/reference/glossary.md
-- **docs/zh/development/architecture-refactoring.md**: 依赖 3 个文档
-  - docs/zh/development/V1.4.1-changelog.md
-  - docs/zh/development/architecture.md
-  - docs/zh/development/contributing.md
 - **docs/zh/security/audit-log-management.md**: 依赖 4 个文档
   - docs/zh/security/api-key-management.md
   - docs/zh/security/blacklist-management.md
@@ -551,45 +511,52 @@
 - **docs/configuration-guide.md**: 依赖 2 个文档
   - docs/zh/configuration/application-config.md
   - docs/zh/configuration/dynamic-config.md
+- **docs/en/tracing/developer-guide.md**: 依赖 3 个文档
+  - docs/en/api-reference/index.md
+  - docs/en/tracing/config-reference.md
+  - docs/en/tracing/performance-tuning.md
+- **docs/zh/tracing/developer-guide.md**: 依赖 3 个文档
+  - docs/zh/api-reference/index.md
+  - docs/zh/tracing/config-reference.md
+  - docs/zh/tracing/performance-tuning.md
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.43 - 2026-06-14 (34a1a250)
-- **docs/zh/development/tracing-full-chain-design.md**: v1.0.1 - 2026-06-11 (a9e349a6)
-- **docs/zh/development/V1.4.1-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
-- **docs/zh/development/V1.4.0-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
+- **docs/zh/tracing/usage-guide.md**: v1.0.2 - 2026-06-15 (3259879e)
+- **docs/zh/tracing/quickstart.md**: v1.0.2 - 2026-06-15 (3259879e)
+- **docs/zh/tracing/operations-guide.md**: v1.0.2 - 2026-06-15 (3259879e)
+- **docs/zh/tracing/index.md**: v1.0.2 - 2026-06-15 (3fd42181)
+- **docs/zh/tracing/developer-guide.md**: v1.0.0 - 2026-06-15 (3fd42181)
+- **docs/zh/reference/changelog.md**: v1.0.5 - 2026-06-15 (0f56b957)
+- **docs/zh/development/index.md**: v1.0.5 - 2026-06-15 (3fd42181)
+- **docs/zh/development/architecture.md**: v1.0.4 - 2026-06-15 (3fd42181)
+- **docs/en/tracing/usage-guide.md**: v1.0.2 - 2026-06-15 (3259879e)
+- **docs/en/tracing/quickstart.md**: v1.0.2 - 2026-06-15 (3259879e)
+- **docs/en/tracing/operations-guide.md**: v1.0.2 - 2026-06-15 (3259879e)
+- **docs/en/tracing/index.md**: v1.0.2 - 2026-06-15 (3259879e)
+- **docs/en/tracing/developer-guide.md**: v1.0.0 - 2026-06-15 (3fd42181)
+- **docs/en/reference/changelog.md**: v1.0.5 - 2026-06-15 (e511f33c)
+- **docs/en/development/index.md**: v1.0.4 - 2026-06-15 (3fd42181)
+- **docs/en/development/architecture.md**: v1.0.3 - 2026-06-15 (3fd42181)
+- **docs-version-report.md**: v1.0.44 - 2026-06-15 (21220b8e)
 - **docs/en/security/blacklist-management.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/reference/adapter-updates.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/monitoring/alert_rules_guide.md**: v1.0.1 - 2026-06-11 (a9e349a6)
-- **docs/en/development/V1.4.1-changelog.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/deployment/docker-optimized.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/docs-version-report.md**: v1.0.1 - 2026-06-11 (a9e349a6)
-- **docs/zh/tracing/index.md**: v1.0.1 - 2026-06-10 (227a92b7)
-- **docs/zh/reference/changelog.md**: v1.0.4 - 2026-06-10 (ba6d6ddf)
 - **docs/zh/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
 - **docs/zh/configuration/validation-rules.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
 - **docs/zh/configuration/store-config.md**: v1.0.3 - 2026-06-10 (227a92b7)
 - **docs/zh/configuration/state-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
-- **docs/en/tracing/index.md**: v1.0.1 - 2026-06-10 (227a92b7)
 - **docs/en/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
 - **docs/en/configuration/store-config.md**: v1.0.3 - 2026-06-10 (227a92b7)
 - **docs/en/configuration/state-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
 - **docs/en/configuration/jwt-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
-- **docs/zh/tracing/usage-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/zh/tracing/troubleshooting.md**: v1.0.1 - 2026-06-09 (b9fa976b)
-- **docs/zh/tracing/quickstart.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/zh/tracing/performance-tuning.md**: v1.0.1 - 2026-06-09 (b9fa976b)
-- **docs/zh/tracing/operations-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
-- **docs/zh/development/tracing-integration.md**: v1.0.1 - 2026-06-09 (b9fa976b)
-- **docs/zh/development/index.md**: v1.0.4 - 2026-06-09 (b9fa976b)
-- **docs/en/tracing/usage-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/en/tracing/troubleshooting.md**: v1.0.1 - 2026-06-09 (b9fa976b)
-- **docs/en/tracing/quickstart.md**: v1.0.1 - 2026-06-09 (b9fa976b)
 - **docs/en/tracing/performance-tuning.md**: v1.0.1 - 2026-06-09 (b9fa976b)
-- **docs/en/tracing/operations-guide.md**: v1.0.1 - 2026-06-09 (b9fa976b)
-- **docs/en/development/tracing-integration.md**: v1.0.1 - 2026-06-09 (b9fa976b)
-- **docs/en/development/index.md**: v1.0.3 - 2026-06-09 (b9fa976b)
 - **docs/zh/troubleshooting/performance.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/issue-fixes.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
@@ -626,12 +593,8 @@
 - **docs/zh/getting-started/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/getting-started/first-steps.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/development/testing.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/zh/development/performance-optimization.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
-- **docs/zh/development/deployment-testing.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/development/contributing.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/development/code-quality.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/zh/development/architecture.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
-- **docs/zh/development/architecture-refactoring.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/deployment/production.md**: v1.0.5 - 2026-06-03 (85bfdb3e)
 - **docs/zh/deployment/kubernetes.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/deployment/jwt-persistence-deployment-checklist.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
@@ -668,7 +631,6 @@
 - **docs/en/reference/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/reference/glossary.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/reference/faq.md**: v1.0.3 - 2026-06-03 (b305e6de)
-- **docs/en/reference/changelog.md**: v1.0.4 - 2026-06-03 (b305e6de)
 - **docs/en/monitoring/troubleshooting.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/monitoring/testing.md**: v1.0.4 - 2026-06-03 (b305e6de)
 - **docs/en/monitoring/slow-query-alerts.md**: v1.0.1 - 2026-06-03 (b305e6de)
@@ -686,11 +648,8 @@
 - **docs/en/getting-started/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/getting-started/first-steps.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/development/testing.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/en/development/performance-optimization.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
-- **docs/en/development/deployment-testing.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/en/development/contributing.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/en/development/code-quality.md**: v1.0.2 - 2026-06-03 (b305e6de)
-- **docs/en/development/architecture.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/en/deployment/production.md**: v1.0.5 - 2026-06-03 (b305e6de)
 - **docs/en/deployment/kubernetes.md**: v1.0.4 - 2026-06-03 (b305e6de)
 - **docs/en/deployment/index.md**: v1.0.3 - 2026-06-03 (b305e6de)
@@ -715,4 +674,3 @@
 - **README.md**: v1.0.16 - 2026-06-03 (b305e6de)
 - **README-ZH.md**: v1.0.8 - 2026-06-03 (b305e6de)
 - **QWEN.md**: v1.0.3 - 2026-05-19 (8c4e0ad9)
-- **docs/CHANGELOG-v2.5.x.md**: v1.0.0 - 2026-05-14 (947dc154)

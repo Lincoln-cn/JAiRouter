@@ -237,10 +237,10 @@
     },
     "docs/en/development/architecture.md": {
       "FilePath": "docs/en/development/architecture.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-06-03T06:53:11.145533",
-      "ContentHash": "1218979896e63d55",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.3",
+      "LastModified": "2026-06-15T07:21:27.455765",
+      "ContentHash": "e43a3395ad117387",
+      "GitCommit": "3fd42181",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -265,43 +265,19 @@
       "ChangeSummary": "",
       "Dependencies": []
     },
-    "docs/en/development/deployment-testing.md": {
-      "FilePath": "docs/en/development/deployment-testing.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.152034",
-      "ContentHash": "8364ae5955a42f6f",
-      "GitCommit": "85bfdb3e",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
     "docs/en/development/index.md": {
       "FilePath": "docs/en/development/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-09T06:09:48.033478",
-      "ContentHash": "00f2b85e9e5f38e5",
-      "GitCommit": "b9fa976b",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-15T07:21:27.463555",
+      "ContentHash": "6d406db8e0115ebf",
+      "GitCommit": "3fd42181",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/development/architecture.md",
         "docs/en/development/code-quality.md",
         "docs/en/development/contributing.md",
-        "docs/en/development/testing.md",
-        "docs/en/reference/changelog.md"
-      ]
-    },
-    "docs/en/development/performance-optimization.md": {
-      "FilePath": "docs/en/development/performance-optimization.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.158404",
-      "ContentHash": "232a724620b378ce",
-      "GitCommit": "85bfdb3e",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/development/architecture.md",
-        "docs/en/development/deployment-testing.md"
+        "docs/en/development/testing.md"
       ]
     },
     "docs/en/development/testing.md": {
@@ -528,10 +504,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-06-03T06:53:11.223388",
-      "ContentHash": "9b07321764a7e796",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.5",
+      "LastModified": "2026-06-15T07:21:27.514636",
+      "ContentHash": "d91d02651904e174",
+      "GitCommit": "e511f33c",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -857,10 +833,10 @@
     },
     "docs/zh/development/architecture.md": {
       "FilePath": "docs/zh/development/architecture.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.385061",
-      "ContentHash": "83fe46325ea1eb69",
-      "GitCommit": "85bfdb3e",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-15T07:21:27.640670",
+      "ContentHash": "b6f0fb27803f07eb",
+      "GitCommit": "3fd42181",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -885,47 +861,19 @@
       "ChangeSummary": "",
       "Dependencies": []
     },
-    "docs/zh/development/deployment-testing.md": {
-      "FilePath": "docs/zh/development/deployment-testing.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.392023",
-      "ContentHash": "b2ec0326c3e5a9e5",
-      "GitCommit": "85bfdb3e",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/README.md"
-      ]
-    },
     "docs/zh/development/index.md": {
       "FilePath": "docs/zh/development/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-06-09T06:09:48.215013",
-      "ContentHash": "3a5a14a8843b848d",
-      "GitCommit": "b9fa976b",
+      "Version": "1.0.5",
+      "LastModified": "2026-06-15T07:21:27.648049",
+      "ContentHash": "410e8c14797c24b2",
+      "GitCommit": "3fd42181",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/zh/development/V1.4.0-changelog.md",
-        "docs/zh/development/V1.4.1-changelog.md",
         "docs/zh/development/architecture.md",
         "docs/zh/development/code-quality.md",
         "docs/zh/development/contributing.md",
-        "docs/zh/development/testing.md",
-        "docs/zh/reference/changelog.md"
-      ]
-    },
-    "docs/zh/development/performance-optimization.md": {
-      "FilePath": "docs/zh/development/performance-optimization.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.397357",
-      "ContentHash": "ae27e67ea352e427",
-      "GitCommit": "85bfdb3e",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/development/architecture.md",
-        "docs/zh/development/deployment-testing.md"
+        "docs/zh/development/testing.md"
       ]
     },
     "docs/zh/development/testing.md": {
@@ -1173,10 +1121,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-06-10T06:24:27.926658",
-      "ContentHash": "aead428eb3388e55",
-      "GitCommit": "ba6d6ddf",
+      "Version": "1.0.5",
+      "LastModified": "2026-06-15T07:21:27.703197",
+      "ContentHash": "4b217eac52f2dd63",
+      "GitCommit": "0f56b957",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1319,20 +1267,6 @@
       "ChangeSummary": "",
       "Dependencies": []
     },
-    "docs/en/development/tracing-integration.md": {
-      "FilePath": "docs/en/development/tracing-integration.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-09T06:09:48.039457",
-      "ContentHash": "e010e55796759792",
-      "GitCommit": "b9fa976b",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/api-reference/index.md",
-        "docs/en/tracing/config-reference.md",
-        "docs/en/tracing/performance-tuning.md"
-      ]
-    },
     "docs/en/monitoring/error-tracking.md": {
       "FilePath": "docs/en/monitoring/error-tracking.md",
       "Version": "1.0.1",
@@ -1434,15 +1368,15 @@
     },
     "docs/en/tracing/index.md": {
       "FilePath": "docs/en/tracing/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-10T06:24:27.795764",
-      "ContentHash": "41ee12edf6a2275f",
-      "GitCommit": "227a92b7",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-15T07:21:27.549611",
+      "ContentHash": "186f1755b4bfaee6",
+      "GitCommit": "3259879e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/en/development/tracing-integration.md",
         "docs/en/tracing/config-reference.md",
+        "docs/en/tracing/developer-guide.md",
         "docs/en/tracing/quickstart.md",
         "docs/en/tracing/troubleshooting.md",
         "docs/en/tracing/usage-guide.md"
@@ -1450,14 +1384,14 @@
     },
     "docs/en/tracing/operations-guide.md": {
       "FilePath": "docs/en/tracing/operations-guide.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-09T06:09:48.115576",
-      "ContentHash": "3c026336be470822",
-      "GitCommit": "b9fa976b",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-15T07:21:27.551860",
+      "ContentHash": "50723c52ed8771a3",
+      "GitCommit": "3259879e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/en/development/tracing-integration.md",
+        "docs/en/tracing/developer-guide.md",
         "docs/en/tracing/performance-tuning.md",
         "docs/en/tracing/troubleshooting.md"
       ]
@@ -1478,15 +1412,15 @@
     },
     "docs/en/tracing/quickstart.md": {
       "FilePath": "docs/en/tracing/quickstart.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-09T06:09:48.119789",
-      "ContentHash": "9f72dd3c5196a06d",
-      "GitCommit": "b9fa976b",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-15T07:21:27.556619",
+      "ContentHash": "6f77cbe7dab6e344",
+      "GitCommit": "3259879e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/en/development/tracing-integration.md",
         "docs/en/tracing/config-reference.md",
+        "docs/en/tracing/developer-guide.md",
         "docs/en/tracing/performance-tuning.md",
         "docs/en/tracing/troubleshooting.md",
         "docs/en/tracing/usage-guide.md"
@@ -1508,14 +1442,14 @@
     },
     "docs/en/tracing/usage-guide.md": {
       "FilePath": "docs/en/tracing/usage-guide.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-09T06:09:48.123796",
-      "ContentHash": "02a17297012eda30",
-      "GitCommit": "b9fa976b",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-15T07:21:27.561292",
+      "ContentHash": "847c76d59a039204",
+      "GitCommit": "3259879e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/en/development/tracing-integration.md",
+        "docs/en/tracing/developer-guide.md",
         "docs/en/tracing/operations-guide.md",
         "docs/en/tracing/performance-tuning.md",
         "docs/en/tracing/troubleshooting.md"
@@ -1530,20 +1464,6 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
-    },
-    "docs/zh/development/tracing-integration.md": {
-      "FilePath": "docs/zh/development/tracing-integration.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-09T06:09:48.224731",
-      "ContentHash": "b29da44776a1ec9c",
-      "GitCommit": "b9fa976b",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/api-reference/index.md",
-        "docs/zh/tracing/config-reference.md",
-        "docs/zh/tracing/performance-tuning.md"
-      ]
     },
     "docs/zh/monitoring/error-tracking.md": {
       "FilePath": "docs/zh/monitoring/error-tracking.md",
@@ -1646,15 +1566,15 @@
     },
     "docs/zh/tracing/index.md": {
       "FilePath": "docs/zh/tracing/index.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-10T06:24:27.951674",
-      "ContentHash": "b9376da27e3bfba5",
-      "GitCommit": "227a92b7",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-15T07:21:27.741042",
+      "ContentHash": "9a23ce8d864d2499",
+      "GitCommit": "3fd42181",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/zh/development/tracing-integration.md",
         "docs/zh/tracing/config-reference.md",
+        "docs/zh/tracing/developer-guide.md",
         "docs/zh/tracing/quickstart.md",
         "docs/zh/tracing/troubleshooting.md",
         "docs/zh/tracing/usage-guide.md"
@@ -1662,14 +1582,14 @@
     },
     "docs/zh/tracing/operations-guide.md": {
       "FilePath": "docs/zh/tracing/operations-guide.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-09T06:09:48.303712",
-      "ContentHash": "246bb54ccb0621d4",
-      "GitCommit": "b9fa976b",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-15T07:21:27.743346",
+      "ContentHash": "5dc0452fe42222e0",
+      "GitCommit": "3259879e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/zh/development/tracing-integration.md",
+        "docs/zh/tracing/developer-guide.md",
         "docs/zh/tracing/performance-tuning.md",
         "docs/zh/tracing/troubleshooting.md"
       ]
@@ -1690,15 +1610,15 @@
     },
     "docs/zh/tracing/quickstart.md": {
       "FilePath": "docs/zh/tracing/quickstart.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-09T06:09:48.307858",
-      "ContentHash": "a9795c6b914b46cf",
-      "GitCommit": "b9fa976b",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-15T07:21:27.748141",
+      "ContentHash": "efc524bea31ff8df",
+      "GitCommit": "3259879e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/zh/development/tracing-integration.md",
         "docs/zh/tracing/config-reference.md",
+        "docs/zh/tracing/developer-guide.md",
         "docs/zh/tracing/performance-tuning.md",
         "docs/zh/tracing/troubleshooting.md",
         "docs/zh/tracing/usage-guide.md"
@@ -1720,14 +1640,14 @@
     },
     "docs/zh/tracing/usage-guide.md": {
       "FilePath": "docs/zh/tracing/usage-guide.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-09T06:09:48.311921",
-      "ContentHash": "9c29a0e98c5ad3e9",
-      "GitCommit": "b9fa976b",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-15T07:21:27.753730",
+      "ContentHash": "73af093696706a59",
+      "GitCommit": "3259879e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
-        "docs/zh/development/tracing-integration.md",
+        "docs/zh/tracing/developer-guide.md",
         "docs/zh/tracing/operations-guide.md",
         "docs/zh/tracing/performance-tuning.md",
         "docs/zh/tracing/troubleshooting.md"
@@ -1850,20 +1770,6 @@
         "docs/en/monitoring/index.md"
       ]
     },
-    "docs/en/development/V1.4.1-changelog.md": {
-      "FilePath": "docs/en/development/V1.4.1-changelog.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-11T06:49:24.731786",
-      "ContentHash": "9d093c2a6710c76d",
-      "GitCommit": "a9e349a6",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/en/configuration/circuit-breaker.md",
-        "docs/en/configuration/dynamic-config.md",
-        "docs/en/reference/glossary.md"
-      ]
-    },
     "docs/en/monitoring/alert_rules_guide.md": {
       "FilePath": "docs/en/monitoring/alert_rules_guide.md",
       "Version": "1.0.1",
@@ -1957,58 +1863,6 @@
         "docs/zh/troubleshooting/common-issues.md"
       ]
     },
-    "docs/zh/development/V1.4.0-changelog.md": {
-      "FilePath": "docs/zh/development/V1.4.0-changelog.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-11T06:49:24.873423",
-      "ContentHash": "8482ac2de5dbf2bf",
-      "GitCommit": "a9e349a6",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/development/performance-optimization.md",
-        "docs/zh/monitoring/setup.md",
-        "docs/zh/security/jwt-authentication.md"
-      ]
-    },
-    "docs/zh/development/V1.4.1-changelog.md": {
-      "FilePath": "docs/zh/development/V1.4.1-changelog.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-11T06:49:24.875131",
-      "ContentHash": "ec0be8b6de8b47de",
-      "GitCommit": "a9e349a6",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/configuration/circuit-breaker.md",
-        "docs/zh/configuration/dynamic-config.md",
-        "docs/zh/reference/glossary.md"
-      ]
-    },
-    "docs/zh/development/architecture-refactoring.md": {
-      "FilePath": "docs/zh/development/architecture-refactoring.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-03T06:53:11.382758",
-      "ContentHash": "2b59fa7180c3ee62",
-      "GitCommit": "85bfdb3e",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/development/V1.4.1-changelog.md",
-        "docs/zh/development/architecture.md",
-        "docs/zh/development/contributing.md"
-      ]
-    },
-    "docs/zh/development/tracing-full-chain-design.md": {
-      "FilePath": "docs/zh/development/tracing-full-chain-design.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-11T06:49:24.892136",
-      "ContentHash": "73da8050d2ba82a3",
-      "GitCommit": "a9e349a6",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
     "docs/zh/security/audit-log-management.md": {
       "FilePath": "docs/zh/security/audit-log-management.md",
       "Version": "1.0.1",
@@ -2094,21 +1948,11 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.43",
-      "LastModified": "2026-06-14T06:41:07.911207",
-      "ContentHash": "89b4110af7c868d3",
-      "GitCommit": "34a1a250",
+      "Version": "1.0.44",
+      "LastModified": "2026-06-15T07:21:27.376910",
+      "ContentHash": "d4d526c6752f3ac7",
+      "GitCommit": "21220b8e",
       "Author": "GitHub Action",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
-    "docs/CHANGELOG-v2.5.x.md": {
-      "FilePath": "docs/CHANGELOG-v2.5.x.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-05-14T05:48:24.546616",
-      "ContentHash": "27a42a93f189dd0b",
-      "GitCommit": "947dc154",
-      "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
@@ -2144,6 +1988,34 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
+    },
+    "docs/en/tracing/developer-guide.md": {
+      "FilePath": "docs/en/tracing/developer-guide.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-06-15T07:21:27.547138",
+      "ContentHash": "e010e55796759792",
+      "GitCommit": "3fd42181",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/api-reference/index.md",
+        "docs/en/tracing/config-reference.md",
+        "docs/en/tracing/performance-tuning.md"
+      ]
+    },
+    "docs/zh/tracing/developer-guide.md": {
+      "FilePath": "docs/zh/tracing/developer-guide.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-06-15T07:21:27.738510",
+      "ContentHash": "b29da44776a1ec9c",
+      "GitCommit": "3fd42181",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/api-reference/index.md",
+        "docs/zh/tracing/config-reference.md",
+        "docs/zh/tracing/performance-tuning.md"
+      ]
     }
   },
   "changes": [
@@ -4562,7 +4434,239 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-06-14T06:41:07.911217",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.43",
+      "NewVersion": "1.0.44",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.376919",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/architecture.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.455777",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.463563",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.514643",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/developer-guide.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-06-15T07:21:27.547147",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/tracing/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.549616",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/operations-guide.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.551864",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/quickstart.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.556623",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/usage-guide.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.561296",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/architecture.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.640679",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.648056",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.703206",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/developer-guide.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-06-15T07:21:27.738520",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/tracing/index.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.741047",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/operations-guide.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.743350",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/quickstart.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.748146",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/usage-guide.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-15T07:21:27.753741",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/deployment-testing.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766711",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/development/performance-optimization.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766740",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/development/deployment-testing.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766760",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/development/performance-optimization.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766775",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/development/tracing-integration.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766790",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/development/tracing-integration.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766805",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/en/development/V1.4.1-changelog.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766819",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/development/V1.4.0-changelog.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766835",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/development/V1.4.1-changelog.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766848",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/development/architecture-refactoring.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766863",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/zh/development/tracing-full-chain-design.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766876",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/CHANGELOG-v2.5.x.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-06-15T07:21:27.766892",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-06-14T06:41:08.452786"
+  "last_updated": "2026-06-15T07:21:27.869160"
 }
