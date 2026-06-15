@@ -495,4 +495,4 @@ Establish emergency response procedures:
 
 - [Troubleshooting](troubleshooting.md) - Detailed problem diagnosis and solutions
 - [Performance Tuning](performance-tuning.md) - In-depth performance optimization guide
-- [Developer Integration](developer-guide.md) - Developer integration documentation
+- [Usage Guide](usage-guide.md) - API reference and best practices

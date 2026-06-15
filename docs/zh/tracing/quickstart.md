@@ -270,7 +270,6 @@ management:
 ## 下一步
 
 - [配置参考](config-reference.md) - 查看所有配置选项
-- [使用指南](usage-guide.md) - 了解高级使用技巧
+- [使用指南](usage-guide.md) - API 参考、高级使用技巧和最佳实践
 - [故障排除](troubleshooting.md) - 解决常见问题
 - [性能调优](performance-tuning.md) - 优化追踪性能
-- [开发集成](developer-guide.md) - 开发者指南

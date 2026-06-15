@@ -216,7 +216,6 @@ nav:
     - 性能调优: zh/tracing/performance-tuning.md
     - 故障排除: zh/tracing/troubleshooting.md
     - 运维指南: zh/tracing/operations-guide.md
-    - 开发者指南: zh/tracing/developer-guide.md
   - 开发指南:
     - zh/development/index.md
     - 架构说明: zh/development/architecture.md

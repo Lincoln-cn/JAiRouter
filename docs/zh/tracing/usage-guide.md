@@ -639,6 +639,207 @@ public class ContextDiagnostic {
 }
 ```
 
+## API 参考
+
+### TracingService
+
+追踪服务的核心接口，提供 Span 管理和追踪上下文操作。
+
+```java
+@Component
+public class TracingService {
+
+    /**
+     * 为 HTTP 请求创建根追踪上下文
+     */
+    public Mono<TracingContext> createRootSpan(ServerWebExchange exchange);
+
+    /**
+     * 创建业务操作的追踪上下文
+     */
+    public TracingContext createOperationSpan(String operationName, SpanKind kind);
+
+    /**
+     * 完成 HTTP 请求的追踪
+     */
+    public void finishHttpSpan(ServerWebExchange exchange, TracingContext context, long duration);
+
+    /**
+     * 记录错误到追踪上下文
+     */
+    public void recordError(TracingContext context, Throwable error);
+
+    /**
+     * 获取性能统计信息
+     */
+    public Mono<Map<String, Object>> getPerformanceStats();
+
+    /**
+     * 触发性能优化
+     */
+    public Mono<Void> triggerPerformanceOptimization();
+}
+```
+
+### TracingContext
+
+追踪上下文接口，提供分布式追踪的核心功能。
+
+```java
+public interface TracingContext {
+
+    // Span 管理
+    Span createSpan(String operationName, SpanKind kind);
+    Span createChildSpan(String operationName, SpanKind kind, Span parentSpan);
+    Span getCurrentSpan();
+    void setCurrentSpan(Span span);
+    void finishSpan(Span span);
+    void finishSpan(Span span, Throwable error);
+
+    // 属性管理
+    void setTag(String key, String value);
+    void setTag(String key, Number value);
+    void setTag(String key, Boolean value);
+    void addEvent(String name);
+    void addEvent(String name, Map<String, Object> attributes);
+
+    // 上下文传播
+    void injectContext(Map<String, String> headers);
+    TracingContext extractContext(Map<String, String> headers);
+    TracingContext copy();
+
+    // 日志关联
+    String getTraceId();
+    String getSpanId();
+    Map<String, String> getLogContext();
+
+    // 状态管理
+    boolean isActive();
+    boolean isSampled();
+    void clear();
+}
+```
+
+### TracingContextHolder
+
+追踪上下文持有者，提供线程本地的追踪上下文存储。
+
+```java
+public class TracingContextHolder {
+
+    /**
+     * 获取当前线程的追踪上下文
+     */
+    public static TracingContext getCurrentContext();
+
+    /**
+     * 设置当前线程的追踪上下文
+     */
+    public static void setCurrentContext(TracingContext context);
+
+    /**
+     * 清理当前线程的追踪上下文（重要：防止内存泄漏）
+     */
+    public static void clearCurrentContext();
+
+    /**
+     * 检查当前线程是否有追踪上下文
+     */
+    public static boolean hasCurrentContext();
+
+    /**
+     * 获取当前追踪 ID
+     */
+    public static String getCurrentTraceId();
+
+    /**
+     * 获取当前 Span ID
+     */
+    public static String getCurrentSpanId();
+}
+```
+
+## 测试支持
+
+### 单元测试
+
+```java
+@ExtendWith(MockitoExtension.class)
+class TracingServiceTest {
+
+    @Mock
+    private SpanExporter spanExporter;
+
+    @Mock
+    private Tracer tracer;
+
+    @InjectMocks
+    private TracingService tracingService;
+
+    @Test
+    void testCreateRootSpan() {
+        // Given
+        String operation = "test-operation";
+        ServerWebExchange exchange = mock(ServerWebExchange.class);
+
+        // When
+        StepVerifier.create(tracingService.createRootSpan(exchange))
+            .assertNext(context -> {
+                assertThat(context).isNotNull();
+                assertThat(context.isActive()).isTrue();
+            })
+            .verifyComplete();
+    }
+
+    @Test
+    void testContextAttributeSetting() {
+        // Given
+        TracingContext context = new DefaultTracingContext(tracer);
+        Span span = context.createSpan("test", SpanKind.INTERNAL);
+
+        // When
+        context.setTag("test.key", "test.value");
+
+        // Then
+        assertThat(context.isActive()).isTrue();
+    }
+}
+```
+
+### 集成测试
+
+```java
+@SpringBootTest
+@AutoConfigureTestDatabase
+class TracingIntegrationTest {
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private TracingService tracingService;
+
+    @Test
+    void testTracingIntegration() {
+        // Given
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Trace-Debug", "true");
+
+        HttpEntity<String> entity = new HttpEntity<>("{}", headers);
+
+        // When
+        ResponseEntity<String> response = restTemplate.exchange(
+            "/api/test", HttpMethod.POST, entity, String.class);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // 验证追踪上下文已清理
+        assertThat(TracingContextHolder.getCurrentContext()).isNull();
+    }
+}
+```
+
 ## 最佳实践
 
 ### 1. 采样策略选择
@@ -647,20 +848,33 @@ public class ContextDiagnostic {
 - **测试环境**：使用规则采样，重点关注关键接口
 - **生产环境**：使用自适应采样，平衡性能和可观测性
 
-### 2. 标签使用规范
+### 2. Span 命名规范
 
 ```java
-// ✅ 好的标签命名
+// ✅ 好的命名
+context.createSpan("user-authentication", SpanKind.INTERNAL);
+context.createSpan("database-query", SpanKind.CLIENT);
+context.createSpan("external-api-call", SpanKind.CLIENT);
+
+// ❌ 避免的命名
+context.createSpan("op1", SpanKind.INTERNAL);
+context.createSpan("doSomething", SpanKind.INTERNAL);
+```
+
+### 3. 标签使用规范
+
+```java
+// ✅ 有意义的标签
 span.setAttribute("http.method", "POST");
 span.setAttribute("user.id", userId);
 span.setAttribute("business.operation", "payment");
 
-// ❌ 避免的标签命名
+// ❌ 避免的标签
 span.setAttribute("tag1", "value");  // 不明确的命名
 span.setAttribute("user_data", largeObject.toString());  // 过大的值
 ```
 
-### 3. 错误处理
+### 4. 错误处理
 
 ```java
 // ✅ 正确的错误记录
@@ -672,16 +886,31 @@ span.recordException(exception);
 span.setAttribute("error.details", exception.getMessage());  // 可能包含敏感信息
 ```
 
-### 4. 性能考虑
+### 5. 性能考虑
 
 - 避免在高频调用路径中添加过多标签
 - 使用异步导出避免影响请求性能
 - 定期清理过期的追踪数据
 - 监控追踪系统自身的资源使用
 
+### 6. 上下文清理
+
+```java
+// ✅ 确保上下文被清理
+try {
+    TracingContextHolder.setCurrentContext(context);
+    // 业务逻辑
+} finally {
+    TracingContextHolder.clearCurrentContext();
+}
+
+// ❌ 忘记清理会导致内存泄漏
+TracingContextHolder.setCurrentContext(context);
+// 业务逻辑后忘记清理
+```
+
 ## 下一步
 
 - [性能调优](performance-tuning.md) - 深入的性能优化指南
 - [故障排除](troubleshooting.md) - 详细的故障排除手册
-- [开发集成](developer-guide.md) - 开发者集成指南
 - [运维指南](operations-guide.md) - 生产环境运维最佳实践
