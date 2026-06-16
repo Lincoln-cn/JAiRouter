@@ -58,8 +58,6 @@ public abstract class BaseAdapter implements ServiceCapability {
     protected final ObjectMapper objectMapper;
     private final Logger logger = LoggerFactory.getLogger(BaseAdapter.class);
 
-    @Autowired(required = false)
-    private StreamingRequestProcessor streamingRequestProcessor;
     @Autowired
     private MultipartRequestHandler multipartRequestHandler;
     @Autowired(required = false)
@@ -97,7 +95,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final NonStreamingRequestProcessor nonStreamingProcessor) {
         this.context = new AdapterContext(registry, objectMapper, statsRepository);
         this.requestSupport = new RequestProcessingSupport(requestBuilder, responseHandler, instanceSelector,
-                responseTransformer, httpRequestProcessor, responseMapper, nonStreamingProcessor);
+                responseTransformer, httpRequestProcessor, responseMapper, nonStreamingProcessor, null);
         this.resilienceSupport = new ResilienceSupport(capabilityChecker, errorHandler, retryPolicy,
                 metricsRecorder, tracingManager, errorResponseBuilder);
         this.objectMapper = objectMapper;
@@ -238,7 +236,8 @@ public abstract class BaseAdapter implements ServiceCapability {
             final String authorization, final WebClient client, final String path,
             final ModelRouterProperties.ModelInstance selectedInstance,
             final ModelServiceRegistry.ServiceType serviceType) {
-        if (streamingRequestProcessor == null) {
+        StreamingRequestProcessor processor = requestSupport.getStreamingProcessor();
+        if (processor == null) {
             logger.error("StreamingRequestProcessor 未注入，无法处理流式请求");
             return Mono.error(new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "流式请求处理器未配置"));
@@ -247,7 +246,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         String finalPath = adaptModelName(path);
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), adapterType);
         Object transformedRequest = transformRequest(request, adapterType);
-        return streamingRequestProcessor.processStreamingRequest(transformedRequest, finalAuth, client,
+        return processor.processStreamingRequest(transformedRequest, finalAuth, client,
                 finalPath, selectedInstance, serviceType, adapterType);
     }
 

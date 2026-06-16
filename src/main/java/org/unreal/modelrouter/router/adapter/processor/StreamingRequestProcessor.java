@@ -2,8 +2,10 @@ package org.unreal.modelrouter.router.adapter.processor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
@@ -20,16 +22,17 @@ import java.util.function.Function;
  *
  * @since v2.15.0
  */
+@Component
 public class StreamingRequestProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamingRequestProcessor.class);
 
-    private final MetricsCollector metricsCollector;
     private final ResponseTransformer responseTransformer;
 
-    public StreamingRequestProcessor(final MetricsCollector metricsCollector,
-                                      final ResponseTransformer responseTransformer) {
-        this.metricsCollector = metricsCollector;
+    @Autowired(required = false)
+    private MetricsCollector metricsCollector;
+
+    public StreamingRequestProcessor(final ResponseTransformer responseTransformer) {
         this.responseTransformer = responseTransformer;
     }
 
