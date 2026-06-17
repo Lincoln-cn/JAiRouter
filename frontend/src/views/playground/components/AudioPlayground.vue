@@ -946,7 +946,7 @@ const sendSttRequest = async () => {
   try {
     const requestBody: any = {
       model: sttConfig.value.model,
-      response_format: sttConfig.value.responseFormat,
+      responseFormat: sttConfig.value.responseFormat,
       temperature: sttConfig.value.temperature
     }
 
