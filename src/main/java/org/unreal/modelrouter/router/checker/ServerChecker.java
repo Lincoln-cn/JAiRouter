@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -19,6 +20,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -371,15 +373,28 @@ public class ServerChecker {
             return;
         }
         try {
-            serviceInstanceRepository.findByInstanceName(instanceName).ifPresent(entity -> {
-                entity.setHealthStatus(healthStatus);
-                entity.setErrorMessage(errorMessage);
-                if (instanceId != null && entity.getInstanceId() == null) {
-                    entity.setInstanceId(instanceId);
+            // v2.x: 优先使用 instanceId 查找，避免同名实例导致的重复记录错误
+            if (instanceId != null && !instanceId.isEmpty()) {
+                serviceInstanceRepository.findByInstanceId(instanceId).ifPresent(entity -> {
+                    entity.setHealthStatus(healthStatus);
+                    entity.setErrorMessage(errorMessage);
+                    serviceInstanceRepository.save(entity);
+                    log.debug("更新数据库实例 {} (instanceId={}) 健康状态: {}", instanceName, instanceId, healthStatus);
+                });
+            } else {
+                // v2.x: 如果 instanceId 为空（内存对象从 YAML 加载），更新所有同名实例
+                List<ServiceInstanceEntity> entities = serviceInstanceRepository.findAllByInstanceName(instanceName);
+                if (entities.isEmpty()) {
+                    log.debug("未找到实例 {} 的数据库记录", instanceName);
+                    return;
                 }
-                serviceInstanceRepository.save(entity);
-                log.debug("更新数据库实例 {} 健康状态: {}", instanceName, healthStatus);
-            });
+                for (ServiceInstanceEntity entity : entities) {
+                    entity.setHealthStatus(healthStatus);
+                    entity.setErrorMessage(errorMessage);
+                    serviceInstanceRepository.save(entity);
+                }
+                log.debug("更新数据库实例 {} (共{}个同名实例) 健康状态: {}", instanceName, entities.size(), healthStatus);
+            }
         } catch (Exception e) {
             log.error("更新数据库实例健康状态失败: {}", e.getMessage());
         }

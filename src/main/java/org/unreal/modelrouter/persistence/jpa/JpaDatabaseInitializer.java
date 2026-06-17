@@ -56,13 +56,48 @@ public class JpaDatabaseInitializer {
         // 1. 初始化模型配置
         initializeModelConfig();
 
-        // 2. 初始化 API Keys
+        // 2. 数据迁移：为 instanceId 为空的实例生成 UUID
+        migrateInstanceIds();
+
+        // 3. 初始化 API Keys
         initializeApiKeys();
 
-        // 3. 初始化 JWT 账户
+        // 4. 初始化 JWT 账户
         initializeJwtAccounts();
 
         log.info("JPA database initialization completed");
+    }
+
+    /**
+     * 数据迁移：为 instanceId 为空的实例生成 UUID
+     * v2.x: 修复旧数据没有 instanceId 导致熔断器 key 不一致的问题
+     */
+    private void migrateInstanceIds() {
+        try {
+            log.info("Starting instanceId migration check...");
+            List<ServiceInstanceEntity> allInstances = serviceInstanceRepository.findAll();
+            log.info("Total instances found: {}", allInstances.size());
+            
+            List<ServiceInstanceEntity> instancesWithoutId = allInstances.stream()
+                    .filter(inst -> inst.getInstanceId() == null || inst.getInstanceId().isEmpty())
+                    .toList();
+
+            if (instancesWithoutId.isEmpty()) {
+                log.info("All instances already have instanceId, migration skipped");
+                return;
+            }
+
+            log.info("Migrating {} instances without instanceId...", instancesWithoutId.size());
+            for (ServiceInstanceEntity entity : instancesWithoutId) {
+                String newUuid = java.util.UUID.randomUUID().toString();
+                entity.setInstanceId(newUuid);
+                serviceInstanceRepository.save(entity);
+                log.info("Generated instanceId {} for instance: {}", newUuid, entity.getInstanceName());
+            }
+            log.info("InstanceId migration completed for {} instances", instancesWithoutId.size());
+        } catch (Exception e) {
+            log.error("Failed to migrate instanceIds: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -173,10 +208,17 @@ public class JpaDatabaseInitializer {
             // 保存实例
             if (serviceConfig.getInstances() != null) {
                 for (ModelRouterProperties.ModelInstance instance : serviceConfig.getInstances()) {
+                    // v2.x: 如果 instanceId 为空，生成 UUID
+                    String instanceUuid = instance.getInstanceId();
+                    if (instanceUuid == null || instanceUuid.isEmpty()) {
+                        instanceUuid = java.util.UUID.randomUUID().toString();
+                        log.info("Generated instanceId {} for instance: {}", instanceUuid, instance.getName());
+                    }
+                    
                     ServiceInstanceEntity instanceEntity = ServiceInstanceEntity.builder()
                             .serviceConfigId(savedConfig.getId())
                             .instanceName(instance.getName())
-                            .instanceId(instance.getInstanceId()) // v1.7.1: 存储 instanceId (UUID)
+                            .instanceId(instanceUuid)
                             .baseUrl(instance.getBaseUrl())
                             .path(instance.getPath())
                             .weight(instance.getWeight())
