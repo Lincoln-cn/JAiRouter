@@ -18,6 +18,7 @@ import org.unreal.modelrouter.persistence.jpa.repository.InstanceRateLimitReposi
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.common.util.SecurityUtils;
 
 import java.util.ArrayList;
@@ -44,6 +45,7 @@ public class ServiceInstanceManager {
     private final ConfigurationService configurationService;
     private final ConfigVersionManager configVersionManager;  // 新增
     private final ModelServiceRegistry modelServiceRegistry;
+    private final CircuitBreakerManager circuitBreakerManager;
 
     public ServiceInstanceManager(
             final ServiceInstanceRepository serviceInstanceRepository,
@@ -51,15 +53,17 @@ public class ServiceInstanceManager {
             final InstanceCircuitBreakerRepository circuitBreakerRepository,
             final ServiceConfigRepository serviceConfigRepository,
             @Lazy final ConfigurationService configurationService,
-            final ConfigVersionManager configVersionManager,  // 新增
-            final ModelServiceRegistry modelServiceRegistry) {
+            final ConfigVersionManager configVersionManager,
+            final ModelServiceRegistry modelServiceRegistry,
+            final CircuitBreakerManager circuitBreakerManager) {
         this.serviceInstanceRepository = serviceInstanceRepository;
         this.rateLimitRepository = rateLimitRepository;
         this.circuitBreakerRepository = circuitBreakerRepository;
         this.serviceConfigRepository = serviceConfigRepository;
         this.configurationService = configurationService;
-        this.configVersionManager = configVersionManager;  // 新增
+        this.configVersionManager = configVersionManager;
         this.modelServiceRegistry = modelServiceRegistry;
+        this.circuitBreakerManager = circuitBreakerManager;
     }
 
     /**
@@ -95,9 +99,13 @@ public class ServiceInstanceManager {
      */
     @Transactional
     public ServiceInstanceDTO createInstance(final Long serviceConfigId, final CreateServiceInstanceRequest request) {
+        // v2.x: 生成 UUID 作为实例唯一标识符，用于熔断器等组件的 key
+        String instanceUuid = java.util.UUID.randomUUID().toString();
+        
         ServiceInstanceEntity entity = ServiceInstanceEntity.builder()
                 .serviceConfigId(serviceConfigId)
                 .instanceName(request.getName())
+                .instanceId(instanceUuid)
                 .baseUrl(request.getBaseUrl())
                 .path(request.getPath())
                 .weight(request.getWeight() != null ? request.getWeight() : 1)
@@ -118,6 +126,7 @@ public class ServiceInstanceManager {
 
     /**
      * 更新实例
+     * v2.x: 更新实例时重置熔断器状态（使用正确的 instanceId）
      */
     @Transactional
     public ServiceInstanceDTO updateInstance(final Long id, final CreateServiceInstanceRequest request) {
@@ -150,10 +159,18 @@ public class ServiceInstanceManager {
 
         ServiceInstanceEntity saved = serviceInstanceRepository.save(entity);
         log.info("Updated service instance: {}", id);
-        
+
+        // 重置该实例的熔断器状态
+        // 使用 entity.getInstanceId()（UUID）而不是数据库 ID
+        String circuitBreakerKey = saved.getInstanceId() != null ? saved.getInstanceId() : String.valueOf(id);
+        String instanceUrl = saved.getBaseUrl() + saved.getPath();
+        circuitBreakerManager.resetCircuitBreaker(circuitBreakerKey, instanceUrl);
+        log.info("Reset circuit breaker for updated instance: dbId={}, instanceId={}, url={}", 
+                id, circuitBreakerKey, instanceUrl);
+
         // 保存版本
         saveVersion("更新服务实例: " + instanceName);
-        
+
         return convertToDTO(saved);
     }
 
@@ -270,6 +287,7 @@ public class ServiceInstanceManager {
 
     /**
      * 保存或更新熔断器配置
+     * v2.x: 更新熔断器配置时重置内存中的熔断器状态（使用正确的 instanceId）
      */
     @Transactional
     public InstanceCircuitBreakerDTO saveCircuitBreakerConfig(final Long instanceId, final InstanceCircuitBreakerDTO dto) {
@@ -304,6 +322,17 @@ public class ServiceInstanceManager {
 
         InstanceCircuitBreakerEntity saved = circuitBreakerRepository.save(entity);
         log.info("Saved circuit breaker config for instance: {}", instanceId);
+
+        // 重置内存中的熔断器状态
+        serviceInstanceRepository.findById(instanceId).ifPresent(inst -> {
+            // 使用 entity.getInstanceId()（UUID）而不是数据库 ID
+            String circuitBreakerKey = inst.getInstanceId() != null ? inst.getInstanceId() : String.valueOf(instanceId);
+            String instUrl = inst.getBaseUrl() + inst.getPath();
+            circuitBreakerManager.resetCircuitBreaker(circuitBreakerKey, instUrl);
+            log.info("Reset circuit breaker state after config update: dbId={}, instanceId={}, url={}", 
+                    instanceId, circuitBreakerKey, instUrl);
+        });
+
         return convertCircuitBreakerToDTO(saved);
     }
 
@@ -381,14 +410,14 @@ public class ServiceInstanceManager {
         try {
             // 从数据库构建完整配置
             Map<String, Object> fullConfig = buildFullConfigFromDatabase();
-            
+
             // 添加元数据（用于版本列表显示操作类型和操作详情）
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("operation", "instanceChange");
             metadata.put("operationDetail", description);
             metadata.put("timestamp", System.currentTimeMillis());
             fullConfig.put("_metadata", metadata);
-            
+
             // 保存为新版本 - 使用 ConfigVersionManager 替代废弃方法
             String userId = SecurityUtils.getCurrentUserId();
             configVersionManager.saveAsNewVersion(fullConfig, description, userId);
@@ -440,8 +469,12 @@ public class ServiceInstanceManager {
                 instanceMap.put("path", instance.getPath());
                 instanceMap.put("weight", instance.getWeight());
                 instanceMap.put("status", instance.getStatus());
-                instanceMap.put("instanceId", String.valueOf(instance.getId()));
-                
+                // 使用实体的 instanceId（UUID），而非数据库 ID
+                instanceMap.put("instanceId", instance.getInstanceId() != null
+                        ? instance.getInstanceId() : String.valueOf(instance.getId()));
+                instanceMap.put("adapter", instance.getAdapter());
+                instanceMap.put("headers", instance.getHeaders());
+
                 // 添加限流器配置
                 rateLimitRepository.findByInstanceId(instance.getId())
                         .ifPresent(rateLimit -> {

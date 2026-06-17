@@ -174,10 +174,15 @@ public class CircuitBreakerManager {
      * @param instanceUrl 实例URL
      */
     public void resetCircuitBreaker(final String instanceId, final String instanceUrl) {
-        String key = instanceUrl != null ? instanceUrl : instanceId;
-        if (key != null) {
-            circuitBreakers.remove(key);
-            logger.info("Reset circuit breaker for instance: {}", key);
+        // 与 getCircuitBreaker 保持一致的 key 选择逻辑：优先 instanceId
+        String key = instanceId != null && !instanceId.trim().isEmpty() ? instanceId : instanceUrl;
+        if (key != null && !key.trim().isEmpty()) {
+            CircuitBreaker removed = circuitBreakers.remove(key);
+            if (removed != null) {
+                logger.info("Reset circuit breaker for instance: key={}, id={}, url={}", key, instanceId, instanceUrl);
+            } else {
+                logger.debug("No circuit breaker found to reset: key={}, id={}, url={}", key, instanceId, instanceUrl);
+            }
         }
     }
 
