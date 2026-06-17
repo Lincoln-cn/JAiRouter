@@ -11,7 +11,8 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="启用自适应阈值调整">
-              <el-switch v-model="globalConfig.adaptiveThresholdEnabled" />
+              <el-switch v-model="globalConfig.adaptiveThresholdEnabled" disabled />
+              <el-tag type="info" size="small" style="margin-left: 10px">待实现</el-tag>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -20,7 +21,9 @@
                 v-model="globalConfig.stateSyncIntervalMinutes"
                 :min="1"
                 :max="60"
+                disabled
               />
+              <el-tag type="info" size="small" style="margin-left: 10px">待实现</el-tag>
             </el-form-item>
           </el-col>
         </el-row>
@@ -32,14 +35,17 @@
                 v-model="globalConfig.cleanupIntervalMinutes"
                 :min="1"
                 :max="120"
+                disabled
               />
+              <el-tag type="info" size="small" style="margin-left: 10px">待实现</el-tag>
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-form-item>
-          <el-button type="primary" @click="saveGlobalConfig">保存全局配置</el-button>
-          <el-button @click="resetGlobalConfig">重置</el-button>
+          <el-button type="primary" @click="saveGlobalConfig" disabled>保存全局配置</el-button>
+          <el-button @click="resetGlobalConfig" disabled>重置</el-button>
+          <el-tag type="warning" size="small" style="margin-left: 10px">全局配置功能待后端实现</el-tag>
         </el-form-item>
       </el-form>
     </el-card>
@@ -91,19 +97,17 @@
       <template #header>
         <div class="card-header">
           <span class="card-title">熔断器历史记录</span>
+          <el-tag type="info" size="small">功能待后端实现</el-tag>
         </div>
       </template>
 
-      <el-table :data="circuitBreakerHistory" stripe v-loading="loadingHistory" class="flex-table">
-        <el-table-column prop="instanceId" label="实例ID" min-width="150" />
-        <el-table-column prop="event" label="事件" min-width="100" />
-        <el-table-column prop="timestamp" label="时间" min-width="150">
-          <template #default="{ row }">
-            {{ formatTime(row.timestamp) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="details" label="详情" min-width="200" />
-      </el-table>
+      <el-empty description="历史记录功能待后端实现" :image-size="80">
+        <template #description>
+          <p style="color: #909399; font-size: 14px;">
+            熔断器状态变化历史记录需要后端新增 API 支持
+          </p>
+        </template>
+      </el-empty>
     </el-card>
   </div>
 </template>
@@ -130,13 +134,6 @@ interface CircuitBreakerStatus {
   timeout: number | string
 }
 
-interface CircuitBreakerHistory {
-  instanceId: string
-  event: string
-  timestamp: number
-  details: string
-}
-
 const globalConfig = ref<GlobalConfig>({
   adaptiveThresholdEnabled: true,
   stateSyncIntervalMinutes: 5,
@@ -144,9 +141,7 @@ const globalConfig = ref<GlobalConfig>({
 })
 
 const circuitBreakerStatus = ref<CircuitBreakerStatus[]>([])
-const circuitBreakerHistory = ref<CircuitBreakerHistory[]>([])
 const loadingStatus = ref(false)
-const loadingHistory = ref(false)
 
 // 使用正确的API端点（axios baseURL已经是/api，所以这里不需要/api前缀）
 const apiBaseUrl = '/monitoring/circuit-breaker'
@@ -191,21 +186,46 @@ const resetGlobalConfig = () => {
 const loadCircuitBreakerStatus = async () => {
   loadingStatus.value = true
   try {
-    // 使用后端实际提供的API端点
-    const response = await request.get(`${apiBaseUrl}/stats`)
+    // 获取实例级熔断器状态
+    const response = await request.get('/config/instance/circuit-breaker/states')
     if (response.data?.success) {
-      const stats = response.data.data
-      // 将统计数据转换为状态列表格式
-      circuitBreakerStatus.value = [{
-        instanceId: 'monitoring-system',
-        state: stats.state || 'CLOSED',
-        failureCount: stats.failureCount || 0,
-        successCount: stats.successCount || 0,
-        lastFailureTime: null,
-        failureThreshold: '-',
-        successThreshold: '-',
-        timeout: '-'
-      }]
+      const states = response.data.data
+      // 将状态映射转换为状态列表
+      const statusList: CircuitBreakerStatus[] = []
+      if (states && typeof states === 'object') {
+        Object.entries(states).forEach(([instanceId, state]) => {
+          statusList.push({
+            instanceId,
+            state: state as string,
+            failureCount: '-',
+            successCount: '-',
+            lastFailureTime: null,
+            failureThreshold: '-',
+            successThreshold: '-',
+            timeout: '-'
+          })
+        })
+      }
+      
+      // 如果没有实例熔断器，显示监控熔断器状态
+      if (statusList.length === 0) {
+        const monitoringResponse = await request.get(`${apiBaseUrl}/stats`)
+        if (monitoringResponse.data?.success) {
+          const stats = monitoringResponse.data.data
+          statusList.push({
+            instanceId: 'monitoring-system',
+            state: stats.state || 'CLOSED',
+            failureCount: stats.failureCount || 0,
+            successCount: stats.successCount || 0,
+            lastFailureTime: null,
+            failureThreshold: '-',
+            successThreshold: '-',
+            timeout: '-'
+          })
+        }
+      }
+      
+      circuitBreakerStatus.value = statusList
     } else {
       ElMessage.error(response.data?.message || '加载熔断器状态失败')
     }
@@ -217,41 +237,8 @@ const loadCircuitBreakerStatus = async () => {
   }
 }
 
-const loadCircuitBreakerHistory = async () => {
-  loadingHistory.value = true
-  try {
-    // 使用模拟数据，因为后端暂不支持历史记录API
-    circuitBreakerHistory.value = [
-      {
-        instanceId: 'gpustack-instance-1',
-        event: 'STATE_CHANGE',
-        timestamp: Date.now() - 120000,
-        details: '状态从CLOSED变为OPEN'
-      },
-      {
-        instanceId: 'ollama-instance-1',
-        event: 'FAILURE',
-        timestamp: Date.now() - 300000,
-        details: '请求失败，失败次数: 2'
-      },
-      {
-        instanceId: 'vllm-instance-1',
-        event: 'SUCCESS',
-        timestamp: Date.now() - 60000,
-        details: '请求成功，进入HALF_OPEN状态'
-      }
-    ]
-  } catch (error: any) {
-    console.error('Failed to load circuit breaker history:', error)
-    ElMessage.error('加载熔断器历史记录失败')
-  } finally {
-    loadingHistory.value = false
-  }
-}
-
 const refreshStatus = () => {
   loadCircuitBreakerStatus()
-  loadCircuitBreakerHistory()
   ElMessage.success('已刷新熔断器状态')
 }
 
@@ -280,6 +267,10 @@ const resetCircuitBreaker = async (instanceId: string) => {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
+    })
+    // 调用实例级熔断器重置 API
+    await request.post(`/config/instance/circuit-breaker/reset`, {
+      instanceId
     })
     ElMessage.success(`熔断器 ${instanceId} 已重置`)
     loadCircuitBreakerStatus()
@@ -329,7 +320,6 @@ const forceCloseCircuitBreaker = async (instanceId: string) => {
 
 onMounted(() => {
   loadCircuitBreakerStatus()
-  loadCircuitBreakerHistory()
 })
 </script>
 
