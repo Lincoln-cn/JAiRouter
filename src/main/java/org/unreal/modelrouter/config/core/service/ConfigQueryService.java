@@ -8,6 +8,7 @@ import org.unreal.modelrouter.config.core.ConfigMergeService;
 import org.unreal.modelrouter.config.core.TraceConfig;
 import org.unreal.modelrouter.config.core.manager.InstanceManager;
 import org.unreal.modelrouter.common.util.InstanceIdUtils;
+import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 
 import java.util.HashMap;
@@ -64,13 +65,16 @@ public class ConfigQueryService {
                         if (instance != null && instance.containsKey("name") && instance.containsKey("baseUrl")) {
                             String name = (String) instance.get("name");
                             // 检查是否已存在instanceId，如果不存在才生成新的
-                            if (!instance.containsKey("instanceId") || instance.get("instanceId") == null) {
-                                String instanceId = InstanceIdUtils.getInstanceId(instance);
+                            String instanceId = null;
+                            if (instance.containsKey("instanceId") && instance.get("instanceId") != null) {
+                                instanceId = (String) instance.get("instanceId");
+                            } else {
+                                instanceId = InstanceIdUtils.getInstanceId(instance);
                                 instance.put("instanceId", instanceId);
                             }
 
-                            // 从数据库获取健康状态
-                            String healthStatus = getHealthStatusFromDatabase(name);
+                            // 从数据库获取健康状态（优先使用 instanceId）
+                            String healthStatus = getHealthStatusFromDatabase(name, instanceId);
                             if (healthStatus != null) {
                                 instance.put("health", "HEALTHY".equals(healthStatus));
                                 instance.put("healthStatus", healthStatus);
@@ -89,18 +93,30 @@ public class ConfigQueryService {
 
     /**
      * 从数据库获取实例的健康状态
+     * v2.x: 优先使用 instanceId 查询，避免同名实例导致的重复记录错误
      *
      * @param instanceName 实例名称
+     * @param instanceId 实例唯一ID (UUID)
      * @return 健康状态字符串 (HEALTHY, UNHEALTHY, UNKNOWN)，如果找不到返回 null
      */
-    private String getHealthStatusFromDatabase(final String instanceName) {
+    private String getHealthStatusFromDatabase(final String instanceName, final String instanceId) {
         if (serviceInstanceRepository == null) {
             return null;
         }
         try {
-            return serviceInstanceRepository.findByInstanceName(instanceName)
-                    .map(entity -> entity.getHealthStatus())
-                    .orElse(null);
+            // v2.x: 优先使用 instanceId 查询
+            if (instanceId != null && !instanceId.isEmpty()) {
+                return serviceInstanceRepository.findByInstanceId(instanceId)
+                        .map(entity -> entity.getHealthStatus())
+                        .orElse(null);
+            }
+            
+            // v2.x: 如果 instanceId 为空，查询所有同名实例，取第一个的健康状态
+            List<ServiceInstanceEntity> entities = serviceInstanceRepository.findAllByInstanceName(instanceName);
+            if (!entities.isEmpty()) {
+                return entities.get(0).getHealthStatus();
+            }
+            return null;
         } catch (Exception e) {
             logger.warn("从数据库获取实例健康状态失败: {}", e.getMessage());
             return null;

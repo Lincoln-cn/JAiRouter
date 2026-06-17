@@ -146,6 +146,9 @@ public class ConfigConverterHelper {
         if (instanceMap.containsKey("instanceId")) {
             instance.setInstanceId((String) instanceMap.get("instanceId"));
         }
+        if (instanceMap.containsKey("adapter")) {
+            instance.setAdapter((String) instanceMap.get("adapter"));
+        }
 
         // 设置请求头配置
         if (instanceMap.containsKey("headers") && instanceMap.get("headers") instanceof Map) {
