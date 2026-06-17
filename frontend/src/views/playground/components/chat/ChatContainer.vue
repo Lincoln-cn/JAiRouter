@@ -160,6 +160,7 @@ import { useStreaming } from '../../composables/useStreaming'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import { sendServiceRequest } from '@/api/playground'
 import type { ChatMessage, ChatRequestConfig } from '../../types/playground'
+import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
 
 // Refs
 const messageListRef = ref<HTMLElement>()
@@ -321,10 +322,21 @@ const handleSendMessage = async (content: string) => {
       updateLastMessage(assistantContent)
     }
   } catch (error: any) {
-    const errorMessage =
-      error.data?.error?.message || error.message || '请求失败'
+    const errorMessage = parseErrorMessage(error, '对话请求')
+    const suggestion = getErrorSuggestion(error)
+
     updateLastMessage(`❌ 错误: ${errorMessage}`)
-    ElMessage.error(errorMessage)
+
+    if (suggestion) {
+      ElMessage({
+        type: 'error',
+        message: `${errorMessage}\n\n💡 建议: ${suggestion}`,
+        duration: 6000,
+        showClose: true
+      })
+    } else {
+      ElMessage.error(errorMessage)
+    }
   } finally {
     isLoading.value = false
     isStreaming.value = false
@@ -431,10 +443,21 @@ const handleRegenerateMessage = async () => {
       updateLastMessage(assistantContent)
     }
   } catch (error: any) {
-    const errorMessage =
-      error.data?.error?.message || error.message || '请求失败'
+    const errorMessage = parseErrorMessage(error, '对话请求')
+    const suggestion = getErrorSuggestion(error)
+
     updateLastMessage(`❌ 错误: ${errorMessage}`)
-    ElMessage.error(errorMessage)
+
+    if (suggestion) {
+      ElMessage({
+        type: 'error',
+        message: `${errorMessage}\n\n💡 建议: ${suggestion}`,
+        duration: 6000,
+        showClose: true
+      })
+    } else {
+      ElMessage.error(errorMessage)
+    }
   } finally {
     isLoading.value = false
     isStreaming.value = false

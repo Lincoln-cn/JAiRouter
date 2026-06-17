@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Monitor,
   Refresh,
@@ -98,6 +98,7 @@ import EmbeddingContainer from './components/embedding/EmbeddingContainer.vue'
 import RerankContainer from './components/rerank/RerankContainer.vue'
 import AudioContainer from './components/audio/AudioContainer.vue'
 import ImageContainer from './components/image/ImageContainer.vue'
+import { clearCache } from '@/stores/playgroundCache'
 
 // 状态
 const activeService = ref('chat')
@@ -106,6 +107,9 @@ const embeddingRef = ref()
 const rerankRef = ref()
 const audioRef = ref()
 const imageRef = ref()
+
+// SSE 连接
+let eventSource: EventSource | null = null
 
 // 服务导航项
 interface ServiceNavItem {
@@ -187,9 +191,67 @@ const refreshAllData = () => {
   }
 }
 
+// 初始化 SSE 连接
+const initSSE = () => {
+  const baseURL = import.meta.env.VITE_API_BASE_URL || ''
+  const url = `${baseURL}/api/health-status/stream`
+  
+  try {
+    eventSource = new EventSource(url)
+    
+    eventSource.addEventListener('health-update', (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log('[SSE] 收到健康状态更新:', data)
+        
+        // 解析健康状态数据，更新对应服务的实例状态
+        if (data.instanceHealth) {
+          // 清除所有服务的缓存，强制重新获取
+          clearCache()
+          
+          // 刷新当前活动服务的数据
+          refreshAllData()
+        }
+      } catch (error) {
+        console.error('[SSE] 解析健康状态数据失败:', error)
+      }
+    })
+    
+    eventSource.onerror = (error) => {
+      console.warn('[SSE] 连接错误，将在 5 秒后重试:', error)
+      // 关闭当前连接，稍后重试
+      if (eventSource) {
+        eventSource.close()
+        eventSource = null
+      }
+      setTimeout(initSSE, 5000)
+    }
+    
+    console.log('[SSE] 健康状态监听已启动')
+  } catch (error) {
+    console.error('[SSE] 初始化失败:', error)
+  }
+}
+
+// 关闭 SSE 连接
+const closeSSE = () => {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
+    console.log('[SSE] 健康状态监听已关闭')
+  }
+}
+
 // 初始化
 onMounted(() => {
   // 默认聚焦在 Chat 服务
+  // 启动 SSE 监听健康状态变化
+  initSSE()
+})
+
+// 清理
+onUnmounted(() => {
+  closeSSE()
 })
 </script>
 

@@ -121,6 +121,7 @@ export interface PlaygroundRequest {
   headers: Record<string, string>
   body?: any
   files?: File[]
+  responseType?: 'json' | 'blob' | 'text'
 }
 
 // 请求状态

@@ -207,11 +207,11 @@
         >
           <div class="result-stats">
             <span class="stat-item">耗时: {{ result.duration }}ms</span>
-            <span class="stat-item">返回: {{ result.data?.results?.length || 0 }} 条</span>
+            <span class="stat-item">返回: {{ result.data?.data?.results?.length || 0 }} 条</span>
           </div>
 
           <div
-            v-for="(item, idx) in result.data?.results"
+            v-for="(item, idx) in result.data?.data?.results"
             :key="idx"
             class="result-item"
           >
@@ -249,6 +249,7 @@ import { ElMessage } from 'element-plus'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import { sendServiceRequest } from '@/api/playground'
 import type { RerankRequestConfig, PlaygroundResponse } from '../../types/playground'
+import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
 
 // 状态
 const showConfig = ref(false)
@@ -323,8 +324,19 @@ const handleRerank = async () => {
     result.value = response
     ElMessage.success('重排序完成')
   } catch (error: any) {
-    const errorMsg = error.data?.error?.message || '重排序失败'
-    ElMessage.error(errorMsg)
+    const errorMsg = parseErrorMessage(error, '重排序')
+    const suggestion = getErrorSuggestion(error)
+
+    if (suggestion) {
+      ElMessage({
+        type: 'error',
+        message: `${errorMsg}\n\n💡 建议: ${suggestion}`,
+        duration: 6000,
+        showClose: true
+      })
+    } else {
+      ElMessage.error(errorMsg)
+    }
   } finally {
     isLoading.value = false
   }
