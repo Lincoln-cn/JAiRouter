@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 150
-- 近7天变更: 67
+- 近7天变更: 56
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-16 07:27:18
+- 最后扫描: 2026-06-17 07:10:33
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.45 → 1.0.46) - 2026-06-17
 - **DELETED**: docs/zh/tracing/developer-guide.md (1.0.0 → ) - 2026-06-16
 - **DELETED**: docs/en/tracing/developer-guide.md (1.0.0 → ) - 2026-06-16
 - **MODIFIED**: docs/zh/tracing/usage-guide.md (1.0.2 → 1.0.3) - 2026-06-16
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/en/tracing/usage-guide.md (1.0.2 → 1.0.3) - 2026-06-16
 - **MODIFIED**: docs/en/tracing/quickstart.md (1.0.2 → 1.0.3) - 2026-06-16
 - **MODIFIED**: docs/en/tracing/operations-guide.md (1.0.2 → 1.0.3) - 2026-06-16
-- **MODIFIED**: docs/en/tracing/index.md (1.0.2 → 1.0.3) - 2026-06-16
 
 ## 依赖关系分析
 
@@ -509,6 +509,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.46 - 2026-06-17 (52b94129)
 - **docs/zh/tracing/usage-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
@@ -517,7 +518,6 @@
 - **docs/en/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/en/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/en/tracing/index.md**: v1.0.3 - 2026-06-16 (933eeadf)
-- **docs-version-report.md**: v1.0.45 - 2026-06-16 (a0501f34)
 - **docs/zh/reference/changelog.md**: v1.0.5 - 2026-06-15 (0f56b957)
 - **docs/zh/development/index.md**: v1.0.5 - 2026-06-15 (3fd42181)
 - **docs/zh/development/architecture.md**: v1.0.4 - 2026-06-15 (3fd42181)
