@@ -8,18 +8,23 @@ jairouter:
   security:
     api-key:
       # API Key 功能开关
-      enabled: false
-      
+      enabled: true
+
       # API Key 头名称
       header-name: "X-API-Key"
-      
+
       # 默认过期天数
       default-expiration-days: 365
-      
+
       # 缓存配置
       cache-enabled: true
       cache-expiration-seconds: 3600
-      
+
       # API Key 列表（仅用于开发环境测试）
       # 生产环境应通过 API 管理或环境变量配置
-      keys: []
+      keys:
+        - key-id: "test-key-001"
+          key-value: "sk-test-api-key-12345678"
+          description: "测试用 API Key"
+          permissions: "read,write"
+          enabled: true
