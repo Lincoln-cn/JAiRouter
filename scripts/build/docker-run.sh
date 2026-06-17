@@ -135,6 +135,7 @@ docker run -d \
     $PORTS \
     -e SPRING_PROFILES_ACTIVE=$ENVIRONMENT \
     -e JAVA_OPTS="$JAVA_OPTS" \
+    -e INITIAL_ADMIN_PASSWORD=ChangeMeOnFirstStartup123456 \
     $SECURITY_CONFIG \
     -v $(pwd)/config:/app/config:ro \
     -v $(pwd)/logs:/app/logs \
