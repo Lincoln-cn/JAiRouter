@@ -234,7 +234,10 @@ public class LocalAiRequestTransformer {
 
             if (sttRequest.prompt() != null) builder.part("prompt", sttRequest.prompt());
             if (sttRequest.responseFormat() != null) builder.part("response_format", sttRequest.responseFormat());
-            if (sttRequest.temperature() != null) builder.part("temperature", sttRequest.temperature());
+            if (sttRequest.temperature() != null) {
+                // 关键：temperature 必须转为字符串，否则 Content-Type 会是 application/octet-stream
+                builder.part("temperature", sttRequest.temperature().toString());
+            }
 
             return builder.build();
         } catch (Exception e) {

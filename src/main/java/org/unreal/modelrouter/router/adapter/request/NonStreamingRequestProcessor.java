@@ -24,6 +24,7 @@ import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -95,13 +96,35 @@ public class NonStreamingRequestProcessor {
         logger.debug("发送请求到下游服务: instance={}, path={}, auth={}",
                 instanceName, path, authorization != null ? "***" : "null");
 
-        // 2. 构建请求
+        // 2. 构建请求 - 不在这里设置 Authorization，统一由实例 headers 处理
         WebClient.RequestBodySpec requestSpec = client.post()
-                .uri(path)
-                .header("Authorization", authorization);
+                .uri(path);
 
-        // 3. 配置请求头（通过 MultipartRequestHandler）
-        requestSpec = multipartHandler.configureRequestHeaders(requestSpec, request, selectedInstance);
+        // 3. 配置请求头
+        if (multipartHandler != null) {
+            requestSpec = multipartHandler.configureRequestHeaders(requestSpec, request, selectedInstance);
+        } else {
+            // 对于普通JSON请求，设置Content-Type
+            requestSpec = requestSpec.contentType(MediaType.APPLICATION_JSON);
+
+            // 优先使用实例自定义headers中的Authorization，如果没有则使用参数传入的authorization
+            boolean hasInstanceAuth = false;
+            if (selectedInstance != null && selectedInstance.getHeaders() != null) {
+                for (Map.Entry<String, String> header : selectedInstance.getHeaders().entrySet()) {
+                    requestSpec = requestSpec.header(header.getKey(), header.getValue());
+                    logger.debug("应用实例自定义请求头: {} = {}", header.getKey(), "***");
+                    if ("Authorization".equalsIgnoreCase(header.getKey())) {
+                        hasInstanceAuth = true;
+                    }
+                }
+            }
+
+            // 如果实例没有自定义Authorization，且参数提供了authorization，则使用参数值
+            if (!hasInstanceAuth && authorization != null && !authorization.isEmpty()) {
+                requestSpec = requestSpec.header("Authorization", authorization);
+                logger.debug("使用参数Authorization头");
+            }
+        }
 
         // 4. 根据响应类型处理
         if (responseType == byte[].class) {
@@ -109,7 +132,7 @@ public class NonStreamingRequestProcessor {
                     instanceName, adapterType, serviceType, requestStartTime, multipartHandler);
         } else {
             return processJsonResponse(requestSpec, transformedRequest, instanceName,
-                    adapterType, serviceType, requestStartTime, path, transformResponseFn);
+                    adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler);
         }
     }
 
@@ -126,7 +149,13 @@ public class NonStreamingRequestProcessor {
             final long requestStartTime,
             final MultipartRequestHandler multipartHandler) {
 
-        BodyInserter<?, ? super ClientHttpRequest> requestBody = multipartHandler.createRequestBody(transformedRequest);
+        BodyInserter<?, ? super ClientHttpRequest> requestBody;
+        if (multipartHandler != null) {
+            requestBody = multipartHandler.createRequestBody(transformedRequest);
+        } else {
+            // 对于普通JSON请求，使用JSON body
+            requestBody = org.springframework.web.reactive.function.BodyInserters.fromValue(transformedRequest);
+        }
 
         return requestSpec
                 .body(requestBody)
@@ -175,10 +204,20 @@ public class NonStreamingRequestProcessor {
             final ServiceType serviceType,
             final long requestStartTime,
             final String path,
-            final Function<Object, Object> transformResponseFn) {
+            final Function<Object, Object> transformResponseFn,
+            final MultipartRequestHandler multipartHandler) {
+
+        // 支持multipart请求（如STT）
+        BodyInserter<?, ? super ClientHttpRequest> requestBody;
+        if (multipartHandler != null && multipartHandler.isMultipartRequest(transformedRequest)) {
+            requestBody = multipartHandler.createRequestBody(transformedRequest);
+            logger.debug("使用multipart请求体处理STT请求");
+        } else {
+            requestBody = org.springframework.web.reactive.function.BodyInserters.fromValue(transformedRequest);
+        }
 
         return requestSpec
-                .bodyValue(transformedRequest)
+                .body(requestBody)
                 .retrieve()
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse -> {
                     logger.error("下游服务5xx错误: instance={}, path={}, status={}",

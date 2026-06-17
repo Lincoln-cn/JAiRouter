@@ -90,7 +90,8 @@ public class GpuStackAdapter extends BaseAdapter {
         } else if (request instanceof TtsDTO.Request) {
             return transformTtsRequest((TtsDTO.Request) request);
         } else if (request instanceof SttDTO.Request) {
-            return transformSttRequest((SttDTO.Request) request);
+            // STT请求不转换，直接返回原始请求，由MultipartRequestHandler处理
+            return request;
         } else {
             return request;
         }
@@ -402,7 +403,8 @@ public class GpuStackAdapter extends BaseAdapter {
                 builder.part("response_format", sttRequest.responseFormat());
             }
             if (sttRequest.temperature() != null) {
-                builder.part("temperature", sttRequest.temperature());
+                // 关键：temperature 必须转为字符串，否则 Content-Type 会是 application/octet-stream
+                builder.part("temperature", sttRequest.temperature().toString());
             }
 
             return builder.build();
@@ -416,13 +418,96 @@ public class GpuStackAdapter extends BaseAdapter {
     protected Object transformResponse(final Object response, final String adapterType) {
         if (response instanceof String responseStr) {
             try {
-                JsonNode jsonResponse = objectMapper.readTree(adaptModelName(responseStr));
+                JsonNode jsonResponse = objectMapper.readTree(responseStr);
+
+                // 检测 GPUStack 特有的错误响应格式（HTTP 200 但响应体包含错误）
+                // 格式: {"status_code": 500, "detail": "错误信息", "headers": null}
+                checkGpuStackError(jsonResponse);
+
                 return transformResponseJson(jsonResponse);
+            } catch (org.unreal.modelrouter.common.exception.DownstreamServiceException e) {
+                // 重新抛出下游服务异常
+                throw e;
             } catch (Exception e) {
                 return response;
             }
         }
         return response;
+    }
+
+    /**
+     * 检测 GPUStack 特有的错误响应格式
+     * GPUStack 有时会返回 HTTP 200，但响应体中包含 status_code 和 detail 字段表示错误
+     * 格式: {"status_code": 500, "detail": "Failed to generate speech, Voice alloy not supported", "headers": null}
+     *
+     * @param jsonResponse 响应 JSON
+     * @throws DownstreamServiceException 当检测到 GPUStack 错误格式时抛出
+     */
+    private void checkGpuStackError(final JsonNode jsonResponse) {
+        // 检查是否是 GPUStack 错误格式
+        if (jsonResponse.has("status_code") && jsonResponse.has("detail")) {
+            int statusCode = jsonResponse.get("status_code").asInt();
+            String detail = jsonResponse.get("detail").asText();
+
+            // 构建友好的错误消息
+            String errorMessage = buildGpuStackErrorMessage(statusCode, detail);
+
+            // 根据 status_code 映射到 HTTP 状态
+            org.springframework.http.HttpStatus httpStatus = mapGpuStackStatusCode(statusCode);
+
+            throw new org.unreal.modelrouter.common.exception.DownstreamServiceException(
+                    errorMessage, httpStatus);
+        }
+    }
+
+    /**
+     * 构建 GPUStack 错误消息，提供更友好的提示
+     */
+    private String buildGpuStackErrorMessage(final int statusCode, final String detail) {
+        StringBuilder message = new StringBuilder();
+
+        // 根据错误类型添加友好的提示
+        if (detail.contains("not supported") || detail.contains("Voice")) {
+            message.append("模型不支持该配置: ").append(detail);
+            message.append("。建议: 请检查语音类型(voice)配置是否正确，或尝试其他支持的语音。");
+        } else if (detail.contains("authentication") || detail.contains("unauthorized") || statusCode == 401) {
+            message.append("下游服务认证失败: ").append(detail);
+            message.append("。建议: 请检查实例的认证配置，确保已正确配置 Authorization 或 X-API-Key 认证头。");
+        } else if (detail.contains("model") && detail.contains("not found")) {
+            message.append("模型不存在: ").append(detail);
+            message.append("。建议: 请检查模型名称是否正确，或确认模型是否已部署。");
+        } else if (detail.contains("timeout") || statusCode == 504) {
+            message.append("下游服务超时: ").append(detail);
+            message.append("。建议: 请稍后重试或检查下游服务状态。");
+        } else if (statusCode >= 500) {
+            message.append("下游服务内部错误: ").append(detail);
+            message.append("。建议: 请检查下游服务日志或稍后重试。");
+        } else if (statusCode >= 400) {
+            message.append("请求参数错误: ").append(detail);
+            message.append("。建议: 请检查请求参数是否正确。");
+        } else {
+            message.append("下游服务返回错误: ").append(detail);
+        }
+
+        return message.toString();
+    }
+
+    /**
+     * 将 GPUStack status_code 映射到 HTTP 状态码
+     */
+    private org.springframework.http.HttpStatus mapGpuStackStatusCode(final int statusCode) {
+        return switch (statusCode) {
+            case 400 -> org.springframework.http.HttpStatus.BAD_REQUEST;
+            case 401 -> org.springframework.http.HttpStatus.UNAUTHORIZED;
+            case 403 -> org.springframework.http.HttpStatus.FORBIDDEN;
+            case 404 -> org.springframework.http.HttpStatus.NOT_FOUND;
+            case 429 -> org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
+            case 500 -> org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+            case 502 -> org.springframework.http.HttpStatus.BAD_GATEWAY;
+            case 503 -> org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
+            case 504 -> org.springframework.http.HttpStatus.GATEWAY_TIMEOUT;
+            default -> org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+        };
     }
 
     /**

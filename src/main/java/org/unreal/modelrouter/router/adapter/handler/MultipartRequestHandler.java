@@ -2,7 +2,9 @@ package org.unreal.modelrouter.router.adapter.handler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -61,43 +63,72 @@ public class MultipartRequestHandler {
      * @return BodyInserter 用于插入multipart请求体
      */
     private BodyInserter<?, ? super ClientHttpRequest> createSttMultipartBody(final SttDTO.Request sttRequest) {
-        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-
         logger.debug("创建STT multipart请求体: model={}, file={}, language={}",
                 sttRequest.model(),
                 sttRequest.file() != null ? sttRequest.file().filename() : "null",
                 sttRequest.language());
 
-        // 添加文件部分
-        if (sttRequest.file() != null) {
-            parts.add("file", sttRequest.file());
-            logger.debug("添加文件部分: filename={}", sttRequest.file().filename());
-        }
-
-        // 添加其他表单字段
-        if (sttRequest.model() != null) {
-            parts.add("model", sttRequest.model());
-            logger.debug("添加model字段: {}", sttRequest.model());
-        }
-        if (sttRequest.language() != null) {
-            parts.add("language", sttRequest.language());
-            logger.debug("添加language字段: {}", sttRequest.language());
-        }
-        if (sttRequest.prompt() != null) {
-            parts.add("prompt", sttRequest.prompt());
-            logger.debug("添加prompt字段: {}", sttRequest.prompt());
-        }
-        if (sttRequest.responseFormat() != null) {
-            parts.add("response_format", sttRequest.responseFormat());
-            logger.debug("添加response_format字段: {}", sttRequest.responseFormat());
-        }
-        if (sttRequest.temperature() != null) {
-            parts.add("temperature", sttRequest.temperature().toString());
-            logger.debug("添加temperature字段: {}", sttRequest.temperature());
-        }
-
-        logger.debug("Multipart表单数据创建完成，包含{}个字段", parts.size());
-        return BodyInserters.fromMultipartData(parts);
+        // 使用 LinkedMultiValueMap 配合资源对象构建 multipart 请求
+        // 注意：FilePart 需要特殊处理，使用 InMemoryResource 包装文件内容
+        return (outputMessage, context) -> {
+            // 读取文件内容到内存
+            return sttRequest.file().content()
+                    .collectList()
+                    .flatMap(dataBuffers -> {
+                        // 合并所有 DataBuffer 为字节数组
+                        int totalSize = dataBuffers.stream()
+                                .mapToInt(db -> db.readableByteCount())
+                                .sum();
+                        byte[] bytes = new byte[totalSize];
+                        int offset = 0;
+                        for (org.springframework.core.io.buffer.DataBuffer db : dataBuffers) {
+                            int len = db.readableByteCount();
+                            java.nio.ByteBuffer byteBuffer = db.asByteBuffer();
+                            byteBuffer.get(bytes, offset, len);
+                            offset += len;
+                            org.springframework.core.io.buffer.DataBufferUtils.release(db);
+                        }
+                        
+                        // 创建内存资源
+                        org.springframework.core.io.buffer.DefaultDataBufferFactory factory = 
+                                new org.springframework.core.io.buffer.DefaultDataBufferFactory();
+                        org.springframework.core.io.buffer.DataBuffer dataBuffer = factory.wrap(bytes);
+                        
+                        org.springframework.core.io.Resource resource = 
+                                new org.springframework.core.io.ByteArrayResource(bytes) {
+                                    @Override
+                                    public String getFilename() {
+                                        return sttRequest.file().filename();
+                                    }
+                                };
+                        
+                        // 构建 multipart 表单
+                        MultiValueMap<String, Object> formData = new LinkedMultiValueMap<>();
+                        formData.add("file", resource);
+                        
+                        if (sttRequest.model() != null) {
+                            formData.add("model", sttRequest.model());
+                        }
+                        if (sttRequest.language() != null) {
+                            formData.add("language", sttRequest.language());
+                        }
+                        if (sttRequest.prompt() != null) {
+                            formData.add("prompt", sttRequest.prompt());
+                        }
+                        if (sttRequest.responseFormat() != null) {
+                            formData.add("response_format", sttRequest.responseFormat());
+                        }
+                        if (sttRequest.temperature() != null) {
+                            formData.add("temperature", sttRequest.temperature().toString());
+                        }
+                        
+                        logger.debug("Multipart表单数据创建完成, 文件大小: {} bytes", totalSize);
+                        
+                        // 使用 BodyInserters 发送 multipart 数据
+                        return BodyInserters.fromMultipartData(formData)
+                                .insert(outputMessage, context);
+                    });
+        };
     }
 
     /**
@@ -108,44 +139,46 @@ public class MultipartRequestHandler {
      */
     private BodyInserter<?, ? super ClientHttpRequest> createImageEditMultipartBody(
             final ImageEditDTO.Request imageEditRequest) {
-        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        // 使用 MultipartBodyBuilder 构建 multipart 请求
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
 
         // 根据ImageEditDTO.Request的实际结构添加字段
         // 如果有image字段
         if (imageEditRequest.image() != null) {
-            parts.add("image", imageEditRequest.image());
+            builder.part("image", imageEditRequest.image());
             logger.debug("添加image字段");
         }
 
         // 如果有mask字段
         if (imageEditRequest.mask() != null) {
-            parts.add("mask", imageEditRequest.mask());
+            builder.part("mask", imageEditRequest.mask());
             logger.debug("添加mask字段");
         }
 
-        // 添加其他参数字段
+        // 添加其他参数字段（字符串类型）
         if (imageEditRequest.model() != null) {
-            parts.add("model", imageEditRequest.model());
+            builder.part("model", imageEditRequest.model());
             logger.debug("添加model字段: {}", imageEditRequest.model());
         }
 
         if (imageEditRequest.prompt() != null) {
-            parts.add("prompt", imageEditRequest.prompt());
+            builder.part("prompt", imageEditRequest.prompt());
             logger.debug("添加prompt字段: {}", imageEditRequest.prompt());
         }
 
         if (imageEditRequest.n() != null) {
-            parts.add("n", imageEditRequest.n().toString());
+            // 转为字符串避免 Content-Type 问题
+            builder.part("n", imageEditRequest.n().toString());
             logger.debug("添加n字段: {}", imageEditRequest.n());
         }
 
         if (imageEditRequest.size() != null) {
-            parts.add("size", imageEditRequest.size());
+            builder.part("size", imageEditRequest.size());
             logger.debug("添加size字段: {}", imageEditRequest.size());
         }
 
-        logger.debug("图像编辑Multipart表单数据创建完成，包含{}个字段", parts.size());
-        return BodyInserters.fromMultipartData(parts);
+        logger.debug("图像编辑Multipart表单数据创建完成");
+        return BodyInserters.fromMultipartData(builder.build());
     }
 
     /**
@@ -207,7 +240,15 @@ public class MultipartRequestHandler {
      * @return 是否需要multipart格式
      */
     public boolean isMultipartRequest(final Object request) {
-        return request instanceof SttDTO.Request || request instanceof ImageEditDTO.Request;
+        // 检查原始请求类型
+        if (request instanceof SttDTO.Request || request instanceof ImageEditDTO.Request) {
+            return true;
+        }
+        // 检查已转换的multipart数据（由Adapter.transformSttRequest返回）
+        if (request instanceof MultiValueMap) {
+            return true;
+        }
+        return false;
     }
 
     /**

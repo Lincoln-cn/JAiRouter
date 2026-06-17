@@ -225,9 +225,23 @@ public abstract class BaseAdapter implements ServiceCapability {
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), adapterType);
         Function<Object, Object> transformRequestFn = req -> transformRequest(req, adapterType);
         Function<Object, Object> transformResponseFn = data -> transformResponse(data, adapterType);
+
+        // 延迟获取 multipartRequestHandler（如果尚未注入）
+        MultipartRequestHandler handler = this.multipartRequestHandler;
+        if (handler == null) {
+            try {
+                handler = org.unreal.modelrouter.common.util.ApplicationContextProvider
+                        .getBean(MultipartRequestHandler.class);
+                this.multipartRequestHandler = handler; // 缓存以供后续使用
+                logger.debug("从 ApplicationContext 获取 MultipartRequestHandler 成功");
+            } catch (Exception e) {
+                logger.warn("无法获取 MultipartRequestHandler: {}", e.getMessage());
+            }
+        }
+
         return requestSupport.getNonStreamingProcessor().processRequest(request, finalAuth, client, finalPath,
                 selectedInstance, serviceType, responseType, adapterType,
-                transformRequestFn, transformResponseFn, multipartRequestHandler);
+                transformRequestFn, transformResponseFn, handler);
     }
 
     // ==================== 流式请求处理 ====================

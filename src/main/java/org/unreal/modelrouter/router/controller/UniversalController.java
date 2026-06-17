@@ -138,9 +138,19 @@ public class UniversalController {
             @RequestPart(value = "language", required = false) final String language,
             @RequestPart(value = "prompt", required = false) final String prompt,
             @RequestPart(value = "responseFormat", required = false) final String responseFormat,
-            @RequestPart(value = "temperature", required = false) final Double temperature,
+            @RequestPart(value = "temperature", required = false) final String temperatureStr,
             @RequestHeader(value = "Authorization", required = false) final String authorization,
             final ServerHttpRequest httpRequest) {
+
+        // 手动转换 temperature 字符串为 Double
+        Double temperature = null;
+        if (temperatureStr != null && !temperatureStr.isEmpty()) {
+            try {
+                temperature = Double.parseDouble(temperatureStr);
+            } catch (NumberFormatException e) {
+                // 忽略无效的温度值
+            }
+        }
 
         SttDTO.Request request = new SttDTO.Request(model, file, language, prompt, responseFormat, temperature);
 

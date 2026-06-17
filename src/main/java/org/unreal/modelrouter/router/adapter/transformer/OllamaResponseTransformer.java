@@ -29,6 +29,9 @@ public class OllamaResponseTransformer {
 
             if (ollamaResponse.has("choices")) {
                 transformChatResponse(ollamaResponse, standardResponse);
+            } else if (ollamaResponse.has("embedding")) {
+                // Ollama embedding 响应格式: {"embedding": [...]}
+                transformOllamaEmbeddingResponse(ollamaResponse, standardResponse);
             } else if (ollamaResponse.has("data") && ollamaResponse.has("model")) {
                 transformEmbeddingResponse(ollamaResponse, standardResponse);
             } else if (ollamaResponse.has("results")) {
@@ -104,6 +107,34 @@ public class OllamaResponseTransformer {
         usage.put("prompt_tokens", 0);
         usage.put("total_tokens", 0);
         standardResponse.set("usage", ollamaResponse.has("usage") ? ollamaResponse.get("usage") : usage);
+    }
+
+    /**
+     * 转换Ollama embedding响应为标准OpenAI格式
+     * Ollama格式: {"embedding": [0.1, 0.2, ...]}
+     * OpenAI格式: {"data": [{"object": "embedding", "index": 0, "embedding": [...]}], "model": "xxx", "usage": {...}}
+     */
+    private void transformOllamaEmbeddingResponse(final JsonNode ollamaResponse, final ObjectNode standardResponse) {
+        standardResponse.put("object", "list");
+
+        // 构建 data 数组
+        ObjectNode embeddingData = objectMapper.createObjectNode();
+        embeddingData.put("object", "embedding");
+        embeddingData.put("index", 0);
+        embeddingData.set("embedding", ollamaResponse.get("embedding"));
+
+        standardResponse.set("data", objectMapper.createArrayNode().add(embeddingData));
+
+        // 添加 model 字段（如果有）
+        if (ollamaResponse.has("model")) {
+            standardResponse.put("model", ollamaResponse.get("model").asText());
+        }
+
+        // 添加 usage 字段
+        ObjectNode usage = objectMapper.createObjectNode();
+        usage.put("prompt_tokens", 0);
+        usage.put("total_tokens", 0);
+        standardResponse.set("usage", usage);
     }
 
     private void transformRerankResponse(final JsonNode ollamaResponse, final ObjectNode standardResponse) {

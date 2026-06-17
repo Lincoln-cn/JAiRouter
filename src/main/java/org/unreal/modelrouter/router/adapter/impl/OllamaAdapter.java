@@ -1,6 +1,8 @@
 package org.unreal.modelrouter.router.adapter.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.router.adapter.BaseAdapter;
@@ -21,6 +23,8 @@ import org.unreal.modelrouter.common.dto.TtsDTO;
  * 支持最新的Ollama API特性
  */
 public class OllamaAdapter extends BaseAdapter {
+
+    private static final Logger logger = LoggerFactory.getLogger(OllamaAdapter.class);
 
     private final OllamaRequestTransformer requestTransformer;
     private final OllamaResponseTransformer responseTransformer;
@@ -66,18 +70,30 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected Object transformResponse(final Object response, final String adapterType) {
-        if (response instanceof JsonNode) {
-            return responseTransformer.transformResponseJson((JsonNode) response);
-        } else if (response instanceof String) {
-            try {
-                JsonNode jsonNode = objectMapper.readTree((String) response);
-                return responseTransformer.transformResponseJson(jsonNode);
-            } catch (Exception e) {
+        try {
+            JsonNode jsonNode;
+            if (response instanceof JsonNode) {
+                jsonNode = (JsonNode) response;
+            } else if (response instanceof String) {
+                jsonNode = objectMapper.readTree((String) response);
+            } else if (response instanceof java.util.Map) {
+                // NonStreamingRequestProcessor 会将 JSON 解析为 Map<String, Object>
+                jsonNode = objectMapper.valueToTree(response);
+            } else {
                 return response;
             }
+
+            // 转换响应格式
+            String transformedJson = responseTransformer.transformResponseJson(jsonNode);
+
+            // 解析回 Map 以便后续处理
+            return objectMapper.readValue(transformedJson, java.util.Map.class);
+        } catch (Exception e) {
+            logger.warn("Failed to transform response for Ollama: {}", e.getMessage());
+            return response;
         }
-        return response;
     }
 
     @Override
