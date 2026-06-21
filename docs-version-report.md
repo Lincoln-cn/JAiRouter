@@ -5,10 +5,11 @@
 - 总文档数: 150
 - 近7天变更: 45
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-20 06:21:49
+- 最后扫描: 2026-06-21 06:51:39
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.49 → 1.0.50) - 2026-06-21
 - **MODIFIED**: docs-version-report.md (1.0.48 → 1.0.49) - 2026-06-20
 - **MODIFIED**: docs-version-report.md (1.0.47 → 1.0.48) - 2026-06-19
 - **MODIFIED**: docs-version-report.md (1.0.46 → 1.0.47) - 2026-06-18
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/zh/tracing/usage-guide.md (1.0.2 → 1.0.3) - 2026-06-16
 - **MODIFIED**: docs/zh/tracing/quickstart.md (1.0.2 → 1.0.3) - 2026-06-16
 - **MODIFIED**: docs/zh/tracing/operations-guide.md (1.0.2 → 1.0.3) - 2026-06-16
-- **MODIFIED**: docs/zh/tracing/index.md (1.0.2 → 1.0.3) - 2026-06-16
 
 ## 过期文档 (30天未更新)
 
@@ -513,7 +513,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.49 - 2026-06-20 (27a796a3)
+- **docs-version-report.md**: v1.0.50 - 2026-06-21 (7a9a2f1a)
 - **docs/zh/tracing/usage-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
