@@ -2,23 +2,27 @@
 
 ## 版本统计
 
-- 总文档数: 152
-- 近7天变更: 71
+- 总文档数: 150
+- 近7天变更: 45
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-15 07:21:27
+- 最后扫描: 2026-06-21 06:51:39
 
 ## 最近变更
 
-- **DELETED**: docs/CHANGELOG-v2.5.x.md (1.0.0 → ) - 2026-06-15
-- **DELETED**: docs/zh/development/tracing-full-chain-design.md (1.0.1 → ) - 2026-06-15
-- **DELETED**: docs/zh/development/architecture-refactoring.md (1.0.1 → ) - 2026-06-15
-- **DELETED**: docs/zh/development/V1.4.1-changelog.md (1.0.1 → ) - 2026-06-15
-- **DELETED**: docs/zh/development/V1.4.0-changelog.md (1.0.1 → ) - 2026-06-15
-- **DELETED**: docs/en/development/V1.4.1-changelog.md (1.0.1 → ) - 2026-06-15
-- **DELETED**: docs/zh/development/tracing-integration.md (1.0.1 → ) - 2026-06-15
-- **DELETED**: docs/en/development/tracing-integration.md (1.0.1 → ) - 2026-06-15
-- **DELETED**: docs/zh/development/performance-optimization.md (1.0.3 → ) - 2026-06-15
-- **DELETED**: docs/zh/development/deployment-testing.md (1.0.3 → ) - 2026-06-15
+- **MODIFIED**: docs-version-report.md (1.0.49 → 1.0.50) - 2026-06-21
+- **MODIFIED**: docs-version-report.md (1.0.48 → 1.0.49) - 2026-06-20
+- **MODIFIED**: docs-version-report.md (1.0.47 → 1.0.48) - 2026-06-19
+- **MODIFIED**: docs-version-report.md (1.0.46 → 1.0.47) - 2026-06-18
+- **MODIFIED**: docs-version-report.md (1.0.45 → 1.0.46) - 2026-06-17
+- **DELETED**: docs/zh/tracing/developer-guide.md (1.0.0 → ) - 2026-06-16
+- **DELETED**: docs/en/tracing/developer-guide.md (1.0.0 → ) - 2026-06-16
+- **MODIFIED**: docs/zh/tracing/usage-guide.md (1.0.2 → 1.0.3) - 2026-06-16
+- **MODIFIED**: docs/zh/tracing/quickstart.md (1.0.2 → 1.0.3) - 2026-06-16
+- **MODIFIED**: docs/zh/tracing/operations-guide.md (1.0.2 → 1.0.3) - 2026-06-16
+
+## 过期文档 (30天未更新)
+
+- QWEN.md (版本: 1.0.3, 最后更新: 2026-05-19)
 
 ## 依赖关系分析
 
@@ -368,23 +372,21 @@
   - docs/en/security/api-key-management.md
   - docs/en/security/data-sanitization.md
   - docs/en/security/jwt-authentication.md
-- **docs/en/tracing/index.md**: 依赖 5 个文档
+- **docs/en/tracing/index.md**: 依赖 4 个文档
   - docs/en/tracing/config-reference.md
-  - docs/en/tracing/developer-guide.md
   - docs/en/tracing/quickstart.md
   - docs/en/tracing/troubleshooting.md
   - docs/en/tracing/usage-guide.md
 - **docs/en/tracing/operations-guide.md**: 依赖 3 个文档
-  - docs/en/tracing/developer-guide.md
   - docs/en/tracing/performance-tuning.md
   - docs/en/tracing/troubleshooting.md
+  - docs/en/tracing/usage-guide.md
 - **docs/en/tracing/performance-tuning.md**: 依赖 3 个文档
   - docs/en/tracing/config-reference.md
   - docs/en/tracing/operations-guide.md
   - docs/en/tracing/troubleshooting.md
-- **docs/en/tracing/quickstart.md**: 依赖 5 个文档
+- **docs/en/tracing/quickstart.md**: 依赖 4 个文档
   - docs/en/tracing/config-reference.md
-  - docs/en/tracing/developer-guide.md
   - docs/en/tracing/performance-tuning.md
   - docs/en/tracing/troubleshooting.md
   - docs/en/tracing/usage-guide.md
@@ -393,10 +395,10 @@
   - docs/en/tracing/operations-guide.md
   - docs/en/tracing/performance-tuning.md
 - **docs/en/tracing/usage-guide.md**: 依赖 4 个文档
-  - docs/en/tracing/developer-guide.md
   - docs/en/tracing/operations-guide.md
   - docs/en/tracing/performance-tuning.md
   - docs/en/tracing/troubleshooting.md
+  - docs/en/tracing/usage-guide.md
 - **docs/zh/security/api-key-management.md**: 依赖 3 个文档
   - docs/zh/security/data-sanitization.md
   - docs/zh/security/jwt-authentication.md
@@ -416,23 +418,21 @@
   - docs/zh/security/api-key-management.md
   - docs/zh/security/data-sanitization.md
   - docs/zh/security/jwt-authentication.md
-- **docs/zh/tracing/index.md**: 依赖 5 个文档
+- **docs/zh/tracing/index.md**: 依赖 4 个文档
   - docs/zh/tracing/config-reference.md
-  - docs/zh/tracing/developer-guide.md
   - docs/zh/tracing/quickstart.md
   - docs/zh/tracing/troubleshooting.md
   - docs/zh/tracing/usage-guide.md
 - **docs/zh/tracing/operations-guide.md**: 依赖 3 个文档
-  - docs/zh/tracing/developer-guide.md
   - docs/zh/tracing/performance-tuning.md
   - docs/zh/tracing/troubleshooting.md
+  - docs/zh/tracing/usage-guide.md
 - **docs/zh/tracing/performance-tuning.md**: 依赖 3 个文档
   - docs/zh/tracing/config-reference.md
   - docs/zh/tracing/operations-guide.md
   - docs/zh/tracing/troubleshooting.md
-- **docs/zh/tracing/quickstart.md**: 依赖 5 个文档
+- **docs/zh/tracing/quickstart.md**: 依赖 4 个文档
   - docs/zh/tracing/config-reference.md
-  - docs/zh/tracing/developer-guide.md
   - docs/zh/tracing/performance-tuning.md
   - docs/zh/tracing/troubleshooting.md
   - docs/zh/tracing/usage-guide.md
@@ -440,8 +440,7 @@
   - docs/zh/tracing/config-reference.md
   - docs/zh/tracing/operations-guide.md
   - docs/zh/tracing/performance-tuning.md
-- **docs/zh/tracing/usage-guide.md**: 依赖 4 个文档
-  - docs/zh/tracing/developer-guide.md
+- **docs/zh/tracing/usage-guide.md**: 依赖 3 个文档
   - docs/zh/tracing/operations-guide.md
   - docs/zh/tracing/performance-tuning.md
   - docs/zh/tracing/troubleshooting.md
@@ -511,34 +510,24 @@
 - **docs/configuration-guide.md**: 依赖 2 个文档
   - docs/zh/configuration/application-config.md
   - docs/zh/configuration/dynamic-config.md
-- **docs/en/tracing/developer-guide.md**: 依赖 3 个文档
-  - docs/en/api-reference/index.md
-  - docs/en/tracing/config-reference.md
-  - docs/en/tracing/performance-tuning.md
-- **docs/zh/tracing/developer-guide.md**: 依赖 3 个文档
-  - docs/zh/api-reference/index.md
-  - docs/zh/tracing/config-reference.md
-  - docs/zh/tracing/performance-tuning.md
 
 ## 所有文档版本
 
-- **docs/zh/tracing/usage-guide.md**: v1.0.2 - 2026-06-15 (3259879e)
-- **docs/zh/tracing/quickstart.md**: v1.0.2 - 2026-06-15 (3259879e)
-- **docs/zh/tracing/operations-guide.md**: v1.0.2 - 2026-06-15 (3259879e)
-- **docs/zh/tracing/index.md**: v1.0.2 - 2026-06-15 (3fd42181)
-- **docs/zh/tracing/developer-guide.md**: v1.0.0 - 2026-06-15 (3fd42181)
+- **docs-version-report.md**: v1.0.50 - 2026-06-21 (7a9a2f1a)
+- **docs/zh/tracing/usage-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
+- **docs/zh/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
+- **docs/zh/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
+- **docs/zh/tracing/index.md**: v1.0.3 - 2026-06-16 (933eeadf)
+- **docs/en/tracing/usage-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
+- **docs/en/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
+- **docs/en/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
+- **docs/en/tracing/index.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/reference/changelog.md**: v1.0.5 - 2026-06-15 (0f56b957)
 - **docs/zh/development/index.md**: v1.0.5 - 2026-06-15 (3fd42181)
 - **docs/zh/development/architecture.md**: v1.0.4 - 2026-06-15 (3fd42181)
-- **docs/en/tracing/usage-guide.md**: v1.0.2 - 2026-06-15 (3259879e)
-- **docs/en/tracing/quickstart.md**: v1.0.2 - 2026-06-15 (3259879e)
-- **docs/en/tracing/operations-guide.md**: v1.0.2 - 2026-06-15 (3259879e)
-- **docs/en/tracing/index.md**: v1.0.2 - 2026-06-15 (3259879e)
-- **docs/en/tracing/developer-guide.md**: v1.0.0 - 2026-06-15 (3fd42181)
 - **docs/en/reference/changelog.md**: v1.0.5 - 2026-06-15 (e511f33c)
 - **docs/en/development/index.md**: v1.0.4 - 2026-06-15 (3fd42181)
 - **docs/en/development/architecture.md**: v1.0.3 - 2026-06-15 (3fd42181)
-- **docs-version-report.md**: v1.0.44 - 2026-06-15 (21220b8e)
 - **docs/en/security/blacklist-management.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/reference/adapter-updates.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/monitoring/alert_rules_guide.md**: v1.0.1 - 2026-06-11 (a9e349a6)
