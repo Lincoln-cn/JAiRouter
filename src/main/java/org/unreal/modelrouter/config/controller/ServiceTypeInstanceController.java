@@ -19,8 +19,11 @@ import org.unreal.modelrouter.config.dto.CreateServiceInstanceRequest;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.config.core.ServiceInstanceManager;
+import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
+import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 按服务类型获取实例配置的控制器
@@ -34,6 +37,7 @@ public class ServiceTypeInstanceController {
 
     private final ServiceConfigRepository serviceConfigRepository;
     private final ServiceInstanceManager serviceInstanceManager;
+    private final CircuitBreakerManager circuitBreakerManager;
 
     /**
      * 获取指定服务类型的所有实例配置
@@ -200,5 +204,63 @@ public class ServiceTypeInstanceController {
 
         InstanceCircuitBreakerDTO saved = serviceInstanceManager.saveCircuitBreakerConfig(instanceId, config);
         return ResponseEntity.ok(RouterResponse.success(saved, "熔断器配置保存成功"));
+    }
+
+    /**
+     * 重置实例的内存熔断器状态
+     * 当实例熔断器配置禁用时，可以通过此 API 清除内存中的熔断器状态
+     */
+    @PostMapping("/{serviceType}/{instanceId}/circuit-breaker/reset")
+    public ResponseEntity<RouterResponse<Object>> resetCircuitBreakerState(
+            @PathVariable final String serviceType,
+            @PathVariable final Long instanceId) {
+        log.info("Resetting circuit breaker state for instance: {}", instanceId);
+
+        // 获取实例信息以获取 baseUrl
+        serviceInstanceManager.getInstance(instanceId).ifPresent(instance -> {
+            String instanceUrl = instance.getBaseUrl();
+            circuitBreakerManager.resetCircuitBreaker(String.valueOf(instanceId), instanceUrl);
+            log.info("Circuit breaker reset for instance: {} (url: {})", instanceId, instanceUrl);
+        });
+
+        return ResponseEntity.ok(RouterResponse.success(null, "熔断器状态已重置"));
+    }
+
+    /**
+     * 清除所有实例的内存熔断器状态
+     */
+    @PostMapping("/circuit-breaker/clear-all")
+    public ResponseEntity<RouterResponse<Object>> clearAllCircuitBreakers() {
+        log.info("Clearing all circuit breakers");
+        circuitBreakerManager.clearAllCircuitBreakers();
+        return ResponseEntity.ok(RouterResponse.success(null, "所有熔断器状态已清除"));
+    }
+
+    /**
+     * 获取所有实例的熔断器状态
+     */
+    @GetMapping("/circuit-breaker/states")
+    public ResponseEntity<RouterResponse<Map<String, String>>> getAllCircuitBreakerStates() {
+        Map<String, CircuitBreaker.State> states = circuitBreakerManager.getAllCircuitBreakerStates();
+        Map<String, String> result = new java.util.LinkedHashMap<>();
+        states.forEach((key, state) -> result.put(key, state.name()));
+        return ResponseEntity.ok(RouterResponse.success(result));
+    }
+
+    /**
+     * 重置指定实例的熔断器（通过 instanceId）
+     */
+    @PostMapping("/circuit-breaker/reset")
+    public ResponseEntity<RouterResponse<Object>> resetCircuitBreakerById(
+            @RequestBody final Map<String, String> request) {
+        String instanceId = request.get("instanceId");
+        if (instanceId == null || instanceId.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(RouterResponse.error("instanceId 不能为空"));
+        }
+        
+        log.info("Resetting circuit breaker for instance: {}", instanceId);
+        circuitBreakerManager.resetCircuitBreaker(instanceId, null);
+        return ResponseEntity.ok(RouterResponse.success(null, "熔断器已重置"));
     }
 }

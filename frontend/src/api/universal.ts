@@ -64,10 +64,15 @@ class UniversalApiClient {
           // 处理文件上传（multipart/form-data）
           const formData = new FormData()
 
-          // 添加文件
-          apiRequest.files.forEach((file, index) => {
-            formData.append(`file${index}`, file)
-          })
+          // 添加文件 - 使用 'file' 作为字段名（匹配后端 @RequestPart("file")）
+          if (apiRequest.files.length === 1) {
+            formData.append('file', apiRequest.files[0])
+          } else {
+            // 多文件场景使用索引
+            apiRequest.files.forEach((file, index) => {
+              formData.append(`file${index}`, file)
+            })
+          }
 
           // 添加其他字段
           Object.entries(apiRequest.body).forEach(([key, value]) => {

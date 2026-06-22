@@ -159,7 +159,8 @@ public class OllamaRequestTransformer {
                 builder.part("response_format", request.responseFormat());
             }
             if (request.temperature() != null) {
-                builder.part("temperature", request.temperature());
+                // 关键：temperature 必须转为字符串，否则 Content-Type 会是 application/octet-stream
+                builder.part("temperature", request.temperature().toString());
             }
 
             return builder.build();

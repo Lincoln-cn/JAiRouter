@@ -214,7 +214,7 @@
           <div class="result-stats">
             <div class="stat-item">
               <span class="stat-label">向量数量</span>
-              <span class="stat-value">{{ result.data?.length || 0 }}</span>
+              <span class="stat-value">{{ embeddingData?.length || 0 }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-label">向量维度</span>
@@ -226,28 +226,28 @@
             </div>
           </div>
 
-          <!-- 向量列表 -->
+          <!-- 向量列表 - 直接展示，不使用折叠 -->
           <div class="vector-list">
-            <el-collapse accordion>
-              <el-collapse-item
-                v-for="(embedding, idx) in result.data"
-                :key="idx"
-                :title="`向量 ${idx + 1}`"
-              >
-                <div class="vector-preview">
-                  <div class="vector-text">
-                    {{ formatVectorPreview(embedding.embedding) }}
-                  </div>
-                  <el-button
-                    text
-                    size="small"
-                    @click="copyVector(embedding.embedding)"
-                  >
-                    复制完整向量
-                  </el-button>
-                </div>
-              </el-collapse-item>
-            </el-collapse>
+            <div
+              v-for="(item, idx) in embeddingData"
+              :key="idx"
+              class="vector-item"
+            >
+              <div class="vector-header">
+                <span class="vector-index">向量 {{ idx + 1 }}</span>
+                <el-button
+                  text
+                  size="small"
+                  @click="copyVector(item.embedding)"
+                >
+                  <el-icon><DocumentCopy /></el-icon>
+                  复制
+                </el-button>
+              </div>
+              <div class="vector-value">
+                {{ formatVectorCompact(item.embedding) }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -272,6 +272,7 @@ import { ElMessage } from 'element-plus'
 import { usePlaygroundData } from '@/composables/usePlaygroundData'
 import { sendServiceRequest } from '@/api/playground'
 import type { EmbeddingRequestConfig, PlaygroundResponse } from '../../types/playground'
+import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
 
 // 状态
 const showConfig = ref(false)
@@ -297,10 +298,16 @@ const hasValidInput = computed(() => {
   return inputTexts.value.some((text) => text.trim().length > 0)
 })
 
+// 提取向量数据（处理嵌套的响应结构）
+const embeddingData = computed(() => {
+  if (!result.value?.data?.data?.data) return []
+  return result.value.data.data.data
+})
+
 // 向量维度
 const vectorDimension = computed(() => {
-  if (result.value?.data?.[0]?.embedding) {
-    return result.value.data[0].embedding.length
+  if (embeddingData.value?.[0]?.embedding) {
+    return embeddingData.value[0].embedding.length
   }
   return config.value.dimensions || '未知'
 })
@@ -348,20 +355,44 @@ const handleGenerate = async () => {
 
     const response = await sendServiceRequest('embedding', requestConfig, headers)
     result.value = response
-    ElMessage.success(`成功生成 ${response.data?.data?.length || 0} 个向量`)
+    const count = response.data?.data?.data?.length || 0
+    ElMessage.success(`成功生成 ${count} 个向量`)
   } catch (error: any) {
-    const errorMsg = error.data?.error?.message || '生成向量失败'
-    ElMessage.error(errorMsg)
+    const errorMsg = parseErrorMessage(error, '向量生成')
+    const suggestion = getErrorSuggestion(error)
+
+    if (suggestion) {
+      ElMessage({
+        type: 'error',
+        message: `${errorMsg}\n\n💡 建议: ${suggestion}`,
+        duration: 6000,
+        showClose: true
+      })
+    } else {
+      ElMessage.error(errorMsg)
+    }
   } finally {
     isLoading.value = false
   }
 }
 
-// 格式化向量预览
-const formatVectorPreview = (embedding: number[]) => {
+// 格式化向量 - 压缩展示（显示前后各3个值，中间省略）
+const formatVectorCompact = (embedding: number[]) => {
   if (!embedding || embedding.length === 0) return '[]'
-  const preview = embedding.slice(0, 10).map((v) => v.toFixed(4))
-  return `[${preview.join(', ')}, ...共 ${embedding.length} 维]`
+
+  const len = embedding.length
+
+  // 小于等于8维，直接显示全部
+  if (len <= 8) {
+    const values = embedding.map((v) => v.toFixed(4))
+    return `[${values.join(', ')}]`
+  }
+
+  // 大于8维，压缩显示：前3个 + 省略号 + 后3个
+  const first3 = embedding.slice(0, 3).map((v) => v.toFixed(4))
+  const last3 = embedding.slice(-3).map((v) => v.toFixed(4))
+
+  return `[${first3.join(', ')}, ..., ${last3.join(', ')}]  (${len}维)`
 }
 
 // 复制向量
@@ -556,17 +587,41 @@ defineExpose({
   color: #303133;
 }
 
-.vector-preview {
+.vector-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.vector-text {
-  font-family: monospace;
+.vector-item {
+  padding: 12px;
+  background-color: #f5f7fa;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+}
+
+.vector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vector-index {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.vector-value {
+  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
   font-size: 12px;
   color: #606266;
+  line-height: 1.6;
   word-break: break-all;
+  background-color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
 }
 /* 健康状态指示器样式 */
 .instance-option {

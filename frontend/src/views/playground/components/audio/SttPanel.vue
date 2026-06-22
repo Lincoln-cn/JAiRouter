@@ -263,6 +263,7 @@ import { Setting, Headset, UploadFilled, Document, DocumentCopy, Delete, Loading
 import { ElMessage } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
 import type { SttRequestConfig, PlaygroundResponse } from '../../types/playground'
+import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
 
 interface Props {
   instances: any[]
@@ -328,8 +329,19 @@ const handleTranscribe = async () => {
     result.value = response
     ElMessage.success('识别完成')
   } catch (error: any) {
-    const errorMsg = error.data?.error?.message || '识别失败'
-    ElMessage.error(errorMsg)
+    const errorMsg = parseErrorMessage(error, '语音识别')
+    const suggestion = getErrorSuggestion(error)
+
+    if (suggestion) {
+      ElMessage({
+        type: 'error',
+        message: `${errorMsg}\n\n💡 建议: ${suggestion}`,
+        duration: 6000,
+        showClose: true
+      })
+    } else {
+      ElMessage.error(errorMsg)
+    }
   } finally {
     isLoading.value = false
   }

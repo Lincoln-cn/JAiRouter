@@ -206,10 +206,9 @@ public class ModelRouterProperties {
         }
         
         public String getInstanceId() {
-            // 如果instanceId为空，则生成一个新的UUID
-            if (instanceId == null || instanceId.isEmpty()) {
-                instanceId = SecurityUtils.generateId();
-            }
+            // v2.x: 直接返回 instanceId，不再动态生成
+            // 动态生成会导致每次重启应用熔断器 key 不一致
+            // 如果 instanceId 为空，调用方应使用 baseUrl 或其他唯一标识
             return instanceId;
         }
         

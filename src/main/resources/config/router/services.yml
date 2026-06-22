@@ -3,6 +3,7 @@
 # ========================================
 # 此文件包含各模型服务实例的详细配置
 # 位置：org.unreal.modelrouter.router.model
+# v2.x: 添加 instance-id 字段用于实例唯一标识
 
 model:
   services:
@@ -21,18 +22,13 @@ model:
         scope: "service"
         client-ip-enable: true
       instances:
-        - name: "qwen3:4b"
-          base-url: "http://172.16.30.6:9090"
+        - name: "qwen2.5:1.5b"
+          instance-id: "c09eb43b-5084-48bb-8fc8-3e5ab2505c31"
+          base-url: "http://172.16.30.6:12434"
           path: "/v1/chat/completions"
+          adapter: "ollama"
           weight: 1
-          headers:
-            Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
-          rate-limit:
-            enabled: true
-            algorithm: "token-bucket"
-            capacity: 50
-            rate: 5
-            scope: "instance"
+          headers: {}
 
     # ========================
     # 嵌入服务 (embedding)
@@ -54,13 +50,22 @@ model:
         successThreshold: 3
       instances:
         - name: "nomic-embed-text-v1.5"
+          instance-id: "77ce6597-a2d8-47f9-991e-331f05b036ea"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/embeddings"
           weight: 1
           headers:
             Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
+        - name: "shaw/dmeta-embedding-zh:latest"
+          instance-id: "aa75c8f0-f364-4eb8-8552-ebea390d7774"
+          base-url: "http://172.16.30.6:12434/"
+          path: "/api/embeddings"
+          adapter: "ollama"
+          weight: 1
+          headers: {}
         - name: "bge-large-zh-v1.5"
-          base-url: "http://172.16.30.6:9090"
+          instance-id: "418a9207-45aa-4607-8ebc-2de50b909015"
+          base-url: "http://172.16.30.6:9090/"
           path: "/v1/embeddings"
           weight: 1
           headers:
@@ -87,6 +92,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "bge-reranker-v2-m3"
+          instance-id: "f239e248-f6cb-4738-820e-f5428fa59e9a"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/rerank"
           weight: 2
@@ -108,6 +114,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "cosyvoice-300m"
+          instance-id: "bf463e1b-c18a-4f19-847a-6054f21aeb3c"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/speech"
           weight: 1
@@ -129,6 +136,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "faster-whisper-tiny"
+          instance-id: "fe0d9d76-9eaf-4776-8d46-8fca38e6ec29"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
           weight: 1
@@ -150,6 +158,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "stable-diffusion-2-1"
+          instance-id: "317c09eb-aa36-41b1-912b-4925411d01b9"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/images/generations"
           weight: 1
@@ -171,6 +180,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "stable-diffusion-2-1"
+          instance-id: "ca43a926-0b63-4b2e-b89e-cc226073f31b"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/images/edits"
           weight: 1

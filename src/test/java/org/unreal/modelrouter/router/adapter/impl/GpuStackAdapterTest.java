@@ -477,4 +477,108 @@ class GpuStackAdapterTest {
             assertSame(unknownRequest, result);
         }
     }
+
+    // ========== GPUStack 错误响应解析测试 ==========
+
+    @Nested
+    @DisplayName("GPUStack 错误响应解析测试")
+    class GpuStackErrorResponseTests {
+
+        @Test
+        @DisplayName("检测 GPUStack 错误格式 - status_code 500")
+        void shouldDetectGpuStackError500() {
+            String errorResponse = "{\"status_code\": 500, \"detail\": \"Failed to generate speech, Voice alloy not supported\", \"headers\": null}";
+
+            org.unreal.modelrouter.common.exception.DownstreamServiceException exception =
+                assertThrows(
+                    org.unreal.modelrouter.common.exception.DownstreamServiceException.class,
+                    () -> adapter.transformResponsePublic(errorResponse, "gpustack")
+                );
+
+            assertTrue(exception.getMessage().contains("模型不支持该配置"));
+            assertTrue(exception.getMessage().contains("Voice alloy not supported"));
+            assertEquals(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, exception.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("检测 GPUStack 错误格式 - status_code 401")
+        void shouldDetectGpuStackError401() {
+            String errorResponse = "{\"status_code\": 401, \"detail\": \"authentication failed\", \"headers\": null}";
+
+            org.unreal.modelrouter.common.exception.DownstreamServiceException exception =
+                assertThrows(
+                    org.unreal.modelrouter.common.exception.DownstreamServiceException.class,
+                    () -> adapter.transformResponsePublic(errorResponse, "gpustack")
+                );
+
+            assertTrue(exception.getMessage().contains("认证失败"));
+            assertEquals(org.springframework.http.HttpStatus.UNAUTHORIZED, exception.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("检测 GPUStack 错误格式 - 模型不存在")
+        void shouldDetectModelNotFoundError() {
+            String errorResponse = "{\"status_code\": 404, \"detail\": \"model not found: llama-3\", \"headers\": null}";
+
+            org.unreal.modelrouter.common.exception.DownstreamServiceException exception =
+                assertThrows(
+                    org.unreal.modelrouter.common.exception.DownstreamServiceException.class,
+                    () -> adapter.transformResponsePublic(errorResponse, "gpustack")
+                );
+
+            assertTrue(exception.getMessage().contains("模型不存在"));
+            assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, exception.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("检测 GPUStack 错误格式 - 超时错误")
+        void shouldDetectTimeoutError() {
+            String errorResponse = "{\"status_code\": 504, \"detail\": \"request timeout\", \"headers\": null}";
+
+            org.unreal.modelrouter.common.exception.DownstreamServiceException exception =
+                assertThrows(
+                    org.unreal.modelrouter.common.exception.DownstreamServiceException.class,
+                    () -> adapter.transformResponsePublic(errorResponse, "gpustack")
+                );
+
+            assertTrue(exception.getMessage().contains("超时"));
+            assertEquals(org.springframework.http.HttpStatus.GATEWAY_TIMEOUT, exception.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("正常响应不抛出异常")
+        void shouldNotThrowForNormalResponse() {
+            String normalResponse = "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"Hello\"}}],\"model\":\"llama-3\"}";
+
+            Object result = adapter.transformResponsePublic(normalResponse, "gpustack");
+            assertNotNull(result);
+        }
+
+        @Test
+        @DisplayName("非 JSON 响应直接返回")
+        void shouldReturnNonJsonAsIs() {
+            String nonJsonResponse = "plain text response";
+
+            Object result = adapter.transformResponsePublic(nonJsonResponse, "gpustack");
+            assertEquals(nonJsonResponse, result);
+        }
+
+        @Test
+        @DisplayName("嵌入响应正常处理")
+        void shouldProcessEmbeddingResponse() {
+            String embeddingResponse = "{\"data\":[{\"embedding\":[0.1,0.2,0.3],\"index\":0}],\"model\":\"text-embedding\"}";
+
+            Object result = adapter.transformResponsePublic(embeddingResponse, "gpustack");
+            assertNotNull(result);
+        }
+
+        @Test
+        @DisplayName("重排序响应正常处理")
+        void shouldProcessRerankResponse() {
+            String rerankResponse = "{\"results\":[{\"index\":0,\"relevance_score\":0.95}],\"model\":\"rerank-model\"}";
+
+            Object result = adapter.transformResponsePublic(rerankResponse, "gpustack");
+            assertNotNull(result);
+        }
+    }
 }

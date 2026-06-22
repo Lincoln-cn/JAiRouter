@@ -2,6 +2,20 @@
 -- 配置管理表结构（完全关系型）
 -- ========================================
 
+-- 配置数据表 - 存储配置的简化版本（用于 ConfigEntity）
+CREATE TABLE IF NOT EXISTS config_data (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(255) NOT NULL,
+    config_value TEXT NOT NULL,
+    version INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_latest BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_config_data_key ON config_data(config_key);
+CREATE INDEX IF NOT EXISTS idx_config_data_latest ON config_data(config_key, is_latest);
+
 -- 配置主表 - 存储配置的整体元信息和版本控制
 CREATE TABLE IF NOT EXISTS config_main (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -241,8 +255,30 @@ CREATE INDEX IF NOT EXISTS "idx_blacklist_user_id" ON "jwt_blacklist"("user_id")
 CREATE INDEX IF NOT EXISTS "idx_blacklist_expires_at" ON "jwt_blacklist"("expires_at");
 CREATE INDEX IF NOT EXISTS "idx_blacklist_revoked_at" ON "jwt_blacklist"("revoked_at");
 
--- 注: security_blacklist表由JPA Hibernate自动管理 (ddl-auto: update)
--- Entity: org.unreal.modelrouter.jpa.entity.SecurityBlacklistEntity
+-- 统一安全黑名单表
+CREATE TABLE IF NOT EXISTS "security_blacklist" (
+    "id" BIGINT AUTO_INCREMENT PRIMARY KEY,
+    "blacklist_type" VARCHAR(20) NOT NULL,
+    "target_value" VARCHAR(500) NOT NULL,
+    "target_hash" VARCHAR(255),
+    "user_id" VARCHAR(255),
+    "reason" VARCHAR(1000),
+    "risk_level" VARCHAR(20),
+    "added_by" VARCHAR(255),
+    "added_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "expires_at" TIMESTAMP NULL,
+    "status" VARCHAR(20) NOT NULL,
+    "source" VARCHAR(50),
+    "metadata" VARCHAR(2000),
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY "uk_blacklist_type_value" ("blacklist_type", "target_value")
+);
+
+CREATE INDEX IF NOT EXISTS "idx_security_blacklist_type" ON "security_blacklist"("blacklist_type");
+CREATE INDEX IF NOT EXISTS "idx_security_blacklist_target_hash" ON "security_blacklist"("target_hash");
+CREATE INDEX IF NOT EXISTS "idx_security_blacklist_status" ON "security_blacklist"("status");
+CREATE INDEX IF NOT EXISTS "idx_security_blacklist_expires_at" ON "security_blacklist"("expires_at");
 
 -- ========================================
 -- 异常管理表结构（v1.9.1 新增）

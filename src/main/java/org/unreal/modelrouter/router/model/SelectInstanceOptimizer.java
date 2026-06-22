@@ -103,9 +103,20 @@ public class SelectInstanceOptimizer {
 
     /**
      * 创建熔断检查过滤器
+     * 
+     * 如果实例的熔断器配置显式禁用 (enabled=false)，则跳过熔断检查
      */
     private Predicate<ModelInstance> createCircuitBreakerFilter() {
         return instance -> {
+            // 检查实例是否配置了禁用熔断器
+            ModelRouterProperties.CircuitBreakerConfig cbConfig = instance.getCircuitBreaker();
+            if (cbConfig != null && Boolean.FALSE.equals(cbConfig.getEnabled())) {
+                // 熔断器已禁用，跳过检查
+                LOGGER.trace("Instance {} has circuit breaker disabled, skipping check", instance.getInstanceId());
+                return true;
+            }
+            
+            // 执行熔断器检查
             boolean canExecute = circuitBreakerManager.canExecute(
                     instance.getInstanceId(), instance.getBaseUrl());
             if (!canExecute) {

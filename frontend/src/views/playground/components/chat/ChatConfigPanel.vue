@@ -6,7 +6,7 @@
         <div class="config-item">
           <label class="config-label">流式响应</label>
           <el-switch
-            v-model="config.stream"
+            v-model="stream"
             :disabled="disabled"
           />
         </div>
@@ -18,7 +18,7 @@
           <label class="config-label">Temperature</label>
           <div class="config-control">
             <el-slider
-              v-model="config.temperature"
+              v-model="temperature"
               :min="0"
               :max="2"
               :step="0.1"
@@ -36,7 +36,7 @@
         <div class="config-item">
           <label class="config-label">Max Tokens</label>
           <el-input-number
-            v-model="config.maxTokens"
+            v-model="maxTokens"
             :min="1"
             :max="32000"
             :step="256"
@@ -53,7 +53,7 @@
           <label class="config-label">Top P</label>
           <div class="config-control">
             <el-slider
-              v-model="config.topP"
+              v-model="topP"
               :min="0"
               :max="1"
               :step="0.1"
@@ -77,7 +77,7 @@
           <label class="config-label">Frequency Penalty</label>
           <div class="config-control">
             <el-slider
-              v-model="config.frequencyPenalty"
+              v-model="frequencyPenalty"
               :min="-2"
               :max="2"
               :step="0.1"
@@ -96,7 +96,7 @@
           <label class="config-label">Presence Penalty</label>
           <div class="config-control">
             <el-slider
-              v-model="config.presencePenalty"
+              v-model="presencePenalty"
               :min="-2"
               :max="2"
               :step="0.1"
@@ -114,7 +114,7 @@
         <div class="config-item">
           <label class="config-label">停止词</label>
           <el-select
-            v-model="config.stop"
+            v-model="stop"
             :disabled="disabled"
             multiple
             filterable
@@ -131,7 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed } from 'vue'
 import type { ChatRequestConfig } from '../../types/playground'
 
 interface Props {
@@ -156,41 +156,42 @@ const emit = defineEmits<{
   'update:modelValue': [config: Partial<ChatRequestConfig>]
 }>()
 
-const config = ref({
-  stream: props.modelValue.stream ?? true,
-  temperature: props.modelValue.temperature ?? 0.7,
-  maxTokens: props.modelValue.maxTokens ?? 4096,
-  topP: props.modelValue.topP ?? 1,
-  frequencyPenalty: props.modelValue.frequencyPenalty ?? 0,
-  presencePenalty: props.modelValue.presencePenalty ?? 0,
-  stop: props.modelValue.stop ?? []
+// 为每个属性创建独立的 computed getter/setter
+// 这样 v-model 绑定才能正确触发更新
+const stream = computed({
+  get: () => props.modelValue.stream ?? true,
+  set: (val) => emit('update:modelValue', { ...props.modelValue, stream: val })
 })
 
-// 监听配置变化
-watch(
-  config,
-  (val) => {
-    emit('update:modelValue', { ...val })
-  },
-  { deep: true }
-)
+const temperature = computed({
+  get: () => props.modelValue.temperature ?? 0.7,
+  set: (val) => emit('update:modelValue', { ...props.modelValue, temperature: val })
+})
 
-// 监听外部值变化
-watch(
-  () => props.modelValue,
-  (val) => {
-    config.value = {
-      stream: val.stream ?? true,
-      temperature: val.temperature ?? 0.7,
-      maxTokens: val.maxTokens ?? 4096,
-      topP: val.topP ?? 1,
-      frequencyPenalty: val.frequencyPenalty ?? 0,
-      presencePenalty: val.presencePenalty ?? 0,
-      stop: val.stop ?? []
-    }
-  },
-  { deep: true }
-)
+const maxTokens = computed({
+  get: () => props.modelValue.maxTokens ?? 4096,
+  set: (val) => emit('update:modelValue', { ...props.modelValue, maxTokens: val })
+})
+
+const topP = computed({
+  get: () => props.modelValue.topP ?? 1,
+  set: (val) => emit('update:modelValue', { ...props.modelValue, topP: val })
+})
+
+const frequencyPenalty = computed({
+  get: () => props.modelValue.frequencyPenalty ?? 0,
+  set: (val) => emit('update:modelValue', { ...props.modelValue, frequencyPenalty: val })
+})
+
+const presencePenalty = computed({
+  get: () => props.modelValue.presencePenalty ?? 0,
+  set: (val) => emit('update:modelValue', { ...props.modelValue, presencePenalty: val })
+})
+
+const stop = computed({
+  get: () => props.modelValue.stop ?? [],
+  set: (val) => emit('update:modelValue', { ...props.modelValue, stop: val })
+})
 </script>
 
 <style scoped>

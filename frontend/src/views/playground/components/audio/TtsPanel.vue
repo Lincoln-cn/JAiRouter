@@ -68,31 +68,67 @@
               <el-select
                 v-model="config.voice"
                 size="small"
+                filterable
+                allow-create
+                default-first-option
+                placeholder="选择或输入语音"
               >
-                <el-option
-                  label="alloy"
-                  value="alloy"
-                />
-                <el-option
-                  label="echo"
-                  value="echo"
-                />
-                <el-option
-                  label="fable"
-                  value="fable"
-                />
-                <el-option
-                  label="onyx"
-                  value="onyx"
-                />
-                <el-option
-                  label="nova"
-                  value="nova"
-                />
-                <el-option
-                  label="shimmer"
-                  value="shimmer"
-                />
+                <el-option-group label="OpenAI 标准">
+                  <el-option
+                    label="alloy"
+                    value="alloy"
+                  />
+                  <el-option
+                    label="echo"
+                    value="echo"
+                  />
+                  <el-option
+                    label="fable"
+                    value="fable"
+                  />
+                  <el-option
+                    label="onyx"
+                    value="onyx"
+                  />
+                  <el-option
+                    label="nova"
+                    value="nova"
+                  />
+                  <el-option
+                    label="shimmer"
+                    value="shimmer"
+                  />
+                </el-option-group>
+                <el-option-group label="CosyVoice 多语言">
+                  <el-option
+                    label="Chinese Female (中文女声)"
+                    value="Chinese Female"
+                  />
+                  <el-option
+                    label="Chinese Male (中文男声)"
+                    value="Chinese Male"
+                  />
+                  <el-option
+                    label="Japanese Male (日语男声)"
+                    value="Japanese Male"
+                  />
+                  <el-option
+                    label="Cantonese Female (粤语女声)"
+                    value="Cantonese Female"
+                  />
+                  <el-option
+                    label="English Female (英语女声)"
+                    value="English Female"
+                  />
+                  <el-option
+                    label="English Male (英语男声)"
+                    value="English Male"
+                  />
+                  <el-option
+                    label="Korean Female (韩语女声)"
+                    value="Korean Female"
+                  />
+                </el-option-group>
               </el-select>
             </div>
           </el-col>
@@ -246,6 +282,7 @@ import { Setting, Microphone, Download, Delete, Loading, Cpu } from '@element-pl
 import { ElMessage } from 'element-plus'
 import { sendServiceRequest } from '@/api/playground'
 import type { TtsRequestConfig } from '../../types/playground'
+import { parseErrorMessage, getErrorSuggestion } from '../../utils/errorHandler'
 
 interface Props {
   instances: any[]
@@ -300,8 +337,19 @@ const handleGenerate = async () => {
 
     ElMessage.success('语音生成成功')
   } catch (error: any) {
-    const errorMsg = error.data?.error?.message || '生成语音失败'
-    ElMessage.error(errorMsg)
+    const errorMsg = parseErrorMessage(error, '语音生成')
+    const suggestion = getErrorSuggestion(error)
+
+    if (suggestion) {
+      ElMessage({
+        type: 'error',
+        message: `${errorMsg}\n\n💡 建议: ${suggestion}`,
+        duration: 6000,
+        showClose: true
+      })
+    } else {
+      ElMessage.error(errorMsg)
+    }
   } finally {
     isLoading.value = false
   }

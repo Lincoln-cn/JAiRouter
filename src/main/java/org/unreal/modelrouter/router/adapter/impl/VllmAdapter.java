@@ -414,7 +414,8 @@ public class VllmAdapter extends BaseAdapter {
                 builder.part("response_format", sttRequest.responseFormat());
             }
             if (sttRequest.temperature() != null) {
-                builder.part("temperature", sttRequest.temperature());
+                // 关键：temperature 必须转为字符串，否则 Content-Type 会是 application/octet-stream
+                builder.part("temperature", sttRequest.temperature().toString());
             }
 
             return builder.build();

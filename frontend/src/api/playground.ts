@@ -100,7 +100,8 @@ export const sendPlaygroundRequest = async (request: PlaygroundRequest): Promise
     const config: AxiosRequestConfig = {
       url: request.endpoint,
       method: request.method,
-      headers: request.headers
+      headers: request.headers,
+      responseType: request.responseType || 'json'
     }
     
     // 处理文件上传
@@ -200,7 +201,8 @@ export const sendServiceRequest = async (
     endpoint: endpoint.path,
     method: endpoint.method,
     headers,
-    body: apiBody
+    body: apiBody,
+    responseType: endpoint.responseType
   }
   
   // 处理文件上传类型的请求

@@ -171,9 +171,10 @@ export const usePlaygroundData = (playgroundServiceType: string) => {
   }
 
   // 初始化数据（静默加载，不显示消息）
+  // v2.10.1: 强制刷新数据以获取最新的健康状态
   const initializeData = async () => {
     console.log(`[${playgroundServiceType}] 开始初始化数据...`)
-    
+
     // 确保在初始化时显示加载状态
     if (availableInstances.value.length === 0) {
       instancesLoading.value = true
@@ -181,9 +182,10 @@ export const usePlaygroundData = (playgroundServiceType: string) => {
     if (availableModels.value.length === 0) {
       modelsLoading.value = true
     }
-    
+
     try {
-      const result = await fetchData(false, false)
+      // v2.10.1: 使用 forceRefresh=true 获取最新的健康状态
+      const result = await fetchData(true, false)
       console.log(`[${playgroundServiceType}] 数据初始化完成:`, {
         instances: result.instances.length,
         models: result.models.length,

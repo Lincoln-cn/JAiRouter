@@ -45,6 +45,7 @@ public class ExcludedPathsConfig {
             "/webjars/",
             "/api/auth/jwt/login",
             "/api/auth/jwt/validate",
+            "/api/health-status/",  // SSE健康状态推送端点
             "/favicon.ico",
             "/.well-known"
         );
@@ -52,7 +53,8 @@ public class ExcludedPathsConfig {
         // 认证排除路径模式
         AUTH_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
-            "/admin/**"
+            "/admin/**",
+            "/api/health-status/**"  // SSE健康状态推送端点
         );
         
         // 数据脱敏排除路径
@@ -69,12 +71,13 @@ public class ExcludedPathsConfig {
             "/js/",
             "/images/",
             // 排除AI模型接口路径的数据脱敏（但仍需要认证！）
-            "/v1/chat/",
-            "/v1/embeddings",
-            "/v1/rerank",
-            "/v1/audio/",
-            "/v1/images/",
-            "/v1/debug/",
+            // 注意：实际请求路径是 /api/v1/xxx，不是 /v1/xxx
+            "/api/v1/chat/",
+            "/api/v1/embeddings",
+            "/api/v1/rerank",
+            "/api/v1/audio/",
+            "/api/v1/images/",
+            "/api/v1/debug/",
             "/admin",
             // 排除认证端点
             "/api/auth/jwt/login",

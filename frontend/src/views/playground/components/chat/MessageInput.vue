@@ -70,6 +70,10 @@ const handleKeyDown = (event: Event | KeyboardEvent) => {
   const kbEvent = event as KeyboardEvent
   if (kbEvent.key === 'Enter' && !kbEvent.shiftKey) {
     kbEvent.preventDefault()
+    // 必须检查 disabled 和 loading 状态，否则会在禁用状态下仍然发送
+    if (props.disabled || props.loading || !inputContent.value.trim()) {
+      return
+    }
     handleSend()
   }
 }

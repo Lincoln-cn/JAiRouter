@@ -1,10 +1,12 @@
 package org.unreal.modelrouter.router.adapter.support;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
 import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
+import org.unreal.modelrouter.router.adapter.processor.StreamingRequestProcessor;
 import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
@@ -25,6 +27,7 @@ public class RequestProcessingSupport {
     private final HttpRequestProcessor httpRequestProcessor;
     private final ResponseMapper responseMapper;
     private final NonStreamingRequestProcessor nonStreamingProcessor;
+    private final StreamingRequestProcessor streamingProcessor;
 
     public RequestProcessingSupport(final RequestBuilder requestBuilder,
                                     final ResponseHandler responseHandler,
@@ -32,7 +35,8 @@ public class RequestProcessingSupport {
                                     final ResponseTransformer responseTransformer,
                                     final HttpRequestProcessor httpRequestProcessor,
                                     final ResponseMapper responseMapper,
-                                    final NonStreamingRequestProcessor nonStreamingProcessor) {
+                                    final NonStreamingRequestProcessor nonStreamingProcessor,
+                                    @Autowired(required = false) final StreamingRequestProcessor streamingProcessor) {
         this.requestBuilder = requestBuilder;
         this.responseHandler = responseHandler;
         this.instanceSelector = instanceSelector;
@@ -40,6 +44,7 @@ public class RequestProcessingSupport {
         this.httpRequestProcessor = httpRequestProcessor;
         this.responseMapper = responseMapper;
         this.nonStreamingProcessor = nonStreamingProcessor;
+        this.streamingProcessor = streamingProcessor;
     }
 
     public RequestBuilder getRequestBuilder() {
@@ -68,5 +73,9 @@ public class RequestProcessingSupport {
 
     public NonStreamingRequestProcessor getNonStreamingProcessor() {
         return nonStreamingProcessor;
+    }
+
+    public StreamingRequestProcessor getStreamingProcessor() {
+        return streamingProcessor;
     }
 }

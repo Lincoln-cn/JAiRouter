@@ -58,8 +58,6 @@ public abstract class BaseAdapter implements ServiceCapability {
     protected final ObjectMapper objectMapper;
     private final Logger logger = LoggerFactory.getLogger(BaseAdapter.class);
 
-    @Autowired(required = false)
-    private StreamingRequestProcessor streamingRequestProcessor;
     @Autowired
     private MultipartRequestHandler multipartRequestHandler;
     @Autowired(required = false)
@@ -97,7 +95,7 @@ public abstract class BaseAdapter implements ServiceCapability {
                        final NonStreamingRequestProcessor nonStreamingProcessor) {
         this.context = new AdapterContext(registry, objectMapper, statsRepository);
         this.requestSupport = new RequestProcessingSupport(requestBuilder, responseHandler, instanceSelector,
-                responseTransformer, httpRequestProcessor, responseMapper, nonStreamingProcessor);
+                responseTransformer, httpRequestProcessor, responseMapper, nonStreamingProcessor, null);
         this.resilienceSupport = new ResilienceSupport(capabilityChecker, errorHandler, retryPolicy,
                 metricsRecorder, tracingManager, errorResponseBuilder);
         this.objectMapper = objectMapper;
@@ -227,9 +225,23 @@ public abstract class BaseAdapter implements ServiceCapability {
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), adapterType);
         Function<Object, Object> transformRequestFn = req -> transformRequest(req, adapterType);
         Function<Object, Object> transformResponseFn = data -> transformResponse(data, adapterType);
+
+        // 延迟获取 multipartRequestHandler（如果尚未注入）
+        MultipartRequestHandler handler = this.multipartRequestHandler;
+        if (handler == null) {
+            try {
+                handler = org.unreal.modelrouter.common.util.ApplicationContextProvider
+                        .getBean(MultipartRequestHandler.class);
+                this.multipartRequestHandler = handler; // 缓存以供后续使用
+                logger.debug("从 ApplicationContext 获取 MultipartRequestHandler 成功");
+            } catch (Exception e) {
+                logger.warn("无法获取 MultipartRequestHandler: {}", e.getMessage());
+            }
+        }
+
         return requestSupport.getNonStreamingProcessor().processRequest(request, finalAuth, client, finalPath,
                 selectedInstance, serviceType, responseType, adapterType,
-                transformRequestFn, transformResponseFn, multipartRequestHandler);
+                transformRequestFn, transformResponseFn, handler);
     }
 
     // ==================== 流式请求处理 ====================
@@ -238,7 +250,8 @@ public abstract class BaseAdapter implements ServiceCapability {
             final String authorization, final WebClient client, final String path,
             final ModelRouterProperties.ModelInstance selectedInstance,
             final ModelServiceRegistry.ServiceType serviceType) {
-        if (streamingRequestProcessor == null) {
+        StreamingRequestProcessor processor = requestSupport.getStreamingProcessor();
+        if (processor == null) {
             logger.error("StreamingRequestProcessor 未注入，无法处理流式请求");
             return Mono.error(new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR, "流式请求处理器未配置"));
@@ -247,7 +260,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         String finalPath = adaptModelName(path);
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), adapterType);
         Object transformedRequest = transformRequest(request, adapterType);
-        return streamingRequestProcessor.processStreamingRequest(transformedRequest, finalAuth, client,
+        return processor.processStreamingRequest(transformedRequest, finalAuth, client,
                 finalPath, selectedInstance, serviceType, adapterType);
     }
 
