@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 150
-- 近7天变更: 17
+- 近7天变更: 23
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-22 07:24:57
+- 最后扫描: 2026-06-23 06:07:14
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.4 → 1.0.5) - 2026-06-23
+- **MODIFIED**: docs/zh/index.md (1.0.3 → 1.0.4) - 2026-06-23
+- **MODIFIED**: docs/zh/configuration/validation-rules.md (1.0.1 → 1.0.2) - 2026-06-23
+- **MODIFIED**: docs/en/reference/roadmap.md (1.0.4 → 1.0.5) - 2026-06-23
+- **MODIFIED**: docs/en/index.md (1.0.3 → 1.0.4) - 2026-06-23
+- **MODIFIED**: docs-version-report.md (1.0.51 → 1.0.52) - 2026-06-23
 - **MODIFIED**: docs-version-report.md (1.0.50 → 1.0.51) - 2026-06-22
 - **MODIFIED**: docs-version-report.md (1.0.49 → 1.0.50) - 2026-06-21
 - **MODIFIED**: docs-version-report.md (1.0.48 → 1.0.49) - 2026-06-20
 - **MODIFIED**: docs-version-report.md (1.0.47 → 1.0.48) - 2026-06-19
-- **MODIFIED**: docs-version-report.md (1.0.46 → 1.0.47) - 2026-06-18
-- **MODIFIED**: docs-version-report.md (1.0.45 → 1.0.46) - 2026-06-17
-- **DELETED**: docs/zh/tracing/developer-guide.md (1.0.0 → ) - 2026-06-16
-- **DELETED**: docs/en/tracing/developer-guide.md (1.0.0 → ) - 2026-06-16
-- **MODIFIED**: docs/zh/tracing/usage-guide.md (1.0.2 → 1.0.3) - 2026-06-16
-- **MODIFIED**: docs/zh/tracing/quickstart.md (1.0.2 → 1.0.3) - 2026-06-16
 
 ## 过期文档 (30天未更新)
 
@@ -513,7 +513,12 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.51 - 2026-06-22 (7318fc6b)
+- **docs/zh/reference/roadmap.md**: v1.0.5 - 2026-06-23 (623002c1)
+- **docs/zh/index.md**: v1.0.4 - 2026-06-23 (623002c1)
+- **docs/zh/configuration/validation-rules.md**: v1.0.2 - 2026-06-23 (623002c1)
+- **docs/en/reference/roadmap.md**: v1.0.5 - 2026-06-23 (623002c1)
+- **docs/en/index.md**: v1.0.4 - 2026-06-23 (623002c1)
+- **docs-version-report.md**: v1.0.52 - 2026-06-23 (e1beee6c)
 - **docs/zh/tracing/usage-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
@@ -535,7 +540,6 @@
 - **docs/en/deployment/docker-optimized.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/docs-version-report.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/zh/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
-- **docs/zh/configuration/validation-rules.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
 - **docs/zh/configuration/store-config.md**: v1.0.3 - 2026-06-10 (227a92b7)
 - **docs/zh/configuration/state-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
 - **docs/en/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
@@ -559,7 +563,6 @@
 - **docs/zh/security/blacklist-management.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/audit-log-management.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/api-key-management.md**: v1.0.4 - 2026-06-03 (85bfdb3e)
-- **docs/zh/reference/roadmap.md**: v1.0.4 - 2026-06-03 (b305e6de)
 - **docs/zh/reference/index.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/reference/glossary.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/reference/faq.md**: v1.0.5 - 2026-06-03 (85bfdb3e)
@@ -576,7 +579,6 @@
 - **docs/zh/monitoring/configuration.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/monitoring/alerts.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/monitoring/alert_rules_guide.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/zh/index.md**: v1.0.3 - 2026-06-03 (b305e6de)
 - **docs/zh/getting-started/quick-start.md**: v1.0.4 - 2026-06-03 (85bfdb3e)
 - **docs/zh/getting-started/installation.md**: v1.0.4 - 2026-06-03 (b305e6de)
 - **docs/zh/getting-started/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
@@ -616,7 +618,6 @@
 - **docs/en/security/index.md**: v1.0.1 - 2026-06-03 (b305e6de)
 - **docs/en/security/data-sanitization.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/en/security/api-key-management.md**: v1.0.2 - 2026-06-03 (b305e6de)
-- **docs/en/reference/roadmap.md**: v1.0.4 - 2026-06-03 (85bfdb3e)
 - **docs/en/reference/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/reference/glossary.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/reference/faq.md**: v1.0.3 - 2026-06-03 (b305e6de)
@@ -631,7 +632,6 @@
 - **docs/en/monitoring/dashboards.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/monitoring/configuration.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/en/monitoring/alerts.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/en/index.md**: v1.0.3 - 2026-06-03 (b305e6de)
 - **docs/en/getting-started/quick-start.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/en/getting-started/installation.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/en/getting-started/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
