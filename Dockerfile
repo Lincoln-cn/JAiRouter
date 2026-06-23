@@ -1,11 +1,11 @@
 # JAiRouter 优化版 Dockerfile
-# 多阶段构建 + Spring Boot 分层 JAR + Alpine 基础镜像
-# 镜像大小: ~280MB（比标准版减少 36%）
+# 多阶段构建 + Spring Boot 分层 JAR + 多架构支持 (amd64/arm64)
+# 镜像大小: ~320MB
 
 # =============================================================================
 # 阶段 1: 提取 Spring Boot 分层内容
 # =============================================================================
-FROM eclipse-temurin:17-jdk-alpine AS extract-layer
+FROM eclipse-temurin:17-jdk AS extract-layer
 
 WORKDIR /app
 
@@ -18,19 +18,22 @@ RUN java -Djarmode=tools -jar app.jar extract --layers --launcher --destination 
 # =============================================================================
 # 阶段 2: 最终运行镜像
 # =============================================================================
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 # 设置元数据
 LABEL maintainer="JAiRouter Team"
 LABEL description="JAiRouter - AI Model Service Routing and Load Balancing Gateway"
 LABEL version="2.7.34"
 
-# 安装必要工具（wget 用于健康检查，tzdata 用于时区支持）
-RUN apk add --no-cache wget tzdata
+# 安装必要工具（curl 用于健康检查，tzdata 用于时区支持）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
 
 # 创建非 root 用户（安全最佳实践）
-RUN addgroup -g 10010 -S jairouter && \
-    adduser -u 10010 -S jairouter -G jairouter
+RUN groupadd -g 10010 jairouter && \
+    useradd -u 10010 -g jairouter -m -s /bin/bash jairouter
 
 WORKDIR /app
 
@@ -82,7 +85,7 @@ USER jairouter
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # 启动应用（使用 Spring Boot Launcher）
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher"]
