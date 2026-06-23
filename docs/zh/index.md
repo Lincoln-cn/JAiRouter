@@ -76,7 +76,7 @@ open http://localhost:8080
 [![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
 [![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE)
 
-> **LTS 版本**: v2.6.11 是最终长期支持版本，持续维护至 2028-05
+> **当前版本**: v2.7.0 (2026-06-23) | **LTS 版本**: v2.6.11 (维护至 2028-05)
 
 ---
 
