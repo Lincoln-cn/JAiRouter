@@ -377,7 +377,8 @@ const loadPersistenceStatus = async () => {
     if (response.data?.success) {
       const data = response.data.data
       currentTier.value = data.currentTier || 'h2'
-      tierHealth.value = data.tierHealth || tierHealth.value
+      // tierHealth 由 loadTiers() 单独获取，此处不再覆盖
+      // 因为 /status 返回的是 Map<String, Boolean>，而前端需要 { healthy, message } 结构
       stats.value = data.stats || stats.value
     }
   } catch (error: any) {

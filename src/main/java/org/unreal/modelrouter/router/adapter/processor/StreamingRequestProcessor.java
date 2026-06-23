@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.router.adapter.processor;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,12 +10,16 @@ import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -26,11 +32,20 @@ import java.util.function.Function;
 public class StreamingRequestProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(StreamingRequestProcessor.class);
+    
+    // Token 估算系数
+    private static final double ENGLISH_CHARS_PER_TOKEN = 4.0;
+    private static final double CHINESE_CHARS_PER_TOKEN = 2.0;
 
     private final ResponseTransformer responseTransformer;
 
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
+    
+    @Autowired(required = false)
+    private TokenUsageRecorder tokenUsageRecorder;
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public StreamingRequestProcessor(final ResponseTransformer responseTransformer) {
         this.responseTransformer = responseTransformer;
@@ -64,6 +79,13 @@ public class StreamingRequestProcessor {
 
         logger.debug("开始流式请求: adapter={}, instance={}, path={}", adapterType, instanceName, path);
 
+        // Token 使用量追踪
+        AtomicLong promptTokens = new AtomicLong(0);
+        AtomicLong completionTokens = new AtomicLong(0);
+        AtomicLong totalTokens = new AtomicLong(0);
+        StringBuilder contentBuilder = new StringBuilder();
+        AtomicReference<String> modelRef = new AtomicReference<>("unknown");
+
         // 使用 ServerSentEvent 包装每个数据块，确保 SSE 格式正确
         Flux<ServerSentEvent<String>> streamResponse = client.post()
                 .uri(path)
@@ -82,8 +104,19 @@ public class StreamingRequestProcessor {
                             clientResponse.statusCode(), "请求错误"));
                 })
                 .bodyToFlux(String.class)
-                .map(chunk -> transformAndWrapChunk(chunk, transformChunkFn))
-                .doOnComplete(() -> recordStreamingComplete(serviceType, adapterType, instanceName, requestStartTime))
+                .map(chunk -> {
+                    // 提取 usage 信息和累积内容
+                    extractUsageAndContent(chunk, promptTokens, completionTokens, totalTokens,
+                            contentBuilder, modelRef);
+                    return transformAndWrapChunk(chunk, transformChunkFn);
+                })
+                .doOnComplete(() -> {
+                    recordStreamingComplete(serviceType, adapterType, instanceName, requestStartTime);
+                    // 记录 token 使用量
+                    recordTokenUsage(adapterType, instanceName, modelRef.get(),
+                            promptTokens.get(), completionTokens.get(), totalTokens.get(),
+                            contentBuilder.toString());
+                })
                 .doOnError(throwable -> recordStreamingError(serviceType, adapterType, instanceName,
                         requestStartTime, throwable))
                 .onErrorResume(throwable -> Flux.error(throwable));
@@ -163,5 +196,149 @@ public class StreamingRequestProcessor {
 
         return processStreamingRequest(request, authorization, client, path,
                 selectedInstance, serviceType, adapterType, null);
+    }
+
+    /**
+     * 从 SSE chunk 提取 usage 信息和累积响应内容
+     *
+     * @param chunk              SSE 数据块
+     * @param promptTokens       prompt tokens 计数器
+     * @param completionTokens   completion tokens 计数器
+     * @param totalTokens        total tokens 计数器
+     * @param contentBuilder     内容累积器
+     * @param modelRef           模型名称引用
+     */
+    private void extractUsageAndContent(final String chunk,
+                                         final AtomicLong promptTokens,
+                                         final AtomicLong completionTokens,
+                                         final AtomicLong totalTokens,
+                                         final StringBuilder contentBuilder,
+                                         final AtomicReference<String> modelRef) {
+        try {
+            String jsonPart = chunk;
+            if (chunk.startsWith("data: ")) {
+                jsonPart = chunk.substring(6);
+            }
+
+            if ("[DONE]".equals(jsonPart.trim())) {
+                return;
+            }
+
+            JsonNode jsonNode = objectMapper.readTree(jsonPart);
+
+            // 提取模型名称
+            if (jsonNode.has("model")) {
+                modelRef.set(jsonNode.get("model").asText());
+            }
+
+            // 提取 usage 信息（如果后端提供）
+            if (jsonNode.has("usage")) {
+                JsonNode usage = jsonNode.get("usage");
+                if (usage.has("prompt_tokens")) {
+                    promptTokens.set(usage.get("prompt_tokens").asLong());
+                }
+                if (usage.has("completion_tokens")) {
+                    completionTokens.set(usage.get("completion_tokens").asLong());
+                }
+                if (usage.has("total_tokens")) {
+                    totalTokens.set(usage.get("total_tokens").asLong());
+                }
+            }
+
+            // 累积响应内容（从 choices 中提取）
+            if (jsonNode.has("choices")) {
+                JsonNode choices = jsonNode.get("choices");
+                if (choices.isArray() && choices.size() > 0) {
+                    JsonNode delta = choices.get(0).path("delta");
+                    if (delta.has("content")) {
+                        contentBuilder.append(delta.get("content").asText());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.trace("Failed to parse chunk for usage extraction: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 记录 Token 使用量
+     * 如果后端未提供 usage 信息，则根据累积的内容进行估算
+     */
+    private void recordTokenUsage(final String adapterType,
+                                   final String instanceName,
+                                   final String model,
+                                   final long promptTokens,
+                                   final long completionTokens,
+                                   final long totalTokens,
+                                   final String content) {
+        if (tokenUsageRecorder == null) {
+            return;
+        }
+
+        long finalPromptTokens = promptTokens;
+        long finalCompletionTokens = completionTokens;
+        long finalTotalTokens = totalTokens;
+
+        // 如果后端未返回 usage，则估算
+        if (totalTokens == 0 && content.length() > 0) {
+            finalCompletionTokens = estimateTokens(content);
+            finalTotalTokens = finalPromptTokens + finalCompletionTokens;
+            logger.debug("Token usage estimated: adapter={}, instance={}, prompt={}, completion={}, total={}",
+                    adapterType, instanceName, finalPromptTokens, finalCompletionTokens, finalTotalTokens);
+        } else if (totalTokens > 0) {
+            logger.debug("Token usage from backend: adapter={}, instance={}, prompt={}, completion={}, total={}",
+                    adapterType, instanceName, finalPromptTokens, finalCompletionTokens, finalTotalTokens);
+        }
+
+        // 只有当有实际 token 使用量时才记录
+        if (finalTotalTokens > 0) {
+            try {
+                // 获取 traceId
+                String traceId = TracingContextHolder.getCurrentTraceId();
+                
+                tokenUsageRecorder.recordTokenUsageNoAuth(
+                        "CHAT",
+                        model,
+                        adapterType,
+                        instanceName,
+                        null, // instanceUrl
+                        finalPromptTokens,
+                        finalCompletionTokens,
+                        finalTotalTokens,
+                        traceId,
+                        null, // clientIp
+                        true, // isSuccess
+                        null, // errorCode
+                        null, // errorMessage
+                        null  // responseTimeMs
+                );
+            } catch (Exception e) {
+                logger.warn("Failed to record token usage: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 根据内容估算 token 数量
+     * 英文约 4 字符/token，中文约 2 字符/token
+     */
+    private long estimateTokens(final String content) {
+        if (content == null || content.isEmpty()) {
+            return 0;
+        }
+
+        int chineseChars = 0;
+        int otherChars = 0;
+
+        for (char c : content.toCharArray()) {
+            if (Character.UnicodeScript.of(c) == Character.UnicodeScript.HAN) {
+                chineseChars++;
+            } else if (!Character.isWhitespace(c)) {
+                otherChars++;
+            }
+        }
+
+        return (long) Math.ceil(chineseChars / CHINESE_CHARS_PER_TOKEN
+                + otherChars / ENGLISH_CHARS_PER_TOKEN);
     }
 }

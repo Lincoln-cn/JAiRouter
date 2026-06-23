@@ -33,90 +33,101 @@
       <el-col :xs="24" :lg="8" :gutter="20">
         <el-card class="card-panel" shadow="always">
           <template #header>
-            <div class="card-title">监控状态</div>
+            <div class="card-title">系统指标</div>
           </template>
 
-          <div v-if="monitoringOverview" class="monitoring-box">
+          <div v-if="dashboardMetrics" class="monitoring-box">
+            <!-- JVM 内存 -->
             <el-descriptions :column="1" border size="small">
-              <el-descriptions-item label="监控启用">
-                <el-tag :type="monitoringOverview.enabled ? 'success' : 'danger'">
-                  {{ monitoringOverview.enabled ? '已启用' : '已禁用' }}
-                </el-tag>
-              </el-descriptions-item>
-
-              <el-descriptions-item label="健康状态">
-                <el-tag :type="monitoringOverview.healthy ? 'success' : 'danger'">
-                  {{ monitoringOverview.healthy ? '健康' : '异常' }}
-                </el-tag>
-              </el-descriptions-item>
-
-              <el-descriptions-item label="降级">
+              <el-descriptions-item label="JVM 内存">
                 <div class="row-inline">
-                  <el-tag :type="degradationTagType(monitoringOverview.degradationStatus?.level)">
-                    {{ degradationText(monitoringOverview.degradationStatus?.level) }}
-                  </el-tag>
-                  <el-tag v-if="monitoringOverview.degradationStatus" size="small" type="info" style="margin-left:8px">
-                    采样率：{{ formatPercent(monitoringOverview.degradationStatus?.samplingRate) }}
+                  <el-progress
+                    :percentage="dashboardMetrics.jvm?.heapUsagePercent || 0"
+                    :status="(dashboardMetrics.jvm?.heapUsagePercent || 0) > 80 ? 'exception' : 'success'"
+                    stroke-width="12"
+                    style="flex:1; margin-right:12px"
+                  />
+                  <el-tag size="small" type="info">
+                    {{ dashboardMetrics.jvm?.heapUsedMB || 0 }} / {{ dashboardMetrics.jvm?.heapMaxMB || 0 }} MB
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="熔断">
+              <el-descriptions-item label="线程">
                 <div class="row-inline">
-                  <el-tag :type="circuitTagType(monitoringOverview.circuitBreakerStats?.state)">
-                    {{ circuitText(monitoringOverview.circuitBreakerStats?.state) }}
-                  </el-tag>
-                  <el-tag v-if="monitoringOverview.circuitBreakerStats?.failureRate !== undefined" size="small" type="info" style="margin-left:8px">
-                    失败率：{{ (monitoringOverview.circuitBreakerStats.failureRate || 0).toFixed(2) }}%
+                  <el-tag type="primary">{{ dashboardMetrics.jvm?.threadCount || 0 }} 个</el-tag>
+                  <el-tag size="small" type="info" style="margin-left:8px">
+                    峰值: {{ dashboardMetrics.jvm?.peakThreadCount || 0 }}
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="错误统计">
+              <el-descriptions-item label="HTTP 请求">
                 <div class="row-inline">
-                  <el-tag :type="monitoringOverview.errorStats?.activeErrorComponents > 0 ? 'danger' : 'success'">
-                    活跃错误：{{ monitoringOverview.errorStats?.activeErrorComponents || 0 }}
+                  <el-tag type="primary">{{ dashboardMetrics.http?.totalRequests || 0 }} 次</el-tag>
+                  <el-tag size="small" type="info" style="margin-left:8px">
+                    平均: {{ (dashboardMetrics.http?.avgResponseTimeMs || 0).toFixed(1) }} ms
+                  </el-tag>
+                </div>
+              </el-descriptions-item>
+
+              <el-descriptions-item label="认证">
+                <div class="row-inline">
+                  <el-tag type="success">{{ dashboardMetrics.security?.authSuccesses || 0 }} 成功</el-tag>
+                  <el-tag :type="(dashboardMetrics.security?.authFailures || 0) > 0 ? 'danger' : 'info'" style="margin-left:8px">
+                    {{ dashboardMetrics.security?.authFailures || 0 }} 失败
                   </el-tag>
                   <el-tag size="small" type="warning" style="margin-left:8px">
-                    总错误：{{ monitoringOverview.errorStats?.totalErrors || 0 }}
+                    活跃: {{ Math.round(dashboardMetrics.security?.activeUsers || 0) }}
                   </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="缓存">
-                <div class="cache-row">
-                  <el-progress
-                    :percentage="Math.round((monitoringOverview.cacheStats?.usageRatio || 0) * 100)"
-                    :status="(monitoringOverview.cacheStats?.usageRatio || 0) > 0.8 ? 'exception' : 'success'"
-                    stroke-width="12"
-                    style="flex:1; margin-right:8px"
-                  />
-                  <div class="cache-meta">
-                    <div class="small">重试：{{ monitoringOverview.cacheStats?.activeRetries || 0 }}</div>
-                    <div class="small">占比：{{ Math.round((monitoringOverview.cacheStats?.usageRatio || 0) * 100) }}%</div>
-                  </div>
+              <el-descriptions-item label="安全缓存">
+                <div class="row-inline">
+                  <el-tag type="primary">命中: {{ Math.round(dashboardMetrics.security?.cacheHits || 0) }}</el-tag>
+                  <el-tag size="small" type="info" style="margin-left:8px">
+                    未命中: {{ Math.round(dashboardMetrics.security?.cacheMisses || 0) }}
+                  </el-tag>
+                  <el-tag size="small" type="warning" style="margin-left:8px">
+                    大小: {{ Math.round(dashboardMetrics.security?.cacheSize || 0) }}
+                  </el-tag>
                 </div>
               </el-descriptions-item>
 
-              <el-descriptions-item label="启用类别">
-                <div>
-                  <el-tag
-                    v-for="c in monitoringOverview.enabledCategories || []"
-                    :key="c"
-                    type="info"
-                    size="small"
-                    style="margin-right:6px; margin-bottom:6px"
-                  >
-                    {{ categoryMap[c] || c }}
+              <el-descriptions-item label="审计事件">
+                <div class="row-inline">
+                  <el-tag type="primary">{{ Math.round(dashboardMetrics.audit?.totalEvents || 0) }} 总数</el-tag>
+                  <el-tag type="success" size="small" style="margin-left:8px">
+                    {{ Math.round(dashboardMetrics.audit?.successEvents || 0) }} 成功
+                  </el-tag>
+                  <el-tag :type="(dashboardMetrics.audit?.failureEvents || 0) > 0 ? 'danger' : 'info'" size="small" style="margin-left:8px">
+                    {{ Math.round(dashboardMetrics.audit?.failureEvents || 0) }} 失败
                   </el-tag>
                 </div>
+              </el-descriptions-item>
+
+              <el-descriptions-item label="系统负载">
+                <div class="row-inline">
+                  <el-tag type="primary">{{ (dashboardMetrics.system?.systemLoadAverage || 0).toFixed(2) }}</el-tag>
+                  <el-tag size="small" type="info" style="margin-left:8px">
+                    CPU: {{ ((dashboardMetrics.system?.processCpuUsage || 0) * 100).toFixed(1) }}%
+                  </el-tag>
+                  <el-tag size="small" type="warning" style="margin-left:8px">
+                    核心: {{ dashboardMetrics.system?.availableProcessors || 0 }}
+                  </el-tag>
+                </div>
+              </el-descriptions-item>
+
+              <el-descriptions-item label="运行时间">
+                <el-tag type="primary">{{ formatUptime(dashboardMetrics.system?.uptimeSeconds) }}</el-tag>
               </el-descriptions-item>
             </el-descriptions>
           </div>
 
           <div v-else class="empty-placeholder">
             <el-icon><Loading /></el-icon>
-            <div>正在加载监控数据...</div>
+            <div>正在加载指标数据...</div>
           </div>
         </el-card>
       </el-col>
@@ -231,7 +242,8 @@ import * as echarts from 'echarts'
 import {
   getServiceStats,
   getAllServiceConfig,
-  getMonitoringOverview
+  getMonitoringOverview,
+  getDashboardMetrics
 } from '@/api/dashboard'
 import { getJwtAccounts } from '@/api/account'
 import { ElMessage } from 'element-plus'
@@ -252,6 +264,7 @@ const stats = ref({
 })
 
 const monitoringOverview = ref<any>(null)
+const dashboardMetrics = ref<any>(null)
 const serviceConfigData = ref<any>(null)
 const configLoading = ref(false)
 const activeServiceTab = ref<string>('global')
@@ -353,46 +366,96 @@ const systemChart = ref<HTMLElement | null>(null)
 let systemChartInstance: echarts.ECharts | null = null
 
 const getChartOption = () => {
-  if (!monitoringOverview.value) {
+  // 使用真实业务指标数据
+  if (!dashboardMetrics.value) {
     return {
+      title: { text: '系统状态概览', left: 'center', textStyle: { fontSize: 14 } },
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: ['00:00','06:00','12:00','18:00','24:00'] },
-      yAxis: { type: 'value' },
+      xAxis: { type: 'category', data: ['内存', 'CPU', '认证', '请求'] },
+      yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } },
       series: [
-        { name: '请求', data: [120,200,150,170,130], type: 'line', smooth: true },
-        { name: '错误', data: [2,5,3,4,2], type: 'line', smooth: true, itemStyle: { color: '#f56c6c' } }
+        { name: '使用率', data: [0, 0, 0, 0], type: 'bar', barWidth: '40%' }
       ]
     }
   }
 
-  const ov = monitoringOverview.value
-  const degradation = ov.degradationStatus || {}
-  const cb = ov.circuitBreakerStats || {}
-  const err = ov.errorStats || {}
-  const cache = ov.cacheStats || {}
+  const m = dashboardMetrics.value
+  const jvm = m.jvm || {}
+  const sys = m.system || {}
+  const sec = m.security || {}
+  const http = m.http || {}
+
+  // 构建真实业务指标图表
+  const memoryUsage = jvm.heapUsagePercent || 0
+  const cpuUsage = (sys.processCpuUsage || 0) * 100
+  const authSuccess = sec.authAttempts > 0 ? ((sec.authSuccesses || 0) / sec.authAttempts * 100) : 100
+  const requestRate = Math.min((http.totalRequests || 0) / 1000 * 10, 100) // 假设 10000 请求 = 100%
 
   return {
-    tooltip: { trigger: 'axis' },
-    grid: { left: 20, right: 20, bottom: 30, top: 50 },
-    xAxis: { type: 'category', data: ['降级','熔断','错误组件','缓存'] },
+    title: { text: '系统资源概览', left: 'center', textStyle: { fontSize: 14 } },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const p = params[0]
+        const labels = ['JVM 内存', 'CPU 使用率', '认证成功率', '请求量']
+        const values = [
+          `${memoryUsage}% (${jvm.heapUsedMB || 0}/${jvm.heapMaxMB || 0} MB)`,
+          `${cpuUsage.toFixed(1)}%`,
+          `${authSuccess.toFixed(1)}%`,
+          `${http.totalRequests || 0} 次`
+        ]
+        return `<strong>${labels[p.dataIndex]}</strong><br/>${values[p.dataIndex]}`
+      }
+    },
+    legend: { bottom: 0, data: ['资源使用'] },
+    grid: { left: 30, right: 30, bottom: 50, top: 60 },
+    xAxis: {
+      type: 'category',
+      data: ['JVM 内存', 'CPU 使用', '认证成功', '请求量'],
+      axisLabel: { interval: 0, rotate: 0, fontSize: 11 }
+    },
     yAxis: {
       type: 'value',
+      max: 100,
       axisLabel: {
-        formatter: (v: number) => v <= 1 ? `${v * 100}%` : `${v}`
+        formatter: (v: number) => `${v}%`
       }
     },
     series: [
       {
-        name: '状态',
+        name: '资源使用',
         type: 'bar',
         barWidth: '50%',
         data: [
-          { value: degradation.level === 'NONE' ? 1 : degradation.level === 'PARTIAL' ? 0.5 : 0, itemStyle: { color: degradation.level === 'NONE' ? '#67c23a' : degradation.level === 'PARTIAL' ? '#e6a23c' : '#f56c6c' } },
-          { value: cb.state === 'CLOSED' ? 1 : cb.state === 'OPEN' ? 0 : 0.5, itemStyle: { color: cb.state === 'CLOSED' ? '#67c23a' : cb.state === 'OPEN' ? '#f56c6c' : '#e6a23c' } },
-          { value: err.activeErrorComponents || 0, itemStyle: { color: (err.activeErrorComponents || 0) > 0 ? '#f56c6c' : '#67c23a' } },
-          { value: cache.usageRatio || 0, itemStyle: { color: (cache.usageRatio || 0) > 0.8 ? '#f56c6c' : '#409eff' } }
+          { 
+            value: memoryUsage, 
+            itemStyle: { color: memoryUsage > 80 ? '#f56c6c' : memoryUsage > 60 ? '#e6a23c' : '#67c23a' },
+            name: `${memoryUsage}%`
+          },
+          { 
+            value: cpuUsage, 
+            itemStyle: { color: cpuUsage > 80 ? '#f56c6c' : cpuUsage > 60 ? '#e6a23c' : '#409eff' },
+            name: `${cpuUsage.toFixed(1)}%`
+          },
+          { 
+            value: authSuccess, 
+            itemStyle: { color: authSuccess < 50 ? '#f56c6c' : authSuccess < 80 ? '#e6a23c' : '#67c23a' },
+            name: `${authSuccess.toFixed(1)}%`
+          },
+          { 
+            value: requestRate, 
+            itemStyle: { color: '#409eff' },
+            name: `${http.totalRequests || 0}`
+          }
         ],
-        label: { show: true, position: 'top', formatter: (p: any) => (p.dataIndex === 2 ? `${p.value}` : `${Math.round(p.value * 100)}%`) }
+        label: {
+          show: true,
+          position: 'top',
+          formatter: (p: any) => {
+            if (p.dataIndex === 3) return `${http.totalRequests || 0}`
+            return `${p.value.toFixed(1)}%`
+          }
+        }
       }
     ]
   }
@@ -595,6 +658,36 @@ const fetchMonitoringOverview = async () => {
   }
 }
 
+// 获取真实业务指标
+const fetchDashboardMetrics = async () => {
+  try {
+    const res = await getDashboardMetrics()
+    if (res.data && res.data.success) {
+      dashboardMetrics.value = res.data.data
+      // 更新图表
+      nextTick(() => {
+        systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
+      })
+    } else {
+      ElMessage.error('获取指标数据失败: ' + (res.data?.message || '未知错误'))
+    }
+  } catch (e: any) {
+    ElMessage.error('获取指标数据异常: ' + (e.message || '网络错误'))
+  }
+}
+
+// 格式化运行时间
+const formatUptime = (seconds: number | undefined) => {
+  if (!seconds) return 'N/A'
+  const s = Math.round(seconds)
+  const days = Math.floor(s / 86400)
+  const hours = Math.floor((s % 86400) / 3600)
+  const mins = Math.floor((s % 3600) / 60)
+  if (days > 0) return `${days}天 ${hours}时`
+  if (hours > 0) return `${hours}时 ${mins}分`
+  return `${mins}分`
+}
+
 const fetchDashboardData = async () => {
   try {
     // 服务统计（保留）
@@ -619,6 +712,7 @@ const fetchDashboardData = async () => {
     // 监控和配置
     await fetchServiceConfig()
     await fetchMonitoringOverview()
+    await fetchDashboardMetrics()
 
     // 初始化或刷新图表
     nextTick(() => {
