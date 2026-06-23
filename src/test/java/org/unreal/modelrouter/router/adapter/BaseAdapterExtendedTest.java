@@ -35,6 +35,9 @@ import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
 import org.unreal.modelrouter.router.adapter.selector.InstanceSelector;
+import org.unreal.modelrouter.router.adapter.support.AdapterContext;
+import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
+import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
 import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
@@ -1034,22 +1037,13 @@ class BaseAdapterExtendedTest {
                 AdapterErrorHandler errorHandler,
                 RetryPolicy retryPolicy) {
             super(
-                    registry,
-                    objectMapper,
-                    statsRepository,
-                    new RequestBuilder(),
-                    new ResponseHandler(objectMapper),
-                    instanceSelector,
-                    responseTransformer,
-                    capabilityChecker,
-                    errorHandler,
-                    retryPolicy,
-                    new HttpRequestProcessor(),
-                    new ResponseMapper(objectMapper),
-                    null,
-                    null,
-                    new ErrorResponseBuilder(),
-                    null
+                    new AdapterContext(registry, objectMapper, statsRepository),
+                    new RequestProcessingSupport(
+                            null, null, instanceSelector, responseTransformer,
+                            null, null, null, null),
+                    new ResilienceSupport(
+                            capabilityChecker, errorHandler, retryPolicy,
+                            null, null, null)
             );
         }
 

@@ -408,7 +408,7 @@ management:
 
 ### management.metrics.export.prometheus
 
-**Type**: Object  
+**Type**: Object
 **Description**: Prometheus export configuration
 
 ```yaml
@@ -422,6 +422,163 @@ management:
         pushgateway:
           enabled: false
           base-url: http://localhost:9091
+```
+
+## Metrics Batch Reporting Configuration
+
+JAiRouter supports batch reporting of Micrometer metrics to external systems, including HTTP endpoints (such as Prometheus Pushgateway, InfluxDB) and local files.
+
+### Configuration Options
+
+#### monitoring.metrics.export.http
+
+**Type**: Object
+**Description**: HTTP endpoint batch reporting configuration
+
+```yaml
+monitoring:
+  metrics:
+    export:
+      http:
+        enabled: false                    # Enable HTTP reporting
+        url: ""                           # Reporting endpoint URL
+        timeout: 5000                     # Request timeout (milliseconds)
+        format: prometheus                # Reporting format: prometheus or json
+```
+
+**Field Description**:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | Boolean | false | Enable HTTP reporting |
+| `url` | String | "" | Reporting endpoint URL, e.g., `http://localhost:9091/metrics/job/jairouter` |
+| `timeout` | Integer | 5000 | HTTP request timeout (milliseconds) |
+| `format` | String | prometheus | Reporting format, supports `prometheus` (Prometheus text format) or `json` (generic JSON format) |
+
+**Prometheus Pushgateway Example**:
+
+```yaml
+monitoring:
+  metrics:
+    export:
+      http:
+        enabled: true
+        url: "http://pushgateway:9091/metrics/job/jairouter/instance/${HOSTNAME}"
+        timeout: 5000
+        format: prometheus
+```
+
+**JSON Format Example**:
+
+```yaml
+monitoring:
+  metrics:
+    export:
+      http:
+        enabled: true
+        url: "http://influxdb:8086/api/v2/write?org=myorg&bucket=metrics"
+        timeout: 10000
+        format: json
+```
+
+#### monitoring.metrics.export.file
+
+**Type**: Object
+**Description**: File batch reporting configuration
+
+```yaml
+monitoring:
+  metrics:
+    export:
+      file:
+        enabled: false                    # Enable file reporting
+        path: "./logs/metrics"            # Metrics file storage path
+        format: json                      # File format: json or prometheus
+        max-size-mb: 100                  # Maximum file size (MB)
+```
+
+**Field Description**:
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | Boolean | false | Enable file reporting |
+| `path` | String | "./logs/metrics" | Metrics file storage directory path |
+| `format` | String | json | File format, supports `json` or `prometheus` |
+| `max-size-mb` | Integer | 100 | Maximum size of a single metrics file (MB), auto-rolls to new file when exceeded |
+
+**JSON Format Output Example**:
+
+```json
+{
+  "metrics": [
+    {
+      "name": "jairouter_requests_total",
+      "type": "counter",
+      "value": 12345.0,
+      "tags": {"service": "chat", "status": "200"},
+      "timestamp": 1719123456789
+    }
+  ],
+  "timestamp": "2026-06-23T10:30:00Z",
+  "source": "jairouter",
+  "count": 1
+}
+```
+
+**Prometheus Format Output Example**:
+
+```text
+jairouter_requests_total{service="chat",status="200"} 12345.0 1719123456789
+jairouter_backend_latency_seconds{adapter="gpustack",operation="chat"} 0.256 1719123456789
+```
+
+### Batch Reporting Mechanism
+
+The `MetricsBatchReporter` component implements an efficient metrics batch reporting mechanism:
+
+1. **Collection Phase**: Collects metrics from `MeterRegistry` to memory buffer every 10 seconds
+2. **Aggregation Phase**: Metrics are aggregated in the buffer to reduce reporting frequency
+3. **Reporting Phase**: Batch reports once per minute, supporting both HTTP and file methods
+4. **Performance Improvement**: Reduces reporting frequency from N times/second to 1 time/minute, reducing network overhead by approximately 95%
+
+### Report Target Switching
+
+You can dynamically switch report targets via API or configuration:
+
+```java
+// Switch to HTTP reporting
+metricsBatchReporter.setReportTarget(ReportTarget.HTTP);
+
+// Switch to file reporting
+metricsBatchReporter.setReportTarget(ReportTarget.FILE);
+
+// Switch to log reporting (default)
+metricsBatchReporter.setReportTarget(ReportTarget.LOG);
+```
+
+### Complete Configuration Example
+
+```yaml
+monitoring:
+  metrics:
+    enabled: true
+    prefix: "jairouter"
+    
+    # Batch reporting configuration
+    export:
+      # HTTP reporting (e.g., Prometheus Pushgateway)
+      http:
+        enabled: true
+        url: "http://pushgateway:9091/metrics/job/jairouter"
+        timeout: 5000
+        format: prometheus
+      
+      # File reporting (backup or offline analysis)
+      file:
+        enabled: true
+        path: "./logs/metrics"
+        format: json
+        max-size-mb: 100
 ```
 
 ## Environment-Specific Configuration

@@ -1,27 +1,20 @@
 package org.unreal.modelrouter.router.adapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.router.adapter.error.AdapterErrorHandler;
-import org.unreal.modelrouter.router.adapter.retry.RetryPolicy;
-import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
-import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
-import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
-import org.unreal.modelrouter.router.adapter.error.ErrorResponseBuilder;
-import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
+import org.unreal.modelrouter.router.adapter.support.AdapterContext;
+import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
+import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * 测试BaseAdapter中的指标收集功能
- * v2.26.x: MetricsCollector已从BaseAdapter移除，指标记录委托给AdapterMetricsRecorder
+ * v2.28.x: 使用新的聚合组件构造函数
  */
 @ExtendWith(MockitoExtension.class)
 class BaseAdapterMetricsTest {
@@ -29,13 +22,17 @@ class BaseAdapterMetricsTest {
     @Mock
     private ModelServiceRegistry registry;
 
-    @Mock
-    private AdapterMetricsRecorder metricsRecorder;
-
     @Test
     void shouldCalculateRequestSize() {
         // Given
-        TestAdapter adapter = new TestAdapter(registry, new ObjectMapper());
+        ObjectMapper objectMapper = new ObjectMapper();
+        AdapterContext context = new AdapterContext(registry, objectMapper, null);
+        RequestProcessingSupport requestSupport = new RequestProcessingSupport(
+                null, null, null, null, null, null, null, null);
+        ResilienceSupport resilienceSupport = new ResilienceSupport(
+                null, null, null, null, null, null);
+        TestAdapter adapter = new TestAdapter(context, requestSupport, resilienceSupport);
+
         String testRequest = "test request content";
 
         // When
@@ -49,7 +46,13 @@ class BaseAdapterMetricsTest {
     @Test
     void shouldHandleNullRequestInSizeCalculation() {
         // Given
-        TestAdapter adapter = new TestAdapter(registry, new ObjectMapper());
+        ObjectMapper objectMapper = new ObjectMapper();
+        AdapterContext context = new AdapterContext(registry, objectMapper, null);
+        RequestProcessingSupport requestSupport = new RequestProcessingSupport(
+                null, null, null, null, null, null, null, null);
+        ResilienceSupport resilienceSupport = new ResilienceSupport(
+                null, null, null, null, null, null);
+        TestAdapter adapter = new TestAdapter(context, requestSupport, resilienceSupport);
 
         // When
         long size = adapter.calculateRequestSize(null);
@@ -63,8 +66,9 @@ class BaseAdapterMetricsTest {
      */
     private static class TestAdapter extends BaseAdapter {
 
-        public TestAdapter(ModelServiceRegistry registry, ObjectMapper objectMapper) {
-            super(registry, objectMapper, null, null, null, null, null, null, new AdapterErrorHandler(), new RetryPolicy(), new HttpRequestProcessor(), new ResponseMapper(new ObjectMapper()), null, null, new ErrorResponseBuilder(), null);
+        public TestAdapter(AdapterContext context, RequestProcessingSupport requestSupport, 
+                          ResilienceSupport resilienceSupport) {
+            super(context, requestSupport, resilienceSupport);
         }
 
         @Override
@@ -73,8 +77,8 @@ class BaseAdapterMetricsTest {
         }
 
         @Override
-        public org.unreal.modelrouter.router.adapter.AdapterCapabilities supportCapability() {
-            return org.unreal.modelrouter.router.adapter.AdapterCapabilities.builder().chat(true).build();
+        public AdapterCapabilities supportCapability() {
+            return AdapterCapabilities.builder().chat(true).build();
         }
 
         @Override

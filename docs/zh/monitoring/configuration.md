@@ -408,7 +408,7 @@ management:
 
 ### management.metrics.export.prometheus
 
-**类型**: Object  
+**类型**: Object
 **描述**: Prometheus 导出配置
 
 ```yaml
@@ -422,6 +422,163 @@ management:
         pushgateway:
           enabled: false
           base-url: http://localhost:9091
+```
+
+## 指标批量上报配置
+
+JAiRouter 支持将 Micrometer 指标批量上报到外部系统，包括 HTTP 端点（如 Prometheus Pushgateway、InfluxDB）和本地文件。
+
+### 配置项说明
+
+#### monitoring.metrics.export.http
+
+**类型**: Object
+**描述**: HTTP 端点批量上报配置
+
+```yaml
+monitoring:
+  metrics:
+    export:
+      http:
+        enabled: false                    # 是否启用 HTTP 上报
+        url: ""                           # 上报端点 URL
+        timeout: 5000                     # 请求超时时间（毫秒）
+        format: prometheus                # 上报格式：prometheus 或 json
+```
+
+**字段说明**:
+
+| 字段 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `enabled` | Boolean | false | 是否启用 HTTP 上报 |
+| `url` | String | "" | 上报端点 URL，例如 `http://localhost:9091/metrics/job/jairouter` |
+| `timeout` | Integer | 5000 | HTTP 请求超时时间（毫秒） |
+| `format` | String | prometheus | 上报格式，支持 `prometheus`（Prometheus 文本格式）或 `json`（通用 JSON 格式） |
+
+**Prometheus Pushgateway 示例**:
+
+```yaml
+monitoring:
+  metrics:
+    export:
+      http:
+        enabled: true
+        url: "http://pushgateway:9091/metrics/job/jairouter/instance/${HOSTNAME}"
+        timeout: 5000
+        format: prometheus
+```
+
+**JSON 格式示例**:
+
+```yaml
+monitoring:
+  metrics:
+    export:
+      http:
+        enabled: true
+        url: "http://influxdb:8086/api/v2/write?org=myorg&bucket=metrics"
+        timeout: 10000
+        format: json
+```
+
+#### monitoring.metrics.export.file
+
+**类型**: Object
+**描述**: 文件批量上报配置
+
+```yaml
+monitoring:
+  metrics:
+    export:
+      file:
+        enabled: false                    # 是否启用文件上报
+        path: "./logs/metrics"            # 指标文件存储路径
+        format: json                      # 文件格式：json 或 prometheus
+        max-size-mb: 100                  # 单文件最大大小（MB）
+```
+
+**字段说明**:
+
+| 字段 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `enabled` | Boolean | false | 是否启用文件上报 |
+| `path` | String | "./logs/metrics" | 指标文件存储目录路径 |
+| `format` | String | json | 文件格式，支持 `json` 或 `prometheus` |
+| `max-size-mb` | Integer | 100 | 单个指标文件最大大小（MB），超过后自动滚动创建新文件 |
+
+**JSON 格式输出示例**:
+
+```json
+{
+  "metrics": [
+    {
+      "name": "jairouter_requests_total",
+      "type": "counter",
+      "value": 12345.0,
+      "tags": {"service": "chat", "status": "200"},
+      "timestamp": 1719123456789
+    }
+  ],
+  "timestamp": "2026-06-23T10:30:00Z",
+  "source": "jairouter",
+  "count": 1
+}
+```
+
+**Prometheus 格式输出示例**:
+
+```text
+jairouter_requests_total{service="chat",status="200"} 12345.0 1719123456789
+jairouter_backend_latency_seconds{adapter="gpustack",operation="chat"} 0.256 1719123456789
+```
+
+### 批量上报原理
+
+`MetricsBatchReporter` 组件实现了高效的指标批量上报机制：
+
+1. **收集阶段**：每 10 秒从 `MeterRegistry` 收集指标到内存缓冲区
+2. **聚合阶段**：指标在缓冲区中聚合，减少上报次数
+3. **上报阶段**：每分钟批量上报一次，支持 HTTP 和文件两种方式
+4. **性能提升**：上报次数从 N 次/秒降低到 1 次/分钟，网络开销降低约 95%
+
+### 上报目标切换
+
+可通过 API 或配置动态切换上报目标：
+
+```java
+// 切换到 HTTP 上报
+metricsBatchReporter.setReportTarget(ReportTarget.HTTP);
+
+// 切换到文件上报
+metricsBatchReporter.setReportTarget(ReportTarget.FILE);
+
+// 切换到日志上报（默认）
+metricsBatchReporter.setReportTarget(ReportTarget.LOG);
+```
+
+### 完整配置示例
+
+```yaml
+monitoring:
+  metrics:
+    enabled: true
+    prefix: "jairouter"
+    
+    # 批量上报配置
+    export:
+      # HTTP 上报（如 Prometheus Pushgateway）
+      http:
+        enabled: true
+        url: "http://pushgateway:9091/metrics/job/jairouter"
+        timeout: 5000
+        format: prometheus
+      
+      # 文件上报（备份或离线分析）
+      file:
+        enabled: true
+        path: "./logs/metrics"
+        format: json
+        max-size-mb: 100
 ```
 
 ## 环境特定配置

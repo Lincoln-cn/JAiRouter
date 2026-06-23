@@ -79,28 +79,6 @@ public abstract class BaseAdapter implements ServiceCapability {
         this.objectMapper = context.getObjectMapper();
     }
 
-    /**
-     * 旧构造函数 - 已废弃，仅为向后兼容保留。
-     * @deprecated 使用 {@link #BaseAdapter(AdapterContext, RequestProcessingSupport, ResilienceSupport)} 替代
-     */
-    @Deprecated(since = "2.28.0", forRemoval = true)
-    public BaseAdapter(final ModelServiceRegistry registry, final ObjectMapper objectMapper,
-                       final ModelCallStatsRepository statsRepository, final RequestBuilder requestBuilder,
-                       final ResponseHandler responseHandler, final InstanceSelector instanceSelector,
-                       final ResponseTransformer responseTransformer, final CapabilityChecker capabilityChecker,
-                       final AdapterErrorHandler errorHandler, final RetryPolicy retryPolicy,
-                       final HttpRequestProcessor httpRequestProcessor, final ResponseMapper responseMapper,
-                       final AdapterMetricsRecorder metricsRecorder, final AdapterTracingManager tracingManager,
-                       final ErrorResponseBuilder errorResponseBuilder,
-                       final NonStreamingRequestProcessor nonStreamingProcessor) {
-        this.context = new AdapterContext(registry, objectMapper, statsRepository);
-        this.requestSupport = new RequestProcessingSupport(requestBuilder, responseHandler, instanceSelector,
-                responseTransformer, httpRequestProcessor, responseMapper, nonStreamingProcessor, null);
-        this.resilienceSupport = new ResilienceSupport(capabilityChecker, errorHandler, retryPolicy,
-                metricsRecorder, tracingManager, errorResponseBuilder);
-        this.objectMapper = objectMapper;
-    }
-
     // ==================== 核心方法 ====================
 
     private String classifyError(final Throwable throwable) {
