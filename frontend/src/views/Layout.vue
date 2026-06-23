@@ -34,9 +34,29 @@
           <el-menu-item index="/config/services">服务管理</el-menu-item>
           <el-menu-item index="/config/instances">实例管理</el-menu-item>
           <el-menu-item index="/config/versions">版本管理</el-menu-item>
-          <el-menu-item index="/config/circuit-breakers">熔断器配置</el-menu-item>
-          <el-menu-item index="/config/load-balancers">负载均衡器配置</el-menu-item>
           <el-menu-item index="/config/state-persistence">状态持久化</el-menu-item>
+        </el-sub-menu>
+
+        <!-- 负载均衡器管理 -->
+        <el-sub-menu index="load-balancers">
+          <template #title>
+            <el-icon>
+              <Connection />
+            </el-icon>
+            <span>负载均衡器</span>
+          </template>
+          <el-menu-item index="/load-balancers/management">负载均衡器管理</el-menu-item>
+        </el-sub-menu>
+
+        <!-- 熔断器管理 -->
+        <el-sub-menu index="circuit-breakers">
+          <template #title>
+            <el-icon>
+              <Promotion />
+            </el-icon>
+            <span>熔断器管理</span>
+          </template>
+          <el-menu-item index="/circuit-breakers/management">熔断器管理</el-menu-item>
         </el-sub-menu>
 
         <!-- 安全管理 -->
@@ -180,7 +200,8 @@ import {
   Sort,
   Headset,
   Picture,
-  Warning
+  Warning,
+  Promotion
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -213,6 +234,10 @@ const defaultOpeneds = computed(() => {
     openeds.push('dashboard')
   } else if (path.startsWith('/config')) {
     openeds.push('config')
+  } else if (path.startsWith('/load-balancers')) {
+    openeds.push('load-balancers')
+  } else if (path.startsWith('/circuit-breakers')) {
+    openeds.push('circuit-breakers')
   } else if (path.startsWith('/security')) {
     openeds.push('security')
   } else if (path.startsWith('/system')) {

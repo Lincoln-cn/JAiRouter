@@ -40,3 +40,8 @@ export const getMonitoringOverview = () => {
 export const getAllServiceConfig = () => {
   return request.get<RouterResponse<any>>('/config/type')
 }
+
+// 获取仪表盘真实业务指标
+export const getDashboardMetrics = () => {
+  return request.get<RouterResponse<any>>('/dashboard/metrics')
+}

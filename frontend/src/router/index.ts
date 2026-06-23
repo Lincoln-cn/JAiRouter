@@ -77,22 +77,42 @@ const router = createRouter({
           meta: { title: '版本管理', icon: 'document' }
         },
         {
-          path: 'circuit-breakers',
-          name: 'circuit-breaker-config',
-          component: () => import('../views/config/CircuitBreakerManagement.vue'),
-          meta: { title: '熔断器配置', icon: 'bolt' }
-        },
-        {
-          path: 'load-balancers',
-          name: 'load-balancer-config',
-          component: () => import('../views/config/LoadBalancerManagement.vue'),
-          meta: { title: '负载均衡器配置', icon: 'connection' }
-        },
-        {
           path: 'state-persistence',
           name: 'state-persistence-config',
           component: () => import('../views/config/StatePersistenceManagement.vue'),
           meta: { title: '状态持久化', icon: 'folder-opened' }
+        }
+      ]
+    },
+    // 负载均衡器管理
+    {
+      path: '/load-balancers',
+      name: 'load-balancers',
+      component: () => import('../views/Layout.vue'),
+      redirect: '/load-balancers/management',
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'management',
+          name: 'load-balancer-management',
+          component: () => import('../views/config/LoadBalancerManagement.vue'),
+          meta: { title: '负载均衡器管理', icon: 'connection' }
+        }
+      ]
+    },
+    // 熔断器管理
+    {
+      path: '/circuit-breakers',
+      name: 'circuit-breakers',
+      component: () => import('../views/Layout.vue'),
+      redirect: '/circuit-breakers/management',
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'management',
+          name: 'circuit-breaker-management',
+          component: () => import('../views/config/CircuitBreakerManagement.vue'),
+          meta: { title: '熔断器管理', icon: 'bolt' }
         }
       ]
     },

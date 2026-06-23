@@ -169,59 +169,150 @@ public class StatePersistenceManagementController {
 
     /**
      * 获取持久化状态
+     * v2.9.x: 修复统计逻辑，使用实际存储数量而非待同步数量
      */
     @GetMapping("/status")
     public Mono<ResponseEntity<Map<String, Object>>> getPersistenceStatus() {
-        return compositePersistenceService.isHealthy().map(healthy -> {
+        return compositePersistenceService.isHealthy().flatMap(healthy -> {
             Map<String, Object> data = new HashMap<>();
             data.put("currentTier", compositePersistenceService.getActiveTierName());
             data.put("tierHealth", compositePersistenceService.getAllTierStatus());
-            
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("circuitBreakerCount", cbPersistenceAdapter.getPendingSyncCount());
-            stats.put("loadBalancerCount", lbPersistenceAdapter.getPendingSyncCount());
-            stats.put("rateLimiterCount", rlPersistenceAdapter != null
-                    ? (int) rlPersistenceAdapter.getStats().block().get("registeredCount")
-                    : 0);
-            stats.put("pendingSync", cbPersistenceAdapter.getPendingSyncCount()
-                    + lbPersistenceAdapter.getPendingSyncCount());
-            data.put("stats", stats);
 
-            // 添加恢复统计
-            if (recoveryService != null) {
-                StateRecoveryService.RecoveryStatistics lastStats = recoveryService.getLastRecoveryStats();
-                data.put("lastRecovery", Map.of(
-                        "success", lastStats.success,
-                        "durationMs", lastStats.durationMs,
-                        "cbRecovered", lastStats.cbStatesRecovered,
-                        "lbRecovered", lastStats.lbStatesRecovered
-                ));
+            // 获取熔断器实际存储数量
+            Mono<Long> cbCountMono = cbPersistenceAdapter.getAllCircuitBreakerInstanceIds()
+                    .flatMapIterable(ids -> ids)
+                    .count();
+
+            // 获取负载均衡器实际存储数量
+            Mono<Integer> lbCountMono = lbPersistenceAdapter.getAllLoadBalancerStates()
+                    .map(lbStates -> lbStates.size());
+
+            // 获取限流器实际存储数量
+            Mono<Integer> rlCountMono;
+            if (rlPersistenceAdapter != null) {
+                rlCountMono = compositePersistenceService.getAllKeys(
+                        org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService.StateType.RATE_LIMITER)
+                        .map(keys -> {
+                            // Iterable 转 Collection 计算 size
+                            java.util.List<String> list = new java.util.ArrayList<>();
+                            keys.forEach(list::add);
+                            return list.size();
+                        })
+                        .defaultIfEmpty(0);
+            } else {
+                rlCountMono = Mono.just(0);
             }
 
-            return ResponseEntity.ok(createSuccessResponse(data));
+            // 合并所有计数
+            return Mono.zip(cbCountMono, lbCountMono, rlCountMono)
+                    .map(tuple -> {
+                        Long cbCount = tuple.getT1();
+                        Integer lbCount = tuple.getT2();
+                        Integer rlCount = tuple.getT3();
+
+                        Map<String, Object> stats = new HashMap<>();
+                        stats.put("circuitBreakerCount", cbCount.intValue());
+                        stats.put("loadBalancerCount", lbCount);
+                        stats.put("rateLimiterCount", rlCount);
+                        stats.put("pendingSync", cbPersistenceAdapter.getPendingSyncCount()
+                                + lbPersistenceAdapter.getPendingSyncCount());
+                        data.put("stats", stats);
+
+                        // 添加恢复统计
+                        if (recoveryService != null) {
+                            StateRecoveryService.RecoveryStatistics lastStats = recoveryService.getLastRecoveryStats();
+                            data.put("lastRecovery", Map.of(
+                                    "success", lastStats.success,
+                                    "durationMs", lastStats.durationMs,
+                                    "cbRecovered", lastStats.cbStatesRecovered,
+                                    "lbRecovered", lastStats.lbStatesRecovered
+                            ));
+                        }
+
+                        return ResponseEntity.ok(createSuccessResponse(data));
+                    });
         });
     }
 
     /**
      * 获取状态详情列表 (v2.4.5)
+     * 从持久化层加载熔断器、负载均衡器、限流器的实际状态
      */
     @GetMapping("/details")
     public Mono<ResponseEntity<Map<String, Object>>> getStateDetails() {
         List<Map<String, Object>> details = new ArrayList<>();
 
-        // 限流器状态（从注册列表获取）
-        if (rlPersistenceAdapter != null) {
-            for (String limiterId : rlPersistenceAdapter.getRegisteredLimiterIds()) {
-                Map<String, Object> detail = new HashMap<>();
-                detail.put("instanceId", limiterId);
-                detail.put("stateType", "RATE_LIMITER");
-                detail.put("state", "registered");
-                detail.put("lastModified", System.currentTimeMillis());
-                details.add(detail);
-            }
-        }
+        // 1. 从持久化层获取熔断器状态
+        return cbPersistenceAdapter.getAllCircuitBreakerInstanceIds()
+                .flatMapIterable(instanceIds -> instanceIds)
+                .flatMap(instanceId -> {
+                    return cbPersistenceAdapter.loadCircuitBreakerState(instanceId)
+                            .map(stateData -> {
+                                Map<String, Object> detail = new HashMap<>();
+                                detail.put("instanceId", instanceId);
+                                detail.put("stateType", "CIRCUIT_BREAKER");
+                                detail.put("state", stateData.getOrDefault("state", "UNKNOWN"));
+                                detail.put("lastModified", stateData.getOrDefault("timestamp", System.currentTimeMillis()));
+                                detail.put("failureCount", stateData.get("failureCount"));
+                                detail.put("successCount", stateData.get("successCount"));
+                                detail.put("tier", compositePersistenceService.getTierName());
+                                return detail;
+                            })
+                            .onErrorResume(e -> {
+                                logger.warn("Failed to load circuit breaker state: {}", instanceId);
+                                return Mono.empty();
+                            });
+                })
+                .collectList()
+                .flatMap(cbDetails -> {
+                    details.addAll(cbDetails);
 
-        return Mono.just(ResponseEntity.ok(createSuccessResponse(details)));
+                    // 2. 从持久化层获取负载均衡器状态
+                    return lbPersistenceAdapter.getAllLoadBalancerStates();
+                })
+                .flatMap(lbStates -> {
+                    for (Map.Entry<ModelServiceRegistry.ServiceType, Map<String, Object>> entry : lbStates.entrySet()) {
+                        Map<String, Object> stateData = entry.getValue();
+                        Map<String, Object> detail = new HashMap<>();
+                        detail.put("serviceType", entry.getKey().name());
+                        detail.put("stateType", "LOAD_BALANCER");
+                        detail.put("state", stateData.getOrDefault("strategy", "unknown"));
+                        detail.put("lastModified", stateData.getOrDefault("timestamp", System.currentTimeMillis()));
+                        detail.put("tier", compositePersistenceService.getTierName());
+                        details.add(detail);
+                    }
+
+                    // 3. 从持久化层获取限流器状态
+                    if (rlPersistenceAdapter != null) {
+                        return compositePersistenceService.getAllKeys(
+                                org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService.StateType.RATE_LIMITER)
+                                .flatMapIterable(keys -> keys)
+                                .flatMap(limiterId -> {
+                                    return rlPersistenceAdapter.loadRateLimiterState(limiterId)
+                                            .map(stateData -> {
+                                                Map<String, Object> detail = new HashMap<>();
+                                                detail.put("instanceId", limiterId);
+                                                detail.put("stateType", "RATE_LIMITER");
+                                                detail.put("state", stateData.getOrDefault("algorithm", "unknown"));
+                                                detail.put("lastModified", stateData.getOrDefault("timestamp", System.currentTimeMillis()));
+                                                detail.put("requestsPerSecond", stateData.get("requestsPerSecond"));
+                                                detail.put("capacity", stateData.get("capacity"));
+                                                detail.put("tier", compositePersistenceService.getTierName());
+                                                return detail;
+                                            })
+                                            .onErrorResume(e -> {
+                                                logger.warn("Failed to load rate limiter state: {}", limiterId);
+                                                return Mono.empty();
+                                            });
+                                })
+                                .collectList();
+                    }
+                    return Mono.just(new ArrayList<Map<String, Object>>());
+                })
+                .map(rlDetails -> {
+                    details.addAll(rlDetails);
+                    return ResponseEntity.ok(createSuccessResponse(details));
+                });
     }
 
     /**
@@ -324,6 +415,37 @@ public class StatePersistenceManagementController {
         data.put("note", "CircuitBreaker and LoadBalancer sync requires additional context");
 
         return Mono.just(ResponseEntity.ok(createSuccessResponse(data)));
+    }
+
+    /**
+     * 测试用：手动保存熔断器状态 (v2.9.x)
+     * 用于验证状态持久化和前端显示
+     */
+    @PostMapping("/test/save-circuit-breaker/{instanceId}")
+    public Mono<ResponseEntity<Map<String, Object>>> testSaveCircuitBreakerState(
+            @PathVariable final String instanceId) {
+
+        logger.info("Test save circuit breaker state for instance: {}", instanceId);
+
+        // 创建测试状态数据
+        Map<String, Object> stateData = new HashMap<>();
+        stateData.put("instanceId", instanceId);
+        stateData.put("state", "OPEN");
+        stateData.put("failureCount", 5);
+        stateData.put("successCount", 0);
+        stateData.put("timestamp", System.currentTimeMillis());
+
+        return compositePersistenceService.save(
+                org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService.StateType.CIRCUIT_BREAKER,
+                instanceId,
+                stateData)
+                .map(saved -> {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("instanceId", instanceId);
+                    data.put("saved", saved);
+                    data.put("stateData", stateData);
+                    return ResponseEntity.ok(createSuccessResponse(data));
+                });
     }
 
     /**
