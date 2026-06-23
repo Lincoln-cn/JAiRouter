@@ -350,10 +350,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.180814",
-      "ContentHash": "4e4b9f38026be942",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-23T06:07:14.245165",
+      "ContentHash": "7124060a84128240",
+      "GitCommit": "623002c1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -556,10 +556,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-06-03T06:53:11.235927",
-      "ContentHash": "0408735bb242b033",
-      "GitCommit": "85bfdb3e",
+      "Version": "1.0.5",
+      "LastModified": "2026-06-23T06:07:14.295125",
+      "ContentHash": "502ec0a6a4aa3786",
+      "GitCommit": "623002c1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -953,10 +953,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.426055",
-      "ContentHash": "1914cdc552a94407",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.4",
+      "LastModified": "2026-06-23T06:07:14.448720",
+      "ContentHash": "290838ff75166c4a",
+      "GitCommit": "623002c1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1174,10 +1174,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-06-03T06:53:11.473778",
-      "ContentHash": "2cf32d876143081f",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.5",
+      "LastModified": "2026-06-23T06:07:14.501243",
+      "ContentHash": "142cf9f99e8651bf",
+      "GitCommit": "623002c1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1819,10 +1819,10 @@
     },
     "docs/zh/configuration/validation-rules.md": {
       "FilePath": "docs/zh/configuration/validation-rules.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-10T06:24:27.845334",
-      "ContentHash": "a8c0845c872629e5",
-      "GitCommit": "ba6d6ddf",
+      "Version": "1.0.2",
+      "LastModified": "2026-06-23T06:07:14.390470",
+      "ContentHash": "3852868cf50e51e1",
+      "GitCommit": "623002c1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1943,10 +1943,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.51",
-      "LastModified": "2026-06-22T07:24:56.511264",
-      "ContentHash": "7844bb5deb918515",
-      "GitCommit": "7318fc6b",
+      "Version": "1.0.52",
+      "LastModified": "2026-06-23T06:07:14.142309",
+      "ContentHash": "b2702a9040af9f6f",
+      "GitCommit": "e1beee6c",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4769,7 +4769,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-06-22T07:24:56.511271",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.51",
+      "NewVersion": "1.0.52",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-23T06:07:14.142318",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-23T06:07:14.245177",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-23T06:07:14.295134",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/validation-rules.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-23T06:07:14.390479",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-23T06:07:14.448730",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-06-23T06:07:14.501252",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-06-22T07:24:56.994091"
+  "last_updated": "2026-06-23T06:07:14.657524"
 }
