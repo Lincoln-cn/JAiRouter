@@ -45,7 +45,8 @@
             </el-icon>
             <span>负载均衡器</span>
           </template>
-          <el-menu-item index="/load-balancers/management">负载均衡器管理</el-menu-item>
+          <el-menu-item index="/load-balancers/monitoring">实时监控</el-menu-item>
+          <el-menu-item index="/load-balancers/strategy-config">策略配置</el-menu-item>
         </el-sub-menu>
 
         <!-- 熔断器管理 -->
