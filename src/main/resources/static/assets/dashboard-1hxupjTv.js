@@ -1,1 +1,0 @@
-import{t as e}from"./request-0ZUmDuG1.js";var t=()=>e.get("/models/stats"),s=()=>e.get("/config/type/services"),a=t=>e.get(`/config/instance/${t}`),o=()=>e.get("/monitoring/overview"),i=()=>e.get("/config/type"),r=()=>e.get("/dashboard/metrics");export{t as a,a as i,r as n,s as o,o as r,i as t};

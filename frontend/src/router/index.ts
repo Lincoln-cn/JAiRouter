@@ -105,16 +105,33 @@ const router = createRouter({
       path: '/circuit-breakers',
       name: 'circuit-breakers',
       component: () => import('../views/Layout.vue'),
-      redirect: '/circuit-breakers/management',
+      redirect: '/circuit-breakers/monitoring',
       meta: { requiresAuth: true },
       children: [
         {
-          path: 'management',
-          name: 'circuit-breaker-management',
-          component: () => import('../views/config/CircuitBreakerManagement.vue'),
-          meta: { title: '熔断器管理', icon: 'bolt' }
+          path: 'monitoring',
+          name: 'circuit-breaker-monitoring',
+          component: () => import('../views/circuit-breaker/Monitoring.vue'),
+          meta: { title: '实时监控', icon: 'monitor' }
+        },
+        {
+          path: 'history',
+          name: 'circuit-breaker-history',
+          component: () => import('../views/circuit-breaker/History.vue'),
+          meta: { title: '历史记录', icon: 'document' }
+        },
+        {
+          path: 'global-config',
+          name: 'circuit-breaker-global-config',
+          component: () => import('../views/circuit-breaker/GlobalConfig.vue'),
+          meta: { title: '全局配置', icon: 'setting' }
         }
       ]
+    },
+    // 兼容旧路由
+    {
+      path: '/circuit-breakers/management',
+      redirect: '/circuit-breakers/monitoring'
     },
     // 安全管理
     {
