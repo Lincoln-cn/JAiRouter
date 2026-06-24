@@ -179,8 +179,8 @@ public class DashboardMetricsController {
         system.put("systemCpuUsage", getGaugeValue("system.cpu.usage"));
 
         // 运行时间
-        system.put("uptimeSeconds", getGaugeValue("process.uptime.seconds"));
-        system.put("startTime", getGaugeValue("process.start.time.seconds"));
+        system.put("uptimeSeconds", getGaugeValue("process.uptime"));
+        system.put("startTime", getGaugeValue("process.start.time"));
 
         // 文件描述符
         system.put("openFiles", getGaugeValue("process.files.open.files"));
