@@ -54,7 +54,8 @@ public class ExcludedPathsConfig {
         AUTH_EXCLUDED_PATTERNS = List.of(
             "/actuator/**",
             "/admin/**",
-            "/api/health-status/**"  // SSE健康状态推送端点
+            "/api/health-status/**",  // SSE健康状态推送端点
+            "/ws/**"                  // WebSocket端点（路由监控等）
         );
         
         // 数据脱敏排除路径

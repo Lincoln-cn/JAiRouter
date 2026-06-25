@@ -321,6 +321,16 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     private String getStrategyName() {
         return delegate.getClass().getSimpleName().replace("LoadBalancer", "").toLowerCase();
     }
+
+    /**
+     * 获取被包装的实际 LoadBalancer
+     * 用于获取实际的负载均衡策略名称
+     *
+     * @return 实际的 LoadBalancer 实例
+     */
+    public LoadBalancer getDelegate() {
+        return delegate;
+    }
     
     /**
      * 计算实例成功率

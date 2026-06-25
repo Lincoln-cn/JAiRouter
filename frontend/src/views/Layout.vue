@@ -204,7 +204,8 @@ import {
   Headset,
   Picture,
   Warning,
-  Promotion
+  Promotion,
+  DataAnalysis
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
