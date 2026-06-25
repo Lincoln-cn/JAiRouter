@@ -276,6 +276,7 @@ class ConsistentHashLoadBalancerTest {
     private ModelRouterProperties.ModelInstance createInstance(String name, String baseUrl, boolean healthy) {
         ModelRouterProperties.ModelInstance instance = new ModelRouterProperties.ModelInstance();
         instance.setId(name);
+        instance.setInstanceId(name);  // 设置 instanceId 避免 NullPointerException
         instance.setName(name);
         instance.setBaseUrl(baseUrl);
         instance.setHealthy(healthy);

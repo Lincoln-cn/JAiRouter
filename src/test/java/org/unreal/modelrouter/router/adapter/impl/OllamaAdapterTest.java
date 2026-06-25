@@ -404,6 +404,9 @@ class OllamaAdapterTest {
         if (result instanceof JsonNode) {
             return (JsonNode) result;
         }
+        if (result instanceof java.util.Map) {
+            return objectMapper.valueToTree(result);
+        }
         return objectMapper.readTree(result.toString());
     }
 }

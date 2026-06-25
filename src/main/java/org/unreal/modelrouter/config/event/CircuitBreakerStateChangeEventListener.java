@@ -9,6 +9,7 @@ import org.unreal.modelrouter.config.service.CircuitBreakerConfigService;
 import org.unreal.modelrouter.persistence.store.persistence.adapter.CircuitBreakerStatePersistenceAdapter;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
+import org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerMonitorService;
 
 /**
  * 熔断器状态变化事件监听器
@@ -17,6 +18,7 @@ import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
  *
  * v2.6.13: 新增
  * v2.9.x: 添加状态持久化触发
+ * v2.7.0: 添加监控服务集成
  */
 @Slf4j
 @Component
@@ -26,6 +28,7 @@ public class CircuitBreakerStateChangeEventListener {
     private final CircuitBreakerConfigService circuitBreakerConfigService;
     private final CircuitBreakerStatePersistenceAdapter cbPersistenceAdapter;
     private final CircuitBreakerManager circuitBreakerManager;
+    private final CircuitBreakerMonitorService circuitBreakerMonitorService;
 
     /**
      * 监听熔断器状态变化事件
@@ -48,7 +51,18 @@ public class CircuitBreakerStateChangeEventListener {
                     event.getFailureCount(),
                     event.getSuccessCount());
 
-            // 2. 触发状态持久化
+            // 2. 记录到实时监控服务
+            circuitBreakerMonitorService.recordStateChange(
+                    event.getInstanceId(),
+                    event.getInstanceName(),
+                    event.getServiceType(),
+                    event.getPreviousState() != null ? event.getPreviousState().name() : null,
+                    event.getCurrentState() != null ? event.getCurrentState().name() : null,
+                    event.getFailureCount() != null ? event.getFailureCount() : 0,
+                    event.getSuccessCount() != null ? event.getSuccessCount() : 0,
+                    event.getTriggerReason());
+
+            // 3. 触发状态持久化
             CircuitBreaker cb = circuitBreakerManager.getCircuitBreaker(event.getInstanceId(), null);
             if (cb != null) {
                 cbPersistenceAdapter.saveCircuitBreakerState(cb)

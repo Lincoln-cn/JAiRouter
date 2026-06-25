@@ -38,10 +38,11 @@ class AdapterTracingEnhancerTest {
     @BeforeEach
     void setUp() {
         enhancer = new AdapterTracingEnhancer(structuredLogger);
-        
+
         // 创建测试用的实例
         instance = new ModelRouterProperties.ModelInstance();
         instance.setName("test-instance");
+        instance.setInstanceId("test-instance-id");  // 设置 instanceId 避免 NullPointerException
         instance.setBaseUrl("http://api.openai.com");
         instance.setPath("/v1/chat/completions");
     }

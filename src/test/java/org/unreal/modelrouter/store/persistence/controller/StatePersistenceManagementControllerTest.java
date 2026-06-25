@@ -69,11 +69,14 @@ class StatePersistenceManagementControllerTest {
         ));
         when(cbPersistenceAdapter.getPendingSyncCount()).thenReturn(0);
         when(lbPersistenceAdapter.getPendingSyncCount()).thenReturn(0);
-        
-        // 添加 rlPersistenceAdapter 的 mock
-        Map<String, Object> statsMap = new HashMap<>();
-        statsMap.put("registeredCount", 0);
-        when(rlPersistenceAdapter.getStats()).thenReturn(Mono.just(statsMap));
+
+        // Mock getAllCircuitBreakerInstanceIds 返回空列表
+        when(cbPersistenceAdapter.getAllCircuitBreakerInstanceIds())
+                .thenReturn(Mono.just(Collections.emptyList()));
+        when(lbPersistenceAdapter.getAllLoadBalancerStates())
+                .thenReturn(Mono.just(Collections.emptyMap()));
+        when(compositePersistenceService.getAllKeys(any()))
+                .thenReturn(Mono.just(Collections.emptyList()));
 
         StepVerifier.create(controller.getPersistenceStatus())
                 .assertNext(response -> {
@@ -171,8 +174,13 @@ class StatePersistenceManagementControllerTest {
     @Test
     @DisplayName("测试 6: 获取状态详情列表")
     void testGetStateDetails() {
-        when(rlPersistenceAdapter.getRegisteredLimiterIds())
-                .thenReturn(Arrays.asList("limiter-1", "limiter-2"));
+        // Mock getAllCircuitBreakerInstanceIds 返回空列表
+        when(cbPersistenceAdapter.getAllCircuitBreakerInstanceIds())
+                .thenReturn(Mono.just(Collections.emptyList()));
+        when(lbPersistenceAdapter.getAllLoadBalancerStates())
+                .thenReturn(Mono.just(Collections.emptyMap()));
+        when(compositePersistenceService.getAllKeys(any()))
+                .thenReturn(Mono.just(Collections.emptyList()));
 
         StepVerifier.create(controller.getStateDetails())
                 .assertNext(response -> {

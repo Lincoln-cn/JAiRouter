@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.event.CircuitBreakerStateChangeEvent;
+import org.unreal.modelrouter.router.circuitbreaker.monitor.CircuitBreakerMonitorService;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 
 import java.util.Map;
@@ -37,6 +38,9 @@ public class CircuitBreakerManager {
     // 自适应阈值管理器（可选，通过 setter 注入）
     private AdaptiveThresholdManager adaptiveThresholdManager;
 
+    // 监控服务（可选，通过 setter 注入）
+    private CircuitBreakerMonitorService monitorService;
+
     public CircuitBreakerManager() {
         // 默认构造函数
     }
@@ -55,6 +59,14 @@ public class CircuitBreakerManager {
      */
     public void setAdaptiveThresholdManager(final AdaptiveThresholdManager adaptiveThresholdManager) {
         this.adaptiveThresholdManager = adaptiveThresholdManager;
+    }
+
+    /**
+     * 设置监控服务
+     * 通过 setter 注入避免循环依赖
+     */
+    public void setMonitorService(final CircuitBreakerMonitorService monitorService) {
+        this.monitorService = monitorService;
     }
 
     /**
@@ -129,6 +141,19 @@ public class CircuitBreakerManager {
                         serviceType);
             }
 
+            // 记录到监控服务
+            if (monitorService != null && cb instanceof LockFreeCircuitBreaker) {
+                Map<String, Object> detail = ((LockFreeCircuitBreaker) cb).getStateDetail();
+                if (detail != null) {
+                    monitorService.recordSuccess(
+                            instanceId != null ? instanceId : instanceUrl,
+                            instanceName,
+                            serviceType,
+                            (Integer) detail.getOrDefault("failureCount", 0),
+                            (Integer) detail.getOrDefault("successCount", 0));
+                }
+            }
+
             // 如果状态发生变化（HALF_OPEN -> CLOSED），发布事件
             if (previousState != currentState) {
                 logger.info("熔断器状态变化: instance={}, {} -> {}",
@@ -174,6 +199,19 @@ public class CircuitBreakerManager {
                         instanceId != null ? instanceId : instanceUrl,
                         instanceName,
                         serviceType);
+            }
+
+            // 记录到监控服务
+            if (monitorService != null && cb instanceof LockFreeCircuitBreaker) {
+                Map<String, Object> detail = ((LockFreeCircuitBreaker) cb).getStateDetail();
+                if (detail != null) {
+                    monitorService.recordFailure(
+                            instanceId != null ? instanceId : instanceUrl,
+                            instanceName,
+                            serviceType,
+                            (Integer) detail.getOrDefault("failureCount", 0),
+                            (Integer) detail.getOrDefault("successCount", 0));
+                }
             }
 
             // 如果状态发生变化，记录详细信息并发布事件
