@@ -220,3 +220,4 @@ jdeps/
 .qwen/skills/
 .qwen/welcome-back-state.json
 link-check-report.json
+.codegraph/

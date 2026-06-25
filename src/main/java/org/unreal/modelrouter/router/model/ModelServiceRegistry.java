@@ -16,7 +16,9 @@ import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.router.fallback.FallbackManager;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancerManager;
+import org.unreal.modelrouter.router.loadbalancer.monitor.RoutingMonitorService;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.monitor.tracing.wrapper.LoadBalancerTracingWrapper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,6 +75,9 @@ public class ModelServiceRegistry {
     private final ServiceInstanceSelector instanceSelector;
     private final ServiceConfigBuilder configBuilder;
 
+    // v2.7.0: 路由监控服务
+    private final RoutingMonitorService routingMonitorService;
+
     // 配置和缓存
     private final ModelRouterProperties originalProperties;
     private volatile Map<String, Object> currentConfig;
@@ -86,7 +91,8 @@ public class ModelServiceRegistry {
                                 final FallbackManager fallbackManager,
                                 final ConfigMergeService configMergeService,
                                 final ConfigurationHelper configurationHelper,
-                                final WebClientCacheManager webClientCacheManager) {
+                                final WebClientCacheManager webClientCacheManager,
+                                final RoutingMonitorService routingMonitorService) {
         this.originalProperties = properties;
         this.serviceStateManager = serviceStateManager;
         this.rateLimitManager = rateLimitManager;
@@ -96,9 +102,11 @@ public class ModelServiceRegistry {
         this.configMergeService = configMergeService;
         this.configurationHelper = configurationHelper;
         this.webClientCacheManager = webClientCacheManager;
+        this.routingMonitorService = routingMonitorService;
         this.serviceConfigCache = new ConcurrentHashMap<>();
         this.selectInstanceOptimizer = new SelectInstanceOptimizer(serviceStateManager, circuitBreakerManager);
-        this.instanceSelector = new ServiceInstanceSelector(serviceStateManager, rateLimitManager, circuitBreakerManager);
+        this.instanceSelector = new ServiceInstanceSelector(
+                serviceStateManager, rateLimitManager, circuitBreakerManager, routingMonitorService);
         this.configBuilder = new ServiceConfigBuilder(configurationHelper, rateLimitManager, circuitBreakerManager, fallbackManager);
     }
 
@@ -193,6 +201,16 @@ public class ModelServiceRegistry {
                     HttpStatus.SERVICE_UNAVAILABLE,
                     "All instances rate limited for model '" + modelName + "'");
         }
+
+        // v2.7.0: 记录路由选择事件
+        String strategy = getActualStrategyName(loadBalancer);
+        routingMonitorService.recordSelection(
+                serviceType.name().toLowerCase(),
+                modelName,
+                strategy,
+                selectedInstance,
+                clientIp,
+                availableInstances.size());
 
         loadBalancer.recordCall(selectedInstance);
         return selectedInstance;
@@ -388,5 +406,28 @@ public class ModelServiceRegistry {
                     config.getAdapter(),
                     config.getLoadBalanceConfig() != null ? config.getLoadBalanceConfig().getType() : "default");
         }
+    }
+
+    /**
+     * 获取实际的负载均衡策略名称
+     * 如果 LoadBalancer 被 LoadBalancerTracingWrapper 包装，则获取被包装的实际策略名
+     *
+     * @param loadBalancer 负载均衡器实例
+     * @return 实际的策略名称
+     */
+    private String getActualStrategyName(final LoadBalancer loadBalancer) {
+        if (loadBalancer == null) {
+            return "Unknown";
+        }
+
+        // 检查是否是 TracingWrapper
+        if (loadBalancer instanceof LoadBalancerTracingWrapper wrapper) {
+            LoadBalancer delegate = wrapper.getDelegate();
+            if (delegate != null) {
+                return delegate.getClass().getSimpleName();
+            }
+        }
+
+        return loadBalancer.getClass().getSimpleName();
     }
 }

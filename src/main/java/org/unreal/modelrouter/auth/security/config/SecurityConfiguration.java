@@ -108,6 +108,8 @@ public class SecurityConfiguration {
                 .pathMatchers("/favicon.ico").permitAll()
                 // 健康状态SSE推送允许匿名访问（前端实时健康状态监听）
                 .pathMatchers("/api/health-status/**").permitAll()
+                // WebSocket端点允许匿名访问（路由监控等）
+                .pathMatchers("/ws/**").permitAll()
                 // JWT登录端点允许匿名访问
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll()
                 // JWT验证端点允许匿名访问（用于验证令牌有效性）

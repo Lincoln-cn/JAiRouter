@@ -10,6 +10,35 @@ model:
     # 负载均衡策略类型
     # 支持: random, round-robin, least-connections, ip-hash, consistent-hash
     type: random
-    
+
     # IP Hash 策略的哈希算法
     hash-algorithm: "md5"
+
+# ========================================
+# 路由监控配置 (v2.7.0 新增)
+# ========================================
+# 用于实时监控负载均衡策略的实例选择情况
+# 支持采样记录、WebSocket 实时推送、历史记录导出
+
+jairouter:
+  loadbalancer:
+    routing-monitor:
+      # 是否启用路由监控
+      enabled: true
+
+      # 采样率 (0.0 - 1.0)
+      # 1.0 = 100% 记录所有请求
+      # 0.1 = 10% 采样 (默认值，适合生产环境)
+      # 0.01 = 1% 采样 (高流量场景)
+      sample-rate: 0.1
+
+      # 历史记录缓冲区大小 (每个服务类型)
+      # 范围: 100 - 10000
+      # 默认: 1000 条
+      history-size: 1000
+
+      # 是否启用 WebSocket 实时推送
+      websocket-enabled: true
+
+      # 统计刷新间隔 (毫秒)
+      stats-refresh-interval-ms: 1000

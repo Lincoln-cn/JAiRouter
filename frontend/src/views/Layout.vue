@@ -45,7 +45,8 @@
             </el-icon>
             <span>负载均衡器</span>
           </template>
-          <el-menu-item index="/load-balancers/management">负载均衡器管理</el-menu-item>
+          <el-menu-item index="/load-balancers/monitoring">实时监控</el-menu-item>
+          <el-menu-item index="/load-balancers/strategy-config">策略配置</el-menu-item>
         </el-sub-menu>
 
         <!-- 熔断器管理 -->
@@ -54,9 +55,11 @@
             <el-icon>
               <Promotion />
             </el-icon>
-            <span>熔断器管理</span>
+            <span>熔断器</span>
           </template>
-          <el-menu-item index="/circuit-breakers/management">熔断器管理</el-menu-item>
+          <el-menu-item index="/circuit-breakers/monitoring">实时监控</el-menu-item>
+          <el-menu-item index="/circuit-breakers/history">历史记录</el-menu-item>
+          <el-menu-item index="/circuit-breakers/global-config">全局配置</el-menu-item>
         </el-sub-menu>
 
         <!-- 安全管理 -->
@@ -201,7 +204,8 @@ import {
   Headset,
   Picture,
   Warning,
-  Promotion
+  Promotion,
+  DataAnalysis
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

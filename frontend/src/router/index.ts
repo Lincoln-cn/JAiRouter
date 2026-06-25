@@ -89,32 +89,60 @@ const router = createRouter({
       path: '/load-balancers',
       name: 'load-balancers',
       component: () => import('../views/Layout.vue'),
-      redirect: '/load-balancers/management',
+      redirect: '/load-balancers/monitoring',
       meta: { requiresAuth: true },
       children: [
         {
-          path: 'management',
-          name: 'load-balancer-management',
-          component: () => import('../views/config/LoadBalancerManagement.vue'),
-          meta: { title: '负载均衡器管理', icon: 'connection' }
+          path: 'monitoring',
+          name: 'load-balancer-monitoring',
+          component: () => import('../views/load-balancer/Monitoring.vue'),
+          meta: { title: '实时监控', icon: 'monitor' }
+        },
+        {
+          path: 'strategy-config',
+          name: 'load-balancer-strategy-config',
+          component: () => import('../views/load-balancer/StrategyConfig.vue'),
+          meta: { title: '策略配置', icon: 'setting' }
         }
       ]
+    },
+    // 兼容旧路由
+    {
+      path: '/load-balancers/management',
+      redirect: '/load-balancers/monitoring'
     },
     // 熔断器管理
     {
       path: '/circuit-breakers',
       name: 'circuit-breakers',
       component: () => import('../views/Layout.vue'),
-      redirect: '/circuit-breakers/management',
+      redirect: '/circuit-breakers/monitoring',
       meta: { requiresAuth: true },
       children: [
         {
-          path: 'management',
-          name: 'circuit-breaker-management',
-          component: () => import('../views/config/CircuitBreakerManagement.vue'),
-          meta: { title: '熔断器管理', icon: 'bolt' }
+          path: 'monitoring',
+          name: 'circuit-breaker-monitoring',
+          component: () => import('../views/circuit-breaker/Monitoring.vue'),
+          meta: { title: '实时监控', icon: 'monitor' }
+        },
+        {
+          path: 'history',
+          name: 'circuit-breaker-history',
+          component: () => import('../views/circuit-breaker/History.vue'),
+          meta: { title: '历史记录', icon: 'document' }
+        },
+        {
+          path: 'global-config',
+          name: 'circuit-breaker-global-config',
+          component: () => import('../views/circuit-breaker/GlobalConfig.vue'),
+          meta: { title: '全局配置', icon: 'setting' }
         }
       ]
+    },
+    // 兼容旧路由
+    {
+      path: '/circuit-breakers/management',
+      redirect: '/circuit-breakers/monitoring'
     },
     // 安全管理
     {

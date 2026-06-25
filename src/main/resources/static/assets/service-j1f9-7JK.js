@@ -1,1 +1,0 @@
-import{t as e}from"./request-0ZUmDuG1.js";var s=()=>e.get("/config/type/services/batch"),t=()=>e.get("/config/type"),i=s=>e.get(`/config/type/services/${s}`),a=(s,t)=>e.post(`/config/type/services/${s}`,t),c=(s,t)=>e.put(`/config/type/services/${s}`,t),o=s=>e.delete(`/config/type/services/${s}`),r=()=>e.get("/config/adapter");export{s as a,t as i,o as n,i as o,r,c as s,a as t};

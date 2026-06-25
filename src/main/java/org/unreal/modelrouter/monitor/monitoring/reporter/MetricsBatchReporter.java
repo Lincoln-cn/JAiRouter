@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.monitor.monitoring.reporter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
@@ -7,9 +9,19 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +51,8 @@ public class MetricsBatchReporter {
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsBatchReporter.class);
 
     private final MeterRegistry meterRegistry;
+    private final ObjectMapper objectMapper;
+    private final WebClient webClient;
 
     // 指标缓冲区（内存队列）
     private final ConcurrentLinkedQueue<MetricData> metricsBuffer = new ConcurrentLinkedQueue<>();
@@ -57,8 +71,30 @@ public class MetricsBatchReporter {
     // 上报目标（可扩展）
     private volatile ReportTarget reportTarget = ReportTarget.LOG;
 
-    public MetricsBatchReporter(final MeterRegistry meterRegistry) {
+    // HTTP 上报配置
+    @Value("${monitoring.metrics.export.http.enabled:false}")
+    private boolean httpEnabled;
+    @Value("${monitoring.metrics.export.http.url:}")
+    private String httpEndpointUrl;
+    @Value("${monitoring.metrics.export.http.timeout:5000}")
+    private int httpTimeoutMs;
+    @Value("${monitoring.metrics.export.http.format:prometheus}")
+    private String httpFormat;
+
+    // 文件上报配置
+    @Value("${monitoring.metrics.export.file.enabled:false}")
+    private boolean fileEnabled;
+    @Value("${monitoring.metrics.export.file.path:./logs/metrics}")
+    private String filePath;
+    @Value("${monitoring.metrics.export.file.format:json}")
+    private String fileFormat;
+    @Value("${monitoring.metrics.export.file.max-size-mb:100}")
+    private int fileMaxSizeMb;
+
+    public MetricsBatchReporter(final MeterRegistry meterRegistry, final ObjectMapper objectMapper) {
         this.meterRegistry = meterRegistry;
+        this.objectMapper = objectMapper;
+        this.webClient = WebClient.builder().build();
         LOGGER.info("MetricsBatchReporter initialized with target: {}", reportTarget);
     }
 
@@ -165,19 +201,161 @@ public class MetricsBatchReporter {
      * 上报到 HTTP 端点（可扩展：Prometheus Pushgateway, InfluxDB）
      */
     private boolean reportToHttp(final List<MetricData> batch) {
-        // TODO: 实现 HTTP 上报逻辑
-        // 可以集成 Prometheus Pushgateway, InfluxDB, Datadog 等
-        LOGGER.debug("HTTP reporting not implemented yet, batch size: {}", batch.size());
-        return true;
+        if (!httpEnabled || httpEndpointUrl == null || httpEndpointUrl.isEmpty()) {
+            LOGGER.debug("HTTP reporting disabled or no endpoint configured");
+            return false;
+        }
+
+        try {
+            String requestBody;
+            MediaType contentType;
+
+            // 根据格式选择不同的序列化方式
+            if ("prometheus".equalsIgnoreCase(httpFormat)) {
+                requestBody = formatAsPrometheus(batch);
+                contentType = MediaType.TEXT_PLAIN;
+            } else {
+                requestBody = objectMapper.writeValueAsString(Map.of(
+                        "metrics", batch,
+                        "timestamp", Instant.now().toString(),
+                        "source", "jairouter"
+                ));
+                contentType = MediaType.APPLICATION_JSON;
+            }
+
+            webClient.post()
+                    .uri(httpEndpointUrl)
+                    .contentType(contentType)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(java.time.Duration.ofMillis(httpTimeoutMs))
+                    .block();
+
+            LOGGER.debug("Reported {} metrics to HTTP endpoint: {}", batch.size(), httpEndpointUrl);
+            return true;
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Error serializing metrics for HTTP report: {}", e.getMessage());
+            return false;
+        } catch (Exception e) {
+            LOGGER.error("Error reporting metrics to HTTP endpoint {}: {}", httpEndpointUrl, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 格式化为 Prometheus Pushgateway 格式
+     */
+    private String formatAsPrometheus(final List<MetricData> batch) {
+        StringBuilder sb = new StringBuilder();
+        for (MetricData data : batch) {
+            // 格式: metric_name{tag1="value1",tag2="value2"} value
+            sb.append(data.getName());
+            if (!data.getTags().isEmpty()) {
+                sb.append("{");
+                boolean first = true;
+                for (Map.Entry<String, String> tag : data.getTags().entrySet()) {
+                    if (!first) {
+                        sb.append(",");
+                    }
+                    sb.append(tag.getKey()).append("=\"").append(tag.getValue()).append("\"");
+                    first = false;
+                }
+                sb.append("}");
+            }
+            sb.append(" ").append(data.getValue());
+            sb.append(" ").append(data.getTimestamp());
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
     /**
      * 上报到文件
      */
     private boolean reportToFile(final List<MetricData> batch) {
-        // TODO: 实现文件上报逻辑
-        LOGGER.debug("File reporting not implemented yet, batch size: {}", batch.size());
-        return true;
+        if (!fileEnabled || filePath == null || filePath.isEmpty()) {
+            LOGGER.debug("File reporting disabled or no path configured");
+            return false;
+        }
+
+        try {
+            Path dirPath = Paths.get(filePath);
+            if (!Files.exists(dirPath)) {
+                Files.createDirectories(dirPath);
+            }
+
+            String extension = "json".equalsIgnoreCase(fileFormat) ? "json" : "txt";
+            String dateStr = DateTimeFormatter.ofPattern("yyyyMMdd")
+                    .format(Instant.now().atZone(java.time.ZoneId.systemDefault()));
+
+            // 生成内容
+            String content;
+            if ("json".equalsIgnoreCase(fileFormat)) {
+                // JSON Lines 格式：每行一个 JSON 对象，便于追加和解析
+                content = objectMapper.writeValueAsString(Map.of(
+                        "metrics", batch,
+                        "timestamp", Instant.now().toString(),
+                        "source", "jairouter",
+                        "count", batch.size()
+                )) + "\n";
+            } else {
+                content = formatAsPrometheus(batch);
+            }
+
+            // 查找合适的文件（考虑文件大小限制和序号）
+            Path file = findAvailableFile(dirPath, dateStr, extension, content.length());
+
+            Files.writeString(file, content, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            LOGGER.debug("Reported {} metrics to file: {}", batch.size(), file);
+            return true;
+        } catch (IOException e) {
+            LOGGER.error("Error writing metrics to file {}: {}", filePath, e.getMessage());
+            return false;
+        } catch (Exception e) {
+            LOGGER.error("Error reporting metrics to file: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 查找可用的文件（考虑文件大小限制）
+     * 文件命名规则：metrics-YYYYMMDD.json 或 metrics-YYYYMMDD-N.json
+     */
+    private Path findAvailableFile(final Path dirPath, final String dateStr,
+                                    final String extension, final int contentLength) throws IOException {
+        long maxSizeBytes = (long) fileMaxSizeMb * 1024 * 1024;
+
+        // 先检查基础文件名
+        Path baseFile = dirPath.resolve("metrics-" + dateStr + "." + extension);
+        if (!Files.exists(baseFile)) {
+            return baseFile;
+        }
+
+        long currentSize = Files.size(baseFile);
+        if (currentSize + contentLength <= maxSizeBytes) {
+            return baseFile;
+        }
+
+        // 文件已满，查找下一个可用序号
+        int index = 1;
+        while (true) {
+            Path indexedFile = dirPath.resolve("metrics-" + dateStr + "-" + index + "." + extension);
+            if (!Files.exists(indexedFile)) {
+                return indexedFile;
+            }
+            currentSize = Files.size(indexedFile);
+            if (currentSize + contentLength <= maxSizeBytes) {
+                return indexedFile;
+            }
+            index++;
+
+            // 防止无限循环，最多检查 1000 个文件
+            if (index > 1000) {
+                LOGGER.warn("Too many metric files for date {}, using index 1000", dateStr);
+                return indexedFile;
+            }
+        }
     }
 
     /**

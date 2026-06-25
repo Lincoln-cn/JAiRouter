@@ -678,7 +678,7 @@ const fetchDashboardMetrics = async () => {
 
 // 格式化运行时间
 const formatUptime = (seconds: number | undefined) => {
-  if (!seconds) return 'N/A'
+  if (seconds === undefined || seconds === null) return 'N/A'
   const s = Math.round(seconds)
   const days = Math.floor(s / 86400)
   const hours = Math.floor((s % 86400) / 3600)

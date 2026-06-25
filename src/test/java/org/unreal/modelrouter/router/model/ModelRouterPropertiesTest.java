@@ -225,15 +225,26 @@ class ModelRouterPropertiesTest {
         }
 
         @Test
-        @DisplayName("测试getInstanceId自动生成")
+        @DisplayName("测试getInstanceId返回null当未设置时")
         void testGetInstanceIdAutoGenerate() {
             ModelInstance instance = new ModelInstance();
             instance.setInstanceId(null);
 
+            // v2.x: getInstanceId 不再自动生成，直接返回 null
             String instanceId = instance.getInstanceId();
 
-            assertNotNull(instanceId);
-            assertTrue(instanceId.length() > 0);
+            assertNull(instanceId);  // 未设置时返回 null
+        }
+
+        @Test
+        @DisplayName("测试getInstanceId返回设置的值")
+        void testGetInstanceIdReturnsSetValue() {
+            ModelInstance instance = new ModelInstance();
+            instance.setInstanceId("test-instance-id");
+
+            String instanceId = instance.getInstanceId();
+
+            assertEquals("test-instance-id", instanceId);
         }
     }
 

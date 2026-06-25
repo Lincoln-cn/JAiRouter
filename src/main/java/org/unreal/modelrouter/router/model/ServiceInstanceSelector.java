@@ -7,6 +7,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
+import org.unreal.modelrouter.router.loadbalancer.monitor.RoutingMonitorService;
 import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 
@@ -25,13 +26,16 @@ public class ServiceInstanceSelector {
     private final ServiceStateManager serviceStateManager;
     private final RateLimitManager rateLimitManager;
     private final CircuitBreakerManager circuitBreakerManager;
+    private final RoutingMonitorService routingMonitorService;
 
     public ServiceInstanceSelector(final ServiceStateManager serviceStateManager,
                                    final RateLimitManager rateLimitManager,
-                                   final CircuitBreakerManager circuitBreakerManager) {
+                                   final CircuitBreakerManager circuitBreakerManager,
+                                   final RoutingMonitorService routingMonitorService) {
         this.serviceStateManager = serviceStateManager;
         this.rateLimitManager = rateLimitManager;
         this.circuitBreakerManager = circuitBreakerManager;
+        this.routingMonitorService = routingMonitorService;
     }
 
     /**
