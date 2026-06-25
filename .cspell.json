@@ -257,7 +257,8 @@
     "prometheusrule",
     "tolerations",
     "nindent",
-    "netpol"
+    "netpol",
+    "Pushgateway"
   ],
   "ignoreWords": [
     "CNAME",
