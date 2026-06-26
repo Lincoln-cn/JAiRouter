@@ -79,4 +79,26 @@ public class LeakyBucketRateLimiter implements RateLimiter {
             }
         }
     }
+
+    /**
+     * 获取剩余容量
+     */
+    @Override
+    public long getRemainingCapacity() {
+        leak();
+        return Math.max(0, config.getCapacity() - water.get());
+    }
+
+    /**
+     * 获取容量使用率
+     */
+    @Override
+    public double getUsageRatio() {
+        leak();
+        long capacity = config.getCapacity();
+        if (capacity <= 0) {
+            return 0;
+        }
+        return (double) water.get() / capacity;
+    }
 }

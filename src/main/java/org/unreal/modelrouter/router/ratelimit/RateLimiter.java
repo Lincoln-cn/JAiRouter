@@ -16,4 +16,22 @@ public interface RateLimiter {
      * @return 限流配置
      */
     RateLimitConfig getConfig();
+
+    /**
+     * 获取剩余容量（令牌数/请求数）
+     * 用于监控和指标导出
+     * @return 剩余容量，-1 表示不支持或未知
+     */
+    default long getRemainingCapacity() {
+        return -1;
+    }
+
+    /**
+     * 获取容量使用率（0.0 ~ 1.0）
+     * 用于监控和指标导出
+     * @return 使用率，-1 表示不支持或未知
+     */
+    default double getUsageRatio() {
+        return -1;
+    }
 }
