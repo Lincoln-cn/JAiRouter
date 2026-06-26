@@ -122,11 +122,23 @@ public interface MetricsCollector {
     
     /**
      * 记录追踪分析指标
-     * 
+     *
      * @param analyzerName 分析器名称
      * @param spanCount Span数量
      * @param duration 分析耗时(毫秒)
      * @param success 是否成功
      */
     void recordTraceAnalysis(String analyzerName, int spanCount, long duration, boolean success);
+
+    /**
+     * 记录限流器状态指标
+     *
+     * @param service 服务名称
+     * @param scope 作用域 (global, service, instance, client-ip)
+     * @param algorithm 限流算法
+     * @param remainingCapacity 剩余容量
+     * @param usageRatio 使用率 (0.0 ~ 1.0)
+     */
+    void recordRateLimitStatus(String service, String scope, String algorithm,
+                               long remainingCapacity, double usageRatio);
 }

@@ -312,6 +312,27 @@ const router = createRouter({
         }
       ]
     },
+    // 限流器管理
+    {
+      path: '/rate-limiters',
+      name: 'rate-limiters',
+      component: () => import('../views/Layout.vue'),
+      redirect: '/rate-limiters/monitoring',
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'monitoring',
+          name: 'rate-limiter-monitoring',
+          component: () => import('../views/rate-limiter/Monitoring.vue'),
+          meta: { title: '实时监控', icon: 'monitor' }
+        }
+      ]
+    },
+    // 兼容旧路由
+    {
+      path: '/rate-limiters/management',
+      redirect: '/rate-limiters/monitoring'
+    },
     // Token 使用量统计路由
     {
       path: '/token-usage',

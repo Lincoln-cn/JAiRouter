@@ -15,6 +15,7 @@ import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledConditi
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 默认指标收集器实现
@@ -34,6 +35,7 @@ public class DefaultMetricsCollector implements MetricsCollector {
     private final ConcurrentHashMap<String, Timer> timers = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, DistributionSummary> summaries = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicLong> gaugeValues = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicReference<Double>> usageGauges = new ConcurrentHashMap<>();
 
     public DefaultMetricsCollector(final MeterRegistry meterRegistry, final MonitoringProperties monitoringProperties) {
         this.meterRegistry = meterRegistry;
@@ -491,6 +493,48 @@ public class DefaultMetricsCollector implements MetricsCollector {
                     analyzerName, spanCount, duration, success);
         } catch (Exception e) {
             logger.warn("Failed to record trace analysis metric: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordRateLimitStatus(final String service, final String scope, final String algorithm,
+                                       final long remainingCapacity, final double usageRatio) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+
+            // 记录剩余容量 Gauge
+            String remainingKey = "rate.limit.remaining." + service + "." + scope;
+            AtomicLong remainingValue = gaugeValues.computeIfAbsent(remainingKey, key -> {
+                AtomicLong value = new AtomicLong(remainingCapacity);
+                Gauge.builder(metricPrefix + "rate_limit_remaining", value, AtomicLong::doubleValue)
+                    .tag("service", service)
+                    .tag("scope", scope)
+                    .tag("algorithm", algorithm)
+                    .description("Remaining capacity of rate limiter")
+                    .register(meterRegistry);
+                return value;
+            });
+            remainingValue.set(remainingCapacity);
+
+            // 记录使用率 Gauge (使用 double 存储)
+            String usageKey = "rate.limit.usage.ratio." + service + "." + scope;
+            AtomicReference<Double> usageRef = usageGauges.computeIfAbsent(usageKey, key -> {
+                AtomicReference<Double> ref = new AtomicReference<>(usageRatio);
+                Gauge.builder(metricPrefix + "rate_limit_usage_ratio", ref, AtomicReference::get)
+                    .tag("service", service)
+                    .tag("scope", scope)
+                    .tag("algorithm", algorithm)
+                    .description("Rate limiter usage ratio (0.0 ~ 1.0)")
+                    .register(meterRegistry);
+                return ref;
+            });
+            usageRef.set(usageRatio);
+
+            logger.debug("Recorded rate limit status: service={}, scope={}, remaining={}, usage={}",
+                    service, scope, remainingCapacity, usageRatio);
+        } catch (Exception e) {
+            logger.warn("Failed to record rate limit status: {}", e.getMessage());
         }
     }
 

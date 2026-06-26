@@ -62,6 +62,17 @@
           <el-menu-item index="/circuit-breakers/global-config">全局配置</el-menu-item>
         </el-sub-menu>
 
+        <!-- 限流器管理 -->
+        <el-sub-menu index="rate-limiters">
+          <template #title>
+            <el-icon>
+              <Odometer />
+            </el-icon>
+            <span>限流器</span>
+          </template>
+          <el-menu-item index="/rate-limiters/monitoring">实时监控</el-menu-item>
+        </el-sub-menu>
+
         <!-- 安全管理 -->
         <el-sub-menu index="security">
           <template #title>
@@ -205,7 +216,8 @@ import {
   Picture,
   Warning,
   Promotion,
-  DataAnalysis
+  DataAnalysis,
+  Odometer
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -242,6 +254,8 @@ const defaultOpeneds = computed(() => {
     openeds.push('load-balancers')
   } else if (path.startsWith('/circuit-breakers')) {
     openeds.push('circuit-breakers')
+  } else if (path.startsWith('/rate-limiters')) {
+    openeds.push('rate-limiters')
   } else if (path.startsWith('/security')) {
     openeds.push('security')
   } else if (path.startsWith('/system')) {

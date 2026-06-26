@@ -314,6 +314,21 @@ public class AsyncMetricsCollector implements MetricsCollector {
         }
     }
 
+    @Override
+    public void recordRateLimitStatus(final String service, final String scope, final String algorithm,
+                                       final long remainingCapacity, final double usageRatio) {
+        try {
+            if (shouldUseAsyncProcessing()) {
+                // 限流器状态指标不需要采样
+                fallbackCollector.recordRateLimitStatus(service, scope, algorithm, remainingCapacity, usageRatio);
+            } else {
+                fallbackCollector.recordRateLimitStatus(service, scope, algorithm, remainingCapacity, usageRatio);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to record rate limit status metric: {}", e.getMessage());
+        }
+    }
+
     /**
      * 判断是否应该使用异步处理
      */
