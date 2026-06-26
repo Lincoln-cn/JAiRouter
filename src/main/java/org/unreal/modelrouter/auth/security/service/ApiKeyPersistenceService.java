@@ -193,6 +193,102 @@ public class ApiKeyPersistenceService {
             throw new RuntimeException("Failed to load persisted API key config", e);
         }
     }
+    
+    /**
+     * 加载持久化配置并与 YAML 配置合并（YAML 优先）
+     * v2.x 修复：解决 YAML 中定义的 API Key 无法生效的问题
+     *
+     * @param apiKeyCache    API Key 缓存
+     * @param keyIdIndex     ID 索引
+     * @param yamlApiKeys    YAML 配置中的 API Keys
+     */
+    public void loadAndMergeWithYaml(final Map<String, ApiKey> apiKeyCache,
+                                      final Map<String, String> keyIdIndex,
+                                      final List<ApiKey> yamlApiKeys) {
+        log.info("合并持久化API Key配置与YAML配置（YAML优先）");
+        
+        try {
+            // 1. 先加载持久化配置
+            int currentVersion = apiKeyConfigManager != null
+                    ? apiKeyConfigManager.getCurrentVersion()
+                    : storeManager.getConfigVersions(API_KEYS_STORE_KEY).stream().max(Integer::compareTo).orElse(0);
+            
+            Map<String, Object> versionConfig = null;
+            if (currentVersion > 0) {
+                versionConfig = apiKeyConfigManager != null
+                        ? apiKeyConfigManager.getVersionConfig(currentVersion)
+                        : storeManager.getConfigByVersion(API_KEYS_STORE_KEY, currentVersion);
+            }
+            
+            List<Map<String, Object>> persistedKeys = versionConfig != null 
+                    ? (List<Map<String, Object>>) versionConfig.get(STORE_API_KEYS) 
+                    : null;
+            
+            // 2. 加载持久化的 API Key 到缓存
+            if (persistedKeys != null && !persistedKeys.isEmpty()) {
+                persistedKeys.stream()
+                        .map(item -> objectMapper.convertValue(item, ApiKey.class))
+                        .forEach(item -> {
+                            // 对旧的明文 keyValue 进行哈希迁移
+                            if (item.getKeyValue() != null && !ApiKeyHashUtil.isHashedFormat(item.getKeyValue())) {
+                                String keyHash = ApiKeyHashUtil.hashApiKey(item.getKeyValue());
+                                item.setKeyHash(keyHash);
+                                item.setKeyValue(null);
+                                item.setKeyPrefix("sk-");
+                                log.info("迁移API Key {} 从明文存储到哈希存储", item.getKeyId());
+                            }
+                            
+                            if (item.getKeyHash() != null && !apiKeyCache.containsKey(item.getKeyHash())) {
+                                apiKeyCache.put(item.getKeyHash(), item);
+                                keyIdIndex.put(item.getKeyId(), item.getKeyHash());
+                            }
+                        });
+                log.debug("从持久化加载了 {} 个API Key", apiKeyCache.size());
+            }
+            
+            // 3. 合并 YAML 配置（YAML 优先，覆盖同名 keyId）
+            int mergedCount = 0;
+            for (ApiKey yamlKey : yamlApiKeys) {
+                String keyId = yamlKey.getKeyId();
+                
+                // 处理明文 keyValue
+                if (yamlKey.getKeyValue() != null && !ApiKeyHashUtil.isHashedFormat(yamlKey.getKeyValue())) {
+                    String keyHash = ApiKeyHashUtil.hashApiKey(yamlKey.getKeyValue());
+                    yamlKey.setKeyHash(keyHash);
+                    yamlKey.setKeyValue(null);
+                    yamlKey.setKeyPrefix("sk-");
+                }
+                
+                // 如果已存在同名 keyId，先移除旧的
+                String existingKeyHash = keyIdIndex.get(keyId);
+                if (existingKeyHash != null) {
+                    apiKeyCache.remove(existingKeyHash);
+                    log.debug("移除旧的API Key: {} (keyId={})", existingKeyHash, keyId);
+                }
+                
+                // 添加 YAML 中的新配置
+                if (yamlKey.getKeyHash() != null) {
+                    apiKeyCache.put(yamlKey.getKeyHash(), yamlKey);
+                    keyIdIndex.put(keyId, yamlKey.getKeyHash());
+                    mergedCount++;
+                    log.info("合并YAML API Key: {} (keyId={})", yamlKey.getKeyHash().substring(0, 16) + "...", keyId);
+                }
+            }
+            
+            log.info("合并完成：持久化 {} 个，YAML 合并 {} 个，总计 {} 个API Key", 
+                    persistedKeys != null ? persistedKeys.size() : 0, mergedCount, apiKeyCache.size());
+            
+            // 4. 保存合并后的配置
+            if (mergedCount > 0) {
+                saveApiKeysToStore(apiKeyCache);
+                log.info("已保存合并后的API Key配置");
+            }
+        } catch (Exception e) {
+            log.error("合并API Key配置失败，回退到YAML初始化: {}", e.getMessage());
+            // 失败时回退到 YAML 初始化
+            initializeApiKeyFromYaml(apiKeyCache, keyIdIndex, yamlApiKeys);
+        }
+    }
 
     /**
      * 获取下一个版本号

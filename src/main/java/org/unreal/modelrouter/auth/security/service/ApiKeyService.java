@@ -201,6 +201,14 @@ public class ApiKeyService {
     public void loadLatestApiKeyConfig() {
         apiKeyPersistenceService.loadLatestApiKeyConfig(apiKeyCache, keyIdIndex, loadApiKeysFromConfig());
     }
+    
+    /**
+     * 加载持久化配置并与 YAML 配置合并（YAML 优先）
+     * v2.x 修复：解决 YAML 中定义的 API Key 无法生效的问题
+     */
+    public void loadAndMergeWithYaml() {
+        apiKeyPersistenceService.loadAndMergeWithYaml(apiKeyCache, keyIdIndex, loadApiKeysFromConfig());
+    }
 
     public void updateUsageStatistics(String kid, boolean succ) {
         String kh = keyIdIndex.get(kid);
