@@ -1,9 +1,9 @@
 # Error Codes Reference
 
 <!-- Version Info -->
-> **Document Version**: 1.0.0
-> **Last Updated**: 2026-05-25
-> **Applicable Version**: v2.7.34+
+> **Document Version**: 1.0.1
+> **Last Updated**: 2026-06-29
+> **Applicable Version**: v2.7.5+
 > **Author**: AI Assistant
 
 JAiRouter uses a standardized error code system to identify various error conditions. All error responses include an error code field for client-side error handling.
@@ -281,8 +281,9 @@ log.error("Authentication failed: errorCode={}, message={}",
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.0.1 | 2026-06-29 | Update version reference to v2.7.5+, fix incorrect version number |
 | 1.0.0 | 2026-05-25 | Initial version with all error code definitions |
 
 ---
 
-*Last updated: 2026-05-25*
+*Last updated: 2026-06-29*
