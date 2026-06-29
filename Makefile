@@ -67,12 +67,26 @@ coverage: ## 生成测试覆盖率报告
 	@echo "生成测试覆盖率报告..."
 	mvn clean test jacoco:report
 
-# Docker 构建 - 生产环境
+# Docker 构建 - 生产环境（标准 Debian 版）
 .PHONY: docker-build
-docker-build: package-fast ## 构建生产环境 Docker 镜像
-	@echo "构建生产环境 Docker 镜像..."
+docker-build: package-fast ## 构建生产环境 Docker 镜像（标准版）
+	@echo "构建生产环境 Docker 镜像（标准版）..."
 	docker build -t $(DOCKER_IMAGE):$(VERSION) .
 	docker tag $(DOCKER_IMAGE):$(VERSION) $(DOCKER_IMAGE):latest
+
+# Docker 构建 - 优化版（Alpine 基础镜像，~200MB，减小40%+）
+.PHONY: docker-build-optimized
+docker-build-optimized: package-fast ## 构建优化版 Docker 镜像（Alpine，减小40%+）
+	@echo "构建优化版 Docker 镜像（Alpine 基础镜像，~200MB）..."
+	docker build -f Dockerfile.optimized -t $(DOCKER_IMAGE):$(VERSION)-alpine .
+	docker tag $(DOCKER_IMAGE):$(VERSION)-alpine $(DOCKER_IMAGE):alpine
+
+# Docker 构建 - Distroless 版（Google Distroless，~180MB，最小攻击面）
+.PHONY: docker-build-distroless
+docker-build-distroless: package-fast ## 构建 Distroless Docker 镜像（最小攻击面，~180MB）
+	@echo "构建 Distroless Docker 镜像（Google Distroless，~180MB）..."
+	docker build -f Dockerfile.distroless -t $(DOCKER_IMAGE):$(VERSION)-distroless .
+	docker tag $(DOCKER_IMAGE):$(VERSION)-distroless $(DOCKER_IMAGE):distroless
 
 # Docker 构建 - 开发环境
 .PHONY: docker-build-dev
@@ -85,6 +99,11 @@ docker-build-dev: package ## 构建开发环境 Docker 镜像
 docker-build-jib: ## 使用 Jib 构建 Docker 镜像
 	@echo "使用 Jib 构建 Docker 镜像..."
 	mvn clean package jib:dockerBuild -Pjib
+
+# Docker 构建 - 全部版本
+.PHONY: docker-build-all
+docker-build-all: docker-build docker-build-optimized docker-build-distroless ## 构建所有版本 Docker 镜像（标准+Alpine+Distroless）
+	@echo "所有版本 Docker 镜像构建完成"
 
 # Docker 运行 - 生产环境
 .PHONY: docker-run
@@ -194,7 +213,7 @@ docker-clean: ## 清理 Docker 资源
 	@echo "清理 Docker 资源..."
 	-docker stop $(PROJECT_NAME)-prod $(PROJECT_NAME)-dev
 	-docker rm $(PROJECT_NAME)-prod $(PROJECT_NAME)-dev
-	-docker rmi $(DOCKER_IMAGE):$(VERSION) $(DOCKER_IMAGE):latest $(DOCKER_IMAGE):$(VERSION)-dev
+	-docker rmi $(DOCKER_IMAGE):$(VERSION) $(DOCKER_IMAGE):latest $(DOCKER_IMAGE):$(VERSION)-dev $(DOCKER_IMAGE):$(VERSION)-alpine $(DOCKER_IMAGE):$(VERSION)-distroless $(DOCKER_IMAGE):alpine $(DOCKER_IMAGE):distroless
 	docker system prune -f
 
 # ========================================
