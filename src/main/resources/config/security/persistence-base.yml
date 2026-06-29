@@ -110,12 +110,9 @@ spring:
       max-size: 20
       max-idle-time: 30m
   
-  # SQL 初始化配置（用于 R2DBC）
-  sql:
-    init:
-      mode: always  # 总是执行初始化脚本
-      schema-locations: classpath:schema.sql
-      continue-on-error: false
+  # SQL 初始化配置已移除
+  # 使用 JPA ddl-auto: update 自动管理表结构，避免 schema.sql 与 Entity 不同步问题
+  # 参见: skill schema-sql-jpa-sync
   
   # Redis连接配置（共享）
   data:

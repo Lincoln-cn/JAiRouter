@@ -9,6 +9,7 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -359,6 +360,92 @@ public class RateLimitManager {
                 "instanceRateLimiters", instanceLimiters.size()
         ));
         return status;
+    }
+
+    /**
+     * 获取限流器详细指标信息
+     * 包括剩余容量和使用率
+     * @return 指标信息列表
+     */
+    public List<RateLimiterMetrics> getRateLimiterMetrics() {
+        List<RateLimiterMetrics> metrics = new java.util.ArrayList<>();
+
+        // 全局限流器
+        if (globalLimiter != null) {
+            metrics.add(new RateLimiterMetrics(
+                    "global", "global", "global",
+                    globalLimiter.getConfig().getAlgorithm(),
+                    globalLimiter.getRemainingCapacity(),
+                    globalLimiter.getUsageRatio(),
+                    globalLimiter.getConfig().getCapacity(),
+                    globalLimiter.getConfig().getRate()
+            ));
+        }
+
+        // 服务级限流器
+        serviceLimiters.forEach((type, limiter) -> {
+            metrics.add(new RateLimiterMetrics(
+                    type.name().toLowerCase(), "service", type.name().toLowerCase(),
+                    limiter.getConfig().getAlgorithm(),
+                    limiter.getRemainingCapacity(),
+                    limiter.getUsageRatio(),
+                    limiter.getConfig().getCapacity(),
+                    limiter.getConfig().getRate()
+            ));
+        });
+
+        // 实例级限流器
+        instanceLimiters.forEach((key, limiter) -> {
+            String[] parts = key.split(":");
+            String serviceName = parts.length > 0 ? parts[0].toLowerCase() : "unknown";
+            String instanceId = parts.length > 1 ? parts[1] : key;
+            metrics.add(new RateLimiterMetrics(
+                    serviceName, "instance", instanceId,
+                    limiter.getConfig().getAlgorithm(),
+                    limiter.getRemainingCapacity(),
+                    limiter.getUsageRatio(),
+                    limiter.getConfig().getCapacity(),
+                    limiter.getConfig().getRate()
+            ));
+        });
+
+        return metrics;
+    }
+
+    /**
+     * 限流器指标数据结构
+     */
+    public static class RateLimiterMetrics {
+        private final String service;
+        private final String scope;
+        private final String identifier;
+        private final String algorithm;
+        private final long remainingCapacity;
+        private final double usageRatio;
+        private final long capacity;
+        private final long rate;
+
+        public RateLimiterMetrics(final String service, final String scope, final String identifier,
+                                   final String algorithm, final long remainingCapacity, final double usageRatio,
+                                   final long capacity, final long rate) {
+            this.service = service;
+            this.scope = scope;
+            this.identifier = identifier;
+            this.algorithm = algorithm;
+            this.remainingCapacity = remainingCapacity;
+            this.usageRatio = usageRatio;
+            this.capacity = capacity;
+            this.rate = rate;
+        }
+
+        public String getService() { return service; }
+        public String getScope() { return scope; }
+        public String getIdentifier() { return identifier; }
+        public String getAlgorithm() { return algorithm; }
+        public long getRemainingCapacity() { return remainingCapacity; }
+        public double getUsageRatio() { return usageRatio; }
+        public long getCapacity() { return capacity; }
+        public long getRate() { return rate; }
     }
 
     private String describe(final RateLimitConfig cfg) {

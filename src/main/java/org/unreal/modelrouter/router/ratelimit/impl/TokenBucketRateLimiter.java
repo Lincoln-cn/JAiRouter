@@ -86,4 +86,26 @@ public class TokenBucketRateLimiter implements RateLimiter {
             }
         }
     }
+
+    /**
+     * 获取剩余令牌数
+     */
+    @Override
+    public long getRemainingCapacity() {
+        refill();
+        return tokens.get();
+    }
+
+    /**
+     * 获取容量使用率
+     */
+    @Override
+    public double getUsageRatio() {
+        long remaining = getRemainingCapacity();
+        long capacity = config.getCapacity();
+        if (capacity <= 0) {
+            return 0;
+        }
+        return 1.0 - ((double) remaining / capacity);
+    }
 }

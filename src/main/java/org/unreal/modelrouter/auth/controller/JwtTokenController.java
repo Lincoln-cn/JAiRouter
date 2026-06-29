@@ -21,21 +21,15 @@ import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.dto.BatchTokenRevokeRequest;
 import org.unreal.modelrouter.common.dto.JwtApiResponse;
 import org.unreal.modelrouter.common.dto.JwtTokenInfo;
-import org.unreal.modelrouter.common.dto.LoginRequest;
-import org.unreal.modelrouter.common.dto.LoginResponse;
 import org.unreal.modelrouter.common.dto.PagedResult;
-import org.unreal.modelrouter.common.dto.TokenRefreshRequest;
 import org.unreal.modelrouter.common.dto.TokenRevokeRequest;
 import org.unreal.modelrouter.common.dto.TokenStatus;
 import org.unreal.modelrouter.common.dto.TokenValidationRequest;
 import org.unreal.modelrouter.common.dto.TokenValidationResponse;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
-import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
-import org.unreal.modelrouter.auth.security.service.AccountManager;
 import org.unreal.modelrouter.auth.security.service.JwtTokenRefreshService;
 import org.unreal.modelrouter.auth.security.service.JwtPersistenceService;
 import org.unreal.modelrouter.auth.security.service.JwtCleanupService;
-import org.unreal.modelrouter.auth.security.service.JwtBlacklistService;
 import org.unreal.modelrouter.auth.security.service.JwtTokenManagementService;
 import org.unreal.modelrouter.auth.security.service.JwtTokenQueryService;
 import reactor.core.publisher.Mono;
@@ -43,11 +37,11 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-// Validation imports removed - using Spring Boot 3.x validation
-
 /**
  * JWT令牌管理控制器
- * 提供令牌刷新、撤销等管理功能的REST API
+ * 提供令牌撤销、验证、查询等管理功能的REST API
+ * 
+ * @see JwtAuthController 认证相关功能（登录、刷新）
  */
 @Slf4j
 @RestController
@@ -59,142 +53,25 @@ public class JwtTokenController {
 
     private final JwtTokenRefreshService tokenRefreshService;
     private final JwtTokenValidator jwtTokenValidator;
-    private final AccountManager accountManager;
-    private final SecurityProperties securityProperties;
-    
-    // Optional services for token management (may not be available in all configurations)
+
     @Autowired(required = false)
     private JwtPersistenceService jwtPersistenceService;
-    
+
     @Autowired(required = false)
     private JwtCleanupService jwtCleanupService;
-    
-    @Autowired(required = false)
-    private JwtBlacklistService jwtBlacklistService;
+
     @Autowired(required = false)
     private JwtTokenManagementService jwtTokenManagementService;
 
     @Autowired(required = false)
     private JwtTokenQueryService jwtTokenQueryService;
-    
+
     @jakarta.annotation.PostConstruct
     public void init() {
         log.info("=== JwtTokenController initialized ===");
         log.info("JwtPersistenceService available: {}", jwtPersistenceService != null);
         log.info("JwtCleanupService available: {}", jwtCleanupService != null);
-        log.info("JwtBlacklistService available: {}", jwtBlacklistService != null);
-        if (jwtPersistenceService != null) {
-            log.info("JwtPersistenceService class: {}", jwtPersistenceService.getClass().getSimpleName());
-        } else {
-            log.warn("!!! JwtPersistenceService is NULL - Token persistence will NOT work !!!");
-            log.warn("Check configuration: jairouter.security.jwt.persistence.enabled should be true");
-        }
-    }
-
-    /**
-     * 用户登录获取JWT令牌
-     */
-    @PostMapping("/login")
-    @Operation(summary = "用户登录", description = "使用用户名和密码登录获取JWT令牌")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "登录成功"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "用户名或密码错误")
-    })
-    public Mono<RouterResponse<LoginResponse>> login(
-            @Parameter(description = "登录请求") @RequestBody final LoginRequest request,
-            final org.springframework.web.server.ServerWebExchange exchange) {
-
-        log.info("收到用户登录请求: username={}", request.getUsername());
-        log.info("accountManager class: {}", accountManager.getClass().getName());
-        log.info("securityProperties JWT enabled: {}", securityProperties.getJwt().isEnabled());
-        log.info("securityProperties JWT accounts count: {}", 
-            securityProperties.getJwt().getAccounts() != null ? securityProperties.getJwt().getAccounts().size() : "null");
-
-        // 收集请求上下文信息
-        String clientIp = getClientIpAddress(exchange);
-        String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
-        
-        return accountManager.authenticateAndGenerateToken(request.getUsername(), request.getPassword(), securityProperties, clientIp, userAgent)
-                .flatMap(token -> {
-                    LoginResponse response = new LoginResponse();
-                    response.setToken(token);
-                    response.setTokenType("Bearer");
-                    response.setExpiresIn(securityProperties.getJwt().getExpirationMinutes() * 60L);
-
-                    // 如果持久化服务可用，保存令牌元数据（包含审计）
-                    if (jwtPersistenceService != null) {
-                        log.info("保存令牌元数据到H2数据库: username={}, ip={}", request.getUsername(), clientIp);
-                        return tokenRefreshService.saveTokenMetadata(token, request.getUsername(), userAgent, clientIp, userAgent)
-                                .doOnSuccess(v -> log.info("✓ 令牌元数据已成功保存到H2数据库: username={}", request.getUsername()))
-                                .then(Mono.just(RouterResponse.success(response, "登录成功")))
-                                .onErrorResume(ex -> {
-                                    // 持久化失败不影响登录成功，只记录日志
-                                    log.error("✗ 保存令牌元数据失败: {}", ex.getMessage(), ex);
-                                    return Mono.just(RouterResponse.success(response, "登录成功"));
-                                });
-                    } else {
-                        log.warn("!!! JwtPersistenceService不可用，令牌未持久化 !!!");
-                        return Mono.just(RouterResponse.success(response, "登录成功"));
-                    }
-                })
-                .onErrorResume(ex -> {
-                    log.warn("用户登录失败: {}", ex.getMessage());
-
-                    return Mono.just(RouterResponse.error("登录失败: " + ex.getMessage(), "LOGIN_FAILED"));
-                });
-    }
-
-    /**
-     * 刷新JWT令牌
-     */
-    @PostMapping("/refresh")
-    @Operation(summary = "刷新JWT令牌", description = "使用当前令牌获取新的JWT令牌")
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "令牌刷新成功"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "当前令牌无效或已过期"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误")
-    })
-    public Mono<RouterResponse<JwtTokenInfo>> refreshToken(
-            @Parameter(description = "令牌刷新请求") @RequestBody final TokenRefreshRequest request,
-            final Authentication authentication,
-            final org.springframework.web.server.ServerWebExchange exchange) {
-
-        log.debug("收到JWT令牌刷新请求: user={}", authentication != null ? authentication.getName() : "anonymous");
-
-        // 收集请求上下文信息
-        String clientIp = getClientIpAddress(exchange);
-        String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
-        
-        return tokenRefreshService.refreshToken(request.getToken(), clientIp, userAgent)
-                .flatMap(newToken -> {
-                    JwtTokenInfo response = new JwtTokenInfo();
-                    response.setToken(newToken);
-                    response.setTokenType("Bearer");
-                    response.setMessage("令牌刷新成功");
-                    response.setTimestamp(LocalDateTime.now());
-
-                    // 如果持久化服务可用，保存新令牌元数据（包含设备信息和IP地址）
-                    if (jwtPersistenceService != null && authentication != null) {
-                        return tokenRefreshService.saveTokenOnRefreshWithContext(request.getToken(), newToken, userAgent, clientIp, userAgent)
-                                .then(Mono.just(RouterResponse.success(response, "令牌刷新成功")))
-                                .onErrorResume(ex -> {
-                                    log.warn("刷新时保存令牌元数据失败: {}", ex.getMessage());
-                                    return Mono.just(RouterResponse.success(response, "令牌刷新成功"));
-                                });
-                    } else {
-                        return Mono.just(RouterResponse.success(response, "令牌刷新成功"));
-                    }
-                })
-                .onErrorResume(ex -> {
-                    log.warn("JWT令牌刷新失败: {}", ex.getMessage());
-
-                    JwtTokenInfo response = new JwtTokenInfo();
-                    response.setMessage("令牌刷新失败: " + ex.getMessage());
-                    response.setTimestamp(LocalDateTime.now());
-
-                    return Mono.just(RouterResponse.error("令牌刷新失败: " + ex.getMessage(), "TOKEN_REFRESH_FAILED"));
-                });
+        log.info("JwtTokenManagementService available: {}", jwtTokenManagementService != null);
     }
 
     /**

@@ -74,4 +74,41 @@ public class ScopedRateLimiterWrapper implements RateLimiter {
             }
         }
     }
+
+    /**
+     * 获取剩余容量
+     * 对于多作用域限流器，返回所有作用域的平均剩余容量
+     */
+    @Override
+    public long getRemainingCapacity() {
+        if (config.getScope() == null || map.isEmpty()) {
+            // 单一限流器
+            return factory.apply(config).getRemainingCapacity();
+        }
+        // 多作用域：返回平均剩余容量
+        double avg = map.values().stream()
+                .mapToLong(RateLimiter::getRemainingCapacity)
+                .filter(v -> v >= 0)
+                .average()
+                .orElse(-1);
+        return avg >= 0 ? (long) avg : -1;
+    }
+
+    /**
+     * 获取容量使用率
+     * 对于多作用域限流器，返回所有作用域的平均使用率
+     */
+    @Override
+    public double getUsageRatio() {
+        if (config.getScope() == null || map.isEmpty()) {
+            // 单一限流器
+            return factory.apply(config).getUsageRatio();
+        }
+        // 多作用域：返回平均使用率
+        return map.values().stream()
+                .mapToDouble(RateLimiter::getUsageRatio)
+                .filter(v -> v >= 0)
+                .average()
+                .orElse(-1);
+    }
 }

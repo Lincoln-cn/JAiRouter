@@ -238,13 +238,23 @@ public class JpaDatabaseInitializer {
 
     /**
      * 初始化 API Keys
+     * v2.x 修复：支持环境变量强制从 YAML 初始化，并合并 YAML 和持久化数据
      */
     private void initializeApiKeys() {
         try {
             log.info("Initializing API Keys...");
-            if (apiKeyService.hasPersistedAccountConfig()) {
-                log.info("Loading persisted API Keys configuration...");
-                apiKeyService.loadLatestApiKeyConfig();
+            
+            // 检查环境变量是否强制从 YAML 初始化
+            String forceInitFromYaml = System.getenv("FORCE_API_KEY_INIT_FROM_YAML");
+            boolean forceInit = "true".equalsIgnoreCase(forceInitFromYaml);
+            
+            if (forceInit) {
+                log.info("FORCE_API_KEY_INIT_FROM_YAML=true, forcing initialization from YAML...");
+                apiKeyService.initializeApiKeyFromYaml();
+            } else if (apiKeyService.hasPersistedAccountConfig()) {
+                log.info("Loading persisted API Keys configuration and merging with YAML...");
+                // 加载持久化配置并与 YAML 合并（YAML 优先）
+                apiKeyService.loadAndMergeWithYaml();
             } else {
                 log.info("No persisted API Keys found, initializing from YAML...");
                 apiKeyService.initializeApiKeyFromYaml();

@@ -71,4 +71,37 @@ public class SlidingWindowRateLimiter implements RateLimiter {
             }
         }
     }
+
+    /**
+     * 获取剩余请求数
+     */
+    @Override
+    public long getRemainingCapacity() {
+        long now = System.currentTimeMillis();
+        long window = 1000L;
+        // 清理过期请求
+        while (!q.isEmpty() && q.peek() < now - window) {
+            q.poll();
+        }
+        long maxRequests = config.getRate();
+        return Math.max(0, maxRequests - q.size());
+    }
+
+    /**
+     * 获取容量使用率
+     */
+    @Override
+    public double getUsageRatio() {
+        long now = System.currentTimeMillis();
+        long window = 1000L;
+        // 清理过期请求
+        while (!q.isEmpty() && q.peek() < now - window) {
+            q.poll();
+        }
+        long maxRequests = config.getRate();
+        if (maxRequests <= 0) {
+            return 0;
+        }
+        return (double) q.size() / maxRequests;
+    }
 }

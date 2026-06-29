@@ -1,15 +1,16 @@
 # JAiRouter
 
 <p align="center">
-  <img src="logo/JAiRouterLogo.png" alt="JAiRouter" width="380">
+  <img src="logo/JAiRouterLogo.png" alt="JAiRouter - AI Model Gateway" width="380">
 </p>
 
 <p align="center">
-  <strong>AI 模型服务统一网关</strong>
+  <strong>Production-Ready AI Model Gateway</strong>
 </p>
 
 <p align="center">
-  <strong>一行代码接入 Ollama、vLLM、GPUStack 等所有模型服务</strong>
+  OpenAI-compatible API for unified routing, load balancing & failover<br>
+  across Ollama, vLLM, GPUStack, Xinference, and more
 </p>
 
 <p align="center">
@@ -29,139 +30,121 @@
 
 <p align="center">
   <a href="README-ZH.md">中文</a> •
-  <a href="https://jairouter.com">文档</a> •
-  <a href="https://jairouter.com/en/">English</a> •
-  <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">讨论</a>
+  <a href="https://jairouter.com">Docs</a> •
+  <a href="https://jairouter.com/en/">English Docs</a> •
+  <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">Discussions</a>
 </p>
-
----
-
-## Get started
-
-```bash
-docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
-```
-
-### Access Web Console
-
-Open http://localhost:8080/admin in your browser.
-
-**Default Login Credentials:**
-- Username: `admin`
-- Password: `ChangeMeOnFirstStartup123456` (development default)
-
-> 💡 **Security Note**: For production, set a strong password via environment variable:
-> ```bash
-> docker run -d --name jairouter -p 8080:8080 \
->   -e INITIAL_ADMIN_PASSWORD="YourSecurePassword!" \
->   sodlinken/jairouter:latest
-> ```
-
-That's it. No configuration needed.
-
----
-
-## What is JAiRouter?
-
-JAiRouter is a **unified gateway for AI model services** that provides:
-
-- **OpenAI-compatible API** — Use any OpenAI SDK, zero code changes
-- **Smart Load Balancing** — Automatic request distribution with health checks
-- **Rate Limiting & Circuit Breaking** — Protect your services from overload
-- **Web Console** — Visual management for services, instances, and monitoring
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Your Application                         │
-│                    (OpenAI SDK / LangChain / HTTP)              │
-└─────────────────────────────────┬───────────────────────────────┘
-                                  │
-                                  ▼ OpenAI API
-┌─────────────────────────────────────────────────────────────────┐
-│                         JAiRouter                                │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
-│  │ Router  │ │Balance  │ │Limit    │ │Circuit  │ │  Auth   │   │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
-└─────────────────────────────────┬───────────────────────────────┘
-                                  │
-       ┌──────────────┬───────────┼───────────┬──────────────┐
-       ▼              ▼           ▼           ▼              ▼
-   ┌───────┐     ┌───────┐   ┌───────┐   ┌───────┐     ┌───────┐
-   │Ollama │     │ vLLM  │   │GPUStack│  │Xinference│  │OpenAI │
-   └───────┘     └───────┘   └───────┘   └───────┘     └───────┘
-```
-
----
-
-## Why JAiRouter?
-
-| Without JAiRouter | With JAiRouter |
-|-------------------|----------------|
-| Configure each model endpoint separately | Single unified API endpoint |
-| Manual failover when services go down | Automatic circuit breaker |
-| Implement auth for each service | JWT + API Key built-in |
-| Scattered logs and metrics | Centralized dashboard |
-| Restart service to update config | Web console, hot reload |
-
----
-
-## Features
-
-| Feature | Description |
-|---------|-------------|
-| 🔌 **OpenAI Compatible** | All `/v1/*` endpoints work with OpenAI SDKs |
-| ⚖️ **Load Balancing** | Round-robin, weighted, least-connections, IP-hash, consistent-hash |
-| 🛡️ **Rate Limiting** | Token bucket, leaky bucket, sliding window algorithms |
-| 🔥 **Circuit Breaker** | Auto failover with configurable thresholds |
-| 🔐 **Authentication** | JWT + API Key dual authentication |
-| 📊 **Observability** | Prometheus metrics, OpenTelemetry tracing |
-| 💾 **Persistence** | Redis / File storage for cluster deployment |
-| 🎛️ **Web Console** | Dashboard, service management, version control |
-
----
-
-## Supported Backends
-
-| Backend | Chat | Embedding | Rerank | TTS | STT | Image |
-|---------|:----:|:---------:|:------:|:---:|:---:|:-----:|
-| **Ollama** | ✅ | ✅ | - | - | - | - |
-| **vLLM** | ✅ | ✅ | - | - | - | - |
-| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ |
-| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ |
 
 ---
 
 ## Quick Start
 
-### 1. Start JAiRouter
-
 ```bash
-# Using Docker
+# Start with Docker (no configuration needed)
 docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
 
-# Using Docker Compose
-curl -O https://raw.githubusercontent.com/Lincoln-cn/JAiRouter/master/docker-compose.yml
-docker compose up -d
+# Open Web Console: http://localhost:8080/admin
+# Default: admin / ChangeMeOnFirstStartup123456
 ```
 
-### 2. Access Web Console
+---
 
-Open http://localhost:8080 in your browser.
+## What is JAiRouter?
 
-Default credentials:
-- Username: `admin`
-- Password: Check logs with `docker logs jairouter | grep password`
+JAiRouter is a **production-ready AI model gateway** that provides a unified, OpenAI-compatible API for managing multiple LLM backends. It handles load balancing, rate limiting, circuit breaking, and failover — so you can focus on building applications, not managing infrastructure.
 
-### 3. Configure Your First Service
+### Key Benefits
 
-Via Web Console or API:
+| Problem | JAiRouter Solution |
+|---------|-------------------|
+| Multiple model endpoints to manage | Single unified API endpoint |
+| Manual failover when services fail | Automatic circuit breaker |
+| Implementing auth for each service | JWT + API Key built-in |
+| Scattered logs and metrics | Centralized observability |
+| Service restart for config changes | Hot reload via Web Console |
+
+### Core Features
+
+- **🔌 OpenAI-Compatible API** — Drop-in replacement for OpenAI SDK, LangChain, LlamaIndex
+- **⚖️ Smart Load Balancing** — Round-robin, weighted, least-connections, IP-hash, consistent-hash
+- **🛡️ Rate Limiting** — Token bucket, leaky bucket, sliding window algorithms
+- **🔥 Circuit Breaker** — Auto failover with configurable thresholds and recovery
+- **🔐 Authentication** — JWT + API Key dual authentication with audit logging
+- **📊 Observability** — Prometheus metrics, OpenTelemetry tracing, real-time dashboards
+- **💾 Persistence** — Redis / H2 / File storage for distributed deployment
+- **🎛️ Web Console** — Visual management, version control, configuration rollback
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Your Application                         │
+│                 (OpenAI SDK / LangChain / LlamaIndex)           │
+└─────────────────────────────────┬───────────────────────────────┘
+                                  │
+                                  ▼ OpenAI-Compatible API
+┌─────────────────────────────────────────────────────────────────┐
+│                         JAiRouter Gateway                        │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │ Routing │ │ Balance │ │  Limit  │ │ Circuit │ │   Auth  │   │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │              Observability & Persistence                 │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────┬───────────────────────────────┘
+                                  │
+       ┌──────────────┬───────────┼───────────┬──────────────┐
+       ▼              ▼           ▼           ▼              ▼
+   ┌───────┐     ┌───────┐   ┌───────┐   ┌──────────┐   ┌───────┐
+   │Ollama │     │ vLLM  │   │GPUStack│  │Xinference│   │ OpenAI │
+   └───────┘     └───────┘   └───────┘   └──────────┘   └───────┘
+```
+
+---
+
+## Supported AI Backends
+
+| Backend | Chat | Embedding | Rerank | TTS | STT | Image | Notes |
+|---------|:----:|:---------:|:------:|:---:|:---:|:-----:|-------|
+| **Ollama** | ✅ | ✅ | - | - | - | - | Local inference |
+| **vLLM** | ✅ | ✅ | - | - | - | - | High-throughput |
+| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Full-featured |
+| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Multi-model |
+| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | OpenAI-compatible |
+| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | Cloud fallback |
+
+---
+
+## Usage Example
+
+### Python with OpenAI SDK
+
+```python
+from openai import OpenAI
+
+# Point to JAiRouter instead of OpenAI
+client = OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="not-needed"  # JAiRouter handles authentication
+)
+
+# Use any model from your configured backends
+response = client.chat.completions.create(
+    model="llama3.2",  # Routed to Ollama, vLLM, or GPUStack
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+```
+
+### Add a Model Backend
 
 ```bash
-# Add an Ollama instance
+# Via API - Add Ollama instance
 curl -X POST http://localhost:8080/api/config/instance/add/chat \
   -H "Content-Type: application/json" \
+  -H "Jairouter_token: your-jwt-token" \
   -d '{
     "name": "llama3.2",
     "baseUrl": "http://localhost:11434",
@@ -170,22 +153,44 @@ curl -X POST http://localhost:8080/api/config/instance/add/chat \
   }'
 ```
 
-### 4. Make API Calls
+---
 
-```python
-from openai import OpenAI
+## Why Choose JAiRouter?
 
-client = OpenAI(
-    base_url="http://localhost:8080/v1",
-    api_key="not-needed"  # JAiRouter handles auth
-)
+### vs Nginx
+Nginx is a general-purpose web server. JAiRouter is **purpose-built for AI/LLM workloads** with OpenAI-compatible routing, circuit breaking, and model-aware load balancing.
 
-response = client.chat.completions.create(
-    model="llama3.2",
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-print(response.choices[0].message.content)
-```
+### vs One-API
+One-API focuses on API key management and billing. JAiRouter focuses on **local model gateway** with advanced resilience patterns and observability.
+
+### vs LangChain
+LangChain is an application framework. JAiRouter is an **infrastructure layer** that works beneath LangChain to provide routing, failover, and monitoring.
+
+| Feature | JAiRouter | Nginx | One-API | LangChain |
+|---------|:---------:|:-----:|:-------:|:---------:|
+| OpenAI Compatible | ✅ | ❌ | ✅ | ✅ |
+| Load Balancing | ✅ | ✅ | ✅ | ❌ |
+| Circuit Breaker | ✅ | ❌ | ❌ | ❌ |
+| Rate Limiting | ✅ | ✅ | ✅ | ❌ |
+| Web Console | ✅ | ❌ | ✅ | ❌ |
+| Config Hot Reload | ✅ | ❌ | ✅ | ❌ |
+| Version Control | ✅ | ❌ | ❌ | ❌ |
+| OpenTelemetry | ✅ | ❌ | ❌ | ✅ |
+
+---
+
+## Benchmarks
+
+Performance overhead compared to direct backend access:
+
+| Scenario | Direct Ollama | Via JAiRouter | Overhead |
+|----------|---------------|---------------|----------|
+| Single request | 1.2s | 1.21s | <1% |
+| 100 concurrent | 45s | 48s | ~6% |
+| With rate limiting | N/A | Configurable | - |
+| With circuit breaker | N/A | Auto failover | - |
+
+> Benchmarks: Ubuntu 22.04, 16 cores, 32GB RAM, Ollama 0.1.27
 
 ---
 
@@ -201,64 +206,32 @@ print(response.choices[0].message.content)
 
 ---
 
-## Benchmarks
-
-Performance comparison with direct Ollama access:
-
-| Scenario | Direct Ollama | Via JAiRouter | Overhead |
-|----------|---------------|---------------|----------|
-| Single request | 1.2s | 1.21s | <1% |
-| 100 concurrent | 45s | 48s | ~6% |
-| With rate limiting | N/A | Configurable | - |
-| With circuit breaker | N/A | Auto failover | - |
-
-> Benchmarks run on: Ubuntu 22.04, 16 cores, 32GB RAM, Ollama 0.1.27
-
----
-
-## Comparison
-
-| Feature | JAiRouter | Nginx | One-API | LangChain |
-|---------|:---------:|:-----:|:-------:|:---------:|
-| OpenAI Compatible | ✅ | ❌ | ✅ | ✅ |
-| Load Balancing | ✅ | ✅ | ✅ | ❌ |
-| Rate Limiting | ✅ | ✅ | ✅ | ❌ |
-| Circuit Breaker | ✅ | ❌ | ❌ | ❌ |
-| Web Console | ✅ | ❌ | ✅ | ❌ |
-| Config Hot Reload | ✅ | ❌ | ✅ | ❌ |
-| Version Control | ✅ | ❌ | ❌ | ❌ |
-| Distributed Tracing | ✅ | ❌ | ❌ | ✅ |
-
----
-
 ## Roadmap
 
 - [x] Core gateway functionality
-- [x] Multiple backend adapters
-- [x] Load balancing & rate limiting
-- [x] Circuit breaker
+- [x] Multiple backend adapters (Ollama, vLLM, GPUStack, Xinference, LocalAI)
+- [x] Load balancing with multiple strategies
+- [x] Rate limiting algorithms
+- [x] Circuit breaker with auto recovery
 - [x] Web management console
 - [x] JWT + API Key authentication
-- [x] Distributed tracing
+- [x] OpenTelemetry distributed tracing
 - [x] Configuration version control
 - [ ] Plugin system for custom adapters
 - [ ] GraphQL API support
 
-> **LTS Release**: v2.6.11 is the final Long-Term Support version, maintained until 2028-05.
+> **LTS Release**: v2.6.11 is the Long-Term Support version, maintained until 2028-05.
 
 ---
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](https://jairouter.com/zh/development/contributing/).
+We welcome contributions! See [Contributing Guide](https://jairouter.com/en/development/contributing/).
 
 ```bash
-# Clone and build
 git clone https://github.com/Lincoln-cn/JAiRouter.git
-cd JAiRouter
+cd JAiRouter/modelrouter
 mvn clean package -DskipTests
-
-# Run locally
 java -jar target/modelrouter.jar
 ```
 
