@@ -1,0 +1,61 @@
+# JAiRouter Distroless 版本 Dockerfile
+# 使用 Google Distroless 基础镜像，最小化攻击面
+# 镜像大小: ~180MB (比标准版减少 50%+)
+# 
+# 注意: Distroless 没有 shell，无法使用健康检查命令
+# 建议使用 Kubernetes liveness/readiness probe
+#
+# 构建命令: docker build -f Dockerfile.distroless -t jairouter:distroless .
+# 运行命令: docker run -p 8080:8080 -e JWT_SECRET=your-secret jairouter:distroless
+
+# =============================================================================
+# 阶段 1: 提取 Spring Boot 分层内容
+# =============================================================================
+FROM eclipse-temurin:17-jdk-alpine AS extract-layer
+
+WORKDIR /app
+
+# 复制 JAR 文件
+COPY target/model-router-*.jar app.jar
+
+# 使用 Spring Boot 工具提取分层（利用 Docker 缓存）
+RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
+
+# =============================================================================
+# 阶段 2: 最终运行镜像 (Distroless)
+# =============================================================================
+FROM gcr.io/distroless/java17-debian12:latest
+
+# 设置元数据
+LABEL maintainer="JAiRouter Team"
+LABEL description="JAiRouter - AI Model Service Routing Gateway (Distroless)"
+LABEL version="2.7.5"
+LABEL org.opencontainers.image.source="https://github.com/sodlinken/jairouter"
+
+WORKDIR /app
+
+# 复制 Spring Boot 分层内容
+# 注意: Distroless 默认使用 nonroot 用户 (uid=65532)
+COPY --from=extract-layer /app/extracted/dependencies/ ./
+COPY --from=extract-layer /app/extracted/spring-boot-loader/ ./
+COPY --from=extract-layer /app/extracted/snapshot-dependencies/ ./
+COPY --from=extract-layer /app/extracted/application/ ./
+
+# 环境变量（Distroless 不支持 ENV 指令设置 JAVA_OPTS）
+# 通过 Kubernetes/运行时传入
+
+EXPOSE 8080
+
+# 注意: Distroless 没有 shell，健康检查需要在 Kubernetes 层面实现
+# 建议配置:
+# livenessProbe:
+#   httpGet:
+#     path: /actuator/health/liveness
+#     port: 8080
+# readinessProbe:
+#   httpGet:
+#     path: /actuator/health/readiness
+#     port: 8080
+
+# 启动应用（Distroless 入口点已配置为 java）
+ENTRYPOINT ["java", "-Xms128m", "-Xmx256m", "-XX:+UseG1GC", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "org.springframework.boot.loader.launch.JarLauncher"]
