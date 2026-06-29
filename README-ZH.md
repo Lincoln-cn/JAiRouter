@@ -1,15 +1,16 @@
 # JAiRouter
 
 <p align="center">
-  <img src="logo/JAiRouterLogo.png" alt="JAiRouter" width="380">
+  <img src="logo/JAiRouterLogo.png" alt="JAiRouter - AI 模型网关" width="380">
 </p>
 
 <p align="center">
-  <strong>AI 模型服务统一网关</strong>
+  <strong>生产级 AI 模型网关</strong>
 </p>
 
 <p align="center">
-  <strong>一行代码接入 Ollama、vLLM、GPUStack 等所有模型服务</strong>
+  支持 OpenAI 兼容 API，为 Ollama、vLLM、GPUStack、Xinference 等<br>
+  提供统一路由、负载均衡和故障转移能力
 </p>
 
 <p align="center">
@@ -30,132 +31,120 @@
 <p align="center">
   <a href="README.md">English</a> •
   <a href="https://jairouter.com">文档</a> •
-  <a href="https://jairouter.com/en/">English Docs</a> •
+  <a href="https://jairouter.com/zh/">中文文档</a> •
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">讨论</a>
 </p>
 
 ---
 
-## 立即开始
+## 快速开始
 
 ```bash
+# 使用 Docker 启动（无需配置）
 docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
+
+# 打开 Web 控制台：http://localhost:8080/admin
+# 默认账号：admin / ChangeMeOnFirstStartup123456
 ```
-
-打开 http://localhost:8080 访问 Web 控制台。
-
-就这么简单，无需任何配置。
 
 ---
 
 ## JAiRouter 是什么？
 
-JAiRouter 是一个 **AI 模型服务统一网关**，提供：
+JAiRouter 是一个 **生产级 AI 模型网关**，提供统一的 OpenAI 兼容 API，用于管理多个 LLM 后端。它内置负载均衡、限流、熔断和故障转移功能——让您专注于构建应用，而非管理基础设施。
 
-- **OpenAI 兼容 API** — 使用任意 OpenAI SDK，零代码改动
-- **智能负载均衡** — 自动请求分发，健康检查
-- **限流与熔断** — 保护服务免受过载
-- **Web 控制台** — 可视化管理服务、实例、监控
+### 核心优势
+
+| 问题 | JAiRouter 解决方案 |
+|------|-------------------|
+| 多个模型端点需要管理 | 统一的 API 入口 |
+| 服务故障时手动切换 | 自动熔断故障转移 |
+| 每个服务单独实现认证 | 内置 JWT + API Key |
+| 分散的日志和监控指标 | 统一可观测性 |
+| 修改配置需重启服务 | Web 控制台热更新 |
+
+### 核心功能
+
+- **🔌 OpenAI 兼容 API** — 直接替换 OpenAI SDK、LangChain、LlamaIndex
+- **⚖️ 智能负载均衡** — 轮询、加权、最少连接、IP Hash、一致性哈希
+- **🛡️ 流量控制** — 令牌桶、漏桶、滑动窗口算法
+- **🔥 熔断降级** — 自动故障转移，可配置阈值和恢复策略
+- **🔐 双认证体系** — JWT + API Key 双重认证，审计日志
+- **📊 可观测性** — Prometheus 指标、OpenTelemetry 追踪、实时仪表盘
+- **💾 状态持久化** — Redis / H2 / 文件存储，支持分布式部署
+- **🎛️ Web 控制台** — 可视化管理、版本控制、配置回滚
+
+---
+
+## 系统架构
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                           您的应用                               │
-│                    (OpenAI SDK / LangChain / HTTP)              │
+│                 (OpenAI SDK / LangChain / LlamaIndex)           │
 └─────────────────────────────────┬───────────────────────────────┘
                                   │
-                                  ▼ OpenAI API
+                                  ▼ OpenAI 兼容 API
 ┌─────────────────────────────────────────────────────────────────┐
-│                         JAiRouter                                │
+│                        JAiRouter 网关                            │
 │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
 │  │  路由   │ │负载均衡 │ │  限流   │ │  熔断   │ │  认证   │   │
 │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                  可观测性与持久化                         │   │
+│  └─────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────┬───────────────────────────────┘
                                   │
        ┌──────────────┬───────────┼───────────┬──────────────┐
        ▼              ▼           ▼           ▼              ▼
-   ┌───────┐     ┌───────┐   ┌───────┐   ┌───────┐     ┌───────┐
-   │Ollama │     │ vLLM  │   │GPUStack│  │Xinference│  │OpenAI │
-   └───────┘     └───────┘   └───────┘   └───────┘     └───────┘
+   ┌───────┐     ┌───────┐   ┌───────┐   ┌──────────┐   ┌───────┐
+   │Ollama │     │ vLLM  │   │GPUStack│  │Xinference│   │ OpenAI │
+   └───────┘     └───────┘   └───────┘   └──────────┘   └───────┘
 ```
 
 ---
 
-## 为什么选择 JAiRouter？
+## 支持的 AI 后端
 
-| 没有 JAiRouter | 使用 JAiRouter |
-|---------------|----------------|
-| 每个模型单独配置 endpoint | 统一的 API 入口 |
-| 服务宕机时手动切换 | 自动熔断故障转移 |
-| 每个服务单独实现认证 | 内置 JWT + API Key |
-| 分散的日志和监控指标 | 统一的 Dashboard |
-| 修改配置需重启服务 | Web 控制台热更新 |
-
----
-
-## 功能特性
-
-| 功能 | 描述 |
-|------|------|
-| 🔌 **OpenAI 兼容** | 所有 `/v1/*` 端点与 OpenAI SDK 完全兼容 |
-| ⚖️ **负载均衡** | 轮询、加权、最少连接、IP Hash、一致性哈希 |
-| 🛡️ **流量控制** | 令牌桶、漏桶、滑动窗口算法 |
-| 🔥 **熔断降级** | 自动故障转移，可配置阈值 |
-| 🔐 **双认证体系** | JWT + API Key 双重认证 |
-| 📊 **可观测性** | Prometheus 指标、OpenTelemetry 追踪 |
-| 💾 **状态持久化** | Redis / 文件存储，支持集群部署 |
-| 🎛️ **Web 控制台** | 仪表板、服务管理、版本控制 |
+| 后端 | Chat | Embedding | Rerank | TTS | STT | Image | 说明 |
+|------|:----:|:---------:|:------:|:---:|:---:|:-----:|------|
+| **Ollama** | ✅ | ✅ | - | - | - | - | 本地推理 |
+| **vLLM** | ✅ | ✅ | - | - | - | - | 高吞吐量 |
+| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 功能完整 |
+| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 多模型支持 |
+| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | OpenAI 兼容 |
+| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | 云端兜底 |
 
 ---
 
-## 支持的后端服务
+## 使用示例
 
-| 后端 | Chat | Embedding | Rerank | TTS | STT | Image |
-|------|:----:|:---------:|:------:|:---:|:---:|:-----:|
-| **Ollama** | ✅ | ✅ | - | - | - | - |
-| **vLLM** | ✅ | ✅ | - | - | - | - |
-| **GPUStack** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ |
-| **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ |
+### Python + OpenAI SDK
 
----
+```python
+from openai import OpenAI
 
-## 快速开始
+# 指向 JAiRouter 而非 OpenAI
+client = OpenAI(
+    base_url="http://localhost:8080/v1",
+    api_key="not-needed"  # JAiRouter 处理认证
+)
 
-### 1. 启动 JAiRouter
-
-```bash
-# 使用 Docker
-docker run -d --name jairouter -p 8080:8080 sodlinken/jairouter:latest
-
-# 使用 Docker Compose
-curl -O https://raw.githubusercontent.com/Lincoln-cn/JAiRouter/master/docker-compose.yml
-docker compose up -d
+# 使用任意配置的后端模型
+response = client.chat.completions.create(
+    model="llama3.2",  # 自动路由到 Ollama、vLLM 或 GPUStack
+    messages=[{"role": "user", "content": "你好！"}]
+)
+print(response.choices[0].message.content)
 ```
 
-### 2. 访问 Web 控制台
-
-浏览器打开 http://localhost:8080/admin
-
-**默认登录凭证：**
-- 用户名：`admin`
-- 密码：`ChangeMeOnFirstStartup123456`（开发环境默认值）
-
-> 💡 **安全提示**：生产环境建议通过环境变量设置强密码：
-> ```bash
-> docker run -d --name jairouter -p 8080:8080 \
->   -e INITIAL_ADMIN_PASSWORD="YourSecurePassword!" \
->   sodlinken/jairouter:latest
-> ```
-
-### 3. 配置第一个服务
-
-通过 Web 控制台或 API：
+### 添加模型后端
 
 ```bash
-# 添加 Ollama 实例
+# 通过 API 添加 Ollama 实例
 curl -X POST http://localhost:8080/api/config/instance/add/chat \
   -H "Content-Type: application/json" \
+  -H "Jairouter_token: your-jwt-token" \
   -d '{
     "name": "llama3.2",
     "baseUrl": "http://localhost:11434",
@@ -164,22 +153,44 @@ curl -X POST http://localhost:8080/api/config/instance/add/chat \
   }'
 ```
 
-### 4. 调用 API
+---
 
-```python
-from openai import OpenAI
+## 为什么选择 JAiRouter？
 
-client = OpenAI(
-    base_url="http://localhost:8080/v1",
-    api_key="not-needed"  # JAiRouter 处理认证
-)
+### vs Nginx
+Nginx 是通用 Web 服务器。JAiRouter **专为 AI/LLM 工作负载设计**，提供 OpenAI 兼容路由、熔断和模型感知的负载均衡。
 
-response = client.chat.completions.create(
-    model="llama3.2",
-    messages=[{"role": "user", "content": "你好！"}]
-)
-print(response.choices[0].message.content)
-```
+### vs One-API
+One-API 专注于 API Key 管理和计费。JAiRouter 专注于**本地模型网关**，提供高级弹性模式和可观测性。
+
+### vs LangChain
+LangChain 是应用框架。JAiRouter 是**基础设施层**，位于 LangChain 之下，提供路由、故障转移和监控。
+
+| 功能 | JAiRouter | Nginx | One-API | LangChain |
+|------|:---------:|:-----:|:-------:|:---------:|
+| OpenAI 兼容 | ✅ | ❌ | ✅ | ✅ |
+| 负载均衡 | ✅ | ✅ | ✅ | ❌ |
+| 熔断降级 | ✅ | ❌ | ❌ | ❌ |
+| 限流 | ✅ | ✅ | ✅ | ❌ |
+| Web 控制台 | ✅ | ❌ | ✅ | ❌ |
+| 配置热更新 | ✅ | ❌ | ✅ | ❌ |
+| 版本控制 | ✅ | ❌ | ❌ | ❌ |
+| OpenTelemetry | ✅ | ❌ | ❌ | ✅ |
+
+---
+
+## 性能测试
+
+与直接访问后端服务的性能对比：
+
+| 场景 | 直接访问 Ollama | 通过 JAiRouter | 额外开销 |
+|------|----------------|---------------|----------|
+| 单次请求 | 1.2s | 1.21s | <1% |
+| 100 并发 | 45s | 48s | ~6% |
+| 开启限流 | 不支持 | 可配置 | - |
+| 开启熔断 | 不支持 | 自动故障转移 | - |
+
+> 测试环境：Ubuntu 22.04, 16核, 32GB RAM, Ollama 0.1.27
 
 ---
 
@@ -195,50 +206,21 @@ print(response.choices[0].message.content)
 
 ---
 
-## 性能测试
-
-与直接访问 Ollama 的性能对比：
-
-| 场景 | 直接访问 Ollama | 通过 JAiRouter | 额外开销 |
-|------|----------------|---------------|----------|
-| 单次请求 | 1.2s | 1.21s | <1% |
-| 100 并发 | 45s | 48s | ~6% |
-| 开启限流 | 不支持 | 可配置 | - |
-| 开启熔断 | 不支持 | 自动故障转移 | - |
-
-> 测试环境：Ubuntu 22.04, 16核, 32GB RAM, Ollama 0.1.27
-
----
-
-## 功能对比
-
-| 功能 | JAiRouter | Nginx | One-API | LangChain |
-|------|:---------:|:-----:|:-------:|:---------:|
-| OpenAI 兼容 | ✅ | ❌ | ✅ | ✅ |
-| 负载均衡 | ✅ | ✅ | ✅ | ❌ |
-| 限流 | ✅ | ✅ | ✅ | ❌ |
-| 熔断 | ✅ | ❌ | ❌ | ❌ |
-| Web 控制台 | ✅ | ❌ | ✅ | ❌ |
-| 配置热更新 | ✅ | ❌ | ✅ | ❌ |
-| 版本控制 | ✅ | ❌ | ❌ | ❌ |
-| 分布式追踪 | ✅ | ❌ | ❌ | ✅ |
-
----
-
 ## 发展路线
 
 - [x] 核心网关功能
-- [x] 多后端适配器
-- [x] 负载均衡与限流
-- [x] 熔断降级
+- [x] 多后端适配器（Ollama、vLLM、GPUStack、Xinference、LocalAI）
+- [x] 多策略负载均衡
+- [x] 多算法限流
+- [x] 自动熔断降级
 - [x] Web 管理控制台
 - [x] JWT + API Key 认证
-- [x] 分布式追踪
+- [x] OpenTelemetry 分布式追踪
 - [x] 配置版本控制
 - [ ] 自定义适配器插件系统
 - [ ] GraphQL API 支持
 
-> **LTS 版本**：v2.6.11 是最终长期支持版本，维护至 2028-05。
+> **LTS 版本**：v2.6.11 是长期支持版本，维护至 2028-05。
 
 ---
 
@@ -247,12 +229,9 @@ print(response.choices[0].message.content)
 欢迎参与贡献！请查看 [贡献指南](https://jairouter.com/zh/development/contributing/)。
 
 ```bash
-# 克隆并构建
 git clone https://github.com/Lincoln-cn/JAiRouter.git
-cd JAiRouter
+cd JAiRouter/modelrouter
 mvn clean package -DskipTests
-
-# 本地运行
 java -jar target/modelrouter.jar
 ```
 
