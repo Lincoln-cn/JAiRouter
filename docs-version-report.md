@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 151
-- 近7天变更: 18
+- 近7天变更: 12
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-29 06:48:16
+- 最后扫描: 2026-06-30 06:12:34
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.58 → 1.0.59) - 2026-06-30
 - **CREATED**: repository-description.md ( → 1.0.0) - 2026-06-29
 - **MODIFIED**: docs-version-report.md (1.0.57 → 1.0.58) - 2026-06-29
 - **MODIFIED**: README.md (1.0.16 → 1.0.17) - 2026-06-29
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/zh/monitoring/configuration.md (1.0.2 → 1.0.3) - 2026-06-26
 - **MODIFIED**: docs/en/monitoring/configuration.md (1.0.2 → 1.0.3) - 2026-06-26
 - **MODIFIED**: docs-version-report.md (1.0.54 → 1.0.55) - 2026-06-26
-- **MODIFIED**: docs-version-report.md (1.0.53 → 1.0.54) - 2026-06-25
 
 ## 过期文档 (30天未更新)
 
@@ -513,8 +513,8 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.59 - 2026-06-30 (63429e25)
 - **repository-description.md**: v1.0.0 - 2026-06-29 (635e749d)
-- **docs-version-report.md**: v1.0.58 - 2026-06-29 (b490f5b8)
 - **README.md**: v1.0.17 - 2026-06-29 (0323cc3d)
 - **README-ZH.md**: v1.0.9 - 2026-06-29 (0323cc3d)
 - **docs/zh/monitoring/configuration.md**: v1.0.3 - 2026-06-26 (7da5f191)
