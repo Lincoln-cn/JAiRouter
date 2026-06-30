@@ -74,6 +74,26 @@ public class ApiKeyCreationVO {
     private LocalDateTime lastRotatedAt;
 
     /**
+     * 每日请求上限
+     */
+    private Long dailyRequestLimit;
+
+    /**
+     * 每日 Token 使用上限
+     */
+    private Long dailyTokenLimit;
+
+    /**
+     * 每分钟请求速率限制
+     */
+    private Integer rateLimitPerMinute;
+
+    /**
+     * 配额告警阈值
+     */
+    private Double quotaAlertThreshold;
+
+    /**
      * 警告信息：密钥值只会显示一次
      */
     @Builder.Default

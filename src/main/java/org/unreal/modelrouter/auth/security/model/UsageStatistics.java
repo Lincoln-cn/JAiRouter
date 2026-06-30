@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -49,7 +50,12 @@ public class UsageStatistics {
      * 每日使用统计（日期 -> 使用次数）
      */
     private Map<String, Long> dailyUsage;
-    
+
+    /**
+     * 每日 Token 使用统计（日期 -> Token 总数）
+     */
+    private Map<String, Long> dailyTokenUsage;
+
     /**
      * 获取成功率
      * @return 成功率（0-1之间的小数）
@@ -60,7 +66,7 @@ public class UsageStatistics {
         }
         return (double) successfulRequests / totalRequests;
     }
-    
+
     /**
      * 增加请求统计
      * @param success 请求是否成功
@@ -73,8 +79,28 @@ public class UsageStatistics {
             failedRequests++;
         }
         lastUsedAt = LocalDateTime.now();
+        String today = LocalDateTime.now().toLocalDate().toString();
+        if (dailyUsage == null) {
+            dailyUsage = new HashMap<>();
+        }
+        dailyUsage.put(today, dailyUsage.getOrDefault(today, 0L) + 1);
     }
-    
+
+    /**
+     * 增加 Token 使用量
+     * @param tokens 本次请求消耗的 Token 数
+     */
+    public void incrementTokens(final long tokens) {
+        if (tokens <= 0) {
+            return;
+        }
+        String today = LocalDateTime.now().toLocalDate().toString();
+        if (dailyTokenUsage == null) {
+            dailyTokenUsage = new HashMap<>();
+        }
+        dailyTokenUsage.put(today, dailyTokenUsage.getOrDefault(today, 0L) + tokens);
+    }
+
     /**
      * 重置统计信息
      */
@@ -85,6 +111,21 @@ public class UsageStatistics {
         lastUsedAt = null;
         if (dailyUsage != null) {
             dailyUsage.clear();
+        }
+        if (dailyTokenUsage != null) {
+            dailyTokenUsage.clear();
+        }
+    }
+
+    /**
+     * 重置每日统计（请求计数和 Token 计数）
+     */
+    public void resetDaily() {
+        if (dailyUsage != null) {
+            dailyUsage.clear();
+        }
+        if (dailyTokenUsage != null) {
+            dailyTokenUsage.clear();
         }
     }
     

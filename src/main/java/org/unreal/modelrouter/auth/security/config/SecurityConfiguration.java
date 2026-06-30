@@ -60,9 +60,14 @@ public class SecurityConfiguration {
     public SecurityWebFilterChain securityWebFilterChain(
             final ServerHttpSecurity http,
             final ReactiveAuthenticationManager authenticationManager,
-            final SpringSecurityAuthenticationFilter securityFilter) {
+            final ServerAuthenticationConverter serverAuthenticationConverter) {
 
         log.info("配置Spring Security WebFlux过滤器链");
+
+        // 直接创建认证过滤器实例，避免注册为 @Bean 导致被 Spring Security 自动发现
+        // 和 addFilterBefore() 重复添加，引发请求体被多次消费的问题
+        SpringSecurityAuthenticationFilter securityFilter =
+                new SpringSecurityAuthenticationFilter(securityProperties, serverAuthenticationConverter, authenticationManager);
 
         // 如果启用了追踪功能，则添加追踪过滤器
         ServerHttpSecurity customizedHttp = http;
@@ -116,12 +121,8 @@ public class SecurityConfiguration {
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/validate").permitAll()
                 // JWT账户管理端点需要管理员权限
                 .pathMatchers("/api/security/jwt/accounts/**").hasRole("ADMIN")
-                // AI服务端点的细粒度权限控制
-                .pathMatchers(org.springframework.http.HttpMethod.GET, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
-                .pathMatchers(org.springframework.http.HttpMethod.POST, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
-                .pathMatchers(org.springframework.http.HttpMethod.PUT, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
-                .pathMatchers(org.springframework.http.HttpMethod.PATCH, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
-                .pathMatchers(org.springframework.http.HttpMethod.DELETE, "/v1/**").hasAnyRole("READ", "WRITE", "USER")
+                // AI服务端点需要认证（API Key权限由适配器层按服务类型控制）
+                .pathMatchers("/v1/**").authenticated()
                 // 其他API端点需要认证
                 .pathMatchers("/api/**").authenticated()
                 // 监控端点需要管理员权限（除了已明确允许的健康检查端点）
@@ -130,7 +131,9 @@ public class SecurityConfiguration {
                 .anyExchange().authenticated();
 
         // 完成配置并添加过滤器
-        return http
+        // 注意：securityFilter 不要同时注册为 @Bean（WebFilter），否则 Spring Security 会
+        // 自动发现并添加一次，addFilterBefore 又添加一次，导致认证过滤器执行多次、请求体被多次消费。
+        return customizedHttp
                 .addFilterBefore(securityFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
     }
@@ -174,18 +177,5 @@ public class SecurityConfiguration {
     @Bean
     public ServerAuthenticationConverter serverAuthenticationConverter() {
         return new DefaultAuthenticationConverter(securityProperties);
-    }
-
-    /**
-     * 创建API Key认证过滤器
-     */
-    @Bean
-    public SpringSecurityAuthenticationFilter springSecurityApiKeyAuthenticationFilter(
-            final ServerAuthenticationConverter serverAuthenticationConverter,
-            final ReactiveAuthenticationManager reactiveAuthenticationManager) {
-        return new SpringSecurityAuthenticationFilter(
-                securityProperties,
-                serverAuthenticationConverter,
-                reactiveAuthenticationManager);
     }
 }

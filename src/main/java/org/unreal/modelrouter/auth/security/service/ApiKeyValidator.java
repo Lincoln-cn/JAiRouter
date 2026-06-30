@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.auth.security.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.auth.security.config.properties.ApiKey;
 import org.unreal.modelrouter.common.exception.AuthenticationException;
@@ -16,6 +17,9 @@ import java.util.Map;
 @Slf4j
 @Component
 public class ApiKeyValidator {
+
+    @Autowired(required = false)
+    private TokenBucketRateLimiter rateLimiter;
 
     /**
      * 验证 API Key 格式
@@ -106,7 +110,40 @@ public class ApiKeyValidator {
      */
     public ValidationResult validateDailyLimit(final ApiKey apiKey) {
         if (apiKey.isDailyLimitExceeded()) {
-            return ValidationResult.failure("超过每日请求限制", AuthenticationException.INVALID_API_KEY);
+            return ValidationResult.failure("超过每日请求限制", AuthenticationException.DAILY_QUOTA_EXCEEDED);
+        }
+        return ValidationResult.success();
+    }
+
+    /**
+     * 验证每日 Token 使用限制
+     *
+     * @param apiKey 要验证的 ApiKey
+     * @return 验证结果
+     */
+    public ValidationResult validateTokenLimit(final ApiKey apiKey) {
+        if (apiKey.isDailyTokenLimitExceeded()) {
+            return ValidationResult.failure("超过每日 Token 使用限制", AuthenticationException.TOKEN_QUOTA_EXCEEDED);
+        }
+        return ValidationResult.success();
+    }
+
+    /**
+     * 验证请求速率限制
+     *
+     * @param apiKey 要验证的 ApiKey
+     * @return 验证结果
+     */
+    public ValidationResult validateRateLimit(final ApiKey apiKey) {
+        if (apiKey.getRateLimitPerMinute() <= 0) {
+            return ValidationResult.success();
+        }
+        if (rateLimiter == null) {
+            return ValidationResult.success();
+        }
+        if (!rateLimiter.tryAcquire(apiKey.getKeyId(), apiKey.getRateLimitPerMinute())) {
+            return ValidationResult.failure("请求频率超过限制，请稍后再试",
+                    AuthenticationException.RATE_LIMIT_EXCEEDED);
         }
         return ValidationResult.success();
     }
@@ -155,11 +192,25 @@ public class ApiKeyValidator {
                     ipResult.getMessage(), ipResult.getErrorCode());
         }
 
-        // 6. 每日限制验证
+        // 6. 速率限制验证
+        ValidationResult rateResult = validateRateLimit(matchedKey);
+        if (!rateResult.isSuccess()) {
+            return FullValidationResult.validationError(matchedKey.getKeyId(),
+                    rateResult.getMessage(), rateResult.getErrorCode());
+        }
+
+        // 7. 每日请求限制验证
         ValidationResult limitResult = validateDailyLimit(matchedKey);
         if (!limitResult.isSuccess()) {
             return FullValidationResult.validationError(matchedKey.getKeyId(),
                     limitResult.getMessage(), limitResult.getErrorCode());
+        }
+
+        // 8. 每日 Token 使用限制验证
+        ValidationResult tokenResult = validateTokenLimit(matchedKey);
+        if (!tokenResult.isSuccess()) {
+            return FullValidationResult.validationError(matchedKey.getKeyId(),
+                    tokenResult.getMessage(), tokenResult.getErrorCode());
         }
 
         // 所有验证通过

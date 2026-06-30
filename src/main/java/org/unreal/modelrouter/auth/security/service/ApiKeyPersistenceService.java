@@ -161,6 +161,8 @@ public class ApiKeyPersistenceService {
             keys.stream()
                     .map(item -> objectMapper.convertValue(item, ApiKey.class))
                     .forEach(item -> {
+                        initializeApiKeyFields(item);
+
                         // 对旧的明文 keyValue 进行哈希迁移
                         if (item.getKeyValue() != null && !ApiKeyHashUtil.isHashedFormat(item.getKeyValue())) {
                             String keyHash = ApiKeyHashUtil.hashApiKey(item.getKeyValue());
@@ -229,6 +231,8 @@ public class ApiKeyPersistenceService {
                 persistedKeys.stream()
                         .map(item -> objectMapper.convertValue(item, ApiKey.class))
                         .forEach(item -> {
+                            initializeApiKeyFields(item);
+
                             // 对旧的明文 keyValue 进行哈希迁移
                             if (item.getKeyValue() != null && !ApiKeyHashUtil.isHashedFormat(item.getKeyValue())) {
                                 String keyHash = ApiKeyHashUtil.hashApiKey(item.getKeyValue());
@@ -237,7 +241,7 @@ public class ApiKeyPersistenceService {
                                 item.setKeyPrefix("sk-");
                                 log.info("迁移API Key {} 从明文存储到哈希存储", item.getKeyId());
                             }
-                            
+
                             if (item.getKeyHash() != null && !apiKeyCache.containsKey(item.getKeyHash())) {
                                 apiKeyCache.put(item.getKeyHash(), item);
                                 keyIdIndex.put(item.getKeyId(), item.getKeyHash());
@@ -342,11 +346,19 @@ public class ApiKeyPersistenceService {
         if (apiKey.getUsage() == null) {
             apiKey.setUsage(UsageStatistics.builder()
                     .dailyUsage(new HashMap<>())
+                    .dailyTokenUsage(new HashMap<>())
                     .failedRequests(0L)
                     .lastUsedAt(null)
                     .successfulRequests(0L)
                     .totalRequests(0L)
                     .build());
+        } else {
+            if (apiKey.getUsage().getDailyUsage() == null) {
+                apiKey.getUsage().setDailyUsage(new HashMap<>());
+            }
+            if (apiKey.getUsage().getDailyTokenUsage() == null) {
+                apiKey.getUsage().setDailyTokenUsage(new HashMap<>());
+            }
         }
     }
 

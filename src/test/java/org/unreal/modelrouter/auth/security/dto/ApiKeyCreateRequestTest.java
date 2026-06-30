@@ -86,6 +86,9 @@ class ApiKeyCreateRequestTest {
                 expiresAt,
                 List.of("127.0.0.1"),
                 500L,
+                100000L,
+                60,
+                0.9,
                 30
         );
 
@@ -96,6 +99,9 @@ class ApiKeyCreateRequestTest {
         assertEquals(expiresAt, request.getExpiresAt());
         assertEquals(1, request.getAllowedIpAddresses().size());
         assertEquals(500L, request.getDailyRequestLimit());
+        assertEquals(100000L, request.getDailyTokenLimit());
+        assertEquals(60, request.getRateLimitPerMinute());
+        assertEquals(0.9, request.getQuotaAlertThreshold());
         assertEquals(30, request.getRotationPeriodDays());
     }
 

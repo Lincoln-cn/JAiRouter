@@ -22,9 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
+import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.tracing.TracingConstants;
@@ -57,6 +59,11 @@ import reactor.core.publisher.Mono;
 public class ServiceRequestHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceRequestHandler.class);
+
+    /**
+     * ServerWebExchange attribute key for storing the authenticated API Key ID.
+     */
+    public static final String API_KEY_ID_ATTRIBUTE = "API_KEY_ID";
 
     private final AdapterRegistry adapterRegistry;
     private final ModelServiceRegistry registry;
@@ -108,14 +115,23 @@ public class ServiceRequestHandler {
         ServerHttpRequest httpRequest = exchange.getRequest();
         TracingContext tracingContext = getTracingContext(exchange);
 
-        return handleWithInstanceAdapter(
-            endpoint,
-            modelName,
-            authorization,
-            httpRequest,
-            tracingContext,
-            executor
-        );
+        return ReactiveSecurityContextHolder.getContext()
+            .map(ctx -> ctx.getAuthentication())
+            .filter(auth -> auth instanceof ApiKeyAuthentication)
+            .map(auth -> ((ApiKeyAuthentication) auth).getPrincipal())
+            .filter(principal -> principal != null)
+            .doOnNext(keyId -> {
+                exchange.getAttributes().put(API_KEY_ID_ATTRIBUTE, keyId);
+                httpRequest.getAttributes().put(API_KEY_ID_ATTRIBUTE, keyId);
+            })
+            .then(Mono.defer(() -> handleWithInstanceAdapter(
+                endpoint,
+                modelName,
+                authorization,
+                httpRequest,
+                tracingContext,
+                executor
+            )));
     }
 
     /**

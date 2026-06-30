@@ -1,21 +1,29 @@
 package org.unreal.modelrouter.router.adapter.request;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ClientHttpRequest;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.reactive.function.BodyInserter;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
+import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.auth.security.service.ApiKeyService;
+import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
+import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
@@ -49,6 +57,12 @@ public class NonStreamingRequestProcessor {
     private final ObjectMapper objectMapper;
     private final RequestBuilder requestBuilder;
     private final AdapterMetricsRecorder metricsRecorder;
+
+    @Autowired(required = false)
+    private TokenUsageRecorder tokenUsageRecorder;
+
+    @Autowired(required = false)
+    private ApiKeyService apiKeyService;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
@@ -86,7 +100,11 @@ public class NonStreamingRequestProcessor {
             final String adapterType,
             final Function<Object, Object> transformRequestFn,
             final Function<Object, Object> transformResponseFn,
-            final MultipartRequestHandler multipartHandler) {
+            final MultipartRequestHandler multipartHandler,
+            final ServerHttpRequest httpRequest) {
+
+        // 0. 从请求属性中获取 API Key ID（由 ServiceRequestHandler 在认证阶段存入）
+        final String capturedKeyId = extractKeyIdFromRequest(httpRequest);
 
         // 1. 请求转换
         Object transformedRequest = transformRequestFn.apply(request);
@@ -132,7 +150,8 @@ public class NonStreamingRequestProcessor {
                     instanceName, adapterType, serviceType, requestStartTime, multipartHandler);
         } else {
             return processJsonResponse(requestSpec, transformedRequest, instanceName,
-                    adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler);
+                    adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler,
+                    capturedKeyId);
         }
     }
 
@@ -205,7 +224,8 @@ public class NonStreamingRequestProcessor {
             final long requestStartTime,
             final String path,
             final Function<Object, Object> transformResponseFn,
-            final MultipartRequestHandler multipartHandler) {
+            final MultipartRequestHandler multipartHandler,
+            final String capturedKeyId) {
 
         // 支持multipart请求（如STT）
         BodyInserter<?, ? super ClientHttpRequest> requestBody;
@@ -243,6 +263,9 @@ public class NonStreamingRequestProcessor {
                             downstreamData = null;
                         } else {
                             downstreamData = objectMapper.readValue(bodyStr, Object.class);
+
+                            // 提取并记录 token 使用量
+                            extractAndRecordTokenUsage(bodyStr, adapterType, instanceName, capturedKeyId);
                         }
 
                         // 响应转换
@@ -321,6 +344,93 @@ public class NonStreamingRequestProcessor {
         } else if (statusCode.value() == 503) {
             logger.error("下游服务不可用 (503): instance={}, path={}", instanceName, path);
         }
+    }
+
+    /**
+     * 从下游服务响应中提取 token 使用量并记录
+     */
+    private void extractAndRecordTokenUsage(final String bodyStr,
+                                             final String adapterType,
+                                             final String instanceName,
+                                             final String apiKeyId) {
+        try {
+            JsonNode jsonNode = objectMapper.readTree(bodyStr);
+
+            if (!jsonNode.has("usage")) {
+                return;
+            }
+
+            JsonNode usage = jsonNode.get("usage");
+            long promptTokens = usage.has("prompt_tokens") ? usage.get("prompt_tokens").asLong() : 0;
+            long completionTokens = usage.has("completion_tokens") ? usage.get("completion_tokens").asLong() : 0;
+            long totalTokens = usage.has("total_tokens") ? usage.get("total_tokens").asLong() : 0;
+
+            if (totalTokens <= 0) {
+                return;
+            }
+
+            String model = jsonNode.has("model") ? jsonNode.get("model").asText() : "unknown";
+
+            // 记录到 TokenUsage 表
+            if (tokenUsageRecorder != null) {
+                String traceId = TracingContextHolder.getCurrentTraceId();
+                tokenUsageRecorder.recordTokenUsageNoAuth(
+                        "CHAT",
+                        model,
+                        adapterType,
+                        instanceName,
+                        null,
+                        promptTokens,
+                        completionTokens,
+                        totalTokens,
+                        traceId,
+                        null,
+                        true,
+                        null,
+                        null,
+                        null
+                );
+            }
+
+            // 更新 API Key 的每日 Token 使用量配额
+            updateApiKeyTokenUsage(apiKeyId, totalTokens);
+
+            logger.debug("Non-streaming token usage recorded: adapter={}, instance={}, model={}, total={}",
+                    adapterType, instanceName, model, totalTokens);
+
+        } catch (Exception e) {
+            logger.debug("Failed to extract token usage from response: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 更新 API Key 的 Token 使用量
+     */
+    private void updateApiKeyTokenUsage(final String apiKeyId, final long totalTokens) {
+        if (apiKeyService == null || totalTokens <= 0 || apiKeyId == null) {
+            return;
+        }
+        try {
+            apiKeyService.updateTokenUsage(apiKeyId, totalTokens);
+            logger.debug("API Key token usage updated: keyId={}, tokens={}", apiKeyId, totalTokens);
+        } catch (Exception e) {
+            logger.debug("Failed to update API Key token usage: keyId={}, error={}", apiKeyId, e.getMessage());
+        }
+    }
+
+    /**
+     * 从 ServerHttpRequest 属性中获取 API Key ID
+     */
+    private String extractKeyIdFromRequest(final ServerHttpRequest httpRequest) {
+        if (httpRequest == null) {
+            return null;
+        }
+        Object keyId = httpRequest.getAttributes().get(
+                org.unreal.modelrouter.router.handler.ServiceRequestHandler.API_KEY_ID_ATTRIBUTE);
+        if (keyId instanceof String) {
+            return (String) keyId;
+        }
+        return null;
     }
 
     /**

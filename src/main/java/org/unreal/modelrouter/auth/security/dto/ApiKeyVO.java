@@ -117,6 +117,45 @@ public class ApiKeyVO {
      */
     private Long failedRequests;
 
+    // ===== 配额配置 =====
+
+    /**
+     * 每日请求上限（0 表示无限制）
+     */
+    private Long dailyRequestLimit;
+
+    /**
+     * 每日 Token 使用上限（0 表示无限制）
+     */
+    private Long dailyTokenLimit;
+
+    /**
+     * 每分钟请求速率限制（0 表示无限制）
+     */
+    private Integer rateLimitPerMinute;
+
+    /**
+     * 配额告警阈值（0.0-1.0）
+     */
+    private Double quotaAlertThreshold;
+
+    // ===== 配额使用量 =====
+
+    /**
+     * 今日请求次数
+     */
+    private Long todayRequestCount;
+
+    /**
+     * 今日 Token 使用量
+     */
+    private Long todayTokenUsage;
+
+    /**
+     * 是否触发配额告警
+     */
+    private boolean quotaAlertTriggered;
+
     /**
      * 剩余有效天数（-1 表示已过期，null 表示永不过期）
      */
