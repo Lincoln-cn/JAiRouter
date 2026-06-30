@@ -1,9 +1,9 @@
 # Error Codes Reference
 
 <!-- Version Info -->
-> **Document Version**: 1.0.1
-> **Last Updated**: 2026-06-29
-> **Applicable Version**: v2.7.5+
+> **Document Version**: 1.0.2
+> **Last Updated**: 2026-06-30
+> **Applicable Version**: v2.7.6+
 > **Author**: AI Assistant
 
 JAiRouter uses a standardized error code system to identify various error conditions. All error responses include an error code field for client-side error handling.

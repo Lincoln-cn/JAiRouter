@@ -11,22 +11,22 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ## 目录
 
-- [服务配置管理](#服务配置管理)
-- [实例管理](#实例管理)
-- [服务类型管理](#服务类型管理)
-- [认证管理](#认证管理)
-- [安全管理](#安全管理)
-- [监控管理](#监控管理)
-- [追踪管理](#追踪管理)
-- [负载均衡管理](#负载均衡管理)
-- [熔断器与限流](#熔断器与限流)
-- [模型统计](#模型统计)
-- [令牌使用](#令牌使用)
-- [配置版本管理](#配置版本管理)
+- [服务配置管理](#service-config-mgmt)
+- [实例管理](#instance-mgmt)
+- [服务类型管理](#service-type-mgmt)
+- [认证管理](#auth-mgmt)
+- [安全管理](#security-mgmt)
+- [监控管理](#monitoring-mgmt)
+- [追踪管理](#tracing-mgmt)
+- [负载均衡管理](#loadbalancer-mgmt)
+- [熔断器与限流](#circuit-breaker-rate-limit)
+- [模型统计](#model-stats)
+- [令牌使用](#token-usage)
+- [配置版本管理](#config-version-mgmt)
 
 ---
 
-## 服务配置管理
+## 服务配置管理 {#service-config-mgmt}
 
 ### 基础路径: `/api/services`
 
@@ -84,7 +84,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 实例管理
+## 实例管理 {#instance-mgmt}
 
 ### 基础路径: `/api/instances`
 
@@ -144,7 +144,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 服务类型管理
+## 服务类型管理 {#service-type-mgmt}
 
 ### 基础路径: `/api/config/type`
 
@@ -181,7 +181,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 认证管理
+## 认证管理 {#auth-mgmt}
 
 ### JWT 令牌管理
 
@@ -307,7 +307,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 安全管理
+## 安全管理 {#security-mgmt}
 
 ### 安全审计
 
@@ -398,7 +398,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 监控管理
+## 监控管理 {#monitoring-mgmt}
 
 ### 基础路径: `/api/monitoring`
 
@@ -484,7 +484,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 追踪管理
+## 追踪管理 {#tracing-mgmt}
 
 ### 追踪执行器
 
@@ -645,7 +645,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 负载均衡管理
+## 负载均衡管理 {#loadbalancer-mgmt}
 
 ### 基础路径: `/api/loadbalancer`
 
@@ -688,7 +688,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 熔断器与限流
+## 熔断器与限流 {#circuit-breaker-rate-limit}
 
 ### 熔断器
 
@@ -733,7 +733,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 模型统计
+## 模型统计 {#model-stats}
 
 ### 基础路径: `/api/model-stats`
 
@@ -769,7 +769,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 令牌使用
+## 令牌使用 {#token-usage}
 
 ### 基础路径: `/api/token-usage`
 
@@ -813,7 +813,7 @@ JAiRouter 提供完整的管理 API，用于动态配置管理、服务实例管
 
 ---
 
-## 配置版本管理
+## 配置版本管理 {#config-version-mgmt}
 
 ### 基础路径: `/api/config/version`
 
