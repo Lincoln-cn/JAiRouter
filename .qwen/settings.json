@@ -47,7 +47,8 @@
       "Bash(find *)",
       "Bash(xargs *)",
       "Bash(paste *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Agent(Explore)"
     ]
   },
   "$version": 4

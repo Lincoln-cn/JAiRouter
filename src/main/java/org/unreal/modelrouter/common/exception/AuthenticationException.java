@@ -14,13 +14,20 @@ public class AuthenticationException extends SecurityException {
     public static final String INVALID_JWT_TOKEN = "INVALID_JWT_TOKEN";
     public static final String EXPIRED_JWT_TOKEN = "EXPIRED_JWT_TOKEN";
     public static final String BLACKLISTED_TOKEN = "BLACKLISTED_TOKEN";
+    public static final String DAILY_QUOTA_EXCEEDED = "DAILY_QUOTA_EXCEEDED";
+    public static final String TOKEN_QUOTA_EXCEEDED = "TOKEN_QUOTA_EXCEEDED";
+    public static final String RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED";
     
     public AuthenticationException(final String message, final String errorCode) {
         super(message, errorCode, HttpStatus.UNAUTHORIZED);
     }
-    
+
     public AuthenticationException(final String message, final Throwable cause, final String errorCode) {
         super(message, cause, errorCode, HttpStatus.UNAUTHORIZED);
+    }
+
+    public AuthenticationException(final String message, final String errorCode, final HttpStatus httpStatus) {
+        super(message, errorCode, httpStatus);
     }
     
     /**
@@ -63,5 +70,27 @@ public class AuthenticationException extends SecurityException {
      */
     public static AuthenticationException blacklistedToken() {
         return new AuthenticationException("令牌已被列入黑名单", BLACKLISTED_TOKEN);
+    }
+
+    /**
+     * 创建每日配额超限异常
+     */
+    public static AuthenticationException dailyQuotaExceeded() {
+        return new AuthenticationException("超过每日请求配额限制", DAILY_QUOTA_EXCEEDED);
+    }
+
+    /**
+     * 创建 Token 配额超限异常
+     */
+    public static AuthenticationException tokenQuotaExceeded() {
+        return new AuthenticationException("超过每日 Token 使用配额限制", TOKEN_QUOTA_EXCEEDED);
+    }
+
+    /**
+     * 创建速率限制超限异常（HTTP 429）
+     */
+    public static AuthenticationException rateLimitExceeded() {
+        return new AuthenticationException("请求频率超过限制，请稍后再试",
+                RATE_LIMIT_EXCEEDED, HttpStatus.TOO_MANY_REQUESTS);
     }
 }

@@ -28,3 +28,9 @@ jairouter:
           description: "测试用 API Key"
           permissions: "read,write"
           enabled: true
+
+    # API Key 配额管理配置
+    quota:
+      # 启用配额清理调度器（每天凌晨 3:00 清理 >30 天的历史数据）
+      cleanup:
+        enabled: true

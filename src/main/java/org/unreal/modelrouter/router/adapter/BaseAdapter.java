@@ -197,7 +197,8 @@ public abstract class BaseAdapter implements ServiceCapability {
     protected <T> Mono<? extends ResponseEntity<?>> processNonStreamingRequest(final T request,
             final String authorization, final WebClient client, final String path,
             final ModelRouterProperties.ModelInstance selectedInstance,
-            final ModelServiceRegistry.ServiceType serviceType, final Class<?> responseType) {
+            final ModelServiceRegistry.ServiceType serviceType, final Class<?> responseType,
+            final ServerHttpRequest httpRequest) {
         String adapterType = getAdapterType();
         String finalPath = adaptModelName(path);
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), adapterType);
@@ -219,7 +220,7 @@ public abstract class BaseAdapter implements ServiceCapability {
 
         return requestSupport.getNonStreamingProcessor().processRequest(request, finalAuth, client, finalPath,
                 selectedInstance, serviceType, responseType, adapterType,
-                transformRequestFn, transformResponseFn, handler);
+                transformRequestFn, transformResponseFn, handler, httpRequest);
     }
 
     // ==================== 流式请求处理 ====================
@@ -227,7 +228,8 @@ public abstract class BaseAdapter implements ServiceCapability {
     protected <T> Mono<? extends ResponseEntity<?>> processStreamingRequest(final T request,
             final String authorization, final WebClient client, final String path,
             final ModelRouterProperties.ModelInstance selectedInstance,
-            final ModelServiceRegistry.ServiceType serviceType) {
+            final ModelServiceRegistry.ServiceType serviceType,
+            final org.springframework.http.server.reactive.ServerHttpRequest httpRequest) {
         StreamingRequestProcessor processor = requestSupport.getStreamingProcessor();
         if (processor == null) {
             logger.error("StreamingRequestProcessor 未注入，无法处理流式请求");
@@ -239,7 +241,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         String finalAuth = getAuthorizationHeader(adaptModelName(authorization), adapterType);
         Object transformedRequest = transformRequest(request, adapterType);
         return processor.processStreamingRequest(transformedRequest, finalAuth, client,
-                finalPath, selectedInstance, serviceType, adapterType);
+                finalPath, selectedInstance, serviceType, adapterType, httpRequest);
     }
 
     // ==================== 抽象方法 ====================
@@ -256,9 +258,9 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (capabilityCheck != null) return capabilityCheck;
         return processRequestWithFallback(request, authorization, httpRequest,
                 ModelServiceRegistry.ServiceType.chat, request.model(),
-                (req, auth, client, path, instance, st) -> req.stream()
-                        ? processStreamingRequest(req, auth, client, path, instance, st)
-                        : processNonStreamingRequest(req, auth, client, path, instance, st, String.class));
+                (req, auth, client, path, instance, st) -> Boolean.TRUE.equals(req.stream())
+                        ? processStreamingRequest(req, auth, client, path, instance, st, httpRequest)
+                        : processNonStreamingRequest(req, auth, client, path, instance, st, String.class, httpRequest));
     }
 
     @SuppressWarnings("all")
@@ -269,7 +271,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         return processRequestWithFallback(request, authorization, httpRequest,
                 ModelServiceRegistry.ServiceType.embedding, request.model(),
                 (req, auth, client, path, instance, st) ->
-                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class));
+                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class, httpRequest));
     }
 
     @SuppressWarnings("all")
@@ -280,7 +282,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         return processRequestWithFallback(request, authorization, httpRequest,
                 ModelServiceRegistry.ServiceType.rerank, request.model(),
                 (req, auth, client, path, instance, st) ->
-                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class));
+                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class, httpRequest));
     }
 
     @SuppressWarnings("all")
@@ -291,7 +293,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         return processRequestWithFallback(request, authorization, httpRequest,
                 ModelServiceRegistry.ServiceType.tts, request.model(),
                 (req, auth, client, path, instance, st) ->
-                        processNonStreamingRequest(req, auth, client, path, instance, st, byte[].class));
+                        processNonStreamingRequest(req, auth, client, path, instance, st, byte[].class, httpRequest));
     }
 
     @SuppressWarnings("all")
@@ -302,7 +304,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         return processRequestWithFallback(request, authorization, httpRequest,
                 ModelServiceRegistry.ServiceType.stt, request.model(),
                 (req, auth, client, path, instance, st) ->
-                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class));
+                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class, httpRequest));
     }
 
     @SuppressWarnings("all")
@@ -313,7 +315,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         return processRequestWithFallback(request, authorization, httpRequest,
                 ModelServiceRegistry.ServiceType.imgGen, request.model(),
                 (req, auth, client, path, instance, st) ->
-                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class));
+                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class, httpRequest));
     }
 
     @SuppressWarnings("all")
@@ -324,7 +326,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         return processRequestWithFallback(request, authorization, httpRequest,
                 ModelServiceRegistry.ServiceType.imgEdit, request.model(),
                 (req, auth, client, path, instance, st) ->
-                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class));
+                        processNonStreamingRequest(req, auth, client, path, instance, st, String.class, httpRequest));
     }
 
     // ==================== 子类可重写方法 ====================

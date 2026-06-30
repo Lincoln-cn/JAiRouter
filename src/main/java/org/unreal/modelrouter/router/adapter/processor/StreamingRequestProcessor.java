@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
@@ -44,6 +46,9 @@ public class StreamingRequestProcessor {
     
     @Autowired(required = false)
     private TokenUsageRecorder tokenUsageRecorder;
+
+    @Autowired(required = false)
+    private ApiKeyService apiKeyService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -72,7 +77,10 @@ public class StreamingRequestProcessor {
             final ModelRouterProperties.ModelInstance selectedInstance,
             final ModelServiceRegistry.ServiceType serviceType,
             final String adapterType,
-            final Function<String, String> transformChunkFn) {
+            final Function<String, String> transformChunkFn,
+            final ServerHttpRequest httpRequest) {
+
+        final String capturedKeyId = captureApiKeyId(httpRequest);
 
         String instanceName = selectedInstance.getName();
         long requestStartTime = System.currentTimeMillis();
@@ -115,7 +123,7 @@ public class StreamingRequestProcessor {
                     // 记录 token 使用量
                     recordTokenUsage(adapterType, instanceName, modelRef.get(),
                             promptTokens.get(), completionTokens.get(), totalTokens.get(),
-                            contentBuilder.toString());
+                            contentBuilder.toString(), capturedKeyId);
                 })
                 .doOnError(throwable -> recordStreamingError(serviceType, adapterType, instanceName,
                         requestStartTime, throwable))
@@ -192,10 +200,11 @@ public class StreamingRequestProcessor {
             final String path,
             final ModelRouterProperties.ModelInstance selectedInstance,
             final ModelServiceRegistry.ServiceType serviceType,
-            final String adapterType) {
+            final String adapterType,
+            final ServerHttpRequest httpRequest) {
 
         return processStreamingRequest(request, authorization, client, path,
-                selectedInstance, serviceType, adapterType, null);
+                selectedInstance, serviceType, adapterType, null, httpRequest);
     }
 
     /**
@@ -270,7 +279,8 @@ public class StreamingRequestProcessor {
                                    final long promptTokens,
                                    final long completionTokens,
                                    final long totalTokens,
-                                   final String content) {
+                                   final String content,
+                                   final String apiKeyId) {
         if (tokenUsageRecorder == null) {
             return;
         }
@@ -295,7 +305,7 @@ public class StreamingRequestProcessor {
             try {
                 // 获取 traceId
                 String traceId = TracingContextHolder.getCurrentTraceId();
-                
+
                 tokenUsageRecorder.recordTokenUsageNoAuth(
                         "CHAT",
                         model,
@@ -312,10 +322,49 @@ public class StreamingRequestProcessor {
                         null, // errorMessage
                         null  // responseTimeMs
                 );
+
+                // 更新 API Key 的每日 Token 使用量配额
+                updateApiKeyTokenUsage(apiKeyId, finalTotalTokens);
+
             } catch (Exception e) {
                 logger.warn("Failed to record token usage: {}", e.getMessage());
             }
         }
+    }
+
+    /**
+     * 更新 API Key 的 Token 使用量
+     */
+    private void updateApiKeyTokenUsage(final String apiKeyId, final long totalTokens) {
+        if (apiKeyService == null || totalTokens <= 0 || apiKeyId == null) {
+            return;
+        }
+        try {
+            apiKeyService.updateTokenUsage(apiKeyId, totalTokens);
+            logger.debug("API Key token usage updated: keyId={}, tokens={}", apiKeyId, totalTokens);
+        } catch (Exception e) {
+            logger.debug("Failed to update API Key token usage: keyId={}, error={}", apiKeyId, e.getMessage());
+        }
+    }
+
+    /**
+     * 从请求属性中捕获 API Key ID
+     * 使用 ServiceRequestHandler 预存的 keyId（与 NonStreamingRequestProcessor 一致）
+     */
+    private String captureApiKeyId(final ServerHttpRequest httpRequest) {
+        if (httpRequest == null) {
+            return null;
+        }
+        try {
+            Object keyId = httpRequest.getAttributes()
+                    .get(org.unreal.modelrouter.router.handler.ServiceRequestHandler.API_KEY_ID_ATTRIBUTE);
+            if (keyId instanceof String key && !key.isBlank()) {
+                return key;
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to capture API Key ID from request attributes: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**

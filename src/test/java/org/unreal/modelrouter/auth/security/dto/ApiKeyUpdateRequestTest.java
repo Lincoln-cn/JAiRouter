@@ -81,6 +81,9 @@ class ApiKeyUpdateRequestTest {
                 expiresAt,
                 List.of("172.16.0.0/12"),
                 3000L,
+                200000L,
+                120,
+                0.9,
                 45
         );
 
@@ -90,6 +93,9 @@ class ApiKeyUpdateRequestTest {
         assertEquals(expiresAt, request.getExpiresAt());
         assertEquals(1, request.getAllowedIpAddresses().size());
         assertEquals(3000L, request.getDailyRequestLimit());
+        assertEquals(200000L, request.getDailyTokenLimit());
+        assertEquals(120, request.getRateLimitPerMinute());
+        assertEquals(0.9, request.getQuotaAlertThreshold());
         assertEquals(45, request.getRotationPeriodDays());
     }
 

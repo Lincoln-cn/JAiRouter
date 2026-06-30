@@ -19,7 +19,7 @@ JAiRouter provides a complete set of management APIs for dynamic configuration m
 - [Monitoring Management](#monitoring-management)
 - [Tracing Management](#tracing-management)
 - [Load Balancer Management](#load-balancer-management)
-- [Circuit Breaker & Rate Limit](#circuit-breaker--rate-limit)
+- [Circuit Breaker & Rate Limit](#circuit-breaker-rate-limit)
 - [Model Statistics](#model-statistics)
 - [Token Usage](#token-usage)
 - [Configuration Version Management](#configuration-version-management)
@@ -688,7 +688,7 @@ Get load balancer statistics.
 
 ---
 
-## Circuit Breaker & Rate Limit
+## Circuit Breaker & Rate Limit {#circuit-breaker-rate-limit}
 
 ### Circuit Breaker
 

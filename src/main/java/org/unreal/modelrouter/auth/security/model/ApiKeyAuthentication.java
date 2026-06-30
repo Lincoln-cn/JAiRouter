@@ -39,9 +39,11 @@ public class ApiKeyAuthentication implements Authentication {
     public ApiKeyAuthentication(final String keyId, final String apiKey, final List<String> permissions) {
         this.principal = keyId;
         this.credentials = apiKey;
-        this.authorities = permissions.stream()
-                .map(permission -> new SimpleGrantedAuthority("ROLE_" + permission.toUpperCase()))
-                .collect(Collectors.toList());
+        this.authorities = permissions != null
+                ? permissions.stream()
+                    .map(permission -> new SimpleGrantedAuthority("ROLE_" + permission.toUpperCase()))
+                    .collect(Collectors.toList())
+                : List.of();
     }
     
     @Override

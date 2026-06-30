@@ -72,14 +72,23 @@ public class ApiKeyService {
                 .rotationPeriodDays(req.getRotationPeriodDays() != null ? req.getRotationPeriodDays() : 0)
                 .allowedIpAddresses(req.getAllowedIpAddresses())
                 .dailyRequestLimit(req.getDailyRequestLimit() != null ? req.getDailyRequestLimit() : 0L)
-                .usage(UsageStatistics.builder().totalRequests(0L).successfulRequests(0L).failedRequests(0L).dailyUsage(new HashMap<>()).build()).build();
+                .dailyTokenLimit(req.getDailyTokenLimit() != null ? req.getDailyTokenLimit() : 0L)
+                .rateLimitPerMinute(req.getRateLimitPerMinute() != null ? req.getRateLimitPerMinute() : 0)
+                .quotaAlertThreshold(req.getQuotaAlertThreshold() != null ? req.getQuotaAlertThreshold() : 0.8)
+                .usage(UsageStatistics.builder().totalRequests(0L).successfulRequests(0L).failedRequests(0L)
+                    .dailyUsage(new HashMap<>()).dailyTokenUsage(new HashMap<>()).build()).build();
             apiKeyCache.put(kh, ak); keyIdIndex.put(kid, kh);
             apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
             eventPublisher.publishEvent(ApiKeyAuditEvent.created(kid, by, ip));
             log.info("创建API Key成功: {}", kid);
             return ApiKeyCreationVO.builder().keyId(kid).keyValue(kv).description(ak.getDescription())
                 .permissions(ak.getPermissions()).enabled(ak.isEnabled()).createdAt(ak.getCreatedAt())
-                .expiresAt(ak.getExpiresAt()).warning("密钥值只会显示一次，请妥善保存！").build();
+                .expiresAt(ak.getExpiresAt())
+                .dailyRequestLimit(ak.getDailyRequestLimit())
+                .dailyTokenLimit(ak.getDailyTokenLimit())
+                .rateLimitPerMinute(ak.getRateLimitPerMinute())
+                .quotaAlertThreshold(ak.getQuotaAlertThreshold())
+                .warning("密钥值只会显示一次，请妥善保存！").build();
         });
     }
 
@@ -96,6 +105,9 @@ public class ApiKeyService {
             if (req.getAllowedIpAddresses() != null) ak.setAllowedIpAddresses(req.getAllowedIpAddresses());
             if (req.getDailyRequestLimit() != null) ak.setDailyRequestLimit(req.getDailyRequestLimit());
             if (req.getRotationPeriodDays() != null) ak.setRotationPeriodDays(req.getRotationPeriodDays());
+            if (req.getDailyTokenLimit() != null) ak.setDailyTokenLimit(req.getDailyTokenLimit());
+            if (req.getRateLimitPerMinute() != null) ak.setRateLimitPerMinute(req.getRateLimitPerMinute());
+            if (req.getQuotaAlertThreshold() != null) ak.setQuotaAlertThreshold(req.getQuotaAlertThreshold());
             apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
             log.info("更新API Key成功: {}", kid);
             return convertToVO(ak);
@@ -214,7 +226,14 @@ public class ApiKeyService {
         String kh = keyIdIndex.get(kid);
         if (kh == null) { log.warn("API Key不存在: {}", kid); return; }
         ApiKey ak = apiKeyCache.get(kh);
-        if (ak == null || ak.getUsage() == null) { log.warn("API Key或usage不存在: {}", kid); return; }
+        if (ak == null) { log.warn("API Key不存在: {}", kid); return; }
+        if (ak.getUsage() == null) {
+            ak.setUsage(UsageStatistics.builder()
+                    .dailyUsage(new HashMap<>())
+                    .dailyTokenUsage(new HashMap<>())
+                    .totalRequests(0L).successfulRequests(0L).failedRequests(0L)
+                    .build());
+        }
         UsageStatistics st = ak.getUsage(); st.incrementRequest(succ);
         String td = LocalDateTime.now().toLocalDate().toString();
         Map<String, Long> du = st.getDailyUsage();
@@ -224,12 +243,64 @@ public class ApiKeyService {
         log.debug("更新API Key使用统计: {} (成功: {})", kid, succ);
     }
 
+    /**
+     * 更新 API Key Token 使用量
+     *
+     * @param kid   API Key ID
+     * @param tokens 消耗的 Token 数
+     */
+    public void updateTokenUsage(String kid, long tokens) {
+        if (tokens <= 0) {
+            return;
+        }
+        String kh = keyIdIndex.get(kid);
+        if (kh == null) {
+            log.warn("API Key不存在: {}", kid);
+            return;
+        }
+        ApiKey ak = apiKeyCache.get(kh);
+        if (ak == null || ak.getUsage() == null) {
+            log.warn("API Key或usage不存在: {}", kid);
+            return;
+        }
+        ak.getUsage().incrementTokens(tokens);
+        apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+        log.debug("更新API Key Token使用量: {} (tokens: {})", kid, tokens);
+    }
+
+    /**
+     * 重置指定 API Key 的每日配额计数器
+     *
+     * @param kid API Key ID
+     */
+    public Mono<Void> resetDailyQuota(String kid) {
+        return Mono.fromRunnable(() -> {
+            String kh = keyIdIndex.get(kid);
+            if (kh == null) throw new IllegalArgumentException("API Key不存在: " + kid);
+            ApiKey ak = apiKeyCache.get(kh);
+            if (ak == null || ak.getUsage() == null) {
+                throw new IllegalArgumentException("API Key或usage不存在: " + kid);
+            }
+            ak.getUsage().resetDaily();
+            apiKeyPersistenceService.saveApiKeysToStore(apiKeyCache);
+            log.info("重置API Key每日配额: {}", kid);
+        });
+    }
+
     private ApiKeyVO convertToVO(ApiKey ak) {
         ApiKeyVO vo = ApiKeyVO.builder().keyId(ak.getKeyId()).description(ak.getDescription())
             .permissions(ak.getPermissions()).enabled(ak.isEnabled()).expired(ak.isExpired())
             .createdAt(ak.getCreatedAt()).createdBy(ak.getCreatedBy()).creatorIpAddress(ak.getCreatorIpAddress())
             .rotationPeriodDays(ak.getRotationPeriodDays()).lastRotatedAt(ak.getLastRotatedAt())
-            .needsRotation(ak.needsRotation()).expiresAt(ak.getExpiresAt()).build();
+            .needsRotation(ak.needsRotation()).expiresAt(ak.getExpiresAt())
+            .dailyRequestLimit(ak.getDailyRequestLimit())
+            .dailyTokenLimit(ak.getDailyTokenLimit())
+            .rateLimitPerMinute(ak.getRateLimitPerMinute())
+            .quotaAlertThreshold(ak.getQuotaAlertThreshold())
+            .todayRequestCount(ak.getTodayRequestCount())
+            .todayTokenUsage(ak.getTodayTokenUsage())
+            .quotaAlertTriggered(ak.isQuotaAlertTriggered())
+            .build();
         if (ak.getUsage() != null) {
             vo.setTotalRequests(ak.getUsage().getTotalRequests());
             vo.setSuccessfulRequests(ak.getUsage().getSuccessfulRequests());

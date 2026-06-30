@@ -69,6 +69,24 @@ public class ApiKeyCreateRequest {
     private Long dailyRequestLimit = 0L;
 
     /**
+     * 每日 Token 使用上限（可选，0 表示无限制）
+     */
+    @Builder.Default
+    private Long dailyTokenLimit = 0L;
+
+    /**
+     * 每分钟请求速率限制（可选，0 表示无限制）
+     */
+    @Builder.Default
+    private Integer rateLimitPerMinute = 0;
+
+    /**
+     * 配额告警阈值（0.0-1.0，达到此比例时触发告警，默认 0.8 即 80%）
+     */
+    @Builder.Default
+    private Double quotaAlertThreshold = 0.8;
+
+    /**
      * 密钥轮换周期（天数），0 表示不自动轮换
      */
     @Builder.Default

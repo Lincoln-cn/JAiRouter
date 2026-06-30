@@ -26,7 +26,10 @@ import org.unreal.modelrouter.auth.security.dto.ApiKeyListVO;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyUpdateRequest;
 import org.unreal.modelrouter.auth.security.dto.ApiKeyVO;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
+import org.unreal.modelrouter.auth.security.service.ApiKeyQuotaService;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 /**
  * API 密钥管理控制器
@@ -47,6 +50,7 @@ import reactor.core.publisher.Mono;
 public class ApiKeyManagementController {
 
     private final ApiKeyService apiKeyService;
+    private final ApiKeyQuotaService apiKeyQuotaService;
 
     /**
      * 获取所有 API 密钥列表
@@ -269,6 +273,79 @@ public class ApiKeyManagementController {
                 .onErrorResume(e -> {
                     log.error("批量导入API密钥失败", e);
                     return Mono.just(RouterResponse.error("批量导入API密钥失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    // ===== 配额管理端点 =====
+
+    /**
+     * 获取指定 API Key 的配额使用详情
+     */
+    @GetMapping("/{keyId}/quota")
+    @Operation(summary = "获取API密钥配额详情",
+               description = "获取指定API密钥的配额使用情况，包括请求/Token使用量和速率")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<ApiKeyQuotaService.QuotaUsageDetail>> getApiKeyQuota(
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
+        return Mono.fromCallable(() -> apiKeyQuotaService.getQuotaUsage(keyId))
+                .flatMap(opt -> opt.map(detail -> Mono.just(RouterResponse.success(detail, "获取配额详情成功")))
+                        .orElseGet(() -> Mono.just(RouterResponse.error("API密钥不存在", "NOT_FOUND"))))
+                .onErrorResume(e -> {
+                    log.error("获取API密钥配额详情失败: {}", keyId, e);
+                    return Mono.just(RouterResponse.error("获取配额详情失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    /**
+     * 重置指定 API Key 的每日配额计数器
+     */
+    @PostMapping("/{keyId}/quota/reset")
+    @Operation(summary = "重置API密钥每日配额",
+               description = "重置指定API密钥的每日请求和Token使用计数器")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<Void>> resetApiKeyQuota(
+            @Parameter(description = "API密钥ID") @PathVariable("keyId") final String keyId) {
+        return Mono.fromRunnable(() -> apiKeyQuotaService.resetDailyQuota(keyId))
+                .then(Mono.just(RouterResponse.<Void>success(null, "重置每日配额成功")))
+                .onErrorResume(e -> {
+                    log.error("重置API密钥每日配额失败: {}", keyId, e);
+                    return Mono.just(RouterResponse.<Void>error("重置配额失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    /**
+     * 获取所有触发配额告警的 API Key 列表
+     */
+    @GetMapping("/quota/alerts")
+    @Operation(summary = "获取配额告警列表",
+               description = "获取所有触发了配额告警阈值的API密钥")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<List<ApiKeyQuotaService.QuotaAlertInfo>>> getQuotaAlerts() {
+        return Mono.fromCallable(apiKeyQuotaService::getAlerts)
+                .map(alerts -> RouterResponse.success(alerts, "获取配额告警列表成功"))
+                .onErrorResume(e -> {
+                    log.error("获取配额告警列表失败", e);
+                    return Mono.just(RouterResponse.error("获取告警列表失败: " + e.getMessage(),
+                            "INTERNAL_ERROR"));
+                });
+    }
+
+    /**
+     * 获取所有 API Key 的配额使用概览
+     */
+    @GetMapping("/quota/overview")
+    @Operation(summary = "获取配额使用概览",
+               description = "获取所有API密钥的配额使用情况概览")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Mono<RouterResponse<List<ApiKeyQuotaService.QuotaUsageDetail>>> getQuotaOverview() {
+        return Mono.fromCallable(apiKeyQuotaService::getAllQuotaUsage)
+                .map(overview -> RouterResponse.success(overview, "获取配额概览成功"))
+                .onErrorResume(e -> {
+                    log.error("获取配额概览失败", e);
+                    return Mono.just(RouterResponse.error("获取配额概览失败: " + e.getMessage(),
                             "INTERNAL_ERROR"));
                 });
     }

@@ -64,14 +64,14 @@ public class ApiKey {
      * @since v2.5.2 完善废弃标注
      */
     @Deprecated(since = "2.5.2", forRemoval = true)
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty
     private String keyValue;
 
     /**
      * API Key 的哈希值（SHA-256 + 盐值）
      * 用于安全存储和验证
      */
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty
     private String keyHash;
 
     /**
@@ -91,6 +91,27 @@ public class ApiKey {
      */
     @Builder.Default
     private long dailyRequestLimit = 0L;
+
+    /**
+     * 每日 Token 使用上限（0 表示无限制）
+     * 统计 prompt_tokens + completion_tokens 总和
+     */
+    @Builder.Default
+    private long dailyTokenLimit = 0L;
+
+    /**
+     * 每分钟请求速率上限（0 表示无限制）
+     * 使用滑动窗口算法实现
+     */
+    @Builder.Default
+    private int rateLimitPerMinute = 0;
+
+    /**
+     * 配额告警阈值（0.0-1.0），达到此比例时触发告警
+     * 默认 0.8 表示使用量达到 80% 时告警
+     */
+    @Builder.Default
+    private double quotaAlertThreshold = 0.8;
 
     /**
      * API Key描述信息
@@ -227,8 +248,75 @@ public class ApiKey {
             return false;
         }
         String today = LocalDateTime.now().toLocalDate().toString();
-        Long todayCount = usage.getDailyUsage() != null ? usage.getDailyUsage().get(today) : 0L;
-        return todayCount != null && todayCount >= dailyRequestLimit;
+        Long todayCount = usage.getDailyUsage() != null ? usage.getDailyUsage().get(today) : null;
+        return todayCount != null && todayCount.longValue() >= dailyRequestLimit;
+    }
+
+    /**
+     * 检查是否超过每日 Token 使用限制
+     *
+     * @return 是否超限
+     */
+    public boolean isDailyTokenLimitExceeded() {
+        if (dailyTokenLimit <= 0) {
+            return false;
+        }
+        if (usage == null || usage.getDailyTokenUsage() == null) {
+            return false;
+        }
+        String today = LocalDateTime.now().toLocalDate().toString();
+        Long todayTokens = usage.getDailyTokenUsage().get(today);
+        return todayTokens != null && todayTokens.longValue() >= dailyTokenLimit;
+    }
+
+    /**
+     * 获取今日 Token 使用量
+     *
+     * @return 今日 Token 使用量
+     */
+    public long getTodayTokenUsage() {
+        if (usage == null || usage.getDailyTokenUsage() == null) {
+            return 0L;
+        }
+        String today = LocalDateTime.now().toLocalDate().toString();
+        return usage.getDailyTokenUsage().getOrDefault(today, 0L);
+    }
+
+    /**
+     * 获取今日请求数
+     *
+     * @return 今日请求数
+     */
+    public long getTodayRequestCount() {
+        if (usage == null || usage.getDailyUsage() == null) {
+            return 0L;
+        }
+        String today = LocalDateTime.now().toLocalDate().toString();
+        return usage.getDailyUsage().getOrDefault(today, 0L);
+    }
+
+    /**
+     * 检查配额使用是否达到告警阈值
+     *
+     * @return 是否需要告警
+     */
+    public boolean isQuotaAlertTriggered() {
+        if (quotaAlertThreshold <= 0 || quotaAlertThreshold >= 1.0) {
+            return false;
+        }
+        if (dailyRequestLimit > 0) {
+            long todayCount = getTodayRequestCount();
+            if (todayCount >= dailyRequestLimit * quotaAlertThreshold) {
+                return true;
+            }
+        }
+        if (dailyTokenLimit > 0) {
+            long todayTokens = getTodayTokenUsage();
+            if (todayTokens >= dailyTokenLimit * quotaAlertThreshold) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -280,11 +368,14 @@ public class ApiKey {
     public ApiKey createSecureCopy() {
         return ApiKey.builder()
                 .keyId(this.keyId)
-                .keyValue(null) // 安全起见，不包含keyValue
-                .keyHash(null)  // 不包含哈希值
+                .keyValue(null)
+                .keyHash(null)
                 .keyPrefix(this.keyPrefix)
                 .allowedIpAddresses(this.allowedIpAddresses)
                 .dailyRequestLimit(this.dailyRequestLimit)
+                .dailyTokenLimit(this.dailyTokenLimit)
+                .rateLimitPerMinute(this.rateLimitPerMinute)
+                .quotaAlertThreshold(this.quotaAlertThreshold)
                 .description(this.description)
                 .permissions(this.permissions)
                 .expiresAt(this.expiresAt)
@@ -309,11 +400,14 @@ public class ApiKey {
     public ApiKey createCreationResponse(final String originalKeyValue) {
         return ApiKey.builder()
                 .keyId(this.keyId)
-                .keyValue(originalKeyValue) // 仅在创建时包含原始keyValue
-                .keyHash(null)  // 不返回哈希值
+                .keyValue(originalKeyValue)
+                .keyHash(null)
                 .keyPrefix(this.keyPrefix)
                 .allowedIpAddresses(this.allowedIpAddresses)
                 .dailyRequestLimit(this.dailyRequestLimit)
+                .dailyTokenLimit(this.dailyTokenLimit)
+                .rateLimitPerMinute(this.rateLimitPerMinute)
+                .quotaAlertThreshold(this.quotaAlertThreshold)
                 .description(this.description)
                 .permissions(this.permissions)
                 .expiresAt(this.expiresAt)

@@ -8,15 +8,14 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.springframework.test.context.TestPropertySource;
-import org.unreal.modelrouter.auth.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -65,12 +64,12 @@ class SecurityConfigurationTest {
         securityConfiguration.setJwtTokenValidator(jwtTokenValidator);
         
         ReactiveAuthenticationManager authManager = securityConfiguration.reactiveAuthenticationManager();
-        SpringSecurityAuthenticationFilter securityFilter = mock(SpringSecurityAuthenticationFilter.class);
         ServerHttpSecurity http = ServerHttpSecurity.http();
+        ServerAuthenticationConverter authConverter = securityConfiguration.serverAuthenticationConverter();
 
         // When
         SecurityWebFilterChain filterChain = securityConfiguration.securityWebFilterChain(
-                http, authManager, securityFilter
+                http, authManager, authConverter
         );
 
         // Then

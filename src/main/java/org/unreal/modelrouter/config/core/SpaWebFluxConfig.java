@@ -30,10 +30,12 @@ public class SpaWebFluxConfig {
      * 将 /v1/** 请求转发到 /api/v1/**，兼容 OpenAI API 标准路径格式
      * 例如：/v1/chat/completions -> /api/v1/chat/completions
      *
-     * 使用高优先级 Order(-2) 确保在所有其他过滤器之前执行
+     * 优先级设置为 HIGHEST_PRECEDENCE + 1，确保在 CachedBodyWebFilter (HIGHEST_PRECEDENCE)
+     * 缓存请求体之后、Spring Security 过滤器链之前执行路径重写。
+     * 这样安全过滤器只对重写后的路径执行一次认证，避免请求体被多次消费导致 400 错误。
      */
     @Bean
-    @Order(-2)
+    @Order(org.springframework.core.Ordered.HIGHEST_PRECEDENCE + 1)
     public WebFilter apiPathForwardFilter() {
         return new WebFilter() {
             @Override
