@@ -1,9 +1,9 @@
 # API Key 管理指南
 
 <!-- 版本信息 -->
-> **文档版本**: 1.7.0
-> **最后更新**: 2026-05-21
-> **Git 提交**: 61384b4a
+> **文档版本**: 1.8.0
+> **最后更新**: 2026-06-30
+> **Git 提交**: fb0cd62f
 > **作者**: Lincoln
 <!-- /版本信息 -->
 
@@ -104,10 +104,66 @@ curl -H "X-API-Key: your-api-key-here" \
   permissions: ["read", "write"]        # 权限列表
   expires-at: "2025-12-31T23:59:59"    # 过期时间
   enabled: true                         # 是否启用
+  daily-token-limit: 100000            # 每日 Token 使用限额（可选）
+  rate-limit-per-minute: 100           # 每分钟请求速率限制（可选）
+  quota-alert-threshold: 80           # 告警阈值百分比（可选）
   metadata:                            # 元数据
     created-by: "admin"
     department: "IT"
 ```
+
+### 配额管理配置 (v2.7.6+)
+
+JAiRouter 支持全面的 API Key 配额管理功能，包括每日 Token 使用限额、请求速率限制和告警阈值。
+
+#### 配置参数
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `daily-token-limit` | long | -1（无限制） | 每日 Token 使用上限 |
+| `rate-limit-per-minute` | int | -1（无限制） | 每分钟请求次数上限 |
+| `quota-alert-threshold` | int | 80 | 告警阈值百分比（0-100） |
+
+#### 配置示例
+
+```yaml
+jairouter:
+  security:
+    api-key:
+      keys:
+        - key-id: "limited-api-key"
+          key-value: "${LIMITED_API_KEY}"
+          description: "带配额限制的 API Key"
+          permissions: ["read"]
+          expires-at: "2025-12-31T23:59:59"
+          enabled: true
+          daily-token-limit: 100000      # 每日 10 万 Token
+          rate-limit-per-minute: 60      # 每分钟 60 次请求
+          quota-alert-threshold: 80      # 使用量达到 80% 时告警
+```
+
+#### 配额管理工作原理
+
+1. **每日 Token 限额**：跟踪每日 Token 使用量。当达到限额时，API 请求将被拒绝，返回 429（Too Many Requests）状态码。
+
+2. **请求速率限制**：使用滑动窗口算法限制每分钟请求次数。当达到限制时，API 请求将被拒绝，返回 429 状态码。
+
+3. **告警阈值**：当使用量超过阈值百分比（如 80%）时，系统会触发告警。这对于监控和主动管理非常有用。
+
+4. **自动重置**：配额计数器每天午夜（00:00:00）自动重置。
+
+#### 监控配额使用情况
+
+您可以通过以下方式监控 API Key 配额使用情况：
+
+1. **Prometheus 指标**：
+   - `jairouter_security_api_key_daily_token_usage`：当日 Token 使用量
+   - `jairouter_security_api_key_daily_request_count`：当日请求次数
+   - `jairouter_security_api_key_quota_exceeded_total`：配额超限总次数
+
+2. **审计日志**：配额相关事件会记录在审计日志中。
+
+3. **管理 API**：通过管理 API 端点查询配额状态。
 
 ### 权限级别说明
 
@@ -274,6 +330,12 @@ API Key 在 H2 数据库中存储在以下表中：
 | permissions | TEXT | 权限列表（JSON） |
 | expires_at | TIMESTAMP | 过期时间 |
 | enabled | BOOLEAN | 是否启用 |
+| daily_token_limit | BIGINT | 每日 Token 使用限额 |
+| rate_limit_per_minute | INT | 每分钟请求次数限制 |
+| quota_alert_threshold | INT | 告警阈值百分比 |
+| today_token_usage | BIGINT | 当日 Token 使用量 |
+| today_request_count | INT | 当日请求次数 |
+| last_reset_time | TIMESTAMP | 最后重置时间 |
 | created_at | TIMESTAMP | 创建时间 |
 | updated_at | TIMESTAMP | 更新时间 |
 | metadata | TEXT | 元数据（JSON） |
@@ -301,6 +363,12 @@ API Key 存储包含以下元数据：
   "permissions": ["admin", "read", "write", "delete"],
   "expiresAt": "2025-12-31T23:59:59",
   "enabled": true,
+  "dailyTokenLimit": 100000,
+  "rateLimitPerMinute": 100,
+  "quotaAlertThreshold": 80,
+  "todayTokenUsage": 15000,
+  "todayRequestCount": 200,
+  "lastResetTime": "2025-01-15T00:00:00Z",
   "createdAt": "2025-01-15T10:30:00Z",
   "updatedAt": "2025-01-15T10:30:00Z",
   "metadata": {

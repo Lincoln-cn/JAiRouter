@@ -2,19 +2,19 @@
 
 ## 目录
 
-1. [配置概述](#配置概述)
-2. [配置加载优先级](#配置加载优先级)
-3. [模块化配置结构](#模块化配置结构)
-4. [环境变量配置](#环境变量配置)
-5. [外部配置文件](#外部配置文件)
-6. [多环境配置](#多环境配置)
-7. [配置校验机制](#配置校验机制)
-8. [配置API](#配置api)
-9. [迁移指南](#迁移指南)
+1. [配置概述](#config-overview)
+2. [配置加载优先级](#config-loading-priority)
+3. [模块化配置结构](#modular-config-structure)
+4. [环境变量配置](#env-config)
+5. [外部配置文件](#external-config)
+6. [多环境配置](#multi-env-config)
+7. [配置校验机制](#config-validation)
+8. [配置API](#config-api)
+9. [迁移指南](#migration-guide)
 
 ---
 
-## 配置概述
+## 配置概述 {#config-overview}
 
 JAiRouter v2.8.x 采用模块化配置架构，将配置按服务模块分离，支持外部配置文件和环境变量覆盖。
 
@@ -28,7 +28,7 @@ JAiRouter v2.8.x 采用模块化配置架构，将配置按服务模块分离，
 
 ---
 
-## 配置加载优先级
+## 配置加载优先级 {#config-loading-priority}
 
 配置按以下优先级加载（高优先级覆盖低优先级）：
 
@@ -50,7 +50,7 @@ JAiRouter v2.8.x 采用模块化配置架构，将配置按服务模块分离，
 
 ---
 
-## 模块化配置结构
+## 模块化配置结构 {#modular-config-structure}
 
 v2.8.x 配置目录结构：
 
@@ -91,7 +91,7 @@ src/main/resources/config/
 
 ---
 
-## 环境变量配置
+## 环境变量配置 {#env-config}
 
 ### 必须配置的环境变量
 
@@ -125,7 +125,7 @@ SERVER_PORT=8080
 
 ---
 
-## 外部配置文件
+## 外部配置文件 {#external-config}
 
 ### Docker 部署配置
 
@@ -156,7 +156,7 @@ model:
 
 ---
 
-## 多环境配置
+## 多环境配置 {#multi-env-config}
 
 ### 环境配置文件
 
@@ -180,7 +180,7 @@ environment:
 
 ---
 
-## 配置校验机制
+## 配置校验机制 {#config-validation}
 
 ### 启动时校验
 
@@ -211,7 +211,7 @@ curl http://localhost:8080/api/config/environment-variables
 
 ---
 
-## 配置API
+## 配置API {#config-api}
 
 | API | 说明 |
 |-----|------|
@@ -221,7 +221,7 @@ curl http://localhost:8080/api/config/environment-variables
 
 ---
 
-## 迁移指南
+## 迁移指南 {#migration-guide}
 
 ### 从 v2.7.x 迁移到 v2.8.x
 

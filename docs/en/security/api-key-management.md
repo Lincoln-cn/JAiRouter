@@ -1,10 +1,10 @@
 # API Key Management Guide
 
 <!-- Version Information -->
-> **Document Version**: 1.0.0  
-> **Last Updated**: 2025-08-19  
-> **Git Commit**:   
-> **Author**: 
+> **Document Version**: 1.1.0
+> **Last Updated**: 2026-06-30
+> **Git Commit**: fb0cd62f
+> **Author**: Lincoln
 <!-- /Version Information -->
 
 
@@ -18,6 +18,7 @@ The API Key authentication feature of JAiRouter provides a secure access control
 - **Multi-level Permission Control**: Supports different permission levels such as admin, read, write, and delete
 - **Expiration Time Management**: Supports setting expiration times for API Keys
 - **Usage Statistics**: Records usage statistics for each API Key
+- **Quota Management**: Supports daily Token usage limits, rate limiting, and alert thresholds
 - **Cache Optimization**: Supports Redis and local caching to improve authentication performance
 - **Dynamic Management**: Supports adding, deleting, and updating API Keys at runtime
 - **Persistent Storage**: Supports storing API Key information in H2 database
@@ -88,10 +89,66 @@ Each API Key contains the following attributes:
   permissions: ["read", "write"]        # Permission list
   expires-at: "2025-12-31T23:59:59"    # Expiration time
   enabled: true                         # Whether enabled
+  daily-token-limit: 100000            # Daily Token usage limit (optional)
+  rate-limit-per-minute: 100           # Requests per minute limit (optional)
+  quota-alert-threshold: 80           # Alert threshold percentage (optional)
   metadata:                            # Metadata
     created-by: "admin"
     department: "IT"
 ```
+
+### Quota Management Configuration
+
+JAiRouter supports comprehensive quota management for API Keys, including daily Token usage limits, rate limiting, and alert thresholds.
+
+#### Quota Configuration Parameters
+
+| Parameter | Type | Default Value | Description |
+|-----------|------|---------------|-------------|
+| `daily-token-limit` | long | -1 (unlimited) | Maximum Token usage per day |
+| `rate-limit-per-minute` | int | -1 (unlimited) | Maximum requests per minute |
+| `quota-alert-threshold` | int | 80 | Alert threshold percentage (0-100) |
+
+#### Quota Configuration Example
+
+```yaml
+jairouter:
+  security:
+    api-key:
+      keys:
+        - key-id: "limited-api-key"
+          key-value: "${LIMITED_API_KEY}"
+          description: "API Key with quota limits"
+          permissions: ["read"]
+          expires-at: "2025-12-31T23:59:59"
+          enabled: true
+          daily-token-limit: 100000      # 100K tokens per day
+          rate-limit-per-minute: 60      # 60 requests per minute
+          quota-alert-threshold: 80      # Alert at 80% usage
+```
+
+#### How Quota Management Works
+
+1. **Daily Token Limit**: Tracks Token usage per day. When the limit is reached, API requests are rejected with a 429 (Too Many Requests) status code.
+
+2. **Rate Limiting**: Uses a sliding window algorithm to limit requests per minute. When the limit is reached, API requests are rejected with a 429 status code.
+
+3. **Alert Threshold**: When usage exceeds the threshold percentage (e.g., 80%), the system triggers an alert. This is useful for monitoring and proactive management.
+
+4. **Automatic Reset**: Quota counters are automatically reset at midnight (00:00:00) every day.
+
+#### Monitoring Quota Usage
+
+You can monitor API Key quota usage through:
+
+1. **Prometheus Metrics**:
+   - `jairouter_security_api_key_daily_token_usage`: Current day Token usage
+   - `jairouter_security_api_key_daily_request_count`: Current day request count
+   - `jairouter_security_api_key_quota_exceeded_total`: Total quota exceeded events
+
+2. **Audit Logs**: Quota-related events are logged for audit purposes.
+
+3. **Management API**: Query quota status through the management API endpoint.
 
 ### Permission Level Descriptions
 
@@ -258,6 +315,12 @@ API Keys are stored in the H2 database in the following tables:
 | permissions | TEXT | Permission list (JSON) |
 | expires_at | TIMESTAMP | Expiration time |
 | enabled | BOOLEAN | Whether enabled |
+| daily_token_limit | BIGINT | Daily Token usage limit |
+| rate_limit_per_minute | INT | Requests per minute limit |
+| quota_alert_threshold | INT | Alert threshold percentage |
+| today_token_usage | BIGINT | Current day Token usage |
+| today_request_count | INT | Current day request count |
+| last_reset_time | TIMESTAMP | Last quota reset time |
 | created_at | TIMESTAMP | Creation time |
 | updated_at | TIMESTAMP | Update time |
 | metadata | TEXT | Metadata (JSON) |
@@ -285,6 +348,12 @@ API Keys are stored with the following metadata:
   "permissions": ["admin", "read", "write", "delete"],
   "expiresAt": "2025-12-31T23:59:59",
   "enabled": true,
+  "dailyTokenLimit": 100000,
+  "rateLimitPerMinute": 100,
+  "quotaAlertThreshold": 80,
+  "todayTokenUsage": 15000,
+  "todayRequestCount": 200,
+  "lastResetTime": "2025-01-15T00:00:00Z",
   "createdAt": "2025-01-15T10:30:00Z",
   "updatedAt": "2025-01-15T10:30:00Z",
   "metadata": {

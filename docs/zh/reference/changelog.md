@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.6.11
-> **最后更新**: 2026-06-09
+> **文档版本**: 2.7.0
+> **最后更新**: 2026-06-30
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,40 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### \[2.7.6] - 2026-06-30 - 功能发布
+
+#### API Key 配额管理
+
+新增全面的 API Key 配额管理功能：
+
+- **每日 Token 限额**：跟踪和限制每个 API Key 的每日 Token 使用量
+- **请求速率限制**：使用滑动窗口算法限制每分钟请求次数
+- **告警阈值**：可配置的使用量百分比告警阈值
+- **自动重置**：配额计数器每天午夜自动重置
+
+#### 问题修复
+
+- **API Key 序列化**：修复 `@JsonProperty(access = WRITE_ONLY)` 导致 `keyHash` 无法序列化到数据库的问题
+- **Token 使用量跟踪**：改进流式和非流式请求的 Token 使用量跟踪
+
+#### 新增组件
+
+- `ApiKeyQuotaService`：配额检查与告警服务
+- `TokenBucketRateLimiter`：滑动窗口限流器
+- `ApiKeyQuotaCleanupScheduler`：定时清理过期配额数据
+
+#### 数据库变更
+
+在 `api_keys` 表中新增配额相关字段：
+- `daily_token_limit`：每日 Token 使用限额
+- `rate_limit_per_minute`：每分钟请求次数限制
+- `quota_alert_threshold`：告警阈值百分比
+- `today_token_usage`：当日 Token 使用量
+- `today_request_count`：当日请求次数
+- `last_reset_time`：最后重置时间
+
+---
 
 ### \[2.5.15] - 2026-05-11 - 封板版本
 

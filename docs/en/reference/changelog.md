@@ -1,9 +1,9 @@
 ﻿# Changelog
 
 <!-- Version Info -->
-> **Document Version**: 1.7.3
-> **Last Updated**: 2026-04-14
-> **Git Commit**: 6b0e96e
+> **Document Version**: 1.8.0
+> **Last Updated**: 2026-06-30
+> **Git Commit**: fb0cd62f
 > **Author**: Lincoln
 <!-- /Version Info -->
 
@@ -20,6 +20,40 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.7.6] - 2026-06-30 - Feature Release
+
+#### API Key Quota Management
+
+Added comprehensive quota management features for API Keys:
+
+- **Daily Token Limit**: Track and limit daily Token usage per API Key
+- **Rate Limiting**: Sliding window algorithm for per-minute request limiting
+- **Alert Thresholds**: Configurable usage percentage thresholds for alerts
+- **Automatic Reset**: Quota counters reset daily at midnight
+
+#### Bug Fixes
+
+- **API Key Serialization**: Fixed `@JsonProperty(access = WRITE_ONLY)` preventing `keyHash` from being serialized to database
+- **Token Usage Tracking**: Improved Token usage tracking for streaming and non-streaming requests
+
+#### New Components
+
+- `ApiKeyQuotaService`: Quota checking and alert service
+- `TokenBucketRateLimiter`: Sliding window rate limiter
+- `ApiKeyQuotaCleanupScheduler`: Scheduled cleanup of expired quota data
+
+#### Database Changes
+
+Added quota-related fields to `api_keys` table:
+- `daily_token_limit`: Daily Token usage limit
+- `rate_limit_per_minute`: Requests per minute limit
+- `quota_alert_threshold`: Alert threshold percentage
+- `today_token_usage`: Current day Token usage
+- `today_request_count`: Current day request count
+- `last_reset_time`: Last quota reset time
+
+---
 
 ### [2.5.15] - 2026-05-11 - Stable Release
 

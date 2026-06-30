@@ -88,6 +88,7 @@ plugins:
             管理API: Management API
             监控API: Monitoring API
             OpenAPI规范: OpenAPI Specification
+            错误码对照表: Error Codes
             部署指南: Deployment
             Docker部署: Docker Deployment
             Kubernetes部署: Kubernetes Deployment
@@ -186,6 +187,7 @@ nav:
     - 管理API: zh/api-reference/management-api.md
     - 监控API: zh/api-reference/monitoring-api.md
     - OpenAPI规范: zh/api-reference/openapi-spec.md
+    - 错误码对照表: zh/api-reference/error-codes.md
   - 部署指南:
     - zh/deployment/index.md
     - Docker部署: zh/deployment/docker.md
