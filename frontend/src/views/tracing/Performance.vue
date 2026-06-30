@@ -700,7 +700,7 @@ const getErrorTrendChartOption = (timeSeriesData?: any[]) => {
     yData = timeSeriesData.map(d => d.errorCount)
   } else {
     // 没有数据，给当前小时和0
-    const nowHour = new Date().getHours().toString().padStart(2, '0') + ':00'
+    const nowHour = `${new Date().getHours().toString().padStart(2, '0')  }:00`
     xData = [nowHour]
     yData = [0]
   }
@@ -809,7 +809,7 @@ const getQpsTrendChartOption = (timeSeriesData?: any[]) => {
     yData = timeSeriesData.map(d => d.totalRequests || d.qps || 0)
   } else {
     // 没有数据，给当前小时和0
-    const nowHour = new Date().getHours().toString().padStart(2, '0') + ':00'
+    const nowHour = `${new Date().getHours().toString().padStart(2, '0')  }:00`
     xData = [nowHour]
     yData = [0]
   }
@@ -928,8 +928,8 @@ const loadPerformanceData = async () => {
       services.forEach(service => {
         console.log(`服务 ${service.name}:`, {
           追踪数量: service.requestCount,
-          平均延迟: service.avgLatency + 'ms',
-          错误率: service.errorRate + '%',
+          平均延迟: `${service.avgLatency  }ms`,
+          错误率: `${service.errorRate  }%`,
           错误数量: service.errorCount
         })
       })
@@ -1576,7 +1576,7 @@ const getTraceDetailChartOption = (traceData?: any) => {
 
   const categories = sortedSpans.map((span: any) => {
     const shortName = span.operationName.length > 30
-      ? span.operationName.substring(0, 30) + '...'
+      ? `${span.operationName.substring(0, 30)  }...`
       : span.operationName
     return shortName
   })
@@ -1662,7 +1662,7 @@ const getTraceDetailChartOption = (traceData?: any) => {
             x: start[0],
             y: start[1] - height / 2,
             width: Math.max(end[0] - start[0], 2),
-            height: height
+            height
           }
 
           return {

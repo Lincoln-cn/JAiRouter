@@ -622,7 +622,7 @@ const fetchServiceInstances = (serviceType: string) => {
         const typedData: ServiceInstance[] = data.map((item) => ({
           ...item,
           id: item.instanceId || Date.now() + Math.random(), // 使用后端返回的instanceId作为唯一标识符，如果没有则使用随机数
-          serviceType: serviceType,
+          serviceType,
           adapter: item.adapter || '', // 确保适配器字段存在
           headers: item.headers || {} // 确保headers字段存在
         }))

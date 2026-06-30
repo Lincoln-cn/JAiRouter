@@ -1099,7 +1099,7 @@ const sendGenerateRequest = async () => {
 const downloadImage = async (image: any, index: number) => {
   try {
     let imageUrl = image.url
-    let filename = `generated_image_${index + 1}_${Date.now()}.png`
+    const filename = `generated_image_${index + 1}_${Date.now()}.png`
     
     if (image.b64_json) {
       // 处理 base64 图像

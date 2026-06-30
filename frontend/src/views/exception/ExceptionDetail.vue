@@ -202,7 +202,7 @@ const loadData = async () => {
     }
   } catch (error: any) {
     console.error('加载异常事件详情失败:', error)
-    ElMessage.error('加载失败：' + (error.message || '未知错误'))
+    ElMessage.error(`加载失败：${  error.message || '未知错误'}`)
   } finally {
     loading.value = false
   }

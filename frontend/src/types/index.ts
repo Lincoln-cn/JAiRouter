@@ -59,6 +59,12 @@ export interface ApiKeyVO {
   remainingDays?: number      // -1 表示已过期，null 表示永不过期
   allowedIpAddresses?: string[]  // IP 白名单
   dailyRequestLimit?: number     // 每日请求限制
+  dailyTokenLimit?: number       // 每日 Token 使用上限
+  rateLimitPerMinute?: number    // 每分钟请求速率限制
+  quotaAlertThreshold?: number   // 配额告警阈值 (0.0-1.0)
+  todayRequestCount?: number     // 今日请求次数
+  todayTokenUsage?: number       // 今日 Token 使用量
+  quotaAlertTriggered?: boolean  // 是否触发配额告警
   rotationPeriodDays?: number    // 密钥轮换周期（天数）
   lastRotatedAt?: string         // 上次轮换时间
   needsRotation?: boolean        // 是否需要轮换
@@ -98,6 +104,9 @@ export interface ApiKeyCreateRequest {
   expiresAt?: string
   allowedIpAddresses?: string[]
   dailyRequestLimit?: number
+  dailyTokenLimit?: number       // 每日 Token 使用上限
+  rateLimitPerMinute?: number    // 每分钟请求速率限制
+  quotaAlertThreshold?: number   // 配额告警阈值 (0.0-1.0)
   rotationPeriodDays?: number   // 密钥轮换周期（天数）
 }
 
@@ -108,6 +117,9 @@ export interface ApiKeyUpdateRequest {
   expiresAt?: string
   allowedIpAddresses?: string[]
   dailyRequestLimit?: number
+  dailyTokenLimit?: number       // 每日 Token 使用上限
+  rateLimitPerMinute?: number    // 每分钟请求速率限制
+  quotaAlertThreshold?: number   // 配额告警阈值 (0.0-1.0)
   rotationPeriodDays?: number   // 密钥轮换周期（天数）
 }
 
@@ -159,6 +171,32 @@ export interface ApiKeyBatchImportResult {
 export interface ImportError {
   keyId?: string
   reason: string
+}
+
+// API Key 配额管理类型
+export interface QuotaUsageDetail {
+  keyId: string
+  description: string
+  dailyRequestLimit: number
+  dailyTokenLimit: number
+  rateLimitPerMinute: number
+  quotaAlertThreshold: number
+  todayRequestCount: number
+  todayTokenUsage: number
+  currentRatePerMinute: number
+  totalRequests: number
+  dailyRequestUsagePercent: number  // -1 表示无限制
+  dailyTokenUsagePercent: number    // -1 表示无限制
+  alertTriggered: boolean
+}
+
+export interface QuotaAlertInfo {
+  keyId: string
+  description: string
+  alertType: string        // REQUEST_QUOTA | TOKEN_QUOTA | GENERAL
+  dailyRequestUsagePercent: number
+  dailyTokenUsagePercent: number
+  message: string
 }
 
 // 兼容旧类型

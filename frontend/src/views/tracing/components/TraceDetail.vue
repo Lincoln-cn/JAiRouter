@@ -203,7 +203,7 @@ const renderGanttChart = () => {
 
   const categories = spans.map((span: any) => {
     const name = span.operationName || ''
-    return name.length > 30 ? name.substring(0, 30) + '...' : name
+    return name.length > 30 ? `${name.substring(0, 30)  }...` : name
   })
 
   const maxDuration = Math.max(...ganttData.map((d: any) => d.value[2]))
@@ -264,7 +264,7 @@ const renderGanttChart = () => {
             x: start[0],
             y: start[1] - height / 2,
             width: Math.max(end[0] - start[0], 2),
-            height: height
+            height
           },
           style: {
             ...api.style(),

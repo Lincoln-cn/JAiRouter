@@ -372,7 +372,7 @@ let latencyDistEcharts: echarts.ECharts | null = null
 let latencyTrendEcharts: echarts.ECharts | null = null
 let errorTrendEcharts: echarts.ECharts | null = null
 let throughputEcharts: echarts.ECharts | null = null
-let throughputDistEcharts: echarts.ECharts | null = null
+const throughputDistEcharts: echarts.ECharts | null = null
 
 // 追踪详情
 const traceDetailVisible = ref(false)
@@ -595,7 +595,7 @@ const generateRandomData = (count: number, min: number, max: number) => {
 
 const formatNumber = (num: number) => {
   if (num >= 10000) {
-    return (num / 10000).toFixed(1) + 'w'
+    return `${(num / 10000).toFixed(1)  }w`
   }
   return num.toLocaleString()
 }

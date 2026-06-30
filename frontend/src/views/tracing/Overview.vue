@@ -169,7 +169,7 @@ import {
 import type { TracingOverview, TracingStats, ServiceStats } from '@/types'
 
 // 图表更新定时器
-let chartUpdateTimer: number | null = null
+const chartUpdateTimer: number | null = null
 
 // 加载状态
 const loading = ref(false)
@@ -263,7 +263,7 @@ const getTraceChartOption = () => {
     tooltip: {
       trigger: 'axis',
       formatter: (params: any[]) => {
-        let tooltipText = params[0].axisValueLabel + '<br/>'
+        let tooltipText = `${params[0].axisValueLabel  }<br/>`
         params.forEach((param: any) => {
           tooltipText += `${param.marker} ${param.seriesName}: ${param.value}<br/>`
         })

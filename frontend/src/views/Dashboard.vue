@@ -473,7 +473,7 @@ const resizeChart = () => {
 }
 
 // 辅助显示函数
-const formatPercent = (v?: number) => ((v ?? 0) * 100).toFixed(0) + '%'
+const formatPercent = (v?: number) => `${((v ?? 0) * 100).toFixed(0)  }%`
 const degradationText = (level?: string) => (level === 'NONE' ? '无降级' : level === 'PARTIAL' ? '部分降级' : level === 'FULL' ? '全部降级' : 'N/A')
 const degradationTagType = (level?: string) => (level === 'NONE' ? 'success' : level === 'PARTIAL' ? 'warning' : 'danger')
 const circuitText = (s?: string) => (s === 'CLOSED' ? '关闭' : s === 'OPEN' ? '开启' : s === 'HALF_OPEN' ? '半开' : 'N/A')
@@ -632,10 +632,10 @@ const fetchServiceConfig = async () => {
       const ordered = orderedServiceNames.value
       if (ordered.length > 0) activeServiceTab.value = ordered[0]
     } else {
-      ElMessage.error('获取服务配置失败: ' + (res.data?.message || '未知错误'))
+      ElMessage.error(`获取服务配置失败: ${  res.data?.message || '未知错误'}`)
     }
   } catch (e: any) {
-    ElMessage.error('获取服务配置异常: ' + (e.message || '网络错误'))
+    ElMessage.error(`获取服务配置异常: ${  e.message || '网络错误'}`)
   } finally {
     configLoading.value = false
   }
@@ -651,10 +651,10 @@ const fetchMonitoringOverview = async () => {
         systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
       })
     } else {
-      ElMessage.error('获取监控概览失败: ' + (res.data?.message || '未知错误'))
+      ElMessage.error(`获取监控概览失败: ${  res.data?.message || '未知错误'}`)
     }
   } catch (e: any) {
-    ElMessage.error('获取监控概览异常: ' + (e.message || '网络错误'))
+    ElMessage.error(`获取监控概览异常: ${  e.message || '网络错误'}`)
   }
 }
 
@@ -669,10 +669,10 @@ const fetchDashboardMetrics = async () => {
         systemChartInstance ? systemChartInstance.setOption(getChartOption(), { notMerge: true }) : initChart()
       })
     } else {
-      ElMessage.error('获取指标数据失败: ' + (res.data?.message || '未知错误'))
+      ElMessage.error(`获取指标数据失败: ${  res.data?.message || '未知错误'}`)
     }
   } catch (e: any) {
-    ElMessage.error('获取指标数据异常: ' + (e.message || '网络错误'))
+    ElMessage.error(`获取指标数据异常: ${  e.message || '网络错误'}`)
   }
 }
 
@@ -719,7 +719,7 @@ const fetchDashboardData = async () => {
       initChart()
     })
   } catch (e: any) {
-    ElMessage.error('加载仪表板失败: ' + (e.message || '网络错误'))
+    ElMessage.error(`加载仪表板失败: ${  e.message || '网络错误'}`)
   }
 }
 

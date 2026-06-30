@@ -444,7 +444,7 @@ const loadData = async () => {
     loadStatistics()
   } catch (error: any) {
     console.error('加载异常列表失败:', error)
-    ElMessage.error('加载异常列表失败：' + (error.message || '未知错误'))
+    ElMessage.error(`加载异常列表失败：${  error.message || '未知错误'}`)
   } finally {
     loading.value = false
   }
@@ -558,7 +558,7 @@ const handleCleanup = async () => {
   } catch (error: any) {
     if (error !== 'cancel') {
       console.error('清理异常事件失败:', error)
-      ElMessage.error('清理失败：' + (error.message || '未知错误'))
+      ElMessage.error(`清理失败：${  error.message || '未知错误'}`)
     }
   }
 }

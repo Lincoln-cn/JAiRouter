@@ -352,16 +352,16 @@ const getAlgorithmLabel = (algorithm: string) => {
 const getShortIdentifier = (identifier: string) => {
   if (!identifier) return '-'
   if (identifier.length <= 30) return identifier
-  return identifier.substring(0, 14) + '...' + identifier.substring(identifier.length - 13)
+  return `${identifier.substring(0, 14)  }...${  identifier.substring(identifier.length - 13)}`
 }
 
 const formatNumber = (num: number) => {
   if (num < 0) return 'N/A'
   if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M'
+    return `${(num / 1000000).toFixed(1)  }M`
   }
   if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K'
+    return `${(num / 1000).toFixed(1)  }K`
   }
   return num.toString()
 }

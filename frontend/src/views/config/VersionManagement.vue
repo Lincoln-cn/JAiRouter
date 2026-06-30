@@ -264,7 +264,7 @@ const fetchVersions = async () => {
     console.log('Versions count:', versions.value.length) // 添加版本数量调试日志
   } catch (error) {
     console.error('获取版本列表失败:', error)
-    ElMessage.error('获取版本列表失败: ' + (error as Error).message)
+    ElMessage.error(`获取版本列表失败: ${  (error as Error).message}`)
   } finally {
     loading.value = false
   }

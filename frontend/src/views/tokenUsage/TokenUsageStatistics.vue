@@ -405,7 +405,7 @@ const updateModelChart = () => {
         type: 'pie',
         radius: ['40%', '70%'],
         left: '15%',
-        data: data,
+        data,
         label: {
           show: true,
           formatter: '{b}: {c}'
@@ -669,7 +669,7 @@ const loadData = async () => {
     initCharts()
   } catch (error: any) {
     console.error('加载统计数据失败:', error)
-    ElMessage.error('加载统计数据失败：' + (error.message || '未知错误'))
+    ElMessage.error(`加载统计数据失败：${  error.message || '未知错误'}`)
   }
 }
 

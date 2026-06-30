@@ -251,7 +251,7 @@ export class ConfigService {
 
       return { success: successCount, errors }
     } catch (error) {
-      return { success: 0, errors: ['导入数据解析失败: ' + (error as Error).message] }
+      return { success: 0, errors: [`导入数据解析失败: ${  (error as Error).message}`] }
     }
   }
 

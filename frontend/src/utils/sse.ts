@@ -21,7 +21,7 @@ export function connectSSE() {
   try {
     // 获取基础URL
     const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-    let sseUrl = `${baseUrl}/health-status/stream`
+    const sseUrl = `${baseUrl}/health-status/stream`
     
     // 获取token
     const token = localStorage.getItem('admin_token')

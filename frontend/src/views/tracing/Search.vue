@@ -580,7 +580,7 @@ const getTraceChainChartOption = () => {
 
   const categories = spans.map((span: any) => {
     const shortName = span.operationName.length > 25 
-      ? span.operationName.substring(0, 25) + '...' 
+      ? `${span.operationName.substring(0, 25)  }...` 
       : span.operationName
     return shortName
   })
@@ -666,7 +666,7 @@ const getTraceChainChartOption = () => {
             x: start[0],
             y: start[1] - height / 2,
             width: Math.max(end[0] - start[0], 2), // 最小宽度为2px
-            height: height
+            height
           }
           
           return {

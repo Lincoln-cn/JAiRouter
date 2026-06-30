@@ -290,22 +290,22 @@ const breadcrumbs = computed(() => {
   // 处理其他路径的面包屑
   let path = ''
   for (let i = 0; i < pathArray.length; i++) {
-    path += '/' + pathArray[i]
+    path += `/${  pathArray[i]}`
     const routeMatched = router.options.routes?.find(r => r.path === path)
     if (routeMatched) {
       breadcrumbArray.push({
-        path: path,
+        path,
         title: (routeMatched.meta?.title as string) || (routeMatched.name as string)
       })
     } else {
       // 查找子路由
       const parentPath = pathArray.slice(0, i).join('/')
-      const parentRoute = router.options.routes?.find(r => r.path === '/' + parentPath)
+      const parentRoute = router.options.routes?.find(r => r.path === `/${  parentPath}`)
       if (parentRoute && parentRoute.children) {
         const childRoute = parentRoute.children.find(child => child.path === pathArray[i])
         if (childRoute) {
           breadcrumbArray.push({
-            path: path,
+            path,
             title: (childRoute.meta?.title as string) || (childRoute.name as string)
           })
         }

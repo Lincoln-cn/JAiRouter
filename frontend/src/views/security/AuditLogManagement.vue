@@ -443,7 +443,7 @@ const handleExport = async (format: string) => {
     
     ElMessage.success(`已导出 ${result.events.length} 条记录`)
   } catch (error: any) {
-    ElMessage.error('导出失败: ' + (error.message || '未知错误'))
+    ElMessage.error(`导出失败: ${  error.message || '未知错误'}`)
   }
 }
 
@@ -547,7 +547,7 @@ const loadAuditLogs = async () => {
     logs.value = result.events
     pagination.total = result.totalElements
   } catch (error: any) {
-    ElMessage.error('加载审计日志失败: ' + (error.message || '未知错误'))
+    ElMessage.error(`加载审计日志失败: ${  error.message || '未知错误'}`)
   } finally {
     loading.value = false
   }

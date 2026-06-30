@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -118,20 +119,35 @@ public class ServiceRequestHandler {
         return ReactiveSecurityContextHolder.getContext()
             .map(ctx -> ctx.getAuthentication())
             .filter(auth -> auth instanceof ApiKeyAuthentication)
-            .map(auth -> ((ApiKeyAuthentication) auth).getPrincipal())
-            .filter(principal -> principal != null)
-            .doOnNext(keyId -> {
+            .cast(ApiKeyAuthentication.class)
+            .flatMap(auth -> {
+                String keyId = (String) auth.getPrincipal();
+                if (keyId == null) {
+                    return Mono.error(new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "API Key authentication required"));
+                }
+
+                // 检查服务类型权限
+                if (!hasServicePermission(auth, endpoint.getServiceType())) {
+                    logger.warn("API Key '{}' does not have permission for service type: {}",
+                        keyId, endpoint.getServiceType());
+                    return Mono.error(new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "API Key does not have permission for service: " + endpoint.getServiceType()));
+                }
+
                 exchange.getAttributes().put(API_KEY_ID_ATTRIBUTE, keyId);
                 httpRequest.getAttributes().put(API_KEY_ID_ATTRIBUTE, keyId);
-            })
-            .then(Mono.defer(() -> handleWithInstanceAdapter(
-                endpoint,
-                modelName,
-                authorization,
-                httpRequest,
-                tracingContext,
-                executor
-            )));
+
+                return handleWithInstanceAdapter(
+                    endpoint,
+                    modelName,
+                    authorization,
+                    httpRequest,
+                    tracingContext,
+                    executor
+                );
+            });
     }
 
     /**
@@ -326,6 +342,39 @@ public class ServiceRequestHandler {
             return exchange.getAttribute(TracingConstants.ContextKeys.TRACING_CONTEXT);
         }
         return null;
+    }
+
+    /**
+     * 检查 API Key 是否具有访问指定服务类型的权限.
+     *
+     * <p>权限检查逻辑：
+     * <ul>
+     *   <li>如果 API Key 具有 ADMIN 权限，允许访问所有服务</li>
+     *   <li>否则检查是否具有对应服务类型的权限（如 ROLE_CHAT, ROLE_EMBEDDING 等）</li>
+     * </ul>
+     *
+     * @param authentication API Key 认证对象
+     * @param serviceType 服务类型
+     * @return 是否具有权限
+     */
+    private boolean hasServicePermission(final ApiKeyAuthentication authentication, final ServiceType serviceType) {
+        String requiredRole = "ROLE_" + serviceType.name();
+
+        for (GrantedAuthority authority : authentication.getAuthorities()) {
+            String authorityName = authority.getAuthority();
+
+            // ADMIN 权限允许访问所有服务
+            if ("ROLE_ADMIN".equals(authorityName)) {
+                return true;
+            }
+
+            // 检查是否具有对应服务类型的权限
+            if (requiredRole.equals(authorityName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

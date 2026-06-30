@@ -327,7 +327,7 @@ const loadTokens = async () => {
     )
     tokenList.value = result
   } catch (error: any) {
-    ElMessage.error('加载令牌列表失败: ' + (error.message || '未知错误'))
+    ElMessage.error(`加载令牌列表失败: ${  error.message || '未知错误'}`)
   } finally {
     loading.value = false
   }
@@ -373,7 +373,7 @@ const handleViewDetails = async (token: JwtTokenInfo) => {
     selectedTokenDetails.value = details
     tokenDetailsDialogVisible.value = true
   } catch (error: any) {
-    ElMessage.error('获取令牌详情失败: ' + (error.message || '未知错误'))
+    ElMessage.error(`获取令牌详情失败: ${  error.message || '未知错误'}`)
   }
 }
 
@@ -401,7 +401,7 @@ const handleRevoke = (token: JwtTokenInfo) => {
         ElMessage.error('令牌撤销失败')
       }
     } catch (error: any) {
-      ElMessage.error('令牌撤销失败: ' + (error.message || '未知错误'))
+      ElMessage.error(`令牌撤销失败: ${  error.message || '未知错误'}`)
     }
   }).catch(() => {
     // 用户取消操作
@@ -486,7 +486,7 @@ const handleRevokeFromDetails = async () => {
         ElMessage.error('令牌撤销失败')
       }
     } catch (error: any) {
-      ElMessage.error('令牌撤销失败: ' + (error.message || '未知错误'))
+      ElMessage.error(`令牌撤销失败: ${  error.message || '未知错误'}`)
     }
   }).catch(() => {
     // 用户取消操作
@@ -508,7 +508,7 @@ const handleCleanupExpiredTokens = async () => {
       await loadTokens()
       
     } catch (error: any) {
-      ElMessage.error('清理过期令牌失败: ' + (error.message || '未知错误'))
+      ElMessage.error(`清理过期令牌失败: ${  error.message || '未知错误'}`)
     } finally {
       loading.value = false
     }
@@ -551,7 +551,7 @@ const handleBatchRevoke = async () => {
       ElMessage.error('批量撤销失败')
     }
   } catch (error: any) {
-    ElMessage.error('批量撤销失败: ' + (error.message || '未知错误'))
+    ElMessage.error(`批量撤销失败: ${  error.message || '未知错误'}`)
   } finally {
     batchRevokeLoading.value = false
   }

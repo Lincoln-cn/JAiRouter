@@ -345,7 +345,7 @@ const handleHeaderChange = () => {
 
   const updatedGlobalConfig = {
     ...props.globalConfig,
-    customHeaders: customHeaders
+    customHeaders
   }
 
   emit('update:globalConfig', updatedGlobalConfig)

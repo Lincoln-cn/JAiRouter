@@ -304,11 +304,11 @@ const formatSampleRate = (val: number) => `${val}%`
 
 const formatTimestamp = (timestamp: string) => {
   const date = new Date(timestamp)
-  return date.toLocaleTimeString('zh-CN', {
+  return `${date.toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
-  }) + '.' + String(date.getMilliseconds()).padStart(3, '0')
+  })  }.${  String(date.getMilliseconds()).padStart(3, '0')}`
 }
 
 const getInstanceShortName = (instanceId: string) => {

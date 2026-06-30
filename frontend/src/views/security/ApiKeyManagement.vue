@@ -130,6 +130,22 @@
             </el-tooltip>
           </template>
         </el-table-column>
+        <el-table-column label="今日Token" width="120" align="center">
+          <template #default="scope">
+            <span v-if="scope.row.todayTokenUsage !== undefined && scope.row.todayTokenUsage !== null">
+              {{ formatTokenCount(scope.row.todayTokenUsage) }}
+            </span>
+            <span v-else class="text-muted">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="告警状态" width="100" align="center">
+          <template #default="scope">
+            <el-tag v-if="scope.row.quotaAlertTriggered" type="danger" size="small">
+              <el-icon><Warning /></el-icon> 告警
+            </el-tag>
+            <el-tag v-else type="success" size="small">正常</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" prop="enabled" width="80" align="center">
           <template #default="scope">
             <el-switch
@@ -141,13 +157,16 @@
             />
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="160">
+        <el-table-column fixed="right" label="操作" width="200">
           <template #default="scope">
             <div class="action-buttons">
               <el-button icon="Edit" size="small" @click="handleEdit(scope.row)">编辑</el-button>
               <el-button icon="RefreshRight" size="small" type="warning" @click="handleRotate(scope.row)"
                          :disabled="scope.row.expired">轮换</el-button>
               <el-button icon="Refresh" size="small" type="info" @click="handleReset(scope.row)">重置</el-button>
+              <el-tooltip content="重置每日配额计数器" placement="top">
+                <el-button icon="Timer" size="small" type="success" @click="handleResetQuota(scope.row)">配额重置</el-button>
+              </el-tooltip>
               <el-button icon="Delete" size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
             </div>
           </template>
@@ -180,10 +199,13 @@
         </el-form-item>
         <el-form-item label="权限">
           <el-checkbox-group v-model="form.permissions">
-            <el-checkbox label="READ">读取</el-checkbox>
-            <el-checkbox label="WRITE">写入</el-checkbox>
-            <el-checkbox label="DELETE">删除</el-checkbox>
-            <el-checkbox label="ADMIN">管理员</el-checkbox>
+            <el-checkbox label="chat">聊天模型</el-checkbox>
+            <el-checkbox label="embedding">嵌入模型</el-checkbox>
+            <el-checkbox label="rerank">重排序模型</el-checkbox>
+            <el-checkbox label="tts">语音合成</el-checkbox>
+            <el-checkbox label="stt">语音识别</el-checkbox>
+            <el-checkbox label="imgGen">图像生成</el-checkbox>
+            <el-checkbox label="imgEdit">图像编辑</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
         <el-form-item label="IP白名单">
@@ -202,6 +224,18 @@
         <el-form-item label="每日请求上限">
           <el-input-number v-model="form.dailyRequestLimit" :min="0" :step="100" placeholder="0表示不限制"/>
           <div class="form-hint">0 表示不限制</div>
+        </el-form-item>
+        <el-form-item label="每日Token上限">
+          <el-input-number v-model="form.dailyTokenLimit" :min="0" :step="1000" placeholder="0表示不限制"/>
+          <div class="form-hint">每日 Token 使用量上限，0 表示不限制</div>
+        </el-form-item>
+        <el-form-item label="每分钟速率限制">
+          <el-input-number v-model="form.rateLimitPerMinute" :min="0" :step="10" placeholder="0表示不限制"/>
+          <div class="form-hint">每分钟请求速率上限，0 表示不限制</div>
+        </el-form-item>
+        <el-form-item label="告警阈值">
+          <el-slider v-model="form.quotaAlertThreshold" :min="0" :max="1" :step="0.05" show-input :format-tooltip="(val: number) => `${Math.round(val * 100)}%`"/>
+          <div class="form-hint">配额使用达到此比例时触发告警</div>
         </el-form-item>
         <el-form-item label="轮换周期">
           <el-input-number v-model="form.rotationPeriodDays" :min="0" :step="30" placeholder="0表示不自动轮换"/>
@@ -377,7 +411,9 @@ import {
   resetApiKey,
   rotateApiKey,
   exportApiKeys,
-  importApiKeys
+  importApiKeys,
+  resetApiKeyQuota,
+  getQuotaOverview
 } from '@/api/apiKey'
 import type {
   ApiKeyVO,
@@ -387,7 +423,8 @@ import type {
   ApiKeyUpdateRequest,
   ApiKeyBatchImportRequest,
   ApiKeyBatchImportResult,
-  ApiKeyImportItem
+  ApiKeyImportItem,
+  QuotaUsageDetail
 } from '@/types'
 
 // 列表数据
@@ -421,6 +458,9 @@ const form = ref({
   permissions: [] as string[],
   allowedIpAddresses: [] as string[],
   dailyRequestLimit: 0,
+  dailyTokenLimit: 0,
+  rateLimitPerMinute: 0,
+  quotaAlertThreshold: 0.8,
   rotationPeriodDays: 0
 })
 
@@ -432,14 +472,27 @@ const keyIdRules = [
 // 获取权限标签类型
 const getPermissionTagType = (permission: string) => {
   switch (permission) {
-    case 'ADMIN':
-      return 'danger'
-    case 'WRITE':
-      return 'warning'
-    case 'DELETE':
-      return 'warning'
-    case 'READ':
+    case 'chat':
+      return 'primary'
+    case 'embedding':
       return 'success'
+    case 'rerank':
+      return 'warning'
+    case 'tts':
+      return 'info'
+    case 'stt':
+      return 'info'
+    case 'imgGen':
+      return 'danger'
+    case 'imgEdit':
+      return 'danger'
+    // 兼容旧权限格式
+    case 'image':
+      return 'danger'
+    case 'audio':
+      return 'info'
+    case 'admin':
+      return 'danger'
     default:
       return 'info'
   }
@@ -448,14 +501,33 @@ const getPermissionTagType = (permission: string) => {
 // 格式化权限显示
 const formatPermission = (permission: string) => {
   switch (permission) {
-    case 'ADMIN':
+    case 'chat':
+      return '聊天模型'
+    case 'embedding':
+      return '嵌入模型'
+    case 'rerank':
+      return '重排序模型'
+    case 'tts':
+      return '语音合成'
+    case 'stt':
+      return '语音识别'
+    case 'imgGen':
+      return '图像生成'
+    case 'imgEdit':
+      return '图像编辑'
+    // 兼容旧权限格式
+    case 'image':
+      return '图像生成'
+    case 'audio':
+      return '语音合成'
+    case 'admin':
       return '管理员'
-    case 'WRITE':
-      return '写入'
-    case 'DELETE':
-      return '删除'
-    case 'READ':
+    case 'read':
       return '读取'
+    case 'write':
+      return '写入'
+    case 'delete':
+      return '删除'
     default:
       return permission
   }
@@ -477,16 +549,27 @@ const getRemainingDaysType = (row: ApiKeyVO): 'success' | 'warning' | 'danger' |
   return 'success'
 }
 
+// 格式化 Token 数量
+const formatTokenCount = (count: number): string => {
+  if (count >= 1000000) {
+    return `${(count / 1000000).toFixed(1)  }M`
+  }
+  if (count >= 1000) {
+    return `${(count / 1000).toFixed(1)  }K`
+  }
+  return count.toString()
+}
+
 // 格式化日期时间
 const formatDateTime = (dateString: string): string => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  return date.getFullYear() + '-' +
-      String(date.getMonth() + 1).padStart(2, '0') + '-' +
-      String(date.getDate()).padStart(2, '0') + ' ' +
-      String(date.getHours()).padStart(2, '0') + ':' +
-      String(date.getMinutes()).padStart(2, '0') + ':' +
-      String(date.getSeconds()).padStart(2, '0')
+  return `${date.getFullYear()  }-${ 
+      String(date.getMonth() + 1).padStart(2, '0')  }-${ 
+      String(date.getDate()).padStart(2, '0')  } ${ 
+      String(date.getHours()).padStart(2, '0')  }:${ 
+      String(date.getMinutes()).padStart(2, '0')  }:${ 
+      String(date.getSeconds()).padStart(2, '0')}`
 }
 
 // 获取API密钥列表
@@ -501,7 +584,7 @@ const fetchApiKeys = async () => {
       expiresAt: formatDateTime(key.expiresAt),
       lastUsedAt: formatDateTime(key.lastUsedAt || '')
     }))
-    
+
     apiKeys.value = formattedItems
     listData.items = formattedItems
     listData.total = data.total
@@ -509,10 +592,35 @@ const fetchApiKeys = async () => {
     listData.disabledCount = data.disabledCount
     listData.expiredCount = data.expiredCount
     listData.summary = data.summary
+
+    // 获取配额概览数据并合并到列表
+    await fetchQuotaOverview()
   } catch (error) {
     ElMessage.error('获取API密钥列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 获取配额概览数据
+const fetchQuotaOverview = async () => {
+  try {
+    const quotaData = await getQuotaOverview()
+    // 创建配额数据映射
+    const quotaMap = new Map<string, QuotaUsageDetail>()
+    quotaData.forEach(quota => quotaMap.set(quota.keyId, quota))
+
+    // 将配额数据合并到列表项
+    apiKeys.value = apiKeys.value.map(key => ({
+      ...key,
+      todayTokenUsage: quotaMap.get(key.keyId)?.todayTokenUsage ?? key.todayTokenUsage,
+      todayRequestCount: quotaMap.get(key.keyId)?.todayRequestCount ?? key.todayRequestCount,
+      quotaAlertTriggered: quotaMap.get(key.keyId)?.alertTriggered ?? key.quotaAlertTriggered
+    }))
+    listData.items = apiKeys.value
+  } catch (error) {
+    // 配额数据获取失败不影响列表显示
+    console.warn('获取配额概览失败:', error)
   }
 }
 
@@ -528,6 +636,9 @@ const handleCreateApiKey = () => {
     permissions: [],
     allowedIpAddresses: [],
     dailyRequestLimit: 0,
+    dailyTokenLimit: 0,
+    rateLimitPerMinute: 0,
+    quotaAlertThreshold: 0.8,
     rotationPeriodDays: 0
   }
   dialogVisible.value = true
@@ -545,6 +656,9 @@ const handleEdit = (row: ApiKeyVO) => {
     permissions: row.permissions || [],
     allowedIpAddresses: [],
     dailyRequestLimit: row.dailyRequestLimit || 0,
+    dailyTokenLimit: row.dailyTokenLimit || 0,
+    rateLimitPerMinute: row.rateLimitPerMinute || 0,
+    quotaAlertThreshold: row.quotaAlertThreshold ?? 0.8,
     rotationPeriodDays: row.rotationPeriodDays || 0
   }
   dialogVisible.value = true
@@ -585,7 +699,7 @@ const handleReset = (row: ApiKeyVO) => {
       await fetchApiKeys()
       ElMessage.success('密钥重置成功，请保存新的密钥值！')
     } catch (error: any) {
-      ElMessage.error('重置失败: ' + (error.message || ''))
+      ElMessage.error(`重置失败: ${  error.message || ''}`)
     }
   })
 }
@@ -608,7 +722,28 @@ const handleRotate = (row: ApiKeyVO) => {
       await fetchApiKeys()
       ElMessage.success('密钥轮换成功，请保存新的密钥值！')
     } catch (error: any) {
-      ElMessage.error('轮换失败: ' + (error.message || ''))
+      ElMessage.error(`轮换失败: ${  error.message || ''}`)
+    }
+  })
+}
+
+// 重置API密钥每日配额
+const handleResetQuota = (row: ApiKeyVO) => {
+  ElMessageBox.confirm(
+    `确定要重置API密钥 ${row.keyId} 的每日配额计数器吗？这将清零今日的请求和Token使用量。`,
+    '配额重置确认',
+    {
+      confirmButtonText: '确定重置',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      await resetApiKeyQuota(row.keyId)
+      await fetchQuotaOverview()
+      ElMessage.success('配额重置成功')
+    } catch (error: any) {
+      ElMessage.error(`配额重置失败: ${  error.message || ''}`)
     }
   })
 }
@@ -658,7 +793,7 @@ const handleSave = async () => {
     dialogVisible.value = false
     await fetchApiKeys()
   } catch (error: any) {
-    ElMessage.error(isEdit.value ? '编辑失败: ' + (error.message || '') : '创建失败: ' + (error.message || ''))
+    ElMessage.error(isEdit.value ? `编辑失败: ${  error.message || ''}` : `创建失败: ${  error.message || ''}`)
   } finally {
     saveLoading.value = false
   }
@@ -736,7 +871,7 @@ const handleImport = async () => {
     await fetchApiKeys()
     ElMessage.success(`导入完成：成功 ${result.successCount}，失败 ${result.failureCount}`)
   } catch (error: any) {
-    ElMessage.error('导入失败: ' + (error.message || ''))
+    ElMessage.error(`导入失败: ${  error.message || ''}`)
   } finally {
     importLoading.value = false
   }
@@ -769,7 +904,7 @@ const handleExport = async () => {
     URL.revokeObjectURL(url)
     ElMessage.success(`已导出 ${exportData.total} 个密钥配置`)
   } catch (error: any) {
-    ElMessage.error('导出失败: ' + (error.message || ''))
+    ElMessage.error(`导出失败: ${  error.message || ''}`)
   }
 }
 

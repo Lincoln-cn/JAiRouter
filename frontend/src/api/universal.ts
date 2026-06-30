@@ -162,7 +162,7 @@ class UniversalApiClient {
         const baseURL = import.meta.env.VITE_API_BASE_URL || '/api'
         const origin = window.location.origin
         // 确保正确拼接URL：origin + baseURL + endpoint
-        fullUrl = `${origin}${baseURL}${apiRequest.endpoint.startsWith('/') ? apiRequest.endpoint : '/' + apiRequest.endpoint}`
+        fullUrl = `${origin}${baseURL}${apiRequest.endpoint.startsWith('/') ? apiRequest.endpoint : `/${  apiRequest.endpoint}`}`
       }
 
       // 确保Content-Type正确设置
@@ -173,17 +173,17 @@ class UniversalApiClient {
       // 构建fetch请求配置
       const fetchConfig: RequestInit = {
         method: apiRequest.method.toUpperCase(),
-        headers: headers,
+        headers,
         body: apiRequest.body ? JSON.stringify(apiRequest.body) : undefined
       }
 
       console.log('流式请求配置:', {
         method: fetchConfig.method,
         originalUrl: apiRequest.endpoint,
-        fullUrl: fullUrl,
-        headers: headers,
+        fullUrl,
+        headers,
         hasBody: !!fetchConfig.body,
-        bodyContent: fetchConfig.body ? JSON.stringify(apiRequest.body).substring(0, 200) + '...' : 'no body'
+        bodyContent: fetchConfig.body ? `${JSON.stringify(apiRequest.body).substring(0, 200)  }...` : 'no body'
       })
 
       const response = await fetch(fullUrl, fetchConfig)

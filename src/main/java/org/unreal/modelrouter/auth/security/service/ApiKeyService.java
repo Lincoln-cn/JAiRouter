@@ -13,6 +13,7 @@ import org.unreal.modelrouter.auth.security.dto.*;
 import org.unreal.modelrouter.auth.security.event.ApiKeyAuditEvent;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import org.unreal.modelrouter.auth.security.util.ApiKeyHashUtil;
+import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import reactor.core.publisher.Mono;
 
@@ -66,8 +67,9 @@ public class ApiKeyService {
             if (keyIdIndex.containsKey(kid)) throw new IllegalArgumentException("API Key ID已存在: " + kid);
             String kv = ApiKey.generateApiKey("sk-", 32);
             String kh = ApiKeyHashUtil.hashApiKey(kv);
+            List<String> validatedPermissions = validatePermissions(req.getPermissions());
             ApiKey ak = ApiKey.builder().keyId(kid).keyHash(kh).keyPrefix("sk-").description(req.getDescription())
-                .permissions(req.getPermissions()).enabled(req.getEnabled() != null ? req.getEnabled() : true)
+                .permissions(validatedPermissions).enabled(req.getEnabled() != null ? req.getEnabled() : true)
                 .expiresAt(req.getExpiresAt()).createdAt(LocalDateTime.now()).createdBy(by).creatorIpAddress(ip)
                 .rotationPeriodDays(req.getRotationPeriodDays() != null ? req.getRotationPeriodDays() : 0)
                 .allowedIpAddresses(req.getAllowedIpAddresses())
@@ -101,7 +103,7 @@ public class ApiKeyService {
             if (req.getDescription() != null) ak.setDescription(req.getDescription());
             if (req.getEnabled() != null) ak.setEnabled(req.getEnabled());
             if (req.getExpiresAt() != null) ak.setExpiresAt(req.getExpiresAt());
-            if (req.getPermissions() != null) ak.setPermissions(req.getPermissions());
+            if (req.getPermissions() != null) ak.setPermissions(validatePermissions(req.getPermissions()));
             if (req.getAllowedIpAddresses() != null) ak.setAllowedIpAddresses(req.getAllowedIpAddresses());
             if (req.getDailyRequestLimit() != null) ak.setDailyRequestLimit(req.getDailyRequestLimit());
             if (req.getRotationPeriodDays() != null) ak.setRotationPeriodDays(req.getRotationPeriodDays());
@@ -318,4 +320,64 @@ public class ApiKeyService {
 
     public Map<String, ApiKey> getApiKeyCache() { return apiKeyCache; }
     public Map<String, String> getKeyIdIndex() { return keyIdIndex; }
+
+    /**
+     * 验证权限列表是否有效.
+     *
+     * <p>权限值必须是 ServiceTypeConstants 中定义的服务类型（如 chat, embedding 等）。
+     *
+     * @param permissions 权限列表
+     * @return 验证后的权限列表（已过滤无效值）
+     */
+    public List<String> validatePermissions(final List<String> permissions) {
+        if (permissions == null || permissions.isEmpty()) {
+            return permissions;
+        }
+
+        List<String> validPermissions = new ArrayList<>();
+        for (String permission : permissions) {
+            if (permission == null || permission.trim().isEmpty()) {
+                continue;
+            }
+
+            String trimmedPermission = permission.trim().toLowerCase();
+
+            // 检查是否是有效的服务类型
+            if (ServiceTypeConstants.isValidServiceType(trimmedPermission)) {
+                validPermissions.add(trimmedPermission);
+            } else if (isLegacyPermission(trimmedPermission)) {
+                // 处理旧权限格式，转换为全部服务类型权限
+                log.warn("检测到旧权限格式 '{}'，将自动转换为全部服务类型权限。"
+                    + "请更新 API Key 权限配置为服务类型（chat, embedding, rerank, tts, stt, imgGen, imgEdit）",
+                    permission);
+                return convertLegacyPermissionsToAllServiceTypes();
+            } else {
+                log.warn("忽略无效的权限值: {}", permission);
+            }
+        }
+
+        return validPermissions;
+    }
+
+    /**
+     * 检查是否是旧权限格式（READ, WRITE, DELETE, ADMIN）.
+     *
+     * @param permission 权限值
+     * @return 是否是旧权限格式
+     */
+    private boolean isLegacyPermission(final String permission) {
+        return "read".equals(permission)
+            || "write".equals(permission)
+            || "delete".equals(permission)
+            || "admin".equals(permission);
+    }
+
+    /**
+     * 将旧权限格式转换为全部服务类型权限.
+     *
+     * @return 全部服务类型权限列表
+     */
+    private List<String> convertLegacyPermissionsToAllServiceTypes() {
+        return new ArrayList<>(ServiceTypeConstants.getServiceTypeList());
+    }
 }

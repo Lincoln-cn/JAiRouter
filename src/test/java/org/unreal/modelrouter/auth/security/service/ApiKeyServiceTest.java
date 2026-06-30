@@ -440,4 +440,72 @@ class ApiKeyServiceTest {
             verify(apiKeyBatchService).rotateExpiredKeys(any(Map.class), any(Map.class));
         }
     }
+
+    @Nested
+    @DisplayName("权限验证功能测试")
+    class PermissionValidationTests {
+
+        @Test
+        @DisplayName("验证有效服务类型权限 - 返回过滤后的权限列表")
+        void validatePermissions_ValidServiceTypes_ReturnsFilteredList() {
+            List<String> permissions = List.of("chat", "embedding", "rerank");
+            List<String> result = apiKeyService.validatePermissions(permissions);
+            assertEquals(3, result.size());
+            assertTrue(result.contains("chat"));
+            assertTrue(result.contains("embedding"));
+            assertTrue(result.contains("rerank"));
+        }
+
+        @Test
+        @DisplayName("验证空权限列表 - 返回空列表")
+        void validatePermissions_EmptyList_ReturnsEmpty() {
+            List<String> permissions = List.of();
+            List<String> result = apiKeyService.validatePermissions(permissions);
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("验证null权限列表 - 返回null")
+        void validatePermissions_NullList_ReturnsNull() {
+            List<String> result = apiKeyService.validatePermissions(null);
+            assertNull(result);
+        }
+
+        @Test
+        @DisplayName("验证混合权限 - 只返回有效服务类型")
+        void validatePermissions_MixedPermissions_ReturnsOnlyValid() {
+            List<String> permissions = List.of("chat", "invalid", "embedding");
+            List<String> result = apiKeyService.validatePermissions(permissions);
+            assertEquals(2, result.size());
+            assertTrue(result.contains("chat"));
+            assertTrue(result.contains("embedding"));
+            assertFalse(result.contains("invalid"));
+        }
+
+        @Test
+        @DisplayName("验证旧权限格式 - 自动转换为全部服务类型")
+        void validatePermissions_LegacyFormat_ConvertsToAllServiceTypes() {
+            List<String> permissions = List.of("READ", "WRITE");
+            List<String> result = apiKeyService.validatePermissions(permissions);
+            assertEquals(7, result.size());
+            assertTrue(result.contains("chat"));
+            assertTrue(result.contains("embedding"));
+            assertTrue(result.contains("rerank"));
+            assertTrue(result.contains("tts"));
+            assertTrue(result.contains("stt"));
+            assertTrue(result.contains("imgGen"));
+            assertTrue(result.contains("imgEdit"));
+        }
+
+        @Test
+        @DisplayName("验证大小写不敏感权限 - 正确处理")
+        void validatePermissions_CaseInsensitive_HandlesCorrectly() {
+            List<String> permissions = List.of("CHAT", "Embedding", "RERANK");
+            List<String> result = apiKeyService.validatePermissions(permissions);
+            assertEquals(3, result.size());
+            assertTrue(result.contains("chat"));
+            assertTrue(result.contains("embedding"));
+            assertTrue(result.contains("rerank"));
+        }
+    }
 }

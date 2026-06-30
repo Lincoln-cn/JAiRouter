@@ -8,7 +8,9 @@ import type {
   ApiKeyUpdateRequest,
   ApiKeyBatchExportVO,
   ApiKeyBatchImportRequest,
-  ApiKeyBatchImportResult
+  ApiKeyBatchImportResult,
+  QuotaUsageDetail,
+  QuotaAlertInfo
 } from '@/types'
 
 /**
@@ -122,5 +124,43 @@ export const exportApiKeys = async (): Promise<ApiKeyBatchExportVO> => {
  */
 export const importApiKeys = async (importRequest: ApiKeyBatchImportRequest): Promise<ApiKeyBatchImportResult> => {
   const response = await request.post<RouterResponse<ApiKeyBatchImportResult>>('/auth/api-keys/import', importRequest)
+  return response.data.data!
+}
+
+// ===== 配额管理 API =====
+
+/**
+ * 获取指定 API Key 的配额使用详情
+ * @param keyId API 密钥 ID
+ * @returns 配额使用详情
+ */
+export const getApiKeyQuota = async (keyId: string): Promise<QuotaUsageDetail> => {
+  const response = await request.get<RouterResponse<QuotaUsageDetail>>(`/auth/api-keys/${keyId}/quota`)
+  return response.data.data!
+}
+
+/**
+ * 重置指定 API Key 的每日配额计数器
+ * @param keyId API 密钥 ID
+ */
+export const resetApiKeyQuota = async (keyId: string): Promise<void> => {
+  await request.post<RouterResponse<void>>(`/auth/api-keys/${keyId}/quota/reset`)
+}
+
+/**
+ * 获取所有触发配额告警的 API Key 列表
+ * @returns 告警列表
+ */
+export const getQuotaAlerts = async (): Promise<QuotaAlertInfo[]> => {
+  const response = await request.get<RouterResponse<QuotaAlertInfo[]>>('/auth/api-keys/quota/alerts')
+  return response.data.data!
+}
+
+/**
+ * 获取所有 API Key 的配额使用概览
+ * @returns 配额使用概览列表
+ */
+export const getQuotaOverview = async (): Promise<QuotaUsageDetail[]> => {
+  const response = await request.get<RouterResponse<QuotaUsageDetail[]>>('/auth/api-keys/quota/overview')
   return response.data.data!
 }
