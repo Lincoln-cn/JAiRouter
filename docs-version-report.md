@@ -2,23 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 150
-- 近7天变更: 15
+- 总文档数: 151
+- 近7天变更: 12
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-28 06:18:26
+- 最后扫描: 2026-06-30 06:12:34
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.58 → 1.0.59) - 2026-06-30
+- **CREATED**: repository-description.md ( → 1.0.0) - 2026-06-29
+- **MODIFIED**: docs-version-report.md (1.0.57 → 1.0.58) - 2026-06-29
+- **MODIFIED**: README.md (1.0.16 → 1.0.17) - 2026-06-29
+- **MODIFIED**: README-ZH.md (1.0.8 → 1.0.9) - 2026-06-29
 - **MODIFIED**: docs-version-report.md (1.0.56 → 1.0.57) - 2026-06-28
 - **MODIFIED**: docs-version-report.md (1.0.55 → 1.0.56) - 2026-06-27
 - **MODIFIED**: docs/zh/monitoring/configuration.md (1.0.2 → 1.0.3) - 2026-06-26
 - **MODIFIED**: docs/en/monitoring/configuration.md (1.0.2 → 1.0.3) - 2026-06-26
 - **MODIFIED**: docs-version-report.md (1.0.54 → 1.0.55) - 2026-06-26
-- **MODIFIED**: docs-version-report.md (1.0.53 → 1.0.54) - 2026-06-25
-- **MODIFIED**: docs-version-report.md (1.0.52 → 1.0.53) - 2026-06-24
-- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.4 → 1.0.5) - 2026-06-23
-- **MODIFIED**: docs/zh/index.md (1.0.3 → 1.0.4) - 2026-06-23
-- **MODIFIED**: docs/zh/configuration/validation-rules.md (1.0.1 → 1.0.2) - 2026-06-23
 
 ## 过期文档 (30天未更新)
 
@@ -513,7 +513,10 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.57 - 2026-06-28 (da27d3c6)
+- **docs-version-report.md**: v1.0.59 - 2026-06-30 (63429e25)
+- **repository-description.md**: v1.0.0 - 2026-06-29 (635e749d)
+- **README.md**: v1.0.17 - 2026-06-29 (0323cc3d)
+- **README-ZH.md**: v1.0.9 - 2026-06-29 (0323cc3d)
 - **docs/zh/monitoring/configuration.md**: v1.0.3 - 2026-06-26 (7da5f191)
 - **docs/en/monitoring/configuration.md**: v1.0.3 - 2026-06-26 (7da5f191)
 - **docs/zh/reference/roadmap.md**: v1.0.5 - 2026-06-23 (623002c1)
@@ -660,6 +663,4 @@
 - **docs/en/api-reference/error-codes.md**: v1.0.0 - 2026-06-03 (cbb53aec)
 - **docs/configuration-guide.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/README.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **README.md**: v1.0.16 - 2026-06-03 (b305e6de)
-- **README-ZH.md**: v1.0.8 - 2026-06-03 (b305e6de)
 - **QWEN.md**: v1.0.3 - 2026-05-19 (8c4e0ad9)
