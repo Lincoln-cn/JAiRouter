@@ -335,6 +335,57 @@ class MetricsBatchReporterTest {
         assertTrue(Files.exists(tempDir.resolve("metrics-" + dateStr + "-1.json")));
     }
 
+    @Test
+    @DisplayName("所有文件满时应返回 false 而非写入已满文件")
+    void reportToFile_allFilesFull_shouldReturnFalse() throws Exception {
+        ReflectionTestUtils.setField(reporter, "fileEnabled", true);
+        ReflectionTestUtils.setField(reporter, "filePath", tempDir.toString());
+        ReflectionTestUtils.setField(reporter, "fileFormat", "json");
+        ReflectionTestUtils.setField(reporter, "fileMaxSizeMb", 1); // 1MB
+
+        String dateStr = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")
+                .format(Instant.now().atZone(java.time.ZoneId.systemDefault()));
+
+        // 填满基础文件 + 1000 个序号文件
+        Path baseFile = tempDir.resolve("metrics-" + dateStr + ".json");
+        Files.writeString(baseFile, "x".repeat(1024 * 1024 + 1));
+        for (int i = 1; i <= 1000; i++) {
+            Path indexedFile = tempDir.resolve("metrics-" + dateStr + "-" + i + ".json");
+            Files.writeString(indexedFile, "x".repeat(1024 * 1024 + 1));
+        }
+
+        MetricsBatchReporter.MetricData data = new MetricsBatchReporter.MetricData(
+                "test.metric", "counter", 1.0, Map.of(), System.currentTimeMillis()
+        );
+
+        boolean result = invokeReportToFile(List.of(data));
+
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("中文标签内容应按 UTF-8 字节数正确计算文件大小")
+    void reportToFile_chineseContent_shouldCountUtf8Bytes() throws Exception {
+        ReflectionTestUtils.setField(reporter, "fileEnabled", true);
+        ReflectionTestUtils.setField(reporter, "filePath", tempDir.toString());
+        ReflectionTestUtils.setField(reporter, "fileFormat", "json");
+        ReflectionTestUtils.setField(reporter, "fileMaxSizeMb", 1);
+
+        // 包含中文标签的指标
+        MetricsBatchReporter.MetricData data = new MetricsBatchReporter.MetricData(
+                "jairouter_requests_total", "counter", 100.0,
+                Map.of("service", "聊天机器人", "status", "成功"),
+                System.currentTimeMillis()
+        );
+
+        boolean result = invokeReportToFile(List.of(data));
+
+        assertTrue(result);
+        Path writtenFile = Files.list(tempDir).findFirst().orElseThrow();
+        String content = Files.readString(writtenFile);
+        assertTrue(content.contains("聊天机器人"));
+    }
+
     // ==================== HTTP 上报测试 ====================
 
     @Test

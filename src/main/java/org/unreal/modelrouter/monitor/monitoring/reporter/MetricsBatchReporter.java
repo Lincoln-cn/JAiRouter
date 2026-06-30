@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -304,9 +305,18 @@ public class MetricsBatchReporter {
             }
 
             // 查找合适的文件（考虑文件大小限制和序号）
-            Path file = findAvailableFile(dirPath, dateStr, extension, content.length());
+            long contentBytes = content.getBytes(StandardCharsets.UTF_8).length;
+            Path file = findAvailableFile(dirPath, dateStr, extension, contentBytes);
+            if (file == null) {
+                LOGGER.error("No available metric file for date {}, all files are full", dateStr);
+                return false;
+            }
 
-            Files.writeString(file, content, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            if (Files.exists(file)) {
+                Files.writeString(file, content, StandardOpenOption.APPEND);
+            } else {
+                Files.writeString(file, content, StandardOpenOption.CREATE);
+            }
             LOGGER.debug("Reported {} metrics to file: {}", batch.size(), file);
             return true;
         } catch (IOException e) {
@@ -323,7 +333,7 @@ public class MetricsBatchReporter {
      * 文件命名规则：metrics-YYYYMMDD.json 或 metrics-YYYYMMDD-N.json
      */
     private Path findAvailableFile(final Path dirPath, final String dateStr,
-                                    final String extension, final int contentLength) throws IOException {
+                                    final String extension, final long contentLength) throws IOException {
         long maxSizeBytes = (long) fileMaxSizeMb * 1024 * 1024;
 
         // 先检查基础文件名
@@ -340,6 +350,11 @@ public class MetricsBatchReporter {
         // 文件已满，查找下一个可用序号
         int index = 1;
         while (true) {
+            if (index > 1000) {
+                LOGGER.error("All metric files for date {} are full, cannot write batch of {} bytes",
+                        dateStr, contentLength);
+                return null;
+            }
             Path indexedFile = dirPath.resolve("metrics-" + dateStr + "-" + index + "." + extension);
             if (!Files.exists(indexedFile)) {
                 return indexedFile;
@@ -349,12 +364,6 @@ public class MetricsBatchReporter {
                 return indexedFile;
             }
             index++;
-
-            // 防止无限循环，最多检查 1000 个文件
-            if (index > 1000) {
-                LOGGER.warn("Too many metric files for date {}, using index 1000", dateStr);
-                return indexedFile;
-            }
         }
     }
 
