@@ -37,10 +37,10 @@
     },
     "docs/en/api-reference/management-api.md": {
       "FilePath": "docs/en/api-reference/management-api.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.075437",
-      "ContentHash": "0058f434a91fb35a",
-      "GitCommit": "85bfdb3e",
+      "Version": "1.0.4",
+      "LastModified": "2026-07-01T06:27:23.942694",
+      "ContentHash": "40221eb66396f19c",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -504,10 +504,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-06-15T07:21:27.514636",
-      "ContentHash": "d91d02651904e174",
-      "GitCommit": "e511f33c",
+      "Version": "1.0.6",
+      "LastModified": "2026-07-01T06:27:24.044457",
+      "ContentHash": "3263ab2b26b39c0d",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -628,10 +628,10 @@
     },
     "docs/zh/api-reference/management-api.md": {
       "FilePath": "docs/zh/api-reference/management-api.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-06-03T06:53:11.307850",
-      "ContentHash": "d6db70f7536f5347",
-      "GitCommit": "cbb53aec",
+      "Version": "1.0.3",
+      "LastModified": "2026-07-01T06:27:24.099656",
+      "ContentHash": "5328f24583029d6a",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1121,10 +1121,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-06-15T07:21:27.703197",
-      "ContentHash": "4b217eac52f2dd63",
-      "GitCommit": "0f56b957",
+      "Version": "1.0.6",
+      "LastModified": "2026-07-01T06:27:24.211179",
+      "ContentHash": "3d2dc06fa7f2ed32",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1289,10 +1289,10 @@
     },
     "docs/en/security/api-key-management.md": {
       "FilePath": "docs/en/security/api-key-management.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-06-03T06:53:11.238572",
-      "ContentHash": "2fd4e826138fee2d",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.3",
+      "LastModified": "2026-07-01T06:27:24.055830",
+      "ContentHash": "e660593991a76b31",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1485,10 +1485,10 @@
     },
     "docs/zh/security/api-key-management.md": {
       "FilePath": "docs/zh/security/api-key-management.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-06-03T06:53:11.476351",
-      "ContentHash": "8eeffadd35fe9ab8",
-      "GitCommit": "85bfdb3e",
+      "Version": "1.0.5",
+      "LastModified": "2026-07-01T06:27:24.223077",
+      "ContentHash": "8d376aa113f8aad9",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1943,20 +1943,20 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.59",
-      "LastModified": "2026-06-30T06:12:34.203624",
-      "ContentHash": "58dab3cb599eb94f",
-      "GitCommit": "63429e25",
+      "Version": "1.0.60",
+      "LastModified": "2026-07-01T06:27:23.930419",
+      "ContentHash": "2f281798913a9307",
+      "GitCommit": "9d3c72d0",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/configuration-guide.md": {
       "FilePath": "docs/configuration-guide.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-06-03T06:53:11.064884",
-      "ContentHash": "50e02093f2ea0b50",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.3",
+      "LastModified": "2026-07-01T06:27:23.934508",
+      "ContentHash": "ce86dbfb295d823b",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1966,20 +1966,20 @@
     },
     "docs/en/api-reference/error-codes.md": {
       "FilePath": "docs/en/api-reference/error-codes.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-06-03T06:53:11.070332",
-      "ContentHash": "6289c91012eba2c2",
-      "GitCommit": "cbb53aec",
+      "Version": "1.0.1",
+      "LastModified": "2026-07-01T06:27:23.938440",
+      "ContentHash": "ea4c674a4e025f82",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/api-reference/error-codes.md": {
       "FilePath": "docs/zh/api-reference/error-codes.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-06-03T06:53:11.302696",
-      "ContentHash": "c1281ab6f446e375",
-      "GitCommit": "cbb53aec",
+      "Version": "1.0.1",
+      "LastModified": "2026-07-01T06:27:24.094939",
+      "ContentHash": "bbc56815bad7d6bf",
+      "GitCommit": "64026034",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4923,7 +4923,87 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-06-30T06:12:34.203632",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.59",
+      "NewVersion": "1.0.60",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:23.930426",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/configuration-guide.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:23.934513",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/error-codes.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:23.938445",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/api-reference/management-api.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:23.942698",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:24.044466",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/security/api-key-management.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:24.055837",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/error-codes.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:24.094948",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/api-reference/management-api.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:24.099662",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:24.211188",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/security/api-key-management.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-01T06:27:24.223084",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-06-30T06:12:34.709048"
+  "last_updated": "2026-07-01T06:27:24.348169"
 }
