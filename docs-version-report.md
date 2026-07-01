@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 151
-- 近7天变更: 12
+- 近7天变更: 21
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-06-30 06:12:34
+- 最后扫描: 2026-07-01 06:27:24
 
 ## 最近变更
 
-- **MODIFIED**: docs-version-report.md (1.0.58 → 1.0.59) - 2026-06-30
-- **CREATED**: repository-description.md ( → 1.0.0) - 2026-06-29
-- **MODIFIED**: docs-version-report.md (1.0.57 → 1.0.58) - 2026-06-29
-- **MODIFIED**: README.md (1.0.16 → 1.0.17) - 2026-06-29
-- **MODIFIED**: README-ZH.md (1.0.8 → 1.0.9) - 2026-06-29
-- **MODIFIED**: docs-version-report.md (1.0.56 → 1.0.57) - 2026-06-28
-- **MODIFIED**: docs-version-report.md (1.0.55 → 1.0.56) - 2026-06-27
-- **MODIFIED**: docs/zh/monitoring/configuration.md (1.0.2 → 1.0.3) - 2026-06-26
-- **MODIFIED**: docs/en/monitoring/configuration.md (1.0.2 → 1.0.3) - 2026-06-26
-- **MODIFIED**: docs-version-report.md (1.0.54 → 1.0.55) - 2026-06-26
+- **MODIFIED**: docs/zh/security/api-key-management.md (1.0.4 → 1.0.5) - 2026-07-01
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.5 → 1.0.6) - 2026-07-01
+- **MODIFIED**: docs/zh/api-reference/management-api.md (1.0.2 → 1.0.3) - 2026-07-01
+- **MODIFIED**: docs/zh/api-reference/error-codes.md (1.0.0 → 1.0.1) - 2026-07-01
+- **MODIFIED**: docs/en/security/api-key-management.md (1.0.2 → 1.0.3) - 2026-07-01
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.5 → 1.0.6) - 2026-07-01
+- **MODIFIED**: docs/en/api-reference/management-api.md (1.0.3 → 1.0.4) - 2026-07-01
+- **MODIFIED**: docs/en/api-reference/error-codes.md (1.0.0 → 1.0.1) - 2026-07-01
+- **MODIFIED**: docs/configuration-guide.md (1.0.2 → 1.0.3) - 2026-07-01
+- **MODIFIED**: docs-version-report.md (1.0.59 → 1.0.60) - 2026-07-01
 
 ## 过期文档 (30天未更新)
 
@@ -513,7 +513,16 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.59 - 2026-06-30 (63429e25)
+- **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (64026034)
+- **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (64026034)
+- **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (64026034)
+- **docs/zh/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (64026034)
+- **docs/en/security/api-key-management.md**: v1.0.3 - 2026-07-01 (64026034)
+- **docs/en/reference/changelog.md**: v1.0.6 - 2026-07-01 (64026034)
+- **docs/en/api-reference/management-api.md**: v1.0.4 - 2026-07-01 (64026034)
+- **docs/en/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (64026034)
+- **docs/configuration-guide.md**: v1.0.3 - 2026-07-01 (64026034)
+- **docs-version-report.md**: v1.0.60 - 2026-07-01 (9d3c72d0)
 - **repository-description.md**: v1.0.0 - 2026-06-29 (635e749d)
 - **README.md**: v1.0.17 - 2026-06-29 (0323cc3d)
 - **README-ZH.md**: v1.0.9 - 2026-06-29 (0323cc3d)
@@ -532,10 +541,8 @@
 - **docs/en/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/en/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/en/tracing/index.md**: v1.0.3 - 2026-06-16 (933eeadf)
-- **docs/zh/reference/changelog.md**: v1.0.5 - 2026-06-15 (0f56b957)
 - **docs/zh/development/index.md**: v1.0.5 - 2026-06-15 (3fd42181)
 - **docs/zh/development/architecture.md**: v1.0.4 - 2026-06-15 (3fd42181)
-- **docs/en/reference/changelog.md**: v1.0.5 - 2026-06-15 (e511f33c)
 - **docs/en/development/index.md**: v1.0.4 - 2026-06-15 (3fd42181)
 - **docs/en/development/architecture.md**: v1.0.3 - 2026-06-15 (3fd42181)
 - **docs/en/security/blacklist-management.md**: v1.0.1 - 2026-06-11 (a9e349a6)
@@ -567,7 +574,6 @@
 - **docs/zh/security/data-sanitization.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/blacklist-management.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/security/audit-log-management.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
-- **docs/zh/security/api-key-management.md**: v1.0.4 - 2026-06-03 (85bfdb3e)
 - **docs/zh/reference/index.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/reference/glossary.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/reference/faq.md**: v1.0.5 - 2026-06-03 (85bfdb3e)
@@ -609,9 +615,7 @@
 - **docs/zh/api-reference/universal-api.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/zh/api-reference/openapi-spec.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/api-reference/monitoring-api.md**: v1.0.1 - 2026-06-03 (069ead36)
-- **docs/zh/api-reference/management-api.md**: v1.0.2 - 2026-06-03 (cbb53aec)
 - **docs/zh/api-reference/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/zh/api-reference/error-codes.md**: v1.0.0 - 2026-06-03 (cbb53aec)
 - **docs/en/troubleshooting/performance.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/troubleshooting/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/troubleshooting/debugging.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
@@ -621,7 +625,6 @@
 - **docs/en/security/jwt-authentication.md**: v1.0.4 - 2026-06-03 (e7ca1741)
 - **docs/en/security/index.md**: v1.0.1 - 2026-06-03 (b305e6de)
 - **docs/en/security/data-sanitization.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
-- **docs/en/security/api-key-management.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/en/reference/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/reference/glossary.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/reference/faq.md**: v1.0.3 - 2026-06-03 (b305e6de)
@@ -658,9 +661,6 @@
 - **docs/en/api-reference/universal-api.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/en/api-reference/openapi-spec.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/en/api-reference/monitoring-api.md**: v1.0.1 - 2026-06-03 (069ead36)
-- **docs/en/api-reference/management-api.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/en/api-reference/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/en/api-reference/error-codes.md**: v1.0.0 - 2026-06-03 (cbb53aec)
-- **docs/configuration-guide.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/README.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **QWEN.md**: v1.0.3 - 2026-05-19 (8c4e0ad9)
