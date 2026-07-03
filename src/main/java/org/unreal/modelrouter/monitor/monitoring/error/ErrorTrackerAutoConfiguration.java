@@ -1,6 +1,7 @@
 package org.unreal.modelrouter.monitor.monitoring.error;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -35,12 +36,25 @@ public class ErrorTrackerAutoConfiguration {
      * 创建错误追踪器
      *
      * @param structuredLogger 结构化日志记录器
+     * @param stackTraceSanitizer 异常堆栈脱敏器（可选）
+     * @param errorMetricsCollector 错误指标收集器（可选）
+     * @param exceptionPersistenceService 异常持久化服务（可选）
+     * @param errorCodeResolver 错误代码解析器（可选）
      * @return 错误追踪器
      */
     @Bean
     @ConditionalOnProperty(name = "jairouter.monitoring.enabled", havingValue = "true", matchIfMissing = true)
-    public ErrorTracker errorTracker(final StructuredLogger structuredLogger) {
-        return new ErrorTracker(structuredLogger);
+    public ErrorTracker errorTracker(final StructuredLogger structuredLogger,
+                                     final ObjectProvider<StackTraceSanitizer> stackTraceSanitizer,
+                                     final ObjectProvider<ErrorMetricsCollector> errorMetricsCollector,
+                                     final ObjectProvider<ExceptionPersistenceService> exceptionPersistenceService,
+                                     final ObjectProvider<ErrorCodeResolver> errorCodeResolver) {
+        final ErrorTracker errorTracker = new ErrorTracker(structuredLogger);
+        stackTraceSanitizer.ifAvailable(errorTracker::setStackTraceSanitizer);
+        errorMetricsCollector.ifAvailable(errorTracker::setErrorMetricsCollector);
+        exceptionPersistenceService.ifAvailable(errorTracker::setExceptionPersistenceService);
+        errorCodeResolver.ifAvailable(errorTracker::setErrorCodeResolver);
+        return errorTracker;
     }
 
     /**
@@ -65,7 +79,7 @@ public class ErrorTrackerAutoConfiguration {
     /**
      * 创建异常堆栈脱敏器
      *
-     * @param properties 错误追踪配置属性
+     * @param sanitizationConfig 脱敏配置
      * @return 异常堆栈脱敏器
      */
     @Bean

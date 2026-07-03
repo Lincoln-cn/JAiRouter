@@ -224,7 +224,7 @@ public class ExceptionPersistenceService {
             }
 
         } catch (Exception e) {
-            log.warn("更新小时统计失败：{}", e.getMessage());
+            log.warn("更新小时统计失败：{}", e.getMessage(), e);
         }
     }
 

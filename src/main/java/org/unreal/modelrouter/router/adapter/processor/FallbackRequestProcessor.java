@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.router.fallback.FallbackStrategy;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
+import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
+import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
 
 /**
@@ -44,6 +46,9 @@ import reactor.core.publisher.Mono;
 public class FallbackRequestProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(FallbackRequestProcessor.class);
+
+    @Autowired(required = false)
+    private ErrorTracker errorTracker;
 
     /**
      * 处理降级错误
@@ -73,6 +78,9 @@ public class FallbackRequestProcessor {
 
             logger.info("降级成功: statusCode={}, hasBody={}",
                     fallbackResponse.getStatusCode(), fallbackResponse.getBody() != null);
+            if (errorTracker != null) {
+                errorTracker.trackError(throwable, "fallback.success");
+            }
             return Mono.just(fallbackResponse);
 
         } catch (Exception e) {

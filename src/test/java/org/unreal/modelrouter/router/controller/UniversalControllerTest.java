@@ -14,7 +14,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
@@ -68,7 +68,7 @@ class UniversalControllerTest {
     private ControllerTracingInterceptor tracingInterceptor;
 
     @Mock
-    private ServerHttpRequest httpRequest;
+    private ServerWebExchange exchange;
 
     @InjectMocks
     private UniversalController controller;
@@ -90,8 +90,8 @@ class UniversalControllerTest {
 
         // 配置HTTP请求
         HttpHeaders headers = new HttpHeaders();
-        lenient().when(httpRequest.getHeaders()).thenReturn(headers);
-        lenient().when(httpRequest.getMethod()).thenReturn(org.springframework.http.HttpMethod.POST);
+        lenient().when(exchange.getRequest().getHeaders()).thenReturn(headers);
+        lenient().when(exchange.getRequest().getMethod()).thenReturn(org.springframework.http.HttpMethod.POST);
     }
 
     // ==================== Chat Completions 测试 ====================
@@ -120,7 +120,7 @@ class UniversalControllerTest {
             // When & Then
             org.junit.jupiter.api.Assertions.assertThrows(
                     org.springframework.web.server.ServerWebInputException.class,
-                    () -> controller.embeddings("Bearer token", null, httpRequest)
+                    () -> controller.embeddings("Bearer token", null, exchange)
             );
         }
     }
@@ -137,7 +137,7 @@ class UniversalControllerTest {
             // When & Then
             org.junit.jupiter.api.Assertions.assertThrows(
                     org.springframework.web.server.ServerWebInputException.class,
-                    () -> controller.imageGenerate("Bearer token", null, httpRequest)
+                    () -> controller.imageGenerate("Bearer token", null, exchange)
             );
         }
     }
@@ -154,7 +154,7 @@ class UniversalControllerTest {
             // When & Then
             org.junit.jupiter.api.Assertions.assertThrows(
                     org.springframework.web.server.ServerWebInputException.class,
-                    () -> controller.imageEdits("Bearer token", null, httpRequest)
+                    () -> controller.imageEdits("Bearer token", null, exchange)
             );
         }
     }

@@ -14,6 +14,7 @@ import org.unreal.modelrouter.router.adapter.handler.ResponseHandler;
 import org.unreal.modelrouter.router.adapter.mapper.ResponseMapper;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.adapter.processor.FallbackRequestProcessor;
+import org.unreal.modelrouter.monitor.monitoring.error.ErrorTracker;
 import org.unreal.modelrouter.router.adapter.processor.HttpRequestProcessor;
 import org.unreal.modelrouter.router.adapter.processor.StreamingRequestProcessor;
 import org.unreal.modelrouter.router.adapter.request.NonStreamingRequestProcessor;
@@ -62,6 +63,8 @@ public abstract class BaseAdapter implements ServiceCapability {
     private MultipartRequestHandler multipartRequestHandler;
     @Autowired(required = false)
     private FallbackRequestProcessor fallbackRequestProcessor;
+    @Autowired(required = false)
+    private ErrorTracker errorTracker;
 
     /**
      * 新构造函数 - 使用聚合组件（推荐）。
@@ -77,6 +80,10 @@ public abstract class BaseAdapter implements ServiceCapability {
         this.requestSupport = requestSupport;
         this.resilienceSupport = resilienceSupport;
         this.objectMapper = context.getObjectMapper();
+    }
+
+    public void setErrorTracker(final ErrorTracker errorTracker) {
+        this.errorTracker = errorTracker;
     }
 
     // ==================== 核心方法 ====================
@@ -165,6 +172,9 @@ public abstract class BaseAdapter implements ServiceCapability {
                                         selectedInstance, serviceType, modelName, processor,
                                         System.currentTimeMillis(), retryCount + 1));
                     }
+                    if (errorTracker != null) {
+                        errorTracker.trackError(throwable, adapterType + ".request");
+                    }
                     return resilienceSupport.getErrorResponseBuilder().buildErrorResponse(throwable).flatMap(Mono::error);
                 });
     }
@@ -183,13 +193,22 @@ public abstract class BaseAdapter implements ServiceCapability {
         Mono<ResponseEntity<?>> requestMono = (Mono<ResponseEntity<?>>)(Mono) processRequest(
                 request, authorization, httpRequest, serviceType, modelName, processor);
         if (fallbackRequestProcessor != null) {
-            return requestMono.onErrorResume(throwable ->
-                    fallbackRequestProcessor.handleFallbackError(throwable, fallbackStrategy));
+            return requestMono.onErrorResume(throwable -> {
+                if (errorTracker != null) {
+                    errorTracker.trackError(throwable, getAdapterType() + ".fallback");
+                }
+                return fallbackRequestProcessor.handleFallbackError(throwable, fallbackStrategy);
+            });
         }
-        return requestMono.onErrorResume(throwable -> fallbackStrategy.fallback((Exception) throwable) != null
+        return requestMono.onErrorResume(throwable -> {
+            if (errorTracker != null) {
+                errorTracker.trackError(throwable, getAdapterType() + ".fallback");
+            }
+            return fallbackStrategy.fallback((Exception) throwable) != null
                 ? Mono.just(fallbackStrategy.fallback((Exception) throwable))
                 : Mono.error(new org.springframework.web.server.ResponseStatusException(
-                        org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存")));
+                        org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE, "服务降级且无缓存"));
+        });
     }
 
     // ==================== 非流式请求处理 ====================

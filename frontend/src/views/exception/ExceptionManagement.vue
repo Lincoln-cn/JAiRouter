@@ -35,8 +35,8 @@
               <el-icon><Monitor /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ listData.serverErrorCount || 0 }}</div>
-              <div class="stat-label">服务端错误</div>
+              <div class="stat-value stat-value-text">{{ listData.topExceptionType || '-' }}</div>
+              <div class="stat-label">Top 异常类型</div>
             </div>
           </div>
         </el-card>
@@ -48,8 +48,8 @@
               <el-icon><TrendCharts /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ listData.clientErrorCount || 0 }}</div>
-              <div class="stat-label">客户端错误</div>
+              <div class="stat-value">{{ listData.topClientIp || '-' }}</div>
+              <div class="stat-label">Top 来源 IP</div>
             </div>
           </div>
         </el-card>
@@ -358,8 +358,8 @@ const exceptionList = ref<ExceptionEvent[]>([])
 const listData = ref({
   totalElements: 0,
   totalTypes: 0,
-  serverErrorCount: 0,
-  clientErrorCount: 0
+  topExceptionType: '',
+  topClientIp: ''
 })
 
 // 详情对话框
@@ -458,11 +458,15 @@ const loadStatistics = async () => {
       queryParams.endTime
     )
 
+    const topType = stats.eventsByType
+      ? Object.entries(stats.eventsByType).sort((a, b) => b[1] - a[1])[0]?.[0] || ''
+      : ''
+    const topIp = stats.topClientIps?.[0]?.ip || '-'
     listData.value = {
       totalElements: stats.totalEvents || 0,
       totalTypes: stats.totalTypes || 0,
-      serverErrorCount: stats.eventsByCategory?.['SERVER_ERROR'] || 0,
-      clientErrorCount: stats.eventsByCategory?.['CLIENT_ERROR'] || 0
+      topExceptionType: topType,
+      topClientIp: topIp
     }
   } catch (error) {
     console.error('加载统计数据失败:', error)
@@ -599,6 +603,15 @@ onMounted(() => {
   font-size: 24px;
   font-weight: bold;
   color: #303133;
+}
+
+.stat-card .stat-info .stat-value.stat-value-text {
+  font-size: 14px;
+  font-weight: 600;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stat-card .stat-info .stat-label {

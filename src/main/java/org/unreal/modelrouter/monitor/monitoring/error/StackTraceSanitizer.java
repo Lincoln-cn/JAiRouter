@@ -1,7 +1,6 @@
 package org.unreal.modelrouter.monitor.monitoring.error;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ErrorTrackerProperties;
 
 import java.util.ArrayList;
@@ -10,14 +9,13 @@ import java.util.regex.Pattern;
 
 /**
  * 异常堆栈脱敏器
- * 
+ *
  * 负责对异常堆栈信息进行脱敏处理，保护敏感信息不被泄露。
- * 
+ *
  * @author JAiRouter Team
  * @since 1.0.0
  */
 @Slf4j
-@Component
 public class StackTraceSanitizer {
     
     private final ErrorTrackerProperties.SanitizationConfig config;

@@ -358,7 +358,7 @@ public class ServiceRequestHandler {
      * @return 是否具有权限
      */
     private boolean hasServicePermission(final ApiKeyAuthentication authentication, final ServiceType serviceType) {
-        String requiredRole = "ROLE_" + serviceType.name();
+        String requiredRole = "ROLE_" + serviceType.name().toUpperCase();
 
         for (GrantedAuthority authority : authentication.getAuthorities()) {
             String authorityName = authority.getAuthority();

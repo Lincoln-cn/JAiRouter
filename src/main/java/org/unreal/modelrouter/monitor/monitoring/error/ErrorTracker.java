@@ -1,8 +1,6 @@
 package org.unreal.modelrouter.monitor.monitoring.error;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
@@ -16,34 +14,41 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 错误追踪器
- * 
+ *
  * 统一处理系统中的异常追踪，提供：
  * - 异常信息的结构化记录
  * - 异常堆栈的脱敏和截断处理
  * - 异常分类和聚合统计功能
  * - 与追踪上下文的集成
- * 
+ *
  * @author JAiRouter Team
  * @since 1.0.0
  */
 @Slf4j
-@Component
 public class ErrorTracker {
-    
+
     private final StructuredLogger structuredLogger;
-    
-    // 可选依赖
-    @Autowired(required = false)
+
     private StackTraceSanitizer stackTraceSanitizer;
-
-    @Autowired(required = false)
     private ErrorMetricsCollector errorMetricsCollector;
-
-    @Autowired(required = false)
     private ExceptionPersistenceService exceptionPersistenceService;
-
-    @Autowired(required = false)
     private ErrorCodeResolver errorCodeResolver;
+
+    public void setStackTraceSanitizer(final StackTraceSanitizer stackTraceSanitizer) {
+        this.stackTraceSanitizer = stackTraceSanitizer;
+    }
+
+    public void setErrorMetricsCollector(final ErrorMetricsCollector errorMetricsCollector) {
+        this.errorMetricsCollector = errorMetricsCollector;
+    }
+
+    public void setExceptionPersistenceService(final ExceptionPersistenceService exceptionPersistenceService) {
+        this.exceptionPersistenceService = exceptionPersistenceService;
+    }
+
+    public void setErrorCodeResolver(final ErrorCodeResolver errorCodeResolver) {
+        this.errorCodeResolver = errorCodeResolver;
+    }
     
     // 异常统计
     private final ConcurrentHashMap<String, AtomicLong> errorTypeCounters = new ConcurrentHashMap<>();

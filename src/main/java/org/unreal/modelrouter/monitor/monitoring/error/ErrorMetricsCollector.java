@@ -4,7 +4,6 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ErrorTrackerProperties;
 
 import java.time.Duration;
@@ -21,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0.0
  */
 @Slf4j
-@Component
 public class ErrorMetricsCollector {
 
     private final MeterRegistry meterRegistry;

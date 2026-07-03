@@ -78,7 +78,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> embeddings(
             @RequestHeader(value = "Authorization", required = false) final String authorization,
             @RequestBody(required = false) final EmbeddingDTO.Request request,
-            final ServerHttpRequest httpRequest) {
+            final ServerWebExchange exchange) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -88,8 +88,8 @@ public class UniversalController {
             ServiceEndpoint.EMBEDDING,
             request.model(),
             authorization,
-            httpRequest,
-            (adapter, auth, req) -> adapter.embedding(request, auth, req)
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.embedding(request, auth, httpRequest)
         );
     }
 
@@ -97,7 +97,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> rerank(
             @RequestHeader(value = "Authorization", required = false) final String authorization,
             @RequestBody(required = false) final RerankDTO.Request request,
-            final ServerHttpRequest httpRequest) {
+            final ServerWebExchange exchange) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -107,8 +107,8 @@ public class UniversalController {
             ServiceEndpoint.RERANK,
             request.model(),
             authorization,
-            httpRequest,
-            (adapter, auth, req) -> adapter.rerank(request, auth, req)
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.rerank(request, auth, httpRequest)
         );
     }
 
@@ -116,7 +116,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> textToSpeech(
             @RequestHeader(value = "Authorization", required = false) final String authorization,
             @RequestBody(required = false) final TtsDTO.Request request,
-            final ServerHttpRequest httpRequest) {
+            final ServerWebExchange exchange) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -126,8 +126,8 @@ public class UniversalController {
             ServiceEndpoint.TTS,
             request.model(),
             authorization,
-            httpRequest,
-            (adapter, auth, req) -> adapter.tts(request, auth, req)
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.tts(request, auth, httpRequest)
         );
     }
 
@@ -140,7 +140,7 @@ public class UniversalController {
             @RequestPart(value = "responseFormat", required = false) final String responseFormat,
             @RequestPart(value = "temperature", required = false) final String temperatureStr,
             @RequestHeader(value = "Authorization", required = false) final String authorization,
-            final ServerHttpRequest httpRequest) {
+            final ServerWebExchange exchange) {
 
         // 手动转换 temperature 字符串为 Double
         Double temperature = null;
@@ -158,8 +158,8 @@ public class UniversalController {
             ServiceEndpoint.STT,
             request.model(),
             authorization,
-            httpRequest,
-            (adapter, auth, req) -> adapter.stt(request, auth, req)
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.stt(request, auth, httpRequest)
         );
     }
 
@@ -167,7 +167,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> imageGenerate(
             @RequestHeader(value = "Authorization", required = false) final String authorization,
             @RequestBody(required = false) final ImageGenerateDTO.Request request,
-            final ServerHttpRequest httpRequest) {
+            final ServerWebExchange exchange) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -177,8 +177,8 @@ public class UniversalController {
             ServiceEndpoint.IMAGE_GEN,
             request.model(),
             authorization,
-            httpRequest,
-            (adapter, auth, req) -> adapter.imageGenerate(request, auth, req)
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.imageGenerate(request, auth, httpRequest)
         );
     }
 
@@ -186,7 +186,7 @@ public class UniversalController {
     public Mono<ResponseEntity<?>> imageEdits(
             @RequestHeader(value = "Authorization", required = false) final String authorization,
             @RequestBody(required = false) final ImageEditDTO.Request request,
-            final ServerHttpRequest httpRequest) {
+            final ServerWebExchange exchange) {
 
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
@@ -196,8 +196,8 @@ public class UniversalController {
             ServiceEndpoint.IMAGE_EDIT,
             request.model(),
             authorization,
-            httpRequest,
-            (adapter, auth, req) -> adapter.imageEdit(request, auth, req)
+            exchange,
+            (adapter, auth, httpRequest) -> adapter.imageEdit(request, auth, httpRequest)
         );
     }
 }
