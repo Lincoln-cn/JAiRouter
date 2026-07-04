@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 151
-- 近7天变更: 22
+- 近7天变更: 20
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-03 05:53:33
+- 最后扫描: 2026-07-04 05:46:26
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.62 → 1.0.63) - 2026-07-04
 - **MODIFIED**: docs-version-report.md (1.0.61 → 1.0.62) - 2026-07-03
 - **MODIFIED**: docs-version-report.md (1.0.60 → 1.0.61) - 2026-07-02
 - **MODIFIED**: docs/zh/security/api-key-management.md (1.0.4 → 1.0.5) - 2026-07-01
@@ -18,11 +19,111 @@
 - **MODIFIED**: docs/en/security/api-key-management.md (1.0.2 → 1.0.3) - 2026-07-01
 - **MODIFIED**: docs/en/reference/changelog.md (1.0.5 → 1.0.6) - 2026-07-01
 - **MODIFIED**: docs/en/api-reference/management-api.md (1.0.3 → 1.0.4) - 2026-07-01
-- **MODIFIED**: docs/en/api-reference/error-codes.md (1.0.0 → 1.0.1) - 2026-07-01
 
 ## 过期文档 (30天未更新)
 
+- docs/README.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/api-reference/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/api-reference/openapi-spec.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/api-reference/universal-api.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/configuration/application-config.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/configuration/circuit-breaker.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/configuration/dynamic-config.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/configuration/index.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/en/configuration/load-balancing.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/configuration/rate-limiting.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/deployment/china-optimization.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/deployment/docker.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/en/deployment/github-pages.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/deployment/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/deployment/kubernetes.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/en/deployment/production.md (版本: 1.0.5, 最后更新: 2026-06-03)
+- docs/en/development/code-quality.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/development/contributing.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/development/testing.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/getting-started/first-steps.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/getting-started/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/getting-started/installation.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/getting-started/quick-start.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/monitoring/alerts.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/monitoring/dashboards.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/monitoring/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/monitoring/metrics.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/monitoring/performance.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/monitoring/setup.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/monitoring/testing.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/en/monitoring/troubleshooting.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/reference/faq.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/reference/glossary.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/reference/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/troubleshooting/common-issues.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/en/troubleshooting/debugging.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/troubleshooting/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/troubleshooting/performance.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/api-reference/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/api-reference/openapi-spec.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/api-reference/universal-api.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/configuration/application-config.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/configuration/circuit-breaker.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/configuration/dynamic-config.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/configuration/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/configuration/load-balancing.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/configuration/rate-limiting.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/deployment/china-optimization.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/deployment/docker.md (版本: 1.0.6, 最后更新: 2026-06-03)
+- docs/zh/deployment/github-pages.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/deployment/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/deployment/kubernetes.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/deployment/production.md (版本: 1.0.5, 最后更新: 2026-06-03)
+- docs/zh/development/code-quality.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/development/contributing.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/development/testing.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/getting-started/first-steps.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/getting-started/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/getting-started/installation.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/zh/getting-started/quick-start.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/zh/monitoring/alert_rules_guide.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/monitoring/alerts.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/monitoring/dashboards.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/monitoring/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/monitoring/metrics.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/monitoring/performance.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/monitoring/setup.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/monitoring/testing.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/zh/monitoring/troubleshooting.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/reference/faq.md (版本: 1.0.5, 最后更新: 2026-06-03)
+- docs/zh/reference/glossary.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/reference/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/troubleshooting/common-issues.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/troubleshooting/debugging.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/zh/troubleshooting/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/troubleshooting/performance.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/api-reference/monitoring-api.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/api-reference/monitoring-api.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/configuration/modular-config.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/monitoring/error-tracking.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/monitoring/slow-query-alerts.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/security/data-sanitization.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/security/index.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/en/security/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/tracing/config-reference.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/configuration/modular-config.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/monitoring/error-tracking.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/monitoring/slow-query-alerts.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/security/data-sanitization.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/security/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/zh/security/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/tracing/config-reference.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - QWEN.md (版本: 1.0.3, 最后更新: 2026-05-19)
+- docs/zh/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/deployment/docker-optimized.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/security/audit-log-management.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/security/blacklist-management.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.1, 最后更新: 2026-06-03)
 
 ## 依赖关系分析
 
@@ -513,7 +614,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.62 - 2026-07-03 (c87e0d6a)
+- **docs-version-report.md**: v1.0.63 - 2026-07-04 (577f0df9)
 - **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (64026034)
 - **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (64026034)
 - **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (64026034)
