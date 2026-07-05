@@ -5,10 +5,11 @@
 - 总文档数: 151
 - 近7天变更: 20
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-04 05:46:26
+- 最后扫描: 2026-07-05 06:04:59
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.63 → 1.0.64) - 2026-07-05
 - **MODIFIED**: docs-version-report.md (1.0.62 → 1.0.63) - 2026-07-04
 - **MODIFIED**: docs-version-report.md (1.0.61 → 1.0.62) - 2026-07-03
 - **MODIFIED**: docs-version-report.md (1.0.60 → 1.0.61) - 2026-07-02
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/zh/api-reference/error-codes.md (1.0.0 → 1.0.1) - 2026-07-01
 - **MODIFIED**: docs/en/security/api-key-management.md (1.0.2 → 1.0.3) - 2026-07-01
 - **MODIFIED**: docs/en/reference/changelog.md (1.0.5 → 1.0.6) - 2026-07-01
-- **MODIFIED**: docs/en/api-reference/management-api.md (1.0.3 → 1.0.4) - 2026-07-01
 
 ## 过期文档 (30天未更新)
 
@@ -614,7 +614,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.63 - 2026-07-04 (577f0df9)
+- **docs-version-report.md**: v1.0.64 - 2026-07-05 (09c3c547)
 - **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (64026034)
 - **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (64026034)
 - **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (64026034)
