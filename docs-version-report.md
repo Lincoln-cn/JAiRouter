@@ -3,22 +3,19 @@
 ## 版本统计
 
 - 总文档数: 151
-- 近7天变更: 17
+- 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-08 05:21:43
+- 最后扫描: 2026-07-09 06:05:09
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.67 → 1.0.68) - 2026-07-09
 - **MODIFIED**: docs-version-report.md (1.0.66 → 1.0.67) - 2026-07-08
 - **MODIFIED**: docs-version-report.md (1.0.65 → 1.0.66) - 2026-07-07
 - **MODIFIED**: docs-version-report.md (1.0.64 → 1.0.65) - 2026-07-06
 - **MODIFIED**: docs-version-report.md (1.0.63 → 1.0.64) - 2026-07-05
 - **MODIFIED**: docs-version-report.md (1.0.62 → 1.0.63) - 2026-07-04
 - **MODIFIED**: docs-version-report.md (1.0.61 → 1.0.62) - 2026-07-03
-- **MODIFIED**: docs-version-report.md (1.0.60 → 1.0.61) - 2026-07-02
-- **MODIFIED**: docs/zh/security/api-key-management.md (1.0.4 → 1.0.5) - 2026-07-01
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.5 → 1.0.6) - 2026-07-01
-- **MODIFIED**: docs/zh/api-reference/management-api.md (1.0.2 → 1.0.3) - 2026-07-01
 
 ## 过期文档 (30天未更新)
 
@@ -614,7 +611,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.67 - 2026-07-08 (dcee1cd8)
+- **docs-version-report.md**: v1.0.68 - 2026-07-09 (e6eadd79)
 - **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (64026034)
 - **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (64026034)
 - **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (64026034)
