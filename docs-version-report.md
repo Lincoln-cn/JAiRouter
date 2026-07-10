@@ -5,17 +5,17 @@
 - 总文档数: 151
 - 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-09 06:05:09
+- 最后扫描: 2026-07-10 06:03:52
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.68 → 1.0.69) - 2026-07-10
 - **MODIFIED**: docs-version-report.md (1.0.67 → 1.0.68) - 2026-07-09
 - **MODIFIED**: docs-version-report.md (1.0.66 → 1.0.67) - 2026-07-08
 - **MODIFIED**: docs-version-report.md (1.0.65 → 1.0.66) - 2026-07-07
 - **MODIFIED**: docs-version-report.md (1.0.64 → 1.0.65) - 2026-07-06
 - **MODIFIED**: docs-version-report.md (1.0.63 → 1.0.64) - 2026-07-05
 - **MODIFIED**: docs-version-report.md (1.0.62 → 1.0.63) - 2026-07-04
-- **MODIFIED**: docs-version-report.md (1.0.61 → 1.0.62) - 2026-07-03
 
 ## 过期文档 (30天未更新)
 
@@ -105,6 +105,8 @@
 - docs/en/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/en/security/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/tracing/config-reference.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/tracing/performance-tuning.md (版本: 1.0.1, 最后更新: 2026-06-09)
+- docs/en/tracing/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-09)
 - docs/zh/configuration/modular-config.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/monitoring/error-tracking.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/monitoring/slow-query-alerts.md (版本: 1.0.1, 最后更新: 2026-06-03)
@@ -113,6 +115,8 @@
 - docs/zh/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/zh/security/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/tracing/config-reference.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/tracing/performance-tuning.md (版本: 1.0.1, 最后更新: 2026-06-09)
+- docs/zh/tracing/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-09)
 - docs/zh/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - QWEN.md (版本: 1.0.3, 最后更新: 2026-05-19)
 - docs/zh/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-03)
@@ -611,7 +615,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.68 - 2026-07-09 (e6eadd79)
+- **docs-version-report.md**: v1.0.69 - 2026-07-10 (dae0aa84)
 - **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (64026034)
 - **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (64026034)
 - **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (64026034)
