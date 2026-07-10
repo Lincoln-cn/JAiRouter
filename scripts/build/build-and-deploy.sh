@@ -170,7 +170,7 @@ build_backend() {
 start_service() {
     print_info "正在启动 Spring Boot 服务..."
     cd "${PROJECT_ROOT}"
-    nohup ./mvnw spring-boot:run -P fast > "${PROJECT_ROOT}/logs/spring-boot.log" 2>&1 &
+    SPRING_PROFILES_ACTIVE=dev nohup ./mvnw spring-boot:run -P fast > "${PROJECT_ROOT}/logs/spring-boot.log" 2>&1 &
     print_success "服务启动中，日志输出到 logs/spring-boot.log"
 
     # 等待服务启动

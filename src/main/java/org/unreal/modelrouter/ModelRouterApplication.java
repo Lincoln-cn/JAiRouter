@@ -9,7 +9,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableAsync
 @EnableScheduling
-@ConfigurationPropertiesScan("org.unreal.modelrouter.config")
+@ConfigurationPropertiesScan({
+    "org.unreal.modelrouter.config",
+    "org.unreal.modelrouter.monitor.callhistory.config"
+})
 public class ModelRouterApplication {
     /** Private constructor to prevent instantiation. */
     private ModelRouterApplication() {}

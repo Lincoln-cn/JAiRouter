@@ -1,12 +1,14 @@
 package org.unreal.modelrouter.router.adapter.metrics;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
+import org.unreal.modelrouter.monitor.callhistory.ApiCallHistoryRecorder;
+import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
 
 /**
  * 适配器监控记录器
@@ -17,18 +19,29 @@ import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
  * - 后端调用指标
  * - 模型调用统计
  * - 服务注册调用记录 (v2.26.0)
+ * - API 调用历史记录 (v2.7.8)
  *
  * @author JAiRouter Team
  * @since v2.3.2
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class AdapterMetricsRecorder {
 
     private final MetricsCollector metricsCollector;
     private final ModelCallStatsRepository statsRepository;
     private final ModelServiceRegistry registry;
+
+    @Autowired(required = false)
+    private ApiCallHistoryRecorder callHistoryRecorder;
+
+    public AdapterMetricsRecorder(MetricsCollector metricsCollector,
+                                  ModelCallStatsRepository statsRepository,
+                                  ModelServiceRegistry registry) {
+        this.metricsCollector = metricsCollector;
+        this.statsRepository = statsRepository;
+        this.registry = registry;
+    }
 
     /**
      * 记录请求开始
@@ -297,7 +310,26 @@ public class AdapterMetricsRecorder {
                 statsRepository.recordErrorCode(serviceType.name(), modelName, errorCode);
             }
         }
-        
+
+        // v2.7.8: 记录 API 调用历史
+        if (callHistoryRecorder != null && serviceType != null && modelName != null) {
+            try {
+                CallHistoryRecordDTO record = CallHistoryRecordDTO.builder()
+                        .serviceType(serviceType.name())
+                        .modelName(modelName)
+                        .provider(adapterType)
+                        .instanceName(instanceId)
+                        .instanceUrl(instance != null ? instance.getBaseUrl() : null)
+                        .responseTimeMs(durationMs)
+                        .isSuccess(success)
+                        .errorCode(errorCode)
+                        .build();
+                callHistoryRecorder.record(record);
+            } catch (Exception e) {
+                log.debug("Failed to record call history: {}", e.getMessage());
+            }
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("完整调用记录：adapter={}, instance={}, duration={}ms, success={}, errorCode={}",
                     adapterType, instanceId, durationMs, success, errorCode);
