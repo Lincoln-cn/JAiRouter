@@ -152,7 +152,12 @@ public class ExceptionPersistenceService {
                    .userAgent(getStringValue(additionalInfo, "userAgent"))
                    .serviceName(getStringValue(additionalInfo, "serviceName"))
                    .methodName(getStringValue(additionalInfo, "methodName"))
-                   .className(getStringValue(additionalInfo, "className"));
+                   .className(getStringValue(additionalInfo, "className"))
+                   .serviceType(getStringValue(additionalInfo, "serviceType"))
+                   .modelName(getStringValue(additionalInfo, "modelName"))
+                   .provider(getStringValue(additionalInfo, "provider"))
+                   .instanceName(getStringValue(additionalInfo, "instanceName"))
+                   .responseTimeMs(getLongValue(additionalInfo, "responseTimeMs"));
 
             // 尝试解析元数据为 JSON
             try {
@@ -291,6 +296,27 @@ public class ExceptionPersistenceService {
     }
 
     /**
+     * 从 Map 中安全获取 Long 值
+     */
+    private Long getLongValue(final Map<String, Object> map, final String key) {
+        if (map == null || !map.containsKey(key)) {
+            return null;
+        }
+        Object value = map.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value != null) {
+            try {
+                return Long.parseLong(value.toString());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
      * 截断字符串到指定长度
      */
     private String truncate(final String str, final int maxLength) {
@@ -323,11 +349,13 @@ public class ExceptionPersistenceService {
             final String traceId,
             final String clientIp,
             final Boolean isAggregated,
+            final String serviceType,
+            final String modelName,
             final org.springframework.data.domain.Pageable pageable) {
-        
+
         return exceptionEventRepository.findByConditions(
                 startTime, endTime, exceptionType, operation, errorCode, errorCategory,
-                traceId, clientIp, isAggregated, pageable);
+                traceId, clientIp, isAggregated, serviceType, modelName, pageable);
     }
 
     /**

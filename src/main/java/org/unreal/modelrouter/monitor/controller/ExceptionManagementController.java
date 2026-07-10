@@ -81,6 +81,14 @@ public class ExceptionManagementController {
             @RequestParam(required = false)
             final String clientIp,
 
+            @Parameter(description = "服务类型")
+            @RequestParam(required = false)
+            final String serviceType,
+
+            @Parameter(description = "模型名称（支持模糊匹配）")
+            @RequestParam(required = false)
+            final String modelName,
+
             @Parameter(description = "是否仅查询聚合事件")
             @RequestParam(required = false)
             final Boolean aggregatedOnly,
@@ -111,6 +119,8 @@ public class ExceptionManagementController {
                 .errorCategory(errorCategory)
                 .traceId(traceId)
                 .clientIp(clientIp)
+                .serviceType(serviceType)
+                .modelName(modelName)
                 .aggregatedOnly(aggregatedOnly)
                 .page(page)
                 .size(size)

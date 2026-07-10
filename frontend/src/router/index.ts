@@ -333,19 +333,37 @@ const router = createRouter({
       path: '/rate-limiters/management',
       redirect: '/rate-limiters/monitoring'
     },
-    // Token 使用量统计路由
+    // API 调用历史路由
     {
-      path: '/token-usage',
-      name: 'token-usage',
+      path: '/call-history',
+      name: 'call-history',
       component: () => import('../views/Layout.vue'),
-      redirect: '/token-usage/statistics',
+      redirect: '/call-history/dashboard',
       meta: { requiresAuth: true },
       children: [
         {
-          path: 'statistics',
-          name: 'token-usage-statistics',
-          component: () => import('../views/tokenUsage/TokenUsageStatistics.vue'),
-          meta: { title: 'Token 使用统计', icon: 'data-analysis' }
+          path: 'dashboard',
+          name: 'call-history-dashboard',
+          component: () => import('../views/callHistory/Dashboard.vue'),
+          meta: { title: '调用历史仪表盘', icon: 'data-analysis' }
+        },
+        {
+          path: 'list',
+          name: 'call-history-list',
+          component: () => import('../views/callHistory/CallHistoryList.vue'),
+          meta: { title: '调用历史列表', icon: 'list' }
+        },
+        {
+          path: 'slow-calls',
+          name: 'call-history-slow-calls',
+          component: () => import('../views/callHistory/CallHistorySlowCalls.vue'),
+          meta: { title: '慢调用', icon: 'timer' }
+        },
+        {
+          path: 'token-usage',
+          name: 'call-history-token-usage',
+          component: () => import('../views/callHistory/TokenUsageStatistics.vue'),
+          meta: { title: 'Token 统计', icon: 'DataAnalysis' }
         }
       ]
     }

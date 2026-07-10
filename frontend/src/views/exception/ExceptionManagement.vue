@@ -116,6 +116,26 @@
               @keyup.enter="handleQuery"
             />
           </el-form-item>
+          <el-form-item label="服务类型">
+            <el-select v-model="queryParams.serviceType" placeholder="选择服务类型" clearable style="width: 130px">
+              <el-option label="Chat" value="CHAT" />
+              <el-option label="Embedding" value="EMBEDDING" />
+              <el-option label="Rerank" value="RERANK" />
+              <el-option label="TTS" value="TTS" />
+              <el-option label="STT" value="STT" />
+              <el-option label="图像生成" value="IMG_GENERATE" />
+              <el-option label="图像编辑" value="IMG_EDIT" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="模型名称">
+            <el-input
+              v-model="queryParams.modelName"
+              placeholder="输入模型名"
+              clearable
+              style="width: 160px"
+              @keyup.enter="handleQuery"
+            />
+          </el-form-item>
           <el-form-item label="时间范围">
             <el-date-picker
               v-model="dateRange"
@@ -152,6 +172,27 @@
           <el-table-column label="异常类型" prop="exceptionType" min-width="180" show-overflow-tooltip>
             <template #default="scope">
               <span class="exception-type">{{ scope.row.exceptionType }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="服务类型" prop="serviceType" width="100">
+            <template #default="scope">
+              <el-tag v-if="scope.row.serviceType" size="small" type="info">{{ scope.row.serviceType }}</el-tag>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="模型名称" prop="modelName" min-width="140" show-overflow-tooltip>
+            <template #default="scope">
+              <span>{{ scope.row.modelName || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="提供商" prop="provider" width="100" show-overflow-tooltip>
+            <template #default="scope">
+              <span>{{ scope.row.provider || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="响应时间(ms)" prop="responseTimeMs" width="120" sortable>
+            <template #default="scope">
+              <span>{{ scope.row.responseTimeMs != null ? scope.row.responseTimeMs : '-' }}</span>
             </template>
           </el-table-column>
           <el-table-column label="错误代码" prop="errorCode" width="100">
@@ -233,6 +274,14 @@
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="客户端 IP">{{ selectedEvent.clientIp || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="服务类型">
+          <el-tag v-if="selectedEvent.serviceType" size="small" type="info">{{ selectedEvent.serviceType }}</el-tag>
+          <span v-else>-</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="模型名称">{{ selectedEvent.modelName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="提供商">{{ selectedEvent.provider || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="实例名称">{{ selectedEvent.instanceName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="响应时间(ms)">{{ selectedEvent.responseTimeMs != null ? selectedEvent.responseTimeMs : '-' }}</el-descriptions-item>
         <el-descriptions-item label="追踪 ID" :span="2">
           <el-tag effect="plain" type="info">{{ selectedEvent.traceId || '-' }}</el-tag>
         </el-descriptions-item>
@@ -335,6 +384,8 @@ const queryParams = reactive<ExceptionQueryParams>({
   errorCode: undefined,
   errorCategory: undefined,
   clientIp: undefined,
+  serviceType: undefined,
+  modelName: undefined,
   startTime: undefined,
   endTime: undefined,
   page: 0,
@@ -485,6 +536,8 @@ const handleReset = () => {
   queryParams.errorCode = undefined
   queryParams.errorCategory = undefined
   queryParams.clientIp = undefined
+  queryParams.serviceType = undefined
+  queryParams.modelName = undefined
   dateRange.value = null
   queryParams.startTime = undefined
   queryParams.endTime = undefined

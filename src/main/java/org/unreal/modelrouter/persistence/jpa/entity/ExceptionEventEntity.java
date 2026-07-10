@@ -135,6 +135,36 @@ public class ExceptionEventEntity {
     private String serviceName;
 
     /**
+     * 服务类型（chat/embedding/rerank/tts 等）
+     */
+    @Column(name = "service_type", length = 50)
+    private String serviceType;
+
+    /**
+     * 模型名称
+     */
+    @Column(name = "model_name", length = 255)
+    private String modelName;
+
+    /**
+     * 适配器/提供商类型（gpuStack/ollama/vllm 等）
+     */
+    @Column(name = "provider", length = 100)
+    private String provider;
+
+    /**
+     * 实例名称
+     */
+    @Column(name = "instance_name", length = 255)
+    private String instanceName;
+
+    /**
+     * 响应时间（毫秒）
+     */
+    @Column(name = "response_time_ms")
+    private Long responseTimeMs;
+
+    /**
      * 方法名
      */
     @Column(name = "method_name", length = 255)

@@ -127,7 +127,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
            + "(:errorCategory IS NULL OR e.errorCategory = :errorCategory) AND "
            + "(:traceId IS NULL OR e.traceId = :traceId) AND "
            + "(:clientIp IS NULL OR e.clientIp = :clientIp) AND "
-           + "(:isAggregated IS NULL OR e.isAggregated = :isAggregated) "
+           + "(:isAggregated IS NULL OR e.isAggregated = :isAggregated) AND "
+           + "(:serviceType IS NULL OR e.serviceType = :serviceType) AND "
+           + "(:modelName IS NULL OR e.modelName LIKE %:modelName%) "
            + "ORDER BY e.occurredAt DESC")
     Page<ExceptionEventEntity> findByConditions(
             @Param("startTime") LocalDateTime startTime,
@@ -139,6 +141,8 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
             @Param("traceId") String traceId,
             @Param("clientIp") String clientIp,
             @Param("isAggregated") Boolean isAggregated,
+            @Param("serviceType") String serviceType,
+            @Param("modelName") String modelName,
             Pageable pageable);
 
     /**

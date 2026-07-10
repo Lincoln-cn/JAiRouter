@@ -76,6 +76,8 @@ public class ExceptionManagementService {
                 request.getTraceId(),
                 request.getClientIp(),
                 request.getAggregatedOnly(),
+                request.getServiceType(),
+                request.getModelName(),
                 pageRequest
         );
 
@@ -243,6 +245,11 @@ public class ExceptionManagementService {
                 .traceId(entity.getTraceId())
                 .clientIp(entity.getClientIp())
                 .serviceName(entity.getServiceName())
+                .serviceType(entity.getServiceType())
+                .modelName(entity.getModelName())
+                .provider(entity.getProvider())
+                .instanceName(entity.getInstanceName())
+                .responseTimeMs(entity.getResponseTimeMs())
                 .occurrenceCount(entity.getOccurrenceCount())
                 .firstOccurrence(entity.getFirstOccurrence())
                 .lastOccurrence(entity.getLastOccurrence())

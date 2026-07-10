@@ -60,6 +60,16 @@ public class ExceptionQueryRequest {
     private String clientIp;
 
     /**
+     * 服务类型（chat/embedding/rerank/tts 等）
+     */
+    private String serviceType;
+
+    /**
+     * 模型名称（支持模糊匹配）
+     */
+    private String modelName;
+
+    /**
      * 是否仅查询聚合事件
      */
     private Boolean aggregatedOnly;

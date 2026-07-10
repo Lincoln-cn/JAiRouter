@@ -110,15 +110,18 @@
           <el-menu-item index="/exceptions/statistics">异常统计分析</el-menu-item>
         </el-sub-menu>
 
-        <!-- Token 使用统计 -->
-        <el-sub-menu index="tokenUsage">
+        <!-- API 调用历史 -->
+        <el-sub-menu index="callHistory">
           <template #title>
             <el-icon>
-              <DataAnalysis />
+              <Document />
             </el-icon>
-            <span>Token 统计</span>
+            <span>调用历史</span>
           </template>
-          <el-menu-item index="/token-usage/statistics">Token 使用统计</el-menu-item>
+          <el-menu-item index="/call-history/dashboard">仪表盘</el-menu-item>
+          <el-menu-item index="/call-history/list">调用列表</el-menu-item>
+          <el-menu-item index="/call-history/token-usage">Token 统计</el-menu-item>
+          <el-menu-item index="/call-history/slow-calls">慢调用</el-menu-item>
         </el-sub-menu>
 
         <!-- 追踪管理 -->
@@ -217,7 +220,8 @@ import {
   Warning,
   Promotion,
   DataAnalysis,
-  Odometer
+  Odometer,
+  Document
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -266,6 +270,8 @@ const defaultOpeneds = computed(() => {
     openeds.push('tracing')
   } else if (path.startsWith('/playground')) {
     openeds.push('playground')
+  } else if (path.startsWith('/call-history')) {
+    openeds.push('callHistory')
   }
 
   return openeds

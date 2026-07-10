@@ -79,10 +79,12 @@ class ExceptionManagementServiceTest {
         List<ExceptionEventEntity> entities = Arrays.asList(testEntity);
         Page<ExceptionEventEntity> page = new PageImpl<>(entities);
 
-        // Mock Repository - 使用 any() 匹配所有参数
+        // Mock Repository - 使用 any() 匹配所有参数（12 个参数：10 原有 + serviceType + modelName）
         when(exceptionEventRepository.findByConditions(
                 any(LocalDateTime.class),
                 any(LocalDateTime.class),
+                any(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -123,6 +125,8 @@ class ExceptionManagementServiceTest {
         when(exceptionEventRepository.findByConditions(
                 any(LocalDateTime.class),
                 any(LocalDateTime.class),
+                any(),
+                any(),
                 any(),
                 any(),
                 any(),
@@ -259,7 +263,7 @@ class ExceptionManagementServiceTest {
 
         when(exceptionEventRepository.findByConditions(
                 any(LocalDateTime.class), any(LocalDateTime.class), any(), any(),
-                any(), any(), any(), any(), any(), any(PageRequest.class)
+                any(), any(), any(), any(), any(), any(), any(), any(PageRequest.class)
         )).thenReturn(page);
 
         ExceptionQueryRequest request = ExceptionQueryRequest.builder().page(0).size(20).build();

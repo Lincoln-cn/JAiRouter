@@ -18,6 +18,11 @@ export interface ExceptionEvent {
   traceId: string
   clientIp: string
   serviceName: string
+  serviceType: string
+  modelName: string
+  provider: string
+  instanceName: string
+  responseTimeMs: number
   occurrenceCount: number
   firstOccurrence: string
   lastOccurrence: string
@@ -49,6 +54,8 @@ export interface ExceptionQueryParams {
   errorCategory?: string
   traceId?: string
   clientIp?: string
+  serviceType?: string
+  modelName?: string
   aggregatedOnly?: boolean
   page?: number
   size?: number

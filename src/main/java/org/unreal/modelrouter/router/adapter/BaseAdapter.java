@@ -44,6 +44,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -173,7 +175,15 @@ public abstract class BaseAdapter implements ServiceCapability {
                                         System.currentTimeMillis(), retryCount + 1));
                     }
                     if (errorTracker != null) {
-                        errorTracker.trackError(throwable, adapterType + ".request");
+                        Map<String, Object> errorContext = new HashMap<>();
+                        errorContext.put("modelName", modelName);
+                        errorContext.put("serviceType", serviceType != null ? serviceType.name() : null);
+                        errorContext.put("provider", adapterType);
+                        errorContext.put("instanceName", instanceName);
+                        errorContext.put("responseTimeMs", duration);
+                        errorContext.put("errorCode", errorCode);
+                        errorContext.put("retryCount", retryCount);
+                        errorTracker.trackError(throwable, adapterType + ".request", errorContext);
                     }
                     return resilienceSupport.getErrorResponseBuilder().buildErrorResponse(throwable).flatMap(Mono::error);
                 });
@@ -195,14 +205,24 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (fallbackRequestProcessor != null) {
             return requestMono.onErrorResume(throwable -> {
                 if (errorTracker != null) {
-                    errorTracker.trackError(throwable, getAdapterType() + ".fallback");
+                    String adapterType = getAdapterType();
+                    Map<String, Object> errorContext = new HashMap<>();
+                    errorContext.put("modelName", modelName);
+                    errorContext.put("serviceType", serviceType != null ? serviceType.name() : null);
+                    errorContext.put("provider", adapterType);
+                    errorTracker.trackError(throwable, adapterType + ".fallback", errorContext);
                 }
                 return fallbackRequestProcessor.handleFallbackError(throwable, fallbackStrategy);
             });
         }
         return requestMono.onErrorResume(throwable -> {
             if (errorTracker != null) {
-                errorTracker.trackError(throwable, getAdapterType() + ".fallback");
+                String adapterType = getAdapterType();
+                Map<String, Object> errorContext = new HashMap<>();
+                errorContext.put("modelName", modelName);
+                errorContext.put("serviceType", serviceType != null ? serviceType.name() : null);
+                errorContext.put("provider", adapterType);
+                errorTracker.trackError(throwable, adapterType + ".fallback", errorContext);
             }
             return fallbackStrategy.fallback((Exception) throwable) != null
                 ? Mono.just(fallbackStrategy.fallback((Exception) throwable))

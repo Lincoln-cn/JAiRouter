@@ -76,6 +76,31 @@ public class ExceptionEventDTO {
     private String serviceName;
 
     /**
+     * 服务类型（chat/embedding/rerank/tts 等）
+     */
+    private String serviceType;
+
+    /**
+     * 模型名称
+     */
+    private String modelName;
+
+    /**
+     * 适配器/提供商类型
+     */
+    private String provider;
+
+    /**
+     * 实例名称
+     */
+    private String instanceName;
+
+    /**
+     * 响应时间（毫秒）
+     */
+    private Long responseTimeMs;
+
+    /**
      * 出现次数
      */
     private Long occurrenceCount;
