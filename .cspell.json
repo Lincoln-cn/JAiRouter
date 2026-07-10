@@ -258,7 +258,9 @@
     "tolerations",
     "nindent",
     "netpol",
-    "Pushgateway"
+    "Pushgateway",
+    "mgmt",
+    "echarts"
   ],
   "ignoreWords": [
     "CNAME",

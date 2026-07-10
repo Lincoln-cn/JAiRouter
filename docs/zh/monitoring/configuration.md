@@ -458,25 +458,27 @@ monitoring:
 **Prometheus Pushgateway 示例**:
 
 ```yaml
+# Prometheus Pushgateway 示例配置
 monitoring:
   metrics:
     export:
       http:
         enabled: true
-        url: "http://pushgateway:9091/metrics/job/jairouter/instance/${HOSTNAME}"
+        url: "http://your-pushgateway-host:9091/metrics/job/jairouter/instance/${HOSTNAME}"
         timeout: 5000
         format: prometheus
 ```
 
-**JSON 格式示例**:
+**InfluxDB 示例配置**:
 
 ```yaml
+# InfluxDB 示例配置
 monitoring:
   metrics:
     export:
       http:
         enabled: true
-        url: "http://influxdb:8086/api/v2/write?org=myorg&bucket=metrics"
+        url: "http://your-influxdb-host:8086/api/v2/write?org=myorg&bucket=metrics"
         timeout: 10000
         format: json
 ```
