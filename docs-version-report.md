@@ -5,10 +5,11 @@
 - 总文档数: 152
 - 近7天变更: 11
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-11 05:13:39
+- 最后扫描: 2026-07-12 05:28:42
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.70 → 1.0.71) - 2026-07-12
 - **CREATED**: merge-log-2026-07-10.md ( → 1.0.0) - 2026-07-11
 - **MODIFIED**: docs/zh/monitoring/configuration.md (1.0.3 → 1.0.4) - 2026-07-11
 - **MODIFIED**: docs/zh/index.md (1.0.4 → 1.0.5) - 2026-07-11
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.66 → 1.0.67) - 2026-07-08
 - **MODIFIED**: docs-version-report.md (1.0.65 → 1.0.66) - 2026-07-07
 - **MODIFIED**: docs-version-report.md (1.0.64 → 1.0.65) - 2026-07-06
-- **MODIFIED**: docs-version-report.md (1.0.63 → 1.0.64) - 2026-07-05
 
 ## 过期文档 (30天未更新)
 
@@ -125,8 +125,13 @@
 - docs/zh/configuration/store-config.md (版本: 1.0.3, 最后更新: 2026-06-10)
 - docs/zh/configuration/version-management.md (版本: 1.0.2, 最后更新: 2026-06-10)
 - docs/en/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
+- docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/zh/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - QWEN.md (版本: 1.0.3, 最后更新: 2026-05-19)
+- docs/en/deployment/docker-optimized.md (版本: 1.0.1, 最后更新: 2026-06-11)
+- docs/en/monitoring/alert_rules_guide.md (版本: 1.0.1, 最后更新: 2026-06-11)
+- docs/en/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-11)
+- docs/en/security/blacklist-management.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/zh/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/deployment/docker-optimized.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-03)
@@ -135,6 +140,7 @@
 - docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
 - docs/zh/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
+- docs/docs-version-report.md (版本: 1.0.1, 最后更新: 2026-06-11)
 
 ## 依赖关系分析
 
@@ -625,10 +631,10 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.71 - 2026-07-12 (1ea1ce62)
 - **merge-log-2026-07-10.md**: v1.0.0 - 2026-07-11 (eb2d8a82)
 - **docs/zh/monitoring/configuration.md**: v1.0.4 - 2026-07-11 (27143cbb)
 - **docs/zh/index.md**: v1.0.5 - 2026-07-11 (27143cbb)
-- **docs-version-report.md**: v1.0.70 - 2026-07-11 (bed58637)
 - **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (2f07f762)
 - **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (2f07f762)
 - **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (2f07f762)
