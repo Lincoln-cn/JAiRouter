@@ -36,6 +36,16 @@ public class ApiKeyVO {
     private String description;
 
     /**
+     * 所有者ID - 用于多用户资源隔离
+     */
+    private String ownerId;
+
+    /**
+     * 所有者角色
+     */
+    private String ownerRole;
+
+    /**
      * 权限列表
      */
     private List<String> permissions;

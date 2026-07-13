@@ -69,6 +69,8 @@ public class ApiKeyService {
             String kh = ApiKeyHashUtil.hashApiKey(kv);
             List<String> validatedPermissions = validatePermissions(req.getPermissions());
             ApiKey ak = ApiKey.builder().keyId(kid).keyHash(kh).keyPrefix("sk-").description(req.getDescription())
+                .ownerId(req.getOwnerId() != null ? req.getOwnerId() : by)
+                .ownerRole(req.getOwnerRole() != null ? req.getOwnerRole() : "user")
                 .permissions(validatedPermissions).enabled(req.getEnabled() != null ? req.getEnabled() : true)
                 .expiresAt(req.getExpiresAt()).createdAt(LocalDateTime.now()).createdBy(by).creatorIpAddress(ip)
                 .rotationPeriodDays(req.getRotationPeriodDays() != null ? req.getRotationPeriodDays() : 0)
@@ -149,6 +151,55 @@ public class ApiKeyService {
                 .enabledCount(en).disabledCount(dis).expiredCount(exp)
                 .summary(ApiKeyListVO.Summary.builder().todayTotalRequests(ttr)
                     .todaySuccessfulRequests(tsr).todayFailedRequests(tfr).build()).build();
+        });
+    }
+
+    /**
+     * 获取指定所有者的API Key列表
+     * 管理员可以查看所有Key，普通用户只能查看自己的Key
+     *
+     * @param ownerId 所有者ID
+     * @param isAdmin 是否为管理员
+     * @return API Key列表
+     */
+    public Mono<ApiKeyListVO> getApiKeysByOwnerVO(final String ownerId, final boolean isAdmin) {
+        return Mono.fromCallable(() -> {
+            List<ApiKeyVO> items = apiKeyCache.values().stream()
+                .filter(ak -> isAdmin || ownerId.equals(ak.getOwnerId()))
+                .map(this::convertToVO)
+                .sorted(Comparator.comparing(ApiKeyVO::getCreatedAt).reversed())
+                .toList();
+            
+            int en = 0, dis = 0, exp = 0;
+            long ttr = 0, tsr = 0, tfr = 0;
+            String td = LocalDateTime.now().toLocalDate().toString();
+            
+            for (ApiKey ak : apiKeyCache.values()) {
+                if (!isAdmin && !ownerId.equals(ak.getOwnerId())) {
+                    continue;
+                }
+                if (ak.isEnabled()) en++; else dis++;
+                if (ak.isExpired()) exp++;
+                UsageStatistics us = ak.getUsage();
+                if (us != null) {
+                    Map<String, Long> du = us.getDailyUsage();
+                    if (du != null && du.get(td) != null) ttr += du.get(td);
+                    tsr += us.getSuccessfulRequests(); tfr += us.getFailedRequests();
+                }
+            }
+            
+            return ApiKeyListVO.builder()
+                .items(items)
+                .total(items.size())
+                .enabledCount(en)
+                .disabledCount(dis)
+                .expiredCount(exp)
+                .summary(ApiKeyListVO.Summary.builder()
+                    .todayTotalRequests(ttr)
+                    .todaySuccessfulRequests(tsr)
+                    .todayFailedRequests(tfr)
+                    .build())
+                .build();
         });
     }
 
