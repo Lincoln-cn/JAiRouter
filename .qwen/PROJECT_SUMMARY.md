@@ -27,18 +27,23 @@ mvn checkstyle:check
 ```
 
 ### 架构质量评估
-- **当前评分**: 5.8/10（中等偏上）
-- **主要问题**: 依赖注入过多（16个）、重复代码（65%）、可选依赖过多（71个）
+- **当前评分**: 6.8/10（中等）
+- **主要问题**: 大文件拆分未完成（5个>600行）、测试覆盖率低（12.5%）、Checkstyle警告多（3334个）
 
-### 大文件清单（>500行）
+### 大文件清单（>600行）
 | 文件 | 行数 | 状态 |
 |------|------|------|
+| GpuStackAdapter.java | 665 | 待拆分 |
 | ConfigurationService.java | 646 | 待继续拆分 |
 | TracingPerformanceMonitor.java | 623 | 待拆分（11个内部类） |
-| JwtTokenController.java | 620 | 待拆分 |
-| VllmAdapter.java | 618 | 待优化 |
-| UniversalController.java | 617 | **正在重构** |
-| BaseAdapter.java | ~600 | 待重构（16个依赖） |
+| ExtendedSecurityAuditServiceImpl.java | 618 | 待拆分 |
+| ApiKeyBatchService.java | 607 | 待拆分 |
+
+### 已完成的重构
+| 文件 | 原行数 | 最终行数 | 状态 |
+|------|--------|----------|------|
+| UniversalController.java | 617 | 203 | ✅ 已完成 |
+| BaseAdapter.java | 1350 | 456 | ✅ 已完成 |
 
 ## Recent Actions
 
@@ -60,7 +65,7 @@ mvn checkstyle:check
 
 ### 架构设计
 ```
-UniversalController (待重构，目标~150行)
+UniversalController (203行，已重构完成)
         ↓ 委托
 ServiceRequestHandler (核心处理逻辑，393行)
         ├── 实例选择与负载均衡
@@ -70,6 +75,11 @@ ServiceRequestHandler (核心处理逻辑，393行)
         ↓ 使用
 ServiceEndpoint (端点配置枚举)
 ServiceRequestExecutor (函数式接口)
+
+BaseAdapter (456行，已重构完成)
+        ├── AdapterContext (核心上下文)
+        ├── RequestProcessingSupport (请求处理支持)
+        └── ResilienceSupport (弹性支持)
 ```
 
 ## Current Plan

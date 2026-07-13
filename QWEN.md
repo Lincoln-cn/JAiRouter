@@ -20,14 +20,13 @@ JAiRouter is an AI model service routing and load balancing gateway built with *
 
 ```
 /home/ubuntu/jairouter/modelrouter/
-├── src/main/java/org/unreal/modelrouter/    # Java source code
-│   ├── adapter/                              # AI service adapters (GPUStack, Ollama, vLLM, etc.)
-│   ├── circuitbreaker/                       # Circuit breaker implementation
-│   ├── config/                               # Configuration management
-│   ├── controller/                           # REST API controllers
-│   ├── service/                              # Business services
-│   ├── security/                             # Security filters and handlers
-│   ├── tracing/                              # Distributed tracing
+├── src/main/java/org/unreal/modelrouter/    # Java source code (6 modules)
+│   ├── auth/                                 # Authentication & authorization (JWT, API Key, audit)
+│   ├── config/                               # Configuration management (versioning, sync, persistence)
+│   ├── router/                               # Core routing engine (adapters, load balancing, circuit breaker, rate limiting)
+│   ├── monitor/                              # Monitoring & observability (tracing, metrics, exception management)
+│   ├── persistence/                          # Data persistence (JPA, store abstraction)
+│   ├── common/                               # Shared utilities, DTOs, exceptions
 │   └── ...
 ├── src/main/resources/                       # Application configs, static resources
 ├── src/test/                                 # Unit and integration tests
@@ -35,7 +34,7 @@ JAiRouter is an AI model service routing and load balancing gateway built with *
 ├── config/                                   # Runtime configuration files
 ├── docs/                                     # Documentation
 ├── scripts/                                  # Utility scripts
-├── Dockerfile*                               # Docker build files
+├── Dockerfile*                               # Docker build files (6 variants)
 ├── docker-compose*.yml                       # Docker Compose configurations
 ├── Makefile                                  # Build shortcuts
 └── pom.xml                                   # Maven configuration
