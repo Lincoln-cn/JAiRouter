@@ -19,6 +19,7 @@ import org.unreal.modelrouter.config.core.service.ServiceConfigUpdateService;
 import org.unreal.modelrouter.config.dto.UpdateServiceConfigRequest;
 import org.unreal.modelrouter.config.event.ConfigSyncEvent;
 import org.unreal.modelrouter.config.core.ConfigSyncService;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.monitor.tracing.config.SamplingConfigurationValidator;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
@@ -51,7 +52,7 @@ class ConfigurationServiceTest {
     private StoreManager storeManager;
 
     @Mock
-    private ConfigurationHelper configurationHelper;
+    private ConfigConverterHelper configConverterHelper;
 
     @Mock
     private ConfigMergeService configMergeService;
@@ -298,7 +299,7 @@ class ConfigurationServiceTest {
 
             when(storeManager.getConfigVersions(anyString())).thenReturn(List.of(1));
             when(storeManager.getConfigByVersion(anyString(), anyInt())).thenReturn(sampleConfig);
-            when(configurationHelper.convertInstanceToMap(any())).thenReturn(instanceMap);
+            when(configConverterHelper.convertInstanceToMap(any())).thenReturn(instanceMap);
             when(instanceOperationService.addInstance(any(), any())).thenReturn("添加实例: test-instance");
             when(configComparisonService.isConfigurationChanged(any(), any())).thenReturn(true);
             when(configVersionManager.saveAsNewVersion(any(), anyString(), any())).thenReturn(2);
@@ -370,7 +371,7 @@ class ConfigurationServiceTest {
 
             when(storeManager.getConfigVersions(anyString())).thenReturn(List.of(1));
             when(storeManager.getConfigByVersion(anyString(), anyInt())).thenReturn(sampleConfig);
-            when(configurationHelper.convertInstanceToMap(any())).thenReturn(instanceMap);
+            when(configConverterHelper.convertInstanceToMap(any())).thenReturn(instanceMap);
             when(instanceOperationService.addInstance(any(), any())).thenReturn("添加实例: instance-1");
             when(configComparisonService.isConfigurationChanged(any(), any())).thenReturn(true);
             when(configVersionManager.saveAsNewVersion(any(), anyString(), any())).thenReturn(2);

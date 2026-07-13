@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.persistence.jpa.entity.ConfigEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.JwtAccountEntity;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
@@ -43,7 +43,7 @@ public class JpaDatabaseInitializer {
     private final ServiceInstanceRepository serviceInstanceRepository;
     private final JwtAccountRepository jwtAccountRepository;
     private final ModelRouterProperties modelRouterProperties;
-    private final ConfigurationHelper configurationHelper;
+    private final ConfigConverterHelper configConverterHelper;
     private final ApiKeyService apiKeyService;
     private final SecurityProperties securityProperties;
     private final PasswordEncoder passwordEncoder;
@@ -140,7 +140,7 @@ public class JpaDatabaseInitializer {
      * v1.5.4: 添加元数据用于版本管理显示
      */
     private void saveModelRouterConfig() {
-        Map<String, Object> configMap = configurationHelper.convertModelRouterPropertiesToMap(modelRouterProperties);
+        Map<String, Object> configMap = configConverterHelper.convertModelRouterPropertiesToMap(modelRouterProperties);
         
         // 添加初始化元数据
         Map<String, Object> metadata = new HashMap<>();

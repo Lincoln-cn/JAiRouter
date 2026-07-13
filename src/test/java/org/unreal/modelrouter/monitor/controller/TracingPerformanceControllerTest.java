@@ -19,6 +19,7 @@ import org.unreal.modelrouter.monitor.tracing.memory.model.GCResult;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryCheckResult;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryPressureLevel;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
+import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -172,8 +173,8 @@ class TracingPerformanceControllerTest {
         @Test
         @DisplayName("生成成功")
         void generateSuccess() {
-            TracingPerformanceMonitor.PerformanceReport report =
-                    mock(TracingPerformanceMonitor.PerformanceReport.class);
+            TracingPerformanceModels.PerformanceReport report =
+                    mock(TracingPerformanceModels.PerformanceReport.class);
             when(performanceMonitor.generatePerformanceReport()).thenReturn(Mono.just(report));
 
             StepVerifier.create(controller.generatePerformanceReport())
@@ -209,8 +210,8 @@ class TracingPerformanceControllerTest {
         @Test
         @DisplayName("执行成功")
         void performSuccess() {
-            TracingPerformanceMonitor.TuningResult result =
-                    mock(TracingPerformanceMonitor.TuningResult.class);
+            TracingPerformanceModels.TuningResult result =
+                    mock(TracingPerformanceModels.TuningResult.class);
             when(performanceMonitor.performPerformanceTuning(any())).thenReturn(Mono.just(result));
 
             StepVerifier.create(controller.performTuning(List.of("optimize-memory")))

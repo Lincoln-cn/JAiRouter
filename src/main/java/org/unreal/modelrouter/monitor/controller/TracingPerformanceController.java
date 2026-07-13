@@ -19,6 +19,7 @@ import org.unreal.modelrouter.monitor.tracing.memory.model.GCResult;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryCheckResult;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
+import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -88,7 +89,7 @@ public class TracingPerformanceController {
     @GetMapping("/bottlenecks")
     @Operation(summary = "检测性能瓶颈", description = "检测追踪系统当前的性能瓶颈")
     @ApiResponse(responseCode = "200", description = "成功返回瓶颈检测结果")
-    public Mono<ResponseEntity<List<TracingPerformanceMonitor.PerformanceBottleneck>>> detectBottlenecks() {
+    public Mono<ResponseEntity<List<TracingPerformanceModels.PerformanceBottleneck>>> detectBottlenecks() {
         return performanceMonitor.detectBottlenecks()
             .map(ResponseEntity::ok)
             .onErrorReturn(ResponseEntity.internalServerError().build());
@@ -97,7 +98,7 @@ public class TracingPerformanceController {
     @GetMapping("/suggestions")
     @Operation(summary = "获取优化建议", description = "获取基于当前性能状态的优化建议")
     @ApiResponse(responseCode = "200", description = "成功返回优化建议")
-    public Mono<ResponseEntity<List<TracingPerformanceMonitor.OptimizationSuggestion>>> getOptimizationSuggestions() {
+    public Mono<ResponseEntity<List<TracingPerformanceModels.OptimizationSuggestion>>> getOptimizationSuggestions() {
         return performanceMonitor.getOptimizationSuggestions()
             .map(ResponseEntity::ok)
             .onErrorReturn(ResponseEntity.internalServerError().build());
@@ -106,7 +107,7 @@ public class TracingPerformanceController {
     @GetMapping("/report")
     @Operation(summary = "生成性能报告", description = "生成追踪系统的综合性能报告")
     @ApiResponse(responseCode = "200", description = "成功返回性能报告")
-    public Mono<ResponseEntity<TracingPerformanceMonitor.PerformanceReport>> generatePerformanceReport() {
+    public Mono<ResponseEntity<TracingPerformanceModels.PerformanceReport>> generatePerformanceReport() {
         return performanceMonitor.generatePerformanceReport()
             .map(ResponseEntity::ok)
             .onErrorReturn(ResponseEntity.internalServerError().build());
@@ -130,7 +131,7 @@ public class TracingPerformanceController {
     @PostMapping("/tuning")
     @Operation(summary = "执行性能调优", description = "执行指定的性能调优操作")
     @ApiResponse(responseCode = "200", description = "成功执行性能调优")
-    public Mono<ResponseEntity<TracingPerformanceMonitor.TuningResult>> performTuning(
+    public Mono<ResponseEntity<TracingPerformanceModels.TuningResult>> performTuning(
             @RequestBody final List<String> tuningActions) {
         return performanceMonitor.performPerformanceTuning(tuningActions)
             .map(ResponseEntity::ok)
@@ -220,8 +221,8 @@ public class TracingPerformanceController {
                 Map<String, Object> alerts = new HashMap<>();
                 alerts.put("count", bottlenecks.size());
                 alerts.put("alerts", bottlenecks.stream()
-                    .filter(b -> b.getSeverity() == TracingPerformanceMonitor.Severity.HIGH
-                                 || b.getSeverity() == TracingPerformanceMonitor.Severity.CRITICAL)
+                    .filter(b -> b.getSeverity() == TracingPerformanceModels.Severity.HIGH
+                                 || b.getSeverity() == TracingPerformanceModels.Severity.CRITICAL)
                     .map(b -> Map.of(
                         "type", b.getType().name(),
                         "description", b.getDescription(),

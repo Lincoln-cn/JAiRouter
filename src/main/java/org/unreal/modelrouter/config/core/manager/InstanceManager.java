@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ConfigMergeService;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.config.core.dto.ModelInstanceConfiguration;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.persistence.store.StoreManager;
@@ -30,7 +29,6 @@ public class InstanceManager {
     private static final Logger logger = LoggerFactory.getLogger(InstanceManager.class);
 
     private final StoreManager storeManager;
-    private final ConfigurationHelper configurationHelper;
     private final ConfigMergeService configMergeService;
 
     private static final String CURRENT_KEY = "model-router-config";
@@ -43,10 +41,8 @@ public class InstanceManager {
     private static final long REQUEST_DEDUP_WINDOW_MS = 1000;
 
     public InstanceManager(final StoreManager storeManager,
-                           final ConfigurationHelper configurationHelper,
                            final ConfigMergeService configMergeService) {
         this.storeManager = storeManager;
-        this.configurationHelper = configurationHelper;
         this.configMergeService = configMergeService;
     }
 

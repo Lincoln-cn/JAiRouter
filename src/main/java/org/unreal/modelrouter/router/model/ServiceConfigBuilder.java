@@ -2,7 +2,7 @@ package org.unreal.modelrouter.router.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.router.fallback.FallbackManager;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
@@ -21,16 +21,16 @@ public class ServiceConfigBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceConfigBuilder.class);
 
-    private final ConfigurationHelper configurationHelper;
+    private final ConfigConverterHelper configConverterHelper;
     private final RateLimitManager rateLimitManager;
     private final CircuitBreakerManager circuitBreakerManager;
     private final FallbackManager fallbackManager;
 
-    public ServiceConfigBuilder(final ConfigurationHelper configurationHelper,
+    public ServiceConfigBuilder(final ConfigConverterHelper configConverterHelper,
                                 final RateLimitManager rateLimitManager,
                                 final CircuitBreakerManager circuitBreakerManager,
                                 final FallbackManager fallbackManager) {
-        this.configurationHelper = configurationHelper;
+        this.configConverterHelper = configConverterHelper;
         this.rateLimitManager = rateLimitManager;
         this.circuitBreakerManager = circuitBreakerManager;
         this.fallbackManager = fallbackManager;
@@ -82,7 +82,7 @@ public class ServiceConfigBuilder {
         if (serviceConfigMap.containsKey("instances")) {
             List<Map<String, Object>> instanceList = (List<Map<String, Object>>) serviceConfigMap.get("instances");
             List<ModelRouterProperties.ModelInstance> instances = instanceList.stream()
-                    .map(configurationHelper::convertMapToInstance)
+                    .map(configConverterHelper::convertMapToInstance)
                     .collect(Collectors.toList());
             runtimeConfig.setInstances(instances);
         } else {
@@ -104,7 +104,7 @@ public class ServiceConfigBuilder {
             }
             runtimeConfig.setLoadBalanceConfig(loadBalanceConfig);
         } else {
-            runtimeConfig.setLoadBalanceConfig(configurationHelper.createDefaultLoadBalanceConfig());
+            runtimeConfig.setLoadBalanceConfig(configConverterHelper.createDefaultLoadBalanceConfig());
         }
 
         // 解析其他配置（限流、熔断器、降级）
@@ -125,7 +125,7 @@ public class ServiceConfigBuilder {
             if (rateLimitMap != null) {
                 ModelRouterProperties.RateLimitConfig rateLimitConfig =
                         new ModelRouterProperties.RateLimitConfig();
-                configurationHelper.updateRateLimitConfig(rateLimitConfig, rateLimitMap);
+                configConverterHelper.updateRateLimitConfig(rateLimitConfig, rateLimitMap);
                 runtimeConfig.setRateLimitConfig(rateLimitConfig);
             } else {
                 runtimeConfig.setRateLimitConfig(rateLimitManager.getDefaultRateLimitConfig());
@@ -139,7 +139,7 @@ public class ServiceConfigBuilder {
             if (circuitBreakerMap != null) {
                 ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig =
                         new ModelRouterProperties.CircuitBreakerConfig();
-                configurationHelper.updateCircuitBreakerConfig(circuitBreakerConfig, circuitBreakerMap);
+                configConverterHelper.updateCircuitBreakerConfig(circuitBreakerConfig, circuitBreakerMap);
                 runtimeConfig.setCircuitBreakerConfig(circuitBreakerConfig);
             } else {
                 runtimeConfig.setCircuitBreakerConfig(circuitBreakerManager.getDefaultCircuitBreakerConfig());
@@ -152,7 +152,7 @@ public class ServiceConfigBuilder {
             if (fallbackMap != null) {
                 ModelRouterProperties.FallbackConfig fallbackConfig =
                         new ModelRouterProperties.FallbackConfig();
-                configurationHelper.updateFallbackConfig(fallbackConfig, fallbackMap);
+                configConverterHelper.updateFallbackConfig(fallbackConfig, fallbackMap);
                 runtimeConfig.setFallbackConfig(fallbackConfig);
             } else {
                 runtimeConfig.setFallbackConfig(fallbackManager.getDefaultFallbackConfig());

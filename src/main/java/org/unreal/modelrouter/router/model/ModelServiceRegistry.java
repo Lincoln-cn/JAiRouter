@@ -12,7 +12,8 @@ import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker;
 import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 import org.unreal.modelrouter.config.core.ConfigMergeService;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
+import org.unreal.modelrouter.config.core.helper.ServiceTypeResolver;
 import org.unreal.modelrouter.router.fallback.FallbackManager;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancerManager;
@@ -63,7 +64,8 @@ public class ModelServiceRegistry {
     private final CircuitBreakerManager circuitBreakerManager;
     private final FallbackManager fallbackManager;
     private final ConfigMergeService configMergeService;
-    private final ConfigurationHelper configurationHelper;
+    private final ServiceTypeResolver serviceTypeResolver;
+    private final ConfigConverterHelper configConverterHelper;
 
     // v2.7.7: 实例选择优化器
     private final SelectInstanceOptimizer selectInstanceOptimizer;
@@ -90,7 +92,8 @@ public class ModelServiceRegistry {
                                 final CircuitBreakerManager circuitBreakerManager,
                                 final FallbackManager fallbackManager,
                                 final ConfigMergeService configMergeService,
-                                final ConfigurationHelper configurationHelper,
+                                final ServiceTypeResolver serviceTypeResolver,
+                                final ConfigConverterHelper configConverterHelper,
                                 final WebClientCacheManager webClientCacheManager,
                                 final RoutingMonitorService routingMonitorService) {
         this.originalProperties = properties;
@@ -100,14 +103,15 @@ public class ModelServiceRegistry {
         this.circuitBreakerManager = circuitBreakerManager;
         this.fallbackManager = fallbackManager;
         this.configMergeService = configMergeService;
-        this.configurationHelper = configurationHelper;
+        this.serviceTypeResolver = serviceTypeResolver;
+        this.configConverterHelper = configConverterHelper;
         this.webClientCacheManager = webClientCacheManager;
         this.routingMonitorService = routingMonitorService;
         this.serviceConfigCache = new ConcurrentHashMap<>();
         this.selectInstanceOptimizer = new SelectInstanceOptimizer(serviceStateManager, circuitBreakerManager);
         this.instanceSelector = new ServiceInstanceSelector(
                 serviceStateManager, rateLimitManager, circuitBreakerManager, routingMonitorService);
-        this.configBuilder = new ServiceConfigBuilder(configurationHelper, rateLimitManager, circuitBreakerManager, fallbackManager);
+        this.configBuilder = new ServiceConfigBuilder(configConverterHelper, rateLimitManager, circuitBreakerManager, fallbackManager);
     }
 
     @PostConstruct
@@ -140,7 +144,7 @@ public class ModelServiceRegistry {
             if (mergedConfig == null || mergedConfig.isEmpty()) {
                 LOGGER.info("未找到合并配置，使用默认配置");
                 if (originalProperties != null) {
-                    mergedConfig = configurationHelper.convertModelRouterPropertiesToMap(originalProperties);
+                    mergedConfig = configConverterHelper.convertModelRouterPropertiesToMap(originalProperties);
                 } else {
                     LOGGER.warn("原始配置也为空，使用空配置");
                     mergedConfig = new HashMap<>();
@@ -171,7 +175,7 @@ public class ModelServiceRegistry {
             throw new IllegalArgumentException("ModelName cannot be null or empty");
         }
 
-        String serviceKey = configurationHelper.getServiceConfigKey(serviceType);
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
         if (runtimeConfig == null || runtimeConfig.getInstances().isEmpty()) {
@@ -226,7 +230,7 @@ public class ModelServiceRegistry {
     }
 
     public String getModelPath(final ServiceType serviceType, final String modelName) {
-        String serviceKey = configurationHelper.getServiceConfigKey(serviceType);
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
         if (runtimeConfig == null || runtimeConfig.getInstances().isEmpty()) {
@@ -241,7 +245,7 @@ public class ModelServiceRegistry {
     }
 
     public String getServiceAdapter(final ServiceType serviceType) {
-        String serviceKey = configurationHelper.getServiceConfigKey(serviceType);
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
         return runtimeConfig != null ? runtimeConfig.getAdapter() : null;
     }
@@ -271,13 +275,13 @@ public class ModelServiceRegistry {
     public Set<ServiceType> getAvailableServiceTypes() {
         return serviceConfigCache.entrySet().stream()
                 .filter(entry -> !entry.getValue().getInstances().isEmpty())
-                .map(entry -> configurationHelper.parseServiceType(entry.getKey()))
+                .map(entry -> serviceTypeResolver.parseServiceType(entry.getKey()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
     public Set<String> getAvailableModels(final ServiceType serviceType) {
-        String serviceKey = configurationHelper.getServiceConfigKey(serviceType);
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
         if (runtimeConfig == null) {
@@ -293,7 +297,7 @@ public class ModelServiceRegistry {
         Map<ServiceType, List<ModelRouterProperties.ModelInstance>> result = new HashMap<>();
 
         for (Map.Entry<String, ServiceRuntimeConfig> entry : serviceConfigCache.entrySet()) {
-            ServiceType serviceType = configurationHelper.parseServiceType(entry.getKey());
+            ServiceType serviceType = serviceTypeResolver.parseServiceType(entry.getKey());
             if (serviceType != null) {
                 result.put(serviceType, new ArrayList<>(entry.getValue().getInstances()));
             }
@@ -303,7 +307,7 @@ public class ModelServiceRegistry {
     }
 
     public ModelRouterProperties.ServiceConfig getServiceConfig(final ServiceType serviceType) {
-        String serviceKey = configurationHelper.getServiceConfigKey(serviceType);
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
         if (runtimeConfig == null) {
@@ -333,7 +337,7 @@ public class ModelServiceRegistry {
     // ==================== 动态更新方法 ====================
 
     public void updateServiceInstances(final ServiceType serviceType, final List<ModelRouterProperties.ModelInstance> instances) {
-        String serviceKey = configurationHelper.getServiceConfigKey(serviceType);
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
         if (runtimeConfig != null) {
@@ -343,7 +347,7 @@ public class ModelServiceRegistry {
     }
 
     public void updateServiceAdapter(final ServiceType serviceType, final String adapter) {
-        String serviceKey = configurationHelper.getServiceConfigKey(serviceType);
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
         if (runtimeConfig != null) {
@@ -363,7 +367,7 @@ public class ModelServiceRegistry {
     private void reinitializeLoadBalancers() {
         try {
             for (Map.Entry<String, ServiceRuntimeConfig> entry : serviceConfigCache.entrySet()) {
-                ServiceType serviceType = configurationHelper.parseServiceType(entry.getKey());
+                ServiceType serviceType = serviceTypeResolver.parseServiceType(entry.getKey());
                 if (serviceType != null && !entry.getValue().getInstances().isEmpty()) {
                     loadBalancerManager.reinitializeLoadBalancer(serviceType, entry.getValue().getLoadBalanceConfig());
                 }
@@ -388,7 +392,7 @@ public class ModelServiceRegistry {
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         for (Map.Entry<String, Object> entry : servicesMap.entrySet()) {
             Map<String, Object> serviceConfigMap = (Map<String, Object>) entry.getValue();
-            ModelRouterProperties.ServiceConfig serviceConfig = configurationHelper.convertMapToServiceConfig(serviceConfigMap);
+            ModelRouterProperties.ServiceConfig serviceConfig = configConverterHelper.convertMapToServiceConfig(serviceConfigMap);
             services.put(entry.getKey(), serviceConfig);
         }
 

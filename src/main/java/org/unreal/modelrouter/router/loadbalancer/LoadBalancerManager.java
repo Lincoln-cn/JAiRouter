@@ -3,7 +3,8 @@ package org.unreal.modelrouter.router.loadbalancer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
+import org.unreal.modelrouter.config.core.helper.ServiceTypeResolver;
 import org.unreal.modelrouter.router.factory.ComponentFactory;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -23,14 +24,17 @@ public class LoadBalancerManager {
             new EnumMap<>(ModelServiceRegistry.ServiceType.class);
 
     private final ComponentFactory componentFactory;
-    private final ConfigurationHelper configHelper;
+    private final ServiceTypeResolver serviceTypeResolver;
+    private final ConfigConverterHelper configConverterHelper;
     private final ModelRouterProperties properties;
 
     public LoadBalancerManager(final ComponentFactory componentFactory,
-                               final ConfigurationHelper configHelper,
+                               final ServiceTypeResolver serviceTypeResolver,
+                               final ConfigConverterHelper configConverterHelper,
                                final ModelRouterProperties properties) {
         this.componentFactory = componentFactory;
-        this.configHelper = configHelper;
+        this.serviceTypeResolver = serviceTypeResolver;
+        this.configConverterHelper = configConverterHelper;
         this.properties = properties;
         initializeLoadBalancers();
     }
@@ -48,7 +52,7 @@ public class LoadBalancerManager {
                 ModelRouterProperties.LoadBalanceConfig serviceConfig =
                         getServiceLoadBalanceConfig(serviceType);
                 ModelRouterProperties.LoadBalanceConfig effectiveConfig =
-                        configHelper.getEffectiveLoadBalanceConfig(serviceConfig, globalConfig);
+                        configConverterHelper.getEffectiveLoadBalanceConfig(serviceConfig, globalConfig);
 
                 LoadBalancer loadBalancer = componentFactory.createLoadBalancer(effectiveConfig);
                 loadBalancers.put(serviceType, loadBalancer);
@@ -58,9 +62,8 @@ public class LoadBalancerManager {
             } catch (Exception e) {
                 logger.error("Failed to initialize load balancer for service type: {}. Error: {}",
                         serviceType, e.getMessage());
-                // 使用默认配置作为降级方案
                 LoadBalancer defaultLoadBalancer = componentFactory.createLoadBalancer(
-                        configHelper.createDefaultLoadBalanceConfig());
+                        configConverterHelper.createDefaultLoadBalanceConfig());
                 loadBalancers.put(serviceType, defaultLoadBalancer);
             }
         }
@@ -78,7 +81,7 @@ public class LoadBalancerManager {
             return null;
         }
 
-        String serviceKey = configHelper.getServiceConfigKey(serviceType);
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ModelRouterProperties.ServiceConfig serviceConfig = properties.getServices().get(serviceKey);
 
         return serviceConfig != null ? serviceConfig.getLoadBalance() : null;
@@ -91,9 +94,8 @@ public class LoadBalancerManager {
         LoadBalancer loadBalancer = loadBalancers.get(serviceType);
         if (loadBalancer == null) {
             logger.warn("No load balancer found for service type: {}, creating default", serviceType);
-            // 创建默认负载均衡器
             loadBalancer = componentFactory.createLoadBalancer(
-                    configHelper.createDefaultLoadBalanceConfig());
+                    configConverterHelper.createDefaultLoadBalanceConfig());
             loadBalancers.put(serviceType, loadBalancer);
         }
         return loadBalancer;

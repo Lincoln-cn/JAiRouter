@@ -4,10 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,18 +20,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author JAiRouter Team
  * @since 2.0.0
  */
-@ExtendWith(MockitoExtension.class)
 @DisplayName("ConfigValidator 测试")
 class ConfigValidatorTest {
-
-    @Mock
-    private ConfigurationHelper configurationHelper;
 
     private ConfigValidator validator;
 
     @BeforeEach
     void setUp() {
-        validator = new ConfigValidator(configurationHelper);
+        validator = new ConfigValidator();
     }
 
     @Nested
