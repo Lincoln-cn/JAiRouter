@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.config.event.ConfigSyncEvent;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.config.core.manager.ConfigValidator;
 import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
@@ -95,7 +96,7 @@ public class ConfigurationService {
     private static final String CURRENT_KEY = "model-router-config";
 
     private final StoreManager storeManager;
-    private final ConfigurationHelper configurationHelper;
+    private final ConfigConverterHelper configConverterHelper;
     private final ConfigMergeService configMergeService;
     private final ServiceStateManager serviceStateManager;
     private final SamplingConfigurationValidator samplingValidator;
@@ -119,7 +120,7 @@ private final ConfigComparisonService configComparisonService;
 
     @Autowired
     public ConfigurationService(final StoreManager storeManager,
-                                final ConfigurationHelper configurationHelper,
+                                final ConfigConverterHelper configConverterHelper,
                                 final ConfigMergeService configMergeService,
                                 final ServiceStateManager serviceStateManager,
                                 final SamplingConfigurationValidator samplingValidator,
@@ -133,7 +134,7 @@ private final ConfigComparisonService configComparisonService;
                                 final InstanceOperationService instanceOperationService,
                                 final ServiceConfigUpdateService serviceConfigUpdateService) {
         this.storeManager = storeManager;
-        this.configurationHelper = configurationHelper;
+        this.configConverterHelper = configConverterHelper;
         this.configMergeService = configMergeService;
         this.serviceStateManager = serviceStateManager;
         this.samplingValidator = samplingValidator;
@@ -303,7 +304,7 @@ private final ConfigComparisonService configComparisonService;
         List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.computeIfAbsent("instances", k -> new ArrayList<>());
 
         // 委托到 InstanceOperationService
-        Map<String, Object> instanceMap = configurationHelper.convertInstanceToMap(instanceConfig);
+        Map<String, Object> instanceMap = configConverterHelper.convertInstanceToMap(instanceConfig);
         String detail = instanceOperationService.addInstance(instances, instanceMap);
 
         currentConfig.put("services", services);
@@ -350,7 +351,7 @@ private final ConfigComparisonService configComparisonService;
         List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
 
         // 委托到 InstanceOperationService
-        Map<String, Object> instanceMap = configurationHelper.convertInstanceToMap(instanceConfig);
+        Map<String, Object> instanceMap = configConverterHelper.convertInstanceToMap(instanceConfig);
         String detail = instanceOperationService.updateInstance(instances, instanceId, instanceMap);
 
         // 更新配置
@@ -438,14 +439,14 @@ private final ConfigComparisonService configComparisonService;
                 case ADD:
                     detail = instanceOperationService.addInstance(
                             instances,
-                            configurationHelper.convertInstanceToMap(operation.instanceConfig()));
+                            configConverterHelper.convertInstanceToMap(operation.instanceConfig()));
                     operationDetails.add(detail);
                     break;
                 case UPDATE:
                     detail = instanceOperationService.updateInstance(
                             instances,
                             operation.instanceId(),
-                            configurationHelper.convertInstanceToMap(operation.instanceConfig()));
+                            configConverterHelper.convertInstanceToMap(operation.instanceConfig()));
                     operationDetails.add(detail);
                     break;
                 case DELETE:

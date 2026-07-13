@@ -5,7 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
+import org.unreal.modelrouter.config.core.helper.ServiceTypeResolver;
 import org.unreal.modelrouter.router.factory.ComponentFactory;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -29,7 +30,10 @@ class RateLimiterTest {
     private ComponentFactory componentFactory;
 
     @Mock
-    private ConfigurationHelper configHelper;
+    private ServiceTypeResolver serviceTypeResolver;
+
+    @Mock
+    private ConfigConverterHelper configConverterHelper;
 
     @Mock
     private ModelRouterProperties properties;

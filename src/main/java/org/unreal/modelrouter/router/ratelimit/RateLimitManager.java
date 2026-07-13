@@ -3,7 +3,8 @@ package org.unreal.modelrouter.router.ratelimit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
+import org.unreal.modelrouter.config.core.helper.ServiceTypeResolver;
 import org.unreal.modelrouter.router.factory.ComponentFactory;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
@@ -25,7 +26,8 @@ public class RateLimitManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(RateLimitManager.class);
 
     private final ComponentFactory componentFactory;
-    private final ConfigurationHelper configHelper;
+    private final ServiceTypeResolver serviceTypeResolver;
+    private final ConfigConverterHelper configConverterHelper;
     private final ModelRouterProperties properties;
 
     /* ---------------- 三级限流器 ---------------- */
@@ -39,10 +41,12 @@ public class RateLimitManager {
     private final ClientIpRateLimiterCache clientIpRateLimiterCache = new ClientIpRateLimiterCache();
 
     public RateLimitManager(final ComponentFactory componentFactory,
-                            final ConfigurationHelper configHelper,
+                            final ServiceTypeResolver serviceTypeResolver,
+                            final ConfigConverterHelper configConverterHelper,
                             final ModelRouterProperties properties) {
         this.componentFactory = componentFactory;
-        this.configHelper = configHelper;
+        this.serviceTypeResolver = serviceTypeResolver;
+        this.configConverterHelper = configConverterHelper;
         this.properties = properties;
         initializeRateLimiters();
     }
@@ -71,7 +75,7 @@ public class RateLimitManager {
             String serviceKey = entry.getKey();
             ModelRouterProperties.ServiceConfig svcCfg = entry.getValue();
 
-            ModelServiceRegistry.ServiceType type = configHelper.parseServiceType(serviceKey);
+            ModelServiceRegistry.ServiceType type = serviceTypeResolver.parseServiceType(serviceKey);
             if (type == null) {
                 LOGGER.warn("Unknown service type: {}", serviceKey);
                 continue;
@@ -80,7 +84,7 @@ public class RateLimitManager {
             /* 服务级 */
             if (svcCfg.getRateLimit() != null && Boolean.TRUE.equals(svcCfg.getRateLimit().getEnabled())) {
                 serviceLimiters.put(type, componentFactory.createScopedRateLimiter(
-                        configHelper.convertRateLimitConfig(svcCfg.getRateLimit())));
+                        configConverterHelper.convertRateLimitConfig(svcCfg.getRateLimit())));
                 svcCnt++;
             }
 
@@ -188,7 +192,7 @@ public class RateLimitManager {
                 && Boolean.TRUE.equals(serviceConfig.getRateLimit().getClientIpEnable())) {
             // v2.7.10: 使用 Caffeine 缓存获取限流器
             RateLimiter ipLimiter = clientIpRateLimiterCache.get(serviceType, clientIp, () -> {
-                RateLimitConfig config = configHelper.convertRateLimitConfig(serviceConfig.getRateLimit());
+                RateLimitConfig config = configConverterHelper.convertRateLimitConfig(serviceConfig.getRateLimit());
                 return componentFactory.createScopedRateLimiter(config);
             });
             return ipLimiter != null && ipLimiter.tryAcquire(context);
@@ -199,7 +203,7 @@ public class RateLimitManager {
         if (globalRateLimit != null && Boolean.TRUE.equals(globalRateLimit.getClientIpEnable())) {
             // v2.7.10: 使用 Caffeine 缓存获取限流器
             RateLimiter ipLimiter = clientIpRateLimiterCache.get(serviceType, clientIp, () -> {
-                RateLimitConfig config = configHelper.convertRateLimitConfig(globalRateLimit);
+                RateLimitConfig config = configConverterHelper.convertRateLimitConfig(globalRateLimit);
                 return componentFactory.createScopedRateLimiter(config);
             });
             return ipLimiter != null && ipLimiter.tryAcquire(context);

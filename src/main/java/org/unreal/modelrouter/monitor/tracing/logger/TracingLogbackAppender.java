@@ -43,7 +43,8 @@ public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
             }
         } catch (Exception e) {
             // 降级到标准输出，防止日志系统异常影响主流程
-            System.err.println("TracingLogbackAppender error: " + e.getMessage());
+            // 注意：此处不能使用log.error()，因为这是Logback Appender，会导致无限递归
+            System.err.println("[TracingLogbackAppender] Formatting error: " + e.getMessage());
             System.out.println(event.getFormattedMessage());
         }
     }

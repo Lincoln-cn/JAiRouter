@@ -7,7 +7,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -32,21 +31,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceModels.*;
+
 /**
  * 追踪性能监控器
- * 
- * 负责监控追踪系统的性能，包括：
- * - 追踪开销的实时监控
- * - 性能瓶颈检测和优化建议
- * - 追踪系统的健康检查
- * - 性能指标收集和导出
- * 
- * @since 1.0.0
  */
 @Slf4j
 @Component
 public class TracingPerformanceMonitor implements HealthIndicator {
-    
+
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final TracingConfiguration tracingConfiguration;
@@ -55,25 +48,18 @@ public class TracingPerformanceMonitor implements HealthIndicator {
     private final MeterRegistry meterRegistry;
     private final Scheduler monitoringScheduler;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
-    
-    // 性能指标
+
     private final Timer tracingOverheadTimer;
     private final Gauge memoryUsageGauge;
     private final Counter performanceAnomalyCounter;
     private final DistributionSummary processingLatencyDistribution;
-    
-    // 性能统计
+
     private final AtomicLong totalOperations = new AtomicLong(0);
     private final AtomicLong slowOperations = new AtomicLong(0);
     private final AtomicReference<PerformanceSnapshot> lastSnapshot = new AtomicReference<>();
     private final Map<String, OperationMetrics> operationMetrics = new ConcurrentHashMap<>();
-    
-    // 性能阈值
     private final Map<String, PerformanceThreshold> thresholds = new ConcurrentHashMap<>();
-    
-    // 健康状态
-    private final AtomicReference<SystemHealth> systemHealth = 
-            new AtomicReference<>(SystemHealth.HEALTHY);
+    private final AtomicReference<SystemHealth> systemHealth = new AtomicReference<>(SystemHealth.HEALTHY);
     private final List<PerformanceIssue> activeIssues = new ArrayList<>();
 
     public TracingPerformanceMonitor(final TracingConfiguration tracingConfiguration,
@@ -85,25 +71,23 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         this.memoryManager = memoryManager;
         this.meterRegistry = meterRegistry;
         this.monitoringScheduler = Schedulers.newBoundedElastic(2, 100, "tracing-perf-monitor");
-        
-        // 初始化指标
+
         this.tracingOverheadTimer = Timer.builder("tracing.overhead")
                 .description("Tracing system overhead")
                 .register(meterRegistry);
-                
+
         this.memoryUsageGauge = Gauge.builder("tracing.memory.usage", this, TracingPerformanceMonitor::getCurrentMemoryUsage)
                 .description("Tracing memory usage")
                 .register(meterRegistry);
-                
+
         this.performanceAnomalyCounter = Counter.builder("tracing.performance.anomalies")
                 .description("Number of performance anomalies detected")
                 .register(meterRegistry);
-                
+
         this.processingLatencyDistribution = DistributionSummary.builder("tracing.processing.latency")
                 .description("Tracing processing latency distribution")
                 .register(meterRegistry);
-        
-        // 初始化默认阈值
+
         initializeDefaultThresholds();
     }
 
@@ -125,45 +109,32 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         }
     }
 
-    /**
-     * 记录操作性能
-     */
-    public Mono<Void> recordOperationPerformance(final String operation, final long startTime, final long endTime, 
+    public Mono<Void> recordOperationPerformance(final String operation, final long startTime, final long endTime,
                                                 final boolean success, final Map<String, Object> metadata) {
         return Mono.fromRunnable(() -> {
             long duration = endTime - startTime;
             totalOperations.incrementAndGet();
-            
-            // 记录到指标系统
+
             tracingOverheadTimer.record(Duration.ofMillis(duration));
             processingLatencyDistribution.record(duration);
-            
-            // 更新操作指标
-            OperationMetrics metrics = operationMetrics.computeIfAbsent(operation, 
-                    k -> new OperationMetrics(operation));
+
+            OperationMetrics metrics = operationMetrics.computeIfAbsent(operation, k -> new OperationMetrics(operation));
             metrics.recordOperation(duration, success);
-            
-            // 检查是否为慢操作
+
             PerformanceThreshold threshold = thresholds.get(operation);
             if (threshold != null && duration > threshold.getSlowThreshold()) {
                 slowOperations.incrementAndGet();
                 handleSlowOperation(operation, duration, metadata);
             }
-            
-            log.debug("记录操作性能: operation={}, duration={}ms, success={}", 
-                    operation, duration, success);
-                    
+
+            log.debug("记录操作性能: operation={}, duration={}ms, success={}", operation, duration, success);
         }).subscribeOn(monitoringScheduler).then();
     }
 
-    /**
-     * 检测性能瓶颈
-     */
     public Mono<List<PerformanceBottleneck>> detectBottlenecks() {
         return Mono.fromCallable(() -> {
             List<PerformanceBottleneck> bottlenecks = new ArrayList<>();
-            
-            // 1. 检查内存瓶颈
+
             MemoryStats memoryStats = memoryManager.getMemoryStats();
             if (memoryStats.getHeapUsageRatio() > 0.8) {
                 bottlenecks.add(new PerformanceBottleneck(
@@ -173,8 +144,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                         generateMemoryOptimizationSuggestions(memoryStats)
                 ));
             }
-            
-            // 2. 检查处理器瓶颈
+
             AsyncTracingProcessor.ProcessingStats processingStats = asyncTracingProcessor.getProcessingStats();
             if (processingStats.getDropRate() > 0.1) {
                 bottlenecks.add(new PerformanceBottleneck(
@@ -184,8 +154,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                         generateProcessingOptimizationSuggestions(processingStats)
                 ));
             }
-            
-            // 3. 检查操作瓶颈
+
             for (OperationMetrics metrics : operationMetrics.values()) {
                 PerformanceThreshold threshold = thresholds.get(metrics.getOperation());
                 if (threshold != null && metrics.getP99Latency() > threshold.getCriticalThreshold()) {
@@ -197,8 +166,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                     ));
                 }
             }
-            
-            // 4. 检查系统整体瓶颈
+
             double slowOperationRatio = totalOperations.get() > 0
                     ? (double) slowOperations.get() / totalOperations.get() : 0.0;
             if (slowOperationRatio > 0.2) {
@@ -209,20 +177,16 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                         generateSystemOptimizationSuggestions()
                 ));
             }
-            
+
             return bottlenecks;
-            
         }).subscribeOn(monitoringScheduler);
     }
 
-    /**
-     * 生成性能报告
-     */
     public Mono<PerformanceReport> generatePerformanceReport() {
         return Mono.fromCallable(() -> {
             MemoryStats memoryStats = memoryManager.getMemoryStats();
             AsyncTracingProcessor.ProcessingStats processingStats = asyncTracingProcessor.getProcessingStats();
-            
+
             return new PerformanceReport(
                     Instant.now(),
                     totalOperations.get(),
@@ -236,30 +200,22 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         }).subscribeOn(monitoringScheduler);
     }
 
-    /**
-     * 获取优化建议
-     */
     public Mono<List<OptimizationSuggestion>> getOptimizationSuggestions() {
         return detectBottlenecks()
                 .map(bottlenecks -> {
                     List<OptimizationSuggestion> suggestions = new ArrayList<>();
-                    
                     for (PerformanceBottleneck bottleneck : bottlenecks) {
                         suggestions.addAll(bottleneck.getSuggestions());
                     }
-                    
                     return suggestions;
                 });
     }
 
-    /**
-     * 执行性能调优
-     */
     public Mono<TuningResult> performPerformanceTuning(final List<String> tuningActions) {
         return Mono.fromCallable(() -> {
             List<String> appliedActions = new ArrayList<>();
             List<String> failedActions = new ArrayList<>();
-            
+
             for (String action : tuningActions) {
                 try {
                     if (applyTuningAction(action)) {
@@ -272,9 +228,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                     failedActions.add(action);
                 }
             }
-            
+
             return new TuningResult(appliedActions, failedActions);
-            
         }).subscribeOn(monitoringScheduler);
     }
 
@@ -284,9 +239,9 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             SystemHealth currentHealth = systemHealth.get();
             MemoryStats memoryStats = memoryManager.getMemoryStats();
             AsyncTracingProcessor.ProcessingStats processingStats = asyncTracingProcessor.getProcessingStats();
-            
+
             Health.Builder builder = new Health.Builder();
-            
+
             if (currentHealth == SystemHealth.HEALTHY) {
                 builder.up();
             } else if (currentHealth == SystemHealth.DEGRADED) {
@@ -294,7 +249,7 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             } else {
                 builder.down();
             }
-            
+
             return builder
                     .withDetail("systemHealth", currentHealth)
                     .withDetail("totalOperations", totalOperations.get())
@@ -303,20 +258,13 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                     .withDetail("processingDropRate", processingStats.getDropRate())
                     .withDetail("activeIssues", activeIssues.size())
                     .build();
-                    
         } catch (Exception e) {
-            return Health.down()
-                    .withDetail("error", e.getMessage())
-                    .build();
+            return Health.down().withDetail("error", e.getMessage()).build();
         }
     }
 
-    /**
-     * 启动性能监控
-     */
     private void startPerformanceMonitoring() {
         Duration monitoringInterval = Duration.ofMinutes(1);
-        
         Flux.interval(monitoringInterval, monitoringScheduler)
                 .flatMap(tick -> collectPerformanceSnapshot())
                 .subscribe(
@@ -328,12 +276,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                 );
     }
 
-    /**
-     * 启动健康检查
-     */
     private void startHealthChecks() {
         Duration healthCheckInterval = Duration.ofMinutes(2);
-        
         Flux.interval(healthCheckInterval, monitoringScheduler)
                 .flatMap(tick -> performHealthCheck())
                 .subscribe(
@@ -342,28 +286,21 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                 );
     }
 
-    /**
-     * 启动瓶颈检测
-     */
     private void startBottleneckDetection() {
         Duration detectionInterval = Duration.ofMinutes(5);
-        
         Flux.interval(detectionInterval, monitoringScheduler)
                 .flatMap(tick -> detectBottlenecks())
                 .subscribe(
-                        bottlenecks -> handleDetectedBottlenecks(bottlenecks),
+                        this::handleDetectedBottlenecks,
                         error -> log.error("瓶颈检测错误", error)
                 );
     }
 
-    /**
-     * 收集性能快照
-     */
     private Mono<PerformanceSnapshot> collectPerformanceSnapshot() {
         return Mono.fromCallable(() -> {
             MemoryStats memoryStats = memoryManager.getMemoryStats();
             AsyncTracingProcessor.ProcessingStats processingStats = asyncTracingProcessor.getProcessingStats();
-            
+
             return new PerformanceSnapshot(
                     Instant.now(),
                     totalOperations.get(),
@@ -376,32 +313,26 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         });
     }
 
-    /**
-     * 执行健康检查
-     */
     private Mono<SystemHealth> performHealthCheck() {
         return Mono.fromCallable(() -> {
             List<String> issues = new ArrayList<>();
-            
-            // 检查内存健康
+
             MemoryStats memoryStats = memoryManager.getMemoryStats();
             if (memoryStats.getHeapUsageRatio() > 0.9) {
                 issues.add("内存使用率危险");
             }
-            
-            // 检查处理器健康
+
             AsyncTracingProcessor.ProcessingStats processingStats = asyncTracingProcessor.getProcessingStats();
             if (!processingStats.isRunning()) {
                 issues.add("异步处理器未运行");
             }
-            
-            // 检查性能指标
+
             double slowRatio = totalOperations.get() > 0
                     ? (double) slowOperations.get() / totalOperations.get() : 0.0;
             if (slowRatio > 0.5) {
                 issues.add("慢操作比例过高");
             }
-            
+
             if (issues.isEmpty()) {
                 return SystemHealth.HEALTHY;
             } else if (issues.size() <= 2) {
@@ -411,8 +342,6 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             }
         });
     }
-
-    // 辅助方法实现
 
     private void initializeDefaultThresholds() {
         thresholds.put("trace.export", new PerformanceThreshold(1000, 5000));
@@ -432,17 +361,14 @@ public class TracingPerformanceMonitor implements HealthIndicator {
     }
 
     private double getCurrentCpuUsage() {
-        // 简化的CPU使用率获取
-        return SECURE_RANDOM.nextDouble() * 100; // 实际实现需要从系统获取
+        return SECURE_RANDOM.nextDouble() * 100;
     }
 
     private double getCurrentThroughput() {
-        // 计算当前吞吐量
-        return totalOperations.get() / 60.0; // 每分钟操作数
+        return totalOperations.get() / 60.0;
     }
 
     private void analyzePerformanceTrends(final PerformanceSnapshot snapshot) {
-        // 分析性能趋势
         log.debug("性能快照: {}", snapshot);
     }
 
@@ -454,171 +380,32 @@ public class TracingPerformanceMonitor implements HealthIndicator {
 
     private List<OptimizationSuggestion> generateMemoryOptimizationSuggestions(final MemoryStats stats) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
-        suggestions.add(new OptimizationSuggestion(
-                "增加堆内存大小",
-                "考虑通过JVM参数增加堆内存: -Xmx<size>",
-                Priority.HIGH
-        ));
-        suggestions.add(new OptimizationSuggestion(
-                "优化缓存策略",
-                "减少缓存大小或启用更激进的清理策略",
-                Priority.MEDIUM
-        ));
+        suggestions.add(new OptimizationSuggestion("增加堆内存大小", "考虑通过JVM参数增加堆内存: -Xmx<size>", Priority.HIGH));
+        suggestions.add(new OptimizationSuggestion("优化缓存策略", "减少缓存大小或启用更激进的清理策略", Priority.MEDIUM));
         return suggestions;
     }
 
     private List<OptimizationSuggestion> generateProcessingOptimizationSuggestions(final AsyncTracingProcessor.ProcessingStats stats) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
-        suggestions.add(new OptimizationSuggestion(
-                "增加处理线程",
-                "考虑增加异步处理器的线程池大小",
-                Priority.HIGH
-        ));
-        suggestions.add(new OptimizationSuggestion(
-                "优化批处理大小",
-                "调整批处理大小以提高处理效率",
-                Priority.MEDIUM
-        ));
+        suggestions.add(new OptimizationSuggestion("增加处理线程", "考虑增加异步处理器的线程池大小", Priority.HIGH));
+        suggestions.add(new OptimizationSuggestion("优化批处理大小", "调整批处理大小以提高处理效率", Priority.MEDIUM));
         return suggestions;
     }
 
     private List<OptimizationSuggestion> generateOperationOptimizationSuggestions(final OperationMetrics metrics) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
-        suggestions.add(new OptimizationSuggestion(
-                "优化操作实现",
-                "检查操作 " + metrics.getOperation() + " 的实现，可能存在性能问题",
-                Priority.MEDIUM
-        ));
+        suggestions.add(new OptimizationSuggestion("优化操作实现", "检查操作 " + metrics.getOperation() + " 的实现，可能存在性能问题", Priority.MEDIUM));
         return suggestions;
     }
 
     private List<OptimizationSuggestion> generateSystemOptimizationSuggestions() {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
-        suggestions.add(new OptimizationSuggestion(
-                "系统整体优化",
-                "考虑进行系统整体性能调优",
-                Priority.HIGH
-        ));
+        suggestions.add(new OptimizationSuggestion("系统整体优化", "考虑进行系统整体性能调优", Priority.HIGH));
         return suggestions;
     }
 
     private boolean applyTuningAction(final String action) {
-        // 实现具体的调优操作
         log.info("应用调优操作: {}", action);
         return true;
-    }
-
-    // 数据类定义
-
-    public enum SystemHealth {
-        HEALTHY, DEGRADED, UNHEALTHY
-    }
-
-    public enum BottleneckType {
-        MEMORY, PROCESSING, OPERATION, SYSTEM
-    }
-
-    public enum Severity {
-        LOW, MEDIUM, HIGH, CRITICAL
-    }
-
-    public enum Priority {
-        LOW, MEDIUM, HIGH
-    }
-
-    @Data
-    public static class PerformanceSnapshot {
-        private final Instant timestamp;
-        private final long totalOperations;
-        private final long slowOperations;
-        private final double memoryUsage;
-        private final double dropRate;
-        private final double cpuUsage;
-        private final double throughput;
-    }
-
-    @Data
-    public static class OperationMetrics {
-        private final String operation;
-        private final AtomicLong totalCount = new AtomicLong(0);
-        private final AtomicLong successCount = new AtomicLong(0);
-        private final AtomicLong totalLatency = new AtomicLong(0);
-        private final AtomicLong maxLatency = new AtomicLong(0);
-        private final AtomicLong minLatency = new AtomicLong(Long.MAX_VALUE);
-
-        public OperationMetrics(final String operation) {
-            this.operation = operation;
-        }
-
-        public void recordOperation(final long latency, final boolean success) {
-            totalCount.incrementAndGet();
-            if (success) {
-                successCount.incrementAndGet();
-            }
-            totalLatency.addAndGet(latency);
-            maxLatency.updateAndGet(current -> Math.max(current, latency));
-            minLatency.updateAndGet(current -> Math.min(current, latency));
-        }
-
-        public double getAverageLatency() {
-            long count = totalCount.get();
-            return count > 0 ? (double) totalLatency.get() / count : 0.0;
-        }
-
-        public double getSuccessRate() {
-            long count = totalCount.get();
-            return count > 0 ? (double) successCount.get() / count : 0.0;
-        }
-
-        public long getP99Latency() {
-            // 简化实现，实际需要保存延迟分布
-            return (long) (getAverageLatency() * 1.5);
-        }
-    }
-
-    @Data
-    public static class PerformanceThreshold {
-        private final long slowThreshold;
-        private final long criticalThreshold;
-    }
-
-    @Data
-    public static class PerformanceBottleneck {
-        private final BottleneckType type;
-        private final String description;
-        private final Severity severity;
-        private final List<OptimizationSuggestion> suggestions;
-    }
-
-    @Data
-    public static class OptimizationSuggestion {
-        private final String title;
-        private final String description;
-        private final Priority priority;
-    }
-
-    @Data
-    public static class PerformanceIssue {
-        private final String description;
-        private final Severity severity;
-        private final Instant detectedAt;
-    }
-
-    @Data
-    public static class PerformanceReport {
-        private final Instant timestamp;
-        private final long totalOperations;
-        private final long slowOperations;
-        private final MemoryStats memoryStats;
-        private final AsyncTracingProcessor.ProcessingStats processingStats;
-        private final List<OperationMetrics> operationMetrics;
-        private final SystemHealth systemHealth;
-        private final List<PerformanceIssue> activeIssues;
-    }
-
-    @Data
-    public static class TuningResult {
-        private final List<String> appliedActions;
-        private final List<String> failedActions;
     }
 }

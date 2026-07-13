@@ -446,4 +446,67 @@ public class ConfigConverterHelper {
             }
         }
     }
+
+    /**
+     * 创建默认负载均衡配置
+     *
+     * @return 默认负载均衡配置
+     */
+    public ModelRouterProperties.LoadBalanceConfig createDefaultLoadBalanceConfig() {
+        return new ModelRouterProperties.LoadBalanceConfig();
+    }
+
+    /**
+     * 更新降级配置
+     *
+     * @param fallbackConfig 降级配置对象
+     * @param fallbackMap 降级配置Map
+     */
+    public void updateFallbackConfig(final ModelRouterProperties.FallbackConfig fallbackConfig,
+                                     final Map<String, Object> fallbackMap) {
+        if (fallbackConfig == null || fallbackMap == null) {
+            return;
+        }
+
+        if (fallbackMap.containsKey("enabled")) {
+            Object enabledObj = fallbackMap.get("enabled");
+            if (enabledObj instanceof Boolean) {
+                fallbackConfig.setEnabled((Boolean) enabledObj);
+            }
+        }
+        if (fallbackMap.containsKey("strategy")) {
+            fallbackConfig.setStrategy((String) fallbackMap.get("strategy"));
+        }
+        if (fallbackMap.containsKey("cacheSize")) {
+            Object cacheSizeObj = fallbackMap.get("cacheSize");
+            if (cacheSizeObj instanceof Number) {
+                fallbackConfig.setCacheSize(((Number) cacheSizeObj).intValue());
+            }
+        }
+        if (fallbackMap.containsKey("cacheTtl")) {
+            Object cacheTtlObj = fallbackMap.get("cacheTtl");
+            if (cacheTtlObj instanceof Number) {
+                fallbackConfig.setCacheTtl(((Number) cacheTtlObj).longValue());
+            }
+        }
+    }
+
+    /**
+     * 获取有效的负载均衡配置
+     *
+     * @param serviceConfig 服务配置
+     * @param globalConfig 全局配置
+     * @return 有效的负载均衡配置
+     */
+    public ModelRouterProperties.LoadBalanceConfig getEffectiveLoadBalanceConfig(
+            final ModelRouterProperties.LoadBalanceConfig serviceConfig,
+            final ModelRouterProperties.LoadBalanceConfig globalConfig) {
+        if (serviceConfig != null) {
+            return serviceConfig;
+        }
+        if (globalConfig != null) {
+            return globalConfig;
+        }
+        return createDefaultLoadBalanceConfig();
+    }
 }

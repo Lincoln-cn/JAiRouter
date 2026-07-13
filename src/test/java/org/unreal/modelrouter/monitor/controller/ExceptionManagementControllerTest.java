@@ -66,7 +66,7 @@ class ExceptionManagementControllerTest {
                     .thenReturn(pagedResult);
 
             ResponseEntity<RouterResponse<PagedResult<ExceptionEventDTO>>> response =
-                    controller.queryExceptionEvents(null, null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
+                    controller.queryExceptionEvents(null, null, null, null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -84,7 +84,7 @@ class ExceptionManagementControllerTest {
                     .thenReturn(pagedResult);
 
             ResponseEntity<RouterResponse<PagedResult<ExceptionEventDTO>>> response =
-                    controller.queryExceptionEvents(startTime, endTime, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
+                    controller.queryExceptionEvents(startTime, endTime, null, null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());
@@ -99,7 +99,7 @@ class ExceptionManagementControllerTest {
                     .thenReturn(pagedResult);
 
             ResponseEntity<RouterResponse<PagedResult<ExceptionEventDTO>>> response =
-                    controller.queryExceptionEvents(null, null, "NullPointerException", null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
+                    controller.queryExceptionEvents(null, null, "NullPointerException", null, null, null, null, null, null, null, null, 0, 20, "occurredAt", "desc");
 
             assertNotNull(response.getBody());
             assertTrue(response.getBody().isSuccess());

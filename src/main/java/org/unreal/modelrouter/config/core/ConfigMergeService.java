@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.unreal.modelrouter.config.core.helper.ConfigConverterHelper;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.common.util.InstanceIdUtils;
@@ -24,15 +25,15 @@ public class ConfigMergeService {
 
     private final StoreManager storeManager;
     private final ModelRouterProperties modelRouterProperties;
-    private final ConfigurationHelper configurationHelper;
+    private final ConfigConverterHelper configConverterHelper;
 
     @Autowired
     public ConfigMergeService(final StoreManager storeManager,
                               final ModelRouterProperties modelRouterProperties,
-                              final ConfigurationHelper configurationHelper) {
+                              final ConfigConverterHelper configConverterHelper) {
         this.storeManager = storeManager;
         this.modelRouterProperties = modelRouterProperties;
-        this.configurationHelper = configurationHelper;
+        this.configConverterHelper = configConverterHelper;
     }
 
     /**
@@ -214,6 +215,6 @@ public class ConfigMergeService {
      * @return 默认配置Map
      */
     public Map<String, Object> getDefaultConfig() {
-        return configurationHelper.convertModelRouterPropertiesToMap(modelRouterProperties);
+        return configConverterHelper.convertModelRouterPropertiesToMap(modelRouterProperties);
     }
 }

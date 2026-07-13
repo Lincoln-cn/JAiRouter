@@ -3,7 +3,6 @@ package org.unreal.modelrouter.config.core.manager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.unreal.modelrouter.config.core.ConfigurationHelper;
 import org.unreal.modelrouter.common.constants.ServiceTypeConstants;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.common.util.InstanceIdUtils;
@@ -27,10 +26,7 @@ public class ConfigValidator {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigValidator.class);
 
-    private final ConfigurationHelper configurationHelper;
-
-    public ConfigValidator(final ConfigurationHelper configurationHelper) {
-        this.configurationHelper = configurationHelper;
+    public ConfigValidator() {
     }
 
     /**
