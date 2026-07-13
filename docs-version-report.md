@@ -2,20 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 151
-- 近7天变更: 7
+- 总文档数: 152
+- 近7天变更: 11
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-10 06:03:52
+- 最后扫描: 2026-07-13 05:37:49
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.71 → 1.0.72) - 2026-07-13
+- **MODIFIED**: docs-version-report.md (1.0.70 → 1.0.71) - 2026-07-12
+- **CREATED**: merge-log-2026-07-10.md ( → 1.0.0) - 2026-07-11
+- **MODIFIED**: docs/zh/monitoring/configuration.md (1.0.3 → 1.0.4) - 2026-07-11
+- **MODIFIED**: docs/zh/index.md (1.0.4 → 1.0.5) - 2026-07-11
+- **MODIFIED**: docs-version-report.md (1.0.69 → 1.0.70) - 2026-07-11
 - **MODIFIED**: docs-version-report.md (1.0.68 → 1.0.69) - 2026-07-10
 - **MODIFIED**: docs-version-report.md (1.0.67 → 1.0.68) - 2026-07-09
 - **MODIFIED**: docs-version-report.md (1.0.66 → 1.0.67) - 2026-07-08
 - **MODIFIED**: docs-version-report.md (1.0.65 → 1.0.66) - 2026-07-07
-- **MODIFIED**: docs-version-report.md (1.0.64 → 1.0.65) - 2026-07-06
-- **MODIFIED**: docs-version-report.md (1.0.63 → 1.0.64) - 2026-07-05
-- **MODIFIED**: docs-version-report.md (1.0.62 → 1.0.63) - 2026-07-04
 
 ## 过期文档 (30天未更新)
 
@@ -117,14 +120,27 @@
 - docs/zh/tracing/config-reference.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/tracing/performance-tuning.md (版本: 1.0.1, 最后更新: 2026-06-09)
 - docs/zh/tracing/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-09)
+- docs/en/configuration/store-config.md (版本: 1.0.3, 最后更新: 2026-06-10)
+- docs/en/configuration/version-management.md (版本: 1.0.2, 最后更新: 2026-06-10)
+- docs/zh/configuration/store-config.md (版本: 1.0.3, 最后更新: 2026-06-10)
+- docs/zh/configuration/version-management.md (版本: 1.0.2, 最后更新: 2026-06-10)
+- docs/en/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
+- docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/zh/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - QWEN.md (版本: 1.0.3, 最后更新: 2026-05-19)
+- docs/en/deployment/docker-optimized.md (版本: 1.0.1, 最后更新: 2026-06-11)
+- docs/en/monitoring/alert_rules_guide.md (版本: 1.0.1, 最后更新: 2026-06-11)
+- docs/en/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-11)
+- docs/en/security/blacklist-management.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/zh/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/deployment/docker-optimized.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/security/audit-log-management.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/security/blacklist-management.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
+- docs/zh/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
+- docs/docs-version-report.md (版本: 1.0.1, 最后更新: 2026-06-11)
 
 ## 依赖关系分析
 
@@ -615,23 +631,24 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.69 - 2026-07-10 (dae0aa84)
-- **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (64026034)
-- **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (64026034)
-- **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (64026034)
-- **docs/zh/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (64026034)
-- **docs/en/security/api-key-management.md**: v1.0.3 - 2026-07-01 (64026034)
-- **docs/en/reference/changelog.md**: v1.0.6 - 2026-07-01 (64026034)
-- **docs/en/api-reference/management-api.md**: v1.0.4 - 2026-07-01 (64026034)
-- **docs/en/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (64026034)
-- **docs/configuration-guide.md**: v1.0.3 - 2026-07-01 (64026034)
+- **docs-version-report.md**: v1.0.72 - 2026-07-13 (4600576b)
+- **merge-log-2026-07-10.md**: v1.0.0 - 2026-07-11 (eb2d8a82)
+- **docs/zh/monitoring/configuration.md**: v1.0.4 - 2026-07-11 (27143cbb)
+- **docs/zh/index.md**: v1.0.5 - 2026-07-11 (27143cbb)
+- **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (2f07f762)
+- **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (2f07f762)
+- **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (2f07f762)
+- **docs/zh/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (2f07f762)
+- **docs/en/security/api-key-management.md**: v1.0.3 - 2026-07-01 (2f07f762)
+- **docs/en/reference/changelog.md**: v1.0.6 - 2026-07-01 (2f07f762)
+- **docs/en/api-reference/management-api.md**: v1.0.4 - 2026-07-01 (2f07f762)
+- **docs/en/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (2f07f762)
+- **docs/configuration-guide.md**: v1.0.3 - 2026-07-01 (2f07f762)
 - **repository-description.md**: v1.0.0 - 2026-06-29 (635e749d)
 - **README.md**: v1.0.17 - 2026-06-29 (0323cc3d)
 - **README-ZH.md**: v1.0.9 - 2026-06-29 (0323cc3d)
-- **docs/zh/monitoring/configuration.md**: v1.0.3 - 2026-06-26 (7da5f191)
 - **docs/en/monitoring/configuration.md**: v1.0.3 - 2026-06-26 (7da5f191)
 - **docs/zh/reference/roadmap.md**: v1.0.5 - 2026-06-23 (623002c1)
-- **docs/zh/index.md**: v1.0.4 - 2026-06-23 (623002c1)
 - **docs/zh/configuration/validation-rules.md**: v1.0.2 - 2026-06-23 (623002c1)
 - **docs/en/reference/roadmap.md**: v1.0.5 - 2026-06-23 (623002c1)
 - **docs/en/index.md**: v1.0.4 - 2026-06-23 (623002c1)
