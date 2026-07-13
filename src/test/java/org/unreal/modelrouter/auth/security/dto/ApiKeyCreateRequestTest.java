@@ -78,22 +78,26 @@ class ApiKeyCreateRequestTest {
     void allArgsConstructor_CreatesRequest() {
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
         
-        ApiKeyCreateRequest request = new ApiKeyCreateRequest(
-                "key-123",
-                "Description",
-                List.of("ADMIN"),
-                false,
-                expiresAt,
-                List.of("127.0.0.1"),
-                500L,
-                100000L,
-                60,
-                0.9,
-                30
-        );
+        ApiKeyCreateRequest request = ApiKeyCreateRequest.builder()
+                .keyId("key-123")
+                .description("Description")
+                .ownerId("user-001")
+                .ownerRole("admin")
+                .permissions(List.of("ADMIN"))
+                .enabled(false)
+                .expiresAt(expiresAt)
+                .allowedIpAddresses(List.of("127.0.0.1"))
+                .dailyRequestLimit(500L)
+                .dailyTokenLimit(100000L)
+                .rateLimitPerMinute(60)
+                .quotaAlertThreshold(0.9)
+                .rotationPeriodDays(30)
+                .build();
 
         assertEquals("key-123", request.getKeyId());
         assertEquals("Description", request.getDescription());
+        assertEquals("user-001", request.getOwnerId());
+        assertEquals("admin", request.getOwnerRole());
         assertEquals(1, request.getPermissions().size());
         assertFalse(request.getEnabled());
         assertEquals(expiresAt, request.getExpiresAt());
