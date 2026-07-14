@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import request from '@/utils/request'
 import type { ApiResponse } from '@/types'
 
@@ -25,9 +25,49 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
   let refreshTimer: number | null = null
 
+  // 从JWT token解析角色
+  const parseRolesFromToken = (jwtToken: string): string[] => {
+    try {
+      const payload = JSON.parse(atob(jwtToken.split('.')[1]))
+      return payload.roles || payload.authorities || []
+    } catch {
+      return []
+    }
+  }
+
+  // 从JWT token解析用户名
+  const parseUsernameFromToken = (jwtToken: string): string => {
+    try {
+      const payload = JSON.parse(atob(jwtToken.split('.')[1]))
+      return payload.sub || ''
+    } catch {
+      return ''
+    }
+  }
+
+  // 检查是否为管理员
+  const isAdmin = computed(() => {
+    return userInfo.value?.roles?.includes('ADMIN') || false
+  })
+
+  // 检查是否有指定角色
+  const hasRole = (role: string): boolean => {
+    return userInfo.value?.roles?.includes(role) || false
+  }
+
+  // 检查是否有任意一个角色
+  const hasAnyRole = (roles: string[]): boolean => {
+    if (!userInfo.value?.roles) return false
+    return roles.some(role => userInfo.value!.roles!.includes(role))
+  }
+
   const setToken = (newToken: string) => {
     token.value = newToken
     localStorage.setItem('admin_token', newToken)
+    // 从token中提取用户信息
+    const username = parseUsernameFromToken(newToken)
+    const roles = parseRolesFromToken(newToken)
+    userInfo.value = { username, roles }
   }
 
   const clearToken = () => {
@@ -35,7 +75,6 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('admin_token')
     userInfo.value = null
 
-    // 清除定时器
     if (refreshTimer) {
       clearInterval(refreshTimer)
       refreshTimer = null
@@ -48,28 +87,23 @@ export const useUserStore = defineStore('user', () => {
 
   // 启动定时刷新令牌
   const startTokenRefresh = () => {
-    // 清除现有的定时器
     if (refreshTimer) {
       clearInterval(refreshTimer)
     }
 
-    // 设置定时器，每隔15分钟刷新一次令牌（在令牌过期前）
-    // 注意：这里假设令牌有效期为60分钟（如application-dev.yml中配置），我们提前15分钟刷新
     refreshTimer = window.setInterval(async () => {
       if (token.value) {
         try {
           await refreshToken()
         } catch (error) {
           console.error('自动刷新令牌失败:', error)
-          // 如果刷新失败，清除令牌并跳转到登录页
           clearToken()
-          // 使用router进行跳转，确保使用正确的base path
           import('@/router').then(({ default: router }) => {
             router.push('/login')
           })
         }
       }
-    }, 30 * 60 * 1000) // 30分钟
+    }, 30 * 60 * 1000)
   }
 
   // 刷新令牌方法
@@ -80,7 +114,6 @@ export const useUserStore = defineStore('user', () => {
       })
 
       if (response.data.success && response.data.data) {
-        // 从响应数据中提取新token
         const newToken = response.data.data.token
         setToken(newToken)
         return response.data
@@ -102,20 +135,16 @@ export const useUserStore = defineStore('user', () => {
       })
       
       if (response.data.success && response.data.data) {
-        // 从响应数据中提取 token
         const jwtToken = response.data.data.token
         setToken(jwtToken)
-        // 启动定时刷新
         startTokenRefresh()
-        // 可以在这里设置用户信息，如果需要的话
-        // userInfo.value = response.data.data.user
         return response.data
       } else {
         throw new Error(response.data.message || '登录失败')
       }
     } catch (error: any) {
       console.error('登录请求失败:', error)
-      throw new Error(error.response?.data?.message || error.message || '登录失败')
+      throw new Error(error.response?.data?.message || '登录失败')
     }
   }
 
@@ -123,10 +152,7 @@ export const useUserStore = defineStore('user', () => {
   const logout = async () => {
     try {
       if (token.value) {
-        // 解析JWT token获取用户名
-        const payload = JSON.parse(atob(token.value.split('.')[1]))
-        const username = payload.sub
-        
+        const username = parseUsernameFromToken(token.value)
         await request.post('/auth/jwt/revoke', {
           token: token.value,
           userId: username,
@@ -163,13 +189,18 @@ export const useUserStore = defineStore('user', () => {
   return {
     token,
     userInfo,
+    isAdmin,
     setToken,
     clearToken,
     isAuthenticated,
+    hasRole,
+    hasAnyRole,
     login,
     logout,
     getUserInfo,
     refreshToken,
-    startTokenRefresh
+    startTokenRefresh,
+    parseRolesFromToken,
+    parseUsernameFromToken
   }
 })

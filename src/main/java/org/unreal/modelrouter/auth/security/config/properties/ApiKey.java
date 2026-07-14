@@ -119,17 +119,6 @@ public class ApiKey {
     private String description;
 
     /**
-     * 所有者ID - 用于多用户资源隔离
-     * 管理员可以查看所有Key，普通用户只能查看自己的Key
-     */
-    private String ownerId;
-
-    /**
-     * 所有者角色
-     */
-    private String ownerRole;
-
-    /**
      * 权限列表
      */
     private List<String> permissions;
@@ -388,8 +377,6 @@ public class ApiKey {
                 .rateLimitPerMinute(this.rateLimitPerMinute)
                 .quotaAlertThreshold(this.quotaAlertThreshold)
                 .description(this.description)
-                .ownerId(this.ownerId)
-                .ownerRole(this.ownerRole)
                 .permissions(this.permissions)
                 .expiresAt(this.expiresAt)
                 .createdAt(this.createdAt)

@@ -74,6 +74,7 @@ export interface ApiKeyCreationVO {
   keyId: string
   keyValue: string  // 仅在创建时返回，请妥善保存
   description: string
+  createdBy?: string  // 创建者用户名
   permissions: string[]
   enabled: boolean
   createdAt: string
