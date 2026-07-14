@@ -81,8 +81,6 @@ class ApiKeyCreateRequestTest {
         ApiKeyCreateRequest request = ApiKeyCreateRequest.builder()
                 .keyId("key-123")
                 .description("Description")
-                .ownerId("user-001")
-                .ownerRole("admin")
                 .permissions(List.of("ADMIN"))
                 .enabled(false)
                 .expiresAt(expiresAt)
@@ -96,8 +94,6 @@ class ApiKeyCreateRequestTest {
 
         assertEquals("key-123", request.getKeyId());
         assertEquals("Description", request.getDescription());
-        assertEquals("user-001", request.getOwnerId());
-        assertEquals("admin", request.getOwnerRole());
         assertEquals(1, request.getPermissions().size());
         assertFalse(request.getEnabled());
         assertEquals(expiresAt, request.getExpiresAt());

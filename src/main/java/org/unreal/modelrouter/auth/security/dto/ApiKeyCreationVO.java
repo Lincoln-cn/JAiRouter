@@ -40,6 +40,11 @@ public class ApiKeyCreationVO {
     private String description;
 
     /**
+     * 创建者用户名
+     */
+    private String createdBy;
+
+    /**
      * 权限列表
      */
     private List<String> permissions;

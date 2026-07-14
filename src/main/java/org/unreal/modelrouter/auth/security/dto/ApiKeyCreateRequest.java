@@ -38,18 +38,6 @@ public class ApiKeyCreateRequest {
     private String description;
 
     /**
-     * 所有者ID - 用于多用户资源隔离
-     */
-    @Size(max = 64, message = "所有者ID长度不能超过64字符")
-    private String ownerId;
-
-    /**
-     * 所有者角色 - 可选值：admin, user, viewer
-     */
-    @Size(max = 20, message = "角色长度不能超过20字符")
-    private String ownerRole;
-
-    /**
      * 权限列表
      * 可选值：READ, WRITE, DELETE, ADMIN
      */

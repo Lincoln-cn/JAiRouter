@@ -73,7 +73,7 @@
       </template>
 
       <div class="table-wrapper">
-        <el-table v-loading="loading" :data="apiKeys" border stripe :max-height="500">
+        <el-table v-loading="loading" :data="pagedApiKeys" border stripe style="width: 100%">
         <el-table-column label="密钥ID" prop="keyId" width="180">
           <template #default="scope">
             <el-tag effect="plain" type="info">{{ scope.row.keyId }}</el-tag>
@@ -172,11 +172,23 @@
           </template>
         </el-table-column>
       </el-table>
+      <!-- 分页组件 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="pagination.currentPage"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="pagination.pageSizes"
+          :total="pagination.total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
       </div>
     </el-card>
 
     <!-- 创建/编辑API密钥对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" center width="550px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" center width="680px">
       <el-form ref="formRef" :model="form" label-width="120px" status-icon>
         <el-form-item label="密钥ID" prop="keyId" :rules="keyIdRules">
           <el-input v-model="form.keyId" :disabled="isEdit" maxlength="64" placeholder="留空则自动生成"
@@ -449,6 +461,14 @@ const dialogTitle = ref('')
 const isEdit = ref(false)
 const formRef = ref()
 
+// 分页状态
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 20,
+  pageSizes: [10, 20, 50, 100],
+  total: 0
+})
+
 // 表单数据
 const form = ref({
   keyId: '',
@@ -572,6 +592,25 @@ const formatDateTime = (dateString: string): string => {
       String(date.getSeconds()).padStart(2, '0')}`
 }
 
+// 分页数据
+import { computed } from 'vue'
+
+const pagedApiKeys = computed(() => {
+  const start = (pagination.currentPage - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+  return apiKeys.value.slice(start, end)
+})
+
+// 分页处理
+const handleSizeChange = (val: number) => {
+  pagination.pageSize = val
+  pagination.currentPage = 1
+}
+
+const handleCurrentChange = (val: number) => {
+  pagination.currentPage = val
+}
+
 // 获取API密钥列表
 const fetchApiKeys = async () => {
   loading.value = true
@@ -592,6 +631,9 @@ const fetchApiKeys = async () => {
     listData.disabledCount = data.disabledCount
     listData.expiredCount = data.expiredCount
     listData.summary = data.summary
+
+    // 更新分页总数
+    pagination.total = data.total
 
     // 获取配额概览数据并合并到列表
     await fetchQuotaOverview()
@@ -933,13 +975,35 @@ onMounted(() => {
 
 <style scoped>
 .api-key-management {
-  padding: 20px;
-  background: #f5f7fa;
-  min-height: 100vh;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .stats-row {
-  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.main-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+}
+
+.main-card :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.card-header {
+  flex-shrink: 0;
 }
 
 .stat-card {
@@ -980,19 +1044,16 @@ onMounted(() => {
   margin-top: 4px;
 }
 
-.main-card {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
 .table-wrapper {
-  width: 100%;
-  overflow-x: auto;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .table-wrapper .el-table {
-  min-width: 100%;
-  width: max-content;
+  flex: 1;
+  overflow: auto;
 }
 
 .card-header {
@@ -1018,6 +1079,14 @@ onMounted(() => {
 .desc-text {
   color: #606266;
   font-size: 14px;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+  border-top: 1px solid #EBEEF5;
+  flex-shrink: 0;
 }
 
 .permission-tags {

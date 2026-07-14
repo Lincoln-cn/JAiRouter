@@ -73,8 +73,8 @@
           <el-menu-item index="/rate-limiters/monitoring">实时监控</el-menu-item>
         </el-sub-menu>
 
-        <!-- 安全管理 -->
-        <el-sub-menu index="security">
+        <!-- 安全管理 - 仅ADMIN可见 -->
+        <el-sub-menu index="security" v-if="userStore.hasRole('ADMIN')">
           <template #title>
             <el-icon>
               <Lock />
@@ -87,8 +87,8 @@
           <el-menu-item index="/security/audit-logs">审计日志</el-menu-item>
         </el-sub-menu>
 
-        <!-- 系统管理 -->
-        <el-sub-menu index="system">
+        <!-- 系统管理 - 仅ADMIN可见 -->
+        <el-sub-menu index="system" v-if="userStore.hasRole('ADMIN')">
           <template #title>
             <el-icon>
               <User />

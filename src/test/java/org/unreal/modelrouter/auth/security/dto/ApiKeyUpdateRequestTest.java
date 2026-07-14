@@ -74,18 +74,18 @@ class ApiKeyUpdateRequestTest {
     void allArgsConstructor_CreatesRequest() {
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(15);
         
-        ApiKeyUpdateRequest request = new ApiKeyUpdateRequest(
-                "Full Update",
-                List.of("DELETE"),
-                true,
-                expiresAt,
-                List.of("172.16.0.0/12"),
-                3000L,
-                200000L,
-                120,
-                0.9,
-                45
-        );
+        ApiKeyUpdateRequest request = ApiKeyUpdateRequest.builder()
+                .description("Full Update")
+                .permissions(List.of("DELETE"))
+                .enabled(true)
+                .expiresAt(expiresAt)
+                .allowedIpAddresses(List.of("172.16.0.0/12"))
+                .dailyRequestLimit(3000L)
+                .dailyTokenLimit(200000L)
+                .rateLimitPerMinute(120)
+                .quotaAlertThreshold(0.9)
+                .rotationPeriodDays(45)
+                .build();
 
         assertEquals("Full Update", request.getDescription());
         assertEquals(1, request.getPermissions().size());

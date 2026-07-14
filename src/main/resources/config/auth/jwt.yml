@@ -44,6 +44,10 @@ jairouter:
           password: "{noop}${INITIAL_ADMIN_PASSWORD:ChangeMeOnFirstStartup123456}"
           roles: ["ADMIN", "USER"]
           enabled: true
+        - username: "user"
+          password: "{noop}user123456"
+          roles: ["USER"]
+          enabled: true
 
       # JWT 持久化配置
       persistence:

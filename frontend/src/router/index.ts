@@ -149,7 +149,7 @@ const router = createRouter({
       path: '/security',
       name: 'security',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, roles: ['ADMIN'] },
       children: [
         {
           path: 'api-keys',
@@ -182,7 +182,7 @@ const router = createRouter({
       path: '/system',
       name: 'system',
       component: () => import('../views/Layout.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, roles: ['ADMIN'] },
       children: [
         {
           path: 'accounts',
@@ -374,17 +374,8 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
 
-  // 添加调试信息
-  console.log('路由守卫触发:', {
-    to: to.path,
-    from: from.path,
-    fullPath: to.fullPath
-  })
-  console.log('用户认证状态:', userStore.isAuthenticated())
-
   // 特殊处理根路径的重定向
   if (to.path === '/') {
-    console.log('根路径重定向到仪表板')
     next({ name: 'dashboard-main' })
     return
   }
@@ -393,38 +384,43 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth !== false) {
     // 检查是否有token
     if (!userStore.isAuthenticated()) {
-      console.log('需要认证但未登录，重定向到登录页')
       next({ name: 'login' })
       return
     }
 
-    // 检查token是否过期（超过1小时）
+    // 检查token是否过期
     const token = localStorage.getItem('admin_token')
     if (token && isTokenExpired(token)) {
-      console.log('Token已过期，清除token并重定向到登录页')
       userStore.clearToken()
       next({ name: 'login' })
       return
+    }
+
+    // 检查角色权限
+    const requiredRoles = (to.meta as any).roles as string[] | undefined
+    if (requiredRoles && requiredRoles.length > 0) {
+      const userRoles = userStore.userInfo?.roles || []
+      const hasRole = requiredRoles.some(role => userRoles.includes(role))
+      if (!hasRole) {
+        // 无权限，跳转到仪表板
+        next({ name: 'dashboard-main' })
+        return
+      }
     }
   }
 
   // 已登录用户访问登录页的处理
   if (to.name === 'login' && userStore.isAuthenticated()) {
-    // 检查token是否过期
     const token = localStorage.getItem('admin_token')
     if (token && isTokenExpired(token)) {
-      console.log('已登录但token过期，清除token并重定向到登录页')
       userStore.clearToken()
       next({ name: 'login' })
     } else {
-      // token有效，重定向到仪表板
-      console.log('已登录用户访问登录页，重定向到仪表板')
       next({ name: 'dashboard-main' })
     }
     return
   }
 
-  console.log('正常路由跳转')
   next()
 })
 

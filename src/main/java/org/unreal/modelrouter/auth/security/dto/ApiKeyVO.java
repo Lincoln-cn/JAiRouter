@@ -36,14 +36,14 @@ public class ApiKeyVO {
     private String description;
 
     /**
-     * 所有者ID - 用于多用户资源隔离
+     * 创建者用户名
      */
-    private String ownerId;
+    private String createdBy;
 
     /**
-     * 所有者角色
+     * 创建者 IP 地址
      */
-    private String ownerRole;
+    private String creatorIpAddress;
 
     /**
      * 权限列表
@@ -67,16 +67,6 @@ public class ApiKeyVO {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime createdAt;
-
-    /**
-     * 创建者用户名
-     */
-    private String createdBy;
-
-    /**
-     * 创建者 IP 地址
-     */
-    private String creatorIpAddress;
 
     /**
      * 密钥轮换周期（天数），0 表示不自动轮换
