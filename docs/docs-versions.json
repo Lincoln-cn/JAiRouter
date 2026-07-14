@@ -350,10 +350,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-06-23T06:07:14.245165",
-      "ContentHash": "7124060a84128240",
-      "GitCommit": "623002c1",
+      "Version": "1.0.5",
+      "LastModified": "2026-07-14T04:51:10.166088",
+      "ContentHash": "bfb8d7f01ebcc7bc",
+      "GitCommit": "63a07c9b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -953,10 +953,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-07-11T05:13:39.495090",
-      "ContentHash": "aa96ea9c5a76fc22",
-      "GitCommit": "27143cbb",
+      "Version": "1.0.6",
+      "LastModified": "2026-07-14T04:51:10.387147",
+      "ContentHash": "20c685e48f869ae4",
+      "GitCommit": "02f4e4cb",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1121,10 +1121,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-07-01T06:27:24.211179",
-      "ContentHash": "3d2dc06fa7f2ed32",
-      "GitCommit": "2f07f762",
+      "Version": "1.0.7",
+      "LastModified": "2026-07-14T04:51:10.432458",
+      "ContentHash": "a91146a88f73151f",
+      "GitCommit": "63a07c9b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1174,10 +1174,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-06-23T06:07:14.501243",
-      "ContentHash": "142cf9f99e8651bf",
-      "GitCommit": "623002c1",
+      "Version": "1.0.6",
+      "LastModified": "2026-07-14T04:51:10.445423",
+      "ContentHash": "b92916b00c75209f",
+      "GitCommit": "63a07c9b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1743,10 +1743,10 @@
     },
     "QWEN.md": {
       "FilePath": "QWEN.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-05-19T06:08:23.871418",
-      "ContentHash": "d10037dc19f13d44",
-      "GitCommit": "8c4e0ad9",
+      "Version": "1.0.4",
+      "LastModified": "2026-07-14T04:51:10.044215",
+      "ContentHash": "034bfabbdd47be34",
+      "GitCommit": "63a07c9b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1943,10 +1943,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.72",
-      "LastModified": "2026-07-13T05:37:48.482814",
-      "ContentHash": "50318f587d3c280c",
-      "GitCommit": "4600576b",
+      "Version": "1.0.73",
+      "LastModified": "2026-07-14T04:51:10.051367",
+      "ContentHash": "17129e4191898351",
+      "GitCommit": "f23ad8b8",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -5133,7 +5133,55 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-07-13T05:37:48.482821",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "QWEN.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-14T04:51:10.044224",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.72",
+      "NewVersion": "1.0.73",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-14T04:51:10.051373",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-14T04:51:10.166100",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-14T04:51:10.387157",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-14T04:51:10.432467",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-14T04:51:10.445429",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-07-13T05:37:49.018701"
+  "last_updated": "2026-07-14T04:51:10.620403"
 }

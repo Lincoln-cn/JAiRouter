@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 152
-- 近7天变更: 11
+- 近7天变更: 16
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-13 05:37:49
+- 最后扫描: 2026-07-14 04:51:10
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.5 → 1.0.6) - 2026-07-14
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.6 → 1.0.7) - 2026-07-14
+- **MODIFIED**: docs/zh/index.md (1.0.5 → 1.0.6) - 2026-07-14
+- **MODIFIED**: docs/en/index.md (1.0.4 → 1.0.5) - 2026-07-14
+- **MODIFIED**: docs-version-report.md (1.0.72 → 1.0.73) - 2026-07-14
+- **MODIFIED**: QWEN.md (1.0.3 → 1.0.4) - 2026-07-14
 - **MODIFIED**: docs-version-report.md (1.0.71 → 1.0.72) - 2026-07-13
 - **MODIFIED**: docs-version-report.md (1.0.70 → 1.0.71) - 2026-07-12
 - **CREATED**: merge-log-2026-07-10.md ( → 1.0.0) - 2026-07-11
 - **MODIFIED**: docs/zh/monitoring/configuration.md (1.0.3 → 1.0.4) - 2026-07-11
-- **MODIFIED**: docs/zh/index.md (1.0.4 → 1.0.5) - 2026-07-11
-- **MODIFIED**: docs-version-report.md (1.0.69 → 1.0.70) - 2026-07-11
-- **MODIFIED**: docs-version-report.md (1.0.68 → 1.0.69) - 2026-07-10
-- **MODIFIED**: docs-version-report.md (1.0.67 → 1.0.68) - 2026-07-09
-- **MODIFIED**: docs-version-report.md (1.0.66 → 1.0.67) - 2026-07-08
-- **MODIFIED**: docs-version-report.md (1.0.65 → 1.0.66) - 2026-07-07
 
 ## 过期文档 (30天未更新)
 
@@ -127,7 +127,6 @@
 - docs/en/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
 - docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/zh/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-03)
-- QWEN.md (版本: 1.0.3, 最后更新: 2026-05-19)
 - docs/en/deployment/docker-optimized.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/en/monitoring/alert_rules_guide.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/en/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-11)
@@ -631,12 +630,15 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.72 - 2026-07-13 (4600576b)
+- **docs/zh/reference/roadmap.md**: v1.0.6 - 2026-07-14 (63a07c9b)
+- **docs/zh/reference/changelog.md**: v1.0.7 - 2026-07-14 (63a07c9b)
+- **docs/zh/index.md**: v1.0.6 - 2026-07-14 (02f4e4cb)
+- **docs/en/index.md**: v1.0.5 - 2026-07-14 (63a07c9b)
+- **docs-version-report.md**: v1.0.73 - 2026-07-14 (f23ad8b8)
+- **QWEN.md**: v1.0.4 - 2026-07-14 (63a07c9b)
 - **merge-log-2026-07-10.md**: v1.0.0 - 2026-07-11 (eb2d8a82)
 - **docs/zh/monitoring/configuration.md**: v1.0.4 - 2026-07-11 (27143cbb)
-- **docs/zh/index.md**: v1.0.5 - 2026-07-11 (27143cbb)
 - **docs/zh/security/api-key-management.md**: v1.0.5 - 2026-07-01 (2f07f762)
-- **docs/zh/reference/changelog.md**: v1.0.6 - 2026-07-01 (2f07f762)
 - **docs/zh/api-reference/management-api.md**: v1.0.3 - 2026-07-01 (2f07f762)
 - **docs/zh/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (2f07f762)
 - **docs/en/security/api-key-management.md**: v1.0.3 - 2026-07-01 (2f07f762)
@@ -648,10 +650,8 @@
 - **README.md**: v1.0.17 - 2026-06-29 (0323cc3d)
 - **README-ZH.md**: v1.0.9 - 2026-06-29 (0323cc3d)
 - **docs/en/monitoring/configuration.md**: v1.0.3 - 2026-06-26 (7da5f191)
-- **docs/zh/reference/roadmap.md**: v1.0.5 - 2026-06-23 (623002c1)
 - **docs/zh/configuration/validation-rules.md**: v1.0.2 - 2026-06-23 (623002c1)
 - **docs/en/reference/roadmap.md**: v1.0.5 - 2026-06-23 (623002c1)
-- **docs/en/index.md**: v1.0.4 - 2026-06-23 (623002c1)
 - **docs/zh/tracing/usage-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
@@ -782,4 +782,3 @@
 - **docs/en/api-reference/monitoring-api.md**: v1.0.1 - 2026-06-03 (069ead36)
 - **docs/en/api-reference/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/README.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **QWEN.md**: v1.0.3 - 2026-05-19 (8c4e0ad9)
