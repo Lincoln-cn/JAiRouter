@@ -217,10 +217,14 @@ LangChain 是应用框架。JAiRouter 是**基础设施层**，位于 LangChain 
 - [x] JWT + API Key 认证
 - [x] OpenTelemetry 分布式追踪
 - [x] 配置版本控制
+- [x] Docker 镜像优化（Alpine/Distroless）
+- [x] API Key 配额管理
+- [x] 调用历史持久化
+- [x] RBAC 角色权限控制
 - [ ] 自定义适配器插件系统
 - [ ] GraphQL API 支持
 
-> **LTS 版本**：v2.6.11 是长期支持版本，维护至 2028-05。
+> **当前版本**：v2.7.11 | **LTS 版本**：v2.6.11（维护至 2028-05）
 
 ---
 

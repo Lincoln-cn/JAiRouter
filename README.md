@@ -217,10 +217,14 @@ Performance overhead compared to direct backend access:
 - [x] JWT + API Key authentication
 - [x] OpenTelemetry distributed tracing
 - [x] Configuration version control
+- [x] Docker image optimization (Alpine/Distroless)
+- [x] API Key quota management
+- [x] Call history persistence
+- [x] RBAC role-based access control
 - [ ] Plugin system for custom adapters
 - [ ] GraphQL API support
 
-> **LTS Release**: v2.6.11 is the Long-Term Support version, maintained until 2028-05.
+> **Current Release**: v2.7.11 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 
