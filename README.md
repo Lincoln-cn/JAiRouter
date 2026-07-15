@@ -114,6 +114,7 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 | **Xinference** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | Multi-model |
 | **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | OpenAI-compatible |
 | **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | Cloud fallback |
+| **Anthropic Claude** | ✅ | - | - | - | - | - | Native Claude API |
 
 ---
 
@@ -221,10 +222,9 @@ Performance overhead compared to direct backend access:
 - [x] API Key quota management
 - [x] Call history persistence
 - [x] RBAC role-based access control
-- [ ] Plugin system for custom adapters
-- [ ] GraphQL API support
+- [x] Anthropic Claude adapter
 
-> **Current Release**: v2.7.11 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.8.0 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 
