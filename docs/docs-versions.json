@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.17",
-      "LastModified": "2026-06-29T06:48:15.828019",
-      "ContentHash": "b23b2c89fe5885c8",
-      "GitCommit": "0323cc3d",
+      "Version": "1.0.18",
+      "LastModified": "2026-07-15T04:51:42.767075",
+      "ContentHash": "230b6ca3453760a5",
+      "GitCommit": "2b9554b1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -335,16 +335,18 @@
     },
     "docs/en/getting-started/quick-start.md": {
       "FilePath": "docs/en/getting-started/quick-start.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.177634",
-      "ContentHash": "b8c236ac175dec25",
-      "GitCommit": "85bfdb3e",
+      "Version": "1.0.4",
+      "LastModified": "2026-07-15T04:51:42.873096",
+      "ContentHash": "612a85f801d486cd",
+      "GitCommit": "d01148bb",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/api-reference/index.md",
         "docs/en/configuration/index.md",
+        "docs/en/configuration/instance-examples.md",
         "docs/en/deployment/index.md",
+        "docs/en/getting-started/first-steps.md",
         "docs/en/getting-started/installation.md"
       ]
     },
@@ -556,10 +558,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-06-23T06:07:14.295125",
-      "ContentHash": "502ec0a6a4aa3786",
-      "GitCommit": "623002c1",
+      "Version": "1.0.6",
+      "LastModified": "2026-07-15T04:51:42.928004",
+      "ContentHash": "761e7b7715b2652d",
+      "GitCommit": "d7c1e0a8",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -936,15 +938,16 @@
     },
     "docs/zh/getting-started/quick-start.md": {
       "FilePath": "docs/zh/getting-started/quick-start.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-06-03T06:53:11.423476",
-      "ContentHash": "7819d6115e39492b",
-      "GitCommit": "85bfdb3e",
+      "Version": "1.0.5",
+      "LastModified": "2026-07-15T04:51:43.089223",
+      "ContentHash": "08289d563a7f7482",
+      "GitCommit": "d01148bb",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/api-reference/index.md",
         "docs/zh/configuration/index.md",
+        "docs/zh/configuration/instance-examples.md",
         "docs/zh/deployment/index.md",
         "docs/zh/getting-started/first-steps.md",
         "docs/zh/getting-started/installation.md",
@@ -1174,10 +1177,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-07-14T04:51:10.445423",
-      "ContentHash": "b92916b00c75209f",
-      "GitCommit": "63a07c9b",
+      "Version": "1.0.7",
+      "LastModified": "2026-07-15T04:51:43.148140",
+      "ContentHash": "c0fdbefdc1dd9319",
+      "GitCommit": "d7c1e0a8",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1719,10 +1722,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-06-29T06:48:15.825878",
-      "ContentHash": "4539fc935dd22ae9",
-      "GitCommit": "0323cc3d",
+      "Version": "1.0.10",
+      "LastModified": "2026-07-15T04:51:42.764952",
+      "ContentHash": "45c8f8c2d4e1d468",
+      "GitCommit": "2b9554b1",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1931,38 +1934,15 @@
         "docs/zh/configuration/store-config.md"
       ]
     },
-    "docs/docs-version-report.md": {
-      "FilePath": "docs/docs-version-report.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-11T06:49:24.684090",
-      "ContentHash": "55d674767eab73fc",
-      "GitCommit": "a9e349a6",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": []
-    },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.73",
-      "LastModified": "2026-07-14T04:51:10.051367",
-      "ContentHash": "17129e4191898351",
-      "GitCommit": "f23ad8b8",
+      "Version": "1.0.74",
+      "LastModified": "2026-07-15T04:51:42.769300",
+      "ContentHash": "30eca9877c0706a4",
+      "GitCommit": "8cb4bf85",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
-    },
-    "docs/configuration-guide.md": {
-      "FilePath": "docs/configuration-guide.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-07-01T06:27:23.934508",
-      "ContentHash": "ce86dbfb295d823b",
-      "GitCommit": "2f07f762",
-      "Author": "Lincoln",
-      "ChangeSummary": "",
-      "Dependencies": [
-        "docs/zh/configuration/application-config.md",
-        "docs/zh/configuration/dynamic-config.md"
-      ]
     },
     "docs/en/api-reference/error-codes.md": {
       "FilePath": "docs/en/api-reference/error-codes.md",
@@ -2000,6 +1980,26 @@
       "LastModified": "2026-07-11T05:13:39.575051",
       "ContentHash": "b94ad3a4df7e839b",
       "GitCommit": "eb2d8a82",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/en/configuration/instance-examples.md": {
+      "FilePath": "docs/en/configuration/instance-examples.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-07-15T04:51:42.802793",
+      "ContentHash": "844796655c4974ce",
+      "GitCommit": "a0139c87",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/zh/configuration/instance-examples.md": {
+      "FilePath": "docs/zh/configuration/instance-examples.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-07-15T04:51:43.009794",
+      "ContentHash": "236c3492d1bbb227",
+      "GitCommit": "a0139c87",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -5181,7 +5181,95 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-07-14T04:51:10.445429",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-15T04:51:42.764960",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.17",
+      "NewVersion": "1.0.18",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-15T04:51:42.767080",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.73",
+      "NewVersion": "1.0.74",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-15T04:51:42.769305",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/instance-examples.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-07-15T04:51:42.802804",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/getting-started/quick-start.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-15T04:51:42.873104",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-15T04:51:42.928012",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/instance-examples.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-07-15T04:51:43.009802",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/getting-started/quick-start.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-15T04:51:43.089231",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-15T04:51:43.148146",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/docs-version-report.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-07-15T04:51:43.208900",
+      "Description": "文档已删除"
+    },
+    {
+      "FilePath": "docs/configuration-guide.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "",
+      "ChangeType": "DELETED",
+      "Timestamp": "2026-07-15T04:51:43.208929",
+      "Description": "文档已删除"
     }
   ],
-  "last_updated": "2026-07-14T04:51:10.620403"
+  "last_updated": "2026-07-15T04:51:43.310727"
 }

@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 152
-- 近7天变更: 16
+- 近7天变更: 26
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-14 04:51:10
+- 最后扫描: 2026-07-15 04:51:43
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.5 → 1.0.6) - 2026-07-14
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.6 → 1.0.7) - 2026-07-14
-- **MODIFIED**: docs/zh/index.md (1.0.5 → 1.0.6) - 2026-07-14
-- **MODIFIED**: docs/en/index.md (1.0.4 → 1.0.5) - 2026-07-14
-- **MODIFIED**: docs-version-report.md (1.0.72 → 1.0.73) - 2026-07-14
-- **MODIFIED**: QWEN.md (1.0.3 → 1.0.4) - 2026-07-14
-- **MODIFIED**: docs-version-report.md (1.0.71 → 1.0.72) - 2026-07-13
-- **MODIFIED**: docs-version-report.md (1.0.70 → 1.0.71) - 2026-07-12
-- **CREATED**: merge-log-2026-07-10.md ( → 1.0.0) - 2026-07-11
-- **MODIFIED**: docs/zh/monitoring/configuration.md (1.0.3 → 1.0.4) - 2026-07-11
+- **DELETED**: docs/configuration-guide.md (1.0.3 → ) - 2026-07-15
+- **DELETED**: docs/docs-version-report.md (1.0.1 → ) - 2026-07-15
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.6 → 1.0.7) - 2026-07-15
+- **MODIFIED**: docs/zh/getting-started/quick-start.md (1.0.4 → 1.0.5) - 2026-07-15
+- **CREATED**: docs/zh/configuration/instance-examples.md ( → 1.0.0) - 2026-07-15
+- **MODIFIED**: docs/en/reference/roadmap.md (1.0.5 → 1.0.6) - 2026-07-15
+- **MODIFIED**: docs/en/getting-started/quick-start.md (1.0.3 → 1.0.4) - 2026-07-15
+- **CREATED**: docs/en/configuration/instance-examples.md ( → 1.0.0) - 2026-07-15
+- **MODIFIED**: docs-version-report.md (1.0.73 → 1.0.74) - 2026-07-15
+- **MODIFIED**: README.md (1.0.17 → 1.0.18) - 2026-07-15
 
 ## 过期文档 (30天未更新)
 
@@ -44,7 +44,6 @@
 - docs/en/getting-started/first-steps.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/getting-started/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/getting-started/installation.md (版本: 1.0.3, 最后更新: 2026-06-03)
-- docs/en/getting-started/quick-start.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/en/monitoring/alerts.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/monitoring/dashboards.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/monitoring/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
@@ -81,7 +80,6 @@
 - docs/zh/getting-started/first-steps.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/getting-started/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/getting-started/installation.md (版本: 1.0.4, 最后更新: 2026-06-03)
-- docs/zh/getting-started/quick-start.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/zh/monitoring/alert_rules_guide.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/monitoring/alerts.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/monitoring/dashboards.md (版本: 1.0.2, 最后更新: 2026-06-03)
@@ -139,7 +137,6 @@
 - docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
 - docs/zh/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
-- docs/docs-version-report.md (版本: 1.0.1, 最后更新: 2026-06-11)
 
 ## 依赖关系分析
 
@@ -216,10 +213,12 @@
   - docs/en/getting-started/quick-start.md
 - **docs/en/getting-started/installation.md**: 依赖 1 个文档
   - docs/en/getting-started/quick-start.md
-- **docs/en/getting-started/quick-start.md**: 依赖 4 个文档
+- **docs/en/getting-started/quick-start.md**: 依赖 6 个文档
   - docs/en/api-reference/index.md
   - docs/en/configuration/index.md
+  - docs/en/configuration/instance-examples.md
   - docs/en/deployment/index.md
+  - docs/en/getting-started/first-steps.md
   - docs/en/getting-started/installation.md
 - **docs/en/index.md**: 依赖 7 个文档
   - docs/en/api-reference/index.md
@@ -377,9 +376,10 @@
   - docs/zh/getting-started/first-steps.md
   - docs/zh/getting-started/quick-start.md
   - docs/zh/troubleshooting/index.md
-- **docs/zh/getting-started/quick-start.md**: 依赖 6 个文档
+- **docs/zh/getting-started/quick-start.md**: 依赖 7 个文档
   - docs/zh/api-reference/index.md
   - docs/zh/configuration/index.md
+  - docs/zh/configuration/instance-examples.md
   - docs/zh/deployment/index.md
   - docs/zh/getting-started/first-steps.md
   - docs/zh/getting-started/installation.md
@@ -624,17 +624,21 @@
   - docs/zh/configuration/circuit-breaker.md
   - docs/zh/configuration/rate-limiting.md
   - docs/zh/configuration/store-config.md
-- **docs/configuration-guide.md**: 依赖 2 个文档
-  - docs/zh/configuration/application-config.md
-  - docs/zh/configuration/dynamic-config.md
 
 ## 所有文档版本
 
-- **docs/zh/reference/roadmap.md**: v1.0.6 - 2026-07-14 (63a07c9b)
+- **docs/zh/reference/roadmap.md**: v1.0.7 - 2026-07-15 (d7c1e0a8)
+- **docs/zh/getting-started/quick-start.md**: v1.0.5 - 2026-07-15 (d01148bb)
+- **docs/zh/configuration/instance-examples.md**: v1.0.0 - 2026-07-15 (a0139c87)
+- **docs/en/reference/roadmap.md**: v1.0.6 - 2026-07-15 (d7c1e0a8)
+- **docs/en/getting-started/quick-start.md**: v1.0.4 - 2026-07-15 (d01148bb)
+- **docs/en/configuration/instance-examples.md**: v1.0.0 - 2026-07-15 (a0139c87)
+- **docs-version-report.md**: v1.0.74 - 2026-07-15 (8cb4bf85)
+- **README.md**: v1.0.18 - 2026-07-15 (2b9554b1)
+- **README-ZH.md**: v1.0.10 - 2026-07-15 (2b9554b1)
 - **docs/zh/reference/changelog.md**: v1.0.7 - 2026-07-14 (63a07c9b)
 - **docs/zh/index.md**: v1.0.6 - 2026-07-14 (02f4e4cb)
 - **docs/en/index.md**: v1.0.5 - 2026-07-14 (63a07c9b)
-- **docs-version-report.md**: v1.0.73 - 2026-07-14 (f23ad8b8)
 - **QWEN.md**: v1.0.4 - 2026-07-14 (63a07c9b)
 - **merge-log-2026-07-10.md**: v1.0.0 - 2026-07-11 (eb2d8a82)
 - **docs/zh/monitoring/configuration.md**: v1.0.4 - 2026-07-11 (27143cbb)
@@ -645,13 +649,9 @@
 - **docs/en/reference/changelog.md**: v1.0.6 - 2026-07-01 (2f07f762)
 - **docs/en/api-reference/management-api.md**: v1.0.4 - 2026-07-01 (2f07f762)
 - **docs/en/api-reference/error-codes.md**: v1.0.1 - 2026-07-01 (2f07f762)
-- **docs/configuration-guide.md**: v1.0.3 - 2026-07-01 (2f07f762)
 - **repository-description.md**: v1.0.0 - 2026-06-29 (635e749d)
-- **README.md**: v1.0.17 - 2026-06-29 (0323cc3d)
-- **README-ZH.md**: v1.0.9 - 2026-06-29 (0323cc3d)
 - **docs/en/monitoring/configuration.md**: v1.0.3 - 2026-06-26 (7da5f191)
 - **docs/zh/configuration/validation-rules.md**: v1.0.2 - 2026-06-23 (623002c1)
-- **docs/en/reference/roadmap.md**: v1.0.5 - 2026-06-23 (623002c1)
 - **docs/zh/tracing/usage-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
@@ -669,7 +669,6 @@
 - **docs/en/monitoring/alert_rules_guide.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/deployment/docker-optimized.md**: v1.0.1 - 2026-06-11 (a9e349a6)
-- **docs/docs-version-report.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/zh/configuration/version-management.md**: v1.0.2 - 2026-06-10 (227a92b7)
 - **docs/zh/configuration/store-config.md**: v1.0.3 - 2026-06-10 (227a92b7)
 - **docs/zh/configuration/state-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
@@ -708,7 +707,6 @@
 - **docs/zh/monitoring/dashboards.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/monitoring/alerts.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/monitoring/alert_rules_guide.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/zh/getting-started/quick-start.md**: v1.0.4 - 2026-06-03 (85bfdb3e)
 - **docs/zh/getting-started/installation.md**: v1.0.4 - 2026-06-03 (b305e6de)
 - **docs/zh/getting-started/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/getting-started/first-steps.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
@@ -757,7 +755,6 @@
 - **docs/en/monitoring/error-tracking.md**: v1.0.1 - 2026-06-03 (b305e6de)
 - **docs/en/monitoring/dashboards.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/monitoring/alerts.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
-- **docs/en/getting-started/quick-start.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/en/getting-started/installation.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
 - **docs/en/getting-started/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/en/getting-started/first-steps.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
