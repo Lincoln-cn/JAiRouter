@@ -1,10 +1,10 @@
 # Error Codes Reference
 
-<!-- Version Info -->
+<!-- 版本信息 -->
 > **Document Version**: 1.0.2
-> **Last Updated**: 2026-06-30
+> **最后更新**: 2026-06-30
 > **Applicable Version**: v2.7.6+
-> **Author**: AI Assistant
+> **作者**: AI Assistant
 
 JAiRouter uses a standardized error code system to identify various error conditions. All error responses include an error code field for client-side error handling.
 

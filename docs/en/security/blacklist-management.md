@@ -1,11 +1,11 @@
 # Security Blacklist Management
 
-<!-- Version Info -->
+<!-- 版本信息 -->
 > **Document Version**: 1.8.0
-> **Last Updated**: 2026-06-10
-> **Git Commit**: 2cba097
-> **Author**: Lincoln
-<!-- /Version Info -->
+> **最后更新**: 2026-06-10
+> **Git 提交**: 2cba097
+> **作者**: Lincoln
+<!-- /版本信息 -->
 
 ## Overview
 

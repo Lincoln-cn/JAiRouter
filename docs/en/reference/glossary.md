@@ -273,4 +273,4 @@ It is recommended to learn the following concepts in order:
 
 **Note**: This glossary will be continuously updated as the project develops. If you find missing terms or concepts that need to be added, please provide feedback through [GitHub Issues](https://github.com/Lincoln-cn/JAiRouter/issues).
 
-**Last Updated**: January 15, 2025
+**最后更新**: January 15, 2025

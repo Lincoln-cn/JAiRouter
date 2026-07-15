@@ -1,11 +1,11 @@
 # Quick Start
 
-<!-- Version Info -->
+<!-- 版本信息 -->
 > **Doc Version**: 1.2.0
-> **Last Updated**: 2026-07-14
+> **最后更新**: 2026-07-14
 > **Applicable Version**: v1.8.0+
-> **Author**: Lincoln
-<!-- /Version Info -->
+> **作者**: Lincoln
+<!-- /版本信息 -->
 
 This guide will help you make your first API call to JAiRouter and understand the basic concepts.
 

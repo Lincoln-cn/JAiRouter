@@ -72,18 +72,24 @@ plugins:
             第一步: First Steps
             配置指南: Configuration
             应用配置: Application Config
+            模块化配置: Modular Config
             动态配置: Dynamic Config
             常用服务配置示例: Instance Configuration Examples
             负载均衡: Load Balancing
             限流配置: Rate Limiting
             熔断器: Circuit Breaker
             存储配置: Store Configuration
+            JWT持久化: JWT Persistence
+            状态持久化: State Persistence
+            版本管理: Version Management
+            验证规则: Validation Rules
             安全功能: Security Features
             API Key管理: API Key Management
             JWT认证: JWT Authentication
             安全黑名单: Security Blacklist
             审计日志管理: Audit Log Management
             数据脱敏: Data Sanitization
+            故障排除: Troubleshooting
             API参考: API Reference
             统一API: Universal API
             管理API: Management API
@@ -92,29 +98,35 @@ plugins:
             错误码对照表: Error Codes
             部署指南: Deployment
             Docker部署: Docker Deployment
+            Docker优化: Docker Optimization
             Kubernetes部署: Kubernetes Deployment
             生产环境: Production
             中国优化: China Optimization
             GitHub Pages: GitHub Pages
+            JWT持久化检查清单: JWT Persistence Checklist
             监控指南: Monitoring
             监控设置: Setup
+            监控配置: Monitoring Configuration
             仪表板: Dashboards
             告警配置: Alerts
-            故障排查: Troubleshooting
+            告警规则指南: Alert Rules Guide
+            慢查询配置: Slow Query Alerts
+            监控指标: Metrics
+            性能监控: Performance Monitoring
+            错误追踪: Error Tracking
+            监控测试: Monitoring Testing
             分布式追踪: Distributed Tracing
             追踪概述: Tracing Overview
             快速入门: Quick Start
             配置参考: Configuration Reference
             使用指南: Usage Guide
             性能调优: Performance Tuning
-            故障排除: Troubleshooting
             运维指南: Operations Guide
             开发指南: Development
             架构说明: Architecture
             贡献指南: Contributing
             测试指南: Testing
             代码质量: Code Quality
-            部署测试: Deployment Testing
             性能优化: Performance Optimization
             常见问题: Common Issues
             关键问题修复: Key Issue Fixes
@@ -125,6 +137,7 @@ plugins:
             发展路线图: Roadmap
             FAQ: FAQ
             术语表: Glossary
+            适配器更新: Adapter Updates
   - git-revision-date-localized:
       type: date
       enable_creation_date: true
@@ -211,7 +224,7 @@ nav:
     - 性能监控: zh/monitoring/performance.md
     - 错误追踪: zh/monitoring/error-tracking.md
     - 监控测试: zh/monitoring/testing.md
-    - 故障排查: zh/monitoring/troubleshooting.md
+    - 故障排除: zh/monitoring/troubleshooting.md
   - 分布式追踪:
     - zh/tracing/index.md
     - 快速入门: zh/tracing/quickstart.md
@@ -226,7 +239,7 @@ nav:
     - 贡献指南: zh/development/contributing.md
     - 测试指南: zh/development/testing.md
     - 代码质量: zh/development/code-quality.md
-  - 故障排查:
+  - 故障排除:
     - zh/troubleshooting/index.md
     - 常见问题: zh/troubleshooting/common-issues.md
     - 关键问题修复: zh/troubleshooting/issue-fixes.md

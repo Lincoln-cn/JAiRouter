@@ -1,4 +1,4 @@
-# 安全功能故障排除指南
+# Security Feature Troubleshooting Guide
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -9,85 +9,85 @@
 
 
 
-## 概述
+## Overview
 
-本文档提供了 JAiRouter 安全功能常见问题的诊断和解决方案，包括认证失败、脱敏问题、性能问题等。
+This document provides diagnosis and solutions for common JAiRouter security feature issues, including authentication failures, sanitization problems, performance issues, and more.
 
-## 快速诊断
+## Quick Diagnosis
 
-### 1. 检查安全功能状态
+### 1. Check Security Feature Status
 
 ```bash
-# 检查系统健康状态
+# Check system health
 curl http://localhost:8080/actuator/health
 
-# 检查安全配置
+# Check security configuration
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/status
 ```
 
-### 2. 查看日志
+### 2. View Logs
 
 ```bash
-# 查看应用日志
+# View application logs
 tail -f logs/jairouter.log
 
-# 查看安全审计日志
+# View security audit logs
 tail -f logs/security-audit.log
 
-# 查看错误日志
+# View error logs
 grep ERROR logs/jairouter.log
 ```
 
-### 3. 检查监控指标
+### 3. Check Monitoring Metrics
 
 ```bash
-# 查看 Prometheus 指标
+# View Prometheus metrics
 curl http://localhost:8080/actuator/prometheus | grep security
 
-# 查看认证指标
+# View authentication metrics
 curl http://localhost:8080/actuator/prometheus | grep authentication
 
-# 查看脱敏指标
+# View sanitization metrics
 curl http://localhost:8080/actuator/prometheus | grep sanitization
 ```
 
-## 认证问题
+## Authentication Issues
 
-### 问题 1：API Key 认证失败
+### Issue 1: API Key Authentication Failure
 
-#### 症状
-- 客户端收到 `401 Unauthorized` 错误
-- 日志显示 `Invalid API Key` 或 `API Key not found`
+#### Symptoms
+- Client receives `401 Unauthorized` error
+- Logs show `Invalid API Key` or `API Key not found`
 
-#### 可能原因
-1. API Key 不正确或不存在
-2. API Key 已过期
-3. API Key 已被禁用
-4. 请求头名称不正确
-5. API Key 格式错误
+#### Possible Causes
+1. API Key is incorrect or does not exist
+2. API Key has expired
+3. API Key has been disabled
+4. Request header name is incorrect
+5. API Key format is wrong
 
-#### 诊断步骤
+#### Diagnosis Steps
 
 ```bash
-# 1. 检查 API Key 配置
+# 1. Check API Key configuration
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/api-keys
 
-# 2. 验证请求头
+# 2. Verify request header
 curl -v -H "X-API-Key: your-api-key" \
      http://localhost:8080/v1/models
 
-# 3. 检查 API Key 状态
+# 3. Check API Key status
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/api-keys/your-key-id/status
 ```
 
-#### 解决方案
+#### Solutions
 
-1. **检查 API Key 值**
+1. **Check API Key value**
 ```yaml
-# 确保配置正确
+# Ensure configuration is correct
 jairouter:
   security:
     api-key:
@@ -97,16 +97,16 @@ jairouter:
           enabled: true
 ```
 
-2. **检查过期时间**
+2. **Check expiration time**
 ```bash
-# 更新过期时间
+# Update expiration time
 curl -X PUT -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"expires_at": "2025-12-31T23:59:59"}' \
      http://localhost:8080/admin/security/api-keys/your-key-id
 ```
 
-3. **启用 API Key**
+3. **Enable API Key**
 ```bash
 curl -X PUT -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
@@ -114,124 +114,124 @@ curl -X PUT -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/api-keys/your-key-id
 ```
 
-### 问题 2：JWT 认证失败
+### Issue 2: JWT Authentication Failure
 
-#### 症状
-- 客户端收到 `401 Unauthorized` 错误
-- 日志显示 `Invalid JWT token` 或 `JWT signature verification failed`
+#### Symptoms
+- Client receives `401 Unauthorized` error
+- Logs show `Invalid JWT token` or `JWT signature verification failed`
 
-#### 可能原因
-1. JWT 令牌格式不正确
-2. 签名验证失败
-3. 令牌已过期
-4. 令牌在黑名单中
-5. 密钥配置错误
+#### Possible Causes
+1. JWT token format is incorrect
+2. Signature verification failed
+3. Token has expired
+4. Token is in the blacklist
+5. Secret key configuration is wrong
 
-#### 诊断步骤
+#### Diagnosis Steps
 
 ```bash
-# 1. 解析 JWT 令牌
+# 1. Parse JWT token
 echo "your-jwt-token" | cut -d'.' -f2 | base64 -d | jq
 
-# 2. 检查令牌状态
+# 2. Check token status
 curl -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"token": "your-jwt-token"}' \
      http://localhost:8080/admin/security/jwt/validate
 
-# 3. 检查黑名单
+# 3. Check blacklist
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/jwt/blacklist
 ```
 
-#### 解决方案
+#### Solutions
 
-1. **检查 JWT 配置**
+1. **Check JWT configuration**
 ```yaml
 jairouter:
   security:
     jwt:
       enabled: true
-      secret: "${JWT_SECRET}"  # 确保密钥正确
+      secret: "${JWT_SECRET}"  # Ensure secret is correct
       algorithm: "HS256"
 ```
 
-2. **刷新令牌**
+2. **Refresh token**
 ```bash
 curl -X POST -H "Content-Type: application/json" \
      -d '{"refresh_token": "your-refresh-token"}' \
      http://localhost:8080/auth/refresh
 ```
 
-3. **清除黑名单**
+3. **Clear blacklist**
 ```bash
 curl -X DELETE -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/jwt/blacklist/clear
 ```
 
-### 问题 3：权限不足
+### Issue 3: Insufficient Permissions
 
-#### 症状
-- 客户端收到 `403 Forbidden` 错误
-- 日志显示 `Insufficient permissions`
+#### Symptoms
+- Client receives `403 Forbidden` error
+- Logs show `Insufficient permissions`
 
-#### 诊断步骤
+#### Diagnosis Steps
 
 ```bash
-# 检查用户权限
+# Check user permissions
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/permissions/your-user-id
 
-# 检查接口权限要求
+# Check endpoint permission requirements
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/endpoints
 ```
 
-#### 解决方案
+#### Solutions
 
 ```bash
-# 更新用户权限
+# Update user permissions
 curl -X PUT -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"permissions": ["read", "write", "admin"]}' \
      http://localhost:8080/admin/security/api-keys/your-key-id/permissions
 ```
 
-## 数据脱敏问题
+## Data Sanitization Issues
 
-### 问题 4：脱敏不生效
+### Issue 4: Sanitization Not Working
 
-#### 症状
-- 敏感数据未被脱敏
-- 日志显示脱敏规则未匹配
+#### Symptoms
+- Sensitive data is not being sanitized
+- Logs show sanitization rules not matched
 
-#### 可能原因
-1. 脱敏功能未启用
-2. 正则表达式不匹配
-3. 用户在白名单中
-4. 规则优先级问题
+#### Possible Causes
+1. Sanitization feature is not enabled
+2. Regular expression does not match
+3. User is in the whitelist
+4. Rule priority issue
 
-#### 诊断步骤
+#### Diagnosis Steps
 
 ```bash
-# 1. 检查脱敏配置
+# 1. Check sanitization configuration
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/sanitization/config
 
-# 2. 测试脱敏规则
+# 2. Test sanitization rules
 curl -X POST -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
-     -d '{"text": "我的手机号是13812345678", "rules": ["phone"]}' \
+     -d '{"text": "My phone number is 13812345678", "rules": ["phone"]}' \
      http://localhost:8080/admin/security/sanitization/test
 
-# 3. 检查白名单
+# 3. Check whitelist
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/sanitization/whitelist
 ```
 
-#### 解决方案
+#### Solutions
 
-1. **启用脱敏功能**
+1. **Enable sanitization feature**
 ```yaml
 jairouter:
   security:
@@ -242,7 +242,7 @@ jairouter:
         enabled: true
 ```
 
-2. **修正正则表达式**
+2. **Fix regular expression**
 ```yaml
 jairouter:
   security:
@@ -252,87 +252,87 @@ jairouter:
           - "\\b(?:13[0-9]|14[5-9]|15[0-3,5-9]|16[2,5,6,7]|17[0-8]|18[0-9]|19[1,3,5,8,9])\\d{8}\\b"
 ```
 
-3. **检查白名单**
+3. **Check whitelist**
 ```bash
-# 从白名单中移除用户
+# Remove user from whitelist
 curl -X DELETE -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/sanitization/whitelist/users/your-user-id
 ```
 
-### 问题 5：误脱敏
+### Issue 5: False Positive Sanitization
 
-#### 症状
-- 正常数据被错误脱敏
-- 业务功能受到影响
+#### Symptoms
+- Normal data is incorrectly sanitized
+- Business functionality is affected
 
-#### 诊断步骤
+#### Diagnosis Steps
 
 ```bash
-# 测试具体文本的脱敏结果
+# Test sanitization result for specific text
 curl -X POST -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"text": "your-test-text"}' \
      http://localhost:8080/admin/security/sanitization/test
 ```
 
-#### 解决方案
+#### Solutions
 
-1. **精确化正则表达式**
+1. **Make regular expression more precise**
 ```yaml
-# 修改前：过于宽泛
+# Before: Too broad
 pii-patterns:
-  - "\\d+"  # 匹配所有数字
+  - "\\d+"  # Matches all numbers
 
-# 修改后：精确匹配
+# After: Precise matching
 pii-patterns:
-  - "\\b1[3-9]\\d{9}\\b"  # 只匹配手机号
+  - "\\b1[3-9]\\d{9}\\b"  # Only matches phone numbers
 ```
 
-2. **调整规则优先级**
+2. **Adjust rule priority**
 ```yaml
 jairouter:
   security:
     sanitization:
       request:
         rule-priorities:
-          specific-pattern: 1    # 高优先级
-          general-pattern: 10    # 低优先级
+          specific-pattern: 1    # High priority
+          general-pattern: 10    # Low priority
 ```
 
-3. **添加例外规则**
+3. **Add exception rules**
 ```yaml
 jairouter:
   security:
     sanitization:
       request:
         exception-patterns:
-          - "订单号:\\d+"  # 订单号不脱敏
+          - "Order number:\\d+"  # Order numbers not sanitized
 ```
 
-## 性能问题
+## Performance Issues
 
-### 问题 6：认证响应慢
+### Issue 6: Slow Authentication Response
 
-#### 症状
-- 认证耗时过长
-- 系统响应缓慢
+#### Symptoms
+- Authentication takes too long
+- System response is slow
 
-#### 诊断步骤
+#### Diagnosis Steps
 
 ```bash
-# 检查认证性能指标
+# Check authentication performance metrics
 curl http://localhost:8080/actuator/prometheus | grep authentication_duration
 
-# 检查缓存命中率
+# Check cache hit rate
 curl http://localhost:8080/actuator/prometheus | grep cache_hit_rate
 
-# 检查线程池状态
+# Check thread pool status
 curl http://localhost:8080/actuator/prometheus | grep thread_pool
 ```
 
-#### 解决方案
+#### Solutions
 
-1. **启用缓存**
+1. **Enable caching**
 ```yaml
 jairouter:
   security:
@@ -344,7 +344,7 @@ jairouter:
           enabled: true
 ```
 
-2. **优化线程池**
+2. **Optimize thread pool**
 ```yaml
 jairouter:
   security:
@@ -355,35 +355,35 @@ jairouter:
         timeout-ms: 3000
 ```
 
-3. **减少 API Key 数量**
+3. **Reduce API Key count**
 ```bash
-# 清理无用的 API Key
+# Clean up unused API Keys
 curl -X DELETE -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/api-keys/unused-key-id
 ```
 
-### 问题 7：脱敏性能问题
+### Issue 7: Sanitization Performance Issues
 
-#### 症状
-- 脱敏操作耗时过长
-- 内存使用过高
+#### Symptoms
+- Sanitization operation takes too long
+- Memory usage is too high
 
-#### 诊断步骤
+#### Diagnosis Steps
 
 ```bash
-# 检查脱敏性能指标
+# Check sanitization performance metrics
 curl http://localhost:8080/actuator/prometheus | grep sanitization_duration
 
-# 检查内存使用
+# Check memory usage
 curl http://localhost:8080/actuator/metrics/jvm.memory.used
 
-# 检查正则表达式缓存
+# Check regex cache
 curl http://localhost:8080/actuator/prometheus | grep regex_cache
 ```
 
-#### 解决方案
+#### Solutions
 
-1. **启用并行处理**
+1. **Enable parallel processing**
 ```yaml
 jairouter:
   security:
@@ -393,15 +393,15 @@ jairouter:
         thread-pool-size: 8
 ```
 
-2. **优化正则表达式**
+2. **Optimize regular expressions**
 ```yaml
-# 避免复杂的正则表达式
+# Avoid complex regular expressions
 pii-patterns:
-  - "\\d{11}"  # 简单模式
-  # 避免：(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,}  # 复杂模式
+  - "\\d{11}"  # Simple pattern
+  # Avoid: (?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{8,}  # Complex pattern
 ```
 
-3. **启用流式处理**
+3. **Enable streaming processing**
 ```yaml
 jairouter:
   security:
@@ -410,93 +410,93 @@ jairouter:
         streaming-threshold: 1048576  # 1MB
 ```
 
-## 配置问题
+## Configuration Issues
 
-### 问题 8：配置不生效
+### Issue 8: Configuration Not Taking Effect
 
-#### 症状
-- 修改配置后功能未变化
-- 系统使用默认配置
+#### Symptoms
+- Features don't change after modifying configuration
+- System uses default configuration
 
-#### 诊断步骤
+#### Diagnosis Steps
 
 ```bash
-# 检查当前配置
+# Check current configuration
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/config/current
 
-# 检查配置文件
+# Check configuration file
 cat src/main/resources/application.yml | grep -A 20 security
 
-# 检查环境变量
+# Check environment variables
 env | grep -i security
 ```
 
-#### 解决方案
+#### Solutions
 
-1. **重启应用**
+1. **Restart application**
 ```bash
-# 某些配置需要重启才能生效
+# Some configurations require restart to take effect
 ./mvnw spring-boot:stop
 ./mvnw spring-boot:run
 ```
 
-2. **检查配置优先级**
+2. **Check configuration priority**
 ```yaml
-# 确保配置在正确的环境文件中
-# application-prod.yml 优先级高于 application.yml
+# Ensure configuration is in the correct environment file
+# application-prod.yml has higher priority than application.yml
 ```
 
-3. **验证 YAML 格式**
+3. **Validate YAML format**
 ```bash
-# 使用 YAML 验证工具
+# Use YAML validation tool
 yamllint src/main/resources/application.yml
 ```
 
-### 问题 9：环境变量未生效
+### Issue 9: Environment Variables Not Working
 
-#### 症状
-- 环境变量值未被读取
-- 使用了默认值而非环境变量值
+#### Symptoms
+- Environment variable values are not read
+- Default values are used instead of environment variable values
 
-#### 解决方案
+#### Solutions
 
-1. **检查环境变量格式**
+1. **Check environment variable format**
 ```bash
-# 正确格式
+# Correct format
 export JWT_SECRET="your-secret-here"
 
-# 错误格式
-export jwt_secret="your-secret-here"  # 大小写错误
+# Wrong format
+export jwt_secret="your-secret-here"  # Case error
 ```
 
-2. **检查配置引用**
+2. **Check configuration reference**
 ```yaml
-# 正确引用
+# Correct reference
 secret: "${JWT_SECRET}"
 
-# 错误引用
-secret: "$JWT_SECRET"  # 缺少大括号
+# Wrong reference
+secret: "$JWT_SECRET"  # Missing braces
 ```
 
-3. **重新加载环境变量**
+3. **Reload environment variables**
 ```bash
 source ~/.bashrc
-# 或
+# Or
 source ~/.profile
 ```
 
-## 监控和告警问题
+## Monitoring and Alerting Issues
 
-### 问题 10：监控指标缺失
+### Issue 10: Missing Monitoring Metrics
 
-#### 症状
-- Prometheus 指标不显示
-- 监控面板无数据
+#### Symptoms
+- Prometheus metrics not showing
+- Monitoring dashboard has no data
 
-#### 解决方案
+#### Solutions
 
-1. **启用监控功能**
+1. **Enable monitoring feature**
 ```yaml
 jairouter:
   security:
@@ -509,7 +509,7 @@ jairouter:
           enabled: true
 ```
 
-2. **检查 Actuator 配置**
+2. **Check Actuator configuration**
 ```yaml
 management:
   endpoints:
@@ -518,20 +518,20 @@ management:
         include: health,info,metrics,prometheus
 ```
 
-3. **验证指标端点**
+3. **Verify metrics endpoint**
 ```bash
 curl http://localhost:8080/actuator/prometheus
 ```
 
-### 问题 11：告警不触发
+### Issue 11: Alerts Not Triggering
 
-#### 症状
-- 达到阈值但未收到告警
-- 告警配置不生效
+#### Symptoms
+- Threshold reached but no alert received
+- Alert configuration not working
 
-#### 解决方案
+#### Solutions
 
-1. **检查告警配置**
+1. **Check alert configuration**
 ```yaml
 jairouter:
   security:
@@ -542,13 +542,13 @@ jairouter:
           authentication-failure-rate: 0.1
 ```
 
-2. **测试告警通知**
+2. **Test alert notification**
 ```bash
 curl -X POST -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/alerts/test
 ```
 
-3. **检查通知配置**
+3. **Check notification configuration**
 ```yaml
 jairouter:
   security:
@@ -560,9 +560,9 @@ jairouter:
             recipients: ["admin@example.com"]
 ```
 
-## 调试工具和技巧
+## Debugging Tools and Tips
 
-### 1. 启用详细日志
+### 1. Enable Verbose Logging
 
 ```yaml
 logging:
@@ -572,23 +572,23 @@ logging:
     org.springframework.web: DEBUG
 ```
 
-### 2. 使用调试端点
+### 2. Use Debug Endpoints
 
 ```bash
-# 安全状态检查
+# Security status check
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/debug
 
-# 配置检查
+# Configuration check
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/config/validate
 
-# 性能分析
+# Performance analysis
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/performance/analyze
 ```
 
-### 3. 日志分析脚本
+### 3. Log Analysis Script
 
 ```bash
 #!/bin/bash
@@ -597,20 +597,20 @@ curl -H "Authorization: Bearer admin-token" \
 LOG_FILE="logs/jairouter.log"
 AUDIT_FILE="logs/security-audit.log"
 
-echo "=== 认证失败统计 ==="
+echo "=== Authentication Failure Statistics ==="
 grep "authentication failed" $LOG_FILE | wc -l
 
-echo "=== 最近的认证错误 ==="
+echo "=== Recent Authentication Errors ==="
 grep "authentication failed" $LOG_FILE | tail -10
 
-echo "=== 脱敏操作统计 ==="
+echo "=== Sanitization Operation Statistics ==="
 grep "sanitization applied" $AUDIT_FILE | wc -l
 
-echo "=== 性能问题检查 ==="
+echo "=== Performance Issue Check ==="
 grep "timeout\|slow\|performance" $LOG_FILE | tail -10
 ```
 
-### 4. 健康检查脚本
+### 4. Health Check Script
 
 ```bash
 #!/bin/bash
@@ -619,88 +619,88 @@ grep "timeout\|slow\|performance" $LOG_FILE | tail -10
 BASE_URL="http://localhost:8080"
 ADMIN_TOKEN="your-admin-token"
 
-echo "=== 系统健康检查 ==="
+echo "=== System Health Check ==="
 curl -s "$BASE_URL/actuator/health" | jq '.status'
 
-echo "=== 安全功能状态 ==="
+echo "=== Security Feature Status ==="
 curl -s -H "Authorization: Bearer $ADMIN_TOKEN" \
      "$BASE_URL/admin/security/status" | jq
 
-echo "=== 认证性能指标 ==="
+echo "=== Authentication Performance Metrics ==="
 curl -s "$BASE_URL/actuator/prometheus" | \
      grep "jairouter_security_authentication_duration_seconds"
 
-echo "=== 脱敏性能指标 ==="
+echo "=== Sanitization Performance Metrics ==="
 curl -s "$BASE_URL/actuator/prometheus" | \
      grep "jairouter_security_sanitization_duration_seconds"
 ```
 
-## 常用命令参考
+## Common Commands Reference
 
-### 配置管理
+### Configuration Management
 
 ```bash
-# 重新加载配置
+# Reload configuration
 curl -X POST -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/config/reload
 
-# 验证配置
+# Validate configuration
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/config/validate
 
-# 备份配置
+# Backup configuration
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/config/backup > config-backup.json
 ```
 
-### 缓存管理
+### Cache Management
 
 ```bash
-# 清除认证缓存
+# Clear authentication cache
 curl -X DELETE -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/cache/authentication
 
-# 清除脱敏缓存
+# Clear sanitization cache
 curl -X DELETE -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/cache/sanitization
 
-# 查看缓存统计
+# View cache statistics
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/security/cache/stats
 ```
 
-### 日志管理
+### Log Management
 
 ```bash
-# 设置日志级别
+# Set log level
 curl -X POST -H "Authorization: Bearer admin-token" \
      -H "Content-Type: application/json" \
      -d '{"level": "DEBUG"}' \
      http://localhost:8080/admin/logging/org.unreal.modelrouter.security
 
-# 下载日志
+# Download logs
 curl -H "Authorization: Bearer admin-token" \
      http://localhost:8080/admin/logs/security-audit.log > audit.log
 ```
 
-## 联系支持
+## Contact Support
 
-如果以上解决方案无法解决您的问题，请联系技术支持：
+If the above solutions cannot resolve your issue, please contact technical support:
 
 - **GitHub Issues**: https://github.com/Lincoln-cn/JAiRouter/issues
-- **邮箱支持**: support@jairouter.com
-- **文档中心**: https://jairouter.com
+- **Email Support**: support@jairouter.com
+- **Documentation Center**: https://jairouter.com
 
-提交问题时，请包含以下信息：
-1. 问题详细描述
-2. 错误日志
-3. 配置文件（脱敏后）
-4. 系统环境信息
-5. 复现步骤
+When submitting an issue, please include the following information:
+1. Detailed description of the problem
+2. Error logs
+3. Configuration file (after sanitization)
+4. System environment information
+5. Steps to reproduce
 
-## 相关文档
+## Related Documentation
 
-- [API Key 管理指南](api-key-management.md)
-- [JWT 认证配置说明](jwt-authentication.md)
-- [数据脱敏规则配置](data-sanitization.md)
-- [安全监控和告警](../monitoring/alerts.md)
+- [API Key Management Guide](api-key-management.md)
+- [JWT Authentication Configuration](jwt-authentication.md)
+- [Data Sanitization Rule Configuration](data-sanitization.md)
+- [Security Monitoring and Alerts](../monitoring/alerts.md)

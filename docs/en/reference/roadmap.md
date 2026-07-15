@@ -308,6 +308,6 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 
 ---
 
-**Last Updated**: July 14, 2026
+**最后更新**: July 14, 2026
 
 For any suggestions or ideas, feel free to communicate with us via [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions).

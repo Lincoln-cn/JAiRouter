@@ -544,4 +544,4 @@ If your question is not answered in this FAQ, please feel free to provide feedba
 
 We will continuously update the FAQ content to provide better support for users.
 
-**Last Updated**: January 15, 2025
+**最后更新**: January 15, 2025

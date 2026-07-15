@@ -1,11 +1,11 @@
 ﻿# Changelog
 
-<!-- Version Info -->
+<!-- 版本信息 -->
 > **Document Version**: 1.8.0
-> **Last Updated**: 2026-06-30
-> **Git Commit**: fb0cd62f
-> **Author**: Lincoln
-<!-- /Version Info -->
+> **最后更新**: 2026-06-30
+> **Git 提交**: fb0cd62f
+> **作者**: Lincoln
+<!-- /版本信息 -->
 
 
 

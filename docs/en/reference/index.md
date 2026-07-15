@@ -122,5 +122,5 @@ We are committed to providing accurate, timely, and useful reference materials t
 
 ---
 
-**Last Updated**: August 15, 2025  
+**最后更新**: August 15, 2025  
 **Maintained by**: JAiRouter Documentation Team  
