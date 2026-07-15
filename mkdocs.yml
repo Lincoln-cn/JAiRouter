@@ -73,6 +73,7 @@ plugins:
             配置指南: Configuration
             应用配置: Application Config
             动态配置: Dynamic Config
+            常用服务配置示例: Instance Configuration Examples
             负载均衡: Load Balancing
             限流配置: Rate Limiting
             熔断器: Circuit Breaker
@@ -165,6 +166,7 @@ nav:
     - 应用配置: zh/configuration/application-config.md
     - 模块化配置: zh/configuration/modular-config.md
     - 动态配置: zh/configuration/dynamic-config.md
+    - 常用服务配置示例: zh/configuration/instance-examples.md
     - 负载均衡: zh/configuration/load-balancing.md
     - 限流配置: zh/configuration/rate-limiting.md
     - 熔断器: zh/configuration/circuit-breaker.md
