@@ -101,7 +101,8 @@ public class NonStreamingRequestProcessor {
             final Function<Object, Object> transformRequestFn,
             final Function<Object, Object> transformResponseFn,
             final MultipartRequestHandler multipartHandler,
-            final ServerHttpRequest httpRequest) {
+            final ServerHttpRequest httpRequest,
+            final Map<String, String> additionalHeaders) {
 
         // 0. 从请求属性中获取 API Key ID（由 ServiceRequestHandler 在认证阶段存入）
         final String capturedKeyId = extractKeyIdFromRequest(httpRequest);
@@ -141,6 +142,14 @@ public class NonStreamingRequestProcessor {
             if (!hasInstanceAuth && authorization != null && !authorization.isEmpty()) {
                 requestSpec = requestSpec.header("Authorization", authorization);
                 logger.debug("使用参数Authorization头");
+            }
+
+            // 应用适配器特有的额外请求头
+            if (additionalHeaders != null && !additionalHeaders.isEmpty()) {
+                for (Map.Entry<String, String> header : additionalHeaders.entrySet()) {
+                    requestSpec = requestSpec.header(header.getKey(), header.getValue());
+                    logger.debug("应用适配器额外请求头: {} = {}", header.getKey(), "***");
+                }
             }
         }
 
