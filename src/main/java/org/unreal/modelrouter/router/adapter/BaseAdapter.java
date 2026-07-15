@@ -259,7 +259,7 @@ public abstract class BaseAdapter implements ServiceCapability {
 
         return requestSupport.getNonStreamingProcessor().processRequest(request, finalAuth, client, finalPath,
                 selectedInstance, serviceType, responseType, adapterType,
-                transformRequestFn, transformResponseFn, handler, httpRequest);
+                transformRequestFn, transformResponseFn, handler, httpRequest, getAdditionalHeaders());
     }
 
     // ==================== 流式请求处理 ====================
@@ -369,6 +369,16 @@ public abstract class BaseAdapter implements ServiceCapability {
     }
 
     // ==================== 子类可重写方法 ====================
+
+    /**
+     * 获取适配器特有的额外请求头
+     * 子类可重写此方法以添加适配器特定的头（如 Claude 的 anthropic-version）
+     *
+     * @return 额外请求头映射，空 Map 表示无额外头
+     */
+    protected Map<String, String> getAdditionalHeaders() {
+        return java.util.Collections.emptyMap();
+    }
 
     protected <T> WebClient.RequestBodySpec configureRequestHeaders(
             final WebClient.RequestBodySpec requestSpec, final T request) {

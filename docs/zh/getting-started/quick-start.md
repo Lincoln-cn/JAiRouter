@@ -1,4 +1,4 @@
-﻿# 快速开始
+# 快速开始
 
 <!-- 版本信息 -->
 > **文档版本**: 1.1.0
@@ -266,6 +266,102 @@ docker run -d \
 # 停止当前进程（Ctrl+C），然后重新运行
 java -jar model-router.jar
 ```
+
+### 常见服务配置示例
+
+以下是常用 AI 服务的快速配置示例：
+
+#### 在线 API 服务
+
+**OpenAI GPT**
+```bash
+curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "gpt-4o",
+    "baseUrl": "https://api.openai.com",
+    "path": "/v1/chat/completions",
+    "adapter": "normal",
+    "headers": {
+      "Authorization": "Bearer sk-proj-xxxxx"
+    }
+  }'
+```
+
+**DeepSeek**
+```bash
+curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "deepseek-chat",
+    "baseUrl": "https://api.deepseek.com",
+    "path": "/v1/chat/completions",
+    "adapter": "normal",
+    "headers": {
+      "Authorization": "Bearer sk-xxxxxxxx"
+    }
+  }'
+```
+
+**Anthropic Claude**
+```bash
+curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "claude-sonnet",
+    "baseUrl": "https://api.anthropic.com",
+    "path": "/v1/messages",
+    "adapter": "claude",
+    "headers": {
+      "x-api-key": "sk-ant-api03-xxxxx"
+    }
+  }'
+```
+
+> 💡 **提示**: Claude 适配器会自动注入 `anthropic-version` 头，无需手动配置。
+
+**Google Gemini**
+```bash
+curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "gemini-pro",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "path": "/chat/completions",
+    "adapter": "normal",
+    "headers": {
+      "Authorization": "Bearer AIzaSyxxxxx"
+    }
+  }'
+```
+
+#### 本地推理引擎
+
+**Ollama**
+```bash
+curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "llama3.2:3b",
+    "baseUrl": "http://localhost:11434",
+    "path": "/api/chat",
+    "adapter": "ollama"
+  }'
+```
+
+**vLLM**
+```bash
+curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "vllm-qwen",
+    "baseUrl": "http://localhost:8000",
+    "path": "/v1/chat/completions",
+    "adapter": "vllm"
+  }'
+```
+
+> 💡 **提示**: 更多配置示例请查看 [常用服务配置示例](../configuration/instance-examples.md)。
 
 ### 没有 AI 服务？使用模拟服务
 
