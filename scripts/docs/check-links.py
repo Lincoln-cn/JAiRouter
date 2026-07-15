@@ -119,6 +119,16 @@ class LinkChecker:
             r"jairouter\.com/zh/",
             # httpbin.org（测试服务，经常不可用）
             r"httpbin\.org",
+            # 占位符URL（文档示例）
+            r"^http://your-",
+            r"^http://pushgateway:",
+            r"^http://influxdb:",
+            # GitHub stargazers（URL可能不存在）
+            r"stargazers$",
+            # AI服务商端点（需要认证或已变更）
+            r"api\.deepseek\.com",
+            r"generativelanguage\.googleapis\.com",
+            r"api\.hunyuan\.cloud\.tencent\.com",
         ]
 
         # HTTP 请求头
