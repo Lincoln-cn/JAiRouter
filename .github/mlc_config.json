@@ -20,6 +20,27 @@
     },
     {
       "pattern": "\\.(jpg|jpeg|png|gif|svg|ico)$"
+    },
+    {
+      "pattern": "^http://your-"
+    },
+    {
+      "pattern": "^http://pushgateway:"
+    },
+    {
+      "pattern": "^http://influxdb:"
+    },
+    {
+      "pattern": "stargazers$"
+    },
+    {
+      "pattern": "^https://api\\.deepseek\\.com"
+    },
+    {
+      "pattern": "^https://generativelanguage\\.googleapis\\.com"
+    },
+    {
+      "pattern": "^https://api\\.hunyuan\\.cloud\\.tencent\\.com"
     }
   ],
   "replacementPatterns": [

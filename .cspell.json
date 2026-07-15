@@ -260,7 +260,8 @@
     "netpol",
     "Pushgateway",
     "mgmt",
-    "echarts"
+    "echarts",
+    "Distroless"
   ],
   "ignoreWords": [
     "CNAME",
