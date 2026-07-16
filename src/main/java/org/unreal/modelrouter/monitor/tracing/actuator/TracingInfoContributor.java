@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
-import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryPressureLevel;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 

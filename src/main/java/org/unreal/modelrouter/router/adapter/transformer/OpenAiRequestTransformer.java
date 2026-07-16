@@ -1,6 +1,5 @@
 package org.unreal.modelrouter.router.adapter.transformer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.ImageEditDTO;

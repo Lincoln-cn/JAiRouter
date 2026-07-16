@@ -5,8 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.common.util.JacksonHelper;
-import org.unreal.modelrouter.persistence.jpa.entity.ServiceConfigEntity;
-import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceConfigRepository;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 
@@ -14,7 +12,6 @@ import jakarta.annotation.PostConstruct;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
 
 /**

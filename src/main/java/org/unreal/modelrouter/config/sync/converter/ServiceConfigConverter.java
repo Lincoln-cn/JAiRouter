@@ -197,7 +197,9 @@ public class ServiceConfigConverter {
 
         return new LoadBalanceConfiguration(
                 update.getType() != null ? update.getType() : (existing != null ? existing.type() : null),
-                update.getHashAlgorithm() != null ? update.getHashAlgorithm() : (existing != null ? existing.hashAlgorithm() : null)
+                update.getHashAlgorithm() != null
+                        ? update.getHashAlgorithm()
+                        : (existing != null ? existing.hashAlgorithm() : null)
         );
     }
 

@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.common.dto.JwtTokenInfo;
 import org.unreal.modelrouter.common.dto.TokenStatus;
 import reactor.core.publisher.Mono;
 

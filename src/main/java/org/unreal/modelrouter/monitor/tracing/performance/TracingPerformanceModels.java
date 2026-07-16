@@ -1,6 +1,5 @@
 package org.unreal.modelrouter.monitor.tracing.performance;
 
-import io.micrometer.core.instrument.DistributionSummary;
 import lombok.Data;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;

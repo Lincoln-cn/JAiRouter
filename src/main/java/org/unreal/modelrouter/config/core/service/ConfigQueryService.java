@@ -11,7 +11,6 @@ import org.unreal.modelrouter.common.util.InstanceIdUtils;
 import org.unreal.modelrouter.persistence.jpa.entity.ServiceInstanceEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ServiceInstanceRepository;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
