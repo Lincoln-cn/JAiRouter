@@ -10,7 +10,7 @@
 
 <p align="center">
   OpenAI-compatible API for unified routing, load balancing & failover<br>
-  across Ollama, vLLM, GPUStack, Xinference, and more
+  across Ollama, vLLM, GPUStack, Xinference, Claude, Gemini, and more
 </p>
 
 <p align="center">
@@ -115,6 +115,7 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 | **LocalAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | OpenAI-compatible |
 | **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | Cloud fallback |
 | **Anthropic Claude** | ✅ | - | - | - | - | - | Native Claude API |
+| **Google Gemini** | ✅ | - | - | - | - | - | Native Gemini API |
 
 ---
 
@@ -223,8 +224,9 @@ Performance overhead compared to direct backend access:
 - [x] Call history persistence
 - [x] RBAC role-based access control
 - [x] Anthropic Claude adapter
+- [x] Google Gemini adapter
 
-> **Current Release**: v2.8.0 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.8.3 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 
