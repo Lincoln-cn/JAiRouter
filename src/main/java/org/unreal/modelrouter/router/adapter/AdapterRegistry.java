@@ -2,6 +2,7 @@ package org.unreal.modelrouter.router.adapter;
 
 import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.router.adapter.impl.ClaudeAdapter;
+import org.unreal.modelrouter.router.adapter.impl.GeminiAdapter;
 import org.unreal.modelrouter.router.adapter.impl.GpuStackAdapter;
 import org.unreal.modelrouter.router.adapter.impl.LocalAiAdapter;
 import org.unreal.modelrouter.router.adapter.impl.NormalOpenAiAdapter;
@@ -58,6 +59,8 @@ public class AdapterRegistry {
         adapters.put("normal", new NormalOpenAiAdapter(context, requestSupport, resilienceSupport,
                 openAiRequestTransformer, openAiResponseTransformer));
         adapters.put("claude", new ClaudeAdapter(context, requestSupport, resilienceSupport,
+                openAiRequestTransformer, openAiResponseTransformer));
+        adapters.put("gemini", new GeminiAdapter(context, requestSupport, resilienceSupport,
                 openAiRequestTransformer, openAiResponseTransformer));
         adapters.put("gpustack", new GpuStackAdapter(context, requestSupport, resilienceSupport));
         adapters.put("ollama", new OllamaAdapter(context, requestSupport, resilienceSupport));
