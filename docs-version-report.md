@@ -5,10 +5,11 @@
 - 总文档数: 152
 - 近7天变更: 40
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-16 05:10:57
+- 最后扫描: 2026-07-17 05:14:05
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.75 → 1.0.76) - 2026-07-17
 - **MODIFIED**: docs/en/security/troubleshooting.md (1.0.1 → 1.0.2) - 2026-07-16
 - **MODIFIED**: docs/en/security/blacklist-management.md (1.0.1 → 1.0.2) - 2026-07-16
 - **MODIFIED**: docs/en/reference/roadmap.md (1.0.6 → 1.0.7) - 2026-07-16
@@ -18,7 +19,6 @@
 - **MODIFIED**: docs/en/reference/changelog.md (1.0.6 → 1.0.7) - 2026-07-16
 - **MODIFIED**: docs/en/getting-started/quick-start.md (1.0.4 → 1.0.5) - 2026-07-16
 - **MODIFIED**: docs/en/development/index.md (1.0.4 → 1.0.5) - 2026-07-16
-- **MODIFIED**: docs/en/development/architecture.md (1.0.3 → 1.0.4) - 2026-07-16
 
 ## 过期文档 (30天未更新)
 
@@ -104,8 +104,12 @@
 - docs/en/security/index.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/en/tracing/config-reference.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/tracing/index.md (版本: 1.0.3, 最后更新: 2026-06-16)
+- docs/en/tracing/operations-guide.md (版本: 1.0.3, 最后更新: 2026-06-16)
 - docs/en/tracing/performance-tuning.md (版本: 1.0.1, 最后更新: 2026-06-09)
+- docs/en/tracing/quickstart.md (版本: 1.0.3, 最后更新: 2026-06-16)
 - docs/en/tracing/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-09)
+- docs/en/tracing/usage-guide.md (版本: 1.0.3, 最后更新: 2026-06-16)
 - docs/zh/configuration/modular-config.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/monitoring/error-tracking.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/monitoring/slow-query-alerts.md (版本: 1.0.1, 最后更新: 2026-06-03)
@@ -114,8 +118,12 @@
 - docs/zh/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/zh/security/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/tracing/config-reference.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/tracing/index.md (版本: 1.0.3, 最后更新: 2026-06-16)
+- docs/zh/tracing/operations-guide.md (版本: 1.0.3, 最后更新: 2026-06-16)
 - docs/zh/tracing/performance-tuning.md (版本: 1.0.1, 最后更新: 2026-06-09)
+- docs/zh/tracing/quickstart.md (版本: 1.0.3, 最后更新: 2026-06-16)
 - docs/zh/tracing/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-09)
+- docs/zh/tracing/usage-guide.md (版本: 1.0.3, 最后更新: 2026-06-16)
 - docs/en/configuration/store-config.md (版本: 1.0.3, 最后更新: 2026-06-10)
 - docs/en/configuration/version-management.md (版本: 1.0.2, 最后更新: 2026-06-10)
 - docs/zh/configuration/store-config.md (版本: 1.0.3, 最后更新: 2026-06-10)
@@ -623,6 +631,7 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.76 - 2026-07-17 (ce18fbf5)
 - **docs/en/security/troubleshooting.md**: v1.0.2 - 2026-07-16 (b98b834b)
 - **docs/en/security/blacklist-management.md**: v1.0.2 - 2026-07-16 (b98b834b)
 - **docs/en/reference/roadmap.md**: v1.0.7 - 2026-07-16 (b98b834b)
@@ -635,7 +644,6 @@
 - **docs/en/development/architecture.md**: v1.0.4 - 2026-07-16 (b98b834b)
 - **docs/en/deployment/docker-optimized.md**: v1.0.2 - 2026-07-16 (b98b834b)
 - **docs/en/api-reference/error-codes.md**: v1.0.2 - 2026-07-16 (b98b834b)
-- **docs-version-report.md**: v1.0.75 - 2026-07-16 (bf625198)
 - **README.md**: v1.0.19 - 2026-07-16 (4f1b54b4)
 - **README-ZH.md**: v1.0.11 - 2026-07-16 (4f1b54b4)
 - **docs/zh/reference/roadmap.md**: v1.0.7 - 2026-07-15 (d7c1e0a8)
