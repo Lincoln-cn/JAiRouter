@@ -227,3 +227,6 @@ link-check-report.json
 
 # Agent skills (project-specific, not for git)
 .agents/skills/
+
+# JCodeIndexer data
+.jindexer/
