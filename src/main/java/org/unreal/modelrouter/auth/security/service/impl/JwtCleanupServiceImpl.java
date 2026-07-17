@@ -365,24 +365,24 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
      * 构建性能指标Map
      */
     private Map<String, Object> buildPerformanceMetrics(final CleanupStats stats) {
-        Map<String, Object> metrics = new HashMap<>();
+        Map<String, Object> perfMetrics = new HashMap<>();
 
         long totalCleanups = stats.getTotalCleanupsPerformed();
         long totalItemsRemoved = stats.getTotalTokensRemoved() + stats.getTotalBlacklistEntriesRemoved();
         double successRate = statsManager.getSuccessRate();
 
-        metrics.put("retentionDays", retentionDays);
-        metrics.put("batchSize", batchSize);
-        metrics.put("successRate", successRate);
-        metrics.put("failureRate", 100.0 - successRate);
-        metrics.put("totalItemsRemoved", totalItemsRemoved);
-        metrics.put("averageItemsPerCleanup", totalCleanups > 0 ? (double) totalItemsRemoved / totalCleanups : 0.0);
-        metrics.put("isHealthy", successRate >= 90.0);
-        metrics.put("tokenCleanupCount", this.metrics.getTokenCleanupCount());
-        metrics.put("blacklistCleanupCount", this.metrics.getBlacklistCleanupCount());
-        metrics.put("cleanupFailureCount", this.metrics.getFailureCount());
+        perfMetrics.put("retentionDays", retentionDays);
+        perfMetrics.put("batchSize", batchSize);
+        perfMetrics.put("successRate", successRate);
+        perfMetrics.put("failureRate", 100.0 - successRate);
+        perfMetrics.put("totalItemsRemoved", totalItemsRemoved);
+        perfMetrics.put("averageItemsPerCleanup", totalCleanups > 0 ? (double) totalItemsRemoved / totalCleanups : 0.0);
+        perfMetrics.put("isHealthy", successRate >= 90.0);
+        perfMetrics.put("tokenCleanupCount", this.metrics.getTokenCleanupCount());
+        perfMetrics.put("blacklistCleanupCount", this.metrics.getBlacklistCleanupCount());
+        perfMetrics.put("cleanupFailureCount", this.metrics.getFailureCount());
 
-        return metrics;
+        return perfMetrics;
     }
 
     /**

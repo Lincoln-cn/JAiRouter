@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.config.core.ConfigMergeService;
-import org.unreal.modelrouter.config.core.manager.ConfigVersionManager;
 import org.unreal.modelrouter.monitor.tracing.config.SamplingConfigurationValidator;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.persistence.store.StoreManager;

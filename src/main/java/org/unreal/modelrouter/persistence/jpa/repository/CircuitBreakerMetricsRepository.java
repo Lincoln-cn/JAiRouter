@@ -44,9 +44,9 @@ public interface CircuitBreakerMetricsRepository extends JpaRepository<CircuitBr
     /**
      * 统计指定时间范围内的总调用数据
      */
-    @Query("SELECT SUM(m.totalCalls), SUM(m.failureCalls), SUM(m.successCalls) " +
-           "FROM CircuitBreakerMetricsEntity m " +
-           "WHERE m.instanceId = :instanceId AND m.windowEnd BETWEEN :start AND :end")
+    @Query("SELECT SUM(m.totalCalls), SUM(m.failureCalls), SUM(m.successCalls) "
+           + "FROM CircuitBreakerMetricsEntity m "
+           + "WHERE m.instanceId = :instanceId AND m.windowEnd BETWEEN :start AND :end")
     Object[] sumCallsByInstanceIdAndTimeRange(
             @Param("instanceId") String instanceId,
             @Param("start") LocalDateTime start,
@@ -60,7 +60,7 @@ public interface CircuitBreakerMetricsRepository extends JpaRepository<CircuitBr
     /**
      * 查找所有实例的最新统计数据（每个实例一条）
      */
-    @Query("SELECT m FROM CircuitBreakerMetricsEntity m " +
-           "WHERE m.windowEnd = (SELECT MAX(m2.windowEnd) FROM CircuitBreakerMetricsEntity m2 WHERE m2.instanceId = m.instanceId)")
+    @Query("SELECT m FROM CircuitBreakerMetricsEntity m "
+           + "WHERE m.windowEnd = (SELECT MAX(m2.windowEnd) FROM CircuitBreakerMetricsEntity m2 WHERE m2.instanceId = m.instanceId)")
     List<CircuitBreakerMetricsEntity> findLatestMetricsForAllInstances();
 }

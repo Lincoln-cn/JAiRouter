@@ -5,7 +5,6 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
-import org.unreal.modelrouter.monitor.tracing.memory.LRUCache;
 import org.unreal.modelrouter.monitor.tracing.memory.model.CachedTraceData;
 import org.unreal.modelrouter.monitor.tracing.memory.model.GCResult;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryCheckResult;

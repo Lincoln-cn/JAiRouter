@@ -188,7 +188,7 @@ public abstract class BaseAdapter implements ServiceCapability {
         if (fallbackStrategy == null) {
             return processRequest(request, authorization, httpRequest, serviceType, modelName, processor);
         }
-        Mono<ResponseEntity<?>> requestMono = (Mono<ResponseEntity<?>>)(Mono) processRequest(
+        Mono<ResponseEntity<?>> requestMono = (Mono<ResponseEntity<?>>) (Mono) processRequest(
                 request, authorization, httpRequest, serviceType, modelName, processor);
         if (fallbackRequestProcessor != null) {
             return requestMono.onErrorResume(throwable -> {

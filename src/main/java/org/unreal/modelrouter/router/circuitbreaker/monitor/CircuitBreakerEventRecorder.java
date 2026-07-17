@@ -280,12 +280,12 @@ public class CircuitBreakerEventRecorder {
         private final int maxSize;
         private volatile int head = 0;
 
-        public RingBuffer(int maxSize) {
+        RingBuffer(int maxSize) {
             this.maxSize = maxSize;
             this.buffer = new CopyOnWriteArrayList<>();
         }
 
-        public synchronized void add(T item) {
+        synchronized void add(T item) {
             if (buffer.size() < maxSize) {
                 buffer.add(item);
             } else {
