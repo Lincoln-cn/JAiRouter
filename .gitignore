@@ -221,3 +221,9 @@ jdeps/
 .qwen/welcome-back-state.json
 link-check-report.json
 .codegraph/
+
+# MiMo Code agent metadata
+.mimocode/
+
+# Agent skills (project-specific, not for git)
+.agents/skills/
