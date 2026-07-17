@@ -38,14 +38,12 @@ import org.unreal.modelrouter.monitor.tracing.logger.dto.BusinessEventFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.ErrorLogFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.LogType;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.PerformanceFields;
-import org.unreal.modelrouter.monitor.tracing.logger.dto.RequestLogFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.ResponseLogFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.SecurityEventFields;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.StructuredLogEntry;
 import org.unreal.modelrouter.monitor.tracing.logger.dto.SystemEventFields;
 import org.unreal.modelrouter.monitor.tracing.sanitization.TracingSanitizationService;
 import org.unreal.modelrouter.monitor.tracing.security.TracingSecurityManager;
-import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.Map;

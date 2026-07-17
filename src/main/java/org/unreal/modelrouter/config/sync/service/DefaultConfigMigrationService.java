@@ -11,7 +11,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -95,7 +94,8 @@ public class DefaultConfigMigrationService implements ConfigMigrationService {
     private Mono<Boolean> importServiceConfig(String serviceType, Object configData) {
         return Mono.fromCallable(() -> {
             try {
-                ServiceConfigEntity existing = serviceConfigRepository.findFirstByServiceTypeAndIsLatestTrue(serviceType).orElse(null);
+                ServiceConfigEntity existing = serviceConfigRepository
+                        .findFirstByServiceTypeAndIsLatestTrue(serviceType).orElse(null);
                 ServiceConfigEntity entity;
                 if (existing != null) {
                     entity = existing;

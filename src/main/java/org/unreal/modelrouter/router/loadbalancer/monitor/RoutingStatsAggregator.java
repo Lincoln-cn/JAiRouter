@@ -165,10 +165,10 @@ public class RoutingStatsAggregator {
         /**
          * 记录一次实例选择
          */
-        public void recordSelection(String instance, String clientId, Instant timestamp, String strategy, String modelName) {
+        public void recordSelection(String instance, String clientId, Instant timestamp, String strategyName, String modelName) {
             // 更新策略
-            if (strategy != null && !strategy.isEmpty()) {
-                this.strategy = strategy;
+            if (strategyName != null && !strategyName.isEmpty()) {
+                this.strategy = strategyName;
             }
 
             // 更新实例选中计数

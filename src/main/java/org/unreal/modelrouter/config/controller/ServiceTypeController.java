@@ -126,7 +126,8 @@ public class ServiceTypeController {
      * @param serviceConfig 服务配置
      * @return 验证结果，如果验证通过返回null，否则返回错误信息
      */
-    private List<String> validateServiceConfiguration(final String serviceType, final Map<String, Object> serviceConfig) {
+    private List<String> validateServiceConfiguration(
+            final String serviceType, final Map<String, Object> serviceConfig) {
         // 验证服务类型参数
         if (!configurationValidator.isValidServiceType(serviceType)) {
             throw new IllegalArgumentException("无效的服务类型: " + serviceType);

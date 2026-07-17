@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.controller.HealthStatusSseController;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

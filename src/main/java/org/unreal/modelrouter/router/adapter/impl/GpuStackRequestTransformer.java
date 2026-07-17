@@ -12,7 +12,6 @@ import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.RerankDTO;
 import org.unreal.modelrouter.common.dto.SttDTO;
 import org.unreal.modelrouter.common.dto.TtsDTO;
-import org.unreal.modelrouter.router.adapter.util.ModelUtils;
 
 /**
  * GPUStack 请求转换器

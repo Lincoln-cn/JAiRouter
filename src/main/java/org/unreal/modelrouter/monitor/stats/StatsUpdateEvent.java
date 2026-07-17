@@ -126,6 +126,7 @@ public class StatsUpdateEvent {
     /**
      * 构建器
      */
+    @SuppressWarnings("HiddenField")
     public static class Builder {
         private Type type;
         private String serviceType;

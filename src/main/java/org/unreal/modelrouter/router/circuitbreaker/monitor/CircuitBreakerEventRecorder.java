@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -281,12 +280,12 @@ public class CircuitBreakerEventRecorder {
         private final int maxSize;
         private volatile int head = 0;
 
-        public RingBuffer(int maxSize) {
+        RingBuffer(int maxSize) {
             this.maxSize = maxSize;
             this.buffer = new CopyOnWriteArrayList<>();
         }
 
-        public synchronized void add(T item) {
+        synchronized void add(T item) {
             if (buffer.size() < maxSize) {
                 buffer.add(item);
             } else {

@@ -2,7 +2,6 @@ package org.unreal.modelrouter.router.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.unreal.modelrouter.common.util.SecurityUtils;
 import java.util.List;
 import java.util.Map;
 

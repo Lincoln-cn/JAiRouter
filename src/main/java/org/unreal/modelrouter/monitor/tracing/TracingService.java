@@ -13,7 +13,6 @@ import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.helper.ServiceNameResolver;
 import org.unreal.modelrouter.monitor.tracing.helper.SpanAttributeHelper;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
-import org.unreal.modelrouter.monitor.tracing.memory.model.CachedTraceData;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 import org.unreal.modelrouter.monitor.tracing.query.TraceQueryService;

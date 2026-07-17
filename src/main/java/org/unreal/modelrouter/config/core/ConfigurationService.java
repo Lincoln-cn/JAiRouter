@@ -19,8 +19,6 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.persistence.store.StoreManager;
 import org.unreal.modelrouter.monitor.tracing.config.SamplingConfigurationValidator;
-import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
-import org.unreal.modelrouter.common.util.InstanceIdUtils;
 import org.unreal.modelrouter.common.util.SecurityUtils;
 
 import java.util.ArrayList;
