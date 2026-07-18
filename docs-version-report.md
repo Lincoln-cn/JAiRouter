@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 152
-- 近7天变更: 40
+- 近7天变更: 45
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-17 05:14:05
+- 最后扫描: 2026-07-18 04:48:48
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.7 → 1.0.8) - 2026-07-18
+- **MODIFIED**: docs/zh/configuration/validation-rules.md (1.0.2 → 1.0.3) - 2026-07-18
+- **MODIFIED**: docs/en/reference/roadmap.md (1.0.7 → 1.0.8) - 2026-07-18
+- **MODIFIED**: docs-version-report.md (1.0.76 → 1.0.77) - 2026-07-18
+- **MODIFIED**: README.md (1.0.19 → 1.0.20) - 2026-07-18
+- **MODIFIED**: README-ZH.md (1.0.11 → 1.0.12) - 2026-07-18
 - **MODIFIED**: docs-version-report.md (1.0.75 → 1.0.76) - 2026-07-17
 - **MODIFIED**: docs/en/security/troubleshooting.md (1.0.1 → 1.0.2) - 2026-07-16
 - **MODIFIED**: docs/en/security/blacklist-management.md (1.0.1 → 1.0.2) - 2026-07-16
 - **MODIFIED**: docs/en/reference/roadmap.md (1.0.6 → 1.0.7) - 2026-07-16
-- **MODIFIED**: docs/en/reference/index.md (1.0.2 → 1.0.3) - 2026-07-16
-- **MODIFIED**: docs/en/reference/glossary.md (1.0.2 → 1.0.3) - 2026-07-16
-- **MODIFIED**: docs/en/reference/faq.md (1.0.3 → 1.0.4) - 2026-07-16
-- **MODIFIED**: docs/en/reference/changelog.md (1.0.6 → 1.0.7) - 2026-07-16
-- **MODIFIED**: docs/en/getting-started/quick-start.md (1.0.4 → 1.0.5) - 2026-07-16
-- **MODIFIED**: docs/en/development/index.md (1.0.4 → 1.0.5) - 2026-07-16
 
 ## 过期文档 (30天未更新)
 
@@ -631,10 +631,14 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.76 - 2026-07-17 (ce18fbf5)
+- **docs/zh/reference/roadmap.md**: v1.0.8 - 2026-07-18 (ca98a2ee)
+- **docs/zh/configuration/validation-rules.md**: v1.0.3 - 2026-07-18 (ca98a2ee)
+- **docs/en/reference/roadmap.md**: v1.0.8 - 2026-07-18 (d96cd9ee)
+- **docs-version-report.md**: v1.0.77 - 2026-07-18 (91074b2b)
+- **README.md**: v1.0.20 - 2026-07-18 (a082b2a2)
+- **README-ZH.md**: v1.0.12 - 2026-07-18 (a082b2a2)
 - **docs/en/security/troubleshooting.md**: v1.0.2 - 2026-07-16 (b98b834b)
 - **docs/en/security/blacklist-management.md**: v1.0.2 - 2026-07-16 (b98b834b)
-- **docs/en/reference/roadmap.md**: v1.0.7 - 2026-07-16 (b98b834b)
 - **docs/en/reference/index.md**: v1.0.3 - 2026-07-16 (b98b834b)
 - **docs/en/reference/glossary.md**: v1.0.3 - 2026-07-16 (b98b834b)
 - **docs/en/reference/faq.md**: v1.0.4 - 2026-07-16 (b98b834b)
@@ -644,9 +648,6 @@
 - **docs/en/development/architecture.md**: v1.0.4 - 2026-07-16 (b98b834b)
 - **docs/en/deployment/docker-optimized.md**: v1.0.2 - 2026-07-16 (b98b834b)
 - **docs/en/api-reference/error-codes.md**: v1.0.2 - 2026-07-16 (b98b834b)
-- **README.md**: v1.0.19 - 2026-07-16 (4f1b54b4)
-- **README-ZH.md**: v1.0.11 - 2026-07-16 (4f1b54b4)
-- **docs/zh/reference/roadmap.md**: v1.0.7 - 2026-07-15 (d7c1e0a8)
 - **docs/zh/getting-started/quick-start.md**: v1.0.5 - 2026-07-15 (d01148bb)
 - **docs/zh/configuration/instance-examples.md**: v1.0.0 - 2026-07-15 (a0139c87)
 - **docs/en/configuration/instance-examples.md**: v1.0.0 - 2026-07-15 (a0139c87)
@@ -663,7 +664,6 @@
 - **docs/en/api-reference/management-api.md**: v1.0.4 - 2026-07-01 (2f07f762)
 - **repository-description.md**: v1.0.0 - 2026-06-29 (635e749d)
 - **docs/en/monitoring/configuration.md**: v1.0.3 - 2026-06-26 (7da5f191)
-- **docs/zh/configuration/validation-rules.md**: v1.0.2 - 2026-06-23 (623002c1)
 - **docs/zh/tracing/usage-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/quickstart.md**: v1.0.3 - 2026-06-16 (933eeadf)
 - **docs/zh/tracing/operations-guide.md**: v1.0.3 - 2026-06-16 (933eeadf)
