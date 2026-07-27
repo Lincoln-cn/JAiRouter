@@ -5,17 +5,17 @@
 - 总文档数: 152
 - 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-26 05:32:11
+- 最后扫描: 2026-07-27 05:50:46
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.85 → 1.0.86) - 2026-07-27
 - **MODIFIED**: docs-version-report.md (1.0.84 → 1.0.85) - 2026-07-26
 - **MODIFIED**: docs-version-report.md (1.0.83 → 1.0.84) - 2026-07-25
 - **MODIFIED**: docs-version-report.md (1.0.82 → 1.0.83) - 2026-07-24
 - **MODIFIED**: docs-version-report.md (1.0.81 → 1.0.82) - 2026-07-23
 - **MODIFIED**: docs-version-report.md (1.0.80 → 1.0.81) - 2026-07-22
 - **MODIFIED**: docs-version-report.md (1.0.79 → 1.0.80) - 2026-07-21
-- **MODIFIED**: docs-version-report.md (1.0.78 → 1.0.79) - 2026-07-20
 
 ## 过期文档 (30天未更新)
 
@@ -42,6 +42,7 @@
 - docs/en/getting-started/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/getting-started/installation.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/en/monitoring/alerts.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/monitoring/configuration.md (版本: 1.0.3, 最后更新: 2026-06-26)
 - docs/en/monitoring/dashboards.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/monitoring/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/en/monitoring/metrics.md (版本: 1.0.2, 最后更新: 2026-06-03)
@@ -628,7 +629,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.85 - 2026-07-26 (7fa86bf3)
+- **docs-version-report.md**: v1.0.86 - 2026-07-27 (0cb79083)
 - **docs/zh/reference/roadmap.md**: v1.0.8 - 2026-07-18 (ca98a2ee)
 - **docs/zh/configuration/validation-rules.md**: v1.0.3 - 2026-07-18 (ca98a2ee)
 - **docs/en/reference/roadmap.md**: v1.0.8 - 2026-07-18 (d96cd9ee)
