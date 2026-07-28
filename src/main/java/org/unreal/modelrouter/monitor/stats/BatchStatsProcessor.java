@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * @author JAiRouter Team
  * @since 2.7.4
  */
-public class BatchStatsProcessor implements Consumer<StatsUpdateEvent> {
+public final class BatchStatsProcessor implements Consumer<StatsUpdateEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(BatchStatsProcessor.class);
 
@@ -272,7 +272,7 @@ public class BatchStatsProcessor implements Consumer<StatsUpdateEvent> {
     /**
      * 处理器统计信息
      */
-    public static class ProcessorStats {
+    public static final class ProcessorStats {
         private final int bufferSize;
         private final long processedCount;
         private final long droppedCount;

@@ -55,7 +55,8 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
     
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            final List<ModelRouterProperties.ModelInstance> instances, final String clientIp, final String serviceType) {
+            final List<ModelRouterProperties.ModelInstance> instances,
+            final String clientIp, final String serviceType) {
         
         TracingContext context = TracingContextHolder.getCurrentContext();
         Span span = null;
@@ -80,7 +81,8 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
             }
             
             // 执行负载均衡选择
-            ModelRouterProperties.ModelInstance selectedInstance = delegate.selectInstance(instances, clientIp, serviceType);
+            ModelRouterProperties.ModelInstance selectedInstance =
+                    delegate.selectInstance(instances, clientIp, serviceType);
             
             // 计算决策时间
             long decisionTimeMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
@@ -89,7 +91,8 @@ public class LoadBalancerTracingWrapper implements LoadBalancer {
                 // 记录成功选择
                 recordSuccessfulSelection(context, span, selectedInstance, decisionTimeMs, serviceType);
                 successfulSelections.incrementAndGet();
-                instanceSelectionCount.computeIfAbsent(selectedInstance.getName(), k -> new AtomicLong(0)).incrementAndGet();
+                instanceSelectionCount.computeIfAbsent(
+                        selectedInstance.getName(), k -> new AtomicLong(0)).incrementAndGet();
             } else {
                 // 记录选择失败
                 recordFailedSelection(context, span, decisionTimeMs, serviceType, "No instance selected");

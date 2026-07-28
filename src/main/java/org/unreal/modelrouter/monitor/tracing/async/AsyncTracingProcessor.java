@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 @Component
-public class AsyncTracingProcessor {
+public final class AsyncTracingProcessor {
 
     private final TracingConfiguration tracingConfiguration;
     private final Scheduler processingScheduler;

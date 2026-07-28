@@ -111,7 +111,8 @@ public class ModelServiceRegistry {
         this.selectInstanceOptimizer = new SelectInstanceOptimizer(serviceStateManager, circuitBreakerManager);
         this.instanceSelector = new ServiceInstanceSelector(
                 serviceStateManager, rateLimitManager, circuitBreakerManager, routingMonitorService);
-        this.configBuilder = new ServiceConfigBuilder(configConverterHelper, rateLimitManager, circuitBreakerManager, fallbackManager);
+        this.configBuilder = new ServiceConfigBuilder(
+                configConverterHelper, rateLimitManager, circuitBreakerManager, fallbackManager);
     }
 
     @PostConstruct
@@ -198,7 +199,8 @@ public class ModelServiceRegistry {
         }
 
         ModelRouterProperties.ModelInstance selectedInstance =
-                instanceSelector.selectWithRateLimit(availableInstances, loadBalancer, clientIp, serviceType, modelName);
+                instanceSelector.selectWithRateLimit(
+                        availableInstances, loadBalancer, clientIp, serviceType, modelName);
 
         if (selectedInstance == null) {
             throw new ResponseStatusException(
@@ -336,7 +338,9 @@ public class ModelServiceRegistry {
 
     // ==================== 动态更新方法 ====================
 
-    public void updateServiceInstances(final ServiceType serviceType, final List<ModelRouterProperties.ModelInstance> instances) {
+    public void updateServiceInstances(
+            final ServiceType serviceType,
+            final List<ModelRouterProperties.ModelInstance> instances) {
         String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
         ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
 
@@ -392,7 +396,8 @@ public class ModelServiceRegistry {
         Map<String, ModelRouterProperties.ServiceConfig> services = new HashMap<>();
         for (Map.Entry<String, Object> entry : servicesMap.entrySet()) {
             Map<String, Object> serviceConfigMap = (Map<String, Object>) entry.getValue();
-            ModelRouterProperties.ServiceConfig serviceConfig = configConverterHelper.convertMapToServiceConfig(serviceConfigMap);
+            ModelRouterProperties.ServiceConfig serviceConfig =
+                    configConverterHelper.convertMapToServiceConfig(serviceConfigMap);
             services.put(entry.getKey(), serviceConfig);
         }
 

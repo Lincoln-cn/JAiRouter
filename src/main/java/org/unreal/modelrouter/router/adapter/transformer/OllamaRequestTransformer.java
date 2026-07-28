@@ -52,7 +52,9 @@ public class OllamaRequestTransformer {
             return ollamaRequest;
         } catch (Exception e) {
             LOGGER.warn("Failed to transform chat request for Ollama: {}", e.getMessage());
-            return objectMapper.createObjectNode().put("model", request.model()).set("messages", objectMapper.valueToTree(request.messages()));
+            return objectMapper.createObjectNode()
+                    .put("model", request.model())
+                    .set("messages", objectMapper.valueToTree(request.messages()));
         }
     }
 

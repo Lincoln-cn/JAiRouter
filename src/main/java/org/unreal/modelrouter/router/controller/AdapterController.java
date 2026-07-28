@@ -47,10 +47,13 @@ public class AdapterController {
     @ApiResponse(responseCode = "500", description = "服务器内部错误")
     public ResponseEntity<RouterResponse<List<Object>>> getAdapters() {
         try {
-            Map<String, org.unreal.modelrouter.router.adapter.ServiceCapability> adapters = adapterRegistry.getAllAdapters();
+            Map<String, org.unreal.modelrouter.router.adapter.ServiceCapability> adapters =
+                    adapterRegistry.getAllAdapters();
             
             List<Object> adapterList = new ArrayList<>();
-            for (Map.Entry<String, org.unreal.modelrouter.router.adapter.ServiceCapability> entry : adapters.entrySet()) {
+            for (Map.Entry<String,
+                    org.unreal.modelrouter.router.adapter.ServiceCapability> entry
+                    : adapters.entrySet()) {
                 String adapterName = entry.getKey();
                 org.unreal.modelrouter.router.adapter.ServiceCapability adapter = entry.getValue();
                 

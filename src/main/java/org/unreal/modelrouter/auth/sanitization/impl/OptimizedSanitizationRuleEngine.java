@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @Component
 @Primary
 @ConditionalOnProperty(name = "jairouter.security.sanitization.optimized", havingValue = "true", matchIfMissing = true)
-public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
+public final class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     
     /**
      * 编译后的正则表达式缓存
@@ -75,7 +75,9 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     private static final String DEFAULT_HASH_ALGORITHM = "SHA-256";
     
     @Override
-    public Mono<String> applySanitizationRules(final String content, final List<SanitizationRule> rules, final String contentType) {
+    public Mono<String> applySanitizationRules(final String content,
+                                                 final List<SanitizationRule> rules,
+                                                 final String contentType) {
         if (content == null || content.isEmpty()) {
             return Mono.justOrEmpty(content);
         }
@@ -95,7 +97,9 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 内存中处理内容
      */
-    private Mono<String> processContentInMemory(final String content, final List<SanitizationRule> rules, final String contentType) {
+    private Mono<String> processContentInMemory(final String content,
+                                                  final List<SanitizationRule> rules,
+                                                  final String contentType) {
         return Mono.fromCallable(() -> {
             List<CompiledRule> applicableRules = getApplicableRules(rules, contentType);
             
@@ -112,13 +116,16 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
             return sanitizedContent;
         })
         .subscribeOn(Schedulers.boundedElastic())
-        .onErrorMap(throwable -> new SanitizationException("脱敏处理失败", throwable, SanitizationException.SANITIZATION_FAILED));
+        .onErrorMap(throwable -> new SanitizationException("脱敏处理失败",
+                throwable, SanitizationException.SANITIZATION_FAILED));
     }
     
     /**
      * 流式处理大文件内容
      */
-    private Mono<String> processLargeContentStreaming(final String content, final List<SanitizationRule> rules, final String contentType) {
+    private Mono<String> processLargeContentStreaming(final String content,
+                                                       final List<SanitizationRule> rules,
+                                                       final String contentType) {
         return Mono.fromCallable(() -> {
             List<CompiledRule> applicableRules = getApplicableRules(rules, contentType);
             
@@ -147,7 +154,8 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
             return result.toString();
         })
         .subscribeOn(Schedulers.boundedElastic())
-        .onErrorMap(throwable -> new SanitizationException("流式脱敏处理失败", throwable, SanitizationException.SANITIZATION_FAILED));
+        .onErrorMap(throwable -> new SanitizationException("流式脱敏处理失败",
+                throwable, SanitizationException.SANITIZATION_FAILED));
     }
     
     /**
@@ -211,7 +219,9 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用掩码策略
      */
-    private String applyMaskStrategy(final String content, final java.util.regex.Matcher matcher, final SanitizationRule rule) {
+    private String applyMaskStrategy(final String content,
+                                      final java.util.regex.Matcher matcher,
+                                      final SanitizationRule rule) {
         String maskChar = rule.getReplacementChar() != null ? rule.getReplacementChar() : DEFAULT_MASK_CHAR;
         
         StringBuffer result = new StringBuffer();
@@ -230,7 +240,9 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用替换策略
      */
-    private String applyReplaceStrategy(final String content, final java.util.regex.Matcher matcher, final SanitizationRule rule) {
+    private String applyReplaceStrategy(final String content,
+                                         final java.util.regex.Matcher matcher,
+                                         final SanitizationRule rule) {
         String replacement = rule.getReplacementText() != null ? rule.getReplacementText() : "[REDACTED]";
         return matcher.replaceAll(java.util.regex.Matcher.quoteReplacement(replacement));
     }
@@ -372,7 +384,10 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 批量处理多个内容
      */
-    public Flux<String> applySanitizationRulesBatch(final List<String> contents, final List<SanitizationRule> rules, final String contentType) {
+    public Flux<String> applySanitizationRulesBatch(
+            final List<String> contents,
+            final List<SanitizationRule> rules,
+            final String contentType) {
         return Flux.fromIterable(contents)
                 .parallel()
                 .runOn(Schedulers.parallel())
@@ -425,7 +440,7 @@ public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 缓存统计信息
      */
-    public static class CacheStatistics {
+    public static final class CacheStatistics {
         private final int compiledRulesCount;
         private final int contentTypeCacheCount;
         private final long totalMatches;

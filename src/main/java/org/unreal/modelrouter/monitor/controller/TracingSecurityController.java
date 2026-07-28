@@ -253,7 +253,8 @@ public class TracingSecurityController {
             
             // 脱敏配置状态
             Map<String, Object> sanitizationStatus = new HashMap<>();
-            sanitizationStatus.put("sensitiveFieldCount", tracingSanitizationService.getTracingSensitiveFields().size());
+            sanitizationStatus.put("sensitiveFieldCount",
+                    tracingSanitizationService.getTracingSensitiveFields().size());
             sanitizationStatus.put("enabled", true);
             overview.put("sanitization", sanitizationStatus);
             

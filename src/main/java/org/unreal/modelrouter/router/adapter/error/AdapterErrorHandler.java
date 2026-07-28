@@ -35,7 +35,8 @@ public class AdapterErrorHandler {
         }
 
         if (throwable instanceof org.springframework.web.server.ResponseStatusException) {
-            return String.valueOf(((org.springframework.web.server.ResponseStatusException) throwable).getStatusCode().value());
+            return String.valueOf(((org.springframework.web.server.ResponseStatusException) throwable)
+                    .getStatusCode().value());
         } else if (throwable instanceof DownstreamServiceException) {
             return "503";
         } else if (throwable instanceof TimeoutException) {

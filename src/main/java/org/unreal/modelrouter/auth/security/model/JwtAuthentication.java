@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  */
 @Getter
 @Setter
-public class JwtAuthentication implements Authentication {
+public final class JwtAuthentication implements Authentication {
     
     private final String principal;
     private final String credentials;

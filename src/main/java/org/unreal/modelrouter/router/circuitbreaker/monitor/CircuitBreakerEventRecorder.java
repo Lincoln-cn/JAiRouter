@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  */
 @Slf4j
 @Component
-public class CircuitBreakerEventRecorder {
+public final class CircuitBreakerEventRecorder {
 
     private final CircuitBreakerMonitorConfig config;
 
@@ -235,7 +235,9 @@ public class CircuitBreakerEventRecorder {
     public String exportAsCsv(int limit) {
         StringWriter writer = new StringWriter();
 
-        writer.write("timestamp,instance_id,instance_name,service_type,event_type,previous_state,current_state,failure_count,success_count,trigger_reason\n");
+        writer.write("timestamp,instance_id,instance_name,service_type,"
+                + "event_type,previous_state,current_state,"
+                + "failure_count,success_count,trigger_reason\n");
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
 

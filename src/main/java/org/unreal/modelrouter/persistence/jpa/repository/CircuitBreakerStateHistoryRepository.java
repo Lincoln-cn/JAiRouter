@@ -45,7 +45,9 @@ public interface CircuitBreakerStateHistoryRepository extends JpaRepository<Circ
     /**
      * 按时间范围查询历史记录
      */
-    @Query("SELECT h FROM CircuitBreakerStateHistoryEntity h WHERE h.changedAt BETWEEN :startTime AND :endTime ORDER BY h.changedAt DESC")
+    @Query("SELECT h FROM CircuitBreakerStateHistoryEntity h "
+           + "WHERE h.changedAt BETWEEN :startTime AND :endTime "
+           + "ORDER BY h.changedAt DESC")
     List<CircuitBreakerStateHistoryEntity> findByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);

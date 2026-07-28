@@ -3,7 +3,7 @@ package org.unreal.modelrouter.common.dto;
 /**
  * JWT账户配置状态对象
  */
-public class JwtAccountConfigStatus {
+public final class JwtAccountConfigStatus {
     private boolean hasPersistedConfig;
     private int currentVersion;
     private int totalVersions;

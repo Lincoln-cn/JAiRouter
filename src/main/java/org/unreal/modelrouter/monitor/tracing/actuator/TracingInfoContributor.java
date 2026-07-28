@@ -26,7 +26,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class TracingInfoContributor implements InfoContributor {
+public final class TracingInfoContributor implements InfoContributor {
 
     private final TracingConfiguration tracingConfiguration;
     private final TracingPerformanceMonitor performanceMonitor;

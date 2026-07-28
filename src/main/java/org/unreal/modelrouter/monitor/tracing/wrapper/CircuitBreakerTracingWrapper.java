@@ -47,7 +47,10 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     private volatile Instant lastSuccessTime;
     private volatile State previousState = State.CLOSED;
     
-    public CircuitBreakerTracingWrapper(final CircuitBreaker delegate, final StructuredLogger structuredLogger, final String instanceId) {
+    public CircuitBreakerTracingWrapper(
+            final CircuitBreaker delegate,
+            final StructuredLogger structuredLogger,
+            final String instanceId) {
         this.delegate = delegate;
         this.structuredLogger = structuredLogger;
         this.instanceId = instanceId != null ? instanceId : "unknown";
@@ -461,7 +464,9 @@ public class CircuitBreakerTracingWrapper implements CircuitBreaker {
     /**
      * 记录熔断器错误
      */
-    private void recordCircuitBreakerError(final TracingContext context, final Span span, final long operationTimeMs, final Exception error) {
+    private void recordCircuitBreakerError(
+            final TracingContext context, final Span span,
+            final long operationTimeMs, final Exception error) {
         if (span != null) {
             span.setAttribute("cb.operation_time_ms", operationTimeMs);
             span.setAttribute("cb.error", error.getMessage());

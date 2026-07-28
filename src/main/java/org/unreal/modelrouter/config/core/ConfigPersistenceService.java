@@ -52,7 +52,9 @@ public class ConfigPersistenceService {
      * 保存配置并创建新版本
      */
     @Transactional
-    public Integer saveConfigWithVersion(final Map<String, Object> config, final String description, final String userId) {
+    public Integer saveConfigWithVersion(
+            final Map<String, Object> config, final String description,
+            final String userId) {
         Integer version = versionControlService.createNewVersion(config, description, userId);
         storeManager.saveConfig(CURRENT_KEY, config);
         publishConfigChangedEvent(config, version, description, userId);

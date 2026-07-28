@@ -9,7 +9,9 @@ public class ProcessingStats {
     private final long queueSize;
     private final String circuitBreakerState;
 
-    public ProcessingStats(final long processedCount, final long droppedCount, final long queueSize, final String circuitBreakerState) {
+    public ProcessingStats(
+            final long processedCount, final long droppedCount,
+            final long queueSize, final String circuitBreakerState) {
         this.processedCount = processedCount;
         this.droppedCount = droppedCount;
         this.queueSize = queueSize;

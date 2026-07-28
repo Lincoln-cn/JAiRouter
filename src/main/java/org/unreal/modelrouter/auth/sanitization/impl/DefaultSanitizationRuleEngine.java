@@ -23,7 +23,7 @@ import java.util.regex.PatternSyntaxException;
  */
 @Slf4j
 @Component
-public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
+public final class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     
     /**
      * 编译后的正则表达式缓存
@@ -46,7 +46,8 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     private static final String DEFAULT_HASH_ALGORITHM = "SHA-256";
     
     @Override
-    public Mono<String> applySanitizationRules(final String content, final List<SanitizationRule> rules, final String contentType) {
+    public Mono<String> applySanitizationRules(
+            final String content, final List<SanitizationRule> rules, final String contentType) {
         if (content == null) {
             return Mono.empty();
         }
@@ -81,7 +82,8 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
             
             return sanitizedContent;
         })
-        .onErrorMap(throwable -> new SanitizationException("脱敏处理失败", throwable, SanitizationException.SANITIZATION_FAILED));
+        .onErrorMap(throwable -> new SanitizationException(
+                "脱敏处理失败", throwable, SanitizationException.SANITIZATION_FAILED));
     }
     
     /**
@@ -114,7 +116,8 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用掩码策略
      */
-    private String applyMaskStrategy(final String content, final java.util.regex.Matcher matcher, final SanitizationRule rule) {
+    private String applyMaskStrategy(final String content,
+            final java.util.regex.Matcher matcher, final SanitizationRule rule) {
         String maskChar = rule.getReplacementChar() != null ? rule.getReplacementChar() : DEFAULT_MASK_CHAR;
         
         StringBuffer result = new StringBuffer();
@@ -133,7 +136,8 @@ public class DefaultSanitizationRuleEngine implements SanitizationRuleEngine {
     /**
      * 应用替换策略
      */
-    private String applyReplaceStrategy(final String content, final java.util.regex.Matcher matcher, final SanitizationRule rule) {
+    private String applyReplaceStrategy(final String content,
+            final java.util.regex.Matcher matcher, final SanitizationRule rule) {
         String replacement = rule.getReplacementText() != null ? rule.getReplacementText() : "[REDACTED]";
         return matcher.replaceAll(java.util.regex.Matcher.quoteReplacement(replacement));
     }

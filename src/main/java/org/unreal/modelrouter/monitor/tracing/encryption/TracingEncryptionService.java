@@ -280,7 +280,9 @@ public class TracingEncryptionService {
                 EncryptedTraceData oldData = encryptedTraceCache.get(traceId);
                 if (oldData != null) {
                     // 解密旧数据
-                    String decryptedData = decryptTraceData(oldData.getEncryptedData(), traceId, oldData.getDataType()).block();
+                    String decryptedData = decryptTraceData(
+                            oldData.getEncryptedData(), traceId,
+                            oldData.getDataType()).block();
                     
                     // 更新密钥
                     encryptionKeys.put(traceId, newKey);

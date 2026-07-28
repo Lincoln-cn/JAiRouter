@@ -44,7 +44,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PerformanceFields implements LogFields {
+public final class PerformanceFields implements LogFields {
 
     /**
      * 操作名称

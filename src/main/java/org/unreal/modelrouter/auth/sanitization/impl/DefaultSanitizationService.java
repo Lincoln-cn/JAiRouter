@@ -42,7 +42,8 @@ public class DefaultSanitizationService implements SanitizationService {
     private final AtomicInteger ruleIdGenerator = new AtomicInteger(1);
     
     @Autowired
-    public DefaultSanitizationService(final SanitizationRuleEngine ruleEngine, final SecurityProperties securityProperties) {
+    public DefaultSanitizationService(
+            final SanitizationRuleEngine ruleEngine, final SecurityProperties securityProperties) {
         this.ruleEngine = ruleEngine;
         this.securityProperties = securityProperties;
     }

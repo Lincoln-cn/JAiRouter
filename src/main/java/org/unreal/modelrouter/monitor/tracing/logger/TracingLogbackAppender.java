@@ -22,7 +22,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Slf4j
-public class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
+public final class TracingLogbackAppender extends AppenderBase<ILoggingEvent> {
     
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final DateTimeFormatter DATE_FORMATTER = 

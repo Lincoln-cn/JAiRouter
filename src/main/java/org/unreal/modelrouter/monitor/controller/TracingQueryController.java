@@ -384,7 +384,8 @@ public class TracingQueryController {
                 for (Map<String, Object> service : services) {
                     Map<String, Object> serviceData = new HashMap<>();
                     serviceData.put("service", service.get("name"));
-                    serviceData.put("requestsPerSecond", ((Number) service.get("traces")).doubleValue() / 3600.0); // 简化计算
+                    serviceData.put("requestsPerSecond",
+                            ((Number) service.get("traces")).doubleValue() / 3600.0);
                     serviceData.put("totalRequests", service.get("traces"));
                     requestDistribution.add(serviceData);
                 }

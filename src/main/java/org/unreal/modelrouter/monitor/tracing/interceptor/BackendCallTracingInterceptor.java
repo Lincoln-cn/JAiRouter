@@ -35,7 +35,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Component
-public class BackendCallTracingInterceptor implements ExchangeFilterFunction {
+public final class BackendCallTracingInterceptor implements ExchangeFilterFunction {
     
     private static final Logger logger = LoggerFactory.getLogger(BackendCallTracingInterceptor.class);
     

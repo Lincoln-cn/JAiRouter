@@ -51,7 +51,9 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 根据时间范围查询
      */
-    @Query("SELECT t FROM TokenUsageEntity t WHERE t.occurredAt BETWEEN :startTime AND :endTime ORDER BY t.occurredAt DESC")
+    @Query("SELECT t FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime "
+           + "ORDER BY t.occurredAt DESC")
     List<TokenUsageEntity> findByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -59,7 +61,9 @@ public interface TokenUsageRepository extends JpaRepository<TokenUsageEntity, Lo
     /**
      * 统计时间范围内的 token 使用量
      */
-    @Query("SELECT COALESCE(SUM(t.totalTokens), 0) FROM TokenUsageEntity t WHERE t.occurredAt BETWEEN :startTime AND :endTime")
+    @Query("SELECT COALESCE(SUM(t.totalTokens), 0) "
+           + "FROM TokenUsageEntity t "
+           + "WHERE t.occurredAt BETWEEN :startTime AND :endTime")
     long countTotalTokensByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);

@@ -20,7 +20,9 @@ public class EnhancedSecurityConfiguration {
      * 配置增强的JWT黑名单服务
      */
     @Bean
-    @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist-enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "jairouter.security.jwt.blacklist-enabled",
+            havingValue = "true", matchIfMissing = true)
     public EnhancedJwtBlacklistService enhancedJwtBlacklistService(final ReactiveStringRedisTemplate redisTemplate) {
         log.info("配置增强的JWT黑名单服务");
         return new EnhancedJwtBlacklistService(redisTemplate);

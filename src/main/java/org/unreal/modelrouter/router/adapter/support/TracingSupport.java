@@ -54,7 +54,8 @@ public class TracingSupport {
         if (tracingContext != null && tracingContext.isActive()) {
             try {
                 AdapterTracingEnhancer enhancer = ApplicationContextProvider.getBean(AdapterTracingEnhancer.class);
-                enhancer.logAdapterCallComplete(adapterType, instance, serviceType, modelName, duration, success, tracingContext);
+                enhancer.logAdapterCallComplete(adapterType, instance,
+                        serviceType, modelName, duration, success, tracingContext);
             } catch (Exception e) {
                 log.debug("记录适配器调用完成追踪失败：{}", e.getMessage());
             }
@@ -77,7 +78,8 @@ public class TracingSupport {
         }
 
         if (metricsCollector != null) {
-            metricsCollector.recordBackendCall(adapterType, instance != null ? instance.getName() : "unknown", 0, false);
+            metricsCollector.recordBackendCall(adapterType,
+                    instance != null ? instance.getName() : "unknown", 0, false);
         }
     }
 

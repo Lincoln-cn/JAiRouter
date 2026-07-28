@@ -137,7 +137,8 @@ public class GpuStackResponseTransformer {
                     standardResponse.set("usage", usage);
                 }
             } else if (gpuStackResponse.has("results")) {
-                standardResponse.set("id", objectMapper.getNodeFactory().textNode("cmpl-" + System.currentTimeMillis()));
+                standardResponse.set("id", objectMapper.getNodeFactory()
+                        .textNode("cmpl-" + System.currentTimeMillis()));
                 standardResponse.set("results", gpuStackResponse.get("results"));
                 if (gpuStackResponse.has("model")) {
                     standardResponse.put("model", gpuStackResponse.get("model").asText());

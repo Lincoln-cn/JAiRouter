@@ -24,7 +24,9 @@ import java.util.Map;
  */
 @Controller
 @RequestMapping("/actuator/jwt-persistence-health")
-@ConditionalOnProperty(name = "management.endpoint.jwt-persistence-health.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "management.endpoint.jwt-persistence-health.enabled",
+        havingValue = "true", matchIfMissing = true)
 public class JwtPersistenceHealthEndpoint {
     
     private static final Logger log = LoggerFactory.getLogger(JwtPersistenceHealthEndpoint.class);

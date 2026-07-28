@@ -18,7 +18,7 @@ import java.time.format.DateTimeFormatter;
  * - 适合需要追踪版本创建时间的场景
  */
 @Component
-public class TimestampVersionGenerator implements VersionGenerator {
+public final class TimestampVersionGenerator implements VersionGenerator {
 
     private static final Logger logger = LoggerFactory.getLogger(TimestampVersionGenerator.class);
 

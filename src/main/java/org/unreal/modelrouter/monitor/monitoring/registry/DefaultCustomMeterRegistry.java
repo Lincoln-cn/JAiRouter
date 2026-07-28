@@ -349,7 +349,8 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
         }
         
         if (request.getType() != expectedType) {
-            throw new IllegalArgumentException("Expected metric type " + expectedType + " but got " + request.getType());
+            throw new IllegalArgumentException("Expected metric type "
+                    + expectedType + " but got " + request.getType());
         }
         
         if (request.getSamplingRate() < 0.0 || request.getSamplingRate() > 1.0) {
@@ -363,7 +364,9 @@ public class DefaultCustomMeterRegistry implements CustomMeterRegistry {
         if (tags != null && !tags.isEmpty()) {
             tags.entrySet().stream()
                     .sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> keyBuilder.append("|").append(entry.getKey()).append("=").append(entry.getValue()));
+                    .forEach(entry -> keyBuilder.append("|")
+                            .append(entry.getKey()).append("=")
+                            .append(entry.getValue()));
         }
         
         return keyBuilder.toString();

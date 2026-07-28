@@ -69,7 +69,9 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public MetricRegistrationResult registerGaugeMetric(final MetricRegistrationRequest request, final Supplier<Number> valueSupplier) {
+    public MetricRegistrationResult registerGaugeMetric(
+            final MetricRegistrationRequest request,
+            final Supplier<Number> valueSupplier) {
         try {
             ValidationResult validation = validateMetricRequest(request);
             if (!validation.isValid()) {
@@ -169,7 +171,9 @@ public class DefaultMetricRegistrationService implements MetricRegistrationServi
     }
     
     @Override
-    public boolean updateMetricConfiguration(final String metricName, final boolean enabled, final double samplingRate) {
+    public boolean updateMetricConfiguration(
+            final String metricName, final boolean enabled,
+            final double samplingRate) {
         try {
             var metadataOpt = customMeterRegistry.getMetricMetadata(metricName);
             if (metadataOpt.isEmpty()) {

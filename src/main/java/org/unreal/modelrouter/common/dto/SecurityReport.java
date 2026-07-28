@@ -8,7 +8,7 @@ import java.util.Map;
  * 安全报告类
  * 用于生成安全审计报告
  */
-public class SecurityReport {
+public final class SecurityReport {
     
     private LocalDateTime reportPeriodStart;
     private LocalDateTime reportPeriodEnd;

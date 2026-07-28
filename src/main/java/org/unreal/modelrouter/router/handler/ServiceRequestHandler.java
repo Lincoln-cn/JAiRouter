@@ -276,7 +276,8 @@ public class ServiceRequestHandler {
         }
 
         // 执行请求
-        return executeRequest(adapter, authorization, httpRequest, tracingContext, adapterName, serviceType, instance, requestExecutor)
+        return executeRequest(adapter, authorization, httpRequest,
+                tracingContext, adapterName, serviceType, instance, requestExecutor)
             .doOnSuccess(response -> {
                 long duration = System.currentTimeMillis() - startTime;
                 String status = getResponseStatus(response);

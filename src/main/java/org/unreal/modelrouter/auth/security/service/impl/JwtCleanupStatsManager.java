@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class JwtCleanupStatsManager {
+public final class JwtCleanupStatsManager {
 
     private static final String CLEANUP_STATS_KEY = "jwt_cleanup_stats";
 

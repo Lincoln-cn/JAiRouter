@@ -44,7 +44,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RequestLogFields implements LogFields {
+public final class RequestLogFields implements LogFields {
 
     /**
      * HTTP方法（GET/POST/PUT/DELETE等）

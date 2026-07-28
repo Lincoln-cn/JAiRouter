@@ -81,8 +81,10 @@ public class FileStoreManager extends BaseStoreManager {
             if (e.getMessage() != null && e.getMessage().contains("File does not exist")) {
                 return null;
             }
-            LOGGER.error("Failed to read config for key: " + key + ". File path: " + storagePath + "/" + key + ".json", e);
-            throw new RuntimeException("Failed to read config for key: " + key + ". Please check if the JSON file is valid.", e);
+            LOGGER.error("Failed to read config for key: " + key
+                    + ". File path: " + storagePath + "/" + key + ".json", e);
+            throw new RuntimeException("Failed to read config for key: " + key
+                    + ". Please check if the JSON file is valid.", e);
         }
     }
 

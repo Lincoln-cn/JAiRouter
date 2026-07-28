@@ -10,7 +10,7 @@ import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker.State;
  * 熔断器正常工作，允许所有请求通过。
  * 当失败次数达到阈值时，转换为打开状态。
  */
-public class ClosedState implements CircuitState {
+public final class ClosedState implements CircuitState {
 
     private static final Logger logger = LoggerFactory.getLogger(ClosedState.class);
 

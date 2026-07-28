@@ -11,7 +11,7 @@ import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker.State;
  * 成功次数达到阈值时，转换为关闭状态。
  * 失败时，重新转换为打开状态。
  */
-public class HalfOpenState implements CircuitState {
+public final class HalfOpenState implements CircuitState {
 
     private static final Logger logger = LoggerFactory.getLogger(HalfOpenState.class);
 

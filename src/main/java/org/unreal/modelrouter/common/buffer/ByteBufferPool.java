@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author JAiRouter Team
  * @since 2.7.5
  */
-public class ByteBufferPool {
+public final class ByteBufferPool {
 
     private static final Logger logger = LoggerFactory.getLogger(ByteBufferPool.class);
 

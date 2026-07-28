@@ -56,7 +56,9 @@ public class WeightCalculator {
      * @param endIndex 结束索引（包含）
      * @return 累积权重值
      */
-    public static long calculateCumulativeWeight(final List<ModelRouterProperties.ModelInstance> instances, final int endIndex) {
+    public static long calculateCumulativeWeight(
+            final List<ModelRouterProperties.ModelInstance> instances,
+            final int endIndex) {
         if (instances == null || endIndex < 0) {
             return 0L;
         }

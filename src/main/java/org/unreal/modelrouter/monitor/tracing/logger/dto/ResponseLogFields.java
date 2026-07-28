@@ -42,7 +42,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ResponseLogFields implements LogFields {
+public final class ResponseLogFields implements LogFields {
 
     /**
      * HTTP状态码

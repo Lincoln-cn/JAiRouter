@@ -51,7 +51,9 @@ public class SlowQueryDetector {
      * @param durationMillis 操作耗时（毫秒）
      * @param context 上下文信息
      */
-    public void detectSlowQuery(final String operationName, final long durationMillis, final Map<String, String> context) {
+    public void detectSlowQuery(
+            final String operationName, final long durationMillis,
+            final Map<String, String> context) {
         detectSlowQuery(operationName, durationMillis, context, null);
     }
     
@@ -63,7 +65,10 @@ public class SlowQueryDetector {
      * @param context 上下文信息
      * @param tracingContext 追踪上下文
      */
-    public void detectSlowQuery(final String operationName, final long durationMillis, final Map<String, String> context, final TracingContext tracingContext) {
+    public void detectSlowQuery(
+            final String operationName, final long durationMillis,
+            final Map<String, String> context,
+            final TracingContext tracingContext) {
         // 获取慢查询阈值，如果没有配置则使用默认值1000ms
         Map<String, Long> slowQueryThresholds = monitoringProperties.getThresholds().getSlowQueryThresholds();
         Long threshold = slowQueryThresholds != null

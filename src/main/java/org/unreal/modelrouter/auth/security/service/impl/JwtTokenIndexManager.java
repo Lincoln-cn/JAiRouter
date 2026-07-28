@@ -24,7 +24,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtTokenIndexManager {
+public final class JwtTokenIndexManager {
 
     private final StoreManager storeManager;
 

@@ -107,7 +107,9 @@ public class OllamaAdapter extends BaseAdapter {
     }
 
     @Override
-    protected <T> WebClient.RequestBodySpec configureRequestHeaders(final WebClient.RequestBodySpec requestSpec, final T request) {
+    protected <T> WebClient.RequestBodySpec configureRequestHeaders(
+            final WebClient.RequestBodySpec requestSpec,
+            final T request) {
         return requestSpec;
     }
 

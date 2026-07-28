@@ -21,7 +21,7 @@ import java.util.Map;
 @Component("jwtRedisHealthIndicator")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-public class JwtRedisHealthMonitor implements HealthIndicator {
+public final class JwtRedisHealthMonitor implements HealthIndicator {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     private final JwtBlacklistCacheManager cacheManager;

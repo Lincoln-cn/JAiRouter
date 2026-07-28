@@ -113,7 +113,9 @@ public class JwtPersistenceMetricsService {
     /**
      * 完成令牌操作计时
      */
-    public void finishTokenOperation(final Timer.Sample sample, final String operation, final String storageType, final boolean success) {
+    public void finishTokenOperation(
+            final Timer.Sample sample, final String operation,
+            final String storageType, final boolean success) {
         String key = operation + "." + storageType;
         Timer timer = tokenOperationTimers.get(key);
         if (timer != null && sample != null) {
@@ -164,7 +166,9 @@ public class JwtPersistenceMetricsService {
     /**
      * 完成黑名单操作计时
      */
-    public void finishBlacklistOperation(final Timer.Sample sample, final String operation, final String storageType, final boolean success) {
+    public void finishBlacklistOperation(
+            final Timer.Sample sample, final String operation,
+            final String storageType, final boolean success) {
         String key = operation + "." + storageType;
         Timer timer = blacklistOperationTimers.get(key);
         if (timer != null && sample != null) {

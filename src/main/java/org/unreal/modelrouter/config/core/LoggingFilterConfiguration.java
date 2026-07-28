@@ -11,7 +11,7 @@ import org.slf4j.Marker;
  * 用于屏蔽特定的异常日志记录
  */
 @Configuration
-public class LoggingFilterConfiguration {
+public final class LoggingFilterConfiguration {
 
     /**
      * 自定义过滤器，用于屏蔽ReadOnlyHttpHeaders.set相关的UnsupportedOperationException异常
@@ -19,7 +19,11 @@ public class LoggingFilterConfiguration {
     public static class ReadOnlyHttpHeadersExceptionFilter extends TurboFilter {
         
         @Override
-        public FilterReply decide(final Marker marker, final ch.qos.logback.classic.Logger logger, final Level level, final String format, final Object[] params, final Throwable t) {
+        public FilterReply decide(
+                final Marker marker,
+                final ch.qos.logback.classic.Logger logger,
+                final Level level, final String format,
+                final Object[] params, final Throwable t) {
             // 检查日志信息是否包含ReadOnlyHttpHeaders.set相关的异常
             if (format != null
                 && (format.contains("ReadOnlyHttpHeaders.set")

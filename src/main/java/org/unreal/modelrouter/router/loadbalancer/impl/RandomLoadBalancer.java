@@ -38,7 +38,8 @@ public class RandomLoadBalancer implements LoadBalancer {
 
     @Override
     public ModelRouterProperties.ModelInstance selectInstance(
-            final List<ModelRouterProperties.ModelInstance> instances, final String clientIp, final String serviceType) {
+            final List<ModelRouterProperties.ModelInstance> instances,
+            final String clientIp, final String serviceType) {
 
         if (instances == null || instances.isEmpty()) {
             logger.warn("No instances available for random selection");
@@ -68,7 +69,8 @@ public class RandomLoadBalancer implements LoadBalancer {
             // 如果没有权重，使用简单随机
             ModelRouterProperties.ModelInstance selected =
                     availableInstances.get(random.nextInt(availableInstances.size()));
-            logger.debug("Selected instance {} using simple random strategy for service {}", selected.getName(), serviceType);
+            logger.debug("Selected instance {} using simple random strategy for service {}",
+                    selected.getName(), serviceType);
             recordLoadBalancerSelection(serviceType, "random", selected.getName());
             return selected;
         }
@@ -79,14 +81,16 @@ public class RandomLoadBalancer implements LoadBalancer {
         } catch (java.security.NoSuchAlgorithmException e) {
             // 如果安全随机数算法不可用，回退到类中的 SecureRandom 实例
             randomWeight = (long) (random.nextDouble() * totalWeight);
-            logger.warn("SecureRandom.getInstanceStrong() not available, using class SecureRandom instance: {}", e.getMessage());
+            logger.warn("SecureRandom.getInstanceStrong() not available, "
+                    + "using class SecureRandom instance: {}", e.getMessage());
         }
         long currentWeight = 0;
 
         for (ModelRouterProperties.ModelInstance instance : availableInstances) {
             currentWeight += Math.max(0, instance.getWeight());
             if (randomWeight < currentWeight) {
-                logger.debug("Selected instance {} using weighted random strategy for service {}", instance.getName(), serviceType);
+                logger.debug("Selected instance {} using weighted random strategy for service {}",
+                        instance.getName(), serviceType);
                 recordLoadBalancerSelection(serviceType, "random", instance.getName());
                 return instance;
             }
@@ -119,7 +123,8 @@ public class RandomLoadBalancer implements LoadBalancer {
     /**
      * 记录负载均衡器选择指标
      */
-    private void recordLoadBalancerSelection(final String service, final String strategy, final String selectedInstance) {
+    private void recordLoadBalancerSelection(
+            final String service, final String strategy, final String selectedInstance) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordLoadBalancer(service, strategy, selectedInstance);

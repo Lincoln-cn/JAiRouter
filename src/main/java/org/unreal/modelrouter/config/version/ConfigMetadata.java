@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 // 配置元数据内部类
-public class ConfigMetadata {
+public final class ConfigMetadata {
 
     private String configKey;
     private int currentVersion;

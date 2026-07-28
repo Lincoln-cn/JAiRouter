@@ -10,7 +10,7 @@ import org.unreal.modelrouter.router.circuitbreaker.CircuitBreaker.State;
  * 熔断器打开，拒绝所有请求。
  * 当超时时间过去后，转换为半开状态。
  */
-public class OpenState implements CircuitState {
+public final class OpenState implements CircuitState {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenState.class);
 

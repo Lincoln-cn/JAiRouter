@@ -62,7 +62,8 @@ public class LoadBalancerManagementController {
 
                         // 获取配置信息 - 使用 ServiceConfigManager 替代废弃方法
                         try {
-                            ServiceConfiguration serviceConfig = serviceConfigManager.getServiceConfiguration(type.name().toLowerCase());
+                            ServiceConfiguration serviceConfig =
+                                    serviceConfigManager.getServiceConfiguration(type.name().toLowerCase());
                             if (serviceConfig != null && serviceConfig.loadBalance() != null) {
                                 response.configType = serviceConfig.loadBalance().type();
                                 response.hashAlgorithm = serviceConfig.loadBalance().hashAlgorithm();

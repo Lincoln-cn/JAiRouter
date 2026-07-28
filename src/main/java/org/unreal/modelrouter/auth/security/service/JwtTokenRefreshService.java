@@ -166,7 +166,9 @@ public class JwtTokenRefreshService {
     /**
      * 记录令牌撤销审计日志
      */
-    private Mono<Void> recordTokenRevokeAudit(final String userId, final String token, final String reason, final String revokedBy) {
+    private Mono<Void> recordTokenRevokeAudit(
+            final String userId, final String token,
+            final String reason, final String revokedBy) {
         if (auditService == null) {
             return Mono.empty();
         }
@@ -333,7 +335,10 @@ public class JwtTokenRefreshService {
      * @param userAgent 用户代理
      * @return 保存操作结果
      */
-    public Mono<Void> saveTokenMetadata(final String token, final String userId, final String deviceInfo, final String ipAddress, final String userAgent) {
+    public Mono<Void> saveTokenMetadata(
+            final String token, final String userId,
+            final String deviceInfo, final String ipAddress,
+            final String userAgent) {
         // 记录审计日志
         Mono<Void> auditMono = Mono.empty();
         if (auditService != null) {
@@ -421,7 +426,10 @@ public class JwtTokenRefreshService {
     /**
      * 在令牌刷新时保存新令牌并撤销旧令牌（带上下文信息）
      */
-    public Mono<Void> saveTokenOnRefreshWithContext(final String oldToken, final String newToken, final String deviceInfo, final String ipAddress, final String userAgent) {
+    public Mono<Void> saveTokenOnRefreshWithContext(
+            final String oldToken, final String newToken,
+            final String deviceInfo, final String ipAddress,
+            final String userAgent) {
         return jwtTokenValidator.extractUserId(oldToken)
             .flatMap(userId -> {
                 // 撤销旧令牌

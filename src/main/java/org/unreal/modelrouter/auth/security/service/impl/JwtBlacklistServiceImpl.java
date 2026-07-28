@@ -25,7 +25,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.persistence.enabled", havingValue = "true")
-public class JwtBlacklistServiceImpl implements JwtBlacklistService {
+public final class JwtBlacklistServiceImpl implements JwtBlacklistService {
     
     private final StoreManager storeManager;
     
@@ -393,7 +393,8 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                     try {
                         if (tokenHash != null && !tokenHash.trim().isEmpty()) {
                             // 创建黑名单条目
-                            TokenBlacklistEntry entry = new TokenBlacklistEntry(tokenHash, expiresAt, reason, addedBy, now);
+                            TokenBlacklistEntry entry = new TokenBlacklistEntry(
+                                    tokenHash, expiresAt, reason, addedBy, now);
                             
                             // 转换为Map进行存储
                             Map<String, Object> entryData = convertToMap(entry);

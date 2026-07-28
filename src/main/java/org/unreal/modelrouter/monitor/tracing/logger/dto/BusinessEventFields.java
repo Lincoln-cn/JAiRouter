@@ -44,7 +44,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BusinessEventFields implements LogFields {
+public final class BusinessEventFields implements LogFields {
 
     /**
      * 事件名称

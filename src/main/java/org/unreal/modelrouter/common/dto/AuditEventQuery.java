@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * 审计事件查询条件类
  */
-public class AuditEventQuery {
+public final class AuditEventQuery {
     
     private LocalDateTime startTime;
     private LocalDateTime endTime;

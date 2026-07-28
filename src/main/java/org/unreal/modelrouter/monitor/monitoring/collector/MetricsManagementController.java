@@ -178,7 +178,8 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Sampling configuration updated successfully");
         } catch (Exception e) {
             logger.error("Error updating sampling config", e);
-            return ResponseEntity.internalServerError().body("Failed to update sampling configuration: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(
+                    "Failed to update sampling configuration: " + e.getMessage());
         }
     }
 
@@ -220,7 +221,8 @@ public class MetricsManagementController {
             return ResponseEntity.ok("Performance configuration updated successfully");
         } catch (Exception e) {
             logger.error("Error updating performance config", e);
-            return ResponseEntity.internalServerError().body("Failed to update performance configuration: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(
+                    "Failed to update performance configuration: " + e.getMessage());
         }
     }
 
@@ -299,7 +301,9 @@ public class MetricsManagementController {
      * 重置错误状态
      */
     @PostMapping("/error-handler/reset")
-    public ResponseEntity<String> resetErrorState(@RequestParam String component, @RequestParam final String operation) {
+    public ResponseEntity<String> resetErrorState(
+            @RequestParam String component,
+            @RequestParam final String operation) {
         try {
             errorHandler.resetErrorState(component, operation);
             logger.info("Reset error state for component: {}, operation: {}", component, operation);

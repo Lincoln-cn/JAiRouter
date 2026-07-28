@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Component
 @Conditional(MonitoringEnabledCondition.class)
-public class AsyncMetricsProcessor {
+public final class AsyncMetricsProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncMetricsProcessor.class);
 
@@ -99,7 +99,8 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录请求指标
      */
-    public void recordRequestAsync(final String service, final String method, final long duration, final String status) {
+    public void recordRequestAsync(final String service, final String method,
+                                     final long duration, final String status) {
         if (!shouldSample(MetricsType.REQUEST)) {
             return;
         }
@@ -109,7 +110,8 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录后端调用指标
      */
-    public void recordBackendCallAsync(final String adapter, final String instance, final long duration, final boolean success) {
+    public void recordBackendCallAsync(final String adapter, final String instance,
+                                        final long duration, final boolean success) {
         if (!shouldSample(MetricsType.BACKEND)) {
             return;
         }
@@ -149,7 +151,8 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录健康检查指标
      */
-    public void recordHealthCheckAsync(final String adapter, final String instance, final boolean healthy, final long responseTime) {
+    public void recordHealthCheckAsync(final String adapter, final String instance,
+                                        final boolean healthy, final long responseTime) {
         if (!shouldSample(MetricsType.INFRASTRUCTURE)) {
             return;
         }
@@ -169,7 +172,9 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪指标
      */
-    public void recordTraceAsync(final String traceId, final String spanId, final String operationName, final long duration, final boolean success) {
+    public void recordTraceAsync(final String traceId, final String spanId,
+                                  final String operationName, final long duration,
+                                  final boolean success) {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
@@ -189,7 +194,8 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪分析指标
      */
-    public void recordTraceAnalysisAsync(final String analyzerName, final int spanCount, final long duration, final boolean success) {
+    public void recordTraceAnalysisAsync(final String analyzerName, final int spanCount,
+                                          final long duration, final boolean success) {
         if (!shouldSample(MetricsType.TRACE_ANALYSIS)) {
             return;
         }
@@ -199,7 +205,8 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪导出指标
      */
-    public void recordTraceExportAsync(final String exporterType, final long duration, final boolean success, final int batchSize) {
+    public void recordTraceExportAsync(final String exporterType, final long duration,
+                                        final boolean success, final int batchSize) {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
@@ -216,7 +223,8 @@ public class AsyncMetricsProcessor {
     /**
      * 异步记录追踪数据质量指标
      */
-    public void recordTraceDataQualityAsync(final String traceId, final int spanCount, final int attributeCount, final int errorCount) {
+    public void recordTraceDataQualityAsync(final String traceId, final int spanCount,
+                                             final int attributeCount, final int errorCount) {
         if (!shouldSample(MetricsType.TRACE)) {
             return;
         }
@@ -345,40 +353,52 @@ public class AsyncMetricsProcessor {
                 metricsCollector.recordRequest(req.getService(), req.getMethod(), req.getDuration(), req.getStatus());
             } else if (event instanceof BackendCallMetricsEvent) {
                 BackendCallMetricsEvent backend = (BackendCallMetricsEvent) event;
-                metricsCollector.recordBackendCall(backend.getAdapter(), backend.getInstance(), backend.getDuration(), backend.isSuccess());
+                metricsCollector.recordBackendCall(backend.getAdapter(),
+                        backend.getInstance(), backend.getDuration(), backend.isSuccess());
             } else if (event instanceof RateLimitMetricsEvent) {
                 RateLimitMetricsEvent rateLimit = (RateLimitMetricsEvent) event;
-                metricsCollector.recordRateLimit(rateLimit.getService(), rateLimit.getAlgorithm(), rateLimit.isAllowed());
+                metricsCollector.recordRateLimit(rateLimit.getService(),
+                        rateLimit.getAlgorithm(), rateLimit.isAllowed());
             } else if (event instanceof CircuitBreakerMetricsEvent) {
                 CircuitBreakerMetricsEvent cb = (CircuitBreakerMetricsEvent) event;
                 metricsCollector.recordCircuitBreaker(cb.getService(), cb.getState(), cb.getEvent());
             } else if (event instanceof LoadBalancerMetricsEvent) {
                 LoadBalancerMetricsEvent lb = (LoadBalancerMetricsEvent) event;
-                metricsCollector.recordLoadBalancer(lb.getService(), lb.getStrategy(), lb.getSelectedInstance());
+                metricsCollector.recordLoadBalancer(lb.getService(),
+                        lb.getStrategy(), lb.getSelectedInstance());
             } else if (event instanceof HealthCheckMetricsEvent) {
                 HealthCheckMetricsEvent health = (HealthCheckMetricsEvent) event;
-                metricsCollector.recordHealthCheck(health.getAdapter(), health.getInstance(), health.isHealthy(), health.getResponseTime());
+                metricsCollector.recordHealthCheck(health.getAdapter(),
+                        health.getInstance(), health.isHealthy(), health.getResponseTime());
             } else if (event instanceof RequestSizeMetricsEvent) {
                 RequestSizeMetricsEvent size = (RequestSizeMetricsEvent) event;
                 metricsCollector.recordRequestSize(size.getService(), size.getRequestSize(), size.getResponseSize());
             } else if (event instanceof TraceMetricsEvent) {
                 TraceMetricsEvent trace = (TraceMetricsEvent) event;
-                metricsCollector.recordTrace(trace.getTraceId(), trace.getSpanId(), trace.getOperationName(), trace.getDuration(), trace.isSuccess());
+                metricsCollector.recordTrace(trace.getTraceId(), trace.getSpanId(),
+                        trace.getOperationName(), trace.getDuration(), trace.isSuccess());
             } else if (event instanceof TraceExportMetricsEvent) {
                 TraceExportMetricsEvent traceExport = (TraceExportMetricsEvent) event;
-                metricsCollector.recordTraceExport(traceExport.getExporterType(), traceExport.getDuration(), traceExport.isSuccess(), traceExport.getBatchSize());
+                metricsCollector.recordTraceExport(traceExport.getExporterType(),
+                        traceExport.getDuration(), traceExport.isSuccess(),
+                        traceExport.getBatchSize());
             } else if (event instanceof TraceSamplingMetricsEvent) {
                 TraceSamplingMetricsEvent traceSampling = (TraceSamplingMetricsEvent) event;
                 metricsCollector.recordTraceSampling(traceSampling.getSamplingRate(), traceSampling.isSampled());
             } else if (event instanceof TraceDataQualityMetricsEvent) {
                 TraceDataQualityMetricsEvent traceDataQuality = (TraceDataQualityMetricsEvent) event;
-                metricsCollector.recordTraceDataQuality(traceDataQuality.getTraceId(), traceDataQuality.getSpanCount(), traceDataQuality.getAttributeCount(), traceDataQuality.getErrorCount());
+                metricsCollector.recordTraceDataQuality(traceDataQuality.getTraceId(),
+                        traceDataQuality.getSpanCount(), traceDataQuality.getAttributeCount(),
+                        traceDataQuality.getErrorCount());
             } else if (event instanceof TraceProcessingMetricsEvent) {
                 TraceProcessingMetricsEvent traceProcessing = (TraceProcessingMetricsEvent) event;
-                metricsCollector.recordTraceProcessing(traceProcessing.getProcessorName(), traceProcessing.getDuration(), traceProcessing.isSuccess());
+                metricsCollector.recordTraceProcessing(traceProcessing.getProcessorName(),
+                        traceProcessing.getDuration(), traceProcessing.isSuccess());
             } else if (event instanceof TraceAnalysisMetricsEvent) {
                 TraceAnalysisMetricsEvent traceAnalysis = (TraceAnalysisMetricsEvent) event;
-                metricsCollector.recordTraceAnalysis(traceAnalysis.getAnalyzerName(), traceAnalysis.getSpanCount(), traceAnalysis.getDuration(), traceAnalysis.isSuccess());
+                metricsCollector.recordTraceAnalysis(traceAnalysis.getAnalyzerName(),
+                        traceAnalysis.getSpanCount(), traceAnalysis.getDuration(),
+                        traceAnalysis.isSuccess());
             }
         } catch (Exception e) {
             logger.warn("Failed to process metrics event: {}", e.getMessage());
@@ -389,8 +409,10 @@ public class AsyncMetricsProcessor {
      * 记录统计信息
      */
     private void logStatistics() {
-        logger.info("Metrics processor statistics - Processed: {}, Dropped: {}, Queue size: {}, Circuit breaker state: {}",
-                   processedCount.get(), droppedCount.get(), queueSize.get(), circuitBreaker.getState());
+        logger.info("Metrics processor statistics - Processed: {}, "
+                + "Dropped: {}, Queue size: {}, Circuit breaker state: {}",
+                processedCount.get(), droppedCount.get(), queueSize.get(),
+                circuitBreaker.getState());
     }
 
     /**

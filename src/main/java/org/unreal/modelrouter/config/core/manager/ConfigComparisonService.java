@@ -51,7 +51,9 @@ public class ConfigComparisonService {
      * @param newConfig     新配置
      * @return true如果配置发生了实质性变化，false如果配置相同
      */
-    public boolean isConfigurationChanged(final Map<String, Object> currentConfig, final Map<String, Object> newConfig) {
+    public boolean isConfigurationChanged(
+            final Map<String, Object> currentConfig,
+            final Map<String, Object> newConfig) {
         if (currentConfig == null && newConfig == null) {
             return false;
         }
@@ -307,7 +309,9 @@ public class ConfigComparisonService {
      * @return 合并后的配置
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> mergeServiceConfig(final Map<String, Object> existing, final Map<String, Object> updates) {
+    public Map<String, Object> mergeServiceConfig(
+            final Map<String, Object> existing,
+            final Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
 
         for (Map.Entry<String, Object> entry : updates.entrySet()) {
@@ -339,7 +343,9 @@ public class ConfigComparisonService {
      * @param updates  更新实例配置
      * @return 合并后的实例配置
      */
-    public Map<String, Object> mergeInstanceConfig(final Map<String, Object> existing, final Map<String, Object> updates) {
+    public Map<String, Object> mergeInstanceConfig(
+            final Map<String, Object> existing,
+            final Map<String, Object> updates) {
         Map<String, Object> merged = new HashMap<>(existing);
         merged.putAll(updates);
         return merged;

@@ -34,7 +34,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
+public final class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     private final SecurityBlacklistRepository repository;
 
@@ -42,11 +42,14 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     @Transactional
     public BlacklistEntryDTO addToBlacklist(final AddBlacklistRequest request, final String addedBy) {
         log.info("添加到黑名单: type={}, value={}, addedBy={}",
-                request.getBlacklistType(), maskTargetValue(request.getBlacklistType(), request.getTargetValue()), addedBy);
+                request.getBlacklistType(),
+                maskTargetValue(request.getBlacklistType(), request.getTargetValue()),
+                addedBy);
 
         BlacklistType type = BlacklistType.valueOf(request.getBlacklistType().toUpperCase());
 
-        Optional<SecurityBlacklistEntity> existing = repository.findByBlacklistTypeAndTargetValue(type, request.getTargetValue());
+        Optional<SecurityBlacklistEntity> existing =
+                repository.findByBlacklistTypeAndTargetValue(type, request.getTargetValue());
         if (existing.isPresent()) {
             SecurityBlacklistEntity entity = existing.get();
             if (entity.getStatus() != BlacklistStatus.ACTIVE) {
@@ -158,7 +161,9 @@ public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
     }
 
     @Override
-    public Page<BlacklistEntryDTO> getBlacklistPage(final BlacklistType type, final String status, final int page, final int size) {
+    public Page<BlacklistEntryDTO> getBlacklistPage(
+            final BlacklistType type, final String status,
+            final int page, final int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "addedAt"));
 
         Page<SecurityBlacklistEntity> entityPage;

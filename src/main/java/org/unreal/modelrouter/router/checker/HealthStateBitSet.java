@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author JAiRouter Team
  * @since v2.7.11
  */
-public class HealthStateBitSet {
+public final class HealthStateBitSet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthStateBitSet.class);
 
@@ -159,7 +159,7 @@ public class HealthStateBitSet {
     /**
      * 统计信息
      */
-    public static class Stats {
+    public static final class Stats {
         private final int totalInstances;
         private final int healthyCount;
         private final int knownCount;

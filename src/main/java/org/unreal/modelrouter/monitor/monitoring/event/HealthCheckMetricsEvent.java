@@ -9,7 +9,9 @@ public class HealthCheckMetricsEvent extends MetricsEvent {
     private final boolean healthy;
     private final long responseTime;
 
-    public HealthCheckMetricsEvent(final String adapter, final String instance, final boolean healthy, final long responseTime) {
+    public HealthCheckMetricsEvent(
+            final String adapter, final String instance,
+            final boolean healthy, final long responseTime) {
         this.adapter = adapter;
         this.instance = instance;
         this.healthy = healthy;

@@ -115,7 +115,9 @@ public interface StructuredLogger {
      * @param availableInstances 可用实例数量
      * @param context 追踪上下文
      */
-    void logLoadBalancerDecision(String strategy, String selectedInstance, int availableInstances, TracingContext context);
+    void logLoadBalancerDecision(
+            String strategy, String selectedInstance,
+            int availableInstances, TracingContext context);
     
     /**
      * 记录限流检查日志

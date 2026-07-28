@@ -68,7 +68,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class DefaultStructuredLogger implements StructuredLogger {
+public final class DefaultStructuredLogger implements StructuredLogger {
 
     private final ObjectMapper objectMapper;
     private final TracingConfiguration tracingConfiguration;
@@ -158,7 +158,8 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
 
     @Override
-    public void logError(final Throwable error, final TracingContext context, final Map<String, Object> additionalInfo) {
+    public void logError(final Throwable error, final TracingContext context,
+                          final Map<String, Object> additionalInfo) {
         if (!isLoggingEnabled() || error == null) {
             return;
         }
@@ -194,7 +195,8 @@ public class DefaultStructuredLogger implements StructuredLogger {
     public void logLoadBalancerDecision(final String strategy, final String selectedInstance,
                                         final int availableInstances, final TracingContext context) {
         logBusinessEvent("load_balancer_decision",
-                Map.of("strategy", strategy, "selectedInstance", selectedInstance, "availableInstances", availableInstances),
+                Map.of("strategy", strategy, "selectedInstance", selectedInstance,
+                        "availableInstances", availableInstances),
                 context);
     }
 
@@ -234,7 +236,8 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
 
     @Override
-    public void logSlowQuery(final String operation, final long duration, final long threshold, final TracingContext context) {
+    public void logSlowQuery(final String operation, final long duration,
+                              final long threshold, final TracingContext context) {
         logPerformance(operation, duration, Map.of("threshold", threshold, "slowQueryDetected", true), context);
     }
 
@@ -263,7 +266,8 @@ public class DefaultStructuredLogger implements StructuredLogger {
     }
 
     @Override
-    public void logSanitization(final String field, final String action, final String ruleId, final TracingContext context) {
+    public void logSanitization(final String field, final String action,
+                                 final String ruleId, final TracingContext context) {
         logBusinessEvent("data_sanitization", Map.of("field", field, "action", action, "ruleId", ruleId), context);
     }
 

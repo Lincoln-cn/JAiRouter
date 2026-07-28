@@ -141,8 +141,9 @@ public final class SafeFileOperations {
      * @return 文件的绝对路径
      * @throws IOException 如果文件操作失败
      */
-    public static String writeJsonFile(final Path basePath, final Map<String, Object> data, final ObjectMapper objectMapper)
-            throws IOException {
+    public static String writeJsonFile(
+            final Path basePath, final Map<String, Object> data,
+            final ObjectMapper objectMapper) throws IOException {
         if (basePath == null || data == null || objectMapper == null) {
             throw new IllegalArgumentException("Base path, data and object mapper cannot be null");
         }
@@ -207,8 +208,9 @@ public final class SafeFileOperations {
      * @return 从文件读取的数据
      * @throws IOException 如果文件操作失败
      */
-    public static <T> T readJsonFile(final Path basePath, final ObjectMapper objectMapper, final TypeReference<T> typeReference)
-            throws IOException {
+    public static <T> T readJsonFile(
+            final Path basePath, final ObjectMapper objectMapper,
+            final TypeReference<T> typeReference) throws IOException {
         if (basePath == null || objectMapper == null || typeReference == null) {
             throw new IllegalArgumentException("Base path, object mapper and type reference cannot be null");
         }

@@ -12,7 +12,7 @@ import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
  * @author JAiRouter Team
  * @since 1.0.0
  */
-public class TraceIdConverter extends ClassicConverter {
+public final class TraceIdConverter extends ClassicConverter {
     
     @Override
     public String convert(final ILoggingEvent event) {

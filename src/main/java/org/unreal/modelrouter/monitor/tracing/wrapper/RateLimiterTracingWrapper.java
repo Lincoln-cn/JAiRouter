@@ -58,7 +58,9 @@ public class RateLimiterTracingWrapper implements RateLimiter {
         try {
             // 创建限流追踪Span
             if (tracingContext != null && tracingContext.isActive()) {
-                span = tracingContext.createChildSpan("rate-limiter", SpanKind.INTERNAL, tracingContext.getCurrentSpan());
+                span = tracingContext.createChildSpan(
+                        "rate-limiter", SpanKind.INTERNAL,
+                        tracingContext.getCurrentSpan());
                 tracingContext.setCurrentSpan(span);
                 
                 // 设置基础属性
@@ -270,8 +272,10 @@ public class RateLimiterTracingWrapper implements RateLimiter {
     /**
      * 记录限流检查错误
      */
-    private void recordRateLimitError(final TracingContext context, final Span span, 
-                                    final RateLimitContext rateLimitContext, final long checkTimeMs, final Exception error) {
+    private void recordRateLimitError(
+            final TracingContext context, final Span span,
+            final RateLimitContext rateLimitContext,
+            final long checkTimeMs, final Exception error) {
         if (span != null) {
             span.setAttribute("rl.check_time_ms", checkTimeMs);
             span.setAttribute("rl.error", error.getMessage());

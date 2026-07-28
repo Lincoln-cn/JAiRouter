@@ -82,7 +82,8 @@ public class MonitoringController {
     /**
      * 更新监控启用状态
      *
-     * NOTE: changed return generic to Object to avoid generic inference issues with RouterResponse.success(...) implementations
+     * NOTE: changed return generic to Object to avoid generic inference issues
+     * with RouterResponse.success(...) implementations
      */
     @PutMapping("/config/enabled")
     public Mono<RouterResponse<Object>> updateEnabled(@RequestBody final Map<String, Boolean> request) {
@@ -92,8 +93,10 @@ public class MonitoringController {
                 return RouterResponse.<Object>error("Missing 'enabled' parameter");
             }
 
-            boolean updated = configUpdater.updateBasicConfig(enabled, monitoringProperties.getPrefix(),
-                               monitoringProperties.getCollectionInterval(), monitoringProperties.getEnabledCategories());
+            boolean updated = configUpdater.updateBasicConfig(
+                    enabled, monitoringProperties.getPrefix(),
+                    monitoringProperties.getCollectionInterval(),
+                    monitoringProperties.getEnabledCategories());
             if (updated) {
                 return RouterResponse.<Object>success("监控状态已更新为: " + enabled);
             } else {
@@ -120,8 +123,10 @@ public class MonitoringController {
                 return RouterResponse.<Object>error("Invalid prefix format");
             }
 
-            boolean updated = configUpdater.updateBasicConfig(monitoringProperties.isEnabled(), prefix,
-                               monitoringProperties.getCollectionInterval(), monitoringProperties.getEnabledCategories());
+            boolean updated = configUpdater.updateBasicConfig(
+                    monitoringProperties.isEnabled(), prefix,
+                    monitoringProperties.getCollectionInterval(),
+                    monitoringProperties.getEnabledCategories());
             if (updated) {
                 return RouterResponse.<Object>success("指标前缀已更新为: " + prefix);
             } else {
@@ -149,8 +154,9 @@ public class MonitoringController {
                 return RouterResponse.<Object>error("Invalid interval format");
             }
 
-            boolean updated = configUpdater.updateBasicConfig(monitoringProperties.isEnabled(), monitoringProperties.getPrefix(),
-                               interval, monitoringProperties.getEnabledCategories());
+            boolean updated = configUpdater.updateBasicConfig(
+                    monitoringProperties.isEnabled(), monitoringProperties.getPrefix(),
+                    interval, monitoringProperties.getEnabledCategories());
             if (updated) {
                 return RouterResponse.<Object>success("收集间隔已更新为: " + interval);
             } else {
@@ -177,8 +183,9 @@ public class MonitoringController {
                 return RouterResponse.<Object>error("Invalid categories");
             }
 
-            boolean updated = configUpdater.updateBasicConfig(monitoringProperties.isEnabled(), monitoringProperties.getPrefix(),
-                               monitoringProperties.getCollectionInterval(), categories);
+            boolean updated = configUpdater.updateBasicConfig(
+                    monitoringProperties.isEnabled(), monitoringProperties.getPrefix(),
+                    monitoringProperties.getCollectionInterval(), categories);
             if (updated) {
                 return RouterResponse.<Object>success("启用类别已更新为: " + categories);
             } else {
@@ -329,7 +336,8 @@ public class MonitoringController {
             }
 
             try {
-                MetricsDegradationStrategy.DegradationLevel level = MetricsDegradationStrategy.DegradationLevel.valueOf(levelStr.toUpperCase());
+                MetricsDegradationStrategy.DegradationLevel level =
+                        MetricsDegradationStrategy.DegradationLevel.valueOf(levelStr.toUpperCase());
                 degradationStrategy.setDegradationLevel(level);
                 return RouterResponse.<Object>success("降级级别已设置为: " + level.getDescription());
             } catch (IllegalArgumentException e) {

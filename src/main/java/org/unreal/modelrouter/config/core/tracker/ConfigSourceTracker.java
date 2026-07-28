@@ -31,7 +31,7 @@ import java.util.Map;
  * </ol>
  */
 @Component
-public class ConfigSourceTracker implements ApplicationListener<ApplicationReadyEvent> {
+public final class ConfigSourceTracker implements ApplicationListener<ApplicationReadyEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigSourceTracker.class);
 

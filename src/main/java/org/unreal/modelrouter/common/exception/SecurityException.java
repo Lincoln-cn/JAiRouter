@@ -23,7 +23,9 @@ public class SecurityException extends RuntimeException {
         this.httpStatus = aHttpStatus;
     }
     
-    public SecurityException(final String message, final Throwable cause, final String aErrorCode, final HttpStatus aHttpStatus) {
+    public SecurityException(
+            final String message, final Throwable cause,
+            final String aErrorCode, final HttpStatus aHttpStatus) {
         super(message, cause);
         this.errorCode = aErrorCode;
         this.httpStatus = aHttpStatus;

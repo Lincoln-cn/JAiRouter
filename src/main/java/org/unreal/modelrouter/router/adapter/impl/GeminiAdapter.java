@@ -347,9 +347,12 @@ public class GeminiAdapter extends BaseAdapter {
             if (geminiResponse.has("usageMetadata")) {
                 JsonNode usage = geminiResponse.get("usageMetadata");
                 ObjectNode openAiUsage = objectMapper.createObjectNode();
-                openAiUsage.put("prompt_tokens", usage.has("promptTokenCount") ? usage.get("promptTokenCount").asInt() : 0);
-                openAiUsage.put("completion_tokens", usage.has("candidatesTokenCount") ? usage.get("candidatesTokenCount").asInt() : 0);
-                openAiUsage.put("total_tokens", usage.has("totalTokenCount") ? usage.get("totalTokenCount").asInt() : 0);
+                openAiUsage.put("prompt_tokens",
+                        usage.has("promptTokenCount") ? usage.get("promptTokenCount").asInt() : 0);
+                openAiUsage.put("completion_tokens",
+                        usage.has("candidatesTokenCount") ? usage.get("candidatesTokenCount").asInt() : 0);
+                openAiUsage.put("total_tokens",
+                        usage.has("totalTokenCount") ? usage.get("totalTokenCount").asInt() : 0);
                 openAiResponse.set("usage", openAiUsage);
             }
 

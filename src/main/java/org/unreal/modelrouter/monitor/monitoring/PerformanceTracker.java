@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * 提供操作耗时监控、慢操作检测、性能数据统计和聚合功能
  */
 @Component
-public class PerformanceTracker {
+public final class PerformanceTracker {
     
     private static final Logger logger = LoggerFactory.getLogger(PerformanceTracker.class);
     
@@ -31,7 +31,10 @@ public class PerformanceTracker {
     // 存储操作统计信息
     private final Map<String, OperationStats> operationStats = new ConcurrentHashMap<>();
     
-    public PerformanceTracker(final MeterRegistry meterRegistry, final MonitoringProperties monitoringProperties, final SlowQueryDetector slowQueryDetector) {
+    public PerformanceTracker(
+            final MeterRegistry meterRegistry,
+            final MonitoringProperties monitoringProperties,
+            final SlowQueryDetector slowQueryDetector) {
         this.meterRegistry = meterRegistry;
         this.monitoringProperties = monitoringProperties;
         this.slowQueryDetector = slowQueryDetector;

@@ -346,7 +346,8 @@ public class RoutingEventRecorder {
         StringWriter writer = new StringWriter();
 
         // CSV 头
-        writer.write("timestamp,service_type,strategy,selected_instance,selected_instance_url,client_id,candidate_count,selection_time_ms\n");
+        writer.write("timestamp,service_type,strategy,selected_instance,"
+                + "selected_instance_url,client_id,candidate_count,selection_time_ms\n");
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
 
@@ -361,7 +362,9 @@ public class RoutingEventRecorder {
         return writer.toString();
     }
 
-    private void writeCsvRecords(StringWriter writer, String serviceType, List<RoutingEvent> events, DateTimeFormatter formatter) {
+    private void writeCsvRecords(
+            StringWriter writer, String serviceType,
+            List<RoutingEvent> events, DateTimeFormatter formatter) {
         for (RoutingEvent event : events) {
             writer.write(String.format("%s,%s,%s,%s,%s,%s,%d,%d\n",
                 escapeCsv(formatter.format(event.timestamp())),

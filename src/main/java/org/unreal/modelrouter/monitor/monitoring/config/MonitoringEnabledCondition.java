@@ -8,7 +8,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * 监控功能启用条件
  * 当monitoring.metrics.enabled=true时启用监控功能
  */
-public class MonitoringEnabledCondition implements Condition {
+public final class MonitoringEnabledCondition implements Condition {
 
     @Override
     public boolean matches(final ConditionContext context, final AnnotatedTypeMetadata metadata) {

@@ -50,7 +50,8 @@ public class DebugMultipartController {
         debugInfo.put("authorization", headers.getFirst("Authorization"));
 
         // 请求信息
-        debugInfo.put("method", exchange.getRequest().getMethod() != null ? exchange.getRequest().getMethod().name() : null);
+        debugInfo.put("method", exchange.getRequest().getMethod() != null
+                ? exchange.getRequest().getMethod().name() : null);
         debugInfo.put("path", exchange.getRequest().getPath().value());
         debugInfo.put("uri", exchange.getRequest().getURI().toString());
 

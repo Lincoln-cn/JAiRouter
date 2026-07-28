@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * TracingPerformanceMonitor 数据模型
  */
-public class TracingPerformanceModels {
+public final class TracingPerformanceModels {
 
     public enum SystemHealth {
         HEALTHY, DEGRADED, UNHEALTHY
@@ -30,7 +30,7 @@ public class TracingPerformanceModels {
     }
 
     @Data
-    public static class PerformanceSnapshot {
+    public static final class PerformanceSnapshot {
         private final Instant timestamp;
         private final long totalOperations;
         private final long slowOperations;
@@ -41,7 +41,7 @@ public class TracingPerformanceModels {
     }
 
     @Data
-    public static class OperationMetrics {
+    public static final class OperationMetrics {
         private final String operation;
         private final AtomicLong totalCount = new AtomicLong(0);
         private final AtomicLong successCount = new AtomicLong(0);
@@ -79,13 +79,13 @@ public class TracingPerformanceModels {
     }
 
     @Data
-    public static class PerformanceThreshold {
+    public static final class PerformanceThreshold {
         private final long slowThreshold;
         private final long criticalThreshold;
     }
 
     @Data
-    public static class PerformanceBottleneck {
+    public static final class PerformanceBottleneck {
         private final BottleneckType type;
         private final String description;
         private final Severity severity;
@@ -93,21 +93,21 @@ public class TracingPerformanceModels {
     }
 
     @Data
-    public static class OptimizationSuggestion {
+    public static final class OptimizationSuggestion {
         private final String title;
         private final String description;
         private final Priority priority;
     }
 
     @Data
-    public static class PerformanceIssue {
+    public static final class PerformanceIssue {
         private final String description;
         private final Severity severity;
         private final Instant detectedAt;
     }
 
     @Data
-    public static class PerformanceReport {
+    public static final class PerformanceReport {
         private final Instant timestamp;
         private final long totalOperations;
         private final long slowOperations;
@@ -119,7 +119,7 @@ public class TracingPerformanceModels {
     }
 
     @Data
-    public static class TuningResult {
+    public static final class TuningResult {
         private final List<String> appliedActions;
         private final List<String> failedActions;
     }

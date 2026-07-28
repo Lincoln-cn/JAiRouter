@@ -45,7 +45,8 @@ public class SecurityBlacklistController {
     @Operation(summary = "获取黑名单列表", description = "分页查询黑名单条目，支持按类型和状态过滤")
     public ResponseEntity<RouterResponse<Page<BlacklistEntryDTO>>> getBlacklistPage(
             @Parameter(description = "黑名单类型: TOKEN, IP, DEVICE") @RequestParam(required = false) final String type,
-            @Parameter(description = "状态: ACTIVE, EXPIRED, REMOVED") @RequestParam(required = false) final String status,
+            @Parameter(description = "状态: ACTIVE, EXPIRED, REMOVED")
+            @RequestParam(required = false) final String status,
             @Parameter(description = "页码") @RequestParam(defaultValue = "0") final int page,
             @Parameter(description = "每页大小") @RequestParam(defaultValue = "20") final int size) {
 

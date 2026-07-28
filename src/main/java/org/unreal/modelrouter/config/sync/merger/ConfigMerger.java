@@ -235,7 +235,8 @@ public class ConfigMerger {
                 updates.fallbackUrl() != null ? updates.fallbackUrl() : existing.fallbackUrl(),
                 updates.maxRetries() != null ? updates.maxRetries() : existing.maxRetries(),
                 updates.retryInterval() != null ? updates.retryInterval() : existing.retryInterval(),
-                updates.returnDefaultResponse() != null ? updates.returnDefaultResponse() : existing.returnDefaultResponse()
+                updates.returnDefaultResponse() != null
+                        ? updates.returnDefaultResponse() : existing.returnDefaultResponse()
         );
     }
 

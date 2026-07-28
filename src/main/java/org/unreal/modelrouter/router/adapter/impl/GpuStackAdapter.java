@@ -60,9 +60,12 @@ public class GpuStackAdapter extends BaseAdapter {
                     currentSpan.setAttribute("adapter.version", "v1");
 
                     if (request instanceof org.unreal.modelrouter.common.dto.ChatDTO.Request chatRequest) {
-                        currentSpan.setAttribute("request.stream", chatRequest.stream() != null ? chatRequest.stream() : false);
-                        currentSpan.setAttribute("request.max_tokens", chatRequest.maxTokens() != null ? chatRequest.maxTokens() : 0);
-                        currentSpan.setAttribute("request.temperature", chatRequest.temperature() != null ? chatRequest.temperature() : 1.0);
+                        currentSpan.setAttribute("request.stream",
+                                chatRequest.stream() != null ? chatRequest.stream() : false);
+                        currentSpan.setAttribute("request.max_tokens",
+                                chatRequest.maxTokens() != null ? chatRequest.maxTokens() : 0);
+                        currentSpan.setAttribute("request.temperature",
+                                chatRequest.temperature() != null ? chatRequest.temperature() : 1.0);
                     }
                 }
 

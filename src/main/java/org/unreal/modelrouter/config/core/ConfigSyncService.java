@@ -119,7 +119,8 @@ public class ConfigSyncService {
         int deletedCount = 0;
 
         // 获取该服务当前的所有实例
-        List<ServiceInstanceEntity> existingInstances = serviceInstanceRepository.findByServiceConfigId(serviceConfigId);
+        List<ServiceInstanceEntity> existingInstances =
+                serviceInstanceRepository.findByServiceConfigId(serviceConfigId);
 
         // 用于跟踪配置中的实例名称
         List<String> configInstanceNames = new ArrayList<>();
@@ -209,7 +210,9 @@ public class ConfigSyncService {
     /**
      * 从配置创建实例实体
      */
-    private ServiceInstanceEntity createInstanceFromConfig(final Long serviceConfigId, final Map<String, Object> instanceConfig) {
+    private ServiceInstanceEntity createInstanceFromConfig(
+            final Long serviceConfigId,
+            final Map<String, Object> instanceConfig) {
         return ServiceInstanceEntity.builder()
                 .serviceConfigId(serviceConfigId)
                 .instanceName((String) instanceConfig.get("name"))
@@ -224,7 +227,9 @@ public class ConfigSyncService {
     /**
      * 从配置更新实例实体
      */
-    private void updateInstanceFromConfig(final ServiceInstanceEntity entity, final Map<String, Object> instanceConfig) {
+    private void updateInstanceFromConfig(
+            final ServiceInstanceEntity entity,
+            final Map<String, Object> instanceConfig) {
         if (instanceConfig.get("baseUrl") != null) {
             entity.setBaseUrl((String) instanceConfig.get("baseUrl"));
         }

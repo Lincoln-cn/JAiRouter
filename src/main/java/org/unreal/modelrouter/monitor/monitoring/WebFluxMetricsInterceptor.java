@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Component
 @Conditional(MonitoringEnabledCondition.class)
-public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
+public final class WebFluxMetricsInterceptor implements WebFilter, Ordered {
 
     private static final Logger logger = LoggerFactory.getLogger(WebFluxMetricsInterceptor.class);
 
@@ -228,7 +228,7 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
     /**
      * 自定义响应装饰器，用于捕获响应大小
      */
-    private static class MetricsServerHttpResponseDecorator extends ServerHttpResponseDecorator {
+    private static final class MetricsServerHttpResponseDecorator extends ServerHttpResponseDecorator {
         
         private final AtomicLong responseSize;
 
@@ -249,7 +249,10 @@ public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
         }
 
         @Override
-        public Mono<Void> writeAndFlushWith(final org.reactivestreams.Publisher<? extends org.reactivestreams.Publisher<? extends DataBuffer>> body) {
+        public Mono<Void> writeAndFlushWith(
+                final org.reactivestreams.Publisher<
+                        ? extends org.reactivestreams.Publisher<
+                                ? extends DataBuffer>> body) {
             return super.writeAndFlushWith(
                 Flux.from(body)
                     .map(publisher -> 

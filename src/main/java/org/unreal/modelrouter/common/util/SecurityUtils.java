@@ -248,7 +248,8 @@ public class SecurityUtils {
      * @param authentication 认证对象
      * @return 用户ID
      */
-    private static String extractUserIdFromAuthentication(final org.springframework.security.core.Authentication authentication) {
+    private static String extractUserIdFromAuthentication(
+            final org.springframework.security.core.Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return "system";
         }

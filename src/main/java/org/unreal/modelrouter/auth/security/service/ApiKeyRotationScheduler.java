@@ -19,7 +19,9 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jairouter.security.api-key.rotation.enabled", havingValue = "true", matchIfMissing = false)
+@ConditionalOnProperty(
+        name = "jairouter.security.api-key.rotation.enabled",
+        havingValue = "true", matchIfMissing = false)
 public class ApiKeyRotationScheduler {
 
     @Autowired(required = false)

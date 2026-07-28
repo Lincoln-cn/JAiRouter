@@ -19,7 +19,7 @@ import java.util.Map;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class FallbackBlacklistOperations {
+public final class FallbackBlacklistOperations {
 
     private final StoreManager fallbackStoreManager;
 

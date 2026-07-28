@@ -46,7 +46,9 @@ public class JwtBlacklistCacheManager {
     /**
      * 添加令牌到黑名单缓存，带TTL管理
      */
-    public Mono<Void> addToBlacklistCache(final String tokenHash, final String reason, final String addedBy, final Duration ttl) {
+    public Mono<Void> addToBlacklistCache(
+            final String tokenHash, final String reason,
+            final String addedBy, final Duration ttl) {
         if (tokenHash == null || tokenHash.trim().isEmpty()) {
             return Mono.error(new IllegalArgumentException("Token hash cannot be null or empty"));
         }
@@ -116,7 +118,9 @@ public class JwtBlacklistCacheManager {
                 localCache.remove(tokenHash);
                 log.debug("Removed token from blacklist cache: {}", tokenHash);
             })
-            .doOnError(error -> log.error("Failed to remove token from blacklist cache: {}", error.getMessage(), error));
+            .doOnError(error -> log.error(
+                    "Failed to remove token from blacklist cache: {}",
+                    error.getMessage(), error));
     }
     
     /**

@@ -17,13 +17,15 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
+public final class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
 
     private final ConfigChangeAuditRepository auditRepository;
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public ConfigChangeAuditServiceImpl(final ConfigChangeAuditRepository auditRepository, final ObjectMapper objectMapper) {
+    public ConfigChangeAuditServiceImpl(
+            final ConfigChangeAuditRepository auditRepository,
+            final ObjectMapper objectMapper) {
         this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
     }

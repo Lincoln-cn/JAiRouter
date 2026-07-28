@@ -42,7 +42,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BackendCallFields implements LogFields {
+public final class BackendCallFields implements LogFields {
 
     /**
      * 适配器名称

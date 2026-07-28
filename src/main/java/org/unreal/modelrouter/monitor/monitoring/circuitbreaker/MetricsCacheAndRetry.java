@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * 提供指标数据的本地缓存、批量处理和失败重试功能
  */
 @Component
-public class MetricsCacheAndRetry {
+public final class MetricsCacheAndRetry {
     
     private static final Logger logger = LoggerFactory.getLogger(MetricsCacheAndRetry.class);
     
@@ -350,7 +350,9 @@ public class MetricsCacheAndRetry {
         private final int attempts;
         private final Exception lastError;
         
-        RetryableMetric(final String operationId, final Supplier<?> operation, final int attempts, final Exception lastError) {
+        RetryableMetric(
+                final String operationId, final Supplier<?> operation,
+                final int attempts, final Exception lastError) {
             this.operationId = operationId;
             this.operation = operation;
             this.attempts = attempts;

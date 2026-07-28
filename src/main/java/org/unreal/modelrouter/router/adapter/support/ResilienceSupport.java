@@ -15,7 +15,7 @@ import org.unreal.modelrouter.router.adapter.tracing.AdapterTracingManager;
  * @since v2.28.0
  */
 @Component
-public class ResilienceSupport {
+public final class ResilienceSupport {
 
     private final CapabilityChecker capabilityChecker;
     private final AdapterErrorHandler errorHandler;

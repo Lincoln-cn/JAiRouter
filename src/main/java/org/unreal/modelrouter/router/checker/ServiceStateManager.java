@@ -103,7 +103,10 @@ public class ServiceStateManager {
      * @param instance    实例
      * @param isHealthy   是否健康
      */
-    public void updateInstanceHealthStatus(final String serviceType, final ModelRouterProperties.ModelInstance instance, final boolean isHealthy) {
+    public void updateInstanceHealthStatus(
+            final String serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final boolean isHealthy) {
         // 使用实例的唯一ID作为键
         String instanceKey = serviceType + ":" + instance.getInstanceId();
         Boolean previousStatus = instanceHealthBits.getHealth(instanceKey);

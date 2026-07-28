@@ -84,7 +84,9 @@ public class TracingSecurityFilter implements WebFilter, Ordered {
     /**
      * 安全地处理已认证的请求
      */
-    private Mono<Void> handleAuthenticatedRequestSafely(final ServerWebExchange exchange, final Authentication authentication) {
+    private Mono<Void> handleAuthenticatedRequestSafely(
+            final ServerWebExchange exchange,
+            final Authentication authentication) {
         return ReactiveTracingContextHolder.getCurrentContext()
                 .doOnNext(context -> {
                     try {

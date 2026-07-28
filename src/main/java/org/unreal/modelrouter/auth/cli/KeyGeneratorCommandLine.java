@@ -14,7 +14,7 @@ import org.unreal.modelrouter.auth.security.util.SecretKeyValidator;
  * java -jar jairouter.jar --generate-password
  */
 @Component
-public class KeyGeneratorCommandLine implements CommandLineRunner {
+public final class KeyGeneratorCommandLine implements CommandLineRunner {
 
     private static final String ANSI_RESET = "\u001B[0m";
     private static final String ANSI_GREEN = "\u001B[32m";

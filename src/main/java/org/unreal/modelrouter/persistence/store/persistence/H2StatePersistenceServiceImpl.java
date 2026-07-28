@@ -24,7 +24,7 @@ import java.util.stream.StreamSupport;
  * @since 2.4.4
  */
 @Service
-public class H2StatePersistenceServiceImpl implements StatePersistenceService {
+public final class H2StatePersistenceServiceImpl implements StatePersistenceService {
 
     private static final Logger logger = LoggerFactory.getLogger(H2StatePersistenceServiceImpl.class);
     private static final String KEY_PREFIX = "state.";

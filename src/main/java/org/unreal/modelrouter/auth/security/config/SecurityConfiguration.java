@@ -35,7 +35,7 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true")
-public class SecurityConfiguration {
+public final class SecurityConfiguration {
 
     private final SecurityProperties securityProperties;
     private final ApiKeyService apiKeyService;
@@ -67,7 +67,8 @@ public class SecurityConfiguration {
         // 直接创建认证过滤器实例，避免注册为 @Bean 导致被 Spring Security 自动发现
         // 和 addFilterBefore() 重复添加，引发请求体被多次消费的问题
         SpringSecurityAuthenticationFilter securityFilter =
-                new SpringSecurityAuthenticationFilter(securityProperties, serverAuthenticationConverter, authenticationManager);
+                new SpringSecurityAuthenticationFilter(securityProperties,
+                        serverAuthenticationConverter, authenticationManager);
 
         // 如果启用了追踪功能，则添加追踪过滤器
         ServerHttpSecurity customizedHttp = http;
@@ -94,7 +95,8 @@ public class SecurityConfiguration {
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((exchange, ex) -> {
                             // 直接使用ReactiveGlobalExceptionHandler处理认证异常
-                            ReactiveGlobalExceptionHandler exceptionHandler = applicationContext.getBean(ReactiveGlobalExceptionHandler.class);
+                            ReactiveGlobalExceptionHandler exceptionHandler =
+                                    applicationContext.getBean(ReactiveGlobalExceptionHandler.class);
                             return exceptionHandler.handle(exchange, ex);
                         })
                 )

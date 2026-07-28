@@ -89,8 +89,10 @@ public class SanitizationMetrics {
                 .register(meterRegistry);
         
         // 数据大小指标
-        meterRegistry.gauge("jairouter.security.sanitization.content.total.size", totalContentSize, AtomicLong::get);
-        meterRegistry.gauge("jairouter.security.sanitization.content.sanitized.size", totalSanitizedSize, AtomicLong::get);
+        meterRegistry.gauge("jairouter.security.sanitization.content.total.size",
+                totalContentSize, AtomicLong::get);
+        meterRegistry.gauge("jairouter.security.sanitization.content.sanitized.size",
+                totalSanitizedSize, AtomicLong::get);
         
         log.info("脱敏性能指标收集器初始化完成");
     }

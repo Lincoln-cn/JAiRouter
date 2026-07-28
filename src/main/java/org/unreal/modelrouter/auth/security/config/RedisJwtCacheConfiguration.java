@@ -19,7 +19,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Slf4j
 @Configuration
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-public class RedisJwtCacheConfiguration {
+public final class RedisJwtCacheConfiguration {
 
     /**
      * Redis JWT缓存配置属性
@@ -206,7 +206,8 @@ public class RedisJwtCacheConfiguration {
      */
     @Bean("jwtReactiveRedisTemplate")
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-    public ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate(final ReactiveRedisConnectionFactory connectionFactory) {
+    public ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate(
+            final ReactiveRedisConnectionFactory connectionFactory) {
         try {
             // 使用String序列化器
             StringRedisSerializer stringSerializer = new StringRedisSerializer();
@@ -236,7 +237,8 @@ public class RedisJwtCacheConfiguration {
      */
     @Bean("redisJwtHealthChecker")
     @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-    public RedisJwtHealthChecker redisJwtHealthChecker(final ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate) {
+    public RedisJwtHealthChecker redisJwtHealthChecker(
+            final ReactiveRedisTemplate<String, String> jwtReactiveRedisTemplate) {
         return new RedisJwtHealthChecker(jwtReactiveRedisTemplate);
     }
 

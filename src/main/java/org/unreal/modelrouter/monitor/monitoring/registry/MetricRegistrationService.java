@@ -113,7 +113,9 @@ public interface MetricRegistrationService {
         private final String metricName;
         private final Exception error;
         
-        public MetricRegistrationResult(final boolean success, final String message, final String metricName, final Exception error) {
+        public MetricRegistrationResult(
+                final boolean success, final String message,
+                final String metricName, final Exception error) {
             this.success = success;
             this.message = message;
             this.metricName = metricName;
@@ -124,7 +126,9 @@ public interface MetricRegistrationService {
             return new MetricRegistrationResult(true, "Metric registered successfully", metricName, null);
         }
         
-        public static MetricRegistrationResult failure(final String metricName, final String message, final Exception error) {
+        public static MetricRegistrationResult failure(
+                final String metricName, final String message,
+                final Exception error) {
             return new MetricRegistrationResult(false, message, metricName, error);
         }
         

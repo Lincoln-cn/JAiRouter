@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 1.0.0
  */
 @Slf4j
-public class ErrorTracker {
+public final class ErrorTracker {
 
     private final StructuredLogger structuredLogger;
 
@@ -68,7 +68,9 @@ public class ErrorTracker {
      * @param operation 操作名称
      * @param additionalInfo 额外信息
      */
-    public void trackError(final Throwable throwable, final String operation, final Map<String, Object> additionalInfo) {
+    public void trackError(
+            final Throwable throwable, final String operation,
+            final Map<String, Object> additionalInfo) {
         if (throwable == null) {
             return;
         }

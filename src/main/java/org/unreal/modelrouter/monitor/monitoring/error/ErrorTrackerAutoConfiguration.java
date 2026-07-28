@@ -84,7 +84,9 @@ public class ErrorTrackerAutoConfiguration {
      */
     @Bean
     @ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.enabled", havingValue = "true")
-    @ConditionalOnProperty(name = "jairouter.monitoring.error-tracking.sanitization.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "jairouter.monitoring.error-tracking.sanitization.enabled",
+            havingValue = "true", matchIfMissing = true)
     public StackTraceSanitizer stackTraceSanitizer(final ErrorTrackerProperties.SanitizationConfig sanitizationConfig) {
         return new StackTraceSanitizer(sanitizationConfig);
     }

@@ -28,7 +28,7 @@ import java.util.Set;
  */
 @Service
 @ConditionalOnProperty(name = "jairouter.persistence.redis.enabled", havingValue = "true")
-public class RedisStatePersistenceServiceImpl implements StatePersistenceService {
+public final class RedisStatePersistenceServiceImpl implements StatePersistenceService {
 
     private static final Logger logger = LoggerFactory.getLogger(RedisStatePersistenceServiceImpl.class);
     private static final String KEY_PREFIX = "jairouter:state:";

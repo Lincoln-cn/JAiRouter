@@ -36,7 +36,9 @@ public interface JwtTokenLifecycleService {
      * @param additionalMetadata 额外元数据
      * @return 操作结果
      */
-    Mono<JwtTokenInfo> collectAndStoreTokenMetadata(String token, String userId, Map<String, Object> additionalMetadata);
+    Mono<JwtTokenInfo> collectAndStoreTokenMetadata(
+            String token, String userId,
+            Map<String, Object> additionalMetadata);
 
     /**
      * 获取令牌的完整生命周期信息
@@ -53,7 +55,9 @@ public interface JwtTokenLifecycleService {
      * @param updatedBy 更新者
      * @return 更新操作结果
      */
-    Mono<Long> batchUpdateTokenStatus(java.util.List<String> tokenHashes, TokenStatus newStatus, String reason, String updatedBy);
+    Mono<Long> batchUpdateTokenStatus(
+            java.util.List<String> tokenHashes, TokenStatus newStatus,
+            String reason, String updatedBy);
 
     /**
      * 获取令牌生命周期统计信息

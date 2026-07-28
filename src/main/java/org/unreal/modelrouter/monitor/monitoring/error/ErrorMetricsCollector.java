@@ -130,7 +130,8 @@ public class ErrorMetricsCollector {
 
             // 组合维度：错误代码 + 严重级别
             if (errorCode != null && severity != null) {
-                getOrCreateErrorCounter("by_code_severity", errorCode, severity, "all", "all", "all", "all").increment();
+                getOrCreateErrorCounter("by_code_severity",
+                        errorCode, severity, "all", "all", "all", "all").increment();
             }
 
             // 组合维度：模块 + 错误类型

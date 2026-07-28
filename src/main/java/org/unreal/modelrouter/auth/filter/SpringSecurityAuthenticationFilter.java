@@ -80,8 +80,8 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
                                 // 创建已认证的安全上下文
                                 SecurityContextImpl securityContext = new SecurityContextImpl(authenticated);
                                 // 在安全上下文中继续执行过滤器链
-                                return chain.filter(exchange)
-                                        .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
+                                return chain.filter(exchange).contextWrite(
+                                        ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
                             })
                             // 只捕获认证相关异常，其它异常放行
                             .onErrorResume(throwable -> {
@@ -175,7 +175,10 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
      * 在安全上下文中继续执行过滤器链
      * 优化版本：设置上下文后直接继续，不会重复进入认证流程
      */
-    private Mono<Void> continueWithSecurityContext(final Authentication authenticated, final ServerWebExchange exchange, final WebFilterChain chain) {
+    private Mono<Void> continueWithSecurityContext(
+            final Authentication authenticated,
+            final ServerWebExchange exchange,
+            final WebFilterChain chain) {
         log.debug("设置认证上下文并继续执行过滤器链: {} - 用户: {}",
                 exchange.getRequest().getPath().value(),
                 authenticated.getName());
@@ -222,7 +225,10 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
     /**
      * 创建认证错误响应
      */
-    private Mono<Void> createAuthenticationErrorResponse(final ServerWebExchange exchange, final String message, final String errorCode) {
+    private Mono<Void> createAuthenticationErrorResponse(
+            final ServerWebExchange exchange,
+            final String message,
+            final String errorCode) {
         ServerHttpResponse response = exchange.getResponse();
 
         // 检查响应是否已经提交
@@ -233,7 +239,9 @@ public class SpringSecurityAuthenticationFilter implements WebFilter {
 
         response.setStatusCode(org.springframework.http.HttpStatus.UNAUTHORIZED);
         String errorResponse = String.format(
-                "{\"error\": {\"message\": \"%s\", \"type\": \"authentication_error\", \"code\": \"%s\"}}",
+                "{\"error\": {\"message\": \"%s\", "
+                        + "\"type\": \"authentication_error\", "
+                        + "\"code\": \"%s\"}}",
                 message.replace("\"", "\\\""),
                 errorCode
         );

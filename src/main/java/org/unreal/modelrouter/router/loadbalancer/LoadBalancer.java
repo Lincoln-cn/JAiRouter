@@ -19,7 +19,9 @@ public interface LoadBalancer {
      * @param clientIp 客户端IP (用于IP Hash策略)
      * @return 选中的实例
      */
-    ModelRouterProperties.ModelInstance selectInstance(List<ModelRouterProperties.ModelInstance> instances, String clientIp);
+    ModelRouterProperties.ModelInstance selectInstance(
+            List<ModelRouterProperties.ModelInstance> instances,
+            String clientIp);
 
     /**
      * 选择一个实例（带服务上下文）
@@ -28,7 +30,9 @@ public interface LoadBalancer {
      * @param serviceType 服务类型
      * @return 选中的实例
      */
-    default ModelRouterProperties.ModelInstance selectInstance(final List<ModelRouterProperties.ModelInstance> instances, final String clientIp, final String serviceType) {
+    default ModelRouterProperties.ModelInstance selectInstance(
+            final List<ModelRouterProperties.ModelInstance> instances,
+            final String clientIp, final String serviceType) {
         return selectInstance(instances, clientIp);
     }
 

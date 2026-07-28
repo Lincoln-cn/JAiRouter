@@ -167,7 +167,8 @@ public class ConfigConverterHelper {
         // 设置熔断器配置
         if (instanceMap.containsKey("circuitBreaker") && instanceMap.get("circuitBreaker") instanceof Map) {
             Map<String, Object> circuitBreakerMap = (Map<String, Object>) instanceMap.get("circuitBreaker");
-            ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig = new ModelRouterProperties.CircuitBreakerConfig();
+            ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig =
+                    new ModelRouterProperties.CircuitBreakerConfig();
             updateCircuitBreakerConfig(circuitBreakerConfig, circuitBreakerMap);
             instance.setCircuitBreaker(circuitBreakerConfig);
         }
@@ -370,7 +371,9 @@ public class ConfigConverterHelper {
      * @param rateLimitConfig 限流配置对象
      * @param rateLimitMap 限流配置Map
      */
-    public void updateRateLimitConfig(final ModelRouterProperties.RateLimitConfig rateLimitConfig, final Map<String, Object> rateLimitMap) {
+    public void updateRateLimitConfig(
+            final ModelRouterProperties.RateLimitConfig rateLimitConfig,
+            final Map<String, Object> rateLimitMap) {
         if (rateLimitConfig == null || rateLimitMap == null) {
             return;
         }
@@ -416,7 +419,9 @@ public class ConfigConverterHelper {
      * @param circuitBreakerConfig 熔断器配置对象
      * @param circuitBreakerMap 熔断器配置Map
      */
-    public void updateCircuitBreakerConfig(final ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig, final Map<String, Object> circuitBreakerMap) {
+    public void updateCircuitBreakerConfig(
+            final ModelRouterProperties.CircuitBreakerConfig circuitBreakerConfig,
+            final Map<String, Object> circuitBreakerMap) {
         if (circuitBreakerConfig == null || circuitBreakerMap == null) {
             return;
         }

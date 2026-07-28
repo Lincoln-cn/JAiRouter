@@ -128,7 +128,8 @@ public class ExceptionManagementService {
         LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
 
         // 使用 PersistenceService 获取统计
-        Map<String, Object> stats = exceptionPersistenceService.getExceptionStatistics(effectiveStartTime, effectiveEndTime);
+        Map<String, Object> stats =
+                exceptionPersistenceService.getExceptionStatistics(effectiveStartTime, effectiveEndTime);
         
         // 获取各类统计数据
         Map<String, Long> byType = (Map<String, Long>) stats.getOrDefault("byType", new HashMap<>());
@@ -150,7 +151,8 @@ public class ExceptionManagementService {
         dto.setUnaggregatedCount(exceptionEventRepository.countUnaggregatedEvents());
 
         // 查询按操作统计
-        List<Object[]> byOperation = exceptionEventRepository.countByOperation(effectiveStartTime, effectiveEndTime, 10);
+        List<Object[]> byOperation =
+                exceptionEventRepository.countByOperation(effectiveStartTime, effectiveEndTime, 10);
         Map<String, Long> operationStats = new HashMap<>();
         byOperation.forEach(row -> operationStats.put((String) row[0], (Long) row[1]));
         dto.setByOperation(operationStats);
@@ -162,15 +164,18 @@ public class ExceptionManagementService {
         dto.setByHttpStatus(httpStatusStats);
 
         // 查询 Top 客户端 IP
-        List<Object[]> topClientIps = exceptionEventRepository.countByClientIp(effectiveStartTime, effectiveEndTime, 10);
+        List<Object[]> topClientIps =
+                exceptionEventRepository.countByClientIp(effectiveStartTime, effectiveEndTime, 10);
         List<ExceptionStatisticsDTO.ClientIpStats> clientIpStats = new ArrayList<>();
-        topClientIps.forEach(row -> clientIpStats.add(new ExceptionStatisticsDTO.ClientIpStats((String) row[0], (Long) row[1])));
+        topClientIps.forEach(row -> clientIpStats.add(
+                new ExceptionStatisticsDTO.ClientIpStats((String) row[0], (Long) row[1])));
         dto.setTopClientIps(clientIpStats);
 
         // 查询小时分布
         List<Object[]> hourlyStats = exceptionEventRepository.countByHour(effectiveStartTime, effectiveEndTime);
         List<ExceptionStatisticsDTO.HourlyStats> hourlyDistribution = new ArrayList<>();
-        hourlyStats.forEach(row -> hourlyDistribution.add(new ExceptionStatisticsDTO.HourlyStats(String.valueOf(row[0]), (Long) row[1])));
+        hourlyStats.forEach(row -> hourlyDistribution.add(
+                new ExceptionStatisticsDTO.HourlyStats(String.valueOf(row[0]), (Long) row[1])));
         dto.setHourlyDistribution(hourlyDistribution);
 
         return dto;

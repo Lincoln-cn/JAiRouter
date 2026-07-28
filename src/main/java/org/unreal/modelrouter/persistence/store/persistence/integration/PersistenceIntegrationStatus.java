@@ -10,7 +10,7 @@ import java.util.Map;
  * @author JAiRouter Team
  * @since 2.4.6
  */
-public class PersistenceIntegrationStatus {
+public final class PersistenceIntegrationStatus {
 
     private boolean initialized;
     private long syncIntervalMs;
@@ -22,7 +22,9 @@ public class PersistenceIntegrationStatus {
     public PersistenceIntegrationStatus() {
     }
 
-    public PersistenceIntegrationStatus(final boolean initialized, final long syncIntervalMs, final long recoveryTimeoutMs) {
+    public PersistenceIntegrationStatus(
+            final boolean initialized, final long syncIntervalMs,
+            final long recoveryTimeoutMs) {
         this.initialized = initialized;
         this.syncIntervalMs = syncIntervalMs;
         this.recoveryTimeoutMs = recoveryTimeoutMs;

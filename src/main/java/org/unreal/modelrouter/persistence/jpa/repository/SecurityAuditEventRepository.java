@@ -51,12 +51,16 @@ public interface SecurityAuditEventRepository extends JpaRepository<SecurityAudi
 
     // ========== 时间范围查询 ==========
 
-    @Query("SELECT e FROM SecurityAuditEventEntity e WHERE e.timestamp BETWEEN :startTime AND :endTime ORDER BY e.timestamp DESC")
+    @Query("SELECT e FROM SecurityAuditEventEntity e "
+           + "WHERE e.timestamp BETWEEN :startTime AND :endTime "
+           + "ORDER BY e.timestamp DESC")
     List<SecurityAuditEventEntity> findByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
 
-    @Query("SELECT e FROM SecurityAuditEventEntity e WHERE e.timestamp BETWEEN :startTime AND :endTime ORDER BY e.timestamp DESC")
+    @Query("SELECT e FROM SecurityAuditEventEntity e "
+           + "WHERE e.timestamp BETWEEN :startTime AND :endTime "
+           + "ORDER BY e.timestamp DESC")
     Page<SecurityAuditEventEntity> findByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
@@ -253,7 +257,9 @@ public interface SecurityAuditEventRepository extends JpaRepository<SecurityAudi
             @Param("userId") String userId,
             @Param("limit") int limit);
 
-    @Query("SELECT e FROM SecurityAuditEventEntity e WHERE e.clientIp = :clientIp ORDER BY e.timestamp DESC LIMIT :limit")
+    @Query("SELECT e FROM SecurityAuditEventEntity e "
+           + "WHERE e.clientIp = :clientIp "
+           + "ORDER BY e.timestamp DESC LIMIT :limit")
     List<SecurityAuditEventEntity> findRecentEventsByIp(
             @Param("clientIp") String clientIp,
             @Param("limit") int limit);

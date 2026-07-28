@@ -9,7 +9,9 @@ public class TraceExportMetricsEvent extends MetricsEvent {
     private final boolean success;
     private final int batchSize;
 
-    public TraceExportMetricsEvent(final String exporterType, final long duration, final boolean success, final int batchSize) {
+    public TraceExportMetricsEvent(
+            final String exporterType, final long duration,
+            final boolean success, final int batchSize) {
         this.exporterType = exporterType;
         this.duration = duration;
         this.success = success;

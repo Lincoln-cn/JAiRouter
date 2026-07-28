@@ -21,7 +21,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * 监控JVM内存使用情况和垃圾回收状态
  */
 @Service
-@ConditionalOnProperty(name = "jairouter.security.monitoring.jwt-persistence.health-checks.memory.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "jairouter.security.monitoring.jwt-persistence.health-checks.memory.enabled",
+        havingValue = "true", matchIfMissing = true)
 public class MemoryUsageHealthService {
     
     private static final Logger log = LoggerFactory.getLogger(MemoryUsageHealthService.class);
@@ -153,7 +155,9 @@ public class MemoryUsageHealthService {
     /**
      * 评估内存健康状态
      */
-    private boolean evaluateMemoryHealth(final double heapUsagePercent, final double nonHeapUsagePercent, final double gcPressure) {
+    private boolean evaluateMemoryHealth(
+            final double heapUsagePercent, final double nonHeapUsagePercent,
+            final double gcPressure) {
         boolean healthy = true;
         
         // 检查堆内存使用情况
@@ -197,7 +201,8 @@ public class MemoryUsageHealthService {
             
             // 基本状态
             status.put("healthy", isHealthy.get());
-            status.put("lastCheckTime", LocalDateTime.ofEpochSecond(lastCheckTime.get() / 1000, 0, java.time.ZoneOffset.UTC).toString());
+            status.put("lastCheckTime", LocalDateTime.ofEpochSecond(
+                    lastCheckTime.get() / 1000, 0, java.time.ZoneOffset.UTC).toString());
             status.put("warningCount", warningCount.get());
             status.put("criticalCount", criticalCount.get());
             

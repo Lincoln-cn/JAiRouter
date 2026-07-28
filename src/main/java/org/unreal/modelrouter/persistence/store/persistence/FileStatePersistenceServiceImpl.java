@@ -28,7 +28,7 @@ import java.util.stream.StreamSupport;
  */
 @Service
 @ConditionalOnProperty(name = "jairouter.persistence.file.enabled", havingValue = "true", matchIfMissing = true)
-public class FileStatePersistenceServiceImpl implements StatePersistenceService {
+public final class FileStatePersistenceServiceImpl implements StatePersistenceService {
 
     private static final Logger logger = LoggerFactory.getLogger(FileStatePersistenceServiceImpl.class);
     private static final int TIER_PRIORITY = 3;

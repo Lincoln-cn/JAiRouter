@@ -36,7 +36,9 @@ public class TracingSecurityAutoConfiguration {
      * 配置追踪数据脱敏服务
      */
     @Bean
-    @ConditionalOnProperty(name = "jairouter.tracing.security.sanitization.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "jairouter.tracing.security.sanitization.enabled",
+            havingValue = "true", matchIfMissing = true)
     public TracingSanitizationService tracingSanitizationService(
             final SanitizationService sanitizationService,
             final TracingConfiguration tracingConfiguration,
@@ -53,7 +55,9 @@ public class TracingSecurityAutoConfiguration {
      * 配置追踪安全管理器
      */
     @Bean
-    @ConditionalOnProperty(name = "jairouter.tracing.security.access-control.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "jairouter.tracing.security.access-control.enabled",
+            havingValue = "true", matchIfMissing = true)
     public TracingSecurityManager tracingSecurityManager(
             final TracingConfiguration tracingConfiguration,
             @Lazy final StructuredLogger structuredLogger) {
@@ -68,7 +72,9 @@ public class TracingSecurityAutoConfiguration {
      * 配置追踪数据加密服务
      */
     @Bean
-    @ConditionalOnProperty(name = "jairouter.tracing.security.encryption.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "jairouter.tracing.security.encryption.enabled",
+            havingValue = "true", matchIfMissing = true)
     public TracingEncryptionService tracingEncryptionService(
             final TracingConfiguration tracingConfiguration,
             @Lazy final StructuredLogger structuredLogger) {

@@ -66,18 +66,23 @@ public class ReactiveFileStoreManager implements ReactiveVersionedStoreManager {
                     String sanitizedKey = PathSanitizer.sanitizeFileName(key);
                     Path configPath = PathSanitizer.sanitizePath(storagePath)
                             .resolve(sanitizedKey + ".json");
-                    return SafeFileOperations.readJsonFile(configPath, JacksonHelper.getObjectMapper(), new TypeReference<Map<String, Object>>() {
+                    return SafeFileOperations.readJsonFile(configPath,
+                            JacksonHelper.getObjectMapper(),
+                            new TypeReference<Map<String, Object>>() {
                     });
                 })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(e -> {
-                    if (e.getMessage() != null && e.getMessage().contains("File does not exist")) {
+                    if (e.getMessage() != null
+                            && e.getMessage().contains("File does not exist")) {
                         LOGGER.debug("Config not found for key: {}", key);
                     } else {
                         LOGGER.error("Failed to read config for key: {}", key, e);
                     }
                 })
-                .onErrorReturn(e -> e.getMessage() != null && e.getMessage().contains("File does not exist"), (Map<String, Object>) null);
+                .onErrorReturn(e -> e.getMessage() != null
+                        && e.getMessage().contains("File does not exist"),
+                        (Map<String, Object>) null);
     }
 
     @Override
@@ -194,11 +199,15 @@ public class ReactiveFileStoreManager implements ReactiveVersionedStoreManager {
                     String sanitizedKey = PathSanitizer.sanitizeFileName(key);
                     Path versionPath = PathSanitizer.sanitizePath(storagePath)
                             .resolve(sanitizedKey + "@" + version + ".json");
-                    return SafeFileOperations.readJsonFile(versionPath, JacksonHelper.getObjectMapper(), new TypeReference<Map<String, Object>>() {
+                    return SafeFileOperations.readJsonFile(versionPath,
+                            JacksonHelper.getObjectMapper(),
+                            new TypeReference<Map<String, Object>>() {
                     });
                 })
                 .subscribeOn(Schedulers.boundedElastic())
-                .doOnError(e -> LOGGER.error("Failed to read config version for key: {}, version: {}", key, version, e));
+                .doOnError(e -> LOGGER.error(
+                        "Failed to read config version for key: {}, version: {}",
+                        key, version, e));
     }
 
     @Override
@@ -212,7 +221,9 @@ public class ReactiveFileStoreManager implements ReactiveVersionedStoreManager {
                 })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnSuccess(path -> LOGGER.debug("Deleted config version for key: {}, version: {}", key, version))
-                .doOnError(e -> LOGGER.error("Failed to delete config version for key: {}, version: {}", key, version, e))
+                .doOnError(e -> LOGGER.error(
+                        "Failed to delete config version for key: {}, version: {}",
+                        key, version, e))
                 .then();
     }
 
@@ -252,6 +263,8 @@ public class ReactiveFileStoreManager implements ReactiveVersionedStoreManager {
                         attrs.creationTime().toInstant(),
                         ZoneId.systemDefault()
                 ))
-                .doOnError(e -> LOGGER.error("Failed to get version created time for key: {}, version: {}", key, version, e));
+                .doOnError(e -> LOGGER.error(
+                        "Failed to get version created time for key: {}, version: {}",
+                        key, version, e));
     }
 }

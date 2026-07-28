@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.enabled", havingValue = "true")
-public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
+public final class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
 
     private final StoreManager storeManager;
     private final JwtTokenIndexManager indexManager;
@@ -431,7 +431,9 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     }
 
     @Override
-    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status, final String reason, final String updatedBy) {
+    public Mono<Void> batchUpdateTokenStatus(
+            final List<String> tokenHashes, final TokenStatus status,
+            final String reason, final String updatedBy) {
         return Mono.fromRunnable(() -> {
             try {
                 if (tokenHashes == null || tokenHashes.isEmpty() || status == null) {
@@ -500,7 +502,8 @@ public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
      */
     private Map<String, Object> convertToMap(final JwtTokenInfo tokenInfo) {
         try {
-            return JacksonHelper.getObjectMapper().convertValue(tokenInfo, new TypeReference<Map<String, Object>>() { });
+            return JacksonHelper.getObjectMapper().convertValue(
+                    tokenInfo, new TypeReference<Map<String, Object>>() { });
         } catch (Exception e) {
             log.error("Failed to convert token info to map: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to convert token info to map", e);

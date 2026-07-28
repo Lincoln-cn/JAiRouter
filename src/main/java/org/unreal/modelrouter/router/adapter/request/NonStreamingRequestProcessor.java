@@ -299,7 +299,8 @@ public class NonStreamingRequestProcessor {
                         metricsRecorder.recordRequestSize(serviceType,
                                 transformedRequest.toString().getBytes().length, bodyStr.getBytes().length);
                         metricsRecorder.recordResponseTime(serviceType, "POST",
-                                System.currentTimeMillis() - requestStartTime, responseEntity.getStatusCode().toString());
+                                System.currentTimeMillis() - requestStartTime,
+                                responseEntity.getStatusCode().toString());
                     }
                 })
                 .doOnError(throwable -> {

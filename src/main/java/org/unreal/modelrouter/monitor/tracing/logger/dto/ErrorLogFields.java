@@ -41,7 +41,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ErrorLogFields implements LogFields {
+public final class ErrorLogFields implements LogFields {
 
     /**
      * 异常类型（类名）

@@ -73,7 +73,10 @@ public class AccountManager implements UserDetailsService {
                 .filter(account -> account.getUsername().equals(username))
                 .peek(account -> log.info("找到账户: username={}, passwordPrefix={}", 
                         account.getUsername(), 
-                        account.getPassword() != null ? account.getPassword().substring(0, Math.min(10, account.getPassword().length())) : "null"))
+                        account.getPassword() != null
+                                ? account.getPassword().substring(0,
+                                Math.min(10, account.getPassword().length()))
+                                : "null"))
                 .anyMatch(account -> {
                     boolean matches = passwordEncoder.matches(password, account.getPassword());
                     log.info("密码匹配结果: username={}, matches={}", username, matches);
@@ -107,14 +110,19 @@ public class AccountManager implements UserDetailsService {
     /**
      * 验证用户名和密码并生成JWT令牌
      */
-    public Mono<String> authenticateAndGenerateToken(final String username, final String password, final SecurityProperties securityProperties) {
+    public Mono<String> authenticateAndGenerateToken(
+            final String username, final String password,
+            final SecurityProperties securityProperties) {
         return authenticateAndGenerateToken(username, password, securityProperties, null, null);
     }
 
     /**
      * 验证用户名和密码并生成JWT令牌（带上下文信息用于审计）
      */
-    public Mono<String> authenticateAndGenerateToken(final String username, final String password, final SecurityProperties securityProperties, final String ipAddress, final String userAgent) {
+    public Mono<String> authenticateAndGenerateToken(
+            final String username, final String password,
+            final SecurityProperties securityProperties,
+            final String ipAddress, final String userAgent) {
         // 验证配置中的用户凭据
         return Mono.just(validateCredentials(username, password))
                 .filter(valid -> valid)

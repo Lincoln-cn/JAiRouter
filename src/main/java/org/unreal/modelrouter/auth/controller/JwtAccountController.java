@@ -58,7 +58,8 @@ public class JwtAccountController {
      * 创建账户
      */
     @PostMapping
-    public ResponseEntity<RouterResponse<JwtAccountDTO>> createAccount(@RequestBody final CreateJwtAccountRequest request) {
+    public ResponseEntity<RouterResponse<JwtAccountDTO>> createAccount(
+            @RequestBody final CreateJwtAccountRequest request) {
         log.info("Creating JWT account: {}", request.getUsername());
         JwtAccountDTO created = jwtAccountService.createAccount(request);
         return ResponseEntity.ok(RouterResponse.success(created, "账户创建成功"));

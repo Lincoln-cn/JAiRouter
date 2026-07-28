@@ -26,7 +26,7 @@ import org.unreal.modelrouter.config.sync.service.InstanceConfigUpdateService;
  */
 @Component
 @Slf4j
-public class ConfigSyncEventListener {
+public final class ConfigSyncEventListener {
 
     private final ConfigSyncService configSyncService;
     private final ConfigPushService configPushService;

@@ -61,7 +61,8 @@ public class SecurityConfigurationBackupService {
 
         try {
             // 验证配置
-            SecurityConfigurationValidator.ValidationResult validationResult = validator.validateConfiguration(properties);
+            SecurityConfigurationValidator.ValidationResult validationResult =
+                    validator.validateConfiguration(properties);
             if (!validationResult.isValid()) {
                 log.warn("配置验证失败，仍将创建备份: {}", validationResult.getErrors());
             }

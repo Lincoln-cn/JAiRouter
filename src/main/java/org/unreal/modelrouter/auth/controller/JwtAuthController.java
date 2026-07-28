@@ -64,7 +64,9 @@ public class JwtAuthController {
         String clientIp = getClientIpAddress(exchange);
         String userAgent = exchange != null ? exchange.getRequest().getHeaders().getFirst("User-Agent") : null;
 
-        return accountManager.authenticateAndGenerateToken(request.getUsername(), request.getPassword(), securityProperties, clientIp, userAgent)
+        return accountManager.authenticateAndGenerateToken(
+                request.getUsername(), request.getPassword(),
+                securityProperties, clientIp, userAgent)
                 .flatMap(token -> {
                     LoginResponse response = new LoginResponse();
                     response.setToken(token);
@@ -73,7 +75,9 @@ public class JwtAuthController {
 
                     if (jwtPersistenceService != null) {
                         log.info("保存令牌元数据到H2数据库: username={}, ip={}", request.getUsername(), clientIp);
-                        return tokenRefreshService.saveTokenMetadata(token, request.getUsername(), userAgent, clientIp, userAgent)
+                        return tokenRefreshService.saveTokenMetadata(
+                                token, request.getUsername(),
+                                userAgent, clientIp, userAgent)
                                 .doOnSuccess(v -> log.info("✓ 令牌元数据已成功保存到H2数据库: username={}", request.getUsername()))
                                 .then(Mono.just(RouterResponse.success(response, "登录成功")))
                                 .onErrorResume(ex -> {
@@ -120,7 +124,9 @@ public class JwtAuthController {
                     response.setTimestamp(LocalDateTime.now());
 
                     if (jwtPersistenceService != null && authentication != null) {
-                        return tokenRefreshService.saveTokenOnRefreshWithContext(request.getToken(), newToken, userAgent, clientIp, userAgent)
+                        return tokenRefreshService.saveTokenOnRefreshWithContext(
+                                request.getToken(), newToken,
+                                userAgent, clientIp, userAgent)
                                 .then(Mono.just(RouterResponse.success(response, "令牌刷新成功")))
                                 .onErrorResume(ex -> {
                                     log.warn("刷新时保存令牌元数据失败: {}", ex.getMessage());

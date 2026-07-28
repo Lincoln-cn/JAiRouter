@@ -42,7 +42,8 @@ public class SecurityTracingIntegration {
      * @param authentication 认证对象
      * @return 处理结果
      */
-    public Mono<Void> recordAuthenticationSuccess(final ServerWebExchange exchange, final Authentication authentication) {
+    public Mono<Void> recordAuthenticationSuccess(
+            final ServerWebExchange exchange, final Authentication authentication) {
         return ReactiveTracingContextHolder.getCurrentContext()
                 .doOnNext(context -> {
                     // 添加用户信息到追踪上下文
@@ -77,7 +78,9 @@ public class SecurityTracingIntegration {
      * @param attemptedUser 尝试认证的用户（可能为null）
      * @return 处理结果
      */
-    public Mono<Void> recordAuthenticationFailure(final ServerWebExchange exchange, final String reason, final String attemptedUser) {
+    public Mono<Void> recordAuthenticationFailure(
+            final ServerWebExchange exchange, final String reason,
+            final String attemptedUser) {
         return ReactiveTracingContextHolder.getCurrentContext()
                 .doOnNext(context -> {
                     String clientIp = getClientIp(exchange);
@@ -118,7 +121,9 @@ public class SecurityTracingIntegration {
      * @param resource 访问的资源
      * @return 处理结果
      */
-    public Mono<Void> recordAuthorizationSuccess(final ServerWebExchange exchange, final Authentication authentication, final String resource) {
+    public Mono<Void> recordAuthorizationSuccess(
+            final ServerWebExchange exchange, final Authentication authentication,
+            final String resource) {
         return ReactiveTracingContextHolder.getCurrentContext()
                 .doOnNext(context -> {
                     String clientIp = getClientIp(exchange);
@@ -366,7 +371,9 @@ public class SecurityTracingIntegration {
     /**
      * 创建认证事件数据
      */
-    private Map<String, Object> createAuthenticationEventData(final Authentication authentication, final String authMethod, final String clientIp) {
+    private Map<String, Object> createAuthenticationEventData(
+            final Authentication authentication, final String authMethod,
+            final String clientIp) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("user", authentication.getName());
         eventData.put("authMethod", authMethod);

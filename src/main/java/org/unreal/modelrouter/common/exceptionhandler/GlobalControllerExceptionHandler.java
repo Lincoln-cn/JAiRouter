@@ -17,7 +17,8 @@ public class GlobalControllerExceptionHandler {
     public ResponseEntity<RouterResponse<Void>> handleResponseStatusException(final ResponseStatusException ex) {
 
         // 在这里，您可以确定地捕获到异常
-        logger.error("通过 @RestControllerAdvice 捕获到响应状态异常: status={}, reason={}", ex.getStatusCode(), ex.getReason(), ex);
+        logger.error("通过 @RestControllerAdvice 捕获到响应状态异常: status={}, reason={}",
+                ex.getStatusCode(), ex.getReason(), ex);
 
         RouterResponse<Void> errorResponse = RouterResponse.error(
                 "请求处理失败: " + ex.getMessage(),

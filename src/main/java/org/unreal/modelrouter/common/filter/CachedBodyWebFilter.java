@@ -69,7 +69,9 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     /**
      * 处理multipart请求的缓存
      */
-    private Mono<Void> handleMultipartRequest(final ServerWebExchange exchange, final WebFilterChain chain, final ServerHttpRequest request) {
+    private Mono<Void> handleMultipartRequest(
+            final ServerWebExchange exchange, final WebFilterChain chain,
+            final ServerHttpRequest request) {
         // 对于multipart请求，我们需要特别小心处理边界信息
         return DataBufferUtils.join(request.getBody())
                 .flatMap(dataBuffer -> {
@@ -108,7 +110,9 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
     /**
      * 处理标准请求的缓存
      */
-    private Mono<Void> handleStandardRequest(final ServerWebExchange exchange, final WebFilterChain chain, final ServerHttpRequest request) {
+    private Mono<Void> handleStandardRequest(
+            final ServerWebExchange exchange, final WebFilterChain chain,
+            final ServerHttpRequest request) {
         return DataBufferUtils.join(request.getBody())
                 .flatMap(dataBuffer -> {
                     try {
@@ -174,7 +178,9 @@ public class CachedBodyWebFilter implements WebFilter, Ordered {
         private final byte[] cachedBody;
         private final ServerWebExchange exchange;
 
-        MultipartCachedRequestDecorator(final ServerHttpRequest delegate, final byte[] cachedBody, final ServerWebExchange exchange) {
+        MultipartCachedRequestDecorator(
+                final ServerHttpRequest delegate, final byte[] cachedBody,
+                final ServerWebExchange exchange) {
             super(delegate);
             this.cachedBody = cachedBody;
             this.exchange = exchange;

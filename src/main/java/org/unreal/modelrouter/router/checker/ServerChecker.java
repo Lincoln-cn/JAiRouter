@@ -40,7 +40,8 @@ public class ServerChecker {
     // 缓存实例之前的状态，用于检测状态变化
     private final Map<String, Boolean> previousInstanceStates = new ConcurrentHashMap<>();
 
-    public ServerChecker(final ModelServiceRegistry modelServiceRegistry, final ServiceStateManager serviceStateManager) {
+    public ServerChecker(final ModelServiceRegistry modelServiceRegistry,
+                         final ServiceStateManager serviceStateManager) {
         this.modelServiceRegistry = modelServiceRegistry;
         this.serviceStateManager = serviceStateManager;
     }
@@ -112,7 +113,8 @@ public class ServerChecker {
         }
         
         // 统计健康状态
-        for (Map.Entry<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> entry : instanceRegistry.entrySet()) {
+        for (Map.Entry<ModelServiceRegistry.ServiceType,
+                List<ModelRouterProperties.ModelInstance>> entry : instanceRegistry.entrySet()) {
             String serviceType = entry.getKey().name();
             List<ModelRouterProperties.ModelInstance> instances = entry.getValue();
             
@@ -146,10 +148,13 @@ public class ServerChecker {
             healthyServices, totalServices, healthyInstances, totalInstances, batchDuration);
     }
 
-    private List<Runnable> getRunnable(final Map<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> instanceRegistry) {
+    private List<Runnable> getRunnable(
+            final Map<ModelServiceRegistry.ServiceType,
+                    List<ModelRouterProperties.ModelInstance>> instanceRegistry) {
         List<Runnable> tasks = new ArrayList<>();
 
-        for (Map.Entry<ModelServiceRegistry.ServiceType, List<ModelRouterProperties.ModelInstance>> entry : instanceRegistry.entrySet()) {
+        for (Map.Entry<ModelServiceRegistry.ServiceType,
+                List<ModelRouterProperties.ModelInstance>> entry : instanceRegistry.entrySet()) {
             ModelServiceRegistry.ServiceType serviceType = entry.getKey();
             List<ModelRouterProperties.ModelInstance> instances = entry.getValue();
 
@@ -163,7 +168,9 @@ public class ServerChecker {
     /**
      * 检查特定服务类型的所有实例
      */
-    private void checkServiceInstances(final String serviceType, final List<ModelRouterProperties.ModelInstance> instances) {
+    private void checkServiceInstances(
+            final String serviceType,
+            final List<ModelRouterProperties.ModelInstance> instances) {
         boolean hasHealthyInstance = false;
 
         for (ModelRouterProperties.ModelInstance instance : instances) {
@@ -214,17 +221,23 @@ public class ServerChecker {
                     
                     // 记录健康检查完成事件
                     if (tracingEnhancer != null && tracingContext != null) {
-                        tracingEnhancer.logHealthCheckComplete(serviceType, instance, true, responseTime, result.getMsg(), tracingContext);
+                        tracingEnhancer.logHealthCheckComplete(
+                                serviceType, instance, true, responseTime,
+                                result.getMsg(), tracingContext);
                     }
                 } else {
                     serviceStateManager.updateInstanceHealthStatus(serviceType, instance, false);
-                    updateDatabaseHealthStatus(instance.getName(), instance.getInstanceId(), "UNHEALTHY", result.getMsg());
+                    updateDatabaseHealthStatus(instance.getName(),
+                            instance.getInstanceId(), "UNHEALTHY", result.getMsg());
                     log.warn("实例 {} 连接失败: {}", instance.getName(), result.getMsg());
-                    recordHealthCheckMetrics(getAdapterType(instance), instance.getName(), false, responseTime);
+                    recordHealthCheckMetrics(
+                            getAdapterType(instance), instance.getName(), false, responseTime);
                     
                     // 记录健康检查完成事件
                     if (tracingEnhancer != null && tracingContext != null) {
-                        tracingEnhancer.logHealthCheckComplete(serviceType, instance, false, responseTime, result.getMsg(), tracingContext);
+                        tracingEnhancer.logHealthCheckComplete(
+                                serviceType, instance, false, responseTime,
+                                result.getMsg(), tracingContext);
                     }
                 }
                 
@@ -253,7 +266,9 @@ public class ServerChecker {
                 log.error("无效的URL格式: {}", instance.getBaseUrl(), e);
                 // 记录健康检查完成事件（失败）
                 if (tracingEnhancer != null && tracingContext != null) {
-                    tracingEnhancer.logHealthCheckComplete(serviceType, instance, false, 0, "无效的URL格式: " + e.getMessage(), tracingContext);
+                    tracingEnhancer.logHealthCheckComplete(
+                            serviceType, instance, false, 0,
+                            "无效的URL格式: " + e.getMessage(), tracingContext);
                 }
             } finally {
                 // 完成追踪上下文
@@ -270,7 +285,8 @@ public class ServerChecker {
         // 检查服务状态是否发生变化
         if (previousServiceState != hasHealthyInstance) {
             try {
-                HealthCheckTracingEnhancer tracingEnhancer = ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
+                HealthCheckTracingEnhancer tracingEnhancer =
+                        ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
                 int totalInstances = instances.size();
                 int healthyInstances = 0;
                 for (ModelRouterProperties.ModelInstance instance : instances) {
@@ -278,7 +294,8 @@ public class ServerChecker {
                         healthyInstances++;
                     }
                 }
-                tracingEnhancer.logServiceStateChange(serviceType, hasHealthyInstance, totalInstances, healthyInstances);
+                tracingEnhancer.logServiceStateChange(
+                        serviceType, hasHealthyInstance, totalInstances, healthyInstances);
             } catch (Exception e) {
                 log.debug("无法记录服务状态变更事件: {}", e.getMessage());
             }
@@ -299,7 +316,9 @@ public class ServerChecker {
     /**
      * 记录健康检查指标
      */
-    private void recordHealthCheckMetrics(final String adapter, final String instance, final boolean healthy, final long responseTime) {
+    private void recordHealthCheckMetrics(
+            final String adapter, final String instance,
+            final boolean healthy, final long responseTime) {
         if (metricsCollector != null) {
             try {
                 metricsCollector.recordHealthCheck(adapter, instance, healthy, responseTime);
@@ -336,9 +355,12 @@ public class ServerChecker {
      * @param serviceType 服务类型
      * @param instance 服务实例
      */
-    public void logServiceInstanceRegistered(final String serviceType, final ModelRouterProperties.ModelInstance instance) {
+    public void logServiceInstanceRegistered(
+            final String serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
         try {
-            HealthCheckTracingEnhancer tracingEnhancer = ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
+            HealthCheckTracingEnhancer tracingEnhancer =
+                    ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
             tracingEnhancer.logServiceInstanceRegistered(serviceType, instance);
         } catch (Exception e) {
             log.debug("无法记录服务实例注册事件: {}", e.getMessage());
@@ -351,9 +373,12 @@ public class ServerChecker {
      * @param serviceType 服务类型
      * @param instance 服务实例
      */
-    public void logServiceInstanceDiscovered(final String serviceType, final ModelRouterProperties.ModelInstance instance) {
+    public void logServiceInstanceDiscovered(
+            final String serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
         try {
-            HealthCheckTracingEnhancer tracingEnhancer = ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
+            HealthCheckTracingEnhancer tracingEnhancer =
+                    ApplicationContextProvider.getBean(HealthCheckTracingEnhancer.class);
             tracingEnhancer.logServiceInstanceDiscovered(serviceType, instance);
         } catch (Exception e) {
             log.debug("无法记录服务实例发现事件: {}", e.getMessage());
@@ -367,7 +392,9 @@ public class ServerChecker {
      * @param healthStatus 健康状态 (HEALTHY, UNHEALTHY, UNKNOWN)
      * @param errorMessage 错误信息
      */
-    private void updateDatabaseHealthStatus(final String instanceName, final String instanceId, final String healthStatus, final String errorMessage) {
+    private void updateDatabaseHealthStatus(
+            final String instanceName, final String instanceId,
+            final String healthStatus, final String errorMessage) {
         if (serviceInstanceRepository == null) {
             return;
         }

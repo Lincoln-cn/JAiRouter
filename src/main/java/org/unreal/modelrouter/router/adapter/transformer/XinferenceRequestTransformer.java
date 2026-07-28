@@ -55,7 +55,9 @@ public class XinferenceRequestTransformer {
             if (request.stream() != null) xinferenceRequest.put("stream", request.stream());
             if (request.n() != null) xinferenceRequest.put("n", request.n());
             if (request.presencePenalty() != null) xinferenceRequest.put("presence_penalty", request.presencePenalty());
-            if (request.frequencyPenalty() != null) xinferenceRequest.put("frequency_penalty", request.frequencyPenalty());
+            if (request.frequencyPenalty() != null) {
+                xinferenceRequest.put("frequency_penalty", request.frequencyPenalty());
+            }
             if (request.logprobs() != null) xinferenceRequest.put("logprobs", request.logprobs());
             if (request.topLogprobs() != null) xinferenceRequest.put("top_logprobs", request.topLogprobs());
             if (request.user() != null) xinferenceRequest.put("user", request.user());
@@ -81,26 +83,55 @@ public class XinferenceRequestTransformer {
         if (request.minP() != null) extraBody.put("min_p", request.minP());
         if (request.repetitionPenalty() != null) extraBody.put("repetition_penalty", request.repetitionPenalty());
         if (request.lengthPenalty() != null) extraBody.put("length_penalty", request.lengthPenalty());
-        if (request.includeStopStrInOutput() != null) extraBody.put("include_stop_str_in_output", request.includeStopStrInOutput());
+        if (request.includeStopStrInOutput() != null) {
+            extraBody.put("include_stop_str_in_output", request.includeStopStrInOutput());
+        }
         if (request.ignoreEos() != null) extraBody.put("ignore_eos", request.ignoreEos());
         if (request.minTokens() != null) extraBody.put("min_tokens", request.minTokens());
         if (request.skipSpecialTokens() != null) extraBody.put("skip_special_tokens", request.skipSpecialTokens());
-        if (request.spacesBetweenSpecialTokens() != null) extraBody.put("spaces_between_special_tokens", request.spacesBetweenSpecialTokens());
-        if (request.truncatePromptTokens() != null) extraBody.put("truncate_prompt_tokens", request.truncatePromptTokens());
+        if (request.spacesBetweenSpecialTokens() != null) {
+            extraBody.put("spaces_between_special_tokens", request.spacesBetweenSpecialTokens());
+        }
+        if (request.truncatePromptTokens() != null) {
+            extraBody.put("truncate_prompt_tokens", request.truncatePromptTokens());
+        }
         if (request.echo() != null) extraBody.put("echo", request.echo());
-        if (request.addGenerationPrompt() != null) extraBody.put("add_generation_prompt", request.addGenerationPrompt());
-        if (request.continueFinalMessage() != null) extraBody.put("continue_final_message", request.continueFinalMessage());
-        if (request.addSpecialTokens() != null) extraBody.put("add_special_tokens", request.addSpecialTokens());
-        if (request.documents() != null) extraBody.set("documents", objectMapper.valueToTree(request.documents()));
-        if (request.chatTemplate() != null) extraBody.put("chat_template", request.chatTemplate());
-        if (request.chatTemplateKwargs() != null) extraBody.set("chat_template_kwargs", objectMapper.valueToTree(request.chatTemplateKwargs()));
-        if (request.structuredOutputs() != null) extraBody.set("structured_outputs", objectMapper.valueToTree(request.structuredOutputs()));
+        if (request.addGenerationPrompt() != null) {
+            extraBody.put("add_generation_prompt", request.addGenerationPrompt());
+        }
+        if (request.continueFinalMessage() != null) {
+            extraBody.put("continue_final_message", request.continueFinalMessage());
+        }
+        if (request.addSpecialTokens() != null) {
+            extraBody.put("add_special_tokens", request.addSpecialTokens());
+        }
+        if (request.documents() != null) {
+            extraBody.set("documents", objectMapper.valueToTree(request.documents()));
+        }
+        if (request.chatTemplate() != null) {
+            extraBody.put("chat_template", request.chatTemplate());
+        }
+        if (request.chatTemplateKwargs() != null) {
+            extraBody.set("chat_template_kwargs",
+                    objectMapper.valueToTree(request.chatTemplateKwargs()));
+        }
+        if (request.structuredOutputs() != null) {
+            extraBody.set("structured_outputs",
+                    objectMapper.valueToTree(request.structuredOutputs()));
+        }
         if (request.priority() != null) extraBody.put("priority", request.priority());
         if (request.requestId() != null) extraBody.put("request_id", request.requestId());
-        if (request.returnTokensAsTokenIds() != null) extraBody.put("return_tokens_as_token_ids", request.returnTokensAsTokenIds());
-        if (request.returnTokenIds() != null) extraBody.put("return_token_ids", request.returnTokenIds());
+        if (request.returnTokensAsTokenIds() != null) {
+            extraBody.put("return_tokens_as_token_ids", request.returnTokensAsTokenIds());
+        }
+        if (request.returnTokenIds() != null) {
+            extraBody.put("return_token_ids", request.returnTokenIds());
+        }
         if (request.cacheSalt() != null) extraBody.put("cache_salt", request.cacheSalt());
-        if (request.repetitionDetection() != null) extraBody.set("repetition_detection", objectMapper.valueToTree(request.repetitionDetection()));
+        if (request.repetitionDetection() != null) {
+            extraBody.set("repetition_detection",
+                    objectMapper.valueToTree(request.repetitionDetection()));
+        }
 
         return extraBody;
     }
@@ -136,19 +167,37 @@ public class XinferenceRequestTransformer {
     private ObjectNode buildEmbeddingExtraBody(final EmbeddingDTO.Request request) {
         ObjectNode extraBody = objectMapper.createObjectNode();
 
-        if (request.truncatePromptTokens() != null) extraBody.put("truncate_prompt_tokens", request.truncatePromptTokens());
+        if (request.truncatePromptTokens() != null) {
+            extraBody.put("truncate_prompt_tokens", request.truncatePromptTokens());
+        }
         if (request.requestId() != null) extraBody.put("request_id", request.requestId());
         if (request.priority() != null) extraBody.put("priority", request.priority());
         if (request.cacheSalt() != null) extraBody.put("cache_salt", request.cacheSalt());
-        if (request.addSpecialTokens() != null) extraBody.put("add_special_tokens", request.addSpecialTokens());
+        if (request.addSpecialTokens() != null) {
+            extraBody.put("add_special_tokens", request.addSpecialTokens());
+        }
         if (request.embedDtype() != null) extraBody.put("embed_dtype", request.embedDtype());
         if (request.endianness() != null) extraBody.put("endianness", request.endianness());
-        if (request.useActivation() != null) extraBody.put("use_activation", request.useActivation());
-        if (request.chatTemplate() != null) extraBody.put("chat_template", request.chatTemplate());
-        if (request.chatTemplateKwargs() != null) extraBody.set("chat_template_kwargs", objectMapper.valueToTree(request.chatTemplateKwargs()));
-        if (request.mediaIoKwargs() != null) extraBody.set("media_io_kwargs", objectMapper.valueToTree(request.mediaIoKwargs()));
-        if (request.addGenerationPrompt() != null) extraBody.put("add_generation_prompt", request.addGenerationPrompt());
-        if (request.continueFinalMessage() != null) extraBody.put("continue_final_message", request.continueFinalMessage());
+        if (request.useActivation() != null) {
+            extraBody.put("use_activation", request.useActivation());
+        }
+        if (request.chatTemplate() != null) {
+            extraBody.put("chat_template", request.chatTemplate());
+        }
+        if (request.chatTemplateKwargs() != null) {
+            extraBody.set("chat_template_kwargs",
+                    objectMapper.valueToTree(request.chatTemplateKwargs()));
+        }
+        if (request.mediaIoKwargs() != null) {
+            extraBody.set("media_io_kwargs",
+                    objectMapper.valueToTree(request.mediaIoKwargs()));
+        }
+        if (request.addGenerationPrompt() != null) {
+            extraBody.put("add_generation_prompt", request.addGenerationPrompt());
+        }
+        if (request.continueFinalMessage() != null) {
+            extraBody.put("continue_final_message", request.continueFinalMessage());
+        }
 
         return extraBody;
     }
@@ -162,12 +211,20 @@ public class XinferenceRequestTransformer {
             xinferenceRequest.set("documents", objectMapper.valueToTree(rerankRequest.documents()));
 
             if (rerankRequest.topN() != null) xinferenceRequest.put("top_n", rerankRequest.topN());
-            if (rerankRequest.returnDocuments() != null) xinferenceRequest.put("return_documents", rerankRequest.returnDocuments());
+            if (rerankRequest.returnDocuments() != null) {
+                xinferenceRequest.put("return_documents", rerankRequest.returnDocuments());
+            }
 
             ObjectNode extraBody = objectMapper.createObjectNode();
-            if (rerankRequest.requestId() != null) extraBody.put("request_id", rerankRequest.requestId());
-            if (rerankRequest.priority() != null) extraBody.put("priority", rerankRequest.priority());
-            if (rerankRequest.truncatePromptTokens() != null) extraBody.put("truncate_prompt_tokens", rerankRequest.truncatePromptTokens());
+            if (rerankRequest.requestId() != null) {
+                extraBody.put("request_id", rerankRequest.requestId());
+            }
+            if (rerankRequest.priority() != null) {
+                extraBody.put("priority", rerankRequest.priority());
+            }
+            if (rerankRequest.truncatePromptTokens() != null) {
+                extraBody.put("truncate_prompt_tokens", rerankRequest.truncatePromptTokens());
+            }
 
             if (extraBody.size() > 0) {
                 xinferenceRequest.set("extra_body", extraBody);
@@ -188,7 +245,9 @@ public class XinferenceRequestTransformer {
             xinferenceRequest.put("input", ttsRequest.input());
             xinferenceRequest.put("voice", ttsRequest.voice());
 
-            if (ttsRequest.responseFormat() != null) xinferenceRequest.put("response_format", ttsRequest.responseFormat());
+            if (ttsRequest.responseFormat() != null) {
+                xinferenceRequest.put("response_format", ttsRequest.responseFormat());
+            }
             if (ttsRequest.speed() != null) xinferenceRequest.put("speed", ttsRequest.speed());
 
             return xinferenceRequest;

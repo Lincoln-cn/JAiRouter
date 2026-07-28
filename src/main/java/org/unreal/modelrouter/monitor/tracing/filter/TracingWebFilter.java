@@ -167,7 +167,9 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 处理请求错误
      */
-    private void handleError(final ServerWebExchange exchange, final TracingContext context, final Throwable error, final long startTime) {
+    private void handleError(
+            final ServerWebExchange exchange, final TracingContext context,
+            final Throwable error, final long startTime) {
         try {
             long duration = System.currentTimeMillis() - startTime;
             
@@ -215,7 +217,9 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 设置响应相关属性
      */
-    private void setResponseAttributes(final TracingContext context, final ServerWebExchange exchange, final long duration) {
+    private void setResponseAttributes(
+            final TracingContext context, final ServerWebExchange exchange,
+            final long duration) {
         if (context == null || !context.isActive()) {
             return;
         }
@@ -421,7 +425,9 @@ public class TracingWebFilter implements WebFilter, Ordered {
     /**
      * 触发慢请求优化
      */
-    private void triggerSlowRequestOptimization(final String operationName, final long duration, final TracingContext context) {
+    private void triggerSlowRequestOptimization(
+            final String operationName, final long duration,
+            final TracingContext context) {
         // 异步触发性能优化，避免影响主请求流程
         tracingService.triggerPerformanceOptimization()
             .subscribe(

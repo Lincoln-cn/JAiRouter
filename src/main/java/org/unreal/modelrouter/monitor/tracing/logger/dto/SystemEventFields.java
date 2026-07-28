@@ -39,7 +39,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SystemEventFields implements LogFields {
+public final class SystemEventFields implements LogFields {
 
     /**
      * 事件名称

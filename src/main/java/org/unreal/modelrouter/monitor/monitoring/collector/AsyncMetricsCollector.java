@@ -18,7 +18,7 @@ import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledConditi
 @Component
 @Primary
 @Conditional(MonitoringEnabledCondition.class)
-public class AsyncMetricsCollector implements MetricsCollector {
+public final class AsyncMetricsCollector implements MetricsCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncMetricsCollector.class);
 
@@ -64,7 +64,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordBackendCall(final String adapter, final String instance, final long duration, final boolean success) {
+    public void recordBackendCall(final String adapter, final String instance,
+                                   final long duration, final boolean success) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getBackendMetrics();
@@ -75,7 +76,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordBackendCall(adapter, instance, duration, success);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record backend call metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record backend call metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordBackendCall(adapter, instance, duration, success);
             } catch (Exception fallbackError) {
@@ -117,7 +119,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordCircuitBreaker(service, state, event);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record circuit breaker metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record circuit breaker metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordCircuitBreaker(service, state, event);
             } catch (Exception fallbackError) {
@@ -138,7 +141,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordLoadBalancer(service, strategy, selectedInstance);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record load balancer metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record load balancer metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordLoadBalancer(service, strategy, selectedInstance);
             } catch (Exception fallbackError) {
@@ -148,7 +152,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordHealthCheck(final String adapter, final String instance, final boolean healthy, final long responseTime) {
+    public void recordHealthCheck(final String adapter, final String instance,
+                                   final boolean healthy, final long responseTime) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -159,7 +164,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordHealthCheck(adapter, instance, healthy, responseTime);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record health check metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record health check metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordHealthCheck(adapter, instance, healthy, responseTime);
             } catch (Exception fallbackError) {
@@ -180,7 +186,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordRequestSize(service, requestSize, responseSize);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record request size metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record request size metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordRequestSize(service, requestSize, responseSize);
             } catch (Exception fallbackError) {
@@ -190,7 +197,9 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTrace(final String traceId, final String spanId, final String operationName, final long duration, final boolean success) {
+    public void recordTrace(final String traceId, final String spanId,
+                             final String operationName, final long duration,
+                             final boolean success) {
         try {
             if (shouldUseAsyncProcessing()) {
                 // 对于追踪指标，使用基础设施指标的采样率
@@ -212,7 +221,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceExport(final String exporterType, final long duration, final boolean success, final int batchSize) {
+    public void recordTraceExport(final String exporterType, final long duration,
+                                   final boolean success, final int batchSize) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -223,7 +233,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordTraceExport(exporterType, duration, success, batchSize);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record trace export metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record trace export metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordTraceExport(exporterType, duration, success, batchSize);
             } catch (Exception fallbackError) {
@@ -242,7 +253,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordTraceSampling(samplingRate, sampled);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record trace sampling metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record trace sampling metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordTraceSampling(samplingRate, sampled);
             } catch (Exception fallbackError) {
@@ -252,7 +264,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceDataQuality(final String traceId, final int spanCount, final int attributeCount, final int errorCount) {
+    public void recordTraceDataQuality(final String traceId, final int spanCount,
+                                        final int attributeCount, final int errorCount) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getInfrastructureMetrics();
@@ -263,7 +276,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordTraceDataQuality(traceId, spanCount, attributeCount, errorCount);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record trace data quality metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record trace data quality metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordTraceDataQuality(traceId, spanCount, attributeCount, errorCount);
             } catch (Exception fallbackError) {
@@ -284,7 +298,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordTraceProcessing(processorName, duration, success);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record trace processing metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record trace processing metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordTraceProcessing(processorName, duration, success);
             } catch (Exception fallbackError) {
@@ -294,7 +309,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceAnalysis(final String analyzerName, final int spanCount, final long duration, final boolean success) {
+    public void recordTraceAnalysis(final String analyzerName, final int spanCount,
+                                     final long duration, final boolean success) {
         try {
             if (shouldUseAsyncProcessing()) {
                 double samplingRate = monitoringProperties.getSampling().getTraceAnalysisMetrics();
@@ -305,7 +321,8 @@ public class AsyncMetricsCollector implements MetricsCollector {
                 fallbackCollector.recordTraceAnalysis(analyzerName, spanCount, duration, success);
             }
         } catch (Exception e) {
-            logger.warn("Failed to record trace analysis metric asynchronously, falling back to sync: {}", e.getMessage());
+            logger.warn("Failed to record trace analysis metric "
+                    + "asynchronously, falling back to sync: {}", e.getMessage());
             try {
                 fallbackCollector.recordTraceAnalysis(analyzerName, spanCount, duration, success);
             } catch (Exception fallbackError) {

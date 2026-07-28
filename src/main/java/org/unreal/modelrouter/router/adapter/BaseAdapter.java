@@ -117,7 +117,8 @@ public abstract class BaseAdapter implements ServiceCapability {
         long startTime = System.currentTimeMillis();
         String adapterType = getAdapterType();
         String modelNameFromRequest = ModelUtils.getModelNameFromRequest(request);
-        resilienceSupport.getTracingManager().recordCallStart(adapterType, selectedInstance, serviceType, modelNameFromRequest);
+        resilienceSupport.getTracingManager()
+                .recordCallStart(adapterType, selectedInstance, serviceType, modelNameFromRequest);
         return processRequestWithRetry(request, authorization, client, path, selectedInstance,
                 serviceType, modelNameFromRequest, processor, startTime, 0);
     }
@@ -152,7 +153,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                                 errorCode, modelName, serviceType, selectedInstance);
                     }
                     if (retryPolicy.canRetry(retryCount, throwable) && retryPolicy.isRetryable(throwable)) {
-                        resilienceSupport.getTracingManager().recordRetry(adapterType, selectedInstance, retryCount + 1, maxRetries, throwable);
+                        resilienceSupport.getTracingManager()
+                                .recordRetry(adapterType, selectedInstance, retryCount + 1, maxRetries, throwable);
                         if (metricsRecorder != null) {
                             metricsRecorder.recordRetry(adapterType, instanceName, retryCount + 1, throwable);
                         }
@@ -173,7 +175,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                         errorContext.put("retryCount", retryCount);
                         errorTracker.trackError(throwable, adapterType + ".request", errorContext);
                     }
-                    return resilienceSupport.getErrorResponseBuilder().buildErrorResponse(throwable).flatMap(Mono::error);
+                    return resilienceSupport.getErrorResponseBuilder()
+                            .buildErrorResponse(throwable).flatMap(Mono::error);
                 });
     }
 
@@ -292,7 +295,8 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     @SuppressWarnings("all")
     @Override
-    public Mono embedding(final EmbeddingDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
+    public Mono embedding(final EmbeddingDTO.Request request, final String authorization,
+            final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.embedding);
         if (capabilityCheck != null) return capabilityCheck;
         return processRequestWithFallback(request, authorization, httpRequest,
@@ -303,7 +307,8 @@ public abstract class BaseAdapter implements ServiceCapability {
 
     @SuppressWarnings("all")
     @Override
-    public Mono rerank(final RerankDTO.Request request, final String authorization, final ServerHttpRequest httpRequest) {
+    public Mono rerank(final RerankDTO.Request request, final String authorization,
+            final ServerHttpRequest httpRequest) {
         Mono<ResponseEntity<String>> capabilityCheck = checkCapability(ModelServiceRegistry.ServiceType.rerank);
         if (capabilityCheck != null) return capabilityCheck;
         return processRequestWithFallback(request, authorization, httpRequest,
@@ -431,7 +436,8 @@ public abstract class BaseAdapter implements ServiceCapability {
         resilienceSupport.getTracingManager().recordRetry(adapterType, instance, retryCount, maxRetries, error);
         AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
         if (metricsRecorder != null) {
-            metricsRecorder.recordRetry(adapterType, instance != null ? instance.getName() : "unknown", retryCount, error);
+            metricsRecorder.recordRetry(adapterType,
+                    instance != null ? instance.getName() : "unknown", retryCount, error);
         }
     }
 

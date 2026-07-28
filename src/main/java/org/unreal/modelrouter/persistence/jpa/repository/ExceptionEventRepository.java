@@ -91,7 +91,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 根据时间范围查询
      */
-    @Query("SELECT e FROM ExceptionEventEntity e WHERE e.occurredAt BETWEEN :startTime AND :endTime ORDER BY e.occurredAt DESC")
+    @Query("SELECT e FROM ExceptionEventEntity e "
+           + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
+           + "ORDER BY e.occurredAt DESC")
     List<ExceptionEventEntity> findByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
@@ -99,7 +101,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 根据时间范围分页查询
      */
-    @Query("SELECT e FROM ExceptionEventEntity e WHERE e.occurredAt BETWEEN :startTime AND :endTime ORDER BY e.occurredAt DESC")
+    @Query("SELECT e FROM ExceptionEventEntity e "
+           + "WHERE e.occurredAt BETWEEN :startTime AND :endTime "
+           + "ORDER BY e.occurredAt DESC")
     Page<ExceptionEventEntity> findByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime,
@@ -258,7 +262,9 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 获取指定异常类型的最近事件
      */
-    @Query("SELECT e FROM ExceptionEventEntity e WHERE e.exceptionType = :exceptionType ORDER BY e.occurredAt DESC LIMIT :limit")
+    @Query("SELECT e FROM ExceptionEventEntity e "
+           + "WHERE e.exceptionType = :exceptionType "
+           + "ORDER BY e.occurredAt DESC LIMIT :limit")
     List<ExceptionEventEntity> findRecentEventsByType(
             @Param("exceptionType") String exceptionType,
             @Param("limit") int limit);
@@ -296,7 +302,8 @@ public interface ExceptionEventRepository extends JpaRepository<ExceptionEventEn
     /**
      * 查找需要聚合的异常（超过阈值）
      */
-    @Query("SELECT e.exceptionType, e.operation, COUNT(e) as cnt, MIN(e.occurredAt) as first, MAX(e.occurredAt) as last "
+    @Query("SELECT e.exceptionType, e.operation, COUNT(e) as cnt, "
+           + "MIN(e.occurredAt) as first, MAX(e.occurredAt) as last "
            + "FROM ExceptionEventEntity e WHERE e.isAggregated = false "
            + "GROUP BY e.exceptionType, e.operation "
            + "HAVING COUNT(e) >= :threshold")

@@ -18,7 +18,9 @@ import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
  */
 @Configuration
 @EnableConfigurationProperties(SlowQueryAlertProperties.class)
-@ConditionalOnProperty(name = "jairouter.monitoring.slow-query-alert.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "jairouter.monitoring.slow-query-alert.enabled",
+        havingValue = "true", matchIfMissing = true)
 public class SlowQueryAlertAutoConfiguration {
     
     /**

@@ -18,7 +18,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * 专门负责Redis连接状态的监控和健康检查
  */
 @Service
-@ConditionalOnProperty(name = "jairouter.security.monitoring.jwt-persistence.health-checks.redis.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "jairouter.security.monitoring.jwt-persistence.health-checks.redis.enabled",
+        havingValue = "true", matchIfMissing = true)
 public class RedisConnectionHealthService {
     
     private static final Logger log = LoggerFactory.getLogger(RedisConnectionHealthService.class);
@@ -92,7 +94,8 @@ public class RedisConnectionHealthService {
                 
             } else {
                 // 响应异常或超时
-                handleHealthCheckFailure("Unexpected ping response or timeout: " + result + ", responseTime: " + responseTime + "ms");
+                handleHealthCheckFailure("Unexpected ping response or timeout: "
+                        + result + ", responseTime: " + responseTime + "ms");
                 return false;
             }
             
@@ -125,8 +128,10 @@ public class RedisConnectionHealthService {
         // 基本状态
         status.put("healthy", isHealthy.get());
         status.put("configured", redisTemplate != null);
-        status.put("lastCheckTime", LocalDateTime.ofEpochSecond(lastCheckTime.get() / 1000, 0, java.time.ZoneOffset.UTC).toString());
-        status.put("lastSuccessTime", LocalDateTime.ofEpochSecond(lastSuccessTime.get() / 1000, 0, java.time.ZoneOffset.UTC).toString());
+        status.put("lastCheckTime", LocalDateTime.ofEpochSecond(
+                lastCheckTime.get() / 1000, 0, java.time.ZoneOffset.UTC).toString());
+        status.put("lastSuccessTime", LocalDateTime.ofEpochSecond(
+                lastSuccessTime.get() / 1000, 0, java.time.ZoneOffset.UTC).toString());
         
         // 性能指标
         status.put("lastResponseTimeMs", lastResponseTime.get());

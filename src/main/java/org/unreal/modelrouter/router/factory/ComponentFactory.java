@@ -58,7 +58,8 @@ public class ComponentFactory {
             case "round-robin" -> new RoundRobinLoadBalancer();
             case "least-connections" -> new LeastConnectionsLoadBalancer();
             case "ip-hash" -> new IpHashLoadBalancer(config.getHashAlgorithm());
-            case "consistent-hash" -> new ConsistentHashLoadBalancer(config.getVirtualNodes() != null ? config.getVirtualNodes() : 150);
+            case "consistent-hash" -> new ConsistentHashLoadBalancer(
+                    config.getVirtualNodes() != null ? config.getVirtualNodes() : 150);
             default -> {
                 logger.warn("Unsupported load balancer: {}, fallback to random", config.getType());
                 yield new RandomLoadBalancer();

@@ -82,7 +82,8 @@ public class ClientIpUtils {
     private static String getIpFromProxyHeaders(final ServerWebExchange exchange) {
         for (String header : PROXY_HEADERS) {
             String headerValue = exchange.getRequest().getHeaders().getFirst(header);
-            if (headerValue != null && !headerValue.trim().isEmpty() && !"unknown".equalsIgnoreCase(headerValue.trim())) {
+            if (headerValue != null && !headerValue.trim().isEmpty()
+                    && !"unknown".equalsIgnoreCase(headerValue.trim())) {
                 // 处理多个IP的情况（如X-Forwarded-For: client, proxy1, proxy2）
                 String[] ips = headerValue.split(",");
                 for (String ip : ips) {

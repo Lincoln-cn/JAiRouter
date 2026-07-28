@@ -72,7 +72,8 @@ public class StatePersistenceManagementController {
         logger.info("Manual full state recovery triggered via API");
 
         if (recoveryService == null) {
-            return Mono.just(ResponseEntity.ok(createSuccessResponse(Map.of("message", "Recovery service is disabled"))));
+            return Mono.just(ResponseEntity.ok(
+                    createSuccessResponse(Map.of("message", "Recovery service is disabled"))));
         }
 
         return recoveryService.triggerManualRecovery()
@@ -191,7 +192,8 @@ public class StatePersistenceManagementController {
             Mono<Integer> rlCountMono;
             if (rlPersistenceAdapter != null) {
                 rlCountMono = compositePersistenceService.getAllKeys(
-                        org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService.StateType.RATE_LIMITER)
+                        org.unreal.modelrouter.persistence.store.persistence
+                                .StatePersistenceService.StateType.RATE_LIMITER)
                         .map(keys -> {
                             // Iterable 转 Collection 计算 size
                             java.util.List<String> list = new java.util.ArrayList<>();
@@ -252,7 +254,8 @@ public class StatePersistenceManagementController {
                                 detail.put("instanceId", instanceId);
                                 detail.put("stateType", "CIRCUIT_BREAKER");
                                 detail.put("state", stateData.getOrDefault("state", "UNKNOWN"));
-                                detail.put("lastModified", stateData.getOrDefault("timestamp", System.currentTimeMillis()));
+                                detail.put("lastModified",
+                                        stateData.getOrDefault("timestamp", System.currentTimeMillis()));
                                 detail.put("failureCount", stateData.get("failureCount"));
                                 detail.put("successCount", stateData.get("successCount"));
                                 detail.put("tier", compositePersistenceService.getTierName());
@@ -285,7 +288,8 @@ public class StatePersistenceManagementController {
                     // 3. 从持久化层获取限流器状态
                     if (rlPersistenceAdapter != null) {
                         return compositePersistenceService.getAllKeys(
-                                org.unreal.modelrouter.persistence.store.persistence.StatePersistenceService.StateType.RATE_LIMITER)
+                                org.unreal.modelrouter.persistence.store.persistence
+                                        .StatePersistenceService.StateType.RATE_LIMITER)
                                 .flatMapIterable(keys -> keys)
                                 .flatMap(limiterId -> {
                                     return rlPersistenceAdapter.loadRateLimiterState(limiterId)
@@ -294,7 +298,8 @@ public class StatePersistenceManagementController {
                                                 detail.put("instanceId", limiterId);
                                                 detail.put("stateType", "RATE_LIMITER");
                                                 detail.put("state", stateData.getOrDefault("algorithm", "unknown"));
-                                                detail.put("lastModified", stateData.getOrDefault("timestamp", System.currentTimeMillis()));
+                                                detail.put("lastModified", stateData
+                                                        .getOrDefault("timestamp", System.currentTimeMillis()));
                                                 detail.put("requestsPerSecond", stateData.get("requestsPerSecond"));
                                                 detail.put("capacity", stateData.get("capacity"));
                                                 detail.put("tier", compositePersistenceService.getTierName());

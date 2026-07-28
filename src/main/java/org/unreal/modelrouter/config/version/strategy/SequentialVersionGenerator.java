@@ -14,7 +14,7 @@ import org.unreal.modelrouter.config.version.VersionContext;
  * - 简单易维护
  */
 @Component
-public class SequentialVersionGenerator implements VersionGenerator {
+public final class SequentialVersionGenerator implements VersionGenerator {
 
     private static final Logger logger = LoggerFactory.getLogger(SequentialVersionGenerator.class);
 

@@ -62,17 +62,23 @@ public class VllmAdapter extends BaseAdapter {
                     // 根据请求类型添加特定属性
                     if (request instanceof ChatDTO.Request) {
                         ChatDTO.Request chatRequest = (ChatDTO.Request) request;
-                        currentSpan.setAttribute("request.stream", chatRequest.stream() != null ? chatRequest.stream() : false);
-                        currentSpan.setAttribute("request.max_tokens", chatRequest.maxTokens() != null ? chatRequest.maxTokens() : 0);
-                        currentSpan.setAttribute("request.temperature", chatRequest.temperature() != null ? chatRequest.temperature() : 1.0);
+                        currentSpan.setAttribute("request.stream",
+                                chatRequest.stream() != null ? chatRequest.stream() : false);
+                        currentSpan.setAttribute("request.max_tokens",
+                                chatRequest.maxTokens() != null ? chatRequest.maxTokens() : 0);
+                        currentSpan.setAttribute("request.temperature",
+                                chatRequest.temperature() != null ? chatRequest.temperature() : 1.0);
                     } else if (request instanceof EmbeddingDTO.Request) {
                         EmbeddingDTO.Request embeddingRequest = (EmbeddingDTO.Request) request;
                         currentSpan.setAttribute("request.embedding_model", embeddingRequest.model());
-                        currentSpan.setAttribute("request.input_type", embeddingRequest.input() instanceof String ? "string" : "array");
+                        currentSpan.setAttribute("request.input_type",
+                                embeddingRequest.input() instanceof String ? "string" : "array");
                     } else if (request instanceof RerankDTO.Request) {
                         RerankDTO.Request rerankRequest = (RerankDTO.Request) request;
-                        currentSpan.setAttribute("request.query_length", rerankRequest.query() != null ? rerankRequest.query().length() : 0);
-                        currentSpan.setAttribute("request.documents_count", rerankRequest.documents() != null ? rerankRequest.documents().size() : 0);
+                        currentSpan.setAttribute("request.query_length",
+                                rerankRequest.query() != null ? rerankRequest.query().length() : 0);
+                        currentSpan.setAttribute("request.documents_count",
+                                rerankRequest.documents() != null ? rerankRequest.documents().size() : 0);
                     }
                 }
 
@@ -489,7 +495,8 @@ public class VllmAdapter extends BaseAdapter {
                 }
             } else if (vllmResponse.has("results")) {
                 // 重排序响应转换
-                standardResponse.set("id", objectMapper.getNodeFactory().textNode("cmpl-" + System.currentTimeMillis()));
+                standardResponse.set("id",
+                        objectMapper.getNodeFactory().textNode("cmpl-" + System.currentTimeMillis()));
                 standardResponse.set("results", vllmResponse.get("results"));
                 if (vllmResponse.has("model")) {
                     standardResponse.put("model", vllmResponse.get("model").asText());

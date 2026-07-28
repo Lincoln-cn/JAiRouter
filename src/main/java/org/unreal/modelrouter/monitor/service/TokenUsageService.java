@@ -105,7 +105,8 @@ public class TokenUsageService {
         dto.setAvgResponseTimeMs(tokenUsageRepository.avgResponseTimeByTimeRange(effectiveStartTime, effectiveEndTime));
 
         // 计算输入输出 token（需要单独查询）
-        List<Object[]> tokenDetails = tokenUsageRepository.countTokensByServiceType(effectiveStartTime, effectiveEndTime);
+        List<Object[]> tokenDetails =
+                tokenUsageRepository.countTokensByServiceType(effectiveStartTime, effectiveEndTime);
         long totalPrompt = 0L;
         long totalCompletion = 0L;
         for (Object[] row : tokenDetails) {
@@ -139,7 +140,8 @@ public class TokenUsageService {
         dto.setByModel(modelStats);
 
         // 按服务类型统计
-        List<Object[]> byServiceType = tokenUsageRepository.countTokensByServiceType(effectiveStartTime, effectiveEndTime);
+        List<Object[]> byServiceType =
+                tokenUsageRepository.countTokensByServiceType(effectiveStartTime, effectiveEndTime);
         List<TokenUsageStatisticsDTO.ServiceTypeStats> serviceTypeStats = new ArrayList<>();
         for (Object[] row : byServiceType) {
             String serviceType = (String) row[0];

@@ -58,7 +58,9 @@ public interface ApiCallHistoryRepository extends JpaRepository<ApiCallHistoryEn
     /**
      * 根据时间范围查询
      */
-    @Query("SELECT c FROM ApiCallHistoryEntity c WHERE c.createdAt BETWEEN :startTime AND :endTime ORDER BY c.createdAt DESC")
+    @Query("SELECT c FROM ApiCallHistoryEntity c "
+           + "WHERE c.createdAt BETWEEN :startTime AND :endTime "
+           + "ORDER BY c.createdAt DESC")
     List<ApiCallHistoryEntity> findByTimeRange(
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);

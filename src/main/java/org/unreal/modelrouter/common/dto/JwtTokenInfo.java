@@ -246,7 +246,9 @@ public class JwtTokenInfo {
                 + ", timestamp=" + timestamp
                 + ", id='" + id + '\''
                 + ", userId='" + userId + '\''
-                + ", tokenHash='" + (tokenHash != null ? tokenHash.substring(0, Math.min(tokenHash.length(), 16)) + "..." : null) + '\''
+                + ", tokenHash='" + (tokenHash != null
+                        ? tokenHash.substring(0, Math.min(tokenHash.length(), 16)) + "..."
+                        : null) + '\''
                 + ", issuedAt=" + issuedAt
                 + ", expiresAt=" + expiresAt
                 + ", createdAt=" + createdAt

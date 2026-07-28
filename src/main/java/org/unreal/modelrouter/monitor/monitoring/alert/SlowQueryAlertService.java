@@ -222,8 +222,11 @@ public class SlowQueryAlertService {
     /**
      * 构建慢查询告警对象
      */
-    private SlowQueryAlert buildSlowQueryAlert(final String operationName, final long durationMillis, final long threshold,
-                                              final long alertCount, final TracingContext context, final Map<String, Object> additionalInfo) {
+    private SlowQueryAlert buildSlowQueryAlert(
+            final String operationName, final long durationMillis,
+            final long threshold, final long alertCount,
+            final TracingContext context,
+            final Map<String, Object> additionalInfo) {
         
         SlowQueryDetector.SlowQueryStats stats = getSlowQueryDetector().getSlowQueryStats(operationName);
         String severity = getSeverityLevel(durationMillis, threshold);

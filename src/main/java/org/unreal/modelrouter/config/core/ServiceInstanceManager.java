@@ -290,7 +290,8 @@ public class ServiceInstanceManager {
      * v2.x: 更新熔断器配置时重置内存中的熔断器状态（使用正确的 instanceId）
      */
     @Transactional
-    public InstanceCircuitBreakerDTO saveCircuitBreakerConfig(final Long instanceId, final InstanceCircuitBreakerDTO dto) {
+    public InstanceCircuitBreakerDTO saveCircuitBreakerConfig(
+            final Long instanceId, final InstanceCircuitBreakerDTO dto) {
         // 确保实例存在
         if (!serviceInstanceRepository.existsById(instanceId)) {
             throw new RuntimeException("Instance not found: " + instanceId);

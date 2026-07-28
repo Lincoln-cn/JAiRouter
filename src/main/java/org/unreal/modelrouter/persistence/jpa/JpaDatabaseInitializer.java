@@ -36,7 +36,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @DependsOn({"apiKeyService"})
-public class JpaDatabaseInitializer {
+public final class JpaDatabaseInitializer {
 
     private final ConfigRepository configRepository;
     private final ServiceConfigRepository serviceConfigRepository;

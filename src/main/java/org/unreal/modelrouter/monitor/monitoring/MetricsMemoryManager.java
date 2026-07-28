@@ -85,7 +85,8 @@ public class MetricsMemoryManager {
             double memoryUsage = getCurrentMemoryUsage();
             
             if (memoryUsage >= MEMORY_CRITICAL_THRESHOLD) {
-                logger.warn("Critical memory usage detected: {:.2f}%, performing aggressive cleanup", memoryUsage * 100);
+                logger.warn("Critical memory usage detected: {:.2f}%, "
+                        + "performing aggressive cleanup", memoryUsage * 100);
                 performAggressiveCleanup();
                 memoryCleanups.incrementAndGet();
             } else if (memoryUsage >= MEMORY_WARNING_THRESHOLD) {

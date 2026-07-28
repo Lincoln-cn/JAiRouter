@@ -9,7 +9,9 @@ public class TraceAnalysisMetricsEvent extends MetricsEvent {
     private final long duration;
     private final boolean success;
 
-    public TraceAnalysisMetricsEvent(final String analyzerName, final int spanCount, final long duration, final boolean success) {
+    public TraceAnalysisMetricsEvent(
+            final String analyzerName, final int spanCount,
+            final long duration, final boolean success) {
         this.analyzerName = analyzerName;
         this.spanCount = spanCount;
         this.duration = duration;

@@ -17,26 +17,32 @@ import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledConditi
 @Configuration
 @EnableScheduling
 @Conditional(MonitoringEnabledCondition.class)
-public class CustomMetricsConfiguration {
+public final class CustomMetricsConfiguration {
     
     private static final Logger logger = LoggerFactory.getLogger(CustomMetricsConfiguration.class);
     
     @Bean
-    @ConditionalOnProperty(name = "monitoring.metrics.custom-registry.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "monitoring.metrics.custom-registry.enabled",
+            havingValue = "true", matchIfMissing = true)
     public CustomMeterRegistry customMeterRegistry(final MeterRegistry meterRegistry) {
         logger.info("Creating CustomMeterRegistry bean");
         return new DefaultCustomMeterRegistry(meterRegistry);
     }
     
     @Bean
-    @ConditionalOnProperty(name = "monitoring.metrics.custom-registry.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "monitoring.metrics.custom-registry.enabled",
+            havingValue = "true", matchIfMissing = true)
     public MetricRegistrationService metricRegistrationService(final CustomMeterRegistry customMeterRegistry) {
         logger.info("Creating MetricRegistrationService bean");
         return new DefaultMetricRegistrationService(customMeterRegistry);
     }
     
     @Bean
-    @ConditionalOnProperty(name = "monitoring.metrics.lifecycle-management.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "monitoring.metrics.lifecycle-management.enabled",
+            havingValue = "true", matchIfMissing = true)
     public MetricLifecycleManager metricLifecycleManager(final MetricRegistrationService metricRegistrationService,
                                                         final CustomMeterRegistry customMeterRegistry) {
         logger.info("Creating MetricLifecycleManager bean");

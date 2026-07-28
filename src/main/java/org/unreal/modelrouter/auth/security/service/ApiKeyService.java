@@ -48,7 +48,10 @@ public class ApiKeyService {
     @Autowired private ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    public ApiKeyService(@Qualifier("jpaStoreManager") StoreManager sm, ObjectMapper om, SecurityProperties sp) { this.securityProperties = sp; }
+    public ApiKeyService(@Qualifier("jpaStoreManager") StoreManager sm,
+                         ObjectMapper om, SecurityProperties sp) {
+        this.securityProperties = sp;
+    }
 
     public Mono<ApiKey> validateApiKey(String kv) { return validateApiKey(kv, null, null); }
 
@@ -64,8 +67,10 @@ public class ApiKeyService {
                 updateUsageStatistics(r.getKeyId(), false);
                 eventPublisher.publishEvent(ApiKeyAuditEvent.used(r.getKeyId(), ep, ip, false));
             }
-            String et = r.getFailureType() == ApiKeyValidator.ValidationFailureType.FORMAT_ERROR ? "API_KEY_MISSING"
-                : r.getFailureType() == ApiKeyValidator.ValidationFailureType.NOT_FOUND ? "API_KEY_INVALID" : "API_KEY_VALIDATION_FAILED";
+            String et = r.getFailureType() == ApiKeyValidator.ValidationFailureType.FORMAT_ERROR
+                    ? "API_KEY_MISSING"
+                    : r.getFailureType() == ApiKeyValidator.ValidationFailureType.NOT_FOUND
+                    ? "API_KEY_INVALID" : "API_KEY_VALIDATION_FAILED";
             eventPublisher.publishEvent(ApiKeyAuditEvent.securityEvent(et, r.getErrorMessage(), r.getKeyId(), ip));
             return Mono.error(r.toException());
         });
@@ -75,7 +80,9 @@ public class ApiKeyService {
 
     public Mono<ApiKeyCreationVO> createApiKey(ApiKeyCreateRequest req, String by, String ip) {
         return Mono.fromCallable(() -> {
-            String kid = req.getKeyId() != null && !req.getKeyId().isEmpty() ? req.getKeyId() : "key-" + UUID.randomUUID().toString().substring(0, 8);
+            String kid = req.getKeyId() != null && !req.getKeyId().isEmpty()
+                    ? req.getKeyId()
+                    : "key-" + UUID.randomUUID().toString().substring(0, 8);
             if (keyIdIndex.containsKey(kid)) throw new IllegalArgumentException("API Key ID已存在: " + kid);
             String kv = ApiKey.generateApiKey("sk-", 32);
             String kh = ApiKeyHashUtil.hashApiKey(kv);
@@ -215,9 +222,13 @@ public class ApiKeyService {
 
     public Mono<Integer> cleanupExpiredKeys() { return apiKeyBatchService.cleanupExpiredKeys(apiKeyCache); }
 
-    public Mono<ApiKeyBatchService.RotationStats> getRotationStats() { return apiKeyBatchService.getRotationStats(apiKeyCache); }
+    public Mono<ApiKeyBatchService.RotationStats> getRotationStats() {
+        return apiKeyBatchService.getRotationStats(apiKeyCache);
+    }
 
-    public Mono<ApiKeyBatchService.ExpirationStats> getExpirationStats() { return apiKeyBatchService.getExpirationStats(apiKeyCache); }
+    public Mono<ApiKeyBatchService.ExpirationStats> getExpirationStats() {
+        return apiKeyBatchService.getExpirationStats(apiKeyCache);
+    }
 
     public boolean hasPersistedAccountConfig() { return apiKeyPersistenceService.hasPersistedAccountConfig(); }
 

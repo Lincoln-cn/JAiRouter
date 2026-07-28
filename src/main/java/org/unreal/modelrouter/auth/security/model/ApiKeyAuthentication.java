@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  */
 @Getter
 @Setter
-public class ApiKeyAuthentication implements Authentication {
+public final class ApiKeyAuthentication implements Authentication {
     
     private final String principal;
     private final String credentials;

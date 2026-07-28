@@ -15,7 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author JAiRouter Team
  * @since 2.7.2
  */
-public class CircularTimeBuffer {
+public final class CircularTimeBuffer {
 
     /**
      * 时间槽数组，每个槽存储该时间段内的请求数

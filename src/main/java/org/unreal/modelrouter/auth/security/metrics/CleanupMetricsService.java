@@ -242,7 +242,9 @@ public class CleanupMetricsService {
         // 计算清理效率
         long totalExecutions = (long) (tokenCleanupCounter.count() + blacklistCleanupCounter.count());
         if (totalExecutions > 0) {
-            double avgItemsPerExecution = (double) (totalTokensRemoved.get() + totalBlacklistItemsRemoved.get()) / totalExecutions;
+            double avgItemsPerExecution =
+                    (double) (totalTokensRemoved.get() + totalBlacklistItemsRemoved.get())
+                    / totalExecutions;
             stats.put("avgItemsPerExecution", avgItemsPerExecution);
         }
         

@@ -107,8 +107,10 @@ public interface DataSyncService {
 
         @Override
         public String toString() {
-            return String.format("SyncResult{success=%s, processed=%d, success=%d, failure=%d, duration=%dms, message='%s'}",
-                success, processedCount, successCount, failureCount, durationMs, message);
+            return String.format("SyncResult{success=%s, processed=%d, "
+                            + "success=%d, failure=%d, duration=%dms, message='%s'}",
+                success, processedCount, successCount, failureCount,
+                durationMs, message);
         }
     }
 
@@ -167,8 +169,11 @@ public interface DataSyncService {
 
         @Override
         public String toString() {
-            return String.format("ConsistencyCheckResult{consistent=%s, redis=%d, storeManager=%d, missingInRedis=%d, missingInStoreManager=%d, conflicts=%d, details='%s'}",
-                consistent, redisCount, storeManagerCount, missingInRedis, missingInStoreManager, conflictCount, details);
+            return String.format("ConsistencyCheckResult{consistent=%s, redis=%d, "
+                            + "storeManager=%d, missingInRedis=%d, missingInStoreManager=%d, "
+                            + "conflicts=%d, details='%s'}",
+                consistent, redisCount, storeManagerCount, missingInRedis,
+                missingInStoreManager, conflictCount, details);
         }
     }
 }

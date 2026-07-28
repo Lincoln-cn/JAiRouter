@@ -39,7 +39,8 @@ public class ServerExceptionHandler {
             if (e instanceof org.springframework.web.server.ServerWebInputException) {
                 additionalInfo.put("responseStatus", "400");
             } else if (e instanceof org.springframework.web.server.ResponseStatusException) {
-                org.springframework.web.server.ResponseStatusException rse = (org.springframework.web.server.ResponseStatusException) e;
+                org.springframework.web.server.ResponseStatusException rse =
+                        (org.springframework.web.server.ResponseStatusException) e;
                 additionalInfo.put("responseStatus", String.valueOf(rse.getStatusCode().value()));
             } else {
                 additionalInfo.put("responseStatus", "500");
@@ -59,9 +60,11 @@ public class ServerExceptionHandler {
         
         // 特别处理 ResponseStatusException
         if (e instanceof org.springframework.web.server.ResponseStatusException) {
-            org.springframework.web.server.ResponseStatusException rse = (org.springframework.web.server.ResponseStatusException) e;
+            org.springframework.web.server.ResponseStatusException rse =
+                    (org.springframework.web.server.ResponseStatusException) e;
             logger.error("响应状态异常: status={}, message={}", rse.getStatusCode(), rse.getMessage());
-            return RouterResponse.error("请求处理失败: " + rse.getReason(), String.valueOf(rse.getStatusCode().value()));
+            return RouterResponse.error("请求处理失败: " + rse.getReason(),
+                    String.valueOf(rse.getStatusCode().value()));
         }
         
         logger.error("系统异常", e);

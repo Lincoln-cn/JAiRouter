@@ -9,7 +9,9 @@ public class BackendCallMetricsEvent extends MetricsEvent {
     private final long duration;
     private final boolean success;
 
-    public BackendCallMetricsEvent(final String adapter, final String instance, final long duration, final boolean success) {
+    public BackendCallMetricsEvent(
+            final String adapter, final String instance,
+            final long duration, final boolean success) {
         this.adapter = adapter;
         this.instance = instance;
         this.duration = duration;

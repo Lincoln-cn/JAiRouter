@@ -88,7 +88,8 @@ public class RequestBuilder {
      * @param imageEditRequest 图像编辑请求对象
      * @return multipart 请求体
      */
-    public BodyInserter<?, ? super ClientHttpRequest> createImageEditMultipartBody(final ImageEditDTO.Request imageEditRequest) {
+    public BodyInserter<?, ? super ClientHttpRequest> createImageEditMultipartBody(
+            final ImageEditDTO.Request imageEditRequest) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
 
         // 添加图像文件（支持单个或多个文件）

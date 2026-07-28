@@ -175,10 +175,13 @@ public class TraceQueryService {
     private boolean matchesCriteria(final TraceRecord trace, final TraceSearchCriteria criteria) {
         if (criteria.getStartTime() != null && trace.getCreatedAt().isBefore(criteria.getStartTime())) return false;
         if (criteria.getEndTime() != null && trace.getCreatedAt().isAfter(criteria.getEndTime())) return false;
-        if (criteria.getServiceName() != null && !criteria.getServiceName().equals(trace.getServiceName())) return false;
-        if (criteria.getTraceId() != null && !trace.getTraceId().contains(criteria.getTraceId())) return false;
+        if (criteria.getServiceName() != null
+                && !criteria.getServiceName().equals(trace.getServiceName())) return false;
+        if (criteria.getTraceId() != null
+                && !trace.getTraceId().contains(criteria.getTraceId())) return false;
         if (criteria.getOperationName() != null) {
-            boolean hasOperation = trace.getSpans().stream().anyMatch(span -> criteria.getOperationName().equals(span.getOperationName()));
+            boolean hasOperation = trace.getSpans().stream()
+                    .anyMatch(span -> criteria.getOperationName().equals(span.getOperationName()));
             if (!hasOperation) return false;
         }
         if (criteria.getMinDuration() > 0 && trace.getDuration() < criteria.getMinDuration()) return false;
@@ -191,7 +194,8 @@ public class TraceQueryService {
     }
 
     private TraceSummary createTraceSummary(final TraceRecord trace) {
-        SpanRecord rootSpan = trace.getSpans().stream().min(Comparator.comparing(SpanRecord::getStartTime)).orElse(null);
+        SpanRecord rootSpan = trace.getSpans().stream()
+                .min(Comparator.comparing(SpanRecord::getStartTime)).orElse(null);
         boolean hasError = trace.getSpans().stream().anyMatch(SpanRecord::isError);
         return new TraceSummary(trace.getTraceId(), trace.getServiceName(),
             rootSpan != null ? rootSpan.getOperationName() : "unknown",
@@ -200,16 +204,26 @@ public class TraceQueryService {
 
     private TraceRecord convertFromCachedData(final CachedTraceData cachedData) {
         SpanRecord span = new SpanRecord(cachedData.getSpanId(), cachedData.getTraceId(),
-            "cached-operation", cachedData.getTimestamp(), cachedData.getTimestamp().plusMillis(100),
+            "cached-operation", cachedData.getTimestamp(),
+            cachedData.getTimestamp().plusMillis(100),
             100.0, false, "200", new HashMap<>());
-        return new TraceRecord(cachedData.getTraceId(), "cached-service", List.of(span), 100.0, cachedData.getTimestamp());
+        return new TraceRecord(cachedData.getTraceId(), "cached-service",
+                List.of(span), 100.0, cachedData.getTimestamp());
     }
 
     public static class TraceRecord {
-        private final String traceId; private final String serviceName; private final List<SpanRecord> spans;
-        private final double duration; private final Instant createdAt;
-        public TraceRecord(String traceId, String serviceName, List<SpanRecord> spans, double duration, Instant createdAt) {
-            this.traceId = traceId; this.serviceName = serviceName; this.spans = spans; this.duration = duration; this.createdAt = createdAt;
+        private final String traceId;
+        private final String serviceName;
+        private final List<SpanRecord> spans;
+        private final double duration;
+        private final Instant createdAt;
+        public TraceRecord(String traceId, String serviceName,
+                           List<SpanRecord> spans, double duration, Instant createdAt) {
+            this.traceId = traceId;
+            this.serviceName = serviceName;
+            this.spans = spans;
+            this.duration = duration;
+            this.createdAt = createdAt;
         }
         public String getTraceId() { return traceId; }
         public String getServiceName() { return serviceName; }
@@ -240,10 +254,18 @@ public class TraceQueryService {
     }
 
     public static class TraceChain {
-        private final String traceId; private final String serviceName; private final List<SpanRecord> spans;
-        private final TraceChainStats stats; private final Instant startTime;
-        public TraceChain(String traceId, String serviceName, List<SpanRecord> spans, TraceChainStats stats, Instant startTime) {
-            this.traceId = traceId; this.serviceName = serviceName; this.spans = spans; this.stats = stats; this.startTime = startTime;
+        private final String traceId;
+        private final String serviceName;
+        private final List<SpanRecord> spans;
+        private final TraceChainStats stats;
+        private final Instant startTime;
+        public TraceChain(String traceId, String serviceName,
+                          List<SpanRecord> spans, TraceChainStats stats, Instant startTime) {
+            this.traceId = traceId;
+            this.serviceName = serviceName;
+            this.spans = spans;
+            this.stats = stats;
+            this.startTime = startTime;
         }
         public String getTraceId() { return traceId; }
         public String getServiceName() { return serviceName; }
@@ -253,11 +275,21 @@ public class TraceQueryService {
     }
 
     public static class TraceChainStats {
-        private final int totalSpans; private final double totalDuration; private final double avgDuration;
-        private final double maxDuration; private final long errorCount; private final int depth;
-        public TraceChainStats(int totalSpans, double totalDuration, double avgDuration, double maxDuration, long errorCount, int depth) {
-            this.totalSpans = totalSpans; this.totalDuration = totalDuration; this.avgDuration = avgDuration;
-            this.maxDuration = maxDuration; this.errorCount = errorCount; this.depth = depth;
+        private final int totalSpans;
+        private final double totalDuration;
+        private final double avgDuration;
+        private final double maxDuration;
+        private final long errorCount;
+        private final int depth;
+        public TraceChainStats(int totalSpans, double totalDuration,
+                              double avgDuration, double maxDuration,
+                              long errorCount, int depth) {
+            this.totalSpans = totalSpans;
+            this.totalDuration = totalDuration;
+            this.avgDuration = avgDuration;
+            this.maxDuration = maxDuration;
+            this.errorCount = errorCount;
+            this.depth = depth;
         }
         public int getTotalSpans() { return totalSpans; }
         public double getTotalDuration() { return totalDuration; }
@@ -268,11 +300,22 @@ public class TraceQueryService {
     }
 
     public static class TraceSummary {
-        private final String traceId; private final String serviceName; private final String operationName;
-        private final double duration; private final int spanCount; private final boolean hasError; private final Instant startTime;
-        public TraceSummary(String traceId, String serviceName, String operationName, double duration, int spanCount, boolean hasError, Instant startTime) {
-            this.traceId = traceId; this.serviceName = serviceName; this.operationName = operationName;
-            this.duration = duration; this.spanCount = spanCount; this.hasError = hasError; this.startTime = startTime;
+        private final String traceId;
+        private final String serviceName;
+        private final String operationName;
+        private final double duration;
+        private final int spanCount;
+        private final boolean hasError;
+        private final Instant startTime;
+        public TraceSummary(String traceId, String serviceName, String operationName,
+                           double duration, int spanCount, boolean hasError, Instant startTime) {
+            this.traceId = traceId;
+            this.serviceName = serviceName;
+            this.operationName = operationName;
+            this.duration = duration;
+            this.spanCount = spanCount;
+            this.hasError = hasError;
+            this.startTime = startTime;
         }
         public String getTraceId() { return traceId; }
         public String getServiceName() { return serviceName; }
@@ -341,9 +384,16 @@ public class TraceQueryService {
     }
 
     public static class TraceExportRequest {
-        private final Instant startTime; private final Instant endTime; private final String format; private final int maxRecords;
-        public TraceExportRequest(Instant startTime, Instant endTime, String format, int maxRecords) {
-            this.startTime = startTime; this.endTime = endTime; this.format = format; this.maxRecords = maxRecords;
+        private final Instant startTime;
+        private final Instant endTime;
+        private final String format;
+        private final int maxRecords;
+        public TraceExportRequest(Instant startTime, Instant endTime,
+                                 String format, int maxRecords) {
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.format = format;
+            this.maxRecords = maxRecords;
         }
         public Instant getStartTime() { return startTime; }
         public Instant getEndTime() { return endTime; }
@@ -352,11 +402,20 @@ public class TraceQueryService {
     }
 
     public static class TraceExportResult {
-        private final int recordCount; private final String format; private final String data;
-        private final Instant startTime; private final Instant endTime; private final Instant exportedAt;
-        public TraceExportResult(int recordCount, String format, String data, Instant startTime, Instant endTime, Instant exportedAt) {
-            this.recordCount = recordCount; this.format = format; this.data = data;
-            this.startTime = startTime; this.endTime = endTime; this.exportedAt = exportedAt;
+        private final int recordCount;
+        private final String format;
+        private final String data;
+        private final Instant startTime;
+        private final Instant endTime;
+        private final Instant exportedAt;
+        public TraceExportResult(int recordCount, String format, String data,
+                                Instant startTime, Instant endTime, Instant exportedAt) {
+            this.recordCount = recordCount;
+            this.format = format;
+            this.data = data;
+            this.startTime = startTime;
+            this.endTime = endTime;
+            this.exportedAt = exportedAt;
         }
         public int getRecordCount() { return recordCount; }
         public String getFormat() { return format; }

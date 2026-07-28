@@ -80,7 +80,9 @@ public class ConfigMergeService {
      * @return 合并后的配置
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> deepMergeConfigs(final Map<String, Object> baseConfig, final Map<String, Object> overrideConfig) {
+    public Map<String, Object> deepMergeConfigs(
+            final Map<String, Object> baseConfig,
+            final Map<String, Object> overrideConfig) {
         if (overrideConfig.isEmpty()) {
             return new HashMap<>(baseConfig);
         }

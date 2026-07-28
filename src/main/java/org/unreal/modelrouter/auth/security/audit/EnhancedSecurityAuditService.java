@@ -181,7 +181,9 @@ public class EnhancedSecurityAuditService implements SecurityAuditService {
     }
 
     @Override
-    public Mono<Void> recordSanitizationEvent(final String userId, final String contentType, final String ruleId, final int matchCount) {
+    public Mono<Void> recordSanitizationEvent(
+            final String userId, final String contentType,
+            final String ruleId, final int matchCount) {
         SecurityAuditEvent event = SecurityAuditEvent.builder()
                 .eventType("DATA_SANITIZATION")
                 .userId(userId)

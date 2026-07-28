@@ -189,7 +189,8 @@ private final ConfigComparisonService configComparisonService;
      * @param userId      用户ID
      * @return 版本号（如果创建了新版本则返回新版本号，否则返回当前版本号）
      */
-    public int saveAsNewVersionIfChanged(final Map<String, Object> config, final String description, final String userId) {
+    public int saveAsNewVersionIfChanged(final Map<String, Object> config,
+                                         final String description, final String userId) {
         Map<String, Object> currentConfig = getCurrentPersistedConfig();
         if (!configComparisonService.isConfigurationChanged(currentConfig, config)) {
             logger.info("配置未发生变化，不创建新版本");
@@ -257,11 +258,13 @@ private final ConfigComparisonService configComparisonService;
             Map<String, Object> existingServiceConfig = (Map<String, Object>) services.get(serviceType);
 
             // 委托到 ServiceConfigUpdateService
-            Map<String, Object> newConfig = serviceConfigUpdateService.buildServiceConfigUpdate(existingServiceConfig, request);
+            Map<String, Object> newConfig =
+                    serviceConfigUpdateService.buildServiceConfigUpdate(existingServiceConfig, request);
 
             services.put(serviceType, newConfig);
             storeManager.saveConfig("model-router-config", currentConfig);
-            configVersionManager.saveAsNewVersion(currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
+            configVersionManager.saveAsNewVersion(
+                    currentConfig, "更新服务配置: " + serviceType, SecurityUtils.getCurrentUserId());
             refreshRuntimeConfig();
 
             logger.info("服务 {} 配置更新成功", serviceType);
@@ -299,7 +302,8 @@ private final ConfigComparisonService configComparisonService;
         }
 
         Map<String, Object> serviceConfig = (Map<String, Object>) services.get(serviceType);
-        List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.computeIfAbsent("instances", k -> new ArrayList<>());
+        List<Map<String, Object>> instances =
+                (List<Map<String, Object>>) serviceConfig.computeIfAbsent("instances", k -> new ArrayList<>());
 
         // 委托到 InstanceOperationService
         Map<String, Object> instanceMap = configConverterHelper.convertInstanceToMap(instanceConfig);
@@ -331,7 +335,9 @@ private final ConfigComparisonService configComparisonService;
      * v2.6.15: 简化实现，委托到 InstanceOperationService
      */
     @SuppressWarnings("unchecked")
-    private void updateServiceInstanceInternal(final String serviceType, final String instanceId, final ModelRouterProperties.ModelInstance instanceConfig) {
+    private void updateServiceInstanceInternal(
+            final String serviceType, final String instanceId,
+            final ModelRouterProperties.ModelInstance instanceConfig) {
 
         // 验证服务类型
         if (!configValidator.isValidServiceType(serviceType)) {
@@ -346,7 +352,8 @@ private final ConfigComparisonService configComparisonService;
         }
 
         Map<String, Object> serviceConfig = (Map<String, Object>) services.get(serviceType);
-        List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
+        List<Map<String, Object>> instances =
+                (List<Map<String, Object>>) serviceConfig.getOrDefault("instances", new ArrayList<>());
 
         // 委托到 InstanceOperationService
         Map<String, Object> instanceMap = configConverterHelper.convertInstanceToMap(instanceConfig);
@@ -426,7 +433,8 @@ private final ConfigComparisonService configComparisonService;
         }
 
         Map<String, Object> serviceConfig = (Map<String, Object>) services.get(serviceType);
-        List<Map<String, Object>> instances = (List<Map<String, Object>>) serviceConfig.computeIfAbsent("instances", k -> new ArrayList<>());
+        List<Map<String, Object>> instances =
+                (List<Map<String, Object>>) serviceConfig.computeIfAbsent("instances", k -> new ArrayList<>());
 
         List<String> operationDetails = new ArrayList<>();
 

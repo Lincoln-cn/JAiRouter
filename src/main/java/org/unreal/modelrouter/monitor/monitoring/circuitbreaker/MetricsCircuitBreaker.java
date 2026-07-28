@@ -46,8 +46,9 @@ public class MetricsCircuitBreaker {
     private static final Duration WINDOW_SIZE = Duration.ofMinutes(1);
 
     public MetricsCircuitBreaker() {
-        logger.info("MetricsCircuitBreaker initialized with failure threshold: {}, failure rate threshold: {}, timeout: {}",
-                   FAILURE_THRESHOLD, FAILURE_RATE_THRESHOLD, TIMEOUT);
+        logger.info("MetricsCircuitBreaker initialized with failure threshold: {}, "
+                + "failure rate threshold: {}, timeout: {}",
+                FAILURE_THRESHOLD, FAILURE_RATE_THRESHOLD, TIMEOUT);
     }
 
     /**
@@ -241,7 +242,10 @@ public class MetricsCircuitBreaker {
         private final int requestCount;
         private final double failureRate;
 
-        public CircuitBreakerStats(final String state, final int failureCount, final int successCount, final int requestCount, final double failureRate) {
+        public CircuitBreakerStats(
+                final String state, final int failureCount,
+                final int successCount, final int requestCount,
+                final double failureRate) {
             this.state = state;
             this.failureCount = failureCount;
             this.successCount = successCount;
@@ -267,8 +271,9 @@ public class MetricsCircuitBreaker {
 
         @Override
         public String toString() {
-            return String.format("CircuitBreakerStats{state='%s', failures=%d, successes=%d, requests=%d, failureRate=%.2f}",
-                               state, failureCount, successCount, requestCount, failureRate);
+            return String.format("CircuitBreakerStats{state='%s', failures=%d, "
+                            + "successes=%d, requests=%d, failureRate=%.2f}",
+                    state, failureCount, successCount, requestCount, failureRate);
         }
     }
 }

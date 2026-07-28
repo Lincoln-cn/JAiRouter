@@ -34,7 +34,8 @@ import java.time.LocalDateTime;
 @Slf4j
 @Component
 @Order(20) // 在请求处理之后执行
-@ConditionalOnProperty(name = "jairouter.security.sanitization.response.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "jairouter.security.sanitization.response.enabled",
+        havingValue = "true", matchIfMissing = true)
 public class ResponseSanitizationFilter implements WebFilter {
     
     private final SanitizationService sanitizationService;
@@ -136,9 +137,15 @@ public class ResponseSanitizationFilter implements WebFilter {
                                         })
                                         .onErrorResume(Exception.class, ex -> {
                                             // 记录更详细的错误信息
-                                            String errorMessage = "未知错误: " + (ex.getMessage() != null ? ex.getMessage() : ex.getClass().getName());
+                                            String errorMessage = "未知错误: "
+                                                    + (ex.getMessage() != null
+                                                    ? ex.getMessage()
+                                                    : ex.getClass().getName());
                                             if (ex.getCause() != null) {
-                                                errorMessage += ", 原因: " + (ex.getCause().getMessage() != null ? ex.getCause().getMessage() : ex.getCause().getClass().getName());
+                                                errorMessage += ", 原因: "
+                                                        + (ex.getCause().getMessage() != null
+                                                        ? ex.getCause().getMessage()
+                                                        : ex.getCause().getClass().getName());
                                             }
                                             
                                             log.error("响应脱敏过程中发生未知错误: {}", errorMessage, ex);
@@ -215,15 +222,20 @@ public class ResponseSanitizationFilter implements WebFilter {
     /**
      * 记录脱敏事件
      */
-    private void recordSanitizationEvent(final ServerHttpRequest request, final String contentType, final boolean sanitized) {
+    private void recordSanitizationEvent(
+            final ServerHttpRequest request, final String contentType,
+            final boolean sanitized) {
         recordSanitizationEvent(request, contentType, sanitized, null);
     }
     
     /**
      * 记录脱敏事件（带错误信息）
      */
-    private void recordSanitizationEvent(final ServerHttpRequest request, final String contentType, 
-                                       final boolean sanitized, final String errorMessage) {
+    private void recordSanitizationEvent(
+            final ServerHttpRequest request,
+            final String contentType,
+            final boolean sanitized,
+            final String errorMessage) {
         if (!securityProperties.getSanitization().getResponse().isLogSanitization()) {
             return;
         }

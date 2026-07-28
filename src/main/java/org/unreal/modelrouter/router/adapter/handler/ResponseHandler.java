@@ -42,7 +42,9 @@ public class ResponseHandler {
      * @param adapterType 适配器类型
      * @return 处理后的响应
      */
-    public Mono<ResponseEntity<?>> handleResponse(final ResponseEntity<String> responseEntity, final String adapterType) {
+    public Mono<ResponseEntity<?>> handleResponse(
+            final ResponseEntity<String> responseEntity,
+            final String adapterType) {
         if (!responseEntity.getStatusCode().is2xxSuccessful()) {
             String bodyStr = responseEntity.getBody() != null ? responseEntity.getBody() : "";
             return Mono.error(new ResponseStatusException(
@@ -208,7 +210,9 @@ public class ResponseHandler {
      * @param path 请求路径
      * @return 错误 Mono
      */
-    public Mono<Void> handleServerError(final ClientResponse clientResponse, final String instanceName, final String path) {
+    public Mono<Void> handleServerError(
+            final ClientResponse clientResponse,
+            final String instanceName, final String path) {
         logger.error("下游服务 5xx 错误：instance={}, path={}, status={}",
                 instanceName, path, clientResponse.statusCode());
         return Mono.error(new ResponseStatusException(clientResponse.statusCode()));

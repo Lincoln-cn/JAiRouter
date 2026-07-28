@@ -375,7 +375,9 @@ public class TracingService {
     /**
      * 创建错误元数据
      */
-    private Map<String, Object> createErrorMetadata(final ServerWebExchange exchange, final TracingContext context, final Throwable error) {
+    private Map<String, Object> createErrorMetadata(
+            final ServerWebExchange exchange, final TracingContext context,
+            final Throwable error) {
         Map<String, Object> metadata = createSpanAttributes(exchange, context);
 
         metadata.put("error.type", error.getClass().getSimpleName());

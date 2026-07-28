@@ -49,7 +49,7 @@ import static org.unreal.modelrouter.monitor.tracing.performance.TracingPerforma
  */
 @Slf4j
 @Component
-public class TracingPerformanceMonitor implements HealthIndicator {
+public final class TracingPerformanceMonitor implements HealthIndicator {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -87,7 +87,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
                 .description("Tracing system overhead")
                 .register(meterRegistry);
 
-        this.memoryUsageGauge = Gauge.builder("tracing.memory.usage", this, TracingPerformanceMonitor::getCurrentMemoryUsage)
+        this.memoryUsageGauge = Gauge.builder("tracing.memory.usage", this,
+                TracingPerformanceMonitor::getCurrentMemoryUsage)
                 .description("Tracing memory usage")
                 .register(meterRegistry);
 
@@ -129,7 +130,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
             tracingOverheadTimer.record(Duration.ofMillis(duration));
             processingLatencyDistribution.record(duration);
 
-            OperationMetrics metrics = operationMetrics.computeIfAbsent(operation, k -> new OperationMetrics(operation));
+            OperationMetrics metrics =
+                    operationMetrics.computeIfAbsent(operation, k -> new OperationMetrics(operation));
             metrics.recordOperation(duration, success);
 
             PerformanceThreshold threshold = thresholds.get(operation);
@@ -396,7 +398,8 @@ public class TracingPerformanceMonitor implements HealthIndicator {
         return suggestions;
     }
 
-    private List<OptimizationSuggestion> generateProcessingOptimizationSuggestions(final AsyncTracingProcessor.ProcessingStats stats) {
+    private List<OptimizationSuggestion> generateProcessingOptimizationSuggestions(
+            final AsyncTracingProcessor.ProcessingStats stats) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
         suggestions.add(new OptimizationSuggestion("增加处理线程", "考虑增加异步处理器的线程池大小", Priority.HIGH));
         suggestions.add(new OptimizationSuggestion("优化批处理大小", "调整批处理大小以提高处理效率", Priority.MEDIUM));
@@ -405,7 +408,9 @@ public class TracingPerformanceMonitor implements HealthIndicator {
 
     private List<OptimizationSuggestion> generateOperationOptimizationSuggestions(final OperationMetrics metrics) {
         List<OptimizationSuggestion> suggestions = new ArrayList<>();
-        suggestions.add(new OptimizationSuggestion("优化操作实现", "检查操作 " + metrics.getOperation() + " 的实现，可能存在性能问题", Priority.MEDIUM));
+        suggestions.add(new OptimizationSuggestion("优化操作实现",
+                "检查操作 " + metrics.getOperation() + " 的实现，可能存在性能问题",
+                Priority.MEDIUM));
         return suggestions;
     }
 

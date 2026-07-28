@@ -72,7 +72,9 @@ public class MonitoringHealthChecker {
             details.put("degradationStrategy", degradationStatus.getDetails());
             if (!degradationStatus.isHealthy()) {
                 isHealthy = false;
-                issues.append("DegradationStrategy: ").append(degradationStatus.getDetails().get("reason")).append("; ");
+                issues.append("DegradationStrategy: ")
+                        .append(degradationStatus.getDetails().get("reason"))
+                        .append("; ");
             }
             
             // 检查缓存和重试机制状态
@@ -216,7 +218,8 @@ public class MonitoringHealthChecker {
             details.put("circuitBreakerState", stats.getCircuitBreakerState());
             
             // 队列积压过多或丢弃过多视为不健康
-            boolean isHealthy = stats.getQueueSize() < 1000 && stats.getDroppedCount() < stats.getProcessedCount() * 0.1;
+            boolean isHealthy = stats.getQueueSize() < 1000
+                    && stats.getDroppedCount() < stats.getProcessedCount() * 0.1;
             details.put("status", isHealthy ? "UP" : "DOWN");
             details.put("reason", isHealthy ? "正常" : "队列积压或丢弃过多");
             

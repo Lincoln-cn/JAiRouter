@@ -199,7 +199,8 @@ public class ExceptionManagementController {
             @RequestParam(defaultValue = "10")
             final int limit) {
 
-        List<ExceptionEventDTO> events = exceptionManagementService.getRecentExceptionEventsByType(exceptionType, limit);
+        List<ExceptionEventDTO> events =
+                exceptionManagementService.getRecentExceptionEventsByType(exceptionType, limit);
         return ResponseEntity.ok(RouterResponse.success(events));
     }
 

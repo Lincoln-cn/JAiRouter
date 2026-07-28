@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since v2.7.12
  */
 @Component
-public class MetricsBatchReporter {
+public final class MetricsBatchReporter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MetricsBatchReporter.class);
 
@@ -429,7 +429,7 @@ public class MetricsBatchReporter {
     /**
      * 指标数据
      */
-    public static class MetricData {
+    public static final class MetricData {
         private final String name;
         private final String type;
         private final double value;
@@ -484,7 +484,7 @@ public class MetricsBatchReporter {
     /**
      * 上报器统计信息
      */
-    public static class ReporterStats {
+    public static final class ReporterStats {
         private final long totalMetricsCollected;
         private final long totalBatchesSent;
         private final int bufferSize;

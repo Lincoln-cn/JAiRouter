@@ -159,8 +159,11 @@ public class AdapterTracingEnhancer {
      * @param lastError 上次错误
      * @param context 追踪上下文
      */
-    public void logAdapterRetry(final String adapterType, final ModelRouterProperties.ModelInstance instance,
-                               final int retryCount, final int maxRetries, final Throwable lastError, final TracingContext context) {
+    public void logAdapterRetry(
+            final String adapterType,
+            final ModelRouterProperties.ModelInstance instance,
+            final int retryCount, final int maxRetries,
+            final Throwable lastError, final TracingContext context) {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("adapter_type", adapterType);
         eventData.put("retry_count", retryCount);
@@ -183,7 +186,9 @@ public class AdapterTracingEnhancer {
     /**
      * 根据适配器类型设置特定属性
      */
-    private void enhanceByAdapterType(final Span span, final String adapterType, final ModelRouterProperties.ModelInstance instance) {
+    private void enhanceByAdapterType(
+            final Span span, final String adapterType,
+            final ModelRouterProperties.ModelInstance instance) {
         switch (adapterType.toLowerCase()) {
             case "openai":
                 enhanceOpenAIAdapter(span, instance);
@@ -327,7 +332,9 @@ public class AdapterTracingEnhancer {
     /**
      * 收集适配器性能指标
      */
-    private Map<String, Object> collectAdapterPerformanceMetrics(final String adapterType, final long duration, final boolean success) {
+    private Map<String, Object> collectAdapterPerformanceMetrics(
+            final String adapterType, final long duration,
+            final boolean success) {
         Map<String, Object> metrics = new HashMap<>();
         
         // 基础性能指标

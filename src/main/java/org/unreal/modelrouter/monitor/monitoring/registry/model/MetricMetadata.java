@@ -10,7 +10,7 @@ import java.util.Objects;
  * 指标元数据模型
  * 包含指标的描述信息、类型、标签等元数据
  */
-public class MetricMetadata {
+public final class MetricMetadata {
     
     private final String name;
     private final String description;
@@ -112,7 +112,7 @@ public class MetricMetadata {
                + '}';
     }
     
-    public static class Builder {
+    public static final class Builder {
         private final String name;
         private final Meter.Type type;
         private String description = "";

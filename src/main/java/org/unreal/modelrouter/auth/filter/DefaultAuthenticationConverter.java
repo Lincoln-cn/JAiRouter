@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * 默认的认证转换器
  */
-public class DefaultAuthenticationConverter implements ServerAuthenticationConverter {
+public final class DefaultAuthenticationConverter implements ServerAuthenticationConverter {
 
     private final SecurityProperties securityProperties;
 

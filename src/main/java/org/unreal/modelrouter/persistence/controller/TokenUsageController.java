@@ -141,7 +141,8 @@ public class TokenUsageController {
         LocalDateTime effectiveStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
 
-        List<Map<String, Object>> topModels = tokenUsageService.getTopModels(effectiveStartTime, effectiveEndTime, limit);
+        List<Map<String, Object>> topModels =
+                tokenUsageService.getTopModels(effectiveStartTime, effectiveEndTime, limit);
         return ResponseEntity.ok(RouterResponse.success(topModels));
     }
 
@@ -169,7 +170,8 @@ public class TokenUsageController {
         LocalDateTime effectiveStartTime = startTime != null ? startTime : LocalDateTime.now().minusDays(7);
         LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
 
-        List<Map<String, Object>> topServiceTypes = tokenUsageService.getTopServiceTypes(effectiveStartTime, effectiveEndTime, limit);
+        List<Map<String, Object>> topServiceTypes =
+                tokenUsageService.getTopServiceTypes(effectiveStartTime, effectiveEndTime, limit);
         return ResponseEntity.ok(RouterResponse.success(topServiceTypes));
     }
 
@@ -194,13 +196,15 @@ public class TokenUsageController {
         LocalDateTime effectiveEndTime = endTime != null ? endTime : LocalDateTime.now();
 
         // 获取统计信息
-        TokenUsageStatisticsDTO statistics = tokenUsageService.getTokenUsageStatistics(effectiveStartTime, effectiveEndTime);
+        TokenUsageStatisticsDTO statistics =
+                tokenUsageService.getTokenUsageStatistics(effectiveStartTime, effectiveEndTime);
 
         // 获取模型排名
         List<Map<String, Object>> topModels = tokenUsageService.getTopModels(effectiveStartTime, effectiveEndTime, 5);
 
         // 获取服务类型排名
-        List<Map<String, Object>> topServiceTypes = tokenUsageService.getTopServiceTypes(effectiveStartTime, effectiveEndTime, 5);
+        List<Map<String, Object>> topServiceTypes =
+                tokenUsageService.getTopServiceTypes(effectiveStartTime, effectiveEndTime, 5);
 
         // 获取最近使用记录
         List<TokenUsageEntity> recentUsage = tokenUsageService.getRecentUsage(10);

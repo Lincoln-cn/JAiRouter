@@ -16,8 +16,10 @@ import java.util.Map;
  * 检查JWT令牌持久化相关组件的健康状态
  */
 @Component("jwtPersistenceHealthIndicator")
-@ConditionalOnProperty(name = "jairouter.security.monitoring.jwt-persistence.health-checks.enabled", havingValue = "true", matchIfMissing = true)
-public class JwtPersistenceHealthIndicator {
+@ConditionalOnProperty(
+        name = "jairouter.security.monitoring.jwt-persistence.health-checks.enabled",
+        havingValue = "true", matchIfMissing = true)
+public final class JwtPersistenceHealthIndicator {
     
     private static final Logger log = LoggerFactory.getLogger(JwtPersistenceHealthIndicator.class);
     

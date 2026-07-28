@@ -50,8 +50,11 @@ public class SecurityAlertService {
     /**
      * 检查认证失败告警
      */
-    public Mono<Void> checkAuthenticationFailureAlert(final String clientIp, final String failureReason) {
-        return auditService.shouldTriggerAlert("AUTHENTICATION_FAILURE", AUTH_FAILURE_WINDOW_MINUTES, AUTH_FAILURE_THRESHOLD)
+    public Mono<Void> checkAuthenticationFailureAlert(
+            final String clientIp, final String failureReason) {
+        return auditService.shouldTriggerAlert(
+                "AUTHENTICATION_FAILURE", AUTH_FAILURE_WINDOW_MINUTES,
+                AUTH_FAILURE_THRESHOLD)
                 .flatMap(shouldAlert -> {
                     if (shouldAlert) {
                         return triggerAlert(

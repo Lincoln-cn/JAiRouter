@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 @Getter
 @RequiredArgsConstructor
-public class JwtPrincipal implements Principal {
+public final class JwtPrincipal implements Principal {
     
     private final String subject;
     private final String issuer;

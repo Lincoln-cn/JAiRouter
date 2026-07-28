@@ -22,7 +22,7 @@ import java.util.Objects;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class RedisBlacklistOperations {
+public final class RedisBlacklistOperations {
 
     private final ReactiveRedisTemplate<String, String> redisTemplate;
 

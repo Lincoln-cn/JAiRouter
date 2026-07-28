@@ -224,9 +224,12 @@ public class DynamicMonitoringConfigUpdater {
     /**
      * 发布配置变更事件
      */
-    private void publishConfigurationChangeEvent(final String configType, final Object oldValue, final Object newValue) {
+    private void publishConfigurationChangeEvent(
+            final String configType, final Object oldValue,
+            final Object newValue) {
         String changeId = UUID.randomUUID().toString();
-        MonitorConfigurationChangeEvent event = new MonitorConfigurationChangeEvent(this, changeId, configType, oldValue, newValue);
+        MonitorConfigurationChangeEvent event = new MonitorConfigurationChangeEvent(
+                this, changeId, configType, oldValue, newValue);
         eventPublisher.publishEvent(event);
         logger.debug("已发布配置变更事件: type={}, oldValue={}, newValue={}", configType, oldValue, newValue);
     }

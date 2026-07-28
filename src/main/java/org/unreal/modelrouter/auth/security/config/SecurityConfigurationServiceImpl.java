@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SecurityConfigurationServiceImpl implements SecurityConfigurationService {
+public final class SecurityConfigurationServiceImpl implements SecurityConfigurationService {
 
     private final SecurityProperties securityProperties;
     private final StoreManager storeManager;
@@ -209,7 +209,8 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 记录配置变更事件
      */
-    private void recordConfigurationChange(final String changeType, final String userId, final String description, final Object oldValue, final Object newValue) {
+    private void recordConfigurationChange(final String changeType, final String userId,
+            final String description, final Object oldValue, final Object newValue) {
         String changeId = UUID.randomUUID().toString();
         SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(
                 this, changeId, changeType, oldValue, newValue);
@@ -228,7 +229,8 @@ public class SecurityConfigurationServiceImpl implements SecurityConfigurationSe
     /**
      * 发布配置变更事件
      */
-    private void publishConfigurationChangeEvent(final String configType, final Object oldValue, final Object newValue) {
+    private void publishConfigurationChangeEvent(final String configType,
+            final Object oldValue, final Object newValue) {
         try {
             String changeId = UUID.randomUUID().toString();
             SecurityConfigurationChangeEvent event = new SecurityConfigurationChangeEvent(

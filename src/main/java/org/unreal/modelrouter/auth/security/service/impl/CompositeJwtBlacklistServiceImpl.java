@@ -21,7 +21,7 @@ import java.util.Map;
 @Service("compositeJwtBlacklistService")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.composite.enabled", havingValue = "true")
-public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
+public final class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     
     @Qualifier("redisJwtBlacklistService")
     private final JwtBlacklistService redisService;
@@ -41,7 +41,8 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
                         .then(fallbackService.addToBlacklist(tokenHash, reason, addedBy))
                         .doOnSuccess(unused -> log.debug("Token added to blacklist in both Redis and StoreManager"))
                         .onErrorResume(error -> {
-                            log.warn("Failed to add to blacklist in Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to add to blacklist in Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.addToBlacklist(tokenHash, reason, addedBy);
                         });
                 } else {
@@ -87,7 +88,8 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
                         .then(fallbackService.removeFromBlacklist(tokenHash))
                         .doOnSuccess(unused -> log.debug("Token removed from blacklist in both Redis and StoreManager"))
                         .onErrorResume(error -> {
-                            log.warn("Failed to remove from blacklist in Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to remove from blacklist in Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.removeFromBlacklist(tokenHash);
                         });
                 } else {
@@ -131,9 +133,11 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
                     // Redis健康时，同时清理Redis和StoreManager
                     return redisService.cleanupExpiredEntries()
                         .then(fallbackService.cleanupExpiredEntries())
-                        .doOnSuccess(unused -> log.info("Expired blacklist entries cleaned up in both Redis and StoreManager"))
+                        .doOnSuccess(unused -> log.info(
+                                "Expired blacklist entries cleaned up in both Redis and StoreManager"))
                         .onErrorResume(error -> {
-                            log.warn("Failed to cleanup expired entries in Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to cleanup expired entries in Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.cleanupExpiredEntries();
                         });
                 } else {
@@ -142,7 +146,8 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
                     return fallbackService.cleanupExpiredEntries();
                 }
             })
-            .doOnError(error -> log.error("Failed to cleanup expired blacklist entries: {}", error.getMessage(), error));
+            .doOnError(error -> log.error("Failed to cleanup expired blacklist entries: {}",
+                    error.getMessage(), error));
     }
     
     @Override
@@ -196,9 +201,12 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
                     // Redis健康时，同时批量添加到Redis和StoreManager
                     return redisService.batchAddToBlacklist(tokenHashes, reason, addedBy)
                         .then(fallbackService.batchAddToBlacklist(tokenHashes, reason, addedBy))
-                        .doOnSuccess(unused -> log.info("Batch added {} tokens to blacklist in both Redis and StoreManager", tokenHashes.size()))
+                        .doOnSuccess(unused -> log.info(
+                                "Batch added {} tokens to blacklist in both Redis and StoreManager",
+                                tokenHashes.size()))
                         .onErrorResume(error -> {
-                            log.warn("Failed to batch add to blacklist in Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to batch add to blacklist in Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.batchAddToBlacklist(tokenHashes, reason, addedBy);
                         });
                 } else {
@@ -255,9 +263,12 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
                             return fallbackService.cleanupExpiredEntriesWithCount()
                                 .map(fallbackCount -> redisCount + fallbackCount);
                         })
-                        .doOnSuccess(totalCount -> log.info("Cleaned up {} expired blacklist entries in both Redis and StoreManager", totalCount))
+                        .doOnSuccess(totalCount -> log.info(
+                                "Cleaned up {} expired blacklist entries in both Redis and StoreManager",
+                                totalCount))
                         .onErrorResume(error -> {
-                            log.warn("Failed to cleanup expired entries in Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to cleanup expired entries in Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.cleanupExpiredEntriesWithCount();
                         });
                 } else {
@@ -266,6 +277,8 @@ public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
                     return fallbackService.cleanupExpiredEntriesWithCount();
                 }
             })
-            .doOnError(error -> log.error("Failed to cleanup expired blacklist entries with count: {}", error.getMessage(), error));
+            .doOnError(error -> log.error(
+                    "Failed to cleanup expired blacklist entries with count: {}",
+                    error.getMessage(), error));
     }
 }

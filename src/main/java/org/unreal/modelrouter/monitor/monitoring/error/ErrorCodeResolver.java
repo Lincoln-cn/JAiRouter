@@ -60,9 +60,15 @@ public class ErrorCodeResolver {
         // Spring 常见异常
         EXCEPTION_CATEGORY_MAP.put("org.springframework.web.server.ResponseStatusException", ErrorCategory.VALIDATION);
         EXCEPTION_CATEGORY_MAP.put("org.springframework.web.server.ServerWebInputException", ErrorCategory.VALIDATION);
-        EXCEPTION_CATEGORY_MAP.put("org.springframework.web.bind.MethodArgumentNotValidException", ErrorCategory.VALIDATION);
-        EXCEPTION_CATEGORY_MAP.put("org.springframework.web.bind.MissingServletRequestParameterException", ErrorCategory.VALIDATION);
-        EXCEPTION_CATEGORY_MAP.put("org.springframework.web.HttpRequestMethodNotSupportedException", ErrorCategory.VALIDATION);
+        EXCEPTION_CATEGORY_MAP.put(
+                "org.springframework.web.bind.MethodArgumentNotValidException",
+                ErrorCategory.VALIDATION);
+        EXCEPTION_CATEGORY_MAP.put(
+                "org.springframework.web.bind.MissingServletRequestParameterException",
+                ErrorCategory.VALIDATION);
+        EXCEPTION_CATEGORY_MAP.put(
+                "org.springframework.web.HttpRequestMethodNotSupportedException",
+                ErrorCategory.VALIDATION);
         
         // 网络相关
         EXCEPTION_CATEGORY_MAP.put("java.net.ConnectException", ErrorCategory.NETWORK);

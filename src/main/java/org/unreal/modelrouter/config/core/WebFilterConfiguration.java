@@ -23,7 +23,7 @@ import org.unreal.modelrouter.common.filter.CachedBodyWebFilter;
  */
 @Slf4j
 @Configuration
-public class WebFilterConfiguration {
+public final class WebFilterConfiguration {
     
     /**
      * 注册缓存 body 的 WebFilter

@@ -23,7 +23,7 @@ import java.util.Arrays;
 @Slf4j
 @Component
 @ConditionalOnProperty(name = "jairouter.security.startup-check.enabled", havingValue = "true", matchIfMissing = true)
-public class StartupSecretKeyChecker implements CommandLineRunner {
+public final class StartupSecretKeyChecker implements CommandLineRunner {
 
     private static final String ASCII_ART_BORDER = "\n"
             + "╔══════════════════════════════════════════════════════════════════════════════╗\n"

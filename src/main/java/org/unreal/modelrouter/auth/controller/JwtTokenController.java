@@ -91,7 +91,9 @@ public class JwtTokenController {
 
         log.debug("收到JWT令牌撤销请求: user={}, targetToken={}",
                 authentication != null ? authentication.getName() : "anonymous",
-                request.getToken() != null ? request.getToken().substring(0, Math.min(10, request.getToken().length())) + "..." : "tokenHash");
+                request.getToken() != null
+                        ? request.getToken().substring(0, Math.min(10, request.getToken().length())) + "..."
+                        : "tokenHash");
 
         // 检查是否是tokenHash（通常是Base64编码，长度较短）还是完整token
         String tokenToRevoke = request.getToken();
@@ -309,10 +311,14 @@ public class JwtTokenController {
     })
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #userId == authentication.name)")
     public Mono<RouterResponse<PagedResult<JwtTokenInfo>>> getTokens(
-            @Parameter(description = "页码，从0开始") @RequestParam(defaultValue = "0") final int page,
-            @Parameter(description = "页大小") @RequestParam(defaultValue = "20") final int size,
-            @Parameter(description = "用户ID过滤") @RequestParam(required = false) final String userId,
-            @Parameter(description = "令牌状态过滤") @RequestParam(required = false) final TokenStatus status,
+            @Parameter(description = "页码，从0开始")
+            @RequestParam(defaultValue = "0") final int page,
+            @Parameter(description = "页大小")
+            @RequestParam(defaultValue = "20") final int size,
+            @Parameter(description = "用户ID过滤")
+            @RequestParam(required = false) final String userId,
+            @Parameter(description = "令牌状态过滤")
+            @RequestParam(required = false) final TokenStatus status,
             final Authentication authentication) {
 
         log.debug("收到获取令牌列表请求: user={}, page={}, size={}, userId={}, status={}",
@@ -425,7 +431,8 @@ public class JwtTokenController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "清理操作失败")
     })
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<RouterResponse<JwtCleanupService.CleanupResult>> cleanupExpiredTokens(final Authentication authentication) {
+    public Mono<RouterResponse<JwtCleanupService.CleanupResult>> cleanupExpiredTokens(
+            final Authentication authentication) {
 
         log.debug("收到手动清理过期令牌请求: user={}",
                 authentication != null ? authentication.getName() : "anonymous");
@@ -437,8 +444,9 @@ public class JwtTokenController {
 
         return jwtCleanupService.performFullCleanup()
                 .map(result -> {
-                    String message = String.format("清理完成，删除了%d个过期令牌和%d个过期黑名单条目", 
-                            result.getRemovedTokens(), result.getRemovedBlacklistEntries());
+                    String message = String.format(
+                "清理完成，删除了%d个过期令牌和%d个过期黑名单条目",
+                result.getRemovedTokens(), result.getRemovedBlacklistEntries());
                     return RouterResponse.success(result, message);
                 })
                 .onErrorResume(ex -> {
@@ -479,7 +487,9 @@ public class JwtTokenController {
                 .map(stats -> RouterResponse.success(stats, "清理统计信息获取成功"))
                 .onErrorResume(ex -> {
                     log.warn("获取清理统计信息失败: {}", ex.getMessage());
-                    return Mono.just(RouterResponse.error("获取清理统计信息失败: " + ex.getMessage(), "GET_CLEANUP_STATS_FAILED"));
+                    return Mono.just(RouterResponse.error(
+                            "获取清理统计信息失败: " + ex.getMessage(),
+                            "GET_CLEANUP_STATS_FAILED"));
                 });
     }
 

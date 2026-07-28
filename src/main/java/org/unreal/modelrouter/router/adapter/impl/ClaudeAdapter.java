@@ -224,7 +224,8 @@ public class ClaudeAdapter extends BaseAdapter {
             ObjectNode openAiResponse = objectMapper.createObjectNode();
 
             // 基本信息
-            openAiResponse.put("id", "chatcmpl-" + (claudeResponse.has("id") ? claudeResponse.get("id").asText() : System.currentTimeMillis()));
+            openAiResponse.put("id", "chatcmpl-" + (claudeResponse.has("id")
+                    ? claudeResponse.get("id").asText() : System.currentTimeMillis()));
             openAiResponse.put("object", "chat.completion");
             openAiResponse.put("created", System.currentTimeMillis() / 1000);
             openAiResponse.put("model", claudeResponse.has("model") ? claudeResponse.get("model").asText() : "unknown");
@@ -260,8 +261,10 @@ public class ClaudeAdapter extends BaseAdapter {
             if (claudeResponse.has("usage")) {
                 JsonNode usage = claudeResponse.get("usage");
                 ObjectNode openAiUsage = objectMapper.createObjectNode();
-                openAiUsage.put("prompt_tokens", usage.has("input_tokens") ? usage.get("input_tokens").asInt() : 0);
-                openAiUsage.put("completion_tokens", usage.has("output_tokens") ? usage.get("output_tokens").asInt() : 0);
+                openAiUsage.put("prompt_tokens",
+                        usage.has("input_tokens") ? usage.get("input_tokens").asInt() : 0);
+                openAiUsage.put("completion_tokens",
+                        usage.has("output_tokens") ? usage.get("output_tokens").asInt() : 0);
                 openAiUsage.put("total_tokens",
                         openAiUsage.get("prompt_tokens").asInt() + openAiUsage.get("completion_tokens").asInt());
                 openAiResponse.set("usage", openAiUsage);

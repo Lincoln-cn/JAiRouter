@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Component
 @Conditional(MonitoringEnabledCondition.class)
-public class DefaultMetricsCollector implements MetricsCollector {
+public final class DefaultMetricsCollector implements MetricsCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultMetricsCollector.class);
 
@@ -80,7 +80,8 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordBackendCall(final String adapter, final String instance, final long duration, final boolean success) {
+    public void recordBackendCall(final String adapter, final String instance,
+                                   final long duration, final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -202,7 +203,8 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordHealthCheck(final String adapter, final String instance, final boolean healthy, final long responseTime) {
+    public void recordHealthCheck(final String adapter, final String instance,
+                                   final boolean healthy, final long responseTime) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -272,7 +274,9 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTrace(final String traceId, final String spanId, final String operationName, final long duration, final boolean success) {
+    public void recordTrace(final String traceId, final String spanId,
+                             final String operationName, final long duration,
+                             final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -307,7 +311,8 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceExport(final String exporterType, final long duration, final boolean success, final int batchSize) {
+    public void recordTraceExport(final String exporterType, final long duration,
+                                   final boolean success, final int batchSize) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -377,7 +382,8 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceDataQuality(final String traceId, final int spanCount, final int attributeCount, final int errorCount) {
+    public void recordTraceDataQuality(final String traceId, final int spanCount,
+                                        final int attributeCount, final int errorCount) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
@@ -409,7 +415,8 @@ public class DefaultMetricsCollector implements MetricsCollector {
             );
             errorSummary.record(errorCount);
 
-            logger.debug("Recorded trace data quality metric: traceId={}, spanCount={}, attributeCount={}, errorCount={}",
+            logger.debug("Recorded trace data quality metric: traceId={}, "
+                    + "spanCount={}, attributeCount={}, errorCount={}",
                     traceId, spanCount, attributeCount, errorCount);
         } catch (Exception e) {
             logger.warn("Failed to record trace data quality metric: {}", e.getMessage());
@@ -452,7 +459,8 @@ public class DefaultMetricsCollector implements MetricsCollector {
     }
 
     @Override
-    public void recordTraceAnalysis(final String analyzerName, final int spanCount, final long duration, final boolean success) {
+    public void recordTraceAnalysis(final String analyzerName, final int spanCount,
+                                     final long duration, final boolean success) {
         try {
             String prefix = monitoringProperties.getPrefix();
             String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";

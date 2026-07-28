@@ -39,7 +39,8 @@ public class ConfigurationValidator {
 
     // 域名正则表达式 - 支持多级域名
     private static final Pattern DOMAIN_PATTERN = Pattern.compile(
-            "^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,6}$"
+            "^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?"
+            + "(\\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\\.[a-zA-Z]{2,6}$"
     );
 
     /**
@@ -289,7 +290,8 @@ public class ConfigurationValidator {
 
         // 如果未启用，则无需验证
         if (rateLimit.containsKey("enabled")
-                && (Boolean.FALSE.equals(rateLimit.get("enabled")) || "false".equalsIgnoreCase(rateLimit.get("enabled").toString()))) {
+                && (Boolean.FALSE.equals(rateLimit.get("enabled"))
+                || "false".equalsIgnoreCase(rateLimit.get("enabled").toString()))) {
             return;
         }
 
@@ -565,7 +567,9 @@ public class ConfigurationValidator {
         
         return false;
     }
-    public void validateServiceConfig(final String serviceType, final Map<String, Object> serviceConfig, final List<String> errors, final List<String> warnings) {
+    public void validateServiceConfig(
+            final String serviceType, final Map<String, Object> serviceConfig,
+            final List<String> errors, final List<String> warnings) {
         if (serviceType == null || serviceType.trim().isEmpty()) {
             errors.add("服务类型不能为空");
             return;

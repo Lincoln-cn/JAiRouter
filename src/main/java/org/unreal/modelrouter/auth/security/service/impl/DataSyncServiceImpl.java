@@ -30,8 +30,10 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jairouter.security.jwt.persistence.sync.enabled", havingValue = "true", matchIfMissing = true)
-public class DataSyncServiceImpl implements DataSyncService {
+@ConditionalOnProperty(
+        name = "jairouter.security.jwt.persistence.sync.enabled",
+        havingValue = "true", matchIfMissing = true)
+public final class DataSyncServiceImpl implements DataSyncService {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     
@@ -153,7 +155,8 @@ public class DataSyncServiceImpl implements DataSyncService {
             boolean consistent = (missingInRedis == 0 && missingInStoreManager == 0 && conflicts == 0);
             
             String details = String.format(
-                "Redis: %d tokens, StoreManager: %d tokens, Missing in Redis: %d, Missing in StoreManager: %d, Conflicts: %d",
+                "Redis: %d tokens, StoreManager: %d tokens, "
+                + "Missing in Redis: %d, Missing in StoreManager: %d, Conflicts: %d",
                 redisCount, storeManagerCount, missingInRedis, missingInStoreManager, conflicts
             );
             

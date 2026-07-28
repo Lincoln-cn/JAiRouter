@@ -18,7 +18,7 @@ import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
  * @since v2.28.0
  */
 @Component
-public class RequestProcessingSupport {
+public final class RequestProcessingSupport {
 
     private final RequestBuilder requestBuilder;
     private final ResponseHandler responseHandler;

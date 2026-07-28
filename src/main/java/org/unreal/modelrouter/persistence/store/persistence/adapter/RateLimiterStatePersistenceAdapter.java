@@ -236,7 +236,9 @@ public class RateLimiterStatePersistenceAdapter {
     /**
      * 提取 TokenBucket 状态
      */
-    private void extractTokenBucketState(final Map<String, Object> stateData, final TokenBucketRateLimiter rateLimiter) {
+    private void extractTokenBucketState(
+            final Map<String, Object> stateData,
+            final TokenBucketRateLimiter rateLimiter) {
         // TokenBucketRateLimiter 的 tokens 和 lastRefillTimestamp 是私有字段
         // 我们需要通过反射或者其他方式获取，这里使用配置值作为基础
         stateData.put("algorithm", "token_bucket");
@@ -247,7 +249,9 @@ public class RateLimiterStatePersistenceAdapter {
     /**
      * 提取 SlidingWindow 状态
      */
-    private void extractSlidingWindowState(final Map<String, Object> stateData, final SlidingWindowRateLimiter rateLimiter) {
+    private void extractSlidingWindowState(
+            final Map<String, Object> stateData,
+            final SlidingWindowRateLimiter rateLimiter) {
         stateData.put("algorithm", "sliding_window");
         stateData.put("windowSize", rateLimiter.getConfig().getCapacity());
     }
@@ -255,7 +259,9 @@ public class RateLimiterStatePersistenceAdapter {
     /**
      * 提取 LeakyBucket 状态
      */
-    private void extractLeakyBucketState(final Map<String, Object> stateData, final LeakyBucketRateLimiter rateLimiter) {
+    private void extractLeakyBucketState(
+            final Map<String, Object> stateData,
+            final LeakyBucketRateLimiter rateLimiter) {
         stateData.put("algorithm", "leaky_bucket");
         stateData.put("waterLevel", 0); // 默认水位
         stateData.put("leakRate", rateLimiter.getConfig().getRate());

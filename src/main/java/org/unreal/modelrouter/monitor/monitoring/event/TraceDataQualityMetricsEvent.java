@@ -9,7 +9,9 @@ public class TraceDataQualityMetricsEvent extends MetricsEvent {
     private final int attributeCount;
     private final int errorCount;
 
-    public TraceDataQualityMetricsEvent(final String traceId, final int spanCount, final int attributeCount, final int errorCount) {
+    public TraceDataQualityMetricsEvent(
+            final String traceId, final int spanCount,
+            final int attributeCount, final int errorCount) {
         this.traceId = traceId;
         this.spanCount = spanCount;
         this.attributeCount = attributeCount;

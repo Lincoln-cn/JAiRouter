@@ -10,7 +10,10 @@ public class TraceMetricsEvent extends MetricsEvent {
     private final long duration;
     private final boolean success;
 
-    public TraceMetricsEvent(final String traceId, final String spanId, final String operationName, final long duration, final boolean success) {
+    public TraceMetricsEvent(
+            final String traceId, final String spanId,
+            final String operationName, final long duration,
+            final boolean success) {
         this.traceId = traceId;
         this.spanId = spanId;
         this.operationName = operationName;

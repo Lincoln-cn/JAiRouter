@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
  * 令牌黑名单条目
  * 用于存储被撤销的令牌信息
  */
-public class TokenBlacklistEntry {
+public final class TokenBlacklistEntry {
     
     private String tokenHash;       // 令牌哈希值
     private LocalDateTime expiresAt; // 过期时间
@@ -17,7 +17,10 @@ public class TokenBlacklistEntry {
     public TokenBlacklistEntry() {
     }
 
-    public TokenBlacklistEntry(final String tokenHash, final LocalDateTime expiresAt, final String reason, final String addedBy, final LocalDateTime addedAt) {
+    public TokenBlacklistEntry(
+            final String tokenHash, final LocalDateTime expiresAt,
+            final String reason, final String addedBy,
+            final LocalDateTime addedAt) {
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
         this.reason = reason;

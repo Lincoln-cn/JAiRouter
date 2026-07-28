@@ -21,7 +21,7 @@ import java.util.List;
 @Service("compositeJwtPersistenceService")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.composite.enabled", havingValue = "true")
-public class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService {
+public final class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService {
     
     @Qualifier("redisJwtTokenPersistenceService")
     private final JwtPersistenceService redisService;
@@ -41,7 +41,8 @@ public class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService
                         .then(fallbackService.saveToken(tokenInfo))
                         .doOnSuccess(unused -> log.debug("Token saved to both Redis and StoreManager"))
                         .onErrorResume(error -> {
-                            log.warn("Failed to save to Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to save to Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.saveToken(tokenInfo);
                         });
                 } else {
@@ -129,7 +130,8 @@ public class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService
                         .then(fallbackService.updateTokenStatus(tokenHash, status))
                         .doOnSuccess(unused -> log.debug("Token status updated in both Redis and StoreManager"))
                         .onErrorResume(error -> {
-                            log.warn("Failed to update status in Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to update status in Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.updateTokenStatus(tokenHash, status);
                         });
                 } else {
@@ -199,7 +201,8 @@ public class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService
                         .then(fallbackService.removeExpiredTokens())
                         .doOnSuccess(unused -> log.info("Expired tokens removed from both Redis and StoreManager"))
                         .onErrorResume(error -> {
-                            log.warn("Failed to remove expired tokens from Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to remove expired tokens from Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.removeExpiredTokens();
                         });
                 } else {
@@ -249,21 +252,27 @@ public class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService
                     return fallbackService.findTokensByUserId(userId, page, size);
                 }
             })
-            .doOnNext(tokens -> log.debug("Found {} tokens for user {} (page: {}, size: {})", tokens.size(), userId, page, size))
+            .doOnNext(tokens -> log.debug("Found {} tokens for user {} (page: {}, size: {})",
+                    tokens.size(), userId, page, size))
             .doOnError(error -> log.error("Failed to find tokens by user ID: {}", error.getMessage(), error));
     }
     
     @Override
-    public Mono<Void> batchUpdateTokenStatus(final List<String> tokenHashes, final TokenStatus status, final String reason, final String updatedBy) {
+    public Mono<Void> batchUpdateTokenStatus(
+            final List<String> tokenHashes, final TokenStatus status,
+            final String reason, final String updatedBy) {
         return storageHealthService.isRedisHealthy()
             .flatMap(isHealthy -> {
                 if (isHealthy) {
                     // Redis健康时，同时更新Redis和StoreManager
                     return redisService.batchUpdateTokenStatus(tokenHashes, status, reason, updatedBy)
                         .then(fallbackService.batchUpdateTokenStatus(tokenHashes, status, reason, updatedBy))
-                        .doOnSuccess(unused -> log.info("Batch updated {} tokens in both Redis and StoreManager", tokenHashes.size()))
+                        .doOnSuccess(unused -> log.info(
+                                "Batch updated {} tokens in both Redis and StoreManager",
+                                tokenHashes.size()))
                         .onErrorResume(error -> {
-                            log.warn("Failed to batch update in Redis, falling back to StoreManager only: {}", error.getMessage());
+                            log.warn("Failed to batch update in Redis, "
+                                    + "falling back to StoreManager only: {}", error.getMessage());
                             return fallbackService.batchUpdateTokenStatus(tokenHashes, status, reason, updatedBy);
                         });
                 } else {

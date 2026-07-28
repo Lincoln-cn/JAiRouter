@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.enabled", havingValue = "true")
-public class JwtPersistenceConfiguration {
+public final class JwtPersistenceConfiguration {
 
     /**
      * JWT持久化配置属性

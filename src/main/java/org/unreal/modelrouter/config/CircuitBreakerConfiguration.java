@@ -18,7 +18,7 @@ import jakarta.annotation.PostConstruct;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-public class CircuitBreakerConfiguration {
+public final class CircuitBreakerConfiguration {
 
     private final CircuitBreakerManager circuitBreakerManager;
     private final ApplicationEventPublisher eventPublisher;

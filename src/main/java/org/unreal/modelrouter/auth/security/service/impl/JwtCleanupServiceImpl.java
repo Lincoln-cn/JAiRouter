@@ -25,8 +25,9 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jairouter.security.jwt.persistence.cleanup.enabled", havingValue = "true", matchIfMissing = true)
-public class JwtCleanupServiceImpl implements JwtCleanupService {
+@ConditionalOnProperty(name = "jairouter.security.jwt.persistence.cleanup.enabled",
+        havingValue = "true", matchIfMissing = true)
+public final class JwtCleanupServiceImpl implements JwtCleanupService {
 
     private final JwtPersistenceService jwtPersistenceService;
     private final JwtBlacklistService jwtBlacklistService;
@@ -48,7 +49,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
     @PostConstruct
     public void init() {
         this.metrics = new JwtCleanupMetrics(meterRegistry);
-        this.statsManager = new JwtCleanupStatsManager(storeManager, metrics, retentionDays, batchSize, cleanupSchedule);
+        this.statsManager = new JwtCleanupStatsManager(
+                storeManager, metrics, retentionDays, batchSize, cleanupSchedule);
         statsManager.loadStats();
 
         log.info("JWT cleanup service initialized with schedule: {}, retention days: {}, batch size: {}",
@@ -81,8 +83,10 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
      */
     private void logCleanupResult(final CleanupResult result, final LocalDateTime scheduledTime) {
         if (result.isSuccess()) {
-            log.info("Scheduled cleanup completed successfully at {}. Removed {} tokens and {} blacklist entries in {}ms",
-                    LocalDateTime.now(), result.getRemovedTokens(), result.getRemovedBlacklistEntries(), result.getDurationMs());
+            log.info("Scheduled cleanup completed successfully at {}. "
+                    + "Removed {} tokens and {} blacklist entries in {}ms",
+                    LocalDateTime.now(), result.getRemovedTokens(),
+                    result.getRemovedBlacklistEntries(), result.getDurationMs());
             log.info("Cleanup success rate: {:.1f}% ({} successful out of {} total)",
                     statsManager.getSuccessRate(),
                     statsManager.getTotalCleanupsPerformed().get() - statsManager.getFailedCleanups().get(),
@@ -104,7 +108,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                 LocalDateTime.now(), error.getMessage(), error.getClass().getSimpleName(), error);
         metrics.recordFailure();
         statsManager.saveStats();
-        log.error("Troubleshooting info: Check storage connectivity, verify configuration, review retention settings (current: {}days)", retentionDays);
+        log.error("Troubleshooting info: Check storage connectivity, "
+                + "verify configuration, review retention settings (current: {}days)", retentionDays);
     }
 
     @Override
@@ -127,7 +132,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                 long duration = java.time.Duration.between(startTime, endTime).toMillis();
 
                 CleanupResult result = new CleanupResult(removedCount, 0, startTime, endTime, true);
-                result.setDetails(buildTokenDetails(beforeCount, afterCount, removedCount, duration, startTime, endTime));
+                result.setDetails(buildTokenDetails(beforeCount, afterCount,
+                        removedCount, duration, startTime, endTime));
 
                 metrics.recordTokenCleanup(removedCount);
 
@@ -191,9 +197,11 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
                 metrics.recordBlacklistCleanup(removedCount);
 
                 if (removedCount > 0) {
-                    log.info("Expired blacklist entries cleanup completed. Removed {} entries in {}ms", removedCount, duration);
+                    log.info("Expired blacklist entries cleanup completed. "
+                            + "Removed {} entries in {}ms", removedCount, duration);
                 } else {
-                    log.debug("Expired blacklist entries cleanup completed. No expired entries found. Duration: {}ms", duration);
+                    log.debug("Expired blacklist entries cleanup completed. "
+                            + "No expired entries found. Duration: {}ms", duration);
                 }
 
                 return result;
@@ -287,7 +295,8 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
         details.put("batchSize", batchSize);
         combinedResult.setDetails(details);
 
-        statsManager.updateCleanupComplete(tokenResult.getRemovedTokens(), blacklistResult.getRemovedBlacklistEntries());
+        statsManager.updateCleanupComplete(
+                tokenResult.getRemovedTokens(), blacklistResult.getRemovedBlacklistEntries());
 
         if (!combinedResult.isSuccess()) {
             combinedResult.setErrorMessage(String.format("Partial cleanup failure - Token: %s, Blacklist: %s",
@@ -309,8 +318,10 @@ public class JwtCleanupServiceImpl implements JwtCleanupService {
      */
     private void logFullCleanupSummary(final CleanupResult result, final long totalDuration,
                                         final CleanupResult tokenResult, final CleanupResult blacklistResult) {
-        log.info("Full cleanup summary: Success={}, Tokens removed={}, Blacklist entries removed={}, Total duration={}ms",
-                result.isSuccess(), result.getRemovedTokens(), result.getRemovedBlacklistEntries(), totalDuration);
+        log.info("Full cleanup summary: Success={}, Tokens removed={}, "
+                + "Blacklist entries removed={}, Total duration={}ms",
+                result.isSuccess(), result.getRemovedTokens(),
+                result.getRemovedBlacklistEntries(), totalDuration);
     }
 
     /**
