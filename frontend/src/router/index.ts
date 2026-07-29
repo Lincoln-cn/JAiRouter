@@ -81,6 +81,12 @@ const router = createRouter({
           name: 'state-persistence-config',
           component: () => import('../views/config/StatePersistenceManagement.vue'),
           meta: { title: '状态持久化', icon: 'folder-opened' }
+        },
+        {
+          path: 'adapters',
+          name: 'adapter-management',
+          component: () => import('../views/config/AdapterManagement.vue'),
+          meta: { title: 'Adapter管理', icon: 'connection' }
         }
       ]
     },
