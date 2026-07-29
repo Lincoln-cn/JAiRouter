@@ -1936,10 +1936,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.87",
-      "LastModified": "2026-07-28T05:14:59.083550",
-      "ContentHash": "514c0115416785b4",
-      "GitCommit": "13382f7f",
+      "Version": "1.0.88",
+      "LastModified": "2026-07-29T05:21:59.516758",
+      "ContentHash": "24de12be6a5803f4",
+      "GitCommit": "5237abd3",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2006,118 +2006,6 @@
     }
   },
   "changes": [
-    {
-      "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-04-29T05:26:47.449325",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.10",
-      "NewVersion": "1.0.11",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-04-29T05:26:47.451726",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/docs-version-report.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2026-04-29T05:26:47.462107",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/zh/development/v2.7.x-package-refactoring.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2026-04-29T05:26:48.263706",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "RELEASE-NOTES-1.9.3.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.568868",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.10",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.568903",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "RELEASE-1.8.1.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.568921",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "RELEASE-NOTES-1.8.1.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.568936",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "v2.2.x-开发总结.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.568951",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "v2.3.0-系列版本规划.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.568967",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "v2.3.1-系列版本规划.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.568982",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "v2.3.3-健康检查显示修复计划.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.568998",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "v2.3.x-开发总结.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.569011",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "工作进度-v1.9.4-v1.9.5.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-04-29T05:26:48.569026",
-      "Description": "文档已删除"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "",
@@ -5037,7 +4925,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-07-28T05:14:59.083559",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.87",
+      "NewVersion": "1.0.88",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-29T05:21:59.516767",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-07-28T05:14:59.559669"
+  "last_updated": "2026-07-29T05:21:59.963622"
 }
