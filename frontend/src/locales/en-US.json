@@ -99,5 +99,38 @@
     "apiKeys": "API Keys",
     "jwtTokens": "JWT Tokens",
     "auditLog": "Audit Log"
+  },
+  "adapter": {
+    "title": "Adapter Management",
+    "name": "Name",
+    "type": "Type",
+    "source": "Source",
+    "builtin": "Builtin",
+    "configurable": "Configurable",
+    "capabilities": "Capabilities",
+    "actions": "Actions",
+    "view": "View",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create Adapter",
+    "save": "Save",
+    "cancel": "Cancel",
+    "basicInfo": "Basic Info",
+    "capabilityConfig": "Capabilities",
+    "authConfig": "Auth Config",
+    "headerName": "Header Name",
+    "headerPrefix": "Header Prefix",
+    "additionalHeaders": "Additional Headers",
+    "types": {
+      "openai-compatible": "OpenAI Compatible",
+      "builtin": "Builtin"
+    },
+    "confirmDelete": "Confirm Delete",
+    "confirmDeleteMessage": "Are you sure to delete adapter \"{name}\"?",
+    "createSuccess": "Adapter created successfully",
+    "updateSuccess": "Adapter updated successfully",
+    "deleteSuccess": "Adapter deleted successfully",
+    "nameRequired": "Adapter name is required",
+    "nameExists": "Adapter name already exists"
   }
 }

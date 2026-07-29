@@ -7,5 +7,54 @@
 model:
   # 全局适配器配置
   # 如果服务没有指定适配器，将使用此配置
-  # 支持: normal, gpustack, ollama, vllm, xinference, localai
+  # 支持: normal, gpustack, ollama, vllm, xinference, localai, claude, gemini
+  # 以及 adapter-definitions 中定义的自定义adapter
   adapter: gpustack
+
+# ========================================
+# 配置驱动Adapter定义
+# ========================================
+# 通过配置即可添加新的OpenAI兼容adapter，无需编写代码
+# 适用于: DeepSeek、智谱、月之暗面、百川、零一万物、通义千问、Minimax等
+#
+# 配置项说明:
+#   type: adapter类型，目前支持 openai-compatible
+#   capabilities: 支持的服务类型
+#     chat/embedding/rerank/tts/stt/imgGen/imgEdit/streaming
+#   auth: 认证配置
+#     header-name: 认证头名称（默认 Authorization）
+#     header-prefix: 认证头前缀（默认 "Bearer "）
+#   additional-headers: 额外的HTTP请求头
+#
+# 使用方式:
+#   在 services.yml 中为服务或实例指定 adapter: "adapter名称"
+#
+adapter-definitions: {}
+  # 示例：DeepSeek adapter
+  # deepseek:
+  #   type: openai-compatible
+  #   capabilities:
+  #     chat: true
+  #     embedding: true
+  #     streaming: true
+  #   auth:
+  #     header-name: Authorization
+  #     header-prefix: "Bearer "
+  #
+  # 示例：智谱GLM adapter
+  # zhipu:
+  #   type: openai-compatible
+  #   capabilities:
+  #     chat: true
+  #     embedding: true
+  #     streaming: true
+  #
+  # 示例：自定义认证头的adapter
+  # custom-api:
+  #   type: openai-compatible
+  #   capabilities:
+  #     chat: true
+  #     streaming: true
+  #   auth:
+  #     header-name: X-API-Key
+  #     header-prefix: ""

@@ -1,7 +1,11 @@
 package org.unreal.modelrouter.router.adapter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
+import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 import org.unreal.modelrouter.router.adapter.impl.ClaudeAdapter;
+import org.unreal.modelrouter.router.adapter.impl.ConfigurableAdapter;
 import org.unreal.modelrouter.router.adapter.impl.GeminiAdapter;
 import org.unreal.modelrouter.router.adapter.impl.GpuStackAdapter;
 import org.unreal.modelrouter.router.adapter.impl.LocalAiAdapter;
@@ -18,8 +22,10 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * AdapterRegistry - v2.28.0 重构版
@@ -27,6 +33,10 @@ import java.util.Optional;
  */
 @Configuration
 public class AdapterRegistry {
+
+    private static final Logger logger = LoggerFactory.getLogger(AdapterRegistry.class);
+
+    private static final Set<String> BUILTIN_ADAPTER_NAMES = new HashSet<>();
 
     private final Map<String, ServiceCapability> adapters;
     private final ModelRouterProperties properties;
@@ -36,6 +46,7 @@ public class AdapterRegistry {
     private final ResilienceSupport resilienceSupport;
     private final OpenAiRequestTransformer openAiRequestTransformer;
     private final OpenAiResponseTransformer openAiResponseTransformer;
+    private final AdapterDefinitionProperties adapterDefinitionProperties;
 
     public AdapterRegistry(final ModelRouterProperties properties,
                            final ModelServiceRegistry registry,
@@ -43,7 +54,8 @@ public class AdapterRegistry {
                            final RequestProcessingSupport requestSupport,
                            final ResilienceSupport resilienceSupport,
                            final OpenAiRequestTransformer openAiRequestTransformer,
-                           final OpenAiResponseTransformer openAiResponseTransformer) {
+                           final OpenAiResponseTransformer openAiResponseTransformer,
+                           final AdapterDefinitionProperties adapterDefinitionProperties) {
         this.properties = properties;
         this.registry = registry;
         this.context = context;
@@ -51,6 +63,7 @@ public class AdapterRegistry {
         this.resilienceSupport = resilienceSupport;
         this.openAiRequestTransformer = openAiRequestTransformer;
         this.openAiResponseTransformer = openAiResponseTransformer;
+        this.adapterDefinitionProperties = adapterDefinitionProperties;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
@@ -67,6 +80,94 @@ public class AdapterRegistry {
         adapters.put("vllm", new VllmAdapter(context, requestSupport, resilienceSupport));
         adapters.put("xinference", new XinferenceAdapter(context, requestSupport, resilienceSupport));
         adapters.put("localai", new LocalAiAdapter(context, requestSupport, resilienceSupport));
+
+        BUILTIN_ADAPTER_NAMES.addAll(adapters.keySet());
+
+        loadConfigurableAdapters();
+    }
+
+    private void loadConfigurableAdapters() {
+        Map<String, AdapterDefinitionProperties.AdapterDefinition> definitions =
+                adapterDefinitionProperties.getAdapterDefinitions();
+        if (definitions == null || definitions.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<String, AdapterDefinitionProperties.AdapterDefinition> entry : definitions.entrySet()) {
+            String adapterName = entry.getKey();
+            AdapterDefinitionProperties.AdapterDefinition definition = entry.getValue();
+
+            if (!adapters.containsKey(adapterName.toLowerCase())) {
+                try {
+                    ConfigurableAdapter adapter = createConfigurableAdapter(adapterName, definition);
+                    adapters.put(adapterName.toLowerCase(), adapter);
+                    logger.info("Loaded configurable adapter from YAML: {}", adapterName);
+                } catch (Exception e) {
+                    logger.error("Failed to load configurable adapter {}: {}", adapterName, e.getMessage());
+                }
+            }
+        }
+    }
+
+    private ConfigurableAdapter createConfigurableAdapter(final String name,
+                                                          final AdapterDefinitionProperties.AdapterDefinition definition) {
+        AdapterCapabilities capabilities = AdapterCapabilities.builder()
+                .chat(definition.getCapabilities().isChat())
+                .embedding(definition.getCapabilities().isEmbedding())
+                .rerank(definition.getCapabilities().isRerank())
+                .tts(definition.getCapabilities().isTts())
+                .stt(definition.getCapabilities().isStt())
+                .imageGenerate(definition.getCapabilities().isImgGen())
+                .imageEdit(definition.getCapabilities().isImgEdit())
+                .streaming(definition.getCapabilities().isStreaming())
+                .build();
+
+        return new ConfigurableAdapter(
+                context, requestSupport, resilienceSupport,
+                name, capabilities,
+                definition.getAuth().getHeaderName(),
+                definition.getAuth().getHeaderPrefix(),
+                definition.getAdditionalHeaders(),
+                openAiRequestTransformer, openAiResponseTransformer
+        );
+    }
+
+    /**
+     * 动态注册一个adapter
+     */
+    public void registerAdapter(final String name, final ServiceCapability adapter) {
+        adapters.put(name.toLowerCase(), adapter);
+        logger.info("Registered adapter: {}", name);
+    }
+
+    /**
+     * 动态移除一个adapter（仅限配置驱动的adapter）
+     */
+    public boolean removeAdapter(final String name) {
+        if (isBuiltinAdapter(name)) {
+            logger.warn("Cannot remove builtin adapter: {}", name);
+            return false;
+        }
+        ServiceCapability removed = adapters.remove(name.toLowerCase());
+        if (removed != null) {
+            logger.info("Removed adapter: {}", name);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 判断是否是内置adapter
+     */
+    public boolean isBuiltinAdapter(final String name) {
+        return BUILTIN_ADAPTER_NAMES.contains(name.toLowerCase());
+    }
+
+    /**
+     * 获取所有内置adapter名称
+     */
+    public Set<String> getBuiltinAdapterNames() {
+        return new HashSet<>(BUILTIN_ADAPTER_NAMES);
     }
 
     /**
@@ -87,7 +188,7 @@ public class AdapterRegistry {
      * 根据实例获取对应的Adapter（实例级适配器优先）
      */
     public ServiceCapability getAdapter(final ModelServiceRegistry.ServiceType serviceType,
-                                       final ModelRouterProperties.ModelInstance instance) {
+                                        final ModelRouterProperties.ModelInstance instance) {
         String adapterName = getAdapterName(serviceType, instance);
         ServiceCapability adapter = adapters.get(adapterName.toLowerCase());
 
@@ -116,7 +217,7 @@ public class AdapterRegistry {
      * 获取指定实例的adapter名称（实例级适配器优先）
      */
     private String getAdapterName(final ModelServiceRegistry.ServiceType serviceType,
-                                 final ModelRouterProperties.ModelInstance instance) {
+                                  final ModelRouterProperties.ModelInstance instance) {
         if (instance != null && instance.getAdapter() != null && !instance.getAdapter().trim().isEmpty()) {
             return instance.getAdapter();
         }
