@@ -3,20 +3,19 @@
 ## 版本统计
 
 - 总文档数: 152
-- 近7天变更: 8
+- 近7天变更: 7
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-28 05:14:59
+- 最后扫描: 2026-07-29 05:22:00
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.87 → 1.0.88) - 2026-07-29
 - **MODIFIED**: docs-version-report.md (1.0.86 → 1.0.87) - 2026-07-28
 - **MODIFIED**: docs-version-report.md (1.0.85 → 1.0.86) - 2026-07-27
 - **MODIFIED**: docs-version-report.md (1.0.84 → 1.0.85) - 2026-07-26
 - **MODIFIED**: docs-version-report.md (1.0.83 → 1.0.84) - 2026-07-25
 - **MODIFIED**: docs-version-report.md (1.0.82 → 1.0.83) - 2026-07-24
 - **MODIFIED**: docs-version-report.md (1.0.81 → 1.0.82) - 2026-07-23
-- **MODIFIED**: docs-version-report.md (1.0.80 → 1.0.81) - 2026-07-22
-- **MODIFIED**: docs-version-report.md (1.0.79 → 1.0.80) - 2026-07-21
 
 ## 过期文档 (30天未更新)
 
@@ -630,7 +629,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.87 - 2026-07-28 (13382f7f)
+- **docs-version-report.md**: v1.0.88 - 2026-07-29 (5237abd3)
 - **docs/zh/reference/roadmap.md**: v1.0.8 - 2026-07-18 (ca98a2ee)
 - **docs/zh/configuration/validation-rules.md**: v1.0.3 - 2026-07-18 (ca98a2ee)
 - **docs/en/reference/roadmap.md**: v1.0.8 - 2026-07-18 (d96cd9ee)
