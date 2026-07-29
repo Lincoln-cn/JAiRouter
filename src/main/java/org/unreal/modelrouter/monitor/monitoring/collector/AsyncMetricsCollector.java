@@ -18,7 +18,7 @@ import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledConditi
 @Component
 @Primary
 @Conditional(MonitoringEnabledCondition.class)
-public final class AsyncMetricsCollector implements MetricsCollector {
+public class AsyncMetricsCollector implements MetricsCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncMetricsCollector.class);
 

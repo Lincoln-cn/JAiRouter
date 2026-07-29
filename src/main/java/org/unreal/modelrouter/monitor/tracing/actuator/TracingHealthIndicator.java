@@ -27,7 +27,7 @@ import java.util.Map;
 @Slf4j
 @Component("tracing")
 @RequiredArgsConstructor
-public final class TracingHealthIndicator implements HealthIndicator {
+public class TracingHealthIndicator implements HealthIndicator {
 
     private final TracingConfiguration tracingConfiguration;
     private final TracingPerformanceMonitor performanceMonitor;

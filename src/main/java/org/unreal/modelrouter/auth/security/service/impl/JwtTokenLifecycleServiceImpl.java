@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.enabled", havingValue = "true")
-public final class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
+public class JwtTokenLifecycleServiceImpl implements JwtTokenLifecycleService {
     
     private final SecurityProperties securityProperties;
     

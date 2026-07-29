@@ -24,7 +24,7 @@ import org.unreal.modelrouter.persistence.jpa.repository.ConfigVersionHistoryRep
  */
 @Component
 @Slf4j
-public final class VersionHistoryEventListener {
+public class VersionHistoryEventListener {
 
     private final ConfigVersionHistoryRepository versionHistoryRepository;
 

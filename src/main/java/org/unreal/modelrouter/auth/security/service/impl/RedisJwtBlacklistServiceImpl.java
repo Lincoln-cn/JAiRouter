@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.redis.enabled", havingValue = "true")
-public final class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
+public class RedisJwtBlacklistServiceImpl implements JwtBlacklistService {
 
     private final RedisBlacklistOperations redisOperations;
     private final FallbackBlacklistOperations fallbackOperations;

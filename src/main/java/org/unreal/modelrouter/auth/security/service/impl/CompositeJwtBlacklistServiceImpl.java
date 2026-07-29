@@ -21,7 +21,7 @@ import java.util.Map;
 @Service("compositeJwtBlacklistService")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.composite.enabled", havingValue = "true")
-public final class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
+public class CompositeJwtBlacklistServiceImpl implements JwtBlacklistService {
     
     @Qualifier("redisJwtBlacklistService")
     private final JwtBlacklistService redisService;

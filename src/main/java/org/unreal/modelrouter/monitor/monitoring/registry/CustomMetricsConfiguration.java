@@ -17,7 +17,7 @@ import org.unreal.modelrouter.monitor.monitoring.config.MonitoringEnabledConditi
 @Configuration
 @EnableScheduling
 @Conditional(MonitoringEnabledCondition.class)
-public final class CustomMetricsConfiguration {
+public class CustomMetricsConfiguration {
     
     private static final Logger logger = LoggerFactory.getLogger(CustomMetricsConfiguration.class);
     

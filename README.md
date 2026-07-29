@@ -66,6 +66,7 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 ### Core Features
 
 - **🔌 OpenAI-Compatible API** — Drop-in replacement for OpenAI SDK, LangChain, LlamaIndex
+- **🔧 Configurable Adapters** — Add new AI providers (DeepSeek, Zhipu, etc.) via config or Web UI, no code needed
 - **⚖️ Smart Load Balancing** — Round-robin, weighted, least-connections, IP-hash, consistent-hash
 - **🛡️ Rate Limiting** — Token bucket, leaky bucket, sliding window algorithms
 - **🔥 Circuit Breaker** — Auto failover with configurable thresholds and recovery
@@ -106,6 +107,8 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 
 ## Supported AI Backends
 
+### Built-in Adapters
+
 | Backend | Chat | Embedding | Rerank | TTS | STT | Image | Notes |
 |---------|:----:|:---------:|:------:|:---:|:---:|:-----:|-------|
 | **Ollama** | ✅ | ✅ | - | - | - | - | Local inference |
@@ -116,6 +119,21 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 | **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | Cloud fallback |
 | **Anthropic Claude** | ✅ | - | - | - | - | - | Native Claude API |
 | **Google Gemini** | ✅ | - | - | - | - | - | Native Gemini API |
+
+### Configurable Adapters (No Code Required)
+
+Add any OpenAI-compatible provider via configuration or Web UI:
+
+| Provider | Configuration |
+|----------|--------------|
+| **DeepSeek** | `adapter-definitions: deepseek: type: openai-compatible` |
+| **Zhipu (GLM)** | `adapter-definitions: zhipu: type: openai-compatible` |
+| **Moonshot** | `adapter-definitions: moonshot: type: openai-compatible` |
+| **Qwen (Tongyi)** | `adapter-definitions: qwen: type: openai-compatible` |
+| **Baichuan** | `adapter-definitions: baichuan: type: openai-compatible` |
+| **Minimax** | `adapter-definitions: minimax: type: openai-compatible` |
+
+> 📖 See [Adapter Configuration Guide](https://jairouter.com/zh/configuration/adapter-config/) for details.
 
 ---
 

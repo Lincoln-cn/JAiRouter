@@ -34,7 +34,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public final class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
+public class SecurityBlacklistServiceImpl implements SecurityBlacklistService {
 
     private final SecurityBlacklistRepository repository;
 

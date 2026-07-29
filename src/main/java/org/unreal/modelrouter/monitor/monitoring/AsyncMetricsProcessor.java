@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Component
 @Conditional(MonitoringEnabledCondition.class)
-public final class AsyncMetricsProcessor {
+public class AsyncMetricsProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncMetricsProcessor.class);
 

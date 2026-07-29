@@ -68,7 +68,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public final class DefaultStructuredLogger implements StructuredLogger {
+public class DefaultStructuredLogger implements StructuredLogger {
 
     private final ObjectMapper objectMapper;
     private final TracingConfiguration tracingConfiguration;

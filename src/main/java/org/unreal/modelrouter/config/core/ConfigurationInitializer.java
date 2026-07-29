@@ -19,7 +19,7 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 @Component
 @RequiredArgsConstructor
 @org.springframework.context.annotation.DependsOn("jpaDatabaseInitializer")
-public final class ConfigurationInitializer {
+public class ConfigurationInitializer {
 
     private final ConfigurationService configurationService;
     private final ModelServiceRegistry modelServiceRegistry;

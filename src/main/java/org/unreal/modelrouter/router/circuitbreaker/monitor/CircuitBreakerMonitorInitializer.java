@@ -17,7 +17,7 @@ import org.unreal.modelrouter.router.circuitbreaker.CircuitBreakerManager;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public final class CircuitBreakerMonitorInitializer {
+public class CircuitBreakerMonitorInitializer {
 
     private final CircuitBreakerManager circuitBreakerManager;
     private final CircuitBreakerMonitorService monitorService;

@@ -11,7 +11,7 @@ import org.slf4j.Marker;
  * 用于屏蔽特定的异常日志记录
  */
 @Configuration
-public final class LoggingFilterConfiguration {
+public class LoggingFilterConfiguration {
 
     /**
      * 自定义过滤器，用于屏蔽ReadOnlyHttpHeaders.set相关的UnsupportedOperationException异常

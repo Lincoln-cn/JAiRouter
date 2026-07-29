@@ -19,7 +19,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Slf4j
 @Configuration
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-public final class RedisJwtCacheConfiguration {
+public class RedisJwtCacheConfiguration {
 
     /**
      * Redis JWT缓存配置属性

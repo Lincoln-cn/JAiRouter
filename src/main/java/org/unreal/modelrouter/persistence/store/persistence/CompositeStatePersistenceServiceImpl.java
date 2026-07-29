@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Primary
-public final class CompositeStatePersistenceServiceImpl implements StatePersistenceService {
+public class CompositeStatePersistenceServiceImpl implements StatePersistenceService {
 
     private static final Logger logger = LoggerFactory.getLogger(CompositeStatePersistenceServiceImpl.class);
     private static final int TIER_PRIORITY = 0;

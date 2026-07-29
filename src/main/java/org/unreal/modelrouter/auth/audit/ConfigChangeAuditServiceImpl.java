@@ -17,7 +17,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public final class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
+public class ConfigChangeAuditServiceImpl implements ConfigChangeAuditService {
 
     private final ConfigChangeAuditRepository auditRepository;
     private final ObjectMapper objectMapper;

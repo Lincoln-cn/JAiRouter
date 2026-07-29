@@ -66,6 +66,7 @@ JAiRouter 是一个 **生产级 AI 模型网关**，提供统一的 OpenAI 兼�
 ### 核心功能
 
 - **🔌 OpenAI 兼容 API** — 直接替换 OpenAI SDK、LangChain、LlamaIndex
+- **🔧 可配置 Adapter** — 通过配置或 Web 页面添加新 AI 提供商（DeepSeek、智谱等），无需编码
 - **⚖️ 智能负载均衡** — 轮询、加权、最少连接、IP Hash、一致性哈希
 - **🛡️ 流量控制** — 令牌桶、漏桶、滑动窗口算法
 - **🔥 熔断降级** — 自动故障转移，可配置阈值和恢复策略
@@ -106,6 +107,8 @@ JAiRouter 是一个 **生产级 AI 模型网关**，提供统一的 OpenAI 兼�
 
 ## 支持的 AI 后端
 
+### 内置 Adapter
+
 | 后端 | Chat | Embedding | Rerank | TTS | STT | Image | 说明 |
 |------|:----:|:---------:|:------:|:---:|:---:|:-----:|------|
 | **Ollama** | ✅ | ✅ | - | - | - | - | 本地推理 |
@@ -116,6 +119,21 @@ JAiRouter 是一个 **生产级 AI 模型网关**，提供统一的 OpenAI 兼�
 | **OpenAI** | ✅ | ✅ | - | ✅ | ✅ | ✅ | 云端兜底 |
 | **Anthropic Claude** | ✅ | - | - | - | - | - | 原生 Claude API |
 | **Google Gemini** | ✅ | - | - | - | - | - | 原生 Gemini API |
+
+### 可配置 Adapter（无需编码）
+
+通过配置或 Web 页面添加任意 OpenAI 兼容的提供商：
+
+| 提供商 | 配置方式 |
+|--------|----------|
+| **DeepSeek** | `adapter-definitions: deepseek: type: openai-compatible` |
+| **智谱 (GLM)** | `adapter-definitions: zhipu: type: openai-compatible` |
+| **月之暗面** | `adapter-definitions: moonshot: type: openai-compatible` |
+| **通义千问** | `adapter-definitions: qwen: type: openai-compatible` |
+| **百川** | `adapter-definitions: baichuan: type: openai-compatible` |
+| **Minimax** | `adapter-definitions: minimax: type: openai-compatible` |
+
+> 📖 详见 [Adapter 配置指南](https://jairouter.com/zh/configuration/adapter-config/)
 
 ---
 
