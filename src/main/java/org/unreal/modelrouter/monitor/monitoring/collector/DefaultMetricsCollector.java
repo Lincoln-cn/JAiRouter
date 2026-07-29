@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Component
 @Conditional(MonitoringEnabledCondition.class)
-public final class DefaultMetricsCollector implements MetricsCollector {
+public class DefaultMetricsCollector implements MetricsCollector {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultMetricsCollector.class);
 

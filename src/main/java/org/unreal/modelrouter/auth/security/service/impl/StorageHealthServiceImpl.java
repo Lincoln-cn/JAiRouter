@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public final class StorageHealthServiceImpl implements StorageHealthService {
+public class StorageHealthServiceImpl implements StorageHealthService {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public final class OpenAiResponseTransformerImpl implements OpenAiResponseTransformer {
+public class OpenAiResponseTransformerImpl implements OpenAiResponseTransformer {
 
     private final ObjectMapper objectMapper;
 

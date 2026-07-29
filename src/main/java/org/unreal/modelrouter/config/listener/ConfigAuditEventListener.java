@@ -24,7 +24,7 @@ import java.time.Instant;
  */
 @Component
 @Slf4j
-public final class ConfigAuditEventListener {
+public class ConfigAuditEventListener {
 
     private final ConfigAuditLogRepository auditLogRepository;
 

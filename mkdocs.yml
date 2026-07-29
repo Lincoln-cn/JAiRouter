@@ -83,6 +83,7 @@ plugins:
             状态持久化: State Persistence
             版本管理: Version Management
             验证规则: Validation Rules
+            Adapter配置: Adapter Configuration
             安全功能: Security Features
             API Key管理: API Key Management
             JWT认证: JWT Authentication
@@ -188,6 +189,7 @@ nav:
     - 状态持久化: zh/configuration/state-persistence.md
     - 版本管理: zh/configuration/version-management.md
     - 验证规则: zh/configuration/validation-rules.md
+    - Adapter配置: zh/configuration/adapter-config.md
   - 安全功能:
     - zh/security/index.md
     - API Key管理: zh/security/api-key-management.md

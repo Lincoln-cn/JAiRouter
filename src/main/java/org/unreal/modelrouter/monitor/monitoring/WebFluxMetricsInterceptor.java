@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @Component
 @Conditional(MonitoringEnabledCondition.class)
-public final class WebFluxMetricsInterceptor implements WebFilter, Ordered {
+public class WebFluxMetricsInterceptor implements WebFilter, Ordered {
 
     private static final Logger logger = LoggerFactory.getLogger(WebFluxMetricsInterceptor.class);
 

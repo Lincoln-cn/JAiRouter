@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.call-history.enabled", havingValue = "true", matchIfMissing = true)
-public final class ApiCallHistoryRecorder {
+public class ApiCallHistoryRecorder {
 
     private final ApiCallHistoryService service;
     private final CallHistoryProperties properties;

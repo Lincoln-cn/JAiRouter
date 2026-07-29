@@ -16,7 +16,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 @ConditionalOnProperty(
         name = "jairouter.security.jwt.persistence.cleanup.enabled",
         havingValue = "true", matchIfMissing = true)
-public final class JwtCleanupConfiguration {
+public class JwtCleanupConfiguration {
 
     /**
      * 配置JWT清理任务的专用调度器

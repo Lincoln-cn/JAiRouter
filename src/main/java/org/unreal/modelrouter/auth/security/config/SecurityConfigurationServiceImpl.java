@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public final class SecurityConfigurationServiceImpl implements SecurityConfigurationService {
+public class SecurityConfigurationServiceImpl implements SecurityConfigurationService {
 
     private final SecurityProperties securityProperties;
     private final StoreManager storeManager;

@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.enabled", havingValue = "true")
-public final class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
+public class JwtTokenPersistenceServiceImpl implements JwtPersistenceService {
 
     private final StoreManager storeManager;
     private final JwtTokenIndexManager indexManager;

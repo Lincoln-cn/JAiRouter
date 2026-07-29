@@ -13,7 +13,7 @@ import org.unreal.modelrouter.persistence.jpa.JpaStoreManager;
 @Slf4j
 @Configuration
 @ConfigurationProperties(prefix = "store")
-public final class StoreManagerConfiguration {
+public class StoreManagerConfiguration {
 
     private String type = "jpa";
     private String path = "./config";

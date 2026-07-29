@@ -25,7 +25,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.persistence.enabled", havingValue = "true")
-public final class JwtBlacklistServiceImpl implements JwtBlacklistService {
+public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     
     private final StoreManager storeManager;
     

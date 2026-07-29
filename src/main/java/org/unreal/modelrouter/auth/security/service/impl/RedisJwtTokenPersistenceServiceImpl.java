@@ -28,7 +28,7 @@ import java.util.Objects;
 @Service("redisJwtTokenPersistenceService")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.redis.enabled", havingValue = "true")
-public final class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceService {
+public class RedisJwtTokenPersistenceServiceImpl implements JwtPersistenceService {
     
     private final ReactiveRedisTemplate<String, String> redisTemplate;
     

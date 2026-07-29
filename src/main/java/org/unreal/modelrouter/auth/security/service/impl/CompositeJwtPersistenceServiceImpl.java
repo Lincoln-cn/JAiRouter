@@ -21,7 +21,7 @@ import java.util.List;
 @Service("compositeJwtPersistenceService")
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.persistence.composite.enabled", havingValue = "true")
-public final class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService {
+public class CompositeJwtPersistenceServiceImpl implements JwtPersistenceService {
     
     @Qualifier("redisJwtTokenPersistenceService")
     private final JwtPersistenceService redisService;

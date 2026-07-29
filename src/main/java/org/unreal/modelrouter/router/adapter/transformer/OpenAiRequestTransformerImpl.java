@@ -23,7 +23,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public final class OpenAiRequestTransformerImpl implements OpenAiRequestTransformer {
+public class OpenAiRequestTransformerImpl implements OpenAiRequestTransformer {
 
     private final ObjectMapper objectMapper;
 

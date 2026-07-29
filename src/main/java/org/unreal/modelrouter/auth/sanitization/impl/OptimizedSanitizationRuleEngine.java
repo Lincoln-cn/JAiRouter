@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @Component
 @Primary
 @ConditionalOnProperty(name = "jairouter.security.sanitization.optimized", havingValue = "true", matchIfMissing = true)
-public final class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
+public class OptimizedSanitizationRuleEngine implements SanitizationRuleEngine {
     
     /**
      * 编译后的正则表达式缓存

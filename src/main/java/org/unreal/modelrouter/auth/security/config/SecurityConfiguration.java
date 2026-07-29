@@ -35,7 +35,7 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.enabled", havingValue = "true")
-public final class SecurityConfiguration {
+public class SecurityConfiguration {
 
     private final SecurityProperties securityProperties;
     private final ApiKeyService apiKeyService;
