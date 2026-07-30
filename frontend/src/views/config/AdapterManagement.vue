@@ -106,13 +106,29 @@
           <el-select v-model="form.type" style="width: 100%" @change="handleTypeChange">
             <el-option label="OpenAI兼容" value="openai-compatible" />
             <el-option label="Ollama兼容" value="ollama-compatible" />
+            <el-option label="继承扩展" value="extend" />
           </el-select>
           <div class="type-hint" v-if="form.type === 'ollama-compatible'">
             Ollama兼容：使用Ollama API格式，适用于本地Ollama服务
           </div>
+          <div class="type-hint" v-else-if="form.type === 'extend'">
+            继承扩展：基于现有adapter创建变体，可覆盖能力配置和认证方式
+          </div>
           <div class="type-hint" v-else>
             OpenAI兼容：使用标准OpenAI API格式，适用于大多数云端API
           </div>
+        </el-form-item>
+
+        <el-form-item v-if="form.type === 'extend'" label="父Adapter" prop="parent">
+          <el-select v-model="form.parent" placeholder="选择要继承的父adapter" style="width: 100%">
+            <el-option
+              v-for="item in parentAdapters"
+              :key="item.name"
+              :label="item.name + (item.source === 'builtin' ? ' (内置)' : ' (配置驱动)')"
+              :value="item.name"
+            />
+          </el-select>
+          <div class="type-hint">选择一个现有adapter作为基础，新adapter将继承其所有功能</div>
         </el-form-item>
 
         <el-form-item label="能力配置">
@@ -168,16 +184,19 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Connection, Plus } from '@element-plus/icons-vue'
 import {
   getAdapterList,
+  getParentAdapterList,
   createAdapter,
   updateAdapter,
   deleteAdapter,
   type AdapterInfo,
-  type AdapterCapabilities
+  type AdapterCapabilities,
+  type ParentAdapterInfo
 } from '@/api/adapter'
 
 const loading = ref(false)
 const submitting = ref(false)
 const adapterList = ref<AdapterInfo[]>([])
+const parentAdapters = ref<ParentAdapterInfo[]>([])
 const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
 const isEditing = ref(false)
@@ -202,6 +221,7 @@ const viewData = ref<AdapterInfo>({
 const defaultForm = () => ({
   name: '',
   type: 'openai-compatible',
+  parent: '',
   capabilities: {
     chat: true,
     embedding: false,
@@ -348,8 +368,20 @@ const handleSubmit = async () => {
   }
 }
 
+const fetchParentAdapters = async () => {
+  try {
+    const res = await getParentAdapterList()
+    if (res.data?.success) {
+      parentAdapters.value = res.data.data || []
+    }
+  } catch (e: any) {
+    console.error('获取父adapter列表失败:', e)
+  }
+}
+
 onMounted(() => {
   fetchAdapters()
+  fetchParentAdapters()
 })
 </script>
 
