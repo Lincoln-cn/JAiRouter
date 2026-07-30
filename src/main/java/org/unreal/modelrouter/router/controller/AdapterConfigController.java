@@ -25,6 +25,7 @@ import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 import org.unreal.modelrouter.router.adapter.impl.ConfigurableAdapter;
+import org.unreal.modelrouter.router.adapter.impl.ExtendedAdapter;
 import org.unreal.modelrouter.router.adapter.impl.OllamaConfigurableAdapter;
 import org.unreal.modelrouter.router.adapter.support.AdapterContext;
 import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
@@ -194,6 +195,7 @@ public class AdapterConfigController {
 
             AdapterDefinitionProperties.AdapterDefinition definition = new AdapterDefinitionProperties.AdapterDefinition();
             definition.setType(request.getType() != null ? request.getType() : "openai-compatible");
+            definition.setParent(request.getParent());  // 设置父adapter
 
             if (request.getCapabilities() != null) {
                 AdapterDefinitionProperties.CapabilitiesConfig caps = new AdapterDefinitionProperties.CapabilitiesConfig();
@@ -267,6 +269,7 @@ public class AdapterConfigController {
 
             AdapterDefinitionProperties.AdapterDefinition definition = new AdapterDefinitionProperties.AdapterDefinition();
             definition.setType(request.getType() != null ? request.getType() : "openai-compatible");
+            definition.setParent(request.getParent());  // 设置父adapter
 
             if (request.getCapabilities() != null) {
                 AdapterDefinitionProperties.CapabilitiesConfig caps = new AdapterDefinitionProperties.CapabilitiesConfig();
@@ -351,14 +354,83 @@ public class AdapterConfigController {
         }
     }
 
+    /**
+     * 获取可用于继承的父adapter列表
+     */
+    @GetMapping("/parents")
+    @Operation(summary = "获取父adapter列表", description = "获取可用于继承的adapter列表")
+    public ResponseEntity<RouterResponse<List<Map<String, Object>>>> getParentAdapters() {
+        try {
+            Map<String, ServiceCapability> allAdapters = adapterRegistry.getAllAdapters();
+            List<Map<String, Object>> parentList = new ArrayList<>();
+
+            for (Map.Entry<String, ServiceCapability> entry : allAdapters.entrySet()) {
+                String adapterName = entry.getKey();
+                ServiceCapability adapter = entry.getValue();
+
+                // 排除extend类型的adapter（不能作为父adapter）
+                if (adapter instanceof ExtendedAdapter) {
+                    continue;
+                }
+
+                Map<String, Object> info = new HashMap<>();
+                info.put("name", adapterName);
+                info.put("source", adapterRegistry.isBuiltinAdapter(adapterName) ? "builtin" : "configurable");
+                parentList.add(info);
+            }
+
+            return ResponseEntity.ok(RouterResponse.success(parentList, "获取父adapter列表成功"));
+        } catch (Exception e) {
+            logger.error("获取父adapter列表失败", e);
+            return ResponseEntity.internalServerError()
+                    .body(RouterResponse.error("获取父adapter列表失败: " + e.getMessage()));
+        }
+    }
+
     private ServiceCapability createAdapterByType(final String name,
                                                   final AdapterDefinitionProperties.AdapterDefinition definition) {
         String type = definition.getType() != null ? definition.getType() : "openai-compatible";
 
-        if ("ollama-compatible".equals(type)) {
+        if ("extend".equals(type)) {
+            return createExtendedAdapter(name, definition);
+        } else if ("ollama-compatible".equals(type)) {
             return createOllamaConfigurableAdapter(name, definition);
         }
         return createConfigurableAdapter(name, definition);
+    }
+
+    private ExtendedAdapter createExtendedAdapter(final String name,
+                                                  final AdapterDefinitionProperties.AdapterDefinition definition) {
+        String parentName = definition.getParent();
+        if (parentName == null || parentName.isBlank()) {
+            throw new IllegalArgumentException("Extended adapter must specify a parent adapter");
+        }
+
+        ServiceCapability parentAdapter = adapterRegistry.getAdapterByName(parentName);
+        if (parentAdapter == null) {
+            throw new IllegalArgumentException("Parent adapter '" + parentName + "' not found");
+        }
+
+        AdapterCapabilities capabilities = null;
+        if (definition.getCapabilities() != null) {
+            capabilities = AdapterCapabilities.builder()
+                    .chat(definition.getCapabilities().isChat())
+                    .embedding(definition.getCapabilities().isEmbedding())
+                    .rerank(definition.getCapabilities().isRerank())
+                    .tts(definition.getCapabilities().isTts())
+                    .stt(definition.getCapabilities().isStt())
+                    .imageGenerate(definition.getCapabilities().isImgGen())
+                    .imageEdit(definition.getCapabilities().isImgEdit())
+                    .streaming(definition.getCapabilities().isStreaming())
+                    .build();
+        }
+
+        return new ExtendedAdapter(
+                parentAdapter, name, capabilities,
+                definition.getAuth().getHeaderName(),
+                definition.getAuth().getHeaderPrefix(),
+                definition.getAdditionalHeaders()
+        );
     }
 
     private OllamaConfigurableAdapter createOllamaConfigurableAdapter(final String name,
@@ -412,6 +484,7 @@ public class AdapterConfigController {
     public static class AdapterDefinitionRequest {
         private String name;
         private String type;
+        private String parent;  // 继承模式下的父adapter名称
         private Map<String, Boolean> capabilities;
         private Map<String, String> auth;
         private Map<String, String> additionalHeaders;
@@ -430,6 +503,14 @@ public class AdapterConfigController {
 
         public void setType(final String type) {
             this.type = type;
+        }
+
+        public String getParent() {
+            return parent;
+        }
+
+        public void setParent(final String parent) {
+            this.parent = parent;
         }
 
         public Map<String, Boolean> getCapabilities() {

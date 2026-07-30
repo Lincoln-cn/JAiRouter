@@ -15,6 +15,7 @@ JAiRouter supports adding new adapters through configuration-driven approach, wi
 | Qwen (Tongyi) | OpenAI Compatible | ✅ |
 | Minimax | OpenAI Compatible | ✅ |
 | Ollama (Local) | Ollama Compatible | ✅ |
+| Extend/Override | Based on existing adapter | ✅ |
 | Anthropic Claude | Claude Format | ❌ Use built-in `claude` adapter |
 | Google Gemini | Gemini Format | ❌ Use built-in `gemini` adapter |
 
@@ -191,6 +192,27 @@ adapter-definitions:
 ```
 
 > **Note**: Ollama-compatible adapters use the Ollama API format, suitable for locally deployed Ollama services or other inference engines compatible with the Ollama format.
+
+### Extend/Override (Based on Existing Adapter)
+
+```yaml
+adapter-definitions:
+  my-deepseek:
+    type: extend
+    parent: deepseek          # Inherit from deepseek adapter
+    capabilities:
+      chat: true
+      embedding: true
+      rerank: true            # Add rerank support
+      streaming: true
+    auth:
+      header-name: X-API-Key  # Override authentication
+      header-prefix: ""
+    additional-headers:
+      X-Custom-Header: "value"
+```
+
+> **Note**: Extend/Override mode allows creating variants based on existing adapters, overriding capabilities, authentication, and additional headers.
 
 ---
 

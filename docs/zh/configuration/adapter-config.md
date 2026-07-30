@@ -15,6 +15,7 @@ JAiRouter 支持通过配置驱动的方式添加新的 adapter，无需编写�
 | 通义千问 (Qwen) | OpenAI兼容 | ✅ |
 | Minimax | OpenAI兼容 | ✅ |
 | Ollama（本地部署） | Ollama兼容 | ✅ |
+| 继承扩展 | 基于现有adapter | ✅ |
 | Anthropic Claude | Claude格式 | ❌ 需使用内置 `claude` adapter |
 | Google Gemini | Gemini格式 | ❌ 需使用内置 `gemini` adapter |
 
@@ -191,6 +192,27 @@ adapter-definitions:
 ```
 
 > **说明**：Ollama兼容adapter使用Ollama API格式，适用于本地部署的Ollama服务或其他兼容Ollama格式的推理引擎。
+
+### 继承扩展（基于现有adapter）
+
+```yaml
+adapter-definitions:
+  my-deepseek:
+    type: extend
+    parent: deepseek          # 继承deepseek adapter
+    capabilities:
+      chat: true
+      embedding: true
+      rerank: true            # 新增rerank支持
+      streaming: true
+    auth:
+      header-name: X-API-Key  # 覆盖认证方式
+      header-prefix: ""
+    additional-headers:
+      X-Custom-Header: "value"
+```
+
+> **说明**：继承扩展模式允许基于现有adapter创建变体，可以覆盖父adapter的能力配置、认证方式和额外请求头。
 
 ---
 

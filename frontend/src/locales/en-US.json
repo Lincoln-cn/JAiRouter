@@ -124,6 +124,7 @@
     "types": {
       "openai-compatible": "OpenAI Compatible",
       "ollama-compatible": "Ollama Compatible",
+      "extend": "Extend/Override",
       "builtin": "Builtin"
     },
     "confirmDelete": "Confirm Delete",

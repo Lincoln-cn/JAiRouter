@@ -26,6 +26,7 @@ public class AdapterDefinitionProperties {
 
     public static class AdapterDefinition {
         private String type = "openai-compatible";
+        private String parent;  // 继承模式下的父adapter名称
         private CapabilitiesConfig capabilities = new CapabilitiesConfig();
         private AuthConfig auth = new AuthConfig();
         private Map<String, String> additionalHeaders = new HashMap<>();
@@ -36,6 +37,14 @@ public class AdapterDefinitionProperties {
 
         public void setType(final String type) {
             this.type = type;
+        }
+
+        public String getParent() {
+            return parent;
+        }
+
+        public void setParent(final String parent) {
+            this.parent = parent;
         }
 
         public CapabilitiesConfig getCapabilities() {
