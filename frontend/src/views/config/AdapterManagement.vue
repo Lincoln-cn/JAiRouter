@@ -103,10 +103,16 @@
         </el-form-item>
 
         <el-form-item label="类型" prop="type">
-          <el-select v-model="form.type" style="width: 100%">
+          <el-select v-model="form.type" style="width: 100%" @change="handleTypeChange">
             <el-option label="OpenAI兼容" value="openai-compatible" />
             <el-option label="Ollama兼容" value="ollama-compatible" />
           </el-select>
+          <div class="type-hint" v-if="form.type === 'ollama-compatible'">
+            Ollama兼容：使用Ollama API格式，适用于本地Ollama服务
+          </div>
+          <div class="type-hint" v-else>
+            OpenAI兼容：使用标准OpenAI API格式，适用于大多数云端API
+          </div>
         </el-form-item>
 
         <el-form-item label="能力配置">
@@ -211,6 +217,34 @@ const defaultForm = () => ({
     headerPrefix: 'Bearer '
   }
 })
+
+const getTypeDefaults = (type: string) => {
+  if (type === 'ollama-compatible') {
+    return {
+      capabilities: {
+        chat: true,
+        embedding: true,
+        rerank: false,
+        tts: false,
+        stt: false,
+        imgGen: false,
+        imgEdit: false,
+        streaming: true
+      },
+      auth: {
+        headerName: 'Authorization',
+        headerPrefix: 'Bearer '
+      }
+    }
+  }
+  return defaultForm()
+}
+
+const handleTypeChange = (type: string) => {
+  const defaults = getTypeDefaults(type)
+  form.capabilities = { ...defaults.capabilities }
+  form.auth = { ...defaults.auth }
+}
 
 const form = reactive(defaultForm())
 
@@ -358,5 +392,12 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.type-hint {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.4;
 }
 </style>
