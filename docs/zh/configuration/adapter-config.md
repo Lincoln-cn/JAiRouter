@@ -14,9 +14,9 @@ JAiRouter 支持通过配置驱动的方式添加新的 adapter，无需编写�
 | 百川 (Baichuan) | OpenAI兼容 | ✅ |
 | 通义千问 (Qwen) | OpenAI兼容 | ✅ |
 | Minimax | OpenAI兼容 | ✅ |
+| Ollama（本地部署） | Ollama兼容 | ✅ |
 | Anthropic Claude | Claude格式 | ❌ 需使用内置 `claude` adapter |
 | Google Gemini | Gemini格式 | ❌ 需使用内置 `gemini` adapter |
-| Ollama | Ollama格式 | ❌ 需使用内置 `ollama` adapter |
 
 ---
 
@@ -174,6 +174,23 @@ adapter-definitions:
       header-name: X-API-Key    # 自定义认证头名称
       header-prefix: ""          # 无前缀
 ```
+
+### Ollama兼容（本地部署）
+
+```yaml
+adapter-definitions:
+  my-ollama:
+    type: ollama-compatible
+    capabilities:
+      chat: true
+      embedding: true
+      streaming: true
+    auth:
+      header-name: Authorization
+      header-prefix: "Bearer "
+```
+
+> **说明**：Ollama兼容adapter使用Ollama API格式，适用于本地部署的Ollama服务或其他兼容Ollama格式的推理引擎。
 
 ---
 

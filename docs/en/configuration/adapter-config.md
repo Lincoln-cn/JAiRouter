@@ -14,9 +14,9 @@ JAiRouter supports adding new adapters through configuration-driven approach, wi
 | Baichuan | OpenAI Compatible | ✅ |
 | Qwen (Tongyi) | OpenAI Compatible | ✅ |
 | Minimax | OpenAI Compatible | ✅ |
+| Ollama (Local) | Ollama Compatible | ✅ |
 | Anthropic Claude | Claude Format | ❌ Use built-in `claude` adapter |
 | Google Gemini | Gemini Format | ❌ Use built-in `gemini` adapter |
-| Ollama | Ollama Format | ❌ Use built-in `ollama` adapter |
 
 ---
 
@@ -174,6 +174,23 @@ adapter-definitions:
       header-name: X-API-Key    # Custom auth header name
       header-prefix: ""          # No prefix
 ```
+
+### Ollama Compatible (Local Deployment)
+
+```yaml
+adapter-definitions:
+  my-ollama:
+    type: ollama-compatible
+    capabilities:
+      chat: true
+      embedding: true
+      streaming: true
+    auth:
+      header-name: Authorization
+      header-prefix: "Bearer "
+```
+
+> **Note**: Ollama-compatible adapters use the Ollama API format, suitable for locally deployed Ollama services or other inference engines compatible with the Ollama format.
 
 ---
 
