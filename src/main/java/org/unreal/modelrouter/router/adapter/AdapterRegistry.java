@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 import org.unreal.modelrouter.router.adapter.impl.ClaudeAdapter;
 import org.unreal.modelrouter.router.adapter.impl.ConfigurableAdapter;
+import org.unreal.modelrouter.router.adapter.impl.OllamaConfigurableAdapter;
 import org.unreal.modelrouter.router.adapter.impl.GeminiAdapter;
 import org.unreal.modelrouter.router.adapter.impl.GpuStackAdapter;
 import org.unreal.modelrouter.router.adapter.impl.LocalAiAdapter;
@@ -99,9 +100,17 @@ public class AdapterRegistry {
 
             if (!adapters.containsKey(adapterName.toLowerCase())) {
                 try {
-                    ConfigurableAdapter adapter = createConfigurableAdapter(adapterName, definition);
+                    String type = definition.getType() != null ? definition.getType() : "openai-compatible";
+                    ServiceCapability adapter;
+
+                    if ("ollama-compatible".equals(type)) {
+                        adapter = createOllamaConfigurableAdapter(adapterName, definition);
+                    } else {
+                        adapter = createConfigurableAdapter(adapterName, definition);
+                    }
+
                     adapters.put(adapterName.toLowerCase(), adapter);
-                    logger.info("Loaded configurable adapter from YAML: {}", adapterName);
+                    logger.info("Loaded configurable adapter from YAML: {} (type: {})", adapterName, type);
                 } catch (Exception e) {
                     logger.error("Failed to load configurable adapter {}: {}", adapterName, e.getMessage());
                 }
@@ -129,6 +138,28 @@ public class AdapterRegistry {
                 definition.getAuth().getHeaderPrefix(),
                 definition.getAdditionalHeaders(),
                 openAiRequestTransformer, openAiResponseTransformer
+        );
+    }
+
+    private OllamaConfigurableAdapter createOllamaConfigurableAdapter(final String name,
+                                                                      final AdapterDefinitionProperties.AdapterDefinition definition) {
+        AdapterCapabilities capabilities = AdapterCapabilities.builder()
+                .chat(definition.getCapabilities().isChat())
+                .embedding(definition.getCapabilities().isEmbedding())
+                .rerank(definition.getCapabilities().isRerank())
+                .tts(definition.getCapabilities().isTts())
+                .stt(definition.getCapabilities().isStt())
+                .imageGenerate(definition.getCapabilities().isImgGen())
+                .imageEdit(definition.getCapabilities().isImgEdit())
+                .streaming(definition.getCapabilities().isStreaming())
+                .build();
+
+        return new OllamaConfigurableAdapter(
+                context, requestSupport, resilienceSupport,
+                name, capabilities,
+                definition.getAuth().getHeaderName(),
+                definition.getAuth().getHeaderPrefix(),
+                definition.getAdditionalHeaders()
         );
     }
 

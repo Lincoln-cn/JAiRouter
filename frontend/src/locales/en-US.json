@@ -123,6 +123,7 @@
     "additionalHeaders": "Additional Headers",
     "types": {
       "openai-compatible": "OpenAI Compatible",
+      "ollama-compatible": "Ollama Compatible",
       "builtin": "Builtin"
     },
     "confirmDelete": "Confirm Delete",

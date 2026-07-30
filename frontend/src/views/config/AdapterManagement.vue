@@ -105,6 +105,7 @@
         <el-form-item label="类型" prop="type">
           <el-select v-model="form.type" style="width: 100%">
             <el-option label="OpenAI兼容" value="openai-compatible" />
+            <el-option label="Ollama兼容" value="ollama-compatible" />
           </el-select>
         </el-form-item>
 

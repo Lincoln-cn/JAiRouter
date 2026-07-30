@@ -25,6 +25,7 @@ import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
 import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 import org.unreal.modelrouter.router.adapter.impl.ConfigurableAdapter;
+import org.unreal.modelrouter.router.adapter.impl.OllamaConfigurableAdapter;
 import org.unreal.modelrouter.router.adapter.support.AdapterContext;
 import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
 import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
@@ -222,7 +223,7 @@ public class AdapterConfigController {
             adapterDefinitionProperties.getAdapterDefinitions().put(request.getName(), definition);
 
             // 创建adapter并注册
-            ConfigurableAdapter adapter = createConfigurableAdapter(request.getName(), definition);
+            ServiceCapability adapter = createAdapterByType(request.getName(), definition);
             adapterRegistry.registerAdapter(request.getName(), adapter);
 
             Map<String, Object> result = new HashMap<>();
@@ -295,7 +296,7 @@ public class AdapterConfigController {
             definitions.put(name, definition);
 
             // 重新创建adapter
-            ConfigurableAdapter adapter = createConfigurableAdapter(name, definition);
+            ServiceCapability adapter = createAdapterByType(name, definition);
             adapterRegistry.registerAdapter(name, adapter);
 
             Map<String, Object> result = new HashMap<>();
@@ -348,6 +349,38 @@ public class AdapterConfigController {
             return ResponseEntity.internalServerError()
                     .body(RouterResponse.error("删除adapter失败: " + e.getMessage()));
         }
+    }
+
+    private ServiceCapability createAdapterByType(final String name,
+                                                  final AdapterDefinitionProperties.AdapterDefinition definition) {
+        String type = definition.getType() != null ? definition.getType() : "openai-compatible";
+
+        if ("ollama-compatible".equals(type)) {
+            return createOllamaConfigurableAdapter(name, definition);
+        }
+        return createConfigurableAdapter(name, definition);
+    }
+
+    private OllamaConfigurableAdapter createOllamaConfigurableAdapter(final String name,
+                                                                      final AdapterDefinitionProperties.AdapterDefinition definition) {
+        AdapterCapabilities capabilities = AdapterCapabilities.builder()
+                .chat(definition.getCapabilities().isChat())
+                .embedding(definition.getCapabilities().isEmbedding())
+                .rerank(definition.getCapabilities().isRerank())
+                .tts(definition.getCapabilities().isTts())
+                .stt(definition.getCapabilities().isStt())
+                .imageGenerate(definition.getCapabilities().isImgGen())
+                .imageEdit(definition.getCapabilities().isImgEdit())
+                .streaming(definition.getCapabilities().isStreaming())
+                .build();
+
+        return new OllamaConfigurableAdapter(
+                adapterContext, requestProcessingSupport, resilienceSupport,
+                name, capabilities,
+                definition.getAuth().getHeaderName(),
+                definition.getAuth().getHeaderPrefix(),
+                definition.getAdditionalHeaders()
+        );
     }
 
     private ConfigurableAdapter createConfigurableAdapter(final String name,
