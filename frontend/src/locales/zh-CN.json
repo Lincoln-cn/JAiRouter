@@ -123,6 +123,7 @@
     "additionalHeaders": "额外请求头",
     "types": {
       "openai-compatible": "OpenAI兼容",
+      "ollama-compatible": "Ollama兼容",
       "builtin": "内置"
     },
     "confirmDelete": "确认删除",
