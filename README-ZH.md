@@ -31,7 +31,7 @@
 <p align="center">
   <a href="README.md">English</a> •
   <a href="https://jairouter.com">文档</a> •
-  <a href="https://jairouter.com/zh/">中文文档</a> •
+  <a href="https://jairouter.com">中文文档</a> •
   <a href="https://github.com/Lincoln-cn/JAiRouter/discussions">讨论</a>
 </p>
 
@@ -133,7 +133,7 @@ JAiRouter 是一个 **生产级 AI 模型网关**，提供统一的 OpenAI 兼�
 | **百川** | `adapter-definitions: baichuan: type: openai-compatible` |
 | **Minimax** | `adapter-definitions: minimax: type: openai-compatible` |
 
-> 📖 详见 [Adapter 配置指南](https://jairouter.com/zh/configuration/adapter-config/)
+> 📖 详见 [Adapter 配置指南](https://jairouter.com/configuration/adapter-config/)
 
 ---
 
@@ -220,9 +220,9 @@ LangChain 是应用框架。JAiRouter 是**基础设施层**，位于 LangChain 
 |------|------|
 | 📖 **完整文档** | https://jairouter.com |
 | 📘 **API 参考** | http://localhost:8080/swagger-ui |
-| 🚀 **部署指南** | https://jairouter.com/zh/deployment/ |
-| 🔧 **配置说明** | https://jairouter.com/zh/configuration/ |
-| 📊 **监控配置** | https://jairouter.com/zh/monitoring/ |
+| 🚀 **部署指南** | https://jairouter.com/deployment/ |
+| 🔧 **配置说明** | https://jairouter.com/configuration/ |
+| 📊 **监控配置** | https://jairouter.com/monitoring/ |
 
 ---
 
@@ -250,7 +250,7 @@ LangChain 是应用框架。JAiRouter 是**基础设施层**，位于 LangChain 
 
 ## 参与贡献
 
-欢迎参与贡献！请查看 [贡献指南](https://jairouter.com/zh/development/contributing/)。
+欢迎参与贡献！请查看 [贡献指南](https://jairouter.com/development/contributing/)。
 
 ```bash
 git clone https://github.com/Lincoln-cn/JAiRouter.git

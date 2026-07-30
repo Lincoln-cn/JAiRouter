@@ -133,7 +133,7 @@ Add any OpenAI-compatible provider via configuration or Web UI:
 | **Baichuan** | `adapter-definitions: baichuan: type: openai-compatible` |
 | **Minimax** | `adapter-definitions: minimax: type: openai-compatible` |
 
-> 📖 See [Adapter Configuration Guide](https://jairouter.com/zh/configuration/adapter-config/) for details.
+> 📖 See [Adapter Configuration Guide](https://jairouter.com/configuration/adapter-config/) for details.
 
 ---
 
