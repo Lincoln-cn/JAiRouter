@@ -2,20 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 152
-- 近7天变更: 7
+- 总文档数: 154
+- 近7天变更: 12
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-29 05:22:00
+- 最后扫描: 2026-07-30 05:09:05
 
 ## 最近变更
 
+- **CREATED**: docs/zh/configuration/adapter-config.md ( → 1.0.0) - 2026-07-30
+- **CREATED**: docs/en/configuration/adapter-config.md ( → 1.0.0) - 2026-07-30
+- **MODIFIED**: docs-version-report.md (1.0.88 → 1.0.89) - 2026-07-30
+- **MODIFIED**: README.md (1.0.20 → 1.0.21) - 2026-07-30
+- **MODIFIED**: README-ZH.md (1.0.12 → 1.0.13) - 2026-07-30
 - **MODIFIED**: docs-version-report.md (1.0.87 → 1.0.88) - 2026-07-29
 - **MODIFIED**: docs-version-report.md (1.0.86 → 1.0.87) - 2026-07-28
 - **MODIFIED**: docs-version-report.md (1.0.85 → 1.0.86) - 2026-07-27
 - **MODIFIED**: docs-version-report.md (1.0.84 → 1.0.85) - 2026-07-26
 - **MODIFIED**: docs-version-report.md (1.0.83 → 1.0.84) - 2026-07-25
-- **MODIFIED**: docs-version-report.md (1.0.82 → 1.0.83) - 2026-07-24
-- **MODIFIED**: docs-version-report.md (1.0.81 → 1.0.82) - 2026-07-23
 
 ## 过期文档 (30天未更新)
 
@@ -139,6 +142,7 @@
 - docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
 - docs/zh/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
+- repository-description.md (版本: 1.0.0, 最后更新: 2026-06-29)
 
 ## 依赖关系分析
 
@@ -629,12 +633,14 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.88 - 2026-07-29 (5237abd3)
+- **docs/zh/configuration/adapter-config.md**: v1.0.0 - 2026-07-30 (0f8a0189)
+- **docs/en/configuration/adapter-config.md**: v1.0.0 - 2026-07-30 (0f8a0189)
+- **docs-version-report.md**: v1.0.89 - 2026-07-30 (27d8fcd8)
+- **README.md**: v1.0.21 - 2026-07-30 (4c52b0b1)
+- **README-ZH.md**: v1.0.13 - 2026-07-30 (4c52b0b1)
 - **docs/zh/reference/roadmap.md**: v1.0.8 - 2026-07-18 (ca98a2ee)
 - **docs/zh/configuration/validation-rules.md**: v1.0.3 - 2026-07-18 (ca98a2ee)
 - **docs/en/reference/roadmap.md**: v1.0.8 - 2026-07-18 (d96cd9ee)
-- **README.md**: v1.0.20 - 2026-07-18 (a082b2a2)
-- **README-ZH.md**: v1.0.12 - 2026-07-18 (a082b2a2)
 - **docs/en/security/troubleshooting.md**: v1.0.2 - 2026-07-16 (b98b834b)
 - **docs/en/security/blacklist-management.md**: v1.0.2 - 2026-07-16 (b98b834b)
 - **docs/en/reference/index.md**: v1.0.3 - 2026-07-16 (b98b834b)
