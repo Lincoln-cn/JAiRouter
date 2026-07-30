@@ -36,13 +36,23 @@ export interface AdapterDetail {
 export interface AdapterDefinitionRequest {
   name: string
   type?: string
+  parent?: string  // 继承模式下的父adapter名称
   capabilities?: Record<string, boolean>
   auth?: Record<string, string>
   additionalHeaders?: Record<string, string>
 }
 
+export interface ParentAdapterInfo {
+  name: string
+  source: 'builtin' | 'configurable'
+}
+
 export const getAdapterList = () => {
   return request.get<RouterResponse<AdapterInfo[]>>('/config/adapter/list')
+}
+
+export const getParentAdapterList = () => {
+  return request.get<RouterResponse<ParentAdapterInfo[]>>('/config/adapter/parents')
 }
 
 export const getAdapterDetail = (name: string) => {

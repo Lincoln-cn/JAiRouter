@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 import org.unreal.modelrouter.router.adapter.impl.ClaudeAdapter;
 import org.unreal.modelrouter.router.adapter.impl.ConfigurableAdapter;
+import org.unreal.modelrouter.router.adapter.impl.ExtendedAdapter;
 import org.unreal.modelrouter.router.adapter.impl.OllamaConfigurableAdapter;
 import org.unreal.modelrouter.router.adapter.impl.GeminiAdapter;
 import org.unreal.modelrouter.router.adapter.impl.GpuStackAdapter;
@@ -94,6 +95,7 @@ public class AdapterRegistry {
             return;
         }
 
+        // 第一遍：加载非extend类型的adapter
         for (Map.Entry<String, AdapterDefinitionProperties.AdapterDefinition> entry : definitions.entrySet()) {
             String adapterName = entry.getKey();
             AdapterDefinitionProperties.AdapterDefinition definition = entry.getValue();
@@ -103,7 +105,9 @@ public class AdapterRegistry {
                     String type = definition.getType() != null ? definition.getType() : "openai-compatible";
                     ServiceCapability adapter;
 
-                    if ("ollama-compatible".equals(type)) {
+                    if ("extend".equals(type)) {
+                        continue; // 延迟处理extend类型
+                    } else if ("ollama-compatible".equals(type)) {
                         adapter = createOllamaConfigurableAdapter(adapterName, definition);
                     } else {
                         adapter = createConfigurableAdapter(adapterName, definition);
@@ -113,6 +117,22 @@ public class AdapterRegistry {
                     logger.info("Loaded configurable adapter from YAML: {} (type: {})", adapterName, type);
                 } catch (Exception e) {
                     logger.error("Failed to load configurable adapter {}: {}", adapterName, e.getMessage());
+                }
+            }
+        }
+
+        // 第二遍：加载extend类型的adapter（需要依赖父adapter）
+        for (Map.Entry<String, AdapterDefinitionProperties.AdapterDefinition> entry : definitions.entrySet()) {
+            String adapterName = entry.getKey();
+            AdapterDefinitionProperties.AdapterDefinition definition = entry.getValue();
+
+            if (!adapters.containsKey(adapterName.toLowerCase()) && "extend".equals(definition.getType())) {
+                try {
+                    ServiceCapability adapter = createExtendedAdapter(adapterName, definition);
+                    adapters.put(adapterName.toLowerCase(), adapter);
+                    logger.info("Loaded extended adapter from YAML: {} (parent: {})", adapterName, definition.getParent());
+                } catch (Exception e) {
+                    logger.error("Failed to load extended adapter {}: {}", adapterName, e.getMessage());
                 }
             }
         }
@@ -163,12 +183,56 @@ public class AdapterRegistry {
         );
     }
 
+    private ExtendedAdapter createExtendedAdapter(final String name,
+                                                  final AdapterDefinitionProperties.AdapterDefinition definition) {
+        String parentName = definition.getParent();
+        if (parentName == null || parentName.isBlank()) {
+            throw new IllegalArgumentException("Extended adapter '" + name + "' must specify a parent adapter");
+        }
+
+        ServiceCapability parentAdapter = adapters.get(parentName.toLowerCase());
+        if (parentAdapter == null) {
+            throw new IllegalArgumentException("Parent adapter '" + parentName + "' not found for extended adapter '" + name + "'");
+        }
+
+        AdapterCapabilities capabilities = null;
+        if (definition.getCapabilities() != null) {
+            capabilities = AdapterCapabilities.builder()
+                    .chat(definition.getCapabilities().isChat())
+                    .embedding(definition.getCapabilities().isEmbedding())
+                    .rerank(definition.getCapabilities().isRerank())
+                    .tts(definition.getCapabilities().isTts())
+                    .stt(definition.getCapabilities().isStt())
+                    .imageGenerate(definition.getCapabilities().isImgGen())
+                    .imageEdit(definition.getCapabilities().isImgEdit())
+                    .streaming(definition.getCapabilities().isStreaming())
+                    .build();
+        }
+
+        return new ExtendedAdapter(
+                parentAdapter, name, capabilities,
+                definition.getAuth().getHeaderName(),
+                definition.getAuth().getHeaderPrefix(),
+                definition.getAdditionalHeaders()
+        );
+    }
+
     /**
      * 动态注册一个adapter
      */
     public void registerAdapter(final String name, final ServiceCapability adapter) {
         adapters.put(name.toLowerCase(), adapter);
         logger.info("Registered adapter: {}", name);
+    }
+
+    /**
+     * 根据名称获取adapter（不区分大小写）
+     */
+    public ServiceCapability getAdapterByName(final String name) {
+        if (name == null) {
+            return null;
+        }
+        return adapters.get(name.toLowerCase());
     }
 
     /**
