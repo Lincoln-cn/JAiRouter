@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 154
-- 近7天变更: 12
+- 近7天变更: 15
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-30 05:09:05
+- 最后扫描: 2026-07-31 05:35:46
 
 ## 最近变更
 
+- **MODIFIED**: docs/zh/configuration/adapter-config.md (1.0.0 → 1.0.1) - 2026-07-31
+- **MODIFIED**: docs/en/configuration/adapter-config.md (1.0.0 → 1.0.1) - 2026-07-31
+- **MODIFIED**: docs-version-report.md (1.0.89 → 1.0.90) - 2026-07-31
+- **MODIFIED**: README.md (1.0.21 → 1.0.22) - 2026-07-31
+- **MODIFIED**: README-ZH.md (1.0.13 → 1.0.14) - 2026-07-31
 - **CREATED**: docs/zh/configuration/adapter-config.md ( → 1.0.0) - 2026-07-30
 - **CREATED**: docs/en/configuration/adapter-config.md ( → 1.0.0) - 2026-07-30
 - **MODIFIED**: docs-version-report.md (1.0.88 → 1.0.89) - 2026-07-30
 - **MODIFIED**: README.md (1.0.20 → 1.0.21) - 2026-07-30
 - **MODIFIED**: README-ZH.md (1.0.12 → 1.0.13) - 2026-07-30
-- **MODIFIED**: docs-version-report.md (1.0.87 → 1.0.88) - 2026-07-29
-- **MODIFIED**: docs-version-report.md (1.0.86 → 1.0.87) - 2026-07-28
-- **MODIFIED**: docs-version-report.md (1.0.85 → 1.0.86) - 2026-07-27
-- **MODIFIED**: docs-version-report.md (1.0.84 → 1.0.85) - 2026-07-26
-- **MODIFIED**: docs-version-report.md (1.0.83 → 1.0.84) - 2026-07-25
 
 ## 过期文档 (30天未更新)
 
@@ -633,11 +633,11 @@
 
 ## 所有文档版本
 
-- **docs/zh/configuration/adapter-config.md**: v1.0.0 - 2026-07-30 (0f8a0189)
-- **docs/en/configuration/adapter-config.md**: v1.0.0 - 2026-07-30 (0f8a0189)
-- **docs-version-report.md**: v1.0.89 - 2026-07-30 (27d8fcd8)
-- **README.md**: v1.0.21 - 2026-07-30 (4c52b0b1)
-- **README-ZH.md**: v1.0.13 - 2026-07-30 (4c52b0b1)
+- **docs/zh/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
+- **docs/en/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
+- **docs-version-report.md**: v1.0.90 - 2026-07-31 (d0312ca1)
+- **README.md**: v1.0.22 - 2026-07-31 (67324f0b)
+- **README-ZH.md**: v1.0.14 - 2026-07-31 (67324f0b)
 - **docs/zh/reference/roadmap.md**: v1.0.8 - 2026-07-18 (ca98a2ee)
 - **docs/zh/configuration/validation-rules.md**: v1.0.3 - 2026-07-18 (ca98a2ee)
 - **docs/en/reference/roadmap.md**: v1.0.8 - 2026-07-18 (d96cd9ee)

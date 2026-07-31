@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.21",
-      "LastModified": "2026-07-30T05:09:04.612616",
-      "ContentHash": "f6215fc69021398e",
-      "GitCommit": "4c52b0b1",
+      "Version": "1.0.22",
+      "LastModified": "2026-07-31T05:35:45.455028",
+      "ContentHash": "b04c1da13f88f1e4",
+      "GitCommit": "67324f0b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1722,10 +1722,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-07-30T05:09:04.610434",
-      "ContentHash": "02598bf24b5638d5",
-      "GitCommit": "4c52b0b1",
+      "Version": "1.0.14",
+      "LastModified": "2026-07-31T05:35:45.452823",
+      "ContentHash": "b6a3fb46651123dd",
+      "GitCommit": "67324f0b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1936,10 +1936,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.89",
-      "LastModified": "2026-07-30T05:09:04.614927",
-      "ContentHash": "e5289a3eee34aab8",
-      "GitCommit": "27d8fcd8",
+      "Version": "1.0.90",
+      "LastModified": "2026-07-31T05:35:45.457361",
+      "ContentHash": "3d19f8a1c848085a",
+      "GitCommit": "d0312ca1",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2006,42 +2006,26 @@
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-07-30T05:09:04.637850",
-      "ContentHash": "e21e7ce2f95f404c",
-      "GitCommit": "0f8a0189",
+      "Version": "1.0.1",
+      "LastModified": "2026-07-31T05:35:45.480793",
+      "ContentHash": "c093bd0bc3144e51",
+      "GitCommit": "8374858b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-07-30T05:09:04.866911",
-      "ContentHash": "4837eb4cbac9e9d8",
-      "GitCommit": "0f8a0189",
+      "Version": "1.0.1",
+      "LastModified": "2026-07-31T05:35:45.709977",
+      "ContentHash": "845abfafa3d9c835",
+      "GitCommit": "8374858b",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     }
   },
   "changes": [
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-01T05:41:59.422992",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-02T05:11:32.654306",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.2",
@@ -4985,7 +4969,47 @@
       "ChangeType": "CREATED",
       "Timestamp": "2026-07-30T05:09:04.866919",
       "Description": "文档created"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-31T05:35:45.452831",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.21",
+      "NewVersion": "1.0.22",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-31T05:35:45.455034",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.89",
+      "NewVersion": "1.0.90",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-31T05:35:45.457366",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/adapter-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-31T05:35:45.480798",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/adapter-config.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-07-31T05:35:45.709986",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-07-30T05:09:05.216386"
+  "last_updated": "2026-07-31T05:35:46.047319"
 }
