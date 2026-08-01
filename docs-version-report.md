@@ -5,10 +5,11 @@
 - 总文档数: 154
 - 近7天变更: 15
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-07-31 05:35:46
+- 最后扫描: 2026-08-01 05:27:35
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.90 → 1.0.91) - 2026-08-01
 - **MODIFIED**: docs/zh/configuration/adapter-config.md (1.0.0 → 1.0.1) - 2026-07-31
 - **MODIFIED**: docs/en/configuration/adapter-config.md (1.0.0 → 1.0.1) - 2026-07-31
 - **MODIFIED**: docs-version-report.md (1.0.89 → 1.0.90) - 2026-07-31
@@ -18,12 +19,12 @@
 - **CREATED**: docs/en/configuration/adapter-config.md ( → 1.0.0) - 2026-07-30
 - **MODIFIED**: docs-version-report.md (1.0.88 → 1.0.89) - 2026-07-30
 - **MODIFIED**: README.md (1.0.20 → 1.0.21) - 2026-07-30
-- **MODIFIED**: README-ZH.md (1.0.12 → 1.0.13) - 2026-07-30
 
 ## 过期文档 (30天未更新)
 
 - docs/README.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/api-reference/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/api-reference/management-api.md (版本: 1.0.4, 最后更新: 2026-07-01)
 - docs/en/api-reference/openapi-spec.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/api-reference/universal-api.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/configuration/application-config.md (版本: 1.0.3, 最后更新: 2026-06-03)
@@ -58,6 +59,7 @@
 - docs/en/troubleshooting/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/troubleshooting/performance.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/api-reference/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/api-reference/management-api.md (版本: 1.0.3, 最后更新: 2026-07-01)
 - docs/zh/api-reference/openapi-spec.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/api-reference/universal-api.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/configuration/application-config.md (版本: 1.0.3, 最后更新: 2026-06-03)
@@ -101,6 +103,7 @@
 - docs/en/configuration/modular-config.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/monitoring/error-tracking.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/monitoring/slow-query-alerts.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/en/security/api-key-management.md (版本: 1.0.3, 最后更新: 2026-07-01)
 - docs/en/security/data-sanitization.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/security/index.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
@@ -114,6 +117,7 @@
 - docs/zh/configuration/modular-config.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/monitoring/error-tracking.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/monitoring/slow-query-alerts.md (版本: 1.0.1, 最后更新: 2026-06-03)
+- docs/zh/security/api-key-management.md (版本: 1.0.5, 最后更新: 2026-07-01)
 - docs/zh/security/data-sanitization.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/security/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
@@ -142,6 +146,7 @@
 - docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
 - docs/zh/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
+- docs/zh/api-reference/error-codes.md (版本: 1.0.1, 最后更新: 2026-07-01)
 - repository-description.md (版本: 1.0.0, 最后更新: 2026-06-29)
 
 ## 依赖关系分析
@@ -633,9 +638,9 @@
 
 ## 所有文档版本
 
+- **docs-version-report.md**: v1.0.91 - 2026-08-01 (62aba7d1)
 - **docs/zh/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **docs/en/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
-- **docs-version-report.md**: v1.0.90 - 2026-07-31 (d0312ca1)
 - **README.md**: v1.0.22 - 2026-07-31 (67324f0b)
 - **README-ZH.md**: v1.0.14 - 2026-07-31 (67324f0b)
 - **docs/zh/reference/roadmap.md**: v1.0.8 - 2026-07-18 (ca98a2ee)
