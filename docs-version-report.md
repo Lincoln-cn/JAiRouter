@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 154
-- 近7天变更: 15
+- 近7天变更: 16
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-01 05:27:35
+- 最后扫描: 2026-08-02 05:28:01
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.91 → 1.0.92) - 2026-08-02
 - **MODIFIED**: docs-version-report.md (1.0.90 → 1.0.91) - 2026-08-01
 - **MODIFIED**: docs/zh/configuration/adapter-config.md (1.0.0 → 1.0.1) - 2026-07-31
 - **MODIFIED**: docs/en/configuration/adapter-config.md (1.0.0 → 1.0.1) - 2026-07-31
@@ -18,7 +19,6 @@
 - **CREATED**: docs/zh/configuration/adapter-config.md ( → 1.0.0) - 2026-07-30
 - **CREATED**: docs/en/configuration/adapter-config.md ( → 1.0.0) - 2026-07-30
 - **MODIFIED**: docs-version-report.md (1.0.88 → 1.0.89) - 2026-07-30
-- **MODIFIED**: README.md (1.0.20 → 1.0.21) - 2026-07-30
 
 ## 过期文档 (30天未更新)
 
@@ -638,7 +638,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.91 - 2026-08-01 (62aba7d1)
+- **docs-version-report.md**: v1.0.92 - 2026-08-02 (f62bb4c1)
 - **docs/zh/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **docs/en/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **README.md**: v1.0.22 - 2026-07-31 (67324f0b)
