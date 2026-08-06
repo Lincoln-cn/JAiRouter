@@ -1936,10 +1936,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.95",
-      "LastModified": "2026-08-05T05:14:53.669508",
-      "ContentHash": "ebd8c692d78303ad",
-      "GitCommit": "620349e3",
+      "Version": "1.0.96",
+      "LastModified": "2026-08-06T05:17:33.225388",
+      "ContentHash": "be972924da51ee89",
+      "GitCommit": "f1581787",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2026,38 +2026,6 @@
     }
   },
   "changes": [
-    {
-      "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.3",
-      "NewVersion": "1.0.4",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-07T05:32:16.118233",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.11",
-      "NewVersion": "1.0.12",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-07T05:32:16.120341",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.6",
-      "NewVersion": "1.0.7",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-07T05:32:16.122505",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.7",
-      "NewVersion": "1.0.8",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-08T04:53:30.943261",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.8",
@@ -5017,7 +4985,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-08-05T05:14:53.669514",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.95",
+      "NewVersion": "1.0.96",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-06T05:17:33.225398",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-08-05T05:14:54.241875"
+  "last_updated": "2026-08-06T05:17:33.854624"
 }
