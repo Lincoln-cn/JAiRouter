@@ -5,10 +5,11 @@
 - 总文档数: 154
 - 近7天变更: 8
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-10 03:55:27
+- 最后扫描: 2026-08-11 03:43:57
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.100 → 1.0.101) - 2026-08-11
 - **MODIFIED**: docs-version-report.md (1.0.99 → 1.0.100) - 2026-08-10
 - **MODIFIED**: docs-version-report.md (1.0.98 → 1.0.99) - 2026-08-09
 - **MODIFIED**: docs-version-report.md (1.0.97 → 1.0.98) - 2026-08-08
@@ -16,7 +17,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.95 → 1.0.96) - 2026-08-06
 - **MODIFIED**: docs-version-report.md (1.0.94 → 1.0.95) - 2026-08-05
 - **MODIFIED**: docs-version-report.md (1.0.93 → 1.0.94) - 2026-08-04
-- **MODIFIED**: docs-version-report.md (1.0.92 → 1.0.93) - 2026-08-03
 
 ## 过期文档 (30天未更新)
 
@@ -82,6 +82,7 @@
 - docs/zh/getting-started/installation.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/zh/monitoring/alert_rules_guide.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/monitoring/alerts.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/zh/monitoring/configuration.md (版本: 1.0.4, 最后更新: 2026-07-11)
 - docs/zh/monitoring/dashboards.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/monitoring/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/monitoring/metrics.md (版本: 1.0.2, 最后更新: 2026-06-03)
@@ -146,6 +147,7 @@
 - docs/zh/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
 - docs/zh/api-reference/error-codes.md (版本: 1.0.1, 最后更新: 2026-07-01)
 - repository-description.md (版本: 1.0.0, 最后更新: 2026-06-29)
+- merge-log-2026-07-10.md (版本: 1.0.0, 最后更新: 2026-07-11)
 
 ## 依赖关系分析
 
@@ -636,7 +638,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.100 - 2026-08-10 (2b7b77b2)
+- **docs-version-report.md**: v1.0.101 - 2026-08-11 (d7fff2fc)
 - **docs/zh/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **docs/en/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **README.md**: v1.0.22 - 2026-07-31 (67324f0b)
