@@ -1936,10 +1936,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.102",
-      "LastModified": "2026-08-12T04:07:54.645121",
-      "ContentHash": "6a674396fc3c2929",
-      "GitCommit": "8df92006",
+      "Version": "1.0.103",
+      "LastModified": "2026-08-13T04:11:59.239165",
+      "ContentHash": "e20e57b1f628480f",
+      "GitCommit": "407f1491",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2026,54 +2026,6 @@
     }
   },
   "changes": [
-    {
-      "FilePath": "QWEN.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-14T05:48:24.537697",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.4",
-      "NewVersion": "1.0.5",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-14T05:48:24.540080",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.12",
-      "NewVersion": "1.0.13",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-14T05:48:24.542290",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.11",
-      "NewVersion": "1.0.12",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-14T05:48:24.544637",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/CHANGELOG-v2.5.x.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2026-05-14T05:48:24.546621",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/configuration-guide.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2026-05-14T05:48:24.558792",
-      "Description": "文档created"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.12",
@@ -5017,7 +4969,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-08-12T04:07:54.645127",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.102",
+      "NewVersion": "1.0.103",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-13T04:11:59.239173",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-08-12T04:07:55.024200"
+  "last_updated": "2026-08-13T04:11:59.841923"
 }
