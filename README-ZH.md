@@ -244,7 +244,7 @@ LangChain 是应用框架。JAiRouter 是**基础设施层**，位于 LangChain 
 - [x] Anthropic Claude 适配器
 - [x] Google Gemini 适配器
 
-> **当前版本**：v2.8.3 | **LTS 版本**：v2.6.11（维护至 2028-05）
+> **当前版本**：v2.8.4 | **LTS 版本**：v2.6.11（维护至 2028-05）
 
 ---
 

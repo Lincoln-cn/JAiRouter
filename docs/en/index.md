@@ -76,7 +76,7 @@ open http://localhost:8080
 [![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
 [![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE)
 
-> **Current Release**: v2.7.8 (2026-07-10) | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.8.4 (2026-08-14) | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 

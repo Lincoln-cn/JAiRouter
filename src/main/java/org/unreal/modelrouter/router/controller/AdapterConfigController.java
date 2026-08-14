@@ -27,6 +27,7 @@ import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 import org.unreal.modelrouter.router.adapter.impl.ConfigurableAdapter;
 import org.unreal.modelrouter.router.adapter.impl.ExtendedAdapter;
 import org.unreal.modelrouter.router.adapter.impl.OllamaConfigurableAdapter;
+import org.unreal.modelrouter.router.adapter.persistence.AdapterDefinitionPersistenceService;
 import org.unreal.modelrouter.router.adapter.support.AdapterContext;
 import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
 import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
@@ -52,6 +53,7 @@ public class AdapterConfigController {
 
     private final AdapterRegistry adapterRegistry;
     private final AdapterDefinitionProperties adapterDefinitionProperties;
+    private final AdapterDefinitionPersistenceService persistenceService;
     private final AdapterContext adapterContext;
     private final RequestProcessingSupport requestProcessingSupport;
     private final ResilienceSupport resilienceSupport;
@@ -60,6 +62,7 @@ public class AdapterConfigController {
 
     public AdapterConfigController(final AdapterRegistry adapterRegistry,
                                    final AdapterDefinitionProperties adapterDefinitionProperties,
+                                   final AdapterDefinitionPersistenceService persistenceService,
                                    final AdapterContext adapterContext,
                                    final RequestProcessingSupport requestProcessingSupport,
                                    final ResilienceSupport resilienceSupport,
@@ -67,6 +70,7 @@ public class AdapterConfigController {
                                    final OpenAiResponseTransformer openAiResponseTransformer) {
         this.adapterRegistry = adapterRegistry;
         this.adapterDefinitionProperties = adapterDefinitionProperties;
+        this.persistenceService = persistenceService;
         this.adapterContext = adapterContext;
         this.requestProcessingSupport = requestProcessingSupport;
         this.resilienceSupport = resilienceSupport;
@@ -224,6 +228,9 @@ public class AdapterConfigController {
             // 保存到配置
             adapterDefinitionProperties.getAdapterDefinitions().put(request.getName(), definition);
 
+            // 持久化到存储
+            persistenceService.saveDefinition(request.getName(), definition);
+
             // 创建adapter并注册
             ServiceCapability adapter = createAdapterByType(request.getName(), definition);
             adapterRegistry.registerAdapter(request.getName(), adapter);
@@ -298,6 +305,9 @@ public class AdapterConfigController {
             // 更新配置
             definitions.put(name, definition);
 
+            // 持久化到存储
+            persistenceService.saveDefinition(name, definition);
+
             // 重新创建adapter
             ServiceCapability adapter = createAdapterByType(name, definition);
             adapterRegistry.registerAdapter(name, adapter);
@@ -341,6 +351,9 @@ public class AdapterConfigController {
 
             // 从配置中移除
             definitions.remove(name);
+
+            // 从持久化存储中移除
+            persistenceService.removeDefinition(name);
 
             // 从registry中移除
             adapterRegistry.removeAdapter(name);

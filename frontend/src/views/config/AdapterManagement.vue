@@ -17,7 +17,6 @@
           </div>
         </div>
       </template>
-
       <el-table
         :data="adapterList"
         v-loading="loading"
@@ -47,7 +46,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="190" fixed="right">
           <template #default="{ row }">
             <el-button
               v-if="row.source !== 'builtin'"
@@ -57,6 +56,14 @@
               @click="handleEdit(row)"
             >
               编辑
+            </el-button>
+            <el-button
+              type="success"
+              link
+              size="small"
+              @click="handleTest(row)"
+            >
+              测试
             </el-button>
             <el-button
               v-if="row.source !== 'builtin'"
@@ -80,6 +87,19 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 测试弹窗 -->
+    <el-dialog
+      v-model="testDialogVisible"
+      :title="'测试 Adapter: ' + testingName"
+      width="560px"
+      :close-on-click-modal="false"
+    >
+      <AdapterTestPanel :adapter-name="testingName" />
+    </el-dialog>
+
+    <!-- 新增向导 -->
+    <AdapterWizard v-model="wizardVisible" @created="fetchAdapters" />
 
     <!-- 创建/编辑弹窗 -->
     <el-dialog
@@ -192,6 +212,8 @@ import {
   type AdapterCapabilities,
   type ParentAdapterInfo
 } from '@/api/adapter'
+import AdapterWizard from './adapter/AdapterWizard.vue'
+import AdapterTestPanel from './adapter/AdapterTestPanel.vue'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -217,6 +239,11 @@ const viewData = ref<AdapterInfo>({
     streaming: false
   }
 })
+
+// 新增向导 + 测试面板
+const wizardVisible = ref(false)
+const testDialogVisible = ref(false)
+const testingName = ref('')
 
 const defaultForm = () => ({
   name: '',
@@ -293,10 +320,13 @@ const fetchAdapters = async () => {
 }
 
 const handleCreate = () => {
-  isEditing.value = false
-  editingName.value = ''
-  Object.assign(form, defaultForm())
-  dialogVisible.value = true
+  // 打开新增向导（支持模板选择 + 分步配置 + 测试）
+  wizardVisible.value = true
+}
+
+const handleTest = (row: AdapterInfo) => {
+  testingName.value = row.name
+  testDialogVisible.value = true
 }
 
 const handleEdit = (row: AdapterInfo) => {

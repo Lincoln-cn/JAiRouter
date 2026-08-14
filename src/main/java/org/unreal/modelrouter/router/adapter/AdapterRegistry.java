@@ -15,6 +15,7 @@ import org.unreal.modelrouter.router.adapter.impl.NormalOpenAiAdapter;
 import org.unreal.modelrouter.router.adapter.impl.OllamaAdapter;
 import org.unreal.modelrouter.router.adapter.impl.VllmAdapter;
 import org.unreal.modelrouter.router.adapter.impl.XinferenceAdapter;
+import org.unreal.modelrouter.router.adapter.persistence.AdapterDefinitionPersistenceService;
 import org.unreal.modelrouter.router.adapter.support.AdapterContext;
 import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
 import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
@@ -49,6 +50,7 @@ public class AdapterRegistry {
     private final OpenAiRequestTransformer openAiRequestTransformer;
     private final OpenAiResponseTransformer openAiResponseTransformer;
     private final AdapterDefinitionProperties adapterDefinitionProperties;
+    private final AdapterDefinitionPersistenceService persistenceService;
 
     public AdapterRegistry(final ModelRouterProperties properties,
                            final ModelServiceRegistry registry,
@@ -57,7 +59,8 @@ public class AdapterRegistry {
                            final ResilienceSupport resilienceSupport,
                            final OpenAiRequestTransformer openAiRequestTransformer,
                            final OpenAiResponseTransformer openAiResponseTransformer,
-                           final AdapterDefinitionProperties adapterDefinitionProperties) {
+                           final AdapterDefinitionProperties adapterDefinitionProperties,
+                           final AdapterDefinitionPersistenceService persistenceService) {
         this.properties = properties;
         this.registry = registry;
         this.context = context;
@@ -66,6 +69,7 @@ public class AdapterRegistry {
         this.openAiRequestTransformer = openAiRequestTransformer;
         this.openAiResponseTransformer = openAiResponseTransformer;
         this.adapterDefinitionProperties = adapterDefinitionProperties;
+        this.persistenceService = persistenceService;
         this.adapters = new HashMap<>();
         initializeAdapters();
     }
@@ -89,12 +93,35 @@ public class AdapterRegistry {
     }
 
     private void loadConfigurableAdapters() {
-        Map<String, AdapterDefinitionProperties.AdapterDefinition> definitions =
+        // 第一步：加载 YAML 配置的 adapter
+        Map<String, AdapterDefinitionProperties.AdapterDefinition> yamlDefinitions =
                 adapterDefinitionProperties.getAdapterDefinitions();
-        if (definitions == null || definitions.isEmpty()) {
-            return;
+        if (yamlDefinitions != null) {
+            loadAdapterDefinitions(yamlDefinitions, "YAML");
         }
 
+        // 第二步：加载持久化的 adapter（跳过与 YAML 同名的）
+        try {
+            Map<String, AdapterDefinitionProperties.AdapterDefinition> persistedDefinitions =
+                    persistenceService.loadAllDefinitions();
+            if (persistedDefinitions != null && !persistedDefinitions.isEmpty()) {
+                Map<String, AdapterDefinitionProperties.AdapterDefinition> toLoad = new HashMap<>();
+                for (Map.Entry<String, AdapterDefinitionProperties.AdapterDefinition> entry : persistedDefinitions.entrySet()) {
+                    if (!adapters.containsKey(entry.getKey().toLowerCase())) {
+                        toLoad.put(entry.getKey(), entry.getValue());
+                    }
+                }
+                if (!toLoad.isEmpty()) {
+                    loadAdapterDefinitions(toLoad, "持久化");
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("加载持久化适配器定义失败，跳过: {}", e.getMessage());
+        }
+    }
+
+    private void loadAdapterDefinitions(final Map<String, AdapterDefinitionProperties.AdapterDefinition> definitions,
+                                         final String source) {
         // 第一遍：加载非extend类型的adapter
         for (Map.Entry<String, AdapterDefinitionProperties.AdapterDefinition> entry : definitions.entrySet()) {
             String adapterName = entry.getKey();
@@ -114,7 +141,7 @@ public class AdapterRegistry {
                     }
 
                     adapters.put(adapterName.toLowerCase(), adapter);
-                    logger.info("Loaded configurable adapter from YAML: {} (type: {})", adapterName, type);
+                    logger.info("Loaded configurable adapter from {}: {} (type: {})", source, adapterName, type);
                 } catch (Exception e) {
                     logger.error("Failed to load configurable adapter {}: {}", adapterName, e.getMessage());
                 }
@@ -130,7 +157,7 @@ public class AdapterRegistry {
                 try {
                     ServiceCapability adapter = createExtendedAdapter(adapterName, definition);
                     adapters.put(adapterName.toLowerCase(), adapter);
-                    logger.info("Loaded extended adapter from YAML: {} (parent: {})", adapterName, definition.getParent());
+                    logger.info("Loaded extended adapter from {}: {} (parent: {})", source, adapterName, definition.getParent());
                 } catch (Exception e) {
                     logger.error("Failed to load extended adapter {}: {}", adapterName, e.getMessage());
                 }
