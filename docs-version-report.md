@@ -5,10 +5,11 @@
 - 总文档数: 154
 - 近7天变更: 8
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-14 04:08:31
+- 最后扫描: 2026-08-15 02:51:38
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.104 → 1.0.105) - 2026-08-15
 - **MODIFIED**: docs-version-report.md (1.0.103 → 1.0.104) - 2026-08-14
 - **MODIFIED**: docs-version-report.md (1.0.102 → 1.0.103) - 2026-08-13
 - **MODIFIED**: docs-version-report.md (1.0.101 → 1.0.102) - 2026-08-12
@@ -16,7 +17,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.99 → 1.0.100) - 2026-08-10
 - **MODIFIED**: docs-version-report.md (1.0.98 → 1.0.99) - 2026-08-09
 - **MODIFIED**: docs-version-report.md (1.0.97 → 1.0.98) - 2026-08-08
-- **MODIFIED**: docs-version-report.md (1.0.96 → 1.0.97) - 2026-08-07
 
 ## 过期文档 (30天未更新)
 
@@ -81,6 +81,7 @@
 - docs/zh/getting-started/first-steps.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/getting-started/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/getting-started/installation.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/zh/getting-started/quick-start.md (版本: 1.0.5, 最后更新: 2026-07-15)
 - docs/zh/index.md (版本: 1.0.6, 最后更新: 2026-07-14)
 - docs/zh/monitoring/alert_rules_guide.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/monitoring/alerts.md (版本: 1.0.2, 最后更新: 2026-06-03)
@@ -152,6 +153,8 @@
 - docs/zh/api-reference/error-codes.md (版本: 1.0.1, 最后更新: 2026-07-01)
 - repository-description.md (版本: 1.0.0, 最后更新: 2026-06-29)
 - merge-log-2026-07-10.md (版本: 1.0.0, 最后更新: 2026-07-11)
+- docs/en/configuration/instance-examples.md (版本: 1.0.0, 最后更新: 2026-07-15)
+- docs/zh/configuration/instance-examples.md (版本: 1.0.0, 最后更新: 2026-07-15)
 
 ## 依赖关系分析
 
@@ -642,7 +645,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.104 - 2026-08-14 (1f6818c7)
+- **docs-version-report.md**: v1.0.105 - 2026-08-15 (82cd0212)
 - **docs/zh/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **docs/en/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **README.md**: v1.0.22 - 2026-07-31 (67324f0b)
