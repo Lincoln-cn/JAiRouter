@@ -5,10 +5,11 @@
 - 总文档数: 154
 - 近7天变更: 8
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-15 02:51:38
+- 最后扫描: 2026-08-16 02:59:29
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.105 → 1.0.106) - 2026-08-16
 - **MODIFIED**: docs-version-report.md (1.0.104 → 1.0.105) - 2026-08-15
 - **MODIFIED**: docs-version-report.md (1.0.103 → 1.0.104) - 2026-08-14
 - **MODIFIED**: docs-version-report.md (1.0.102 → 1.0.103) - 2026-08-13
@@ -16,7 +17,6 @@
 - **MODIFIED**: docs-version-report.md (1.0.100 → 1.0.101) - 2026-08-11
 - **MODIFIED**: docs-version-report.md (1.0.99 → 1.0.100) - 2026-08-10
 - **MODIFIED**: docs-version-report.md (1.0.98 → 1.0.99) - 2026-08-09
-- **MODIFIED**: docs-version-report.md (1.0.97 → 1.0.98) - 2026-08-08
 
 ## 过期文档 (30天未更新)
 
@@ -37,12 +37,15 @@
 - docs/en/deployment/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/en/deployment/kubernetes.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/en/deployment/production.md (版本: 1.0.5, 最后更新: 2026-06-03)
+- docs/en/development/architecture.md (版本: 1.0.4, 最后更新: 2026-07-16)
 - docs/en/development/code-quality.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/development/contributing.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/development/index.md (版本: 1.0.5, 最后更新: 2026-07-16)
 - docs/en/development/testing.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/getting-started/first-steps.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/getting-started/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/getting-started/installation.md (版本: 1.0.3, 最后更新: 2026-06-03)
+- docs/en/getting-started/quick-start.md (版本: 1.0.5, 最后更新: 2026-07-16)
 - docs/en/index.md (版本: 1.0.5, 最后更新: 2026-07-14)
 - docs/en/monitoring/alerts.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/en/monitoring/configuration.md (版本: 1.0.3, 最后更新: 2026-06-26)
@@ -53,6 +56,10 @@
 - docs/en/monitoring/setup.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/en/monitoring/testing.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/en/monitoring/troubleshooting.md (版本: 1.0.2, 最后更新: 2026-06-03)
+- docs/en/reference/changelog.md (版本: 1.0.7, 最后更新: 2026-07-16)
+- docs/en/reference/faq.md (版本: 1.0.4, 最后更新: 2026-07-16)
+- docs/en/reference/glossary.md (版本: 1.0.3, 最后更新: 2026-07-16)
+- docs/en/reference/index.md (版本: 1.0.3, 最后更新: 2026-07-16)
 - docs/en/troubleshooting/common-issues.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/en/troubleshooting/debugging.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/en/troubleshooting/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
@@ -110,6 +117,7 @@
 - docs/en/security/data-sanitization.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/security/index.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
+- docs/en/security/troubleshooting.md (版本: 1.0.2, 最后更新: 2026-07-16)
 - docs/en/tracing/config-reference.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/tracing/index.md (版本: 1.0.3, 最后更新: 2026-06-16)
 - docs/en/tracing/operations-guide.md (版本: 1.0.3, 最后更新: 2026-06-16)
@@ -140,8 +148,10 @@
 - docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/zh/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - QWEN.md (版本: 1.0.4, 最后更新: 2026-07-14)
+- docs/en/deployment/docker-optimized.md (版本: 1.0.2, 最后更新: 2026-07-16)
 - docs/en/monitoring/alert_rules_guide.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/en/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-11)
+- docs/en/security/blacklist-management.md (版本: 1.0.2, 最后更新: 2026-07-16)
 - docs/zh/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/deployment/docker-optimized.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/zh/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-03)
@@ -150,6 +160,7 @@
 - docs/zh/troubleshooting/issue-fixes.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - docs/en/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
 - docs/zh/configuration/state-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
+- docs/en/api-reference/error-codes.md (版本: 1.0.2, 最后更新: 2026-07-16)
 - docs/zh/api-reference/error-codes.md (版本: 1.0.1, 最后更新: 2026-07-01)
 - repository-description.md (版本: 1.0.0, 最后更新: 2026-06-29)
 - merge-log-2026-07-10.md (版本: 1.0.0, 最后更新: 2026-07-11)
@@ -645,7 +656,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.105 - 2026-08-15 (82cd0212)
+- **docs-version-report.md**: v1.0.106 - 2026-08-16 (d0359557)
 - **docs/zh/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **docs/en/configuration/adapter-config.md**: v1.0.1 - 2026-07-31 (8374858b)
 - **README.md**: v1.0.22 - 2026-07-31 (67324f0b)
