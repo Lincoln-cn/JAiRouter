@@ -285,7 +285,7 @@ const rawResponseText = computed(() => {
   return JSON.stringify(props.response.data)
 })
 
-const imageUrls = computed(() => {
+const imageUrls = computed<any[]>(() => {
   if (!isImageResponse.value || !props.response) return []
   const data = props.response.data
   if (Array.isArray(data.data)) {

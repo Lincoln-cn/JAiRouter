@@ -188,7 +188,7 @@ import {
   type ParentAdapterInfo
 } from '@/api/adapter'
 
-const visible = defineModel<boolean>('visible', { default: false })
+const visible = defineModel<boolean>({ default: false })
 
 const emit = defineEmits<{
   (e: 'created'): void

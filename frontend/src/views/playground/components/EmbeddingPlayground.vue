@@ -783,7 +783,7 @@ const getActualData = () => {
 }
 
 // 获取嵌入向量
-const getEmbeddings = () => {
+const getEmbeddings = (): any[] => {
   const data = getActualData()
   if (!data || !data.data) return []
   return data.data.map((item: any) => item.embedding || [])

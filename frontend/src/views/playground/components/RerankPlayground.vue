@@ -211,7 +211,7 @@
               <div class="rerank-results" v-if="getActualData(requestState.response)?.results">
                 <h4>重排序结果</h4>
                 <div class="results-list">
-                  <div v-for="(result, index) in getActualData(requestState.response).results" :key="index"
+                  <div v-for="(result, index) in rerankResults" :key="index"
                     class="result-item">
                     <div class="result-header">
                       <div class="result-rank">
@@ -667,6 +667,9 @@ const getScoreColor = (score: number) => {
   if (score >= 0.4) return '#f56c6c'
   return '#909399'
 }
+
+// 类型化的重排序结果列表（便于模板遍历）
+const rerankResults = computed<any[]>(() => getActualData(requestState.response)?.results ?? [])
 
 
 

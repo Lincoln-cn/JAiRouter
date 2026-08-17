@@ -299,7 +299,7 @@ const hasValidInput = computed(() => {
 })
 
 // 提取向量数据（处理嵌套的响应结构）
-const embeddingData = computed(() => {
+const embeddingData = computed<any[]>(() => {
   if (!result.value?.data?.data?.data) return []
   return result.value.data.data.data
 })
