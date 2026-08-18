@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.22",
-      "LastModified": "2026-07-31T05:35:45.455028",
-      "ContentHash": "b04c1da13f88f1e4",
-      "GitCommit": "67324f0b",
+      "Version": "1.0.23",
+      "LastModified": "2026-08-18T02:55:03.714824",
+      "ContentHash": "8fb3e032b3a498c1",
+      "GitCommit": "b1088a7e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -352,10 +352,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-07-14T04:51:10.166088",
-      "ContentHash": "bfb8d7f01ebcc7bc",
-      "GitCommit": "63a07c9b",
+      "Version": "1.0.6",
+      "LastModified": "2026-08-18T02:55:03.840308",
+      "ContentHash": "3a8a4e92ba1f5724",
+      "GitCommit": "b1088a7e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -956,10 +956,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.6",
-      "LastModified": "2026-07-14T04:51:10.387147",
-      "ContentHash": "20c685e48f869ae4",
-      "GitCommit": "02f4e4cb",
+      "Version": "1.0.7",
+      "LastModified": "2026-08-18T02:55:04.088784",
+      "ContentHash": "c08dd386de90af62",
+      "GitCommit": "b1088a7e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1722,10 +1722,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.14",
-      "LastModified": "2026-07-31T05:35:45.452823",
-      "ContentHash": "b6a3fb46651123dd",
-      "GitCommit": "67324f0b",
+      "Version": "1.0.15",
+      "LastModified": "2026-08-18T02:55:03.712734",
+      "ContentHash": "9db455f6ab741f2a",
+      "GitCommit": "b1088a7e",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1936,10 +1936,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.107",
-      "LastModified": "2026-08-17T02:59:17.884202",
-      "ContentHash": "cba0ccd4fb81e300",
-      "GitCommit": "aecc0c29",
+      "Version": "1.0.108",
+      "LastModified": "2026-08-18T02:55:03.717063",
+      "ContentHash": "e996d6b77a04ab7f",
+      "GitCommit": "39f68875",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2026,70 +2026,6 @@
     }
   },
   "changes": [
-    {
-      "FilePath": "QWEN.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.871430",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.5",
-      "NewVersion": "1.0.6",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.874018",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.13",
-      "NewVersion": "1.0.14",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.876363",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.16",
-      "NewVersion": "1.0.17",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.878914",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/configuration-guide.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "1.0.1",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:23.890519",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/getting-started/quick-start-v1.8.md",
-      "OldVersion": "",
-      "NewVersion": "1.0.0",
-      "ChangeType": "CREATED",
-      "Timestamp": "2026-05-19T06:08:24.114510",
-      "Description": "文档created"
-    },
-    {
-      "FilePath": "docs/en/index.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:24.123855",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/index.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-19T06:08:24.561370",
-      "Description": "文档modified"
-    },
     {
       "FilePath": "README-ZH.md",
       "OldVersion": "1.0.6",
@@ -4977,7 +4913,47 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-08-17T02:59:17.884214",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.14",
+      "NewVersion": "1.0.15",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-18T02:55:03.712742",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.22",
+      "NewVersion": "1.0.23",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-18T02:55:03.714829",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.107",
+      "NewVersion": "1.0.108",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-18T02:55:03.717068",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-18T02:55:03.840317",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.6",
+      "NewVersion": "1.0.7",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-18T02:55:04.088793",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-08-17T02:59:18.529805"
+  "last_updated": "2026-08-18T02:55:04.321198"
 }
