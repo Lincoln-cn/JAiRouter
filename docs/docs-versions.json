@@ -1936,10 +1936,10 @@
     },
     "docs-version-report.md": {
       "FilePath": "docs-version-report.md",
-      "Version": "1.0.108",
-      "LastModified": "2026-08-18T02:55:03.717063",
-      "ContentHash": "e996d6b77a04ab7f",
-      "GitCommit": "39f68875",
+      "Version": "1.0.109",
+      "LastModified": "2026-08-19T02:56:40.703633",
+      "ContentHash": "cb306c606ea3da3e",
+      "GitCommit": "3c76e13a",
       "Author": "GitHub Action",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2026,78 +2026,6 @@
     }
   },
   "changes": [
-    {
-      "FilePath": "README-ZH.md",
-      "OldVersion": "1.0.6",
-      "NewVersion": "1.0.7",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.666421",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "README.md",
-      "OldVersion": "1.0.14",
-      "NewVersion": "1.0.15",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.668689",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs-version-report.md",
-      "OldVersion": "1.0.17",
-      "NewVersion": "1.0.18",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.671099",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/getting-started/quick-start.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "1.0.2",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.872732",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/en/reference/roadmap.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:07.969227",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/getting-started/quick-start.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:08.259878",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/reference/roadmap.md",
-      "OldVersion": "1.0.2",
-      "NewVersion": "1.0.3",
-      "ChangeType": "MODIFIED",
-      "Timestamp": "2026-05-20T06:08:08.354787",
-      "Description": "文档modified"
-    },
-    {
-      "FilePath": "docs/zh/getting-started/quick-start-v1.8.md",
-      "OldVersion": "1.0.1",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-05-20T06:08:08.451800",
-      "Description": "文档已删除"
-    },
-    {
-      "FilePath": "docs/en/getting-started/quick-start-v1.8.md",
-      "OldVersion": "1.0.0",
-      "NewVersion": "",
-      "ChangeType": "DELETED",
-      "Timestamp": "2026-05-20T06:08:08.451836",
-      "Description": "文档已删除"
-    },
     {
       "FilePath": "docs-version-report.md",
       "OldVersion": "1.0.18",
@@ -4953,7 +4881,15 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-08-18T02:55:04.088793",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs-version-report.md",
+      "OldVersion": "1.0.108",
+      "NewVersion": "1.0.109",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-19T02:56:40.703641",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-08-18T02:55:04.321198"
+  "last_updated": "2026-08-19T02:56:41.207964"
 }
