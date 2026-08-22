@@ -3,12 +3,13 @@
 ## 版本统计
 
 - 总文档数: 154
-- 近7天变更: 12
+- 近7天变更: 11
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-21 03:02:24
+- 最后扫描: 2026-08-22 02:53:29
 
 ## 最近变更
 
+- **MODIFIED**: docs-version-report.md (1.0.111 → 1.0.112) - 2026-08-22
 - **MODIFIED**: docs-version-report.md (1.0.110 → 1.0.111) - 2026-08-21
 - **MODIFIED**: docs-version-report.md (1.0.109 → 1.0.110) - 2026-08-20
 - **MODIFIED**: docs-version-report.md (1.0.108 → 1.0.109) - 2026-08-19
@@ -18,7 +19,6 @@
 - **MODIFIED**: README.md (1.0.22 → 1.0.23) - 2026-08-18
 - **MODIFIED**: README-ZH.md (1.0.14 → 1.0.15) - 2026-08-18
 - **MODIFIED**: docs-version-report.md (1.0.106 → 1.0.107) - 2026-08-17
-- **MODIFIED**: docs-version-report.md (1.0.105 → 1.0.106) - 2026-08-16
 
 ## 过期文档 (30天未更新)
 
@@ -659,7 +659,7 @@
 
 ## 所有文档版本
 
-- **docs-version-report.md**: v1.0.111 - 2026-08-21 (ffe38b37)
+- **docs-version-report.md**: v1.0.112 - 2026-08-22 (336b5423)
 - **docs/zh/index.md**: v1.0.7 - 2026-08-18 (b1088a7e)
 - **docs/en/index.md**: v1.0.6 - 2026-08-18 (b1088a7e)
 - **README.md**: v1.0.23 - 2026-08-18 (b1088a7e)
