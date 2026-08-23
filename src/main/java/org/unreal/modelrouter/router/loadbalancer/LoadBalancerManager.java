@@ -251,6 +251,27 @@ public class LoadBalancerManager {
     }
 
     /**
+     * 按策略名获取负载均衡器(v2.8.5 规则引擎支持)
+     * 基于配置创建指定策略的实例,不修改现有注册表
+     *
+     * @param strategy 策略名: random/round-robin/least-connections/ip-hash/consistent-hash
+     * @return 对应策略的负载均衡器;未知策略返回 null
+     */
+    public LoadBalancer getLoadBalancerByStrategy(final String strategy) {
+        if (strategy == null || strategy.isBlank()) {
+            return null;
+        }
+        try {
+            ModelRouterProperties.LoadBalanceConfig config = new ModelRouterProperties.LoadBalanceConfig();
+            config.setType(strategy.trim().toLowerCase());
+            return componentFactory.createLoadBalancer(config);
+        } catch (Exception e) {
+            logger.warn("创建负载均衡器失败, strategy: {}, fallback to null", strategy);
+            return null;
+        }
+    }
+
+    /**
      * 检查是否有指定服务类型的负载均衡器
      */
     public boolean hasLoadBalancer(final ModelServiceRegistry.ServiceType serviceType) {

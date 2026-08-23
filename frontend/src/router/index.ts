@@ -87,6 +87,12 @@ const router = createRouter({
           name: 'adapter-management',
           component: () => import('../views/config/AdapterManagement.vue'),
           meta: { title: 'Adapter管理', icon: 'connection' }
+        },
+        {
+          path: 'rules',
+          name: 'rule-management',
+          component: () => import('../views/config/rules/RuleManagement.vue'),
+          meta: { title: '路由规则', icon: 'set-up' }
         }
       ]
     },

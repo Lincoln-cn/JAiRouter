@@ -12,8 +12,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
@@ -70,6 +72,9 @@ class UniversalControllerTest {
     @Mock
     private ServerWebExchange exchange;
 
+    @Mock
+    private ServerHttpRequest httpRequest;
+
     @InjectMocks
     private UniversalController controller;
 
@@ -90,8 +95,9 @@ class UniversalControllerTest {
 
         // 配置HTTP请求
         HttpHeaders headers = new HttpHeaders();
-        lenient().when(exchange.getRequest().getHeaders()).thenReturn(headers);
-        lenient().when(exchange.getRequest().getMethod()).thenReturn(org.springframework.http.HttpMethod.POST);
+        lenient().when(exchange.getRequest()).thenReturn(httpRequest);
+        lenient().when(httpRequest.getHeaders()).thenReturn(headers);
+        lenient().when(httpRequest.getMethod()).thenReturn(HttpMethod.POST);
     }
 
     // ==================== Chat Completions 测试 ====================

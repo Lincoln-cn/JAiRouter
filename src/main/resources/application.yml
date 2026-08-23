@@ -29,6 +29,7 @@ spring:
       - classpath:config/router/circuitbreaker.yml
       - classpath:config/router/fallback.yml
       - classpath:config/router/services.yml
+      - classpath:config/router/rules.yml
       
       # ====== auth 模块配置 ======
       - classpath:config/auth/jwt.yml

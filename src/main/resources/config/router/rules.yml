@@ -1,0 +1,38 @@
+# ========================================
+# 路由规则配置 (router 模块)
+# ========================================
+# 此文件包含规则引擎的默认规则定义
+# 位置：org.unreal.modelrouter.router.rule
+# 绑定：RuleDefinitionProperties (@ConfigurationProperties("model.rules"))
+#
+# 规则引擎说明:
+#   - 按 priority 降序匹配，首条命中即终止（规则间 OR）
+#   - 规则内条件全部满足才命中（AND）
+#   - 默认为空列表：不配置任何规则时，路由行为与之前完全一致
+#
+# 条件类型 (type):
+#   SERVICE_TYPE / MODEL_NAME / HEADER / CLIENT_IP / WEIGHT
+# 操作符 (operator):
+#   EQUALS / CONTAINS / STARTS_WITH / REGEX / CIDR_MATCH
+# 动作类型 (action.type):
+#   TARGET_MODEL（重写模型名）/ TARGET_INSTANCE（锁定实例）/
+#   TARGET_ADAPTER（覆盖适配器）/ LB_STRATEGY（覆盖负载均衡策略）
+#
+# 示例:
+# model:
+#   rules:
+#     - id: route-vllm-header
+#       name: 按请求头路由到vLLM适配器
+#       enabled: true
+#       priority: 100
+#       conditions:
+#         - type: HEADER
+#           field: x-routing
+#           operator: EQUALS
+#           value: vllm
+#       action:
+#         type: TARGET_ADAPTER
+#         adapter-name: vllm
+
+model:
+  rules: []

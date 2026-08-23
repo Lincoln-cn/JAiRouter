@@ -3,6 +3,7 @@ package org.unreal.modelrouter.router.model;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,8 @@ import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.router.loadbalancer.monitor.RoutingMonitorService;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.router.rule.RuleDecision;
+import org.unreal.modelrouter.router.rule.RuleEngineService;
 import org.unreal.modelrouter.monitor.tracing.wrapper.LoadBalancerTracingWrapper;
 
 import java.util.ArrayList;
@@ -80,10 +83,22 @@ public class ModelServiceRegistry {
     // v2.7.0: 路由监控服务
     private final RoutingMonitorService routingMonitorService;
 
+    // v2.8.5: 规则引擎(延迟注入,避免循环依赖)
+    private RuleEngineService ruleEngine;
+
     // 配置和缓存
     private final ModelRouterProperties originalProperties;
     private volatile Map<String, Object> currentConfig;
     private volatile Map<String, ServiceRuntimeConfig> serviceConfigCache;
+
+    /**
+     * v2.8.5: 规则引擎延迟注入
+     * required=false:规则引擎不可用时路由行为与之前完全一致
+     */
+    @Autowired(required = false)
+    public void setRuleEngine(final RuleEngineService ruleEngine) {
+        this.ruleEngine = ruleEngine;
+    }
 
     public ModelServiceRegistry(final ModelRouterProperties properties,
                                 final ServiceStateManager serviceStateManager,
@@ -164,11 +179,22 @@ public class ModelServiceRegistry {
     }
 
     /**
-     * 选择服务实例
+     * 选择服务实例(无请求头版本,内部调用路径)
      */
     public ModelRouterProperties.ModelInstance selectInstance(final ServiceType serviceType,
                                                               final String modelName,
                                                               final String clientIp) {
+        return selectInstance(serviceType, modelName, clientIp, null);
+    }
+
+    /**
+     * 选择服务实例
+     * v2.8.5: 支持规则引擎(按 header 等条件路由);无规则/不匹配时行为与之前完全一致
+     */
+    public ModelRouterProperties.ModelInstance selectInstance(final ServiceType serviceType,
+                                                              final String modelName,
+                                                              final String clientIp,
+                                                              final Map<String, String> headers) {
         if (serviceType == null) {
             throw new IllegalArgumentException("ServiceType cannot be null");
         }
@@ -185,34 +211,66 @@ public class ModelServiceRegistry {
                     "No instances found for model '" + modelName + "' in service type '" + serviceType + "'");
         }
 
+        // v2.8.5: 规则引擎求值(命中后重写模型名/锁定实例/覆盖LB策略;未命中走原逻辑)
+        RuleDecision ruleDecision = ruleEngine != null
+                ? ruleEngine.evaluate(serviceType, modelName, clientIp, headers)
+                : null;
+
+        String effectiveModelName = ruleDecision != null && ruleDecision.getTargetModelName() != null
+                ? ruleDecision.getTargetModelName() : modelName;
+
+        List<ModelRouterProperties.ModelInstance> candidates = runtimeConfig.getInstances();
+        if (ruleDecision != null && ruleDecision.getTargetInstanceId() != null) {
+            String targetInstanceId = ruleDecision.getTargetInstanceId();
+            candidates = candidates.stream()
+                    .filter(i -> targetInstanceId.equals(i.getInstanceId())
+                            || targetInstanceId.equals(i.getName()))
+                    .collect(Collectors.toList());
+            if (candidates.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No instances found for rule target instance '" + targetInstanceId + "'");
+            }
+            // 锁定实例时按目标实例自身名称匹配,不受原 modelName 限制
+            effectiveModelName = candidates.get(0).getName();
+        }
+
         List<ModelRouterProperties.ModelInstance> availableInstances =
                 selectInstanceOptimizer.filterAvailableInstances(
-                        runtimeConfig.getInstances(), modelName, serviceType);
+                        candidates, effectiveModelName, serviceType);
 
         if (availableInstances.isEmpty()) {
-            throw instanceSelector.createAppropriateException(serviceType, modelName, runtimeConfig.getInstances());
+            throw instanceSelector.createAppropriateException(serviceType, effectiveModelName, candidates);
         }
 
         LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
         if (loadBalancer == null) {
             loadBalancer = loadBalancerManager.getLoadBalancer(null);
         }
+        // v2.8.5: 规则指定 LB 策略时覆盖
+        if (ruleDecision != null && ruleDecision.getLbStrategy() != null) {
+            LoadBalancer ruleLoadBalancer =
+                    loadBalancerManager.getLoadBalancerByStrategy(ruleDecision.getLbStrategy());
+            if (ruleLoadBalancer != null) {
+                loadBalancer = ruleLoadBalancer;
+            }
+        }
 
         ModelRouterProperties.ModelInstance selectedInstance =
                 instanceSelector.selectWithRateLimit(
-                        availableInstances, loadBalancer, clientIp, serviceType, modelName);
+                        availableInstances, loadBalancer, clientIp, serviceType, effectiveModelName);
 
         if (selectedInstance == null) {
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
-                    "All instances rate limited for model '" + modelName + "'");
+                    "All instances rate limited for model '" + effectiveModelName + "'");
         }
 
         // v2.7.0: 记录路由选择事件
         String strategy = getActualStrategyName(loadBalancer);
         routingMonitorService.recordSelection(
                 serviceType.name().toLowerCase(),
-                modelName,
+                effectiveModelName,
                 strategy,
                 selectedInstance,
                 clientIp,
@@ -220,6 +278,23 @@ public class ModelServiceRegistry {
 
         loadBalancer.recordCall(selectedInstance);
         return selectedInstance;
+    }
+
+    /**
+     * v2.8.5: 解析规则指定的目标适配器名(供 ServiceRequestHandler 消费 TARGET_ADAPTER 动作)
+     * 必须传原始 modelName 与 selectInstance 求值输入一致,保证二次求值确定性
+     *
+     * @return 规则指定的适配器名;无规则/不匹配/非 TARGET_ADAPTER 动作返回 null
+     */
+    public String resolveRuleAdapterName(final ServiceType serviceType,
+                                         final String modelName,
+                                         final String clientIp,
+                                         final Map<String, String> headers) {
+        if (ruleEngine == null) {
+            return null;
+        }
+        RuleDecision decision = ruleEngine.evaluate(serviceType, modelName, clientIp, headers);
+        return decision != null ? decision.getTargetAdapterName() : null;
     }
 
     public WebClient getClient(final ServiceType serviceType, final String modelName, final String clientIp) {

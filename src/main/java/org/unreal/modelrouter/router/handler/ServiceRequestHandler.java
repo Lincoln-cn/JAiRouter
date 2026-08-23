@@ -41,6 +41,9 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 通用服务请求处理器.
  *
@@ -191,10 +194,20 @@ public class ServiceRequestHandler {
         String clientIp = IpUtils.getClientIp(httpRequest);
         ServiceType serviceType = endpoint.getServiceType();
 
+        // v2.8.5: 提取请求头用于规则引擎路由(仅用于规则匹配,不影响出站转发)
+        Map<String, String> requestHeaders = new HashMap<>();
+        if (httpRequest.getHeaders() != null) {
+            httpRequest.getHeaders().forEach((key, values) -> {
+                if (!values.isEmpty()) {
+                    requestHeaders.put(key, values.get(0));
+                }
+            });
+        }
+
         // 1. 选择实例
         ModelRouterProperties.ModelInstance selectedInstance;
         try {
-            selectedInstance = selectInstance(serviceType, modelName, clientIp, tracingContext);
+            selectedInstance = selectInstance(serviceType, modelName, clientIp, tracingContext, requestHeaders);
         } catch (Exception e) {
             logger.error("Failed to select instance for service: {}, model: {}", serviceType, modelName, e);
             return Mono.error(e);
@@ -204,10 +217,29 @@ public class ServiceRequestHandler {
         ServiceCapability adapter;
         String adapterName;
         try {
-            adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
-            adapterName = selectedInstance.getAdapter() != null
-                ? selectedInstance.getAdapter()
-                : "default";
+            // v2.8.5: 规则引擎 TARGET_ADAPTER 动作 — 规则指定适配器名时按名取用
+            String ruleAdapterName = registry.resolveRuleAdapterName(serviceType, modelName, clientIp, requestHeaders);
+            if (ruleAdapterName != null && !ruleAdapterName.isBlank()) {
+                ServiceCapability ruleAdapter = adapterRegistry.getAdapterByName(ruleAdapterName);
+                if (ruleAdapter != null) {
+                    adapter = ruleAdapter;
+                    adapterName = ruleAdapterName;
+                    logger.info("Rule selected adapter '{}' for instance '{}' in service '{}'",
+                            adapterName, selectedInstance.getName(), serviceType);
+                } else {
+                    logger.warn("Rule target adapter '{}' not registered, fallback to instance adapter",
+                            ruleAdapterName);
+                    adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
+                    adapterName = selectedInstance.getAdapter() != null
+                            ? selectedInstance.getAdapter()
+                            : "default";
+                }
+            } else {
+                adapter = adapterRegistry.getAdapter(serviceType, selectedInstance);
+                adapterName = selectedInstance.getAdapter() != null
+                    ? selectedInstance.getAdapter()
+                    : "default";
+            }
             logger.info("Selected adapter '{}' for instance '{}' in service '{}'",
                        adapterName, selectedInstance.getName(), serviceType);
         } catch (Exception e) {
@@ -235,10 +267,11 @@ public class ServiceRequestHandler {
             final ServiceType serviceType,
             final String modelName,
             final String clientIp,
-            final TracingContext tracingContext) {
+            final TracingContext tracingContext,
+            final Map<String, String> requestHeaders) {
 
-        ModelRouterProperties.ModelInstance instance = registry.selectInstance(serviceType, modelName, clientIp);
-
+        ModelRouterProperties.ModelInstance instance = registry.selectInstance(
+                serviceType, modelName, clientIp, requestHeaders);
         // 追踪实例选择
         if (tracingInterceptor != null && tracingContext != null && tracingContext.isActive()) {
             tracingInterceptor.traceInstanceSelection(tracingContext, serviceType, modelName, clientIp, instance);
