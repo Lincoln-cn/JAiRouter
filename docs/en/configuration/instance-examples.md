@@ -1,4 +1,11 @@
-# Instance Configuration Examples
+﻿# Instance Configuration Examples
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-07-15
+> **Git Commit**: a0139c87
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 This document provides configuration examples for common AI services to help users get started quickly.
 

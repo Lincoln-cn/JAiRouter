@@ -1,4 +1,11 @@
-# JAiRouter
+﻿# JAiRouter
+
+<!-- 版本信息 -->
+> **文档版本**: 1.0.0
+> **最后更新**: 2026-08-15
+> **Git 提交**: b1088a7e
+> **作者**: Lincoln
+<!-- /版本信息 -->
 
 <p align="center">
   <strong>AI 模型服务统一网关</strong><br>
@@ -76,7 +83,7 @@ open http://localhost:8080
 [![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
 [![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE)
 
-> **当前版本**: v2.8.4 (2026-08-14) | **LTS 版本**: v2.6.11 (维护至 2028-05)
+> **当前版本**: v2.8.4 (2026-08-15) | **LTS 版本**: v2.6.11 (维护至 2028-05)
 
 ---
 

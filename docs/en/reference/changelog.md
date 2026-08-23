@@ -1,10 +1,10 @@
-﻿# Changelog
+# Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 1.8.0
-> **最后更新**: 2026-06-30
-> **Git 提交**: fb0cd62f
-> **作者**: Lincoln
+> **Document Version**: 2.8.4
+> **Last Updated**: 2026-08-17
+> **Git Commit**: e8f8fa72
+> **Author**: Lincoln
 <!-- /版本信息 -->
 
 
@@ -20,6 +20,64 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.8.4] - 2026-08-15 - Feature Release
+
+#### Plugin System (Custom Adapter Framework)
+
+Implement the "plugin system" so users can create, test, and manage custom adapters from the Web console **without writing code**:
+
+- **Adapter Template System**: 13 built-in templates (DeepSeek/Zhipu GLM/Moonshot Kimi/Baichuan/Qwen/MiniMax/01.AI Yi/StepFun/SiliconFlow/Groq/OpenRouter/Together AI/Local Ollama)
+- **Adapter Test API**: PING connectivity test + CHAT conversation test (independent 10s timeout, API Key never persisted)
+- **Enhanced Frontend Wizard**: 4-step configuration wizard (template selection/basic config/advanced config/test connection) + template cards + test panel
+- **Adapter Definition Persistence**: StoreManager-backed persistence, auto-recovery on restart, YAML-first merge strategy
+
+#### New Components
+
+- `AdapterTemplateService`: template service (13 built-in templates)
+- `AdapterTestService`: adapter connectivity test service
+- `AdapterDefinitionPersistenceService`: adapter definition persistence service
+- `AdapterTemplateController` / `AdapterTestController`: template & test REST APIs
+
+#### Tests
+
+- 49 new test cases (TDD-first), all passing; Checkstyle 0 violations
+
+---
+
+### [2.8.3] - 2026-07-15 - Feature Release
+
+#### Gemini Adapter + Adapter Config Enhancements
+
+- **Gemini Adapter**: added Google Gemini adapter support
+- **adapter-config phases 1-3**: OpenAI-compatible adapter config, Ollama-compatible adapter config, inheritance + override mode
+- **Test coverage improvements**: ErrorResponseBuilder (15 cases), StreamingRequestProcessor (14 cases), NonStreamingRequestProcessor (11 cases), Health module (0% → 68-71%)
+
+---
+
+### [2.8.2] - 2026-07-17 - Code Quality
+
+- Checkstyle cleanup: fixed 11 warnings
+
+---
+
+### [2.8.1] - 2026-07-16 - Code Quality
+
+- Checkstyle cleanup: fixed 66 warnings
+
+---
+
+### [2.8.0] - 2026-07-15 - Feature Release
+
+#### Anthropic Claude Adapter
+
+Added Anthropic Claude adapter support, enabling JAiRouter to serve as a unified gateway for Claude API workloads alongside existing OpenAI-compatible backends.
+
+- **ClaudeAdapter**: Claude adapter implementation (+295 lines)
+- **ClaudeAdapterTest**: adapter tests (+404 lines, covering request transformation, response parsing, error handling)
+- **Documentation cleanup & config examples**: added Claude adapter configuration examples
+
+---
 
 ### [2.7.6] - 2026-06-30 - Feature Release
 
@@ -52,6 +110,42 @@ Added quota-related fields to `api_keys` table:
 - `today_token_usage`: Current day Token usage
 - `today_request_count`: Current day request count
 - `last_reset_time`: Last quota reset time
+
+---
+
+### [2.7.7] - 2026-07-10 - Feature Release
+
+#### ExceptionEvent Collection Fixes
+
+Fixed multiple issues in the exception event collection pipeline:
+
+- **Bean conflict fix**: Resolved `ExceptionEventService` bean initialization conflict
+- **Error degradation optimization**: Exception event collection failure no longer affects the main flow
+- **Persistence chain fix**: Ensured exception events are correctly written to the database
+
+#### API Key Service-Level Permission Checks
+
+- **Service-level permissions**: API Keys now support fine-grained permission control by service type (Chat/Embedding/Rerank, etc.)
+- **Frontend permission fixes**: Fixed permission management page display and interaction issues
+
+---
+
+### [2.7.8] - 2026-07-10 - Feature Release
+
+#### Request Call History Persistence
+
+Added a complete API call history recording feature:
+
+- **Call record storage**: Records detailed information for each API call (model, instance, duration, status, etc.)
+- **Query and statistics**: Supports querying and statistics by time range, model, service type, and other dimensions
+- **Frontend dashboard**: New call history visualization page with trend charts and detail tables
+- **Exception monitoring enhancement**: Exception management page adds business fields and frontend filtering
+
+#### New Components
+
+- `ApiCallHistoryService`: Call history recording service
+- `ApiCallHistoryController`: Call history REST API
+- `CallHistoryDashboard`: Frontend call history dashboard
 
 ---
 

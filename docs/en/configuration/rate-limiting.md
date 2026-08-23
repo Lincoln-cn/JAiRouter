@@ -1,10 +1,10 @@
 ﻿# Rate Limiting Configuration
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.2  
-> **最后更新**: 2026-05-21
-> **Git 提交**: 61384b4a  
-> **作者**: Lincoln
+> **Doc Version**: 1.0.2  
+> **Last Updated**: 2026-05-21
+> **Git Commit**: 61384b4a  
+> **Author**: Lincoln
 <!-- /版本信息 -->
 
 JAiRouter provides multiple rate limiting algorithms, supporting global, service-level, and instance-level rate limiting configurations, as well as independent rate limiting based on client IP. This document details the configuration and usage of various rate limiting strategies.

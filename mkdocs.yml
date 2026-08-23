@@ -84,6 +84,7 @@ plugins:
             版本管理: Version Management
             验证规则: Validation Rules
             Adapter配置: Adapter Configuration
+            路由规则: Routing Rules
             安全功能: Security Features
             API Key管理: API Key Management
             JWT认证: JWT Authentication
@@ -128,6 +129,7 @@ plugins:
             贡献指南: Contributing
             测试指南: Testing
             代码质量: Code Quality
+            文档维护: Doc Maintenance
             性能优化: Performance Optimization
             常见问题: Common Issues
             关键问题修复: Key Issue Fixes
@@ -190,6 +192,7 @@ nav:
     - 版本管理: zh/configuration/version-management.md
     - 验证规则: zh/configuration/validation-rules.md
     - Adapter配置: zh/configuration/adapter-config.md
+    - 路由规则: zh/configuration/routing-rules.md
   - 安全功能:
     - zh/security/index.md
     - API Key管理: zh/security/api-key-management.md
@@ -241,6 +244,7 @@ nav:
     - 贡献指南: zh/development/contributing.md
     - 测试指南: zh/development/testing.md
     - 代码质量: zh/development/code-quality.md
+    - 文档维护: zh/development/doc-maintenance.md
   - 故障排除:
     - zh/troubleshooting/index.md
     - 常见问题: zh/troubleshooting/common-issues.md

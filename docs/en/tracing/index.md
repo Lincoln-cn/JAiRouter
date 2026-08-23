@@ -1,4 +1,11 @@
-# Distributed Tracing Overview
+﻿# Distributed Tracing Overview
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-06-15
+> **Git Commit**: 933eeadf
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 > **Version:** 2.6.11  
 > **Last Updated:** 2026-06-09  

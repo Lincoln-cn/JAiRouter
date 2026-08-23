@@ -45,6 +45,8 @@ document_scanning:
     - "*.tmp"
     - "*.bak"
     - "*~"
+    # 版本报告本身不参与扫描，避免自引用刷版本
+    - "docs-version-report.md"
   
   # 文档类型配置
   document_types:

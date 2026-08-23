@@ -1,4 +1,11 @@
-# State Persistence Configuration
+﻿# State Persistence Configuration
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-06-09
+> **Git Commit**: ba6d6ddf
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 > Document Version: 2.6.11
 > Applicable Version: v2.6.x

@@ -1,4 +1,11 @@
-# JAiRouter
+﻿# JAiRouter
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-08-15
+> **Git Commit**: b1088a7e
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 <p align="center">
   <strong>AI Model Service Unified Gateway</strong><br>
@@ -76,7 +83,7 @@ open http://localhost:8080
 [![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
 [![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE)
 
-> **Current Release**: v2.8.4 (2026-08-14) | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.8.4 (2026-08-15) | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 

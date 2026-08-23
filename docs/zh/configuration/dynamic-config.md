@@ -13,36 +13,86 @@ JAiRouter 提供灵活的配置选项以满足各种部署场景。本指南涵�
 
 从 v1.0.0 版本开始，JAiRouter 采用模块化配置结构：
 
-- 主配置文件: `application.yml`
-- 基础配置模块: `config/base/` 目录下的文件
-- 功能配置模块: `config/security/`、`config/tracing/` 等目录下的文件
-- 环境配置文件: `application-dev.yml`、`application-prod.yml` 等
+- 主配置文件：`application.yml`
+- 基础配置模块：`config/base/` 目录下的文件
+- 功能配置模块：`config/security/`、`config/tracing/` 等目录下的文件
+- 环境配置文件：`application-dev.yml`、`application-prod.yml` 等
 
-虽然配置已模块化，但动态配置 API 仍然可以用于运行时更新实例配置，不影响模块化结构。
+虽然配置已经模块化，动态配置 API 仍然可以在运行时更新实例配置，且不影响模块化结构。
 
 ## 配置概览
+**1. 配置合并**：启动时读取 config 目录中的配置文档，并自动与 application.yml 配置合并，以实现动态更新。
+**2. 实例管理 API**：通过 REST API 在运行时更新配置。
 
-JAiRouter 提供完整的动态配置管理能力：
+## 配置合并
+### 配置文件命名规则
 
-**1. 版本管理**: 支持配置版本历史查看、回滚和对比。
-**2. 实例管理 API**: 通过 REST API 在运行时动态管理服务实例。
+```
+config/
+├── model-router-config@1.json    # Version 1 configuration file
+├── model-router-config@2.json    # Version 2 configuration file
+├── model-router-config@3.json    # Version 3 configuration file
+└── backup_1640995200000/         # Backup directory (timestamp)
+    ├── model-router-config@1.json
+    └── model-router-config@2.json
+```
 
-## 版本管理
+### 配置文件格式
 
-JAiRouter 使用数据库存储配置版本，提供完整的版本历史管理：
-
-- 自动创建配置版本快照
-- 支持版本回滚和对比
-- 保留完整的变更历史
-
-### 版本管理 API
-
-| 操作 | 方法 | 路径 | 说明 |
-|------|------|------|------|
-| 获取版本列表 | GET | `/api/config/versions` | 获取所有版本信息 |
-| 获取版本详情 | GET | `/api/config/versions/{version}` | 获取指定版本配置 |
-| 应用版本 | POST | `/api/config/versions/{version}/apply` | 回滚到指定版本 |
-| 删除版本 | DELETE | `/api/config/versions/{version}` | 删除指定版本 |
+```json
+{
+  "services": {
+    "chat": {
+      "instances": [
+        {
+          "name": "llama3.2:3b",
+          "baseUrl": "http://localhost:11434",
+          "path": "/v1/chat/completions",
+          "weight": 1,
+          "timeout": 30000,
+          "maxRetries": 3,
+          "headers": {
+            "Authorization": "Bearer token"
+          }
+        }
+      ],
+      "loadBalance": {
+        "type": "round-robin",
+        "hashAlgorithm": "md5"
+      },
+      "rateLimit": {
+        "type": "token-bucket",
+        "capacity": 100,
+        "refillRate": 10,
+        "clientIpEnable": true
+      },
+      "circuitBreaker": {
+        "failureThreshold": 5,
+        "recoveryTimeout": 60000,
+        "successThreshold": 3,
+        "timeout": 30000
+      },
+      "fallback": {
+        "type": "default",
+        "response": {
+          "choices": [
+            {
+              "message": {
+                "role": "assistant",
+                "content": "Service is temporarily unavailable. Please try again later."
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "store": {
+    "type": "file",
+    "path": "config/"
+  }
+}
+```
 
 ## 实例管理 API
 
@@ -59,10 +109,10 @@ JAiRouter 使用数据库存储配置版本，提供完整的版本历史管理�
 ### 1. 获取实例列表
 
 ```bash
-# 获取 Chat 服务的所有实例
+# Get all instances of Chat service
 curl -X GET "http://localhost:8080/api/config/instance/type/chat"
 
-# 响应示例
+# Response Example
 {
   "success": true,
   "data": [
@@ -83,10 +133,10 @@ curl -X GET "http://localhost:8080/api/config/instance/type/chat"
 ### 2. 获取实例详情
 
 ```bash
-# 获取特定实例的详细信息
+# Get detailed information of specific instance
 curl -X GET "http://localhost:8080/api/config/instance/info/chat?modelName=llama3.2:3b&baseUrl=http://localhost:11434"
 
-# 响应示例
+# Response Example
 {
   "success": true,
   "data": {
@@ -110,7 +160,7 @@ curl -X GET "http://localhost:8080/api/config/instance/info/chat?modelName=llama
 ### 3. 添加实例
 
 ```bash
-# 添加新的 Chat 服务实例
+# Add new Chat service instance
 curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
   -H "Content-Type: application/json" \
   -d '{
@@ -126,10 +176,10 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
     }
   }'
 
-# 响应示例
+# Response Example
 {
   "success": true,
-  "message": "实例添加成功",
+  "message": "Instance added successfully",
   "data": {
     "instanceId": "qwen2:7b@http://gpu-server:8080"
   }
@@ -139,7 +189,7 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 ### 4. 更新实例
 
 ```bash
-# 更新现有实例配置
+# Update existing instance configuration
 curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
   -H "Content-Type: application/json" \
   -d '{
@@ -154,23 +204,232 @@ curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
     }
   }'
 
-# 响应示例
+# Response Example
 {
   "success": true,
-  "message": "实例更新成功"
+  "message": "Instance updated successfully"
 }
 ```
 
 ### 5. 删除实例
 
 ```bash
-# 删除指定实例
+# Delete specified instance
 curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=qwen2:7b&baseUrl=http://gpu-server:8080"
 
-# 响应示例
+# Response Example
 {
   "success": true,
-  "message": "实例删除成功"
+  "message": "Instance deleted successfully"
+}
+```
+
+## 配置文件管理 API
+
+### 配置合并功能
+
+JAiRouter 提供强大的自动配置文件合并功能：
+
+| 功能 | API 端点 | 方法 | 说明 |
+|------|----------|------|------|
+| 扫描版本文件 | `/api/config/merge/scan` | GET | 扫描所有版本配置文件 |
+| 预览合并结果 | `/api/config/merge/preview` | GET | 预览合并后的配置 |
+| 执行合并 | `/api/config/merge/execute` | POST | 执行配置文件合并 |
+| 备份配置 | `/api/config/merge/backup` | POST | 备份当前配置文件 |
+| 批量操作 | `/api/config/merge/batch` | POST | 备份+合并+清理 |
+| 清理文件 | `/api/config/merge/cleanup` | DELETE | 清理原始配置文件 |
+| 验证配置 | `/api/config/merge/validate` | GET | 验证配置文件格式 |
+| 统计信息 | `/api/config/merge/statistics` | GET | 获取配置统计信息 |
+| 服务状态 | `/api/config/merge/status` | GET | 获取合并服务状态 |
+
+### 1. 扫描配置文件版本
+
+```bash
+# Scan all version configuration files
+curl -X GET "http://localhost:8080/api/config/merge/scan"
+
+# Response Example
+{
+  "success": true,
+  "data": {
+    "configFiles": [
+      {
+        "filename": "model-router-config@1.json",
+        "version": 1,
+        "size": 2048,
+        "lastModified": "2024-01-15T10:00:00Z",
+        "servicesCount": 2,
+        "instancesCount": 5
+      },
+      {
+        "filename": "model-router-config@2.json",
+        "version": 2,
+        "size": 3072,
+        "lastModified": "2024-01-15T11:00:00Z",
+        "servicesCount": 3,
+        "instancesCount": 8
+      }
+    ],
+    "totalFiles": 2,
+    "totalInstances": 13
+  }
+}
+```
+
+### 2. 预览合并结果
+
+```bash
+# Preview configuration file merge result
+curl -X GET "http://localhost:8080/api/config/merge/preview"
+
+# Response Example
+{
+  "success": true,
+  "data": {
+    "mergedConfig": {
+      "services": {
+        "chat": {
+          "instances": [
+            // Merged instance list
+          ]
+        }
+      }
+    },
+    "mergeStatistics": {
+      "totalServices": 3,
+      "totalInstances": 13,
+      "duplicatesRemoved": 2,
+      "conflictsResolved": 1
+    }
+  }
+}
+```
+
+### 3. 执行配置合并
+
+```bash
+# Execute configuration file merge
+curl -X POST "http://localhost:8080/api/config/merge/execute"
+
+# Response Example
+{
+  "success": true,
+  "message": "Configuration merge completed",
+  "data": {
+    "mergedFile": "model-router-config@1.json",
+    "originalFiles": [
+      "model-router-config@1.json",
+      "model-router-config@2.json"
+    ],
+    "statistics": {
+      "servicesProcessed": 3,
+      "instancesProcessed": 13,
+      "duplicatesRemoved": 2
+    }
+  }
+}
+```
+
+### 4. 批量操作
+
+```bash
+# Execute batch operation: backup + merge + cleanup
+curl -X POST "http://localhost:8080/api/config/merge/batch?deleteOriginals=true"
+
+# Response Example
+{
+  "success": true,
+  "message": "Batch operation completed",
+  "data": {
+    "backupDirectory": "backup_1640995200000",
+    "mergedFile": "model-router-config@1.json",
+    "filesDeleted": [
+      "model-router-config@2.json",
+      "model-router-config@3.json"
+    ]
+  }
+}
+```
+
+## 配置验证与监控
+
+### 1. 配置验证
+
+```bash
+# Validate configuration file format and content
+curl -X GET "http://localhost:8080/api/config/merge/validate"
+
+# Response Example
+{
+  "success": true,
+  "data": {
+    "validationResults": [
+      {
+        "filename": "model-router-config@1.json",
+        "valid": true,
+        "errors": [],
+        "warnings": [
+          "Instance 'old-model@http://old-server:8080' may be unavailable"
+        ]
+      }
+    ],
+    "overallValid": true,
+    "totalErrors": 0,
+    "totalWarnings": 1
+  }
+}
+```
+
+### 2. 配置统计
+
+```bash
+# Get configuration statistics
+curl -X GET "http://localhost:8080/api/config/merge/statistics"
+
+# Response Example
+{
+  "success": true,
+  "data": {
+    "configFiles": 3,
+    "totalServices": 5,
+    "totalInstances": 15,
+    "serviceBreakdown": {
+      "chat": 6,
+      "embedding": 4,
+      "tts": 3,
+      "stt": 2
+    },
+    "loadBalanceStrategies": {
+      "round-robin": 2,
+      "least-connections": 2,
+      "random": 1
+    },
+    "rateLimitAlgorithms": {
+      "token-bucket": 4,
+      "sliding-window": 1
+    }
+  }
+}
+```
+
+### 3. 服务状态监控
+
+```bash
+# Get merge service status
+curl -X GET "http://localhost:8080/api/config/merge/status"
+
+# Response Example
+{
+  "success": true,
+  "data": {
+    "serviceStatus": "RUNNING",
+    "lastMergeTime": "2024-01-15T12:00:00Z",
+    "lastBackupTime": "2024-01-15T11:30:00Z",
+    "configDirectory": "/app/config",
+    "backupDirectory": "/app/config/backup_1640995200000",
+    "activeConfigFile": "model-router-config@1.json",
+    "pendingChanges": false
+  }
 }
 ```
 
@@ -179,7 +438,7 @@ curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=qwe
 ### 场景 1：添加新的 AI 服务实例
 
 ```bash
-# 1. 添加新的高性能 GPU 实例
+# 1. Add new high-performance GPU instance
 curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
   -H "Content-Type: application/json" \
   -d '{
@@ -190,10 +449,10 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
     "timeout": 60000
   }'
 
-# 2. 验证实例添加成功
+# 2. Verify instance addition success
 curl -X GET "http://localhost:8080/api/config/instance/type/chat"
 
-# 3. 测试新实例
+# 3. Test new instance
 curl -X POST "http://localhost:8080/v1/chat/completions" \
   -H "Content-Type: application/json" \
   -d '{
@@ -205,10 +464,10 @@ curl -X POST "http://localhost:8080/v1/chat/completions" \
 ### 场景 2：动态调整负载均衡权重
 
 ```bash
-# 1. 获取当前实例配置
+# 1. Get current instance configuration
 curl -X GET "http://localhost:8080/api/config/instance/info/chat?modelName=qwen2:7b&baseUrl=http://gpu-server:8080"
 
-# 2. 更新实例权重（从 2 调整到 4）
+# 2. Update instance weight (from 2 to 4)
 curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
   -H "Content-Type: application/json" \
   -d '{
@@ -221,20 +480,20 @@ curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
     }
   }'
 
-# 3. 验证权重更新
+# 3. Verify weight update
 curl -X GET "http://localhost:8080/api/config/instance/type/chat"
 ```
 
 ### 场景 3：故障实例处理
 
 ```bash
-# 1. 检查实例健康状态
+# 1. Check instance health status
 curl -X GET "http://localhost:8080/api/config/instance/type/chat"
 
-# 2. 临时移除故障实例
+# 2. Temporarily remove faulty instance
 curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=faulty-model&baseUrl=http://faulty-server:8080"
 
-# 3. 添加替代实例
+# 3. Add alternative instance
 curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
   -H "Content-Type: application/json" \
   -d '{
@@ -243,6 +502,25 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
     "path": "/v1/chat/completions",
     "weight": 1
   }'
+```
+
+### 场景 4：配置文件维护
+
+```bash
+# 1. Backup current configuration
+curl -X POST "http://localhost:8080/api/config/merge/backup"
+
+# 2. Scan configuration file versions
+curl -X GET "http://localhost:8080/api/config/merge/scan"
+
+# 3. Preview merge result
+curl -X GET "http://localhost:8080/api/config/merge/preview"
+
+# 4. Execute configuration merge
+curl -X POST "http://localhost:8080/api/config/merge/execute"
+
+# 5. Clean old version files
+curl -X DELETE "http://localhost:8080/api/config/merge/cleanup?deleteOriginals=true"
 ```
 
 ## 最佳实践
@@ -258,61 +536,65 @@ curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
 ### 2. 实例管理策略
 
 ```bash
-# 渐进式实例替换
-# 1. 添加新实例（权重较小）
+# Progressive Instance Replacement
+# 1. Add new instance (smaller weight)
 curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
   -d '{"name": "new-model", "weight": 1, ...}'
 
-# 2. 观察新实例表现
-# 监控指标、错误率、响应时间
+# 2. Observe new instance performance
+# Monitor metrics, error rate, response time
 
-# 3. 逐步增加新实例权重
+# 3. Gradually increase new instance weight
 curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
   -d '{"instanceId": "new-model@...", "instance": {"weight": 3, ...}}'
 
-# 4. 逐步减少旧实例权重
+# 4. Gradually decrease old instance weight
 curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
   -d '{"instanceId": "old-model@...", "instance": {"weight": 1, ...}}'
 
-# 5. 移除旧实例
+# 5. Remove old instance
 curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?..."
 ```
 
 ### 3. 配置监控
 
 ```bash
-# 监控实例健康状态
-curl -X GET "http://localhost:8080/actuator/health"
+# Regularly check configuration status
+curl -X GET "http://localhost:8080/api/config/merge/status"
 
-# 查看当前配置状态
-curl -X GET "http://localhost:8080/api/config/versions"
+# Validate configuration integrity
+curl -X GET "http://localhost:8080/api/config/merge/validate"
+
+# Monitor instance health status
+curl -X GET "http://localhost:8080/actuator/health"
 ```
 
 ### 4. 错误处理
 
 ```bash
-# 配置回滚脚本示例
+# Configuration rollback script example
 #!/bin/bash
 
-# 获取当前版本
-CURRENT_VERSION=$(curl -s "http://localhost:8080/api/config/versions" | jq -r '.data[0].version')
+# Backup current configuration
+BACKUP_RESULT=$(curl -s -X POST "http://localhost:8080/api/config/merge/backup")
 
-if [[ -z "$CURRENT_VERSION" ]]; then
-    echo "无法获取当前版本"
+if [[ $? -eq 0 ]]; then
+    echo "Configuration backup successful"
+    
+    # Execute configuration change
+    # ... configuration change operations ...
+    
+    # Verify change result
+    HEALTH_CHECK=$(curl -s "http://localhost:8080/actuator/health")
+    
+    if [[ $(echo $HEALTH_CHECK | jq -r '.status') != "UP" ]]; then
+        echo "Health check failed, starting rollback"
+        # Execute rollback operation
+        # ... rollback logic ...
+    fi
+else
+    echo "Configuration backup failed, canceling change"
     exit 1
-fi
-
-echo "当前版本: $CURRENT_VERSION"
-
-# 执行配置变更
-# ... 配置变更操作 ...
-
-# 验证变更结果
-HEALTH_CHECK=$(curl -s "http://localhost:8080/actuator/health")
-
-if [[ $(echo $HEALTH_CHECK | jq -r '.status') != "UP" ]]; then
-    echo "健康检查失败，开始回滚到版本 $CURRENT_VERSION"
-    curl -X POST "http://localhost:8080/api/config/versions/$CURRENT_VERSION/apply"
 fi
 ```
 
@@ -321,33 +603,33 @@ fi
 ### 常见问题
 
 1. **配置不生效**
-   - 检查 API 响应是否成功
-   - 验证配置是否正确保存
-   - 确认服务实例是否健康
+    - 检查 API 响应是否成功
+    - 验证配置文件是否正确保存
+    - 确认服务实例是否健康
 
 2. **实例添加失败**
-   - 检查网络连通性
-   - 验证 URL 格式是否正确
-   - 确认后端服务是否可用
+    - 检查网络连通性
+    - 验证 URL 格式是否正确
+    - 确认后端服务是否可用
 
-3. **版本回滚失败**
-   - 检查目标版本是否存在
-   - 验证版本配置格式是否正确
-   - 查看服务日志获取详细错误信息
+3. **配置合并失败**
+    - 检查配置文件格式是否正确
+    - 验证磁盘空间是否充足
+    - 确认文件权限是否正确
 
 ### 调试命令
 
 ```bash
-# 查看详细错误信息
+# View detailed error information
 curl -v "http://localhost:8080/api/config/instance/add/chat" \
   -H "Content-Type: application/json" \
   -d '{"name": "test", ...}'
 
-# 检查服务日志
+# Check service logs
 docker logs jairouter
 
-# 查看当前配置
-curl -s "http://localhost:8080/api/config/versions" | jq .
+# Validate configuration file
+cat config/model-router-config@1.json | jq .
 ```
 
 ## 下一步

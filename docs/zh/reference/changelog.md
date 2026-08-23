@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.7.8
-> **最后更新**: 2026-07-10
+> **文档版本**: 2.8.4
+> **最后更新**: 2026-08-17
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,64 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### \[2.8.4] - 2026-08-15 - 功能发布
+
+#### 插件系统（自定义适配器框架）
+
+实现"插件系统"，让用户通过 Web 控制台**无需编写代码**即可创建、测试和管理自定义适配器：
+
+- **适配器模板系统**：13 个预置模板（DeepSeek/智谱GLM/月之暗面Kimi/百川智能/通义千问/MiniMax/零一万物/阶跃星辰/硅基流动/Groq/OpenRouter/Together AI/本地 Ollama）
+- **适配器测试 API**：PING 连通性测试 + CHAT 对话测试（独立 10 秒超时，API Key 不持久化）
+- **增强前端向导**：4 步配置向导（模板选择/基本配置/高级配置/测试连接）+ 模板卡片 + 测试面板
+- **适配器定义持久化**：StoreManager 持久化，重启自动恢复，YAML 定义优先合并策略
+
+#### 新增组件
+
+- `AdapterTemplateService`：模板服务（13 个预置模板）
+- `AdapterTestService`：适配器连通性测试服务
+- `AdapterDefinitionPersistenceService`：适配器定义持久化服务
+- `AdapterTemplateController` / `AdapterTestController`：模板与测试 REST API
+
+#### 测试
+
+- 新增 49 个测试用例（TDD 先行），全部通过；Checkstyle 0 violations
+
+---
+
+### \[2.8.3] - 2026-07-15 - 功能发布
+
+#### Gemini 适配器 + 适配器配置增强
+
+- **Gemini 适配器**：新增 Google Gemini 适配器支持
+- **adapter-config 阶段1-3**：支持 OpenAI 兼容 Adapter 配置、Ollama 兼容 Adapter 配置、继承+覆盖模式
+- **测试覆盖提升**：ErrorResponseBuilder（15 用例）、StreamingRequestProcessor（14 用例）、NonStreamingRequestProcessor（11 用例）、Health 模块（覆盖率 0% → 68-71%）
+
+---
+
+### \[2.8.2] - 2026-07-17 - 代码质量
+
+- Checkstyle 治理：修复 11 个警告
+
+---
+
+### \[2.8.1] - 2026-07-16 - 代码质量
+
+- Checkstyle 治理：修复 66 个警告
+
+---
+
+### \[2.8.0] - 2026-07-15 - 功能发布
+
+#### Anthropic Claude 适配器
+
+新增 Anthropic Claude 适配器支持，使 JAiRouter 可以统一网关承载 Claude API 负载，与现有 OpenAI 兼容后端并存。
+
+- **ClaudeAdapter**：Claude 适配器实现（+295 行）
+- **ClaudeAdapterTest**：适配器测试（+404 行，覆盖请求转换、响应解析、错误处理）
+- **文档清理与配置示例**：补充 Claude 适配器配置示例
+
+---
 
 ### \[2.7.6] - 2026-06-30 - 功能发布
 

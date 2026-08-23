@@ -230,3 +230,8 @@ link-check-report.json
 
 # JCodeIndexer data
 .jindexer/
+
+# Local build/quality snapshots (not for git)
+checkstyle-*.txt
+compile-result.txt
+jindexer.jar

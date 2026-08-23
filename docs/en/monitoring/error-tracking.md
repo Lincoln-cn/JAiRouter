@@ -1,4 +1,11 @@
-# Error Tracking Feature
+﻿# Error Tracking Feature
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-06-02
+> **Git Commit**: b305e6de
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 ## Overview
 

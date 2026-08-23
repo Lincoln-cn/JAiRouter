@@ -1,10 +1,10 @@
-# Modular Configuration Guide
+﻿# Modular Configuration Guide
 
 <!-- 版本信息 -->
-> **文档版本**: 2.0.0
-> **最后更新**: 2026-05-21
-> **Git 提交**: 61384b4a
-> **作者**: Lincoln
+> **Doc Version**: 2.0.0
+> **Last Updated**: 2026-05-21
+> **Git Commit**: 61384b4a
+> **Author**: Lincoln
 <!-- /版本信息 -->
 
 ## Overview

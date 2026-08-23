@@ -1,10 +1,10 @@
-# Security Features
+﻿# Security Features
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.2  
-> **最后更新**: 2026-05-21  
-> **Git 提交**: 61384b4a  
-> **作者**: 
+> **Doc Version**: 1.0.2  
+> **Last Updated**: 2026-05-21  
+> **Git Commit**: 61384b4a  
+> **Author**: 
 <!-- /版本信息 -->
 
 

@@ -1,11 +1,11 @@
-# Docker Image Optimization Guide
+﻿# Docker Image Optimization Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.2.0
-> **最后更新**: 2026-06-10
+> **Last Updated**: 2026-06-10
 > **Applicable Version**: v2.7.x+
-> **Git 提交**: 135f9a60
-> **作者**: Lincoln
+> **Git Commit**: 135f9a60
+> **Author**: Lincoln
 <!-- /版本信息 -->
 
 ## Overview

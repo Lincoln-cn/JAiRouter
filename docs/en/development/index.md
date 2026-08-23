@@ -2,9 +2,9 @@
 
 <!-- 版本信息 -->
 > **Document Version**: 2.0.0
-> **最后更新**: 2026-06-15
-> **Git 提交**: 0f56b957
-> **作者**: JAiRouter Team
+> **Last Updated**: 2026-06-15
+> **Git Commit**: 0f56b957
+> **Author**: JAiRouter Team
 <!-- /版本信息 -->
 
 Welcome to the JAiRouter Development Guide! This guide provides developers with comprehensive information on setting up the development environment, coding standards, testing strategies, and contribution processes.

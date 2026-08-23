@@ -1,384 +1,762 @@
-﻿# First Steps
+﻿# First Steps: Deep Dive into Configuration
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.2
-> **最后更新**: 2026-05-21
-> **Git 提交**: 61384b4a
-> **作者**: Lincoln
+> **Doc Version**: 1.0.2
+> **Last Updated**: 2026-05-21
+> **Git Commit**: 61384b4a
+> **Author**: Lincoln
 <!-- /版本信息 -->
 
 
 
-After completing the [Quick Start](quick-start.md), this guide will help you understand JAiRouter's core concepts and configure it for your specific needs.
+After completing the [Quick Start](quick-start.md), this guide will help you dive deeper into JAiRouter's configuration and usage, building a production-ready AI service gateway step by step.
 
-## Core Concepts
+## 🎯 Learning Path
 
-### 1. Service Types
+This guide is organized by real-world usage scenarios. It is recommended to follow it in order:
 
-JAiRouter supports multiple AI service types:
+| Stage | Content | Time | Difficulty |
+|-------|---------|------|------------|
+| **Basic Configuration** | Understand the configuration structure and service types | 10 minutes | ⭐ |
+| **Load Balancing** | Configure multiple instances and load balancing strategies | 15 minutes | ⭐⭐ |
+| **Traffic Control** | Set up rate limiting and circuit breaker protection | 20 minutes | ⭐⭐⭐ |
+| **Monitoring & Operations** | Configure health checks and monitoring | 15 minutes | ⭐⭐ |
+| **Advanced Features** | Dynamic configuration and failure recovery | 20 minutes | ⭐⭐⭐ |
 
-| Service Type | Description | API Endpoint |
-|--------------|-------------|--------------|
-| **chat** | Chat completions | `/v1/chat/completions` |
-| **embedding** | Text embeddings | `/v1/embeddings` |
-| **rerank** | Text reranking | `/v1/rerank` |
-| **tts** | Text-to-speech | `/v1/audio/speech` |
-| **stt** | Speech-to-text | `/v1/audio/transcriptions` |
-| **image** | Image generation | `/v1/images/generations` |
+## 📋 Prerequisites
 
-### 2. Service Instances
+- ✅ Completed the [Quick Start](quick-start.md) guide
+- ✅ JAiRouter is running
+- ✅ At least one AI service instance has been configured
 
-Each service type can have multiple instances for load balancing:
+## 🎯 Learning Objectives
 
-```yaml
-model:
-  services:
-    chat:
-      instances:
-        - name: "qwen2.5:7b"
-          baseUrl: "http://server1:11434"
-          path: "/v1/chat/completions"
-          weight: 2
-        - name: "qwen2.5:14b"
-          baseUrl: "http://server2:11434"
-          path: "/v1/chat/completions"
-          weight: 1
+After completing this guide, you will be able to:
+
+- 🎯 Configure multiple types of AI services (Chat, Embedding, TTS, etc.)
+- 🎯 Implement intelligent load balancing and traffic distribution
+- 🎯 Set up rate limiting policies to protect backend services
+- 🎯 Configure circuit breakers to prevent service avalanche
+- 🎯 Build a complete monitoring and alerting system
+- 🎯 Master dynamic configuration management techniques
+
+## Configuration Basics
+
+### Configuration Methods
+
+JAiRouter supports two configuration methods:
+
+1. **Static configuration**: via `application.yml` or JSON configuration files
+2. **Dynamic configuration**: runtime updates via the REST API
+
+### Configuration Priority
+
+| Priority | Configuration Source | Hot Reload | Persistence |
+|----------|----------------------|------------|-------------|
+| High | Dynamic API configuration | ✅ | ✅ |
+| Low | Static configuration files | ❌ | ✅ |
+
+## Configuring AI Services
+
+### Supported Service Types
+
+JAiRouter supports the following AI service types:
+
+| Service Type | Description | Example Models |
+|--------------|-------------|----------------|
+| `chat` | Chat conversation service | GPT-4, Llama, Qwen |
+| `embedding` | Text embedding service | text-embedding-ada-002 |
+| `rerank` | Text reranking service | bge-reranker |
+| `tts` | Text-to-speech service | tts-1 |
+| `stt` | Speech-to-text service | whisper-1 |
+| `image-generation` | Image generation service | dall-e-3 |
+| `image-editing` | Image editing service | dall-e-2 |
+
+### Basic Service Configuration
+
+Create `config/model-router-config@1.json`:
+
+```json
+{
+  "services": {
+    "chat": {
+      "instances": [
+        {
+          "name": "llama3.2:3b",
+          "baseUrl": "http://localhost:11434",
+          "path": "/v1/chat/completions",
+          "weight": 1,
+          "timeout": 30000,
+          "maxRetries": 3
+        }
+      ]
+    }
+  }
+}
 ```
 
-### 3. Load Balancing Strategies
+### Instance Configuration Parameters
 
-Choose how requests are distributed:
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `name` | String | ✅ | - | Model name, used for routing |
+| `baseUrl` | String | ✅ | - | Base URL of the backend service |
+| `path` | String | ✅ | - | API path |
+| `weight` | Integer | ❌ | 1 | Load balancing weight |
+| `timeout` | Integer | ❌ | 30000 | Request timeout (milliseconds) |
+| `maxRetries` | Integer | ❌ | 3 | Maximum number of retries |
+| `headers` | Object | ❌ | {} | Custom request headers |
 
-- **random**: Random selection
-- **round-robin**: Sequential rotation
-- **least-connections**: Route to least busy instance
-- **ip-hash**: Consistent routing based on client IP
+## Configuring Load Balancing
 
-### 4. Rate Limiting
+### Load Balancing Strategies
 
-Control request rates per client or globally:
+JAiRouter supports four load balancing strategies:
 
-- **token-bucket**: Allow bursts up to bucket capacity
-- **leaky-bucket**: Smooth, constant rate
-- **sliding-window**: Rate limit over time windows
+#### 1. Random
 
-## Basic Configuration
-
-### Minimal Configuration
-
-Start with a simple configuration:
-
-```yaml
-server:
-  port: 8080
-
-model:
-  services:
-    chat:
-      instances:
-        - name: "default-model"
-          baseUrl: "http://localhost:11434"
-          path: "/v1/chat/completions"
+```json
+{
+  "services": {
+    "chat": {
+      "loadBalance": {
+        "type": "random"
+      }
+    }
+  }
+}
 ```
 
-### Adding Load Balancing
+**Features**:
+- Randomly selects an available instance
+- Simple and efficient, suitable for scenarios where instances have similar performance
+- Requests are evenly distributed over the long run
 
-Configure multiple instances with load balancing:
+#### 2. Round Robin
 
-```yaml
-model:
-  services:
-    chat:
-      load-balance:
-        type: round-robin
-      instances:
-        - name: "fast-model"
-          baseUrl: "http://fast-server:11434"
-          weight: 3
-        - name: "accurate-model"
-          baseUrl: "http://accurate-server:11434"
-          weight: 1
+```json
+{
+  "services": {
+    "chat": {
+      "loadBalance": {
+        "type": "round-robin"
+      }
+    }
+  }
+}
 ```
 
-### Adding Rate Limiting
+**Features**:
+- Distributes requests sequentially in turn
+- Guarantees that every instance receives requests
+- Suitable for scenarios where instances have similar performance
 
-Protect your services with rate limiting:
+#### 3. Least Connections
 
-```yaml
-model:
-  services:
-    chat:
-      rate-limit:
-        type: token-bucket
-        capacity: 100
-        refill-rate: 10
-        client-ip-enable: true
-      instances:
-        - name: "protected-model"
-          baseUrl: "http://localhost:11434"
+```json
+{
+  "services": {
+    "chat": {
+      "loadBalance": {
+        "type": "least-connections"
+      }
+    }
+  }
+}
 ```
 
-### Adding Circuit Breaking
+**Features**:
+- Selects the instance with the fewest current connections
+- Suitable for scenarios where request processing times vary greatly
+- Automatically balances the load
 
-Prevent cascading failures:
+#### 4. IP Hash
 
-```yaml
-model:
-  services:
-    chat:
-      circuit-breaker:
-        enabled: true
-        failure-threshold: 5
-        recovery-timeout: 30000
-        success-threshold: 3
-      fallback:
-        type: default
-        message: "Service temporarily unavailable"
-      instances:
-        - name: "reliable-model"
-          baseUrl: "http://localhost:11434"
+```json
+{
+  "services": {
+    "chat": {
+      "loadBalance": {
+        "type": "ip-hash"
+      }
+    }
+  }
+}
 ```
 
-## Configuration Management
+**Features**:
+- Consistent hashing based on the client IP
+- The same client is always routed to the same instance
+- Suitable for scenarios that require session stickiness
 
-### Static Configuration
+### Weight Configuration
 
-Define services in `application.yml`:
+All load balancing strategies support weight configuration:
 
-```yaml
-model:
-  services:
-    chat:
-      # Configuration here
-    embedding:
-      # Configuration here
+```json
+{
+  "services": {
+    "chat": {
+      "instances": [
+        {
+          "name": "high-performance-model",
+          "baseUrl": "http://gpu-server:8080",
+          "weight": 3
+        },
+        {
+          "name": "standard-model",
+          "baseUrl": "http://cpu-server:8080",
+          "weight": 1
+        }
+      ],
+      "loadBalance": {
+        "type": "round-robin"
+      }
+    }
+  }
+}
 ```
 
-### Dynamic Configuration
+## Configuring Rate Limiting
 
-Add, update, or remove instances at runtime:
+### Rate Limiting Algorithms
+
+JAiRouter supports four rate limiting algorithms:
+
+#### 1. Token Bucket
+
+```json
+{
+  "services": {
+    "chat": {
+      "rateLimit": {
+        "type": "token-bucket",
+        "capacity": 100,
+        "refillRate": 10,
+        "clientIpEnable": true
+      }
+    }
+  }
+}
+```
+
+**Parameter descriptions**:
+- `capacity`: Bucket capacity (maximum number of tokens)
+- `refillRate`: Token refill rate (per second)
+- `clientIpEnable`: Whether to enable independent rate limiting based on client IP
+
+#### 2. Leaky Bucket
+
+```json
+{
+  "services": {
+    "chat": {
+      "rateLimit": {
+        "type": "leaky-bucket",
+        "capacity": 50,
+        "leakRate": 5
+      }
+    }
+  }
+}
+```
+
+**Parameter descriptions**:
+- `capacity`: Bucket capacity
+- `leakRate`: Leak rate (per second)
+
+#### 3. Sliding Window
+
+```json
+{
+  "services": {
+    "chat": {
+      "rateLimit": {
+        "type": "sliding-window",
+        "windowSize": 60,
+        "maxRequests": 100
+      }
+    }
+  }
+}
+```
+
+**Parameter descriptions**:
+- `windowSize`: Time window size (seconds)
+- `maxRequests`: Maximum number of requests within the window
+
+#### 4. Warm Up
+
+```json
+{
+  "services": {
+    "chat": {
+      "rateLimit": {
+        "type": "warm-up",
+        "capacity": 100,
+        "warmUpPeriod": 300,
+        "coldFactor": 3
+      }
+    }
+  }
+}
+```
+
+**Parameter descriptions**:
+- `capacity`: Final capacity
+- `warmUpPeriod`: Warm-up time (seconds)
+- `coldFactor`: Cold start factor
+
+## Configuring the Circuit Breaker
+
+The circuit breaker is used to prevent service avalanche. When a backend service fails, the circuit breaker trips automatically:
+
+```json
+{
+  "services": {
+    "chat": {
+      "circuitBreaker": {
+        "failureThreshold": 5,
+        "recoveryTimeout": 60000,
+        "successThreshold": 3,
+        "timeout": 30000
+      }
+    }
+  }
+}
+```
+
+### Circuit Breaker Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `failureThreshold` | Integer | 5 | Failure threshold; the breaker trips when exceeded |
+| `recoveryTimeout` | Long | 60000 | Recovery detection interval (milliseconds) |
+| `successThreshold` | Integer | 3 | Success threshold; the breaker closes when reached |
+| `timeout` | Long | 30000 | Request timeout (milliseconds) |
+
+### Circuit Breaker States
+
+- **CLOSED**: Normal state, requests pass through normally
+- **OPEN**: Tripped state, errors are returned directly
+- **HALF_OPEN**: Half-open state, allows a small number of requests to test service recovery
+
+## Configuring Fallback Strategies
+
+When a service is unavailable, you can configure a fallback strategy:
+
+```json
+{
+  "services": {
+    "chat": {
+      "fallback": {
+        "type": "default",
+        "response": {
+          "choices": [
+            {
+              "message": {
+                "role": "assistant",
+                "content": "The service is temporarily unavailable. Please try again later."
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+### Fallback Strategy Types
+
+- **default**: Returns a preset default response
+- **cache**: Returns cached historical responses
+
+## Configuring Health Checks
+
+JAiRouter automatically checks the health status of service instances:
+
+```json
+{
+  "checker": {
+    "enabled": true,
+    "interval": 30000,
+    "timeout": 5000,
+    "healthPath": "/health"
+  }
+}
+```
+
+### Health Check Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `enabled` | Boolean | true | Whether health checks are enabled |
+| `interval` | Long | 30000 | Check interval (milliseconds) |
+| `timeout` | Long | 5000 | Check timeout (milliseconds) |
+| `healthPath` | String | /health | Health check path |
+
+## Configuring Storage
+
+JAiRouter supports two configuration storage methods:
+
+### In-Memory Storage
+
+```json
+{
+  "store": {
+    "type": "memory"
+  }
+}
+```
+
+**Features**:
+- Configuration is stored in memory
+- Configuration is lost after restart
+- Suitable for development and testing environments
+
+### File Storage
+
+```json
+{
+  "store": {
+    "type": "file",
+    "path": "config/"
+  }
+}
+```
+
+**Features**:
+- Configuration is persisted to files
+- Supports automatic merging of configuration files
+- Suitable for production environments
+
+## Multi-Service Configuration Example
+
+Here is a complete configuration example that includes multiple service types:
+
+```json
+{
+  "services": {
+    "chat": {
+      "instances": [
+        {
+          "name": "llama3.2:3b",
+          "baseUrl": "http://ollama:11434",
+          "path": "/v1/chat/completions",
+          "weight": 1
+        },
+        {
+          "name": "qwen2:7b",
+          "baseUrl": "http://ollama:11434",
+          "path": "/v1/chat/completions",
+          "weight": 2
+        }
+      ],
+      "loadBalance": {
+        "type": "round-robin"
+      },
+      "rateLimit": {
+        "type": "token-bucket",
+        "capacity": 100,
+        "refillRate": 10,
+        "clientIpEnable": true
+      },
+      "circuitBreaker": {
+        "failureThreshold": 5,
+        "recoveryTimeout": 60000,
+        "successThreshold": 3
+      }
+    },
+    "embedding": {
+      "instances": [
+        {
+          "name": "nomic-embed-text",
+          "baseUrl": "http://ollama:11434",
+          "path": "/v1/embeddings",
+          "weight": 1
+        }
+      ],
+      "loadBalance": {
+        "type": "random"
+      },
+      "rateLimit": {
+        "type": "sliding-window",
+        "windowSize": 60,
+        "maxRequests": 200
+      }
+    },
+    "tts": {
+      "instances": [
+        {
+          "name": "tts-1",
+          "baseUrl": "http://openai-api:8080",
+          "path": "/v1/audio/speech",
+          "weight": 1,
+          "headers": {
+            "Authorization": "Bearer your-api-key"
+          }
+        }
+      ]
+    }
+  },
+  "store": {
+    "type": "file",
+    "path": "config/"
+  },
+  "checker": {
+    "enabled": true,
+    "interval": 30000
+  }
+}
+```
+
+## Dynamic Configuration Management
+
+### Managing Configuration via the API
 
 ```bash
 # Add a new instance
-curl -X POST http://localhost:8080/api/config/instance/add/chat \
+curl -X POST "http://localhost:8080/api/config/instance/add/chat" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "new-model",
-    "baseUrl": "http://new-server:11434",
+    "baseUrl": "http://new-server:8080",
     "path": "/v1/chat/completions",
     "weight": 1
   }'
 
 # Update an instance
-curl -X PUT http://localhost:8080/api/config/instance/update/chat \
+curl -X PUT "http://localhost:8080/api/config/instance/update/chat" \
   -H "Content-Type: application/json" \
   -d '{
-    "instanceId": "new-model@http://new-server:11434",
+    "instanceId": "new-model@http://new-server:8080",
     "instance": {
       "name": "new-model",
-      "baseUrl": "http://updated-server:11434",
+      "baseUrl": "http://new-server:8080",
       "path": "/v1/chat/completions",
       "weight": 2
     }
   }'
 
-# Remove an instance
-curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=new-model&baseUrl=http://updated-server:11434"
+# Delete an instance
+curl -X DELETE "http://localhost:8080/api/config/instance/del/chat?modelName=new-model&baseUrl=http://new-server:8080"
+
+# View all instances
+curl "http://localhost:8080/api/config/instance/type/chat"
 ```
 
-## Health Monitoring
+### Configuration File Version Management
 
-### Automatic Health Checks
-
-JAiRouter automatically monitors service health:
-
-```yaml
-model:
-  services:
-    chat:
-      health-check:
-        enabled: true
-        interval: 30000  # 30 seconds
-        timeout: 5000    # 5 seconds
-        path: "/health"  # Health check endpoint
-```
-
-### Manual Health Check
-
-Check service status manually:
+JAiRouter supports configuration file version management. Through the version management API, you can view historical versions and roll back configurations:
 
 ```bash
-# Check overall health
-curl http://localhost:8080/actuator/health
+# Get information about all versions
+curl "http://localhost:8080/api/config/versions"
 
-# Check specific service instances
-curl http://localhost:8080/api/config/instance/type/chat
+# Get the configuration of a specific version
+curl "http://localhost:8080/api/config/versions/1"
+
+# Roll back to a specific version
+curl -X POST "http://localhost:8080/api/config/versions/1/apply"
 ```
 
-## Monitoring and Observability
+## Monitoring and Logging
 
-### Metrics
+### Enabling Monitoring
 
-JAiRouter exposes metrics for monitoring:
+JAiRouter has built-in Prometheus metrics support:
+
+```yaml
+# application.yml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+```
+
+### Viewing Metrics
 
 ```bash
 # View all metrics
-curl http://localhost:8080/actuator/metrics
+curl "http://localhost:8080/actuator/metrics"
 
-# View specific metrics
-curl http://localhost:8080/actuator/metrics/http.server.requests
-curl http://localhost:8080/actuator/metrics/jairouter.requests.total
+# View HTTP request metrics
+curl "http://localhost:8080/actuator/metrics/http.server.requests"
+
+# View metrics in Prometheus format
+curl "http://localhost:8080/actuator/prometheus"
 ```
 
-### Logging
+### Logging Configuration
 
-Configure logging levels:
+JAiRouter supports multi-environment logging configuration:
 
 ```yaml
+# application-dev.yml (development environment)
 logging:
   level:
     org.unreal.modelrouter: DEBUG
-    org.springframework.web: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    org.springframework: INFO
+
+# application-prod.yml (production environment)
+logging:
+  level:
+    org.unreal.modelrouter: INFO
+    org.springframework: WARN
   file:
     name: logs/jairouter.log
 ```
 
-## Testing Your Configuration
-
-### 1. Validate Configuration
-
-Test your configuration before deploying:
-
-```bash
-# Check configuration syntax
-java -jar jairouter.jar --spring.config.location=file:./application.yml --spring.profiles.active=validate
-```
-
-### 2. Load Testing
-
-Use tools like Apache Bench or curl to test load balancing:
-
-```bash
-# Simple load test
-for i in {1..10}; do
-  curl -X POST http://localhost:8080/v1/chat/completions \
-    -H "Content-Type: application/json" \
-    -d '{"model": "test", "messages": [{"role": "user", "content": "test"}]}' &
-done
-wait
-```
-
-### 3. Circuit Breaker Testing
-
-Test circuit breaker behavior:
-
-```bash
-# Stop backend service to trigger circuit breaker
-# Then make requests to see fallback responses
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model": "test", "messages": [{"role": "user", "content": "test"}]}'
-```
-
-## Common Patterns
-
-### 1. Multi-Model Setup
-
-Configure different models for different use cases:
-
-```yaml
-model:
-  services:
-    chat:
-      instances:
-        - name: "fast-chat"
-          baseUrl: "http://fast-server:11434"
-          weight: 3
-        - name: "smart-chat"
-          baseUrl: "http://smart-server:11434"
-          weight: 1
-    embedding:
-      instances:
-        - name: "embedding-model"
-          baseUrl: "http://embedding-server:11434"
-```
-
-### 2. Environment-Specific Configuration
-
-Use Spring profiles for different environments:
-
-```yaml
-# application-dev.yml
-model:
-  services:
-    chat:
-      instances:
-        - name: "dev-model"
-          baseUrl: "http://localhost:11434"
-
----
-# application-prod.yml
-model:
-  services:
-    chat:
-      load-balance:
-        type: least-connections
-      rate-limit:
-        type: token-bucket
-        capacity: 1000
-        refill-rate: 100
-      instances:
-        - name: "prod-model-1"
-          baseUrl: "http://prod-server-1:11434"
-        - name: "prod-model-2"
-          baseUrl: "http://prod-server-2:11434"
-```
-
-### 3. Gradual Rollout
-
-Use weights for gradual model rollouts:
-
-```yaml
-model:
-  services:
-    chat:
-      instances:
-        - name: "stable-model"
-          baseUrl: "http://stable-server:11434"
-          weight: 9  # 90% of traffic
-        - name: "new-model"
-          baseUrl: "http://new-server:11434"
-          weight: 1  # 10% of traffic
-```
-
 ## Next Steps
 
-Now that you understand the basics, explore more advanced topics:
+After completing the first step of configuration, you can:
 
-1. **[Configuration Guide](../configuration/index.md)** - Detailed configuration options
-2. **[API Reference](../api-reference/index.md)** - Complete API documentation
-3. **[Deployment Guide](../deployment/index.md)** - Production deployment strategies
-4. **[Monitoring Guide](../monitoring/index.md)** - Set up comprehensive monitoring
+1. **[Configuration Guide](../configuration/index.md)** - Dive into all configuration options
+2. **[API Reference](../api-reference/index.md)** - View the complete API documentation
+3. **[Deployment Guide](../deployment/index.md)** - Learn about production deployment
+4. **[Monitoring Guide](../monitoring/index.md)** - Set up monitoring and alerting
 
-## Troubleshooting
+## FAQ
 
-### Common Issues
+### Q: How do I choose the right load balancing strategy?
 
-**No Available Instances**:
-- Check if backend services are running
-- Verify network connectivity
-- Check health check configuration
+**A:** Choose based on your scenario:
+- **Instances with similar performance**: Use Random or Round Robin
+- **Large performance differences**: Use Least Connections
+- **Session stickiness required**: Use IP Hash
 
-**Rate Limit Exceeded**:
-- Adjust rate limit settings
-- Check if client IP rate limiting is appropriate
-- Monitor request patterns
+### Q: How do I choose the right rate limiting algorithm?
 
-**Circuit Breaker Open**:
-- Check backend service health
-- Review failure threshold settings
-- Monitor error rates
+**A:** Choose based on traffic characteristics:
+- **Steady traffic**: Use Token Bucket
+- **Bursty traffic**: Use Leaky Bucket
+- **Precise control**: Use Sliding Window
+- **Cold start scenarios**: Use Warm Up
 
-For more detailed troubleshooting, see the [Troubleshooting Guide](../troubleshooting/index.md).
+### Q: When do configuration updates take effect?
+
+**A:** 
+- **Dynamic API configuration**: takes effect immediately
+- **Configuration file updates**: require a service restart
+
+### Q: How do I back up my configuration?
+
+**A:** Use the configuration management API:
+
+```bash
+# Back up the current configuration
+curl -X POST "http://localhost:8080/api/config/merge/backup"
+```
+
+Configuration files are backed up to the `config/backup_<timestamp>/` directory.
+
+## 🎉 Complete the First Step of Configuration!
+
+Congratulations on completing your in-depth JAiRouter configuration learning! You have now mastered:
+
+### ✅ Skills Acquired
+
+- 🎯 **Multi-service configuration**: Configure multiple AI services such as Chat, Embedding, and TTS
+- ⚖️ **Load balancing**: Master the use cases of the four load balancing strategies
+- 🛡️ **Traffic control**: Configure rate limiting, circuit breaking, and fallback protection mechanisms
+- 📊 **Monitoring & operations**: Set up health checks and monitoring metrics
+- 🔧 **Dynamic management**: Use the API for runtime configuration updates
+
+### 🚀 Next Step Suggestions
+
+Choose your next step based on your needs:
+
+| Goal | Recommended Document | Description |
+|------|----------------------|-------------|
+| **Production deployment** | [Deployment Guide](../deployment/index.md) | Docker, Kubernetes deployment |
+| **API integration development** | [API Reference](../api-reference/index.md) | Complete API documentation and examples |
+| **Monitoring and alerting** | [Monitoring Guide](../monitoring/index.md) | Prometheus, Grafana integration |
+| **Troubleshooting** | [Troubleshooting](../troubleshooting/index.md) | Common issues and solutions |
+| **Advanced configuration** | [Configuration Guide](../configuration/index.md) | Detailed configuration parameter descriptions |
+
+### 💡 Continuous Learning
+
+- 📖 Regularly check the [Changelog](../reference/changelog.md) for new features
+- 🐛 When you encounter issues, check the [FAQ](../reference/faq.md)
+- 💬 Join the [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions)
+
+### 🎯 Practice Suggestions
+
+1. **Start small**: Validate your configuration in a development environment first
+2. **Expand gradually**: Add service types and instances one at a time
+3. **Monitor first**: Establish monitoring and alerting mechanisms early
+4. **Document everything**: Record your configuration decisions and change history
+
+Ready to go to production? Let's continue with the **[Deployment Guide](../deployment/index.md)**!
+
+## FAQ {#faq}
+
+This section summarizes common issues users encounter during the first step of configuration.
+
+### Configuration-Related
+
+#### 1. Configuration File Format Errors
+
+**Problem**: YAML or JSON parsing errors are reported at startup
+
+**Solutions**:
+- Use a YAML/JSON validation tool to check the syntax
+- Ensure correct indentation (YAML)
+- Check quote matching (JSON)
+
+#### 2. Configuration Not Taking Effect
+
+**Problem**: Changes to the configuration have no effect
+
+**Solutions**:
+- Dynamic configuration takes effect immediately
+- Static configuration requires a service restart
+- Check whether the configuration file path is correct
+
+### Load Balancing-Related
+
+#### 3. Unbalanced Load
+
+**Problem**: Some instances receive too many requests while others receive too few
+
+**Solutions**:
+- Check whether the weight configuration is reasonable
+- Confirm whether health checks are working properly
+- Consider using the Least Connections strategy
+
+### Rate Limiting and Circuit Breaker-Related
+
+#### 4. Frequent Rate Limiting Triggers
+
+**Problem**: Normal traffic is being rate limited
+
+**Solutions**:
+- Adjust the rate limiting thresholds
+- Check whether client IP rate limiting is enabled
+- Consider using the sliding window algorithm
+
+#### 5. Circuit Breaker Tripping Frequently
+
+**Problem**: The circuit breaker trips even though the service is healthy
+
+**Solutions**:
+- Adjust the failureThreshold threshold
+- Check the backend service response time
+- Increase the timeout setting
+
+### Monitoring-Related
+
+#### 6. Missing Monitoring Metrics
+
+**Problem**: Prometheus cannot scrape metrics
+
+**Solutions**:
+- Check the management endpoint configuration
+- Confirm network connectivity
+- Check whether `/actuator/prometheus` returns data normally

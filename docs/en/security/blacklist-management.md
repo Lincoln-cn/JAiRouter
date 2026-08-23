@@ -1,10 +1,10 @@
-# Security Blacklist Management
+﻿# Security Blacklist Management
 
 <!-- 版本信息 -->
 > **Document Version**: 1.8.0
-> **最后更新**: 2026-06-10
-> **Git 提交**: 2cba097
-> **作者**: Lincoln
+> **Last Updated**: 2026-06-10
+> **Git Commit**: 2cba097
+> **Author**: Lincoln
 <!-- /版本信息 -->
 
 ## Overview

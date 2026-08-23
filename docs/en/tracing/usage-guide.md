@@ -1,4 +1,11 @@
-# Usage Guide
+﻿# Usage Guide
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-06-15
+> **Git Commit**: 933eeadf
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 This guide details how to effectively use JAiRouter's distributed tracing feature in various scenarios.
 
@@ -8,36 +15,36 @@ This guide details how to effectively use JAiRouter's distributed tracing featur
 
 #### 1. Log Tracing Information
 
-After enabling tracing, all requests will contain tracing information in the logs:
+After tracing is enabled, all requests will include tracing information in the logs:
 
 ```bash
-# View logs containing tracing information
+# 查看包含追踪信息的日志
 tail -f logs/application.log | grep traceId
 
-# Find all logs for a specific request by traceId
+# 根据 traceId 查找特定请求的所有日志
 grep "4bf92f3577b34da6a3ce929d0e0e4736" logs/application.log
 ```
 
 #### 2. Structured Log Query
 
 ```bash
-# Use jq to parse JSON-formatted tracing logs
+# 使用 jq 解析 JSON 格式的追踪日志
 tail -f logs/application.log | jq 'select(.traceId != null)'
 
-# Query tracing data for a specific service
+# 查询特定服务的追踪数据
 tail -f logs/application.log | jq 'select(.service == "jairouter" and .traceId != null)'
 ```
 
 #### 3. Actuator Endpoint Query
 
 ```bash
-# View tracing health status
+# 查看追踪健康状态
 curl http://localhost:8080/actuator/health/tracing
 
-# View tracing configuration information
+# 查看追踪配置信息
 curl http://localhost:8080/actuator/info | jq '.tracing'
 
-# View tracing metrics
+# 查看追踪指标
 curl http://localhost:8080/actuator/metrics | grep tracing
 ```
 
@@ -50,95 +57,85 @@ curl http://localhost:8080/actuator/metrics | grep tracing
 public class CustomController {
 
     @Autowired
-    private TracingService tracingService;
+    private TracingContextHolder tracingContextHolder;
 
     @PostMapping("/api/custom")
-    public Mono<ResponseEntity<?>> customEndpoint(@RequestBody CustomRequest request) {
-        // Get current tracing context (automatically created by HTTP filter)
-        TracingContext context = TracingContextHolder.getCurrentContext();
-        
+    public ResponseEntity<?> customEndpoint(@RequestBody CustomRequest request) {
+        TracingContext context = tracingContextHolder.getCurrentContext();
         if (context != null && context.isActive()) {
-            Span currentSpan = context.getCurrentSpan();
-            
-            // Add business attributes to Span
-            currentSpan.setAttribute("user.id", request.getUserId());
-            currentSpan.setAttribute("business.type", request.getType());
-            currentSpan.setAttribute("custom.operation", "data-processing");
-            
-            // Record business event
-            currentSpan.addEvent("business.started", 
-                Attributes.of(AttributeKey.longKey("input.size"), request.getData().size()));
+            Span span = context.getCurrentSpan();
+            // 添加业务标签
+            span.setAttribute("user.id", request.getUserId());
+            span.setAttribute("business.type", request.getType());
+            span.setAttribute("custom.operation", "data-processing");
+
+            // 记录业务事件
+            span.addEvent("business.started");
         }
 
-        // Business logic processing
-        return processRequest(request)
-            .doOnSuccess(response -> {
-                if (context != null && context.isActive()) {
-                    Span span = context.getCurrentSpan();
-                    span.setAttribute("result.status", response.getStatus());
-                    span.addEvent("business.completed",
-                        Attributes.of(AttributeKey.longKey("output.size"), response.getData().size()));
-                }
-            })
-            .map(ResponseEntity::ok);
+        // 业务逻辑处理
+        CustomResponse response = processRequest(request);
+
+        // 记录处理结果
+        if (context != null && context.isActive()) {
+            Span span = context.getCurrentSpan();
+            span.setAttribute("result.status", response.getStatus());
+            span.addEvent("business.completed");
+        }
+
+        return ResponseEntity.ok(response);
     }
 }
 ```
 
-#### 2. Manual Span Creation in Business Services
+#### 2. Manually Creating Spans for Tracing
 
 ```java
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+
 @Component
 public class BusinessService {
 
     @Autowired
-    private TracingService tracingService;
+    private TracingContextHolder tracingContextHolder;
 
     public Mono<ProcessResult> processUserData(UserData data) {
-        return Mono.fromCallable(() -> {
-            // Create custom operation span
-            TracingContext context = tracingService.createOperationSpan(
-                "user-data-processing", 
-                SpanKind.INTERNAL
-            );
-            
+        TracingContext context = tracingContextHolder.getCurrentContext();
+        if (context != null && context.isActive()) {
+            Span parentSpan = context.getCurrentSpan();
+            Span span = context.createChildSpan("user-data-processing", SpanKind.INTERNAL, parentSpan);
             try {
-                Span span = context.getCurrentSpan();
-                span.setAttribute("user.id", data.getUserId());
-                span.setAttribute("data.size", data.getSize());
-                
-                // Business logic
-                ProcessResult result = performProcessing(data);
-                
-                span.addEvent("processing.completed");
-                return result;
-            } finally {
-                context.finishSpan(context.getCurrentSpan());
+                return Mono.fromCallable(() -> {
+                    // 业务逻辑
+                    return new ProcessResult();
+                }).doFinally(signal -> span.end());
+            } catch (Exception e) {
+                span.recordException(e);
+                span.end();
+                throw e;
             }
+        }
+        return Mono.fromCallable(() -> {
+            // 业务逻辑
+            return new ProcessResult();
         });
     }
 
     public List<Entity> queryDatabase(String condition) {
-        TracingContext parentContext = TracingContextHolder.getCurrentContext();
-        
-        if (parentContext != null && parentContext.isActive()) {
-            // Create child span for database operation
-            Span dbSpan = parentContext.createChildSpan(
-                "database-query", 
-                SpanKind.CLIENT,
-                parentContext.getCurrentSpan()
-            );
-            
-            dbSpan.setAttribute("db.operation", "query");
-            dbSpan.setAttribute("db.condition", condition);
-            
+        TracingContext context = tracingContextHolder.getCurrentContext();
+        if (context != null && context.isActive()) {
+            Span parentSpan = context.getCurrentSpan();
+            Span span = context.createChildSpan("database-query", SpanKind.CLIENT, parentSpan);
+            span.setAttribute("operation", "query");
             try {
+                // 数据库查询逻辑
                 return entityRepository.findByCondition(condition);
             } finally {
-                dbSpan.end();
+                span.end();
             }
         }
-        
+        // 数据库查询逻辑
         return entityRepository.findByCondition(condition);
     }
 }
@@ -151,57 +148,55 @@ public class BusinessService {
 #### 1. Inter-Service Call Tracing
 
 ```java
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+
 @Service
 public class ExternalServiceClient {
 
     @Autowired
     private WebClient webClient;
 
-    public Mono<ExternalResponse> callExternalService(ExternalRequest request) {
-        TracingContext parentContext = TracingContextHolder.getCurrentContext();
-        
-        if (parentContext != null && parentContext.isActive()) {
-            // Create child Span for external service call
-            Span externalSpan = parentContext.createChildSpan(
-                "external-service-call",
-                SpanKind.CLIENT,
-                parentContext.getCurrentSpan()
-            );
-            
-            // Add service information
-            externalSpan.setAttribute("external.service", "ai-model-service");
-            externalSpan.setAttribute("external.endpoint", "/v1/chat/completions");
-            externalSpan.setAttribute("request.model", request.getModel());
-            
-            // Prepare headers with tracing context
-            Map<String, String> headers = new HashMap<>();
-            parentContext.injectContext(headers);
+    @Autowired
+    private TracingContextHolder tracingContextHolder;
 
-            return webClient.post()
-                .uri("/v1/chat/completions")
-                .headers(httpHeaders -> headers.forEach(httpHeaders::add))
-                .body(BodyInserters.fromValue(request))
-                .retrieve()
-                .bodyToMono(ExternalResponse.class)
-                .doOnSuccess(response -> {
-                    externalSpan.setAttribute("response.status", "success");
-                    externalSpan.setAttribute("response.tokens", response.getUsage().getTotalTokens());
-                    externalSpan.end();
-                })
-                .doOnError(error -> {
-                    externalSpan.setAttribute("error.type", error.getClass().getSimpleName());
-                    externalSpan.setAttribute("error.message", error.getMessage());
-                    externalSpan.recordException(error);
-                    externalSpan.end();
-                });
+    public Mono<ExternalResponse> callExternalService(ExternalRequest request) {
+        TracingContext context = tracingContextHolder.getCurrentContext();
+        if (context == null || !context.isActive()) {
+            return callExternalServiceInternal(request, null);
         }
-        
-        // Fallback without tracing
+
+        // 创建子 Span 用于外部服务调用
+        Span parentSpan = context.getCurrentSpan();
+        Span span = context.createChildSpan("external-service-call", SpanKind.CLIENT, parentSpan);
+        // 添加服务信息
+        span.setAttribute("external.service", "ai-model-service");
+        span.setAttribute("external.endpoint", "/v1/chat/completions");
+        span.setAttribute("request.model", request.getModel());
+
+        return callExternalServiceInternal(request, span)
+            .doFinally(signal -> span.end());
+    }
+
+    private Mono<ExternalResponse> callExternalServiceInternal(ExternalRequest request, Span span) {
         return webClient.post()
             .uri("/v1/chat/completions")
             .body(BodyInserters.fromValue(request))
             .retrieve()
-            .bodyToMono(ExternalResponse.class);
+            .bodyToMono(ExternalResponse.class)
+            .doOnSuccess(response -> {
+                if (span != null) {
+                    span.setAttribute("response.status", "success");
+                    span.setAttribute("response.tokens", response.getUsage().getTotalTokens());
+                }
+            })
+            .doOnError(error -> {
+                if (span != null) {
+                    span.setAttribute("error.type", error.getClass().getSimpleName());
+                    span.setAttribute("error.message", error.getMessage());
+                    span.recordException(error);
+                }
+            });
     }
 }
 ```
@@ -212,34 +207,37 @@ public class ExternalServiceClient {
 @Component
 public class ReactiveProcessor {
 
+    @Autowired
+    private TracingContextHolder tracingContextHolder;
+
     public Mono<ProcessedData> processDataPipeline(InputData input) {
         return Mono.just(input)
-            // First stage: validation
+            // 第一阶段：验证
             .flatMap(this::validateInput)
-            .doOnNext(validated -> {
-                TracingContext context = TracingContextHolder.getCurrentContext();
-                if (context != null && context.isActive()) {
-                    context.getCurrentSpan().addEvent("pipeline.stage.validation");
-                }
-            })
+            .contextWrite(ctx ->
+                tracingContextHolder.getCurrentContext()
+                    .map(tracing -> ctx.put("tracing", tracing))
+                    .orElse(ctx))
 
-            // Second stage: transformation
+            // 第二阶段：转换
             .flatMap(this::transformData)
-            .doOnNext(transformed -> {
-                TracingContext context = TracingContextHolder.getCurrentContext();
+            .contextWrite(ctx -> {
+                // 在每个阶段更新追踪信息
+                TracingContext context = tracingContextHolder.getCurrentContext();
                 if (context != null && context.isActive()) {
                     Span span = context.getCurrentSpan();
                     span.addEvent("pipeline.stage.transform");
-                    span.setAttribute("data.transformed", true);
                 }
+                return ctx;
             })
 
-            // Third stage: storage
+            // 第三阶段：存储
             .flatMap(this::saveData)
             .doOnSuccess(result -> {
-                TracingContext context = TracingContextHolder.getCurrentContext();
+                TracingContext context = tracingContextHolder.getCurrentContext();
                 if (context != null && context.isActive()) {
-                    context.getCurrentSpan().setAttribute("pipeline.result", "success");
+                    Span span = context.getCurrentSpan();
+                    span.setAttribute("pipeline.result", "success");
                 }
             });
     }
@@ -250,7 +248,7 @@ public class ReactiveProcessor {
 
 #### 1. Automatic Slow Query Detection
 
-The system automatically detects requests exceeding the threshold:
+The system automatically detects requests that exceed the threshold:
 
 ```yaml
 jairouter:
@@ -258,8 +256,8 @@ jairouter:
     sampling:
       strategy: "adaptive"
       adaptive:
-        slow-request-threshold: 3000  # 3-second threshold
-        slow-request-sample-rate: 0.8 # 80% sampling for slow requests
+        slow-request-threshold: 3000  # 3秒阈值
+        slow-request-sample-rate: 0.8 # 慢请求80%采样
 ```
 
 #### 2. Manual Slow Query Analysis
@@ -268,29 +266,29 @@ jairouter:
 @Component
 public class SlowQueryAnalyzer {
 
+    @Autowired
+    private TracingContextHolder tracingContextHolder;
+
     public void analyzeSlowOperation() {
-        TracingContext context = TracingContextHolder.getCurrentContext();
         long startTime = System.currentTimeMillis();
 
         try {
-            // Execute potentially slow operation
+            // 执行可能较慢的操作
             performComplexOperation();
         } finally {
             long duration = System.currentTimeMillis() - startTime;
 
-            if (duration > 5000 && context != null && context.isActive()) { // 5-second threshold
-                Span span = context.getCurrentSpan();
-                
-                // Mark as slow query
-                span.setAttribute("performance.slow", true);
-                span.setAttribute("performance.duration_ms", duration);
-                span.addEvent("slow.query.detected",
-                    Attributes.of(
-                        AttributeKey.stringKey("threshold"), "5000ms",
-                        AttributeKey.stringKey("actual"), duration + "ms"
-                    ));
+            if (duration > 5000) { // 5秒阈值
+                TracingContext context = tracingContextHolder.getCurrentContext();
+                if (context != null && context.isActive()) {
+                    Span span = context.getCurrentSpan();
+                    // 标记为慢查询
+                    span.setAttribute("performance.slow", "true");
+                    span.setAttribute("performance.duration", String.valueOf(duration));
+                    span.addEvent("slow.query.detected");
+                }
 
-                // Record detailed performance information
+                // 记录详细的性能信息
                 recordPerformanceDetails();
             }
         }
@@ -307,13 +305,13 @@ public class SlowQueryAnalyzer {
 public class ErrorHandlingService {
 
     @Autowired
-    private TracingService tracingService;
+    private TracingContextHolder tracingContextHolder;
 
     public Mono<Result> processWithErrorHandling(Request request) {
         return Mono.fromCallable(() -> processRequest(request))
             .onErrorResume(BusinessException.class, ex -> {
-                // Business exception handling
-                TracingContext context = TracingContextHolder.getCurrentContext();
+                // 业务异常处理
+                TracingContext context = tracingContextHolder.getCurrentContext();
                 if (context != null && context.isActive()) {
                     Span span = context.getCurrentSpan();
                     span.setAttribute("error.type", "business");
@@ -323,15 +321,15 @@ public class ErrorHandlingService {
                 return Mono.just(createErrorResult(ex));
             })
             .onErrorResume(Exception.class, ex -> {
-                // System exception handling
-                TracingContext context = TracingContextHolder.getCurrentContext();
+                // 系统异常处理
+                TracingContext context = tracingContextHolder.getCurrentContext();
                 if (context != null && context.isActive()) {
                     Span span = context.getCurrentSpan();
                     span.setAttribute("error.type", "system");
                     span.setAttribute("error.severity", "high");
                     span.recordException(ex);
                 }
-                return Mono.error(new SystemException("System processing failed", ex));
+                return Mono.error(new SystemException("系统处理失败", ex));
             });
     }
 }
@@ -340,45 +338,47 @@ public class ErrorHandlingService {
 #### 2. Custom Error Tracing
 
 ```java
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanKind;
+
 @Component
 public class CustomErrorTracker {
 
+    @Autowired
+    private TracingContextHolder tracingContextHolder;
+
     public void trackCustomError(String operation, Throwable error, Map<String, Object> context) {
-        TracingContext parentContext = TracingContextHolder.getCurrentContext();
-        
-        if (parentContext != null && parentContext.isActive()) {
-            // Create error analysis span
-            Span errorSpan = parentContext.createChildSpan(
-                "error-analysis",
-                SpanKind.INTERNAL,
-                parentContext.getCurrentSpan()
-            );
-            
-            // Record basic error information
-            errorSpan.setAttribute("error.operation", operation);
-            errorSpan.setAttribute("error.class", error.getClass().getSimpleName());
-            errorSpan.setAttribute("error.message", error.getMessage());
+        TracingContext tracingContext = tracingContextHolder.getCurrentContext();
+        if (tracingContext == null || !tracingContext.isActive()) {
+            return;
+        }
 
-            // Record context information
+        Span parentSpan = tracingContext.getCurrentSpan();
+        Span span = tracingContext.createChildSpan("error-analysis", SpanKind.INTERNAL, parentSpan);
+        try {
+            // 记录错误基本信息
+            span.setAttribute("error.operation", operation);
+            span.setAttribute("error.class", error.getClass().getSimpleName());
+            span.setAttribute("error.message", error.getMessage());
+
+            // 记录上下文信息
             context.forEach((key, value) ->
-                errorSpan.setAttribute("context." + key, String.valueOf(value)));
+                span.setAttribute("context." + key, String.valueOf(value)));
 
-            // Record stack trace (sanitized)
+            // 记录堆栈跟踪（脱敏处理）
             String sanitizedStackTrace = sanitizeStackTrace(error);
-            errorSpan.addEvent("error.stacktrace",
-                Attributes.of(AttributeKey.stringKey("trace"), sanitizedStackTrace));
+            span.addEvent("error.stacktrace");
 
-            // Analyze error severity
+            // 分析错误严重程度
             String severity = analyzeSeverity(error);
-            errorSpan.setAttribute("error.severity", severity);
-            
-            // End the error span
-            errorSpan.end();
+            span.setAttribute("error.severity", severity);
+        } finally {
+            span.end();
         }
     }
 
     private String sanitizeStackTrace(Throwable error) {
-        // Implement stack trace sanitization logic
+        // 实现堆栈跟踪脱敏逻辑
         return error.getStackTrace()[0].toString();
     }
 }
@@ -391,13 +391,13 @@ public class CustomErrorTracker {
 #### 1. Viewing Key Metrics
 
 ```bash
-# View Prometheus metrics related to tracing
+# 查看追踪相关的 Prometheus 指标
 curl -s http://localhost:8080/actuator/prometheus | grep jairouter_tracing
 
-# View sampling rate metrics
+# 查看采样率指标
 curl -s http://localhost:8080/actuator/metrics/jairouter.tracing.sampling.rate
 
-# View Span creation and export statistics
+# 查看 Span 创建和导出统计
 curl -s http://localhost:8080/actuator/metrics/jairouter.tracing.spans.created
 curl -s http://localhost:8080/actuator/metrics/jairouter.tracing.spans.exported
 ```
@@ -435,21 +435,24 @@ public class TracingPerformanceController {
 ```java
 @Component
 public class TracingMemoryMonitor {
-    
-    @Scheduled(fixedRate = 30000) // Check every 30 seconds
+
+    @Autowired
+    private TracingContextHolder tracingContextHolder;
+
+    @Scheduled(fixedRate = 30000) // 每30秒检查一次
     public void monitorMemoryUsage() {
         MemoryUsage memoryUsage = tracingMemoryManager.getMemoryUsage();
-        
+
         if (memoryUsage.getUsedRatio() > 0.8) {
-            // Memory usage exceeds 80%, trigger cleanup
+            // 内存使用率超过80%，触发清理
             tracingMemoryManager.triggerCleanup();
-            
-            // Record memory pressure event
-            TracingContext.current().ifPresent(tracing -> {
-                tracing.addEvent("memory.pressure.detected",
-                    Map.of("usedRatio", memoryUsage.getUsedRatio(),
-                           "totalSpans", memoryUsage.getTotalSpans()));
-            });
+
+            // 记录内存压力事件
+            TracingContext context = tracingContextHolder.getCurrentContext();
+            if (context != null && context.isActive()) {
+                Span span = context.getCurrentSpan();
+                span.addEvent("memory.pressure.detected");
+            }
         }
     }
 }
@@ -461,10 +464,10 @@ public class TracingMemoryMonitor {
 jairouter:
   tracing:
     memory:
-      max-spans: 50000              # Adjust based on actual memory
-      cleanup-interval: 30s         # More frequent cleanup
-      span-ttl: 180s               # Shorter TTL
-      memory-threshold: 0.7        # Lower memory threshold
+      max-spans: 50000              # 根据实际内存调整
+      cleanup-interval: 30s         # 更频繁的清理
+      span-ttl: 180s               # 较短的 TTL
+      memory-threshold: 0.7        # 较低的内存阈值
 ```
 
 ## Security and Privacy
@@ -476,40 +479,40 @@ jairouter:
 ```java
 @Component
 public class TracingSanitizer {
-    
+
     public void sanitizeSpanAttributes(Span span, Map<String, Object> attributes) {
         attributes.forEach((key, value) -> {
             if (isSensitiveAttribute(key)) {
-                // Sanitization processing
+                // 脱敏处理
                 String sanitizedValue = sanitizeValue(String.valueOf(value));
-                span.setAttribute(key + ".sanitized", sanitizedValue);
+                span.setAttribute(key, sanitizedValue);
             } else {
                 span.setAttribute(key, String.valueOf(value));
             }
         });
     }
-    
+
     private boolean isSensitiveAttribute(String key) {
-        // Check if it's a sensitive attribute
+        // 检查是否为敏感属性
         return key.toLowerCase().contains("password") ||
                key.toLowerCase().contains("token") ||
                key.toLowerCase().contains("secret") ||
                key.toLowerCase().contains("api-key");
     }
-    
+
     private String sanitizeValue(String value) {
         if (value.length() <= 4) {
             return "***";
         }
-        // Keep first 2 and last 2 characters, replace middle with *
-        return value.substring(0, 2) + 
-               "*".repeat(value.length() - 4) + 
+        // 保留前2位和后2位，中间用*代替
+        return value.substring(0, 2) +
+               "*".repeat(value.length() - 4) +
                value.substring(value.length() - 2);
     }
 }
 ```
 
-#### 2. Configure Sensitive Data Filtering Rules
+#### 2. Configuring Sensitive Data Filtering Rules
 
 ```yaml
 jairouter:
@@ -565,25 +568,25 @@ public class TracingSecurityManager {
 **Diagnosis Steps:**
 
 ```bash
-# 1. Check if tracing is enabled
+# 1. 检查追踪是否启用
 curl http://localhost:8080/actuator/health/tracing
 
-# 2. Check sampling configuration
+# 2. 检查采样配置
 curl http://localhost:8080/actuator/configprops | jq '.jairouter.tracing.sampling'
 
-# 3. Check exporter status
+# 3. 检查导出器状态
 curl http://localhost:8080/actuator/metrics/jairouter.tracing.export.errors
 ```
 
 **Solutions:**
 
 ```yaml
-# Temporarily increase sampling rate for debugging
+# 临时提高采样率进行调试
 jairouter:
   tracing:
     sampling:
       strategy: "ratio"
-      ratio: 1.0  # 100% sampling
+      ratio: 1.0  # 100% 采样
 ```
 
 #### 2. Performance Impact Too Large
@@ -591,10 +594,10 @@ jairouter:
 **Diagnostic Metrics:**
 
 ```bash
-# View tracing processing latency
+# 查看追踪处理延迟
 curl http://localhost:8080/actuator/metrics/jairouter.tracing.processing.duration
 
-# View memory usage
+# 查看内存使用情况
 curl http://localhost:8080/actuator/metrics/jvm.memory.used
 ```
 
@@ -603,16 +606,16 @@ curl http://localhost:8080/actuator/metrics/jvm.memory.used
 ```yaml
 jairouter:
   tracing:
-    # Reduce sampling rate
+    # 降低采样率
     sampling:
       ratio: 0.1
     
-    # Enable async processing
+    # 启用异步处理
     async:
       enabled: true
       core-pool-size: 4
     
-    # Optimize memory configuration
+    # 优化内存配置
     memory:
       max-spans: 5000
       cleanup-interval: 15s
@@ -625,16 +628,221 @@ jairouter:
 ```java
 @Component
 public class ContextDiagnostic {
-    
+
+    @Autowired
+    private TracingContextHolder tracingContextHolder;
+
     public Mono<String> diagnoseContext() {
         return Mono.deferContextual(ctx -> {
             boolean hasTracing = ctx.hasKey("tracing");
-            String traceId = TracingContext.getCurrentTraceId();
-            
+            TracingContext context = tracingContextHolder.getCurrentContext();
+            String traceId = context != null ? context.getTraceId() : "null";
+
             return Mono.just(String.format(
-                "Context has tracing: %s, Current TraceId: %s", 
+                "Context有追踪: %s, 当前TraceId: %s",
                 hasTracing, traceId));
         });
+    }
+}
+```
+
+## API Reference
+
+### TracingService
+
+The core interface of the tracing service, providing Span management and tracing context operations.
+
+```java
+@Component
+public class TracingService {
+
+    /**
+     * 为 HTTP 请求创建根追踪上下文
+     */
+    public Mono<TracingContext> createRootSpan(ServerWebExchange exchange);
+
+    /**
+     * 创建业务操作的追踪上下文
+     */
+    public TracingContext createOperationSpan(String operationName, SpanKind kind);
+
+    /**
+     * 完成 HTTP 请求的追踪
+     */
+    public void finishHttpSpan(ServerWebExchange exchange, TracingContext context, long duration);
+
+    /**
+     * 记录错误到追踪上下文
+     */
+    public void recordError(TracingContext context, Throwable error);
+
+    /**
+     * 获取性能统计信息
+     */
+    public Mono<Map<String, Object>> getPerformanceStats();
+
+    /**
+     * 触发性能优化
+     */
+    public Mono<Void> triggerPerformanceOptimization();
+}
+```
+
+### TracingContext
+
+The tracing context interface, providing core functionality for distributed tracing.
+
+```java
+public interface TracingContext {
+
+    // Span 管理
+    Span createSpan(String operationName, SpanKind kind);
+    Span createChildSpan(String operationName, SpanKind kind, Span parentSpan);
+    Span getCurrentSpan();
+    void setCurrentSpan(Span span);
+    void finishSpan(Span span);
+    void finishSpan(Span span, Throwable error);
+
+    // 属性管理
+    void setTag(String key, String value);
+    void setTag(String key, Number value);
+    void setTag(String key, Boolean value);
+    void addEvent(String name);
+    void addEvent(String name, Map<String, Object> attributes);
+
+    // 上下文传播
+    void injectContext(Map<String, String> headers);
+    TracingContext extractContext(Map<String, String> headers);
+    TracingContext copy();
+
+    // 日志关联
+    String getTraceId();
+    String getSpanId();
+    Map<String, String> getLogContext();
+
+    // 状态管理
+    boolean isActive();
+    boolean isSampled();
+    void clear();
+}
+```
+
+### TracingContextHolder
+
+The tracing context holder, providing thread-local storage for tracing contexts.
+
+```java
+public class TracingContextHolder {
+
+    /**
+     * 获取当前线程的追踪上下文
+     */
+    public static TracingContext getCurrentContext();
+
+    /**
+     * 设置当前线程的追踪上下文
+     */
+    public static void setCurrentContext(TracingContext context);
+
+    /**
+     * 清理当前线程的追踪上下文（重要：防止内存泄漏）
+     */
+    public static void clearCurrentContext();
+
+    /**
+     * 检查当前线程是否有追踪上下文
+     */
+    public static boolean hasCurrentContext();
+
+    /**
+     * 获取当前追踪 ID
+     */
+    public static String getCurrentTraceId();
+
+    /**
+     * 获取当前 Span ID
+     */
+    public static String getCurrentSpanId();
+}
+```
+
+## Test Support
+
+### Unit Tests
+
+```java
+@ExtendWith(MockitoExtension.class)
+class TracingServiceTest {
+
+    @Mock
+    private SpanExporter spanExporter;
+
+    @Mock
+    private Tracer tracer;
+
+    @InjectMocks
+    private TracingService tracingService;
+
+    @Test
+    void testCreateRootSpan() {
+        // Given
+        String operation = "test-operation";
+        ServerWebExchange exchange = mock(ServerWebExchange.class);
+
+        // When
+        StepVerifier.create(tracingService.createRootSpan(exchange))
+            .assertNext(context -> {
+                assertThat(context).isNotNull();
+                assertThat(context.isActive()).isTrue();
+            })
+            .verifyComplete();
+    }
+
+    @Test
+    void testContextAttributeSetting() {
+        // Given
+        TracingContext context = new DefaultTracingContext(tracer);
+        Span span = context.createSpan("test", SpanKind.INTERNAL);
+
+        // When
+        context.setTag("test.key", "test.value");
+
+        // Then
+        assertThat(context.isActive()).isTrue();
+    }
+}
+```
+
+### Integration Tests
+
+```java
+@SpringBootTest
+@AutoConfigureTestDatabase
+class TracingIntegrationTest {
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private TracingService tracingService;
+
+    @Test
+    void testTracingIntegration() {
+        // Given
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Trace-Debug", "true");
+
+        HttpEntity<String> entity = new HttpEntity<>("{}", headers);
+
+        // When
+        ResponseEntity<String> response = restTemplate.exchange(
+            "/api/test", HttpMethod.POST, entity, String.class);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // 验证追踪上下文已清理
+        assertThat(TracingContextHolder.getCurrentContext()).isNull();
     }
 }
 ```
@@ -644,44 +852,72 @@ public class ContextDiagnostic {
 ### 1. Sampling Strategy Selection
 
 - **Development Environment**: Use 100% sampling rate for debugging
-- **Test Environment**: Use rule sampling, focusing on critical interfaces
+- **Test Environment**: Use rule-based sampling, focusing on critical interfaces
 - **Production Environment**: Use adaptive sampling, balancing performance and observability
 
-### 2. Attribute Usage Standards
+### 2. Span Naming Conventions
 
 ```java
-// ✅ Good attribute naming
+// ✅ 好的命名
+context.createSpan("user-authentication", SpanKind.INTERNAL);
+context.createSpan("database-query", SpanKind.CLIENT);
+context.createSpan("external-api-call", SpanKind.CLIENT);
+
+// ❌ 避免的命名
+context.createSpan("op1", SpanKind.INTERNAL);
+context.createSpan("doSomething", SpanKind.INTERNAL);
+```
+
+### 3. Tag Usage Conventions
+
+```java
+// ✅ 有意义的标签
 span.setAttribute("http.method", "POST");
 span.setAttribute("user.id", userId);
 span.setAttribute("business.operation", "payment");
 
-// ❌ Avoid attribute naming
-span.setAttribute("tag1", "value");  // Unclear naming
-span.setAttribute("user_data", largeObject.toString());  // Large values
+// ❌ 避免的标签
+span.setAttribute("tag1", "value");  // 不明确的命名
+span.setAttribute("user_data", largeObject.toString());  // 过大的值
 ```
 
-### 3. Error Handling
+### 4. Error Handling
 
 ```java
-// ✅ Proper error recording
+// ✅ 正确的错误记录
 span.setAttribute("error", "true");
 span.setAttribute("error.type", "validation");
 span.recordException(exception);
 
-// ❌ Avoid recording sensitive error information
-span.setAttribute("error.details", exception.getMessage());  // May contain sensitive information
+// ❌ 避免记录敏感错误信息
+span.setAttribute("error.details", exception.getMessage());  // 可能包含敏感信息
 ```
 
-### 4. Performance Considerations
+### 5. Performance Considerations
 
 - Avoid adding too many tags in high-frequency call paths
 - Use async export to avoid affecting request performance
 - Regularly clean up expired tracing data
 - Monitor the tracing system's own resource usage
 
+### 6. Context Cleanup
+
+```java
+// ✅ 确保上下文被清理
+try {
+    TracingContextHolder.setCurrentContext(context);
+    // 业务逻辑
+} finally {
+    TracingContextHolder.clearCurrentContext();
+}
+
+// ❌ 忘记清理会导致内存泄漏
+TracingContextHolder.setCurrentContext(context);
+// 业务逻辑后忘记清理
+```
+
 ## Next Steps
 
 - [Performance Tuning](performance-tuning.md) - In-depth performance optimization guide
 - [Troubleshooting](troubleshooting.md) - Detailed troubleshooting manual
-- [Usage Guide](usage-guide.md) - API reference and best practices
 - [Operations Guide](operations-guide.md) - Production environment operations best practices

@@ -1,4 +1,11 @@
-# Adapter Configuration Guide
+﻿# Adapter Configuration Guide
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-07-30
+> **Git Commit**: 8374858b
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 ## Overview
 

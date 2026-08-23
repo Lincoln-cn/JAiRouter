@@ -1,4 +1,11 @@
-# Troubleshooting
+﻿# Troubleshooting
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-06-08
+> **Git Commit**: b9fa976b
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 This document provides diagnosis and solutions for common issues with the JAiRouter distributed tracing feature.
 

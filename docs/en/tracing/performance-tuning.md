@@ -1,4 +1,11 @@
-# Performance Tuning
+﻿# Performance Tuning
+
+<!-- 版本信息 -->
+> **Doc Version**: 1.0.0
+> **Last Updated**: 2026-06-08
+> **Git Commit**: b9fa976b
+> **Author**: Lincoln
+<!-- /版本信息 -->
 
 This document provides performance tuning guides and best practices for the JAiRouter distributed tracing system.
 
