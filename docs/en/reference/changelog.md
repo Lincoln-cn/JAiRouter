@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.8.6
+> **Document Version**: 2.8.7
 > **Last Updated**: 2026-08-25
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
@@ -20,6 +20,20 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.8.7] - 2026-08-25 - Feature Release
+
+#### Rule Engine Trio
+
+- **Rule hit statistics**: hits are counted at the decision-application point (no double counting; dry-run excluded); new Prometheus metric `jairouter_rule_hits_total` (tags: ruleId/actionType) + `GET /api/config/rules/stats` aggregation endpoint; the rule list page adds a "hits" column with refresh
+- **Priority drag-and-drop**: rules can be reordered by drag (sortablejs), committing priorities in row order; `PUT /priority` now skips unknown ids (YAML rules no longer 404) and returns `{updated, skipped}`; rules expose a `source` field (YAML/PERSISTED), YAML rules show a badge and cannot be dragged
+- **Scenario templates**: 6 built-in rule templates (canary release / tenant isolation / model rewrite / weight split / adapter switch / VIP instance pin); `GET /api/config/rules/templates` + `POST /{id}/create`; a "Create from template" wizard pre-fills the rule form as a draft before saving
+
+#### Tests
+
+- RuleConfigControllerTest extended (RULEC-026~028 for stats); new RuleStatsServiceTest, RuleTemplateServiceTest, RuleTemplateControllerTest; all rule-related tests pass; Checkstyle 0 violations
+
+---
 
 ### [2.8.6] - 2026-08-25 - Enhancement Release
 

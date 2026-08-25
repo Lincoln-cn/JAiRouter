@@ -94,10 +94,13 @@ JAiRouter 提供**规则引擎**（v2.8.5），允许通过 Web 页面或 YAML �
 
 > 表单底部提供 **「模拟测试」** 按钮，可先验证规则命中再保存。
 
+> 也可点击 **「从模板创建」**：选择预置场景模板（灰度发布/租户隔离/模型重写/权重分流/适配器切换/VIP 锁定），填写名称后生成规则草稿，预填表单后再编辑保存。
+
 ### 管理规则
 
 - **启停**：表格"启用"开关即时生效
-- **优先级调整**：编辑规则修改优先级（批量重排通过 API）
+- **优先级拖拽**：拖动行首手柄按行序调整优先级（顶部最高），整批提交；YAML 规则显示 **YAML** 徽章且不可拖拽（其优先级不随拖拽改变）
+- **命中统计**：表格"命中"列展示各规则累计命中数（Prometheus 指标 `jairouter_rule_hits_total`），右上角刷新按钮同步刷新
 - **编辑/删除**：表格操作列
 
 > 规则增删改后**立即热生效**，无需重启应用。
@@ -162,8 +165,11 @@ model:
 | `/api/config/rules/{id}` | DELETE | 删除规则 |
 | `/api/config/rules/{id}/enable` | PUT | 启用规则 |
 | `/api/config/rules/{id}/disable` | PUT | 停用规则 |
-| `/api/config/rules/priority` | PUT | 批量调整优先级 `[{id, priority}]` |
+| `/api/config/rules/priority` | PUT | 批量调整优先级 `[{id, priority}]`；未知 id（如 YAML 规则）跳过，返回 `{updated, skipped}` |
 | `/api/config/rules/validate` | POST | 规则模拟测试（dry-run），只读不改状态 |
+| `/api/config/rules/stats` | GET | 规则命中统计（ruleId/ruleName/actionType/hits） |
+| `/api/config/rules/templates` | GET | 规则场景模板列表 |
+| `/api/config/rules/templates/{id}/create` | POST | 从模板生成规则草稿（`{name, priority?}`，不持久化） |
 
 ### 创建规则示例
 

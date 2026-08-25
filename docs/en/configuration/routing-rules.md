@@ -94,10 +94,13 @@ Click **「New Rule」** and fill in the form:
 
 > The form has a **「Simulate Test」** button — validate rule matching before saving.
 
+> Alternatively click **「Create from Template」**: pick a built-in scenario template (canary release / tenant isolation / model rewrite / weight split / adapter switch / VIP pin), enter a name, and a rule draft is generated and pre-filled into the form for editing.
+
 ### Managing Rules
 
 - **Enable/Disable**: the table switch takes effect immediately
-- **Priority**: edit the rule to change priority (batch reorder via API)
+- **Priority drag-and-drop**: drag the row handle to reorder by row position (top = highest priority) and commit in batch; YAML rules show a **YAML** badge and cannot be dragged (their priority is unaffected)
+- **Hit statistics**: the "hits" column shows accumulated match counts per rule (Prometheus metric `jairouter_rule_hits_total`); the refresh button reloads list and stats
 - **Edit/Delete**: via the action column
 
 > Rule changes take effect **immediately** — no restart required.
@@ -162,8 +165,11 @@ Base path: `/api/config/rules`
 | `/api/config/rules/{id}` | DELETE | Delete a rule |
 | `/api/config/rules/{id}/enable` | PUT | Enable a rule |
 | `/api/config/rules/{id}/disable` | PUT | Disable a rule |
-| `/api/config/rules/priority` | PUT | Batch update priorities `[{id, priority}]` |
+| `/api/config/rules/priority` | PUT | Batch update priorities `[{id, priority}]`; unknown ids (e.g. YAML rules) are skipped, returns `{updated, skipped}` |
 | `/api/config/rules/validate` | POST | Rule simulation test (dry-run), read-only |
+| `/api/config/rules/stats` | GET | Rule hit statistics (ruleId/ruleName/actionType/hits) |
+| `/api/config/rules/templates` | GET | Rule scenario template list |
+| `/api/config/rules/templates/{id}/create` | POST | Build a rule draft from a template (`{name, priority?}`, not persisted) |
 
 ### Create Rule Example
 

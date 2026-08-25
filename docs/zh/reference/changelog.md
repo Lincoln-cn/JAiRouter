@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.8.6
+> **文档版本**: 2.8.7
 > **最后更新**: 2026-08-25
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,20 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.8.7] - 2026-08-25 - 功能发布
+
+#### 规则引擎三件套
+
+- **规则命中统计**：命中计数挂在决策生效点（不重复计数，dry-run 不计）；新增 Prometheus 指标 `jairouter_rule_hits_total`（tag: ruleId/actionType）+ `GET /api/config/rules/stats` 聚合端点；前端规则列表新增"命中"列与刷新
+- **优先级拖拽**：规则列表支持拖拽排序（sortablejs），按行序批量提交优先级；`PUT /priority` 改为跳过未知 id（YAML 规则不再 404），返回 `{updated, skipped}`；规则新增 `source` 字段（YAML/PERSISTED），YAML 规则显示徽章且不可拖拽
+- **场景模板**：新增 6 个预置规则模板（灰度发布/租户隔离/模型名重写/权重分流/适配器切换/VIP 实例锁定）；`GET /api/config/rules/templates` + `POST /{id}/create`；前端"从模板创建"向导，生成草稿预填表单后保存
+
+#### 测试
+
+- RuleConfigControllerTest 新增 RULEC-026~028（统计）；新增 RuleStatsServiceTest、RuleTemplateServiceTest、RuleTemplateControllerTest；规则相关测试全部通过；Checkstyle 0 violations
+
+---
 
 ### [2.8.6] - 2026-08-25 - 功能增强
 
