@@ -244,7 +244,7 @@ Performance overhead compared to direct backend access:
 - [x] Anthropic Claude adapter
 - [x] Google Gemini adapter
 
-> **Current Release**: v2.8.4 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.8.5 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 

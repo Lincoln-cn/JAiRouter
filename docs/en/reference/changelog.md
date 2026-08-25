@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.8.4
-> **Last Updated**: 2026-08-17
+> **Document Version**: 2.8.5
+> **Last Updated**: 2026-08-23
 > **Git Commit**: e8f8fa72
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,25 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.8.5] - 2026-08-23 - Feature Release
+
+#### Rule Engine (Visual Conditional Routing)
+
+Implement visual routing rule configuration so users can configure condition-based smart routing from the Web console **without writing code**:
+
+- **Conditional routing rules**: 5 match condition types (model name / service type / request header / client IP / weight) and 5 operators (equals / contains / starts-with / regex / CIDR match); matched requests execute a preset action
+- **Action types**: TARGET_MODEL (model rewrite), TARGET_INSTANCE (pin instance), TARGET_ADAPTER (switch adapter), LB_STRATEGY (load-balancing strategy override)
+- **Rule management API**: `/api/config/rules` full CRUD + enable/disable + priority batch update
+- **Rule persistence**: StoreManager-backed persistence, auto-recovery on restart, YAML-first merge
+- **Frontend visual configuration**: rule management page + rule form dialog (condition editing / action config)
+- **Docs overhaul**: new routing-rule configuration doc, docs structure reorganization
+
+#### Tests
+
+- All rule-engine related test cases pass; Checkstyle 0 violations
+
+---
 
 ### [2.8.4] - 2026-08-15 - Feature Release
 
