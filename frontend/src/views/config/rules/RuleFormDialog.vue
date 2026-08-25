@@ -301,18 +301,6 @@ const loadInstancesForService = async (serviceType: string) => {
   }
 }
 
-const currentServiceType = computed(() => {
-  const cond = form.conditions.find(c => c.type === 'SERVICE_TYPE')
-  return cond?.value || 'chat'
-})
-
-watch(currentServiceType, val => {
-  if (val) {
-    loadModelsForService(val)
-    loadInstancesForService(val)
-  }
-})
-
 onMounted(loadOptions)
 
 // ==================== 表单 ====================
@@ -335,6 +323,19 @@ const form = reactive<{
   conditions: [defaultCondition()],
   actionType: 'TARGET_MODEL',
   actionTarget: ''
+})
+
+// 条件中的 SERVICE_TYPE 值(缺省 chat),变化时联动刷新模型/实例下拉
+const currentServiceType = computed(() => {
+  const cond = form.conditions.find(c => c.type === 'SERVICE_TYPE')
+  return cond?.value || 'chat'
+})
+
+watch(currentServiceType, val => {
+  if (val) {
+    loadModelsForService(val)
+    loadInstancesForService(val)
+  }
 })
 
 // ==================== 模拟测试(dry-run) ====================
