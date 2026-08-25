@@ -17,11 +17,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.rule.RuleDecision;
 import org.unreal.modelrouter.router.rule.RuleDefinitionPersistenceService;
 import org.unreal.modelrouter.router.rule.RuleEngineService;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -200,6 +204,66 @@ public class RuleConfigController {
         persistenceService.saveAll(persisted);
         reloadActiveRules();
         return ResponseEntity.ok(RouterResponse.success(null));
+    }
+
+    /**
+     * 规则模拟测试(dry-run)
+     * 输入示例请求,返回命中的规则与动作,不修改任何状态
+     */
+    @PostMapping("/validate")
+    @Operation(summary = "规则模拟测试", description = "输入示例请求(modelName/IP/headers),返回命中规则与动作,只读不改状态")
+    public ResponseEntity<RouterResponse<Map<String, Object>>> validateRule(
+            @RequestBody final Map<String, Object> request) {
+        if (request == null || request.get("modelName") == null
+                || String.valueOf(request.get("modelName")).isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "modelName is required");
+        }
+
+        String modelName = String.valueOf(request.get("modelName"));
+        String serviceTypeName = request.get("serviceType") != null
+                ? String.valueOf(request.get("serviceType")) : "chat";
+        String clientIp = request.get("clientIp") != null
+                ? String.valueOf(request.get("clientIp")) : "127.0.0.1";
+        @SuppressWarnings("unchecked")
+        Map<String, String> headers = request.get("headers") instanceof Map
+                ? (Map<String, String>) request.get("headers") : null;
+
+        ModelServiceRegistry.ServiceType serviceType = Arrays.stream(ModelServiceRegistry.ServiceType.values())
+                .filter(st -> st.name().equalsIgnoreCase(serviceTypeName))
+                .findFirst()
+                .orElse(null);
+        if (serviceType == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Invalid serviceType: " + serviceTypeName + " (valid: chat/embedding/rerank/tts/stt/imgGen/imgEdit)");
+        }
+
+        RuleDecision decision = ruleEngineService.evaluate(serviceType, modelName, clientIp, headers);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (decision == null) {
+            result.put("matched", false);
+            result.put("message", "未命中任何规则,将走默认路由逻辑");
+        } else {
+            RuleDefinition rule = decision.getRule();
+            result.put("matched", true);
+            result.put("ruleId", rule.getId());
+            result.put("ruleName", rule.getName());
+            result.put("priority", rule.getPriority());
+            Map<String, Object> actionMap = new LinkedHashMap<>();
+            actionMap.put("type", rule.getAction().getType().name());
+            if (decision.getTargetModelName() != null) {
+                actionMap.put("target", decision.getTargetModelName());
+            } else if (decision.getTargetInstanceId() != null) {
+                actionMap.put("target", decision.getTargetInstanceId());
+            } else if (decision.getTargetAdapterName() != null) {
+                actionMap.put("target", decision.getTargetAdapterName());
+            } else if (decision.getLbStrategy() != null) {
+                actionMap.put("target", decision.getLbStrategy());
+            }
+            result.put("action", actionMap);
+            result.put("message", "命中规则: " + rule.getName());
+        }
+        return ResponseEntity.ok(RouterResponse.success(result));
     }
 
     private RuleDefinition findRule(final String id) {

@@ -312,4 +312,99 @@ class RuleConfigControllerTest {
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
     }
+
+    // ==================== 规则模拟测试(dry-run) ====================
+
+    @Nested
+    @DisplayName("规则模拟测试 validate")
+    class ValidateTests {
+
+        @Test
+        @DisplayName("RULEC-020: 命中规则返回 matched=true 与动作")
+        void testValidate_hit() {
+            controller.createRule(validRule("rule1"));
+
+            Map<String, Object> result = controller.validateRule(Map.of(
+                    "modelName", "gpt-4",
+                    "serviceType", "chat"
+            )).getBody().getData();
+
+            assertTrue((Boolean) result.get("matched"));
+            assertEquals("rule1", result.get("ruleName"));
+            Map<String, Object> action = (Map<String, Object>) result.get("action");
+            assertEquals("TARGET_MODEL", action.get("type"));
+            assertEquals("claude-3", action.get("target"));
+        }
+
+        @Test
+        @DisplayName("RULEC-021: 未命中返回 matched=false")
+        void testValidate_noMatch() {
+            controller.createRule(validRule("rule1"));
+
+            Map<String, Object> result = controller.validateRule(Map.of(
+                    "modelName", "other-model"
+            )).getBody().getData();
+
+            assertFalse((Boolean) result.get("matched"));
+            assertNull(result.get("ruleName"));
+        }
+
+        @Test
+        @DisplayName("RULEC-022: HEADER 条件按请求头命中")
+        void testValidate_headerHit() {
+            RuleDefinition r = validRule("header-rule");
+            RuleDefinition.Condition c = new RuleDefinition.Condition(
+                    RuleDefinition.ConditionType.HEADER, RuleDefinition.Operator.EQUALS, "vllm");
+            c.setField("x-routing");
+            r.setConditions(List.of(c));
+            r.setAction(new RuleDefinition.Action(RuleDefinition.ActionType.TARGET_ADAPTER, "vllm"));
+            controller.createRule(r);
+
+            Map<String, Object> hit = controller.validateRule(Map.of(
+                    "modelName", "gpt-4",
+                    "headers", Map.of("x-routing", "vllm")
+            )).getBody().getData();
+            assertTrue((Boolean) hit.get("matched"));
+            assertEquals("vllm", ((Map<String, Object>) hit.get("action")).get("target"));
+
+            Map<String, Object> miss = controller.validateRule(Map.of(
+                    "modelName", "gpt-4",
+                    "headers", Map.of("x-routing", "other")
+            )).getBody().getData();
+            assertFalse((Boolean) miss.get("matched"));
+        }
+
+        @Test
+        @DisplayName("RULEC-023: 缺失 modelName 返回 400")
+        void testValidate_missingModelName_400() {
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> controller.validateRule(Map.of("serviceType", "chat")));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("RULEC-024: 非法 serviceType 返回 400")
+        void testValidate_invalidServiceType_400() {
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> controller.validateRule(Map.of(
+                            "modelName", "gpt-4",
+                            "serviceType", "bogus"
+                    )));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("RULEC-025: camelCase serviceType (imgGen) 正常命中,不返回 400")
+        void testValidate_camelCaseServiceType() {
+            controller.createRule(validRule("img-rule"));
+
+            Map<String, Object> result = controller.validateRule(Map.of(
+                    "modelName", "gpt-4",
+                    "serviceType", "imgGen"
+            )).getBody().getData();
+
+            assertTrue((Boolean) result.get("matched"));
+            assertEquals("img-rule", result.get("ruleName"));
+        }
+    }
 }

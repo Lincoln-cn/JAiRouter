@@ -42,6 +42,26 @@ export interface PriorityUpdateItem {
   priority: number
 }
 
+// 规则模拟测试(dry-run)
+export interface RuleValidateRequest {
+  serviceType?: string
+  modelName: string
+  clientIp?: string
+  headers?: Record<string, string>
+}
+
+export interface RuleValidateResult {
+  matched: boolean
+  ruleId?: string
+  ruleName?: string
+  priority?: number
+  action?: {
+    type: RuleActionType
+    target?: string
+  }
+  message: string
+}
+
 export const getRuleList = () => {
   return request.get<RouterResponse<RuleDefinition[]>>('/config/rules/list')
 }
@@ -72,4 +92,8 @@ export const disableRule = (id: string) => {
 
 export const updateRulePriorities = (items: PriorityUpdateItem[]) => {
   return request.put<RouterResponse<void>>('/config/rules/priority', items)
+}
+
+export const validateRule = (data: RuleValidateRequest) => {
+  return request.post<RouterResponse<RuleValidateResult>>('/config/rules/validate', data)
 }
