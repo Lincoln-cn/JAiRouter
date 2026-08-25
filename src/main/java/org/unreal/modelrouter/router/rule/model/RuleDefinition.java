@@ -35,6 +35,12 @@ public class RuleDefinition {
         LB_STRATEGY
     }
 
+    /** 规则来源 */
+    public enum Source {
+        YAML,       // 配置文件默认规则
+        PERSISTED   // Web 页面创建/持久化规则
+    }
+
     /** 条件 */
     public static class Condition {
         private ConditionType type;
@@ -163,6 +169,7 @@ public class RuleDefinition {
     private String matchMode = "ALL"; // v1 固定 AND,预留 OR
     private List<Condition> conditions = new ArrayList<>();
     private Action action;
+    private Source source;          // v2.8.7: YAML/PERSISTED;旧数据 null 兼容
 
     public String getId() {
         return id;
@@ -226,5 +233,13 @@ public class RuleDefinition {
 
     public void setAction(final Action action) {
         this.action = action;
+    }
+
+    public Source getSource() {
+        return source;
+    }
+
+    public void setSource(final Source source) {
+        this.source = source;
     }
 }

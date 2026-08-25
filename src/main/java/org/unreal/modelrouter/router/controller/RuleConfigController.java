@@ -21,7 +21,9 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.rule.RuleDecision;
 import org.unreal.modelrouter.router.rule.RuleDefinitionPersistenceService;
 import org.unreal.modelrouter.router.rule.RuleEngineService;
+import org.unreal.modelrouter.router.rule.RuleStatsService;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
+import org.unreal.modelrouter.router.rule.model.RuleStat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * 路由规则配置管理控制器
@@ -45,14 +48,17 @@ public class RuleConfigController {
 
     private final RuleEngineService ruleEngineService;
     private final RuleDefinitionPersistenceService persistenceService;
+    private final RuleStatsService ruleStatsService;
 
     // 当前生效规则(含 YAML 默认 + 持久化用户规则,按 priority 降序)
     private final CopyOnWriteArrayList<RuleDefinition> activeRules = new CopyOnWriteArrayList<>();
 
     public RuleConfigController(final RuleEngineService ruleEngineService,
-                                final RuleDefinitionPersistenceService persistenceService) {
+                                final RuleDefinitionPersistenceService persistenceService,
+                                final RuleStatsService ruleStatsService) {
         this.ruleEngineService = ruleEngineService;
         this.persistenceService = persistenceService;
+        this.ruleStatsService = ruleStatsService;
         reloadActiveRules();
     }
 
@@ -65,9 +71,11 @@ public class RuleConfigController {
 
         List<RuleDefinition> merged = new ArrayList<>();
         for (RuleDefinition rule : yamlRules) {
+            rule.setSource(RuleDefinition.Source.YAML);
             merged.add(rule);
         }
         for (RuleDefinition rule : persistedRules) {
+            rule.setSource(RuleDefinition.Source.PERSISTED);
             // 持久化规则同 id 覆盖 YAML
             merged.removeIf(r -> r.getId().equals(rule.getId()));
             merged.add(rule);
@@ -175,15 +183,18 @@ public class RuleConfigController {
 
     /**
      * 批量调整优先级
+     * 仅更新持久化规则;未知 id(如 YAML 规则)跳过并计数,不再 404
      */
     @PutMapping("/priority")
-    @Operation(summary = "批量调整优先级", description = "批量重排规则优先级 [{id, priority}]")
-    public ResponseEntity<RouterResponse<Void>> updatePriorities(
+    @Operation(summary = "批量调整优先级", description = "批量重排规则优先级 [{id, priority}],未知 id 跳过")
+    public ResponseEntity<RouterResponse<Map<String, Object>>> updatePriorities(
             @RequestBody final List<Map<String, Object>> priorities) {
         if (priorities == null || priorities.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Priorities must not be empty");
         }
         List<RuleDefinition> persisted = persistenceService.loadAll();
+        int updated = 0;
+        int skipped = 0;
         for (Map<String, Object> item : priorities) {
             Object idObj = item.get("id");
             Object priorityObj = item.get("priority");
@@ -197,13 +208,19 @@ public class RuleConfigController {
                     .findFirst()
                     .orElse(null);
             if (rule == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Rule not found: " + id);
+                skipped++;
+                logger.warn("优先级调整跳过未知规则 id: {} (可能为 YAML 规则)", id);
+                continue;
             }
             rule.setPriority(priority);
+            updated++;
         }
         persistenceService.saveAll(persisted);
         reloadActiveRules();
-        return ResponseEntity.ok(RouterResponse.success(null));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("updated", updated);
+        result.put("skipped", skipped);
+        return ResponseEntity.ok(RouterResponse.success(result));
     }
 
     /**
@@ -264,6 +281,23 @@ public class RuleConfigController {
             result.put("message", "命中规则: " + rule.getName());
         }
         return ResponseEntity.ok(RouterResponse.success(result));
+    }
+
+    /**
+     * 规则命中统计
+     * 返回各规则命中次数(ruleId+actionType),仅统计在生效规则列表中的规则
+     */
+    @GetMapping("/stats")
+    @Operation(summary = "规则命中统计", description = "返回各规则的命中次数与动作类型(基于内存计数)")
+    public ResponseEntity<RouterResponse<List<RuleStat>>> getRuleStats() {
+        Map<String, RuleDefinition> activeById = activeRules.stream()
+                .collect(Collectors.toMap(RuleDefinition::getId, r -> r, (a, b) -> a));
+        List<RuleStat> stats = ruleStatsService.getStats().stream()
+                .filter(s -> activeById.containsKey(s.getRuleId()))
+                .map(s -> new RuleStat(s.getRuleId(), activeById.get(s.getRuleId()).getName(),
+                        s.getActionType(), s.getHits()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(RouterResponse.success(stats));
     }
 
     private RuleDefinition findRule(final String id) {

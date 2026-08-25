@@ -239,7 +239,7 @@ const visible = defineModel<boolean>({ required: true })
 const formRef = ref<FormInstance>()
 const saving = ref(false)
 
-const isEdit = computed(() => !!props.rule)
+const isEdit = computed(() => !!props.rule?.id)
 
 // ==================== 下拉数据源 ====================
 const adapterNames = ref<string[]>([])
@@ -504,7 +504,7 @@ const handleSave = async () => {
   }
   saving.value = true
   try {
-    if (isEdit.value && props.rule) {
+    if (isEdit.value && props.rule?.id) {
       await updateRule(props.rule.id, payload)
       ElMessage.success('规则已更新')
     } else {

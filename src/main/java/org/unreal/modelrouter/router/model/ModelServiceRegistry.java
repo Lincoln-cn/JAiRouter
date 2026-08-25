@@ -22,6 +22,7 @@ import org.unreal.modelrouter.router.loadbalancer.monitor.RoutingMonitorService;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.router.rule.RuleDecision;
 import org.unreal.modelrouter.router.rule.RuleEngineService;
+import org.unreal.modelrouter.router.rule.RuleStatsService;
 import org.unreal.modelrouter.monitor.tracing.wrapper.LoadBalancerTracingWrapper;
 
 import java.util.ArrayList;
@@ -86,6 +87,9 @@ public class ModelServiceRegistry {
     // v2.8.5: 规则引擎(延迟注入,避免循环依赖)
     private RuleEngineService ruleEngine;
 
+    // v2.8.7: 规则命中统计(延迟注入,避免循环依赖)
+    private RuleStatsService ruleStatsService;
+
     // 配置和缓存
     private final ModelRouterProperties originalProperties;
     private volatile Map<String, Object> currentConfig;
@@ -98,6 +102,15 @@ public class ModelServiceRegistry {
     @Autowired(required = false)
     public void setRuleEngine(final RuleEngineService ruleEngine) {
         this.ruleEngine = ruleEngine;
+    }
+
+    /**
+     * v2.8.7: 规则命中统计延迟注入
+     * required=false:统计不可用时路由行为不变
+     */
+    @Autowired(required = false)
+    public void setRuleStatsService(final RuleStatsService ruleStatsService) {
+        this.ruleStatsService = ruleStatsService;
     }
 
     public ModelServiceRegistry(final ModelRouterProperties properties,
@@ -215,6 +228,11 @@ public class ModelServiceRegistry {
         RuleDecision ruleDecision = ruleEngine != null
                 ? ruleEngine.evaluate(serviceType, modelName, clientIp, headers)
                 : null;
+        // v2.8.7: 命中统计(仅决策生效点计数,resolveRuleAdapterName/dry-run 不计数)
+        if (ruleDecision != null && ruleStatsService != null) {
+            ruleStatsService.recordHit(ruleDecision.getRule().getId(),
+                    ruleDecision.getRule().getAction().getType().name());
+        }
 
         String effectiveModelName = ruleDecision != null && ruleDecision.getTargetModelName() != null
                 ? ruleDecision.getTargetModelName() : modelName;

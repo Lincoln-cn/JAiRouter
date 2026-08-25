@@ -27,7 +27,7 @@ export interface RuleAction {
 }
 
 export interface RuleDefinition {
-  id: string
+  id?: string
   name: string
   description?: string
   enabled: boolean
@@ -35,6 +35,7 @@ export interface RuleDefinition {
   matchMode?: string
   conditions: RuleCondition[]
   action: RuleAction
+  source?: 'YAML' | 'PERSISTED'  // v2.8.7: 规则来源,旧数据可能为空
 }
 
 export interface PriorityUpdateItem {
@@ -60,6 +61,26 @@ export interface RuleValidateResult {
     target?: string
   }
   message: string
+}
+
+// 规则命中统计
+export interface RuleStat {
+  ruleId: string
+  ruleName: string
+  actionType: string
+  hits: number
+}
+
+// 规则场景模板
+export interface RuleTemplate {
+  id: string
+  name: string
+  description: string
+  category: string
+  defaultPriority: number
+  usageTip: string
+  conditions: RuleCondition[]
+  action: RuleAction
 }
 
 export const getRuleList = () => {
@@ -91,9 +112,21 @@ export const disableRule = (id: string) => {
 }
 
 export const updateRulePriorities = (items: PriorityUpdateItem[]) => {
-  return request.put<RouterResponse<void>>('/config/rules/priority', items)
+  return request.put<RouterResponse<{ updated: number; skipped: number }>>('/config/rules/priority', items)
 }
 
 export const validateRule = (data: RuleValidateRequest) => {
   return request.post<RouterResponse<RuleValidateResult>>('/config/rules/validate', data)
+}
+
+export const getRuleStats = () => {
+  return request.get<RouterResponse<RuleStat[]>>('/config/rules/stats')
+}
+
+export const getRuleTemplates = () => {
+  return request.get<RouterResponse<RuleTemplate[]>>('/config/rules/templates')
+}
+
+export const createRuleFromTemplate = (templateId: string, data: { name: string; priority?: number }) => {
+  return request.post<RouterResponse<RuleDefinition>>(`/config/rules/templates/${templateId}/create`, data)
 }

@@ -1,5 +1,6 @@
 package org.unreal.modelrouter.router.controller;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -8,9 +9,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.config.core.MonitoringProperties;
 import org.unreal.modelrouter.router.rule.RuleDefinitionPersistenceService;
 import org.unreal.modelrouter.router.rule.RuleEngineService;
+import org.unreal.modelrouter.router.rule.RuleStatsService;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
+import org.unreal.modelrouter.router.rule.model.RuleStat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +31,7 @@ class RuleConfigControllerTest {
 
     private RuleEngineService ruleEngineService;
     private RuleDefinitionPersistenceService persistenceService;
+    private RuleStatsService ruleStatsService;
     private RuleConfigController controller;
 
     /** 内存版持久化,避免依赖 StoreManager */
@@ -64,7 +69,8 @@ class RuleConfigControllerTest {
     void setUp() {
         ruleEngineService = new RuleEngineService();
         persistenceService = new InMemoryPersistence();
-        controller = new RuleConfigController(ruleEngineService, persistenceService);
+        ruleStatsService = new RuleStatsService(new SimpleMeterRegistry(), new MonitoringProperties());
+        controller = new RuleConfigController(ruleEngineService, persistenceService, ruleStatsService);
     }
 
     private RuleDefinition validRule(final String name) {
@@ -305,11 +311,29 @@ class RuleConfigControllerTest {
         }
 
         @Test
-        @DisplayName("RULEC-019: 不存在的规则返回 404")
-        void testUpdatePriorities_missing_404() {
-            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                    () -> controller.updatePriorities(List.of(Map.of("id", "nonexistent", "priority", 5))));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        @DisplayName("RULEC-019: 未知 id 跳过并返回 updated/skipped 计数")
+        void testUpdatePriorities_skipsUnknownIds() {
+            RuleDefinition r1 = controller.createRule(validRule("r1")).getBody().getData();
+
+            Map<String, Object> result = controller.updatePriorities(List.of(
+                    Map.of("id", r1.getId(), "priority", 7),
+                    Map.of("id", "nonexistent", "priority", 5))).getBody().getData();
+
+            assertEquals(1, result.get("updated"));
+            assertEquals(1, result.get("skipped"));
+
+            List<RuleDefinition> rules = controller.getAllRules().getBody().getData();
+            assertEquals(7, rules.get(0).getPriority());
+        }
+
+        @Test
+        @DisplayName("RULEC-019b: 仅含未知 id 时 updated=0 不报错")
+        void testUpdatePriorities_allUnknownNoError() {
+            Map<String, Object> result = controller.updatePriorities(
+                    List.of(Map.of("id", "nonexistent", "priority", 5))).getBody().getData();
+
+            assertEquals(0, result.get("updated"));
+            assertEquals(1, result.get("skipped"));
         }
     }
 
@@ -405,6 +429,51 @@ class RuleConfigControllerTest {
 
             assertTrue((Boolean) result.get("matched"));
             assertEquals("img-rule", result.get("ruleName"));
+        }
+    }
+
+    // ==================== 规则命中统计(dry-run 之外的命中计数) ====================
+
+    @Nested
+    @DisplayName("规则命中统计 stats")
+    class StatsTests {
+
+        @Test
+        @DisplayName("RULEC-026: 统计返回命中数与规则名(join activeRules)")
+        void testGetStats_returnsHitsJoinedWithName() {
+            RuleDefinition created = controller.createRule(validRule("rule1")).getBody().getData();
+
+            ruleStatsService.recordHit(created.getId(), "TARGET_MODEL");
+            ruleStatsService.recordHit(created.getId(), "TARGET_MODEL");
+
+            List<RuleStat> stats = controller.getRuleStats().getBody().getData();
+            assertEquals(1, stats.size());
+            assertEquals(created.getId(), stats.get(0).getRuleId());
+            assertEquals("rule1", stats.get(0).getRuleName());
+            assertEquals(2, stats.get(0).getHits());
+        }
+
+        @Test
+        @DisplayName("RULEC-027: dry-run 模拟测试不计数")
+        void testValidate_dryRun_doesNotCount() {
+            controller.createRule(validRule("rule1"));
+
+            controller.validateRule(Map.of("modelName", "gpt-4", "serviceType", "chat"));
+
+            List<RuleStat> stats = controller.getRuleStats().getBody().getData();
+            assertTrue(stats.isEmpty());
+        }
+
+        @Test
+        @DisplayName("RULEC-028: 已删除规则的残留计数被过滤")
+        void testGetStats_filtersDeletedRule() {
+            RuleDefinition created = controller.createRule(validRule("rule1")).getBody().getData();
+            ruleStatsService.recordHit(created.getId(), "TARGET_MODEL");
+
+            controller.deleteRule(created.getId());
+
+            List<RuleStat> stats = controller.getRuleStats().getBody().getData();
+            assertTrue(stats.isEmpty());
         }
     }
 }
