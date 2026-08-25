@@ -112,6 +112,7 @@
     "VLLM",
     "Xinference",
     "Rerank",
+    "RULEC",
     "runbook",
     "MTTR",
     "gpustack",
