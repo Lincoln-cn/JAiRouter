@@ -3,7 +3,7 @@
 <!-- 版本信息 -->
 > **Document Version**: 2.8.5
 > **Last Updated**: 2026-08-23
-> **Git Commit**: e8f8fa72
+> **Git Commit**: 4d3e084d
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
