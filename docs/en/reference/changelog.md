@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.8.5
-> **Last Updated**: 2026-08-23
+> **Document Version**: 2.8.6
+> **Last Updated**: 2026-08-25
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,20 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.8.6] - 2026-08-25 - Enhancement Release
+
+#### Rule Engine Usability
+
+- **Action/condition value dropdowns**: action targets are selected from type-aware dropdowns (model name / instance / adapter, searchable with custom input; LB strategy is a fixed 5-value select); condition values support model-name / service-type / common-header dropdowns with autocomplete; options refresh when the service type changes
+- **Rule simulation test (dry-run)**: `POST /api/config/rules/validate` verifies rule matching with a sample request (modelName/IP/headers), read-only; the Web form includes a built-in 「Simulate Test」 panel
+- **Fix**: case-insensitive `serviceType` matching (`imgGen`/`imgEdit` camelCase enum values now resolve correctly)
+
+#### Tests
+
+- RuleConfigControllerTest extended (incl. RULEC-025); all rule-engine tests pass; Checkstyle 0 violations
+
+---
 
 ### [2.8.5] - 2026-08-23 - Feature Release
 

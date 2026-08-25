@@ -1,8 +1,8 @@
 # 路由规则配置
 
 <!-- 版本信息 -->
-> **文档版本**: 1.0.0
-> **最后更新**: 2026-08-23
+> **文档版本**: 1.0.1
+> **最后更新**: 2026-08-25
 > **Git 提交**: f8a2eebe
 > **作者**: Lincoln
 <!-- /版本信息 -->
@@ -89,8 +89,10 @@ JAiRouter 提供**规则引擎**（v2.8.5），允许通过 Web 页面或 YAML �
 |------|------|
 | **名称** | 规则名称 |
 | **优先级** | 0-9999，越大越先 |
-| **匹配条件** | 可添加多行：条件类型 → 操作符 → 值；HEADER 类型多一个 header 名输入；WEIGHT 类型用 0-100 数字 |
-| **执行动作** | 单选动作类型 + 目标值（按类型提示输入模型名/实例ID/适配器名/LB策略） |
+| **匹配条件** | 可添加多行：条件类型 → 操作符 → 值；值支持**下拉/自动补全**（模型名、服务类型、常用请求头），也可手动输入；HEADER 类型多一个 header 名选择；WEIGHT 类型用 0-100 数字 |
+| **执行动作** | 单选动作类型，目标值按类型**下拉选择**（模型名/实例/适配器，支持搜索与自定义输入；LB 策略为固定 5 选 1） |
+
+> 表单底部提供 **「模拟测试」** 按钮，可先验证规则命中再保存。
 
 ### 管理规则
 
@@ -161,6 +163,7 @@ model:
 | `/api/config/rules/{id}/enable` | PUT | 启用规则 |
 | `/api/config/rules/{id}/disable` | PUT | 停用规则 |
 | `/api/config/rules/priority` | PUT | 批量调整优先级 `[{id, priority}]` |
+| `/api/config/rules/validate` | POST | 规则模拟测试（dry-run），只读不改状态 |
 
 ### 创建规则示例
 
@@ -187,6 +190,47 @@ curl -X PUT http://localhost:8080/api/config/rules/priority \
   -H "Jairouter_Token: your-admin-token" \
   -d '[{"id": "rule-id-1", "priority": 200}, {"id": "rule-id-2", "priority": 100}]'
 ```
+
+### 规则模拟测试（dry-run）
+
+保存规则前，可用示例请求验证规则是否按预期命中，**只读、不修改任何状态**：
+
+```bash
+curl -X POST http://localhost:8080/api/config/rules/validate \
+  -H "Content-Type: application/json" \
+  -H "Jairouter_Token: your-admin-token" \
+  -d '{
+    "serviceType": "chat",
+    "modelName": "gpt-4",
+    "clientIp": "127.0.0.1",
+    "headers": {"x-routing": "vllm"}
+  }'
+```
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `modelName` | 是 | 示例请求的模型名 |
+| `serviceType` | 否 | 服务类型，缺省 `chat`（chat/embedding/rerank/tts/stt/imgGen/imgEdit，忽略大小写） |
+| `clientIp` | 否 | 来源 IP，缺省 `127.0.0.1` |
+| `headers` | 否 | 请求头键值对 |
+
+命中时返回：
+
+```json
+{
+  "success": true,
+  "data": {
+    "matched": true,
+    "ruleId": "xxx",
+    "ruleName": "按请求头路由到vLLM",
+    "priority": 100,
+    "action": {"type": "TARGET_ADAPTER", "target": "vllm"},
+    "message": "命中规则: 按请求头路由到vLLM"
+  }
+}
+```
+
+未命中时 `matched=false`。Web 页面的规则表单也内置 **「模拟测试」** 面板，可直接在表单中验证。
 
 ## 验证规则
 

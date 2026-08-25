@@ -1,8 +1,8 @@
 # Routing Rules Configuration
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.0.0
-> **Last Updated**: 2026-08-23
+> **Doc Version**: 1.0.1
+> **Last Updated**: 2026-08-25
 > **Git Commit**: f8a2eebe
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -89,8 +89,10 @@ Click **「New Rule」** and fill in the form:
 |-------|-------------|
 | **Name** | Rule name |
 | **Priority** | 0-9999, higher matches first |
-| **Conditions** | Multiple rows: condition type → operator → value; HEADER adds a header-name input; WEIGHT uses a 0-100 number |
-| **Action** | Select action type + target value (model name / instance ID / adapter name / LB strategy with contextual hints) |
+| **Conditions** | Multiple rows: condition type → operator → value; values support **dropdown/autocomplete** (model names, service types, common headers) with manual input as fallback; HEADER adds a header-name selector; WEIGHT uses a 0-100 number |
+| **Action** | Select action type; target value is chosen from a **dropdown** (model name / instance / adapter, searchable with custom input; LB strategy is a fixed 5-value select) |
+
+> The form has a **「Simulate Test」** button — validate rule matching before saving.
 
 ### Managing Rules
 
@@ -161,6 +163,7 @@ Base path: `/api/config/rules`
 | `/api/config/rules/{id}/enable` | PUT | Enable a rule |
 | `/api/config/rules/{id}/disable` | PUT | Disable a rule |
 | `/api/config/rules/priority` | PUT | Batch update priorities `[{id, priority}]` |
+| `/api/config/rules/validate` | POST | Rule simulation test (dry-run), read-only |
 
 ### Create Rule Example
 
@@ -187,6 +190,47 @@ curl -X PUT http://localhost:8080/api/config/rules/priority \
   -H "Jairouter_Token: your-admin-token" \
   -d '[{"id": "rule-id-1", "priority": 200}, {"id": "rule-id-2", "priority": 100}]'
 ```
+
+### Rule Simulation Test (dry-run)
+
+Before saving a rule, verify it matches as expected using a sample request — **read-only, no state change**:
+
+```bash
+curl -X POST http://localhost:8080/api/config/rules/validate \
+  -H "Content-Type: application/json" \
+  -H "Jairouter_Token: your-admin-token" \
+  -d '{
+    "serviceType": "chat",
+    "modelName": "gpt-4",
+    "clientIp": "127.0.0.1",
+    "headers": {"x-routing": "vllm"}
+  }'
+```
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `modelName` | yes | Model name of the sample request |
+| `serviceType` | no | Service type, defaults to `chat` (chat/embedding/rerank/tts/stt/imgGen/imgEdit, case-insensitive) |
+| `clientIp` | no | Client IP, defaults to `127.0.0.1` |
+| `headers` | no | Request header key-value pairs |
+
+On match:
+
+```json
+{
+  "success": true,
+  "data": {
+    "matched": true,
+    "ruleId": "xxx",
+    "ruleName": "Route to vLLM by header",
+    "priority": 100,
+    "action": {"type": "TARGET_ADAPTER", "target": "vllm"},
+    "message": "Matched rule: Route to vLLM by header"
+  }
+}
+```
+
+When nothing matches, `matched=false`. The rule form in the Web console also has a built-in **「Simulate Test」** panel.
 
 ## Verification
 
