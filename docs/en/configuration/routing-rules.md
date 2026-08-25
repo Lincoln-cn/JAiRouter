@@ -93,7 +93,7 @@ Click **「New Rule」** and fill in the form:
 | **Action** | Select action type; target value is chosen from a **dropdown** (model name / instance / adapter, searchable with custom input; LB strategy is a fixed 5-value select) |
 
 > The form has a **「Simulate Test」** button — validate rule matching before saving.
-
+>
 > Alternatively click **「Create from Template」**: pick a built-in scenario template (canary release / tenant isolation / model rewrite / weight split / adapter switch / VIP pin), enter a name, and a rule draft is generated and pre-filled into the form for editing.
 
 ### Managing Rules
