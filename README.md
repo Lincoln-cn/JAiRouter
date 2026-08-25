@@ -68,6 +68,7 @@ JAiRouter is a **production-ready AI model gateway** that provides a unified, Op
 - **🔌 OpenAI-Compatible API** — Drop-in replacement for OpenAI SDK, LangChain, LlamaIndex
 - **🔧 Configurable Adapters** — Add new AI providers (DeepSeek, Zhipu, etc.) via config or Web UI, no code needed
 - **⚖️ Smart Load Balancing** — Round-robin, weighted, least-connections, IP-hash, consistent-hash
+- **🎯 Rule Engine** — Visual conditional routing (model name, service type, request header, client IP, weight)
 - **🛡️ Rate Limiting** — Token bucket, leaky bucket, sliding window algorithms
 - **🔥 Circuit Breaker** — Auto failover with configurable thresholds and recovery
 - **🔐 Authentication** — JWT + API Key dual authentication with audit logging
@@ -243,6 +244,7 @@ Performance overhead compared to direct backend access:
 - [x] RBAC role-based access control
 - [x] Anthropic Claude adapter
 - [x] Google Gemini adapter
+- [x] Rule engine with visual conditional routing
 
 > **Current Release**: v2.8.5 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 

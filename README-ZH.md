@@ -68,6 +68,7 @@ JAiRouter 是一个 **生产级 AI 模型网关**，提供统一的 OpenAI 兼�
 - **🔌 OpenAI 兼容 API** — 直接替换 OpenAI SDK、LangChain、LlamaIndex
 - **🔧 可配置 Adapter** — 通过配置或 Web 页面添加新 AI 提供商（DeepSeek、智谱等），无需编码
 - **⚖️ 智能负载均衡** — 轮询、加权、最少连接、IP Hash、一致性哈希
+- **🎯 规则引擎** — 可视化条件路由（模型名、服务类型、请求头、来源 IP、权重）
 - **🛡️ 流量控制** — 令牌桶、漏桶、滑动窗口算法
 - **🔥 熔断降级** — 自动故障转移，可配置阈值和恢复策略
 - **🔐 双认证体系** — JWT + API Key 双重认证，审计日志
@@ -243,6 +244,7 @@ LangChain 是应用框架。JAiRouter 是**基础设施层**，位于 LangChain 
 - [x] RBAC 角色权限控制
 - [x] Anthropic Claude 适配器
 - [x] Google Gemini 适配器
+- [x] 规则引擎（可视化条件路由）
 
 > **当前版本**：v2.8.5 | **LTS 版本**：v2.6.11（维护至 2028-05）
 
