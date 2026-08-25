@@ -246,7 +246,7 @@ Performance overhead compared to direct backend access:
 - [x] Google Gemini adapter
 - [x] Rule engine with visual conditional routing
 
-> **Current Release**: v2.8.5 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.8.6 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 
