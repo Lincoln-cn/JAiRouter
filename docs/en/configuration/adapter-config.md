@@ -1,4 +1,4 @@
-﻿# Adapter Configuration Guide
+# Adapter Configuration Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.0
@@ -45,7 +45,7 @@ Click the **「Create Adapter」** button in the top-right corner, fill in the f
 | **Type** | `OpenAI Compatible` | Select this for most cloud APIs |
 | **Capabilities** | Check `Chat`, `Embedding`, `Streaming` | Based on API capabilities |
 | **Header Name** | `Authorization` | Default, no need to change |
-| **Header Prefix** | `Bearer ` | Default, note the trailing space |
+| **Header Prefix** | <code>Bearer </code> | Default, note the trailing space |
 
 Click **「Save」** to complete.
 

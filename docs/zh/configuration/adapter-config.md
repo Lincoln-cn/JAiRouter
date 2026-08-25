@@ -1,4 +1,4 @@
-﻿# Adapter配置指南
+# Adapter配置指南
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.0
@@ -45,7 +45,7 @@ JAiRouter 支持通过配置驱动的方式添加新的 adapter，无需编写�
 | **类型** | `OpenAI兼容` | 大多数云端API选择此项 |
 | **能力配置** | 勾选 `Chat`、`Embedding`、`流式` | 根据API支持的能力选择 |
 | **Header名称** | `Authorization` | 默认值，无需修改 |
-| **Header前缀** | `Bearer ` | 默认值，注意后面有空格 |
+| **Header前缀** | <code>Bearer </code> | 默认值，注意后面有空格 |
 
 点击 **「保存」** 完成创建。
 
