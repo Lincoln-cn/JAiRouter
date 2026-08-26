@@ -76,7 +76,7 @@ The rule engine evaluates on **every request**: rules are matched by priority (h
 | `RATE_LIMIT` | Rule-level rate limiting (per rule ID, 429 when exceeded) | `capacity` / `rate` / `algorithm` / `scope` |
 
 > **LB_STRATEGY values**: `random` / `round-robin` / `least-connections` / `ip-hash` / `consistent-hash`. Unknown strategies fall back to the configured one.
-
+>
 > **RATE_LIMIT action (v2.8.8)**: Once a rule with this action matches, requests are rate-limited per **rule ID** (independent of service/instance-level limits). `capacity` (token bucket capacity) and `rate` (refill per second) are required and must be > 0; `algorithm` defaults to `token-bucket`, `scope` defaults to `rule`. Requests over the limit get `429 Too Many Requests`. Deleting a rule or changing its action type automatically cleans up the corresponding limiter. `GET /api/services/{serviceType}/ratelimit` exposes limiter status including the `rule` level.
 
 ## Web Console Configuration

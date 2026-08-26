@@ -76,7 +76,7 @@ JAiRouter 提供**规则引擎**（v2.8.5），允许通过 Web 页面或 YAML �
 | `RATE_LIMIT` | 规则级限流（按规则 ID 独立限流，超限返回 429） | `capacity` / `rate` / `algorithm` / `scope` |
 
 > **LB_STRATEGY 支持的值**：`random` / `round-robin` / `least-connections` / `ip-hash` / `consistent-hash`，未知策略自动回退原配置。
-
+>
 > **RATE_LIMIT 动作（v2.8.8）**：命中该规则后，按**规则 ID** 对请求进行限流（独立于服务级/实例级限流），`capacity`（令牌桶容量）与 `rate`（每秒补充速率）必填且需 > 0；`algorithm` 默认 `token-bucket`，`scope` 默认 `rule`。超限请求返回 `429 Too Many Requests`。删除规则或变更动作类型时自动清理对应限流器。`GET /api/services/{serviceType}/ratelimit` 可查看各限流器状态（含 `rule` 级）。
 
 ## Web 页面配置

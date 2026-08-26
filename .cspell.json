@@ -113,6 +113,7 @@
     "Xinference",
     "Rerank",
     "RULEC",
+    "INTEG",
     "runbook",
     "MTTR",
     "gpustack",
