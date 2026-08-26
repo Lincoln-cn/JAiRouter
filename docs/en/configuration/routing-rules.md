@@ -255,3 +255,39 @@ When nothing matches, `matched=false`. The rule form in the Web console also has
 4. **Performance**: keep the rule count under ~100; per-request evaluation cost is negligible
 5. **TARGET_ADAPTER**: if the specified adapter is not registered, it logs a warning and falls back to the instance-level adapter
 6. **HEADER conditions**: only apply to `/v1/*` request paths (headers are used for matching only, not outbound forwarding)
+
+---
+
+## Resource Pools & auto-model (v2.8.9)
+
+A resource pool bundles a named set of instances of one service type. When a request's model is a pool name (convention: uto-model), the gateway picks a healthy pool member to serve.
+
+### Configuration
+
+1. **YAML** (config/router/pools.yml):
+
+``yaml
+model:
+  pools:
+    - pool-name: auto-model
+      name: Default auto-routing pool
+      service-type: chat
+      enabled: true
+      strategy: weighted-random
+      members:
+        - instance-id: inst-gpt
+          weight: 9
+        - instance-id: inst-claude
+          weight: 1
+``
+
+2. **Web console**: Configuration → Resource Pools (CRUD with hot reload; persisted to StoreManager key=pool_definitions)
+
+### Behavior
+
+- **Pool name = virtual model name**: requesting model=auto-model (or any configured pool name) triggers pool routing; with no pool configured, uto-model falls back to all healthy instances of the service type
+- **Selection flow**: pool members (referenced by instance ID) → status/health/circuit-breaker filter → pool weights → pool strategy; deleted instances are skipped
+- **Strategies**: weighted-random (default) / ound-robin / least-connections / ip-hash / consistent-hash (note: consistent hash ignores weights)
+- **Rule synergy**: a rule's TARGET_MODEL target can be a pool name — the matched request then routes through the pool
+- **Response echo**: after pool routing, the response and downstream request model field reflect the actual serving instance model (non-streaming; streaming outbound requests are rewritten too)
+- **Rate limiting & circuit breaker**: the pool-selected instance continues through the existing service/instance rate-limit and circuit-breaker chain

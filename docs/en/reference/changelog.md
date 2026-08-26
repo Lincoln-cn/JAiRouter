@@ -21,6 +21,22 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 
 ## Version History
 
+### [2.8.9] - 2026-08-26 - Feature Release
+
+#### Intelligent Routing: Resource Pools + auto-model
+
+- **Resource pools**: a named set of instances of one service type, with a configurable strategy (`weighted-random` / `round-robin` / `least-connections` / `ip-hash` / `consistent-hash`) and per-member weights; configured via YAML (`model.pools`) + StoreManager persistence + CRUD API (`/api/config/pools`) + a web management page (Configuration → Resource Pools)
+- **auto-model virtual model name**: requesting `model=auto-model` (or any pool name) automatically picks a healthy pool member to serve (health/circuit-breaker filter + pool weights + pool strategy); with no pool configured, `auto-model` falls back to all healthy instances of the service type; missing members (deleted instances) are skipped
+- **Rule synergy**: a rule's `TARGET_MODEL` action can point to a pool name to pin the pool
+- **Response echo**: after pool routing, the downstream request and (non-streaming) response `model` field is rewritten to the actual serving instance model (streaming outbound request rewritten too; streaming response echo deferred)
+- **Fix**: `ApiKeyBatchServiceTest` expiration-stats time-boundary flake (`now+2h` crossing midnight misclassified)
+
+#### Tests
+
+- New: `PoolSelectorTest` (POOL-001~007), `PoolPersistenceServiceTest` (POOL-PERSIST-001~008), `PoolConfigControllerTest` (POOL-API-001~013), `ModelServiceRegistryRuleIntegrationTest` pool routing (INTEG-018~021); **full suite 2909 tests green**
+
+---
+
 ### [2.8.8] - 2026-08-26 - Feature Release
 
 #### Rate-Limiting Capability Completion

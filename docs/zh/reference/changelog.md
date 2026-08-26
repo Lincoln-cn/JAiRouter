@@ -22,6 +22,22 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 
 ## 版本历史
 
+### [2.8.9] - 2026-08-26 - 功能发布
+
+#### 智能分流:资源池 + auto-model
+
+- **资源池**:一组同服务类型实例的命名集合,可配置策略(weighted-random/round-robin/least-connections/ip-hash/consistent-hash)与成员权重;YAML(`model.pools`)+ StoreManager 持久化 + CRUD API(`/api/config/pools`)+ Web 管理页(配置管理 → 资源池)
+- **auto-model 虚拟模型名**:请求 `model=auto-model`(或任意池名)时自动从池内健康实例中选择执行(健康/熔断过滤 + 池级权重 + 池策略);未配置池时 auto-model 回退为该服务全部健康实例;池成员缺失(实例被删)自动跳过
+- **规则联动**:规则 `TARGET_MODEL` 可直接指向池名锁定资源池
+- **响应回显**:池路由后,下游请求与响应(非流式)的 `model` 字段改写为实际实例模型名(流式出站请求同步改写,流式响应回显留待后续)
+- **修复**:ApiKeyBatchServiceTest 到期统计时间边界 flaky(now+2h 深夜跨零点误判)
+
+#### 测试
+
+- 新增:PoolSelectorTest(POOL-001~007)、PoolPersistenceServiceTest(POOL-PERSIST-001~008)、PoolConfigControllerTest(POOL-API-001~013)、ModelServiceRegistryRuleIntegrationTest(POOL 路由 INTEG-018~021);**全量 2909 用例全绿**
+
+---
+
 ### [2.8.8] - 2026-08-26 - 功能发布
 
 #### 限流能力补齐
