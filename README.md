@@ -245,6 +245,7 @@ Performance overhead compared to direct backend access:
 - [x] Anthropic Claude adapter
 - [x] Google Gemini adapter
 - [x] Rule engine with visual conditional routing
+- [x] Service-level dynamic rate limiting + rule-based RATE_LIMIT action
 
 > **Current Release**: v2.8.8 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
