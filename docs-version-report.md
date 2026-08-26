@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 158
-- 近7天变更: 92
+- 近7天变更: 102
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-25 02:58:09
+- 最后扫描: 2026-08-26 03:04:21
 
 ## 最近变更
 
-- **DELETED**: docs/README.md (1.0.2 → ) - 2026-08-24
-- **MODIFIED**: docs/zh/tracing/usage-guide.md (1.0.3 → 1.0.4) - 2026-08-24
-- **MODIFIED**: docs/zh/tracing/troubleshooting.md (1.0.1 → 1.0.2) - 2026-08-24
-- **MODIFIED**: docs/zh/tracing/quickstart.md (1.0.3 → 1.0.4) - 2026-08-24
-- **MODIFIED**: docs/zh/tracing/performance-tuning.md (1.0.1 → 1.0.2) - 2026-08-24
-- **MODIFIED**: docs/zh/tracing/operations-guide.md (1.0.3 → 1.0.4) - 2026-08-24
-- **MODIFIED**: docs/zh/tracing/index.md (1.0.3 → 1.0.4) - 2026-08-24
-- **MODIFIED**: docs/zh/tracing/config-reference.md (1.0.1 → 1.0.2) - 2026-08-24
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.7 → 1.0.8) - 2026-08-24
-- **MODIFIED**: docs/zh/monitoring/slow-query-alerts.md (1.0.1 → 1.0.2) - 2026-08-24
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.8 → 1.0.9) - 2026-08-26
+- **MODIFIED**: docs/zh/index.md (1.0.8 → 1.0.9) - 2026-08-26
+- **MODIFIED**: docs/zh/configuration/routing-rules.md (1.0.0 → 1.0.1) - 2026-08-26
+- **MODIFIED**: docs/zh/configuration/adapter-config.md (1.0.2 → 1.0.3) - 2026-08-26
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.8 → 1.0.9) - 2026-08-26
+- **MODIFIED**: docs/en/index.md (1.0.7 → 1.0.8) - 2026-08-26
+- **MODIFIED**: docs/en/configuration/routing-rules.md (1.0.0 → 1.0.1) - 2026-08-26
+- **MODIFIED**: docs/en/configuration/adapter-config.md (1.0.2 → 1.0.3) - 2026-08-26
+- **MODIFIED**: README.md (1.0.23 → 1.0.24) - 2026-08-26
+- **MODIFIED**: README-ZH.md (1.0.15 → 1.0.16) - 2026-08-26
 
 ## 过期文档 (30天未更新)
 
@@ -598,6 +598,16 @@
 
 ## 所有文档版本
 
+- **docs/zh/reference/changelog.md**: v1.0.9 - 2026-08-26 (58f0c2ef)
+- **docs/zh/index.md**: v1.0.9 - 2026-08-26 (6f15704f)
+- **docs/zh/configuration/routing-rules.md**: v1.0.1 - 2026-08-26 (3c4f825a)
+- **docs/zh/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
+- **docs/en/reference/changelog.md**: v1.0.9 - 2026-08-26 (58f0c2ef)
+- **docs/en/index.md**: v1.0.8 - 2026-08-26 (6f15704f)
+- **docs/en/configuration/routing-rules.md**: v1.0.1 - 2026-08-26 (3c4f825a)
+- **docs/en/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
+- **README.md**: v1.0.24 - 2026-08-26 (6f15704f)
+- **README-ZH.md**: v1.0.16 - 2026-08-26 (6f15704f)
 - **docs/zh/tracing/usage-guide.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/troubleshooting.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/quickstart.md**: v1.0.4 - 2026-08-24 (f5d673e2)
@@ -605,20 +615,16 @@
 - **docs/zh/tracing/operations-guide.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/index.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/config-reference.md**: v1.0.2 - 2026-08-24 (f5d673e2)
-- **docs/zh/reference/changelog.md**: v1.0.8 - 2026-08-24 (f5d673e2)
 - **docs/zh/monitoring/slow-query-alerts.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/zh/monitoring/error-tracking.md**: v1.0.2 - 2026-08-24 (f5d673e2)
-- **docs/zh/index.md**: v1.0.8 - 2026-08-24 (f5d673e2)
 - **docs/zh/development/doc-maintenance.md**: v1.0.0 - 2026-08-24 (26c1f68e)
 - **docs/zh/deployment/docker.md**: v1.0.7 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/version-management.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/validation-rules.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/store-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/state-persistence.md**: v1.0.2 - 2026-08-24 (f5d673e2)
-- **docs/zh/configuration/routing-rules.md**: v1.0.0 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/instance-examples.md**: v1.0.1 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/dynamic-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/zh/configuration/adapter-config.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/troubleshooting/performance.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/troubleshooting/issue-fixes.md**: v1.0.0 - 2026-08-24 (f5d673e2)
 - **docs/en/troubleshooting/index.md**: v1.0.3 - 2026-08-24 (f5d673e2)
@@ -640,7 +646,6 @@
 - **docs/en/reference/index.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/reference/glossary.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/reference/faq.md**: v1.0.5 - 2026-08-24 (f5d673e2)
-- **docs/en/reference/changelog.md**: v1.0.8 - 2026-08-24 (f5d673e2)
 - **docs/en/monitoring/troubleshooting.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/monitoring/testing.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/monitoring/slow-query-alerts.md**: v1.0.2 - 2026-08-24 (f5d673e2)
@@ -652,7 +657,6 @@
 - **docs/en/monitoring/dashboards.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/monitoring/configuration.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/monitoring/alerts.md**: v1.0.3 - 2026-08-24 (f5d673e2)
-- **docs/en/index.md**: v1.0.7 - 2026-08-24 (f5d673e2)
 - **docs/en/getting-started/quick-start.md**: v1.0.6 - 2026-08-24 (f5d673e2)
 - **docs/en/getting-started/installation.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/getting-started/index.md**: v1.0.3 - 2026-08-24 (f5d673e2)
@@ -673,7 +677,6 @@
 - **docs/en/configuration/validation-rules.md**: v1.0.0 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/store-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/state-persistence.md**: v1.0.2 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/routing-rules.md**: v1.0.0 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/rate-limiting.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/modular-config.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/load-balancing.md**: v1.0.3 - 2026-08-24 (f5d673e2)
@@ -682,15 +685,12 @@
 - **docs/en/configuration/dynamic-config.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/circuit-breaker.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/application-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/adapter-config.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/universal-api.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/openapi-spec.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/monitoring-api.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/management-api.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/index.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/error-codes.md**: v1.0.3 - 2026-08-24 (f5d673e2)
-- **README.md**: v1.0.23 - 2026-08-18 (b1088a7e)
-- **README-ZH.md**: v1.0.15 - 2026-08-18 (b1088a7e)
 - **docs/zh/reference/roadmap.md**: v1.0.8 - 2026-07-18 (ca98a2ee)
 - **docs/zh/getting-started/quick-start.md**: v1.0.5 - 2026-07-15 (d01148bb)
 - **QWEN.md**: v1.0.4 - 2026-07-14 (63a07c9b)
