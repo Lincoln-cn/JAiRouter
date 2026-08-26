@@ -142,6 +142,15 @@ public class ChatDTO {
             return options != null ? options.repetitionDetection : null;
         }
 
+        // v2.9.0: vLLM 前缀缓存参数
+        public String prefixCacheHash() {
+            return options != null ? options.prefixCacheHash : null;
+        }
+
+        public Boolean enablePrefixCaching() {
+            return options != null ? options.enablePrefixCaching : null;
+        }
+
         // Ollama 特定参数
         public Double repeatPenalty() {
             return options != null ? options.repeatPenalty : null;
@@ -229,6 +238,11 @@ public class ChatDTO {
         private String cacheSalt;
         @JsonProperty("repetition_detection")
         private Object repetitionDetection;
+        // v2.9.0: vLLM 前缀缓存参数
+        @JsonProperty("prefix_cache_hash")
+        private String prefixCacheHash;
+        @JsonProperty("enable_prefix_caching")
+        private Boolean enablePrefixCaching;
 
         // Ollama 特定参数
         @JsonProperty("repeat_penalty")

@@ -54,6 +54,27 @@ public class ServiceInstanceSelector {
             final String clientIp,
             final ModelServiceRegistry.ServiceType serviceType,
             final String modelName) {
+        return selectWithRateLimit(availableInstances, loadBalancer, null, clientIp, serviceType, modelName);
+    }
+
+    /**
+     * v2.9.0: 选择实例并进行实例级限流检查(带会话亲和性)
+     *
+     * @param availableInstances 可用实例列表
+     * @param loadBalancer 负载均衡器
+     * @param affinityKey 会话亲和性键(可为null)
+     * @param clientIp 客户端IP
+     * @param serviceType 服务类型
+     * @param modelName 模型名称
+     * @return 选中的实例，如果无可用实例则返回null
+     */
+    public ModelRouterProperties.ModelInstance selectWithRateLimit(
+            final List<ModelRouterProperties.ModelInstance> availableInstances,
+            final LoadBalancer loadBalancer,
+            final String affinityKey,
+            final String clientIp,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName) {
 
         List<ModelRouterProperties.ModelInstance> candidateInstances = new ArrayList<>(availableInstances);
         int maxAttempts = Math.min(candidateInstances.size(), 3);
@@ -63,8 +84,14 @@ public class ServiceInstanceSelector {
                 break;
             }
 
-            ModelRouterProperties.ModelInstance candidate = loadBalancer.selectInstance(
-                    candidateInstances, clientIp, serviceType.name().toLowerCase());
+            ModelRouterProperties.ModelInstance candidate;
+            if (affinityKey != null && !affinityKey.isBlank()) {
+                candidate = loadBalancer.selectInstance(
+                        candidateInstances, affinityKey, clientIp, serviceType.name().toLowerCase());
+            } else {
+                candidate = loadBalancer.selectInstance(
+                        candidateInstances, clientIp, serviceType.name().toLowerCase());
+            }
 
             // 实例级限流检查
             RateLimitContext instanceContext = new RateLimitContext(

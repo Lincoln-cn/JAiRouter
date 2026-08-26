@@ -68,6 +68,7 @@ public class ModelRouterProperties {
         private RateLimitConfig rateLimit; // 服务级别限流配置
         private CircuitBreakerConfig circuitBreaker; // 服务级别熔断器配置
         private FallbackConfig fallback; // 服务级别降级配置
+        private StickyConfig sticky; // v2.9.0: 会话粘性配置
 
         public LoadBalanceConfig getLoadBalance() {
             return loadBalance;
@@ -112,9 +113,17 @@ public class ModelRouterProperties {
         public FallbackConfig getFallback() {
             return fallback;
         }
-        
+
         public void setFallback(final FallbackConfig fallback) {
             this.fallback = fallback;
+        }
+
+        public StickyConfig getSticky() {
+            return sticky;
+        }
+
+        public void setSticky(final StickyConfig sticky) {
+            this.sticky = sticky;
         }
     }
 
@@ -444,6 +453,29 @@ public class ModelRouterProperties {
 
         public void setCacheTtl(final Long cacheTtl) {
             this.cacheTtl = cacheTtl;
+        }
+    }
+
+    // v2.9.0: 会话粘性配置类
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class StickyConfig {
+        private Boolean enabled = true;   // 是否启用粘性路由(默认开,实例数>1且健康时生效)
+        private String affinityKeyScope = "tenant_model"; // 粘性粒度: tenant_model / tenant
+
+        public Boolean getEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(final Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getAffinityKeyScope() {
+            return affinityKeyScope;
+        }
+
+        public void setAffinityKeyScope(final String affinityKeyScope) {
+            this.affinityKeyScope = affinityKeyScope;
         }
     }
 }

@@ -31,6 +31,7 @@ import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -67,6 +68,10 @@ public class NonStreamingRequestProcessor {
     // v2.8.9: 资源池选择器(池路由后改写下游请求/响应的 model 字段为实际实例名)
     @Autowired(required = false)
     private org.unreal.modelrouter.router.pool.PoolSelector poolSelector;
+
+    // v2.9.0: 指标收集器(记录 KV 缓存命中/未命中指标)
+    @Autowired(required = false)
+    private MetricsCollector metricsCollector;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
@@ -418,6 +423,35 @@ public class NonStreamingRequestProcessor {
             }
 
             String model = jsonNode.has("model") ? jsonNode.get("model").asText() : "unknown";
+
+            // v2.9.0: 提取 KV 缓存命中/未命中 token 数
+            // DeepSeek 形态: prompt_cache_hit_tokens / prompt_cache_miss_tokens
+            // OpenAI/vLLM 形态: prompt_tokens_details.cached_tokens
+            long cacheHitTokens = 0;
+            long cacheMissTokens = 0;
+            if (usage.has("prompt_cache_hit_tokens")) {
+                cacheHitTokens = usage.get("prompt_cache_hit_tokens").asLong();
+            }
+            if (usage.has("prompt_cache_miss_tokens")) {
+                cacheMissTokens = usage.get("prompt_cache_miss_tokens").asLong();
+            }
+            // OpenAI 形态: prompt_tokens_details.cached_tokens → 视为 cacheHit
+            if (cacheHitTokens == 0 && usage.has("prompt_tokens_details")) {
+                JsonNode details = usage.get("prompt_tokens_details");
+                if (details.has("cached_tokens")) {
+                    cacheHitTokens = details.get("cached_tokens").asLong();
+                }
+            }
+            // 如果只有 cacheHit 无 cacheMiss，估算 miss = promptTokens - cacheHit
+            if (cacheHitTokens > 0 && cacheMissTokens == 0) {
+                cacheMissTokens = Math.max(0, promptTokens - cacheHitTokens);
+            }
+
+            // 记录 KV 缓存指标
+            if (metricsCollector != null && (cacheHitTokens > 0 || cacheMissTokens > 0)) {
+                metricsCollector.recordCacheTokenUsage(adapterType, instanceName,
+                        cacheHitTokens, cacheMissTokens);
+            }
 
             // 记录到 TokenUsage 表
             if (tokenUsageRecorder != null) {

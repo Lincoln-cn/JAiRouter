@@ -561,4 +561,63 @@ public class DefaultMetricsCollector implements MetricsCollector {
                 return -1;
         }
     }
+
+    // ==================== v2.9.0: KV 缓存指标 ====================
+
+    @Override
+    public void recordCacheTokenUsage(final String adapter, final String instance,
+                                       final long cacheHitTokens, final long cacheMissTokens) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+
+            // 缓存命中 token 计数器
+            if (cacheHitTokens > 0) {
+                String counterKey = "cache.hit.tokens.total." + adapter + "." + instance;
+                Counter counter = counters.computeIfAbsent(counterKey, key ->
+                    Counter.builder(metricPrefix + "cache_hit_tokens_total")
+                        .tag("adapter", adapter)
+                        .tag("instance", instance)
+                        .description("Total KV cache hit tokens")
+                        .register(meterRegistry)
+                );
+                counter.increment(cacheHitTokens);
+            }
+
+            // 缓存未命中 token 计数器
+            if (cacheMissTokens > 0) {
+                String counterKey = "cache.miss.tokens.total." + adapter + "." + instance;
+                Counter counter = counters.computeIfAbsent(counterKey, key ->
+                    Counter.builder(metricPrefix + "cache_miss_tokens_total")
+                        .tag("adapter", adapter)
+                        .tag("instance", instance)
+                        .description("Total KV cache miss tokens")
+                        .register(meterRegistry)
+                );
+                counter.increment(cacheMissTokens);
+            }
+
+            // 缓存命中率 Gauge(按实例聚合)
+            long totalCacheTokens = cacheHitTokens + cacheMissTokens;
+            if (totalCacheTokens > 0) {
+                double hitRatio = (double) cacheHitTokens / totalCacheTokens;
+                String gaugeKey = "cache.hit.ratio." + adapter + "." + instance;
+                AtomicReference<Double> ratioRef = usageGauges.computeIfAbsent(gaugeKey, key -> {
+                    AtomicReference<Double> ref = new AtomicReference<>(hitRatio);
+                    Gauge.builder(metricPrefix + "cache_hit_ratio", ref, AtomicReference::get)
+                        .tag("adapter", adapter)
+                        .tag("instance", instance)
+                        .description("KV cache hit ratio (0.0 ~ 1.0)")
+                        .register(meterRegistry);
+                    return ref;
+                });
+                ratioRef.set(hitRatio);
+            }
+
+            logger.debug("Recorded cache token usage: adapter={}, instance={}, hit={}, miss={}",
+                    adapter, instance, cacheHitTokens, cacheMissTokens);
+        } catch (Exception e) {
+            logger.warn("Failed to record cache token usage: {}", e.getMessage());
+        }
+    }
 }

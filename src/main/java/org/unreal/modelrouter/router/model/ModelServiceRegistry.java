@@ -29,6 +29,9 @@ import org.unreal.modelrouter.router.rule.RuleEngineService;
 import org.unreal.modelrouter.router.rule.RuleStatsService;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 import org.unreal.modelrouter.monitor.tracing.wrapper.LoadBalancerTracingWrapper;
+import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
+import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
+import org.unreal.modelrouter.router.loadbalancer.impl.StickyLoadBalancer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -332,6 +335,12 @@ public class ModelServiceRegistry {
             throw instanceSelector.createAppropriateException(serviceType, effectiveModelName, candidates);
         }
 
+        // v2.9.0: 会话粘性路由 — 解析亲和性键，用 StickyLoadBalancer 包装原 LB
+        String affinityKey = AffinityContextHolder.get();
+        if (affinityKey != null && isStickyEnabled(serviceType)) {
+            loadBalancer = new StickyLoadBalancer(loadBalancer, serviceStateManager, circuitBreakerManager);
+        }
+
         // v2.8.8: 服务级限流检查(每请求恰一次;实例级在 selectWithRateLimit 内;无配置零开销)
         if (rateLimitManager != null && !rateLimitManager.tryAcquire(
                 new RateLimitContext(serviceType, effectiveModelName, clientIp, 1, null, null))) {
@@ -342,7 +351,7 @@ public class ModelServiceRegistry {
 
         ModelRouterProperties.ModelInstance selectedInstance =
                 instanceSelector.selectWithRateLimit(
-                        availableInstances, loadBalancer, clientIp, serviceType, effectiveModelName);
+                        availableInstances, loadBalancer, affinityKey, clientIp, serviceType, effectiveModelName);
 
         if (selectedInstance == null) {
             throw new ResponseStatusException(
@@ -520,6 +529,32 @@ public class ModelServiceRegistry {
     }
 
     // ==================== 私有方法 ====================
+
+    /**
+     * v2.9.0: 检查指定服务类型是否启用粘性路由
+     * 需要 sticky.enabled=true (默认true) 且实例数>1
+     */
+    private boolean isStickyEnabled(final ServiceType serviceType) {
+        String serviceKey = serviceTypeResolver.getServiceConfigKey(serviceType);
+        ServiceRuntimeConfig runtimeConfig = serviceConfigCache.get(serviceKey);
+        if (runtimeConfig == null) {
+            return false;
+        }
+        List<ModelRouterProperties.ModelInstance> instances = runtimeConfig.getInstances();
+        if (instances == null || instances.size() <= 1) {
+            return false;
+        }
+        // 从原始配置中读取 sticky 配置
+        if (originalProperties != null && originalProperties.getServices() != null) {
+            ModelRouterProperties.ServiceConfig svcConfig =
+                    originalProperties.getServices().get(serviceKey);
+            if (svcConfig != null && svcConfig.getSticky() != null) {
+                return Boolean.TRUE.equals(svcConfig.getSticky().getEnabled());
+            }
+        }
+        // 默认:实例>1时启用
+        return true;
+    }
 
     /**
      * v2.8.8: 将合并配置中带 rateLimit 的服务应用到运行时限流器

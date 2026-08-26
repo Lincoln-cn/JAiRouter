@@ -39,6 +39,8 @@ import org.unreal.modelrouter.router.checker.ServiceStateManager;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
+import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
+import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -194,6 +196,12 @@ public class ServiceRequestHandler {
         String clientIp = IpUtils.getClientIp(httpRequest);
         ServiceType serviceType = endpoint.getServiceType();
 
+        // v2.9.0: 解析会话亲和性键(apiKeyId|serviceType|modelName)
+        String apiKeyId = extractApiKeyId(httpRequest);
+        String affinityKey = AffinityKeyResolver.resolve(apiKeyId, clientIp,
+                serviceType.name(), modelName);
+        AffinityContextHolder.set(affinityKey);
+
         // v2.8.5: 提取请求头用于规则引擎路由(仅用于规则匹配,不影响出站转发)
         Map<String, String> requestHeaders = new HashMap<>();
         if (httpRequest.getHeaders() != null) {
@@ -211,6 +219,9 @@ public class ServiceRequestHandler {
         } catch (Exception e) {
             logger.error("Failed to select instance for service: {}, model: {}", serviceType, modelName, e);
             return Mono.error(e);
+        } finally {
+            // v2.9.0: 请求实例选择完成后清理亲和性上下文
+            AffinityContextHolder.clear();
         }
 
         // 2. 获取适配器
@@ -366,6 +377,21 @@ public class ServiceRequestHandler {
         } catch (Exception e) {
             return Mono.error(e);
         }
+    }
+
+    /**
+     * 从请求属性中提取 API Key ID
+     * v2.9.0: 用于会话亲和性键解析
+     */
+    private String extractApiKeyId(final ServerHttpRequest httpRequest) {
+        if (httpRequest == null) {
+            return null;
+        }
+        Object keyId = httpRequest.getAttributes().get(API_KEY_ID_ATTRIBUTE);
+        if (keyId instanceof String key && !key.isBlank()) {
+            return key;
+        }
+        return null;
     }
 
     /**
