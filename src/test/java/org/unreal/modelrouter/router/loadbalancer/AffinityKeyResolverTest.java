@@ -83,4 +83,49 @@ class AffinityKeyResolverTest {
         String key = AffinityKeyResolver.resolveTenantKey(null, "192.168.1.1");
         assertEquals("192.168.1.1", key);
     }
+
+    @Test
+    @DisplayName("scope=tenant_model(默认)包含 modelName")
+    void resolveScopeTenantModel() {
+        String key = AffinityKeyResolver.resolve("key-1", "10.0.0.1", "chat", "gpt-4",
+                AffinityKeyResolver.SCOPE_TENANT_MODEL);
+        assertEquals("key-1|chat|gpt-4", key);
+    }
+
+    @Test
+    @DisplayName("scope=tenant 不包含 modelName")
+    void resolveScopeTenant() {
+        String key = AffinityKeyResolver.resolve("key-1", "10.0.0.1", "chat", "gpt-4",
+                AffinityKeyResolver.SCOPE_TENANT);
+        assertEquals("key-1|chat", key);
+    }
+
+    @Test
+    @DisplayName("scope=tenant 时不同 modelName 产生相同键")
+    void scopeTenantIgnoresModelName() {
+        String key1 = AffinityKeyResolver.resolve("key-1", "10.0.0.1", "chat", "model-a",
+                AffinityKeyResolver.SCOPE_TENANT);
+        String key2 = AffinityKeyResolver.resolve("key-1", "10.0.0.1", "chat", "model-b",
+                AffinityKeyResolver.SCOPE_TENANT);
+        assertEquals(key1, key2, "tenant scope should ignore modelName");
+    }
+
+    @Test
+    @DisplayName("scope=tenant_model 时不同 modelName 产生不同键")
+    void scopeTenantModelDistinguishesModel() {
+        String key1 = AffinityKeyResolver.resolve("key-1", "10.0.0.1", "chat", "model-a",
+                AffinityKeyResolver.SCOPE_TENANT_MODEL);
+        String key2 = AffinityKeyResolver.resolve("key-1", "10.0.0.1", "chat", "model-b",
+                AffinityKeyResolver.SCOPE_TENANT_MODEL);
+        assertNotEquals(key1, key2, "tenant_model scope should distinguish modelName");
+    }
+
+    @Test
+    @DisplayName("4参数 resolve 默认使用 tenant_model 粒度")
+    void resolveDefaultScopeIsTenantModel() {
+        String key4 = AffinityKeyResolver.resolve("k1", "ip", "chat", "model-x");
+        String key5 = AffinityKeyResolver.resolve("k1", "ip", "chat", "model-x",
+                AffinityKeyResolver.SCOPE_TENANT_MODEL);
+        assertEquals(key4, key5, "4-param resolve should default to tenant_model");
+    }
 }

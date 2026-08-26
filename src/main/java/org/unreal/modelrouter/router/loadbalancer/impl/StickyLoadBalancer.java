@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * v2.9.0: 会话粘性负载均衡器
@@ -40,10 +39,10 @@ public class StickyLoadBalancer implements LoadBalancer {
     private final ServiceStateManager serviceStateManager;
     private final CircuitBreakerManager circuitBreakerManager;
 
-    // 一致性哈希环
-    private final TreeMap<Long, ModelRouterProperties.ModelInstance> hashCircle = new TreeMap<>();
-    // 虚拟节点映射，用于清理
-    private final Map<String, java.util.List<Long>> virtualNodesMap = new ConcurrentHashMap<>();
+    // 哈希环快照：通过 volatile 引用实现不可变快照的原子交换，读线程无需同步
+    private volatile TreeMap<Long, ModelRouterProperties.ModelInstance> hashCircle = new TreeMap<>();
+    // 当前缓存的实例列表指纹；指纹变化时才重建环
+    private volatile String cachedFingerprint = "";
 
     public StickyLoadBalancer(final LoadBalancer delegate,
                               final ServiceStateManager serviceStateManager,
@@ -90,19 +89,20 @@ public class StickyLoadBalancer implements LoadBalancer {
             return delegate.selectInstance(instances, clientIp, serviceType);
         }
 
-        // 构建哈希环(使用当前实例列表)
-        rebuildHashRing(instances);
+        // 获取(可能已缓存的)哈希环快照 — 仅当指纹变化时重建
+        TreeMap<Long, ModelRouterProperties.ModelInstance> ring = getOrRebuildRing(instances);
 
         // 亲和性哈希选择
         long hash = murmurHash3(affinityKey);
-        Map.Entry<Long, ModelRouterProperties.ModelInstance> entry = hashCircle.higherEntry(hash);
+        Map.Entry<Long, ModelRouterProperties.ModelInstance> entry = ring.higherEntry(hash);
         if (entry == null) {
-            entry = hashCircle.firstEntry();
+            entry = ring.firstEntry();
         }
 
         ModelRouterProperties.ModelInstance stickyTarget = entry.getValue();
 
         // 检查粘性目标实例是否可用(健康 + 非熔断)
+        // defense-in-depth: 实例列表已由上游预过滤，此处为额外保护
         if (isInstanceAvailable(stickyTarget)) {
             logger.debug("Sticky routing: key='{}' → instance='{}' (service={})",
                     truncateKey(affinityKey), stickyTarget.getName(), serviceType);
@@ -139,25 +139,58 @@ public class StickyLoadBalancer implements LoadBalancer {
     }
 
     /**
-     * 重建一致性哈希环
+     * 获取或重建一致性哈希环。
+     * 仅当实例列表指纹变化时才重建(构建新 TreeMap 后通过 volatile 原子交换)，
+     * 避免每个请求都重建导致的 O(instances × virtualNodes) 开销和并发读写风险。
      */
-    private void rebuildHashRing(final List<ModelRouterProperties.ModelInstance> instances) {
-        hashCircle.clear();
-        virtualNodesMap.clear();
+    private TreeMap<Long, ModelRouterProperties.ModelInstance> getOrRebuildRing(
+            final List<ModelRouterProperties.ModelInstance> instances) {
+        String fingerprint = computeFingerprint(instances);
+        if (!fingerprint.equals(cachedFingerprint)) {
+            synchronized (this) {
+                // double-check: 其他线程可能已在等待期间完成了重建
+                if (!fingerprint.equals(cachedFingerprint)) {
+                    hashCircle = buildRing(instances);
+                    cachedFingerprint = fingerprint;
+                }
+            }
+        }
+        return hashCircle;
+    }
 
+    /**
+     * 计算实例列表指纹(列表大小 + 每个实例的 instanceId/name 排序后拼接)。
+     * 指纹相同则哈希环不变，无需重建。
+     */
+    private String computeFingerprint(final List<ModelRouterProperties.ModelInstance> instances) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(instances.size());
+        for (ModelRouterProperties.ModelInstance inst : instances) {
+            String id = inst.getInstanceId() != null ? inst.getInstanceId() : inst.getName();
+            sb.append('|').append(id);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 构建新的不可变哈希环 TreeMap。
+     * 返回一个新实例，调用者通过 volatile 赋值实现原子切换。
+     */
+    private TreeMap<Long, ModelRouterProperties.ModelInstance> buildRing(
+            final List<ModelRouterProperties.ModelInstance> instances) {
+        TreeMap<Long, ModelRouterProperties.ModelInstance> ring = new TreeMap<>();
         for (ModelRouterProperties.ModelInstance instance : instances) {
             String instanceId = instance.getInstanceId() != null
                     ? instance.getInstanceId() : instance.getName();
-            java.util.List<Long> nodeHashes = new java.util.ArrayList<>();
-
             for (int i = 0; i < virtualNodeCount; i++) {
                 String virtualNodeKey = instanceId + "#" + i;
                 long h = murmurHash3(virtualNodeKey);
-                hashCircle.put(h, instance);
-                nodeHashes.add(h);
+                ring.put(h, instance);
             }
-            virtualNodesMap.put(instanceId, nodeHashes);
         }
+        logger.debug("Rebuilt sticky hash ring: {} instances, {} total nodes",
+                instances.size(), ring.size());
+        return ring;
     }
 
     /**

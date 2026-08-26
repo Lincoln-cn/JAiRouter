@@ -129,4 +129,28 @@ class CacheMetricsTest {
                         .counter()
                         .count());
     }
+
+    @Test
+    @DisplayName("缓存命中率 Gauge 基于累积计数器(非单次请求)")
+    void cacheHitRatioGaugeUsesCumulativeCounters() {
+        // 第一次调用: hit=100, miss=100 → 累积 100/200 = 0.5
+        collector.recordCacheTokenUsage("vllm", "inst-1", 100, 100);
+        assertEquals(0.5,
+                meterRegistry.find("jairouter_cache_hit_ratio")
+                        .tag("adapter", "vllm")
+                        .tag("instance", "inst-1")
+                        .gauge()
+                        .value(),
+                0.001);
+
+        // 第二次调用: hit=300, miss=100 → 累积 hit=400, miss=200 → 400/600 = 0.6667
+        collector.recordCacheTokenUsage("vllm", "inst-1", 300, 100);
+        assertEquals(400.0 / 600.0,
+                meterRegistry.find("jairouter_cache_hit_ratio")
+                        .tag("adapter", "vllm")
+                        .tag("instance", "inst-1")
+                        .gauge()
+                        .value(),
+                0.001);
+    }
 }

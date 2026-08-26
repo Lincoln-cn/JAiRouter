@@ -40,7 +40,6 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
-import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
@@ -196,11 +195,10 @@ public class ServiceRequestHandler {
         String clientIp = IpUtils.getClientIp(httpRequest);
         ServiceType serviceType = endpoint.getServiceType();
 
-        // v2.9.0: 解析会话亲和性键(apiKeyId|serviceType|modelName)
+        // v2.9.0: 存储亲和性上下文原始组件(apiKeyId, clientIp, serviceType, modelName)
+        // 在 ModelServiceRegistry 中按 sticky.scope 配置动态解析为正确粒度的亲和性键
         String apiKeyId = extractApiKeyId(httpRequest);
-        String affinityKey = AffinityKeyResolver.resolve(apiKeyId, clientIp,
-                serviceType.name(), modelName);
-        AffinityContextHolder.set(affinityKey);
+        AffinityContextHolder.set(apiKeyId, clientIp, serviceType.name(), modelName);
 
         // v2.8.5: 提取请求头用于规则引擎路由(仅用于规则匹配,不影响出站转发)
         Map<String, String> requestHeaders = new HashMap<>();

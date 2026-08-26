@@ -108,6 +108,49 @@ class StickyLoadBalancerTest {
     }
 
     @Test
+    @DisplayName("实例列表变化后环重建，粘性目标跟随新环")
+    void instanceListChangeRebuildsRingAndStickyTargetFollows() {
+        List<ModelRouterProperties.ModelInstance> instances3 = createInstances(3);
+        when(circuitBreakerManager.getState(anyString(), anyString()))
+                .thenReturn(CircuitBreaker.State.CLOSED);
+
+        // 第一次选: 3 个实例
+        ModelRouterProperties.ModelInstance first =
+                stickyLb.selectInstance(instances3, "tenant-1|chat|model-a", "10.0.0.1", "chat");
+        assertNotNull(first);
+
+        // 相同 key + 相同列表 → 同实例(缓存命中)
+        ModelRouterProperties.ModelInstance same =
+                stickyLb.selectInstance(instances3, "tenant-1|chat|model-a", "10.0.0.2", "chat");
+        assertEquals(first.getName(), same.getName(), "same list should hit cached ring");
+
+        // 变更实例列表 → 环重建，粘性目标可能变化但必须一致
+        List<ModelRouterProperties.ModelInstance> instances5 = createInstances(5);
+        ModelRouterProperties.ModelInstance afterChange1 =
+                stickyLb.selectInstance(instances5, "tenant-1|chat|model-a", "10.0.0.3", "chat");
+        ModelRouterProperties.ModelInstance afterChange2 =
+                stickyLb.selectInstance(instances5, "tenant-1|chat|model-a", "10.0.0.4", "chat");
+        assertNotNull(afterChange1);
+        assertEquals(afterChange1.getName(), afterChange2.getName(),
+                "same key + same new list should consistently route to same instance");
+    }
+
+    @Test
+    @DisplayName("null affinityKey 委托给 delegate(2参数版)")
+    void nullAffinityKeyDelegatesThreeArg() {
+        List<ModelRouterProperties.ModelInstance> instances = createInstances(2);
+        ModelRouterProperties.ModelInstance expected = instances.get(0);
+        when(delegate.selectInstance(eq(instances), anyString(), eq("chat")))
+                .thenReturn(expected);
+
+        ModelRouterProperties.ModelInstance result =
+                stickyLb.selectInstance(instances, (String) null, "10.0.0.1", "chat");
+
+        assertEquals(expected, result);
+        verify(delegate).selectInstance(instances, "10.0.0.1", "chat");
+    }
+
+    @Test
     @DisplayName("粘性目标实例不可用时回退到 delegate")
     void fallbackWhenStickyTargetUnavailable() {
         List<ModelRouterProperties.ModelInstance> instances = createInstances(3);
