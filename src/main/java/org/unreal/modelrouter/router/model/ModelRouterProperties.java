@@ -262,6 +262,26 @@ public class ModelRouterProperties {
         public void setHeaders(final Map<String, String> headers) {
             this.headers = headers;
         }
+
+        /**
+         * v2.8.9: 浅拷贝实例(共享配置对象不可变,仅用于池路由时覆盖 weight,避免污染共享实例)
+         */
+        public ModelInstance copy() {
+            ModelInstance c = new ModelInstance();
+            c.id = this.id;
+            c.name = this.name;
+            c.baseUrl = this.baseUrl;
+            c.path = this.path;
+            c.weight = this.weight;
+            c.status = this.status;
+            c.instanceId = this.instanceId;
+            c.adapter = this.adapter;
+            c.headers = this.headers;
+            c.rateLimit = this.rateLimit;
+            c.circuitBreaker = this.circuitBreaker;
+            c.healthy = this.healthy;
+            return c;
+        }
     }
 
     // 限流配置类

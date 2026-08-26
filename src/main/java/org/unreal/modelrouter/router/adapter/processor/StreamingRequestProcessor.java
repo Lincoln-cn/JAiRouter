@@ -15,6 +15,9 @@ import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
+import org.unreal.modelrouter.router.pool.PoolSelector;
+
+import java.util.Map;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import reactor.core.publisher.Flux;
@@ -49,11 +52,30 @@ public class StreamingRequestProcessor {
 
     @Autowired(required = false)
     private ApiKeyService apiKeyService;
+
+    // v2.8.9: 资源池选择器(池路由后改写下游流式请求的 model 字段为实际实例名)
+    @Autowired(required = false)
+    private PoolSelector poolSelector;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public StreamingRequestProcessor(final ResponseTransformer responseTransformer) {
         this.responseTransformer = responseTransformer;
+    }
+
+    /**
+     * v2.8.9: 池路由后,将请求 Map 的 model 字段改写为实际实例名(仅池名触发)
+     */
+    @SuppressWarnings("unchecked")
+    private Object rewriteModelField(final Object target, final String instanceName) {
+        if (target instanceof Map && instanceName != null && poolSelector != null) {
+            Object model = ((Map<String, Object>) target).get("model");
+            if (model instanceof String && poolSelector.isPoolName((String) model)
+                    && !model.equals(instanceName)) {
+                ((Map<String, Object>) target).put("model", instanceName);
+            }
+        }
+        return target;
     }
 
     /**
@@ -99,7 +121,7 @@ public class StreamingRequestProcessor {
                 .uri(path)
                 .header("Authorization", authorization)
                 .header("Content-Type", "application/json")
-                .bodyValue(request)
+                .bodyValue(rewriteModelField(request, instanceName))
                 .retrieve()
                 .onStatus(org.springframework.http.HttpStatusCode::is5xxServerError, clientResponse -> {
                     logger.error("流式请求5xx错误: instance={}, status={}", instanceName, clientResponse.statusCode());

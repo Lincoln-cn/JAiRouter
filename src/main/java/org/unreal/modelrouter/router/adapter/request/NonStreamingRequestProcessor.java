@@ -20,6 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
+import org.unreal.modelrouter.common.dto.ChatDTO;
+import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
@@ -61,6 +63,10 @@ public class NonStreamingRequestProcessor {
 
     @Autowired(required = false)
     private ApiKeyService apiKeyService;
+
+    // v2.8.9: 资源池选择器(池路由后改写下游请求/响应的 model 字段为实际实例名)
+    @Autowired(required = false)
+    private org.unreal.modelrouter.router.pool.PoolSelector poolSelector;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
@@ -108,6 +114,9 @@ public class NonStreamingRequestProcessor {
         // 1. 请求转换
         Object transformedRequest = transformRequestFn.apply(request);
         String instanceName = selectedInstance.getName();
+        // v2.8.9: 池路由后,下游请求 model 改写为实际实例模型名(auto-model/池名不再透传上游)
+        String requestedModel = extractRequestModel(request);
+        rewriteModelField(transformedRequest, requestedModel, instanceName);
         long requestStartTime = System.currentTimeMillis();
 
         logger.debug("发送请求到下游服务: instance={}, path={}, auth={}",
@@ -158,7 +167,7 @@ public class NonStreamingRequestProcessor {
         } else {
             return processJsonResponse(requestSpec, transformedRequest, instanceName,
                     adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler,
-                    capturedKeyId);
+                    capturedKeyId, requestedModel);
         }
     }
 
@@ -232,7 +241,8 @@ public class NonStreamingRequestProcessor {
             final String path,
             final Function<Object, Object> transformResponseFn,
             final MultipartRequestHandler multipartHandler,
-            final String capturedKeyId) {
+            final String capturedKeyId,
+            final String requestedModel) {
 
         // 支持multipart请求（如STT）
         BodyInserter<?, ? super ClientHttpRequest> requestBody;
@@ -277,6 +287,8 @@ public class NonStreamingRequestProcessor {
 
                         // 响应转换
                         Object transformedData = transformResponseFn.apply(downstreamData);
+                        // v2.8.9: 池路由后,响应 model 回显实际实例模型名
+                        rewriteModelField(transformedData, requestedModel, instanceName);
 
                         // 包装 RouterResponse
                         RouterResponse<Object> finalResponse = RouterResponse.success(transformedData, "请求成功");
@@ -351,6 +363,34 @@ public class NonStreamingRequestProcessor {
             logger.error("下游服务请求错误 (400): instance={}, path={}", instanceName, path);
         } else if (statusCode.value() == 503) {
             logger.error("下游服务不可用 (503): instance={}, path={}", instanceName, path);
+        }
+    }
+
+    /**
+     * v2.8.9: 提取原始请求的 model 字段(chat/embedding 形态)
+     */
+    private String extractRequestModel(final Object request) {
+        if (request instanceof ChatDTO.Request r) {
+            return r.model();
+        }
+        if (request instanceof EmbeddingDTO.Request e) {
+            return e.model();
+        }
+        return null;
+    }
+
+    /**
+     * v2.8.9: 池路由后,将目标(Map)的 model 字段改写为实际实例名
+     * 仅当原始请求 model 是池名/auto-model 时触发,不影响普通请求与规则行为
+     */
+    @SuppressWarnings("unchecked")
+    private void rewriteModelField(final Object target, final String requestedModel, final String instanceName) {
+        if (target instanceof Map && instanceName != null && requestedModel != null
+                && poolSelector != null && poolSelector.isPoolName(requestedModel)) {
+            Object model = ((Map<String, Object>) target).get("model");
+            if (model instanceof String && !model.equals(instanceName)) {
+                ((Map<String, Object>) target).put("model", instanceName);
+            }
         }
     }
 

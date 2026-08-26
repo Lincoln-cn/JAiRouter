@@ -62,25 +62,50 @@ public class SelectInstanceOptimizer {
 
         // 单次 Stream 完成 3 层过滤
         return allInstances.stream()
-                // 第1层：模型名匹配 + 状态检查
+                // 第1层：模型名匹配
                 .filter(createModelFilter(modelName))
-                // 第2层：健康检查
-                .filter(createHealthFilter(serviceType))
-                // 第3层：熔断检查
-                .filter(createCircuitBreakerFilter())
+                // 第2-4层：状态 + 健康 + 熔断
+                .filter(createAvailabilityFilter(serviceType))
                 .collect(Collectors.toList());
     }
 
     /**
-     * 创建模型名 + 状态过滤器
+     * v2.8.9: 可用性过滤(状态 active + 健康 + 熔断,不含模型名)
+     * 供资源池成员过滤使用;候选集由池成员显式指定,不再按模型名匹配
+     */
+    public List<ModelInstance> filterHealthyInstances(
+            final List<ModelInstance> allInstances,
+            final ModelServiceRegistry.ServiceType serviceType) {
+
+        if (allInstances == null || allInstances.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return allInstances.stream()
+                .filter(createAvailabilityFilter(serviceType))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 创建模型名过滤器
      */
     private Predicate<ModelInstance> createModelFilter(final String modelName) {
+        return instance -> modelName.equals(instance.getName());
+    }
+
+    /**
+     * 创建状态 + 健康 + 熔断组合过滤器
+     */
+    private Predicate<ModelInstance> createAvailabilityFilter(final ModelServiceRegistry.ServiceType serviceType) {
+        return createStatusFilter()
+                .and(createHealthFilter(serviceType))
+                .and(createCircuitBreakerFilter());
+    }
+
+    /**
+     * 创建状态过滤器:status 必须为 active
+     */
+    private Predicate<ModelInstance> createStatusFilter() {
         return instance -> {
-            // 模型名匹配
-            if (!modelName.equals(instance.getName())) {
-                return false;
-            }
-            // 状态检查：status 必须为 active
             String status = instance.getStatus();
             return status != null && "active".equalsIgnoreCase(status);
         };
@@ -140,8 +165,7 @@ public class SelectInstanceOptimizer {
 
         return allInstances.stream()
                 .filter(createModelFilter(modelName))
-                .filter(createHealthFilter(serviceType))
-                .anyMatch(createCircuitBreakerFilter());
+                .anyMatch(createAvailabilityFilter(serviceType));
     }
 
     /**
@@ -158,8 +182,7 @@ public class SelectInstanceOptimizer {
 
         return (int) allInstances.stream()
                 .filter(createModelFilter(modelName))
-                .filter(createHealthFilter(serviceType))
-                .filter(createCircuitBreakerFilter())
+                .filter(createAvailabilityFilter(serviceType))
                 .count();
     }
 }

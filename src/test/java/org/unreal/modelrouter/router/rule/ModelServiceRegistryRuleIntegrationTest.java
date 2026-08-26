@@ -417,4 +417,88 @@ class ModelServiceRegistryRuleIntegrationTest {
             assertEquals(HttpStatus.TOO_MANY_REQUESTS, ex.getStatusCode());
         }
     }
+
+    // ==================== 资源池路由(v2.8.9) ====================
+
+    @Nested
+    @DisplayName("资源池路由")
+    class PoolRoutingTests {
+
+        private org.unreal.modelrouter.router.pool.PoolSelector poolSelector;
+
+        @BeforeEach
+        void initPoolSelector() {
+            poolSelector = new org.unreal.modelrouter.router.pool.PoolSelector(serviceStateManager, circuitBreakerManager);
+            registry.setPoolSelector(poolSelector);
+        }
+
+        private org.unreal.modelrouter.router.pool.model.PoolDefinition pool(
+                final String poolName, final String serviceType,
+                final org.unreal.modelrouter.router.pool.model.PoolMember... members) {
+            org.unreal.modelrouter.router.pool.model.PoolDefinition p =
+                    new org.unreal.modelrouter.router.pool.model.PoolDefinition();
+            p.setPoolName(poolName);
+            p.setServiceType(serviceType);
+            p.setStrategy("weighted-random");
+            p.setMembers(java.util.List.of(members));
+            return p;
+        }
+
+        private org.unreal.modelrouter.router.pool.model.PoolMember member(final String id, final int weight) {
+            org.unreal.modelrouter.router.pool.model.PoolMember m =
+                    new org.unreal.modelrouter.router.pool.model.PoolMember();
+            m.setInstanceId(id);
+            m.setWeight(weight);
+            return m;
+        }
+
+        @Test
+        @DisplayName("INTEG-018: 池命中时从池成员中选择")
+        void testPoolHit_selectsFromPoolMembers() {
+            poolSelector.reloadPools(java.util.List.of(pool("auto-model", "chat",
+                    member("inst-gpt", 9), member("inst-claude", 1))));
+
+            ModelRouterProperties.ModelInstance selected =
+                    registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "auto-model", "1.1.1.1");
+
+            assertNotNull(selected);
+            assertTrue(java.util.List.of("inst-gpt", "inst-claude").contains(selected.getInstanceId()),
+                    "池路由应只从池成员中选择,实际: " + selected.getInstanceId());
+        }
+
+        @Test
+        @DisplayName("INTEG-019: 无池时 auto-model 回退全部健康实例")
+        void testAutoModel_noPool_fallsBackAllInstances() {
+            poolSelector.reloadPools(java.util.List.of());
+
+            ModelRouterProperties.ModelInstance selected =
+                    registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "auto-model", "1.1.1.1");
+
+            assertNotNull(selected);
+            assertEquals("inst-gpt", selected.getInstanceId(), "回退应走全部健康实例(LB 首选)");
+        }
+
+        @Test
+        @DisplayName("INTEG-020: 池内实例全不健康抛异常")
+        void testPool_allUnhealthy_throws() {
+            poolSelector.reloadPools(java.util.List.of(pool("auto-model", "chat", member("inst-gpt", 1))));
+            when(serviceStateManager.isInstanceHealthy(anyString(), any())).thenReturn(false);
+
+            assertThrows(ResponseStatusException.class,
+                    () -> registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "auto-model", "1.1.1.1"));
+        }
+
+        @Test
+        @DisplayName("INTEG-021: 普通模型名不受池影响")
+        void testNormalModel_unaffected() {
+            poolSelector.reloadPools(java.util.List.of(pool("auto-model", "chat",
+                    member("inst-gpt", 9), member("inst-claude", 1))));
+
+            ModelRouterProperties.ModelInstance selected =
+                    registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "gpt-4", "1.1.1.1");
+
+            assertNotNull(selected);
+            assertEquals("inst-gpt", selected.getInstanceId(), "普通模型名仍走模型名过滤");
+        }
+    }
 }

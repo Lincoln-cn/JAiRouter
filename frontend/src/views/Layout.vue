@@ -37,6 +37,7 @@
           <el-menu-item index="/config/state-persistence">状态持久化</el-menu-item>
           <el-menu-item index="/config/adapters">Adapter管理</el-menu-item>
           <el-menu-item index="/config/rules">路由规则</el-menu-item>
+          <el-menu-item index="/config/pools">资源池</el-menu-item>
         </el-sub-menu>
 
         <!-- 负载均衡器管理 -->

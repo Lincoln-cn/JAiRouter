@@ -1,0 +1,36 @@
+# ========================================
+# 资源池配置 (router 模块)
+# ========================================
+# 此文件包含资源池的默认定义
+# 位置：org.unreal.modelrouter.router.pool
+# 绑定：PoolDefinitionProperties (@ConfigurationProperties("model.pools"))
+#
+# 资源池说明:
+#   - 一组同服务类型实例的命名集合
+#   - 请求 model 使用 poolName(如 auto-model)时,自动从池内健康实例中选择执行
+#   - 未配置任何池时,auto-model 回退为该服务全部健康实例
+#   - 默认为空列表:不配置时路由行为与之前完全一致
+#
+# 策略 (strategy):
+#   weighted-random（权重随机,默认）/ round-robin / least-connections / ip-hash
+# 成员 (members):
+#   - instance-id: 实例 ID(对应实例管理中的 instanceId)
+#   - weight: 池级权重(默认 1)
+#   - model-name: 可选,响应回显的模型名(缺省用实例名)
+#
+# 示例:
+# model:
+#   pools:
+#     - pool-name: auto-model
+#       name: 默认自动分流池
+#       service-type: chat
+#       enabled: true
+#       strategy: weighted-random
+#       members:
+#         - instance-id: inst-gpt
+#           weight: 9
+#         - instance-id: inst-claude
+#           weight: 1
+
+model:
+  pools: []

@@ -22,6 +22,8 @@ import org.unreal.modelrouter.router.loadbalancer.monitor.RoutingMonitorService;
 import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
 import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
+import org.unreal.modelrouter.router.pool.PoolSelector;
+import org.unreal.modelrouter.router.pool.model.PoolDefinition;
 import org.unreal.modelrouter.router.rule.RuleDecision;
 import org.unreal.modelrouter.router.rule.RuleEngineService;
 import org.unreal.modelrouter.router.rule.RuleStatsService;
@@ -93,6 +95,9 @@ public class ModelServiceRegistry {
     // v2.8.7: 规则命中统计(延迟注入,避免循环依赖)
     private RuleStatsService ruleStatsService;
 
+    // v2.8.9: 资源池选择器(延迟注入,避免循环依赖)
+    private PoolSelector poolSelector;
+
     // 配置和缓存
     private final ModelRouterProperties originalProperties;
     private volatile Map<String, Object> currentConfig;
@@ -114,6 +119,15 @@ public class ModelServiceRegistry {
     @Autowired(required = false)
     public void setRuleStatsService(final RuleStatsService ruleStatsService) {
         this.ruleStatsService = ruleStatsService;
+    }
+
+    /**
+     * v2.8.9: 资源池选择器延迟注入
+     * required=false:池不可用时路由行为不变(auto-model 走原逻辑)
+     */
+    @Autowired(required = false)
+    public void setPoolSelector(final PoolSelector poolSelector) {
+        this.poolSelector = poolSelector;
     }
 
     public ModelServiceRegistry(final ModelRouterProperties properties,
@@ -280,9 +294,39 @@ public class ModelServiceRegistry {
             effectiveModelName = candidates.get(0).getName();
         }
 
-        List<ModelRouterProperties.ModelInstance> availableInstances =
-                selectInstanceOptimizer.filterAvailableInstances(
+        // v2.8.9: 资源池路由 — effectiveModelName 命中池名 → 池成员候选 + 池策略;
+        // 未命中时 auto-model 回退为该服务全部健康实例,其余走原模型名过滤
+        List<ModelRouterProperties.ModelInstance> availableInstances;
+        LoadBalancer loadBalancer;
+        PoolDefinition matchedPool = poolSelector != null
+                ? poolSelector.findPool(serviceType, effectiveModelName) : null;
+        if (matchedPool != null) {
+            availableInstances = poolSelector.resolveCandidates(matchedPool, runtimeConfig.getInstances());
+            loadBalancer = loadBalancerManager.getLoadBalancerByStrategy(matchedPool.getStrategy());
+            if (loadBalancer == null) {
+                loadBalancer = loadBalancerManager.getLoadBalancer(null);
+            }
+        } else {
+            if (PoolSelector.AUTO_MODEL.equals(effectiveModelName) && poolSelector != null) {
+                availableInstances = poolSelector.autoFallbackCandidates(
+                        runtimeConfig.getInstances(), serviceType);
+            } else {
+                availableInstances = selectInstanceOptimizer.filterAvailableInstances(
                         candidates, effectiveModelName, serviceType);
+            }
+            loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
+            if (loadBalancer == null) {
+                loadBalancer = loadBalancerManager.getLoadBalancer(null);
+            }
+            // v2.8.5: 规则指定 LB 策略时覆盖
+            if (ruleDecision != null && ruleDecision.getLbStrategy() != null) {
+                LoadBalancer ruleLoadBalancer =
+                        loadBalancerManager.getLoadBalancerByStrategy(ruleDecision.getLbStrategy());
+                if (ruleLoadBalancer != null) {
+                    loadBalancer = ruleLoadBalancer;
+                }
+            }
+        }
 
         if (availableInstances.isEmpty()) {
             throw instanceSelector.createAppropriateException(serviceType, effectiveModelName, candidates);
@@ -294,19 +338,6 @@ public class ModelServiceRegistry {
             throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS,
                     "Service rate limit exceeded for service type '" + serviceType + "'");
-        }
-
-        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
-        if (loadBalancer == null) {
-            loadBalancer = loadBalancerManager.getLoadBalancer(null);
-        }
-        // v2.8.5: 规则指定 LB 策略时覆盖
-        if (ruleDecision != null && ruleDecision.getLbStrategy() != null) {
-            LoadBalancer ruleLoadBalancer =
-                    loadBalancerManager.getLoadBalancerByStrategy(ruleDecision.getLbStrategy());
-            if (ruleLoadBalancer != null) {
-                loadBalancer = ruleLoadBalancer;
-            }
         }
 
         ModelRouterProperties.ModelInstance selectedInstance =

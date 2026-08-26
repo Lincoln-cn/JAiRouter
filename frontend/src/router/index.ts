@@ -93,6 +93,12 @@ const router = createRouter({
           name: 'rule-management',
           component: () => import('../views/config/rules/RuleManagement.vue'),
           meta: { title: '路由规则', icon: 'set-up' }
+        },
+        {
+          path: 'pools',
+          name: 'pool-management',
+          component: () => import('../views/config/pools/PoolManagement.vue'),
+          meta: { title: '资源池', icon: 'box' }
         }
       ]
     },
