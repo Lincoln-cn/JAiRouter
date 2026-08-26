@@ -402,7 +402,8 @@ class ApiKeyBatchServiceTest {
                     .keyHash("hash-today")
                     .keyPrefix("sk-")
                     .enabled(true)
-                    .expiresAt(LocalDateTime.now().plusHours(2))
+                    // 锚定到"今天" 23:59:59,避免 now+2h 在深夜跨零点导致"明天"误判(时间边界 flaky)
+                    .expiresAt(LocalDateTime.now().toLocalDate().atTime(23, 59, 59))
                     .createdAt(LocalDateTime.now().minusDays(30))
                     .usage(UsageStatistics.builder().totalRequests(0L).build())
                     .build();
