@@ -37,6 +37,33 @@
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="screenshots/dashboard.png" alt="Dashboard" width="720">
+  <br/>
+  <em>Dashboard — real-time service, instance and system metrics</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/service-management.png" alt="Service Management" width="720">
+  <br/>
+  <em>Service management — adapters and load-balancing strategies per service</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/instance-management.png" alt="Instance Management" width="720">
+  <img src="screenshots/adapter-management.png" alt="Adapter Management" width="720">
+  <br/>
+  <em>Instance & adapter management</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/rule-management.png" alt="Rule Engine" width="720">
+  <br/>
+  <em>Visual routing rules with hit statistics, priority drag-and-drop and templates</em>
+</p>
+
 ## Quick Start
 
 ```bash

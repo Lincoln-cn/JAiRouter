@@ -37,6 +37,33 @@
 
 ---
 
+## 界面截图
+
+<p align="center">
+  <img src="screenshots/dashboard.png" alt="仪表板" width="720">
+  <br/>
+  <em>仪表板 — 服务/实例/系统指标实时总览</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/service-management.png" alt="服务管理" width="720">
+  <br/>
+  <em>服务管理 — 按服务配置适配器与负载均衡策略</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/instance-management.png" alt="实例管理" width="720">
+  <img src="screenshots/adapter-management.png" alt="适配器管理" width="720">
+  <br/>
+  <em>实例管理与适配器管理</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/rule-management.png" alt="路由规则" width="720">
+  <br/>
+  <em>可视化路由规则 — 命中统计、优先级拖拽与场景模板</em>
+</p>
+
 ## 快速开始
 
 ```bash
