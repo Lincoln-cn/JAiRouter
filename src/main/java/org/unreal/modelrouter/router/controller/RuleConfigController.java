@@ -24,6 +24,7 @@ import org.unreal.modelrouter.router.rule.RuleEngineService;
 import org.unreal.modelrouter.router.rule.RuleStatsService;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 import org.unreal.modelrouter.router.rule.model.RuleStat;
+import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,16 +50,19 @@ public class RuleConfigController {
     private final RuleEngineService ruleEngineService;
     private final RuleDefinitionPersistenceService persistenceService;
     private final RuleStatsService ruleStatsService;
+    private final RateLimitManager rateLimitManager;
 
     // 当前生效规则(含 YAML 默认 + 持久化用户规则,按 priority 降序)
     private final CopyOnWriteArrayList<RuleDefinition> activeRules = new CopyOnWriteArrayList<>();
 
     public RuleConfigController(final RuleEngineService ruleEngineService,
                                 final RuleDefinitionPersistenceService persistenceService,
-                                final RuleStatsService ruleStatsService) {
+                                final RuleStatsService ruleStatsService,
+                                final RateLimitManager rateLimitManager) {
         this.ruleEngineService = ruleEngineService;
         this.persistenceService = persistenceService;
         this.ruleStatsService = ruleStatsService;
+        this.rateLimitManager = rateLimitManager;
         reloadActiveRules();
     }
 
@@ -139,6 +143,8 @@ public class RuleConfigController {
         validateRule(rule);
         rule.setId(existing.getId());
         persistenceService.save(rule);
+        // v2.8.8: 清理旧规则级限流器(仍为 RATE_LIMIT 时下次命中惰性重建)
+        rateLimitManager.removeRuleRateLimiter(id);
         reloadActiveRules();
         return ResponseEntity.ok(RouterResponse.success(rule));
     }
@@ -151,6 +157,8 @@ public class RuleConfigController {
     public ResponseEntity<RouterResponse<Void>> deleteRule(@PathVariable final String id) {
         findRule(id);
         persistenceService.remove(id);
+        // v2.8.8: 清理规则级限流器,防泄漏
+        rateLimitManager.removeRuleRateLimiter(id);
         reloadActiveRules();
         return ResponseEntity.ok(RouterResponse.success(null));
     }
@@ -277,6 +285,14 @@ public class RuleConfigController {
             } else if (decision.getLbStrategy() != null) {
                 actionMap.put("target", decision.getLbStrategy());
             }
+            // v2.8.8: RATE_LIMIT 动作输出限流参数
+            if (rule.getAction().getType() == RuleDefinition.ActionType.RATE_LIMIT) {
+                actionMap.put("capacity", rule.getAction().getCapacity());
+                actionMap.put("rate", rule.getAction().getRate());
+                actionMap.put("algorithm", rule.getAction().getAlgorithm());
+                actionMap.put("scope", rule.getAction().getScope());
+                actionMap.put("warmUpPeriod", rule.getAction().getWarmUpPeriod());
+            }
             result.put("action", actionMap);
             result.put("message", "命中规则: " + rule.getName());
         }
@@ -319,6 +335,15 @@ public class RuleConfigController {
         }
         if (rule.getAction() == null || rule.getAction().getType() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rule must have an action");
+        }
+        // v2.8.8: RATE_LIMIT 动作需 capacity>0 且 rate>0
+        if (rule.getAction().getType() == RuleDefinition.ActionType.RATE_LIMIT) {
+            long capacity = rule.getAction().getCapacity() != null ? rule.getAction().getCapacity() : 0L;
+            long rate = rule.getAction().getRate() != null ? rule.getAction().getRate() : 0L;
+            if (capacity <= 0 || rate <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "RATE_LIMIT action requires capacity > 0 and rate > 0");
+            }
         }
         for (RuleDefinition.Condition condition : rule.getConditions()) {
             if (condition.getType() == null || condition.getOperator() == null) {

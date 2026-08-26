@@ -1,6 +1,5 @@
 package org.unreal.modelrouter.router.controller;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,24 +11,25 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.unreal.modelrouter.config.core.dto.RateLimitConfiguration;
-import org.unreal.modelrouter.config.core.ServiceConfigManager;
-import org.unreal.modelrouter.config.core.dto.ServiceConfiguration;
+import org.springframework.web.server.ResponseStatusException;
+import org.unreal.modelrouter.config.core.helper.ServiceTypeResolver;
+import org.unreal.modelrouter.config.sync.repository.StoreConfigRepository;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry;
+import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
  * ServiceRateLimitController RESTful 接口测试
  *
- * 测试范围：
- * - GET /api/services/{serviceType}/ratelimit - 获取限流配置
- * - PUT /api/services/{serviceType}/ratelimit - 更新限流配置
- *
- * v2.7.6: 使用 Mockito 单元测试方式
+ * v2.8.8: PUT 做实 — 持久化(StoreManager)+ 热生效(RateLimitManager),GET/PUT 统一 canonical 格式
  */
 @DisplayName("ServiceRateLimitController RESTful 接口测试")
 @ExtendWith(MockitoExtension.class)
@@ -37,27 +37,16 @@ import static org.mockito.Mockito.*;
 class ServiceRateLimitControllerTest {
 
     @Mock
-    private ServiceConfigManager serviceConfigManager;
+    private StoreConfigRepository storeConfigRepository;
+
+    @Mock
+    private RateLimitManager rateLimitManager;
+
+    @Mock
+    private ServiceTypeResolver serviceTypeResolver;
 
     @InjectMocks
     private ServiceRateLimitController controller;
-
-    @BeforeEach
-    void setUp() {
-        // 配置模拟限流配置
-        RateLimitConfiguration rlConfig = mock(RateLimitConfiguration.class);
-        when(rlConfig.toMap()).thenReturn(Map.of(
-                "enabled", true,
-                "requestsPerSecond", 100,
-                "burstCapacity", 200,
-                "queueCapacity", 50
-        ));
-
-        ServiceConfiguration serviceConfig = mock(ServiceConfiguration.class);
-        when(serviceConfig.rateLimit()).thenReturn(rlConfig);
-
-        lenient().when(serviceConfigManager.getServiceConfiguration(anyString())).thenReturn(serviceConfig);
-    }
 
     // ==================== 获取限流配置测试 ====================
 
@@ -66,45 +55,39 @@ class ServiceRateLimitControllerTest {
     class GetRateLimitConfigTests {
 
         @Test
-        @DisplayName("RL-001: 成功获取限流配置")
+        @DisplayName("RL-001: 成功获取限流配置(canonical 格式)")
         void testGetRateLimitConfig_success() {
-            // When
+            when(storeConfigRepository.findRateLimitRaw("chat")).thenReturn(Optional.of(
+                    Map.of("enabled", true, "capacity", 100L, "rate", 10L)));
+
             ResponseEntity<Map<String, Object>> result = controller.getRateLimitConfig("chat");
 
-            // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
             assertNotNull(result.getBody());
             assertTrue((Boolean) result.getBody().get("enabled"));
-            assertEquals(100, result.getBody().get("requestsPerSecond"));
+            assertEquals(100L, result.getBody().get("capacity"));
+            assertEquals(10L, result.getBody().get("rate"));
         }
 
         @Test
-        @DisplayName("RL-002: 服务配置不存在返回空配置")
+        @DisplayName("RL-002: 服务不在配置存储时返回空配置")
         void testGetRateLimitConfig_notFound() {
-            // Given
-            when(serviceConfigManager.getServiceConfiguration(anyString())).thenReturn(null);
+            when(storeConfigRepository.findRateLimitRaw("unknown")).thenReturn(Optional.empty());
 
-            // When
             ResponseEntity<Map<String, Object>> result = controller.getRateLimitConfig("unknown");
 
-            // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
             assertNotNull(result.getBody());
             assertTrue(result.getBody().isEmpty());
         }
 
         @Test
-        @DisplayName("RL-003: 限流配置为空返回空配置")
+        @DisplayName("RL-003: 服务无限流配置时返回空配置")
         void testGetRateLimitConfig_nullConfig() {
-            // Given
-            ServiceConfiguration serviceConfig = mock(ServiceConfiguration.class);
-            when(serviceConfig.rateLimit()).thenReturn(null);
-            when(serviceConfigManager.getServiceConfiguration(anyString())).thenReturn(serviceConfig);
+            when(storeConfigRepository.findRateLimitRaw("chat")).thenReturn(Optional.empty());
 
-            // When
             ResponseEntity<Map<String, Object>> result = controller.getRateLimitConfig("chat");
 
-            // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
             assertNotNull(result.getBody());
             assertTrue(result.getBody().isEmpty());
@@ -118,55 +101,71 @@ class ServiceRateLimitControllerTest {
     class UpdateRateLimitConfigTests {
 
         @Test
-        @DisplayName("RL-004: 成功更新限流配置")
+        @DisplayName("RL-004: 成功更新限流配置(持久化 + 热生效)")
         void testUpdateRateLimitConfig_success() {
-            // Given
+            when(serviceTypeResolver.parseServiceType("chat")).thenReturn(ModelServiceRegistry.ServiceType.chat);
             Map<String, Object> newConfig = Map.of(
                     "enabled", true,
-                    "requestsPerSecond", 200,
-                    "burstCapacity", 400,
-                    "queueCapacity", 100
-            );
+                    "algorithm", "token-bucket",
+                    "capacity", 100L,
+                    "rate", 10L,
+                    "scope", "service");
 
-            // When
             ResponseEntity<Map<String, Object>> result = controller.updateRateLimitConfig("chat", newConfig);
 
-            // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
-            assertNotNull(result.getBody());
             assertEquals(newConfig, result.getBody());
+            verify(storeConfigRepository).saveRateLimitRaw(eq("chat"), eq(newConfig));
+            verify(rateLimitManager).setRateLimiter(eq(ModelServiceRegistry.ServiceType.chat), any());
         }
 
         @Test
-        @DisplayName("RL-005: 更新部分配置")
-        void testUpdateRateLimitConfig_partial() {
-            // Given
-            Map<String, Object> partialConfig = Map.of(
-                    "enabled", false
-            );
+        @DisplayName("RL-005: 禁用的限流配置走移除语义")
+        void testUpdateRateLimitConfig_disabled() {
+            when(serviceTypeResolver.parseServiceType("chat")).thenReturn(ModelServiceRegistry.ServiceType.chat);
+            Map<String, Object> disabledConfig = Map.of("enabled", false);
 
-            // When
-            ResponseEntity<Map<String, Object>> result = controller.updateRateLimitConfig("embedding", partialConfig);
+            ResponseEntity<Map<String, Object>> result = controller.updateRateLimitConfig("chat", disabledConfig);
 
-            // Then
             assertEquals(HttpStatus.OK, result.getStatusCode());
-            assertEquals(false, result.getBody().get("enabled"));
+            verify(storeConfigRepository).saveRateLimitRaw(eq("chat"), eq(disabledConfig));
+            verify(rateLimitManager).setRateLimiter(eq(ModelServiceRegistry.ServiceType.chat), argThat(cfg -> !cfg.isEnabled()));
         }
 
         @Test
-        @DisplayName("RL-006: 更新QPS配置")
-        void testUpdateRateLimitConfig_qpsOnly() {
-            // Given
-            Map<String, Object> qpsConfig = Map.of(
-                    "requestsPerSecond", 500
-            );
+        @DisplayName("RL-006: 未知服务类型返回 404")
+        void testUpdateRateLimitConfig_unknownServiceType() {
+            when(serviceTypeResolver.parseServiceType("unknown")).thenReturn(null);
 
-            // When
-            ResponseEntity<Map<String, Object>> result = controller.updateRateLimitConfig("rerank", qpsConfig);
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> controller.updateRateLimitConfig("unknown", Map.of("enabled", true)));
 
-            // Then
-            assertEquals(HttpStatus.OK, result.getStatusCode());
-            assertEquals(500, result.getBody().get("requestsPerSecond"));
+            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+            verify(storeConfigRepository, never()).saveRateLimitRaw(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("RL-007: 启用但 capacity<=0 返回 400")
+        void testUpdateRateLimitConfig_invalidCapacity() {
+            when(serviceTypeResolver.parseServiceType("chat")).thenReturn(ModelServiceRegistry.ServiceType.chat);
+
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> controller.updateRateLimitConfig("chat", Map.of("enabled", true, "capacity", 0L, "rate", 10L)));
+
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+            verify(storeConfigRepository, never()).saveRateLimitRaw(anyString(), any());
+        }
+
+        @Test
+        @DisplayName("RL-008: 启用但 rate<=0 返回 400")
+        void testUpdateRateLimitConfig_invalidRate() {
+            when(serviceTypeResolver.parseServiceType("chat")).thenReturn(ModelServiceRegistry.ServiceType.chat);
+
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> controller.updateRateLimitConfig("chat", Map.of("enabled", true, "capacity", 100L, "rate", 0L)));
+
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+            verify(storeConfigRepository, never()).saveRateLimitRaw(anyString(), any());
         }
     }
 }

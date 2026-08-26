@@ -32,7 +32,8 @@ public class RuleDefinition {
         TARGET_MODEL,
         TARGET_INSTANCE,
         TARGET_ADAPTER,
-        LB_STRATEGY
+        LB_STRATEGY,
+        RATE_LIMIT   // v2.8.8: 规则级限流(按 ruleId keyed)
     }
 
     /** 规则来源 */
@@ -106,6 +107,11 @@ public class RuleDefinition {
         private String instanceId;      // TARGET_INSTANCE
         private String adapterName;     // TARGET_ADAPTER
         private String lbStrategy;      // LB_STRATEGY
+        private Long capacity;          // RATE_LIMIT 容量
+        private Long rate;              // RATE_LIMIT 速率
+        private String algorithm;       // RATE_LIMIT 算法(默认 token-bucket)
+        private String scope;           // RATE_LIMIT 作用域(默认 rule)
+        private Long warmUpPeriod;      // RATE_LIMIT 预热期(秒)
 
         public Action() {
         }
@@ -117,6 +123,7 @@ public class RuleDefinition {
                 case TARGET_INSTANCE -> this.instanceId = target;
                 case TARGET_ADAPTER -> this.adapterName = target;
                 case LB_STRATEGY -> this.lbStrategy = target;
+                case RATE_LIMIT -> { /* 限流参数经 setter 注入 */ }
             }
         }
 
@@ -158,6 +165,46 @@ public class RuleDefinition {
 
         public void setLbStrategy(final String lbStrategy) {
             this.lbStrategy = lbStrategy;
+        }
+
+        public Long getCapacity() {
+            return capacity;
+        }
+
+        public void setCapacity(final Long capacity) {
+            this.capacity = capacity;
+        }
+
+        public Long getRate() {
+            return rate;
+        }
+
+        public void setRate(final Long rate) {
+            this.rate = rate;
+        }
+
+        public String getAlgorithm() {
+            return algorithm;
+        }
+
+        public void setAlgorithm(final String algorithm) {
+            this.algorithm = algorithm;
+        }
+
+        public String getScope() {
+            return scope;
+        }
+
+        public void setScope(final String scope) {
+            this.scope = scope;
+        }
+
+        public Long getWarmUpPeriod() {
+            return warmUpPeriod;
+        }
+
+        public void setWarmUpPeriod(final Long warmUpPeriod) {
+            this.warmUpPeriod = warmUpPeriod;
         }
     }
 

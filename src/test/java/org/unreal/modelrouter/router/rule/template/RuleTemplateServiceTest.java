@@ -20,10 +20,23 @@ class RuleTemplateServiceTest {
     private final RuleTemplateService service = new RuleTemplateService();
 
     @Test
-    @DisplayName("模板列表包含 6 个预置模板")
-    void getAllTemplates_containsSix() {
+    @DisplayName("模板列表包含 7 个预置模板")
+    void getAllTemplates_containsSeven() {
         List<RuleTemplate> templates = service.getAllTemplates();
-        assertEquals(6, templates.size());
+        assertEquals(7, templates.size());
+    }
+
+    @Test
+    @DisplayName("限流保护模板生成 RATE_LIMIT 草稿(含容量/速率参数)")
+    void buildRuleDefinition_rateLimitTemplate() {
+        RuleDefinition draft = service.buildRuleDefinition("rate-limit", Map.of("name", "限流规则"));
+
+        assertNull(draft.getId());
+        assertEquals(RuleDefinition.ActionType.RATE_LIMIT, draft.getAction().getType());
+        assertEquals(100L, draft.getAction().getCapacity());
+        assertEquals(10L, draft.getAction().getRate());
+        assertEquals("token-bucket", draft.getAction().getAlgorithm());
+        assertEquals("rule", draft.getAction().getScope());
     }
 
     @Test

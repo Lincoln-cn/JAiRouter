@@ -349,7 +349,9 @@ import {
   createService, 
   updateServiceConfig, 
   deleteService,
-  getAdapters
+  getAdapters,
+  getServiceRateLimit,
+  updateServiceRateLimit
 } from '@/api/service'
 
 // 支持的服务类型列表（保持原有）
@@ -660,6 +662,20 @@ const handleEdit = async (row: Service) => {
         timeout: cfg.circuitBreaker?.timeout || 60000,
         successThreshold: cfg.circuitBreaker?.successThreshold || 2
       }
+      // v2.8.8: 从 ratelimit 端点加载 canonical 格式的限流配置(覆盖通用配置里可能缺失的字段)
+      const rateLimitRes = await getServiceRateLimit(row.type)
+      const rl = rateLimitRes.data?.data
+      if (rl && Object.keys(rl).length > 0) {
+        form.rateLimit = {
+          enabled: rl.enabled ?? false,
+          algorithm: rl.algorithm || 'token-bucket',
+          capacity: rl.capacity || 100,
+          rate: rl.rate || 10,
+          scope: rl.scope || 'service',
+          key: rl.key || '',
+          clientIpEnable: rl.clientIpEnable || false
+        }
+      }
       dialogVisible.value = true
     } else {
       ElMessage.error(response.data?.message || '获取服务配置失败')
@@ -720,6 +736,23 @@ const handleSave = async () => {
         else response = await createService(form.type, serviceConfig)
 
         if (response.data?.success) {
+          // v2.8.8: 服务级限流配置持久化 + 热生效(独立端点,canonical 格式)
+          try {
+            const rateLimitPayload = form.rateLimit.enabled
+              ? {
+                  enabled: true,
+                  algorithm: form.rateLimit.algorithm,
+                  capacity: form.rateLimit.capacity,
+                  rate: form.rateLimit.rate,
+                  scope: form.rateLimit.scope,
+                  key: form.rateLimit.key
+                }
+              : { enabled: false }
+            await updateServiceRateLimit(form.type, rateLimitPayload)
+          } catch (rateLimitError: any) {
+            console.error('保存服务限流配置失败:', rateLimitError)
+            ElMessage.warning(rateLimitError?.message || '服务已保存,但限流配置保存失败')
+          }
           ElMessage.success(isEdit.value ? '服务编辑成功' : '服务添加成功')
           dialogVisible.value = false
           // 清除所有缓存，强制刷新数据

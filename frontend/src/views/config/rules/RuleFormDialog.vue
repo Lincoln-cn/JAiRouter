@@ -91,10 +91,29 @@
           <el-radio value="TARGET_INSTANCE">锁定实例</el-radio>
           <el-radio value="TARGET_ADAPTER">切换适配器</el-radio>
           <el-radio value="LB_STRATEGY">LB策略</el-radio>
+          <el-radio value="RATE_LIMIT">限流</el-radio>
         </el-radio-group>
       </el-form-item>
 
-      <el-form-item label="动作目标" prop="actionTarget">
+      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" label="限流容量">
+        <el-input-number v-model="form.rateLimit.capacity" :min="1" :max="1000000" style="width: 200px" />
+        <span class="form-tip">令牌桶容量</span>
+      </el-form-item>
+
+      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" label="限流速率">
+        <el-input-number v-model="form.rateLimit.rate" :min="1" :max="1000000" style="width: 200px" />
+        <span class="form-tip">每秒补充速率</span>
+      </el-form-item>
+
+      <el-form-item v-if="form.actionType === 'RATE_LIMIT'" label="限流算法">
+        <el-select v-model="form.rateLimit.algorithm" style="width: 200px">
+          <el-option label="令牌桶" value="token-bucket" />
+          <el-option label="漏桶" value="leaky-bucket" />
+          <el-option label="滑动窗口" value="sliding-window" />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item v-if="form.actionType !== 'RATE_LIMIT'" label="动作目标" prop="actionTarget">
         <el-select
           v-if="form.actionType === 'TARGET_INSTANCE'"
           v-model="form.actionTarget"
@@ -317,12 +336,26 @@ const form = reactive<{
   conditions: RuleCondition[]
   actionType: string
   actionTarget: string
+  rateLimit: {
+    capacity: number
+    rate: number
+    algorithm: string
+    scope: string
+    warmUpPeriod?: number
+  }
 }>({
   name: '',
   priority: 10,
   conditions: [defaultCondition()],
   actionType: 'TARGET_MODEL',
-  actionTarget: ''
+  actionTarget: '',
+  rateLimit: {
+    capacity: 100,
+    rate: 10,
+    algorithm: 'token-bucket',
+    scope: 'rule',
+    warmUpPeriod: 600
+  }
 })
 
 // 条件中的 SERVICE_TYPE 值(缺省 chat),变化时联动刷新模型/实例下拉
@@ -433,6 +466,8 @@ const actionTargetTip = computed(() => {
       return '切换到的适配器'
     case 'LB_STRATEGY':
       return '负载均衡策略'
+    case 'RATE_LIMIT':
+      return '按规则限流(容量/速率必填)'
     default:
       return ''
   }
@@ -472,12 +507,28 @@ const loadRule = (rule: RuleDefinition | null) => {
     form.actionType = rule.action?.type || 'TARGET_MODEL'
     form.actionTarget =
       rule.action?.modelName || rule.action?.instanceId || rule.action?.adapterName || rule.action?.lbStrategy || ''
+    if (form.actionType === 'RATE_LIMIT') {
+      form.rateLimit = {
+        capacity: rule.action?.capacity || 100,
+        rate: rule.action?.rate || 10,
+        algorithm: rule.action?.algorithm || 'token-bucket',
+        scope: rule.action?.scope || 'rule',
+        warmUpPeriod: rule.action?.warmUpPeriod || 600
+      }
+    }
   } else {
     form.name = ''
     form.priority = 10
     form.conditions = [defaultCondition()]
     form.actionType = 'TARGET_MODEL'
     form.actionTarget = ''
+    form.rateLimit = {
+      capacity: 100,
+      rate: 10,
+      algorithm: 'token-bucket',
+      scope: 'rule',
+      warmUpPeriod: 600
+    }
   }
 }
 
@@ -489,6 +540,10 @@ watch(visible, val => {
 
 const handleSave = async () => {
   await formRef.value?.validate()
+  if (form.actionType === 'RATE_LIMIT' && (form.rateLimit.capacity <= 0 || form.rateLimit.rate <= 0)) {
+    ElMessage.error('限流动作需要容量与速率大于 0')
+    return
+  }
   const payload: RuleDefinition = {
     id: props.rule?.id || '',
     name: form.name,
@@ -500,7 +555,12 @@ const handleSave = async () => {
       modelName: form.actionType === 'TARGET_MODEL' ? form.actionTarget : undefined,
       instanceId: form.actionType === 'TARGET_INSTANCE' ? form.actionTarget : undefined,
       adapterName: form.actionType === 'TARGET_ADAPTER' ? form.actionTarget : undefined,
-      lbStrategy: form.actionType === 'LB_STRATEGY' ? form.actionTarget : undefined
+      lbStrategy: form.actionType === 'LB_STRATEGY' ? form.actionTarget : undefined,
+      capacity: form.actionType === 'RATE_LIMIT' ? form.rateLimit.capacity : undefined,
+      rate: form.actionType === 'RATE_LIMIT' ? form.rateLimit.rate : undefined,
+      algorithm: form.actionType === 'RATE_LIMIT' ? form.rateLimit.algorithm : undefined,
+      scope: form.actionType === 'RATE_LIMIT' ? form.rateLimit.scope : undefined,
+      warmUpPeriod: form.actionType === 'RATE_LIMIT' ? form.rateLimit.warmUpPeriod : undefined
     }
   }
   saving.value = true

@@ -89,8 +89,15 @@ public class RuleTemplateService {
             case TARGET_INSTANCE -> target = action.getInstanceId();
             case TARGET_ADAPTER -> target = action.getAdapterName();
             case LB_STRATEGY -> target = action.getLbStrategy();
+            case RATE_LIMIT -> { /* 限流参数经下方 setter 复制 */ }
         }
-        return new RuleDefinition.Action(action.getType(), target);
+        RuleDefinition.Action copy = new RuleDefinition.Action(action.getType(), target);
+        copy.setCapacity(action.getCapacity());
+        copy.setRate(action.getRate());
+        copy.setAlgorithm(action.getAlgorithm());
+        copy.setScope(action.getScope());
+        copy.setWarmUpPeriod(action.getWarmUpPeriod());
+        return copy;
     }
 
     private void initTemplates() {
@@ -165,5 +172,22 @@ public class RuleTemplateService {
                         RuleDefinition.ConditionType.CLIENT_IP,
                         RuleDefinition.Operator.EQUALS, "10.0.0.8")),
                 new RuleDefinition.Action(RuleDefinition.ActionType.TARGET_INSTANCE, "internal-gpu-1")));
+
+        RuleDefinition.Action rateLimitAction = new RuleDefinition.Action(RuleDefinition.ActionType.RATE_LIMIT, null);
+        rateLimitAction.setCapacity(100L);
+        rateLimitAction.setRate(10L);
+        rateLimitAction.setAlgorithm("token-bucket");
+        rateLimitAction.setScope("rule");
+        templates.add(new RuleTemplate(
+                "rate-limit",
+                "限流保护",
+                "按模型名对请求做规则级限流,超限返回 429(保护后端服务)",
+                "防护",
+                40,
+                "调整容量(令牌桶容量)与速率(每秒补充)适配你的 QPS 预算",
+                List.of(new RuleDefinition.Condition(
+                        RuleDefinition.ConditionType.MODEL_NAME,
+                        RuleDefinition.Operator.EQUALS, "gpt-4")),
+                rateLimitAction));
     }
 }

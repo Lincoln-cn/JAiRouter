@@ -15,12 +15,15 @@ import org.unreal.modelrouter.router.rule.RuleEngineService;
 import org.unreal.modelrouter.router.rule.RuleStatsService;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 import org.unreal.modelrouter.router.rule.model.RuleStat;
+import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * RuleConfigController 规则 API 测试
@@ -32,6 +35,7 @@ class RuleConfigControllerTest {
     private RuleEngineService ruleEngineService;
     private RuleDefinitionPersistenceService persistenceService;
     private RuleStatsService ruleStatsService;
+    private RateLimitManager rateLimitManager;
     private RuleConfigController controller;
 
     /** 内存版持久化,避免依赖 StoreManager */
@@ -70,7 +74,8 @@ class RuleConfigControllerTest {
         ruleEngineService = new RuleEngineService();
         persistenceService = new InMemoryPersistence();
         ruleStatsService = new RuleStatsService(new SimpleMeterRegistry(), new MonitoringProperties());
-        controller = new RuleConfigController(ruleEngineService, persistenceService, ruleStatsService);
+        rateLimitManager = mock(RateLimitManager.class);
+        controller = new RuleConfigController(ruleEngineService, persistenceService, ruleStatsService, rateLimitManager);
     }
 
     private RuleDefinition validRule(final String name) {
@@ -474,6 +479,91 @@ class RuleConfigControllerTest {
 
             List<RuleStat> stats = controller.getRuleStats().getBody().getData();
             assertTrue(stats.isEmpty());
+        }
+    }
+
+    // ==================== 规则级限流 RATE_LIMIT 动作(v2.8.8) ====================
+
+    @Nested
+    @DisplayName("RATE_LIMIT 动作测试")
+    class RateLimitActionTests {
+
+        private RuleDefinition rateLimitRule(final String name, final Long capacity, final Long rate) {
+            RuleDefinition r = validRule(name);
+            RuleDefinition.Action action = new RuleDefinition.Action(RuleDefinition.ActionType.RATE_LIMIT, null);
+            action.setCapacity(capacity);
+            action.setRate(rate);
+            action.setAlgorithm("token-bucket");
+            action.setScope("rule");
+            r.setAction(action);
+            return r;
+        }
+
+        @Test
+        @DisplayName("RULEC-029: RATE_LIMIT 规则创建成功(带 capacity/rate)")
+        void testCreate_rateLimitAction_success() {
+            ResponseEntity<RouterResponse<RuleDefinition>> response =
+                    controller.createRule(rateLimitRule("rl-rule", 100L, 10L));
+
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertEquals(RuleDefinition.ActionType.RATE_LIMIT,
+                    response.getBody().getData().getAction().getType());
+        }
+
+        @Test
+        @DisplayName("RULEC-030: RATE_LIMIT 缺 capacity 返回 400")
+        void testCreate_rateLimitNoCapacity_400() {
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> controller.createRule(rateLimitRule("rl-rule", null, 10L)));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("RULEC-031: RATE_LIMIT rate<=0 返回 400")
+        void testCreate_rateLimitInvalidRate_400() {
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> controller.createRule(rateLimitRule("rl-rule", 100L, 0L)));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("RULEC-032: 删除规则清理规则级限流器")
+        void testDeleteRule_cleansRuleLimiter() {
+            RuleDefinition created = controller.createRule(rateLimitRule("rl-rule", 100L, 10L)).getBody().getData();
+
+            controller.deleteRule(created.getId());
+
+            verify(rateLimitManager).removeRuleRateLimiter(created.getId());
+        }
+
+        @Test
+        @DisplayName("RULEC-033: 更新规则清理旧限流器")
+        void testUpdateRule_cleansRuleLimiter() {
+            RuleDefinition created = controller.createRule(rateLimitRule("rl-rule", 100L, 10L)).getBody().getData();
+            RuleDefinition updated = rateLimitRule("rl-rule", 200L, 20L);
+            updated.setId(created.getId());
+
+            controller.updateRule(created.getId(), updated);
+
+            verify(rateLimitManager).removeRuleRateLimiter(created.getId());
+        }
+
+        @Test
+        @DisplayName("RULEC-034: validate 输出包含 RATE_LIMIT 参数")
+        void testValidate_rateLimitAction_outputsParams() {
+            controller.createRule(rateLimitRule("rl-rule", 100L, 10L));
+
+            Map<String, Object> result = controller.validateRule(Map.of(
+                    "modelName", "gpt-4",
+                    "serviceType", "chat"
+            )).getBody().getData();
+
+            assertTrue((Boolean) result.get("matched"));
+            Map<String, Object> action = (Map<String, Object>) result.get("action");
+            assertEquals("RATE_LIMIT", action.get("type"));
+            assertEquals(100L, action.get("capacity"));
+            assertEquals(10L, action.get("rate"));
+            assertEquals("rule", action.get("scope"));
         }
     }
 }

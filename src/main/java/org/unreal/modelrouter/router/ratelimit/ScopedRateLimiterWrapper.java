@@ -41,6 +41,7 @@ public class ScopedRateLimiterWrapper implements RateLimiter {
                 case "model" -> ctx.getServiceType() + ":" + ctx.getModelName();
                 case "client-ip" -> ctx.getClientIp();
                 case "instance" -> ctx.getServiceType() + ":" + ctx.getInstanceId();
+                case "rule" -> ctx.getRuleId() != null ? ctx.getRuleId() : "default";
                 default -> "default";
             };
             RateLimiter l = map.computeIfAbsent(key, k -> factory.apply(config));

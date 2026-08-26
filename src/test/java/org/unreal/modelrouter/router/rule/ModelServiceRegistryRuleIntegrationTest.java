@@ -72,6 +72,7 @@ class ModelServiceRegistryRuleIntegrationTest {
             return instances.get(0);
         });
         when(rateLimitManager.tryAcquireInstance(any())).thenReturn(true);
+        when(rateLimitManager.tryAcquire(any())).thenReturn(true);
 
         registry = new ModelServiceRegistry(properties, serviceStateManager, rateLimitManager,
                 loadBalancerManager, circuitBreakerManager, fallbackManager, configMergeService,
@@ -342,6 +343,78 @@ class ModelServiceRegistryRuleIntegrationTest {
 
             assertNotNull(selected);
             assertEquals("inst-gpt", selected.getInstanceId(), "适配器切换不应改变实例选择");
+        }
+    }
+
+    // ==================== 服务级限流热路径(v2.8.8) ====================
+
+    @Nested
+    @DisplayName("服务级限流热路径")
+    class ServiceRateLimitTests {
+
+        @Test
+        @DisplayName("INTEG-014: 服务级限流通过时正常选择实例")
+        void testServiceRateLimit_passed() {
+            when(rateLimitManager.tryAcquire(any())).thenReturn(true);
+
+            ModelRouterProperties.ModelInstance selected =
+                    registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "gpt-4", "1.1.1.1");
+
+            assertNotNull(selected);
+            assertEquals("inst-gpt", selected.getInstanceId());
+        }
+
+        @Test
+        @DisplayName("INTEG-015: 服务级限流超限抛 429")
+        void testServiceRateLimit_exceeded_throws429() {
+            when(rateLimitManager.tryAcquire(any())).thenReturn(false);
+
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "gpt-4", "1.1.1.1"));
+
+            assertEquals(HttpStatus.TOO_MANY_REQUESTS, ex.getStatusCode());
+        }
+    }
+
+    // ==================== 规则级限流 RATE_LIMIT 动作(v2.8.8) ====================
+
+    @Nested
+    @DisplayName("规则级限流 RATE_LIMIT")
+    class RuleRateLimitTests {
+
+        private RuleDefinition rateLimitRule(final String id) {
+            RuleDefinition r = rule(id, 10,
+                    cond(RuleDefinition.ConditionType.MODEL_NAME, RuleDefinition.Operator.EQUALS, "gpt-4"),
+                    new RuleDefinition.Action(RuleDefinition.ActionType.RATE_LIMIT, null));
+            r.getAction().setCapacity(100L);
+            r.getAction().setRate(10L);
+            r.getAction().setScope("rule");
+            return r;
+        }
+
+        @Test
+        @DisplayName("INTEG-016: RATE_LIMIT 规则命中且限流通过时正常选择实例")
+        void testRateLimitRule_passed() {
+            when(rateLimitManager.tryAcquireRule(any(), any(), any())).thenReturn(true);
+            ruleEngine.reloadRules(List.of(rateLimitRule("rl-rule")));
+
+            ModelRouterProperties.ModelInstance selected =
+                    registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "gpt-4", "1.1.1.1");
+
+            assertNotNull(selected);
+            assertEquals("inst-gpt", selected.getInstanceId());
+        }
+
+        @Test
+        @DisplayName("INTEG-017: RATE_LIMIT 规则超限抛 429")
+        void testRateLimitRule_exceeded_throws429() {
+            when(rateLimitManager.tryAcquireRule(any(), any(), any())).thenReturn(false);
+            ruleEngine.reloadRules(List.of(rateLimitRule("rl-rule")));
+
+            ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                    () -> registry.selectInstance(ModelServiceRegistry.ServiceType.chat, "gpt-4", "1.1.1.1"));
+
+            assertEquals(HttpStatus.TOO_MANY_REQUESTS, ex.getStatusCode());
         }
     }
 }

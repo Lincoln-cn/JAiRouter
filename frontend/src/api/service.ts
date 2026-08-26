@@ -60,3 +60,13 @@ export const resetToDefaultConfig = () => {
 export const getAdapters = () => {
   return request.get<RouterResponse<any[]>>('/config/adapter')
 }
+
+// v2.8.8: 获取服务级限流配置(canonical 格式,持久化)
+export const getServiceRateLimit = (serviceType: string) => {
+  return request.get<RouterResponse<Record<string, any>>>(`/services/${serviceType}/ratelimit`)
+}
+
+// v2.8.8: 更新服务级限流配置(canonical 格式,持久化 + 热生效)
+export const updateServiceRateLimit = (serviceType: string, rateLimit: any) => {
+  return request.put<RouterResponse<Record<string, any>>>(`/services/${serviceType}/ratelimit`, rateLimit)
+}

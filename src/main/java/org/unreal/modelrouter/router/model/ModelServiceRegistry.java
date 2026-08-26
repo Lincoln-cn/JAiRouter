@@ -19,10 +19,13 @@ import org.unreal.modelrouter.router.fallback.FallbackManager;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancer;
 import org.unreal.modelrouter.router.loadbalancer.LoadBalancerManager;
 import org.unreal.modelrouter.router.loadbalancer.monitor.RoutingMonitorService;
+import org.unreal.modelrouter.router.ratelimit.RateLimitConfig;
+import org.unreal.modelrouter.router.ratelimit.RateLimitContext;
 import org.unreal.modelrouter.router.ratelimit.RateLimitManager;
 import org.unreal.modelrouter.router.rule.RuleDecision;
 import org.unreal.modelrouter.router.rule.RuleEngineService;
 import org.unreal.modelrouter.router.rule.RuleStatsService;
+import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 import org.unreal.modelrouter.monitor.tracing.wrapper.LoadBalancerTracingWrapper;
 
 import java.util.ArrayList;
@@ -184,6 +187,8 @@ public class ModelServiceRegistry {
             updateOriginalPropertiesFromConfig(mergedConfig);
             this.serviceConfigCache = configBuilder.rebuildServiceConfigCache(mergedConfig);
             reinitializeLoadBalancers();
+            // v2.8.8: 合并配置中的限流配置应用到运行时限流器(重启后持久化配置生效;YAML 无覆盖时不变)
+            applyPersistedRateLimits(mergedConfig);
 
             LOGGER.info("运行时配置刷新完成，当前包含 {} 个服务", serviceConfigCache.size());
         } catch (Exception e) {
@@ -233,6 +238,28 @@ public class ModelServiceRegistry {
             ruleStatsService.recordHit(ruleDecision.getRule().getId(),
                     ruleDecision.getRule().getAction().getType().name());
         }
+        // v2.8.8: RATE_LIMIT 动作 — 仅决策生效点执行(与命中统计同处,resolveRuleAdapterName 侧不执行,防双计)
+        if (ruleDecision != null && rateLimitManager != null
+                && ruleDecision.getRule().getAction() != null
+                && ruleDecision.getRule().getAction().getType() == RuleDefinition.ActionType.RATE_LIMIT) {
+            RuleDefinition.Action action = ruleDecision.getRule().getAction();
+            RateLimitConfig ruleCfg = new RateLimitConfig();
+            ruleCfg.setEnabled(true);
+            ruleCfg.setAlgorithm(action.getAlgorithm() != null ? action.getAlgorithm() : "token-bucket");
+            ruleCfg.setCapacity(action.getCapacity() != null ? action.getCapacity() : 100L);
+            ruleCfg.setRate(action.getRate() != null ? action.getRate() : 10L);
+            ruleCfg.setScope(action.getScope() != null ? action.getScope() : "rule");
+            if (action.getWarmUpPeriod() != null) {
+                ruleCfg.setWarmUpPeriod(action.getWarmUpPeriod());
+            }
+            RateLimitContext ruleContext = new RateLimitContext(
+                    serviceType, modelName, clientIp, 1, null, null, ruleDecision.getRule().getId());
+            if (!rateLimitManager.tryAcquireRule(ruleDecision.getRule().getId(), ruleCfg, ruleContext)) {
+                throw new ResponseStatusException(
+                        HttpStatus.TOO_MANY_REQUESTS,
+                        "Rate limit rule exceeded: " + ruleDecision.getRule().getName());
+            }
+        }
 
         String effectiveModelName = ruleDecision != null && ruleDecision.getTargetModelName() != null
                 ? ruleDecision.getTargetModelName() : modelName;
@@ -259,6 +286,14 @@ public class ModelServiceRegistry {
 
         if (availableInstances.isEmpty()) {
             throw instanceSelector.createAppropriateException(serviceType, effectiveModelName, candidates);
+        }
+
+        // v2.8.8: 服务级限流检查(每请求恰一次;实例级在 selectWithRateLimit 内;无配置零开销)
+        if (rateLimitManager != null && !rateLimitManager.tryAcquire(
+                new RateLimitContext(serviceType, effectiveModelName, clientIp, 1, null, null))) {
+            throw new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Service rate limit exceeded for service type '" + serviceType + "'");
         }
 
         LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
@@ -454,6 +489,28 @@ public class ModelServiceRegistry {
     }
 
     // ==================== 私有方法 ====================
+
+    /**
+     * v2.8.8: 将合并配置中带 rateLimit 的服务应用到运行时限流器
+     * 仅处理含 rateLimit 段的配置(YAML 无覆盖的服务保持构造时初始化的限流器不变)
+     */
+    @SuppressWarnings("unchecked")
+    private void applyPersistedRateLimits(final Map<String, Object> mergedConfig) {
+        if (mergedConfig == null || !(mergedConfig.get("services") instanceof Map)) {
+            return;
+        }
+        Map<String, Object> services = (Map<String, Object>) mergedConfig.get("services");
+        for (Map.Entry<String, Object> entry : services.entrySet()) {
+            ServiceType type = serviceTypeResolver.parseServiceType(entry.getKey());
+            if (type == null || !(entry.getValue() instanceof Map)) {
+                continue;
+            }
+            Object rateLimit = ((Map<String, Object>) entry.getValue()).get("rateLimit");
+            if (rateLimit instanceof Map) {
+                rateLimitManager.setRateLimiter(type, RateLimitConfig.fromMap((Map<String, Object>) rateLimit));
+            }
+        }
+    }
 
     private void initializeManagers() {
         circuitBreakerManager.initialize(originalProperties);

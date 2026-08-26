@@ -36,6 +36,8 @@ public class RateLimitManager {
             new EnumMap<>(ModelServiceRegistry.ServiceType.class);  // 服务级
     private final Map<String, RateLimiter> instanceLimiters =
             new ConcurrentHashMap<>();                               // 实例级
+    private final Map<String, RateLimiter> ruleLimiters =
+            new ConcurrentHashMap<>();                               // v2.8.8: 规则级(按 ruleId keyed)
 
     // v2.7.10: 使用 Caffeine 缓存替代 ConcurrentHashMap，解决内存泄漏风险
     private final ClientIpRateLimiterCache clientIpRateLimiterCache = new ClientIpRateLimiterCache();
@@ -168,6 +170,35 @@ public class RateLimitManager {
         String key = generateInstanceKey(context.getServiceType(), context.getInstanceId(), context.getInstanceUrl());
         RateLimiter limiter = instanceLimiters.get(key);
         return limiter == null || limiter.tryAcquire(context);
+    }
+
+    /**
+     * v2.8.8: 尝试获取规则级限流令牌(按 ruleId keyed,限流器按规则动作参数惰性创建)
+     * 配置无效/禁用时不限流;删除规则须调 removeRuleRateLimiter 防泄漏
+     * @param ruleId 规则 ID
+     * @param cfg 规则限流配置
+     * @param context 限流上下文
+     * @return 是否通过限流检查
+     */
+    public boolean tryAcquireRule(final String ruleId, final RateLimitConfig cfg, final RateLimitContext context) {
+        if (ruleId == null || cfg == null || !cfg.isEnabled() || !cfg.isValid()) {
+            return true;
+        }
+        RateLimiter limiter = ruleLimiters.computeIfAbsent(ruleId,
+                k -> componentFactory.createScopedRateLimiter(cfg));
+        return limiter.tryAcquire(context);
+    }
+
+    /**
+     * v2.8.8: 移除规则级限流器(规则删除/动作变更时调用,防泄漏)
+     * @param ruleId 规则 ID
+     */
+    public void removeRuleRateLimiter(final String ruleId) {
+        if (ruleId == null) {
+            return;
+        }
+        ruleLimiters.remove(ruleId);
+        LOGGER.info("Rule limiter removed for {}", ruleId);
     }
 
     /**
@@ -359,9 +390,14 @@ public class RateLimitManager {
         instanceLimiters.forEach((k, l) -> inst.put(k, describe(l.getConfig())));
         status.put("instance", inst);
 
+        Map<String, String> rules = new ConcurrentHashMap<>();
+        ruleLimiters.forEach((k, l) -> rules.put(k, describe(l.getConfig())));
+        status.put("rule", rules);
+
         status.put("stats", Map.of(
                 "serviceRateLimiters", serviceLimiters.size(),
-                "instanceRateLimiters", instanceLimiters.size()
+                "instanceRateLimiters", instanceLimiters.size(),
+                "ruleRateLimiters", ruleLimiters.size()
         ));
         return status;
     }
@@ -405,6 +441,18 @@ public class RateLimitManager {
             String instanceId = parts.length > 1 ? parts[1] : key;
             metrics.add(new RateLimiterMetrics(
                     serviceName, "instance", instanceId,
+                    limiter.getConfig().getAlgorithm(),
+                    limiter.getRemainingCapacity(),
+                    limiter.getUsageRatio(),
+                    limiter.getConfig().getCapacity(),
+                    limiter.getConfig().getRate()
+            ));
+        });
+
+        // v2.8.8: 规则级限流器
+        ruleLimiters.forEach((ruleId, limiter) -> {
+            metrics.add(new RateLimiterMetrics(
+                    "rule", "rule", ruleId,
                     limiter.getConfig().getAlgorithm(),
                     limiter.getRemainingCapacity(),
                     limiter.getUsageRatio(),

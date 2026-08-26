@@ -163,6 +163,59 @@ class RateLimiterTest {
         assertFalse(serviceLimiters.containsKey(serviceType));
     }
 
+    // ==================== v2.8.8: 规则级限流 ====================
+
+    @Test
+    void testTryAcquireRule_createsAndReusesLimiter() {
+        // Arrange
+        RateLimitConfig config = new RateLimitConfig("token-bucket", 100, 10, "rule");
+        when(componentFactory.createScopedRateLimiter(config)).thenReturn(rateLimiter);
+        when(rateLimiter.tryAcquire(any())).thenReturn(true);
+
+        RateLimitContext context = new RateLimitContext(
+                ModelServiceRegistry.ServiceType.chat, "model1", "127.0.0.1", 1, null, null, "rule-1");
+
+        // Act
+        boolean first = rateLimitManager.tryAcquireRule("rule-1", config, context);
+        boolean second = rateLimitManager.tryAcquireRule("rule-1", config, context);
+
+        // Assert
+        assertTrue(first);
+        assertTrue(second);
+        verify(componentFactory, times(1)).createScopedRateLimiter(config);
+        verify(rateLimiter, times(2)).tryAcquire(any());
+    }
+
+    @Test
+    void testTryAcquireRule_disabledConfig_returnsTrue() {
+        // Arrange
+        RateLimitConfig config = new RateLimitConfig();
+        RateLimitContext context = new RateLimitContext(
+                ModelServiceRegistry.ServiceType.chat, "model1", "127.0.0.1", 1, null, null, "rule-1");
+
+        // Act
+        boolean result = rateLimitManager.tryAcquireRule("rule-1", config, context);
+
+        // Assert
+        assertTrue(result);
+        verify(componentFactory, never()).createScopedRateLimiter(any());
+    }
+
+    @Test
+    void testRemoveRuleRateLimiter() {
+        // Arrange
+        Map<String, RateLimiter> ruleLimiters = new HashMap<>();
+        ruleLimiters.put("rule-1", rateLimiter);
+        setInternalState(rateLimitManager, "ruleLimiters", ruleLimiters);
+
+        // Act
+        rateLimitManager.removeRuleRateLimiter("rule-1");
+
+        // Assert
+        ruleLimiters = getInternalState(rateLimitManager, "ruleLimiters");
+        assertFalse(ruleLimiters.containsKey("rule-1"));
+    }
+
     // Helper method to set private fields using reflection
     private void setInternalState(Object target, String fieldName, Object value) {
         try {

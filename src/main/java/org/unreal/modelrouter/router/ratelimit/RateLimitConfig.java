@@ -1,5 +1,7 @@
 package org.unreal.modelrouter.router.ratelimit;
 
+import java.util.Map;
+
 /**
  * 简化的限流配置类
  * 移除了冗余的from方法，简化构造和使用
@@ -124,6 +126,39 @@ public class RateLimitConfig {
      */
     public boolean isEnabled() {
         return enabled;
+    }
+
+    /**
+     * v2.8.8: 从 Map 构建配置(canonical 键:enabled/algorithm/capacity/rate/scope/key/warmUpPeriod)
+     *
+     * @param map 配置 Map
+     * @return 限流配置
+     */
+    public static RateLimitConfig fromMap(final Map<String, Object> map) {
+        RateLimitConfig config = new RateLimitConfig();
+        if (map == null) {
+            return config;
+        }
+        config.enabled = Boolean.TRUE.equals(map.get("enabled"));
+        if (map.get("algorithm") instanceof String) {
+            config.algorithm = (String) map.get("algorithm");
+        }
+        if (map.get("capacity") instanceof Number) {
+            config.capacity = ((Number) map.get("capacity")).longValue();
+        }
+        if (map.get("rate") instanceof Number) {
+            config.rate = ((Number) map.get("rate")).longValue();
+        }
+        if (map.get("scope") instanceof String) {
+            config.scope = (String) map.get("scope");
+        }
+        if (map.get("key") instanceof String) {
+            config.key = (String) map.get("key");
+        }
+        if (map.get("warmUpPeriod") instanceof Number) {
+            config.warmUpPeriod = ((Number) map.get("warmUpPeriod")).longValue();
+        }
+        return config;
     }
 
     /**

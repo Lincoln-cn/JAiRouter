@@ -210,8 +210,15 @@ class ApiCallHistoryServiceTest {
         @Test
         @DisplayName("获取统计信息")
         void testGetStatistics() {
-            when(repository.getSummary(any(), any()))
-                    .thenReturn(new Object[]{100L, 15000L, 500.0, 90L});
+            // 服务使用独立范围查询(避免 H2 Object[] 映射问题)
+            when(repository.countAllInRange(any(), any()))
+                    .thenReturn(100L);
+            when(repository.sumTokensInRange(any(), any()))
+                    .thenReturn(15000L);
+            when(repository.avgResponseTimeInRange(any(), any()))
+                    .thenReturn(500.0);
+            when(repository.countSuccessInRange(any(), any()))
+                    .thenReturn(90L);
             when(repository.countByModel(any(), any()))
                     .thenReturn(Collections.emptyList());
             when(repository.countByServiceType(any(), any()))

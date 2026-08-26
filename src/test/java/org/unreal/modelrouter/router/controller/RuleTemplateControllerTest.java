@@ -25,10 +25,10 @@ class RuleTemplateControllerTest {
             new RuleTemplateController(new RuleTemplateService());
 
     @Test
-    @DisplayName("TMPL-001: 模板列表返回 6 个模板")
+    @DisplayName("TMPL-001: 模板列表返回 7 个模板")
     void listTemplates() {
         List<RuleTemplate> templates = controller.getAllTemplates().getBody().getData();
-        assertEquals(6, templates.size());
+        assertEquals(7, templates.size());
     }
 
     @Test

@@ -10,6 +10,7 @@ public class RateLimitContext {
     private final int tokens;
     private final String instanceId;
     private final String instanceUrl;
+    private final String ruleId;   // v2.8.8: 规则级限流(scope=rule 时 keyed by ruleId)
 
     // 带实例信息的构造函数
     public RateLimitContext(final ModelServiceRegistry.ServiceType serviceType,
@@ -18,12 +19,26 @@ public class RateLimitContext {
                             final int tokens,
                             final String instanceId,
                             final String instanceUrl) {
+        this(serviceType, modelName, clientIp, tokens, instanceId, instanceUrl, null);
+    }
+
+    /**
+     * v2.8.8: 完整构造函数(含规则 ID,规则级限流用)
+     */
+    public RateLimitContext(final ModelServiceRegistry.ServiceType serviceType,
+                            final String modelName,
+                            final String clientIp,
+                            final int tokens,
+                            final String instanceId,
+                            final String instanceUrl,
+                            final String ruleId) {
         this.serviceType = serviceType;
         this.modelName = modelName;
         this.clientIp = clientIp;
         this.tokens = tokens;
         this.instanceId = instanceId;
         this.instanceUrl = instanceUrl;
+        this.ruleId = ruleId;
     }
 
     /**
@@ -80,5 +95,13 @@ public class RateLimitContext {
      */
     public boolean hasInstanceInfo() {
         return instanceId != null && instanceUrl != null;
+    }
+
+    /**
+     * v2.8.8: 获取规则 ID(规则级限流用)
+     * @return 规则 ID
+     */
+    public String getRuleId() {
+        return ruleId;
     }
 }

@@ -168,6 +168,60 @@ public class StoreConfigRepository {
         storeManager.saveConfig(CONFIG_KEY, config);
     }
 
+    /**
+     * v2.8.8: 获取指定服务的限流配置原始 Map(canonical 格式,不经 DTO 转换)
+     *
+     * @param serviceType 服务类型
+     * @return 限流配置 Map,不存在返回 Optional.empty()
+     */
+    @SuppressWarnings("unchecked")
+    public Optional<Map<String, Object>> findRateLimitRaw(final String serviceType) {
+        try {
+            Map<String, Object> config = storeManager.getConfig(CONFIG_KEY);
+            if (config == null || !(config.get("services") instanceof Map)) {
+                return Optional.empty();
+            }
+            Map<String, Object> services = (Map<String, Object>) config.get("services");
+            Object svc = services.get(serviceType);
+            if (!(svc instanceof Map)) {
+                return Optional.empty();
+            }
+            Object rateLimit = ((Map<String, Object>) svc).get("rateLimit");
+            return rateLimit instanceof Map
+                    ? Optional.of((Map<String, Object>) rateLimit)
+                    : Optional.empty();
+        } catch (Exception e) {
+            logger.error("获取服务限流配置失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * v2.8.8: 保存指定服务的限流配置原始 Map(canonical 格式,不经 DTO 转换;服务不存在则创建)
+     *
+     * @param serviceType 服务类型
+     * @param rateLimitMap 限流配置 Map
+     */
+    @SuppressWarnings("unchecked")
+    public void saveRateLimitRaw(final String serviceType, final Map<String, Object> rateLimitMap) {
+        logger.info("保存服务限流配置：serviceType={}", serviceType);
+        try {
+            Map<String, Object> currentConfig = getCurrentConfig();
+            Map<String, Object> services = (Map<String, Object>) currentConfig.get("services");
+            Map<String, Object> svc = (Map<String, Object>) services.computeIfAbsent(
+                    serviceType, k -> new HashMap<String, Object>());
+            svc.put("rateLimit", rateLimitMap);
+
+            addMetadata(currentConfig, "save", "保存服务限流配置：" + serviceType, serviceType);
+
+            storeManager.saveConfig(CONFIG_KEY, currentConfig);
+            logger.info("服务限流配置保存成功：serviceType={}", serviceType);
+        } catch (Exception e) {
+            logger.error("保存服务限流配置失败：serviceType={}, error={}", serviceType, e.getMessage(), e);
+            throw new RuntimeException("保存服务限流配置失败：" + e.getMessage(), e);
+        }
+    }
+
     // ==================== 辅助方法 ====================
 
     /**
