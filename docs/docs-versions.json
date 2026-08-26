@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.23",
-      "LastModified": "2026-08-18T02:55:03.714824",
-      "ContentHash": "8fb3e032b3a498c1",
-      "GitCommit": "b1088a7e",
+      "Version": "1.0.24",
+      "LastModified": "2026-08-26T03:04:20.488186",
+      "ContentHash": "f509be92c34a3f85",
+      "GitCommit": "6f15704f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -352,10 +352,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.7",
-      "LastModified": "2026-08-24T03:02:49.162352",
-      "ContentHash": "b486362d785e8b36",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.8",
+      "LastModified": "2026-08-26T03:04:20.581376",
+      "ContentHash": "864baa9b1b810985",
+      "GitCommit": "6f15704f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -506,10 +506,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-08-24T03:02:49.194858",
-      "ContentHash": "1288c83ed9f1f2fb",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.9",
+      "LastModified": "2026-08-26T03:04:20.617707",
+      "ContentHash": "a3f911469362a64a",
+      "GitCommit": "58f0c2ef",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -956,10 +956,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-08-24T03:02:49.391362",
-      "ContentHash": "792d97de8c49dc6a",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.9",
+      "LastModified": "2026-08-26T03:04:20.816796",
+      "ContentHash": "8619f6672c4f34c5",
+      "GitCommit": "6f15704f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1124,10 +1124,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-08-24T03:02:49.442379",
-      "ContentHash": "3f9880bc9af6744a",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.9",
+      "LastModified": "2026-08-26T03:04:20.870859",
+      "ContentHash": "4dfd1b43b59f29ec",
+      "GitCommit": "58f0c2ef",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1721,10 +1721,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.15",
-      "LastModified": "2026-08-18T02:55:03.712734",
-      "ContentHash": "9db455f6ab741f2a",
-      "GitCommit": "b1088a7e",
+      "Version": "1.0.16",
+      "LastModified": "2026-08-26T03:04:20.486336",
+      "ContentHash": "cb02f7c525976481",
+      "GitCommit": "6f15704f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1996,30 +1996,30 @@
     },
     "docs/en/configuration/adapter-config.md": {
       "FilePath": "docs/en/configuration/adapter-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.092539",
-      "ContentHash": "ec5052b3a4ab05d2",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.3",
+      "LastModified": "2026-08-26T03:04:20.502995",
+      "ContentHash": "1fb3aec1f91af0a2",
+      "GitCommit": "462db999",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/configuration/adapter-config.md": {
       "FilePath": "docs/zh/configuration/adapter-config.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.275840",
-      "ContentHash": "b15233be30a8b3d6",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.3",
+      "LastModified": "2026-08-26T03:04:20.698097",
+      "ContentHash": "dae6a49a62de8222",
+      "GitCommit": "462db999",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/configuration/routing-rules.md": {
       "FilePath": "docs/en/configuration/routing-rules.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-08-24T03:02:49.114556",
-      "ContentHash": "c2c59126d898be13",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.1",
+      "LastModified": "2026-08-26T03:04:20.526738",
+      "ContentHash": "c31e761b0f94672a",
+      "GitCommit": "3c4f825a",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2067,10 +2067,10 @@
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
-      "Version": "1.0.0",
-      "LastModified": "2026-08-24T03:02:49.310371",
-      "ContentHash": "3c89519c15ff0f84",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.1",
+      "LastModified": "2026-08-26T03:04:20.733636",
+      "ContentHash": "01de8f877f5c71a5",
+      "GitCommit": "3c4f825a",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4942,7 +4942,87 @@
       "ChangeType": "DELETED",
       "Timestamp": "2026-08-24T03:02:49.527685",
       "Description": "文档已删除"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.15",
+      "NewVersion": "1.0.16",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.486343",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.23",
+      "NewVersion": "1.0.24",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.488191",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/adapter-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.503000",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/routing-rules.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.526743",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.7",
+      "NewVersion": "1.0.8",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.581382",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.617713",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/adapter-config.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.698103",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/routing-rules.md",
+      "OldVersion": "1.0.0",
+      "NewVersion": "1.0.1",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.733641",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.816801",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-26T03:04:20.870864",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-08-25T02:58:09.146395"
+  "last_updated": "2026-08-26T03:04:21.064185"
 }
