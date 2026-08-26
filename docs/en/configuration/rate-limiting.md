@@ -1,4 +1,4 @@
-﻿# Rate Limiting Configuration
+# Rate Limiting Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -48,6 +48,30 @@ graph TB
     style C fill:#e8f5e8
     style G fill:#fff3e0
 ```
+
+> **Layer order (v2.8.8)**: Requests pass through **service-level → instance-level** checks (global / client-IP limits apply when enabled). Exceeding the service limit returns `429 Too Many Requests`; exceeding an instance limit skips to the next instance, and `503` is returned only when all instances are limited. The rule engine's **RATE_LIMIT** action additionally provides per-rule-ID limiting (see [routing-rules.md](./routing-rules.md)).
+
+## Service-Level Dynamic Rate Limiting Configuration (v2.8.8)
+
+Service-level limits can be configured **dynamically and hot-applied** from the Web console (no restart):
+
+- **API**: `PUT /api/services/{serviceType}/ratelimit` (persists + applies immediately), `GET /api/services/{serviceType}/ratelimit` (reads current config)
+- **Config format (canonical)**:
+
+```json
+{
+  "enabled": true,
+  "algorithm": "token-bucket",
+  "capacity": 100,
+  "rate": 10,
+  "scope": "service",
+  "key": ""
+}
+```
+
+- `enabled=false` removes the service limiter; when enabled, `capacity`/`rate` must be > 0 or `400` is returned
+- Config is persisted to the config store (`model-router-config`) and **re-applied automatically on restart** (loaded from the merged config at boot); services without a YAML rate-limit config are untouched
+- The service management edit dialog is wired to this endpoint (saving the rate-limit form hot-applies it)
 
 ## Global Rate Limiting Configuration
 

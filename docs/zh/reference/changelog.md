@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.8.7
-> **最后更新**: 2026-08-25
+> **文档版本**: 2.8.8
+> **最后更新**: 2026-08-26
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,21 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.8.8] - 2026-08-26 - 功能发布
+
+#### 限流能力补齐
+
+- **服务级限流热路径接入**：请求链新增服务级限流检查（每请求恰一次，无配置零开销），超限返回 `429 Too Many Requests`；实例级仍为"跳过换下一个实例"语义
+- **按服务动态限流配置做实**：`PUT /api/services/{serviceType}/ratelimit` 由空实现改为 持久化（配置存储 `model-router-config`）+ 热生效（RateLimitManager）；GET 统一返回 canonical 格式（`enabled/algorithm/capacity/rate/scope/key`）；启用时 `capacity/rate` 必填且 > 0；配置**重启后自动生效**；服务管理页编辑对话框接入该端点
+- **规则 RATE_LIMIT 动作**：规则引擎新增规则级限流动作（按规则 ID 独立限流，与命中统计同一决策生效点，不重复执行），命中后超限返回 429；删除规则/变更动作自动清理限流器；新增「限流保护」预置模板（模板总数 6 → 7，从模板创建自动预填限流参数）；dry-run 输出包含限流参数
+- **修复**：API 调用历史统计测试过时断言（服务改用独立范围查询后测试未同步更新）；dev 模式 `VITE_API_BASE_URL` 修正为 `/api`（开发代理直连后端）
+
+#### 测试
+
+- 新增/更新：ServiceRateLimitControllerTest（RL-001~008）、ModelServiceRegistryRuleIntegrationTest（INTEG-014~017）、RuleConfigControllerTest（RULEC-029~034）、RateLimiterTest（规则级限流 3 例）、RuleTemplateServiceTest（限流模板）、RuleTemplateControllerTest（7 模板）；**全量 2876 用例全绿**（含顺带修复的 ApiCallHistoryServiceTest）
+
+---
 
 ### [2.8.7] - 2026-08-25 - 功能发布
 

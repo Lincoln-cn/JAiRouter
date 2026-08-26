@@ -1,4 +1,4 @@
-﻿# 限流配置
+# 限流配置
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.2  
@@ -49,12 +49,35 @@ graph TB
     style G fill:#fff3e0
 ```
 
+> **限流层级说明（v2.8.8）**：请求经过 **服务级 → 实例级** 两级检查（全局/客户端 IP 限流按配置启用）。服务级超限返回 `429 Too Many Requests`；实例级超限自动换下一个实例，全部实例被限才返回 `503`。此外规则引擎的 **RATE_LIMIT 动作**提供按规则 ID 的独立限流（见 [routing-rules.md](./routing-rules.md)）。
+
+## 服务级动态限流配置（v2.8.8）
+
+服务级限流支持通过 Web 管理界面 **动态配置并热生效**（无需重启）：
+
+- **API**：`PUT /api/services/{serviceType}/ratelimit`（持久化 + 立即生效）、`GET /api/services/{serviceType}/ratelimit`（读取当前配置）
+- **配置格式（canonical）**：
+
+```json
+{
+  "enabled": true,
+  "algorithm": "token-bucket",
+  "capacity": 100,
+  "rate": 10,
+  "scope": "service",
+  "key": ""
+}
+```
+
+- `enabled=false` 时移除该服务的限流器；启用时 `capacity`/`rate` 必须 > 0，否则返回 400
+- 配置持久化到配置存储（`model-router-config`），**重启后自动生效**（启动时从合并配置加载）；YAML 中未配置限流的服务保持原样
+- 服务管理页的编辑对话框已接入该端点（限流配置保存即热生效）
+
 ## 全局限流配置
 
 ### 基础配置
 
 在 `config/base/model-services-base.yml` 文件中配置全局限流：
-
 ```yaml
 # config/base/model-services-base.yml
 model:

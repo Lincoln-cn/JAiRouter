@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.8.7
-> **Last Updated**: 2026-08-25
+> **Document Version**: 2.8.8
+> **Last Updated**: 2026-08-26
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,21 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.8.8] - 2026-08-26 - Feature Release
+
+#### Rate-Limiting Capability Completion
+
+- **Service-level rate limiting on the hot path**: the request chain now runs a service-level rate-limit check (exactly once per request, zero overhead without config); exceeding it returns `429 Too Many Requests`; instance-level keeps its "try the next instance" semantics
+- **Dynamic per-service rate-limit config made real**: `PUT /api/services/{serviceType}/ratelimit` changed from an empty stub to persist (config store `model-router-config`) + hot-apply (`RateLimitManager`); GET returns the canonical format (`enabled/algorithm/capacity/rate/scope/key`); when enabled, `capacity`/`rate` are required and must be > 0; config **re-applies automatically on restart**; the service management edit dialog is wired to this endpoint
+- **RATE_LIMIT rule action**: the rule engine gains a rule-level limiting action (independent limiter per rule ID, fired at the same decision point as hit counting — never double-executed); requests over the limit get 429; deleting a rule or changing its action cleans up the limiter; a new "Rate Limit Protection" preset template is added (6 → 7 templates, pre-filling the limit params when creating from template); dry-run output includes the limit params
+- **Fixes**: stale assertion in the API call-history statistics test (service switched to separate range queries but the test was not updated); dev-mode `VITE_API_BASE_URL` corrected to `/api` so the dev proxy reaches the backend
+
+#### Tests
+
+- New/updated: ServiceRateLimitControllerTest (RL-001~008), ModelServiceRegistryRuleIntegrationTest (INTEG-014~017), RuleConfigControllerTest (RULEC-029~034), RateLimiterTest (rule-level, 3 cases), RuleTemplateServiceTest (rate-limit template), RuleTemplateControllerTest (7 templates); **full suite 2876 tests green** (including the fixed ApiCallHistoryServiceTest)
+
+---
 
 ### [2.8.7] - 2026-08-25 - Feature Release
 
