@@ -3,22 +3,22 @@
 ## 版本统计
 
 - 总文档数: 158
-- 近7天变更: 102
+- 近7天变更: 112
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-26 03:04:21
+- 最后扫描: 2026-08-27 12:24:13
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.8 → 1.0.9) - 2026-08-26
-- **MODIFIED**: docs/zh/index.md (1.0.8 → 1.0.9) - 2026-08-26
-- **MODIFIED**: docs/zh/configuration/routing-rules.md (1.0.0 → 1.0.1) - 2026-08-26
-- **MODIFIED**: docs/zh/configuration/adapter-config.md (1.0.2 → 1.0.3) - 2026-08-26
-- **MODIFIED**: docs/en/reference/changelog.md (1.0.8 → 1.0.9) - 2026-08-26
-- **MODIFIED**: docs/en/index.md (1.0.7 → 1.0.8) - 2026-08-26
-- **MODIFIED**: docs/en/configuration/routing-rules.md (1.0.0 → 1.0.1) - 2026-08-26
-- **MODIFIED**: docs/en/configuration/adapter-config.md (1.0.2 → 1.0.3) - 2026-08-26
-- **MODIFIED**: README.md (1.0.23 → 1.0.24) - 2026-08-26
-- **MODIFIED**: README-ZH.md (1.0.15 → 1.0.16) - 2026-08-26
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.9 → 1.0.10) - 2026-08-27
+- **MODIFIED**: docs/zh/index.md (1.0.9 → 1.0.10) - 2026-08-27
+- **MODIFIED**: docs/zh/configuration/routing-rules.md (1.0.1 → 1.0.2) - 2026-08-27
+- **MODIFIED**: docs/zh/configuration/rate-limiting.md (1.0.2 → 1.0.3) - 2026-08-27
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.9 → 1.0.10) - 2026-08-27
+- **MODIFIED**: docs/en/index.md (1.0.8 → 1.0.9) - 2026-08-27
+- **MODIFIED**: docs/en/configuration/routing-rules.md (1.0.1 → 1.0.2) - 2026-08-27
+- **MODIFIED**: docs/en/configuration/rate-limiting.md (1.0.3 → 1.0.4) - 2026-08-27
+- **MODIFIED**: README.md (1.0.24 → 1.0.25) - 2026-08-27
+- **MODIFIED**: README-ZH.md (1.0.16 → 1.0.17) - 2026-08-27
 
 ## 过期文档 (30天未更新)
 
@@ -30,7 +30,6 @@
 - docs/zh/configuration/circuit-breaker.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/configuration/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/configuration/load-balancing.md (版本: 1.0.2, 最后更新: 2026-06-03)
-- docs/zh/configuration/rate-limiting.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/deployment/china-optimization.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/deployment/github-pages.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/deployment/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
@@ -119,8 +118,9 @@
   - docs/en/configuration/rate-limiting.md
   - docs/en/monitoring/index.md
   - docs/en/troubleshooting/index.md
-- **docs/en/configuration/rate-limiting.md**: 依赖 4 个文档
+- **docs/en/configuration/rate-limiting.md**: 依赖 5 个文档
   - docs/en/configuration/circuit-breaker.md
+  - docs/en/configuration/routing-rules.md
   - docs/en/monitoring/index.md
   - docs/en/troubleshooting/index.md
   - docs/en/troubleshooting/performance.md
@@ -283,8 +283,9 @@
   - docs/zh/configuration/rate-limiting.md
   - docs/zh/monitoring/index.md
   - docs/zh/troubleshooting/index.md
-- **docs/zh/configuration/rate-limiting.md**: 依赖 4 个文档
+- **docs/zh/configuration/rate-limiting.md**: 依赖 5 个文档
   - docs/zh/configuration/circuit-breaker.md
+  - docs/zh/configuration/routing-rules.md
   - docs/zh/monitoring/index.md
   - docs/zh/troubleshooting/index.md
   - docs/zh/troubleshooting/performance.md
@@ -598,16 +599,18 @@
 
 ## 所有文档版本
 
-- **docs/zh/reference/changelog.md**: v1.0.9 - 2026-08-26 (58f0c2ef)
-- **docs/zh/index.md**: v1.0.9 - 2026-08-26 (6f15704f)
-- **docs/zh/configuration/routing-rules.md**: v1.0.1 - 2026-08-26 (3c4f825a)
+- **docs/zh/reference/changelog.md**: v1.0.10 - 2026-08-27 (1f20aefd)
+- **docs/zh/index.md**: v1.0.10 - 2026-08-27 (1af9494d)
+- **docs/zh/configuration/routing-rules.md**: v1.0.2 - 2026-08-27 (1f20aefd)
+- **docs/zh/configuration/rate-limiting.md**: v1.0.3 - 2026-08-27 (a23defac)
+- **docs/en/reference/changelog.md**: v1.0.10 - 2026-08-27 (1f20aefd)
+- **docs/en/index.md**: v1.0.9 - 2026-08-27 (1af9494d)
+- **docs/en/configuration/routing-rules.md**: v1.0.2 - 2026-08-27 (1f20aefd)
+- **docs/en/configuration/rate-limiting.md**: v1.0.4 - 2026-08-27 (a23defac)
+- **README.md**: v1.0.25 - 2026-08-27 (1af9494d)
+- **README-ZH.md**: v1.0.17 - 2026-08-27 (1af9494d)
 - **docs/zh/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
-- **docs/en/reference/changelog.md**: v1.0.9 - 2026-08-26 (58f0c2ef)
-- **docs/en/index.md**: v1.0.8 - 2026-08-26 (6f15704f)
-- **docs/en/configuration/routing-rules.md**: v1.0.1 - 2026-08-26 (3c4f825a)
 - **docs/en/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
-- **README.md**: v1.0.24 - 2026-08-26 (6f15704f)
-- **README-ZH.md**: v1.0.16 - 2026-08-26 (6f15704f)
 - **docs/zh/tracing/usage-guide.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/troubleshooting.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/quickstart.md**: v1.0.4 - 2026-08-24 (f5d673e2)
@@ -677,7 +680,6 @@
 - **docs/en/configuration/validation-rules.md**: v1.0.0 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/store-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/state-persistence.md**: v1.0.2 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/rate-limiting.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/modular-config.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/load-balancing.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/instance-examples.md**: v1.0.1 - 2026-08-24 (f5d673e2)
@@ -744,7 +746,6 @@
 - **docs/zh/deployment/github-pages.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/zh/deployment/docker-optimized.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/deployment/china-optimization.md**: v1.0.3 - 2026-06-03 (85bfdb3e)
-- **docs/zh/configuration/rate-limiting.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/zh/configuration/modular-config.md**: v1.0.1 - 2026-06-03 (69e80538)
 - **docs/zh/configuration/load-balancing.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/zh/configuration/jwt-persistence.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
