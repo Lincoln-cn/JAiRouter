@@ -161,7 +161,8 @@ public class RuleEngineService {
      * WEIGHT 条件:基于 (clientIp + modelName) 稳定哈希,命中百分比区间 [0, weight)
      * 同一请求稳定命中同一规则;weight 默认 50 表示 50%
      */
-    private boolean matchesWeight(final String clientIp, final String modelName, final RuleDefinition.Condition condition) {
+    private boolean matchesWeight(final String clientIp, final String modelName,
+                                   final RuleDefinition.Condition condition) {
         int weight = condition.getWeight() != null ? condition.getWeight()
                 : parseWeight(condition.getValue());
         if (weight <= 0) {

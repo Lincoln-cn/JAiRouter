@@ -163,7 +163,8 @@ public class PoolConfigController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pool body must not be null");
         }
         if (pool.getPoolName() == null || pool.getPoolName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pool name (virtual model name) must not be blank");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Pool name (virtual model name) must not be blank");
         }
         if (pool.getServiceType() == null || pool.getServiceType().isBlank()
                 || serviceTypeResolver.parseServiceType(pool.getServiceType()) == null) {

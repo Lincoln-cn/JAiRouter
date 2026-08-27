@@ -259,7 +259,8 @@ public class RuleConfigController {
                 .orElse(null);
         if (serviceType == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Invalid serviceType: " + serviceTypeName + " (valid: chat/embedding/rerank/tts/stt/imgGen/imgEdit)");
+                    "Invalid serviceType: " + serviceTypeName
+                    + " (valid: chat/embedding/rerank/tts/stt/imgGen/imgEdit)");
         }
 
         RuleDecision decision = ruleEngineService.evaluate(serviceType, modelName, clientIp, headers);

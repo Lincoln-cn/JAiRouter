@@ -8,7 +8,7 @@ import java.util.List;
  * 路由规则场景模板
  * 预置常见路由场景(灰度/租户隔离/模型重写等),从模板快速创建规则
  */
-public class RuleTemplate {
+public final class RuleTemplate {
 
     private String id;
     private String name;

@@ -7,7 +7,7 @@ import java.util.List;
  * 资源池定义
  * 一组同服务类型实例的命名集合;请求 model 使用 poolName(如 auto-model)时触发池路由
  */
-public class PoolDefinition {
+public final class PoolDefinition {
 
     /** 池名 = 虚拟模型名(请求 model 用它触发池路由;auto-model 为约定名) */
     private String poolName;

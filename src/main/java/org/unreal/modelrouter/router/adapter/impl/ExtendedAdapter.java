@@ -2,7 +2,6 @@ package org.unreal.modelrouter.router.adapter.impl;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.common.dto.ChatDTO;
 import org.unreal.modelrouter.common.dto.EmbeddingDTO;
 import org.unreal.modelrouter.common.dto.ImageEditDTO;
@@ -13,9 +12,6 @@ import org.unreal.modelrouter.common.dto.TtsDTO;
 import org.unreal.modelrouter.router.adapter.AdapterCapabilities;
 import org.unreal.modelrouter.router.adapter.BaseAdapter;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
-import org.unreal.modelrouter.router.adapter.support.AdapterContext;
-import org.unreal.modelrouter.router.adapter.support.RequestProcessingSupport;
-import org.unreal.modelrouter.router.adapter.support.ResilienceSupport;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;

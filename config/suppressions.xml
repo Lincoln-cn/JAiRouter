@@ -7,12 +7,21 @@
     <!-- ConstantName: logger/log 是SLF4J/Lombok标准命名约定 -->
     <suppress files=".*\.java" checks="ConstantName"/>
 
-    <!-- HiddenField: Builder模式DTO类、Model类允许参数同名 -->
+    <!-- ================================================================== -->
+    <!-- HiddenField: 具体类逐一说明                                        -->
+    <!-- ================================================================== -->
+    <!-- Builder模式DTO/Model类: 参数名与字段名相同是Builder惯例 -->
     <suppress files=".*[A-Z][a-zA-Z]*Metrics\.java" checks="HiddenField"/>
     <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="HiddenField"/>
     <suppress files=".*[A-Z][a-zA-Z]*Request\.java" checks="HiddenField"/>
     <suppress files=".*[A-Z][a-zA-Z]*Stats\.java" checks="HiddenField"/>
     <suppress files=".*[A-Z][a-zA-Z]*Metadata\.java" checks="HiddenField"/>
+    <!-- StatsUpdateEvent: Builder模式,参数名与字段名相同 -->
+    <suppress files=".*StatsUpdateEvent\.java" checks="HiddenField"/>
+    <!-- ConfigurableAdapter/OllamaConfigurableAdapter: Override方法参数adapterType与字段同名,无法修改父类签名 -->
+    <suppress files=".*ConfigurableAdapter\.java" checks="HiddenField"/>
+    <suppress files=".*OllamaConfigurableAdapter\.java" checks="HiddenField"/>
+    <!-- 以下为Spring管理类,构造函数参数与字段同名(inject同名) -->
     <suppress files=".*ExporterHealthChecker\.java" checks="HiddenField"/>
     <suppress files=".*StorageHealthServiceImpl\.java" checks="HiddenField"/>
     <suppress files=".*CacheFallbackStrategy\.java" checks="HiddenField"/>
@@ -24,46 +33,97 @@
     <suppress files=".*ConfigurationService\.java" checks="HiddenField"/>
     <suppress files=".*JwtTokenInfo\.java" checks="HiddenField"/>
     <suppress files=".*AsyncTracingProcessor\.java" checks="HiddenField"/>
-    
-    <!-- DesignForExtension: API类、DTO类、配置类、服务类允许继承扩展 -->
+
+    <!-- ================================================================== -->
+    <!-- DesignForExtension                                                 -->
+    <!--                                                                     -->
+    <!-- 策略: 所有Spring管理类(@Service/@Component/@Configuration/@        -->
+    <!-- Repository)需要CGLIB代理,不能标记为final,抑制DFE。                -->
+    <!-- 已标记final的POJO/Model类不再需要抑制。                           -->
+    <!-- ================================================================== -->
+
+    <!-- Spring @Configuration / @ConfigurationProperties -->
+    <suppress files=".*Configuration\.java" checks="DesignForExtension"/>
+    <suppress files=".*Config\.java" checks="DesignForExtension"/>
+    <suppress files=".*Properties\.java" checks="DesignForExtension"/>
+
+    <!-- Spring @Controller / @RestController -->
+    <suppress files=".*Controller\.java" checks="DesignForExtension"/>
+
+    <!-- Spring @Service (不含ServiceImpl后缀的单独列出) -->
+    <suppress files=".*Service\.java" checks="DesignForExtension"/>
+    <!-- Spring @Service Impl类: CGLIB代理不能用final -->
+    <suppress files=".*ServiceImpl\.java" checks="DesignForExtension"/>
+
+    <!-- Spring @Component: 常见后缀分组 -->
+    <suppress files=".*Manager\.java" checks="DesignForExtension"/>
+    <suppress files=".*Handler\.java" checks="DesignForExtension"/>
+    <suppress files=".*Validator\.java" checks="DesignForExtension"/>
+    <suppress files=".*Cache\.java" checks="DesignForExtension"/>
+    <suppress files=".*LoadBalancer\.java" checks="DesignForExtension"/>
+    <suppress files=".*Strategy\.java" checks="DesignForExtension"/>
+    <suppress files=".*Filter\.java" checks="DesignForExtension"/>
+    <suppress files=".*Factory\.java" checks="DesignForExtension"/>
+    <suppress files=".*Context\.java" checks="DesignForExtension"/>
+    <suppress files=".*Wrapper\.java" checks="DesignForExtension"/>
+    <suppress files=".*HealthChecker\.java" checks="DesignForExtension"/>
+    <suppress files=".*Adapter\.java" checks="DesignForExtension"/>
+    <suppress files=".*CircuitBreaker\.java" checks="DesignForExtension"/>
+    <suppress files=".*RateLimiter\.java" checks="DesignForExtension"/>
+    <suppress files=".*Provider\.java" checks="DesignForExtension"/>
+    <suppress files=".*EventListener\.java" checks="DesignForExtension"/>
+    <suppress files=".*Initializer\.java" checks="DesignForExtension"/>
+    <suppress files=".*Registry\.java" checks="DesignForExtension"/>
+    <suppress files=".*Recorder\.java" checks="DesignForExtension"/>
+    <suppress files=".*Tracker\.java" checks="DesignForExtension"/>
+    <suppress files=".*Monitor\.java" checks="DesignForExtension"/>
+    <suppress files=".*Engine\.java" checks="DesignForExtension"/>
+    <suppress files=".*Logger\.java" checks="DesignForExtension"/>
+    <suppress files=".*Checker\.java" checks="DesignForExtension"/>
+    <suppress files=".*Indicator\.java" checks="DesignForExtension"/>
+    <suppress files=".*Contributor\.java" checks="DesignForExtension"/>
+    <suppress files=".*Interceptor\.java" checks="DesignForExtension"/>
+    <suppress files=".*Retry\.java" checks="DesignForExtension"/>
+    <suppress files=".*Collector\.java" checks="DesignForExtension"/>
+    <suppress files=".*Processor\.java" checks="DesignForExtension"/>
+    <suppress files=".*Impl\.java" checks="DesignForExtension"/>
+    <suppress files=".*Updater\.java" checks="DesignForExtension"/>
+
+    <!-- Spring @Component: Metrics/Tracing/Snapshot -->
     <suppress files=".*[A-Z][a-zA-Z]*Metrics\.java" checks="DesignForExtension"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Snapshot\.java" checks="DesignForExtension"/>
+    <suppress files=".*Info\.java" checks="DesignForExtension"/>
+
+    <!-- Spring @Component: API接口(含default方法) -->
+    <suppress files=".*Api\.java" checks="DesignForExtension"/>
+
+    <!-- DTO/Event/Exception/Result等值对象(部分有内部类) -->
     <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="DesignForExtension"/>
     <suppress files=".*[A-Z][a-zA-Z]*Request\.java" checks="DesignForExtension"/>
-    <suppress files=".*[A-Z][a-zA-Z]*Stats\.java" checks="DesignForExtension"/>
-    <suppress files=".*[A-Z][a-zA-Z]*Api\.java" checks="DesignForExtension"/>
     <suppress files=".*[A-Z][a-zA-Z]*DTO\.java" checks="DesignForExtension"/>
-    <suppress files=".*Builder\.java" checks="DesignForExtension"/>
-    <suppress files=".*Properties\.java" checks="DesignForExtension"/>
-    <suppress files=".*Config\.java" checks="DesignForExtension"/>
-    <suppress files=".*Validator\.java" checks="DesignForExtension"/>
-    <suppress files=".*Service\.java" checks="DesignForExtension"/>
-    <suppress files=".*Controller\.java" checks="DesignForExtension"/>
-    <suppress files=".*Manager\.java" checks="DesignForExtension"/>
-    <suppress files=".*Repository\.java" checks="DesignForExtension"/>
-    <suppress files=".*Provider\.java" checks="DesignForExtension"/>
-    <suppress files=".*Filter\.java" checks="DesignForExtension"/>
-    <suppress files=".*Handler\.java" checks="DesignForExtension"/>
-    <suppress files=".*Registry\.java" checks="DesignForExtension"/>
-    <suppress files=".*Factory\.java" checks="DesignForExtension"/>
-    <suppress files=".*Strategy\.java" checks="DesignForExtension"/>
-    <suppress files=".*Policy\.java" checks="DesignForExtension"/>
-    <suppress files=".*Adapter\.java" checks="DesignForExtension"/>
-    <suppress files=".*LoadBalancer\.java" checks="DesignForExtension"/>
-    <suppress files=".*RateLimiter\.java" checks="DesignForExtension"/>
-    <suppress files=".*CircuitBreaker\.java" checks="DesignForExtension"/>
-    <suppress files=".*Cache\.java" checks="DesignForExtension"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Stats\.java" checks="DesignForExtension"/>
     <suppress files=".*Event\.java" checks="DesignForExtension"/>
-    <suppress files=".*Entity\.java" checks="DesignForExtension"/>
     <suppress files=".*Exception\.java" checks="DesignForExtension"/>
-    <suppress files=".*Constants\.java" checks="DesignForExtension"/>
-    <suppress files=".*Wrapper\.java" checks="DesignForExtension"/>
-    <suppress files=".*Snapshot\.java" checks="DesignForExtension"/>
-    <suppress files=".*Info\.java" checks="DesignForExtension"/>
-    <suppress files=".*Context\.java" checks="DesignForExtension"/>
     <suppress files=".*Result\.java" checks="DesignForExtension"/>
     <suppress files=".*Record\.java" checks="DesignForExtension"/>
-    <suppress files=".*HealthChecker\.java" checks="DesignForExtension"/>
-    
+    <suppress files=".*Builder\.java" checks="DesignForExtension"/>
+    <suppress files=".*Constants\.java" checks="DesignForExtension"/>
+    <!-- 已为final但内部类触发DFE -->
+    <suppress files=".*ByteBufferPool\.java" checks="DesignForExtension"/>
+    <suppress files=".*PersistenceIntegrationStatus\.java" checks="DesignForExtension"/>
+
+    <!-- ================================================================== -->
+    <!-- LineLength: DTO/Config等类允许较长行(常量定义、链式调用)           -->
+    <!-- ================================================================== -->
+    <suppress files=".*Properties\.java" checks="LineLength"/>
+    <suppress files=".*Application\.java" checks="LineLength"/>
+    <suppress files=".*[A-Z][a-zA-Z]*DTO\.java" checks="LineLength"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="LineLength"/>
+    <suppress files=".*[A-Z][a-zA-Z]*Request\.java" checks="LineLength"/>
+
+    <!-- ================================================================== -->
+    <!-- 其他全局抑制                                                        -->
+    <!-- ================================================================== -->
     <!-- FinalClass: 内部类设计为final -->
     <suppress files=".*\.java" checks="FinalClass"/>
 
@@ -99,13 +159,6 @@
 
     <!-- FileLength: 文件长度 -->
     <suppress files=".*\.java" checks="FileLength"/>
-
-    <!-- LineLength: 配置类、DTO类允许较长行（常量定义、链式调用） -->
-    <suppress files=".*Properties\.java" checks="LineLength"/>
-    <suppress files=".*Application\.java" checks="LineLength"/>
-    <suppress files=".*[A-Z][a-zA-Z]*DTO\.java" checks="LineLength"/>
-    <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="LineLength"/>
-    <suppress files=".*[A-Z][a-zA-Z]*Request\.java" checks="LineLength"/>
 
     <!-- FinalParameters: Spring推荐不加final -->
     <suppress files=".*\.java" checks="FinalParameters"/>

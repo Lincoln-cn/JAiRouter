@@ -6,7 +6,7 @@ import org.unreal.modelrouter.router.rule.model.RuleDefinition;
  * 规则求值决策结果
  * 命中规则后携带动作目标;无命中时返回 null
  */
-public class RuleDecision {
+public final class RuleDecision {
 
     private final RuleDefinition rule;
 

@@ -106,7 +106,8 @@ public class AdapterRegistry {
                     persistenceService.loadAllDefinitions();
             if (persistedDefinitions != null && !persistedDefinitions.isEmpty()) {
                 Map<String, AdapterDefinitionProperties.AdapterDefinition> toLoad = new HashMap<>();
-                for (Map.Entry<String, AdapterDefinitionProperties.AdapterDefinition> entry : persistedDefinitions.entrySet()) {
+                for (Map.Entry<String, AdapterDefinitionProperties.AdapterDefinition> entry
+                        : persistedDefinitions.entrySet()) {
                     if (!adapters.containsKey(entry.getKey().toLowerCase())) {
                         toLoad.put(entry.getKey(), entry.getValue());
                     }
@@ -157,7 +158,8 @@ public class AdapterRegistry {
                 try {
                     ServiceCapability adapter = createExtendedAdapter(adapterName, definition);
                     adapters.put(adapterName.toLowerCase(), adapter);
-                    logger.info("Loaded extended adapter from {}: {} (parent: {})", source, adapterName, definition.getParent());
+                    logger.info("Loaded extended adapter from {}: {} (parent: {})",
+                            source, adapterName, definition.getParent());
                 } catch (Exception e) {
                     logger.error("Failed to load extended adapter {}: {}", adapterName, e.getMessage());
                 }
@@ -165,8 +167,9 @@ public class AdapterRegistry {
         }
     }
 
-    private ConfigurableAdapter createConfigurableAdapter(final String name,
-                                                          final AdapterDefinitionProperties.AdapterDefinition definition) {
+    private ConfigurableAdapter createConfigurableAdapter(
+            final String name,
+            final AdapterDefinitionProperties.AdapterDefinition definition) {
         AdapterCapabilities capabilities = AdapterCapabilities.builder()
                 .chat(definition.getCapabilities().isChat())
                 .embedding(definition.getCapabilities().isEmbedding())
@@ -188,8 +191,9 @@ public class AdapterRegistry {
         );
     }
 
-    private OllamaConfigurableAdapter createOllamaConfigurableAdapter(final String name,
-                                                                      final AdapterDefinitionProperties.AdapterDefinition definition) {
+    private OllamaConfigurableAdapter createOllamaConfigurableAdapter(
+            final String name,
+            final AdapterDefinitionProperties.AdapterDefinition definition) {
         AdapterCapabilities capabilities = AdapterCapabilities.builder()
                 .chat(definition.getCapabilities().isChat())
                 .embedding(definition.getCapabilities().isEmbedding())
@@ -219,7 +223,9 @@ public class AdapterRegistry {
 
         ServiceCapability parentAdapter = adapters.get(parentName.toLowerCase());
         if (parentAdapter == null) {
-            throw new IllegalArgumentException("Parent adapter '" + parentName + "' not found for extended adapter '" + name + "'");
+            throw new IllegalArgumentException(
+                    "Parent adapter '" + parentName
+                    + "' not found for extended adapter '" + name + "'");
         }
 
         AdapterCapabilities capabilities = null;

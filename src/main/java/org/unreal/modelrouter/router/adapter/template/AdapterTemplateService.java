@@ -1,7 +1,6 @@
 package org.unreal.modelrouter.router.adapter.template;
 
 import org.springframework.stereotype.Service;
-import org.unreal.modelrouter.router.adapter.config.AdapterDefinitionProperties;
 import org.unreal.modelrouter.router.controller.AdapterConfigController.AdapterDefinitionRequest;
 
 import java.util.ArrayList;

@@ -3,7 +3,7 @@ package org.unreal.modelrouter.router.rule.model;
 /**
  * 规则命中统计项
  */
-public class RuleStat {
+public final class RuleStat {
 
     private String ruleId;
     private String ruleName;
