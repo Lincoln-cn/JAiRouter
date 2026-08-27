@@ -2,7 +2,7 @@ package org.unreal.modelrouter.common.dto;
 
 import java.time.LocalDateTime;
 
-public class JwtApiResponse {
+public final class JwtApiResponse {
     private boolean success;
     private String message;
     private LocalDateTime timestamp;

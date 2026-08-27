@@ -7,7 +7,7 @@ import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ScopedRateLimiterWrapper implements RateLimiter {
+public final class ScopedRateLimiterWrapper implements RateLimiter {
     private static final Logger logger = LoggerFactory.getLogger(ScopedRateLimiterWrapper.class);
     private final RateLimitConfig config;
     private final java.util.function.Function<RateLimitConfig, RateLimiter> factory;

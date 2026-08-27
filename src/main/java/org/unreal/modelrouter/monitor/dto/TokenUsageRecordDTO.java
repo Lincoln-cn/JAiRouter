@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TokenUsageRecordDTO {
+public final class TokenUsageRecordDTO {
 
     /**
      * 追踪 ID

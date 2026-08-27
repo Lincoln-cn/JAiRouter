@@ -15,7 +15,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateServiceConfigRequest {
+public final class CreateServiceConfigRequest {
 
     private String serviceType;
     private String adapter;

@@ -21,7 +21,7 @@ import java.time.Duration;
 @Slf4j
 @Component
 @ConditionalOnProperty(name = "jairouter.security.cache.redis.enabled", havingValue = "true")
-public class RedisApiKeyCache implements ApiKeyCache {
+public final class RedisApiKeyCache implements ApiKeyCache {
     
     private static final String CACHE_KEY_PREFIX = "jairouter:security:apikey:";
     private static final Duration DEFAULT_TTL = Duration.ofHours(1); // 默认1小时过期

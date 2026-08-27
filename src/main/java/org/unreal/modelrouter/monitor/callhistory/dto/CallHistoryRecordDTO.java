@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CallHistoryRecordDTO {
+public final class CallHistoryRecordDTO {
 
     /**
      * 分布式追踪 ID

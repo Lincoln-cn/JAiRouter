@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Chat DTO - 核心字段 + 扩展选项
  */
-public class ChatDTO {
+public final class ChatDTO {
 
     /**
      * Chat 请求
@@ -187,7 +187,7 @@ public class ChatDTO {
      */
     @Data
     @Builder
-    public static class Options {
+    public static final class Options {
         // 通用扩展参数
         private Integer n;
         private Boolean logprobs;

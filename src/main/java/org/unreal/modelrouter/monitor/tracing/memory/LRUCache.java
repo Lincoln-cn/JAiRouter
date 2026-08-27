@@ -9,7 +9,7 @@ import java.util.function.Predicate;
  * LRU缓存实现
  * 线程安全的最近最少使用缓存
  */
-public class LRUCache<K, V> {
+public final class LRUCache<K, V> {
     private final Map<K, Node<K, V>> map = new ConcurrentHashMap<>();
     private volatile int capacity;
     private final Node<K, V> head = new Node<>(null, null);

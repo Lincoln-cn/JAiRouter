@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.common.dto;
 
-public class TokenRefreshRequest {
+public final class TokenRefreshRequest {
     private String token;
 
     public TokenRefreshRequest() {

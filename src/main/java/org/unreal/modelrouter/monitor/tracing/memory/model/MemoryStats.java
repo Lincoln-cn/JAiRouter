@@ -6,7 +6,7 @@ import lombok.Data;
  * 内存统计信息
  */
 @Data
-public class MemoryStats {
+public final class MemoryStats {
     private final long usedHeap;
     private final long maxHeap;
     private final long totalMemoryUsed;

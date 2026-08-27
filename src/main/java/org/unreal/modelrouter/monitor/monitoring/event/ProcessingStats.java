@@ -3,7 +3,7 @@ package org.unreal.modelrouter.monitor.monitoring.event;
 /**
  * 处理统计信息类
  */
-public class ProcessingStats {
+public final class ProcessingStats {
     private final long processedCount;
     private final long droppedCount;
     private final long queueSize;

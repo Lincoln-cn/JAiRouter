@@ -24,7 +24,7 @@ public class AdapterDefinitionProperties {
         this.adapterDefinitions = adapterDefinitions;
     }
 
-    public static class AdapterDefinition {
+    public static final class AdapterDefinition {
         private String type = "openai-compatible";
         private String parent;  // 继承模式下的父adapter名称
         private CapabilitiesConfig capabilities = new CapabilitiesConfig();
@@ -72,7 +72,7 @@ public class AdapterDefinitionProperties {
         }
     }
 
-    public static class CapabilitiesConfig {
+    public static final class CapabilitiesConfig {
         private boolean chat;
         private boolean embedding;
         private boolean rerank;
@@ -147,7 +147,7 @@ public class AdapterDefinitionProperties {
         }
     }
 
-    public static class AuthConfig {
+    public static final class AuthConfig {
         private String headerName = "Authorization";
         private String headerPrefix = "Bearer ";
 

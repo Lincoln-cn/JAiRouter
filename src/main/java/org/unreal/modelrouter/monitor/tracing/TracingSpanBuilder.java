@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0.0
  */
 @Slf4j
-public class TracingSpanBuilder {
+public final class TracingSpanBuilder {
     
     private final Tracer tracer;
     private final String operationName;

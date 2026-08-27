@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceConfigDTO {
+public final class ServiceConfigDTO {
 
     private Long id;
     private String configKey;

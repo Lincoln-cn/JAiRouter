@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 @ConditionalOnProperty(name = "jairouter.security.cache.redis.enabled", havingValue = "false", matchIfMissing = true)
-public class InMemoryApiKeyCache implements ApiKeyCache {
+public final class InMemoryApiKeyCache implements ApiKeyCache {
     
     private static final Duration DEFAULT_TTL = Duration.ofHours(1); // 默认1小时过期
     

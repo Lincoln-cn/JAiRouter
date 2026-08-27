@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author JAiRouter Team
  * @since v2.7.10
  */
-public class ClientIpRateLimiterCache {
+public final class ClientIpRateLimiterCache {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientIpRateLimiterCache.class);
 
@@ -149,7 +149,7 @@ public class ClientIpRateLimiterCache {
     /**
      * 缓存统计信息
      */
-    public static class CacheStats {
+    public static final class CacheStats {
         private final long hitCount;
         private final long missCount;
         private final long evictionCount;

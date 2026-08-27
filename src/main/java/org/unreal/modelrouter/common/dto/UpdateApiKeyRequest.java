@@ -21,7 +21,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateApiKeyRequest {
+public final class UpdateApiKeyRequest {
 
     private String description;
     private List<String> permissions;

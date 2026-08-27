@@ -13,7 +13,7 @@ import java.time.Duration;
 @Data
 @Component
 @ConfigurationProperties(prefix = "jairouter.security.jwt")
-public class JwtRedisProperties {
+public final class JwtRedisProperties {
     
     /**
      * JWT持久化配置
@@ -26,7 +26,7 @@ public class JwtRedisProperties {
     private Blacklist blacklist = new Blacklist();
     
     @Data
-    public static class Persistence {
+    public static final class Persistence {
         /**
          * 是否启用持久化
          */
@@ -53,7 +53,7 @@ public class JwtRedisProperties {
         private Cleanup cleanup = new Cleanup();
         
         @Data
-        public static class Redis {
+        public static final class Redis {
             /**
              * 是否启用Redis
              */
@@ -110,7 +110,7 @@ public class JwtRedisProperties {
             private Pool pool = new Pool();
             
             @Data
-            public static class Pool {
+            public static final class Pool {
                 /**
                  * 最大活跃连接数
                  */
@@ -134,7 +134,7 @@ public class JwtRedisProperties {
         }
         
         @Data
-        public static class Cleanup {
+        public static final class Cleanup {
             /**
              * 是否启用清理
              */
@@ -158,7 +158,7 @@ public class JwtRedisProperties {
     }
     
     @Data
-    public static class Blacklist {
+    public static final class Blacklist {
         /**
          * 持久化配置
          */
@@ -170,7 +170,7 @@ public class JwtRedisProperties {
         private Redis redis = new Redis();
         
         @Data
-        public static class Persistence {
+        public static final class Persistence {
             /**
              * 是否启用持久化
              */
@@ -198,7 +198,7 @@ public class JwtRedisProperties {
         }
         
         @Data
-        public static class Redis {
+        public static final class Redis {
             /**
              * 是否启用Redis
              */
@@ -250,7 +250,7 @@ public class JwtRedisProperties {
             private Pool pool = new Pool();
             
             @Data
-            public static class Pool {
+            public static final class Pool {
                 /**
                  * 最大活跃连接数
                  */

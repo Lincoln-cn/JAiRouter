@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Data
 @Builder
-public class VersionContext {
+public final class VersionContext {
 
     /**
      * 配置键

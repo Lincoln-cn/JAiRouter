@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
  * 安全错误响应DTO
  * 提供统一的安全异常响应格式
  */
-public class SecurityErrorResponse {
+public final class SecurityErrorResponse {
 
     /**
      * 错误发生时间
@@ -163,7 +163,7 @@ public class SecurityErrorResponse {
         return "SecurityErrorResponse(timestamp=" + this.getTimestamp() + ", status=" + this.getStatus() + ", error=" + this.getError() + ", message=" + this.getMessage() + ", errorCode=" + this.getErrorCode() + ", path=" + this.getPath() + ", requestId=" + this.getRequestId() + ")";
     }
 
-    public static class SecurityErrorResponseBuilder {
+    public static final class SecurityErrorResponseBuilder {
         private LocalDateTime timestamp;
         private int status;
         private String error;

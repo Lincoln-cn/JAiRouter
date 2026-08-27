@@ -10,7 +10,7 @@ import java.util.List;
  * 安全审计查询响应DTO
  */
 @Schema(description = "安全审计查询响应")
-public class SecurityAuditQueryResponse {
+public final class SecurityAuditQueryResponse {
 
     @Schema(description = "审计事件列表")
     private List<SecurityAuditEvent> events;
@@ -121,7 +121,7 @@ public class SecurityAuditQueryResponse {
         return "SecurityAuditQueryResponse(events=" + this.getEvents() + ", page=" + this.getPage() + ", size=" + this.getSize() + ", totalElements=" + this.getTotalElements() + ", startTime=" + this.getStartTime() + ", endTime=" + this.getEndTime() + ", generatedAt=" + this.getGeneratedAt() + ")";
     }
 
-    public static class SecurityAuditQueryResponseBuilder {
+    public static final class SecurityAuditQueryResponseBuilder {
         private List<SecurityAuditEvent> events;
         private int page;
         private int size;

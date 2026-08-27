@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InstanceCircuitBreakerDTO {
+public final class InstanceCircuitBreakerDTO {
 
     private Long id;
     private Long instanceId;

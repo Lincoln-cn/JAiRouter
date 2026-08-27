@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExceptionQueryRequest {
+public final class ExceptionQueryRequest {
 
     /**
      * 开始时间

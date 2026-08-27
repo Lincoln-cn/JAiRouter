@@ -12,7 +12,7 @@ import java.util.Map;
  *
  * @since v2.8.0
  */
-public class CircuitBreakerSnapshot implements Serializable {
+public final class CircuitBreakerSnapshot implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

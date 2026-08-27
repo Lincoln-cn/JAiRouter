@@ -33,7 +33,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @ConfigurationProperties(prefix = "jairouter.persistence")
-public class StatePersistenceProperties {
+public final class StatePersistenceProperties {
 
     /**
      * Redis 存储配置
@@ -105,7 +105,7 @@ public class StatePersistenceProperties {
     /**
      * Redis 存储配置
      */
-    public static class RedisConfig {
+    public static final class RedisConfig {
         /**
          * 是否启用 Redis 存储
          */
@@ -203,7 +203,7 @@ public class StatePersistenceProperties {
     /**
      * H2 数据库配置
      */
-    public static class H2Config {
+    public static final class H2Config {
         /**
          * 是否启用 H2 存储 (默认启用)
          */
@@ -249,7 +249,7 @@ public class StatePersistenceProperties {
     /**
      * 文件存储配置
      */
-    public static class FileConfig {
+    public static final class FileConfig {
         /**
          * 是否启用文件存储 (默认启用作为兜底)
          */
@@ -295,7 +295,7 @@ public class StatePersistenceProperties {
     /**
      * 状态恢复配置
      */
-    public static class RecoveryConfig {
+    public static final class RecoveryConfig {
         /**
          * 是否启用状态恢复
          */
@@ -354,7 +354,7 @@ public class StatePersistenceProperties {
     /**
      * 退坡策略配置
      */
-    public static class FallbackConfig {
+    public static final class FallbackConfig {
         /**
          * 是否自动检测存储层可用性
          */

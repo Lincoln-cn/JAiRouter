@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.common.dto;
 
-public class ImageGenerateDTO {
+public final class ImageGenerateDTO {
 
 
     public record Request(

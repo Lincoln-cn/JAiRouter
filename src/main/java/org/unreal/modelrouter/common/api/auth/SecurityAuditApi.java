@@ -45,7 +45,7 @@ public interface SecurityAuditApi {
     /**
      * 安全事件。
      */
-    class SecurityEvent {
+    final class SecurityEvent {
         private String eventId;
         private String eventType;
         private String accountId;
@@ -144,7 +144,7 @@ public interface SecurityAuditApi {
     /**
      * 安全事件查询条件。
      */
-    class SecurityEventQuery {
+    final class SecurityEventQuery {
         private String eventType;
         private String accountId;
         private String riskLevel;

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 /**
  * 清理统计信息类
  */
-public class CleanupStats {
+public final class CleanupStats {
     
     private LocalDateTime lastCleanupTime;
     private long totalCleanupRuns;

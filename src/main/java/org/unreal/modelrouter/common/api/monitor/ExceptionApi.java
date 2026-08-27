@@ -54,7 +54,7 @@ public interface ExceptionApi {
     /**
      * 异常快照。
      */
-    class ExceptionSnapshot {
+    final class ExceptionSnapshot {
         private String eventId;
         private String componentType;
         private String componentId;
@@ -144,7 +144,7 @@ public interface ExceptionApi {
     /**
      * 异常查询条件。
      */
-    class ExceptionQuery {
+    final class ExceptionQuery {
         private String componentType;
         private String exceptionType;
         private String severity;

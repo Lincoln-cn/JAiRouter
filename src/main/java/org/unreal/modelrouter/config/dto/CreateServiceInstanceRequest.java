@@ -16,7 +16,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateServiceInstanceRequest {
+public final class CreateServiceInstanceRequest {
 
     private String name;
     private String baseUrl;

@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * 服务配置构建器
  * 负责从配置Map构建运行时配置对象
  */
-public class ServiceConfigBuilder {
+public final class ServiceConfigBuilder {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceConfigBuilder.class);
 

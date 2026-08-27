@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 @ConfigurationProperties(prefix = "model")
-public class ModelRouterProperties {
+public final class ModelRouterProperties {
     private LoadBalanceConfig loadBalance = new LoadBalanceConfig();
     private String adapter = "normal";
     private Map<String, ServiceConfig> services;
@@ -61,7 +61,7 @@ public class ModelRouterProperties {
     public void setFallback(final FallbackConfig fallback) {
         this.fallback = fallback;
     }
-    public static class ServiceConfig {
+    public static final class ServiceConfig {
         private LoadBalanceConfig loadBalance;
         private List<ModelInstance> instances;
         private String adapter;
@@ -128,7 +128,7 @@ public class ModelRouterProperties {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class LoadBalanceConfig {
+    public static final class LoadBalanceConfig {
         private String type = "random";
         private String hashAlgorithm = "md5"; // 注意这里要用驼峰命名
         private Integer virtualNodes = 150; // 一致性哈希虚拟节点数
@@ -159,7 +159,7 @@ public class ModelRouterProperties {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class ModelInstance {
+    public static final class ModelInstance {
         private String id; // 实例唯一标识
         private String name;
         private String baseUrl; // 注意驼峰命名
@@ -295,7 +295,7 @@ public class ModelRouterProperties {
 
     // 限流配置类
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class RateLimitConfig {
+    public static final class RateLimitConfig {
         private Boolean enabled = false;     // 是否启用限流
         private String algorithm = "token-bucket"; // 算法类型: token-bucket, leaky-bucket, sliding-window等
         private Long capacity = 100L;        // 容量
@@ -376,7 +376,7 @@ public class ModelRouterProperties {
 
     // 熔断器配置类
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class CircuitBreakerConfig {
+    public static final class CircuitBreakerConfig {
         private Boolean enabled = false;         // 是否启用熔断器
         private Integer failureThreshold = 5;   // 失败阈值
         private Long timeout = 60000L;          // 超时时间(毫秒)
@@ -417,7 +417,7 @@ public class ModelRouterProperties {
     
     // 降级配置类
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class FallbackConfig {
+    public static final class FallbackConfig {
         private Boolean enabled = false;           // 是否启用降级
         private String strategy = "default";       // 降级策略: default, cache等
         private Integer cacheSize = 100;           // 缓存大小（仅在strategy为cache时有效）
@@ -458,7 +458,7 @@ public class ModelRouterProperties {
 
     // v2.9.0: 会话粘性配置类
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class StickyConfig {
+    public static final class StickyConfig {
         private Boolean enabled = true;   // 是否启用粘性路由(默认开,实例数>1且健康时生效)
         private String affinityKeyScope = "tenant_model"; // 粘性粒度: tenant_model / tenant
 

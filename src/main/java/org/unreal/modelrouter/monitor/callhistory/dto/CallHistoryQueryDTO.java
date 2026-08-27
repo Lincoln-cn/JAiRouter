@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CallHistoryQueryDTO {
+public final class CallHistoryQueryDTO {
 
     /**
      * 开始时间 (ISO-8601)

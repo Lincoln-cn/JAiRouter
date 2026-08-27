@@ -16,7 +16,7 @@ import java.util.List;
  */
 @Data
 @ConfigurationProperties(prefix = "jairouter.monitoring.error-tracking")
-public class ErrorTrackerProperties {
+public final class ErrorTrackerProperties {
     
     /**
      * 是否启用错误追踪
@@ -52,7 +52,7 @@ public class ErrorTrackerProperties {
      * 堆栈脱敏配置
      */
     @Data
-    public static class SanitizationConfig {
+    public static final class SanitizationConfig {
         
         /**
          * 是否启用堆栈脱敏
@@ -100,7 +100,7 @@ public class ErrorTrackerProperties {
      * 指标配置
      */
     @Data
-    public static class MetricsConfig {
+    public static final class MetricsConfig {
         
         /**
          * 是否启用错误指标

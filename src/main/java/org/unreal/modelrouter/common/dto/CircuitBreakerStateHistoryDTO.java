@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CircuitBreakerStateHistoryDTO {
+public final class CircuitBreakerStateHistoryDTO {
 
     /**
      * 记录 ID

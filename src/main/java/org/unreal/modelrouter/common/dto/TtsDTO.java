@@ -2,7 +2,7 @@ package org.unreal.modelrouter.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class TtsDTO {
+public final class TtsDTO {
 
     public record Request(
             String model,

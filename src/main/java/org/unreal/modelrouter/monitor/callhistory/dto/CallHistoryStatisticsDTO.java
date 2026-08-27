@@ -17,7 +17,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CallHistoryStatisticsDTO {
+public final class CallHistoryStatisticsDTO {
 
     /**
      * 查询开始时间
@@ -104,7 +104,7 @@ public class CallHistoryStatisticsDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ModelStats {
+    public static final class ModelStats {
         private String modelName;
         private Long requestCount;
         private Long totalTokens;
@@ -117,7 +117,7 @@ public class CallHistoryStatisticsDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ServiceTypeStats {
+    public static final class ServiceTypeStats {
         private String serviceType;
         private Long requestCount;
         private Long totalTokens;
@@ -128,7 +128,7 @@ public class CallHistoryStatisticsDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class DailyStats {
+    public static final class DailyStats {
         private String date;
         private Long requestCount;
         private Long totalTokens;
@@ -138,7 +138,7 @@ public class CallHistoryStatisticsDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class HourlyStats {
+    public static final class HourlyStats {
         private Integer hour;
         private Long requestCount;
         private String label;
@@ -148,7 +148,7 @@ public class CallHistoryStatisticsDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class StatusCodeStats {
+    public static final class StatusCodeStats {
         private Integer statusCode;
         private Long count;
     }
@@ -157,7 +157,7 @@ public class CallHistoryStatisticsDTO {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ErrorCodeStats {
+    public static final class ErrorCodeStats {
         private String errorCode;
         private Long count;
     }

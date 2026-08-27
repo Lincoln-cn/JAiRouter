@@ -12,7 +12,7 @@ import org.unreal.modelrouter.router.model.ModelServiceRegistry;
  * @since v2.28.0
  */
 @Component
-public class AdapterContext {
+public final class AdapterContext {
 
     private final ModelServiceRegistry registry;
     private final ObjectMapper objectMapper;

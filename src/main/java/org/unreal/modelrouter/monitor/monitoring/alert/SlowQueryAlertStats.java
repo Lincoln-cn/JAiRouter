@@ -15,7 +15,7 @@ import java.util.Set;
  */
 @Data
 @Builder
-public class SlowQueryAlertStats {
+public final class SlowQueryAlertStats {
     
     /**
      * 总共触发的告警次数

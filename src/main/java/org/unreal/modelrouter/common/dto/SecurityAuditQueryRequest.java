@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
  * 安全审计查询请求DTO
  */
 @Schema(description = "安全审计查询请求")
-public class SecurityAuditQueryRequest {
+public final class SecurityAuditQueryRequest {
 
     @Schema(description = "开始时间", example = "2024-01-01T00:00:00")
     private LocalDateTime startTime;

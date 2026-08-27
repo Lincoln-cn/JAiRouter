@@ -5,7 +5,7 @@ import org.springframework.http.codec.multipart.FilePart;
 
 import java.util.List;
 
-public class SttDTO {
+public final class SttDTO {
 
     public record Request(
             String model,

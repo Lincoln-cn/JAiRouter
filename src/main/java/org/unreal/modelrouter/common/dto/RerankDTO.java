@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Rerank DTO - 核心字段 + 扩展选项
  */
-public class RerankDTO {
+public final class RerankDTO {
 
     /**
      * Rerank 请求
@@ -45,7 +45,7 @@ public class RerankDTO {
      */
     @Data
     @Builder
-    public static class Options {
+    public static final class Options {
         @JsonProperty("request_id")
         private String requestId;
         private Integer priority;

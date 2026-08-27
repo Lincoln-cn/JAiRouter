@@ -23,7 +23,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiKeyCreateRequest {
+public final class ApiKeyCreateRequest {
 
     /**
      * API Key ID（可选，如果不提供则自动生成）

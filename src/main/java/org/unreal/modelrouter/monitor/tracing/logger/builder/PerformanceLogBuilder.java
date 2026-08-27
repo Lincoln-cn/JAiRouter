@@ -35,7 +35,7 @@ import java.util.Map;
  * @since v2.16.2 (重构于 v2.16.4)
  */
 @Component
-public class PerformanceLogBuilder {
+public final class PerformanceLogBuilder {
 
     /**
      * 构建性能日志字段

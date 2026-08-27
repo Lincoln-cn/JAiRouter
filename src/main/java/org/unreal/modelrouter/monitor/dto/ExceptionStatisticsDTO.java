@@ -21,7 +21,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExceptionStatisticsDTO {
+public final class ExceptionStatisticsDTO {
 
     /**
      * 统计开始时间
@@ -97,7 +97,7 @@ public class ExceptionStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ClientIpStats {
+    public static final class ClientIpStats {
         private String ip;
         private Long count;
     }
@@ -108,7 +108,7 @@ public class ExceptionStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class HourlyStats {
+    public static final class HourlyStats {
         private String hour;
         private Long count;
     }

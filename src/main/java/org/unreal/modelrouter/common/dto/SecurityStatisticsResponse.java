@@ -9,7 +9,7 @@ import java.util.Map;
  * 安全统计响应DTO
  */
 @Schema(description = "安全统计响应")
-public class SecurityStatisticsResponse {
+public final class SecurityStatisticsResponse {
 
     @Schema(description = "统计开始时间")
     private LocalDateTime startTime;
@@ -82,7 +82,7 @@ public class SecurityStatisticsResponse {
         return "SecurityStatisticsResponse(startTime=" + this.getStartTime() + ", endTime=" + this.getEndTime() + ", auditStatistics=" + this.getAuditStatistics() + ", alertStatistics=" + this.getAlertStatistics() + ", generatedAt=" + this.getGeneratedAt() + ")";
     }
 
-    public static class SecurityStatisticsResponseBuilder {
+    public static final class SecurityStatisticsResponseBuilder {
         private LocalDateTime startTime;
         private LocalDateTime endTime;
         private Map<String, Object> auditStatistics;

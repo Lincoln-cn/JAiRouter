@@ -35,7 +35,7 @@ import org.unreal.modelrouter.monitor.tracing.logger.dto.SecurityEventFields;
  * @since v2.16.1 (重构于 v2.16.4)
  */
 @Component
-public class SecurityEventLogBuilder {
+public final class SecurityEventLogBuilder {
 
     /**
      * 构建安全事件日志字段

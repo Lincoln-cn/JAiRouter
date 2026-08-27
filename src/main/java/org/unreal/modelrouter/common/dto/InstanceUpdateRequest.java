@@ -16,7 +16,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "实例更新请求")
-public class InstanceUpdateRequest {
+public final class InstanceUpdateRequest {
 
     @Schema(description = "实例名称", example = "qwen3:4b", required = true)
     private String name;

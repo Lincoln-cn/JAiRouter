@@ -109,7 +109,7 @@ public interface ConfigRepositoryApi {
     /**
      * 获取配置版本信息。
      */
-    class ConfigVersionInfo {
+    final class ConfigVersionInfo {
         private int version;
         private String description;
         private long createTime;

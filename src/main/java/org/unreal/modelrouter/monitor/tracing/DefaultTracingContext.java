@@ -30,7 +30,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Slf4j
-public class DefaultTracingContext implements TracingContext {
+public final class DefaultTracingContext implements TracingContext {
     
     private final Tracer tracer;
     private final W3CTraceContextPropagator propagator;

@@ -9,7 +9,7 @@ import java.util.Objects;
  * 指标注册请求模型
  * 包含注册指标所需的所有信息
  */
-public class MetricRegistrationRequest {
+public final class MetricRegistrationRequest {
     
     private final String name;
     private final String description;
@@ -95,7 +95,7 @@ public class MetricRegistrationRequest {
                + '}';
     }
     
-    public static class Builder {
+    public static final class Builder {
         private final String name;
         private final Meter.Type type;
         private String description = "";

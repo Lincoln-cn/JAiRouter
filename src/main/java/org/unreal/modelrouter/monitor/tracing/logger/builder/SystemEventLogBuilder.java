@@ -35,7 +35,7 @@ import java.util.Map;
  * @since v2.16.6
  */
 @Component
-public class SystemEventLogBuilder {
+public final class SystemEventLogBuilder {
 
     /**
      * 构建系统事件日志字段

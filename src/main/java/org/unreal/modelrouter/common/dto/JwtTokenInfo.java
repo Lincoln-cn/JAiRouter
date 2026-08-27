@@ -10,7 +10,7 @@ import java.util.Map;
  * 合并了TokenResponse、UserTokenInfo和JwtTokenInfo的功能
  * 用于持久化存储JWT令牌的详细信息和API响应
  */
-public class JwtTokenInfo {
+public final class JwtTokenInfo {
 
     // 基础令牌信息 (来自TokenResponse)
     private String token;           // 令牌值

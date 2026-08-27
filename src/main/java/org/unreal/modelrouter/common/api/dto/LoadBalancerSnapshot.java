@@ -12,7 +12,7 @@ import java.util.Map;
  *
  * @since v2.8.0
  */
-public class LoadBalancerSnapshot implements Serializable {
+public final class LoadBalancerSnapshot implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

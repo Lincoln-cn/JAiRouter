@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 1.0.0
  */
 @Slf4j
-public class RateLimiterTracingWrapper implements RateLimiter {
+public final class RateLimiterTracingWrapper implements RateLimiter {
     
     private final RateLimiter delegate;
     private final StructuredLogger structuredLogger;

@@ -14,7 +14,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BlacklistStatsDTO {
+public final class BlacklistStatsDTO {
 
     private Long totalActive;
     private Map<String, Long> typeCounts;

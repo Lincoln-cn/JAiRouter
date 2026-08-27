@@ -14,7 +14,7 @@ import java.util.List;
 @Data
 @Builder
 @Schema(description = "扩展审计查询响应")
-public class ExtendedAuditQueryResponse {
+public final class ExtendedAuditQueryResponse {
     
     @Schema(description = "审计事件列表")
     private List<AuditEvent> events;

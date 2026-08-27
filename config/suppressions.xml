@@ -37,35 +37,35 @@
     <!-- ================================================================== -->
     <!-- DesignForExtension                                                 -->
     <!--                                                                     -->
-    <!-- 策略: 所有Spring管理类(@Service/@Component/@Configuration/@        -->
-    <!-- Repository)需要CGLIB代理,不能标记为final,抑制DFE。                -->
-    <!-- 已标记final的POJO/Model类不再需要抑制。                           -->
+    <!-- 策略: 仅抑制Spring管理类(CGLIB代理需非final)。                     -->
+    <!-- 数据/POJO/DTO/Builder等已标记final,不再需要抑制。                  -->
     <!-- ================================================================== -->
 
-    <!-- Spring @Configuration / @ConfigurationProperties -->
+    <!-- Spring @Configuration: CGLIB代理拦截@Bean方法 -->
     <suppress files=".*Configuration\.java" checks="DesignForExtension"/>
     <suppress files=".*Config\.java" checks="DesignForExtension"/>
-    <suppress files=".*Properties\.java" checks="DesignForExtension"/>
+    <!-- 仅3个@Configuration+@ConfigurationProperties类需要CGLIB -->
+    <suppress files=".*AdapterDefinitionProperties\.java" checks="DesignForExtension"/>
+    <suppress files=".*PoolDefinitionProperties\.java" checks="DesignForExtension"/>
+    <suppress files=".*RuleDefinitionProperties\.java" checks="DesignForExtension"/>
+    <!-- SecurityProperties: 测试子类TestSecurityProperties继承,不能标final -->
+    <suppress files=".*SecurityProperties\.java" checks="DesignForExtension"/>
 
-    <!-- Spring @Controller / @RestController -->
+    <!-- Spring @Controller / @RestController: AOP代理 -->
     <suppress files=".*Controller\.java" checks="DesignForExtension"/>
 
-    <!-- Spring @Service (不含ServiceImpl后缀的单独列出) -->
+    <!-- Spring @Service / @ServiceImpl: AOP代理 -->
     <suppress files=".*Service\.java" checks="DesignForExtension"/>
-    <!-- Spring @Service Impl类: CGLIB代理不能用final -->
     <suppress files=".*ServiceImpl\.java" checks="DesignForExtension"/>
 
-    <!-- Spring @Component: 常见后缀分组 -->
+    <!-- Spring @Component: AOP/事务代理 -->
     <suppress files=".*Manager\.java" checks="DesignForExtension"/>
     <suppress files=".*Handler\.java" checks="DesignForExtension"/>
     <suppress files=".*Validator\.java" checks="DesignForExtension"/>
-    <suppress files=".*Cache\.java" checks="DesignForExtension"/>
     <suppress files=".*LoadBalancer\.java" checks="DesignForExtension"/>
     <suppress files=".*Strategy\.java" checks="DesignForExtension"/>
     <suppress files=".*Filter\.java" checks="DesignForExtension"/>
     <suppress files=".*Factory\.java" checks="DesignForExtension"/>
-    <suppress files=".*Context\.java" checks="DesignForExtension"/>
-    <suppress files=".*Wrapper\.java" checks="DesignForExtension"/>
     <suppress files=".*HealthChecker\.java" checks="DesignForExtension"/>
     <suppress files=".*Adapter\.java" checks="DesignForExtension"/>
     <suppress files=".*CircuitBreaker\.java" checks="DesignForExtension"/>
@@ -88,26 +88,14 @@
     <suppress files=".*Processor\.java" checks="DesignForExtension"/>
     <suppress files=".*Impl\.java" checks="DesignForExtension"/>
     <suppress files=".*Updater\.java" checks="DesignForExtension"/>
-
-    <!-- Spring @Component: Metrics/Tracing/Snapshot -->
     <suppress files=".*[A-Z][a-zA-Z]*Metrics\.java" checks="DesignForExtension"/>
-    <suppress files=".*[A-Z][a-zA-Z]*Snapshot\.java" checks="DesignForExtension"/>
-    <suppress files=".*Info\.java" checks="DesignForExtension"/>
 
-    <!-- Spring @Component: API接口(含default方法) -->
-    <suppress files=".*Api\.java" checks="DesignForExtension"/>
-
-    <!-- DTO/Event/Exception/Result等值对象(部分有内部类) -->
-    <suppress files=".*[A-Z][a-zA-Z]*Response\.java" checks="DesignForExtension"/>
-    <suppress files=".*[A-Z][a-zA-Z]*Request\.java" checks="DesignForExtension"/>
-    <suppress files=".*[A-Z][a-zA-Z]*DTO\.java" checks="DesignForExtension"/>
-    <suppress files=".*[A-Z][a-zA-Z]*Stats\.java" checks="DesignForExtension"/>
+    <!-- Event/Exception/Result/Record: 值对象,部分有内部类未标final -->
     <suppress files=".*Event\.java" checks="DesignForExtension"/>
     <suppress files=".*Exception\.java" checks="DesignForExtension"/>
     <suppress files=".*Result\.java" checks="DesignForExtension"/>
     <suppress files=".*Record\.java" checks="DesignForExtension"/>
-    <suppress files=".*Builder\.java" checks="DesignForExtension"/>
-    <suppress files=".*Constants\.java" checks="DesignForExtension"/>
+
     <!-- 已为final但内部类触发DFE -->
     <suppress files=".*ByteBufferPool\.java" checks="DesignForExtension"/>
     <suppress files=".*PersistenceIntegrationStatus\.java" checks="DesignForExtension"/>

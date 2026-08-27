@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CircuitBreakerStatusDTO {
+public final class CircuitBreakerStatusDTO {
 
     /**
      * 实例 ID（UUID 格式）

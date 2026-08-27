@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
  */
 @Getter
 @RequiredArgsConstructor
-public class CircuitStateContext {
+public final class CircuitStateContext {
 
     private static final Logger logger = LoggerFactory.getLogger(CircuitStateContext.class);
 
