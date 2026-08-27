@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Span缓存
  */
 @Data
-public class SpanCache {
+public final class SpanCache {
     private final String traceId;
     private final Map<String, Object> spans = new ConcurrentHashMap<>();
     private final Instant createdAt = Instant.now();

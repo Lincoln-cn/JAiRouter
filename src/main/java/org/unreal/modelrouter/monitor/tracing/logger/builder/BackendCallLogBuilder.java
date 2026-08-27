@@ -36,7 +36,7 @@ import org.unreal.modelrouter.monitor.tracing.logger.dto.BackendCallFields;
  * @since v2.16.6
  */
 @Component
-public class BackendCallLogBuilder {
+public final class BackendCallLogBuilder {
 
     /**
      * 构建后端调用日志字段（简化版）

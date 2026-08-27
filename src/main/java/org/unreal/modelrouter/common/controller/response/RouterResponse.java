@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * @param <T> 响应数据类型
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RouterResponse<T> {
+public final class RouterResponse<T> {
 
     private boolean success;
     private String message;

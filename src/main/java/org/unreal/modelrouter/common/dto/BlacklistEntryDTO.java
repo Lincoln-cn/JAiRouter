@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BlacklistEntryDTO {
+public final class BlacklistEntryDTO {
 
     private Long id;
     private String blacklistType;

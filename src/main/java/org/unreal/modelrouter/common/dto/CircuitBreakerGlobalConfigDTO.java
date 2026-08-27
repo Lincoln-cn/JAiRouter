@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CircuitBreakerGlobalConfigDTO {
+public final class CircuitBreakerGlobalConfigDTO {
 
     /**
      * 启用自适应阈值调整

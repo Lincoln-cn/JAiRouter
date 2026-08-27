@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AddBlacklistRequest {
+public final class AddBlacklistRequest {
 
     @NotNull(message = "黑名单类型不能为空")
     private String blacklistType;

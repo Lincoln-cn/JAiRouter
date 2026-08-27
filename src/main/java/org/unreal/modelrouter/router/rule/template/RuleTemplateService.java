@@ -85,10 +85,18 @@ public class RuleTemplateService {
     private RuleDefinition.Action copyAction(final RuleDefinition.Action action) {
         String target = null;
         switch (action.getType()) {
-            case TARGET_MODEL -> target = action.getModelName();
-            case TARGET_INSTANCE -> target = action.getInstanceId();
-            case TARGET_ADAPTER -> target = action.getAdapterName();
-            case LB_STRATEGY -> target = action.getLbStrategy();
+            case TARGET_MODEL -> {
+                target = action.getModelName();
+            }
+            case TARGET_INSTANCE -> {
+                target = action.getInstanceId();
+            }
+            case TARGET_ADAPTER -> {
+                target = action.getAdapterName();
+            }
+            case LB_STRATEGY -> {
+                target = action.getLbStrategy();
+            }
             case RATE_LIMIT -> { /* 限流参数经下方 setter 复制 */ }
         }
         RuleDefinition.Action copy = new RuleDefinition.Action(action.getType(), target);

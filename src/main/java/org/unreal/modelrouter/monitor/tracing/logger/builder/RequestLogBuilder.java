@@ -48,7 +48,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RequestLogBuilder {
+public final class RequestLogBuilder {
 
     private final TracingConfiguration tracingConfiguration;
     private final TracingSanitizationService tracingSanitizationService;

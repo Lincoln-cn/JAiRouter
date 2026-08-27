@@ -17,7 +17,7 @@ import java.util.Set;
  */
 @Data
 @ConfigurationProperties(prefix = "jairouter.monitoring.slow-query-alert")
-public class SlowQueryAlertProperties {
+public final class SlowQueryAlertProperties {
     
     /**
      * 是否启用慢查询告警
@@ -75,7 +75,7 @@ public class SlowQueryAlertProperties {
      * 全局配置
      */
     @Data
-    public static class GlobalConfig {
+    public static final class GlobalConfig {
         private boolean enabled = true;
         private long minIntervalMs = 5 * 60 * 1000L; // 5分钟
         private long minOccurrences = 3L;
@@ -88,7 +88,7 @@ public class SlowQueryAlertProperties {
      * 操作特定配置
      */
     @Data
-    public static class OperationConfig {
+    public static final class OperationConfig {
         private Boolean enabled;
         private Long minIntervalMs;
         private Long minOccurrences;
@@ -101,7 +101,7 @@ public class SlowQueryAlertProperties {
      * 通知配置
      */
     @Data
-    public static class NotificationConfig {
+    public static final class NotificationConfig {
         private boolean enablePrometheusMetrics = true;
         private boolean enableStructuredLogging = true;
         private boolean enableWebhook = false;

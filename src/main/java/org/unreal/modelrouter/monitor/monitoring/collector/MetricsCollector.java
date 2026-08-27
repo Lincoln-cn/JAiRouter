@@ -141,4 +141,17 @@ public interface MetricsCollector {
      */
     void recordRateLimitStatus(String service, String scope, String algorithm,
                                long remainingCapacity, double usageRatio);
+
+    /**
+     * v2.9.0: 记录 KV 缓存命中/未命中 token 数量
+     *
+     * @param adapter 适配器类型
+     * @param instance 实例名称
+     * @param cacheHitTokens 缓存命中 token 数
+     * @param cacheMissTokens 缓存未命中 token 数
+     */
+    default void recordCacheTokenUsage(String adapter, String instance,
+                                       long cacheHitTokens, long cacheMissTokens) {
+        // 默认空实现(向后兼容)
+    }
 }

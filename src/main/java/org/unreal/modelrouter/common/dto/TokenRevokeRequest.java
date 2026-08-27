@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.common.dto;
 
-public class TokenRevokeRequest {
+public final class TokenRevokeRequest {
     private String token;
 
     private String userId; // 可选，用于权限检查

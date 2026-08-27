@@ -53,7 +53,7 @@ public interface JwtServiceApi {
     /**
      * JWT 验证结果。
      */
-    class JwtValidationResult {
+    final class JwtValidationResult {
         private boolean valid;
         private String error;
         private JwtAccountInfo accountInfo;
@@ -104,7 +104,7 @@ public interface JwtServiceApi {
     /**
      * JWT 账户信息。
      */
-    class JwtAccountInfo {
+    final class JwtAccountInfo {
         private String accountId;
         private String username;
         private String role;

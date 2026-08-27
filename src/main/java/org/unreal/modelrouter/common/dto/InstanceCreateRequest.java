@@ -16,7 +16,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "实例创建请求")
-public class InstanceCreateRequest {
+public final class InstanceCreateRequest {
 
     @Schema(description = "实例名称", example = "qwen3:4b", required = true)
     private String name;

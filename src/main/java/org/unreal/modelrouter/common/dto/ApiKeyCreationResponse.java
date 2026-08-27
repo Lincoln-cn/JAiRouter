@@ -22,7 +22,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ApiKeyCreationResponse {
+public final class ApiKeyCreationResponse {
 
     private String keyId;
 

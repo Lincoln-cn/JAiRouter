@@ -7,7 +7,7 @@ import java.util.List;
  * 路由规则定义
  * 条件(AND 组合)命中后执行动作(重写模型名/锁定实例/覆盖适配器/覆盖LB策略)
  */
-public class RuleDefinition {
+public final class RuleDefinition {
 
     /** 条件类型 */
     public enum ConditionType {
@@ -43,7 +43,7 @@ public class RuleDefinition {
     }
 
     /** 条件 */
-    public static class Condition {
+    public static final class Condition {
         private ConditionType type;
         private String field;       // 仅 HEADER 用(header 名)
         private Operator operator;
@@ -101,7 +101,7 @@ public class RuleDefinition {
     }
 
     /** 动作 */
-    public static class Action {
+    public static final class Action {
         private ActionType type;
         private String modelName;       // TARGET_MODEL
         private String instanceId;      // TARGET_INSTANCE
@@ -119,10 +119,18 @@ public class RuleDefinition {
         public Action(final ActionType type, final String target) {
             this.type = type;
             switch (type) {
-                case TARGET_MODEL -> this.modelName = target;
-                case TARGET_INSTANCE -> this.instanceId = target;
-                case TARGET_ADAPTER -> this.adapterName = target;
-                case LB_STRATEGY -> this.lbStrategy = target;
+                case TARGET_MODEL -> {
+                    this.modelName = target;
+                }
+                case TARGET_INSTANCE -> {
+                    this.instanceId = target;
+                }
+                case TARGET_ADAPTER -> {
+                    this.adapterName = target;
+                }
+                case LB_STRATEGY -> {
+                    this.lbStrategy = target;
+                }
                 case RATE_LIMIT -> { /* 限流参数经 setter 注入 */ }
             }
         }

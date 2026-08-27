@@ -18,7 +18,7 @@ import org.unreal.modelrouter.common.dto.CircuitBreakerConfig;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class UpdateServiceConfigRequest {
+public final class UpdateServiceConfigRequest {
 
     /**
      * 适配器类型

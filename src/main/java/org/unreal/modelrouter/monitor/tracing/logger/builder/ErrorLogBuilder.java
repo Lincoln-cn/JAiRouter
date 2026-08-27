@@ -42,7 +42,7 @@ import java.util.Map;
  */
 @Component
 @RequiredArgsConstructor
-public class ErrorLogBuilder {
+public final class ErrorLogBuilder {
 
     private final TracingConfiguration tracingConfiguration;
 

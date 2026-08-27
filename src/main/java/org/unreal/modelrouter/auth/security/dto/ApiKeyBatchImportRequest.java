@@ -16,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiKeyBatchImportRequest {
+public final class ApiKeyBatchImportRequest {
 
     /**
      * 要导入的 API Key 列表
@@ -51,7 +51,7 @@ public class ApiKeyBatchImportRequest {
     @NoArgsConstructor
     @AllArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class ApiKeyImportItem {
+    public static final class ApiKeyImportItem {
         /**
          * API Key ID（可选，不提供则自动生成）
          */

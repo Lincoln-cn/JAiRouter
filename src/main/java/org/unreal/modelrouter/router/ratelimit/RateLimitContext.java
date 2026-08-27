@@ -3,7 +3,7 @@ package org.unreal.modelrouter.router.ratelimit;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 
 
-public class RateLimitContext {
+public final class RateLimitContext {
     private final ModelServiceRegistry.ServiceType serviceType;
     private final String modelName;
     private final String clientIp;

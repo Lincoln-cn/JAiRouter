@@ -24,7 +24,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ApiKeyUpdateRequest {
+public final class ApiKeyUpdateRequest {
 
     /**
      * API Key 描述信息

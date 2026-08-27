@@ -54,7 +54,7 @@ public interface ServiceRegistryApi {
     /**
      * 实例数量统计。
      */
-    class InstanceCount {
+    final class InstanceCount {
         private int total;
         private int healthy;
         private int unhealthy;

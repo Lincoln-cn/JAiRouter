@@ -11,7 +11,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @Data
 @ConfigurationProperties(prefix = "jairouter.call-history")
-public class CallHistoryProperties {
+public final class CallHistoryProperties {
 
     /**
      * 是否启用调用历史记录

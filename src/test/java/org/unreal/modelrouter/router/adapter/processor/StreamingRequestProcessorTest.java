@@ -46,6 +46,8 @@ class StreamingRequestProcessorTest {
             AtomicLong promptTokens = new AtomicLong(0);
             AtomicLong completionTokens = new AtomicLong(0);
             AtomicLong totalTokens = new AtomicLong(0);
+            AtomicLong cacheHitTokens = new AtomicLong(0);
+            AtomicLong cacheMissTokens = new AtomicLong(0);
             StringBuilder contentBuilder = new StringBuilder();
             AtomicReference<String> modelRef = new AtomicReference<>("unknown");
 
@@ -53,10 +55,12 @@ class StreamingRequestProcessorTest {
 
             var method = StreamingRequestProcessor.class.getDeclaredMethod("extractUsageAndContent",
                     String.class, AtomicLong.class, AtomicLong.class, AtomicLong.class,
+                    AtomicLong.class, AtomicLong.class,
                     StringBuilder.class, AtomicReference.class);
             method.setAccessible(true);
 
-            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens, contentBuilder, modelRef);
+            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens,
+                    cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
 
             assertEquals(10, promptTokens.get());
             assertEquals(20, completionTokens.get());
@@ -70,6 +74,8 @@ class StreamingRequestProcessorTest {
             AtomicLong promptTokens = new AtomicLong(0);
             AtomicLong completionTokens = new AtomicLong(0);
             AtomicLong totalTokens = new AtomicLong(0);
+            AtomicLong cacheHitTokens = new AtomicLong(0);
+            AtomicLong cacheMissTokens = new AtomicLong(0);
             StringBuilder contentBuilder = new StringBuilder();
             AtomicReference<String> modelRef = new AtomicReference<>("unknown");
 
@@ -77,10 +83,12 @@ class StreamingRequestProcessorTest {
 
             var method = StreamingRequestProcessor.class.getDeclaredMethod("extractUsageAndContent",
                     String.class, AtomicLong.class, AtomicLong.class, AtomicLong.class,
+                    AtomicLong.class, AtomicLong.class,
                     StringBuilder.class, AtomicReference.class);
             method.setAccessible(true);
 
-            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens, contentBuilder, modelRef);
+            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens,
+                    cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
 
             assertEquals(5, promptTokens.get());
             assertEquals(10, completionTokens.get());
@@ -93,6 +101,8 @@ class StreamingRequestProcessorTest {
             AtomicLong promptTokens = new AtomicLong(0);
             AtomicLong completionTokens = new AtomicLong(0);
             AtomicLong totalTokens = new AtomicLong(0);
+            AtomicLong cacheHitTokens = new AtomicLong(0);
+            AtomicLong cacheMissTokens = new AtomicLong(0);
             StringBuilder contentBuilder = new StringBuilder();
             AtomicReference<String> modelRef = new AtomicReference<>("unknown");
 
@@ -100,10 +110,12 @@ class StreamingRequestProcessorTest {
 
             var method = StreamingRequestProcessor.class.getDeclaredMethod("extractUsageAndContent",
                     String.class, AtomicLong.class, AtomicLong.class, AtomicLong.class,
+                    AtomicLong.class, AtomicLong.class,
                     StringBuilder.class, AtomicReference.class);
             method.setAccessible(true);
 
-            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens, contentBuilder, modelRef);
+            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens,
+                    cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
 
             // Should not change values
             assertEquals(0, promptTokens.get());
@@ -117,6 +129,8 @@ class StreamingRequestProcessorTest {
             AtomicLong promptTokens = new AtomicLong(0);
             AtomicLong completionTokens = new AtomicLong(0);
             AtomicLong totalTokens = new AtomicLong(0);
+            AtomicLong cacheHitTokens = new AtomicLong(0);
+            AtomicLong cacheMissTokens = new AtomicLong(0);
             StringBuilder contentBuilder = new StringBuilder();
             AtomicReference<String> modelRef = new AtomicReference<>("unknown");
 
@@ -124,10 +138,12 @@ class StreamingRequestProcessorTest {
 
             var method = StreamingRequestProcessor.class.getDeclaredMethod("extractUsageAndContent",
                     String.class, AtomicLong.class, AtomicLong.class, AtomicLong.class,
+                    AtomicLong.class, AtomicLong.class,
                     StringBuilder.class, AtomicReference.class);
             method.setAccessible(true);
 
-            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens, contentBuilder, modelRef);
+            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens,
+                    cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
 
             assertEquals("Hello", contentBuilder.toString());
         }
@@ -138,6 +154,8 @@ class StreamingRequestProcessorTest {
             AtomicLong promptTokens = new AtomicLong(0);
             AtomicLong completionTokens = new AtomicLong(0);
             AtomicLong totalTokens = new AtomicLong(0);
+            AtomicLong cacheHitTokens = new AtomicLong(0);
+            AtomicLong cacheMissTokens = new AtomicLong(0);
             StringBuilder contentBuilder = new StringBuilder();
             AtomicReference<String> modelRef = new AtomicReference<>("unknown");
 
@@ -145,11 +163,41 @@ class StreamingRequestProcessorTest {
 
             var method = StreamingRequestProcessor.class.getDeclaredMethod("extractUsageAndContent",
                     String.class, AtomicLong.class, AtomicLong.class, AtomicLong.class,
+                    AtomicLong.class, AtomicLong.class,
                     StringBuilder.class, AtomicReference.class);
             method.setAccessible(true);
 
             // Should not throw
-            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens, contentBuilder, modelRef);
+            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens,
+                    cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
+        }
+
+        @Test
+        @DisplayName("应提取 DeepSeek 缓存 token")
+        void shouldExtractDeepSeekCacheTokens() throws Exception {
+            AtomicLong promptTokens = new AtomicLong(0);
+            AtomicLong completionTokens = new AtomicLong(0);
+            AtomicLong totalTokens = new AtomicLong(0);
+            AtomicLong cacheHitTokens = new AtomicLong(0);
+            AtomicLong cacheMissTokens = new AtomicLong(0);
+            StringBuilder contentBuilder = new StringBuilder();
+            AtomicReference<String> modelRef = new AtomicReference<>("unknown");
+
+            String chunk = "{\"model\":\"deepseek-chat\",\"usage\":{\"prompt_tokens\":1000,"
+                    + "\"completion_tokens\":200,\"total_tokens\":1200,"
+                    + "\"prompt_cache_hit_tokens\":800,\"prompt_cache_miss_tokens\":200}}";
+
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("extractUsageAndContent",
+                    String.class, AtomicLong.class, AtomicLong.class, AtomicLong.class,
+                    AtomicLong.class, AtomicLong.class,
+                    StringBuilder.class, AtomicReference.class);
+            method.setAccessible(true);
+
+            method.invoke(processor, chunk, promptTokens, completionTokens, totalTokens,
+                    cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
+
+            assertEquals(800, cacheHitTokens.get());
+            assertEquals(200, cacheMissTokens.get());
         }
     }
 

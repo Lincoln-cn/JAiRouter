@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.common.dto;
 
-public class LoginResponse {
+public final class LoginResponse {
     private String token;
     private String tokenType = "Bearer";
     private long expiresIn;

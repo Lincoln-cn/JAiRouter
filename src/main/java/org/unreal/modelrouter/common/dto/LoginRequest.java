@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.common.dto;
 
-public class LoginRequest {
+public final class LoginRequest {
     private String username;
     private String password;
 

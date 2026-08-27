@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 1.0.0
  */
 @Slf4j
-public class LoadBalancerTracingWrapper implements LoadBalancer {
+public final class LoadBalancerTracingWrapper implements LoadBalancer {
     
     private final LoadBalancer delegate;
     private final StructuredLogger structuredLogger;

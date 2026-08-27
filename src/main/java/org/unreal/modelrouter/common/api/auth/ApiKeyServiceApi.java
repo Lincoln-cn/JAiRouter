@@ -53,7 +53,7 @@ public interface ApiKeyServiceApi {
     /**
      * ApiKey 验证结果。
      */
-    class ApiKeyValidationResult {
+    final class ApiKeyValidationResult {
         private boolean valid;
         private String error;
         private ApiKeyInfo apiKeyInfo;
@@ -104,7 +104,7 @@ public interface ApiKeyServiceApi {
     /**
      * ApiKey 信息。
      */
-    class ApiKeyInfo {
+    final class ApiKeyInfo {
         private String apiKeyId;
         private String accountId;
         private String prefix;

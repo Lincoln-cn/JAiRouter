@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExceptionEventDTO {
+public final class ExceptionEventDTO {
 
     /**
      * 事件 ID

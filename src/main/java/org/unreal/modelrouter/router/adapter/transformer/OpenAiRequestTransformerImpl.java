@@ -158,6 +158,13 @@ public class OpenAiRequestTransformerImpl implements OpenAiRequestTransformer {
         if (request.cacheSalt() != null) {
             extraBody.put("cache_salt", request.cacheSalt());
         }
+        // v2.9.0: vLLM 前缀缓存参数
+        if (request.prefixCacheHash() != null) {
+            extraBody.put("prefix_cache_hash", request.prefixCacheHash());
+        }
+        if (request.enablePrefixCaching() != null) {
+            extraBody.put("enable_prefix_caching", request.enablePrefixCaching());
+        }
         if (request.repetitionDetection() != null) {
             extraBody.set("repetition_detection", objectMapper.valueToTree(request.repetitionDetection()));
         }

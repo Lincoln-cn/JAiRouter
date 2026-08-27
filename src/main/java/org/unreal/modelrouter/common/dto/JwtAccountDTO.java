@@ -16,7 +16,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JwtAccountDTO {
+public final class JwtAccountDTO {
 
     private Long id;
     private String username;

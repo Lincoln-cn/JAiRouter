@@ -15,13 +15,13 @@ import java.util.Map;
  * }
  * }
  */
-public class UpdateInstanceDTO {
+public final class UpdateInstanceDTO {
 
     private String instanceId;
     private Data instance;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class Data {
+    public static final class Data {
         private String name;
         private String baseUrl;
         private String path;

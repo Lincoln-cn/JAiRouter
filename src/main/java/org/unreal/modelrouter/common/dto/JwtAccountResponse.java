@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * JWT账户响应对象
  */
-public class JwtAccountResponse {
+public final class JwtAccountResponse {
     private String username;
     private List<String> roles;
     private boolean enabled;

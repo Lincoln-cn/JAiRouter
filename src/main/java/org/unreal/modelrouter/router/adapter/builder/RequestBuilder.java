@@ -21,7 +21,7 @@ import org.unreal.modelrouter.common.dto.SttDTO;
  * @since v2.2.1
  */
 @Component("adapterRequestBuilder")
-public class RequestBuilder {
+public final class RequestBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestBuilder.class);
 

@@ -197,12 +197,14 @@ public class AdapterConfigController {
                         .body(RouterResponse.error("adapter名称已存在: " + request.getName(), "CONFLICT_EXISTS"));
             }
 
-            AdapterDefinitionProperties.AdapterDefinition definition = new AdapterDefinitionProperties.AdapterDefinition();
+            AdapterDefinitionProperties.AdapterDefinition definition =
+                    new AdapterDefinitionProperties.AdapterDefinition();
             definition.setType(request.getType() != null ? request.getType() : "openai-compatible");
             definition.setParent(request.getParent());  // 设置父adapter
 
             if (request.getCapabilities() != null) {
-                AdapterDefinitionProperties.CapabilitiesConfig caps = new AdapterDefinitionProperties.CapabilitiesConfig();
+                AdapterDefinitionProperties.CapabilitiesConfig caps =
+                        new AdapterDefinitionProperties.CapabilitiesConfig();
                 caps.setChat(request.getCapabilities().getOrDefault("chat", false));
                 caps.setEmbedding(request.getCapabilities().getOrDefault("embedding", false));
                 caps.setRerank(request.getCapabilities().getOrDefault("rerank", false));
@@ -274,12 +276,14 @@ public class AdapterConfigController {
                         .body(RouterResponse.error("adapter不存在: " + name, "NOT_FOUND"));
             }
 
-            AdapterDefinitionProperties.AdapterDefinition definition = new AdapterDefinitionProperties.AdapterDefinition();
+            AdapterDefinitionProperties.AdapterDefinition definition =
+                    new AdapterDefinitionProperties.AdapterDefinition();
             definition.setType(request.getType() != null ? request.getType() : "openai-compatible");
             definition.setParent(request.getParent());  // 设置父adapter
 
             if (request.getCapabilities() != null) {
-                AdapterDefinitionProperties.CapabilitiesConfig caps = new AdapterDefinitionProperties.CapabilitiesConfig();
+                AdapterDefinitionProperties.CapabilitiesConfig caps =
+                        new AdapterDefinitionProperties.CapabilitiesConfig();
                 caps.setChat(request.getCapabilities().getOrDefault("chat", false));
                 caps.setEmbedding(request.getCapabilities().getOrDefault("embedding", false));
                 caps.setRerank(request.getCapabilities().getOrDefault("rerank", false));
@@ -400,8 +404,9 @@ public class AdapterConfigController {
         }
     }
 
-    private ServiceCapability createAdapterByType(final String name,
-                                                  final AdapterDefinitionProperties.AdapterDefinition definition) {
+    private ServiceCapability createAdapterByType(
+            final String name,
+            final AdapterDefinitionProperties.AdapterDefinition definition) {
         String type = definition.getType() != null ? definition.getType() : "openai-compatible";
 
         if ("extend".equals(type)) {
@@ -412,8 +417,9 @@ public class AdapterConfigController {
         return createConfigurableAdapter(name, definition);
     }
 
-    private ExtendedAdapter createExtendedAdapter(final String name,
-                                                  final AdapterDefinitionProperties.AdapterDefinition definition) {
+    private ExtendedAdapter createExtendedAdapter(
+            final String name,
+            final AdapterDefinitionProperties.AdapterDefinition definition) {
         String parentName = definition.getParent();
         if (parentName == null || parentName.isBlank()) {
             throw new IllegalArgumentException("Extended adapter must specify a parent adapter");
@@ -446,8 +452,9 @@ public class AdapterConfigController {
         );
     }
 
-    private OllamaConfigurableAdapter createOllamaConfigurableAdapter(final String name,
-                                                                      final AdapterDefinitionProperties.AdapterDefinition definition) {
+    private OllamaConfigurableAdapter createOllamaConfigurableAdapter(
+            final String name,
+            final AdapterDefinitionProperties.AdapterDefinition definition) {
         AdapterCapabilities capabilities = AdapterCapabilities.builder()
                 .chat(definition.getCapabilities().isChat())
                 .embedding(definition.getCapabilities().isEmbedding())
@@ -468,8 +475,9 @@ public class AdapterConfigController {
         );
     }
 
-    private ConfigurableAdapter createConfigurableAdapter(final String name,
-                                                          final AdapterDefinitionProperties.AdapterDefinition definition) {
+    private ConfigurableAdapter createConfigurableAdapter(
+            final String name,
+            final AdapterDefinitionProperties.AdapterDefinition definition) {
         AdapterCapabilities capabilities = AdapterCapabilities.builder()
                 .chat(definition.getCapabilities().isChat())
                 .embedding(definition.getCapabilities().isEmbedding())

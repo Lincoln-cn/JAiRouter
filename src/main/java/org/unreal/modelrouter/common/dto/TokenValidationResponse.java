@@ -2,7 +2,7 @@ package org.unreal.modelrouter.common.dto;
 
 import java.time.LocalDateTime;
 
-public class TokenValidationResponse {
+public final class TokenValidationResponse {
     private boolean valid;
     private String userId;
     private String message;

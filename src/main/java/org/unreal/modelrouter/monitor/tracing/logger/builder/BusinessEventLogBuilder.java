@@ -37,7 +37,7 @@ import java.util.Map;
  * @since v2.16.3 (重构于 v2.16.4)
  */
 @Component
-public class BusinessEventLogBuilder {
+public final class BusinessEventLogBuilder {
 
     /**
      * 构建业务事件日志字段

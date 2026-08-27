@@ -23,7 +23,7 @@ import reactor.core.publisher.Mono;
  * @since v2.28.0
  */
 @Component
-public class ErrorResponseBuilder {
+public final class ErrorResponseBuilder {
 
     private static final Logger logger = LoggerFactory.getLogger(ErrorResponseBuilder.class);
 

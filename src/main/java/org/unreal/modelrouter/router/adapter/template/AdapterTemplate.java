@@ -7,7 +7,7 @@ import java.util.Map;
  * 适配器模板定义
  * 用于预配置常见 AI 供应商的适配器参数
  */
-public class AdapterTemplate {
+public final class AdapterTemplate {
 
     private String id;
     private String name;
@@ -154,7 +154,7 @@ public class AdapterTemplate {
     /**
      * 能力配置
      */
-    public static class CapabilitiesConfig {
+    public static final class CapabilitiesConfig {
         private boolean chat;
         private boolean embedding;
         private boolean rerank;
@@ -248,7 +248,7 @@ public class AdapterTemplate {
     /**
      * 认证配置
      */
-    public static class AuthConfig {
+    public static final class AuthConfig {
         private String headerName;
         private String headerPrefix;
 

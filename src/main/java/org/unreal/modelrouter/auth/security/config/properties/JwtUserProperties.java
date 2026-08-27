@@ -11,13 +11,13 @@ import java.util.List;
 @Data
 @Component
 @ConfigurationProperties(prefix = "jairouter.security.jwt")
-public class JwtUserProperties {
+public final class JwtUserProperties {
     
     private boolean enabled = false;
     private List<UserAccount> accounts;
     
     @Data
-    public static class UserAccount {
+    public static final class UserAccount {
         private String username;
         private String password;
         private List<String> roles;

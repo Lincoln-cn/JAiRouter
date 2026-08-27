@@ -3,7 +3,7 @@ package org.unreal.modelrouter.common.dto;
 import java.util.List;
 import java.util.Objects;
 
-public class BatchTokenRevokeRequest {
+public final class BatchTokenRevokeRequest {
     private List<String> tokens;
 
     private String reason; // 可选，撤销原因

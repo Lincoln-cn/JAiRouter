@@ -11,7 +11,7 @@ import java.util.List;
  * 映射 application.yml 中的 jairouter.security.jwt.accounts 配置
  */
 @Data
-public class JwtAccountProperties {
+public final class JwtAccountProperties {
 
     /**
      * 用户名

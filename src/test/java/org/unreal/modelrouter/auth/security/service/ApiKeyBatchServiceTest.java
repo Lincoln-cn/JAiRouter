@@ -16,6 +16,7 @@ import org.unreal.modelrouter.auth.security.dto.ApiKeyCreationVO;
 import org.unreal.modelrouter.auth.security.model.UsageStatistics;
 import reactor.test.StepVerifier;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -365,7 +366,8 @@ class ApiKeyBatchServiceTest {
                     .keyPrefix("sk-")
                     .enabled(true)
                     .rotationPeriodDays(30)
-                    .lastRotatedAt(LocalDateTime.now().minusHours(2))
+                    // 锚定到今天 00:00，避免 now().minusHours(2) 在深夜跨零点导致"昨天"误判
+                    .lastRotatedAt(LocalDate.now().atStartOfDay())
                     .createdAt(LocalDateTime.now().minusDays(30))
                     .usage(UsageStatistics.builder().totalRequests(0L).build())
                     .build();

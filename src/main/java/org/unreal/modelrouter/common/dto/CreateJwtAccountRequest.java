@@ -16,7 +16,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateJwtAccountRequest {
+public final class CreateJwtAccountRequest {
 
     private String username;
     private String password;

@@ -20,7 +20,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TokenUsageStatisticsDTO {
+public final class TokenUsageStatisticsDTO {
 
     /**
      * 统计开始时间
@@ -140,7 +140,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ModelTokenStats {
+    public static final class ModelTokenStats {
         private String modelName;
         private Long totalTokens;
         private Long promptTokens;
@@ -155,7 +155,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ServiceTypeStats {
+    public static final class ServiceTypeStats {
         private String serviceType;
         private Long totalTokens;
         private Long promptTokens;
@@ -169,7 +169,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ProviderStats {
+    public static final class ProviderStats {
         private String provider;
         private Long totalTokens;
         private Long requestCount;
@@ -181,7 +181,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class DailyStats {
+    public static final class DailyStats {
         private String date;
         private Long totalTokens;
         private Long promptTokens;
@@ -195,7 +195,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class WeeklyStats {
+    public static final class WeeklyStats {
         private Integer year;
         private Integer week;
         private Long totalTokens;
@@ -211,7 +211,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class MonthlyStats {
+    public static final class MonthlyStats {
         private Integer year;
         private Integer month;
         private Long totalTokens;
@@ -227,7 +227,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class HourlyStats {
+    public static final class HourlyStats {
         private Integer hour;
         private Long totalTokens;
         private Long requestCount;
@@ -240,7 +240,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ApiKeyStats {
+    public static final class ApiKeyStats {
         private String apiKeyId;
         private Long totalTokens;
         private Long requestCount;
@@ -252,7 +252,7 @@ public class TokenUsageStatisticsDTO {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class UserStats {
+    public static final class UserStats {
         private String userId;
         private Long totalTokens;
         private Long requestCount;

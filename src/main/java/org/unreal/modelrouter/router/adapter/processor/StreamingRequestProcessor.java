@@ -46,7 +46,7 @@ public class StreamingRequestProcessor {
 
     @Autowired(required = false)
     private MetricsCollector metricsCollector;
-    
+
     @Autowired(required = false)
     private TokenUsageRecorder tokenUsageRecorder;
 
@@ -113,6 +113,9 @@ public class StreamingRequestProcessor {
         AtomicLong promptTokens = new AtomicLong(0);
         AtomicLong completionTokens = new AtomicLong(0);
         AtomicLong totalTokens = new AtomicLong(0);
+        // v2.9.0: KV 缓存命中/未命中 token 追踪
+        AtomicLong cacheHitTokens = new AtomicLong(0);
+        AtomicLong cacheMissTokens = new AtomicLong(0);
         StringBuilder contentBuilder = new StringBuilder();
         AtomicReference<String> modelRef = new AtomicReference<>("unknown");
 
@@ -137,14 +140,15 @@ public class StreamingRequestProcessor {
                 .map(chunk -> {
                     // 提取 usage 信息和累积内容
                     extractUsageAndContent(chunk, promptTokens, completionTokens, totalTokens,
-                            contentBuilder, modelRef);
+                            cacheHitTokens, cacheMissTokens, contentBuilder, modelRef);
                     return transformAndWrapChunk(chunk, transformChunkFn);
                 })
                 .doOnComplete(() -> {
                     recordStreamingComplete(serviceType, adapterType, instanceName, requestStartTime);
-                    // 记录 token 使用量
+                    // 记录 token 使用量(含 KV 缓存指标)
                     recordTokenUsage(adapterType, instanceName, modelRef.get(),
                             promptTokens.get(), completionTokens.get(), totalTokens.get(),
+                            cacheHitTokens.get(), cacheMissTokens.get(),
                             contentBuilder.toString(), capturedKeyId);
                 })
                 .doOnError(throwable -> recordStreamingError(serviceType, adapterType, instanceName,
@@ -236,6 +240,8 @@ public class StreamingRequestProcessor {
      * @param promptTokens       prompt tokens 计数器
      * @param completionTokens   completion tokens 计数器
      * @param totalTokens        total tokens 计数器
+     * @param cacheHitTokens     v2.9.0: KV 缓存命中 token 计数器
+     * @param cacheMissTokens    v2.9.0: KV 缓存未命中 token 计数器
      * @param contentBuilder     内容累积器
      * @param modelRef           模型名称引用
      */
@@ -243,6 +249,8 @@ public class StreamingRequestProcessor {
                                          final AtomicLong promptTokens,
                                          final AtomicLong completionTokens,
                                          final AtomicLong totalTokens,
+                                         final AtomicLong cacheHitTokens,
+                                         final AtomicLong cacheMissTokens,
                                          final StringBuilder contentBuilder,
                                          final AtomicReference<String> modelRef) {
         try {
@@ -274,6 +282,21 @@ public class StreamingRequestProcessor {
                 if (usage.has("total_tokens")) {
                     totalTokens.set(usage.get("total_tokens").asLong());
                 }
+                // v2.9.0: 提取 KV 缓存命中/未命中 token 数
+                // DeepSeek 形态
+                if (usage.has("prompt_cache_hit_tokens")) {
+                    cacheHitTokens.set(usage.get("prompt_cache_hit_tokens").asLong());
+                }
+                if (usage.has("prompt_cache_miss_tokens")) {
+                    cacheMissTokens.set(usage.get("prompt_cache_miss_tokens").asLong());
+                }
+                // OpenAI/vLLM 形态: prompt_tokens_details.cached_tokens
+                if (cacheHitTokens.get() == 0 && usage.has("prompt_tokens_details")) {
+                    JsonNode details = usage.get("prompt_tokens_details");
+                    if (details.has("cached_tokens")) {
+                        cacheHitTokens.set(details.get("cached_tokens").asLong());
+                    }
+                }
             }
 
             // 累积响应内容（从 choices 中提取）
@@ -301,6 +324,8 @@ public class StreamingRequestProcessor {
                                    final long promptTokens,
                                    final long completionTokens,
                                    final long totalTokens,
+                                   final long cacheHitTokens,
+                                   final long cacheMissTokens,
                                    final String content,
                                    final String apiKeyId) {
         if (tokenUsageRecorder == null) {
@@ -348,9 +373,21 @@ public class StreamingRequestProcessor {
                 // 更新 API Key 的每日 Token 使用量配额
                 updateApiKeyTokenUsage(apiKeyId, finalTotalTokens);
 
+                // v2.9.0: 记录 KV 缓存命中/未命中指标
+                if (metricsCollector != null && (cacheHitTokens > 0 || cacheMissTokens > 0)) {
+                    metricsCollector.recordCacheTokenUsage(adapterType, instanceName,
+                            cacheHitTokens, cacheMissTokens);
+                }
+
             } catch (Exception e) {
                 logger.warn("Failed to record token usage: {}", e.getMessage());
             }
+        }
+
+        // v2.9.0: 即使 totalTokens==0，如果有缓存命中信息也记录指标
+        if (finalTotalTokens == 0 && metricsCollector != null && (cacheHitTokens > 0 || cacheMissTokens > 0)) {
+            metricsCollector.recordCacheTokenUsage(adapterType, instanceName,
+                    cacheHitTokens, cacheMissTokens);
         }
     }
 

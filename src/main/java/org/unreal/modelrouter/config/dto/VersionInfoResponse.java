@@ -8,7 +8,7 @@ import java.util.Map;
  * 版本信息数据传输对象
  * 使用强类型 RouterConfiguration 替代 Map<String, Object>
  */
-public class VersionInfoResponse {
+public final class VersionInfoResponse {
 
     private Integer version;
     private RouterConfiguration config;

@@ -21,7 +21,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateApiKeyRequest {
+public final class CreateApiKeyRequest {
 
     private String keyId;
     private String description;

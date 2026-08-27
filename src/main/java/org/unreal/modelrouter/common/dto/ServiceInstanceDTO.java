@@ -18,7 +18,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ServiceInstanceDTO {
+public final class ServiceInstanceDTO {
 
     private Long id;
 

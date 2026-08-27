@@ -221,7 +221,7 @@ public class ApiCallHistoryService {
         // 按模型统计
         try {
             List<Object[]> byModel = repository.countByModel(effectiveStartTime, effectiveEndTime);
-            dto.setByModel(safeMapByModel(byModel));
+            dto.setByModel(ApiCallHistoryStatisticsMapper.mapByModel(byModel));
         } catch (Exception e) {
             log.warn("Failed to get model statistics: {}", e.getMessage());
             dto.setByModel(new ArrayList<>());
@@ -230,7 +230,7 @@ public class ApiCallHistoryService {
         // 按服务类型统计
         try {
             List<Object[]> byServiceType = repository.countByServiceType(effectiveStartTime, effectiveEndTime);
-            dto.setByServiceType(safeMapByServiceType(byServiceType));
+            dto.setByServiceType(ApiCallHistoryStatisticsMapper.mapByServiceType(byServiceType));
         } catch (Exception e) {
             log.warn("Failed to get service type statistics: {}", e.getMessage());
             dto.setByServiceType(new ArrayList<>());
@@ -239,7 +239,7 @@ public class ApiCallHistoryService {
         // 按日期统计
         try {
             List<Object[]> byDay = repository.countByDay(effectiveStartTime, effectiveEndTime);
-            dto.setByDay(safeMapByDay(byDay));
+            dto.setByDay(ApiCallHistoryStatisticsMapper.mapByDay(byDay));
         } catch (Exception e) {
             log.warn("Failed to get daily statistics: {}", e.getMessage());
             dto.setByDay(new ArrayList<>());
@@ -248,7 +248,7 @@ public class ApiCallHistoryService {
         // 按小时统计（今天）
         try {
             List<Object[]> byHour = repository.countByHour(effectiveEndTime.toLocalDate().toString());
-            dto.setByHour(safeMapByHour(byHour));
+            dto.setByHour(ApiCallHistoryStatisticsMapper.mapByHour(byHour));
         } catch (Exception e) {
             log.warn("Failed to get hourly statistics: {}", e.getMessage());
             dto.setByHour(new ArrayList<>());
@@ -257,7 +257,7 @@ public class ApiCallHistoryService {
         // HTTP 状态码分布
         try {
             List<Object[]> byStatusCode = repository.countByStatusCode(effectiveStartTime, effectiveEndTime);
-            dto.setByStatusCode(safeMapByStatusCode(byStatusCode));
+            dto.setByStatusCode(ApiCallHistoryStatisticsMapper.mapByStatusCode(byStatusCode));
         } catch (Exception e) {
             log.warn("Failed to get status code statistics: {}", e.getMessage());
             dto.setByStatusCode(new ArrayList<>());
@@ -266,7 +266,7 @@ public class ApiCallHistoryService {
         // 错误码分布
         try {
             List<Object[]> byErrorCode = repository.countByErrorCode(effectiveStartTime, effectiveEndTime);
-            dto.setByErrorCode(safeMapByErrorCode(byErrorCode));
+            dto.setByErrorCode(ApiCallHistoryStatisticsMapper.mapByErrorCode(byErrorCode));
         } catch (Exception e) {
             log.warn("Failed to get error code statistics: {}", e.getMessage());
             dto.setByErrorCode(new ArrayList<>());
@@ -357,144 +357,7 @@ public class ApiCallHistoryService {
                 .build();
     }
 
-    // ========== 安全映射方法 ==========
-
-    private List<CallHistoryStatisticsDTO.ModelStats> safeMapByModel(List<Object[]> rows) {
-        List<CallHistoryStatisticsDTO.ModelStats> result = new ArrayList<>();
-        if (rows == null) {
-            return result;
-        }
-        for (Object[] row : rows) {
-            if (row == null || row.length < 5) {
-                continue;
-            }
-            try {
-                long reqCount = toLong(row[1]);
-                long successCount = toLong(row[4]);
-                result.add(CallHistoryStatisticsDTO.ModelStats.builder()
-                        .modelName(String.valueOf(row[0]))
-                        .requestCount(reqCount)
-                        .totalTokens(toLong(row[2]))
-                        .avgResponseTimeMs(toDouble(row[3]))
-                        .successCount(successCount)
-                        .successRate(reqCount > 0 ? (double) successCount / reqCount * 100 : 0.0)
-                        .build());
-            } catch (Exception e) {
-                log.debug("Skipping invalid model stats row: {}", e.getMessage());
-            }
-        }
-        return result;
-    }
-
-    private List<CallHistoryStatisticsDTO.ServiceTypeStats> safeMapByServiceType(List<Object[]> rows) {
-        List<CallHistoryStatisticsDTO.ServiceTypeStats> result = new ArrayList<>();
-        if (rows == null) {
-            return result;
-        }
-        for (Object[] row : rows) {
-            if (row == null || row.length < 4) {
-                continue;
-            }
-            try {
-                result.add(CallHistoryStatisticsDTO.ServiceTypeStats.builder()
-                        .serviceType(String.valueOf(row[0]))
-                        .requestCount(toLong(row[1]))
-                        .totalTokens(toLong(row[2]))
-                        .avgResponseTimeMs(toDouble(row[3]))
-                        .build());
-            } catch (Exception e) {
-                log.debug("Skipping invalid service type stats row: {}", e.getMessage());
-            }
-        }
-        return result;
-    }
-
-    private List<CallHistoryStatisticsDTO.DailyStats> safeMapByDay(List<Object[]> rows) {
-        List<CallHistoryStatisticsDTO.DailyStats> result = new ArrayList<>();
-        if (rows == null) {
-            return result;
-        }
-        for (Object[] row : rows) {
-            if (row == null || row.length < 3) {
-                continue;
-            }
-            try {
-                result.add(CallHistoryStatisticsDTO.DailyStats.builder()
-                        .date(String.valueOf(row[0]))
-                        .requestCount(toLong(row[1]))
-                        .totalTokens(toLong(row[2]))
-                        .build());
-            } catch (Exception e) {
-                log.debug("Skipping invalid daily stats row: {}", e.getMessage());
-            }
-        }
-        return result;
-    }
-
-    private List<CallHistoryStatisticsDTO.HourlyStats> safeMapByHour(List<Object[]> rows) {
-        List<CallHistoryStatisticsDTO.HourlyStats> result = new ArrayList<>();
-        if (rows == null) {
-            return result;
-        }
-        for (Object[] row : rows) {
-            if (row == null || row.length < 2) {
-                continue;
-            }
-            try {
-                int hour = toLong(row[0]).intValue();
-                result.add(CallHistoryStatisticsDTO.HourlyStats.builder()
-                        .hour(hour)
-                        .requestCount(toLong(row[1]))
-                        .label(String.format("%02d:00", hour))
-                        .build());
-            } catch (Exception e) {
-                log.debug("Skipping invalid hourly stats row: {}", e.getMessage());
-            }
-        }
-        return result;
-    }
-
-    private List<CallHistoryStatisticsDTO.StatusCodeStats> safeMapByStatusCode(List<Object[]> rows) {
-        List<CallHistoryStatisticsDTO.StatusCodeStats> result = new ArrayList<>();
-        if (rows == null) {
-            return result;
-        }
-        for (Object[] row : rows) {
-            if (row == null || row.length < 2) {
-                continue;
-            }
-            try {
-                result.add(CallHistoryStatisticsDTO.StatusCodeStats.builder()
-                        .statusCode(toLong(row[0]).intValue())
-                        .count(toLong(row[1]))
-                        .build());
-            } catch (Exception e) {
-                log.debug("Skipping invalid status code stats row: {}", e.getMessage());
-            }
-        }
-        return result;
-    }
-
-    private List<CallHistoryStatisticsDTO.ErrorCodeStats> safeMapByErrorCode(List<Object[]> rows) {
-        List<CallHistoryStatisticsDTO.ErrorCodeStats> result = new ArrayList<>();
-        if (rows == null) {
-            return result;
-        }
-        for (Object[] row : rows) {
-            if (row == null || row.length < 2) {
-                continue;
-            }
-            try {
-                result.add(CallHistoryStatisticsDTO.ErrorCodeStats.builder()
-                        .errorCode(String.valueOf(row[0]))
-                        .count(toLong(row[1]))
-                        .build());
-            } catch (Exception e) {
-                log.debug("Skipping invalid error code stats row: {}", e.getMessage());
-            }
-        }
-        return result;
-    }
+    // ========== 工具方法（委托给 ApiCallHistoryStatisticsMapper）==========
 
     /**
      * 截断并生成摘要
@@ -524,35 +387,11 @@ public class ApiCallHistoryService {
         }
     }
 
-    /**
-     * 安全转换为 Long
-     */
     private Long toLong(Object value) {
-        if (value == null) {
-            return 0L;
-        }
-        if (value instanceof Long) {
-            return (Long) value;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        return 0L;
+        return ApiCallHistoryStatisticsMapper.toLong(value);
     }
 
-    /**
-     * 安全转换为 Double
-     */
     private Double toDouble(Object value) {
-        if (value == null) {
-            return 0.0;
-        }
-        if (value instanceof Double) {
-            return (Double) value;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
-        }
-        return 0.0;
+        return ApiCallHistoryStatisticsMapper.toDouble(value);
     }
 }

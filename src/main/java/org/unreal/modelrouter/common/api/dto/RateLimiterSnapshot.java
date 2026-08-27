@@ -12,7 +12,7 @@ import java.util.Map;
  *
  * @since v2.8.0
  */
-public class RateLimiterSnapshot implements Serializable {
+public final class RateLimiterSnapshot implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

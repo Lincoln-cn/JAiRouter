@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.LongAdder;
  * @author JAiRouter Team
  * @since 2.7.2
  */
-public class ConcurrentModelCallStats {
+public final class ConcurrentModelCallStats {
 
     private final String modelName;
     private final String serviceType;

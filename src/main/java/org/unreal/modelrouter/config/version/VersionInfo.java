@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 // 版本信息内部类
-public class VersionInfo {
+public final class VersionInfo {
 
     private int version;
     private LocalDateTime createdAt;

@@ -17,7 +17,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "实例更新请求（扁平化格式）")
-public class InstanceUpdateFlatRequest {
+public final class InstanceUpdateFlatRequest {
 
     @Schema(description = "实例 ID", example = "5", required = true)
     private String instanceId;

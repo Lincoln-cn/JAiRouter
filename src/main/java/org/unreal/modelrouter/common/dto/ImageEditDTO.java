@@ -4,7 +4,7 @@ import org.springframework.http.codec.multipart.FilePart;
 
 import java.util.List;
 
-public class ImageEditDTO {
+public final class ImageEditDTO {
 
     /**
      * curl -s -D >(grep -i x-request-id >&2) \

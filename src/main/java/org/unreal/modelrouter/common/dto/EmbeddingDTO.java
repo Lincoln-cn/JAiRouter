@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Embedding DTO - 核心字段 + 扩展选项
  */
-public class EmbeddingDTO {
+public final class EmbeddingDTO {
 
     /**
      * Embedding 请求
@@ -86,7 +86,7 @@ public class EmbeddingDTO {
      */
     @Data
     @Builder
-    public static class Options {
+    public static final class Options {
         @JsonProperty("truncate_prompt_tokens")
         private Boolean truncatePromptTokens;
         @JsonProperty("request_id")

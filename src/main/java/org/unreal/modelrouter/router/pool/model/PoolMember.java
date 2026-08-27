@@ -4,7 +4,7 @@ package org.unreal.modelrouter.router.pool.model;
  * 资源池成员
  * 引用一个实例;池级权重在选择时覆盖实例自身权重
  */
-public class PoolMember {
+public final class PoolMember {
 
     /** 实例 ID(稳定键,对应 ModelInstance.instanceId) */
     private String instanceId;

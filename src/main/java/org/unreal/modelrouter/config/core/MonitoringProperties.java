@@ -10,7 +10,7 @@ import java.util.Set;
 
 @Component
 @ConfigurationProperties(prefix = "monitoring")
-public class MonitoringProperties {
+public final class MonitoringProperties {
 
     private boolean enabled = true;
     private String prefix = "jairouter";
@@ -26,7 +26,7 @@ public class MonitoringProperties {
     private Performance performance = new Performance();
     private Thresholds thresholds = new Thresholds();
 
-    public static class Sampling {
+    public static final class Sampling {
         private double requestMetrics = 1.0;
         private double backendMetrics = 1.0;
         private double infrastructureMetrics = 0.1;
@@ -84,7 +84,7 @@ public class MonitoringProperties {
         }
     }
 
-    public static class Performance {
+    public static final class Performance {
         private boolean asyncProcessing = true;
         private int batchSize = 100;
         private int bufferSize = 1000;
@@ -115,7 +115,7 @@ public class MonitoringProperties {
         }
     }
 
-    public static class Thresholds {
+    public static final class Thresholds {
         private long defaultThreshold = 1000L;
         private long slowQueryThreshold = 5000L;
         private Map<String, Long> operationThresholds;

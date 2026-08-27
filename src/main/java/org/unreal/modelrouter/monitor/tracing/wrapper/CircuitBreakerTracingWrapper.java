@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @since 1.0.0
  */
 @Slf4j
-public class CircuitBreakerTracingWrapper implements CircuitBreaker {
+public final class CircuitBreakerTracingWrapper implements CircuitBreaker {
     
     private final CircuitBreaker delegate;
     private final StructuredLogger structuredLogger;

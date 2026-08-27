@@ -1,6 +1,6 @@
 package org.unreal.modelrouter.common.dto;
 
-public class TokenValidationRequest {
+public final class TokenValidationRequest {
     private String token;
 
     public TokenValidationRequest() {

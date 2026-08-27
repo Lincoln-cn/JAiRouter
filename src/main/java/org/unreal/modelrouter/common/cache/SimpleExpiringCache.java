@@ -27,7 +27,7 @@ import java.util.function.Function;
  * @author JAiRouter Team
  * @since 2.7.3
  */
-public class SimpleExpiringCache<K, V> {
+public final class SimpleExpiringCache<K, V> {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleExpiringCache.class);
 
@@ -322,7 +322,7 @@ public class SimpleExpiringCache<K, V> {
     /**
      * 缓存统计信息
      */
-    public static class CacheStats {
+    public static final class CacheStats {
         private final String cacheName;
         private final int size;
         private final long hitCount;

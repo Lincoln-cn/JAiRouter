@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InstanceRateLimitDTO {
+public final class InstanceRateLimitDTO {
 
     private Long id;
     private Long instanceId;

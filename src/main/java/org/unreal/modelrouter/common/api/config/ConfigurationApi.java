@@ -62,7 +62,7 @@ public interface ConfigurationApi {
     /**
      * 服务配置快照。
      */
-    class ServiceConfigSnapshot {
+    final class ServiceConfigSnapshot {
         private String serviceId;
         private String serviceType;
         private String name;
@@ -152,7 +152,7 @@ public interface ConfigurationApi {
     /**
      * 服务实例快照。
      */
-    class ServiceInstanceSnapshot {
+    final class ServiceInstanceSnapshot {
         private String instanceId;
         private String serviceId;
         private String baseUrl;
