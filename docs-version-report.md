@@ -2,23 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 158
-- 近7天变更: 112
+- 总文档数: 160
+- 近7天变更: 122
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-27 12:24:13
+- 最后扫描: 2026-08-28 13:52:19
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.9 → 1.0.10) - 2026-08-27
-- **MODIFIED**: docs/zh/index.md (1.0.9 → 1.0.10) - 2026-08-27
-- **MODIFIED**: docs/zh/configuration/routing-rules.md (1.0.1 → 1.0.2) - 2026-08-27
-- **MODIFIED**: docs/zh/configuration/rate-limiting.md (1.0.2 → 1.0.3) - 2026-08-27
-- **MODIFIED**: docs/en/reference/changelog.md (1.0.9 → 1.0.10) - 2026-08-27
-- **MODIFIED**: docs/en/index.md (1.0.8 → 1.0.9) - 2026-08-27
-- **MODIFIED**: docs/en/configuration/routing-rules.md (1.0.1 → 1.0.2) - 2026-08-27
-- **MODIFIED**: docs/en/configuration/rate-limiting.md (1.0.3 → 1.0.4) - 2026-08-27
-- **MODIFIED**: README.md (1.0.24 → 1.0.25) - 2026-08-27
-- **MODIFIED**: README-ZH.md (1.0.16 → 1.0.17) - 2026-08-27
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.10 → 1.0.11) - 2026-08-28
+- **MODIFIED**: docs/zh/index.md (1.0.10 → 1.0.11) - 2026-08-28
+- **CREATED**: docs/zh/configuration/kv-cache.md ( → 1.0.0) - 2026-08-28
+- **MODIFIED**: docs/zh/configuration/index.md (1.0.3 → 1.0.4) - 2026-08-28
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.10 → 1.0.11) - 2026-08-28
+- **MODIFIED**: docs/en/index.md (1.0.9 → 1.0.10) - 2026-08-28
+- **CREATED**: docs/en/configuration/kv-cache.md ( → 1.0.0) - 2026-08-28
+- **MODIFIED**: docs/en/configuration/index.md (1.0.5 → 1.0.6) - 2026-08-28
+- **MODIFIED**: README.md (1.0.25 → 1.0.26) - 2026-08-28
+- **MODIFIED**: README-ZH.md (1.0.17 → 1.0.18) - 2026-08-28
 
 ## 过期文档 (30天未更新)
 
@@ -28,7 +28,6 @@
 - docs/zh/api-reference/universal-api.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/configuration/application-config.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/configuration/circuit-breaker.md (版本: 1.0.2, 最后更新: 2026-06-03)
-- docs/zh/configuration/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/configuration/load-balancing.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/deployment/china-optimization.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/deployment/github-pages.md (版本: 1.0.2, 最后更新: 2026-06-03)
@@ -104,11 +103,12 @@
   - docs/en/configuration/load-balancing.md
   - docs/en/configuration/rate-limiting.md
   - docs/en/monitoring/index.md
-- **docs/en/configuration/index.md**: 依赖 8 个文档
+- **docs/en/configuration/index.md**: 依赖 9 个文档
   - docs/en/configuration/application-config.md
   - docs/en/configuration/circuit-breaker.md
   - docs/en/configuration/dynamic-config.md
   - docs/en/configuration/jwt-persistence.md
+  - docs/en/configuration/kv-cache.md
   - docs/en/configuration/load-balancing.md
   - docs/en/configuration/rate-limiting.md
   - docs/en/configuration/store-config.md
@@ -270,10 +270,11 @@
   - docs/zh/configuration/load-balancing.md
   - docs/zh/configuration/rate-limiting.md
   - docs/zh/monitoring/index.md
-- **docs/zh/configuration/index.md**: 依赖 7 个文档
+- **docs/zh/configuration/index.md**: 依赖 8 个文档
   - docs/zh/configuration/application-config.md
   - docs/zh/configuration/circuit-breaker.md
   - docs/zh/configuration/dynamic-config.md
+  - docs/zh/configuration/kv-cache.md
   - docs/zh/configuration/load-balancing.md
   - docs/zh/configuration/rate-limiting.md
   - docs/zh/configuration/store-config.md
@@ -596,19 +597,31 @@
   - docs/en/troubleshooting/common-issues.md
   - docs/en/troubleshooting/debugging.md
   - docs/en/troubleshooting/index.md
+- **docs/en/configuration/kv-cache.md**: 依赖 3 个文档
+  - docs/en/configuration/load-balancing.md
+  - docs/en/configuration/routing-rules.md
+  - docs/en/reference/changelog.md
+- **docs/zh/configuration/kv-cache.md**: 依赖 3 个文档
+  - docs/zh/configuration/load-balancing.md
+  - docs/zh/configuration/routing-rules.md
+  - docs/zh/reference/changelog.md
 
 ## 所有文档版本
 
-- **docs/zh/reference/changelog.md**: v1.0.10 - 2026-08-27 (1f20aefd)
-- **docs/zh/index.md**: v1.0.10 - 2026-08-27 (1af9494d)
+- **docs/zh/reference/changelog.md**: v1.0.11 - 2026-08-28 (3bdb3265)
+- **docs/zh/index.md**: v1.0.11 - 2026-08-28 (3bdb3265)
+- **docs/zh/configuration/kv-cache.md**: v1.0.0 - 2026-08-28 (ac0f7045)
+- **docs/zh/configuration/index.md**: v1.0.4 - 2026-08-28 (ac0f7045)
+- **docs/en/reference/changelog.md**: v1.0.11 - 2026-08-28 (3bdb3265)
+- **docs/en/index.md**: v1.0.10 - 2026-08-28 (3bdb3265)
+- **docs/en/configuration/kv-cache.md**: v1.0.0 - 2026-08-28 (ac0f7045)
+- **docs/en/configuration/index.md**: v1.0.6 - 2026-08-28 (ac0f7045)
+- **README.md**: v1.0.26 - 2026-08-28 (3bdb3265)
+- **README-ZH.md**: v1.0.18 - 2026-08-28 (3bdb3265)
 - **docs/zh/configuration/routing-rules.md**: v1.0.2 - 2026-08-27 (1f20aefd)
 - **docs/zh/configuration/rate-limiting.md**: v1.0.3 - 2026-08-27 (a23defac)
-- **docs/en/reference/changelog.md**: v1.0.10 - 2026-08-27 (1f20aefd)
-- **docs/en/index.md**: v1.0.9 - 2026-08-27 (1af9494d)
 - **docs/en/configuration/routing-rules.md**: v1.0.2 - 2026-08-27 (1f20aefd)
 - **docs/en/configuration/rate-limiting.md**: v1.0.4 - 2026-08-27 (a23defac)
-- **README.md**: v1.0.25 - 2026-08-27 (1af9494d)
-- **README-ZH.md**: v1.0.17 - 2026-08-27 (1af9494d)
 - **docs/zh/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
 - **docs/en/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
 - **docs/zh/tracing/usage-guide.md**: v1.0.4 - 2026-08-24 (f5d673e2)
@@ -683,7 +696,6 @@
 - **docs/en/configuration/modular-config.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/load-balancing.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/instance-examples.md**: v1.0.1 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/index.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/dynamic-config.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/circuit-breaker.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/application-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
@@ -749,7 +761,6 @@
 - **docs/zh/configuration/modular-config.md**: v1.0.1 - 2026-06-03 (69e80538)
 - **docs/zh/configuration/load-balancing.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/zh/configuration/jwt-persistence.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
-- **docs/zh/configuration/index.md**: v1.0.3 - 2026-06-03 (b305e6de)
 - **docs/zh/configuration/circuit-breaker.md**: v1.0.2 - 2026-06-03 (b305e6de)
 - **docs/zh/configuration/application-config.md**: v1.0.3 - 2026-06-03 (69e80538)
 - **docs/zh/api-reference/universal-api.md**: v1.0.3 - 2026-06-03 (85bfdb3e)

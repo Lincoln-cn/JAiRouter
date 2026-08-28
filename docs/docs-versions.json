@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.25",
-      "LastModified": "2026-08-27T12:24:13.139028",
-      "ContentHash": "d998e44ffd069fb3",
-      "GitCommit": "1af9494d",
+      "Version": "1.0.26",
+      "LastModified": "2026-08-28T13:52:19.161484",
+      "ContentHash": "7f87b98df5f6353f",
+      "GitCommit": "3bdb3265",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -97,10 +97,10 @@
     },
     "docs/en/configuration/index.md": {
       "FilePath": "docs/en/configuration/index.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-08-24T03:02:49.101053",
-      "ContentHash": "448a75599f4d92e1",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.6",
+      "LastModified": "2026-08-28T13:52:19.177771",
+      "ContentHash": "90bc1ced6da6d4a9",
+      "GitCommit": "ac0f7045",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -108,6 +108,7 @@
         "docs/en/configuration/circuit-breaker.md",
         "docs/en/configuration/dynamic-config.md",
         "docs/en/configuration/jwt-persistence.md",
+        "docs/en/configuration/kv-cache.md",
         "docs/en/configuration/load-balancing.md",
         "docs/en/configuration/rate-limiting.md",
         "docs/en/configuration/store-config.md",
@@ -353,10 +354,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-08-27T12:24:13.242623",
-      "ContentHash": "cb24d9632c857137",
-      "GitCommit": "1af9494d",
+      "Version": "1.0.10",
+      "LastModified": "2026-08-28T13:52:19.224005",
+      "ContentHash": "168e064033e6b0d4",
+      "GitCommit": "3bdb3265",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -507,10 +508,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-08-27T12:24:13.286378",
-      "ContentHash": "5d41a4eb008395dd",
-      "GitCommit": "1f20aefd",
+      "Version": "1.0.11",
+      "LastModified": "2026-08-28T13:52:19.247539",
+      "ContentHash": "cce03d3c3cf8390f",
+      "GitCommit": "3bdb3265",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -703,16 +704,17 @@
     },
     "docs/zh/configuration/index.md": {
       "FilePath": "docs/zh/configuration/index.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-06-03T06:53:11.324690",
-      "ContentHash": "ce3bf86682d5b703",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.4",
+      "LastModified": "2026-08-28T13:52:19.311186",
+      "ContentHash": "d5f9fc7f2e21a486",
+      "GitCommit": "ac0f7045",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/application-config.md",
         "docs/zh/configuration/circuit-breaker.md",
         "docs/zh/configuration/dynamic-config.md",
+        "docs/zh/configuration/kv-cache.md",
         "docs/zh/configuration/load-balancing.md",
         "docs/zh/configuration/rate-limiting.md",
         "docs/zh/configuration/store-config.md",
@@ -958,10 +960,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-08-27T12:24:13.513177",
-      "ContentHash": "29d48b984bec7d50",
-      "GitCommit": "1af9494d",
+      "Version": "1.0.11",
+      "LastModified": "2026-08-28T13:52:19.383941",
+      "ContentHash": "2c0ceba6db9c0172",
+      "GitCommit": "3bdb3265",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1126,10 +1128,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-08-27T12:24:13.573203",
-      "ContentHash": "b1347b3683203919",
-      "GitCommit": "1f20aefd",
+      "Version": "1.0.11",
+      "LastModified": "2026-08-28T13:52:19.420509",
+      "ContentHash": "1a6c1e881a82bd00",
+      "GitCommit": "3bdb3265",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1723,10 +1725,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.17",
-      "LastModified": "2026-08-27T12:24:13.137026",
-      "ContentHash": "793c135df6067969",
-      "GitCommit": "1af9494d",
+      "Version": "1.0.18",
+      "LastModified": "2026-08-28T13:52:19.160290",
+      "ContentHash": "4eff86711ff77e60",
+      "GitCommit": "3bdb3265",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2086,6 +2088,34 @@
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
+    },
+    "docs/en/configuration/kv-cache.md": {
+      "FilePath": "docs/en/configuration/kv-cache.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-08-28T13:52:19.183553",
+      "ContentHash": "22fc2d8f64e5ee87",
+      "GitCommit": "ac0f7045",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/en/configuration/load-balancing.md",
+        "docs/en/configuration/routing-rules.md",
+        "docs/en/reference/changelog.md"
+      ]
+    },
+    "docs/zh/configuration/kv-cache.md": {
+      "FilePath": "docs/zh/configuration/kv-cache.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-08-28T13:52:19.317239",
+      "ContentHash": "96aeaa8f695d8af7",
+      "GitCommit": "ac0f7045",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": [
+        "docs/zh/configuration/load-balancing.md",
+        "docs/zh/configuration/routing-rules.md",
+        "docs/zh/reference/changelog.md"
+      ]
     }
   },
   "changes": [
@@ -5104,7 +5134,87 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-08-27T12:24:13.573213",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.17",
+      "NewVersion": "1.0.18",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-28T13:52:19.160295",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.25",
+      "NewVersion": "1.0.26",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-28T13:52:19.161487",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/index.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-28T13:52:19.177776",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/kv-cache.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-08-28T13:52:19.183558",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-28T13:52:19.224009",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-28T13:52:19.247544",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/index.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-28T13:52:19.311191",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/kv-cache.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-08-28T13:52:19.317245",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-28T13:52:19.383946",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-28T13:52:19.420514",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-08-27T12:24:13.777962"
+  "last_updated": "2026-08-28T13:52:19.549840"
 }
