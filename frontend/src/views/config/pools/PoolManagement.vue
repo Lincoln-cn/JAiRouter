@@ -71,11 +71,14 @@
         <el-form-item label="成员">
           <div style="width: 100%">
             <div v-for="(m, idx) in form.members" :key="idx" style="display: flex; gap: 8px; margin-bottom: 8px">
-              <el-input v-model="m.instanceId" placeholder="实例 ID(见实例管理)" style="flex: 1" />
+              <el-select v-model="m.instanceId" placeholder="选择实例" style="flex: 1">
+                <el-option v-for="o in optionsForRow(idx)" :key="o.value" :label="o.label" :value="o.value" :disabled="o.disabled" />
+              </el-select>
               <el-input-number v-model="m.weight" :min="1" :max="10000" placeholder="权重" style="width: 120px" />
               <el-button type="danger" :icon="Delete" circle size="small" @click="removeMember(idx)" />
             </div>
             <el-button type="primary" plain size="small" :icon="Plus" @click="addMember">添加成员</el-button>
+            <div v-if="!instancesLoading && instances.length === 0 && form.members.length > 0" class="form-tip">该服务类型下暂无实例，请先在实例管理添加</div>
             <div class="form-tip">成员按实例 ID 引用;权重决定被选中概率(一致哈希策略下无效)</div>
           </div>
         </el-form-item>
@@ -92,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Delete } from '@element-plus/icons-vue'
 import { ALL_SERVICE_TYPES as SERVICE_TYPES } from '@/constants/serviceTypes'
@@ -104,12 +107,16 @@ import {
   type PoolDefinition,
   type PoolMember
 } from '@/api/pools'
+import { getServiceInstances, type InstanceConfig } from '@/api/instance'
 
 const pools = ref<PoolDefinition[]>([])
 const loading = ref(false)
 const saving = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
+
+const instances = ref<InstanceConfig[]>([])
+const instancesLoading = ref(false)
 
 const form = reactive<PoolDefinition>({
   poolName: '',
@@ -145,10 +152,49 @@ const resetForm = () => {
   })
 }
 
+const loadInstances = async (serviceType: string) => {
+  instancesLoading.value = true
+  try {
+    const res = await getServiceInstances(serviceType)
+    instances.value = res.data?.data || []
+  } catch {
+    ElMessage.warning('实例加载失败')
+    instances.value = []
+  } finally {
+    instancesLoading.value = false
+  }
+}
+
+const instanceOptions = computed(() =>
+  instances.value
+    .map((i) => ({ value: i.instanceId ?? '', label: `${i.name}(${i.instanceId})` }))
+    .filter((o): o is { value: string; label: string } => Boolean(o.value))
+)
+
+const optionsForRow = (idx: number): { value: string; label: string; disabled?: boolean }[] => {
+  const currentId = form.members[idx]?.instanceId
+  const otherSelected = new Set(
+    form.members
+      .filter((m, i) => i !== idx && m.instanceId)
+      .map((m) => m.instanceId)
+  )
+  const filtered: { value: string; label: string; disabled?: boolean }[] =
+    instanceOptions.value.filter((o) => !otherSelected.has(o.value))
+  if (currentId && !filtered.some((o) => o.value === currentId)) {
+    filtered.push({ value: currentId, label: `${currentId}(实例已删除)`, disabled: true })
+  }
+  return filtered
+}
+
+watch(() => form.serviceType, (st) => {
+  if (st) loadInstances(st)
+})
+
 const handleCreate = () => {
   resetForm()
   isEdit.value = false
   dialogVisible.value = true
+  loadInstances(form.serviceType)
 }
 
 const handleEdit = (row: PoolDefinition) => {
@@ -163,6 +209,7 @@ const handleEdit = (row: PoolDefinition) => {
   })
   isEdit.value = true
   dialogVisible.value = true
+  loadInstances(form.serviceType)
 }
 
 const addMember = () => {
@@ -182,7 +229,7 @@ const handleSave = async () => {
     ElMessage.warning('请填写池名')
     return
   }
-  if (!form.members.length || form.members.some(m => !m.instanceId.trim())) {
+  if (!form.members.length || form.members.some(m => !m.instanceId)) {
     ElMessage.warning('请填写至少一个有效的成员实例 ID')
     return
   }
