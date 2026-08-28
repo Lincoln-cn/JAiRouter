@@ -193,6 +193,7 @@ nav:
     - 验证规则: zh/configuration/validation-rules.md
     - Adapter配置: zh/configuration/adapter-config.md
     - 路由规则: zh/configuration/routing-rules.md
+    - KV缓存: zh/configuration/kv-cache.md
   - 安全功能:
     - zh/security/index.md
     - API Key管理: zh/security/api-key-management.md

@@ -1,4 +1,4 @@
-﻿# Configuration Guide
+# Configuration Guide
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -402,3 +402,4 @@ model:
 - [Storage Configuration](store-config.md) - Storage and auto-merge configuration
 - [Version Management](version-management.md) - Configuration version management: Apply vs Rollback
 - [JWT Persistence Configuration](jwt-persistence.md) - JWT token persistence and security audit configuration
+- [KV Cache](kv-cache.md) - Prefix-cache-friendly gateway: sticky routing and cache metrics (v2.9.0)
