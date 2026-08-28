@@ -274,7 +274,7 @@ Performance overhead compared to direct backend access:
 - [x] Rule engine with visual conditional routing
 - [x] Service-level dynamic rate limiting + rule-based RATE_LIMIT action
 
-> **Current Release**: v2.8.9 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.9.0 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 

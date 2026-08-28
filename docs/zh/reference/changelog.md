@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.8.8
-> **最后更新**: 2026-08-26
+> **文档版本**: 2.9.0
+> **最后更新**: 2026-08-28
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,22 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.0] - 2026-08-28 - 功能发布
+
+#### LLM KV 缓存增强:前缀缓存友好网关
+
+- **自动租户粘性路由**：新增 `StickyLoadBalancer`（一致性哈希按 `apiKeyId|serviceType|modelName` 映射实例）+ `AffinityKeyResolver`（优先 apiKeyId，回退 clientIp）+ `AffinityContextHolder`（ThreadLocal 传递亲和性键）；`sticky.enabled` 配置感知，实例 >1 时自动包装粘性负载均衡；`affinityKeyScope` 支持 `tenant` / `tenant_model`（默认含 modelName）粒度，动态解析生效
+- **缓存命中指标**：解析 DeepSeek 形态 `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens` 与 OpenAI/vLLM 形态 `prompt_tokens_details.cached_tokens`；新增 `jairouter_cache_hit_tokens_total` / `cache_miss_tokens_total` 计数器 + `jairouter_cache_hit_ratio` Gauge（按 adapter+instance 聚合，基于累积计数 hitTotal/(hitTotal+missTotal)）
+- **缓存参数透传**：`ChatDTO.Options` 新增 `prefixCacheHash` / `enablePrefixCaching` 字段；OpenAiRequestTransformer 扩展 extra_body 白名单放行 vLLM 前缀缓存参数
+- **前缀卫生保障**：回归测试断言消息数组逐字透传（4 消息 + 6 消息两组），5 组缓存 token 解析容错测试
+- **修复**：StickyLoadBalancer 并发安全（volatile 快照 + 指纹缓存替代每请求重建 hash ring，消除 TreeMap 并发读写风险并避免 O(instances×150) 重复计算）；cache_hit_ratio 累积语义修正；affinityKeyScope 真正生效；ApiKeyBatchServiceTest 到期统计时间边界 flaky 修复
+
+#### 测试
+
+- 新增：StickyLoadBalancerTest、AffinityKeyResolverTest、CacheMetricsTest、CacheTokenParsingTest、OpenAiRequestTransformerTest（回归）、StreamingRequestProcessorTest；**全量 2953 用例全绿**
+
+---
 
 ### [2.8.9] - 2026-08-26 - 功能发布
 

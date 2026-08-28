@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.8.8
-> **Last Updated**: 2026-08-26
+> **Document Version**: 2.9.0
+> **Last Updated**: 2026-08-28
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,22 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.0] - 2026-08-28 - Feature Release
+
+#### LLM KV Cache Enhancement: Prefix-Cache-Friendly Gateway
+
+- **Automatic tenant-affinity sticky routing**: new `StickyLoadBalancer` (consistent hashing over `apiKeyId|serviceType|modelName` → instance) + `AffinityKeyResolver` (prefers `apiKeyId`, falls back to `clientIp`) + `AffinityContextHolder` (ThreadLocal affinity-key propagation); `sticky.enabled` config-aware (auto-wraps when instances > 1); `affinityKeyScope` supports `tenant` / `tenant_model` (default includes modelName) granularity, resolved dynamically
+- **Cache hit metrics**: parses DeepSeek-style `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens` and OpenAI/vLLM-style `prompt_tokens_details.cached_tokens`; new `jairouter_cache_hit_tokens_total` / `cache_miss_tokens_total` counters + `jairouter_cache_hit_ratio` gauge (per adapter+instance, cumulative hitTotal/(hitTotal+missTotal))
+- **Cache parameter passthrough**: `ChatDTO.Options` gains `prefixCacheHash` / `enablePrefixCaching`; `OpenAiRequestTransformer` extra_body whitelist allows vLLM prefix-cache params
+- **Prefix hygiene guarantee**: regression tests assert byte-for-byte message-array passthrough (4- and 6-message sets); 5 tolerant cache-token parsing tests
+- **Fixes**: StickyLoadBalancer concurrency safety (volatile snapshot + fingerprint cache instead of per-request hash-ring rebuild, removing TreeMap concurrent read/write risk and O(instances×150) recompute); cache_hit_ratio cumulative semantics; affinityKeyScope actually takes effect; `ApiKeyBatchServiceTest` expiration-stats midnight flake
+
+#### Tests
+
+- New: `StickyLoadBalancerTest`, `AffinityKeyResolverTest`, `CacheMetricsTest`, `CacheTokenParsingTest`, `OpenAiRequestTransformerTest` (regression), `StreamingRequestProcessorTest`; **full suite 2953 tests green**
+
+---
 
 ### [2.8.9] - 2026-08-26 - Feature Release
 
