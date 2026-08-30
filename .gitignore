@@ -235,3 +235,6 @@ link-check-report.json
 checkstyle-*.txt
 compile-result.txt
 jindexer.jar
+
+# playwright-cli 临时产物
+.playwright-cli/
