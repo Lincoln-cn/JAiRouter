@@ -271,7 +271,21 @@
     "Pushgateway",
     "mgmt",
     "echarts",
-    "Distroless"
+    "Distroless",
+    "CLOB",
+    "LONGTEXT",
+    "EWMA",
+    "jacoco",
+    "mimo",
+    "regen",
+    "reselects",
+    "retryable",
+    "Toolset",
+    "unsampled",
+    "Dedup",
+    "failover",
+    "governance",
+    "Failover"
   ],
   "ignoreWords": [
     "CNAME",

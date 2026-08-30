@@ -1,4 +1,4 @@
-# 路由规则配置
+﻿# 路由规则配置
 
 <!-- 版本信息 -->
 > **文档版本**: 1.0.1
@@ -287,7 +287,7 @@ model:
 
 - **池名即虚拟模型名**:请求 model=auto-model(或任意已配置池名)命中池路由;未配置任何池时,uto-model 回退为该服务全部健康实例
 - **选择流程**:池成员(按实例 ID 引用)→ 状态/健康/熔断过滤 → 池级权重 → 池策略选择;成员实例被删时自动跳过
-- **策略**:weighted-random(默认)/ ound-robin / least-connections / ip-hash / consistent-hash(注意:一致哈希忽略权重)
+- **策略**:weighted-random(默认)/ round-robin / least-connections / ip-hash / consistent-hash(注意:一致哈希忽略权重)
 - **规则联动**:规则 TARGET_MODEL 目标可直接填池名,命中后走池路由
 - **响应回显**:池路由后响应与下游请求的 model 字段为实际实例模型名(非流式;流式出站请求同步改写)
 - **服务级/实例级限流、熔断**:池选出的实例继续走既有限流与熔断链路

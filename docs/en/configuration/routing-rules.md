@@ -1,4 +1,4 @@
-# Routing Rules Configuration
+﻿# Routing Rules Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.1
@@ -287,7 +287,7 @@ model:
 
 - **Pool name = virtual model name**: requesting model=auto-model (or any configured pool name) triggers pool routing; with no pool configured, uto-model falls back to all healthy instances of the service type
 - **Selection flow**: pool members (referenced by instance ID) → status/health/circuit-breaker filter → pool weights → pool strategy; deleted instances are skipped
-- **Strategies**: weighted-random (default) / ound-robin / least-connections / ip-hash / consistent-hash (note: consistent hash ignores weights)
+- **Strategies**: weighted-random (default) / round-robin / least-connections / ip-hash / consistent-hash (note: consistent hash ignores weights)
 - **Rule synergy**: a rule's TARGET_MODEL target can be a pool name — the matched request then routes through the pool
 - **Response echo**: after pool routing, the response and downstream request model field reflect the actual serving instance model (non-streaming; streaming outbound requests are rewritten too)
 - **Rate limiting & circuit breaker**: the pool-selected instance continues through the existing service/instance rate-limit and circuit-breaker chain
