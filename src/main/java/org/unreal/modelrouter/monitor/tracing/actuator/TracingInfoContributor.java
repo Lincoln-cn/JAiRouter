@@ -7,6 +7,9 @@ import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.async.AsyncTracingProcessor;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingComponentConfig;
+import org.unreal.modelrouter.monitor.tracing.config.TracingPerformanceConfig;
+import org.unreal.modelrouter.monitor.tracing.config.TracingSecurityConfig;
 import org.unreal.modelrouter.monitor.tracing.memory.TracingMemoryManager;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryStats;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
@@ -91,7 +94,7 @@ public class TracingInfoContributor implements InfoContributor {
             
             // 性能配置信息
             Map<String, Object> performance = new HashMap<>();
-            TracingConfiguration.PerformanceConfig perfConfig = tracingConfiguration.getPerformance();
+            TracingPerformanceConfig perfConfig = tracingConfiguration.getPerformance();
             performance.put("asyncProcessing", perfConfig.isAsyncProcessing());
             
             Map<String, Object> threadPool = new HashMap<>();
@@ -162,7 +165,7 @@ public class TracingInfoContributor implements InfoContributor {
             
             // 组件状态
             Map<String, Object> components = new HashMap<>();
-            TracingConfiguration.ComponentsConfig componentsConfig = tracingConfiguration.getComponents();
+            TracingComponentConfig componentsConfig = tracingConfiguration.getComponents();
             
             components.put("http", Map.of(
                 "enabled", componentsConfig.getHttp().isEnabled(),
@@ -193,7 +196,7 @@ public class TracingInfoContributor implements InfoContributor {
             
             // 安全配置信息
             Map<String, Object> security = new HashMap<>();
-            TracingConfiguration.SecurityConfig securityConfig = tracingConfiguration.getSecurity();
+            TracingSecurityConfig securityConfig = tracingConfiguration.getSecurity();
             
             security.put("sanitization", Map.of(
                 "enabled", securityConfig.getSanitization().isEnabled(),

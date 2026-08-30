@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.0
-> **Last Updated**: 2026-08-28
+> **Document Version**: 2.9.1
+> **Last Updated**: 2026-08-30
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,23 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.1] - 2026-08-30 - Quality Closing
+
+#### Pragmatic Large-File Splits
+
+- **15 → 5 files > 500 lines** (5 highly-cohesive files pragmatically exempted): `TracingConfiguration` 608→307 (4 nested config classes extracted), `TracingEncryptionService` 543→477, `ApiKeyBatchService` 608→459, `CircuitBreakerTracingWrapper` 570→243, `DefaultMetricsCollector` 629→379, `ConfigurationService` 653→410 (instance management extracted to `InstanceConfigService`), `JwtBlacklistServiceImpl` 558→438, `ControllerTracingInterceptor` 595→237, `ExtendedSecurityAuditServiceImpl` 629→490, `NonStreamingRequestProcessor` 574→411
+- 16 new top-level classes (plain POJO config classes / DTOs + plain helpers + `@Component`/`@Service` delegates); zero behavior change, full suite regression-free
+
+#### Frontend
+
+- **Resource-pool member instances now use a dropdown selector**: loads available instances by service type, dedupes already-selected items, no manual input, fallback display for deleted instances
+
+#### Tests
+
+- Full suite **2953 tests green** (0 failures / 0 errors); jacoco INSTRUCTION coverage **31%** (≥ 30% target met, 1175 classes)
+
+---
 
 ### [2.9.0] - 2026-08-28 - Feature Release
 

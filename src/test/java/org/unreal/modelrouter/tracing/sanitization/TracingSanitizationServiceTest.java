@@ -15,6 +15,7 @@ import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingSecurityConfig;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -48,10 +49,10 @@ class TracingSanitizationServiceTest {
     private TracingConfiguration tracingConfiguration;
 
     @Mock
-    private TracingConfiguration.SecurityConfig securityConfig;
+    private TracingSecurityConfig securityConfig;
 
     @Mock
-    private TracingConfiguration.SecurityConfig.SanitizationConfig sanitizationConfig;
+    private TracingSecurityConfig.SanitizationConfig sanitizationConfig;
 
     @Mock
     private TracingConfiguration.LoggingConfig loggingConfig;

@@ -1,8 +1,8 @@
 package org.unreal.modelrouter.auth.security.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.unreal.modelrouter.common.dto.TokenBlacklistEntry;
@@ -23,16 +23,22 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "jairouter.security.jwt.blacklist.persistence.enabled", havingValue = "true")
 public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     
     private final StoreManager storeManager;
+    private final BlacklistIndexHelper blacklistIndexHelper;
     
     // 存储键前缀
     private static final String BLACKLIST_PREFIX = "jwt_blacklist_";
     private static final String BLACKLIST_INDEX_KEY = "jwt_blacklist_index";
     private static final String BLACKLIST_STATS_KEY = "jwt_blacklist_stats";
+    
+    @Autowired
+    public JwtBlacklistServiceImpl(final StoreManager storeManager) {
+        this.storeManager = storeManager;
+        this.blacklistIndexHelper = new BlacklistIndexHelper(storeManager, BLACKLIST_PREFIX);
+    }
     
     @jakarta.annotation.PostConstruct
     public void init() {
@@ -62,10 +68,10 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 storeManager.saveConfig(blacklistKey, entryData);
                 
                 // 更新黑名单索引
-                updateBlacklistIndex(tokenHash, true);
+                blacklistIndexHelper.updateBlacklistIndex(tokenHash, true);
                 
                 // 更新统计信息
-                updateBlacklistStats(1, 0);
+                blacklistIndexHelper.updateBlacklistStats(1, 0);
                 
                 log.debug("Successfully added token to blacklist: { }", tokenHash);
                 
@@ -124,10 +130,10 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                     storeManager.deleteConfig(blacklistKey);
                     
                     // 更新黑名单索引
-                    updateBlacklistIndex(tokenHash, false);
+                    blacklistIndexHelper.updateBlacklistIndex(tokenHash, false);
                     
                     // 更新统计信息
-                    updateBlacklistStats(-1, 0);
+                    blacklistIndexHelper.updateBlacklistStats(-1, 0);
                     
                     log.debug("Successfully removed token from blacklist: { }", tokenHash);
                 }
@@ -143,7 +149,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
     public Mono<Long> getBlacklistSize() {
         return Mono.fromCallable(() -> {
             try {
-                List<String> blacklistTokens = getBlacklistIndex();
+                List<String> blacklistTokens = blacklistIndexHelper.getBlacklistIndex();
                 return (long) blacklistTokens.size();
                 
             } catch (Exception e) {
@@ -158,7 +164,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
         return Mono.fromRunnable(() -> {
             try {
                 long removedCount = 0;
-                List<String> blacklistTokens = getBlacklistIndex();
+                List<String> blacklistTokens = blacklistIndexHelper.getBlacklistIndex();
                 
                 for (String tokenHash : blacklistTokens) {
                     try {
@@ -171,7 +177,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                             if (isEntryExpired(entry)) {
                                 // 删除过期条目
                                 storeManager.deleteConfig(blacklistKey);
-                                updateBlacklistIndex(tokenHash, false);
+                                blacklistIndexHelper.updateBlacklistIndex(tokenHash, false);
                                 removedCount++;
                             }
                         }
@@ -182,7 +188,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 
                 if (removedCount > 0) {
                     // 更新统计信息
-                    updateBlacklistStats(-removedCount, removedCount);
+                    blacklistIndexHelper.updateBlacklistStats(-removedCount, removedCount);
                     log.info("Cleaned up { } expired blacklist entries", removedCount);
                 }
                 
@@ -215,7 +221,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 stats.put("lastUpdated", LocalDateTime.now());
                 
                 // 计算过期条目数量
-                long expiredCount = countExpiredEntries();
+                long expiredCount = blacklistIndexHelper.countExpiredEntries();
                 stats.put("expiredEntries", expiredCount);
                 
                 // 计算活跃条目数量
@@ -256,100 +262,6 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
         } catch (Exception e) {
             log.error("Failed to convert map to blacklist entry: { }", e.getMessage(), e);
             throw new RuntimeException("Failed to convert map to blacklist entry", e);
-        }
-    }
-    
-    /**
-     * 更新黑名单索引
-     */
-    private void updateBlacklistIndex(final String tokenHash, final boolean add) {
-        try {
-            Map<String, Object> indexData = storeManager.getConfig(BLACKLIST_INDEX_KEY);
-            
-            if (indexData == null) {
-                indexData = new HashMap<>();
-                indexData.put("tokenHashes", new ArrayList<String>());
-            }
-            
-            @SuppressWarnings("unchecked")
-            List<String> tokenHashes = (List<String>) indexData.get("tokenHashes");
-            if (tokenHashes == null) {
-                tokenHashes = new ArrayList<>();
-            }
-            
-            if (add) {
-                if (!tokenHashes.contains(tokenHash)) {
-                    tokenHashes.add(tokenHash);
-                }
-            } else {
-                tokenHashes.remove(tokenHash);
-            }
-            
-            indexData.put("tokenHashes", tokenHashes);
-            indexData.put("updatedAt", LocalDateTime.now());
-            
-            storeManager.saveConfig(BLACKLIST_INDEX_KEY, indexData);
-            
-        } catch (Exception e) {
-            log.warn("Failed to update blacklist index: { }", e.getMessage());
-        }
-    }
-    
-    /**
-     * 获取黑名单索引
-     */
-    private List<String> getBlacklistIndex() {
-        try {
-            Map<String, Object> indexData = storeManager.getConfig(BLACKLIST_INDEX_KEY);
-            
-            if (indexData == null) {
-                return new ArrayList<>();
-            }
-            
-            @SuppressWarnings("unchecked")
-            List<String> tokenHashes = (List<String>) indexData.get("tokenHashes");
-            return tokenHashes != null ? new ArrayList<>(tokenHashes) : new ArrayList<>();
-            
-        } catch (Exception e) {
-            log.warn("Failed to get blacklist index: { }", e.getMessage());
-            return new ArrayList<>();
-        }
-    }
-    
-    /**
-     * 更新黑名单统计信息
-     */
-    private void updateBlacklistStats(final long sizeChange, final long cleanedCount) {
-        try {
-            Map<String, Object> statsData = storeManager.getConfig(BLACKLIST_STATS_KEY);
-            
-            if (statsData == null) {
-                statsData = new HashMap<>();
-                statsData.put("totalAdded", 0L);
-                statsData.put("totalRemoved", 0L);
-                statsData.put("totalCleaned", 0L);
-            }
-            
-            // 更新统计数据
-            if (sizeChange > 0) {
-                long totalAdded = ((Number) statsData.getOrDefault("totalAdded", 0L)).longValue();
-                statsData.put("totalAdded", totalAdded + sizeChange);
-            } else if (sizeChange < 0) {
-                long totalRemoved = ((Number) statsData.getOrDefault("totalRemoved", 0L)).longValue();
-                statsData.put("totalRemoved", totalRemoved + Math.abs(sizeChange));
-            }
-            
-            if (cleanedCount > 0) {
-                long totalCleaned = ((Number) statsData.getOrDefault("totalCleaned", 0L)).longValue();
-                statsData.put("totalCleaned", totalCleaned + cleanedCount);
-            }
-            
-            statsData.put("lastUpdated", LocalDateTime.now());
-            
-            storeManager.saveConfig(BLACKLIST_STATS_KEY, statsData);
-            
-        } catch (Exception e) {
-            log.warn("Failed to update blacklist stats: { }", e.getMessage());
         }
     }
     
@@ -404,7 +316,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                             storeManager.saveConfig(blacklistKey, entryData);
                             
                             // 更新黑名单索引
-                            updateBlacklistIndex(tokenHash, true);
+                            blacklistIndexHelper.updateBlacklistIndex(tokenHash, true);
                             
                             addedCount++;
                         }
@@ -415,7 +327,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 
                 if (addedCount > 0) {
                     // 更新统计信息
-                    updateBlacklistStats(addedCount, 0);
+                    blacklistIndexHelper.updateBlacklistStats(addedCount, 0);
                     log.info("Batch added { } tokens to blacklist", addedCount);
                 }
                 
@@ -446,7 +358,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
             try {
                 long expiringCount = 0;
                 LocalDateTime cutoffTime = LocalDateTime.now().plusHours(hoursUntilExpiry);
-                List<String> blacklistTokens = getBlacklistIndex();
+                List<String> blacklistTokens = blacklistIndexHelper.getBlacklistIndex();
                 
                 for (String tokenHash : blacklistTokens) {
                     try {
@@ -480,7 +392,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
         return Mono.fromCallable(() -> {
             try {
                 long removedCount = 0;
-                List<String> blacklistTokens = getBlacklistIndex();
+                List<String> blacklistTokens = blacklistIndexHelper.getBlacklistIndex();
                 
                 for (String tokenHash : blacklistTokens) {
                     try {
@@ -493,7 +405,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                             if (isEntryExpired(entry)) {
                                 // 删除过期条目
                                 storeManager.deleteConfig(blacklistKey);
-                                updateBlacklistIndex(tokenHash, false);
+                                blacklistIndexHelper.updateBlacklistIndex(tokenHash, false);
                                 removedCount++;
                             }
                         }
@@ -504,7 +416,7 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 
                 if (removedCount > 0) {
                     // 更新统计信息
-                    updateBlacklistStats(-removedCount, removedCount);
+                    blacklistIndexHelper.updateBlacklistStats(-removedCount, removedCount);
                     log.info("Cleaned up { } expired blacklist entries", removedCount);
                 }
                 
@@ -515,38 +427,6 @@ public class JwtBlacklistServiceImpl implements JwtBlacklistService {
                 return 0L;
             }
         });
-    }
-    
-    /**
-     * 计算过期条目数量
-     */
-    private long countExpiredEntries() {
-        try {
-            long expiredCount = 0;
-            List<String> blacklistTokens = getBlacklistIndex();
-            
-            for (String tokenHash : blacklistTokens) {
-                try {
-                    String blacklistKey = BLACKLIST_PREFIX + tokenHash;
-                    Map<String, Object> entryData = storeManager.getConfig(blacklistKey);
-                    
-                    if (entryData != null) {
-                        TokenBlacklistEntry entry = convertFromMap(entryData);
-                        if (isEntryExpired(entry)) {
-                            expiredCount++;
-                        }
-                    }
-                } catch (Exception e) {
-                    log.warn("Failed to check expiry for blacklist entry: { }", tokenHash, e);
-                }
-            }
-            
-            return expiredCount;
-            
-        } catch (Exception e) {
-            log.warn("Failed to count expired blacklist entries: { }", e.getMessage());
-            return 0L;
-        }
     }
     
     /**

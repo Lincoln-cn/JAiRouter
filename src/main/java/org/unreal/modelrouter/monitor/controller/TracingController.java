@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.unreal.modelrouter.monitor.tracing.TracingService;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingPerformanceConfig;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 import org.unreal.modelrouter.monitor.tracing.sampler.SamplingStrategyManager;
 import reactor.core.publisher.Mono;
@@ -89,7 +90,7 @@ public class TracingController {
             
             // 性能配置状态
             Map<String, Object> performanceStatus = new HashMap<>();
-            TracingConfiguration.PerformanceConfig performanceConfig = tracingConfiguration.getPerformance();
+            TracingPerformanceConfig performanceConfig = tracingConfiguration.getPerformance();
             performanceStatus.put("asyncProcessing", performanceConfig.isAsyncProcessing());
             performanceStatus.put("threadPoolCoreSize", performanceConfig.getThreadPool().getCoreSize());
             performanceStatus.put("bufferSize", performanceConfig.getBuffer().getSize());
@@ -294,8 +295,8 @@ public class TracingController {
         
         // 更新性能配置（部分支持）
         if (newConfig.getPerformance() != null) {
-            TracingConfiguration.PerformanceConfig currentPerf = tracingConfiguration.getPerformance();
-            TracingConfiguration.PerformanceConfig newPerf = newConfig.getPerformance();
+            TracingPerformanceConfig currentPerf = tracingConfiguration.getPerformance();
+            TracingPerformanceConfig newPerf = newConfig.getPerformance();
             
             // 只更新可以运行时修改的配置
             if (newPerf.getBuffer() != null) {
