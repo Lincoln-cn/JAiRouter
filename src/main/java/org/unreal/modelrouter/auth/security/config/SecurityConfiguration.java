@@ -125,6 +125,11 @@ public class SecurityConfiguration {
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/validate").permitAll()
                 // JWT账户管理端点需要管理员权限
                 .pathMatchers("/api/security/jwt/accounts/**").hasRole("ADMIN")
+                // v2.9.4-fix: 同步返回类型的控制器无法用 @PreAuthorize（@EnableReactiveMethodSecurity 要求 Publisher），
+                // 改由 URL 规则保护（调用历史 / 调用历史配置 / 追踪安全配置）
+                .pathMatchers("/api/call-history/**").hasRole("ADMIN")
+                .pathMatchers("/api/config/call-history/**").hasRole("ADMIN")
+                .pathMatchers("/api/config/tracing/security/**").hasRole("ADMIN")
                 // AI服务端点需要认证（API Key权限由适配器层按服务类型控制）
                 .pathMatchers("/v1/**").authenticated()
                 // 其他API端点需要认证

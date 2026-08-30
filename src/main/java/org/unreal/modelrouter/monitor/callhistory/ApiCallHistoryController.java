@@ -8,7 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -45,7 +44,9 @@ import java.util.UUID;
 @RequestMapping("/api/call-history")
 @RequiredArgsConstructor
 @Tag(name = "API 调用历史", description = "API 调用历史记录、查询和统计接口")
-@PreAuthorize("hasRole('ADMIN')")
+// v2.9.4-fix: RBAC 由 SecurityConfiguration URL 规则保护（/api/call-history/** -> ADMIN）。
+// 本 controller 返回同步 ResponseEntity，类级 @PreAuthorize 在 @EnableReactiveMethodSecurity 下
+// 要求 Publisher 返回类型，真实请求会报 500（Reactor Context 错误）。
 public class ApiCallHistoryController {
 
     private final ApiCallHistoryService callHistoryService;

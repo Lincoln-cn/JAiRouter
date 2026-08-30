@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,7 +32,7 @@ import java.util.UUID;
 @RequestMapping("/api/config/call-history")
 @RequiredArgsConstructor
 @Tag(name = "调用历史配置", description = "调用历史记录治理配置管理接口")
-@PreAuthorize("hasRole('ADMIN')")
+// v2.9.4-fix: RBAC 由 SecurityConfiguration URL 规则保护（/api/config/call-history/** -> ADMIN）
 public class CallHistoryConfigController {
 
     private final CallHistoryProperties callHistoryProperties;

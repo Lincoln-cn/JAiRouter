@@ -2,7 +2,7 @@
   <el-container class="layout-container">
     <el-aside width="200px">
       <el-menu :default-active="activeMenu" :default-openeds="defaultOpeneds" class="layout-menu"
-        background-color="#545c64" text-color="#fff" active-text-color="#ffd04b" :router="false"
+        background-color="transparent" text-color="var(--ja-sidebar-text)" active-text-color="var(--ja-sidebar-active)" :router="false"
         @select="handleMenuSelect">
         <div class="logo">
           <div class="logo-icon">
@@ -182,6 +182,12 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <el-button class="theme-toggle" circle @click="toggleTheme">
+            <el-icon :size="18">
+              <Moon v-if="!isDark" />
+              <Sunny v-else />
+            </el-icon>
+          </el-button>
           <el-dropdown @command="handleUserCommand">
             <span class="user-info">
               <el-avatar :size="30" icon="UserFilled" />
@@ -208,6 +214,7 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useTheme } from '@/composables/useTheme'
 import {
   House,
   Setting,
@@ -224,12 +231,15 @@ import {
   Promotion,
   DataAnalysis,
   Odometer,
-  Document
+  Document,
+  Moon,
+  Sunny
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { isDark, toggleTheme } = useTheme()
 
 // 防止快速连续点击导致的导航问题
 const isNavigating = ref(false)
@@ -373,13 +383,13 @@ const handleUserCommand = async (command: string) => {
 <style scoped>
 .layout-container {
   height: 100vh;
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: var(--ja-sidebar-bg);
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .layout-menu {
   height: 100vh;
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: var(--ja-sidebar-bg);
   border-right: none;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
@@ -395,14 +405,14 @@ const handleUserCommand = async (command: string) => {
   justify-content: center;
   flex-direction: column;
   padding: 20px 0;
-  background: linear-gradient(135deg, #434b52 0%, #2c3e50 100%);
-  border-bottom: 1px solid #3d444d;
+  background: var(--ja-sidebar-logo-bg);
+  border-bottom: 1px solid var(--ja-sidebar-logo-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .logo-icon {
   margin-bottom: 10px;
-  color: #409eff;
+  color: var(--ja-primary);
   background: rgba(64, 158, 255, 0.1);
   border-radius: 50%;
   padding: 12px;
@@ -430,7 +440,7 @@ const handleUserCommand = async (command: string) => {
 }
 
 .logo-text {
-  color: #ffffff;
+  color: var(--ja-sidebar-text);
   font-size: 20px;
   font-weight: 600;
   margin: 0;
@@ -442,9 +452,13 @@ const handleUserCommand = async (command: string) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e6e6e6;
+  background-color: var(--ja-bg-page);
+  border-bottom: 1px solid var(--ja-border);
   padding: 0 20px;
+}
+
+.theme-toggle {
+  margin-right: 12px;
 }
 
 .user-info {
@@ -459,7 +473,7 @@ const handleUserCommand = async (command: string) => {
 }
 
 .layout-main {
-  background-color: #f5f5f5;
+  background-color: var(--ja-main-bg);
   padding: 20px;
 }
 </style>

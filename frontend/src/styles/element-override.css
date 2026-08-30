@@ -1,0 +1,107 @@
+/**
+ * Element Plus CSS 变量覆盖
+ * 覆盖 EP 的 CSS 变量使其与 tokens.css 保持一致
+ * 同时定义 html.dark 暗色模式覆盖
+ */
+
+:root {
+  /* ========== 主色 ========== */
+  --el-color-primary: var(--ja-primary);
+  --el-color-primary-light-3: var(--ja-primary-light-3);
+  --el-color-primary-light-5: var(--ja-primary-light-5);
+  --el-color-primary-light-7: var(--ja-primary-light-7);
+  --el-color-primary-light-8: var(--ja-primary-light-8);
+  --el-color-primary-light-9: var(--ja-primary-light-9);
+  --el-color-primary-dark-2: var(--ja-primary-dark-2);
+
+  /* ========== 背景 ========== */
+  --el-bg-color: var(--ja-bg-page);
+  --el-bg-color-overlay: var(--ja-bg-overlay);
+  --el-bg-color-mask: var(--ja-bg-mask);
+
+  /* ========== 填充色 ========== */
+  --el-fill-color-blank: var(--ja-bg-card);
+  --el-fill-color: #f0f2f5;
+  --el-fill-color-light: #f5f7fa;
+  --el-fill-color-lighter: #fafafa;
+  --el-fill-color-extra-light: #fafcff;
+  --el-fill-color-dark: #ebedf0;
+
+  /* ========== 文字色 ========== */
+  --el-text-color-primary: var(--ja-text-primary);
+  --el-text-color-regular: var(--ja-text-regular);
+  --el-text-color-secondary: var(--ja-text-secondary);
+  --el-text-color-placeholder: var(--ja-text-placeholder);
+  --el-text-color-disabled: #a8abb2;
+
+  /* ========== 边框色 ========== */
+  --el-border-color: var(--ja-border);
+  --el-border-color-light: var(--ja-border-light);
+  --el-border-color-lighter: var(--ja-border-lighter);
+  --el-border-color-dark: var(--ja-border-dark);
+  --el-border-color-extra-light: #f2f6fc;
+
+  /* ========== 阴影 ========== */
+  --el-box-shadow: var(--ja-shadow);
+  --el-box-shadow-light: var(--ja-shadow-sm);
+  --el-box-shadow-lighter: 0 1px 1px rgba(0, 0, 0, 0.04);
+  --el-box-shadow-dark: var(--ja-shadow-lg);
+
+  /* ========== 字体 ========== */
+  --el-font-family: var(--ja-font-family);
+
+  /* ========== 圆角 ========== */
+  --el-border-radius-base: var(--ja-radius);
+  --el-border-radius-small: var(--ja-radius-sm);
+  --el-border-radius-round: 20px;
+  --el-border-radius-circle: 100%;
+
+  /* ========== 功能色 ========== */
+  --el-color-success: var(--ja-success);
+  --el-color-warning: var(--ja-warning);
+  --el-color-danger: var(--ja-danger);
+  --el-color-info: var(--ja-info);
+}
+
+/* ========== 暗色模式 Element Plus 覆盖 ========== */
+html.dark {
+  --el-color-primary: var(--ja-primary);
+  --el-color-primary-light-3: var(--ja-primary-light-3);
+  --el-color-primary-light-5: var(--ja-primary-light-5);
+  --el-color-primary-light-7: var(--ja-primary-light-7);
+  --el-color-primary-light-8: var(--ja-primary-light-8);
+  --el-color-primary-light-9: var(--ja-primary-light-9);
+  --el-color-primary-dark-2: var(--ja-primary-dark-2);
+
+  --el-bg-color: var(--ja-bg-page);
+  --el-bg-color-overlay: var(--ja-bg-overlay);
+  --el-bg-color-mask: var(--ja-bg-mask);
+
+  --el-fill-color-blank: var(--ja-bg-card);
+  --el-fill-color: #303030;
+  --el-fill-color-light: #262727;
+  --el-fill-color-lighter: #1d1d1d;
+  --el-fill-color-extra-light: #191919;
+  --el-fill-color-dark: #393939;
+
+  --el-text-color-primary: var(--ja-text-primary);
+  --el-text-color-regular: var(--ja-text-regular);
+  --el-text-color-secondary: var(--ja-text-secondary);
+  --el-text-color-placeholder: var(--ja-text-placeholder);
+  --el-text-color-disabled: #73767a;
+
+  --el-border-color: var(--ja-border);
+  --el-border-color-light: var(--ja-border-light);
+  --el-border-color-lighter: var(--ja-border-lighter);
+  --el-border-color-dark: var(--ja-border-dark);
+  --el-border-color-extra-light: #363637;
+
+  --el-box-shadow: var(--ja-shadow);
+  --el-box-shadow-light: var(--ja-shadow-sm);
+  --el-box-shadow-dark: var(--ja-shadow-lg);
+
+  --el-color-success: var(--ja-success);
+  --el-color-warning: var(--ja-warning);
+  --el-color-danger: var(--ja-danger);
+  --el-color-info: var(--ja-info);
+}
