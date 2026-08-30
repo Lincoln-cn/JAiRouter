@@ -635,6 +635,16 @@ model:
           priority: 3           # Backup instance
 ```
 
+#### Request-level failover (v2.9.6+)
+
+Since v2.9.6, when a call fails with a retryable error (connection error / 5xx / timeout), the gateway **reselects a different instance** to retry, instead of hammering the same instance:
+
+- **Instance switching**: on retryable failure, the current instance joins the per-request failed-blacklist; a new instance is selected through the normal selection chain (health/circuit-breaker filter + LB strategy), excluding already-failed ones
+- **Blacklist isolation**: failed instances are not reselected within the same request
+- **All-failed fallback**: if all instances failed or only one exists, fall back to retrying the same instance (existing behavior); retry count remains bounded by `RetryPolicy`
+- **Non-retryable errors** (e.g. 4xx) do not switch instance or retry
+- Enabled by default, no extra config; retry limit follows the per-service-type retry configuration
+
 ### 3. Load Balancing Issue Diagnosis
 
 ```bash

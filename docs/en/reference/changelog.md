@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.5
+> **Document Version**: 2.9.6
 > **Last Updated**: 2026-08-30
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
@@ -20,6 +20,22 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.6] - 2026-08-30 - Feature Release (Routing Intelligence-2: Request-Level Failover)
+
+#### Request-level failover
+
+- **Instance switching on retry**: `BaseAdapter.processRequestWithRetry` reworked — on retryable error (connection / 5xx / timeout) the current instance joins the per-request failed blacklist (`baseUrl:path` key); a new instance is selected through the normal chain (health/circuit-breaker filter + LB strategy), replacing the old same-instance hammering
+- **Blacklist isolation**: failed instances are not reselected within a request (`tryReselectInstance`, cap `failedKeys.size()+2` prevents infinite loops)
+- **Safe fallback**: single-instance service / all-instances-failed / reselect exhausted → fall back to same-instance retry (existing behavior); 4xx non-retryable errors never switch; retry count stays bounded by `RetryPolicy`
+- **Enabled by default**: no config needed (reselect passes null clientIp, LB degrades to non-IP-aware; sticky routing naturally bypassed during failover)
+- Per-instance WebClient fetched by baseUrl (`getWebClientForInstance`)
+
+#### Tests
+
+- New `BaseAdapterFailoverTest` (5 cases: A-fails→B-succeeds / all-failed fallback / single-instance no-reselect / 4xx no-retry / reselect cap); **full suite 3034 tests green** (+5)
+
+---
 
 ### [2.9.5] - 2026-08-30 - Feature Release (Knowledge-Base Governance)
 

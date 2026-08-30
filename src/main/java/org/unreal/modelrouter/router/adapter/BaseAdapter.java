@@ -33,7 +33,9 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -100,6 +102,24 @@ public abstract class BaseAdapter implements ServiceCapability {
         }
     }
 
+    /**
+     * 根据实例 baseUrl 获取 WebClient（不重新选择实例）。
+     * 用于故障转移重选实例后获取新实例的 WebClient。
+     */
+    @SuppressWarnings("all")
+    private WebClient getWebClientForInstance(final ModelRouterProperties.ModelInstance instance) {
+        String baseUrl = instance.getBaseUrl();
+        try {
+            var tracingFactory = org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
+                    org.unreal.modelrouter.monitor.tracing.client.TracingWebClientFactory.class);
+            return tracingFactory.createTracingWebClient(baseUrl);
+        } catch (Exception e) {
+            return org.unreal.modelrouter.common.util.ApplicationContextProvider.getBean(
+                    org.unreal.modelrouter.router.model.WebClientCacheManager.class)
+                    .getOrCreate(baseUrl);
+        }
+    }
+
     protected Mono<ResponseEntity<String>> checkCapability(final ModelServiceRegistry.ServiceType serviceType) {
         return resilienceSupport.getCapabilityChecker().checkCapability(supportCapability(), serviceType);
     }
@@ -120,14 +140,57 @@ public abstract class BaseAdapter implements ServiceCapability {
         resilienceSupport.getTracingManager()
                 .recordCallStart(adapterType, selectedInstance, serviceType, modelNameFromRequest);
         return processRequestWithRetry(request, authorization, client, path, selectedInstance,
-                serviceType, modelNameFromRequest, processor, startTime, 0);
+                serviceType, modelNameFromRequest, processor, startTime, 0,
+                new HashSet<>());
+    }
+
+    /**
+     * 实例键生成：与 LoadBalancer 的实例标识保持一致
+     */
+    private String instanceKey(final ModelRouterProperties.ModelInstance instance) {
+        return instance.getBaseUrl() + ":" + instance.getPath();
+    }
+
+    /**
+     * v2.9.6: 尝试故障转移重选实例，排除已失败的实例。
+     * 如果找不到新的可用实例，返回当前实例（保留原有重试行为作为兜底）。
+     *
+     * @param currentInstance 当前失败的实例
+     * @param serviceType 服务类型
+     * @param modelName 模型名称
+     * @param failedKeys 已失败的实例键集合
+     * @return 重选的实例（可能与 currentInstance 相同，表示无可用替代）
+     */
+    private ModelRouterProperties.ModelInstance tryReselectInstance(
+            final ModelRouterProperties.ModelInstance currentInstance,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final String modelName,
+            final Set<String> failedKeys) {
+        // 最大尝试次数 = 已失败数 + 2（留余量，避免死循环）
+        int maxAttempts = failedKeys.size() + 2;
+        for (int i = 0; i < maxAttempts; i++) {
+            try {
+                ModelRouterProperties.ModelInstance candidate =
+                        getRegistry().selectInstance(serviceType, modelName, null);
+                if (candidate != null && !failedKeys.contains(instanceKey(candidate))) {
+                    return candidate;
+                }
+                // 候选已在失败列表中或为空，继续尝试
+            } catch (Exception e) {
+                // 选择异常（如无可用实例），跳出循环
+                logger.debug("故障转移重选实例失败: {}", e.getMessage());
+                break;
+            }
+        }
+        return currentInstance;
     }
 
     @SuppressWarnings("all")
     private <T> Mono processRequestWithRetry(final T request, final String authorization,
             final WebClient client, final String path, final ModelRouterProperties.ModelInstance selectedInstance,
             final ModelServiceRegistry.ServiceType serviceType, final String modelName,
-            final RequestProcessor<T> processor, final long startTime, final int retryCount) {
+            final RequestProcessor<T> processor, final long startTime, final int retryCount,
+            final Set<String> failedKeys) {
         String adapterType = getAdapterType();
         String instanceName = selectedInstance.getName();
         RetryPolicy retryPolicy = resilienceSupport.getRetryPolicy();
@@ -160,10 +223,19 @@ public abstract class BaseAdapter implements ServiceCapability {
                             metricsRecorder.recordRetry(adapterType, instanceName, retryCount + 1, throwable);
                         }
                         long retryDelay = retryPolicy.calculateRetryDelay(retryCount);
+                        // v2.9.6: 请求级故障转移 — 重选实例排除已失败实例
+                        failedKeys.add(instanceKey(selectedInstance));
+                        ModelRouterProperties.ModelInstance nextInstance =
+                                tryReselectInstance(selectedInstance, serviceType, modelName, failedKeys);
+                        // 使用新实例时需要获取新的 WebClient
+                        WebClient nextClient = (nextInstance != selectedInstance)
+                                ? getWebClientForInstance(nextInstance) : client;
+                        String nextPath = (nextInstance != selectedInstance)
+                                ? getModelPath(serviceType, modelName) : path;
                         return Mono.delay(Duration.ofMillis(retryDelay))
-                                .then(processRequestWithRetry(request, authorization, client, path,
-                                        selectedInstance, serviceType, modelName, processor,
-                                        System.currentTimeMillis(), retryCount + 1));
+                                .then(processRequestWithRetry(request, authorization, nextClient, nextPath,
+                                        nextInstance, serviceType, modelName, processor,
+                                        System.currentTimeMillis(), retryCount + 1, failedKeys));
                     }
                     if (errorTracker != null) {
                         Map<String, Object> errorContext = new HashMap<>();
