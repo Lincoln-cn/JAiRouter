@@ -37,6 +37,10 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 - **修复**：`ApiCallHistoryController` / `CallHistoryConfigController` / `TracingSecurityController`（3 个同步返回 controller）移除 `@PreAuthorize`，改由 `SecurityConfiguration` URL 规则保护（`/api/call-history/**`、`/api/config/call-history/**`、`/api/config/tracing/security/**` → ADMIN）
 - 真实请求验证：ADMIN 200 / 无 token 401；本地 dev 库手动补齐 v2.9.2 新列（H2 `DATABASE_TO_UPPER=FALSE` 下 Hibernate ddl-auto update 大小写元数据不匹配导致无法自动加列）
 
+#### 旧库升级兼容（自动迁移）
+
+- **`CompatibilitySchemaMigrator`**（启动时幂等迁移）：旧版本（≤v2.9.1）升级的数据库若缺 `record_level` / `request_body_encrypted` / `response_body_encrypted` 列，应用启动时自动检测并 `ALTER TABLE ADD COLUMN` 补齐，无需人工干预；列类型按方言适配（H2=CLOB / MySQL=LONGTEXT / PostgreSQL=TEXT）；新库由 JPA 建表自动跳过；重复启动安全；新增实体列时在迁移清单登记即可扩展
+
 #### 测试
 
 - 更新 ApiCallHistoryControllerRbacTest / RecordLevelChangeAuditTest（RBAC 断言改为 URL 规则语义）；**全量 3023 用例全绿**
