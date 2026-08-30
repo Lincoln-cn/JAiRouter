@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.26",
-      "LastModified": "2026-08-28T13:52:19.161484",
-      "ContentHash": "7f87b98df5f6353f",
-      "GitCommit": "3bdb3265",
+      "Version": "1.0.27",
+      "LastModified": "2026-08-30T07:57:50.137083",
+      "ContentHash": "1f415dce25d634b8",
+      "GitCommit": "a31ec08f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -117,10 +117,10 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-24T03:02:49.108707",
-      "ContentHash": "15b3f3825a57c606",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.4",
+      "LastModified": "2026-08-30T07:57:50.177165",
+      "ContentHash": "ab113d6dfb15f8ac",
+      "GitCommit": "a31ec08f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -354,10 +354,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.10",
-      "LastModified": "2026-08-28T13:52:19.224005",
-      "ContentHash": "168e064033e6b0d4",
-      "GitCommit": "3bdb3265",
+      "Version": "1.0.11",
+      "LastModified": "2026-08-30T07:57:50.246635",
+      "ContentHash": "c5eae2ee2115af0c",
+      "GitCommit": "a31ec08f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -508,10 +508,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-08-28T13:52:19.247539",
-      "ContentHash": "cce03d3c3cf8390f",
-      "GitCommit": "3bdb3265",
+      "Version": "1.0.12",
+      "LastModified": "2026-08-30T07:57:50.288030",
+      "ContentHash": "d8716b571fd85a31",
+      "GitCommit": "a31ec08f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -723,10 +723,10 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-06-03T06:53:11.329739",
-      "ContentHash": "e35da9a9b157ea5b",
-      "GitCommit": "b305e6de",
+      "Version": "1.0.3",
+      "LastModified": "2026-08-30T07:57:50.414312",
+      "ContentHash": "881ee008d07a5335",
+      "GitCommit": "a31ec08f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -960,10 +960,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-08-28T13:52:19.383941",
-      "ContentHash": "2c0ceba6db9c0172",
-      "GitCommit": "3bdb3265",
+      "Version": "1.0.12",
+      "LastModified": "2026-08-30T07:57:50.516304",
+      "ContentHash": "6301fb382d9fe923",
+      "GitCommit": "a31ec08f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1128,10 +1128,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-08-28T13:52:19.420509",
-      "ContentHash": "1a6c1e881a82bd00",
-      "GitCommit": "3bdb3265",
+      "Version": "1.0.12",
+      "LastModified": "2026-08-30T07:57:50.575786",
+      "ContentHash": "4ad29e7fcf400e6f",
+      "GitCommit": "a31ec08f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1725,10 +1725,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.18",
-      "LastModified": "2026-08-28T13:52:19.160290",
-      "ContentHash": "4eff86711ff77e60",
-      "GitCommit": "3bdb3265",
+      "Version": "1.0.19",
+      "LastModified": "2026-08-30T07:57:50.135177",
+      "ContentHash": "884fcb054fb3f6ee",
+      "GitCommit": "a31ec08f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -5214,7 +5214,71 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-08-28T13:52:19.420514",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.18",
+      "NewVersion": "1.0.19",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T07:57:50.135187",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.26",
+      "NewVersion": "1.0.27",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T07:57:50.137088",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T07:57:50.177175",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.10",
+      "NewVersion": "1.0.11",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T07:57:50.246645",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T07:57:50.288040",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T07:57:50.414321",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T07:57:50.516314",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T07:57:50.575796",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-08-29T08:40:43.435433"
+  "last_updated": "2026-08-30T07:57:50.783805"
 }
