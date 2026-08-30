@@ -13,11 +13,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.unreal.modelrouter.auth.security.service.ApiKeyService;
+import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
+import org.unreal.modelrouter.router.pool.PoolSelector;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -41,8 +45,27 @@ class NonStreamingRequestProcessorTest {
     @Mock
     private AdapterMetricsRecorder metricsRecorder;
 
+    @Mock
+    private TokenUsageExtractor tokenUsageExtractor;
+
     @InjectMocks
     private NonStreamingRequestProcessor processor;
+
+    // Mocks for TokenUsageExtractor dependencies
+    @Mock
+    private TokenUsageRecorder tokenUsageRecorder;
+
+    @Mock
+    private ApiKeyService apiKeyService;
+
+    @Mock
+    private PoolSelector poolSelector;
+
+    @Mock
+    private MetricsCollector metricsCollector;
+
+    // Real TokenUsageExtractor instance for testing extracted methods
+    private TokenUsageExtractor realTokenUsageExtractor;
 
     private Function<Object, Object> identityTransform;
     private Function<Object, Object> responseTransform;
@@ -51,6 +74,8 @@ class NonStreamingRequestProcessorTest {
     void setUp() {
         identityTransform = req -> req;
         responseTransform = resp -> resp;
+        realTokenUsageExtractor = new TokenUsageExtractor(
+                objectMapper, tokenUsageRecorder, apiKeyService, poolSelector, metricsCollector);
     }
 
     @Nested
@@ -59,10 +84,10 @@ class NonStreamingRequestProcessorTest {
         @Test
         @DisplayName("httpRequest 为 null 时应返回 null")
         void shouldReturnNullWhenHttpRequestIsNull() throws Exception {
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("extractKeyIdFromRequest", ServerHttpRequest.class);
+            var method = TokenUsageExtractor.class.getDeclaredMethod("extractKeyIdFromRequest", ServerHttpRequest.class);
             method.setAccessible(true);
 
-            String result = (String) method.invoke(processor, (ServerHttpRequest) null);
+            String result = (String) method.invoke(realTokenUsageExtractor, (ServerHttpRequest) null);
             assertNull(result);
         }
 
@@ -72,10 +97,10 @@ class NonStreamingRequestProcessorTest {
             ServerHttpRequest request = mock(ServerHttpRequest.class);
             when(request.getAttributes()).thenReturn(Map.of());
 
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("extractKeyIdFromRequest", ServerHttpRequest.class);
+            var method = TokenUsageExtractor.class.getDeclaredMethod("extractKeyIdFromRequest", ServerHttpRequest.class);
             method.setAccessible(true);
 
-            String result = (String) method.invoke(processor, request);
+            String result = (String) method.invoke(realTokenUsageExtractor, request);
             assertNull(result);
         }
 
@@ -85,10 +110,10 @@ class NonStreamingRequestProcessorTest {
             ServerHttpRequest request = mock(ServerHttpRequest.class);
             when(request.getAttributes()).thenReturn(Map.of("API_KEY_ID", "test-key-id"));
 
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("extractKeyIdFromRequest", ServerHttpRequest.class);
+            var method = TokenUsageExtractor.class.getDeclaredMethod("extractKeyIdFromRequest", ServerHttpRequest.class);
             method.setAccessible(true);
 
-            String result = (String) method.invoke(processor, request);
+            String result = (String) method.invoke(realTokenUsageExtractor, request);
             assertEquals("test-key-id", result);
         }
     }
@@ -99,20 +124,20 @@ class NonStreamingRequestProcessorTest {
         @Test
         @DisplayName("apiKeyId 为 null 时不应更新")
         void shouldNotUpdateWhenApiKeyIdIsNull() throws Exception {
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("updateApiKeyTokenUsage", String.class, long.class);
+            var method = TokenUsageExtractor.class.getDeclaredMethod("updateApiKeyTokenUsage", String.class, long.class);
             method.setAccessible(true);
 
             // Should not throw
-            method.invoke(processor, null, 100L);
+            method.invoke(realTokenUsageExtractor, null, 100L);
         }
 
         @Test
         @DisplayName("totalTokens 为 0 时不应更新")
         void shouldNotUpdateWhenTotalTokensIsZero() throws Exception {
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("updateApiKeyTokenUsage", String.class, long.class);
+            var method = TokenUsageExtractor.class.getDeclaredMethod("updateApiKeyTokenUsage", String.class, long.class);
             method.setAccessible(true);
 
-            method.invoke(processor, "key-id", 0L);
+            method.invoke(realTokenUsageExtractor, "key-id", 0L);
         }
     }
 
@@ -176,12 +201,12 @@ class NonStreamingRequestProcessorTest {
         void shouldNotRecordWhenNoUsageField() throws Exception {
             String bodyStr = "{\"model\": \"gpt-4\"}";
 
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("extractAndRecordTokenUsage",
+            var method = TokenUsageExtractor.class.getDeclaredMethod("extractAndRecordTokenUsage",
                     String.class, String.class, String.class, String.class);
             method.setAccessible(true);
 
             // Should not throw
-            method.invoke(processor, bodyStr, "normal", "instance-1", null);
+            method.invoke(realTokenUsageExtractor, bodyStr, "normal", "instance-1", null);
         }
 
         @Test
@@ -189,11 +214,11 @@ class NonStreamingRequestProcessorTest {
         void shouldNotRecordWhenTotalTokensIsZero() throws Exception {
             String bodyStr = "{\"usage\": {\"prompt_tokens\": 10, \"completion_tokens\": 5, \"total_tokens\": 0}}";
 
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("extractAndRecordTokenUsage",
+            var method = TokenUsageExtractor.class.getDeclaredMethod("extractAndRecordTokenUsage",
                     String.class, String.class, String.class, String.class);
             method.setAccessible(true);
 
-            method.invoke(processor, bodyStr, "normal", "instance-1", null);
+            method.invoke(realTokenUsageExtractor, bodyStr, "normal", "instance-1", null);
         }
 
         @Test
@@ -201,12 +226,12 @@ class NonStreamingRequestProcessorTest {
         void shouldNotThrowOnInvalidJson() throws Exception {
             String bodyStr = "invalid json";
 
-            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("extractAndRecordTokenUsage",
+            var method = TokenUsageExtractor.class.getDeclaredMethod("extractAndRecordTokenUsage",
                     String.class, String.class, String.class, String.class);
             method.setAccessible(true);
 
             // Should not throw
-            method.invoke(processor, bodyStr, "normal", "instance-1", null);
+            method.invoke(realTokenUsageExtractor, bodyStr, "normal", "instance-1", null);
         }
     }
 }

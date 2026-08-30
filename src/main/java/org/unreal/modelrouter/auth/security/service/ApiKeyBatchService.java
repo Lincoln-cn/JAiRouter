@@ -43,6 +43,9 @@ public class ApiKeyBatchService {
     @Autowired(required = false)
     private ApiKeyPersistenceService persistenceService;
 
+    // 审计辅助类
+    private final ApiKeyAuditHelper auditHelper = new ApiKeyAuditHelper();
+
     /**
      * 批量导出 API Key 配置
      * 导出的数据不包含 keyValue 和 keyHash，仅包含可恢复的配置信息
@@ -96,7 +99,7 @@ public class ApiKeyBatchService {
             // 导入每个密钥
             for (ApiKeyBatchImportRequest.ApiKeyImportItem item : request.getKeys()) {
                 try {
-                    ImportResult result = importSingleKey(item, apiKeyCache, keyIdIndex,
+                    ApiKeyImportResult result = importSingleKey(item, apiKeyCache, keyIdIndex,
                             importedBy, ipAddress,
                             request.getMode() == ApiKeyBatchImportRequest.ImportMode.MERGE);
 
@@ -128,7 +131,7 @@ public class ApiKeyBatchService {
             }
 
             // 记录审计
-            auditBatchImport(importedBy, ipAddress, successCount, failureCount);
+            auditHelper.auditBatchImport(extendedAuditService, importedBy, ipAddress, successCount, failureCount);
 
             return ApiKeyBatchImportResult.builder()
                     .totalAttempted(request.getKeys().size())
@@ -214,7 +217,7 @@ public class ApiKeyBatchService {
             }
 
             // 记录审计
-            auditApiKeyRotated(keyId, rotatedBy);
+            auditHelper.auditApiKeyRotated(extendedAuditService, keyId, rotatedBy);
 
             log.info("强制轮换密钥成功: {}, 操作者: {}", keyId, rotatedBy);
 
@@ -250,7 +253,7 @@ public class ApiKeyBatchService {
                         apiKey.setEnabled(false);
                         cleanedCount++;
                         log.info("自动禁用过期密钥: {}", apiKey.getKeyId());
-                        auditApiKeyExpired(apiKey.getKeyId());
+                        auditHelper.auditApiKeyExpired(extendedAuditService, apiKey.getKeyId());
                     } catch (Exception e) {
                         log.error("禁用过期密钥失败: {}", apiKey.getKeyId(), e);
                     }
@@ -271,7 +274,7 @@ public class ApiKeyBatchService {
      * @param apiKeyCache   API Key 缓存
      * @return 轮换统计
      */
-    public Mono<RotationStats> getRotationStats(final Map<String, ApiKey> apiKeyCache) {
+    public Mono<ApiKeyRotationStats> getRotationStats(final Map<String, ApiKey> apiKeyCache) {
         return Mono.fromCallable(() -> {
             int totalKeys = apiKeyCache.size();
             int keysWithRotation = 0;
@@ -292,7 +295,7 @@ public class ApiKeyBatchService {
                 }
             }
 
-            return new RotationStats(totalKeys, keysWithRotation, keysNeedingRotation, rotatedToday);
+            return new ApiKeyRotationStats(totalKeys, keysWithRotation, keysNeedingRotation, rotatedToday);
         });
     }
 
@@ -302,7 +305,7 @@ public class ApiKeyBatchService {
      * @param apiKeyCache   API Key 缓存
      * @return 过期统计
      */
-    public Mono<ExpirationStats> getExpirationStats(final Map<String, ApiKey> apiKeyCache) {
+    public Mono<ApiKeyExpirationStats> getExpirationStats(final Map<String, ApiKey> apiKeyCache) {
         return Mono.fromCallable(() -> {
             int totalKeys = apiKeyCache.size();
             int expiredKeys = 0;
@@ -322,7 +325,7 @@ public class ApiKeyBatchService {
                 }
             }
 
-            return new ExpirationStats(totalKeys, expiredKeys, expiringToday, disabledKeys);
+            return new ApiKeyExpirationStats(totalKeys, expiredKeys, expiringToday, disabledKeys);
         });
     }
 
@@ -331,7 +334,7 @@ public class ApiKeyBatchService {
     /**
      * 导入单个密钥
      */
-    private ImportResult importSingleKey(final ApiKeyBatchImportRequest.ApiKeyImportItem item,
+    private ApiKeyImportResult importSingleKey(final ApiKeyBatchImportRequest.ApiKeyImportItem item,
                                           final Map<String, ApiKey> apiKeyCache,
                                           final Map<String, String> keyIdIndex,
                                           final String importedBy,
@@ -344,7 +347,7 @@ public class ApiKeyBatchService {
 
         // 检查 keyId 是否已存在（MERGE 模式）
         if (mergeMode && keyIdIndex.containsKey(keyId)) {
-            return ImportResult.failure(keyId, "API Key ID已存在");
+            return ApiKeyImportResult.failure(keyId, "API Key ID已存在");
         }
 
         // 生成原始 keyValue
@@ -394,7 +397,7 @@ public class ApiKeyBatchService {
                 .warning("密钥值只会显示一次，请妥善保存！")
                 .build();
 
-        return ImportResult.success(keyId, creationVO);
+        return ApiKeyImportResult.success(keyId, creationVO);
     }
 
     /**
@@ -453,156 +456,4 @@ public class ApiKeyBatchService {
                 .build();
     }
 
-    // ============ 审计方法 ============
-
-    private void auditBatchImport(final String importedBy, final String ipAddress,
-                                  final int successCount, final int failureCount) {
-        if (extendedAuditService != null) {
-            extendedAuditService.auditSecurityEvent("API_KEY_BATCH_IMPORT",
-                    "批量导入完成: 成功 " + successCount + ", 失败 " + failureCount, null, ipAddress)
-                    .onErrorResume(ex -> {
-                        log.warn("记录批量导入审计失败: {}", ex.getMessage());
-                        return Mono.empty();
-                    })
-                    .subscribe();
-        }
-    }
-
-    private void auditApiKeyRotated(final String keyId, final String rotatedBy) {
-        if (extendedAuditService != null) {
-            extendedAuditService.auditSecurityEvent("API_KEY_ROTATED",
-                    "密钥已轮换", keyId, null)
-                    .onErrorResume(ex -> {
-                        log.warn("记录密钥轮换审计失败: {}", ex.getMessage());
-                        return Mono.empty();
-                    })
-                    .subscribe();
-        }
-    }
-
-    private void auditApiKeyExpired(final String keyId) {
-        if (extendedAuditService != null) {
-            extendedAuditService.auditSecurityEvent("API_KEY_EXPIRED",
-                    "密钥已过期，自动禁用", keyId, null)
-                    .onErrorResume(ex -> {
-                        log.warn("记录密钥过期审计失败: {}", ex.getMessage());
-                        return Mono.empty();
-                    })
-                    .subscribe();
-        }
-    }
-
-    // ============ 统计内部类 ============
-
-    /**
-     * 密钥轮换统计
-     */
-    public static class RotationStats {
-        private final int totalKeys;
-        private final int keysWithRotation;
-        private final int keysNeedingRotation;
-        private final int rotatedToday;
-
-        public RotationStats(final int totalKeys, final int keysWithRotation,
-                             final int keysNeedingRotation, final int rotatedToday) {
-            this.totalKeys = totalKeys;
-            this.keysWithRotation = keysWithRotation;
-            this.keysNeedingRotation = keysNeedingRotation;
-            this.rotatedToday = rotatedToday;
-        }
-
-        public int getTotalKeys() {
-            return totalKeys;
-        }
-
-        public int getKeysWithRotation() {
-            return keysWithRotation;
-        }
-
-        public int getKeysNeedingRotation() {
-            return keysNeedingRotation;
-        }
-
-        public int getRotatedToday() {
-            return rotatedToday;
-        }
-    }
-
-    /**
-     * 过期密钥统计
-     */
-    public static class ExpirationStats {
-        private final int totalKeys;
-        private final int expiredKeys;
-        private final int expiringToday;
-        private final int disabledKeys;
-
-        public ExpirationStats(final int totalKeys, final int expiredKeys,
-                               final int expiringToday, final int disabledKeys) {
-            this.totalKeys = totalKeys;
-            this.expiredKeys = expiredKeys;
-            this.expiringToday = expiringToday;
-            this.disabledKeys = disabledKeys;
-        }
-
-        public int getTotalKeys() {
-            return totalKeys;
-        }
-
-        public int getExpiredKeys() {
-            return expiredKeys;
-        }
-
-        public int getExpiringToday() {
-            return expiringToday;
-        }
-
-        public int getDisabledKeys() {
-            return disabledKeys;
-        }
-    }
-
-    // ============ 导入结果内部类 ============
-
-    /**
-     * 单个密钥导入结果
-     */
-    private static class ImportResult {
-        private final boolean success;
-        private final String keyId;
-        private final ApiKeyCreationVO creationVO;
-        private final String errorMessage;
-
-        private ImportResult(final boolean success, final String keyId,
-                             final ApiKeyCreationVO creationVO, final String errorMessage) {
-            this.success = success;
-            this.keyId = keyId;
-            this.creationVO = creationVO;
-            this.errorMessage = errorMessage;
-        }
-
-        public static ImportResult success(final String keyId, final ApiKeyCreationVO creationVO) {
-            return new ImportResult(true, keyId, creationVO, null);
-        }
-
-        public static ImportResult failure(final String keyId, final String errorMessage) {
-            return new ImportResult(false, keyId, null, errorMessage);
-        }
-
-        public boolean isSuccess() {
-            return success;
-        }
-
-        public String getKeyId() {
-            return keyId;
-        }
-
-        public ApiKeyCreationVO getCreationVO() {
-            return creationVO;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-    }
 }

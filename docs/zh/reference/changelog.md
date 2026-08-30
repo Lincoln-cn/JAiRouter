@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.0
-> **最后更新**: 2026-08-28
+> **文档版本**: 2.9.1
+> **最后更新**: 2026-08-30
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,23 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.1] - 2026-08-30 - 质量收口
+
+#### 大文件务实拆分
+
+- **15 → 5 个 >500 行文件**（务实豁免 5 个高内聚文件）：`TracingConfiguration` 608→307（提取 4 个嵌套配置类）、`TracingEncryptionService` 543→477、`ApiKeyBatchService` 608→459、`CircuitBreakerTracingWrapper` 570→243、`DefaultMetricsCollector` 629→379、`ConfigurationService` 653→410（实例管理提取为 `InstanceConfigService`）、`JwtBlacklistServiceImpl` 558→438、`ControllerTracingInterceptor` 595→237、`ExtendedSecurityAuditServiceImpl` 629→490、`NonStreamingRequestProcessor` 574→411
+- 新增 16 个顶层类（纯 POJO 配置类/DTO + 普通 helper + `@Component`/`@Service` 委托类），行为零变更，全量测试无回归
+
+#### 前端
+
+- **资源池成员实例改为下拉选择**：按服务类型加载可用实例、已选去重、禁手输、已删实例兜底显示
+
+#### 测试
+
+- 全量 **2953 用例全绿**（0 失败/0 错误）；jacoco INSTRUCTION 覆盖率 **31%**（≥ 30% 目标达标，1175 类）
+
+---
 
 ### [2.9.0] - 2026-08-28 - 功能发布
 

@@ -1,11 +1,9 @@
 package org.unreal.modelrouter.router.adapter.request;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,19 +17,13 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
-import org.unreal.modelrouter.auth.security.service.ApiKeyService;
-import org.unreal.modelrouter.common.dto.ChatDTO;
-import org.unreal.modelrouter.common.dto.EmbeddingDTO;
-import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
-import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
-import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
-import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.common.exception.DownstreamServiceException;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
-import org.unreal.modelrouter.common.controller.response.RouterResponse;
-import org.unreal.modelrouter.common.exception.DownstreamServiceException;
-import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
+import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -58,28 +50,17 @@ public class NonStreamingRequestProcessor {
     private final ObjectMapper objectMapper;
     private final RequestBuilder requestBuilder;
     private final AdapterMetricsRecorder metricsRecorder;
-
-    @Autowired(required = false)
-    private TokenUsageRecorder tokenUsageRecorder;
-
-    @Autowired(required = false)
-    private ApiKeyService apiKeyService;
-
-    // v2.8.9: 资源池选择器(池路由后改写下游请求/响应的 model 字段为实际实例名)
-    @Autowired(required = false)
-    private org.unreal.modelrouter.router.pool.PoolSelector poolSelector;
-
-    // v2.9.0: 指标收集器(记录 KV 缓存命中/未命中指标)
-    @Autowired(required = false)
-    private MetricsCollector metricsCollector;
+    private final TokenUsageExtractor tokenUsageExtractor;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
             final RequestBuilder requestBuilder,
-            final AdapterMetricsRecorder metricsRecorder) {
+            final AdapterMetricsRecorder metricsRecorder,
+            final TokenUsageExtractor tokenUsageExtractor) {
         this.objectMapper = objectMapper;
         this.requestBuilder = requestBuilder;
         this.metricsRecorder = metricsRecorder;
+        this.tokenUsageExtractor = tokenUsageExtractor;
     }
 
     /**
@@ -114,14 +95,14 @@ public class NonStreamingRequestProcessor {
             final Map<String, String> additionalHeaders) {
 
         // 0. 从请求属性中获取 API Key ID（由 ServiceRequestHandler 在认证阶段存入）
-        final String capturedKeyId = extractKeyIdFromRequest(httpRequest);
+        final String capturedKeyId = tokenUsageExtractor.extractKeyIdFromRequest(httpRequest);
 
         // 1. 请求转换
         Object transformedRequest = transformRequestFn.apply(request);
         String instanceName = selectedInstance.getName();
         // v2.8.9: 池路由后,下游请求 model 改写为实际实例模型名(auto-model/池名不再透传上游)
-        String requestedModel = extractRequestModel(request);
-        rewriteModelField(transformedRequest, requestedModel, instanceName);
+        String requestedModel = tokenUsageExtractor.extractRequestModel(request);
+        tokenUsageExtractor.rewriteModelField(transformedRequest, requestedModel, instanceName);
         long requestStartTime = System.currentTimeMillis();
 
         logger.debug("发送请求到下游服务: instance={}, path={}, auth={}",
@@ -287,13 +268,13 @@ public class NonStreamingRequestProcessor {
                             downstreamData = objectMapper.readValue(bodyStr, Object.class);
 
                             // 提取并记录 token 使用量
-                            extractAndRecordTokenUsage(bodyStr, adapterType, instanceName, capturedKeyId);
+                            tokenUsageExtractor.extractAndRecordTokenUsage(bodyStr, adapterType, instanceName, capturedKeyId);
                         }
 
                         // 响应转换
                         Object transformedData = transformResponseFn.apply(downstreamData);
                         // v2.8.9: 池路由后,响应 model 回显实际实例模型名
-                        rewriteModelField(transformedData, requestedModel, instanceName);
+                        tokenUsageExtractor.rewriteModelField(transformedData, requestedModel, instanceName);
 
                         // 包装 RouterResponse
                         RouterResponse<Object> finalResponse = RouterResponse.success(transformedData, "请求成功");
@@ -369,150 +350,6 @@ public class NonStreamingRequestProcessor {
         } else if (statusCode.value() == 503) {
             logger.error("下游服务不可用 (503): instance={}, path={}", instanceName, path);
         }
-    }
-
-    /**
-     * v2.8.9: 提取原始请求的 model 字段(chat/embedding 形态)
-     */
-    private String extractRequestModel(final Object request) {
-        if (request instanceof ChatDTO.Request r) {
-            return r.model();
-        }
-        if (request instanceof EmbeddingDTO.Request e) {
-            return e.model();
-        }
-        return null;
-    }
-
-    /**
-     * v2.8.9: 池路由后,将目标(Map)的 model 字段改写为实际实例名
-     * 仅当原始请求 model 是池名/auto-model 时触发,不影响普通请求与规则行为
-     */
-    @SuppressWarnings("unchecked")
-    private void rewriteModelField(final Object target, final String requestedModel, final String instanceName) {
-        if (target instanceof Map && instanceName != null && requestedModel != null
-                && poolSelector != null && poolSelector.isPoolName(requestedModel)) {
-            Object model = ((Map<String, Object>) target).get("model");
-            if (model instanceof String && !model.equals(instanceName)) {
-                ((Map<String, Object>) target).put("model", instanceName);
-            }
-        }
-    }
-
-    /**
-     * 从下游服务响应中提取 token 使用量并记录
-     */
-    private void extractAndRecordTokenUsage(final String bodyStr,
-                                             final String adapterType,
-                                             final String instanceName,
-                                             final String apiKeyId) {
-        try {
-            JsonNode jsonNode = objectMapper.readTree(bodyStr);
-
-            if (!jsonNode.has("usage")) {
-                return;
-            }
-
-            JsonNode usage = jsonNode.get("usage");
-            long promptTokens = usage.has("prompt_tokens") ? usage.get("prompt_tokens").asLong() : 0;
-            long completionTokens = usage.has("completion_tokens") ? usage.get("completion_tokens").asLong() : 0;
-            long totalTokens = usage.has("total_tokens") ? usage.get("total_tokens").asLong() : 0;
-
-            if (totalTokens <= 0) {
-                return;
-            }
-
-            String model = jsonNode.has("model") ? jsonNode.get("model").asText() : "unknown";
-
-            // v2.9.0: 提取 KV 缓存命中/未命中 token 数
-            // DeepSeek 形态: prompt_cache_hit_tokens / prompt_cache_miss_tokens
-            // OpenAI/vLLM 形态: prompt_tokens_details.cached_tokens
-            long cacheHitTokens = 0;
-            long cacheMissTokens = 0;
-            if (usage.has("prompt_cache_hit_tokens")) {
-                cacheHitTokens = usage.get("prompt_cache_hit_tokens").asLong();
-            }
-            if (usage.has("prompt_cache_miss_tokens")) {
-                cacheMissTokens = usage.get("prompt_cache_miss_tokens").asLong();
-            }
-            // OpenAI 形态: prompt_tokens_details.cached_tokens → 视为 cacheHit
-            if (cacheHitTokens == 0 && usage.has("prompt_tokens_details")) {
-                JsonNode details = usage.get("prompt_tokens_details");
-                if (details.has("cached_tokens")) {
-                    cacheHitTokens = details.get("cached_tokens").asLong();
-                }
-            }
-            // 如果只有 cacheHit 无 cacheMiss，估算 miss = promptTokens - cacheHit
-            if (cacheHitTokens > 0 && cacheMissTokens == 0) {
-                cacheMissTokens = Math.max(0, promptTokens - cacheHitTokens);
-            }
-
-            // 记录 KV 缓存指标
-            if (metricsCollector != null && (cacheHitTokens > 0 || cacheMissTokens > 0)) {
-                metricsCollector.recordCacheTokenUsage(adapterType, instanceName,
-                        cacheHitTokens, cacheMissTokens);
-            }
-
-            // 记录到 TokenUsage 表
-            if (tokenUsageRecorder != null) {
-                String traceId = TracingContextHolder.getCurrentTraceId();
-                tokenUsageRecorder.recordTokenUsageNoAuth(
-                        "CHAT",
-                        model,
-                        adapterType,
-                        instanceName,
-                        null,
-                        promptTokens,
-                        completionTokens,
-                        totalTokens,
-                        traceId,
-                        null,
-                        true,
-                        null,
-                        null,
-                        null
-                );
-            }
-
-            // 更新 API Key 的每日 Token 使用量配额
-            updateApiKeyTokenUsage(apiKeyId, totalTokens);
-
-            logger.debug("Non-streaming token usage recorded: adapter={}, instance={}, model={}, total={}",
-                    adapterType, instanceName, model, totalTokens);
-
-        } catch (Exception e) {
-            logger.debug("Failed to extract token usage from response: {}", e.getMessage());
-        }
-    }
-
-    /**
-     * 更新 API Key 的 Token 使用量
-     */
-    private void updateApiKeyTokenUsage(final String apiKeyId, final long totalTokens) {
-        if (apiKeyService == null || totalTokens <= 0 || apiKeyId == null) {
-            return;
-        }
-        try {
-            apiKeyService.updateTokenUsage(apiKeyId, totalTokens);
-            logger.debug("API Key token usage updated: keyId={}, tokens={}", apiKeyId, totalTokens);
-        } catch (Exception e) {
-            logger.debug("Failed to update API Key token usage: keyId={}, error={}", apiKeyId, e.getMessage());
-        }
-    }
-
-    /**
-     * 从 ServerHttpRequest 属性中获取 API Key ID
-     */
-    private String extractKeyIdFromRequest(final ServerHttpRequest httpRequest) {
-        if (httpRequest == null) {
-            return null;
-        }
-        Object keyId = httpRequest.getAttributes().get(
-                org.unreal.modelrouter.router.handler.ServiceRequestHandler.API_KEY_ID_ATTRIBUTE);
-        if (keyId instanceof String) {
-            return (String) keyId;
-        }
-        return null;
     }
 
     /**

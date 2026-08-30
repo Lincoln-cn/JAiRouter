@@ -105,10 +105,10 @@ public class OpenTelemetryAutoConfiguration {
     public SdkTracerProvider tracerProvider(
             final Resource resource, final Sampler sampler,
             final SpanExporter spanExporter) {
-        TracingConfiguration.PerformanceConfig performanceConfig = tracingConfig.getPerformance();
+        TracingPerformanceConfig performanceConfig = tracingConfig.getPerformance();
         
         // 获取批处理配置
-        TracingConfiguration.PerformanceConfig.BatchConfig batchConfig = performanceConfig.getBatch();
+        TracingPerformanceConfig.BatchConfig batchConfig = performanceConfig.getBatch();
         
         return SdkTracerProvider.builder()
                 .setResource(resource)

@@ -12,6 +12,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.boot.actuate.health.Health;
 import org.unreal.modelrouter.monitor.tracing.TracingService;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingPerformanceConfig;
 import org.unreal.modelrouter.monitor.tracing.performance.TracingPerformanceMonitor;
 import org.unreal.modelrouter.monitor.tracing.sampler.SamplingStrategyManager;
 import reactor.core.publisher.Mono;
@@ -75,10 +76,10 @@ class TracingControllerTest {
         lenient().when(tracingConfiguration.getExporter()).thenReturn(exporterConfig);
         lenient().when(exporterConfig.getLogging()).thenReturn(loggingExporterConfig);
 
-        TracingConfiguration.PerformanceConfig performanceConfig = mock(TracingConfiguration.PerformanceConfig.class);
-        TracingConfiguration.PerformanceConfig.ThreadPoolConfig threadPoolConfig = mock(TracingConfiguration.PerformanceConfig.ThreadPoolConfig.class);
-        TracingConfiguration.PerformanceConfig.BufferConfig bufferConfig = mock(TracingConfiguration.PerformanceConfig.BufferConfig.class);
-        TracingConfiguration.PerformanceConfig.MemoryConfig memoryConfig = mock(TracingConfiguration.PerformanceConfig.MemoryConfig.class);
+        TracingPerformanceConfig performanceConfig = mock(TracingPerformanceConfig.class);
+        TracingPerformanceConfig.ThreadPoolConfig threadPoolConfig = mock(TracingPerformanceConfig.ThreadPoolConfig.class);
+        TracingPerformanceConfig.BufferConfig bufferConfig = mock(TracingPerformanceConfig.BufferConfig.class);
+        TracingPerformanceConfig.MemoryConfig memoryConfig = mock(TracingPerformanceConfig.MemoryConfig.class);
         when(performanceConfig.isAsyncProcessing()).thenReturn(true);
         when(threadPoolConfig.getCoreSize()).thenReturn(4);
         when(bufferConfig.getSize()).thenReturn(1000);

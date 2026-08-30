@@ -107,6 +107,12 @@ class ConfigurationServiceTest {
         ReflectionTestUtils.setField(configurationService, "eventPublisher", eventPublisher);
         ReflectionTestUtils.setField(configurationService, "configSyncService", configSyncService);
 
+        // 创建真实的 InstanceConfigService 并注入（使用相同的 mock 依赖）
+        InstanceConfigService instanceConfigService = new InstanceConfigService(
+                storeManager, configConverterHelper, configValidator,
+                instanceOperationService, configVersionManager, configComparisonService, eventPublisher);
+        ReflectionTestUtils.setField(configurationService, "instanceConfigService", instanceConfigService);
+
         // 准备示例配置
         sampleConfig = new HashMap<>();
         Map<String, Object> services = new HashMap<>();
@@ -356,12 +362,12 @@ class ConfigurationServiceTest {
         @DisplayName("CONFIG-012: 批量更新服务实例")
         void testBatchUpdateServiceInstances() {
             // Given
-            List<ConfigurationService.InstanceOperation> operations = new ArrayList<>();
+            List<InstanceOperation> operations = new ArrayList<>();
 
             ModelRouterProperties.ModelInstance instance1 = new ModelRouterProperties.ModelInstance();
             instance1.setName("instance-1");
-            operations.add(new ConfigurationService.InstanceOperation(
-                ConfigurationService.InstanceOperationType.ADD,
+            operations.add(new InstanceOperation(
+                InstanceOperationType.ADD,
                 null,
                 instance1
             ));
@@ -388,9 +394,9 @@ class ConfigurationServiceTest {
         @DisplayName("CONFIG-013: 批量更新实例-包含删除操作")
         void testBatchUpdateServiceInstances_WithDelete() {
             // Given
-            List<ConfigurationService.InstanceOperation> operations = new ArrayList<>();
-            operations.add(new ConfigurationService.InstanceOperation(
-                ConfigurationService.InstanceOperationType.DELETE,
+            List<InstanceOperation> operations = new ArrayList<>();
+            operations.add(new InstanceOperation(
+                InstanceOperationType.DELETE,
                 "instance-to-delete",
                 null
             ));

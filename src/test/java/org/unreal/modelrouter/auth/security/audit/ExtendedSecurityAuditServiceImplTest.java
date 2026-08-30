@@ -41,11 +41,14 @@ class ExtendedSecurityAuditServiceImplTest {
     @Mock
     private AuditEntityMapper entityMapper;
 
+    private SecurityReportGenerator reportGenerator;
+
     private ExtendedSecurityAuditServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ExtendedSecurityAuditServiceImpl(auditRepository, entityMapper);
+        reportGenerator = new SecurityReportGenerator(auditRepository, entityMapper);
+        service = new ExtendedSecurityAuditServiceImpl(auditRepository, entityMapper, reportGenerator);
     }
 
     // ========== JWT令牌审计方法测试 ==========

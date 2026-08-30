@@ -222,11 +222,11 @@ public class ApiKeyService {
 
     public Mono<Integer> cleanupExpiredKeys() { return apiKeyBatchService.cleanupExpiredKeys(apiKeyCache); }
 
-    public Mono<ApiKeyBatchService.RotationStats> getRotationStats() {
+    public Mono<ApiKeyRotationStats> getRotationStats() {
         return apiKeyBatchService.getRotationStats(apiKeyCache);
     }
 
-    public Mono<ApiKeyBatchService.ExpirationStats> getExpirationStats() {
+    public Mono<ApiKeyExpirationStats> getExpirationStats() {
         return apiKeyBatchService.getExpirationStats(apiKeyCache);
     }
 

@@ -3,7 +3,12 @@ package org.unreal.modelrouter.monitor.tracing.config;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration.*;
+import org.unreal.modelrouter.monitor.tracing.config.TracingComponentConfig;
+import org.unreal.modelrouter.monitor.tracing.config.TracingMonitoringConfig;
+import org.unreal.modelrouter.monitor.tracing.config.TracingPerformanceConfig;
+import org.unreal.modelrouter.monitor.tracing.config.TracingSecurityConfig;
 
 import java.time.Duration;
 import java.util.List;
@@ -276,7 +281,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试默认值")
         void testDefaultValues() {
-            PerformanceConfig config = new PerformanceConfig();
+            TracingPerformanceConfig config = new TracingPerformanceConfig();
 
             assertTrue(config.isAsyncProcessing());
             assertNotNull(config.getThreadPool());
@@ -288,7 +293,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试线程池配置")
         void testThreadPoolConfig() {
-            PerformanceConfig.ThreadPoolConfig threadPool = new PerformanceConfig.ThreadPoolConfig();
+            TracingPerformanceConfig.ThreadPoolConfig threadPool = new TracingPerformanceConfig.ThreadPoolConfig();
 
             assertEquals(2, threadPool.getCoreSize());
             assertEquals(8, threadPool.getMaxSize());
@@ -300,7 +305,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试内存配置")
         void testMemoryConfig() {
-            PerformanceConfig.MemoryConfig memory = new PerformanceConfig.MemoryConfig();
+            TracingPerformanceConfig.MemoryConfig memory = new TracingPerformanceConfig.MemoryConfig();
 
             assertEquals(10000, memory.getMaxSpansInMemory());
             assertEquals(100, memory.getMemoryLimitMb());
@@ -315,7 +320,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试默认值")
         void testDefaultValues() {
-            ComponentsConfig config = new ComponentsConfig();
+            TracingComponentConfig config = new TracingComponentConfig();
 
             assertNotNull(config.getHttp());
             assertNotNull(config.getDatabase());
@@ -329,7 +334,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试HTTP组件配置")
         void testHttpConfig() {
-            ComponentsConfig.HttpConfig http = new ComponentsConfig.HttpConfig();
+            TracingComponentConfig.HttpConfig http = new TracingComponentConfig.HttpConfig();
 
             assertTrue(http.isEnabled());
             assertTrue(http.isCaptureHeaders());
@@ -345,7 +350,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试默认值")
         void testDefaultValues() {
-            SecurityConfig config = new SecurityConfig();
+            TracingSecurityConfig config = new TracingSecurityConfig();
 
             assertNotNull(config.getSanitization());
             assertNotNull(config.getAccessControl());
@@ -356,7 +361,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试脱敏配置")
         void testSanitizationConfig() {
-            SecurityConfig.SanitizationConfig sanitization = new SecurityConfig.SanitizationConfig();
+            TracingSecurityConfig.SanitizationConfig sanitization = new TracingSecurityConfig.SanitizationConfig();
 
             assertTrue(sanitization.isEnabled());
             assertTrue(sanitization.isInheritGlobalRules());
@@ -366,7 +371,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试访问控制配置")
         void testAccessControlConfig() {
-            SecurityConfig.AccessControlConfig accessControl = new SecurityConfig.AccessControlConfig();
+            TracingSecurityConfig.AccessControlConfig accessControl = new TracingSecurityConfig.AccessControlConfig();
 
             assertTrue(accessControl.isRestrictTraceAccess());
             assertTrue(accessControl.isEnableRoleBasedFiltering());
@@ -379,7 +384,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试加密配置")
         void testEncryptionConfig() {
-            SecurityConfig.EncryptionConfig encryption = new SecurityConfig.EncryptionConfig();
+            TracingSecurityConfig.EncryptionConfig encryption = new TracingSecurityConfig.EncryptionConfig();
 
             assertFalse(encryption.isEnabled());
             assertEquals("AES", encryption.getAlgorithm());
@@ -394,7 +399,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试默认值")
         void testDefaultValues() {
-            MonitoringConfig config = new MonitoringConfig();
+            TracingMonitoringConfig config = new TracingMonitoringConfig();
 
             assertTrue(config.isSelfMonitoring());
             assertNotNull(config.getMetrics());
@@ -405,7 +410,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试指标配置")
         void testMetricsConfig() {
-            MonitoringConfig.MetricsConfig metrics = new MonitoringConfig.MetricsConfig();
+            TracingMonitoringConfig.MetricsConfig metrics = new TracingMonitoringConfig.MetricsConfig();
 
             assertTrue(metrics.isEnabled());
             assertEquals("jairouter.tracing", metrics.getPrefix());
@@ -416,7 +421,7 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试健康检查配置")
         void testHealthConfig() {
-            MonitoringConfig.HealthConfig health = new MonitoringConfig.HealthConfig();
+            TracingMonitoringConfig.HealthConfig health = new TracingMonitoringConfig.HealthConfig();
 
             assertTrue(health.isEnabled());
             assertEquals(Duration.ofSeconds(30), health.getCheckInterval());
@@ -427,12 +432,12 @@ class TracingConfigurationTest {
         @Test
         @DisplayName("测试告警配置")
         void testAlertsConfig() {
-            MonitoringConfig.AlertsConfig alerts = new MonitoringConfig.AlertsConfig();
+            TracingMonitoringConfig.AlertsConfig alerts = new TracingMonitoringConfig.AlertsConfig();
 
             assertTrue(alerts.isEnabled());
             assertNotNull(alerts.getThresholds());
 
-            MonitoringConfig.AlertsConfig.ThresholdsConfig thresholds = alerts.getThresholds();
+            TracingMonitoringConfig.AlertsConfig.ThresholdsConfig thresholds = alerts.getThresholds();
             assertEquals(0.1, thresholds.getExportFailureRate(), 0.01);
             assertEquals(5000L, thresholds.getExportLatencyP99());
         }

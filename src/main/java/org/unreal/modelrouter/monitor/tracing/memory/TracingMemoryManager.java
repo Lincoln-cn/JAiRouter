@@ -5,6 +5,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingPerformanceConfig;
 import org.unreal.modelrouter.monitor.tracing.memory.model.CachedTraceData;
 import org.unreal.modelrouter.monitor.tracing.memory.model.GCResult;
 import org.unreal.modelrouter.monitor.tracing.memory.model.MemoryCheckResult;
@@ -61,7 +62,7 @@ public class TracingMemoryManager {
         this.memoryMXBean = ManagementFactory.getMemoryMXBean();
         this.memoryScheduler = Schedulers.newBoundedElastic(2, 100, "tracing-memory");
 
-        TracingConfiguration.PerformanceConfig.MemoryConfig memoryConfig =
+        TracingPerformanceConfig.MemoryConfig memoryConfig =
                 tracingConfiguration.getPerformance().getMemory();
 
         this.traceCache = new LRUCache<>(memoryConfig.getMaxSpansInMemory());
@@ -334,7 +335,7 @@ public class TracingMemoryManager {
     }
 
     private boolean shouldTriggerCleanup() {
-        TracingConfiguration.PerformanceConfig.MemoryConfig memoryConfig =
+        TracingPerformanceConfig.MemoryConfig memoryConfig =
                 tracingConfiguration.getPerformance().getMemory();
 
         return totalMemoryUsed.get() > memoryConfig.getMemoryLimitMb() * 1024 * 1024 * 0.8;

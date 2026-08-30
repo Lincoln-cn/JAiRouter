@@ -12,6 +12,7 @@ import org.mockito.quality.Strictness;
 import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.DefaultTracingContext;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingSecurityConfig;
 import org.unreal.modelrouter.monitor.tracing.logger.StructuredLogger;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -41,13 +42,13 @@ class TracingEncryptionServiceTest {
     private TracingConfiguration tracingConfiguration;
 
     @Mock
-    private TracingConfiguration.SecurityConfig securityConfig;
+    private TracingSecurityConfig securityConfig;
 
     @Mock
-    private TracingConfiguration.SecurityConfig.EncryptionConfig encryptionConfig;
+    private TracingSecurityConfig.EncryptionConfig encryptionConfig;
 
     @Mock
-    private TracingConfiguration.SecurityConfig.EncryptionConfig.DataRetention dataRetention;
+    private TracingSecurityConfig.EncryptionConfig.DataRetention dataRetention;
 
     private TracingEncryptionService tracingEncryptionService;
     private Tracer tracer;

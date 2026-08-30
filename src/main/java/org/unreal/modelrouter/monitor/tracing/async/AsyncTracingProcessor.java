@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.unreal.modelrouter.monitor.tracing.config.TracingConfiguration;
+import org.unreal.modelrouter.monitor.tracing.config.TracingPerformanceConfig;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
@@ -54,7 +55,7 @@ public final class AsyncTracingProcessor {
         this.tracingConfiguration = tracingConfiguration;
         
         // 创建专用的处理调度器
-        TracingConfiguration.PerformanceConfig.ThreadPoolConfig threadPoolConfig = 
+        TracingPerformanceConfig.ThreadPoolConfig threadPoolConfig = 
                 tracingConfiguration.getPerformance().getThreadPool();
         this.processingScheduler = Schedulers.newBoundedElastic(
                 threadPoolConfig.getCoreSize(),
@@ -147,9 +148,9 @@ public final class AsyncTracingProcessor {
      * 设置处理管道
      */
     private void setupProcessingPipeline() {
-        TracingConfiguration.PerformanceConfig.BatchConfig batchConfig = 
+        TracingPerformanceConfig.BatchConfig batchConfig = 
                 tracingConfiguration.getPerformance().getBatch();
-        TracingConfiguration.PerformanceConfig.BufferConfig bufferConfig = 
+        TracingPerformanceConfig.BufferConfig bufferConfig = 
                 tracingConfiguration.getPerformance().getBuffer();
 
         traceDataSink.asFlux()
