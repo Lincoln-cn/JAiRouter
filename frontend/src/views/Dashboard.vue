@@ -352,12 +352,12 @@ const statCards = computed(() => {
   })
 
   return [
-    { key: 'service', icon: 'Flag', label: '服务数量', value: serviceCount, bg: 'linear-gradient(135deg,#e6f7ff,#fff0f6)' },
-    { key: 'instance', icon: 'Cpu', label: '实例数量', value: instances, bg: 'linear-gradient(135deg,#fff7e6,#f0fff4)' },
-    { key: 'model', icon: 'Monitor', label: '模型数量', value: stats.value.totalModels || 0, bg: 'linear-gradient(135deg,#f0f5ff,#fff)' },
-    { key: 'healthy', icon: 'Check', label: '健康实例', value: healthyCount, bg: 'linear-gradient(135deg,#e6fffb,#f0f9ff)' },
-    { key: 'error', icon: 'Warning', label: '异常实例', value: errorCount < 0 ? 0 : errorCount, bg: 'linear-gradient(135deg,#fff0f0,#fff7e6)' },
-    { key: 'user', icon: 'User', label: '账号数量', value: stats.value.userCount || 0, bg: 'linear-gradient(135deg,#f8eaff,#eef7ff)' }
+    { key: 'service', icon: 'Flag', label: '服务数量', value: serviceCount, bg: 'var(--ja-stat-gradient-service)' },
+    { key: 'instance', icon: 'Cpu', label: '实例数量', value: instances, bg: 'var(--ja-stat-gradient-instance)' },
+    { key: 'model', icon: 'Monitor', label: '模型数量', value: stats.value.totalModels || 0, bg: 'var(--ja-stat-gradient-model)' },
+    { key: 'healthy', icon: 'Check', label: '健康实例', value: healthyCount, bg: 'var(--ja-stat-gradient-healthy)' },
+    { key: 'error', icon: 'Warning', label: '异常实例', value: errorCount < 0 ? 0 : errorCount, bg: 'var(--ja-stat-gradient-error)' },
+    { key: 'user', icon: 'User', label: '账号数量', value: stats.value.userCount || 0, bg: 'var(--ja-stat-gradient-user)' }
   ]
 })
 
@@ -760,7 +760,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .dashboard {
   padding: 18px;
-  background: linear-gradient(180deg, #f6f9ff 0%, #fbfdff 100%);
+  background: var(--ja-main-bg-gradient);
   min-height: 100vh;
 }
 
@@ -787,10 +787,10 @@ onBeforeUnmount(() => {
   margin-right:12px;
   box-shadow: 0 6px 14px rgba(64,158,255,0.06);
 }
-.icon { font-size:22px; color:#2b3a67; }
+.icon { font-size:22px; color:var(--ja-dashboard-icon-color); }
 .text-box { flex:1; min-width:0; }
-.value { font-size:20px; font-weight:700; color:#222b45; }
-.label { font-size:12px; color:#6b7280; margin-top:4px; }
+.value { font-size:20px; font-weight:700; color:var(--ja-dashboard-value-color); }
+.label { font-size:12px; color:var(--ja-dashboard-label-color); margin-top:4px; }
 
 /* 主体卡片 */
 .card-panel { min-height: 330px; border-radius:10px; }
@@ -805,15 +805,15 @@ onBeforeUnmount(() => {
 .config-row { margin-top:22px; }
 .config-card { border-radius:10px; padding-bottom: 6px; }
 .config-header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-.config-title { font-weight:700; color:#283044; }
+.config-title { font-weight:700; color:var(--ja-dashboard-config-title); }
 .config-actions { display:flex; align-items:center; }
 
 /* 表格样式 */
-.el-table .row-error { background: #fff7f6 !important; }
+.el-table .row-error { background: var(--ja-dashboard-error-row) !important; }
 .el-table th { background: transparent; }
 
 /* Empty */
-.empty-placeholder { text-align:center; padding:24px 12px; color:#909399; }
+.empty-placeholder { text-align:center; padding:24px 12px; color:var(--ja-dashboard-empty-color); }
 /* 使主行的列高度一致，并让卡片伸展占满列 */
 .main-row {
   align-items: stretch; /* 让行内列高度拉伸一致 */

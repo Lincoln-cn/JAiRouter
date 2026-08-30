@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.3
+> **文档版本**: 2.9.4
 > **最后更新**: 2026-08-30
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,27 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.4] - 2026-08-30 - 功能发布（UI 设计系统重构 + RBAC 修复）
+
+#### UI 设计系统
+
+- **设计 Token**：新增 `src/styles/tokens.css`（40+ 语义化 `--ja-*` CSS 变量：主色/侧栏/主区/文本/边框/圆角/阴影/字体/登录渐变/仪表盘渐变色，含 `html.dark` 覆盖）
+- **Element Plus 变量覆盖**：`src/styles/element-override.css` 将 `--el-color-primary` 家族、`--el-bg-color`、`--el-fill-color-*`、`--el-text-color-*`、`--el-border-color-*`、阴影映射到 token（亮/暗双套）
+- **暗色模式**：`src/composables/useTheme.ts`（isDark/toggleTheme/initTheme，localStorage 持久化，默认跟随系统，启动前同步初始化防闪烁）；Layout 顶栏日/月切换按钮
+- **硬编码色清理**：Layout.vue 侧栏/激活/主区、Login.vue 渐变、Dashboard.vue 统计卡渐变与图标色、index.html 渐变 → token 变量（保持原视觉）
+
+#### RBAC 修复（500 回归）
+
+- **根因**：`@EnableReactiveMethodSecurity` 下，同步返回类型 controller 的方法级 `@PreAuthorize` 要求 Publisher 返回（Reactor Context），真实请求抛 500（认证正常、授权拦截崩溃，非 401）
+- **修复**：`ApiCallHistoryController` / `CallHistoryConfigController` / `TracingSecurityController`（3 个同步返回 controller）移除 `@PreAuthorize`，改由 `SecurityConfiguration` URL 规则保护（`/api/call-history/**`、`/api/config/call-history/**`、`/api/config/tracing/security/**` → ADMIN）
+- 真实请求验证：ADMIN 200 / 无 token 401；本地 dev 库手动补齐 v2.9.2 新列（H2 `DATABASE_TO_UPPER=FALSE` 下 Hibernate ddl-auto update 大小写元数据不匹配导致无法自动加列）
+
+#### 测试
+
+- 更新 ApiCallHistoryControllerRbacTest / RecordLevelChangeAuditTest（RBAC 断言改为 URL 规则语义）；**全量 3023 用例全绿**
+
+---
 
 ### [2.9.3] - 2026-08-30 - 功能发布（路由智能深化-1：EWMA 延迟感知路由）
 

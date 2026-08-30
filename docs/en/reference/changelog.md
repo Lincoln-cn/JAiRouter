@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.3
+> **Document Version**: 2.9.4
 > **Last Updated**: 2026-08-30
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
@@ -20,6 +20,27 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.4] - 2026-08-30 - Feature Release (UI Design-System Refactor + RBAC Fix)
+
+#### UI Design System
+
+- **Design tokens**: new `src/styles/tokens.css` (40+ semantic `--ja-*` CSS vars: primary/sidebar/main-bg/text/border/radius/shadow/font/login-gradient/dashboard gradients, with `html.dark` overrides)
+- **Element Plus overrides**: `src/styles/element-override.css` maps `--el-color-primary` family, `--el-bg-color`, `--el-fill-color-*`, `--el-text-color-*`, `--el-border-color-*`, shadows to tokens (light + dark)
+- **Dark mode**: `src/composables/useTheme.ts` (isDark/toggleTheme/initTheme, localStorage persistence, follows system by default, synchronous init before mount to avoid flash); sun/moon toggle in the Layout header
+- **Hardcoded color cleanup**: Layout.vue sidebar/active/main, Login.vue gradient, Dashboard.vue stat-card gradients and icon colors, index.html gradient → token vars (same look preserved)
+
+#### RBAC Fix (500 regression)
+
+- **Root cause**: under `@EnableReactiveMethodSecurity`, method-level `@PreAuthorize` on controllers with SYNCHRONOUS return types requires a Publisher return (Reactor Context); real requests threw 500 (auth OK, authorization interceptor crashed — hence 500, not 401)
+- **Fix**: removed `@PreAuthorize` from `ApiCallHistoryController` / `CallHistoryConfigController` / `TracingSecurityController` (3 sync-return controllers); RBAC moved to `SecurityConfiguration` URL rules (`/api/call-history/**`, `/api/config/call-history/**`, `/api/config/tracing/security/**` → ADMIN)
+- Verified against real requests: ADMIN 200 / no token 401; local dev DB manually patched with v2.9.2 columns (H2 `DATABASE_TO_UPPER=FALSE` breaks Hibernate ddl-auto update metadata matching)
+
+#### Tests
+
+- Updated `ApiCallHistoryControllerRbacTest` / `RecordLevelChangeAuditTest` (RBAC assertions now match URL-rule semantics); **full suite 3023 tests green**
+
+---
 
 ### [2.9.3] - 2026-08-30 - Feature Release (Routing Intelligence-1: EWMA Latency-Aware Routing)
 

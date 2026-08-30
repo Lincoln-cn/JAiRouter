@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,7 +43,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @RequestMapping("/api/config/tracing/security")
 @Tag(name = "追踪安全管理", description = "管理追踪安全功能")
-@PreAuthorize("hasRole('ADMIN')")
+// v2.9.4-fix: RBAC 由 SecurityConfiguration URL 规则保护（/api/config/tracing/security/** -> ADMIN）
 public class TracingSecurityController {
     
     private final @Lazy TracingSanitizationService tracingSanitizationService;

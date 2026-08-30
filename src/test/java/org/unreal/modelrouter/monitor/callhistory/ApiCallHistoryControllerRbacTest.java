@@ -49,29 +49,21 @@ class ApiCallHistoryControllerRbacTest {
     @InjectMocks
     private ApiCallHistoryController controller;
 
-    // ==================== RBAC 注解验证 ====================
+    // ==================== RBAC 检查 ====================
 
     @Nested
-    @DisplayName("RBAC 注解检查")
+    @DisplayName("RBAC 检查")
     class RbacAnnotationTests {
 
         @Test
-        @DisplayName("类级别 @PreAuthorize 注解存在且要求 ADMIN 角色")
-        void classLevelPreAuthorizeExists() {
+        @DisplayName("controller 无 @PreAuthorize（RBAC 由 SecurityConfiguration URL 规则保护）")
+        void noClassLevelPreAuthorize() {
+            // v2.9.4-fix: 同步返回类型的 controller 不能用类级 @PreAuthorize
+            // （@EnableReactiveMethodSecurity 要求 Publisher 返回类型，真实请求 500），
+            // RBAC 已移至 SecurityConfiguration 的 URL 规则：/api/call-history/** -> hasRole('ADMIN')
             PreAuthorize annotation = ApiCallHistoryController.class.getAnnotation(PreAuthorize.class);
-            assertNotNull(annotation, "ApiCallHistoryController 应该有 @PreAuthorize 注解");
-            assertEquals("hasRole('ADMIN')", annotation.value(),
-                    "@PreAuthorize 应该要求 ADMIN 角色");
-        }
-
-        @Test
-        @DisplayName("所有公开方法均由类级别 @PreAuthorize 保护")
-        void allPublicMethodsProtectedByClassLevelAnnotation() {
-            // 类级别注解保护所有方法，验证注解存在即可
-            PreAuthorize annotation = ApiCallHistoryController.class.getAnnotation(PreAuthorize.class);
-            assertNotNull(annotation);
-            // 确认没有方法级别的 @PreAuthorize 覆盖（保持一致）
-            assertTrue(ApiCallHistoryController.class.getMethods().length > 0);
+            assertNull(annotation,
+                    "ApiCallHistoryController 不应有 @PreAuthorize（RBAC 由 URL 规则保护）");
         }
     }
 

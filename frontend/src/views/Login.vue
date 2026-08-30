@@ -157,29 +157,29 @@ onMounted(() => {
 }
 
 .login-title {
-  color: #303133;
+  color: var(--ja-text-primary);
   font-size: 2rem;
   font-weight: 600;
   margin: 0.5rem 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--ja-login-gradient-start) 0%, var(--ja-login-gradient-end) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .login-subtitle {
-  color: #606266;
+  color: var(--ja-text-regular);
   font-size: 1rem;
   margin: 0;
 }
 
 :deep(.el-form-item__label) {
   font-weight: 500;
-  color: #303133;
+  color: var(--ja-text-primary);
 }
 
 .login-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--ja-login-gradient-start) 0%, var(--ja-login-gradient-end) 100%);
   border: none;
   font-weight: 500;
   letter-spacing: 1px;
