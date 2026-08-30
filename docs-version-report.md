@@ -2,23 +2,23 @@
 
 ## 版本统计
 
-- 总文档数: 160
-- 近7天变更: 130
+- 总文档数: 163
+- 近7天变更: 154
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-08-30 07:57:50
+- 最后扫描: 2026-08-30 13:18:54
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.11 → 1.0.12) - 2026-08-30
-- **MODIFIED**: docs/zh/index.md (1.0.11 → 1.0.12) - 2026-08-30
-- **MODIFIED**: docs/zh/configuration/load-balancing.md (1.0.2 → 1.0.3) - 2026-08-30
-- **MODIFIED**: docs/en/reference/changelog.md (1.0.11 → 1.0.12) - 2026-08-30
-- **MODIFIED**: docs/en/index.md (1.0.10 → 1.0.11) - 2026-08-30
-- **MODIFIED**: docs/en/configuration/load-balancing.md (1.0.3 → 1.0.4) - 2026-08-30
-- **MODIFIED**: README.md (1.0.26 → 1.0.27) - 2026-08-30
-- **MODIFIED**: README-ZH.md (1.0.18 → 1.0.19) - 2026-08-30
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.10 → 1.0.11) - 2026-08-28
-- **MODIFIED**: docs/zh/index.md (1.0.10 → 1.0.11) - 2026-08-28
+- **MODIFIED**: docs/zh/tracing/index.md (1.0.4 → 1.0.5) - 2026-08-30
+- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.8 → 1.0.9) - 2026-08-30
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.12 → 1.0.13) - 2026-08-30
+- **MODIFIED**: docs/zh/index.md (1.0.12 → 1.0.13) - 2026-08-30
+- **CREATED**: docs/zh/development/knowledge-base-governance.md ( → 1.0.0) - 2026-08-30
+- **MODIFIED**: docs/zh/configuration/version-management.md (1.0.3 → 1.0.4) - 2026-08-30
+- **MODIFIED**: docs/zh/configuration/store-config.md (1.0.4 → 1.0.5) - 2026-08-30
+- **MODIFIED**: docs/zh/configuration/state-persistence.md (1.0.2 → 1.0.3) - 2026-08-30
+- **MODIFIED**: docs/zh/configuration/routing-rules.md (1.0.2 → 1.0.3) - 2026-08-30
+- **MODIFIED**: docs/zh/configuration/load-balancing.md (1.0.3 → 1.0.4) - 2026-08-30
 
 ## 过期文档 (30天未更新)
 
@@ -55,7 +55,6 @@
 - docs/zh/reference/faq.md (版本: 1.0.5, 最后更新: 2026-06-03)
 - docs/zh/reference/glossary.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/reference/index.md (版本: 1.0.3, 最后更新: 2026-06-03)
-- docs/zh/reference/roadmap.md (版本: 1.0.8, 最后更新: 2026-07-18)
 - docs/zh/troubleshooting/common-issues.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/troubleshooting/debugging.md (版本: 1.0.3, 最后更新: 2026-06-03)
 - docs/zh/troubleshooting/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
@@ -69,7 +68,6 @@
 - docs/zh/security/index.md (版本: 1.0.2, 最后更新: 2026-06-03)
 - docs/zh/security/jwt-authentication.md (版本: 1.0.4, 最后更新: 2026-06-03)
 - docs/zh/security/troubleshooting.md (版本: 1.0.1, 最后更新: 2026-06-03)
-- docs/en/configuration/jwt-persistence.md (版本: 1.0.1, 最后更新: 2026-06-10)
 - docs/en/deployment/jwt-persistence-deployment-checklist.md (版本: 1.0.1, 最后更新: 2026-06-11)
 - docs/zh/reference/adapter-updates.md (版本: 1.0.1, 最后更新: 2026-06-03)
 - QWEN.md (版本: 1.0.4, 最后更新: 2026-07-14)
@@ -607,21 +605,35 @@
 
 ## 所有文档版本
 
-- **docs/zh/reference/changelog.md**: v1.0.12 - 2026-08-30 (a31ec08f)
-- **docs/zh/index.md**: v1.0.12 - 2026-08-30 (a31ec08f)
-- **docs/zh/configuration/load-balancing.md**: v1.0.3 - 2026-08-30 (a31ec08f)
-- **docs/en/reference/changelog.md**: v1.0.12 - 2026-08-30 (a31ec08f)
-- **docs/en/index.md**: v1.0.11 - 2026-08-30 (a31ec08f)
-- **docs/en/configuration/load-balancing.md**: v1.0.4 - 2026-08-30 (a31ec08f)
-- **README.md**: v1.0.27 - 2026-08-30 (a31ec08f)
-- **README-ZH.md**: v1.0.19 - 2026-08-30 (a31ec08f)
+- **docs/zh/tracing/index.md**: v1.0.5 - 2026-08-30 (2f3955ee)
+- **docs/zh/reference/roadmap.md**: v1.0.9 - 2026-08-30 (2f3955ee)
+- **docs/zh/reference/changelog.md**: v1.0.13 - 2026-08-30 (0aaa6f38)
+- **docs/zh/index.md**: v1.0.13 - 2026-08-30 (0aaa6f38)
+- **docs/zh/development/knowledge-base-governance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
+- **docs/zh/configuration/version-management.md**: v1.0.4 - 2026-08-30 (2f3955ee)
+- **docs/zh/configuration/store-config.md**: v1.0.5 - 2026-08-30 (2f3955ee)
+- **docs/zh/configuration/state-persistence.md**: v1.0.3 - 2026-08-30 (2f3955ee)
+- **docs/zh/configuration/routing-rules.md**: v1.0.3 - 2026-08-30 (a461b174)
+- **docs/zh/configuration/load-balancing.md**: v1.0.4 - 2026-08-30 (0aaa6f38)
+- **docs/en/tracing/index.md**: v1.0.5 - 2026-08-30 (2f3955ee)
+- **docs/en/reference/roadmap.md**: v1.0.10 - 2026-08-30 (2f3955ee)
+- **docs/en/reference/changelog.md**: v1.0.13 - 2026-08-30 (0aaa6f38)
+- **docs/en/index.md**: v1.0.12 - 2026-08-30 (0aaa6f38)
+- **docs/en/development/knowledge-base-governance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
+- **docs/en/development/doc-maintenance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
+- **docs/en/configuration/version-management.md**: v1.0.4 - 2026-08-30 (2f3955ee)
+- **docs/en/configuration/store-config.md**: v1.0.5 - 2026-08-30 (2f3955ee)
+- **docs/en/configuration/state-persistence.md**: v1.0.3 - 2026-08-30 (2f3955ee)
+- **docs/en/configuration/routing-rules.md**: v1.0.3 - 2026-08-30 (a461b174)
+- **docs/en/configuration/load-balancing.md**: v1.0.5 - 2026-08-30 (0aaa6f38)
+- **docs/en/configuration/jwt-persistence.md**: v1.0.2 - 2026-08-30 (2f3955ee)
+- **README.md**: v1.0.28 - 2026-08-30 (0aaa6f38)
+- **README-ZH.md**: v1.0.20 - 2026-08-30 (0aaa6f38)
 - **docs/zh/configuration/kv-cache.md**: v1.0.0 - 2026-08-28 (ac0f7045)
 - **docs/zh/configuration/index.md**: v1.0.4 - 2026-08-28 (ac0f7045)
 - **docs/en/configuration/kv-cache.md**: v1.0.0 - 2026-08-28 (ac0f7045)
 - **docs/en/configuration/index.md**: v1.0.6 - 2026-08-28 (ac0f7045)
-- **docs/zh/configuration/routing-rules.md**: v1.0.2 - 2026-08-27 (1f20aefd)
 - **docs/zh/configuration/rate-limiting.md**: v1.0.3 - 2026-08-27 (a23defac)
-- **docs/en/configuration/routing-rules.md**: v1.0.2 - 2026-08-27 (1f20aefd)
 - **docs/en/configuration/rate-limiting.md**: v1.0.4 - 2026-08-27 (a23defac)
 - **docs/zh/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
 - **docs/en/configuration/adapter-config.md**: v1.0.3 - 2026-08-26 (462db999)
@@ -630,16 +642,12 @@
 - **docs/zh/tracing/quickstart.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/performance-tuning.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/operations-guide.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/zh/tracing/index.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/zh/tracing/config-reference.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/zh/monitoring/slow-query-alerts.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/zh/monitoring/error-tracking.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/zh/development/doc-maintenance.md**: v1.0.0 - 2026-08-24 (26c1f68e)
 - **docs/zh/deployment/docker.md**: v1.0.7 - 2026-08-24 (f5d673e2)
-- **docs/zh/configuration/version-management.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/validation-rules.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/zh/configuration/store-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/zh/configuration/state-persistence.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/instance-examples.md**: v1.0.1 - 2026-08-24 (f5d673e2)
 - **docs/zh/configuration/dynamic-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/troubleshooting/performance.md**: v1.0.3 - 2026-08-24 (f5d673e2)
@@ -652,14 +660,12 @@
 - **docs/en/tracing/quickstart.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/tracing/performance-tuning.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/tracing/operations-guide.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/en/tracing/index.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/tracing/config-reference.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/security/troubleshooting.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/security/index.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/security/data-sanitization.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/security/blacklist-management.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/security/audit-log-management.md**: v1.0.0 - 2026-08-24 (f5d673e2)
-- **docs/en/reference/roadmap.md**: v1.0.9 - 2026-08-24 (f5d673e2)
 - **docs/en/reference/index.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/reference/glossary.md**: v1.0.4 - 2026-08-24 (f5d673e2)
 - **docs/en/reference/faq.md**: v1.0.5 - 2026-08-24 (f5d673e2)
@@ -690,10 +696,7 @@
 - **docs/en/deployment/docker.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/deployment/docker-optimized.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/deployment/china-optimization.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/version-management.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/validation-rules.md**: v1.0.0 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/store-config.md**: v1.0.4 - 2026-08-24 (f5d673e2)
-- **docs/en/configuration/state-persistence.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/modular-config.md**: v1.0.2 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/instance-examples.md**: v1.0.1 - 2026-08-24 (f5d673e2)
 - **docs/en/configuration/dynamic-config.md**: v1.0.3 - 2026-08-24 (f5d673e2)
@@ -705,7 +708,6 @@
 - **docs/en/api-reference/management-api.md**: v1.0.5 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/index.md**: v1.0.3 - 2026-08-24 (f5d673e2)
 - **docs/en/api-reference/error-codes.md**: v1.0.3 - 2026-08-24 (f5d673e2)
-- **docs/zh/reference/roadmap.md**: v1.0.8 - 2026-07-18 (ca98a2ee)
 - **docs/zh/getting-started/quick-start.md**: v1.0.5 - 2026-07-15 (d01148bb)
 - **QWEN.md**: v1.0.4 - 2026-07-14 (63a07c9b)
 - **merge-log-2026-07-10.md**: v1.0.0 - 2026-07-11 (eb2d8a82)
@@ -720,7 +722,6 @@
 - **docs/en/reference/adapter-updates.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/monitoring/alert_rules_guide.md**: v1.0.1 - 2026-06-11 (a9e349a6)
 - **docs/en/deployment/jwt-persistence-deployment-checklist.md**: v1.0.1 - 2026-06-11 (a9e349a6)
-- **docs/en/configuration/jwt-persistence.md**: v1.0.1 - 2026-06-10 (ba6d6ddf)
 - **docs/zh/troubleshooting/performance.md**: v1.0.2 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/issue-fixes.md**: v1.0.1 - 2026-06-03 (85bfdb3e)
 - **docs/zh/troubleshooting/index.md**: v1.0.2 - 2026-06-03 (85bfdb3e)

@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.27",
-      "LastModified": "2026-08-30T07:57:50.137083",
-      "ContentHash": "1f415dce25d634b8",
-      "GitCommit": "a31ec08f",
+      "Version": "1.0.28",
+      "LastModified": "2026-08-30T13:18:53.456246",
+      "ContentHash": "5421eecc33922945",
+      "GitCommit": "0aaa6f38",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -117,10 +117,10 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-30T07:57:50.177165",
-      "ContentHash": "ab113d6dfb15f8ac",
-      "GitCommit": "a31ec08f",
+      "Version": "1.0.5",
+      "LastModified": "2026-08-30T13:18:53.489265",
+      "ContentHash": "10b1d748b86563e4",
+      "GitCommit": "0aaa6f38",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -354,10 +354,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.11",
-      "LastModified": "2026-08-30T07:57:50.246635",
-      "ContentHash": "c5eae2ee2115af0c",
-      "GitCommit": "a31ec08f",
+      "Version": "1.0.12",
+      "LastModified": "2026-08-30T13:18:53.549831",
+      "ContentHash": "8e8c2111cf94d902",
+      "GitCommit": "0aaa6f38",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -508,10 +508,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-08-30T07:57:50.288030",
-      "ContentHash": "d8716b571fd85a31",
-      "GitCommit": "a31ec08f",
+      "Version": "1.0.13",
+      "LastModified": "2026-08-30T13:18:53.586451",
+      "ContentHash": "fab648060d2c6e4d",
+      "GitCommit": "0aaa6f38",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -560,10 +560,10 @@
     },
     "docs/en/reference/roadmap.md": {
       "FilePath": "docs/en/reference/roadmap.md",
-      "Version": "1.0.9",
-      "LastModified": "2026-08-24T03:02:49.205676",
-      "ContentHash": "352f682c9a029091",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.10",
+      "LastModified": "2026-08-30T13:18:53.595939",
+      "ContentHash": "c25fcc278253d303",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -723,10 +723,10 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-30T07:57:50.414312",
-      "ContentHash": "881ee008d07a5335",
-      "GitCommit": "a31ec08f",
+      "Version": "1.0.4",
+      "LastModified": "2026-08-30T13:18:53.689584",
+      "ContentHash": "9e8eaf1a2ca41963",
+      "GitCommit": "0aaa6f38",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -960,10 +960,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-08-30T07:57:50.516304",
-      "ContentHash": "6301fb382d9fe923",
-      "GitCommit": "a31ec08f",
+      "Version": "1.0.13",
+      "LastModified": "2026-08-30T13:18:53.777481",
+      "ContentHash": "22a11e8d36a2f46e",
+      "GitCommit": "0aaa6f38",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1128,10 +1128,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-08-30T07:57:50.575786",
-      "ContentHash": "4ad29e7fcf400e6f",
-      "GitCommit": "a31ec08f",
+      "Version": "1.0.13",
+      "LastModified": "2026-08-30T13:18:53.826770",
+      "ContentHash": "840b535e9b267c93",
+      "GitCommit": "0aaa6f38",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1181,10 +1181,10 @@
     },
     "docs/zh/reference/roadmap.md": {
       "FilePath": "docs/zh/reference/roadmap.md",
-      "Version": "1.0.8",
-      "LastModified": "2026-07-18T04:48:48.688763",
-      "ContentHash": "86d52b9975ee606b",
-      "GitCommit": "ca98a2ee",
+      "Version": "1.0.9",
+      "LastModified": "2026-08-30T13:18:53.841973",
+      "ContentHash": "b97fe07aec9b6618",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1375,10 +1375,10 @@
     },
     "docs/en/tracing/index.md": {
       "FilePath": "docs/en/tracing/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.230241",
-      "ContentHash": "b26d4c83fa1007dd",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.5",
+      "LastModified": "2026-08-30T13:18:53.619498",
+      "ContentHash": "379a7980f379e060",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1570,10 +1570,10 @@
     },
     "docs/zh/tracing/index.md": {
       "FilePath": "docs/zh/tracing/index.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.490512",
-      "ContentHash": "adf7fb0675f8cc07",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.5",
+      "LastModified": "2026-08-30T13:18:53.873718",
+      "ContentHash": "94333eed319e28ed",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1656,50 +1656,50 @@
     },
     "docs/en/configuration/store-config.md": {
       "FilePath": "docs/en/configuration/store-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.118381",
-      "ContentHash": "c186428c6c31566f",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.5",
+      "LastModified": "2026-08-30T13:18:53.498705",
+      "ContentHash": "035a5e5c8c9b2686",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/configuration/version-management.md": {
       "FilePath": "docs/en/configuration/version-management.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-24T03:02:49.122143",
-      "ContentHash": "f5672912fde44b0d",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.4",
+      "LastModified": "2026-08-30T13:18:53.502765",
+      "ContentHash": "438782a3c8bc77d9",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/configuration/store-config.md": {
       "FilePath": "docs/zh/configuration/store-config.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-24T03:02:49.314398",
-      "ContentHash": "988a9c9704d04d84",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.5",
+      "LastModified": "2026-08-30T13:18:53.701316",
+      "ContentHash": "1aa610ca4ddcf96d",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/zh/configuration/version-management.md": {
       "FilePath": "docs/zh/configuration/version-management.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-24T03:02:49.318323",
-      "ContentHash": "933eb8bad23c8511",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.4",
+      "LastModified": "2026-08-30T13:18:53.705353",
+      "ContentHash": "270d4dd205eb38cb",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
     },
     "docs/en/configuration/jwt-persistence.md": {
       "FilePath": "docs/en/configuration/jwt-persistence.md",
-      "Version": "1.0.1",
-      "LastModified": "2026-06-10T06:24:27.693010",
-      "ContentHash": "2c4f72b4d6f36d3d",
-      "GitCommit": "ba6d6ddf",
+      "Version": "1.0.2",
+      "LastModified": "2026-08-30T13:18:53.485400",
+      "ContentHash": "2c3b7548a1fddbf6",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1725,10 +1725,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.19",
-      "LastModified": "2026-08-30T07:57:50.135177",
-      "ContentHash": "884fcb054fb3f6ee",
-      "GitCommit": "a31ec08f",
+      "Version": "1.0.20",
+      "LastModified": "2026-08-30T13:18:53.454580",
+      "ContentHash": "284cb029f623fed3",
+      "GitCommit": "0aaa6f38",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1912,10 +1912,10 @@
     },
     "docs/en/configuration/state-persistence.md": {
       "FilePath": "docs/en/configuration/state-persistence.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.116569",
-      "ContentHash": "833632f56746658a",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.3",
+      "LastModified": "2026-08-30T13:18:53.497031",
+      "ContentHash": "f92178b7ba1d3c06",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1926,10 +1926,10 @@
     },
     "docs/zh/configuration/state-persistence.md": {
       "FilePath": "docs/zh/configuration/state-persistence.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-24T03:02:49.312465",
-      "ContentHash": "706f591c25b1e301",
-      "GitCommit": "f5d673e2",
+      "Version": "1.0.3",
+      "LastModified": "2026-08-30T13:18:53.699715",
+      "ContentHash": "c92895d6d356cd51",
+      "GitCommit": "2f3955ee",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -2020,10 +2020,10 @@
     },
     "docs/en/configuration/routing-rules.md": {
       "FilePath": "docs/en/configuration/routing-rules.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-27T12:24:13.183514",
-      "ContentHash": "07c5380c94485af6",
-      "GitCommit": "1f20aefd",
+      "Version": "1.0.3",
+      "LastModified": "2026-08-30T13:18:53.495309",
+      "ContentHash": "6edc58e3a600e115",
+      "GitCommit": "a461b174",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2071,10 +2071,10 @@
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
-      "Version": "1.0.2",
-      "LastModified": "2026-08-27T12:24:13.419049",
-      "ContentHash": "78c4d89814a99732",
-      "GitCommit": "1f20aefd",
+      "Version": "1.0.3",
+      "LastModified": "2026-08-30T13:18:53.697965",
+      "ContentHash": "d4e1bffbec595a0b",
+      "GitCommit": "a461b174",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2116,6 +2116,36 @@
         "docs/zh/configuration/routing-rules.md",
         "docs/zh/reference/changelog.md"
       ]
+    },
+    "docs/en/development/doc-maintenance.md": {
+      "FilePath": "docs/en/development/doc-maintenance.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-08-30T13:18:53.531308",
+      "ContentHash": "066235f2256a127a",
+      "GitCommit": "2f3955ee",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/en/development/knowledge-base-governance.md": {
+      "FilePath": "docs/en/development/knowledge-base-governance.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-08-30T13:18:53.535694",
+      "ContentHash": "974991ff32beed55",
+      "GitCommit": "2f3955ee",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
+    },
+    "docs/zh/development/knowledge-base-governance.md": {
+      "FilePath": "docs/zh/development/knowledge-base-governance.md",
+      "Version": "1.0.0",
+      "LastModified": "2026-08-30T13:18:53.755865",
+      "ContentHash": "1485ad3415c08ab1",
+      "GitCommit": "2f3955ee",
+      "Author": "Lincoln",
+      "ChangeSummary": "",
+      "Dependencies": []
     }
   },
   "changes": [
@@ -5278,7 +5308,199 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-08-30T07:57:50.575796",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.19",
+      "NewVersion": "1.0.20",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.454588",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.27",
+      "NewVersion": "1.0.28",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.456250",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/jwt-persistence.md",
+      "OldVersion": "1.0.1",
+      "NewVersion": "1.0.2",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.485407",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.489269",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/routing-rules.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.495314",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/state-persistence.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.497035",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/store-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.498709",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/version-management.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.502770",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/development/doc-maintenance.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-08-30T13:18:53.531315",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/development/knowledge-base-governance.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-08-30T13:18:53.535698",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.11",
+      "NewVersion": "1.0.12",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.549835",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.586457",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/roadmap.md",
+      "OldVersion": "1.0.9",
+      "NewVersion": "1.0.10",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.595943",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/tracing/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.619505",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.689594",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/routing-rules.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.697970",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/state-persistence.md",
+      "OldVersion": "1.0.2",
+      "NewVersion": "1.0.3",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.699719",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/store-config.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.701319",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/version-management.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.705359",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/development/knowledge-base-governance.md",
+      "OldVersion": "",
+      "NewVersion": "1.0.0",
+      "ChangeType": "CREATED",
+      "Timestamp": "2026-08-30T13:18:53.755871",
+      "Description": "文档created"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.777487",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.826777",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/roadmap.md",
+      "OldVersion": "1.0.8",
+      "NewVersion": "1.0.9",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.841977",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/tracing/index.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-08-30T13:18:53.873724",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-08-30T07:57:50.783805"
+  "last_updated": "2026-08-30T13:18:54.157496"
 }
