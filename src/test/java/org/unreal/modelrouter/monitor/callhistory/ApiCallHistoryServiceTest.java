@@ -9,6 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
+import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
+import org.unreal.modelrouter.monitor.callhistory.crypto.RecordContentCipher;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
 import org.unreal.modelrouter.persistence.jpa.entity.ApiCallHistoryEntity;
 import org.unreal.modelrouter.persistence.jpa.repository.ApiCallHistoryRepository;
@@ -37,6 +39,9 @@ class ApiCallHistoryServiceTest {
     @Mock
     private ApiCallHistoryRepository repository;
 
+    @Mock
+    private RecordContentCipher recordContentCipher;
+
     @InjectMocks
     private ApiCallHistoryService service;
 
@@ -51,12 +56,17 @@ class ApiCallHistoryServiceTest {
         properties.setRequestBodySummaryMaxLength(200);
         properties.setResponseBodySummaryEnabled(true);
         properties.setResponseBodySummaryMaxLength(200);
+        properties.setRecordLevel(RecordLevel.METADATA_ONLY);
 
-        // 使用反射注入 properties
+        // 使用反射注入 properties 和 recordContentCipher
         try {
-            var field = ApiCallHistoryService.class.getDeclaredField("properties");
-            field.setAccessible(true);
-            field.set(service, properties);
+            var propField = ApiCallHistoryService.class.getDeclaredField("properties");
+            propField.setAccessible(true);
+            propField.set(service, properties);
+
+            var cipherField = ApiCallHistoryService.class.getDeclaredField("recordContentCipher");
+            cipherField.setAccessible(true);
+            cipherField.set(service, recordContentCipher);
         } catch (Exception e) {
             // 忽略
         }

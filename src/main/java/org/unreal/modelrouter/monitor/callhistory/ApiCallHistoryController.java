@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -17,7 +18,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.unreal.modelrouter.auth.security.audit.SecurityAuditService;
+import org.unreal.modelrouter.auth.security.model.SecurityAuditEvent;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
+import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryQueryDTO;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryStatisticsDTO;
@@ -27,6 +31,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * API 调用历史控制器
@@ -40,10 +45,12 @@ import java.util.Map;
 @RequestMapping("/api/call-history")
 @RequiredArgsConstructor
 @Tag(name = "API 调用历史", description = "API 调用历史记录、查询和统计接口")
+@PreAuthorize("hasRole('ADMIN')")
 public class ApiCallHistoryController {
 
     private final ApiCallHistoryService callHistoryService;
     private final ApiCallHistoryRecorder callHistoryRecorder;
+    private final SecurityAuditService securityAuditService;
 
     /**
      * 记录调用历史（手动）
@@ -85,6 +92,29 @@ public class ApiCallHistoryController {
 
         List<ApiCallHistoryEntity> records = callHistoryService.findByTraceId(traceId);
         return ResponseEntity.ok(RouterResponse.success(records));
+    }
+
+    /**
+     * 查询单条记录详情（解密后）
+     * 若记录级别为 FULL，会触发 FULL_CONTENT_ACCESS 审计事件
+     */
+    @GetMapping("/{id}/detail")
+    @Operation(summary = "查询记录详情", description = "根据 ID 查询单条调用历史记录，自动解密加密内容")
+    public ResponseEntity<RouterResponse<ApiCallHistoryEntity>> getDetail(
+            @Parameter(description = "记录 ID")
+            @PathVariable Long id) {
+
+        return callHistoryService.findById(id)
+                .map(entity -> {
+                    // 若记录级别为 FULL，在返回前记录审计事件
+                    if (RecordLevel.FULL.name().equals(entity.getRecordLevel())) {
+                        emitFullContentAccessAudit(entity.getId());
+                    }
+                    callHistoryService.decryptBodies(entity);
+                    return ResponseEntity.ok(RouterResponse.success(entity));
+                })
+                .orElseGet(() -> ResponseEntity.ok(
+                        RouterResponse.error("记录不存在: id=" + id)));
     }
 
     /**
@@ -232,5 +262,29 @@ public class ApiCallHistoryController {
         result.put("count", count);
 
         return ResponseEntity.ok(RouterResponse.success(result));
+    }
+
+    /**
+     * 发送 FULL_CONTENT_ACCESS 审计事件
+     *
+     * @param recordId 记录 ID
+     */
+    private void emitFullContentAccessAudit(final Long recordId) {
+        try {
+            SecurityAuditEvent event = SecurityAuditEvent.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("FULL_CONTENT_ACCESS")
+                    .resource("call-history")
+                    .action("DETAIL")
+                    .success(true)
+                    .additionalData(Map.of("recordId", recordId))
+                    .build();
+            securityAuditService.recordEvent(event).subscribe(
+                    v -> log.debug("FULL_CONTENT_ACCESS 审计事件已记录: recordId={}", recordId),
+                    e -> log.warn("记录 FULL_CONTENT_ACCESS 审计事件失败: {}", e.getMessage())
+            );
+        } catch (Exception e) {
+            log.warn("发送 FULL_CONTENT_ACCESS 审计事件异常: {}", e.getMessage());
+        }
     }
 }

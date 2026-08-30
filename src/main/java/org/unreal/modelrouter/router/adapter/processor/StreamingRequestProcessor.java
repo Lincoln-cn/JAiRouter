@@ -11,6 +11,11 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
+import org.unreal.modelrouter.auth.sanitization.SanitizationService;
+import org.unreal.modelrouter.monitor.callhistory.ApiCallHistoryRecorder;
+import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
+import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
+import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.monitor.tracing.TracingContextHolder;
@@ -56,6 +61,16 @@ public class StreamingRequestProcessor {
     // v2.8.9: 资源池选择器(池路由后改写下游流式请求的 model 字段为实际实例名)
     @Autowired(required = false)
     private PoolSelector poolSelector;
+
+    // v2.9.2: 记录治理
+    @Autowired(required = false)
+    private ApiCallHistoryRecorder callHistoryRecorder;
+
+    @Autowired(required = false)
+    private CallHistoryProperties callHistoryProperties;
+
+    @Autowired(required = false)
+    private SanitizationService sanitizationService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -109,6 +124,15 @@ public class StreamingRequestProcessor {
 
         logger.debug("开始流式请求: adapter={}, instance={}, path={}", adapterType, instanceName, path);
 
+        // v2.9.2: 记录治理 - 在入口处序列化请求体
+        final String capturedRequestBody;
+        RecordLevel recordLevel = resolveRecordLevel();
+        if (recordLevel != RecordLevel.METADATA_ONLY) {
+            capturedRequestBody = serializeAndTruncate(request);
+        } else {
+            capturedRequestBody = null;
+        }
+
         // Token 使用量追踪
         AtomicLong promptTokens = new AtomicLong(0);
         AtomicLong completionTokens = new AtomicLong(0);
@@ -150,6 +174,48 @@ public class StreamingRequestProcessor {
                             promptTokens.get(), completionTokens.get(), totalTokens.get(),
                             cacheHitTokens.get(), cacheMissTokens.get(),
                             contentBuilder.toString(), capturedKeyId);
+
+                    // v2.9.2: 记录治理 - 记录含请求/响应体的调用历史
+                    if (recordLevel != RecordLevel.METADATA_ONLY && callHistoryRecorder != null) {
+                        long duration = System.currentTimeMillis() - requestStartTime;
+                        String rawResponseBody = truncate(contentBuilder.toString());
+                        String responseBodyForRecord = rawResponseBody;
+
+                        // SUMMARY 级别：对响应体进行脱敏处理
+                        if (recordLevel == RecordLevel.SUMMARY && sanitizationService != null && rawResponseBody != null) {
+                            try {
+                                String sanitized = sanitizationService.sanitizeResponse(
+                                        rawResponseBody, "application/json")
+                                        .block(java.time.Duration.ofSeconds(5));
+                                if (sanitized != null) {
+                                    responseBodyForRecord = sanitized;
+                                }
+                            } catch (Exception e) {
+                                logger.debug("流式响应体脱敏失败: {}", e.getMessage());
+                            }
+                        }
+
+                        try {
+                            CallHistoryRecordDTO dto = CallHistoryRecordDTO.builder()
+                                    .serviceType(serviceType != null ? serviceType.name() : null)
+                                    .modelName(modelRef.get())
+                                    .provider(adapterType)
+                                    .instanceName(instanceName)
+                                    .instanceUrl(selectedInstance.getBaseUrl())
+                                    .responseTimeMs(duration)
+                                    .isSuccess(true)
+                                    .promptTokens(promptTokens.get() > 0 ? promptTokens.get() : null)
+                                    .completionTokens(completionTokens.get() > 0 ? completionTokens.get() : null)
+                                    .totalTokens(totalTokens.get() > 0 ? totalTokens.get() : null)
+                                    .apiKeyId(capturedKeyId)
+                                    .requestBody(capturedRequestBody)
+                                    .responseBody(responseBodyForRecord)
+                                    .build();
+                            callHistoryRecorder.record(dto);
+                        } catch (Exception e) {
+                            logger.debug("流式调用历史记录失败: {}", e.getMessage());
+                        }
+                    }
                 })
                 .doOnError(throwable -> recordStreamingError(serviceType, adapterType, instanceName,
                         requestStartTime, throwable))
@@ -448,5 +514,47 @@ public class StreamingRequestProcessor {
 
         return (long) Math.ceil(chineseChars / CHINESE_CHARS_PER_TOKEN
                 + otherChars / ENGLISH_CHARS_PER_TOKEN);
+    }
+
+    // ==================== v2.9.2: 记录治理辅助方法 ====================
+
+    /**
+     * 解析当前记录级别（默认 METADATA_ONLY）
+     */
+    private RecordLevel resolveRecordLevel() {
+        if (callHistoryProperties != null) {
+            return callHistoryProperties.getRecordLevel();
+        }
+        return RecordLevel.METADATA_ONLY;
+    }
+
+    /**
+     * 将对象序列化为 JSON 字符串并截断到 maxContentLength
+     */
+    private String serializeAndTruncate(final Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        try {
+            String json = objectMapper.writeValueAsString(obj);
+            return truncate(json);
+        } catch (Exception e) {
+            logger.debug("序列化请求体失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 截断字符串到 maxContentLength
+     */
+    private String truncate(final String content) {
+        if (content == null) {
+            return null;
+        }
+        int maxLen = callHistoryProperties != null ? callHistoryProperties.getMaxContentLength() : 65536;
+        if (content.length() > maxLen) {
+            return content.substring(0, maxLen);
+        }
+        return content;
     }
 }

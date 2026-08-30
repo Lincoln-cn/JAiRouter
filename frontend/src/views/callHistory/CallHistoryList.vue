@@ -54,6 +54,41 @@
       </el-form>
     </el-card>
 
+    <!-- v2.9.2 记录治理设置 -->
+    <el-card class="settings-card" shadow="hover" v-loading="configLoading">
+      <template #header>
+        <div class="table-header">
+          <span class="chart-title">记录治理设置</span>
+        </div>
+      </template>
+      <el-form label-width="100px" class="settings-form">
+        <el-form-item label="记录级别">
+          <el-radio-group v-model="recordLevel" :disabled="configSaving">
+            <el-radio value="METADATA_ONLY">仅元数据（默认）</el-radio>
+            <el-radio value="SUMMARY">摘要（脱敏）</el-radio>
+            <el-radio value="FULL">完整（加密）</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="configSaving"
+            :disabled="configSaving || configLoading"
+            @click="handleSaveConfig"
+          >
+            保存
+          </el-button>
+        </el-form-item>
+      </el-form>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        title="各级别说明"
+        description="仅元数据：不保存请求/回复内容；摘要：脱敏后保存前 N 字摘要；完整：加密保存完整内容（仅管理员可查看）"
+      />
+    </el-card>
+
     <!-- 数据表格 -->
     <el-card shadow="hover">
       <template #header>
@@ -246,7 +281,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
-import { queryCallHistory } from '@/api/callHistory'
+import { queryCallHistory, getCallHistoryConfig, updateCallHistoryConfig } from '@/api/callHistory'
+import type { CallHistoryConfig } from '@/api/callHistory'
 import type { ApiCallHistoryRecord, CallHistoryQuery } from '@/types/callHistory'
 
 // 查询表单
@@ -274,6 +310,39 @@ const totalCount = ref(0)
 // 详情抽屉
 const drawerVisible = ref(false)
 const selectedRecord = ref<ApiCallHistoryRecord | null>(null)
+
+// ---- v2.9.2 记录治理 settings ----
+const configLoading = ref(false)
+const configSaving = ref(false)
+const recordLevel = ref<string>('METADATA_ONLY')
+const configLoaded = ref(false)
+
+const loadConfig = async () => {
+  configLoading.value = true
+  try {
+    const cfg: CallHistoryConfig = await getCallHistoryConfig()
+    recordLevel.value = cfg.recordLevel || 'METADATA_ONLY'
+    configLoaded.value = true
+  } catch (error: any) {
+    console.error('加载记录配置失败:', error)
+    ElMessage.error(`加载记录配置失败：${error.message || '未知错误'}`)
+  } finally {
+    configLoading.value = false
+  }
+}
+
+const handleSaveConfig = async () => {
+  configSaving.value = true
+  try {
+    await updateCallHistoryConfig({ recordLevel: recordLevel.value })
+    ElMessage.success('记录级别已更新')
+  } catch (error: any) {
+    console.error('保存记录配置失败:', error)
+    ElMessage.error(`保存记录配置失败：${error.message || '未知错误'}`)
+  } finally {
+    configSaving.value = false
+  }
+}
 
 // 格式化数字
 const formatNumber = (num?: number): string => {
@@ -411,6 +480,7 @@ const handleDetail = (record: ApiCallHistoryRecord) => {
 // 初始化
 onMounted(() => {
   loadData()
+  loadConfig()
 })
 </script>
 
@@ -421,6 +491,14 @@ onMounted(() => {
 
 .call-history-list .filter-card {
   margin-bottom: 20px;
+}
+
+.call-history-list .settings-card {
+  margin-bottom: 20px;
+}
+
+.call-history-list .settings-form {
+  margin-bottom: 12px;
 }
 
 .call-history-list .filter-card .filter-form {

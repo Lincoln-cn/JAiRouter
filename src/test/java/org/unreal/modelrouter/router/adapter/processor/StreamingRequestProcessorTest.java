@@ -11,6 +11,10 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.unreal.modelrouter.auth.sanitization.SanitizationService;
+import org.unreal.modelrouter.monitor.callhistory.ApiCallHistoryRecorder;
+import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
+import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.router.adapter.transformer.ResponseTransformer;
 
 import java.util.Map;
@@ -28,6 +32,16 @@ class StreamingRequestProcessorTest {
 
     @Mock
     private ResponseTransformer responseTransformer;
+
+    // v2.9.2: 记录治理 mock
+    @Mock
+    private ApiCallHistoryRecorder callHistoryRecorder;
+
+    @Mock
+    private CallHistoryProperties callHistoryProperties;
+
+    @Mock
+    private SanitizationService sanitizationService;
 
     @InjectMocks
     private StreamingRequestProcessor processor;
@@ -315,6 +329,108 @@ class StreamingRequestProcessorTest {
 
             assertEquals("original", result.data());
             verify(responseTransformer).transformStreamChunk("original");
+        }
+    }
+
+    @Nested
+    @DisplayName("v2.9.2 记录治理 - 请求/响应体捕获测试")
+    class BodyCaptureTests {
+
+        @Test
+        @DisplayName("resolveRecordLevel: 无配置时默认返回 METADATA_ONLY")
+        void shouldReturnMetadataOnlyWhenNoConfig() throws Exception {
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("resolveRecordLevel");
+            method.setAccessible(true);
+
+            RecordLevel result = (RecordLevel) method.invoke(processor);
+            assertEquals(RecordLevel.METADATA_ONLY, result);
+        }
+
+        @Test
+        @DisplayName("resolveRecordLevel: 配置 SUMMARY 时返回 SUMMARY")
+        void shouldReturnConfiguredLevel() throws Exception {
+            var field = StreamingRequestProcessor.class.getDeclaredField("callHistoryProperties");
+            field.setAccessible(true);
+            when(callHistoryProperties.getRecordLevel()).thenReturn(RecordLevel.SUMMARY);
+            field.set(processor, callHistoryProperties);
+
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("resolveRecordLevel");
+            method.setAccessible(true);
+
+            RecordLevel result = (RecordLevel) method.invoke(processor);
+            assertEquals(RecordLevel.SUMMARY, result);
+        }
+
+        @Test
+        @DisplayName("serializeAndTruncate: null 对象返回 null")
+        void shouldReturnNullForNullObject() throws Exception {
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("serializeAndTruncate", Object.class);
+            method.setAccessible(true);
+
+            String result = (String) method.invoke(processor, (Object) null);
+            assertNull(result);
+        }
+
+        @Test
+        @DisplayName("serializeAndTruncate: 正常对象序列化为 JSON")
+        void shouldSerializeObjectToJson() throws Exception {
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("serializeAndTruncate", Object.class);
+            method.setAccessible(true);
+
+            Map<String, Object> testObj = Map.of("model", "gpt-4", "stream", true);
+            String result = (String) method.invoke(processor, testObj);
+            assertNotNull(result);
+            assertTrue(result.contains("\"model\""));
+            assertTrue(result.contains("gpt-4"));
+        }
+
+        @Test
+        @DisplayName("serializeAndTruncate: 内容超长时截断到 maxContentLength")
+        void shouldTruncateToMaxContentLength() throws Exception {
+            var field = StreamingRequestProcessor.class.getDeclaredField("callHistoryProperties");
+            field.setAccessible(true);
+            when(callHistoryProperties.getMaxContentLength()).thenReturn(15);
+            field.set(processor, callHistoryProperties);
+
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("serializeAndTruncate", Object.class);
+            method.setAccessible(true);
+
+            Map<String, Object> longObj = Map.of("key", "a".repeat(100));
+            String result = (String) method.invoke(processor, longObj);
+            assertNotNull(result);
+            assertTrue(result.length() <= 15, "结果应被截断到 maxContentLength=15，实际长度=" + result.length());
+        }
+
+        @Test
+        @DisplayName("truncate: null 内容返回 null")
+        void shouldReturnNullForNullContent() throws Exception {
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("truncate", String.class);
+            method.setAccessible(true);
+
+            String result = (String) method.invoke(processor, (String) null);
+            assertNull(result);
+        }
+
+        @Test
+        @DisplayName("truncate: 短内容不截断")
+        void shouldNotTruncateShortContent() throws Exception {
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("truncate", String.class);
+            method.setAccessible(true);
+
+            String result = (String) method.invoke(processor, "short");
+            assertEquals("short", result);
+        }
+
+        @Test
+        @DisplayName("truncate: 使用默认 maxContentLength 截断")
+        void shouldTruncateWithDefaultMaxLength() throws Exception {
+            var method = StreamingRequestProcessor.class.getDeclaredMethod("truncate", String.class);
+            method.setAccessible(true);
+
+            String longContent = "x".repeat(100000);
+            String result = (String) method.invoke(processor, longContent);
+            assertNotNull(result);
+            assertEquals(65536, result.length());
         }
     }
 }

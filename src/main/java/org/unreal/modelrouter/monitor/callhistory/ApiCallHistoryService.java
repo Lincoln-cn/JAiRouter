@@ -8,6 +8,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
+import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
+import org.unreal.modelrouter.monitor.callhistory.crypto.RecordContentCipher;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryQueryDTO;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryStatisticsDTO;
@@ -18,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -35,6 +38,7 @@ public class ApiCallHistoryService {
 
     private final ApiCallHistoryRepository repository;
     private final CallHistoryProperties properties;
+    private final RecordContentCipher recordContentCipher;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
     /**
@@ -311,20 +315,69 @@ public class ApiCallHistoryService {
     }
 
     /**
+     * 根据 ID 查询单条记录
+     *
+     * @param id 记录 ID
+     * @return 实体（Optional 包装）
+     */
+    @Transactional(readOnly = true)
+    public Optional<ApiCallHistoryEntity> findById(final Long id) {
+        return repository.findById(id);
+    }
+
+    /**
      * 构建实体
      */
     private ApiCallHistoryEntity buildEntity(CallHistoryRecordDTO dto) {
-        // 生成摘要
-        String requestBodySummary = null;
-        if (properties.isRequestBodySummaryEnabled() && dto.getRequestBody() != null) {
-            requestBodySummary = truncateAndSummarize(dto.getRequestBody(),
-                    properties.getRequestBodySummaryMaxLength());
-        }
+        RecordLevel level = properties.getRecordLevel();
+        String recordLevelStr = level.name();
 
+        // 生成摘要（所有级别都可能用到）
+        String requestBodySummary = null;
         String responseBodySummary = null;
-        if (properties.isResponseBodySummaryEnabled() && dto.getResponseBody() != null) {
-            responseBodySummary = truncateAndSummarize(dto.getResponseBody(),
-                    properties.getResponseBodySummaryMaxLength());
+        String requestBodyEncrypted = null;
+        String responseBodyEncrypted = null;
+
+        switch (level) {
+            case METADATA_ONLY -> {
+                // 仅元数据模式：根据配置生成摘要，不捕获内容
+                if (properties.isRequestBodySummaryEnabled() && dto.getRequestBody() != null) {
+                    requestBodySummary = truncateAndSummarize(dto.getRequestBody(),
+                            properties.getRequestBodySummaryMaxLength());
+                }
+                if (properties.isResponseBodySummaryEnabled() && dto.getResponseBody() != null) {
+                    responseBodySummary = truncateAndSummarize(dto.getResponseBody(),
+                            properties.getResponseBodySummaryMaxLength());
+                }
+            }
+            case SUMMARY -> {
+                // 摘要模式：适配器层已脱敏，截断后存入摘要列
+                if (dto.getRequestBody() != null) {
+                    String safeBody = truncateToMaxLength(dto.getRequestBody());
+                    requestBodySummary = truncateAndSummarize(safeBody,
+                            properties.getRequestBodySummaryMaxLength());
+                }
+                if (dto.getResponseBody() != null) {
+                    String safeBody = truncateToMaxLength(dto.getResponseBody());
+                    responseBodySummary = truncateAndSummarize(safeBody,
+                            properties.getResponseBodySummaryMaxLength());
+                }
+            }
+            case FULL -> {
+                // 完整模式：加密存储，摘要列存预览
+                if (dto.getRequestBody() != null) {
+                    String rawBody = truncateToMaxLength(dto.getRequestBody());
+                    requestBodyEncrypted = recordContentCipher.encrypt(rawBody);
+                    requestBodySummary = truncateAndSummarize(rawBody,
+                            properties.getRequestBodySummaryMaxLength());
+                }
+                if (dto.getResponseBody() != null) {
+                    String rawBody = truncateToMaxLength(dto.getResponseBody());
+                    responseBodyEncrypted = recordContentCipher.encrypt(rawBody);
+                    responseBodySummary = truncateAndSummarize(rawBody,
+                            properties.getResponseBodySummaryMaxLength());
+                }
+            }
         }
 
         return ApiCallHistoryEntity.builder()
@@ -354,7 +407,54 @@ public class ApiCallHistoryService {
                 .userAgent(dto.getUserAgent())
                 .rateLimited(dto.getRateLimited() != null ? dto.getRateLimited() : false)
                 .circuitBroken(dto.getCircuitBroken() != null ? dto.getCircuitBroken() : false)
+                .recordLevel(recordLevelStr)
+                .requestBodyEncrypted(requestBodyEncrypted)
+                .responseBodyEncrypted(responseBodyEncrypted)
                 .build();
+    }
+
+    /**
+     * 解密实体中加密的请求/响应体内容
+     * 解密结果填充到实体的 @Transient 字段中
+     *
+     * @param entity 需要解密的实体
+     * @return 填充了解密内容的同一实体
+     */
+    public ApiCallHistoryEntity decryptBodies(ApiCallHistoryEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        try {
+            if (entity.getRequestBodyEncrypted() != null) {
+                entity.setRequestBodyDecrypted(
+                        recordContentCipher.decrypt(entity.getRequestBodyEncrypted()));
+            }
+        } catch (Exception e) {
+            log.warn("解密请求体失败: id={}", entity.getId(), e);
+        }
+        try {
+            if (entity.getResponseBodyEncrypted() != null) {
+                entity.setResponseBodyDecrypted(
+                        recordContentCipher.decrypt(entity.getResponseBodyEncrypted()));
+            }
+        } catch (Exception e) {
+            log.warn("解密响应体失败: id={}", entity.getId(), e);
+        }
+        return entity;
+    }
+
+    /**
+     * 按最大内容长度截断内容
+     */
+    private String truncateToMaxLength(String content) {
+        if (content == null) {
+            return null;
+        }
+        int maxLen = properties.getMaxContentLength();
+        if (content.length() <= maxLen) {
+            return content;
+        }
+        return content.substring(0, maxLen);
     }
 
     // ========== 工具方法（委托给 ApiCallHistoryStatisticsMapper）==========

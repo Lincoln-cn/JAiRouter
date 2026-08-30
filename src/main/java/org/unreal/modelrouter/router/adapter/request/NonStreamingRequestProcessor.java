@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,8 +18,11 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
+import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.exception.DownstreamServiceException;
+import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
+import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
@@ -51,6 +55,12 @@ public class NonStreamingRequestProcessor {
     private final RequestBuilder requestBuilder;
     private final AdapterMetricsRecorder metricsRecorder;
     private final TokenUsageExtractor tokenUsageExtractor;
+
+    @Autowired(required = false)
+    private CallHistoryProperties callHistoryProperties;
+
+    @Autowired(required = false)
+    private SanitizationService sanitizationService;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
@@ -105,6 +115,13 @@ public class NonStreamingRequestProcessor {
         tokenUsageExtractor.rewriteModelField(transformedRequest, requestedModel, instanceName);
         long requestStartTime = System.currentTimeMillis();
 
+        // v2.9.2: 记录治理 - 序列化转换后的请求体用于调用历史捕获
+        String capturedRequestBody = null;
+        RecordLevel recordLevel = resolveRecordLevel();
+        if (recordLevel != RecordLevel.METADATA_ONLY) {
+            capturedRequestBody = serializeAndTruncate(transformedRequest);
+        }
+
         logger.debug("发送请求到下游服务: instance={}, path={}, auth={}",
                 instanceName, path, authorization != null ? "***" : "null");
 
@@ -149,11 +166,12 @@ public class NonStreamingRequestProcessor {
         // 4. 根据响应类型处理
         if (responseType == byte[].class) {
             return processBinaryResponse(requestSpec, transformedRequest, path,
-                    instanceName, adapterType, serviceType, requestStartTime, multipartHandler);
+                    instanceName, adapterType, serviceType, requestStartTime, multipartHandler,
+                    selectedInstance, requestedModel);
         } else {
             return processJsonResponse(requestSpec, transformedRequest, instanceName,
                     adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler,
-                    capturedKeyId, requestedModel);
+                    capturedKeyId, requestedModel, capturedRequestBody, selectedInstance);
         }
     }
 
@@ -168,7 +186,9 @@ public class NonStreamingRequestProcessor {
             final String adapterType,
             final ServiceType serviceType,
             final long requestStartTime,
-            final MultipartRequestHandler multipartHandler) {
+            final MultipartRequestHandler multipartHandler,
+            final ModelInstance selectedInstance,
+            final String requestedModel) {
 
         BodyInserter<?, ? super ClientHttpRequest> requestBody;
         if (multipartHandler != null) {
@@ -203,6 +223,10 @@ public class NonStreamingRequestProcessor {
                                 ? ((byte[]) responseEntity.getBody()).length : 0;
                         metricsRecorder.recordResponseTime(serviceType, "POST",
                                 System.currentTimeMillis() - requestStartTime, "200");
+                        // v2.9.2: 二进制响应记录调用历史（仅元数据，body 为二进制不捕获）
+                        long duration = System.currentTimeMillis() - requestStartTime;
+                        metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, true,
+                                null, requestedModel, serviceType, selectedInstance);
                     }
                 })
                 .doOnError(throwable -> {
@@ -215,7 +239,7 @@ public class NonStreamingRequestProcessor {
     }
 
     /**
-     * 处理 JSON 响应
+     * 处理 JSON 响应（v2.9.2: 支持请求/响应体捕获）
      */
     private Mono<? extends ResponseEntity<?>> processJsonResponse(
             final WebClient.RequestBodySpec requestSpec,
@@ -228,7 +252,9 @@ public class NonStreamingRequestProcessor {
             final Function<Object, Object> transformResponseFn,
             final MultipartRequestHandler multipartHandler,
             final String capturedKeyId,
-            final String requestedModel) {
+            final String requestedModel,
+            final String capturedRequestBody,
+            final ModelInstance selectedInstance) {
 
         // 支持multipart请求（如STT）
         BodyInserter<?, ? super ClientHttpRequest> requestBody;
@@ -262,6 +288,13 @@ public class NonStreamingRequestProcessor {
                         String bodyStr = responseEntity.getBody();
                         Object downstreamData;
 
+                        // v2.9.2: 记录治理 - 捕获原始下游响应体（在转换前）
+                        String capturedResponseBody = null;
+                        RecordLevel level = resolveRecordLevel();
+                        if (level != RecordLevel.METADATA_ONLY && bodyStr != null && !bodyStr.isEmpty()) {
+                            capturedResponseBody = truncate(bodyStr);
+                        }
+
                         if (bodyStr == null || bodyStr.isEmpty()) {
                             downstreamData = null;
                         } else {
@@ -275,6 +308,15 @@ public class NonStreamingRequestProcessor {
                         Object transformedData = transformResponseFn.apply(downstreamData);
                         // v2.8.9: 池路由后,响应 model 回显实际实例模型名
                         tokenUsageExtractor.rewriteModelField(transformedData, requestedModel, instanceName);
+
+                        // v2.9.2: 记录治理 - 异步记录含请求/响应体的调用历史
+                        if (metricsRecorder != null) {
+                            metricsRecorder.recordCompleteCall(
+                                    adapterType, instanceName,
+                                    System.currentTimeMillis() - requestStartTime,
+                                    true, null, requestedModel, serviceType, selectedInstance,
+                                    capturedRequestBody, capturedResponseBody);
+                        }
 
                         // 包装 RouterResponse
                         RouterResponse<Object> finalResponse = RouterResponse.success(transformedData, "请求成功");
@@ -407,5 +449,47 @@ public class NonStreamingRequestProcessor {
         }
 
         return responseBuilder.build();
+    }
+
+    // ==================== v2.9.2: 记录治理辅助方法 ====================
+
+    /**
+     * 解析当前记录级别（默认 METADATA_ONLY）
+     */
+    private RecordLevel resolveRecordLevel() {
+        if (callHistoryProperties != null) {
+            return callHistoryProperties.getRecordLevel();
+        }
+        return RecordLevel.METADATA_ONLY;
+    }
+
+    /**
+     * 将对象序列化为 JSON 字符串并截断到 maxContentLength
+     */
+    private String serializeAndTruncate(final Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        try {
+            String json = objectMapper.writeValueAsString(obj);
+            return truncate(json);
+        } catch (JsonProcessingException e) {
+            logger.debug("序列化请求体失败: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 截断字符串到 maxContentLength
+     */
+    private String truncate(final String content) {
+        if (content == null) {
+            return null;
+        }
+        int maxLen = callHistoryProperties != null ? callHistoryProperties.getMaxContentLength() : 65536;
+        if (content.length() > maxLen) {
+            return content.substring(0, maxLen);
+        }
+        return content;
     }
 }

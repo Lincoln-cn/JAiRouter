@@ -3,9 +3,12 @@ package org.unreal.modelrouter.router.adapter.metrics;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.unreal.modelrouter.auth.sanitization.SanitizationService;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
+import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
+import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.persistence.repository.ModelCallStatsRepository;
 import org.unreal.modelrouter.monitor.callhistory.ApiCallHistoryRecorder;
 import org.unreal.modelrouter.monitor.callhistory.dto.CallHistoryRecordDTO;
@@ -34,6 +37,12 @@ public class AdapterMetricsRecorder {
 
     @Autowired(required = false)
     private ApiCallHistoryRecorder callHistoryRecorder;
+
+    @Autowired(required = false)
+    private CallHistoryProperties callHistoryProperties;
+
+    @Autowired(required = false)
+    private SanitizationService sanitizationService;
 
     public AdapterMetricsRecorder(MetricsCollector metricsCollector,
                                   ModelCallStatsRepository statsRepository,
@@ -267,7 +276,7 @@ public class AdapterMetricsRecorder {
     }
 
     /**
-     * 完整的调用成功记录（统一入口）
+     * 完整的调用成功记录（统一入口，不含请求/响应体）
      * 
      * 同时更新：Registry + MetricsCollector + StatsRepository
      * 
@@ -290,30 +299,96 @@ public class AdapterMetricsRecorder {
             final String modelName,
             final ModelServiceRegistry.ServiceType serviceType,
             final ModelRouterProperties.ModelInstance instance) {
-        
-        // 更新 Registry
-        if (success) {
-            recordCallSuccessToRegistry(serviceType, instance);
-        } else {
-            recordCallFailureToRegistry(serviceType, instance);
-        }
-        
-        // 更新 MetricsCollector
-        if (metricsCollector != null) {
-            metricsCollector.recordBackendCall(adapterType, instanceId, durationMs, success);
-        }
-        
-        // 更新 StatsRepository
-        if (statsRepository != null && serviceType != null && modelName != null) {
-            statsRepository.updateStats(serviceType.name(), modelName, success, durationMs);
-            if (!success && errorCode != null) {
-                statsRepository.recordErrorCode(serviceType.name(), modelName, errorCode);
-            }
-        }
+        recordCompleteCall(adapterType, instanceId, durationMs, success, errorCode,
+                modelName, serviceType, instance, null, null);
+    }
 
-        // v2.7.8: 记录 API 调用历史
+    /**
+     * 完整的调用统计记录（不含调用历史，v2.9.2 用于 processor 已记录历史时的统计更新）
+     *
+     * 同时更新：Registry + MetricsCollector + StatsRepository
+     *
+     * @param adapterType  适配器类型
+     * @param instanceId   实例ID
+     * @param durationMs   耗时（毫秒）
+     * @param success      是否成功
+     * @param errorCode    错误代码（失败时）
+     * @param modelName    模型名称
+     * @param serviceType  服务类型
+     * @param instance     实例对象
+     * @since v2.9.2
+     */
+    public void recordCompleteCallStats(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final boolean success,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
+        recordStats(adapterType, instanceId, durationMs, success, errorCode, modelName, serviceType, instance);
+
+        if (log.isDebugEnabled()) {
+            log.debug("完整调用统计记录：adapter={}, instance={}, duration={}ms, success={}, errorCode={}",
+                    adapterType, instanceId, durationMs, success, errorCode);
+        }
+    }
+
+    /**
+     * 完整的调用成功记录（含请求/响应体捕获 - v2.9.2 记录治理）
+     *
+     * 当 recordLevel != METADATA_ONLY 时，记录请求体和响应体。
+     * SUMMARY 级别：通过 SanitizationService 脱敏后再记录。
+     * FULL 级别：直接记录原始内容。
+     *
+     * @param adapterType  适配器类型
+     * @param instanceId   实例ID
+     * @param durationMs   耗时（毫秒）
+     * @param success      是否成功
+     * @param errorCode    错误代码（失败时）
+     * @param modelName    模型名称
+     * @param serviceType  服务类型
+     * @param instance     实例对象
+     * @param requestBody  请求体原始内容（可为 null，METADATA_ONLY 时忽略）
+     * @param responseBody 响应体原始内容（可为 null，METADATA_ONLY 时忽略）
+     * @since v2.9.2
+     */
+    public void recordCompleteCall(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final boolean success,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance,
+            final String requestBody,
+            final String responseBody) {
+
+        // v2.9.2: 统计更新（Registry + MetricsCollector + StatsRepository）
+        recordStats(adapterType, instanceId, durationMs, success, errorCode, modelName, serviceType, instance);
+
+        // v2.7.8: 记录 API 调用历史（v2.9.2: 含请求/响应体）
         if (callHistoryRecorder != null && serviceType != null && modelName != null) {
             try {
+                RecordLevel level = resolveRecordLevel();
+                String capturedRequestBody = null;
+                String capturedResponseBody = null;
+
+                if (level != RecordLevel.METADATA_ONLY) {
+                    capturedRequestBody = requestBody;
+                    capturedResponseBody = responseBody;
+
+                    // SUMMARY 级别：对内容进行脱敏处理
+                    if (level == RecordLevel.SUMMARY && sanitizationService != null) {
+                        capturedRequestBody = sanitizeBlocking(
+                                sanitizationService.sanitizeRequest(capturedRequestBody, "application/json", null));
+                        capturedResponseBody = sanitizeBlocking(
+                                sanitizationService.sanitizeResponse(capturedResponseBody, "application/json"));
+                    }
+                }
+
                 CallHistoryRecordDTO record = CallHistoryRecordDTO.builder()
                         .serviceType(serviceType.name())
                         .modelName(modelName)
@@ -323,6 +398,8 @@ public class AdapterMetricsRecorder {
                         .responseTimeMs(durationMs)
                         .isSuccess(success)
                         .errorCode(errorCode)
+                        .requestBody(capturedRequestBody)
+                        .responseBody(capturedResponseBody)
                         .build();
                 callHistoryRecorder.record(record);
             } catch (Exception e) {
@@ -333,6 +410,66 @@ public class AdapterMetricsRecorder {
         if (log.isDebugEnabled()) {
             log.debug("完整调用记录：adapter={}, instance={}, duration={}ms, success={}, errorCode={}",
                     adapterType, instanceId, durationMs, success, errorCode);
+        }
+    }
+
+    /**
+     * 更新统计（Registry + MetricsCollector + StatsRepository）
+     */
+    private void recordStats(
+            final String adapterType,
+            final String instanceId,
+            final long durationMs,
+            final boolean success,
+            final String errorCode,
+            final String modelName,
+            final ModelServiceRegistry.ServiceType serviceType,
+            final ModelRouterProperties.ModelInstance instance) {
+
+        // 更新 Registry
+        if (success) {
+            recordCallSuccessToRegistry(serviceType, instance);
+        } else {
+            recordCallFailureToRegistry(serviceType, instance);
+        }
+
+        // 更新 MetricsCollector
+        if (metricsCollector != null) {
+            metricsCollector.recordBackendCall(adapterType, instanceId, durationMs, success);
+        }
+
+        // 更新 StatsRepository
+        if (statsRepository != null && serviceType != null && modelName != null) {
+            statsRepository.updateStats(serviceType.name(), modelName, success, durationMs);
+            if (!success && errorCode != null) {
+                statsRepository.recordErrorCode(serviceType.name(), modelName, errorCode);
+            }
+        }
+    }
+
+    /**
+     * 解析当前记录级别（默认 METADATA_ONLY）
+     */
+    private RecordLevel resolveRecordLevel() {
+        if (callHistoryProperties != null) {
+            return callHistoryProperties.getRecordLevel();
+        }
+        return RecordLevel.METADATA_ONLY;
+    }
+
+    /**
+     * 阻塞式执行脱敏操作（用于 doOnSuccess/doOnError 回调中的异步记录场景）
+     * 超时或异常时返回 null，不影响主流程
+     */
+    private String sanitizeBlocking(final reactor.core.publisher.Mono<String> mono) {
+        if (mono == null) {
+            return null;
+        }
+        try {
+            return mono.block(java.time.Duration.ofSeconds(5));
+        } catch (Exception e) {
+            log.debug("Sanitization failed: {}", e.getMessage());
+            return null;
         }
     }
 }

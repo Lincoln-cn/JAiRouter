@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.1
+> **文档版本**: 2.9.2
 > **最后更新**: 2026-08-30
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,38 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.2] - 2026-08-30 - 功能发布（记录治理）
+
+#### 三档记录级别
+
+- **METADATA_ONLY（默认）**：仅保存调用元数据，不保存请求/回复内容
+- **SUMMARY**：经 SanitizationService 脱敏后保存前 N 字摘要（复用现有摘要列）
+- **FULL**：AES-256-GCM 加密保存完整请求/回复内容（新 `RecordContentCipher`，密钥来自 `JAIR_CALL_HISTORY_KEY` 环境变量或自动生成持久化到 `~/.jairouter/call-history.key`）
+- 新配置项：`jairouter.call-history.record-level` / `max-content-length`（默认 64KB）/ `encryption-key-source`
+
+#### 内容捕获
+
+- **非流式**：请求体（转换后序列化）与下游原始响应体（转换前）捕获，超限截断；`AdapterMetricsRecorder.recordCompleteCall` 新增含 body 重载
+- **流式**：入口序列化请求 + `doOnComplete` 组装文本；补齐流式调用历史记录（此前流式不落历史）
+- **去重修复**：BaseAdapter 成功路径改为仅更新统计，避免与 RequestProcessor 重复记录（每调用 2 行 → 1 行）
+
+#### 安全
+
+- **调用历史 API 全面 RBAC**：`ApiCallHistoryController` 全部端点 + 新配置端点 `GET/PUT /api/config/call-history` 均为 ADMIN-only
+- **修复潜在安全缺口**：新增 `@EnableReactiveMethodSecurity`（此前 `@PreAuthorize` 实际未生效）
+- **新端点** `GET /api/call-history/{id}/detail`：ADMIN 解密查看 FULL 记录内容
+- **审计事件**：`RECORD_LEVEL_CHANGE`（记录级别变更）、`FULL_CONTENT_ACCESS`（解密访问 FULL 记录）
+
+#### 前端
+
+- 调用历史页新增记录级别设置（radio：仅元数据 / 摘要（脱敏） / 完整（加密））
+
+#### 测试
+
+- 全量 **3008 用例全绿**（0 失败/0 错误，新增 55）；新增 RecordContentCipherTest、ApiCallHistoryServiceRecordLevelTest、ApiCallHistoryControllerRbacTest、RecordLevelChangeAuditTest 等
+
+---
 
 ### [2.9.1] - 2026-08-30 - 质量收口
 

@@ -6,8 +6,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -218,6 +220,40 @@ public class ApiCallHistoryEntity {
     @Column(name = "circuit_broken", nullable = false)
     @Builder.Default
     private Boolean circuitBroken = false;
+
+    // ========== 记录治理（Record Governance） ==========
+
+    /**
+     * 记录内容级别（METADATA_ONLY / SUMMARY / FULL）
+     */
+    @Column(name = "record_level", length = 20)
+    private String recordLevel;
+
+    /**
+     * 加密的请求体内容（AES-256-GCM，Base64 编码）
+     */
+    @Lob
+    @Column(name = "request_body_encrypted", columnDefinition = "CLOB")
+    private String requestBodyEncrypted;
+
+    /**
+     * 加密的响应体内容（AES-256-GCM，Base64 编码）
+     */
+    @Lob
+    @Column(name = "response_body_encrypted", columnDefinition = "CLOB")
+    private String responseBodyEncrypted;
+
+    /**
+     * 解密后的请求体（不持久化，运行时按需填充）
+     */
+    @Transient
+    private String requestBodyDecrypted;
+
+    /**
+     * 解密后的响应体（不持久化，运行时按需填充）
+     */
+    @Transient
+    private String responseBodyDecrypted;
 
     // ========== 时间字段 ==========
 

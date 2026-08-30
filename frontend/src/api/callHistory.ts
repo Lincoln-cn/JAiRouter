@@ -113,3 +113,30 @@ export const getCallHistoryCount = async (): Promise<number> => {
   const response = await request.get('/call-history/count')
   return response.data.data?.count || 0
 }
+
+// ---- v2.9.2 记录治理 (record governance) ----
+
+export interface CallHistoryConfig {
+  recordLevel: string   // "METADATA_ONLY" | "SUMMARY" | "FULL"
+  maxContentLength?: number
+  retentionDays?: number
+  enabled?: boolean
+}
+
+/**
+ * 获取调用历史记录配置
+ */
+export const getCallHistoryConfig = async (): Promise<CallHistoryConfig> => {
+  const response = await request.get('/config/call-history')
+  return response.data.data
+}
+
+/**
+ * 更新调用历史记录配置
+ */
+export const updateCallHistoryConfig = async (
+  payload: { recordLevel: string }
+): Promise<CallHistoryConfig> => {
+  const response = await request.put('/config/call-history', payload)
+  return response.data.data
+}

@@ -138,7 +138,8 @@ public abstract class BaseAdapter implements ServiceCapability {
                     boolean success = response != null && response.getStatusCode().is2xxSuccessful();
                     AdapterMetricsRecorder metricsRecorder = resilienceSupport.getMetricsRecorder();
                     if (metricsRecorder != null) {
-                        metricsRecorder.recordCompleteCall(adapterType, instanceName, duration, success,
+                        // v2.9.2: 成功路径的调用历史由 RequestProcessor 层记录（含请求/响应体），此处仅更新统计，避免重复记录
+                        metricsRecorder.recordCompleteCallStats(adapterType, instanceName, duration, success,
                                 null, modelName, serviceType, selectedInstance);
                     }
                     resilienceSupport.getTracingManager().recordCallComplete(adapterType, selectedInstance, serviceType,

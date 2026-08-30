@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.1
+> **Document Version**: 2.9.2
 > **Last Updated**: 2026-08-30
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
@@ -20,6 +20,38 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.2] - 2026-08-30 - Feature Release (Record Governance)
+
+#### Three Recording Levels
+
+- **METADATA_ONLY (default)**: metadata only, no request/reply content stored
+- **SUMMARY**: content desensitized via `SanitizationService` then truncated to summary columns
+- **FULL**: complete request/reply content encrypted with AES-256-GCM (new `RecordContentCipher`; key from `JAIR_CALL_HISTORY_KEY` env var or auto-generated and persisted to `~/.jairouter/call-history.key`)
+- New config: `jairouter.call-history.record-level` / `max-content-length` (default 64 KB) / `encryption-key-source`
+
+#### Content Capture
+
+- **Non-streaming**: request body (post-transform serialization) + raw downstream response body (pre-transform) captured, truncated at `maxContentLength`; new `AdapterMetricsRecorder.recordCompleteCall` overload carrying bodies
+- **Streaming**: request serialized at entry + assembled text in `doOnComplete`; streaming call-history recording added (previously streaming did not write history)
+- **Dedup fix**: `BaseAdapter` success path now updates stats only, avoiding double recording with the RequestProcessor (2 rows → 1 row per call)
+
+#### Security
+
+- **Full RBAC on call history**: all `ApiCallHistoryController` endpoints + new config endpoints `GET/PUT /api/config/call-history` are ADMIN-only
+- **Latent gap fixed**: added `@EnableReactiveMethodSecurity` (previously `@PreAuthorize` was not enforced)
+- **New endpoint** `GET /api/call-history/{id}/detail`: ADMIN can decrypt and view FULL records
+- **Audit events**: `RECORD_LEVEL_CHANGE` (level change), `FULL_CONTENT_ACCESS` (decrypt access to FULL records)
+
+#### Frontend
+
+- Call-history page gains a record-level setting (radio: metadata-only / summary (desensitized) / full (encrypted))
+
+#### Tests
+
+- Full suite **3008 tests green** (0 failures / 0 errors, +55 new); new `RecordContentCipherTest`, `ApiCallHistoryServiceRecordLevelTest`, `ApiCallHistoryControllerRbacTest`, `RecordLevelChangeAuditTest` and more
+
+---
 
 ### [2.9.1] - 2026-08-30 - Quality Closing
 

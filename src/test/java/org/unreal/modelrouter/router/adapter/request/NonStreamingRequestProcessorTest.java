@@ -14,6 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
+import org.unreal.modelrouter.auth.sanitization.SanitizationService;
+import org.unreal.modelrouter.monitor.callhistory.config.CallHistoryProperties;
+import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.service.TokenUsageRecorder;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
@@ -63,6 +66,13 @@ class NonStreamingRequestProcessorTest {
 
     @Mock
     private MetricsCollector metricsCollector;
+
+    // v2.9.2: 记录治理 mock
+    @Mock
+    private CallHistoryProperties callHistoryProperties;
+
+    @Mock
+    private SanitizationService sanitizationService;
 
     // Real TokenUsageExtractor instance for testing extracted methods
     private TokenUsageExtractor realTokenUsageExtractor;
@@ -232,6 +242,112 @@ class NonStreamingRequestProcessorTest {
 
             // Should not throw
             method.invoke(realTokenUsageExtractor, bodyStr, "normal", "instance-1", null);
+        }
+    }
+
+    @Nested
+    @DisplayName("v2.9.2 记录治理 - 请求/响应体捕获测试")
+    class BodyCaptureTests {
+
+        @Test
+        @DisplayName("resolveRecordLevel: 无配置时默认返回 METADATA_ONLY")
+        void shouldReturnMetadataOnlyWhenNoConfig() throws Exception {
+            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("resolveRecordLevel");
+            method.setAccessible(true);
+
+            // callHistoryProperties is null (mock not injected into field by default)
+            RecordLevel result = (RecordLevel) method.invoke(processor);
+            assertEquals(RecordLevel.METADATA_ONLY, result);
+        }
+
+        @Test
+        @DisplayName("resolveRecordLevel: 配置 FULL 时返回 FULL")
+        void shouldReturnConfiguredLevel() throws Exception {
+            // Use reflection to set the callHistoryProperties field
+            var field = NonStreamingRequestProcessor.class.getDeclaredField("callHistoryProperties");
+            field.setAccessible(true);
+            when(callHistoryProperties.getRecordLevel()).thenReturn(RecordLevel.FULL);
+            field.set(processor, callHistoryProperties);
+
+            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("resolveRecordLevel");
+            method.setAccessible(true);
+
+            RecordLevel result = (RecordLevel) method.invoke(processor);
+            assertEquals(RecordLevel.FULL, result);
+        }
+
+        @Test
+        @DisplayName("serializeAndTruncate: null 对象返回 null")
+        void shouldReturnNullForNullObject() throws Exception {
+            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("serializeAndTruncate", Object.class);
+            method.setAccessible(true);
+
+            String result = (String) method.invoke(processor, (Object) null);
+            assertNull(result);
+        }
+
+        @Test
+        @DisplayName("serializeAndTruncate: 正常对象序列化为 JSON")
+        void shouldSerializeObjectToJson() throws Exception {
+            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("serializeAndTruncate", Object.class);
+            method.setAccessible(true);
+
+            Map<String, Object> testObj = Map.of("model", "gpt-4", "stream", false);
+            String result = (String) method.invoke(processor, testObj);
+            assertNotNull(result);
+            assertTrue(result.contains("\"model\""));
+            assertTrue(result.contains("\"gpt-4\""));
+        }
+
+        @Test
+        @DisplayName("serializeAndTruncate: 内容超长时截断到 maxContentLength")
+        void shouldTruncateToMaxContentLength() throws Exception {
+            // Set up callHistoryProperties with small maxContentLength
+            var field = NonStreamingRequestProcessor.class.getDeclaredField("callHistoryProperties");
+            field.setAccessible(true);
+            when(callHistoryProperties.getMaxContentLength()).thenReturn(20);
+            field.set(processor, callHistoryProperties);
+
+            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("serializeAndTruncate", Object.class);
+            method.setAccessible(true);
+
+            Map<String, Object> longObj = Map.of("key", "a".repeat(100));
+            String result = (String) method.invoke(processor, longObj);
+            assertNotNull(result);
+            assertTrue(result.length() <= 20, "结果应被截断到 maxContentLength=20，实际长度=" + result.length());
+        }
+
+        @Test
+        @DisplayName("truncate: null 内容返回 null")
+        void shouldReturnNullForNullContent() throws Exception {
+            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("truncate", String.class);
+            method.setAccessible(true);
+
+            String result = (String) method.invoke(processor, (String) null);
+            assertNull(result);
+        }
+
+        @Test
+        @DisplayName("truncate: 短内容不截断")
+        void shouldNotTruncateShortContent() throws Exception {
+            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("truncate", String.class);
+            method.setAccessible(true);
+
+            String result = (String) method.invoke(processor, "short");
+            assertEquals("short", result);
+        }
+
+        @Test
+        @DisplayName("truncate: 使用默认 maxContentLength 截断")
+        void shouldTruncateWithDefaultMaxLength() throws Exception {
+            // callHistoryProperties is null, so maxContentLength defaults to 65536
+            var method = NonStreamingRequestProcessor.class.getDeclaredMethod("truncate", String.class);
+            method.setAccessible(true);
+
+            String longContent = "x".repeat(100000);
+            String result = (String) method.invoke(processor, longContent);
+            assertNotNull(result);
+            assertEquals(65536, result.length());
         }
     }
 }
