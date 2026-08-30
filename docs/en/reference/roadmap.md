@@ -1,9 +1,9 @@
-﻿# Roadmap
+# Roadmap
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.2.0
 > **Last Updated**: 2026-07-14
-> **Git 标签**: v2.8.1
+> **Git 标签**: v2.9.5
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,10 +24,10 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-### ✅ v2.7.11 (Current Stable)
+### ✅ v2.9.5 (Current Stable)
 
-**Release Status**: Released (2026-07-14)
-**Git Tag**: v2.7.11
+**Release Status**: Released (2026-08-30)
+**Git Tag**: v2.9.5
 
 #### Key Features
 - ✅ Dashboard real-time metrics (Micrometer integration)

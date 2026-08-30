@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.4
+> **Document Version**: 2.9.5
 > **Last Updated**: 2026-08-30
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
@@ -20,6 +20,23 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.5] - 2026-08-30 - Feature Release (Knowledge-Base Governance)
+
+#### Governance mechanism (docs 155 + innerdoc 165)
+
+- **Toolset** `scripts/knowledge-governance/`: kg-scanner (inventory + SHA-256 + one-off classification), kg-duplicate-detector (SHA-256 exact + filename near), kg-staleness-detector (index drift / status conflict / version literal drift), kg-archive-mover (--plan/--execute archive, hard-guard knowledge-base/ & 16-版本发布/), kg-version-tracker (innerdoc/docs-versions.json + --regen-index)
+- **Workflow** `.mimocode/skills/knowledge-governance/SKILL.md`: 5 steps (scan → LLM proposal → human approval → execute → index update), run every version release
+- **CI enhancement**: `validate-nav-files.py` (mkdocs nav integrity) + docs-version-management.yml (nav check step + duplicate summary in issue)
+- **First-run execution**: archived 61 files (H2×23/security×16/dev-guide×11/tracing×7 etc → `innerdoc/archive/`); 3 unique contents merged into knowledge-base (JPA migration / API-Key init fix / tracing verification); indexes rebuilt (README-INNERDOC/INDEX.json/00-索引, 105 files/18 categories); 1 status conflict fixed
+- **SOP docs**: `docs/{zh,en}/development/knowledge-base-governance.md` (10 sections); created missing `docs/en/development/doc-maintenance.md` (fixed mkdocs strict-build risk)
+- **docs fixes**: 8 doc version headers 2.6.11 → 2.9.5; roadmap current-stable v2.7.11 → v2.9.5
+
+#### Tests
+
+- Governance tools verified (165 files / 3 exact duplicate groups / 22 near clusters / index drift detected); full suite **3029 tests green** (no Java changes)
+
+---
 
 ### [2.9.4] - 2026-08-30 - Feature Release (UI Design-System Refactor + RBAC Fix)
 

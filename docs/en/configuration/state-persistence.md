@@ -1,4 +1,4 @@
-﻿# State Persistence Configuration
+# State Persistence Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.0
@@ -7,7 +7,7 @@
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
-> Document Version: 2.6.11
+> Document Version: 2.9.5
 > Applicable Version: v2.6.x
 > Last Updated: 2026-06-09
 

@@ -82,6 +82,32 @@ jobs:
           echo "changes_count=0" >> $GITHUB_OUTPUT
         fi
     
+    - name: 检查导航完整性
+      id: nav-check
+      continue-on-error: true
+      run: |
+        echo "🔍 检查 mkdocs.yml 导航文件完整性..."
+        python scripts/docs/validate-nav-files.py --mkdocs-yml mkdocs.yml --strict > nav-check-result.txt 2>&1 || true
+        
+        NAV_EXIT=$?
+        NAV_MISSING=$(grep -c "^  MISSING:" nav-check-result.txt 2>/dev/null || echo "0")
+        
+        # 输出到 GitHub Step Summary
+        echo "## 📄 导航文件完整性检查" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "$NAV_MISSING" -gt 0 ]; then
+          echo "⚠️ 发现 $NAV_MISSING 个缺失的导航文件" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat nav-check-result.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ 所有导航文件均存在" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # 输出到终端
+        cat nav-check-result.txt
+        echo "nav_missing=$NAV_MISSING" >> $GITHUB_OUTPUT
+    
     - name: 添加版本头信息
       if: github.event.inputs.add_headers == 'true' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
       run: |
@@ -156,9 +182,40 @@ jobs:
         
         git push
     
+    - name: 检测 docs/ 目录下重复文件
+      id: duplicates
+      if: steps.report.outputs.has_outdated == 'true' && github.event_name == 'schedule'
+      run: |
+        echo "🔍 检测 docs/ 目录下的重复文件..."
+        # kg-duplicate-detector.py 默认扫描 innerdoc/，此处用 sha256sum 检测 docs/ 下字节完全相同的 .md 文件对
+        DUP_COUNT=0
+        DUP_SUMMARY=""
+        if [ -d docs ]; then
+          # 计算所有 .md 文件的 sha256，按哈希分组，找重复
+          DUPLICATES=$(find docs -name '*.md' -type f -exec sha256sum {} + 2>/dev/null | sort | awk '{print $1}' | uniq -d)
+          if [ -n "$DUPLICATES" ]; then
+            DUP_LINES=""
+            for hash in $DUPLICATES; do
+              FILES=$(find docs -name '*.md' -type f -exec sha256sum {} + 2>/dev/null | grep "^$hash" | awk '{print $2}' | sort)
+              COUNT=$(echo "$FILES" | wc -l)
+              DUP_COUNT=$((DUP_COUNT + 1))
+              DUP_LINES="$DUP_LINES\n  - 重复组 $DUP_COUNT ($COUNT 个文件): $(echo $FILES | tr '\n' ', ')"
+            done
+            DUP_SUMMARY="$DUP_LINES"
+          fi
+        fi
+        echo "dup_count=$DUP_COUNT" >> $GITHUB_OUTPUT
+        echo "dup_summary<<DUP_EOF" >> $GITHUB_OUTPUT
+        echo -e "$DUP_SUMMARY" >> $GITHUB_OUTPUT
+        echo "DUP_EOF" >> $GITHUB_OUTPUT
+        echo "📊 发现 $DUP_COUNT 组重复文件"
+    
     - name: 创建过期文档提醒 Issue
       if: steps.report.outputs.has_outdated == 'true' && github.event_name == 'schedule'
       uses: actions/github-script@v6
+      env:
+        DUP_COUNT: ${{ steps.duplicates.outputs.dup_count }}
+        DUP_SUMMARY: ${{ steps.duplicates.outputs.dup_summary }}
       with:
         script: |
           const fs = require('fs');
@@ -171,8 +228,75 @@ jobs:
           const outdatedSection = reportContent.match(/## 过期文档.*?(?=##|$)/s);
           const outdatedContent = outdatedSection ? outdatedSection[0] : '未找到过期文档详情';
           
+          // 重复文件摘要（由上一步注入）
+          const dupCount = '${{ steps.duplicates.outputs.dup_count }}' || '0';
+          const dupSummary = process.env.DUP_SUMMARY || '';
+          const dupLine = parseInt(dupCount) > 0
+            ? `\n\n## 🔁 docs/ 重复文件检测\n\n发现 **${dupCount}** 组字节完全相同的 .md 文件对：\n${dupSummary}\n`
+            : `\n\n## 🔁 docs/ 重复文件检测\n\n✅ 未发现字节完全相同的重复 .md 文件。\n`;
+          
           const issueTitle = `📋 文档维护提醒：发现 ${{ steps.report.outputs.outdated_count }} 个过期文档需要更新`;
-          const issueBody = `## 📊 过期文档检查报告 在定期检查中发现了一些超过 30 天未更新的文档，建议进行内容审查和更新。 ${outdatedContent} ## 🔧 建议操作 1. **审查内容**: 检查过期文档的内容是否仍然准确 2. **更新信息**: 更新过时的信息、链接和示例 3. **验证功能**: 确保文档中的操作步骤仍然有效 4. **同步代码**: 检查文档是否与最新代码保持一致 ## 📈 版本管理信息 - 检查时间: ${new Date().toISOString().split('T')[0]} - 过期阈值: 30 天 - 总文档数: 通过版本管理系统跟踪 - 自动化: 此 Issue 由 GitHub Actions 自动创建 ## 🔗 相关资源 - [文档版本管理配置](docs/docs-version-config.yml) - [版本管理脚本](scripts/docs/docs-version-manager.py) - [完整版本报告](../../actions/runs/${{ github.run_id }}) --- *此 Issue 由文档版本管理系统自动创建，每日检查过期文档并提醒维护。*`;
+          const issueBody = `## 📊 过期文档检查报告
+
+在定期检查中发现了一些超过 30 天未更新的文档，建议进行内容审查和更新。
+
+${outdatedContent}
+
+## 🔧 建议操作
+1. **审查内容**: 检查过期文档的内容是否仍然准确
+2. **更新信息**: 更新过时的信息、链接和示例
+3. **验证功能**: 确保文档中的操作步骤仍然有效
+4. **同步代码**: 检查文档是否与最新代码保持一致
+${dupLine}
+## 📈 版本管理信息
+- 检查时间: ${new Date().toISOString().split('T')[0]}
+- 过期阈值: 30 天
+- 总文档数: 通过版本管理系统跟踪
+- 自动化: 此 Issue 由 GitHub Actions 自动创建
+
+## 🔗 相关资源
+- [文档版本管理配置](docs/docs-version-config.yml)
+- [版本管理脚本](scripts/docs/docs-version-manager.py)
+- [完整版本报告](../../actions/runs/${{ github.run_id }})
+
+---
+*此 Issue 由文档版本管理系统自动创建，每日检查过期文档并提醒维护。*`;
+          
+          // 检查是否已存在类似的 Issue
+          const { data: issues } = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: 'documentation,maintenance,automated',
+            state: 'open'
+          });
+          
+          const existingIssue = issues.find(issue => 
+            issue.title.includes('文档维护提醒') && 
+            issue.title.includes('过期文档')
+          );
+          
+          if (existingIssue) {
+            // 更新现有 Issue
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingIssue.number,
+              body: `## 📅 ${new Date().toISOString().split('T')[0]} 更新\n\n${issueBody}`
+            });
+            
+            console.log(`更新了现有 Issue #${existingIssue.number}`);
+          } else {
+            // 创建新 Issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+              labels: ['documentation', 'maintenance', 'automated']
+            });
+            
+            console.log('创建了新的过期文档提醒 Issue');
+          }
           
           // 检查是否已存在类似的 Issue
           const { data: issues } = await github.rest.issues.listForRepo({

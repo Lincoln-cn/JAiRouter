@@ -130,6 +130,7 @@ plugins:
             测试指南: Testing
             代码质量: Code Quality
             文档维护: Doc Maintenance
+            知识库治理: Knowledge Base Governance
             性能优化: Performance Optimization
             常见问题: Common Issues
             关键问题修复: Key Issue Fixes
@@ -246,6 +247,7 @@ nav:
     - 测试指南: zh/development/testing.md
     - 代码质量: zh/development/code-quality.md
     - 文档维护: zh/development/doc-maintenance.md
+    - 知识库治理: zh/development/knowledge-base-governance.md
   - 故障排除:
     - zh/troubleshooting/index.md
     - 常见问题: zh/troubleshooting/common-issues.md

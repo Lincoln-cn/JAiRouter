@@ -1,7 +1,7 @@
 # JWT Token Persistence Configuration Guide
 
 <!-- Version Information -->
-> **Document Version**: 2.6.11  
+> **Document Version**: 2.9.5  
 > **Last Updated**: 2026-06-09  
 > **Configuration Path**: `src/main/resources/config/security/persistence-base.yml`  
 > **Author**: JAiRouter Team

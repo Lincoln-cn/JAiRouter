@@ -83,7 +83,7 @@ open http://localhost:8080
 [![Docker Pulls](https://img.shields.io/docker/pulls/sodlinken/jairouter)](https://hub.docker.com/r/sodlinken/jairouter)
 [![License](https://img.shields.io/github/license/Lincoln-cn/JAiRouter)](https://github.com/Lincoln-cn/JAiRouter/blob/master/LICENSE)
 
-> **当前版本**: v2.9.4 (2026-08-30) | **LTS 版本**: v2.6.11 (维护至 2028-05)
+> **当前版本**: v2.9.5 (2026-08-30) | **LTS 版本**: v2.6.11 (维护至 2028-05)
 
 ---
 

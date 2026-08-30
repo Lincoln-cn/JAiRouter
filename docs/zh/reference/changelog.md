@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.4
+> **文档版本**: 2.9.5
 > **最后更新**: 2026-08-30
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,23 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.5] - 2026-08-30 - 功能发布（文档知识库治理）
+
+#### 知识库治理机制（docs 155 + innerdoc 165）
+
+- **工具集** `scripts/knowledge-governance/`：kg-scanner（清点+SHA-256+一次性分类）/ kg-duplicate-detector（SHA-256 精确 + 文件名近似）/ kg-staleness-detector（索引漂移/状态冲突/版本字面量）/ kg-archive-mover（--plan/--execute 归档，knowledge-base 与 16-版本发布 硬保护）/ kg-version-tracker（innerdoc/docs-versions.json + --regen-index）
+- **治理工作流** `.mimocode/skills/knowledge-governance/SKILL.md`：5 步（扫描→LLM 提案→人工审批→执行→索引更新），每版本发布执行（开发计划版本条目含 checklist）
+- **CI 增强**：`validate-nav-files.py`（mkdocs nav 完整性校验）+ docs-version-management.yml 增强（nav 校验步骤 + issue 附 docs 重复检测）
+- **首次治理执行**：归档 61 文件（H2×23/security×16/开发指南×11/tracing×7 等 → `innerdoc/archive/`）；3 处唯一内容合并入 knowledge-base（JPA 迁移/API-Key 初始化修复/追踪验证清单）；索引三件套重建（README-INNERDOC/INDEX.json/00-索引，105 文件/18 分类）；修复状态冲突 1 处
+- **SOP 文档**：`docs/{zh,en}/development/knowledge-base-governance.md`（10 节）；补齐缺失的 `docs/en/development/doc-maintenance.md`（修复 mkdocs strict 构建风险）
+- **docs 修复**：8 个文档版本头 2.6.11 → 2.9.5；roadmap 当前稳定版 v2.7.11 → v2.9.5
+
+#### 测试
+
+- 治理工具实测通过（165 文件/3 精确重复组/22 近似集群/索引漂移检出）；全量 **3029 用例全绿**（无 Java 代码改动）
+
+---
 
 ### [2.9.4] - 2026-08-30 - 功能发布（UI 设计系统重构 + RBAC 修复）
 
