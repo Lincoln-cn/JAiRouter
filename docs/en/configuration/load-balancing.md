@@ -1,4 +1,4 @@
-﻿# Load Balancing Configuration
+# Load Balancing Configuration
 
 <!-- 版本信息 -->
 > **Doc Version**: 1.0.2  
@@ -28,6 +28,7 @@ You can find all load balancing related configurations in the `config/base/model
 | **Round Robin** | Round-robin allocation | Ensures each instance is used | Instances with similar performance |
 | **Least Connections** | Minimum connections | Automatically balances load | Large differences in request processing time |
 | **IP Hash** | Client IP hash | Session persistence | Client stickiness required |
+| **Latency** (v2.9.3+) | EWMA latency-aware | Weights instances by historical latency; lower latency = higher probability | Cross-region / mixed hardware, significant latency variance |
 
 ### Configuration Hierarchy
 
@@ -491,6 +492,42 @@ queries:
   - name: "Instance Health Status"
     query: 'jairouter_instance_health_status'
 ```
+
+### 5. Latency Strategy (v2.9.3+)
+
+Latency-aware load balancing based on EWMA (Exponentially Weighted Moving Average). Selection probability adapts to each instance's historical call latency: lower latency instances are picked more often.
+
+#### How it works
+
+- Each successful call updates the instance's EWMA with its actual duration: `ewma = alpha × sample + (1 - alpha) × ewma`
+- Failed calls update with a penalty (equivalent to a 30s timeout), punishing high-failure instances
+- Selection weights by `1 / (1 + ewma)` using weighted random
+- Cold start: instances with no samples get weight 1.0 (zero-latency equivalent) for fair exploration
+- `alpha` (default 0.2) controls smoothing: higher values react faster to new samples
+
+#### Configuration example
+
+```yaml
+# Global configuration
+model:
+  load-balance:
+    type: latency        # latency-aware strategy
+    ewma-alpha: 0.2      # EWMA smoothing factor (optional, default 0.2)
+
+# Service-level configuration (overrides global)
+model:
+  services:
+    chat:
+      load-balance:
+        type: latency
+        ewma-alpha: 0.3
+```
+
+#### Features and use cases
+
+- **Features**: automatically senses instance latency changes and adjusts traffic; fair exploration for unsampled instances; converges smoothly on latency shifts
+- **Use cases**: cross-region deployments, mixed hardware, time-varying instance load
+- **Note**: latency data comes from call history (not active probing); convergence takes about one request cycle at high concurrency. Duration passthrough works with Sticky routing.
 
 ## Performance Tuning
 

@@ -201,6 +201,24 @@ class StickyLoadBalancerTest {
     }
 
     @Test
+    @DisplayName("3-arg recordCallComplete 转发 durationMs 到 delegate")
+    void threeArgRecordCallCompleteForwardsDuration() {
+        ModelRouterProperties.ModelInstance instance = createInstance("inst-1");
+        stickyLb.recordCallComplete(instance, 150L, true);
+
+        verify(delegate).recordCallComplete(instance, 150L, true);
+    }
+
+    @Test
+    @DisplayName("3-arg recordCallFailure 转发 durationMs 和 errorCode 到 delegate")
+    void threeArgRecordCallFailureForwardsDurationAndCode() {
+        ModelRouterProperties.ModelInstance instance = createInstance("inst-1");
+        stickyLb.recordCallFailure(instance, 3000L, "500");
+
+        verify(delegate).recordCallFailure(instance, 3000L, "500");
+    }
+
+    @Test
     @DisplayName("getDelegate 返回委托 LB")
     void getDelegateReturnsDelegate() {
         assertSame(delegate, stickyLb.getDelegate());

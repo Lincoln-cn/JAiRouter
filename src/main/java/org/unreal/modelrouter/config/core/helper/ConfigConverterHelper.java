@@ -86,6 +86,12 @@ public class ConfigConverterHelper {
             if (loadBalanceMap.containsKey("hashAlgorithm")) {
                 loadBalanceConfig.setHashAlgorithm((String) loadBalanceMap.get("hashAlgorithm"));
             }
+            if (loadBalanceMap.containsKey("ewmaAlpha")) {
+                Object alphaObj = loadBalanceMap.get("ewmaAlpha");
+                if (alphaObj instanceof Number) {
+                    loadBalanceConfig.setEwmaAlpha(((Number) alphaObj).doubleValue());
+                }
+            }
             serviceConfig.setLoadBalance(loadBalanceConfig);
         }
 

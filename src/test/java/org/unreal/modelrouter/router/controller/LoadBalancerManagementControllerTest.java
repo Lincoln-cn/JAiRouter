@@ -235,7 +235,7 @@ class LoadBalancerManagementControllerTest {
             assertEquals(HttpStatus.OK, result.getStatusCode());
             assertTrue(result.getBody().isSuccess());
             assertNotNull(result.getBody().getData());
-            assertEquals(5, result.getBody().getData().size());
+            assertEquals(6, result.getBody().getData().size());
 
             // 验证策略名称
             List<String> strategyNames = result.getBody().getData().stream()
@@ -246,6 +246,7 @@ class LoadBalancerManagementControllerTest {
             assertTrue(strategyNames.contains("least-connections"));
             assertTrue(strategyNames.contains("ip-hash"));
             assertTrue(strategyNames.contains("consistent-hash"));
+            assertTrue(strategyNames.contains("latency"));
         }
     }
 

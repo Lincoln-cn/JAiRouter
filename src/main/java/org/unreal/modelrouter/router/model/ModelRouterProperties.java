@@ -132,6 +132,7 @@ public final class ModelRouterProperties {
         private String type = "random";
         private String hashAlgorithm = "md5"; // 注意这里要用驼峰命名
         private Integer virtualNodes = 150; // 一致性哈希虚拟节点数
+        private double ewmaAlpha = 0.2; // v2.9.3: EWMA平滑因子(latency策略专用)
 
         public String getType() {
             return type;
@@ -155,6 +156,14 @@ public final class ModelRouterProperties {
 
         public void setVirtualNodes(final Integer virtualNodes) {
             this.virtualNodes = virtualNodes;
+        }
+
+        public double getEwmaAlpha() {
+            return ewmaAlpha;
+        }
+
+        public void setEwmaAlpha(final double ewmaAlpha) {
+            this.ewmaAlpha = ewmaAlpha;
         }
     }
 

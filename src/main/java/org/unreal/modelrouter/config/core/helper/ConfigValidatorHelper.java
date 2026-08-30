@@ -550,7 +550,8 @@ public class ConfigValidatorHelper {
         return "random".equals(normalizedType)
                 || "round-robin".equals(normalizedType)
                 || "least-connections".equals(normalizedType)
-                || "ip-hash".equals(normalizedType);
+                || "ip-hash".equals(normalizedType)
+                || "latency".equals(normalizedType);
     }
 
     /**

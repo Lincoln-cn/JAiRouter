@@ -76,5 +76,36 @@ public interface LoadBalancer {
      */
     default void recordCallFailure(final ModelRouterProperties.ModelInstance instance) { }
 
+    /**
+     * 记录实例调用完成（带调用时长和成功状态）
+     * <p>
+     * v2.9.3: 默认委托给 {@link #recordCallComplete(ModelRouterProperties.ModelInstance)}，
+     * 保持现有实现无需修改。
+     *
+     * @param instance   调用完成的实例
+     * @param durationMs 调用耗时（毫秒）
+     * @param success    是否成功
+     */
+    default void recordCallComplete(final ModelRouterProperties.ModelInstance instance,
+                                    final long durationMs,
+                                    final boolean success) {
+        recordCallComplete(instance);
+    }
+
+    /**
+     * 记录实例调用失败（带调用时长和错误码）
+     * <p>
+     * v2.9.3: 默认委托给 {@link #recordCallFailure(ModelRouterProperties.ModelInstance)}，
+     * 保持现有实现无需修改。
+     *
+     * @param instance   调用失败的实例
+     * @param durationMs 调用耗时（毫秒）
+     * @param errorCode  错误码
+     */
+    default void recordCallFailure(final ModelRouterProperties.ModelInstance instance,
+                                   final long durationMs,
+                                   final String errorCode) {
+        recordCallFailure(instance);
+    }
 
 }

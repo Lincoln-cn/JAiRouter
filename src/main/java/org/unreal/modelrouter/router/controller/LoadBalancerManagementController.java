@@ -162,6 +162,7 @@ public class LoadBalancerManagementController {
             response.hashAlgorithm = config != null ? config.getHashAlgorithm() : "md5";
             response.virtualNodes = config != null && config.getVirtualNodes() != null
                     ? config.getVirtualNodes() : 150;
+            response.ewmaAlpha = config != null ? config.getEwmaAlpha() : 0.2;
 
             return ResponseEntity.ok(RouterResponse.success(response));
         } catch (Exception e) {
@@ -190,6 +191,7 @@ public class LoadBalancerManagementController {
                 ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
                 response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null
                         ? globalConfig.getVirtualNodes() : 150;
+                response.ewmaAlpha = globalConfig != null ? globalConfig.getEwmaAlpha() : 0.2;
             } else {
                 // 使用全局配置
                 ModelRouterProperties.LoadBalanceConfig globalConfig = properties.getLoadBalance();
@@ -197,6 +199,7 @@ public class LoadBalancerManagementController {
                 response.hashAlgorithm = globalConfig != null ? globalConfig.getHashAlgorithm() : "md5";
                 response.virtualNodes = globalConfig != null && globalConfig.getVirtualNodes() != null
                         ? globalConfig.getVirtualNodes() : 150;
+                response.ewmaAlpha = globalConfig != null ? globalConfig.getEwmaAlpha() : 0.2;
                 response.isGlobal = true;
             }
 
@@ -221,6 +224,9 @@ public class LoadBalancerManagementController {
             config.setType(request.type);
             config.setHashAlgorithm(request.hashAlgorithm != null ? request.hashAlgorithm : "md5");
             config.setVirtualNodes(request.virtualNodes != null ? request.virtualNodes : 150);
+            if (request.ewmaAlpha != null) {
+                config.setEwmaAlpha(request.ewmaAlpha);
+            }
 
             loadBalancerManager.reinitializeLoadBalancer(type, config);
 
@@ -247,7 +253,8 @@ public class LoadBalancerManagementController {
                 new StrategyInfo("round-robin", "轮询策略", "按权重轮询选择实例，适合均匀分布的场景"),
                 new StrategyInfo("least-connections", "最少连接策略", "选择当前连接数最少的实例，适合长连接场景"),
                 new StrategyInfo("ip-hash", "IP Hash策略", "基于客户端IP哈希选择实例，适合会话保持场景"),
-                new StrategyInfo("consistent-hash", "一致性哈希策略", "使用一致性哈希环选择实例，适合分布式缓存场景")
+                new StrategyInfo("consistent-hash", "一致性哈希策略", "使用一致性哈希环选择实例，适合分布式缓存场景"),
+                new StrategyInfo("latency", "延迟感知策略", "基于EWMA延迟估算动态选择延迟最低的实例，适合后端延迟差异显著的场景")
         );
 
         return ResponseEntity.ok(RouterResponse.success(strategies));
@@ -326,6 +333,7 @@ public class LoadBalancerManagementController {
         public String type;
         public String hashAlgorithm;
         public Integer virtualNodes;
+        public Double ewmaAlpha;
         public boolean isGlobal = false;
     }
 
@@ -336,6 +344,7 @@ public class LoadBalancerManagementController {
         public String type;
         public String hashAlgorithm;
         public Integer virtualNodes;
+        public Double ewmaAlpha;
     }
 
     /**

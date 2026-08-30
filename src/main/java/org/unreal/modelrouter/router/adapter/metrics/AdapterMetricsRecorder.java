@@ -236,42 +236,51 @@ public class AdapterMetricsRecorder {
     // ========== v2.26.0: 服务注册调用记录 ==========
 
     /**
-     * 记录调用成功到服务注册
+     * v2.9.3: 记录调用成功到服务注册（带调用时长和成功状态）
      * 
      * @param serviceType 服务类型
      * @param instance 实例
-     * @since v2.26.0
+     * @param durationMs 调用耗时（毫秒）
+     * @param success 是否成功
+     * @since v2.9.3
      */
     public void recordCallSuccessToRegistry(
             final ModelServiceRegistry.ServiceType serviceType,
-            final ModelRouterProperties.ModelInstance instance) {
+            final ModelRouterProperties.ModelInstance instance,
+            final long durationMs,
+            final boolean success) {
         
         if (registry != null && serviceType != null && instance != null) {
-            registry.recordCallComplete(serviceType, instance);
+            registry.recordCallComplete(serviceType, instance, durationMs, success);
         }
         
         if (log.isDebugEnabled()) {
-            log.debug("记录调用成功：service={}, instance={}", serviceType, instance.getName());
+            log.debug("记录调用成功：service={}, instance={}, duration={}ms", serviceType, instance.getName(), durationMs);
         }
     }
 
     /**
-     * 记录调用失败到服务注册
+     * v2.9.3: 记录调用失败到服务注册（带调用时长和错误码）
      * 
      * @param serviceType 服务类型
      * @param instance 实例
-     * @since v2.26.0
+     * @param durationMs 调用耗时（毫秒）
+     * @param errorCode 错误码
+     * @since v2.9.3
      */
     public void recordCallFailureToRegistry(
             final ModelServiceRegistry.ServiceType serviceType,
-            final ModelRouterProperties.ModelInstance instance) {
+            final ModelRouterProperties.ModelInstance instance,
+            final long durationMs,
+            final String errorCode) {
         
         if (registry != null && serviceType != null && instance != null) {
-            registry.recordCallFailure(serviceType, instance);
+            registry.recordCallFailure(serviceType, instance, durationMs, errorCode);
         }
         
         if (log.isDebugEnabled()) {
-            log.debug("记录调用失败：service={}, instance={}", serviceType, instance.getName());
+            log.debug("记录调用失败：service={}, instance={}, duration={}ms, errorCode={}", 
+                    serviceType, instance.getName(), durationMs, errorCode);
         }
     }
 
@@ -426,11 +435,11 @@ public class AdapterMetricsRecorder {
             final ModelServiceRegistry.ServiceType serviceType,
             final ModelRouterProperties.ModelInstance instance) {
 
-        // 更新 Registry
+        // 更新 Registry（v2.9.3: 传递 durationMs 到负载均衡器钩子）
         if (success) {
-            recordCallSuccessToRegistry(serviceType, instance);
+            recordCallSuccessToRegistry(serviceType, instance, durationMs, success);
         } else {
-            recordCallFailureToRegistry(serviceType, instance);
+            recordCallFailureToRegistry(serviceType, instance, durationMs, errorCode);
         }
 
         // 更新 MetricsCollector

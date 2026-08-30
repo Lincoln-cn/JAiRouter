@@ -102,6 +102,12 @@ public final class ServiceConfigBuilder {
             if (loadBalanceMap.containsKey("hashAlgorithm")) {
                 loadBalanceConfig.setHashAlgorithm((String) loadBalanceMap.get("hashAlgorithm"));
             }
+            if (loadBalanceMap.containsKey("ewmaAlpha")) {
+                Object alphaObj = loadBalanceMap.get("ewmaAlpha");
+                if (alphaObj instanceof Number) {
+                    loadBalanceConfig.setEwmaAlpha(((Number) alphaObj).doubleValue());
+                }
+            }
             runtimeConfig.setLoadBalanceConfig(loadBalanceConfig);
         } else {
             runtimeConfig.setLoadBalanceConfig(configConverterHelper.createDefaultLoadBalanceConfig());

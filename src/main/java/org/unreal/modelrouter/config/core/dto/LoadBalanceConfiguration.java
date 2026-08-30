@@ -9,13 +9,14 @@ import java.util.Map;
  */
 public record LoadBalanceConfiguration(
         String type,
-        String hashAlgorithm
+        String hashAlgorithm,
+        Double ewmaAlpha
 ) {
     /**
      * 创建默认负载均衡配置
      */
     public static LoadBalanceConfiguration defaultConfig() {
-        return new LoadBalanceConfiguration("round_robin", "murmur3");
+        return new LoadBalanceConfiguration("round_robin", "murmur3", 0.2);
     }
 
     /**
@@ -26,7 +27,8 @@ public record LoadBalanceConfiguration(
         RANDOM("random"),
         WEIGHTED("weighted"),
         IP_HASH("ip_hash"),
-        LEAST_CONNECTIONS("least_connections");
+        LEAST_CONNECTIONS("least_connections"),
+        LATENCY("latency");
 
         private final String value;
 
@@ -57,7 +59,8 @@ public record LoadBalanceConfiguration(
         }
         return new LoadBalanceConfiguration(
                 getString(map, "type"),
-                getString(map, "hashAlgorithm")
+                getString(map, "hashAlgorithm"),
+                getDouble(map, "ewmaAlpha")
         );
     }
 
@@ -72,6 +75,9 @@ public record LoadBalanceConfiguration(
         if (hashAlgorithm != null) {
             map.put("hashAlgorithm", hashAlgorithm);
         }
+        if (ewmaAlpha != null) {
+            map.put("ewmaAlpha", ewmaAlpha);
+        }
         return map;
     }
 
@@ -79,6 +85,14 @@ public record LoadBalanceConfiguration(
         Object value = map.get(key);
         if (value instanceof String) {
             return (String) value;
+        }
+        return null;
+    }
+
+    private static Double getDouble(final Map<String, Object> map, final String key) {
+        Object value = map.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
         }
         return null;
     }

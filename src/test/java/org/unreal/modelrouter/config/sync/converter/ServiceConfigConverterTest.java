@@ -38,7 +38,7 @@ class ServiceConfigConverterTest {
         ServiceConfiguration config = new ServiceConfiguration(
                 "normal",
                 List.of(),
-                new LoadBalanceConfiguration("round-robin", null),
+                new LoadBalanceConfiguration("round-robin", null, null),
                 null, null, null
         );
 

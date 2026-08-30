@@ -137,6 +137,12 @@ class ConfigValidatorHelperTest {
         }
 
         @Test
+        @DisplayName("VAL-171b: 负载均衡类型 - 有效类型latency")
+        void testValidTypeLatency() {
+            assertTrue(helper.isValidLoadBalanceType("latency"));
+        }
+
+        @Test
         @DisplayName("VAL-172: 负载均衡类型 - 无效类型")
         void testInvalidType() {
             assertFalse(helper.isValidLoadBalanceType("invalid"));

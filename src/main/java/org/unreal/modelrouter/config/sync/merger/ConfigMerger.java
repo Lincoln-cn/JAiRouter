@@ -163,7 +163,8 @@ public class ConfigMerger {
 
         return new LoadBalanceConfiguration(
                 updates.type() != null ? updates.type() : existing.type(),
-                updates.hashAlgorithm() != null ? updates.hashAlgorithm() : existing.hashAlgorithm()
+                updates.hashAlgorithm() != null ? updates.hashAlgorithm() : existing.hashAlgorithm(),
+                updates.ewmaAlpha() != null ? updates.ewmaAlpha() : existing.ewmaAlpha()
         );
     }
 

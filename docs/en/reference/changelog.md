@@ -1,7 +1,7 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.2
+> **Document Version**: 2.9.3
 > **Last Updated**: 2026-08-30
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
@@ -20,6 +20,21 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.3] - 2026-08-30 - Feature Release (Routing Intelligence-1: EWMA Latency-Aware Routing)
+
+#### Latency-aware load balancing (`load-balance.type: latency`)
+
+- **LatencyAwareLoadBalancer**: EWMA-based latency-aware strategy, weighted random by `1/(1+ewma)` (lower latency = higher probability); cold-start equal weight for fair exploration; failed calls update with a 30s penalty
+- **Duration chain**: `LoadBalancer` gains durationMs hook overloads (default, zero change for the 6 existing strategies); `AdapterMetricsRecorder → ModelServiceRegistry → LoadBalancer` threads call duration; `StickyLoadBalancer` 3-arg passthrough (duration preserved under sticky wrapping)
+- **Config**: `ewma-alpha` (default 0.2, global/service-level); `latency` registered in ComponentFactory; validators + DTO + merger/converter full-chain support; `/api/loadbalancer/strategies` includes latency
+- Default strategy remains `random`; `type: latency` is opt-in — zero default behavior change
+
+#### Tests
+
+- New `LatencyAwareLoadBalancerTest` (EWMA convergence / selection distribution / cold start / failure penalty / concurrency), `ModelServiceRegistryDurationFlowTest` (duration flow); extended `StickyLoadBalancerTest`, `LoadBalancerManagementControllerTest`, `ConfigValidatorHelperTest`; **full suite 3024 tests green** (+16)
+
+---
 
 ### [2.9.2] - 2026-08-30 - Feature Release (Record Governance)
 

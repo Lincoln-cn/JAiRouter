@@ -181,7 +181,7 @@ public class ServiceConfigConverter {
         if (type == null || type.isBlank()) {
             return null;
         }
-        return new LoadBalanceConfiguration(type, null);
+        return new LoadBalanceConfiguration(type, null, null);
     }
 
     /**
@@ -199,7 +199,8 @@ public class ServiceConfigConverter {
                 update.getType() != null ? update.getType() : (existing != null ? existing.type() : null),
                 update.getHashAlgorithm() != null
                         ? update.getHashAlgorithm()
-                        : (existing != null ? existing.hashAlgorithm() : null)
+                        : (existing != null ? existing.hashAlgorithm() : null),
+                existing != null ? existing.ewmaAlpha() : null
         );
     }
 

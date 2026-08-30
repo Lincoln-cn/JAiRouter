@@ -81,8 +81,8 @@ class ConfigMergerTest {
 
     @Test
     void merge_loadBalance_overridesExisting() {
-        LoadBalanceConfiguration existingLB = new LoadBalanceConfiguration("round-robin", null);
-        LoadBalanceConfiguration updatesLB = new LoadBalanceConfiguration("least-connections", null);
+        LoadBalanceConfiguration existingLB = new LoadBalanceConfiguration("round-robin", null, null);
+        LoadBalanceConfiguration updatesLB = new LoadBalanceConfiguration("least-connections", null, null);
 
         ServiceConfiguration existing = new ServiceConfiguration(
                 "adapter", List.of(), existingLB, null, null, null

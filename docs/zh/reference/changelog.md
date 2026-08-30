@@ -2,7 +2,7 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.2
+> **文档版本**: 2.9.3
 > **最后更新**: 2026-08-30
 > **作者**: JAiRouter Team
 
@@ -21,6 +21,21 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.3] - 2026-08-30 - 功能发布（路由智能深化-1：EWMA 延迟感知路由）
+
+#### 延迟感知负载均衡（`load-balance.type: latency`）
+
+- **LatencyAwareLoadBalancer**：基于 EWMA（指数加权移动平均）的延迟感知策略，按实例历史调用延迟加权随机（`1/(1+ewma)`，延迟越低概率越高）；冷启动（无样本）等权重公平探索；失败调用按 30s 惩罚值更新
+- **duration 链路接入**：`LoadBalancer` 接口新增带 durationMs 的 hook 重载（default 兼容，现有 6 策略零改动）；`AdapterMetricsRecorder → ModelServiceRegistry → LoadBalancer` 全链路传递调用耗时；`StickyLoadBalancer` 3 参透传（粘性包裹下 duration 不丢失）
+- **配置**：`ewma-alpha`（默认 0.2，全局/服务级均可配）；ComponentFactory 注册 `latency` 类型；两个校验器 + DTO + 合并器/转换器全链路支持；`/api/loadbalancer/strategies` 含 latency
+- 默认策略仍为 random，`type: latency` 配置选择开启，零默认行为变化
+
+#### 测试
+
+- 新增 LatencyAwareLoadBalancerTest（EWMA 收敛/选择分布/冷启动/失败惩罚/并发安全）、ModelServiceRegistryDurationFlowTest（duration 传递）；扩展 StickyLoadBalancerTest、LoadBalancerManagementControllerTest、ConfigValidatorHelperTest；**全量 3024 用例全绿**（+16）
+
+---
 
 ### [2.9.2] - 2026-08-30 - 功能发布（记录治理）
 

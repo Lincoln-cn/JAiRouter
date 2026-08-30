@@ -132,6 +132,30 @@ public class StickyLoadBalancer implements LoadBalancer {
     }
 
     /**
+     * v2.9.3: 带调用时长的调用完成回调，转发给委托LB（保留durationMs信息）
+     */
+    @Override
+    public void recordCallComplete(final ModelRouterProperties.ModelInstance instance,
+                                   final long durationMs,
+                                   final boolean success) {
+        if (delegate != null) {
+            delegate.recordCallComplete(instance, durationMs, success);
+        }
+    }
+
+    /**
+     * v2.9.3: 带调用时长和错误码的调用失败回调，转发给委托LB（保留durationMs信息）
+     */
+    @Override
+    public void recordCallFailure(final ModelRouterProperties.ModelInstance instance,
+                                  final long durationMs,
+                                  final String errorCode) {
+        if (delegate != null) {
+            delegate.recordCallFailure(instance, durationMs, errorCode);
+        }
+    }
+
+    /**
      * 获取委托 LB
      */
     public LoadBalancer getDelegate() {

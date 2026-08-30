@@ -439,6 +439,34 @@ public class ModelServiceRegistry {
         circuitBreakerManager.recordFailure(instance.getInstanceId(), instance.getBaseUrl());
     }
 
+    /**
+     * v2.9.3: 记录实例调用完成（带调用时长和成功状态），将 durationMs 传递给负载均衡器钩子
+     */
+    public void recordCallComplete(final ServiceType serviceType,
+                                   final ModelRouterProperties.ModelInstance instance,
+                                   final long durationMs,
+                                   final boolean success) {
+        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
+        if (loadBalancer != null) {
+            loadBalancer.recordCallComplete(instance, durationMs, success);
+        }
+        circuitBreakerManager.recordSuccess(instance.getInstanceId(), instance.getBaseUrl());
+    }
+
+    /**
+     * v2.9.3: 记录实例调用失败（带调用时长和错误码），将 durationMs 传递给负载均衡器钩子
+     */
+    public void recordCallFailure(final ServiceType serviceType,
+                                  final ModelRouterProperties.ModelInstance instance,
+                                  final long durationMs,
+                                  final String errorCode) {
+        LoadBalancer loadBalancer = loadBalancerManager.getLoadBalancer(serviceType);
+        if (loadBalancer != null) {
+            loadBalancer.recordCallFailure(instance, durationMs, errorCode);
+        }
+        circuitBreakerManager.recordFailure(instance.getInstanceId(), instance.getBaseUrl());
+    }
+
     public CircuitBreaker.State getInstanceCircuitBreakerState(final ModelRouterProperties.ModelInstance instance) {
         return circuitBreakerManager.getState(instance.getInstanceId(), instance.getBaseUrl());
     }
