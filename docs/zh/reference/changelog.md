@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.6
-> **最后更新**: 2026-08-30
+> **文档版本**: 2.9.7
+> **最后更新**: 2026-09-01
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,31 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.7] - 2026-09-01 - 功能发布（路由智能深化-3：标签路由）
+
+#### 标签路由（tags）
+
+- **实例标签**：`ModelInstance` 新增 `Map<String,String> tags`（如 `gpu_type: a100` / `region: cn-north` / `tier: premium`），YAML/API/持久化全链路支持（ConfigConverterHelper/ModelInstanceConfiguration/ServiceInstanceEntity JSON 列/ServiceInstanceManager）
+- **规则动作 TARGET_TAGS**：路由规则新增「标签路由」动作，命中后按标签圈选实例（AND 语义——实例 tags 必须包含全部键值对才入选）；`RuleDefinition.Action` 新增 `tags` 字段
+- **请求级 header 圈选**：`X-JAiRouter-Tags: key=value,key2=value2`（逗号分隔、容忍空格与空项）直接按标签过滤候选实例；规则 TARGET_TAGS 优先于 header
+- **优先级**：TARGET_INSTANCE 锁定 > TARGET_TAGS > 资源池；标签过滤空候选 404；池路由与 auto-model 天然不受 tags 影响（池成员显式指定）
+- **前端**：实例管理页「标签配置」key-value 编辑区（仿请求头）；规则表单新增 TARGET_TAGS 动作 + 标签编辑区；规则列表动作摘要展示
+
+#### 修复
+
+- **旧库升级兼容**：`CompatibilitySchemaMigrator` 登记 `service_instance.tags` 列（CLOB，方言适配）——修复旧 H2 库缺列导致实例查询 500
+- **限流器实例标识**：`RateLimitManager.generateInstanceKey` 回退 `instanceId → name → baseUrl`，修复实例未配置 instance-id 时监控显示 null；指标解析按首个 `:` 切分兼容含冒号实例名
+- **限流器监控指标**：`RateLimiterTracingWrapper` 补 `getRemainingCapacity()`/`getUsageRatio()` 委托转发——修复监控页使用率恒显示 -100%（此前 tracing 包装层未转发接口默认值 -1）
+- **base 配置**：`model-services-base.yml` 9 个实例补 `instance-id`（消除 null 标识根因）
+- **LB 策略下拉**：StrategyConfig.vue 下拉宽度 + 选项布局修复（延迟感知策略与说明不再贴字）+ fallback 补 latency 策略
+- **规则模板复制**：`RuleTemplateService.copyAction` 补 TARGET_TAGS case（防未来模板复制丢 tags）
+
+#### 测试
+
+- 新增：SelectInstanceOptimizerTest（9 例）、ModelServiceRegistryTagRoutingIntegrationTest（10 例）、ModelInstanceConfigurationTest（6 例）、CompatibilitySchemaMigrator 迁移断言（3 例）、RateLimitManagerInstanceKeyTest（3 例）、RateLimiterTracingWrapperTest（2 例）；**全量 3069 用例全绿**
+
+---
 
 ### [2.9.6] - 2026-08-30 - 功能发布（路由智能深化-2：请求级故障转移）
 

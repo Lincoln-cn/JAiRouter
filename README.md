@@ -273,8 +273,9 @@ Performance overhead compared to direct backend access:
 - [x] Google Gemini adapter
 - [x] Rule engine with visual conditional routing
 - [x] Service-level dynamic rate limiting + rule-based RATE_LIMIT action
+- [x] Tag routing (instance tags + TARGET_TAGS rule action + request-level header selection)
 
-> **Current Release**: v2.9.6 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.9.7 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 
