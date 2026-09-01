@@ -92,6 +92,7 @@
           <el-radio value="TARGET_ADAPTER">切换适配器</el-radio>
           <el-radio value="LB_STRATEGY">LB策略</el-radio>
           <el-radio value="RATE_LIMIT">限流</el-radio>
+          <el-radio value="TARGET_TAGS">标签路由</el-radio>
         </el-radio-group>
       </el-form-item>
 
@@ -113,7 +114,7 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item v-if="form.actionType !== 'RATE_LIMIT'" label="动作目标" prop="actionTarget">
+      <el-form-item v-if="form.actionType !== 'RATE_LIMIT' && form.actionType !== 'TARGET_TAGS'" label="动作目标" prop="actionTarget">
         <el-select
           v-if="form.actionType === 'TARGET_INSTANCE'"
           v-model="form.actionTarget"
@@ -165,6 +166,19 @@
             actionTargetTip
           }}
         </span>
+      </el-form-item>
+
+      <el-form-item v-if="form.actionType === 'TARGET_TAGS'" label="目标标签">
+        <div class="test-header-list">
+          <div v-for="(tag, idx) in form.actionTags" :key="idx" class="test-header-row">
+            <el-input v-model="tag.key" placeholder="标签名" style="width: 140px" />
+            <el-input v-model="tag.value" placeholder="值" style="width: 140px; margin-left: 8px" />
+            <el-button type="danger" :icon="Delete" circle size="small" style="margin-left: 8px"
+              @click="removeActionTag(idx)" />
+          </div>
+          <el-button type="primary" plain size="small" :icon="Plus" @click="addActionTag">添加标签</el-button>
+        </div>
+        <span class="form-tip">实例须同时包含全部标签(AND),如 gpu_type=a100</span>
       </el-form-item>
 
       <el-form-item>
@@ -336,6 +350,7 @@ const form = reactive<{
   conditions: RuleCondition[]
   actionType: string
   actionTarget: string
+  actionTags: Array<{ key: string; value: string }>
   rateLimit: {
     capacity: number
     rate: number
@@ -349,6 +364,7 @@ const form = reactive<{
   conditions: [defaultCondition()],
   actionType: 'TARGET_MODEL',
   actionTarget: '',
+  actionTags: [],
   rateLimit: {
     capacity: 100,
     rate: 10,
@@ -434,6 +450,25 @@ const runTest = async () => {
   }
 }
 
+// v2.9.7: TARGET_TAGS 标签编辑
+const addActionTag = () => {
+  form.actionTags.push({ key: '', value: '' })
+}
+
+const removeActionTag = (index: number) => {
+  form.actionTags.splice(index, 1)
+}
+
+const buildActionTags = (): Record<string, string> => {
+  const tags: Record<string, string> = {}
+  form.actionTags.forEach(tag => {
+    if (tag.key.trim() && tag.value.trim()) {
+      tags[tag.key.trim()] = tag.value.trim()
+    }
+  })
+  return tags
+}
+
 const formRules: FormRules = {
   name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
   actionType: [{ required: true, message: '请选择动作类型', trigger: 'change' }],
@@ -468,6 +503,8 @@ const actionTargetTip = computed(() => {
       return '负载均衡策略'
     case 'RATE_LIMIT':
       return '按规则限流(容量/速率必填)'
+    case 'TARGET_TAGS':
+      return '按标签圈选实例(AND)'
     default:
       return ''
   }
@@ -516,12 +553,15 @@ const loadRule = (rule: RuleDefinition | null) => {
         warmUpPeriod: rule.action?.warmUpPeriod || 600
       }
     }
+    // v2.9.7: TARGET_TAGS 动作参数回填
+    form.actionTags = Object.entries(rule.action?.tags || {}).map(([key, value]) => ({ key, value }))
   } else {
     form.name = ''
     form.priority = 10
     form.conditions = [defaultCondition()]
     form.actionType = 'TARGET_MODEL'
     form.actionTarget = ''
+    form.actionTags = []
     form.rateLimit = {
       capacity: 100,
       rate: 10,
@@ -560,7 +600,8 @@ const handleSave = async () => {
       rate: form.actionType === 'RATE_LIMIT' ? form.rateLimit.rate : undefined,
       algorithm: form.actionType === 'RATE_LIMIT' ? form.rateLimit.algorithm : undefined,
       scope: form.actionType === 'RATE_LIMIT' ? form.rateLimit.scope : undefined,
-      warmUpPeriod: form.actionType === 'RATE_LIMIT' ? form.rateLimit.warmUpPeriod : undefined
+      warmUpPeriod: form.actionType === 'RATE_LIMIT' ? form.rateLimit.warmUpPeriod : undefined,
+      tags: form.actionType === 'TARGET_TAGS' ? buildActionTags() : undefined
     }
   }
   saving.value = true

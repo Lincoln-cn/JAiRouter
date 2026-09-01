@@ -75,6 +75,13 @@ public class ServiceInstanceEntity {
     @Column(name = "headers", columnDefinition = "JSON")
     private Map<String, String> headers;
 
+    /**
+     * v2.9.7: 实例标签配置（JSON 格式存储，标签路由按键值对圈选）
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "tags", columnDefinition = "JSON")
+    private Map<String, String> tags;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

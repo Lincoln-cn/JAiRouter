@@ -33,6 +33,7 @@ class ServiceInstanceEntityTest {
     void testAllArgsConstructor() {
         LocalDateTime now = LocalDateTime.now();
         Map<String, String> headers = Map.of("X-Custom-Header", "value");
+        Map<String, String> tags = Map.of("gpu_type", "a100");
 
         ServiceInstanceEntity entity = new ServiceInstanceEntity(
                 1L,
@@ -47,6 +48,7 @@ class ServiceInstanceEntityTest {
                 null,
                 "ollama",
                 headers,
+                tags,
                 now,
                 now
         );
@@ -62,6 +64,7 @@ class ServiceInstanceEntityTest {
         assertEquals("HEALTHY", entity.getHealthStatus());
         assertEquals("ollama", entity.getAdapter());
         assertEquals(headers, entity.getHeaders());
+        assertEquals(tags, entity.getTags());
     }
 
     @Test

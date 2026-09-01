@@ -2,6 +2,7 @@ package org.unreal.modelrouter.router.rule.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 路由规则定义
@@ -33,7 +34,8 @@ public final class RuleDefinition {
         TARGET_INSTANCE,
         TARGET_ADAPTER,
         LB_STRATEGY,
-        RATE_LIMIT   // v2.8.8: 规则级限流(按 ruleId keyed)
+        RATE_LIMIT,   // v2.8.8: 规则级限流(按 ruleId keyed)
+        TARGET_TAGS   // v2.9.7: 按标签圈选实例(AND 语义,标签经 setter 注入)
     }
 
     /** 规则来源 */
@@ -112,6 +114,7 @@ public final class RuleDefinition {
         private String algorithm;       // RATE_LIMIT 算法(默认 token-bucket)
         private String scope;           // RATE_LIMIT 作用域(默认 rule)
         private Long warmUpPeriod;      // RATE_LIMIT 预热期(秒)
+        private Map<String, String> tags; // v2.9.7: TARGET_TAGS 所需标签(key=value,AND)
 
         public Action() {
         }
@@ -132,6 +135,7 @@ public final class RuleDefinition {
                     this.lbStrategy = target;
                 }
                 case RATE_LIMIT -> { /* 限流参数经 setter 注入 */ }
+                case TARGET_TAGS -> { /* 标签经 setter 注入 */ }
             }
         }
 
@@ -213,6 +217,14 @@ public final class RuleDefinition {
 
         public void setWarmUpPeriod(final Long warmUpPeriod) {
             this.warmUpPeriod = warmUpPeriod;
+        }
+
+        public Map<String, String> getTags() {
+            return tags;
+        }
+
+        public void setTags(final Map<String, String> tags) {
+            this.tags = tags;
         }
     }
 

@@ -134,11 +134,11 @@ class ConfigMergerTest {
     void merge_instances_mergesLists() {
         ModelInstanceConfiguration inst1 = new ModelInstanceConfiguration(
                 "inst1", "http://localhost:8080", "/v1", "normal",
-                1, "active", null, null, null, null, null
+                1, "active", null, null, null, null, null, null
         );
         ModelInstanceConfiguration inst2 = new ModelInstanceConfiguration(
                 "inst2", "http://localhost:8081", "/v1", "normal",
-                1, "active", null, null, null, null, null
+                1, "active", null, null, null, null, null, null
         );
 
         ServiceConfiguration existing = new ServiceConfiguration(

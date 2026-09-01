@@ -132,6 +132,16 @@ public final class RateLimiterTracingWrapper implements RateLimiter {
         return delegate.getConfig();
     }
     
+    @Override
+    public long getRemainingCapacity() {
+        return delegate.getRemainingCapacity();
+    }
+    
+    @Override
+    public double getUsageRatio() {
+        return delegate.getUsageRatio();
+    }
+    
     /**
      * 记录限流检查开始
      */

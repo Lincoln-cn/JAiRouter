@@ -170,6 +170,7 @@ public class ServiceConfigConverter {
                 null, // circuitBreaker
                 null, // fallback
                 request.getHeaders(),
+                request.getTags(),
                 null  // instanceId
         );
     }

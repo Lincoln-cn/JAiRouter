@@ -246,6 +246,21 @@ class ModelRouterPropertiesTest {
 
             assertEquals("test-instance-id", instanceId);
         }
+
+        @Test
+        @DisplayName("v2.9.7: 测试copy()同步拷贝tags")
+        void testCopy_syncsTags() {
+            ModelInstance instance = new ModelInstance();
+            instance.setInstanceId("inst-1");
+            instance.setName("gpt-4");
+            instance.setBaseUrl("http://gpt.local");
+            instance.setTags(Map.of("gpu_type", "a100", "region", "cn-north"));
+
+            ModelInstance copy = instance.copy();
+
+            assertEquals(instance.getTags(), copy.getTags(), "copy() 应同步拷贝 tags");
+            assertSame(instance.getTags(), copy.getTags(), "copy() 为浅拷贝,tags Map 引用应共享");
+        }
     }
 
     @Nested

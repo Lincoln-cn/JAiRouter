@@ -57,6 +57,9 @@ public class ModelServiceRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ModelServiceRegistry.class);
 
+    /** v2.9.7: 请求级标签路由 header,值格式 key=value,key2=value2(逗号分隔,容忍空格,空项跳过) */
+    private static final String TAGS_HEADER = "X-JAiRouter-Tags";
+
     /**
      * 获取所有服务类型
      * @return 服务类型集合
@@ -295,6 +298,22 @@ public class ModelServiceRegistry {
             }
             // 锁定实例时按目标实例自身名称匹配,不受原 modelName 限制
             effectiveModelName = candidates.get(0).getName();
+        }
+
+        // v2.9.7: 标签过滤 — 规则 TARGET_TAGS 优先,否则解析请求 header X-JAiRouter-Tags;
+        // 过滤后空候选与 TARGET_INSTANCE 一致抛 404;池路由(池名显式圈选)不受 tags 影响
+        Map<String, String> requiredTags = ruleDecision != null ? ruleDecision.getTargetTags() : null;
+        if (requiredTags == null) {
+            requiredTags = parseTagsHeader(headers);
+        }
+        if (requiredTags != null && !requiredTags.isEmpty()) {
+            candidates = selectInstanceOptimizer.filterByTags(candidates, requiredTags);
+            if (candidates.isEmpty()) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No instances found matching tags " + requiredTags
+                                + " for model '" + effectiveModelName + "'");
+            }
         }
 
         // v2.8.9: 资源池路由 — effectiveModelName 命中池名 → 池成员候选 + 池策略;
@@ -615,6 +634,44 @@ public class ModelServiceRegistry {
         }
         // 默认: 实例>1时启用，使用 tenant_model 粒度
         return AffinityKeyResolver.SCOPE_TENANT_MODEL;
+    }
+
+    /**
+     * v2.9.7: 解析请求级标签 header X-JAiRouter-Tags
+     * 格式: key=value,key2=value2;逗号分隔、容忍空格、键值等号分隔、空项/空值跳过
+     *
+     * @return 解析后的标签 Map;无 header 或解析为空返回 null
+     */
+    private Map<String, String> parseTagsHeader(final Map<String, String> headers) {
+        if (headers == null) {
+            return null;
+        }
+        String headerValue = headers.entrySet().stream()
+                .filter(e -> e.getKey() != null && e.getKey().equalsIgnoreCase(TAGS_HEADER))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+        if (headerValue == null || headerValue.isBlank()) {
+            return null;
+        }
+        Map<String, String> tags = new HashMap<>();
+        for (String item : headerValue.split(",")) {
+            if (item == null || item.isBlank()) {
+                continue;
+            }
+            String trimmed = item.trim();
+            int eqIdx = trimmed.indexOf('=');
+            if (eqIdx <= 0) {
+                continue;
+            }
+            String key = trimmed.substring(0, eqIdx).trim();
+            String value = trimmed.substring(eqIdx + 1).trim();
+            if (key.isEmpty() || value.isEmpty()) {
+                continue;
+            }
+            tags.put(key, value);
+        }
+        return tags.isEmpty() ? null : tags;
     }
 
     /**

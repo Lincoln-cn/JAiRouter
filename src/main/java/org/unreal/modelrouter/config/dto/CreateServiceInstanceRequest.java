@@ -37,4 +37,9 @@ public final class CreateServiceInstanceRequest {
      * 自定义请求头配置
      */
     private Map<String, String> headers;
+
+    /**
+     * v2.9.7: 实例标签配置(标签路由按键值对圈选)
+     */
+    private Map<String, String> tags;
 }

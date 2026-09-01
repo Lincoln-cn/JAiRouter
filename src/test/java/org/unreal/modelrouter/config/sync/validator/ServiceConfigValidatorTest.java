@@ -146,7 +146,7 @@ class ServiceConfigValidatorTest {
         @DisplayName("VAL-093: 实例配置验证 - baseUrl为空抛异常")
         void testValidateInstancesEmptyBaseUrl() {
             ModelInstanceConfiguration instance = new ModelInstanceConfiguration(
-                "instance-1", null, null, null, null, null, null, null, null, null, null
+                "instance-1", null, null, null, null, null, null, null, null, null, null, null
             );
             List<ModelInstanceConfiguration> instances = Collections.singletonList(instance);
 
@@ -161,7 +161,7 @@ class ServiceConfigValidatorTest {
         @DisplayName("VAL-094: 实例配置验证 - 负数权重抛异常")
         void testValidateInstancesNegativeWeight() {
             ModelInstanceConfiguration instance = new ModelInstanceConfiguration(
-                "instance-1", "http://localhost:8080", null, null, -1, null, null, null, null, null, null
+                "instance-1", "http://localhost:8080", null, null, -1, null, null, null, null, null, null, null
             );
             List<ModelInstanceConfiguration> instances = Collections.singletonList(instance);
 
@@ -176,7 +176,8 @@ class ServiceConfigValidatorTest {
         @DisplayName("VAL-095: 实例配置验证 - 无效状态抛异常")
         void testValidateInstancesInvalidStatus() {
             ModelInstanceConfiguration instance = new ModelInstanceConfiguration(
-                "instance-1", "http://localhost:8080", null, null, 1, "invalid-status", null, null, null, null, null
+                "instance-1", "http://localhost:8080", null, null, 1, "invalid-status",
+                null, null, null, null, null, null
             );
             List<ModelInstanceConfiguration> instances = Collections.singletonList(instance);
 
@@ -191,7 +192,7 @@ class ServiceConfigValidatorTest {
         @DisplayName("VAL-096: 实例配置验证 - 成功")
         void testValidateInstancesSuccess() {
             ModelInstanceConfiguration instance = new ModelInstanceConfiguration(
-                "instance-1", "http://localhost:8080", null, null, 1, "active", null, null, null, null, null
+                "instance-1", "http://localhost:8080", null, null, 1, "active", null, null, null, null, null, null
             );
             List<ModelInstanceConfiguration> instances = Collections.singletonList(instance);
 

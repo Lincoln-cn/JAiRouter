@@ -92,6 +92,20 @@
                         </el-tag>
                       </template>
                     </el-table-column>
+                    <el-table-column prop="tags" label="标签" width="120" align="center">
+                      <template #default="scope">
+                        <el-tooltip v-if="scope.row.tags && Object.keys(scope.row.tags).length > 0"
+                          :content="Object.entries(scope.row.tags).map(([k, v]) => `${k}=${v}`).join('\n')"
+                          placement="top">
+                          <el-tag type="primary" class="table-tag" size="small">
+                            {{ Object.keys(scope.row.tags).length }} 个
+                          </el-tag>
+                        </el-tooltip>
+                        <el-tag v-else type="info" class="table-tag" size="small">
+                          无
+                        </el-tag>
+                      </template>
+                    </el-table-column>
                     <el-table-column prop="status" label="状态" width="110" align="center">
                       <template #default="scope">
                         <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'" class="table-tag">
@@ -297,6 +311,64 @@
             </el-col>
           </el-row>
         </div>
+
+        <el-divider content-position="left">标签配置</el-divider>
+
+        <div class="headers-section">
+          <el-row :gutter="20">
+            <el-col :span="24">
+              <el-form-item label="标签管理">
+                <div class="headers-actions">
+                  <el-button type="primary" size="small" @click="addTag">
+                    <el-icon>
+                      <Plus />
+                    </el-icon>
+                    添加标签
+                  </el-button>
+                  <el-button type="warning" size="small" @click="clearAllTags" v-if="tagsList.length > 0">
+                    <el-icon>
+                      <Delete />
+                    </el-icon>
+                    清除所有
+                  </el-button>
+                </div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <div v-if="tagsList.length > 0" class="headers-list">
+            <el-row v-for="(tag, index) in tagsList" :key="index" :gutter="20" class="header-row">
+              <el-col :span="10">
+                <el-form-item :label="`标签名 ${index + 1}`">
+                  <el-input v-model="tag.key" placeholder="如：gpu_type" @input="onTagChange" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item :label="`标签值 ${index + 1}`">
+                  <el-input v-model="tag.value" placeholder="如：a100" @input="onTagChange" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="2">
+                <div class="header-delete-wrapper">
+                  <el-button type="danger" size="small" @click="removeTag(index)" circle
+                    class="remove-header-btn" title="删除此标签">
+                    <el-icon>
+                      <Close />
+                    </el-icon>
+                  </el-button>
+                </div>
+              </el-col>
+            </el-row>
+          </div>
+
+          <el-row v-else :gutter="20">
+            <el-col :span="24">
+              <el-form-item>
+                <el-empty description="暂无标签，点击上方按钮添加" :image-size="60" class="empty-headers" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
       </el-form>
 
       <template #footer>
@@ -362,6 +434,7 @@ interface ServiceInstance {
   instanceId: string
   adapter?: string  // 适配器配置
   headers?: Record<string, string>  // 请求头配置
+  tags?: Record<string, string>  // 标签配置
   rateLimit: {
     enabled: boolean
     algorithm: string
@@ -409,6 +482,7 @@ const form = reactive<ServiceInstance>({
   status: 'active',
   adapter: '',
   headers: {},
+  tags: {},
   rateLimit: {
     enabled: false,
     algorithm: 'token-bucket',
@@ -490,6 +564,50 @@ const addAuthorizationHeader = () => {
     customHeadersList.value.push({ key: 'Authorization', value: 'Bearer your-api-key-here' })
     onCustomHeaderChange()
   }
+}
+
+// 标签管理
+interface TagItem {
+  key: string
+  value: string
+}
+
+const tagsList = ref<TagItem[]>([])
+
+// 同步标签列表
+const syncTagsList = () => {
+  tagsList.value = Object.entries(form.tags || {}).map(([key, value]) => ({
+    key,
+    value
+  }))
+}
+
+// 标签变化处理
+const onTagChange = () => {
+  const tags: Record<string, string> = {}
+  tagsList.value.forEach(tag => {
+    if (tag.key.trim() && tag.value.trim()) {
+      tags[tag.key.trim()] = tag.value.trim()
+    }
+  })
+  form.tags = tags
+}
+
+// 添加标签
+const addTag = () => {
+  tagsList.value.push({ key: '', value: '' })
+}
+
+// 移除标签
+const removeTag = (index: number) => {
+  tagsList.value.splice(index, 1)
+  onTagChange()
+}
+
+// 清除所有标签
+const clearAllTags = () => {
+  tagsList.value = []
+  form.tags = {}
 }
 
 // 简单防抖
@@ -624,7 +742,8 @@ const fetchServiceInstances = (serviceType: string) => {
           id: item.instanceId || Date.now() + Math.random(), // 使用后端返回的instanceId作为唯一标识符，如果没有则使用随机数
           serviceType,
           adapter: item.adapter || '', // 确保适配器字段存在
-          headers: item.headers || {} // 确保headers字段存在
+          headers: item.headers || {}, // 确保headers字段存在
+          tags: item.tags || {} // 确保tags字段存在
         }))
         console.log('获取实例数据 - 原始数据:', data)
         console.log('获取实例数据 - 处理后数据:', typedData)
@@ -669,6 +788,7 @@ const handleAddInstance = () => {
     status: 'active',
     adapter: '',
     headers: {},
+    tags: {},
     rateLimit: {
       enabled: false,
       algorithm: 'token-bucket',
@@ -686,6 +806,7 @@ const handleAddInstance = () => {
     }
   })
   customHeadersList.value = []
+  tagsList.value = []
   console.log('添加实例，使用服务类型:', activeServiceType.value)
   dialogVisible.value = true
 }
@@ -702,6 +823,8 @@ const handleEdit = (row: ServiceInstance) => {
     serviceType: activeServiceType.value,
     // 确保headers字段存在
     headers: row.headers || {},
+    // 确保tags字段存在
+    tags: row.tags || {},
     // 确保 rateLimit 和 circuitBreaker 不为 null
     rateLimit: row.rateLimit || {
       enabled: false,
@@ -722,6 +845,7 @@ const handleEdit = (row: ServiceInstance) => {
     instanceId: String(dbId)
   })
   syncCustomHeadersList()
+  syncTagsList()
   console.log('编辑实例，使用数据库ID:', dbId)
   console.log('编辑实例，使用服务类型:', form.serviceType)
   dialogVisible.value = true
@@ -782,7 +906,8 @@ const handleSave = async () => {
       weight: form.weight,
       status: form.status,
       adapter: form.adapter || undefined,
-      headers: form.headers || {}
+      headers: form.headers || {},
+      tags: form.tags || {}
     }
 
     console.log('构造的实例数据:', instanceData)

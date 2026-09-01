@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +58,21 @@ class RuleTemplateServiceTest {
     void buildRuleDefinition_priorityOverride() {
         RuleDefinition draft = service.buildRuleDefinition("canary", Map.of("name", "灰度", "priority", "200"));
         assertEquals(200, draft.getPriority());
+    }
+
+    @Test
+    @DisplayName("copyAction 复制 TARGET_TAGS 动作保留 tags(不注入单一 target)")
+    void copyAction_targetTags_keepsTags() throws Exception {
+        RuleDefinition.Action source = new RuleDefinition.Action(RuleDefinition.ActionType.TARGET_TAGS, null);
+        source.setTags(Map.of("gpu", "a100", "region", "cn"));
+
+        Method copyAction = RuleTemplateService.class.getDeclaredMethod("copyAction", RuleDefinition.Action.class);
+        copyAction.setAccessible(true);
+        RuleDefinition.Action copy = (RuleDefinition.Action) copyAction.invoke(service, source);
+
+        assertEquals(RuleDefinition.ActionType.TARGET_TAGS, copy.getType());
+        assertNull(copy.getModelName());
+        assertEquals(Map.of("gpu", "a100", "region", "cn"), copy.getTags());
     }
 
     @Test

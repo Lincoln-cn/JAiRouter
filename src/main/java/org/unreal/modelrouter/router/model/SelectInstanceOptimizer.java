@@ -8,6 +8,8 @@ import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -147,6 +149,42 @@ public class SelectInstanceOptimizer {
             }
             return canExecute;
         };
+    }
+
+    /**
+     * v2.9.7: 标签过滤 — AND 语义
+     * 实例 tags 必须包含 requiredTags 全部键值对才保留(实例 tags 为 null 或缺键/值不等 → 排除);
+     * requiredTags 为 null/空 → 原样返回,不改变调用方行为
+     *
+     * @param instances 候选实例列表
+     * @param requiredTags 所需标签(key=value);null/空表示不过滤
+     * @return 过滤后的实例列表
+     */
+    public List<ModelInstance> filterByTags(final List<ModelInstance> instances,
+                                            final Map<String, String> requiredTags) {
+        if (instances == null || instances.isEmpty() || requiredTags == null || requiredTags.isEmpty()) {
+            return instances;
+        }
+        return instances.stream()
+                .filter(instance -> matchesRequiredTags(instance, requiredTags))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * v2.9.7: 实例是否满足全部所需标签(AND)
+     */
+    private boolean matchesRequiredTags(final ModelInstance instance, final Map<String, String> requiredTags) {
+        Map<String, String> tags = instance.getTags();
+        if (tags == null) {
+            return false;
+        }
+        for (Map.Entry<String, String> entry : requiredTags.entrySet()) {
+            String actual = tags.get(entry.getKey());
+            if (!Objects.equals(actual, entry.getValue())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

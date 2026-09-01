@@ -12,17 +12,30 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="默认策略">
-              <el-select v-model="globalConfig.type" placeholder="选择策略">
+              <el-select
+                v-model="globalConfig.type"
+                placeholder="选择策略"
+                style="width: 100%"
+              >
                 <el-option
                   v-for="strategy in strategies"
                   :key="strategy.name"
                   :label="strategy.displayName"
                   :value="strategy.name"
                 >
-                  <span>{{ strategy.displayName }}</span>
-                  <span style="float: right; color: #8492a6; font-size: 12px">
-                    {{ strategy.description }}
-                  </span>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <span>{{ strategy.displayName }}</span>
+                    <span
+                      style="
+                        margin-left: auto;
+                        text-align: right;
+                        color: #8492a6;
+                        font-size: 12px;
+                      "
+                    >
+                      {{ strategy.description }}
+                    </span>
+                  </div>
                 </el-option>
               </el-select>
             </el-form-item>
@@ -104,7 +117,11 @@
     >
       <el-form :model="serviceConfig" label-width="150px">
         <el-form-item label="负载均衡策略">
-          <el-select v-model="serviceConfig.type" placeholder="选择策略">
+          <el-select
+            v-model="serviceConfig.type"
+            placeholder="选择策略"
+            style="width: 100%"
+          >
             <el-option
               v-for="strategy in strategies"
               :key="strategy.name"
@@ -198,7 +215,8 @@ const loadStrategies = async () => {
       { name: 'round-robin', displayName: '轮询策略', description: '按权重轮询选择实例' },
       { name: 'least-connections', displayName: '最少连接策略', description: '选择连接数最少的实例' },
       { name: 'ip-hash', displayName: 'IP Hash策略', description: '基于客户端IP哈希选择实例' },
-      { name: 'consistent-hash', displayName: '一致性哈希策略', description: '使用一致性哈希环选择实例' }
+      { name: 'consistent-hash', displayName: '一致性哈希策略', description: '使用一致性哈希环选择实例' },
+      { name: 'latency', displayName: '延迟感知策略', description: '基于EWMA延迟加权选择实例' }
     ]
   }
 }

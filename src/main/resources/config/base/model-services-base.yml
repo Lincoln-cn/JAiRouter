@@ -50,6 +50,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "qwen3:4b"
+          instance-id: "f0461c5b-f894-4b6e-aace-6a133b2a1559"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/chat/completions"
           weight: 1
@@ -83,18 +84,21 @@ model:
         successThreshold: 3
       instances:
         - name: "nomic-embed-text-v1.5"
+          instance-id: "9352737c-7e9a-415c-afbc-a9c533b63388"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/embeddings"
           weight: 1
           headers:
             Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
         - name: "bge-large-zh-v1.5"
+          instance-id: "663ef0dd-a08c-4d93-b5be-86af766f10fb"
           base-url: "http://172.16.30.6:9090/"
           path: "/v1/embeddings"
           weight: 1
           headers:
             Authorization: "Bearer ${GPUSTACK_API_TOKEN:}"
         - name: "bge-large-zh-v1.5"
+          instance-id: "2c17cfe6-5544-4371-9534-27846ab68e29"
           base-url: "http://172.16.30.6:9090/"
           path: "/v1/embeddings"
           weight: 1
@@ -120,6 +124,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "bge-reranker-v2-m3"
+          instance-id: "e28e74f0-99e8-4de9-b37e-3328f83da0f5"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/rerank"
           weight: 2
@@ -139,6 +144,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "cosyvoice-300m"
+          instance-id: "3fe04c97-a68a-4926-a9ab-9cb34028da44"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/speech"
           weight: 1
@@ -158,6 +164,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "faster-whisper-tiny"
+          instance-id: "d6cef366-2bc0-4228-8bea-b220665094c8"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/audio/transcriptions"
           weight: 1
@@ -176,6 +183,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "stable-diffusion-2-1"
+          instance-id: "4b01f194-1c72-4cff-8520-4b10d3bb1329"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/images/generations"
           weight: 1
@@ -194,6 +202,7 @@ model:
         client-ip-enable: true
       instances:
         - name: "stable-diffusion-2-1"
+          instance-id: "46de45f9-1702-461b-95cd-5f0e7424f8b8"
           base-url: "http://172.16.30.6:9090"
           path: "/v1/images/edits"
           weight: 1
