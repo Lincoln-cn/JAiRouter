@@ -178,6 +178,7 @@ public final class ModelRouterProperties {
         private String instanceId; // 添加唯一ID字段
         private String adapter; // 适配器配置
         private Map<String, String> headers; // 添加请求头配置
+        private Map<String, String> tags; // v2.9.7: 实例标签配置(标签路由按键值对圈选)
         private RateLimitConfig rateLimit; // 实例级别限流配置
         private CircuitBreakerConfig circuitBreaker; // 实例级别熔断器配置
         private Boolean healthy = true; // 实例健康状态
@@ -281,6 +282,14 @@ public final class ModelRouterProperties {
             this.headers = headers;
         }
 
+        public Map<String, String> getTags() {
+            return tags;
+        }
+
+        public void setTags(final Map<String, String> tags) {
+            this.tags = tags;
+        }
+
         /**
          * v2.8.9: 浅拷贝实例(共享配置对象不可变,仅用于池路由时覆盖 weight,避免污染共享实例)
          */
@@ -295,6 +304,7 @@ public final class ModelRouterProperties {
             c.instanceId = this.instanceId;
             c.adapter = this.adapter;
             c.headers = this.headers;
+            c.tags = this.tags;
             c.rateLimit = this.rateLimit;
             c.circuitBreaker = this.circuitBreaker;
             c.healthy = this.healthy;

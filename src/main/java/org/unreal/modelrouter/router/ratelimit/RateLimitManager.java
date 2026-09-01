@@ -436,9 +436,10 @@ public class RateLimitManager {
 
         // 实例级限流器
         instanceLimiters.forEach((key, limiter) -> {
-            String[] parts = key.split(":");
-            String serviceName = parts.length > 0 ? parts[0].toLowerCase() : "unknown";
-            String instanceId = parts.length > 1 ? parts[1] : key;
+            // v2.9.7: 用首个 ':' 切分,兼容 key 含 ':' 的 name/baseUrl 回退值(如 qwen3:4b)
+            int idx = key.indexOf(':');
+            String serviceName = idx > 0 ? key.substring(0, idx).toLowerCase() : "unknown";
+            String instanceId = idx >= 0 ? key.substring(idx + 1) : key;
             metrics.add(new RateLimiterMetrics(
                     serviceName, "instance", instanceId,
                     limiter.getConfig().getAlgorithm(),
@@ -521,14 +522,31 @@ public class RateLimitManager {
         return dst;
     }
 
+    /**
+     * 生成实例级限流器 key
+     * v2.9.7: instanceId 缺失(如 YAML 实例未配置 instance-id)时依次回退 name -> baseUrl,
+     * 避免 key 冲突与监控页 identifier 显示 "null"
+     */
     private String generateInstanceKey(final ModelServiceRegistry.ServiceType type,
                                        final ModelRouterProperties.ModelInstance inst) {
-        return generateInstanceKey(type, inst.getInstanceId(), inst.getBaseUrl());
+        return generateInstanceKey(type, inst.getInstanceId(), inst.getName(), inst.getBaseUrl());
     }
 
     private String generateInstanceKey(final ModelServiceRegistry.ServiceType type,
                                        final String id, final String url) {
-        return type.name() + ":" + id;
+        return generateInstanceKey(type, id, null, url);
+    }
+
+    private String generateInstanceKey(final ModelServiceRegistry.ServiceType type,
+                                       final String id, final String name, final String url) {
+        String keyPart = id;
+        if (keyPart == null || keyPart.isBlank()) {
+            keyPart = name;
+        }
+        if (keyPart == null || keyPart.isBlank()) {
+            keyPart = url;
+        }
+        return type.name() + ":" + keyPart;
     }
 
     /**

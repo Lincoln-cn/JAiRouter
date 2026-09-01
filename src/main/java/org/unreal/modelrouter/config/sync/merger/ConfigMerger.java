@@ -142,6 +142,7 @@ public class ConfigMerger {
                 update.circuitBreaker() != null ? update.circuitBreaker() : existing.circuitBreaker(),
                 update.fallback() != null ? update.fallback() : existing.fallback(),
                 update.headers() != null ? update.headers() : existing.headers(),
+                update.tags() != null ? update.tags() : existing.tags(),
                 update.instanceId() != null ? update.instanceId() : existing.instanceId()
         );
     }

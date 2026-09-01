@@ -11,6 +11,7 @@ export interface InstanceConfig {
   status?: 'active' | 'inactive'
   adapter?: string
   headers?: Record<string, string>
+  tags?: Record<string, string>  // v2.9.7: 实例标签(键值对)
 }
 
 // 限流器配置接口

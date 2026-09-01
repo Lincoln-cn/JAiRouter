@@ -98,6 +98,7 @@ public class RuleTemplateService {
                 target = action.getLbStrategy();
             }
             case RATE_LIMIT -> { /* 限流参数经下方 setter 复制 */ }
+            case TARGET_TAGS -> { target = null; /* 标签经下方 setter 复制 */ }
         }
         RuleDefinition.Action copy = new RuleDefinition.Action(action.getType(), target);
         copy.setCapacity(action.getCapacity());
@@ -105,6 +106,7 @@ public class RuleTemplateService {
         copy.setAlgorithm(action.getAlgorithm());
         copy.setScope(action.getScope());
         copy.setWarmUpPeriod(action.getWarmUpPeriod());
+        copy.setTags(action.getTags());
         return copy;
     }
 

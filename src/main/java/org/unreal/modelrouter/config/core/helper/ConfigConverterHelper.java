@@ -162,6 +162,12 @@ public class ConfigConverterHelper {
             instance.setHeaders(headers);
         }
 
+        // v2.9.7: 设置实例标签配置
+        if (instanceMap.containsKey("tags") && instanceMap.get("tags") instanceof Map) {
+            Map<String, String> tags = (Map<String, String>) instanceMap.get("tags");
+            instance.setTags(tags);
+        }
+
         // 设置限流配置
         if (instanceMap.containsKey("rateLimit") && instanceMap.get("rateLimit") instanceof Map) {
             Map<String, Object> rateLimitMap = (Map<String, Object>) instanceMap.get("rateLimit");

@@ -45,6 +45,10 @@ public class CompatibilitySchemaMigrator implements ApplicationRunner {
                     new ColumnDef("record_level", "varchar(20)"),
                     new ColumnDef("request_body_encrypted", "CLOB"),
                     new ColumnDef("response_body_encrypted", "CLOB")
+            )),
+            // v2.9.7: ServiceInstanceEntity 新增 tags JSON 列,旧库需补齐
+            new TableMigration("service_instance", List.of(
+                    new ColumnDef("tags", "CLOB")
             ))
     );
 

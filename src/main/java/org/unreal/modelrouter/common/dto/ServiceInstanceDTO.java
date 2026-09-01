@@ -71,6 +71,11 @@ public final class ServiceInstanceDTO {
      */
     private Map<String, String> headers;
 
+    /**
+     * v2.9.7: 实例标签配置(标签路由按键值对圈选)
+     */
+    private Map<String, String> tags;
+
     // 限流器配置
     private InstanceRateLimitDTO rateLimit;
 

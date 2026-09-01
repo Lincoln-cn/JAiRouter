@@ -4,6 +4,15 @@
 # 此文件包含各模型服务实例的详细配置
 # 位置：org.unreal.modelrouter.router.model
 # v2.x: 添加 instance-id 字段用于实例唯一标识
+# v2.9.7: 实例支持 tags 标签(Map<String,String>),用于标签路由圈选候选实例
+#   示例:
+#     - name: "qwen2.5-72b"
+#       base-url: "http://10.0.0.1:8000"
+#       tags:
+#         gpu_type: a100
+#         region: cn-north
+#         tier: premium
+#   请求级圈选: header X-JAiRouter-Tags: "gpu_type=a100,region=cn-north"
 
 model:
   services:

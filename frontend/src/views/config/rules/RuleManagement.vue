@@ -228,7 +228,8 @@ const actionTypeMap: Record<string, string> = {
   TARGET_MODEL: '重写模型',
   TARGET_INSTANCE: '锁定实例',
   TARGET_ADAPTER: '切换适配器',
-  LB_STRATEGY: 'LB策略'
+  LB_STRATEGY: 'LB策略',
+  TARGET_TAGS: '标签路由'
 }
 
 const formatConditions = (conditions: RuleCondition[]) => {
@@ -242,8 +243,15 @@ const formatConditions = (conditions: RuleCondition[]) => {
 
 const formatAction = (action: RuleAction) => {
   if (!action) return '-'
+  const label = actionTypeMap[action.type] || action.type
+  if (action.type === 'TARGET_TAGS') {
+    const tags = Object.entries(action.tags || {})
+      .map(([k, v]) => `${k}=${v}`)
+      .join(',')
+    return `${label}: ${tags || '-'}`
+  }
   const target = action.modelName || action.instanceId || action.adapterName || action.lbStrategy || '-'
-  return `${actionTypeMap[action.type] || action.type}: ${target}`
+  return `${label}: ${target}`
 }
 
 onMounted(() => {

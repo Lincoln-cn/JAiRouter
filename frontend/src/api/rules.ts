@@ -8,7 +8,7 @@ export type RuleConditionType = 'SERVICE_TYPE' | 'MODEL_NAME' | 'HEADER' | 'CLIE
 export type RuleOperator = 'EQUALS' | 'CONTAINS' | 'STARTS_WITH' | 'REGEX' | 'CIDR_MATCH'
 
 // 动作类型
-export type RuleActionType = 'TARGET_MODEL' | 'TARGET_INSTANCE' | 'TARGET_ADAPTER' | 'LB_STRATEGY' | 'RATE_LIMIT'
+export type RuleActionType = 'TARGET_MODEL' | 'TARGET_INSTANCE' | 'TARGET_ADAPTER' | 'LB_STRATEGY' | 'RATE_LIMIT' | 'TARGET_TAGS'
 
 export interface RuleCondition {
   type: RuleConditionType
@@ -24,6 +24,8 @@ export interface RuleAction {
   instanceId?: string
   adapterName?: string
   lbStrategy?: string
+  // v2.9.7: TARGET_TAGS 动作参数
+  tags?: Record<string, string>
   // v2.8.8: RATE_LIMIT 动作参数
   capacity?: number
   rate?: number

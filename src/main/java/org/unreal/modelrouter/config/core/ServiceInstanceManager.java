@@ -113,6 +113,7 @@ public class ServiceInstanceManager {
                 .healthStatus("UNKNOWN")
                 .adapter(request.getAdapter())
                 .headers(request.getHeaders())
+                .tags(request.getTags())
                 .build();
 
         ServiceInstanceEntity saved = serviceInstanceRepository.save(entity);
@@ -155,6 +156,9 @@ public class ServiceInstanceManager {
         }
         if (request.getHeaders() != null) {
             entity.setHeaders(request.getHeaders());
+        }
+        if (request.getTags() != null) {
+            entity.setTags(request.getTags());
         }
 
         ServiceInstanceEntity saved = serviceInstanceRepository.save(entity);
@@ -361,6 +365,7 @@ public class ServiceInstanceManager {
                 .errorMessage(entity.getErrorMessage())
                 .adapter(entity.getAdapter())
                 .headers(entity.getHeaders())
+                .tags(entity.getTags())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -475,6 +480,7 @@ public class ServiceInstanceManager {
                         ? instance.getInstanceId() : String.valueOf(instance.getId()));
                 instanceMap.put("adapter", instance.getAdapter());
                 instanceMap.put("headers", instance.getHeaders());
+                instanceMap.put("tags", instance.getTags());
 
                 // 添加限流器配置
                 rateLimitRepository.findByInstanceId(instance.getId())

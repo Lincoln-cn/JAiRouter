@@ -2,6 +2,8 @@ package org.unreal.modelrouter.router.rule;
 
 import org.unreal.modelrouter.router.rule.model.RuleDefinition;
 
+import java.util.Map;
+
 /**
  * 规则求值决策结果
  * 命中规则后携带动作目标;无命中时返回 null
@@ -40,5 +42,11 @@ public final class RuleDecision {
     public String getLbStrategy() {
         return rule.getAction() != null && rule.getAction().getType() == RuleDefinition.ActionType.LB_STRATEGY
                 ? rule.getAction().getLbStrategy() : null;
+    }
+
+    /** 动作目标:按标签圈选实例(v2.9.7) */
+    public Map<String, String> getTargetTags() {
+        return rule.getAction() != null && rule.getAction().getType() == RuleDefinition.ActionType.TARGET_TAGS
+                ? rule.getAction().getTags() : null;
     }
 }

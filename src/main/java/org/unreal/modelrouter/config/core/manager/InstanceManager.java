@@ -194,6 +194,7 @@ public class InstanceManager {
             null, // circuitBreaker
             null, // fallback
             instanceConfig.getHeaders() != null ? instanceConfig.getHeaders() : Map.of(),
+            instanceConfig.getTags() != null ? instanceConfig.getTags() : Map.of(),
             instanceId
         );
 

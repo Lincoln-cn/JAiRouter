@@ -21,6 +21,7 @@ public record ModelInstanceConfiguration(
         CircuitBreakerConfiguration circuitBreaker,
         FallbackConfiguration fallback,
         Map<String, String> headers,
+        Map<String, String> tags,
         String instanceId
 ) {
     /**
@@ -37,6 +38,7 @@ public record ModelInstanceConfiguration(
                 RateLimitConfiguration.defaultConfig(),
                 CircuitBreakerConfiguration.defaultConfig(),
                 FallbackConfiguration.defaultConfig(),
+                Map.of(),
                 Map.of(),
                 null
         );
@@ -68,6 +70,7 @@ public record ModelInstanceConfiguration(
                 CircuitBreakerConfiguration.fromMap(getMap(map, "circuitBreaker")),
                 FallbackConfiguration.fromMap(getMap(map, "fallback")),
                 getStringMap(map, "headers"),
+                getStringMap(map, "tags"),
                 getString(map, "instanceId")
         );
     }
@@ -106,6 +109,9 @@ public record ModelInstanceConfiguration(
         }
         if (headers != null) {
             map.put("headers", headers);
+        }
+        if (tags != null) {
+            map.put("tags", tags);
         }
         if (instanceId != null) {
             map.put("instanceId", instanceId);

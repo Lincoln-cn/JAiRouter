@@ -144,4 +144,53 @@ class CompatibilitySchemaMigratorTest {
         verify(jdbcTemplate).execute("ALTER TABLE api_call_history ADD COLUMN request_body_encrypted LONGTEXT");
         verify(jdbcTemplate).execute("ALTER TABLE api_call_history ADD COLUMN response_body_encrypted LONGTEXT");
     }
+
+    // ==================== v2.9.7: service_instance.tags 列迁移 ====================
+
+    @Test
+    @DisplayName("service_instance 表缺少 tags 列时自动补齐(CLOB)")
+    void serviceInstanceTagsColumnAdded() {
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq("service_instance")))
+                .thenReturn(1);
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), eq("service_instance")))
+                .thenReturn(List.of("id", "service_config_id", "instance_name", "instance_id",
+                        "base_url", "path", "weight", "status", "headers"));
+
+        migrator.run(args);
+
+        verify(jdbcTemplate).execute("ALTER TABLE service_instance ADD COLUMN tags CLOB");
+    }
+
+    @Test
+    @DisplayName("service_instance 已含 tags 列时不执行 ALTER(幂等)")
+    void serviceInstanceTagsColumnPresent() {
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq("service_instance")))
+                .thenReturn(1);
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), eq("service_instance")))
+                .thenReturn(List.of("id", "headers", "tags"));
+
+        migrator.run(args);
+
+        verify(jdbcTemplate, never()).execute(anyString());
+    }
+
+    @Test
+    @DisplayName("MySQL 方言下 service_instance.tags 使用 LONGTEXT")
+    void serviceInstanceTagsClobTypePerDialect() throws Exception {
+        Connection connection = mock(Connection.class);
+        DatabaseMetaData metaData = mock(DatabaseMetaData.class);
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getMetaData()).thenReturn(metaData);
+        when(metaData.getDatabaseProductName()).thenReturn("MySQL");
+
+        CompatibilitySchemaMigrator mysqlMigrator = new CompatibilitySchemaMigrator(dataSource, jdbcTemplate);
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq("service_instance")))
+                .thenReturn(1);
+        when(jdbcTemplate.queryForList(anyString(), eq(String.class), eq("service_instance")))
+                .thenReturn(List.of("id"));
+
+        mysqlMigrator.run(args);
+
+        verify(jdbcTemplate).execute("ALTER TABLE service_instance ADD COLUMN tags LONGTEXT");
+    }
 }
