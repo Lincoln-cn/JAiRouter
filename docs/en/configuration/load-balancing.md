@@ -30,6 +30,8 @@ You can find all load balancing related configurations in the `config/base/model
 | **IP Hash** | Client IP hash | Session persistence | Client stickiness required |
 | **Latency** (v2.9.3+) | EWMA latency-aware | Weights instances by historical latency; lower latency = higher probability | Cross-region / mixed hardware, significant latency variance |
 
+> Candidate instances can first be narrowed by **instance tags** (tag routing, v2.9.7+); the load balancing strategy then picks from the narrowed set. See [Routing Rules Configuration](routing-rules.md).
+
 ### Configuration Hierarchy
 
 ```mermaid

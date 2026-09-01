@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.6
-> **Last Updated**: 2026-08-30
+> **Document Version**: 2.9.7
+> **Last Updated**: 2026-09-01
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,31 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.7] - 2026-09-01 - Feature Release (Routing Intelligence-3: Tag Routing)
+
+#### Tag routing
+
+- **Instance tags**: `ModelInstance` gains `Map<String,String> tags` (e.g. `gpu_type: a100` / `region: cn-north` / `tier: premium`), supported across the full YAML/API/persistence chain (ConfigConverterHelper / ModelInstanceConfiguration / ServiceInstanceEntity JSON column / ServiceInstanceManager)
+- **TARGET_TAGS rule action**: new "tag routing" action that selects instances by tags (AND semantics — instance tags must contain every required key-value pair); `RuleDefinition.Action` gains a `tags` field
+- **Request-level header selection**: `X-JAiRouter-Tags: key=value,key2=value2` (comma-separated, tolerant of whitespace/empty items) filters candidate instances by tags; rule TARGET_TAGS takes precedence over the header
+- **Priority**: TARGET_INSTANCE lock > TARGET_TAGS > resource pool; empty candidates after tag filtering → 404; pools and auto-model are naturally unaffected by tags (pool members are explicitly listed)
+- **Frontend**: instance management page gains a "tag configuration" key-value editor (mirrors the headers UI); rule form gains the TARGET_TAGS action with a tag editor; rule list shows action summaries
+
+#### Fixes
+
+- **Legacy DB upgrade compatibility**: `CompatibilitySchemaMigrator` registers the `service_instance.tags` column (CLOB, dialect-adapted) — fixes instance query 500 on legacy H2 DBs missing the column
+- **Instance limiter identifier**: `RateLimitManager.generateInstanceKey` falls back `instanceId → name → baseUrl`, fixing null identifiers for instances without instance-id; metrics parsing splits on the first `:` to tolerate colons in names
+- **Rate limiter monitor metrics**: `RateLimiterTracingWrapper` now forwards `getRemainingCapacity()`/`getUsageRatio()` — fixes usage ratio stuck at -100% (the tracing wrapper previously fell back to the interface default -1)
+- **Base config**: added `instance-id` to all 9 instances in `model-services-base.yml` (removes the null-identifier root cause)
+- **LB strategy dropdown**: fixed select width and option layout in StrategyConfig.vue (latency strategy label no longer touches its description); fallback list now includes latency
+- **Rule template copy**: `RuleTemplateService.copyAction` handles TARGET_TAGS (prevents silent tag loss when copying future templates)
+
+#### Tests
+
+- Added: SelectInstanceOptimizerTest (9), ModelServiceRegistryTagRoutingIntegrationTest (10), ModelInstanceConfigurationTest (6), CompatibilitySchemaMigrator migration assertions (3), RateLimitManagerInstanceKeyTest (3), RateLimiterTracingWrapperTest (2); **3069 tests all green**
+
+---
 
 ### [2.9.6] - 2026-08-30 - Feature Release (Routing Intelligence-2: Request-Level Failover)
 

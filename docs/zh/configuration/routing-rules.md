@@ -74,8 +74,11 @@ JAiRouter 提供**规则引擎**（v2.8.5），允许通过 Web 页面或 YAML �
 | `TARGET_ADAPTER` | 切换适配器（按名取用，未注册时回退实例级适配器） | `adapterName` |
 | `LB_STRATEGY` | 覆盖负载均衡策略 | `lbStrategy` |
 | `RATE_LIMIT` | 规则级限流（按规则 ID 独立限流，超限返回 429） | `capacity` / `rate` / `algorithm` / `scope` |
+| `TARGET_TAGS` | 标签路由（v2.9.7+）：按标签圈选实例（AND 语义） | `tags` |
 
 > **LB_STRATEGY 支持的值**：`random` / `round-robin` / `least-connections` / `ip-hash` / `consistent-hash`，未知策略自动回退原配置。
+>
+> **TARGET_TAGS 动作（v2.9.7）**：按标签圈选实例（AND 语义），标签经动作的 `tags` 指定；详见文末「标签路由（v2.9.7+）」。
 >
 > **RATE_LIMIT 动作（v2.8.8）**：命中该规则后，按**规则 ID** 对请求进行限流（独立于服务级/实例级限流），`capacity`（令牌桶容量）与 `rate`（每秒补充速率）必填且需 > 0；`algorithm` 默认 `token-bucket`，`scope` 默认 `rule`。超限请求返回 `429 Too Many Requests`。删除规则或变更动作类型时自动清理对应限流器。`GET /api/services/{serviceType}/ratelimit` 可查看各限流器状态（含 `rule` 级）。
 
@@ -291,3 +294,85 @@ model:
 - **规则联动**:规则 TARGET_MODEL 目标可直接填池名,命中后走池路由
 - **响应回显**:池路由后响应与下游请求的 model 字段为实际实例模型名(非流式;流式出站请求同步改写)
 - **服务级/实例级限流、熔断**:池选出的实例继续走既有限流与熔断链路
+
+---
+
+## 标签路由（v2.9.7+）
+
+标签路由允许按**实例标签**圈选候选实例：命中 `TARGET_TAGS` 规则或请求携带标签 header 时，仅保留 tags 包含**全部**指定键值对（**AND 语义**）的实例参与后续选择。
+
+### 实例标签配置
+
+实例（ModelInstance）新增 `tags` 字段（`Map<String, String>`），在 YAML 中与 `instance-id` 同级配置：
+
+```yaml
+model:
+  services:
+    chat:
+      instances:
+        - name: "qwen2.5-72b"
+          instance-id: "inst-gpu-a100-1"
+          base-url: "http://10.0.0.1:8000"
+          tags:
+            gpu_type: a100
+            region: cn-north
+            tier: premium
+```
+
+> 标签为任意键值对，常用如 `gpu_type`（GPU 型号）、`region`（地域）、`tier`（服务分级）。未配置 tags 的实例在标签圈选时会被排除。
+
+### 规则 TARGET_TAGS
+
+动作类型选择 `TARGET_TAGS`，动作的 `tags` 指定圈选标签：
+
+```yaml
+model:
+  rules:
+    - id: route-premium-a100
+      name: 圈选A100
+      enabled: true
+      priority: 100
+      conditions:
+        - type: HEADER
+          field: X-User-Tier
+          operator: EQUALS
+          value: premium
+      action:
+        type: TARGET_TAGS
+        tags:
+          gpu_type: a100
+```
+
+命中规则后按 `tags` 圈选实例（实例必须包含全部键值对才入选）。
+
+> Web 页面同样支持：动作类型选择「标签路由」，在「目标标签」中按「标签名 / 值」逐行添加。
+
+### 请求级 header 圈选
+
+不带规则时，可直接通过请求 header 圈选实例：
+
+```
+X-JAiRouter-Tags: gpu_type=a100,region=cn-north
+```
+
+```bash
+curl http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "X-JAiRouter-Tags: gpu_type=a100,region=cn-north" \
+  -d '{"model": "gpt-4", "messages": [{"role": "user", "content": "hi"}]}'
+```
+
+- 逗号分隔多个键值对，多键为 **AND 语义**
+- 容忍空格与空项（如 `gpu_type=a100, region=cn-north ,,`）
+- header 缺失、空白或解析后为空时不圈选，走原路由逻辑
+
+### 优先级与空候选语义
+
+- **TARGET_TAGS 优先于请求 header**：命中 `TARGET_TAGS` 规则时以规则 tags 为准，忽略请求 header；无规则提供标签时才解析 `X-JAiRouter-Tags`
+- **TARGET_INSTANCE 锁定 > 标签过滤**：实例锁定先按 instanceId/name 圈定，标签过滤在其基础上进一步收窄（锁定动作本身不产生标签要求）
+- **空候选 404**：标签过滤后无匹配实例返回 `404 Not Found`（与 TARGET_INSTANCE 无目标实例时一致）
+- 未配置任何标签圈选时，行为与未启用该功能完全一致
+
+### 与资源池的关系
+
+资源池路由（请求 model 为池名）**不受标签圈选影响**：池内实例按池配置解析，不经过标签过滤。

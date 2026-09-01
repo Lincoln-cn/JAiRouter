@@ -74,8 +74,11 @@ The rule engine evaluates on **every request**: rules are matched by priority (h
 | `TARGET_ADAPTER` | Switch adapter by name (falls back to instance adapter if unregistered) | `adapterName` |
 | `LB_STRATEGY` | Override load balancing strategy | `lbStrategy` |
 | `RATE_LIMIT` | Rule-level rate limiting (per rule ID, 429 when exceeded) | `capacity` / `rate` / `algorithm` / `scope` |
+| `TARGET_TAGS` | Tag routing (v2.9.7+): select instances by tags (AND semantics) | `tags` |
 
 > **LB_STRATEGY values**: `random` / `round-robin` / `least-connections` / `ip-hash` / `consistent-hash`. Unknown strategies fall back to the configured one.
+>
+> **TARGET_TAGS action (v2.9.7)**: selects instances by tags (AND semantics); tags are set via the action's `tags` map. See "Tag Routing (v2.9.7+)" at the end of this page.
 >
 > **RATE_LIMIT action (v2.8.8)**: Once a rule with this action matches, requests are rate-limited per **rule ID** (independent of service/instance-level limits). `capacity` (token bucket capacity) and `rate` (refill per second) are required and must be > 0; `algorithm` defaults to `token-bucket`, `scope` defaults to `rule`. Requests over the limit get `429 Too Many Requests`. Deleting a rule or changing its action type automatically cleans up the corresponding limiter. `GET /api/services/{serviceType}/ratelimit` exposes limiter status including the `rule` level.
 
@@ -291,3 +294,85 @@ model:
 - **Rule synergy**: a rule's TARGET_MODEL target can be a pool name — the matched request then routes through the pool
 - **Response echo**: after pool routing, the response and downstream request model field reflect the actual serving instance model (non-streaming; streaming outbound requests are rewritten too)
 - **Rate limiting & circuit breaker**: the pool-selected instance continues through the existing service/instance rate-limit and circuit-breaker chain
+
+---
+
+## Tag Routing (v2.9.7+)
+
+Tag routing narrows the candidate instances by **instance tags**: when a `TARGET_TAGS` rule matches or the request carries a tag header, only instances whose tags contain **all** the specified key-value pairs (**AND semantics**) remain eligible.
+
+### Instance Tags Configuration
+
+Instances (`ModelInstance`) gain a `tags` field (`Map<String, String>`), configured in YAML at the same level as `instance-id`:
+
+```yaml
+model:
+  services:
+    chat:
+      instances:
+        - name: "qwen2.5-72b"
+          instance-id: "inst-gpu-a100-1"
+          base-url: "http://10.0.0.1:8000"
+          tags:
+            gpu_type: a100
+            region: cn-north
+            tier: premium
+```
+
+> Tags are arbitrary key-value pairs, commonly `gpu_type` (GPU model), `region` (region), `tier` (service tier). Instances without tags are excluded when tag selection is active.
+
+### TARGET_TAGS Action
+
+Set the action type to `TARGET_TAGS` and list the selection tags in the action's `tags` map:
+
+```yaml
+model:
+  rules:
+    - id: route-premium-a100
+      name: Pin premium traffic to A100
+      enabled: true
+      priority: 100
+      conditions:
+        - type: HEADER
+          field: X-User-Tier
+          operator: EQUALS
+          value: premium
+      action:
+        type: TARGET_TAGS
+        tags:
+          gpu_type: a100
+```
+
+On match, instances are selected by `tags` (an instance must contain every key-value pair to qualify).
+
+> The Web console supports this too: pick the 「Tag routing」 action type and add 「tag name / value」 rows under Target Tags.
+
+### Request-Level Header Selection
+
+Without a rule, select instances directly via the request header:
+
+```
+X-JAiRouter-Tags: gpu_type=a100,region=cn-north
+```
+
+```bash
+curl http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "X-JAiRouter-Tags: gpu_type=a100,region=cn-north" \
+  -d '{"model": "gpt-4", "messages": [{"role": "user", "content": "hi"}]}'
+```
+
+- Comma-separated key-value pairs; multiple keys are **AND semantics**
+- Spaces and empty items are tolerated (e.g. `gpu_type=a100, region=cn-north ,,`)
+- A missing, blank, or empty-after-parse header skips selection and keeps the original routing logic
+
+### Priority and Empty-Candidate Semantics
+
+- **TARGET_TAGS takes priority over the request header**: when a `TARGET_TAGS` rule matches, its tags win and the header is ignored; `X-JAiRouter-Tags` is only parsed when no rule provides tags
+- **TARGET_INSTANCE lock > tag filter**: instance locking narrows candidates by instanceId/name first; the tag filter narrows further on top (the lock action itself imposes no tag requirement)
+- **Empty candidates → 404**: `404 Not Found` when no instance matches the tags after filtering (same as TARGET_INSTANCE with no target instance)
+- With no tag selection configured, behavior is identical to not enabling the feature
+
+### Relationship with Resource Pools
+
+Pool routing (request model = pool name) is **not affected by tag selection**: pool members are resolved from the pool configuration, not through the tag filter.
