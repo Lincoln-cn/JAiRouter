@@ -173,25 +173,25 @@ const router = createRouter({
           path: 'api-keys',
           name: 'api-key-management',
           component: () => import('../views/security/ApiKeyManagement.vue'),
-          meta: { title: 'API密钥管理', icon: 'key' }
+          meta: { title: 'API密钥管理', icon: 'key', permissions: ['security:apikeys:manage'] }
         },
         {
           path: 'jwt-tokens',
           name: 'jwt-token-management',
           component: () => import('../views/security/JwtTokenManagement.vue'),
-          meta: { title: 'JWT令牌管理', icon: 'lock' }
+          meta: { title: 'JWT令牌管理', icon: 'lock', permissions: ['security:jwttokens:manage'] }
         },
         {
           path: 'blacklist',
           name: 'blacklist-management',
           component: () => import('../views/security/BlacklistManagement.vue'),
-          meta: { title: '安全黑名单', icon: 'warning' }
+          meta: { title: '安全黑名单', icon: 'warning', permissions: ['security:blacklist:manage'] }
         },
         {
           path: 'audit-logs',
           name: 'audit-log-management',
           component: () => import('../views/security/AuditLogManagement.vue'),
-          meta: { title: '审计日志', icon: 'document-checked' }
+          meta: { title: '审计日志', icon: 'document-checked', permissions: ['security:audit:read'] }
         }
       ]
     },
@@ -206,7 +206,13 @@ const router = createRouter({
           path: 'accounts',
           name: 'account-management',
           component: () => import('../views/security/JwtAccountManagement.vue'),
-          meta: { title: '账户管理', icon: 'user' }
+          meta: { title: '账户管理', icon: 'user', permissions: ['system:accounts:manage'] }
+        },
+        {
+          path: 'permissions',
+          name: 'permission-management',
+          component: () => import('../views/system/PermissionManagement.vue'),
+          meta: { title: '权限管理', icon: 'key', permissions: ['system:permissions:manage'] }
         }
       ]
     },
@@ -420,6 +426,17 @@ router.beforeEach((to, from, next) => {
       const userRoles = userStore.userInfo?.roles || []
       const hasRole = requiredRoles.some(role => userRoles.includes(role))
       if (!hasRole) {
+        // 无权限，跳转到仪表板
+        next({ name: 'dashboard-main' })
+        return
+      }
+    }
+
+    // v2.9.8 RBAC: 检查权限码（meta.permissions，需全部拥有；ADMIN 恒通过）
+    const requiredPermissions = (to.meta as any).permissions as string[] | undefined
+    if (requiredPermissions && requiredPermissions.length > 0) {
+      const hasAllPermissions = requiredPermissions.every(code => userStore.hasPermission(code))
+      if (!hasAllPermissions) {
         // 无权限，跳转到仪表板
         next({ name: 'dashboard-main' })
         return
