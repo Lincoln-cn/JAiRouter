@@ -88,6 +88,7 @@ curl -H "X-API-Key: your-api-key" \
 
 - [API Key 管理](api-key-management.md) - API Key 的配置和管理
 - [JWT 认证](jwt-authentication.md) - JWT 认证的配置和使用
+- [RBAC 权限管理](rbac-permissions.md) - 基于权限码的数据驱动权限体系（v2.9.8）
 - [数据脱敏](data-sanitization.md) - 数据脱敏功能的配置
 - [故障排除](troubleshooting.md) - 常见问题的解决方案
 

@@ -285,7 +285,21 @@
     "Dedup",
     "failover",
     "governance",
-    "Failover"
+    "Failover",
+    "callhistory",
+    "callhistory:view",
+    "tokenusage",
+    "slowquery",
+    "modelstats",
+    "overview",
+    "apikeys",
+    "jwttokens",
+    "rbac",
+    "permission",
+    "permissions",
+    "authorize",
+    "authorization",
+    "authorizeExchange"
   ],
   "ignoreWords": [
     "CNAME",

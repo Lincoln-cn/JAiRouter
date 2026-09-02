@@ -274,8 +274,9 @@ Performance overhead compared to direct backend access:
 - [x] Rule engine with visual conditional routing
 - [x] Service-level dynamic rate limiting + rule-based RATE_LIMIT action
 - [x] Tag routing (instance tags + TARGET_TAGS rule action + request-level header selection)
+- [x] RBAC permission management (43 permission codes + 4 role templates + data-driven menu & URL authorization)
 
-> **Current Release**: v2.9.7 | **LTS Release**: v2.6.11 (maintained until 2028-05)
+> **Current Release**: v2.9.8 | **LTS Release**: v2.6.11 (maintained until 2028-05)
 
 ---
 
