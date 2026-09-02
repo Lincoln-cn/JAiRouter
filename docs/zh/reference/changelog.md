@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.7
-> **最后更新**: 2026-09-01
+> **文档版本**: 2.9.8
+> **最后更新**: 2026-09-02
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,44 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.8] - 2026-09-02 - 功能发布（Web 菜单 RBAC 管理 + 用户/权限扩展）
+
+#### 数据驱动权限体系
+
+- **43 权限码**：`module:resource:action` 体系（overview/config×10/lb/cb/rl/callhistory/monitoring×5/tracing×3/security×4/system×2/ai/actuator）；`PermissionCodes` 常量 + 全量清单
+- **4 角色模板**：ADMIN（43 全量）/ OPERATOR（34：read+write 排除 system/security:manage/actuator）/ USER（24：dashboard+config:read+lb/cb/rl+monitoring:read+tracing dashboard/search+playground）/ VIEWER（23：仅 :read）；`RolePermissionSeeder` 启动播种（表空幂等），role_permissions 表存储
+- **JWT permissions claim**：登录 JWT 内嵌权限码（无 ROLE_ 前缀）；角色仍为 roles claim；refresh 自动保留
+
+#### 数据驱动授权
+
+- **PermissionRuleRegistry**（36 条 URL→权限码规则）+ **PermissionAuthorizationManager**（ReactiveAuthorizationManager：命中→查码；ADMIN 直通；无规则回退 authenticated）；SecurityConfiguration `/api/**` 接入
+- 同步返回 controller 权限全走 URL 规则（遵守 RBAC 500 铁律：禁方法级 @PreAuthorize）；ModelCallStats `hasAdminPermission` stub 补 URL 规则
+- **契约修复**：`/api/security/jwt/accounts/**` 映射统一为 `system:accounts:manage`
+
+#### 管理 API 与 UI
+
+- `GET /api/security/permissions`（全量码）/ `GET /api/security/permissions/roles`（角色→码）/ `PUT /api/security/permissions/roles/{roleName}`（改角色权限，invalidateCache）/ `GET /api/auth/permissions`（当前用户码）
+- **权限管理 UI**：系统管理→权限管理（角色下拉 + 43 码权限树 + 保存；提示变更需重新登录）
+- **菜单重分类**：11 组 → 8 组 34 项（概览/模型服务/流量治理/数据记录/链路追踪/安全管理/系统管理/AI 试验场）；menu.ts 数据驱动 + usePermission 过滤 + 路由守卫 meta.permissions
+
+#### 登录链路修复
+
+- **DB 账户 fallback**：`AccountManager` 登录认证支持 Web 账户管理创建的 DB 账户（YAML 静态账户优先，jwt_accounts 表兜底；enabled=null 按启用，与 JwtAccountService 约定一致）
+
+#### 前端修复
+
+- 侧边菜单滚动阶梯感修复（菜单区独立滚动容器 + 固定全高渐变列，滚动背景连续）
+
+#### 测试
+
+- 新增 50+：RolePermissionService/Seeder/PermissionAuthorizationManager（含 URL 规则矩阵）/PermissionManagementController/JWT permissions claim/AccountManager（DB fallback 13 例）等；**全量 3131 用例全绿**；权限冒烟（ADMIN 200 / 无 token 401 / USER/VIEWER 403 矩阵）通过
+
+#### 文档
+
+- 新增 `security/rbac-permissions.md`（zh/en）：权限码/角色模板/工作流/管理 API/权限 UI/菜单路由/升级注意
+
+---
 
 ### [2.9.7] - 2026-09-01 - 功能发布（路由智能深化-3：标签路由）
 

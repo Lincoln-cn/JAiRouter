@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.7
-> **Last Updated**: 2026-09-01
+> **Document Version**: 2.9.8
+> **Last Updated**: 2026-09-02
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,44 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.8] - 2026-09-02 - Feature Release (Web Menu RBAC Management + User/Permission Extension)
+
+#### Data-driven permission system
+
+- **43 permission codes**: `module:resource:action` scheme (overview/config×10/lb/cb/rl/callhistory/monitoring×5/tracing×3/security×4/system×2/ai/actuator); `PermissionCodes` constants + full list
+- **4 role templates**: ADMIN (all 43) / OPERATOR (34: read+write minus system/security:manage/actuator) / USER (24: dashboard+config:read+lb/cb/rl+monitoring:read+tracing dashboard/search+playground) / VIEWER (23: read-only); `RolePermissionSeeder` seeds on startup (idempotent when table empty), stored in role_permissions
+- **JWT permissions claim**: permission codes embedded in login JWT (no ROLE_ prefix); roles stay in the roles claim; preserved on refresh
+
+#### Data-driven authorization
+
+- **PermissionRuleRegistry** (36 URL→code rules) + **PermissionAuthorizationManager** (ReactiveAuthorizationManager: hit→check code; ADMIN bypass; no rule→fallback authenticated); wired into SecurityConfiguration `/api/**`
+- Sync-returning controller authorization handled purely via URL rules (RBAC 500 rule: no method-level @PreAuthorize); ModelCallStats `hasAdminPermission` stub covered by URL rule
+- **Contract fix**: `/api/security/jwt/accounts/**` now maps to `system:accounts:manage`
+
+#### Management API & UI
+
+- `GET /api/security/permissions` / `GET /api/security/permissions/roles` / `PUT /api/security/permissions/roles/{roleName}` (invalidateCache) / `GET /api/auth/permissions`
+- **Permission management UI**: System → Permission Management (role dropdown + 43-code tree + save; prompts re-login for changes)
+- **Menu re-grouping**: 11 groups → 8 groups / 34 items; data-driven menu.ts + usePermission filtering + route guard meta.permissions
+
+#### Login chain fix
+
+- **DB account fallback**: `AccountManager` authentication now supports Web-created DB accounts (YAML static accounts first, jwt_accounts table fallback; enabled=null treated as enabled, consistent with JwtAccountService)
+
+#### Frontend fix
+
+- Sidebar menu "stepped" background after scroll fixed (independent scroll region over fixed full-height gradient column)
+
+#### Tests
+
+- Added 50+: RolePermissionService/Seeder/PermissionAuthorizationManager (incl. URL matrix)/PermissionManagementController/JWT permissions claim/AccountManager (DB fallback, 13) etc.; **3131 tests all green**; permission smoke passed (ADMIN 200 / no-token 401 / USER·VIEWER 403 matrix)
+
+#### Docs
+
+- New `security/rbac-permissions.md` (zh/en): permission codes/role templates/workflow/management API/permission UI/menu & routes/upgrade notes
+
+---
 
 ### [2.9.7] - 2026-09-01 - Feature Release (Routing Intelligence-3: Tag Routing)
 

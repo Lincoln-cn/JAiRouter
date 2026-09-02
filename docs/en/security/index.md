@@ -88,6 +88,7 @@ curl -H "X-API-Key: your-api-key" \
 
 - [API Key Management](api-key-management.md) - Configuration and management of API Keys
 - [JWT Authentication](jwt-authentication.md) - Configuration and usage of JWT authentication
+- [RBAC Permission Management](rbac-permissions.md) - Data-driven permission system based on permission codes (v2.9.8)
 - [Data Sanitization](data-sanitization.md) - Configuration of data sanitization features
 - [Troubleshooting](troubleshooting.md) - Solutions to common issues
 

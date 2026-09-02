@@ -90,6 +90,7 @@ plugins:
             JWT认证: JWT Authentication
             安全黑名单: Security Blacklist
             审计日志管理: Audit Log Management
+            权限管理: RBAC Permission Management
             数据脱敏: Data Sanitization
             故障排除: Troubleshooting
             API参考: API Reference
@@ -201,6 +202,7 @@ nav:
     - JWT认证: zh/security/jwt-authentication.md
     - 安全黑名单: zh/security/blacklist-management.md
     - 审计日志管理: zh/security/audit-log-management.md
+    - 权限管理: zh/security/rbac-permissions.md
     - 数据脱敏: zh/security/data-sanitization.md
     - 故障排除: zh/security/troubleshooting.md
   - API参考:
