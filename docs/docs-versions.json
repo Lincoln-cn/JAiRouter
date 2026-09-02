@@ -2,10 +2,10 @@
   "versions": {
     "README.md": {
       "FilePath": "README.md",
-      "Version": "1.0.28",
-      "LastModified": "2026-08-30T13:18:53.456246",
-      "ContentHash": "5421eecc33922945",
-      "GitCommit": "0aaa6f38",
+      "Version": "1.0.29",
+      "LastModified": "2026-09-02T06:48:41.249723",
+      "ContentHash": "a7cefd7ca7658631",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -117,15 +117,16 @@
     },
     "docs/en/configuration/load-balancing.md": {
       "FilePath": "docs/en/configuration/load-balancing.md",
-      "Version": "1.0.5",
-      "LastModified": "2026-08-30T13:18:53.489265",
-      "ContentHash": "10b1d748b86563e4",
-      "GitCommit": "0aaa6f38",
+      "Version": "1.0.6",
+      "LastModified": "2026-09-02T06:48:41.289515",
+      "ContentHash": "c3f517d6ae7577b7",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/en/configuration/circuit-breaker.md",
         "docs/en/configuration/rate-limiting.md",
+        "docs/en/configuration/routing-rules.md",
         "docs/en/monitoring/index.md",
         "docs/en/troubleshooting/index.md"
       ]
@@ -354,10 +355,10 @@
     },
     "docs/en/index.md": {
       "FilePath": "docs/en/index.md",
-      "Version": "1.0.12",
-      "LastModified": "2026-08-30T13:18:53.549831",
-      "ContentHash": "8e8c2111cf94d902",
-      "GitCommit": "0aaa6f38",
+      "Version": "1.0.13",
+      "LastModified": "2026-09-02T06:48:41.362338",
+      "ContentHash": "95f1f9ce999e9418",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -508,10 +509,10 @@
     },
     "docs/en/reference/changelog.md": {
       "FilePath": "docs/en/reference/changelog.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-08-30T13:18:53.586451",
-      "ContentHash": "fab648060d2c6e4d",
-      "GitCommit": "0aaa6f38",
+      "Version": "1.0.14",
+      "LastModified": "2026-09-02T06:48:41.404928",
+      "ContentHash": "78ad4042c5ed4a82",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -723,15 +724,16 @@
     },
     "docs/zh/configuration/load-balancing.md": {
       "FilePath": "docs/zh/configuration/load-balancing.md",
-      "Version": "1.0.4",
-      "LastModified": "2026-08-30T13:18:53.689584",
-      "ContentHash": "9e8eaf1a2ca41963",
-      "GitCommit": "0aaa6f38",
+      "Version": "1.0.5",
+      "LastModified": "2026-09-02T06:48:41.533856",
+      "ContentHash": "90b151d330e70ecd",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
         "docs/zh/configuration/circuit-breaker.md",
         "docs/zh/configuration/rate-limiting.md",
+        "docs/zh/configuration/routing-rules.md",
         "docs/zh/monitoring/index.md",
         "docs/zh/troubleshooting/index.md"
       ]
@@ -960,10 +962,10 @@
     },
     "docs/zh/index.md": {
       "FilePath": "docs/zh/index.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-08-30T13:18:53.777481",
-      "ContentHash": "22a11e8d36a2f46e",
-      "GitCommit": "0aaa6f38",
+      "Version": "1.0.14",
+      "LastModified": "2026-09-02T06:48:41.637664",
+      "ContentHash": "c702cbbce4ad6973",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": [
@@ -1128,10 +1130,10 @@
     },
     "docs/zh/reference/changelog.md": {
       "FilePath": "docs/zh/reference/changelog.md",
-      "Version": "1.0.13",
-      "LastModified": "2026-08-30T13:18:53.826770",
-      "ContentHash": "840b535e9b267c93",
-      "GitCommit": "0aaa6f38",
+      "Version": "1.0.14",
+      "LastModified": "2026-09-02T06:48:41.698255",
+      "ContentHash": "e72be9e11fd230bd",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -1725,10 +1727,10 @@
     },
     "README-ZH.md": {
       "FilePath": "README-ZH.md",
-      "Version": "1.0.20",
-      "LastModified": "2026-08-30T13:18:53.454580",
-      "ContentHash": "284cb029f623fed3",
-      "GitCommit": "0aaa6f38",
+      "Version": "1.0.21",
+      "LastModified": "2026-09-02T06:48:41.247876",
+      "ContentHash": "9f14059b3ca012d0",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2020,10 +2022,10 @@
     },
     "docs/en/configuration/routing-rules.md": {
       "FilePath": "docs/en/configuration/routing-rules.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-30T13:18:53.495309",
-      "ContentHash": "6edc58e3a600e115",
-      "GitCommit": "a461b174",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-02T06:48:41.296872",
+      "ContentHash": "d176b3c84609359d",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -2071,10 +2073,10 @@
     },
     "docs/zh/configuration/routing-rules.md": {
       "FilePath": "docs/zh/configuration/routing-rules.md",
-      "Version": "1.0.3",
-      "LastModified": "2026-08-30T13:18:53.697965",
-      "ContentHash": "d4e1bffbec595a0b",
-      "GitCommit": "a461b174",
+      "Version": "1.0.4",
+      "LastModified": "2026-09-02T06:48:41.543244",
+      "ContentHash": "8c215761c0ca0508",
+      "GitCommit": "5f29294f",
       "Author": "Lincoln",
       "ChangeSummary": "",
       "Dependencies": []
@@ -4500,7 +4502,87 @@
       "ChangeType": "MODIFIED",
       "Timestamp": "2026-08-30T13:18:53.873724",
       "Description": "文档modified"
+    },
+    {
+      "FilePath": "README-ZH.md",
+      "OldVersion": "1.0.20",
+      "NewVersion": "1.0.21",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.247884",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "README.md",
+      "OldVersion": "1.0.28",
+      "NewVersion": "1.0.29",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.249728",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/load-balancing.md",
+      "OldVersion": "1.0.5",
+      "NewVersion": "1.0.6",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.289522",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/configuration/routing-rules.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.296877",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/index.md",
+      "OldVersion": "1.0.12",
+      "NewVersion": "1.0.13",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.362344",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/en/reference/changelog.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.404935",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/load-balancing.md",
+      "OldVersion": "1.0.4",
+      "NewVersion": "1.0.5",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.533865",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/configuration/routing-rules.md",
+      "OldVersion": "1.0.3",
+      "NewVersion": "1.0.4",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.543249",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/index.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.637669",
+      "Description": "文档modified"
+    },
+    {
+      "FilePath": "docs/zh/reference/changelog.md",
+      "OldVersion": "1.0.13",
+      "NewVersion": "1.0.14",
+      "ChangeType": "MODIFIED",
+      "Timestamp": "2026-09-02T06:48:41.698261",
+      "Description": "文档modified"
     }
   ],
-  "last_updated": "2026-09-01T07:15:49.469227"
+  "last_updated": "2026-09-02T06:48:42.005709"
 }

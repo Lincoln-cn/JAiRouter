@@ -5,20 +5,20 @@
 - 总文档数: 163
 - 近7天变更: 62
 - 版本文件: /home/runner/work/JAiRouter/JAiRouter/docs/docs-versions.json
-- 最后扫描: 2026-09-01 07:15:49
+- 最后扫描: 2026-09-02 06:48:42
 
 ## 最近变更
 
-- **MODIFIED**: docs/zh/tracing/index.md (1.0.4 → 1.0.5) - 2026-08-30
-- **MODIFIED**: docs/zh/reference/roadmap.md (1.0.8 → 1.0.9) - 2026-08-30
-- **MODIFIED**: docs/zh/reference/changelog.md (1.0.12 → 1.0.13) - 2026-08-30
-- **MODIFIED**: docs/zh/index.md (1.0.12 → 1.0.13) - 2026-08-30
-- **CREATED**: docs/zh/development/knowledge-base-governance.md ( → 1.0.0) - 2026-08-30
-- **MODIFIED**: docs/zh/configuration/version-management.md (1.0.3 → 1.0.4) - 2026-08-30
-- **MODIFIED**: docs/zh/configuration/store-config.md (1.0.4 → 1.0.5) - 2026-08-30
-- **MODIFIED**: docs/zh/configuration/state-persistence.md (1.0.2 → 1.0.3) - 2026-08-30
-- **MODIFIED**: docs/zh/configuration/routing-rules.md (1.0.2 → 1.0.3) - 2026-08-30
-- **MODIFIED**: docs/zh/configuration/load-balancing.md (1.0.3 → 1.0.4) - 2026-08-30
+- **MODIFIED**: docs/zh/reference/changelog.md (1.0.13 → 1.0.14) - 2026-09-02
+- **MODIFIED**: docs/zh/index.md (1.0.13 → 1.0.14) - 2026-09-02
+- **MODIFIED**: docs/zh/configuration/routing-rules.md (1.0.3 → 1.0.4) - 2026-09-02
+- **MODIFIED**: docs/zh/configuration/load-balancing.md (1.0.4 → 1.0.5) - 2026-09-02
+- **MODIFIED**: docs/en/reference/changelog.md (1.0.13 → 1.0.14) - 2026-09-02
+- **MODIFIED**: docs/en/index.md (1.0.12 → 1.0.13) - 2026-09-02
+- **MODIFIED**: docs/en/configuration/routing-rules.md (1.0.3 → 1.0.4) - 2026-09-02
+- **MODIFIED**: docs/en/configuration/load-balancing.md (1.0.5 → 1.0.6) - 2026-09-02
+- **MODIFIED**: README.md (1.0.28 → 1.0.29) - 2026-09-02
+- **MODIFIED**: README-ZH.md (1.0.20 → 1.0.21) - 2026-09-02
 
 ## 过期文档 (30天未更新)
 
@@ -110,9 +110,10 @@
   - docs/en/configuration/rate-limiting.md
   - docs/en/configuration/store-config.md
   - docs/en/configuration/version-management.md
-- **docs/en/configuration/load-balancing.md**: 依赖 4 个文档
+- **docs/en/configuration/load-balancing.md**: 依赖 5 个文档
   - docs/en/configuration/circuit-breaker.md
   - docs/en/configuration/rate-limiting.md
+  - docs/en/configuration/routing-rules.md
   - docs/en/monitoring/index.md
   - docs/en/troubleshooting/index.md
 - **docs/en/configuration/rate-limiting.md**: 依赖 5 个文档
@@ -276,9 +277,10 @@
   - docs/zh/configuration/rate-limiting.md
   - docs/zh/configuration/store-config.md
   - docs/zh/configuration/version-management.md
-- **docs/zh/configuration/load-balancing.md**: 依赖 4 个文档
+- **docs/zh/configuration/load-balancing.md**: 依赖 5 个文档
   - docs/zh/configuration/circuit-breaker.md
   - docs/zh/configuration/rate-limiting.md
+  - docs/zh/configuration/routing-rules.md
   - docs/zh/monitoring/index.md
   - docs/zh/troubleshooting/index.md
 - **docs/zh/configuration/rate-limiting.md**: 依赖 5 个文档
@@ -605,30 +607,30 @@
 
 ## 所有文档版本
 
+- **docs/zh/reference/changelog.md**: v1.0.14 - 2026-09-02 (5f29294f)
+- **docs/zh/index.md**: v1.0.14 - 2026-09-02 (5f29294f)
+- **docs/zh/configuration/routing-rules.md**: v1.0.4 - 2026-09-02 (5f29294f)
+- **docs/zh/configuration/load-balancing.md**: v1.0.5 - 2026-09-02 (5f29294f)
+- **docs/en/reference/changelog.md**: v1.0.14 - 2026-09-02 (5f29294f)
+- **docs/en/index.md**: v1.0.13 - 2026-09-02 (5f29294f)
+- **docs/en/configuration/routing-rules.md**: v1.0.4 - 2026-09-02 (5f29294f)
+- **docs/en/configuration/load-balancing.md**: v1.0.6 - 2026-09-02 (5f29294f)
+- **README.md**: v1.0.29 - 2026-09-02 (5f29294f)
+- **README-ZH.md**: v1.0.21 - 2026-09-02 (5f29294f)
 - **docs/zh/tracing/index.md**: v1.0.5 - 2026-08-30 (2f3955ee)
 - **docs/zh/reference/roadmap.md**: v1.0.9 - 2026-08-30 (2f3955ee)
-- **docs/zh/reference/changelog.md**: v1.0.13 - 2026-08-30 (0aaa6f38)
-- **docs/zh/index.md**: v1.0.13 - 2026-08-30 (0aaa6f38)
 - **docs/zh/development/knowledge-base-governance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
 - **docs/zh/configuration/version-management.md**: v1.0.4 - 2026-08-30 (2f3955ee)
 - **docs/zh/configuration/store-config.md**: v1.0.5 - 2026-08-30 (2f3955ee)
 - **docs/zh/configuration/state-persistence.md**: v1.0.3 - 2026-08-30 (2f3955ee)
-- **docs/zh/configuration/routing-rules.md**: v1.0.3 - 2026-08-30 (a461b174)
-- **docs/zh/configuration/load-balancing.md**: v1.0.4 - 2026-08-30 (0aaa6f38)
 - **docs/en/tracing/index.md**: v1.0.5 - 2026-08-30 (2f3955ee)
 - **docs/en/reference/roadmap.md**: v1.0.10 - 2026-08-30 (2f3955ee)
-- **docs/en/reference/changelog.md**: v1.0.13 - 2026-08-30 (0aaa6f38)
-- **docs/en/index.md**: v1.0.12 - 2026-08-30 (0aaa6f38)
 - **docs/en/development/knowledge-base-governance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
 - **docs/en/development/doc-maintenance.md**: v1.0.0 - 2026-08-30 (2f3955ee)
 - **docs/en/configuration/version-management.md**: v1.0.4 - 2026-08-30 (2f3955ee)
 - **docs/en/configuration/store-config.md**: v1.0.5 - 2026-08-30 (2f3955ee)
 - **docs/en/configuration/state-persistence.md**: v1.0.3 - 2026-08-30 (2f3955ee)
-- **docs/en/configuration/routing-rules.md**: v1.0.3 - 2026-08-30 (a461b174)
-- **docs/en/configuration/load-balancing.md**: v1.0.5 - 2026-08-30 (0aaa6f38)
 - **docs/en/configuration/jwt-persistence.md**: v1.0.2 - 2026-08-30 (2f3955ee)
-- **README.md**: v1.0.28 - 2026-08-30 (0aaa6f38)
-- **README-ZH.md**: v1.0.20 - 2026-08-30 (0aaa6f38)
 - **docs/zh/configuration/kv-cache.md**: v1.0.0 - 2026-08-28 (ac0f7045)
 - **docs/zh/configuration/index.md**: v1.0.4 - 2026-08-28 (ac0f7045)
 - **docs/en/configuration/kv-cache.md**: v1.0.0 - 2026-08-28 (ac0f7045)
