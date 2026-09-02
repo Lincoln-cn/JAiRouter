@@ -13,6 +13,7 @@ import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.springframework.test.context.TestPropertySource;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.permission.PermissionAuthorizationManager;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,13 +38,16 @@ class SecurityConfigurationTest {
     private JwtTokenValidator jwtTokenValidator;
 
     @Mock
+    private PermissionAuthorizationManager permissionAuthorizationManager;
+
+    @Mock
     private ApplicationContext applicationContext;
 
     @Test
     void testReactiveAuthenticationManagerCreation() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, applicationContext
+                securityProperties, apiKeyService, permissionAuthorizationManager, applicationContext
         );
         securityConfiguration.setJwtTokenValidator(jwtTokenValidator);
 
@@ -59,7 +63,7 @@ class SecurityConfigurationTest {
     void testSecurityWebFilterChainCreation() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, applicationContext
+                securityProperties, apiKeyService, permissionAuthorizationManager, applicationContext
         );
         securityConfiguration.setJwtTokenValidator(jwtTokenValidator);
         
@@ -80,7 +84,7 @@ class SecurityConfigurationTest {
     void testSecurityPropertiesInjection() {
         // Given
         SecurityConfiguration securityConfiguration = new SecurityConfiguration(
-                securityProperties, apiKeyService, applicationContext
+                securityProperties, apiKeyService, permissionAuthorizationManager, applicationContext
         );
         securityConfiguration.setJwtTokenValidator(jwtTokenValidator);
 

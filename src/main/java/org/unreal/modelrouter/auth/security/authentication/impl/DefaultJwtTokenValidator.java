@@ -47,6 +47,7 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
 
     private static final String BLACKLIST_KEY_PREFIX = "jwt:blacklist:";
     private static final String ROLES_CLAIM = "roles";
+    private static final String PERMISSIONS_CLAIM = "permissions";
     private static final String USER_ID_CLAIM = "userId";
 
     private final SecurityProperties securityProperties;
@@ -78,6 +79,8 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                     String subject = claims.getSubject();
                     String issuer = claims.getIssuer();
                     List<String> roles = extractRoles(claims);
+                    // v2.9.8 RBAC: 提取权限码声明（与 roles 声明同模式，可能缺失）
+                    List<String> permissions = extractPermissions(claims);
 
                     LocalDateTime issuedAt = convertToLocalDateTime(claims.getIssuedAt());
                     LocalDateTime expiresAt = convertToLocalDateTime(claims.getExpiration());
@@ -92,12 +95,14 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
                         new HashMap<>(claims)
                     );
 
-                    // 创建认证对象
-                    JwtAuthentication authentication = new JwtAuthentication(subject, token, roles);
+                    // 创建认证对象（角色→ROLE_ 前缀 authority，权限码→无前缀 authority）
+                    JwtAuthentication authentication =
+                            new JwtAuthentication(subject, token, roles, permissions);
                     authentication.setAuthenticated(true);
                     authentication.setDetails(principal);
 
-                    log.debug("JWT令牌验证成功: subject={}, roles={}", subject, roles);
+                    log.debug("JWT令牌验证成功: subject={}, roles={}, permissions={}",
+                            subject, roles, permissions);
                     return Mono.just((Authentication) authentication);
 
                 } catch (JwtException e) {
@@ -346,6 +351,25 @@ public class DefaultJwtTokenValidator implements JwtTokenValidator {
             return (List<String>) rolesObj;
         } else if (rolesObj instanceof String) {
             return Arrays.asList(((String) rolesObj).split(","));
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 从Claims中提取权限码列表（v2.9.8 RBAC）
+     *
+     * <p>与 extractRoles 同模式：兼容 List 与逗号分隔字符串两种形态；
+     * 旧版本签发的令牌无 permissions 声明时返回空列表。
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> extractPermissions(final Claims claims) {
+        Object permissionsObj = claims.get(PERMISSIONS_CLAIM);
+
+        if (permissionsObj instanceof List) {
+            return (List<String>) permissionsObj;
+        } else if (permissionsObj instanceof String) {
+            return Arrays.asList(((String) permissionsObj).split(","));
         } else {
             return new ArrayList<>();
         }

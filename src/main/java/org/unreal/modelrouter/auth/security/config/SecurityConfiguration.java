@@ -23,6 +23,7 @@ import org.unreal.modelrouter.auth.filter.DefaultAuthenticationConverter;
 import org.unreal.modelrouter.auth.filter.SpringSecurityAuthenticationFilter;
 import org.unreal.modelrouter.auth.security.authentication.JwtTokenValidator;
 import org.unreal.modelrouter.auth.security.config.properties.SecurityProperties;
+import org.unreal.modelrouter.auth.security.permission.PermissionAuthorizationManager;
 import org.unreal.modelrouter.auth.security.service.ApiKeyService;
 import org.unreal.modelrouter.monitor.tracing.config.TracingSecurityConfiguration;
 
@@ -41,6 +42,7 @@ public class SecurityConfiguration {
 
     private final SecurityProperties securityProperties;
     private final ApiKeyService apiKeyService;
+    private final PermissionAuthorizationManager permissionAuthorizationManager;
     private JwtTokenValidator jwtTokenValidator;
 
     private final ApplicationContext applicationContext;
@@ -123,17 +125,15 @@ public class SecurityConfiguration {
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/login").permitAll()
                 // JWT验证端点允许匿名访问（用于验证令牌有效性）
                 .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/jwt/validate").permitAll()
-                // JWT账户管理端点需要管理员权限
-                .pathMatchers("/api/security/jwt/accounts/**").hasRole("ADMIN")
-                // v2.9.4-fix: 同步返回类型的控制器无法用 @PreAuthorize（@EnableReactiveMethodSecurity 要求 Publisher），
-                // 改由 URL 规则保护（调用历史 / 调用历史配置 / 追踪安全配置）
-                .pathMatchers("/api/call-history/**").hasRole("ADMIN")
-                .pathMatchers("/api/config/call-history/**").hasRole("ADMIN")
-                .pathMatchers("/api/config/tracing/security/**").hasRole("ADMIN")
+                // v2.9.8-fix: ModelCallStatsController.hasAdminPermission() stub 恒 true，
+                // /api/model-stats/** 全量改为 URL 规则 hasRole('ADMIN')（DELETE /clear 为管理员操作）
+                .pathMatchers("/api/model-stats/**").hasRole("ADMIN")
                 // AI服务端点需要认证（API Key权限由适配器层按服务类型控制）
                 .pathMatchers("/v1/**").authenticated()
-                // 其他API端点需要认证
-                .pathMatchers("/api/**").authenticated()
+                // v2.9.8 RBAC: /api/** 采用数据驱动 URL 权限矩阵（PermissionRuleRegistry +
+                // PermissionAuthorizationManager），同步返回 controller 的权限全靠 URL 规则；
+                // 未登记规则的回退 authenticated
+                .pathMatchers("/api/**").access(permissionAuthorizationManager)
                 // 监控端点需要管理员权限（除了已明确允许的健康检查端点）
                 .pathMatchers("/actuator/**").hasRole("ADMIN")
                 // 其他所有请求需要认证

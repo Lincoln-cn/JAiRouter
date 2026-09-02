@@ -1,172 +1,30 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="200px">
+    <el-aside width="200px" class="layout-aside">
+      <div class="logo">
+        <div class="logo-icon">
+          <el-icon :size="32">
+            <Connection />
+          </el-icon>
+        </div>
+        <h2 class="logo-text">JAiRouter</h2>
+      </div>
+
       <el-menu :default-active="activeMenu" :default-openeds="defaultOpeneds" class="layout-menu"
         background-color="transparent" text-color="var(--ja-sidebar-text)" active-text-color="var(--ja-sidebar-active)" :router="false"
         @select="handleMenuSelect">
-        <div class="logo">
-          <div class="logo-icon">
-            <el-icon :size="32">
-              <Connection />
-            </el-icon>
-          </div>
-          <h2 class="logo-text">JAiRouter</h2>
-        </div>
-
-        <el-sub-menu index="dashboard">
+        <el-sub-menu v-for="group in filteredMenuGroups" :key="group.index" :index="group.index">
           <template #title>
             <el-icon>
-              <House />
+              <component :is="groupIconMap[group.icon]" />
             </el-icon>
-            <span>概览</span>
+            <span>{{ group.title }}</span>
           </template>
-          <el-menu-item index="/dashboard/main">仪表板</el-menu-item>
-        </el-sub-menu>
-
-        <!-- 配置管理 -->
-        <el-sub-menu index="config">
-          <template #title>
-            <el-icon>
-              <Setting />
+          <el-menu-item v-for="item in group.children" :key="item.path" :index="item.path">
+            <el-icon v-if="item.icon">
+              <component :is="itemIconMap[item.icon]" />
             </el-icon>
-            <span>配置管理</span>
-          </template>
-          <el-menu-item index="/config/services">服务管理</el-menu-item>
-          <el-menu-item index="/config/instances">实例管理</el-menu-item>
-          <el-menu-item index="/config/versions">版本管理</el-menu-item>
-          <el-menu-item index="/config/state-persistence">状态持久化</el-menu-item>
-          <el-menu-item index="/config/adapters">Adapter管理</el-menu-item>
-          <el-menu-item index="/config/rules">路由规则</el-menu-item>
-          <el-menu-item index="/config/pools">资源池</el-menu-item>
-        </el-sub-menu>
-
-        <!-- 负载均衡器管理 -->
-        <el-sub-menu index="load-balancers">
-          <template #title>
-            <el-icon>
-              <Connection />
-            </el-icon>
-            <span>负载均衡器</span>
-          </template>
-          <el-menu-item index="/load-balancers/monitoring">实时监控</el-menu-item>
-          <el-menu-item index="/load-balancers/strategy-config">策略配置</el-menu-item>
-        </el-sub-menu>
-
-        <!-- 熔断器管理 -->
-        <el-sub-menu index="circuit-breakers">
-          <template #title>
-            <el-icon>
-              <Promotion />
-            </el-icon>
-            <span>熔断器</span>
-          </template>
-          <el-menu-item index="/circuit-breakers/monitoring">实时监控</el-menu-item>
-          <el-menu-item index="/circuit-breakers/history">历史记录</el-menu-item>
-          <el-menu-item index="/circuit-breakers/global-config">全局配置</el-menu-item>
-        </el-sub-menu>
-
-        <!-- 限流器管理 -->
-        <el-sub-menu index="rate-limiters">
-          <template #title>
-            <el-icon>
-              <Odometer />
-            </el-icon>
-            <span>限流器</span>
-          </template>
-          <el-menu-item index="/rate-limiters/monitoring">实时监控</el-menu-item>
-        </el-sub-menu>
-
-        <!-- 安全管理 - 仅ADMIN可见 -->
-        <el-sub-menu index="security" v-if="userStore.hasRole('ADMIN')">
-          <template #title>
-            <el-icon>
-              <Lock />
-            </el-icon>
-            <span>安全管理</span>
-          </template>
-          <el-menu-item index="/security/api-keys">API密钥管理</el-menu-item>
-          <el-menu-item index="/security/jwt-tokens">JWT令牌管理</el-menu-item>
-          <el-menu-item index="/security/blacklist">黑名单管理</el-menu-item>
-          <el-menu-item index="/security/audit-logs">审计日志</el-menu-item>
-        </el-sub-menu>
-
-        <!-- 系统管理 - 仅ADMIN可见 -->
-        <el-sub-menu index="system" v-if="userStore.hasRole('ADMIN')">
-          <template #title>
-            <el-icon>
-              <User />
-            </el-icon>
-            <span>系统管理</span>
-          </template>
-          <el-menu-item index="/system/accounts">账户管理</el-menu-item>
-        </el-sub-menu>
-
-        <!-- 异常管理 -->
-        <el-sub-menu index="exceptions">
-          <template #title>
-            <el-icon>
-              <Warning />
-            </el-icon>
-            <span>异常管理</span>
-          </template>
-          <el-menu-item index="/exceptions/list">异常事件管理</el-menu-item>
-          <el-menu-item index="/exceptions/statistics">异常统计分析</el-menu-item>
-        </el-sub-menu>
-
-        <!-- API 调用历史 -->
-        <el-sub-menu index="callHistory">
-          <template #title>
-            <el-icon>
-              <Document />
-            </el-icon>
-            <span>调用历史</span>
-          </template>
-          <el-menu-item index="/call-history/dashboard">仪表盘</el-menu-item>
-          <el-menu-item index="/call-history/list">调用列表</el-menu-item>
-          <el-menu-item index="/call-history/token-usage">Token 统计</el-menu-item>
-          <el-menu-item index="/call-history/slow-calls">慢调用</el-menu-item>
-        </el-sub-menu>
-
-        <!-- 追踪管理 -->
-        <el-sub-menu index="tracing">
-          <template #title>
-            <el-icon>
-              <Connection />
-            </el-icon>
-            <span>链路追踪</span>
-          </template>
-          <el-menu-item index="/tracing/dashboard">追踪仪表盘</el-menu-item>
-          <el-menu-item index="/tracing/search">追踪搜索</el-menu-item>
-          <el-menu-item index="/tracing/management">追踪配置</el-menu-item>
-        </el-sub-menu>
-
-        <!-- AI 试验场 -->
-        <el-sub-menu index="playground">
-          <template #title>
-            <el-icon>
-              <Monitor />
-            </el-icon>
-            <span>AI 试验场</span>
-          </template>
-          <el-menu-item index="/playground/chat">
-            <el-icon><ChatDotRound /></el-icon>
-            对话测试
-          </el-menu-item>
-          <el-menu-item index="/playground/embedding">
-            <el-icon><DataLine /></el-icon>
-            向量生成
-          </el-menu-item>
-          <el-menu-item index="/playground/rerank">
-            <el-icon><Sort /></el-icon>
-            重排序
-          </el-menu-item>
-          <el-menu-item index="/playground/audio">
-            <el-icon><Headset /></el-icon>
-            语音服务
-          </el-menu-item>
-          <el-menu-item index="/playground/image">
-            <el-icon><Picture /></el-icon>
-            图像服务
+            {{ item.title }}
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -211,10 +69,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
+import { usePermission } from '@/composables/usePermission'
+import { menuGroups } from '@/config/menu'
 import {
   House,
   Setting,
@@ -227,10 +87,7 @@ import {
   Sort,
   Headset,
   Picture,
-  Warning,
-  Promotion,
-  DataAnalysis,
-  Odometer,
+  Position,
   Document,
   Moon,
   Sunny
@@ -240,6 +97,31 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const { isDark, toggleTheme } = useTheme()
+const { filterMenuByPermission } = usePermission()
+
+// v2.9.8 Phase 4: 菜单数据驱动 + 权限过滤（menu.ts 提供 8 组 34 项结构与权限码）
+const filteredMenuGroups = computed(() => filterMenuByPermission(menuGroups))
+
+// 组图标名 → 图标组件（menu.ts 的 icon 为 kebab-case 名）
+const groupIconMap: Record<string, Component> = {
+  house: House,
+  setting: Setting,
+  connection: Connection,
+  document: Document,
+  position: Position,
+  lock: Lock,
+  user: User,
+  monitor: Monitor
+}
+
+// 子项图标名 → 图标组件（仅 AI 试验场子项使用）
+const itemIconMap: Record<string, Component> = {
+  'chat-dot-round': ChatDotRound,
+  'data-line': DataLine,
+  sort: Sort,
+  headset: Headset,
+  picture: Picture
+}
 
 // 防止快速连续点击导致的导航问题
 const isNavigating = ref(false)
@@ -258,33 +140,38 @@ const activeMenu = computed(() => {
   return path
 })
 
-// 计算默认打开的子菜单
+// 计算默认打开的子菜单（v2.9.8 Phase 4：8 组结构，/config 子路由按组拆分归属）
 const defaultOpeneds = computed(() => {
   const { path } = route
-  const openeds = []
+  const openeds: string[] = []
 
   if (path === '/dashboard/main') {
     openeds.push('dashboard')
+  } else if (path.startsWith('/config/state-persistence')) {
+    // 状态持久化归属「系统管理」
+    openeds.push('system')
+  } else if (path.startsWith('/config/rules') || path.startsWith('/config/pools')) {
+    // 路由规则 / 资源池归属「流量治理」
+    openeds.push('traffic')
   } else if (path.startsWith('/config')) {
-    openeds.push('config')
-  } else if (path.startsWith('/load-balancers')) {
-    openeds.push('load-balancers')
-  } else if (path.startsWith('/circuit-breakers')) {
-    openeds.push('circuit-breakers')
-  } else if (path.startsWith('/rate-limiters')) {
-    openeds.push('rate-limiters')
+    // 服务 / 实例 / 版本 / Adapter 归属「模型服务」
+    openeds.push('model-services')
+  } else if (
+    path.startsWith('/load-balancers') ||
+    path.startsWith('/circuit-breakers') ||
+    path.startsWith('/rate-limiters')
+  ) {
+    openeds.push('traffic')
+  } else if (path.startsWith('/call-history') || path.startsWith('/exceptions')) {
+    openeds.push('records')
+  } else if (path.startsWith('/tracing')) {
+    openeds.push('tracing')
   } else if (path.startsWith('/security')) {
     openeds.push('security')
   } else if (path.startsWith('/system')) {
     openeds.push('system')
-  } else if (path.startsWith('/exceptions')) {
-    openeds.push('exceptions')
-  } else if (path.startsWith('/tracing')) {
-    openeds.push('tracing')
   } else if (path.startsWith('/playground')) {
     openeds.push('playground')
-  } else if (path.startsWith('/call-history')) {
-    openeds.push('callHistory')
   }
 
   return openeds
@@ -385,21 +272,42 @@ const handleUserCommand = async (command: string) => {
   height: 100vh;
   background: var(--ja-sidebar-bg);
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
+/* 侧栏固定列：渐变背景挂在「不滚动」的全高容器上，
+   任何滚动位置背景都铺满可见区域，子菜单/折叠层透明叠放不会断层 */
+.layout-aside {
+  display: flex;
+  flex-direction: column;
+  /* 覆盖 EP 默认 .el-aside { overflow: auto }，避免侧栏整体滚动 */
+  overflow: hidden;
+  background-image: var(--ja-sidebar-bg);
+  background-color: var(--ja-sidebar-solid-bg);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.3),
+    2px 0 10px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.3s ease;
+}
+
+.layout-aside:hover {
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.3),
+    4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 菜单区 = 独立滚动容器（logo 固定不动，仅此项区域滚动）；
+   背景透明，露出 .layout-aside 的固定渐变，滚动时无缝 */
 .layout-menu {
-  height: 100vh;
-  background: var(--ja-sidebar-bg);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  background-color: transparent;
   border-right: none;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-}
-
-.layout-menu:hover {
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .logo {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;

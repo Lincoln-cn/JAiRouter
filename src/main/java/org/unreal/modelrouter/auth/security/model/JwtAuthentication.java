@@ -6,9 +6,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * JWT令牌认证对象
@@ -34,14 +34,49 @@ public final class JwtAuthentication implements Authentication {
     }
     
     /**
-     * 构造函数 - 用于已认证的请求
+     * 构造函数 - 用于已认证的请求（兼容旧调用，无权限码）
      */
     public JwtAuthentication(final String subject, final String token, final List<String> roles) {
+        this(subject, token, roles, List.of());
+    }
+
+    /**
+     * 构造函数 - 用于已认证的请求（v2.9.8 RBAC）
+     *
+     * <p>角色映射为 {@code ROLE_} 前缀的 authority（与 API-Key 的 ROLE_* 语义一致），
+     * 权限码映射为无前缀的 authority（避免与角色 ROLE_* 冲突，供 URL 权限矩阵使用）。
+     *
+     * @param subject     用户名
+     * @param token       原始 JWT
+     * @param roles       角色列表（写入 ROLE_ 前缀 authority）
+     * @param permissions 权限码列表（写入无前缀 authority）
+     */
+    public JwtAuthentication(final String subject, final String token,
+                             final List<String> roles, final List<String> permissions) {
         this.principal = subject;
         this.credentials = token;
-        this.authorities = roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
-                .collect(Collectors.toList());
+        this.authorities = buildAuthorities(roles, permissions);
+    }
+
+    /**
+     * 构建 authority 集合：角色加 ROLE_ 前缀，权限码不加前缀
+     */
+    private static Collection<? extends GrantedAuthority> buildAuthorities(
+            final List<String> roles, final List<String> permissions) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        if (roles != null) {
+            roles.stream()
+                    .filter(role -> role != null && !role.trim().isEmpty())
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role.trim().toUpperCase()))
+                    .forEach(authorities::add);
+        }
+        if (permissions != null) {
+            permissions.stream()
+                    .filter(permission -> permission != null && !permission.trim().isEmpty())
+                    .map(permission -> new SimpleGrantedAuthority(permission.trim()))
+                    .forEach(authorities::add);
+        }
+        return authorities;
     }
     
     @Override

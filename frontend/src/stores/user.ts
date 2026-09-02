@@ -23,6 +23,8 @@ interface LoginResponseData {
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(localStorage.getItem('admin_token'))
   const userInfo = ref<UserInfo | null>(null)
+  // v2.9.8 RBAC: 当前用户权限码列表（来自 JWT permissions claim，无 ROLE_ 前缀）
+  const permissions = ref<string[]>([])
   let refreshTimer: number | null = null
 
   // 从JWT token解析角色
@@ -30,6 +32,17 @@ export const useUserStore = defineStore('user', () => {
     try {
       const payload = JSON.parse(atob(jwtToken.split('.')[1]))
       return payload.roles || payload.authorities || []
+    } catch {
+      return []
+    }
+  }
+
+  // v2.9.8 RBAC: 从JWT token解析权限码（同 parseRolesFromToken 模式）
+  // 旧版本签发的令牌无 permissions claim 时返回空数组
+  const parsePermissionsFromToken = (jwtToken: string): string[] => {
+    try {
+      const payload = JSON.parse(atob(jwtToken.split('.')[1]))
+      return Array.isArray(payload.permissions) ? payload.permissions : []
     } catch {
       return []
     }
@@ -61,19 +74,33 @@ export const useUserStore = defineStore('user', () => {
     return roles.some(role => userInfo.value!.roles!.includes(role))
   }
 
+  // v2.9.8 RBAC: 检查是否拥有指定权限码（menu/路由守卫过滤用）
+  const hasPermission = (code: string): boolean => {
+    // ADMIN 拥有全部权限（超集）
+    if (isAdmin.value) return true
+    const list = permissions.value
+    // 旧令牌（无 permissions claim）或未在 role_permissions 登记的角色 → 权限数据为空时不限制。
+    // 与后端"未登记 URL 权限规则回退 authenticated"保持一致，避免旧令牌登录后菜单整体消失。
+    if (!list || list.length === 0) return true
+    return list.includes(code)
+  }
+
   const setToken = (newToken: string) => {
     token.value = newToken
     localStorage.setItem('admin_token', newToken)
     // 从token中提取用户信息
     const username = parseUsernameFromToken(newToken)
     const roles = parseRolesFromToken(newToken)
-    userInfo.value = { username, roles }
+    const perms = parsePermissionsFromToken(newToken)
+    permissions.value = perms
+    userInfo.value = { username, roles, permissions: perms }
   }
 
   const clearToken = () => {
     token.value = null
     localStorage.removeItem('admin_token')
     userInfo.value = null
+    permissions.value = []
 
     if (refreshTimer) {
       clearInterval(refreshTimer)
@@ -189,18 +216,21 @@ export const useUserStore = defineStore('user', () => {
   return {
     token,
     userInfo,
+    permissions,
     isAdmin,
     setToken,
     clearToken,
     isAuthenticated,
     hasRole,
     hasAnyRole,
+    hasPermission,
     login,
     logout,
     getUserInfo,
     refreshToken,
     startTokenRefresh,
     parseRolesFromToken,
+    parsePermissionsFromToken,
     parseUsernameFromToken
   }
 })
