@@ -2,8 +2,8 @@
 
 <!-- 版本信息 -->
 
-> **文档版本**: 2.9.8
-> **最后更新**: 2026-09-02
+> **文档版本**: 2.9.9
+> **最后更新**: 2026-09-03
 > **作者**: JAiRouter Team
 
 <!-- /版本信息 -->
@@ -21,6 +21,26 @@ JAiRouter 遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范：
 * **修订号 (PATCH)**: 向后兼容的问题修正
 
 ## 版本历史
+
+### [2.9.9] - 2026-09-03 - 功能发布（路由智能深化-4：响应缓存 P0）
+
+#### 响应缓存（非流式精确匹配）
+
+- **完整响应缓存**：相同请求（同租户 + 同服务/模型 + 规范化同请求体）直接复用缓存响应，**完全跳过下游**——降延迟、降成本；与 v2.9.0 前缀缓存（KV Cache 亲和，仍走下游省 prefill）可叠加
+- **P0 范围**：非流式 chat + embedding + rerank（确定性请求：chat 需 temperature==0/null 且 n==1/null；embedding/rerank 天然确定性）；image/TTS/STT 二进制排除；流式缓存放后续版本
+- **组件**：`ResponseCacheProperties`（`jairouter.response-cache`，默认关 opt-in）/ `CacheStore` 接口 + `CaffeineCacheStore`（±10% TTL 抖动防雪崩）/ `ResponseCacheService` 门面（enabled 短路 + 确定性门控）/ `ResponseCacheKeyBuilder`（chat/embedding/rerank 规范化）
+- **缓存键**：`SHA-256(apiKeyId|user?|serviceType|model|规范化请求体)`——apiKeyId 入键防跨租户泄漏；user 可选入键（空则 apiKey 粒度，零接口破坏）；`cacheSalt` 显式绕过位；键无明文内容
+- **会话语义**：无 sessionId、会话历史全量在 messages——键含完整 messages 天然区分上下文；通用问候单轮高频天然高命中，陈旧由 TTL 控制
+- **挂载**：handler 读（selectInstance 后短路，服务级限流不绕过）；NonStreamingRequestProcessor 写（仅 2xx 确定性响应）
+- **指标**：`jairouter_response_cache_hits_total / misses_total / hit_ratio`（tag service/model）
+- **命中语义**：命中短路在下游执行前（不写调用历史、不耗 token 配额，仅累加命中指标）
+- **配置文档**：新增 `configuration/response-cache.md`（zh/en）
+
+#### 测试
+
+- 新增 45：KeyBuilder 12 / CaffeineCacheStore 6 / ResponseCacheService 8 / processor 写 4 / 指标 3 / handler 集成 13（命中短路/未命中/禁用/流式与 temperature>0 绕过/租户隔离/embedding·rerank/写读闭环）；**全量 3176 用例全绿**；DeepSeek 真实下游端到端冒烟通过（命中/租户隔离/指标）
+
+---
 
 ### [2.9.8] - 2026-09-02 - 功能发布（Web 菜单 RBAC 管理 + 用户/权限扩展）
 

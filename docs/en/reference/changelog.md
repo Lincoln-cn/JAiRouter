@@ -1,8 +1,8 @@
 # Changelog
 
 <!-- 版本信息 -->
-> **Document Version**: 2.9.8
-> **Last Updated**: 2026-09-02
+> **Document Version**: 2.9.9
+> **Last Updated**: 2026-09-03
 > **Git Commit**: 4d3e084d
 > **Author**: Lincoln
 <!-- /版本信息 -->
@@ -20,6 +20,26 @@ JAiRouter follows the [Semantic Versioning](https://semver.org/) specification:
 - **Patch Version**: Backward-compatible bug fixes
 
 ## Version History
+
+### [2.9.9] - 2026-09-03 - Feature Release (Routing Intelligence-4: Response Cache P0)
+
+#### Response cache (non-streaming exact match)
+
+- **Full response cache**: identical requests (same tenant + service/model + canonical request body) reuse the cached response and **skip the downstream entirely** — lower latency and cost; stacks with the v2.9.0 prefix cache (KV-cache affinity, still hits the downstream for prefill savings)
+- **P0 scope**: non-streaming chat + embedding + rerank (deterministic: chat requires temperature==0/null and n==1/null; embedding/rerank are naturally deterministic); image/TTS/STT binary excluded; streaming caching deferred to a later version
+- **Components**: `ResponseCacheProperties` (`jairouter.response-cache`, off by default, opt-in) / `CacheStore` interface + `CaffeineCacheStore` (±10% TTL jitter against thundering herd) / `ResponseCacheService` facade (enabled short-circuit + deterministic gate) / `ResponseCacheKeyBuilder` (chat/embedding/rerank canonicalization)
+- **Cache key**: `SHA-256(apiKeyId|user?|serviceType|model|canonical body)` — apiKeyId in the key prevents cross-tenant leaks; `user` optionally in the key (empty → apiKey granularity, zero API breakage); `cacheSalt` explicit bypass; no plaintext content in keys
+- **Conversation semantics**: no sessionId — history travels fully in `messages`, so the key naturally distinguishes contexts; single-turn greetings hit frequently by design, staleness bounded by TTL
+- **Wiring**: handler read (short-circuit after instance selection, service-level rate limiting not bypassed); NonStreamingRequestProcessor write (2xx deterministic responses only)
+- **Metrics**: `jairouter_response_cache_hits_total / misses_total / hit_ratio` (tags service/model)
+- **Hit semantics**: cache hits short-circuit before downstream execution (no call-history record, no token quota consumed — only the hit counter increments)
+- **Docs**: new `configuration/response-cache.md` (zh/en)
+
+#### Tests
+
+- Added 45: KeyBuilder 12 / CaffeineCacheStore 6 / ResponseCacheService 8 / processor write 4 / metrics 3 / handler integration 13 (hit short-circuit / miss / disabled / streaming & temperature>0 bypass / tenant isolation / embedding·rerank / write-read loop); **3176 tests all green**; end-to-end smoke against a real DeepSeek downstream passed (hit / tenant isolation / metrics)
+
+---
 
 ### [2.9.8] - 2026-09-02 - Feature Release (Web Menu RBAC Management + User/Permission Extension)
 

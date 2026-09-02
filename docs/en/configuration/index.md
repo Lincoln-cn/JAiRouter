@@ -403,3 +403,4 @@ model:
 - [Version Management](version-management.md) - Configuration version management: Apply vs Rollback
 - [JWT Persistence Configuration](jwt-persistence.md) - JWT token persistence and security audit configuration
 - [KV Cache](kv-cache.md) - Prefix-cache-friendly gateway: sticky routing and cache metrics (v2.9.0)
+- [Response Cache](response-cache.md) - Full response cache: deterministic requests reuse the cached response and skip the downstream (v2.9.9)

@@ -85,6 +85,7 @@ plugins:
             验证规则: Validation Rules
             Adapter配置: Adapter Configuration
             路由规则: Routing Rules
+            响应缓存: Response Cache
             安全功能: Security Features
             API Key管理: API Key Management
             JWT认证: JWT Authentication
@@ -196,6 +197,7 @@ nav:
     - Adapter配置: zh/configuration/adapter-config.md
     - 路由规则: zh/configuration/routing-rules.md
     - KV缓存: zh/configuration/kv-cache.md
+    - 响应缓存: zh/configuration/response-cache.md
   - 安全功能:
     - zh/security/index.md
     - API Key管理: zh/security/api-key-management.md

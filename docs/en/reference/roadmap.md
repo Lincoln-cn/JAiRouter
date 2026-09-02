@@ -1,9 +1,9 @@
 # Roadmap
 
 <!-- 版本信息 -->
-> **Doc Version**: 1.2.0
-> **Last Updated**: 2026-07-14
-> **Git 标签**: v2.9.5
+> **Doc Version**: 1.3.0
+> **Last Updated**: 2026-09-03
+> **Git 标签**: v2.9.9
 > **Author**: Lincoln
 <!-- /版本信息 -->
 
@@ -24,28 +24,29 @@ JAiRouter aims to become the best open-source AI model service routing gateway, 
 
 ## Current Version Status
 
-### ✅ v2.9.5 (Current Stable)
+### ✅ v2.9.9 (Current Stable)
 
-**Release Status**: Released (2026-08-30)
-**Git Tag**: v2.9.5
+**Release Status**: Released (2026-09-03)
+**Git Tag**: v2.9.9
 
-#### Key Features
-- ✅ Dashboard real-time metrics (Micrometer integration)
-- ✅ Circuit Breaker adaptive threshold adjustment
-- ✅ Streaming token usage recording
-- ✅ STT multipart request support
-- ✅ Docker image optimization (Alpine/Distroless)
-- ✅ API Key quota management (quota settings, usage tracking, over-quota alerts)
-- ✅ ExceptionEvent collection fix
-- ✅ Request history persistence (storage, query, statistics, frontend dashboard)
-- ✅ RBAC permission control (multi-user role management, resource isolation)
-- ✅ UI optimization (frontend menu restructuring, permission display)
+#### Key Features (v2.9.6 → v2.9.9 evolution)
+| Version | Date | Highlights |
+|---------|------|------------|
+| v2.9.6 | 2026-08-30 | Routing Intelligence-2: request-level failover (switch-instance retry + per-request blacklist) |
+| v2.9.7 | 2026-09-01 | Routing Intelligence-3: tag routing (instance tags + TARGET_TAGS action + header selection) |
+| v2.9.8 | 2026-09-02 | Web menu RBAC management (43 permission codes + 4 role templates + data-driven URL authorization + permission UI + login DB fallback) |
+| v2.9.9 | 2026-09-03 | Routing Intelligence-4: response cache P0 (non-streaming exact-match cache + Caffeine + tenant-isolated keys + metrics) |
 
 #### Statistics
-- Test count: 2,600+
-- Java source files: 700+
-- Test files: 209+
-- Codebase: ~125k LOC
+- Test count: 3,176 (all green)
+- Java source files: 750+
+- Codebase: ~135k LOC
+
+---
+
+### 🎯 v2.9.10 (Planned)
+
+Response cache P1: streaming SSE concatenation cache + invalidation API (CacheStore.delete + `DELETE /api/config/cache/response`) + service-level rate-limit extraction for early short-circuit (hits skip instance selection). Semantic cache: evaluation report only, separate project; Redis implementation assessed on the follow-up path.
 
 ---
 
@@ -296,9 +297,11 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 
 ### Recent Focus (2026)
 1. ✅ Complete v2.7.x performance optimization series + RBAC permission control
-2. 📋 Advance v2.8.x configuration management optimization + new adapters (Gemini/Cohere/Bedrock)
-3. 📋 Plan v2.9.x maintainability improvements
-4. 📋 Explore v4.0 new features
+2. ✅ Advance v2.8.x configuration management + adapters + plugin system/rule engine/resource pools
+3. ✅ v2.9.x intelligent routing series (failover/tag routing/response cache)
+4. 📋 v2.9.10 response cache P1 (streaming cache + invalidation API + rate-limit short-circuit)
+5. 📋 v2.10+ high-availability foundation (multi-node + Redis distributed + config rollback)
+6. 📋 Semantic cache evaluation (vector-similarity reuse, separate project)
 
 ### Long-term Vision
 1. Become the standard in AI model routing
@@ -308,6 +311,6 @@ JAiRouter will continue to uphold the open-source spirit and is committed to pro
 
 ---
 
-**最后更新**: July 14, 2026
+**Last Updated**: September 3, 2026
 
 For any suggestions or ideas, feel free to communicate with us via [GitHub Discussions](https://github.com/Lincoln-cn/JAiRouter/discussions).
