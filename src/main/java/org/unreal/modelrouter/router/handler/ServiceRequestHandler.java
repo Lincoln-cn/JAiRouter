@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.unreal.modelrouter.auth.security.model.ApiKeyAuthentication;
+import org.unreal.modelrouter.common.controller.response.RouterResponse;
 import org.unreal.modelrouter.common.util.IpUtils;
 import org.unreal.modelrouter.monitor.monitoring.collector.MetricsCollector;
 import org.unreal.modelrouter.monitor.tracing.TracingConstants;
@@ -35,15 +37,18 @@ import org.unreal.modelrouter.monitor.tracing.TracingContext;
 import org.unreal.modelrouter.monitor.tracing.interceptor.ControllerTracingInterceptor;
 import org.unreal.modelrouter.router.adapter.AdapterRegistry;
 import org.unreal.modelrouter.router.adapter.ServiceCapability;
+import org.unreal.modelrouter.router.cache.ResponseCacheService;
 import org.unreal.modelrouter.router.checker.ServiceStateManager;
+import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
+import org.unreal.modelrouter.router.loadbalancer.AffinityKeyResolver;
 import org.unreal.modelrouter.router.model.ModelRouterProperties;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
-import org.unreal.modelrouter.router.loadbalancer.AffinityContextHolder;
 import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 通用服务请求处理器.
@@ -70,11 +75,29 @@ public class ServiceRequestHandler {
      */
     public static final String API_KEY_ID_ATTRIBUTE = "API_KEY_ID";
 
+    /**
+     * v2.9.9: ServerWebExchange attribute key for storing the original request DTO.
+     * Controller 在调用 handleRequest 前放入，handler 认证后读取以构建缓存键。
+     */
+    public static final String REQUEST_DTO_ATTRIBUTE = "JAIR_REQUEST_DTO";
+
+    /**
+     * v2.9.9: ServerHttpRequest attribute key for storing the response cache key.
+     * handler 认证后生成并放入，processor 写缓存前读取（仿 API_KEY_ID_ATTRIBUTE 传递先例）。
+     */
+    public static final String CACHE_KEY_ATTRIBUTE = "JAIR_RESPONSE_CACHE_KEY";
+
     private final AdapterRegistry adapterRegistry;
     private final ModelServiceRegistry registry;
     private final ServiceStateManager serviceStateManager;
     private final MetricsCollector metricsCollector;
     private final ControllerTracingInterceptor tracingInterceptor;
+
+    /**
+     * v2.9.9: 响应缓存门面（可选注入，监控/缓存未装配时为空则跳过缓存路径）
+     */
+    @Autowired(required = false)
+    private ResponseCacheService responseCacheService;
 
     /**
      * 构造函数.
@@ -142,6 +165,10 @@ public class ServiceRequestHandler {
 
                 exchange.getAttributes().put(API_KEY_ID_ATTRIBUTE, keyId);
                 httpRequest.getAttributes().put(API_KEY_ID_ATTRIBUTE, keyId);
+
+                // v2.9.9: 认证通过后为可缓存请求生成响应缓存键并放入请求属性
+                // （供 handleWithInstanceAdapter 缓存读短路与 processor 写缓存使用）
+                prepareResponseCacheKey(exchange, httpRequest, keyId, endpoint);
 
                 return handleWithInstanceAdapter(
                     endpoint,
@@ -220,6 +247,13 @@ public class ServiceRequestHandler {
         } finally {
             // v2.9.0: 请求实例选择完成后清理亲和性上下文
             AffinityContextHolder.clear();
+        }
+
+        // v2.9.9: 响应缓存读 — selectInstance 之后(服务级限流已在 ModelServiceRegistry 内执行,
+        // 每请求恰一次,命中短路不绕过限流)、获取适配器之前(命中直接跳过下游调用)
+        ResponseEntity<?> cachedResponse = tryReadCachedResponse(httpRequest, serviceType, modelName);
+        if (cachedResponse != null) {
+            return Mono.just(cachedResponse);
         }
 
         // 2. 获取适配器
@@ -390,6 +424,76 @@ public class ServiceRequestHandler {
             return key;
         }
         return null;
+    }
+
+    /**
+     * v2.9.9: 响应缓存键生成（读挂载前置准备）.
+     *
+     * <p>认证通过后调用：从 exchange attribute 读取 Controller 放入的原始 DTO；
+     * 缓存启用 + 请求可缓存（确定性/非流式，由 ResponseCacheService 判定）时
+     * 构建键并放入 httpRequest attribute，供处理器缓存读与 processor 写缓存使用。
+     * 任一条件不满足则不生成键（缓存读写天然关闭）。
+     *
+     * @param exchange ServerWebExchange（含原始 DTO attribute）
+     * @param httpRequest HTTP 请求（缓存键存放处）
+     * @param apiKeyId 认证后的 API Key ID
+     * @param endpoint 服务端点
+     */
+    private void prepareResponseCacheKey(final ServerWebExchange exchange, final ServerHttpRequest httpRequest,
+                                         final String apiKeyId, final ServiceEndpoint endpoint) {
+        if (responseCacheService == null || !responseCacheService.isEnabled()) {
+            return;
+        }
+        if (exchange == null || httpRequest == null) {
+            return;
+        }
+        Object requestDto = exchange.getAttribute(REQUEST_DTO_ATTRIBUTE);
+        if (requestDto == null) {
+            return;
+        }
+        // 租户键: apiKeyId 缺省回退 clientIp（复用 AffinityKeyResolver 语义，防跨租户泄漏）
+        String tenantKey = AffinityKeyResolver.resolveTenantKey(apiKeyId, IpUtils.getClientIp(httpRequest));
+        if (tenantKey == null) {
+            return;
+        }
+        String cacheKey = responseCacheService.buildKey(tenantKey, endpoint.getServiceType(), requestDto);
+        if (cacheKey != null) {
+            httpRequest.getAttributes().put(CACHE_KEY_ATTRIBUTE, cacheKey);
+        }
+    }
+
+    /**
+     * v2.9.9: 响应缓存读（在 selectInstance 之后调用）.
+     *
+     * <p>从 httpRequest attribute 读取缓存键并查询缓存；命中时构造与正常路径同构的
+     * RouterResponse 200 JSON 响应（hit 指标由 ResponseCacheService 记录），未命中返回 null
+     * 继续原流程。
+     *
+     * @param httpRequest HTTP 请求
+     * @param serviceType 服务类型
+     * @param modelName 模型名称
+     * @return 缓存命中时的响应实体；未命中或缓存不可用时返回 null
+     */
+    private ResponseEntity<?> tryReadCachedResponse(final ServerHttpRequest httpRequest,
+                                                    final ServiceType serviceType,
+                                                    final String modelName) {
+        if (responseCacheService == null || httpRequest == null) {
+            return null;
+        }
+        Object cacheKey = httpRequest.getAttributes().get(CACHE_KEY_ATTRIBUTE);
+        if (!(cacheKey instanceof String key) || key.isBlank()) {
+            return null;
+        }
+        String serviceName = serviceType != null ? serviceType.name() : "unknown";
+        Optional<Object> cached = responseCacheService.lookup(key, serviceName, modelName);
+        if (cached.isEmpty()) {
+            return null;
+        }
+        logger.info("Response cache hit: service={}, model={}", serviceName, modelName);
+        RouterResponse<Object> body = RouterResponse.success(cached.get(), "请求成功");
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body);
     }
 
     /**

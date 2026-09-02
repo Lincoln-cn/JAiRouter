@@ -361,6 +361,16 @@ public class DefaultMetricsCollector implements MetricsCollector {
         tracingDelegate.recordCacheTokenUsage(adapter, instance, cacheHitTokens, cacheMissTokens);
     }
 
+    @Override
+    public void recordResponseCacheHit(final String service, final String model) {
+        tracingDelegate.recordResponseCacheHit(service, model);
+    }
+
+    @Override
+    public void recordResponseCacheMiss(final String service, final String model) {
+        tracingDelegate.recordResponseCacheMiss(service, model);
+    }
+
     /**
      * 将熔断器状态转换为数值
      */

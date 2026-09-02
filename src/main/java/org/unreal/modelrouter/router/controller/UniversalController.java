@@ -64,6 +64,11 @@ public class UniversalController {
             @RequestBody(required = false) final ChatDTO.Request request,
             final ServerWebExchange exchange) {
 
+        // v2.9.9: 原始 DTO 放入 exchange attribute，供 handler 认证后构建响应缓存键
+        if (request != null) {
+            exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
+        }
+
         return requestHandler.handleRequest(
             ServiceEndpoint.CHAT,
             request.model(),
@@ -83,6 +88,9 @@ public class UniversalController {
             throw new ServerWebInputException("Request body is required");
         }
 
+        // v2.9.9: 原始 DTO 放入 exchange attribute，供 handler 认证后构建响应缓存键
+        exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
+
         return requestHandler.handleRequest(
             ServiceEndpoint.EMBEDDING,
             request.model(),
@@ -101,6 +109,9 @@ public class UniversalController {
         if (request == null) {
             throw new ServerWebInputException("Request body is required");
         }
+
+        // v2.9.9: 原始 DTO 放入 exchange attribute，供 handler 认证后构建响应缓存键
+        exchange.getAttributes().put(ServiceRequestHandler.REQUEST_DTO_ATTRIBUTE, request);
 
         return requestHandler.handleRequest(
             ServiceEndpoint.RERANK,

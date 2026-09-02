@@ -336,4 +336,76 @@ final class TracingMetricsDelegate {
             logger.warn("Failed to record cache token usage: {}", e.getMessage());
         }
     }
+
+    // ==================== v2.9.9: 响应缓存指标 ====================
+
+    void recordResponseCacheHit(final String service, final String model) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+
+            String counterKey = "response.cache.hits.total." + service + "." + model;
+            Counter counter = counters.computeIfAbsent(counterKey, key ->
+                Counter.builder(metricPrefix + "response_cache_hits_total")
+                    .tag("service", service)
+                    .tag("model", model)
+                    .description("Total response cache hits")
+                    .register(meterRegistry)
+            );
+            counter.increment();
+            updateResponseCacheHitRatio(service, model, metricPrefix);
+            logger.debug("Recorded response cache hit: service={}, model={}", service, model);
+        } catch (Exception e) {
+            logger.warn("Failed to record response cache hit: {}", e.getMessage());
+        }
+    }
+
+    void recordResponseCacheMiss(final String service, final String model) {
+        try {
+            String prefix = monitoringProperties.getPrefix();
+            String metricPrefix = (prefix != null && !prefix.isEmpty()) ? prefix + "_" : "";
+
+            String counterKey = "response.cache.misses.total." + service + "." + model;
+            Counter counter = counters.computeIfAbsent(counterKey, key ->
+                Counter.builder(metricPrefix + "response_cache_misses_total")
+                    .tag("service", service)
+                    .tag("model", model)
+                    .description("Total response cache misses")
+                    .register(meterRegistry)
+            );
+            counter.increment();
+            updateResponseCacheHitRatio(service, model, metricPrefix);
+            logger.debug("Recorded response cache miss: service={}, model={}", service, model);
+        } catch (Exception e) {
+            logger.warn("Failed to record response cache miss: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 更新响应缓存命中率 Gauge（基于累积 hit/miss 计数器）.
+     */
+    private void updateResponseCacheHitRatio(final String service, final String model,
+                                             final String metricPrefix) {
+        String hitCounterKey = "response.cache.hits.total." + service + "." + model;
+        String missCounterKey = "response.cache.misses.total." + service + "." + model;
+        Counter hitCounter = counters.get(hitCounterKey);
+        Counter missCounter = counters.get(missCounterKey);
+        double hitTotal = hitCounter != null ? hitCounter.count() : 0;
+        double missTotal = missCounter != null ? missCounter.count() : 0;
+        double cumulativeTotal = hitTotal + missTotal;
+        if (cumulativeTotal > 0) {
+            double hitRatio = hitTotal / cumulativeTotal;
+            String gaugeKey = "response.cache.hit.ratio." + service + "." + model;
+            AtomicReference<Double> ratioRef = usageGauges.computeIfAbsent(gaugeKey, key -> {
+                AtomicReference<Double> ref = new AtomicReference<>(hitRatio);
+                Gauge.builder(metricPrefix + "response_cache_hit_ratio", ref, AtomicReference::get)
+                    .tag("service", service)
+                    .tag("model", model)
+                    .description("Response cache hit ratio (0.0 ~ 1.0)")
+                    .register(meterRegistry);
+                return ref;
+            });
+            ratioRef.set(hitRatio);
+        }
+    }
 }

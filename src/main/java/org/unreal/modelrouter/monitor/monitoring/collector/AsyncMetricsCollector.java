@@ -346,6 +346,24 @@ public class AsyncMetricsCollector implements MetricsCollector {
         }
     }
 
+    @Override
+    public void recordResponseCacheHit(final String service, final String model) {
+        try {
+            fallbackCollector.recordResponseCacheHit(service, model);
+        } catch (Exception e) {
+            logger.warn("Failed to record response cache hit metric: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void recordResponseCacheMiss(final String service, final String model) {
+        try {
+            fallbackCollector.recordResponseCacheMiss(service, model);
+        } catch (Exception e) {
+            logger.warn("Failed to record response cache miss metric: {}", e.getMessage());
+        }
+    }
+
     /**
      * 判断是否应该使用异步处理
      */

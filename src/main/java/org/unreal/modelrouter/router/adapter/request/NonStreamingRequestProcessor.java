@@ -26,6 +26,8 @@ import org.unreal.modelrouter.monitor.callhistory.config.RecordLevel;
 import org.unreal.modelrouter.router.adapter.builder.RequestBuilder;
 import org.unreal.modelrouter.router.adapter.handler.MultipartRequestHandler;
 import org.unreal.modelrouter.router.adapter.metrics.AdapterMetricsRecorder;
+import org.unreal.modelrouter.router.cache.ResponseCacheService;
+import org.unreal.modelrouter.router.handler.ServiceRequestHandler;
 import org.unreal.modelrouter.router.model.ModelRouterProperties.ModelInstance;
 import org.unreal.modelrouter.router.model.ModelServiceRegistry.ServiceType;
 
@@ -61,6 +63,12 @@ public class NonStreamingRequestProcessor {
 
     @Autowired(required = false)
     private SanitizationService sanitizationService;
+
+    /**
+     * v2.9.9: 响应缓存门面（可选注入，未装配时跳过缓存写）
+     */
+    @Autowired(required = false)
+    private ResponseCacheService responseCacheService;
 
     public NonStreamingRequestProcessor(
             final ObjectMapper objectMapper,
@@ -106,6 +114,9 @@ public class NonStreamingRequestProcessor {
 
         // 0. 从请求属性中获取 API Key ID（由 ServiceRequestHandler 在认证阶段存入）
         final String capturedKeyId = tokenUsageExtractor.extractKeyIdFromRequest(httpRequest);
+        // v2.9.9: 从请求属性读取响应缓存键（由 ServiceRequestHandler 认证阶段生成；
+        // 流式/非确定性/未启用请求键为空 → 写缓存自然跳过）
+        final String responseCacheKey = extractResponseCacheKey(httpRequest);
 
         // 1. 请求转换
         Object transformedRequest = transformRequestFn.apply(request);
@@ -171,7 +182,7 @@ public class NonStreamingRequestProcessor {
         } else {
             return processJsonResponse(requestSpec, transformedRequest, instanceName,
                     adapterType, serviceType, requestStartTime, path, transformResponseFn, multipartHandler,
-                    capturedKeyId, requestedModel, capturedRequestBody, selectedInstance);
+                    capturedKeyId, responseCacheKey, requestedModel, capturedRequestBody, selectedInstance);
         }
     }
 
@@ -252,6 +263,7 @@ public class NonStreamingRequestProcessor {
             final Function<Object, Object> transformResponseFn,
             final MultipartRequestHandler multipartHandler,
             final String capturedKeyId,
+            final String responseCacheKey,
             final String requestedModel,
             final String capturedRequestBody,
             final ModelInstance selectedInstance) {
@@ -309,6 +321,10 @@ public class NonStreamingRequestProcessor {
                         // v2.8.9: 池路由后,响应 model 回显实际实例模型名
                         tokenUsageExtractor.rewriteModelField(transformedData, requestedModel, instanceName);
 
+                        // v2.9.9: 响应缓存写 — 仅 2xx 成功分支到达此处(非2xx 已先行短路)；
+                        // 流式/非确定性/未启用请求键为空，此处不写
+                        cacheSuccessfulResponse(responseCacheKey, transformedData);
+
                         // v2.9.2: 记录治理 - 异步记录含请求/响应体的调用历史
                         if (metricsRecorder != null) {
                             metricsRecorder.recordCompleteCall(
@@ -350,6 +366,39 @@ public class NonStreamingRequestProcessor {
                                 System.currentTimeMillis() - requestStartTime, serviceType);
                     }
                 });
+    }
+
+    /**
+     * v2.9.9: 从请求属性提取响应缓存键.
+     *
+     * @param httpRequest HTTP 请求（可能为 null）
+     * @return 缓存键；无键或属性为空返回 null
+     */
+    private String extractResponseCacheKey(final ServerHttpRequest httpRequest) {
+        if (httpRequest == null) {
+            return null;
+        }
+        Object cacheKey = httpRequest.getAttributes().get(ServiceRequestHandler.CACHE_KEY_ATTRIBUTE);
+        if (cacheKey instanceof String key && !key.isBlank()) {
+            return key;
+        }
+        return null;
+    }
+
+    /**
+     * v2.9.9: 写入响应缓存.
+     *
+     * <p>仅在 2xx 成功路径（processJsonResponse 内、非 2xx 已先行短路）调用；
+     * 键为空（流式/非确定性/缓存未启用，由 handler 侧判定）或数据为 null 时不写。
+     *
+     * @param cacheKey 缓存键
+     * @param transformedData 下游转换后的 data（缓存命中时原样返回的内容）
+     */
+    void cacheSuccessfulResponse(final String cacheKey, final Object transformedData) {
+        if (cacheKey == null || transformedData == null || responseCacheService == null) {
+            return;
+        }
+        responseCacheService.store(cacheKey, transformedData);
     }
 
     /**

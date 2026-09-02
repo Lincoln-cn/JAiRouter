@@ -154,4 +154,24 @@ public interface MetricsCollector {
                                        long cacheHitTokens, long cacheMissTokens) {
         // 默认空实现(向后兼容)
     }
+
+    /**
+     * v2.9.9: 记录响应缓存命中
+     *
+     * @param service 服务名称 (chat, embedding, rerank)
+     * @param model 模型名称
+     */
+    default void recordResponseCacheHit(String service, String model) {
+        // 默认空实现(向后兼容)
+    }
+
+    /**
+     * v2.9.9: 记录响应缓存未命中
+     *
+     * @param service 服务名称 (chat, embedding, rerank)
+     * @param model 模型名称
+     */
+    default void recordResponseCacheMiss(String service, String model) {
+        // 默认空实现(向后兼容)
+    }
 }
